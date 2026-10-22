@@ -1,0 +1,98 @@
+{
+  "snapshot_type": "exact_blank_fnb_name_official_mall_directory_proposals",
+  "observed_at_local": "2026-10-19 Asia/Singapore",
+  "master_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "master_sha256": "a70390e62c4b5a9605f8041e4136f92024d93275d99c58f8de7ebaf73c8c96b6",
+  "worksheet": "Public F&B Directory",
+  "scope": "Read-only exact-unit audit of blank public-facing names in the current directory. No workbook edits. Official mall/operator directories used; only rows with exact unit and postal-code matches are proposed.",
+  "source_set": [
+    {
+      "source": "Velocity @ Novena Square official Food & Beverages directory",
+      "observed_date": "2026-10-19",
+      "page_url": "https://www.velocitynovena.com/tenant-category/food-beverages/",
+      "capture_method": "Fetched official page over HTTPS with curl; source body saved in memory only; SHA-256 recorded.",
+      "source_page_sha256": "580817d016ca70eceea8a0d3aa2144df967d64b553bf17b0209eba777dafe6c5",
+      "relevant_entries": [
+        "Cedele #01-22",
+        "SaladStop! #02-24"
+      ],
+      "address_on_page": "238 Thomson Road, Singapore 307683"
+    },
+    {
+      "source": "CapitaLand official Bugis+ CoCo ICHIBANYA store page",
+      "observed_date": "2026-10-19",
+      "page_url": "https://www.capitaland.com/sg/malls/bugisplus/en/stores/coco-ichibanya.html",
+      "capture_method": "Fetched official page over HTTPS with curl; source body saved in memory only; SHA-256 recorded.",
+      "source_page_sha256": "44b159973856bb56882ab17d4682b1474c2eeb7d630b70aaa3ed5cd197e5809f",
+      "relevant_entry": "CoCo ICHIBANYA, Bugis+, #01-10"
+    }
+  ],
+  "summary": {
+    "blank_records_reviewed": 5,
+    "exact_public_fnb_name_proposals": 3,
+    "held_for_shared_foodcourt_identity_ambiguity": 2,
+    "workbook_edits": 0
+  },
+  "proposals": [
+    {
+      "excel_row": 33820,
+      "sfa_licence": "CE10568E000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "SaladStop!",
+      "business_type": "Restaurant",
+      "existing_address": "Address: 238 THOMSON ROAD #02-24,NOVENA SQUARE,Singapore 307683",
+      "postal_code": "307683",
+      "source_type": "official_mall_operator_directory",
+      "source_url": "https://www.velocitynovena.com/tenant-category/food-beverages/",
+      "source_page_sha256": "580817d016ca70eceea8a0d3aa2144df967d64b553bf17b0209eba777dafe6c5",
+      "evidence": "Current Velocity @ Novena Square official Food & Beverages directory lists SaladStop! at #02-24 and identifies the mall address as 238 Thomson Road, Singapore 307683. The workbook record is the exact same postal code and unit; its SFA-licensed business type is Restaurant.",
+      "matching_rule": "Exact six-digit postal code 307683 and exact unit #02-24; operator directory identifies SaladStop! at that unit.",
+      "confidence": "high",
+      "limitations": "Proposes public-facing outlet name only; no other fields proposed. Current blank cell was checked against the bound workbook SHA."
+    },
+    {
+      "excel_row": 37811,
+      "sfa_licence": "W01469L000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "Cedele",
+      "business_type": "Snack Counter",
+      "existing_address": "Address: 238 THOMSON ROAD #01-22,NOVENA SQUARE,Singapore 307683",
+      "postal_code": "307683",
+      "source_type": "official_mall_operator_directory",
+      "source_url": "https://www.velocitynovena.com/tenant-category/food-beverages/",
+      "source_page_sha256": "580817d016ca70eceea8a0d3aa2144df967d64b553bf17b0209eba777dafe6c5",
+      "evidence": "Current Velocity @ Novena Square official Food & Beverages directory lists Cedele at #01-22 and identifies the mall address as 238 Thomson Road, Singapore 307683. The workbook record is the exact same postal code and unit; its SFA-licensed business type is Snack Counter.",
+      "matching_rule": "Exact six-digit postal code 307683 and exact unit #01-22; operator directory identifies Cedele at that unit.",
+      "confidence": "high",
+      "limitations": "Proposes public-facing outlet name only; no other fields proposed. Current blank cell was checked against the bound workbook SHA."
+    },
+    {
+      "excel_row": 33870,
+      "sfa_licence": "CE12172A000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "CoCo ICHIBANYA",
+      "business_type": "Restaurant",
+      "existing_address": "Address: 201 VICTORIA STREET #01-10,BUGIS+,Singapore 188067",
+      "postal_code": "188067",
+      "source_type": "official_mall_operator_store_page",
+      "source_url": "https://www.capitaland.com/sg/malls/bugisplus/en/stores/coco-ichibanya.html",
+      "source_page_sha256": "44b159973856bb56882ab17d4682b1474c2eeb7d630b70aaa3ed5cd197e5809f",
+      "evidence": "CapitaLand’s current official Bugis+ CoCo ICHIBANYA store page identifies the public-facing tenant and location #01-10. The workbook record has the exact unit, mall, Singapore 188067 postal code, and Restaurant licence type.",
+      "matching_rule": "Exact six-digit postal code 188067 and exact unit #01-10; official Bugis+ store page names CoCo ICHIBANYA at that location.",
+      "confidence": "high",
+      "limitations": "Proposes public-facing outlet name only; no other fields proposed. Current blank cell was checked against the bound workbook SHA."
+    }
+  ],
+  "held_rows": [
+    {
+      "excel_row": 33732,
+      "sfa_licence": "CE06L06K001",
+      "reason": "The official Velocity directory identifies Cookhouse by Koufu as the food court tenant at #03-47/56, but this SFA row is a foodcourt-type licence at the shared food-court premises, not an identifiable individual public-facing stall. Hold to avoid assigning the operator name to an ambiguous permit record."
+    },
+    {
+      "excel_row": 33733,
+      "sfa_licence": "CE06L06K002",
+      "reason": "The official Velocity directory identifies Cookhouse by Koufu as the food court tenant at #03-47/56, but this SFA row is a foodcourt-type licence at the shared food-court premises, not an identifiable individual public-facing stall. Hold to avoid assigning the operator name to an ambiguous permit record."
+    }
+  ]
+}

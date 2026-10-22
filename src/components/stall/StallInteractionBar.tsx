@@ -8,7 +8,7 @@
 import { View, Pressable, StyleSheet, ActivityIndicator } from "react-native";
 import { useState } from "react";
 import { Bookmark, CheckCircle, ListPlus } from "lucide-react-native";
-import * as Haptics from "expo-haptics";
+import * as Haptics from "@/lib/haptics";
 
 import { useHungryTheme } from "@/theme";
 import { AppText } from "@/components/ui/AppText";
@@ -29,16 +29,13 @@ interface StallInteractionBarProps {
 export function StallInteractionBar({
   userId,
   stallId,
-  reviewPromptText,
-  hasReviewedDishAtVenue,
-  onReviewRequired,
   onAddToCollection,
 }: StallInteractionBarProps) {
   const { componentRadii, palette, spacing, typography } = useHungryTheme();
   const interactions = useStallInteractionStore((state) => state.interactions);
   const interaction = interactions[stallId];
   const toggleSaved = useStallInteractionStore((s) => s.toggleSaved);
-  const markTried = useStallInteractionStore((s) => s.markTried);
+  const setVisited = useStallInteractionStore((s) => s.setVisited);
   const incrementProgress = useMissionStore((s) => s.incrementProgress);
 
   const isSaved = interaction?.isSaved ?? false;
@@ -58,6 +55,8 @@ export function StallInteractionBar({
         // Just saved (not unsaved) — count toward missions
         await incrementProgress(userId, "save_stalls");
       }
+    } catch {
+      showToast({ message: "Could not confirm this change. Please try again.", tone: "error" });
     } finally {
       setSavingInProgress(false);
     }
@@ -67,23 +66,12 @@ export function StallInteractionBar({
     if (tryingInProgress) return;
     setTryingInProgress(true);
     try {
-      const hasReviewed = hasReviewedDishAtVenue ?? false;
-      if (!hasReviewed) {
-        const message = reviewPromptText ?? "Review this stall once before marking it as visited.";
-        showToast({ message, tone: "warning", duration: 3000 });
-        onReviewRequired?.();
-        return;
-      }
-
-      const triedResult = await markTried(userId, stallId);
-      if (triedResult.isTried) {
-        await incrementProgress(userId, "mark_tried");
-        showToast({ message: "Marked as visited", tone: "success", duration: 3000 });
-      } else {
-        showToast({ message: "Removed from visited", tone: "info", duration: 3000 });
-      }
+      const visited = await setVisited(userId, stallId, !isTried);
+      showToast({ message: visited ? "Visited this stall" : "Visit removed", tone: "success" });
 
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } catch {
+      showToast({ message: "Could not confirm this change. Please try again.", tone: "error" });
     } finally {
       setTryingInProgress(false);
     }
@@ -108,7 +96,7 @@ export function StallInteractionBar({
     },
     {
       id: "tried",
-      label: isTried ? "Visited" : "Mark Visited",
+      label: "Visited this stall",
       icon: CheckCircle,
       active: isTried,
       onPress: handleTried,

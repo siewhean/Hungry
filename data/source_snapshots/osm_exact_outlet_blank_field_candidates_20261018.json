@@ -1,0 +1,1637 @@
+{
+  "baseline_workbook": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_sha256": "ba519451ef5fa46aafcac14d67a1563365e6a15601c1ddc778d71ac20a960ef1",
+  "osm_source": "OpenStreetMap via Overpass API; query: Singapore bbox amenity restaurant/cafe/fast_food/food_court/bar, element tags and metadata",
+  "osm_observation_timestamp_utc": "2026-10-18T15:39:01Z",
+  "element_count": 9619,
+  "filtered_named_postcode_features": 2785,
+  "candidate_count": 36,
+  "candidate_fields_total": 49,
+  "duplicates_excluded": {
+    "duplicate_osm_element_claims": 6,
+    "candidate_records_excluded_due_to_same_osm_element_matching_multiple_sfa_licences": 16,
+    "sfa_licence_groups_excluded": {
+      "node/10877063837": [
+        "SE04185P000",
+        "SE21L77V000"
+      ],
+      "node/4281193490": [
+        "W03074C000",
+        "W03074C001"
+      ],
+      "node/5344390622": [
+        "E92079K000",
+        "E92079K001",
+        "E92079K003",
+        "E92079K004"
+      ],
+      "node/2476253445": [
+        "E90120A000",
+        "E90120A001",
+        "E90120A003",
+        "E90120A004"
+      ],
+      "way/315753905": [
+        "E02011J000",
+        "E02018P000"
+      ],
+      "node/4629107275": [
+        "MWF010004",
+        "MWF011005"
+      ]
+    },
+    "duplicate_sfa_licence_rows_excluded_during_scan": 0,
+    "multiple_osm_matches_for_one_sfa_licence_excluded": 0
+  },
+  "attribution_and_license": {
+    "license": "Open Database License (ODbL) 1.0",
+    "required_credit": "OpenStreetMap and its contributors (commonly displayed as © OpenStreetMap contributors)",
+    "copyright_page": "https://www.openstreetmap.org/copyright",
+    "terms_observed": "OpenStreetMap says its data is licensed under ODbL; users may copy, distribute, transmit, and adapt it if they credit OpenStreetMap and contributors; altered or built-upon data may be distributed only under the same license.",
+    "share_alike_note": "If OSM-derived data is incorporated into or distributed as an adapted public database, assess ODbL share-alike obligations and compatibility with the combined dataset. Preserve this attribution and license note if incorporating candidates; legal review may be needed for a mixed-source database.",
+    "observation_checked_utc": "2026-10-18",
+    "recommended_workbook_attribution": "Source: © OpenStreetMap contributors, ODbL 1.0, https://www.openstreetmap.org/copyright. OSM element source URLs and observation timestamps retained per row."
+  },
+  "candidates": [
+    {
+      "sfa_licence": "W84200E000",
+      "fnb_name_before": "ASK COFFEE ROASTERY",
+      "full_address": "Address: 32 SEAH STREET Singapore 188388",
+      "postal_code": "188388",
+      "before": {
+        "Website": null
+      },
+      "proposed_after": {
+        "Website": "https://akusukakopi.com/"
+      },
+      "osm": {
+        "element_type": "node",
+        "element_id": 13152194769,
+        "url": "https://www.openstreetmap.org/node/13152194769",
+        "name_tags": {
+          "name": "Ask Coffee Roastery"
+        },
+        "tag_values": {
+          "addr:postcode": "188388",
+          "addr:housenumber": "32",
+          "addr:street": "Seah Street",
+          "website": "https://akusukakopi.com/",
+          "phone": "+65 9768 5448",
+          "opening_hours": "Mo-Fr 08:00-16:30; Sa-Su,PH 10:00-16:30"
+        },
+        "observation_timestamp_utc": "2026-10-18T15:39:01Z"
+      },
+      "match_evidence": {
+        "exact_normalized_name": "ASK COFFEE ROASTERY",
+        "exact_postcode": "188388",
+        "kind": "exact_postcode_house_number_street",
+        "house_number": "32",
+        "street": "Seah Street"
+      },
+      "limitations": [
+        "OSM data may be stale or incomplete; presence does not verify the business is currently operating.",
+        "Do not infer rating, operation status, cuisine, menu, or delivery availability.",
+        "Website/phone/hours are user-contributed tags, not independently validated official values.",
+        "OSM feature coordinates describe the mapped feature; way centers are approximate."
+      ]
+    },
+    {
+      "sfa_licence": "CE08826V000",
+      "fnb_name_before": "BALESTIER MARKET",
+      "full_address": "Address: 411 BALESTIER ROAD Singapore 329930",
+      "postal_code": "329930",
+      "before": {
+        "Opening Hours / Closed Days": null
+      },
+      "proposed_after": {
+        "Opening Hours / Closed Days": "24/7"
+      },
+      "osm": {
+        "element_type": "way",
+        "element_id": 261019253,
+        "url": "https://www.openstreetmap.org/way/261019253",
+        "name_tags": {
+          "name": "Balestier Market"
+        },
+        "tag_values": {
+          "addr:postcode": "329930",
+          "addr:housenumber": "411",
+          "addr:street": "Balestier Road",
+          "opening_hours": "24/7"
+        },
+        "observation_timestamp_utc": "2026-10-18T15:39:01Z"
+      },
+      "match_evidence": {
+        "exact_normalized_name": "BALESTIER MARKET",
+        "exact_postcode": "329930",
+        "kind": "exact_postcode_house_number_street",
+        "house_number": "411",
+        "street": "Balestier Road"
+      },
+      "limitations": [
+        "OSM data may be stale or incomplete; presence does not verify the business is currently operating.",
+        "Do not infer rating, operation status, cuisine, menu, or delivery availability.",
+        "Website/phone/hours are user-contributed tags, not independently validated official values.",
+        "OSM feature coordinates describe the mapped feature; way centers are approximate."
+      ]
+    },
+    {
+      "sfa_licence": "CE16641X000",
+      "fnb_name_before": "BEAST & BUTTERFLIES",
+      "full_address": "Address: 90 ROBERTSON QUAY UP@ROBERTSON QUAY,Singapore 238259",
+      "postal_code": "238259",
+      "before": {
+        "Contact Details": null
+      },
+      "proposed_after": {
+        "Contact Details": "+65 6657 0018"
+      },
+      "osm": {
+        "element_type": "way",
+        "element_id": 594698426,
+        "url": "https://www.openstreetmap.org/way/594698426",
+        "name_tags": {
+          "name": "Beast & Butterflies"
+        },
+        "tag_values": {
+          "addr:postcode": "238259",
+          "addr:housenumber": "90",
+          "addr:street": "Robertson Quay",
+          "phone": "+65 6657 0018"
+        },
+        "observation_timestamp_utc": "2026-10-18T15:39:01Z"
+      },
+      "match_evidence": {
+        "exact_normalized_name": "BEAST & BUTTERFLIES",
+        "exact_postcode": "238259",
+        "kind": "exact_postcode_house_number_street",
+        "house_number": "90",
+        "street": "Robertson Quay"
+      },
+      "limitations": [
+        "OSM data may be stale or incomplete; presence does not verify the business is currently operating.",
+        "Do not infer rating, operation status, cuisine, menu, or delivery availability.",
+        "Website/phone/hours are user-contributed tags, not independently validated official values.",
+        "OSM feature coordinates describe the mapped feature; way centers are approximate."
+      ]
+    },
+    {
+      "sfa_licence": "SW06007J000",
+      "fnb_name_before": "BOUNTIFUL RESTAURANT",
+      "full_address": "Address: 108 DEPOT ROAD #03-01,DEPOT HEIGHTS SHOPPING CENTRE,Singapore 100108",
+      "postal_code": "100108",
+      "before": {
+        "Website": null,
+        "Contact Details": null
+      },
+      "proposed_after": {
+        "Website": "https://www.qianxi.com.sg/",
+        "Contact Details": "+65 62703323"
+      },
+      "osm": {
+        "element_type": "node",
+        "element_id": 7283605845,
+        "url": "https://www.openstreetmap.org/node/7283605845",
+        "name_tags": {
+          "name": "Bountiful Restaurant",
+          "name:en": "Bountiful Restaurant"
+        },
+        "tag_values": {
+          "addr:postcode": "100108",
+          "addr:unit": "#03-01/02/03",
+          "addr:housenumber": "108",
+          "addr:street": "Depot Road",
+          "website": "https://www.qianxi.com.sg/",
+          "phone": "+65 62703323"
+        },
+        "observation_timestamp_utc": "2026-10-18T15:39:01Z"
+      },
+      "match_evidence": {
+        "exact_normalized_name": "BOUNTIFUL RESTAURANT",
+        "exact_postcode": "100108",
+        "kind": "exact_postcode_and_unit",
+        "sfa_unit": "03-01",
+        "osm_unit": "03-01"
+      },
+      "limitations": [
+        "OSM data may be stale or incomplete; presence does not verify the business is currently operating.",
+        "Do not infer rating, operation status, cuisine, menu, or delivery availability.",
+        "Website/phone/hours are user-contributed tags, not independently validated official values.",
+        "OSM feature coordinates describe the mapped feature; way centers are approximate."
+      ]
+    },
+    {
+      "sfa_licence": "CE17M50A000",
+      "fnb_name_before": "ChaoNiu HotPot",
+      "full_address": "Address: 7 FRASER STREET #01-40/41,#01-42/43,#01-40,#01-41,#01-42,#01-43,DUO GALLERIA,Singapore 189356",
+      "postal_code": "189356",
+      "before": {
+        "Opening Hours / Closed Days": null
+      },
+      "proposed_after": {
+        "Opening Hours / Closed Days": "Mo-Su 11:00-23:00"
+      },
+      "osm": {
+        "element_type": "node",
+        "element_id": 9759059979,
+        "url": "https://www.openstreetmap.org/node/9759059979",
+        "name_tags": {
+          "name": "Chaoniu Hot Pot"
+        },
+        "tag_values": {
+          "addr:postcode": "189356",
+          "addr:unit": "#01-40/41/42/43",
+          "addr:housenumber": "7",
+          "addr:street": "Fraser Street",
+          "website": "https://www.chaoniu.com.sg/",
+          "phone": "+65 69098783",
+          "opening_hours": "Mo-Su 11:00-23:00"
+        },
+        "observation_timestamp_utc": "2026-10-18T15:39:01Z"
+      },
+      "match_evidence": {
+        "exact_normalized_name": "ChaoNiu HotPot",
+        "exact_postcode": "189356",
+        "kind": "exact_postcode_and_unit",
+        "sfa_unit": "01-40",
+        "osm_unit": "01-40"
+      },
+      "limitations": [
+        "OSM data may be stale or incomplete; presence does not verify the business is currently operating.",
+        "Do not infer rating, operation status, cuisine, menu, or delivery availability.",
+        "Website/phone/hours are user-contributed tags, not independently validated official values.",
+        "OSM feature coordinates describe the mapped feature; way centers are approximate."
+      ]
+    },
+    {
+      "sfa_licence": "CE07182K000",
+      "fnb_name_before": "CHOPSUEY CAFE",
+      "full_address": "Address: 10 DEMPSEY ROAD #01-23,Singapore 247700",
+      "postal_code": "247700",
+      "before": {
+        "Opening Hours / Closed Days": null
+      },
+      "proposed_after": {
+        "Opening Hours / Closed Days": "Mo-Fr 11:30-23:00; Sa-Su 10:30-23:00"
+      },
+      "osm": {
+        "element_type": "node",
+        "element_id": 6370603365,
+        "url": "https://www.openstreetmap.org/node/6370603365",
+        "name_tags": {
+          "name": "ChoPSuey Café"
+        },
+        "tag_values": {
+          "addr:postcode": "247700",
+          "addr:unit": "#01-23",
+          "addr:housenumber": "10",
+          "addr:street": "Dempsey Road",
+          "website": "https://www.pscafe.com/chopsuey-cafe-at-dempsey-hill/",
+          "phone": "+65 9224 6611",
+          "opening_hours": "Mo-Fr 11:30-23:00; Sa-Su 10:30-23:00"
+        },
+        "observation_timestamp_utc": "2026-10-18T15:39:01Z"
+      },
+      "match_evidence": {
+        "exact_normalized_name": "CHOPSUEY CAFE",
+        "exact_postcode": "247700",
+        "kind": "exact_postcode_and_unit",
+        "sfa_unit": "01-23",
+        "osm_unit": "01-23"
+      },
+      "limitations": [
+        "OSM data may be stale or incomplete; presence does not verify the business is currently operating.",
+        "Do not infer rating, operation status, cuisine, menu, or delivery availability.",
+        "Website/phone/hours are user-contributed tags, not independently validated official values.",
+        "OSM feature coordinates describe the mapped feature; way centers are approximate."
+      ]
+    },
+    {
+      "sfa_licence": "SW04012J000",
+      "fnb_name_before": "Colbar",
+      "full_address": "Address: 9A WHITCHURCH ROAD Singapore 138839",
+      "postal_code": "138839",
+      "before": {
+        "Opening Hours / Closed Days": null
+      },
+      "proposed_after": {
+        "Opening Hours / Closed Days": "Tu-Su 11:00-22:00; Mo off"
+      },
+      "osm": {
+        "element_type": "way",
+        "element_id": 453261385,
+        "url": "https://www.openstreetmap.org/way/453261385",
+        "name_tags": {
+          "name": "Colbar"
+        },
+        "tag_values": {
+          "addr:postcode": "138839",
+          "addr:housenumber": "9A",
+          "addr:street": "Whitchurch Road",
+          "opening_hours": "Tu-Su 11:00-22:00; Mo off"
+        },
+        "observation_timestamp_utc": "2026-10-18T15:39:01Z"
+      },
+      "match_evidence": {
+        "exact_normalized_name": "Colbar",
+        "exact_postcode": "138839",
+        "kind": "exact_postcode_house_number_street",
+        "house_number": "9A",
+        "street": "Whitchurch Road"
+      },
+      "limitations": [
+        "OSM data may be stale or incomplete; presence does not verify the business is currently operating.",
+        "Do not infer rating, operation status, cuisine, menu, or delivery availability.",
+        "Website/phone/hours are user-contributed tags, not independently validated official values.",
+        "OSM feature coordinates describe the mapped feature; way centers are approximate."
+      ]
+    },
+    {
+      "sfa_licence": "NE16440X000",
+      "fnb_name_before": "Din Tai Fung",
+      "full_address": "Address: 1 SENGKANG SQUARE #02-11,#02-12,#02-13,COMPASS ONE,Singapore 545078",
+      "postal_code": "545078",
+      "before": {
+        "Website": null,
+        "Contact Details": null,
+        "Opening Hours / Closed Days": null
+      },
+      "proposed_after": {
+        "Website": "https://www.dintaifung.com.tw/",
+        "Contact Details": "+65 6243 7366",
+        "Opening Hours / Closed Days": "Mo-Th 11:30-21:30; Fr 11:30-22:00; Sa,PH 11:00-22:00; Su 11:00-21:30"
+      },
+      "osm": {
+        "element_type": "node",
+        "element_id": 4836072443,
+        "url": "https://www.openstreetmap.org/node/4836072443",
+        "name_tags": {
+          "name": "Din Tai Fung",
+          "name:en": "Din Tai Fung",
+          "brand": "Din Tai Fung",
+          "brand:en": "Din Tai Fung"
+        },
+        "tag_values": {
+          "addr:postcode": "545078",
+          "addr:unit": "#02-11–13",
+          "addr:housenumber": "1",
+          "addr:street": "1 Sengkang Square",
+          "website": "https://www.dintaifung.com.tw/",
+          "phone": "+65 6243 7366",
+          "opening_hours": "Mo-Th 11:30-21:30; Fr 11:30-22:00; Sa,PH 11:00-22:00; Su 11:00-21:30"
+        },
+        "observation_timestamp_utc": "2026-10-18T15:39:01Z"
+      },
+      "match_evidence": {
+        "exact_normalized_name": "Din Tai Fung",
+        "exact_postcode": "545078",
+        "kind": "exact_postcode_and_unit",
+        "sfa_unit": "02-11",
+        "osm_unit": "02-11"
+      },
+      "limitations": [
+        "OSM data may be stale or incomplete; presence does not verify the business is currently operating.",
+        "Do not infer rating, operation status, cuisine, menu, or delivery availability.",
+        "Website/phone/hours are user-contributed tags, not independently validated official values.",
+        "OSM feature coordinates describe the mapped feature; way centers are approximate."
+      ]
+    },
+    {
+      "sfa_licence": "CE17H73P000",
+      "fnb_name_before": "Dosirak",
+      "full_address": "Address: 7 FRASER STREET #B3-06,#B3-07,DUO GALLERIA,Singapore 189356",
+      "postal_code": "189356",
+      "before": {
+        "Website": null,
+        "Opening Hours / Closed Days": null
+      },
+      "proposed_after": {
+        "Website": "https://dosirak.com.sg/",
+        "Opening Hours / Closed Days": "Mo-Fr 10:30-20:30; Sa,PH 11:00-19:00; Su off"
+      },
+      "osm": {
+        "element_type": "node",
+        "element_id": 12179539358,
+        "url": "https://www.openstreetmap.org/node/12179539358",
+        "name_tags": {
+          "name": "Dosirak"
+        },
+        "tag_values": {
+          "addr:postcode": "189356",
+          "addr:unit": "#B3-06/07",
+          "addr:housenumber": "7",
+          "addr:street": "Fraser Street",
+          "website": "https://dosirak.com.sg/",
+          "opening_hours": "Mo-Fr 10:30-20:30; Sa,PH 11:00-19:00; Su off"
+        },
+        "observation_timestamp_utc": "2026-10-18T15:39:01Z"
+      },
+      "match_evidence": {
+        "exact_normalized_name": "Dosirak",
+        "exact_postcode": "189356",
+        "kind": "exact_postcode_house_number_street",
+        "house_number": "7",
+        "street": "Fraser Street"
+      },
+      "limitations": [
+        "OSM data may be stale or incomplete; presence does not verify the business is currently operating.",
+        "Do not infer rating, operation status, cuisine, menu, or delivery availability.",
+        "Website/phone/hours are user-contributed tags, not independently validated official values.",
+        "OSM feature coordinates describe the mapped feature; way centers are approximate."
+      ]
+    },
+    {
+      "sfa_licence": "NW17075A000",
+      "fnb_name_before": "HAN''S",
+      "full_address": "Address: 17 PETIR ROAD #B2-28,#B2-30,#B2-29,HILLION MALL,Singapore 678278",
+      "postal_code": "678278",
+      "before": {
+        "Website": null,
+        "Contact Details": null,
+        "Opening Hours / Closed Days": null
+      },
+      "proposed_after": {
+        "Website": "https://hans.com.sg/",
+        "Contact Details": "+65 6708 6775",
+        "Opening Hours / Closed Days": "07:00-22:00"
+      },
+      "osm": {
+        "element_type": "node",
+        "element_id": 4703167421,
+        "url": "https://www.openstreetmap.org/node/4703167421",
+        "name_tags": {
+          "name": "Han's"
+        },
+        "tag_values": {
+          "addr:postcode": "678278",
+          "addr:unit": "#B2-28/29/30",
+          "addr:housenumber": "17",
+          "addr:street": "Petir Road",
+          "website": "https://hans.com.sg/",
+          "phone": "+65 6708 6775",
+          "opening_hours": "07:00-22:00"
+        },
+        "observation_timestamp_utc": "2026-10-18T15:39:01Z"
+      },
+      "match_evidence": {
+        "exact_normalized_name": "HAN''S",
+        "exact_postcode": "678278",
+        "kind": "exact_postcode_house_number_street",
+        "house_number": "17",
+        "street": "Petir Road"
+      },
+      "limitations": [
+        "OSM data may be stale or incomplete; presence does not verify the business is currently operating.",
+        "Do not infer rating, operation status, cuisine, menu, or delivery availability.",
+        "Website/phone/hours are user-contributed tags, not independently validated official values.",
+        "OSM feature coordinates describe the mapped feature; way centers are approximate."
+      ]
+    },
+    {
+      "sfa_licence": "W91007X000",
+      "fnb_name_before": "IZAKAYA NININGASHI",
+      "full_address": "Address: 2/2A CRAIG ROAD Singapore 089662 (LEVEL 1 & 2)",
+      "postal_code": "089662",
+      "before": {
+        "Website": null
+      },
+      "proposed_after": {
+        "Website": "https://izakaya-niningashi.business.site/"
+      },
+      "osm": {
+        "element_type": "node",
+        "element_id": 7184685093,
+        "url": "https://www.openstreetmap.org/node/7184685093",
+        "name_tags": {
+          "name": "Izakaya Niningashi"
+        },
+        "tag_values": {
+          "addr:postcode": "089662",
+          "addr:housenumber": "2",
+          "addr:street": "Craig Road",
+          "website": "https://izakaya-niningashi.business.site/",
+          "phone": "+65 69700224",
+          "opening_hours": "Mo-Fr 12:00-14:30, 18:00-23:00;Sa 06:00-23:00"
+        },
+        "observation_timestamp_utc": "2026-10-18T15:39:01Z"
+      },
+      "match_evidence": {
+        "exact_normalized_name": "IZAKAYA NININGASHI",
+        "exact_postcode": "089662",
+        "kind": "exact_postcode_house_number_street",
+        "house_number": "2",
+        "street": "Craig Road"
+      },
+      "limitations": [
+        "OSM data may be stale or incomplete; presence does not verify the business is currently operating.",
+        "Do not infer rating, operation status, cuisine, menu, or delivery availability.",
+        "Website/phone/hours are user-contributed tags, not independently validated official values.",
+        "OSM feature coordinates describe the mapped feature; way centers are approximate."
+      ]
+    },
+    {
+      "sfa_licence": "CE14B13L000",
+      "fnb_name_before": "Joy Luck Teahouse",
+      "full_address": "Address: 200 VICTORIA STREET #B1-K25,BUGIS JUNCTION,Singapore 188021 BUGIS JUNCTION",
+      "postal_code": "188021",
+      "before": {
+        "Opening Hours / Closed Days": null
+      },
+      "proposed_after": {
+        "Opening Hours / Closed Days": "Mo-Su 09:00-22:00"
+      },
+      "osm": {
+        "element_type": "node",
+        "element_id": 8327073441,
+        "url": "https://www.openstreetmap.org/node/8327073441",
+        "name_tags": {
+          "name": "Joy Luck Teahouse"
+        },
+        "tag_values": {
+          "addr:postcode": "188021",
+          "addr:unit": "#B2-K15",
+          "addr:housenumber": "200",
+          "addr:street": "Victoria Street",
+          "website": "https://joyluckteahouse.com/",
+          "opening_hours": "Mo-Su 09:00-22:00"
+        },
+        "observation_timestamp_utc": "2026-10-18T15:39:01Z"
+      },
+      "match_evidence": {
+        "exact_normalized_name": "Joy Luck Teahouse",
+        "exact_postcode": "188021",
+        "kind": "exact_postcode_house_number_street",
+        "house_number": "200",
+        "street": "Victoria Street"
+      },
+      "limitations": [
+        "OSM data may be stale or incomplete; presence does not verify the business is currently operating.",
+        "Do not infer rating, operation status, cuisine, menu, or delivery availability.",
+        "Website/phone/hours are user-contributed tags, not independently validated official values.",
+        "OSM feature coordinates describe the mapped feature; way centers are approximate."
+      ]
+    },
+    {
+      "sfa_licence": "CE16P15X000",
+      "fnb_name_before": "KAFFE & TOAST",
+      "full_address": "Address: 5 HOSPITAL DRIVE #02-CAF02,NATIONAL HEART CENTRE OF SINGAPORE,Singapore 169609",
+      "postal_code": "169609",
+      "before": {
+        "Website": null,
+        "Opening Hours / Closed Days": null
+      },
+      "proposed_after": {
+        "Website": "https://www.coffeeandtoast.com.sg/",
+        "Opening Hours / Closed Days": "Mo-Fr 07:00-18:00;Sa 07:30-13:00"
+      },
+      "osm": {
+        "element_type": "node",
+        "element_id": 9772458717,
+        "url": "https://www.openstreetmap.org/node/9772458717",
+        "name_tags": {
+          "name": "Kaffe & Toast"
+        },
+        "tag_values": {
+          "addr:postcode": "169609",
+          "addr:unit": "#02-02",
+          "addr:housenumber": "5",
+          "addr:street": "Hospital Drive",
+          "website": "https://www.coffeeandtoast.com.sg/",
+          "opening_hours": "Mo-Fr 07:00-18:00;Sa 07:30-13:00"
+        },
+        "observation_timestamp_utc": "2026-10-18T15:39:01Z"
+      },
+      "match_evidence": {
+        "exact_normalized_name": "KAFFE & TOAST",
+        "exact_postcode": "169609",
+        "kind": "exact_postcode_house_number_street",
+        "house_number": "5",
+        "street": "Hospital Drive"
+      },
+      "limitations": [
+        "OSM data may be stale or incomplete; presence does not verify the business is currently operating.",
+        "Do not infer rating, operation status, cuisine, menu, or delivery availability.",
+        "Website/phone/hours are user-contributed tags, not independently validated official values.",
+        "OSM feature coordinates describe the mapped feature; way centers are approximate."
+      ]
+    },
+    {
+      "sfa_licence": "S02107N000",
+      "fnb_name_before": "KFC",
+      "full_address": "Address: 1 SENGKANG SQUARE #B1-15,COMPASS POINT,Singapore 545078",
+      "postal_code": "545078",
+      "before": {
+        "Opening Hours / Closed Days": null
+      },
+      "proposed_after": {
+        "Opening Hours / Closed Days": "08:00-22:00"
+      },
+      "osm": {
+        "element_type": "node",
+        "element_id": 4836072450,
+        "url": "https://www.openstreetmap.org/node/4836072450",
+        "name_tags": {
+          "name": "KFC",
+          "name:en": "KFC",
+          "brand": "KFC",
+          "brand:en": "KFC"
+        },
+        "tag_values": {
+          "addr:postcode": "545078",
+          "addr:unit": "15",
+          "addr:housenumber": "1",
+          "addr:street": "Sengkang Square",
+          "website": "https://www.kfc.com.sg",
+          "phone": "+65 6386 3570",
+          "opening_hours": "08:00-22:00"
+        },
+        "observation_timestamp_utc": "2026-10-18T15:39:01Z"
+      },
+      "match_evidence": {
+        "exact_normalized_name": "KFC",
+        "exact_postcode": "545078",
+        "kind": "exact_postcode_house_number_street",
+        "house_number": "1",
+        "street": "Sengkang Square"
+      },
+      "limitations": [
+        "OSM data may be stale or incomplete; presence does not verify the business is currently operating.",
+        "Do not infer rating, operation status, cuisine, menu, or delivery availability.",
+        "Website/phone/hours are user-contributed tags, not independently validated official values.",
+        "OSM feature coordinates describe the mapped feature; way centers are approximate."
+      ]
+    },
+    {
+      "sfa_licence": "CE15290K000",
+      "fnb_name_before": "KRISPY KREME",
+      "full_address": "Address: 3 TEMASEK BOULEVARD #01-419,#01-420,SUNTEC CITY MALL,Singapore 038983 #01-419/420",
+      "postal_code": "038983",
+      "before": {
+        "Opening Hours / Closed Days": null
+      },
+      "proposed_after": {
+        "Opening Hours / Closed Days": "Su-Th 10:00-21:00; Fr-Sa,PH 10:00-22:00"
+      },
+      "osm": {
+        "element_type": "node",
+        "element_id": 8890737146,
+        "url": "https://www.openstreetmap.org/node/8890737146",
+        "name_tags": {
+          "name": "Krispy Kreme",
+          "brand": "Krispy Kreme"
+        },
+        "tag_values": {
+          "addr:postcode": "038983",
+          "addr:unit": "#01-419/420",
+          "addr:housenumber": "3",
+          "addr:street": "Temasek Boulevard",
+          "website": "http://krispykreme.sg/",
+          "phone": "+65 6238 7659",
+          "opening_hours": "Su-Th 10:00-21:00; Fr-Sa,PH 10:00-22:00"
+        },
+        "observation_timestamp_utc": "2026-10-18T15:39:01Z"
+      },
+      "match_evidence": {
+        "exact_normalized_name": "KRISPY KREME",
+        "exact_postcode": "038983",
+        "kind": "exact_postcode_and_unit",
+        "sfa_unit": "01-419",
+        "osm_unit": "01-419"
+      },
+      "limitations": [
+        "OSM data may be stale or incomplete; presence does not verify the business is currently operating.",
+        "Do not infer rating, operation status, cuisine, menu, or delivery availability.",
+        "Website/phone/hours are user-contributed tags, not independently validated official values.",
+        "OSM feature coordinates describe the mapped feature; way centers are approximate."
+      ]
+    },
+    {
+      "sfa_licence": "SW21T24P000",
+      "fnb_name_before": "LES BOUCHONS ROCHESTER",
+      "full_address": "Address: 10 ROCHESTER PARK ROCHESTER PARK,Singapore 139221 (LEVELS 1 & 2)",
+      "postal_code": "139221",
+      "before": {
+        "Website": null,
+        "Contact Details": null
+      },
+      "proposed_after": {
+        "Website": "https://www.lesbouchons.sg/",
+        "Contact Details": "+65 6904 8972"
+      },
+      "osm": {
+        "element_type": "way",
+        "element_id": 173551162,
+        "url": "https://www.openstreetmap.org/way/173551162",
+        "name_tags": {
+          "name": "Les Bouchons Rochester"
+        },
+        "tag_values": {
+          "addr:postcode": "139221",
+          "addr:housenumber": "10",
+          "addr:street": "Rochester Park",
+          "website": "https://www.lesbouchons.sg/",
+          "phone": "+65 6904 8972"
+        },
+        "observation_timestamp_utc": "2026-10-18T15:39:01Z"
+      },
+      "match_evidence": {
+        "exact_normalized_name": "LES BOUCHONS ROCHESTER",
+        "exact_postcode": "139221",
+        "kind": "exact_postcode_house_number_street",
+        "house_number": "10",
+        "street": "Rochester Park"
+      },
+      "limitations": [
+        "OSM data may be stale or incomplete; presence does not verify the business is currently operating.",
+        "Do not infer rating, operation status, cuisine, menu, or delivery availability.",
+        "Website/phone/hours are user-contributed tags, not independently validated official values.",
+        "OSM feature coordinates describe the mapped feature; way centers are approximate."
+      ]
+    },
+    {
+      "sfa_licence": "CE11434B000",
+      "fnb_name_before": "MCDONALD'S",
+      "full_address": "Address: 1378 ANG MO KIO AVENUE 1 BISHAN-ANG MO KIO PARK,Singapore 569981",
+      "postal_code": "569981",
+      "before": {
+        "Opening Hours / Closed Days": null
+      },
+      "proposed_after": {
+        "Opening Hours / Closed Days": "Mo-Fr 07:00-23:00, Sa-Su 07:00-02:00"
+      },
+      "osm": {
+        "element_type": "way",
+        "element_id": 198458323,
+        "url": "https://www.openstreetmap.org/way/198458323",
+        "name_tags": {
+          "name": "McDonald's",
+          "name:en": "McDonald's",
+          "brand": "McDonald's",
+          "brand:en": "McDonald's"
+        },
+        "tag_values": {
+          "addr:postcode": "569981",
+          "addr:housenumber": "1378",
+          "addr:street": "Ang Mo Kio Avenue 1",
+          "opening_hours": "Mo-Fr 07:00-23:00, Sa-Su 07:00-02:00"
+        },
+        "observation_timestamp_utc": "2026-10-18T15:39:01Z"
+      },
+      "match_evidence": {
+        "exact_normalized_name": "MCDONALD'S",
+        "exact_postcode": "569981",
+        "kind": "exact_postcode_house_number_street",
+        "house_number": "1378",
+        "street": "Ang Mo Kio Avenue 1"
+      },
+      "limitations": [
+        "OSM data may be stale or incomplete; presence does not verify the business is currently operating.",
+        "Do not infer rating, operation status, cuisine, menu, or delivery availability.",
+        "Website/phone/hours are user-contributed tags, not independently validated official values.",
+        "OSM feature coordinates describe the mapped feature; way centers are approximate."
+      ]
+    },
+    {
+      "sfa_licence": "E02141L000",
+      "fnb_name_before": "Megumi Japanese Restaurant",
+      "full_address": "Address: 443 JOO CHIAT ROAD RISING COURT,Singapore 427656 (1st Storey)",
+      "postal_code": "427656",
+      "before": {
+        "Website": null
+      },
+      "proposed_after": {
+        "Website": "https://megumi.oddle.me/en_SG/"
+      },
+      "osm": {
+        "element_type": "node",
+        "element_id": 13116470004,
+        "url": "https://www.openstreetmap.org/node/13116470004",
+        "name_tags": {
+          "name": "Megumi Japanese Restaurant"
+        },
+        "tag_values": {
+          "addr:postcode": "427656",
+          "addr:housenumber": "443",
+          "addr:street": "Joo Chiat Road",
+          "website": "https://megumi.oddle.me/en_SG/",
+          "phone": "+65 6243 0700",
+          "opening_hours": "Th-Tu 11:30-14:30, 17:30-22:30"
+        },
+        "observation_timestamp_utc": "2026-10-18T15:39:01Z"
+      },
+      "match_evidence": {
+        "exact_normalized_name": "Megumi Japanese Restaurant",
+        "exact_postcode": "427656",
+        "kind": "exact_postcode_house_number_street",
+        "house_number": "443",
+        "street": "Joo Chiat Road"
+      },
+      "limitations": [
+        "OSM data may be stale or incomplete; presence does not verify the business is currently operating.",
+        "Do not infer rating, operation status, cuisine, menu, or delivery availability.",
+        "Website/phone/hours are user-contributed tags, not independently validated official values.",
+        "OSM feature coordinates describe the mapped feature; way centers are approximate."
+      ]
+    },
+    {
+      "sfa_licence": "W97377L000",
+      "fnb_name_before": "MIZ JAPANESE RESTAURANT",
+      "full_address": "Address: 17 KAMPONG BAHRU ROAD Singapore 169347",
+      "postal_code": "169347",
+      "before": {
+        "Website": null
+      },
+      "proposed_after": {
+        "Website": "https://miz-japanese-restaurant.business.site/"
+      },
+      "osm": {
+        "element_type": "node",
+        "element_id": 3756850477,
+        "url": "https://www.openstreetmap.org/node/3756850477",
+        "name_tags": {
+          "name": "Miz Japanese Restaurant"
+        },
+        "tag_values": {
+          "addr:postcode": "169347",
+          "addr:housenumber": "17",
+          "addr:street": "Kampong Bahru Road",
+          "website": "https://miz-japanese-restaurant.business.site/",
+          "phone": "+65 6225 5761"
+        },
+        "observation_timestamp_utc": "2026-10-18T15:39:01Z"
+      },
+      "match_evidence": {
+        "exact_normalized_name": "MIZ JAPANESE RESTAURANT",
+        "exact_postcode": "169347",
+        "kind": "exact_postcode_house_number_street",
+        "house_number": "17",
+        "street": "Kampong Bahru Road"
+      },
+      "limitations": [
+        "OSM data may be stale or incomplete; presence does not verify the business is currently operating.",
+        "Do not infer rating, operation status, cuisine, menu, or delivery availability.",
+        "Website/phone/hours are user-contributed tags, not independently validated official values.",
+        "OSM feature coordinates describe the mapped feature; way centers are approximate."
+      ]
+    },
+    {
+      "sfa_licence": "CE04432N000",
+      "fnb_name_before": "Old Airport Road Lor Mee",
+      "full_address": "Address: 586 BALESTIER ROAD EASTPAC BUILDING,Singapore 329898",
+      "postal_code": "329898",
+      "before": {
+        "Website": null
+      },
+      "proposed_after": {
+        "Website": "https://www.lormee.sg/"
+      },
+      "osm": {
+        "element_type": "node",
+        "element_id": 6503249934,
+        "url": "https://www.openstreetmap.org/node/6503249934",
+        "name_tags": {
+          "name": "Old Airport Road Lor Mee",
+          "name:en": "Old Airport Road Lor Mee"
+        },
+        "tag_values": {
+          "addr:postcode": "329898",
+          "addr:housenumber": "586",
+          "addr:street": "Balestier Road",
+          "website": "https://www.lormee.sg/",
+          "opening_hours": "08:00-20:00"
+        },
+        "observation_timestamp_utc": "2026-10-18T15:39:01Z"
+      },
+      "match_evidence": {
+        "exact_normalized_name": "Old Airport Road Lor Mee",
+        "exact_postcode": "329898",
+        "kind": "exact_postcode_house_number_street",
+        "house_number": "586",
+        "street": "Balestier Road"
+      },
+      "limitations": [
+        "OSM data may be stale or incomplete; presence does not verify the business is currently operating.",
+        "Do not infer rating, operation status, cuisine, menu, or delivery availability.",
+        "Website/phone/hours are user-contributed tags, not independently validated official values.",
+        "OSM feature coordinates describe the mapped feature; way centers are approximate."
+      ]
+    },
+    {
+      "sfa_licence": "NE16502B000",
+      "fnb_name_before": "Pepper Lunch",
+      "full_address": "Address: 1 SENGKANG SQUARE #B1-01,COMPASS ONE,Singapore 545078 COMPASS ONE",
+      "postal_code": "545078",
+      "before": {
+        "Opening Hours / Closed Days": null
+      },
+      "proposed_after": {
+        "Opening Hours / Closed Days": "Mo-Su 10:00-22:00"
+      },
+      "osm": {
+        "element_type": "node",
+        "element_id": 4967834212,
+        "url": "https://www.openstreetmap.org/node/4967834212",
+        "name_tags": {
+          "name": "Pepper Lunch",
+          "brand": "Pepper Lunch"
+        },
+        "tag_values": {
+          "addr:postcode": "545078",
+          "addr:unit": "01",
+          "addr:housenumber": "1",
+          "addr:street": "Sengkang Square",
+          "website": "https://www.pepperlunch.com.sg/",
+          "phone": "+65 6385 9841",
+          "opening_hours": "Mo-Su 10:00-22:00"
+        },
+        "observation_timestamp_utc": "2026-10-18T15:39:01Z"
+      },
+      "match_evidence": {
+        "exact_normalized_name": "Pepper Lunch",
+        "exact_postcode": "545078",
+        "kind": "exact_postcode_house_number_street",
+        "house_number": "1",
+        "street": "Sengkang Square"
+      },
+      "limitations": [
+        "OSM data may be stale or incomplete; presence does not verify the business is currently operating.",
+        "Do not infer rating, operation status, cuisine, menu, or delivery availability.",
+        "Website/phone/hours are user-contributed tags, not independently validated official values.",
+        "OSM feature coordinates describe the mapped feature; way centers are approximate."
+      ]
+    },
+    {
+      "sfa_licence": "SW13T16A000",
+      "fnb_name_before": "PEPPER LUNCH",
+      "full_address": "Address: 50 JURONG GATEWAY ROAD #04-10,#04-11,#04-12,JEM,Singapore 608549",
+      "postal_code": "608549",
+      "before": {
+        "Opening Hours / Closed Days": null
+      },
+      "proposed_after": {
+        "Opening Hours / Closed Days": "Mo-Su 10:00-22:00"
+      },
+      "osm": {
+        "element_type": "node",
+        "element_id": 8514439926,
+        "url": "https://www.openstreetmap.org/node/8514439926",
+        "name_tags": {
+          "name": "Pepper Lunch",
+          "brand": "Pepper Lunch"
+        },
+        "tag_values": {
+          "addr:postcode": "608549",
+          "addr:unit": "#04-10/11/12",
+          "addr:housenumber": "50",
+          "addr:street": "Jurong Gateway Road",
+          "website": "https://www.pepperlunch.com.sg/",
+          "opening_hours": "Mo-Su 10:00-22:00"
+        },
+        "observation_timestamp_utc": "2026-10-18T15:39:01Z"
+      },
+      "match_evidence": {
+        "exact_normalized_name": "PEPPER LUNCH",
+        "exact_postcode": "608549",
+        "kind": "exact_postcode_and_unit",
+        "sfa_unit": "04-10",
+        "osm_unit": "04-10"
+      },
+      "limitations": [
+        "OSM data may be stale or incomplete; presence does not verify the business is currently operating.",
+        "Do not infer rating, operation status, cuisine, menu, or delivery availability.",
+        "Website/phone/hours are user-contributed tags, not independently validated official values.",
+        "OSM feature coordinates describe the mapped feature; way centers are approximate."
+      ]
+    },
+    {
+      "sfa_licence": "CE13N26C000",
+      "fnb_name_before": "Plain Vanilla",
+      "full_address": "Address: 1D YONG SIAK STREET TIONG BAHRU ESTATE,Singapore 168641",
+      "postal_code": "168641",
+      "before": {
+        "Latitude": null,
+        "Longitude": null
+      },
+      "proposed_after": {
+        "Latitude": 1.2822682,
+        "Longitude": 103.8304572
+      },
+      "osm": {
+        "element_type": "way",
+        "element_id": 481650008,
+        "url": "https://www.openstreetmap.org/way/481650008",
+        "name_tags": {
+          "name": "Plain Vanilla"
+        },
+        "tag_values": {
+          "addr:postcode": "168641",
+          "addr:housenumber": "1D",
+          "addr:street": "Yong Siak Street"
+        },
+        "observation_timestamp_utc": "2026-10-18T15:39:01Z"
+      },
+      "match_evidence": {
+        "exact_normalized_name": "Plain Vanilla",
+        "exact_postcode": "168641",
+        "kind": "exact_postcode_house_number_street",
+        "house_number": "1D",
+        "street": "Yong Siak Street"
+      },
+      "limitations": [
+        "OSM data may be stale or incomplete; presence does not verify the business is currently operating.",
+        "Do not infer rating, operation status, cuisine, menu, or delivery availability.",
+        "Website/phone/hours are user-contributed tags, not independently validated official values.",
+        "OSM feature coordinates describe the mapped feature; way centers are approximate."
+      ]
+    },
+    {
+      "sfa_licence": "CE17L36B000",
+      "fnb_name_before": "Poke Theory",
+      "full_address": "Address: 7 FRASER STREET #01-36,#01-37,DUO GALLERIA,Singapore 189356",
+      "postal_code": "189356",
+      "before": {
+        "Website": null,
+        "Contact Details": null,
+        "Opening Hours / Closed Days": null
+      },
+      "proposed_after": {
+        "Website": "https://poketheory.com.sg/",
+        "Contact Details": "+65 9309 8797",
+        "Opening Hours / Closed Days": "Mo-Fr 11:00-20:00; Sa-Su 11:00-18:30"
+      },
+      "osm": {
+        "element_type": "node",
+        "element_id": 12706542894,
+        "url": "https://www.openstreetmap.org/node/12706542894",
+        "name_tags": {
+          "name": "Poke Theory"
+        },
+        "tag_values": {
+          "addr:postcode": "189356",
+          "addr:unit": "#01-36/37",
+          "addr:housenumber": "7",
+          "addr:street": "Fraser Street",
+          "website": "https://poketheory.com.sg/",
+          "phone": "+65 9309 8797",
+          "opening_hours": "Mo-Fr 11:00-20:00; Sa-Su 11:00-18:30"
+        },
+        "observation_timestamp_utc": "2026-10-18T15:39:01Z"
+      },
+      "match_evidence": {
+        "exact_normalized_name": "Poke Theory",
+        "exact_postcode": "189356",
+        "kind": "exact_postcode_and_unit",
+        "sfa_unit": "01-36",
+        "osm_unit": "01-36"
+      },
+      "limitations": [
+        "OSM data may be stale or incomplete; presence does not verify the business is currently operating.",
+        "Do not infer rating, operation status, cuisine, menu, or delivery availability.",
+        "Website/phone/hours are user-contributed tags, not independently validated official values.",
+        "OSM feature coordinates describe the mapped feature; way centers are approximate."
+      ]
+    },
+    {
+      "sfa_licence": "CE05560N000",
+      "fnb_name_before": "RAPPU",
+      "full_address": "Address: 52 DUXTON ROAD #01,Singapore 089516",
+      "postal_code": "089516",
+      "before": {
+        "Website": null
+      },
+      "proposed_after": {
+        "Website": "https://www.merchantsofsingapore.com.sg/"
+      },
+      "osm": {
+        "element_type": "node",
+        "element_id": 3759866019,
+        "url": "https://www.openstreetmap.org/node/3759866019",
+        "name_tags": {
+          "name": "Rappu"
+        },
+        "tag_values": {
+          "addr:postcode": "089516",
+          "addr:housenumber": "52",
+          "addr:street": "Duxton Road",
+          "website": "https://www.merchantsofsingapore.com.sg/",
+          "phone": "+65 6222 1162"
+        },
+        "observation_timestamp_utc": "2026-10-18T15:39:01Z"
+      },
+      "match_evidence": {
+        "exact_normalized_name": "RAPPU",
+        "exact_postcode": "089516",
+        "kind": "exact_postcode_house_number_street",
+        "house_number": "52",
+        "street": "Duxton Road"
+      },
+      "limitations": [
+        "OSM data may be stale or incomplete; presence does not verify the business is currently operating.",
+        "Do not infer rating, operation status, cuisine, menu, or delivery availability.",
+        "Website/phone/hours are user-contributed tags, not independently validated official values.",
+        "OSM feature coordinates describe the mapped feature; way centers are approximate."
+      ]
+    },
+    {
+      "sfa_licence": "CE24I14E000",
+      "fnb_name_before": "SAIZERIYA",
+      "full_address": "2 HANDY ROAD #B1-11,THE CATHAY,Singapore 229233",
+      "postal_code": "229233",
+      "before": {
+        "Opening Hours / Closed Days": null
+      },
+      "proposed_after": {
+        "Opening Hours / Closed Days": "11:00-22:00"
+      },
+      "osm": {
+        "element_type": "node",
+        "element_id": 3621545940,
+        "url": "https://www.openstreetmap.org/node/3621545940",
+        "name_tags": {
+          "name": "Saizeriya",
+          "name:en": "Saizeriya",
+          "brand": "Saizeriya",
+          "brand:en": "Saizeriya"
+        },
+        "tag_values": {
+          "addr:postcode": "229233",
+          "addr:unit": "11",
+          "addr:housenumber": "2",
+          "addr:street": "Handy Road",
+          "website": "https://www.saizeriya.com.sg/",
+          "phone": "+65 6235 5197",
+          "opening_hours": "11:00-22:00"
+        },
+        "observation_timestamp_utc": "2026-10-18T15:39:01Z"
+      },
+      "match_evidence": {
+        "exact_normalized_name": "SAIZERIYA",
+        "exact_postcode": "229233",
+        "kind": "exact_postcode_house_number_street",
+        "house_number": "2",
+        "street": "Handy Road"
+      },
+      "limitations": [
+        "OSM data may be stale or incomplete; presence does not verify the business is currently operating.",
+        "Do not infer rating, operation status, cuisine, menu, or delivery availability.",
+        "Website/phone/hours are user-contributed tags, not independently validated official values.",
+        "OSM feature coordinates describe the mapped feature; way centers are approximate."
+      ]
+    },
+    {
+      "sfa_licence": "SE19124N000",
+      "fnb_name_before": "Shake Shack",
+      "full_address": "Address: 78 AIRPORT BOULEVARD #02-256,JEWEL CHANGI AIRPORT,Singapore 819666",
+      "postal_code": "819666",
+      "before": {
+        "Website": null
+      },
+      "proposed_after": {
+        "Website": "https://www.shakeshack.com/"
+      },
+      "osm": {
+        "element_type": "way",
+        "element_id": 744315487,
+        "url": "https://www.openstreetmap.org/way/744315487",
+        "name_tags": {
+          "name": "Shake Shack",
+          "brand": "Shake Shack"
+        },
+        "tag_values": {
+          "addr:postcode": "819666",
+          "addr:unit": "#02-256",
+          "addr:housenumber": "78",
+          "addr:street": "Airport Boulevard",
+          "website": "https://www.shakeshack.com/",
+          "opening_hours": "Mo-Su 11:00-20:00"
+        },
+        "observation_timestamp_utc": "2026-10-18T15:39:01Z"
+      },
+      "match_evidence": {
+        "exact_normalized_name": "Shake Shack",
+        "exact_postcode": "819666",
+        "kind": "exact_postcode_and_unit",
+        "sfa_unit": "02-256",
+        "osm_unit": "02-256"
+      },
+      "limitations": [
+        "OSM data may be stale or incomplete; presence does not verify the business is currently operating.",
+        "Do not infer rating, operation status, cuisine, menu, or delivery availability.",
+        "Website/phone/hours are user-contributed tags, not independently validated official values.",
+        "OSM feature coordinates describe the mapped feature; way centers are approximate."
+      ]
+    },
+    {
+      "sfa_licence": "W01148X000",
+      "fnb_name_before": "Shake Shack",
+      "full_address": "Address: 541 ORCHARD ROAD #01-K1,LIAT TOWERS,Singapore 238881",
+      "postal_code": "238881",
+      "before": {
+        "Website": null,
+        "Opening Hours / Closed Days": null
+      },
+      "proposed_after": {
+        "Website": "https://www.shakeshack.com/",
+        "Opening Hours / Closed Days": "Su-Th 11:00-22:00;Fr-Sa,PH 11:00-24:00"
+      },
+      "osm": {
+        "element_type": "node",
+        "element_id": 8164454211,
+        "url": "https://www.openstreetmap.org/node/8164454211",
+        "name_tags": {
+          "name": "Shake Shack",
+          "brand": "Shake Shack"
+        },
+        "tag_values": {
+          "addr:postcode": "238881",
+          "addr:housenumber": "541",
+          "addr:street": "Orchard Road",
+          "website": "https://www.shakeshack.com/",
+          "opening_hours": "Su-Th 11:00-22:00;Fr-Sa,PH 11:00-24:00"
+        },
+        "observation_timestamp_utc": "2026-10-18T15:39:01Z"
+      },
+      "match_evidence": {
+        "exact_normalized_name": "Shake Shack",
+        "exact_postcode": "238881",
+        "kind": "exact_postcode_house_number_street",
+        "house_number": "541",
+        "street": "Orchard Road"
+      },
+      "limitations": [
+        "OSM data may be stale or incomplete; presence does not verify the business is currently operating.",
+        "Do not infer rating, operation status, cuisine, menu, or delivery availability.",
+        "Website/phone/hours are user-contributed tags, not independently validated official values.",
+        "OSM feature coordinates describe the mapped feature; way centers are approximate."
+      ]
+    },
+    {
+      "sfa_licence": "C98157N000",
+      "fnb_name_before": "Simply Bread",
+      "full_address": "Address: 1 FIFTH AVENUE #01-03,GUTHRIE HOUSE,Singapore 268802",
+      "postal_code": "268802",
+      "before": {
+        "Website": null
+      },
+      "proposed_after": {
+        "Website": "https://simplybread.oddle.me/en_SG"
+      },
+      "osm": {
+        "element_type": "node",
+        "element_id": 4353385858,
+        "url": "https://www.openstreetmap.org/node/4353385858",
+        "name_tags": {
+          "name": "Simply Bread"
+        },
+        "tag_values": {
+          "addr:postcode": "268802",
+          "addr:unit": "#01-03",
+          "addr:housenumber": "1",
+          "addr:street": "Fifth Avenue",
+          "website": "https://simplybread.oddle.me/en_SG",
+          "opening_hours": "Mo-Su 08:00-19:00"
+        },
+        "observation_timestamp_utc": "2026-10-18T15:39:01Z"
+      },
+      "match_evidence": {
+        "exact_normalized_name": "Simply Bread",
+        "exact_postcode": "268802",
+        "kind": "exact_postcode_and_unit",
+        "sfa_unit": "01-03",
+        "osm_unit": "01-03"
+      },
+      "limitations": [
+        "OSM data may be stale or incomplete; presence does not verify the business is currently operating.",
+        "Do not infer rating, operation status, cuisine, menu, or delivery availability.",
+        "Website/phone/hours are user-contributed tags, not independently validated official values.",
+        "OSM feature coordinates describe the mapped feature; way centers are approximate."
+      ]
+    },
+    {
+      "sfa_licence": "NE16445J000",
+      "fnb_name_before": "Swensens",
+      "full_address": "Address: 1 SENGKANG SQUARE #B1-16,COMPASS ONE,Singapore 545078 COMPASS ONE",
+      "postal_code": "545078",
+      "before": {
+        "Opening Hours / Closed Days": null
+      },
+      "proposed_after": {
+        "Opening Hours / Closed Days": "Mo-Fr 10:30-22:30; PH,Sa,Su 08:00-22:30"
+      },
+      "osm": {
+        "element_type": "node",
+        "element_id": 4967834211,
+        "url": "https://www.openstreetmap.org/node/4967834211",
+        "name_tags": {
+          "name": "Swensen's",
+          "brand": "Swensen's"
+        },
+        "tag_values": {
+          "addr:postcode": "545078",
+          "addr:unit": "16",
+          "addr:housenumber": "1",
+          "addr:street": "Sengkang Square",
+          "website": "https://swensens.com.sg/",
+          "phone": "+65 6386 4341",
+          "opening_hours": "Mo-Fr 10:30-22:30; PH,Sa,Su 08:00-22:30"
+        },
+        "observation_timestamp_utc": "2026-10-18T15:39:01Z"
+      },
+      "match_evidence": {
+        "exact_normalized_name": "Swensens",
+        "exact_postcode": "545078",
+        "kind": "exact_postcode_house_number_street",
+        "house_number": "1",
+        "street": "Sengkang Square"
+      },
+      "limitations": [
+        "OSM data may be stale or incomplete; presence does not verify the business is currently operating.",
+        "Do not infer rating, operation status, cuisine, menu, or delivery availability.",
+        "Website/phone/hours are user-contributed tags, not independently validated official values.",
+        "OSM feature coordinates describe the mapped feature; way centers are approximate."
+      ]
+    },
+    {
+      "sfa_licence": "CE23H59J000",
+      "fnb_name_before": "TAMBA",
+      "full_address": "Address: 101 DUXTON ROAD Singapore 089964",
+      "postal_code": "089964",
+      "before": {
+        "Website": null
+      },
+      "proposed_after": {
+        "Website": "https://tamba.life/"
+      },
+      "osm": {
+        "element_type": "way",
+        "element_id": 172769128,
+        "url": "https://www.openstreetmap.org/way/172769128",
+        "name_tags": {
+          "name": "TAMBA"
+        },
+        "tag_values": {
+          "addr:postcode": "089964",
+          "addr:housenumber": "101",
+          "addr:street": "Duxton Road",
+          "website": "https://tamba.life/"
+        },
+        "observation_timestamp_utc": "2026-10-18T15:39:01Z"
+      },
+      "match_evidence": {
+        "exact_normalized_name": "TAMBA",
+        "exact_postcode": "089964",
+        "kind": "exact_postcode_house_number_street",
+        "house_number": "101",
+        "street": "Duxton Road"
+      },
+      "limitations": [
+        "OSM data may be stale or incomplete; presence does not verify the business is currently operating.",
+        "Do not infer rating, operation status, cuisine, menu, or delivery availability.",
+        "Website/phone/hours are user-contributed tags, not independently validated official values.",
+        "OSM feature coordinates describe the mapped feature; way centers are approximate."
+      ]
+    },
+    {
+      "sfa_licence": "CE12Y69L000",
+      "fnb_name_before": "Tanjong Hwaro",
+      "full_address": "Address: 67 TANJONG PAGAR ROAD TANJONG PAGAR CONSERVATION AREA,Singapore 088488 (LEVEL 1)",
+      "postal_code": "088488",
+      "before": {
+        "Website": null
+      },
+      "proposed_after": {
+        "Website": "http://www.koryo.com.sg/"
+      },
+      "osm": {
+        "element_type": "node",
+        "element_id": 3759786770,
+        "url": "https://www.openstreetmap.org/node/3759786770",
+        "name_tags": {
+          "name": "Tanjong Hwaro"
+        },
+        "tag_values": {
+          "addr:postcode": "088488",
+          "addr:housenumber": "67",
+          "addr:street": "Tanjong Pagar Road",
+          "website": "http://www.koryo.com.sg/",
+          "phone": "+65 6222 1646"
+        },
+        "observation_timestamp_utc": "2026-10-18T15:39:01Z"
+      },
+      "match_evidence": {
+        "exact_normalized_name": "Tanjong Hwaro",
+        "exact_postcode": "088488",
+        "kind": "exact_postcode_house_number_street",
+        "house_number": "67",
+        "street": "Tanjong Pagar Road"
+      },
+      "limitations": [
+        "OSM data may be stale or incomplete; presence does not verify the business is currently operating.",
+        "Do not infer rating, operation status, cuisine, menu, or delivery availability.",
+        "Website/phone/hours are user-contributed tags, not independently validated official values.",
+        "OSM feature coordinates describe the mapped feature; way centers are approximate."
+      ]
+    },
+    {
+      "sfa_licence": "NW13M94C000",
+      "fnb_name_before": "TOAST BOX",
+      "full_address": "Address: 448 UPPER BUKIT TIMAH ROAD Singapore 678068",
+      "postal_code": "678068",
+      "before": {
+        "Opening Hours / Closed Days": null
+      },
+      "proposed_after": {
+        "Opening Hours / Closed Days": "Mo-Su 08:00-20:00"
+      },
+      "osm": {
+        "element_type": "way",
+        "element_id": 71395038,
+        "url": "https://www.openstreetmap.org/way/71395038",
+        "name_tags": {
+          "name": "Toast Box",
+          "brand": "Toast Box"
+        },
+        "tag_values": {
+          "addr:postcode": "678068",
+          "addr:housenumber": "448",
+          "addr:street": "Upper Bukit Timah Road",
+          "opening_hours": "Mo-Su 08:00-20:00"
+        },
+        "observation_timestamp_utc": "2026-10-18T15:39:01Z"
+      },
+      "match_evidence": {
+        "exact_normalized_name": "TOAST BOX",
+        "exact_postcode": "678068",
+        "kind": "exact_postcode_house_number_street",
+        "house_number": "448",
+        "street": "Upper Bukit Timah Road"
+      },
+      "limitations": [
+        "OSM data may be stale or incomplete; presence does not verify the business is currently operating.",
+        "Do not infer rating, operation status, cuisine, menu, or delivery availability.",
+        "Website/phone/hours are user-contributed tags, not independently validated official values.",
+        "OSM feature coordinates describe the mapped feature; way centers are approximate."
+      ]
+    },
+    {
+      "sfa_licence": "NE16460K000",
+      "fnb_name_before": "ToastBox",
+      "full_address": "Address: 1 SENGKANG SQUARE #B1-35,COMPASS ONE,Singapore 545078 COMPASS ONE",
+      "postal_code": "545078",
+      "before": {
+        "Opening Hours / Closed Days": null
+      },
+      "proposed_after": {
+        "Opening Hours / Closed Days": "08:00-22:00"
+      },
+      "osm": {
+        "element_type": "node",
+        "element_id": 6618302989,
+        "url": "https://www.openstreetmap.org/node/6618302989",
+        "name_tags": {
+          "name": "Toast Box",
+          "brand": "Toast Box"
+        },
+        "tag_values": {
+          "addr:postcode": "545078",
+          "addr:unit": "35",
+          "addr:housenumber": "1",
+          "addr:street": "Sengkang Square",
+          "opening_hours": "08:00-22:00"
+        },
+        "observation_timestamp_utc": "2026-10-18T15:39:01Z"
+      },
+      "match_evidence": {
+        "exact_normalized_name": "ToastBox",
+        "exact_postcode": "545078",
+        "kind": "exact_postcode_house_number_street",
+        "house_number": "1",
+        "street": "Sengkang Square"
+      },
+      "limitations": [
+        "OSM data may be stale or incomplete; presence does not verify the business is currently operating.",
+        "Do not infer rating, operation status, cuisine, menu, or delivery availability.",
+        "Website/phone/hours are user-contributed tags, not independently validated official values.",
+        "OSM feature coordinates describe the mapped feature; way centers are approximate."
+      ]
+    },
+    {
+      "sfa_licence": "CE13V12L000",
+      "fnb_name_before": "UNCLE FONG HOT POT RESTAURANT",
+      "full_address": "Address: 3 TEMASEK BOULEVARD #02-391,#02-392,#02-393,#02-394,SUNTEC CITY MALL,Singapore 038983",
+      "postal_code": "038983",
+      "before": {
+        "Contact Details": null,
+        "Opening Hours / Closed Days": null
+      },
+      "proposed_after": {
+        "Contact Details": "+65 65139565",
+        "Opening Hours / Closed Days": "Mo-Su 11:30-22:00"
+      },
+      "osm": {
+        "element_type": "node",
+        "element_id": 8288255130,
+        "url": "https://www.openstreetmap.org/node/8288255130",
+        "name_tags": {
+          "name": "Uncle Fong Hot pot Restaurant 方叔叔重慶老火鍋"
+        },
+        "tag_values": {
+          "addr:postcode": "038983",
+          "addr:unit": "#02-391/392",
+          "addr:housenumber": "#02-391",
+          "addr:street": "Suntec City",
+          "phone": "+65 65139565",
+          "opening_hours": "Mo-Su 11:30-22:00"
+        },
+        "observation_timestamp_utc": "2026-10-18T15:39:01Z"
+      },
+      "match_evidence": {
+        "exact_normalized_name": "UNCLE FONG HOT POT RESTAURANT",
+        "exact_postcode": "038983",
+        "kind": "exact_postcode_and_unit",
+        "sfa_unit": "02-391",
+        "osm_unit": "02-391"
+      },
+      "limitations": [
+        "OSM data may be stale or incomplete; presence does not verify the business is currently operating.",
+        "Do not infer rating, operation status, cuisine, menu, or delivery availability.",
+        "Website/phone/hours are user-contributed tags, not independently validated official values.",
+        "OSM feature coordinates describe the mapped feature; way centers are approximate."
+      ]
+    },
+    {
+      "sfa_licence": "CE09F02J000",
+      "fnb_name_before": "WINGSTOP",
+      "full_address": "Address: 180 KITCHENER ROAD CITY SQUARE MALL,Singapore 208539 (UNIT: #B1-33/34/K15)",
+      "postal_code": "208539",
+      "before": {
+        "Contact Details": null
+      },
+      "proposed_after": {
+        "Contact Details": "+65 6509 6571"
+      },
+      "osm": {
+        "element_type": "node",
+        "element_id": 8398774868,
+        "url": "https://www.openstreetmap.org/node/8398774868",
+        "name_tags": {
+          "name": "Wingstop",
+          "brand": "Wing Stop"
+        },
+        "tag_values": {
+          "addr:postcode": "208539",
+          "addr:unit": "#B1-33/34",
+          "addr:housenumber": "180",
+          "addr:street": "Kitchener Road",
+          "phone": "+65 6509 6571"
+        },
+        "observation_timestamp_utc": "2026-10-18T15:39:01Z"
+      },
+      "match_evidence": {
+        "exact_normalized_name": "WINGSTOP",
+        "exact_postcode": "208539",
+        "kind": "exact_postcode_house_number_street",
+        "house_number": "180",
+        "street": "Kitchener Road"
+      },
+      "limitations": [
+        "OSM data may be stale or incomplete; presence does not verify the business is currently operating.",
+        "Do not infer rating, operation status, cuisine, menu, or delivery availability.",
+        "Website/phone/hours are user-contributed tags, not independently validated official values.",
+        "OSM feature coordinates describe the mapped feature; way centers are approximate."
+      ]
+    }
+  ],
+  "limitations": [
+    "This is a candidate pass only; no workbook values were changed.",
+    "OSM data may be stale or incomplete; presence does not verify current operation.",
+    "Do not infer ratings, operation status, cuisine, menu, or delivery availability from OSM presence.",
+    "Website, phone, and opening_hours tags are user-contributed and were not independently live-verified.",
+    "Coordinates for ways use their geometric center and may not be a customer entrance or stall-front location.",
+    "A candidate whose OSM element matched multiple SFA licence rows was excluded as ambiguous."
+  ],
+  "osm_source_detail": {
+    "api": "https://overpass-api.de/api/interpreter",
+    "query_scope": {
+      "bbox_south_lat": 1.14,
+      "bbox_west_lon": 103.59,
+      "bbox_north_lat": 1.47,
+      "bbox_east_lon": 104.09,
+      "amenity_values": [
+        "restaurant",
+        "cafe",
+        "fast_food",
+        "food_court",
+        "bar"
+      ],
+      "element_types": [
+        "node",
+        "way",
+        "relation"
+      ],
+      "output": "tags, metadata, coordinates/centers"
+    },
+    "raw_response_sha256": "e6bff35db943dbd25ec135a46288fa2f01249b3ba9a1dfc363a9406bb7fffaf2",
+    "retrieved_utc": "2026-10-18 (local capture; Overpass-reported OSM base timestamp is authoritative)"
+  }
+}

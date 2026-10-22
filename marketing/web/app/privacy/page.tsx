@@ -35,7 +35,7 @@ const DATA_PRACTICES = [
   },
   {
     title: "Retention and updates",
-    body: "Waitlist and contact details are kept only while they remain useful for the launch process or related communications. You can ask for deletion or correction at any time.",
+    body: "Waitlist and contact details are kept only while they remain useful for the launch process or related communications. You can ask for deletion or correction at any time. Account deletion is scheduled 30 days after a confirmed request. Signing in does not cancel deletion: choose Keep my account in the app before the deadline and wait for successful cancellation confirmation.",
   },
 ];
 

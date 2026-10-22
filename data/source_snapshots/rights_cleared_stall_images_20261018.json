@@ -1,0 +1,60 @@
+{
+  "schema_version": "1.0",
+  "snapshot_id": "rights_cleared_stall_images_20261018",
+  "observed_at_sgt": "2026-10-18",
+  "workbook_path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "986a2656c3243d55c1a3914a3c5fbbdf2052e0423a69705785cbba0b7fee154e",
+  "workbook_edited": false,
+  "method": "Targeted review of openly licensed Wikimedia Commons file pages and exact workbook outlet records. No image bytes downloaded. Candidate inclusion requires explicitly verified reuse license and named Singapore outlet match.",
+  "candidate_count": 1,
+  "candidates": [
+    {
+      "directory_name": "Tian Tian Hainanese Chicken Rice",
+      "applicable_sfa_licences": [
+        "MWF010004",
+        "MWF011005"
+      ],
+      "exact_location_match": {
+        "address": "1 Kadayanallur Street, Singapore 069184 (Maxwell Food Centre)",
+        "workbook_records": "Both SFA rows name Tian Tian Hainanese Chicken Rice at Maxwell Food Centre, units 010 and 011; source title/metadata identifies Tian Tian and Maxwell Food Centre.",
+        "match_strength": "Named outlet + named food centre, but image depicts a prepared dish rather than a recognizable stall frontage; do not use as stall photo."
+      },
+      "item_or_image_type": "Chicken rice dish photo associated with the named Tian Tian Maxwell outlet",
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/1/11/Hainanese_Chicken_Rice_%288524291822%29.jpg",
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:Hainanese_Chicken_Rice_(8524291822).jpg",
+      "original_creator": "Charles Haynes",
+      "original_capture_date": "2013-03-03",
+      "license": "Creative Commons Attribution-ShareAlike 2.0 Generic (CC BY-SA 2.0)",
+      "license_url": "https://creativecommons.org/licenses/by-sa/2.0/",
+      "reuse_rights": "Explicit share and adapt rights subject to attribution, license link, indication of changes, and share-alike for adaptations. Wikimedia page reports Flickr review confirmation of license.",
+      "attribution": "Charles Haynes, “Hainanese Chicken Rice (8524291822).jpg”, via Wikimedia Commons; CC BY-SA 2.0; https://creativecommons.org/licenses/by-sa/2.0/; no changes made.",
+      "source_capture_sha256": "2581d34cbcf850241060b4120e6381800bf0296cdf7b053dcdb682a8ccd86982",
+      "source_capture_hash_method": "SHA-256 of raw HTML response from source_page_url fetched with curl on 2026-10-18; image file itself was not downloaded.",
+      "observed_source_facts": {
+        "description": "The standard I measure my chicken rice against.",
+        "camera_location": "1.280469, 103.844769 (Maxwell Hawker Center)",
+        "keywords": [
+          "Maxwell Hawker Center",
+          "Tian Tian Hainanese Chicken Rice"
+        ],
+        "license_confirmation": "Commons file page states CC BY-SA 2.0 and FlickreviewR confirmation."
+      },
+      "visual_check": "Metadata/caption corroborates outlet and food centre; visual not downloaded or independently inspected in this audit. Image asset is a dish photo, not a stall-front photo.",
+      "rights_status": "Reuse permitted under stated CC BY-SA 2.0 conditions; attribution required.",
+      "freshness_hold": "Photo dates to 2013. Valid as a historical dish image but not proof of current presentation, menu, or stall appearance. Keep clearly dated and do not promote as current stall photo.",
+      "recommended_action": "Eligible as a licensed, dated dish-image candidate only; retain provenance and attribution/license fields, and do not put in Approved Image URL as a current stall image."
+    }
+  ],
+  "held_sources": [
+    {
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:Tian_Tian_Hainanese_Chicken_Rice,_Singapore.JPG",
+      "reason": "Commons labels the migrated file “requires review”; license/source metadata is flagged unreliable pending review. Do not use until the file is reviewed and the license is independently confirmed."
+    }
+  ],
+  "scope_limits": [
+    "Only one exact workbook outlet association with explicit reuse license found in this bounded search.",
+    "No current first-party official images with a reuse license or explicit permission surfaced.",
+    "No image was downloaded, stored, or added to Excel.",
+    "No stock, generated, placeholder, delivery-platform, or unlicensed images included."
+  ]
+}

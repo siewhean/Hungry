@@ -1,0 +1,86 @@
+{
+  "snapshot_id": "contact_hours_verification_batch2_20261018",
+  "captured_at": "2026-10-18",
+  "baseline_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_workbook_sha256": "986a2656c3243d55c1a3914a3c5fbbdf2052e0423a69705785cbba0b7fee154e",
+  "scope": "Bounded exact-branch audit of one high-yield row with nonblank contact, website, menu URL and opening-hours fields. No workbook edits made.",
+  "source_evidence": [
+    {
+      "url": "https://www.vivocity.com.sg/stores/breadtalk-and-thye-moh-chan/",
+      "publisher": "VivoCity official store directory",
+      "captured_at": "2026-10-18",
+      "http_status": 200,
+      "content_sha256": "a96266308e284cb18863e160711969fcc273bcf13ffcce183dc7f0017f401938",
+      "evidence_excerpt": "Store Location #B2-50; VivoCity, 1 HarbourFront Walk, Singapore 098585; Open 10am - 10pm daily; the page lists customer service hotline 6377 6870 and links to https://www.breadtalk.com.sg.",
+      "basis": "Outlet unit and postal code match workbook exact record."
+    }
+  ],
+  "records": [
+    {
+      "sfa_licence": "SW25F91L000",
+      "directory_row": 4336,
+      "name": "BreadTalk",
+      "postal_code": "098585",
+      "unit": "#B2-50",
+      "before": {
+        "opening_hours_closed_days": "Hours: Weekday: 07:30am - 10:00pm Weekend: 07:30am - 10:00pm PH eve/ PH: 07:30am - 10:30pm",
+        "contact_details": "Contact: 6278 4434",
+        "website": "http://www.breadtalk.com.sg",
+        "menu_url": "https://www.breadtalk.com.sg/shop/"
+      },
+      "proposals": [
+        {
+          "field": "opening_hours_closed_days",
+          "before": "Hours: Weekday: 07:30am - 10:00pm Weekend: 07:30am - 10:00pm PH eve/ PH: 07:30am - 10:30pm",
+          "after": "Daily: 10:00am–10:00pm",
+          "action": "replace",
+          "confidence": "high",
+          "reason": "Workbook hours conflict with current exact-unit official VivoCity listing."
+        },
+        {
+          "field": "website",
+          "before": "http://www.breadtalk.com.sg",
+          "after": "https://www.breadtalk.com.sg/",
+          "action": "normalize_url",
+          "confidence": "high",
+          "reason": "Workbook HTTP URL redirects to HTTPS; VivoCity official listing links to the HTTPS brand domain."
+        }
+      ],
+      "unresolved": [
+        {
+          "field": "contact_details",
+          "value": "Contact: 6278 4434",
+          "reason": "Official mall page provides the mall customer-service hotline, not a branch phone; it does not corroborate or contradict the workbook phone."
+        },
+        {
+          "field": "menu_url",
+          "value": "https://www.breadtalk.com.sg/shop/",
+          "reason": "First-party order/shop page is reachable, but this is not an outlet-specific menu; no exact-branch menu source found in this audit."
+        }
+      ],
+      "source_urls": [
+        "https://www.vivocity.com.sg/stores/breadtalk-and-thye-moh-chan/",
+        "http://www.breadtalk.com.sg",
+        "https://www.breadtalk.com.sg/shop/"
+      ],
+      "http_observations": {
+        "website_http_status_after_redirect": 200,
+        "website_effective_url": "https://www.breadtalk.com.sg/",
+        "menu_url_http_status": 200,
+        "menu_url_effective_url": "https://www.breadtalk.com.sg/shop/"
+      },
+      "decision": "Propose only the directly contradicted hours and canonical HTTPS URL normalization; preserve phone pending outlet-level evidence."
+    }
+  ],
+  "counts": {
+    "records_audited": 1,
+    "proposed_corrections": 2,
+    "proposed_removals": 0,
+    "unresolved_fields": 2
+  },
+  "limitations": [
+    "A one-record batch is not a full-database contact/hours validation.",
+    "Mall directory hours are outlet-specific but could still change after capture.",
+    "No workbook was edited."
+  ]
+}

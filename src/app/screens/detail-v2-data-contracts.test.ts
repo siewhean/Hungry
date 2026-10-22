@@ -27,7 +27,8 @@ test("stall detail uses real venue hours and popular visitors", () => {
 test("dish detail V2 avoids invented wait times and fake hours", () => {
   const dish = read("src/app/screens/detail/DishDetailScreenV2.tsx");
 
-  assert.match(dish, /const waitTime = formatWaitTime/);
+  assert.doesNotMatch(dish, /const waitTime = formatWaitTime/);
+  assert.match(dish, /const waitTime: string \| undefined = undefined/);
   assert.match(dish, /\.\.\.\(waitTime/);
   assert.doesNotMatch(dish, /Mon-Fri/);
   assert.doesNotMatch(dish, /Sat-Sun/);
@@ -52,7 +53,7 @@ test("dish detail V2 action dock is labelled, stateful and meets 44px targets", 
   assert.doesNotMatch(dish, /isSaved \? palette\.white/);
   assert.match(
     dish,
-    /accessibilityRole="checkbox"\s*accessibilityLabel="Tried"\s*accessibilityState=\{\{ checked: isDishTried/,
+    /accessibilityRole="checkbox"\s*accessibilityLabel="Visited this stall"\s*accessibilityState=\{\{ checked: isDishTried/,
   );
   assert.match(dish, /accessibilityLabel="Write a review"[\s\S]*?>\s*Review\s*<\/AppText>/);
 });

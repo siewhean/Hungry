@@ -115,8 +115,13 @@ test("zoomable social media exposes actionable media and video controls to assis
   assert.match(home, /accessibilityLabel=\{`\$\{actionTargetName\} post image/);
   assert.match(home, /accessibilityHint="Opens this media and supports double tap to like"/);
   assert.match(activityDetail, /accessibilityLabel=\{`\$\{primaryDish\?\.name/);
-  assert.match(
-    socialDetail,
-    /accessibilityHint="Opens the linked customer detail page for this post"/,
-  );
+  assert.match(socialDetail, /<ProfilePostMedia/);
+  const profileMedia = read("src/features/profile/ProfilePostMedia.tsx");
+  assert.match(profileMedia, /<ZoomableMedia/);
+  assert.match(profileMedia, /accessibilityLabel=/);
+  assert.match(profileMedia, /accessibilityLiveRegion="polite"/);
+  assert.match(profileMedia, /label="Previous photo"/);
+  assert.match(profileMedia, /label="Next photo"/);
+  assert.match(profileMedia, /disabled=\{selected === 0\}/);
+  assert.match(profileMedia, /disabled=\{selected === urls.length - 1\}/);
 });

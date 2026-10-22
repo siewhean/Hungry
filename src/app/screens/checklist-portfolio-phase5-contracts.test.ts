@@ -36,14 +36,15 @@ test("Phase 5 checklist and portfolio stores centralize analytics and edge guard
   assert.match(checklistStore, /This item is already in the checklist/);
   assert.match(checklistStore, /assertCompleteReorder/);
   assert.match(checklistStore, /reorder requires every current item exactly once/);
-  assert.match(checklistStore, /catch \(error\)[\s\S]*get\(\)\.items\[checklistId\]/);
+  assert.match(checklistStore, /Account changed\. Reopen this tool/);
   assert.match(checklistStore, /state\.items\[checklistId\] \?\? \[\]/);
-  assert.match(checklistStore, /hungryPersistStorage/);
-  assert.doesNotMatch(checklistStore, /@react-native-async-storage\/async-storage/);
-  assert.match(
+  assert.doesNotMatch(
     checklistStore,
-    /partialize: \(state\) => \(\{ checklists: state\.checklists, items: state\.items \}\)/,
+    /hungryPersistStorage|persist\(/,
+    "private checklist rows must not hydrate from a global account cache",
   );
+  assert.doesNotMatch(checklistStore, /@react-native-async-storage\/async-storage/);
+  assert.match(checklistStore, /generation\+\+/);
 
   assert.match(portfolioStore, /trackAnalyticsEvent\(\s*"portfolio_created"/);
   assert.match(portfolioStore, /trackAnalyticsEvent\(\s*"portfolio_published"/);
@@ -64,11 +65,16 @@ test("Phase 5 checklist and portfolio stores centralize analytics and edge guard
   assert.match(portfolioStore, /refreshPortfolio/);
   assert.match(portfolioStore, /clearConflict/);
   assert.match(portfolioStore, /This portfolio changed elsewhere/);
-  assert.match(portfolioStore, /catch \(error\)[\s\S]*get\(\)\.items\[portfolioId\]/);
+  assert.match(portfolioStore, /Account changed\. Reopen this tool/);
   assert.match(portfolioStore, /state\.items\[portfolioId\] \?\? \[\]/);
-  assert.match(portfolioStore, /collaborators: state\.collaborators/);
-  assert.match(portfolioStore, /follows: state\.follows/);
-  assert.match(portfolioStore, /hungryPersistStorage/);
+  assert.match(portfolioStore, /collaborators: \{\}/);
+  assert.match(portfolioStore, /follows: \{\}/);
+  assert.doesNotMatch(
+    portfolioStore,
+    /hungryPersistStorage|persist\(/,
+    "private portfolios must be account-scoped and reloaded from the service",
+  );
+  assert.match(portfolioStore, /generation\+\+/);
   assert.doesNotMatch(portfolioStore, /@react-native-async-storage\/async-storage/);
 
   assert.match(passportStore, /trackAnalyticsEvent\(\s*"passport_stamp_earned"/);
@@ -214,8 +220,10 @@ test("Phase 5 Supabase service scopes portfolio follow status to the signed-in u
   assert.match(serviceTypes, /expectedUpdatedAt\?: string/);
   assert.match(supabaseService, /portfolioEditConflictError/);
   assert.match(supabaseService, /p_expected_portfolio_updated_at: options\?\.expectedUpdatedAt/);
-  assert.match(supabaseService, /rpc\("update_portfolio_item_with_version"/);
+  assert.match(supabaseService, /rpc\("update_portfolio_item_v2"/);
   assert.match(supabaseService, /rpc\("delete_portfolio_item_with_version"/);
+  assert.match(supabaseService, /rpc\("get_portfolio_private_notes_v2"/);
+  assert.match(supabaseService, /p_patch: Object\.fromEntries/);
 
   assert.match(
     supabaseService,

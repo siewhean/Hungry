@@ -1,0 +1,41 @@
+{
+  "snapshot_type": "refresh119_exact_blank_fnb_name_proposals",
+  "observed_at_local": "2026-10-19 Asia/Singapore",
+  "master_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "master_sha256": "028e757cf68c3fd6be935a2908484a98ba1865c4318975cfde543d1175bf5475",
+  "worksheet": "Public F&B Directory",
+  "scope": "Read-only bounded exact-name batch. Reviewed one blank-name restaurant row with a public-facing outlet and exact unit/address match. No workbook edits or paid sources.",
+  "proposals": [
+    {
+      "excel_row": 33447,
+      "before_fnb_name": "",
+      "registered_business_name": "",
+      "sfa_licence": "C01095A000",
+      "business_type": "Restaurant",
+      "address": "Address: 1 JURONG WEST CENTRAL 2 JURONG POINT SHOPPING CENTRE,Singapore 648886 #02-24",
+      "postal_code": "648886",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "proposed_fnb_name": "BRIO",
+      "source_type": "official_operator_website",
+      "source_url": "https://brio.com.sg/",
+      "source_content_sha256": null,
+      "source_hash_note": "Direct body hashing unavailable: official site fetch was blocked by local TLS certificate validation; official website was opened through web search tool and its current indexed page reports the exact outlet address.",
+      "source_evidence": "Official BRIO site identifies BRIO as a European street-food restaurant at 1 Jurong West Central 2, #02-24/K5, 648886 Singapore. This is an exact street, unit, postal-code match to the current SFA restaurant row. The current website labels the brand BRIO and gives public dining context.",
+      "matching_rule": "Exact outlet address/unit and postal code; business type is Restaurant; first-party operator page.",
+      "confidence": "high",
+      "limitations": "This confirms the public-facing name only. Do not infer other fields from this proposal. Source page opened 2026-10-19; no content SHA available due transport-layer validation failure."
+    }
+  ],
+  "held_rows": [],
+  "summary": {
+    "blank_rows_reviewed": 1,
+    "exact_name_proposals": 1,
+    "unresolved_or_held": 0,
+    "workbook_edited": false
+  },
+  "source_observation": {
+    "official_operator_page": "https://brio.com.sg/",
+    "retrieval": "web search/open; page displayed current BRIO location, contact and hours",
+    "observed_date": "2026-10-19"
+  }
+}

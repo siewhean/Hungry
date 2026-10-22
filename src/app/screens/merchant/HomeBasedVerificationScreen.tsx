@@ -1,3 +1,4 @@
+import { useMerchantOperationScope } from "@/features/merchant/useMerchantOperationScope";
 import React, { useState } from "react";
 import { View, ScrollView, Pressable } from "react-native";
 import { Camera, CheckCircle2, ArrowLeft, Square, CheckSquare, Home } from "lucide-react-native";
@@ -31,6 +32,8 @@ function loadImagePickerModule(): ImagePickerModule | null {
 }
 
 export function HomeBasedVerificationScreen({ navigation }: Props) {
+  const captureOperation = useMerchantOperationScope();
+
   const { componentRadii, palette, spacing, radii } = useHungryTheme();
   const setAccount = useMerchantStore((state) => state.setAccount);
   const activeOutlet = useMerchantStore(getActiveOutlet);
@@ -41,7 +44,7 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [safetyChecked, setSafetyChecked] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const photosAttached = photoUris.length > 0;
+  const photosAttached = photoUris.length >= 3;
 
   if (!activeOutlet) {
     return (
@@ -58,6 +61,9 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
   }
 
   const handleAttachPhotos = async () => {
+    const isOperationCurrent = captureOperation();
+    if (!isOperationCurrent()) return;
+
     setPhotoError(null);
     try {
       const imagePicker = loadImagePickerModule();
@@ -73,12 +79,15 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
         confirmLabel: "Allow",
         cancelLabel: "Not now",
       });
+      if (!isOperationCurrent()) return;
 
       if (!shouldRequestPermission) {
         return;
       }
 
       const permission = await imagePicker.requestMediaLibraryPermissionsAsync();
+      if (!isOperationCurrent()) return;
+
       if (!isGalleryPermissionGranted(permission)) {
         setPhotoError("Photos permission is required to attach verification evidence.");
         return;
@@ -91,6 +100,7 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
         quality: 0.82,
         selectionLimit: 4,
       });
+      if (!isOperationCurrent()) return;
 
       if (result.canceled || !result.assets?.length) {
         return;
@@ -100,12 +110,17 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
         result.assets.map((asset) => asset.uri).filter((uri): uri is string => Boolean(uri)),
       );
     } catch {
+      if (!isOperationCurrent()) return;
+
       setPhotoError("Unable to open the photo library right now.");
     }
   };
 
   const handleSubmit = async () => {
-    if (!displayName.trim() || !photosAttached || !safetyChecked) return;
+    const isOperationCurrent = captureOperation();
+    if (!isOperationCurrent()) return;
+
+    if (isSubmitting || !displayName.trim() || !photosAttached || !safetyChecked) return;
 
     setIsSubmitting(true);
     try {
@@ -114,22 +129,38 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
         name: displayName,
         locationPrivacy: privacy,
       });
+      if (!isOperationCurrent()) return;
 
-      for (const fileUrl of photoUris) {
-        await getHungryService().merchant.submitVerification(activeOutlet.id, {
-          method: "home_based_declaration",
+      await getHungryService().merchant.submitVerification(
+        activeOutlet.id,
+        photoUris.map((fileUrl) => ({
+          method: "home_based_declaration" as const,
           fileUrl,
-        });
-      }
+          reviewNote:
+            "Merchant confirms these include two food photos and one menu photo, and confirms food safety declaration.",
+        })),
+      );
+      if (!isOperationCurrent()) return;
 
       const updatedAccount = await getHungryService().merchant.getMerchantAccount();
+      if (!isOperationCurrent()) return;
+
       if (updatedAccount) setAccount(updatedAccount);
 
       // Go back to the Verification Centre to see the pending status
       navigation.goBack();
     } catch (e) {
-      console.error(e);
-      setIsSubmitting(false);
+      if (!isOperationCurrent()) return;
+
+      setPhotoError(
+        e instanceof Error
+          ? e.message
+          : "Verification could not be submitted. Your evidence remains available to retry.",
+      );
+    } finally {
+      if (isOperationCurrent()) {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -161,8 +192,8 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
 
       <ScrollView contentContainerStyle={{ padding: spacing[4] }}>
         <AppText style={{ color: palette.textSecondary, marginBottom: spacing[4] }}>
-          Please provide the following details to verify your home-based food business. Your exact
-          residential address can be hidden from customers.
+          Please provide the following details to verify your home-based food business. Home-based
+          publication is unavailable until server location privacy has been verified.
         </AppText>
 
         <Input
@@ -186,19 +217,13 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
         <View style={{ gap: spacing[2] }}>
           <PrivacyOption
             title="Approximate Area"
-            description="Shows a rough 500m radius"
+            description="Requested coarse location; publication remains unavailable pending privacy verification"
             selected={privacy === "approximate"}
             onSelect={() => setPrivacy("approximate")}
           />
           <PrivacyOption
-            title="Exact Address"
-            description="Shows full block and street"
-            selected={privacy === "exact"}
-            onSelect={() => setPrivacy("exact")}
-          />
-          <PrivacyOption
             title="Hidden"
-            description="Location is not shown at all"
+            description="Requested hidden location; publication remains unavailable pending privacy verification"
             selected={privacy === "hidden"}
             onSelect={() => setPrivacy("hidden")}
           />
@@ -302,6 +327,8 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
             size={24}
             variant="ghost"
             accessibilityLabel="Safety acknowledgement checkbox"
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: safetyChecked }}
             onPress={() => setSafetyChecked(!safetyChecked)}
           />
           <AppText variant="bodySmall" style={{ color: palette.text, flex: 1, marginLeft: 8 }}>
@@ -344,7 +371,12 @@ function PrivacyOption({
   const { componentRadii, palette, spacing, radii } = useHungryTheme();
 
   return (
-    <Pressable onPress={onSelect}>
+    <Pressable
+      accessibilityRole="radio"
+      accessibilityLabel={title}
+      accessibilityState={{ checked: selected }}
+      onPress={onSelect}
+    >
       <Card
         style={[
           { flexDirection: "row", alignItems: "center", padding: spacing[4], borderWidth: 1 },

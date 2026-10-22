@@ -3,12 +3,12 @@
  * Accessed from the Discover tab Collections section.
  */
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { View, FlatList, Pressable } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, EmptyState, Screen } from "@/components/ui";
+import { AppText, Button, EmptyState, Screen } from "@/components/ui";
 import { CollectionCard } from "@/components/collections/CollectionCard";
 import { useCollectionStore } from "@/store/useCollectionStore";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -25,9 +25,19 @@ export function CollectionListScreen({ navigation }: Props) {
   const profile = useProfileStore((s) => s.profile);
   const isAuthenticated = useSessionStore((s) => s.isAuthenticated);
 
+  const isLoaded = useCollectionStore((state) => state.isLoaded);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [retry, setRetry] = useState(0);
   useEffect(() => {
-    void loadCollections();
-  }, [loadCollections]);
+    let active = true;
+    setLoadError(null);
+    void loadCollections().catch((error: unknown) => {
+      if (active) setLoadError(error instanceof Error ? error.message : "Please retry.");
+    });
+    return () => {
+      active = false;
+    };
+  }, [loadCollections, retry]);
 
   function handlePress(collection: FoodCollection) {
     navigation.navigate("CollectionDetail", { collectionId: collection.id });
@@ -35,7 +45,14 @@ export function CollectionListScreen({ navigation }: Props) {
 
   return (
     <Screen title="Collections" subtitle="Curated food lists for every occasion" scroll={false}>
-      {collections.length === 0 ? (
+      {loadError ? (
+        <View>
+          <AppText>{loadError}</AppText>
+          <Button label="Retry" onPress={() => setRetry((value) => value + 1)} />
+        </View>
+      ) : !isLoaded ? (
+        <AppText>Loading collections…</AppText>
+      ) : collections.length === 0 ? (
         <EmptyState title="No collections yet" body="Check back soon for curated food lists." />
       ) : (
         <FlatList

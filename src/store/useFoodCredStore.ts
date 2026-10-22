@@ -1,3 +1,4 @@
+import { getAccountGeneration } from "@/lib/security/accountScope";
 /**
  * useFoodCredStore — Food Cred contribution score system
  *
@@ -10,7 +11,7 @@
  */
 
 import { create } from "zustand";
-import { getDataRepository } from "@/lib/services/serviceProvider";
+import { getDataRepository, getServiceProvider } from "@/lib/services/serviceProvider";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import {
   FOOD_CRED_LEVELS,
@@ -21,6 +22,9 @@ import {
 import type { FoodCredAction, FoodCredLevel } from "@/types/domain";
 
 // ─── State Interface ──────────────────────────────────────────────────────────
+
+let storeEpoch = 0;
+const accountStamp = () => `${getAccountGeneration()}:${storeEpoch}`;
 
 interface FoodCredState {
   totalPoints: number;
@@ -87,12 +91,14 @@ export const useFoodCredStore = create<FoodCredState>()((set, get) => ({
   levelProgress: () => resolveLevelProgress(get().totalPoints),
 
   loadCredProfile: async (userId) => {
+    const stamp = accountStamp();
     if (get().isLoaded) return;
 
     // Active repository handles mock or Supabase `user_food_cred` hydration.
     const repo = getDataRepository();
     const cred = (await repo.getUserFoodCred?.(userId)) ?? null;
 
+    if (stamp !== accountStamp()) return;
     if (cred) {
       set({
         totalPoints: cred.totalPoints,
@@ -105,12 +111,14 @@ export const useFoodCredStore = create<FoodCredState>()((set, get) => ({
   },
 
   awardPoints: async (action, relatedEntityId) => {
+    const stamp = accountStamp();
     const repo = getDataRepository();
     const remoteCred = await repo.awardFoodCred?.(
       action,
       relatedEntityId,
       relatedEntityTypeForAction(action),
     );
+    if (stamp !== accountStamp()) throw new Error("Your account changed.");
     if (remoteCred) {
       set({
         totalPoints: remoteCred.totalPoints,
@@ -129,6 +137,8 @@ export const useFoodCredStore = create<FoodCredState>()((set, get) => ({
       return remoteCred.totalPoints;
     }
 
+    if (getServiceProvider().mode !== "mock")
+      throw new Error("Reward could not be confirmed. Refresh your Food Cred.");
     const earned = FOOD_CRED_POINTS[action] ?? 0;
     if (earned === 0) return get().totalPoints;
 
@@ -198,7 +208,10 @@ export const useFoodCredStore = create<FoodCredState>()((set, get) => ({
     return newTotal;
   },
 
-  _reset: () => set({ totalPoints: 0, levelIndex: 0, lastEarnedPoints: 0, isLoaded: false }),
+  _reset: () => {
+    storeEpoch++;
+    set({ totalPoints: 0, levelIndex: 0, lastEarnedPoints: 0, isLoaded: false });
+  },
 }));
 
 // ─── Selectors ────────────────────────────────────────────────────────────────

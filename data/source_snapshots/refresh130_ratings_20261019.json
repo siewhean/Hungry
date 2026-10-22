@@ -1,0 +1,79 @@
+{
+  "snapshot_id": "refresh130_ratings_20261019",
+  "created_at_sgt": "2026-10-19T04:30:11+08:00",
+  "baseline_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_sha256": "b76b2a41688b67767fe1dfe7a63690100c6868dd949415b14bd5b224973131bb",
+  "task": "Read-only public-source audit of blank outlet rating/review-count fields",
+  "scope": {
+    "blank_rating_records_inspected": 20,
+    "selection": "20 consecutive 4Fingers branch records with blank Rating / Review Count fields, rows 518-537 of Public F&B Directory",
+    "sfa_licences": [
+      "B98114V000", "C99163K000", "CE11I59K000", "CE14K98C000", "CE15I89K000",
+      "CE16A30A000", "E02082A000", "NE09127P000", "NE22259J000", "NE23M80N000",
+      "NE24989C000", "NE25M50K000", "NW15399C000", "NW25D96P000", "S98078E000",
+      "SE10597E000", "SE13027X000", "SE21T97J000", "SW06650K000", "SW17A35K000"
+    ],
+    "workbook_edits": 0
+  },
+  "observations": [
+    {
+      "sfa_licence": "B98114V000",
+      "workbook_outlet": "4FINGERS CRISPY CHICKEN",
+      "workbook_address": "1 WOODLANDS SQUARE #01-38/39, CAUSEWAY POINT, Singapore 738099",
+      "platform": "Foodpanda Singapore",
+      "platform_outlet_label": "4Fingers Crispy Chicken (Causeway point)",
+      "observed_rating": "5/5",
+      "observed_review_count": "10,000+",
+      "capture_timestamp_sgt": "2026-10-19T04:30:11+08:00",
+      "source_url": "https://www.foodpanda.sg/restaurant/v9np/4fingers-crispy-chicken-causeway-point/reviews",
+      "source_evidence": "The platform page names the Causeway Point outlet and displays 5/5 with 10,000+ reviews.",
+      "freshness_note": "Web source reports this page was crawled about 3 months before capture; live/currentness is not independently guaranteed.",
+      "eligible_for_workbook": false,
+      "reason_not_eligible": "This is a delivery-platform score, not a venue-wide rating. Foodpanda terms provide no explicit open-data or external database reuse license for these aggregates; only publicly visible values were observed."
+    },
+    {
+      "sfa_licence": "S98078E000",
+      "workbook_outlet": "4Fingers Crispy Chicken",
+      "workbook_address": "9 BISHAN PLACE #01-32, JUNCTION 8 SHOPPING CENTRE, Singapore 579837",
+      "platform": "Foodpanda Singapore",
+      "platform_outlet_label": "4Fingers Crispy Chicken (Bishan)",
+      "observed_rating": "4.9/5",
+      "observed_review_count": "5,000+",
+      "capture_timestamp_sgt": "2026-10-19T04:30:11+08:00",
+      "source_url": "https://www.foodpanda.sg/restaurant/w0ys/4fingers-crispy-chicken-bishan/reviews",
+      "source_evidence": "The page displays 4.9 and 5,000+ ratings, and its footer gives 9 Bishan Place, Junction 8, #01-32, matching the workbook row exactly.",
+      "freshness_note": "Web source reports this page was crawled about one month before capture; live/currentness is not independently guaranteed.",
+      "eligible_for_workbook": false,
+      "reason_not_eligible": "This is a delivery-platform score, not a venue-wide rating. Foodpanda terms provide no explicit open-data or external database reuse license for these aggregates; only publicly visible values were observed."
+    },
+    {
+      "sfa_licence": "CE14K98C000",
+      "workbook_outlet": "4FINGERS CRISPY CHICKEN",
+      "workbook_address": "33 SENGKANG WEST AVENUE #03-22/#03-K4/#03-K5, THE SELETAR MALL, Singapore 797653",
+      "platform": "Foodpanda Singapore",
+      "platform_outlet_label": "4Fingers Crispy Chicken (The Seletar Mall)",
+      "observed_rating": "5/5",
+      "observed_review_count": "45",
+      "capture_timestamp_sgt": "2026-10-19T04:30:11+08:00",
+      "source_url": "https://www.foodpanda.sg/restaurant/pe74/4fingers-crispy-chicken-the-seletar-mall-pe74",
+      "source_evidence": "The platform page names The Seletar Mall and displays 5/5 with 45 reviews; a search-indexed rendition lists the exact outlet address matching the workbook row.",
+      "freshness_note": "Web source reports this page was crawled about 2 months before capture; live/currentness is not independently guaranteed.",
+      "eligible_for_workbook": false,
+      "reason_not_eligible": "This is a delivery-platform score, not a venue-wide rating. Foodpanda terms provide no explicit open-data or external database reuse license for these aggregates; only publicly visible values were observed."
+    }
+  ],
+  "source_policy_review": {
+    "free_public_source_found": true,
+    "open_license_found": false,
+    "terms_url": "https://www.foodpanda.sg/contents/terms-and-conditions.htm",
+    "relevant_terms": "Sections 4 and 31 describe platform/trademark and user-generated-content terms. The terms page does not provide a clear open-data grant for copying delivery ratings/review counts into an external database.",
+    "terms_reviewed_at_sgt": "2026-10-19T04:30:11+08:00",
+    "recommendation": "Keep these candidate metrics out of the workbook unless reuse permission is established or the workbook owner explicitly accepts platform-attributed, time-stamped delivery-only scores. Never represent them as venue-wide ratings. Do not copy review text or reviewer identifiers."
+  },
+  "summary": {
+    "sampled_blank_records": 20,
+    "exact_outlet_numeric_candidates_observed": 3,
+    "rows_recommended_for_integration_now": 0,
+    "reason": "No open license/clear external reuse grant was found, source snapshots may be stale, and the only observed rating metric is platform-specific delivery feedback rather than a general outlet rating."
+  }
+}

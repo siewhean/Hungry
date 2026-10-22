@@ -1,0 +1,139 @@
+{
+  "snapshot": "refresh131_directory_fields_20261019",
+  "baseline_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_workbook_sha256": "80bbef4c8edee234e7ddad4a9b3390a67e9f7572621a8711fbe3c97fb7066212",
+  "scope": "Read-only audit of exact public-access Singapore McDonald's records with blank official contact or outlet-hours fields. No workbook edits, paid sources, or Mapbox calls.",
+  "sources_checked": [
+    {
+      "url": "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+      "source_type": "first-party McDonald's Singapore customer care store directory",
+      "retrieved": "2026-10-19",
+      "source_updated": "2026-10-06 01:32",
+      "evidence": "The article provides branch names, street addresses, unit numbers, postal codes, and telephone numbers. Proposed contact fills below match the SFA record address/unit and postal code; same-postal/name-only similarity was not accepted."
+    },
+    {
+      "url": "https://www.mcdonalds.com.sg/our-green-commitment",
+      "source_type": "first-party McDonald's Singapore branch directory with operating hours",
+      "retrieved": "2026-10-19",
+      "evidence": "The page lists outlet-specific addresses and operating hours. Two proposed hours fills match the complete address/unit and postal code in the SFA rows. Hours shown are transcribed as published; no mall-level hours were used."
+    }
+  ],
+  "field_deltas": [
+    {
+      "sfa_licence": "CE04150E000",
+      "f_and_b_name": "McDonald's",
+      "postal_code": "159953",
+      "address_match": "SFA: 370 Alexandra Road #01-34, #01-32/33, Anchorpoint Shopping Centre, 159953; source: 370 Alexandra Road #01-32/33/34 Anchorpoint Shopping Centre, 159953",
+      "field": "Contact Details",
+      "old_value": null,
+      "proposed_value": "Contact: +65 6250 0218",
+      "source_url": "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+      "source_updated": "2026-10-06",
+      "observed_at": "2026-10-19",
+      "confidence": "high",
+      "reason": "Exact outlet address and postal match; phone is listed in the operator's current branch directory."
+    },
+    {
+      "sfa_licence": "NE22L43J000",
+      "f_and_b_name": "McDonald's",
+      "postal_code": "528523",
+      "address_match": "SFA: 1 Tampines Walk #01-14/#01-13, Our Tampines Hub, 528523; source: 1 Tampines Walk #01-13/14, Our Tampines Hub, 528523",
+      "field": "Contact Details",
+      "old_value": null,
+      "proposed_value": "Contact: +65 6297 5688",
+      "source_url": "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+      "source_updated": "2026-10-06",
+      "observed_at": "2026-10-19",
+      "confidence": "high",
+      "reason": "Exact outlet address, unit set and postal match; phone is listed in the operator's current branch directory."
+    },
+    {
+      "sfa_licence": "SW20M01C000",
+      "f_and_b_name": "McDonald's",
+      "postal_code": "657991",
+      "address_match": "SFA: 4 Bukit Batok Street 41 #01-43/44/45/50/51/52/53/54/42, LeQuest, 657991; source: 4 Bukit Batok Street 41 #01-42/43/44/45/50/51/52/53/54, 657991",
+      "field": "Contact Details",
+      "old_value": null,
+      "proposed_value": "Contact: +65 6719 3100",
+      "source_url": "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+      "source_updated": "2026-10-06",
+      "observed_at": "2026-10-19",
+      "confidence": "high",
+      "reason": "Exact outlet street, full unit set and postal match; phone is listed in the operator's current branch directory."
+    },
+    {
+      "sfa_licence": "CE10D21K000",
+      "f_and_b_name": "MCDONALDS SINGAPORE",
+      "postal_code": "259727",
+      "address_match": "SFA: 383 Bukit Timah Road #01-9C and #01-K1, Alocassia Apartments, 259727; source: 383 Bukit Timah Road #01-09C and #01-K1, Alocassia Apartments, 259727",
+      "field": "Contact Details",
+      "old_value": null,
+      "proposed_value": "Contact: +65 6887 4961",
+      "source_url": "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+      "source_updated": "2026-10-06",
+      "observed_at": "2026-10-19",
+      "confidence": "high",
+      "reason": "Exact outlet street, unit and postal match; source formats unit 9C as 09C. Phone is listed in the operator's current branch directory."
+    },
+    {
+      "sfa_licence": "NE16205N000",
+      "f_and_b_name": "MCDONALD'S",
+      "postal_code": "828654",
+      "address_match": "SFA: 9 Sentul Crescent #03-05, 828654; source: 9 Sentul Crescent #03-05 Punggol SAFRA, 828654",
+      "field": "Opening Hours / Closed Days",
+      "old_value": null,
+      "proposed_value": "Hours: Daily 24 hours",
+      "source_url": "https://www.mcdonalds.com.sg/our-green-commitment",
+      "observed_at": "2026-10-19",
+      "confidence": "high",
+      "reason": "First-party branch-hours page gives exact outlet address, unit and postal code, and states Daily: 24 Hours."
+    },
+    {
+      "sfa_licence": "CE12880B000",
+      "f_and_b_name": "MCDONALD'S",
+      "postal_code": "319387",
+      "address_match": "SFA: 293 Lorong 6 Toa Payoh #01-02, SAFRA Toa Payoh Club, 319387; source: 293 Lorong 6 Toa Payoh #01-02, SAFRA Toa Payoh Club, 319387",
+      "field": "Opening Hours / Closed Days",
+      "old_value": null,
+      "proposed_value": "Hours: Daily 07:00-00:00",
+      "source_url": "https://www.mcdonalds.com.sg/our-green-commitment",
+      "observed_at": "2026-10-19",
+      "confidence": "high",
+      "reason": "First-party branch-hours page gives exact outlet address, unit and postal code, and states Daily: 7am to 12am."
+    }
+  ],
+  "non_deltas": [
+    {
+      "sfa_licence": "S89203K000",
+      "f_and_b_name": "MCDONALD'S",
+      "postal_code": "521512",
+      "address_match": "512A Tampines Central 1 #01-K1, 521512",
+      "finding": "The operator's store directory explicitly shows this outlet but its telephone field is '-'. No contact value proposed. The source does not provide branch hours for this location."
+    },
+    {
+      "sfa_licence": "C84333E000",
+      "f_and_b_name": "MCDONALD'S",
+      "postal_code": "618640",
+      "address_match": "SFA gives Yuan Ching Road, 618640; operator directory gives 1A Yuan Ching Road / SuperBowl Complex, 618640",
+      "finding": "Same postal area and street but SFA record omits building number and unit; excluded from exact-address joins. No contact or hours proposed."
+    }
+  ],
+  "summary": {
+    "exact_records_reviewed": 8,
+    "candidate_field_fills": 6,
+    "verified_field_fills": 6,
+    "contact_fills": 4,
+    "outlet_hours_fills": 2,
+    "permanently_closed_confirmations": 0,
+    "ambiguous_or_unpublished_fields_left_blank": 2,
+    "workbook_edited": false,
+    "paid_services_used": false,
+    "mapbox_requests": 0
+  },
+  "limitations": [
+    "Audit covered only eight exact McDonald's Singapore records, not the whole directory.",
+    "No first-party outlet-specific evidence was found for the remaining blank fields in this slice.",
+    "Toast Box location page was in maintenance mode when directly fetched; its older indexed location listing was not used to propose current hours or contacts.",
+    "The supplied sources are operator-controlled and current at retrieval, but hours can change after the observation date."
+  ]
+}

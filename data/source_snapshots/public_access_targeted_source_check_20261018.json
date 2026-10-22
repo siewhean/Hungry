@@ -1,0 +1,319 @@
+{
+  "snapshot_type": "read_only_targeted_official_source_check_public_access",
+  "observed_date": "2026-10-18",
+  "candidate_source": "data/source_snapshots/public_access_integrity_sweep_exact_sfa_20261018.json",
+  "candidate_source_sha256": "b2911bb97020974a0f801921c2f6c66b6def4c18aa9f5170eb67fe28503dc583",
+  "workbook_sha256": "8463f68eef5d04ec42339496ff07b22fe6c251ac23ccd42d30e90a6cbfb205d8",
+  "scope": "17 high-priority exact-SFA-ID candidates surfaced by school/institution/canteen/catering/base/delivery-base cues; no workbook edits; evidence checked against official institution/operator pages only.",
+  "classification_counts": {
+    "confirmed_nonpublic_catering_only": 1,
+    "confirmed_public_accessible_site": 3,
+    "ambiguous_access_unverified": 13
+  },
+  "confirmed_nonpublic": [
+    {
+      "sfa_licence": "E82024E000",
+      "fnb_name": "Phin's Catering Services / Dolphin Food Services Pte Ltd",
+      "business_type": "Restaurant with Catering",
+      "full_address": "Address: 81 GENTING LANE #07-01,EVERICH INDUSTRIAL BUILDING,Singapore 349566",
+      "status": "confirmed_nonpublic_catering_only",
+      "decision": "Recommend exclusion from public-access venue list: operator describes sole purpose as catering and provides delivered/event catering; no public-facing outlet service is represented.",
+      "evidence": [
+        {
+          "url": "https://www.phinscatering.com.sg/pages/about",
+          "source_type": "operator first-party About page",
+          "finding": "States Phin’s Catering Services was established with the sole purpose of providing professional catering services; meals delivered to client premises."
+        },
+        {
+          "url": "https://www.phinscatering.com.sg/",
+          "source_type": "operator first-party website",
+          "finding": "Offers corporate/event catering packages, delivery and event services; site presents order enquiries for catering rather than walk-in dining."
+        }
+      ]
+    }
+  ],
+  "confirmed_public": [
+    {
+      "sfa_licence": "SW20B70E000",
+      "fnb_name": "Helen's Korean and Japanese",
+      "business_type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+      "full_address": "Address: 35 STUDENTS WALK CANTEEN 2,Singapore 639548 MR4",
+      "status": "confirmed_public_accessible_site",
+      "decision": "Do not exclude; NTU policy explicitly describes the campus as open and accessible to the public; official NTU dining directory lists food outlets at Hall 2 / 35 Students Walk.",
+      "evidence": [
+        {
+          "url": "https://www.ntu.edu.sg/life-at-ntu/health-and-safety/campus-security",
+          "source_type": "institution access policy",
+          "finding": "NTU is an open and porous campus accessible to the public; roads are openly accessible and public buses enter campus."
+        },
+        {
+          "url": "https://www.ntu.edu.sg/life-at-ntu/leisure-and-dining/general-directory",
+          "source_type": "institution dining directory",
+          "finding": "Official directory lists F&B at Hall 2, 35 Students Walk, Singapore 639548."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "SW20A92P000",
+      "fnb_name": "HELEN'S MINI WOK",
+      "business_type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+      "full_address": "Address: 35 STUDENTS WALK Singapore 639548 NTU CANTEEN 2 (MR3)",
+      "status": "confirmed_public_accessible_site",
+      "decision": "Do not exclude; NTU policy explicitly describes the campus as open and accessible to the public; official NTU dining directory lists food outlets at Hall 2 / 35 Students Walk.",
+      "evidence": [
+        {
+          "url": "https://www.ntu.edu.sg/life-at-ntu/health-and-safety/campus-security",
+          "source_type": "institution access policy",
+          "finding": "NTU is an open and porous campus accessible to the public; roads are openly accessible and public buses enter campus."
+        },
+        {
+          "url": "https://www.ntu.edu.sg/life-at-ntu/leisure-and-dining/general-directory",
+          "source_type": "institution dining directory",
+          "finding": "Official directory lists F&B at Hall 2, 35 Students Walk, Singapore 639548."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "SW26422K000",
+      "fnb_name": "",
+      "business_type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+      "full_address": "Address: 35 STUDENTS WALK Singapore 639548 NTU CANTEEN 2 (MR6)",
+      "status": "confirmed_public_accessible_site",
+      "decision": "Do not exclude; NTU policy explicitly describes the campus as open and accessible to the public; official NTU dining directory lists food outlets at Hall 2 / 35 Students Walk.",
+      "evidence": [
+        {
+          "url": "https://www.ntu.edu.sg/life-at-ntu/health-and-safety/campus-security",
+          "source_type": "institution access policy",
+          "finding": "NTU is an open and porous campus accessible to the public; roads are openly accessible and public buses enter campus."
+        },
+        {
+          "url": "https://www.ntu.edu.sg/life-at-ntu/leisure-and-dining/general-directory",
+          "source_type": "institution dining directory",
+          "finding": "Official directory lists F&B at Hall 2, 35 Students Walk, Singapore 639548."
+        }
+      ]
+    }
+  ],
+  "ambiguous": [
+    {
+      "sfa_licence": "C81041N007",
+      "fnb_name": "Ba Wei Ban Mian",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "full_address": "Address: 21 LOWER KENT RIDGE ROAD Faculty of Arts and Social Sciences,Singapore 119077 The Deck Canteen",
+      "status": "ambiguous_access_unverified",
+      "decision": "No deletion recommendation; available official evidence does not establish either unrestricted public access or a public-access bar.",
+      "evidence": [
+        {
+          "url": "https://inetapps.nus.edu.sg/vpass/terms-conditions",
+          "source_type": "institution visitor-pass terms",
+          "finding": "Visitor Pass gives an individual access to designated NUS buses and canteens/food courts identified on the pass; sponsor/verification requirements mean campus entry is managed, but the source does not say the named stall is barred to ordinary public."
+        },
+        {
+          "url": "https://uci.nus.edu.sg/campus-tour/",
+          "source_type": "institution campus visitor page",
+          "finding": "Describes visitor/tour access; temporary food-court restrictions applied to particular locations and dates, not evidence of a current general ban for these exact outlets."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "C81041N010",
+      "fnb_name": "Jito's Dhaba",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "full_address": "Address: 21 LOWER KENT RIDGE ROAD The Deck Canteen, Faculty of Arts and Social Sciences,Singapore 119077",
+      "status": "ambiguous_access_unverified",
+      "decision": "No deletion recommendation; available official evidence does not establish either unrestricted public access or a public-access bar.",
+      "evidence": [
+        {
+          "url": "https://inetapps.nus.edu.sg/vpass/terms-conditions",
+          "source_type": "institution visitor-pass terms",
+          "finding": "Visitor Pass gives an individual access to designated NUS buses and canteens/food courts identified on the pass; sponsor/verification requirements mean campus entry is managed, but the source does not say the named stall is barred to ordinary public."
+        },
+        {
+          "url": "https://uci.nus.edu.sg/campus-tour/",
+          "source_type": "institution campus visitor page",
+          "finding": "Describes visitor/tour access; temporary food-court restrictions applied to particular locations and dates, not evidence of a current general ban for these exact outlets."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "SW25199P003",
+      "fnb_name": "Indian Veg",
+      "business_type": "Foodcourt",
+      "full_address": "Address: 31 LOWER KENT RIDGE ROAD Yusof Ishak House Canteen,Singapore 119078",
+      "status": "ambiguous_access_unverified",
+      "decision": "No deletion recommendation; available official evidence does not establish either unrestricted public access or a public-access bar.",
+      "evidence": [
+        {
+          "url": "https://inetapps.nus.edu.sg/vpass/terms-conditions",
+          "source_type": "institution visitor-pass terms",
+          "finding": "Visitor Pass gives an individual access to designated NUS buses and canteens/food courts identified on the pass; sponsor/verification requirements mean campus entry is managed, but the source does not say the named stall is barred to ordinary public."
+        },
+        {
+          "url": "https://uci.nus.edu.sg/campus-tour/",
+          "source_type": "institution campus visitor page",
+          "finding": "Describes visitor/tour access; temporary food-court restrictions applied to particular locations and dates, not evidence of a current general ban for these exact outlets."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "C01076E003",
+      "fnb_name": "Dough Magic",
+      "business_type": "Foodcourt",
+      "full_address": "Address: 27 PRINCE GEORGE'S PARK Singapore 118425 (PGPR CANTEEN)",
+      "status": "ambiguous_access_unverified",
+      "decision": "No deletion recommendation; available official evidence does not establish either unrestricted public access or a public-access bar.",
+      "evidence": [
+        {
+          "url": "https://inetapps.nus.edu.sg/vpass/terms-conditions",
+          "source_type": "institution visitor-pass terms",
+          "finding": "Visitor Pass gives an individual access to designated NUS buses and canteens/food courts identified on the pass; sponsor/verification requirements mean campus entry is managed, but the source does not say the named stall is barred to ordinary public."
+        },
+        {
+          "url": "https://uci.nus.edu.sg/campus-tour/",
+          "source_type": "institution campus visitor page",
+          "finding": "Describes visitor/tour access; temporary food-court restrictions applied to particular locations and dates, not evidence of a current general ban for these exact outlets."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "SW19D47L000",
+      "fnb_name": "Mixue",
+      "business_type": "Takeaway",
+      "full_address": "Address: 3 SCIENCE DRIVE 2 Singapore 117543 (KIOSK 6 Canteen 4 (FRONTIER))",
+      "status": "ambiguous_access_unverified",
+      "decision": "No deletion recommendation; available official evidence does not establish either unrestricted public access or a public-access bar.",
+      "evidence": [
+        {
+          "url": "https://inetapps.nus.edu.sg/vpass/terms-conditions",
+          "source_type": "institution visitor-pass terms",
+          "finding": "Visitor Pass gives an individual access to designated NUS buses and canteens/food courts identified on the pass; sponsor/verification requirements mean campus entry is managed, but the source does not say the named stall is barred to ordinary public."
+        },
+        {
+          "url": "https://uci.nus.edu.sg/campus-tour/",
+          "source_type": "institution campus visitor page",
+          "finding": "Describes visitor/tour access; temporary food-court restrictions applied to particular locations and dates, not evidence of a current general ban for these exact outlets."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "CE16A43L005",
+      "fnb_name": "3Bhai",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "full_address": "Address: 690 WEST CAMP ROAD #02-01,JTC AVIATION TWO @ SELETAR AEROSPACE PARK,Singapore 797523",
+      "status": "ambiguous_access_unverified",
+      "decision": "No deletion recommendation; available official evidence does not establish either unrestricted public access or a public-access bar.",
+      "evidence": [
+        {
+          "url": "https://www.jtc.gov.sg/find-land/industrial-land/land-for-aerospace-and-aviation",
+          "source_type": "estate operator information",
+          "finding": "Seletar Aerospace Park is a commercial aviation/aerospace estate. No official source reviewed establishes a public-admission prohibition for JTC Aviation Two or either venue."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "CE16D15B000",
+      "fnb_name": "Georges Hideout @ Seletar",
+      "business_type": "Restaurant",
+      "full_address": "Address: 690 WEST CAMP ROAD #02-02,JTC AVIATION TWO @ SELETAR AEROSPACE PARK,Singapore 797523",
+      "status": "ambiguous_access_unverified",
+      "decision": "No deletion recommendation; available official evidence does not establish either unrestricted public access or a public-access bar.",
+      "evidence": [
+        {
+          "url": "https://www.jtc.gov.sg/find-land/industrial-land/land-for-aerospace-and-aviation",
+          "source_type": "estate operator information",
+          "finding": "Seletar Aerospace Park is a commercial aviation/aerospace estate. No official source reviewed establishes a public-admission prohibition for JTC Aviation Two or either venue."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "S96293V001",
+      "fnb_name": "Drinks Stall",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "full_address": "Address: 10 BUANGKOK VIEW INSTITUTE OF MENTAL HEALTH,Singapore 539747",
+      "status": "ambiguous_access_unverified",
+      "decision": "No deletion recommendation; available official evidence does not establish either unrestricted public access or a public-access bar.",
+      "evidence": [
+        {
+          "url": "https://www.imh.com.sg/",
+          "source_type": "institution homepage",
+          "finding": "Identifies the site as Institute of Mental Health; reviewed sources did not establish whether the named canteen/stalls are within a controlled visitor zone or available to general visitors."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "S96293V004",
+      "fnb_name": "First Cuisine Food Industries Pte Ltd",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "full_address": "Address: 10 BUANGKOK VIEW INSTITUTE OF MENTAL HEALTH,Singapore 539747",
+      "status": "ambiguous_access_unverified",
+      "decision": "No deletion recommendation; available official evidence does not establish either unrestricted public access or a public-access bar.",
+      "evidence": [
+        {
+          "url": "https://www.imh.com.sg/",
+          "source_type": "institution homepage",
+          "finding": "Identifies the site as Institute of Mental Health; reviewed sources did not establish whether the named canteen/stalls are within a controlled visitor zone or available to general visitors."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "S96293V005",
+      "fnb_name": "Malay delicacies and Nasi Padang Stall",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "full_address": "Address: 10 BUANGKOK VIEW INSTITUTE OF MENTAL HEALTH,Singapore 539747",
+      "status": "ambiguous_access_unverified",
+      "decision": "No deletion recommendation; available official evidence does not establish either unrestricted public access or a public-access bar.",
+      "evidence": [
+        {
+          "url": "https://www.imh.com.sg/",
+          "source_type": "institution homepage",
+          "finding": "Identifies the site as Institute of Mental Health; reviewed sources did not establish whether the named canteen/stalls are within a controlled visitor zone or available to general visitors."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "S96293V002",
+      "fnb_name": "Vegetarian Stall",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "full_address": "Address: 10 BUANGKOK VIEW INSTITUTE OF MENTAL HEALTH,Singapore 539747",
+      "status": "ambiguous_access_unverified",
+      "decision": "No deletion recommendation; available official evidence does not establish either unrestricted public access or a public-access bar.",
+      "evidence": [
+        {
+          "url": "https://www.imh.com.sg/",
+          "source_type": "institution homepage",
+          "finding": "Identifies the site as Institute of Mental Health; reviewed sources did not establish whether the named canteen/stalls are within a controlled visitor zone or available to general visitors."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "SW23B57V000",
+      "fnb_name": "Venture Drive Coffee",
+      "business_type": "Takeaway",
+      "full_address": "Address: 1 NANYANG WALK NATIONAL INSTITUTE OF EDUCATION,Singapore 637616 Blk 4, Level 3",
+      "status": "ambiguous_access_unverified",
+      "decision": "No deletion recommendation; available official evidence does not establish either unrestricted public access or a public-access bar.",
+      "evidence": [
+        {
+          "url": "https://www.ntu.edu.sg/nie/about-us/visit-nie",
+          "source_type": "institution visitor information",
+          "finding": "NIE is an education institution, but the reviewed page does not establish that the exact Level 3 outlet is excluded from public access."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "SW24770N000",
+      "fnb_name": "ROBO-T",
+      "business_type": "Takeaway",
+      "full_address": "Address: 36 CLEANTECH LOOP #01-21A,SURBANA JURONG CAMPUS,Singapore 636740",
+      "status": "ambiguous_access_unverified",
+      "decision": "No deletion recommendation; available official evidence does not establish either unrestricted public access or a public-access bar.",
+      "evidence": [
+        {
+          "url": "https://www.surbanajurong.com/",
+          "source_type": "operator website",
+          "finding": "Surbana Jurong Campus is an organisation campus; no reviewed official visitor or outlet policy establishes a public-admission bar for this exact outlet."
+        }
+      ]
+    }
+  ]
+}

@@ -1,4 +1,12 @@
-import React, { useEffect, useMemo, useState } from "react";
+import {
+  promptContentSafetyActions,
+  useCommunitySafetyRevision,
+  isContentHiddenForSession,
+} from "@/lib/security/communitySafety";
+import { mergeChatMessages } from "@/features/home/socialState";
+import { useChatDraftStore } from "@/store/useChatDraftStore";
+import { useProfileStore } from "@/store/useProfileStore";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -17,15 +25,10 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AccessibleImage, AppText, EmptyState } from "@/components/ui";
 import { getHungryService } from "@/lib/services/serviceProvider";
-import type { ChatMessage } from "@/lib/services/types";
+import type { ChatMessage, ChatParticipant } from "@/lib/services/types";
 import { useHungryTheme } from "@/theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ChatDetail">;
-
-function appendUniqueMessage(messages: ChatMessage[], message: ChatMessage): ChatMessage[] {
-  if (messages.some((candidate) => candidate.id === message.id)) return messages;
-  return [...messages, message];
-}
 
 function formatChatTime(value: string): string {
   const timestamp = new Date(value).getTime();
@@ -48,7 +51,9 @@ export function ChatDetailScreen({ navigation, route }: Props) {
   } = safeParams as Partial<Props["route"]["params"]>;
   const { componentRadii, palette, spacing, semanticSpacing, radii } = useHungryTheme();
   const insets = useSafeAreaInsets();
-  const [message, setMessage] = useState("");
+
+  const safetyRevision = useCommunitySafetyRevision();
+  const [otherParticipant, setOtherParticipant] = useState<ChatParticipant | undefined>();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
@@ -64,6 +69,28 @@ export function ChatDetailScreen({ navigation, route }: Props) {
   const avatar = typeof rawAvatar === "string" && rawAvatar.trim() ? rawAvatar.trim() : "";
   const isOnline = typeof initialIsOnline === "boolean" ? initialIsOnline : false;
   const hasValidChatTarget = Boolean(chatId);
+  useEffect(() => {
+    if (
+      otherParticipant?.userId &&
+      isContentHiddenForSession({ id: "", authorId: otherParticipant.userId })
+    )
+      navigation.goBack();
+  }, [otherParticipant, safetyRevision, navigation]);
+  const accountId = useProfileStore((state) => state.profile.id);
+  const draftKey = `${accountId}:${chatId}`;
+  const currentScope = useRef(draftKey);
+  const scopeGeneration = useRef(0);
+  if (currentScope.current !== draftKey) {
+    currentScope.current = draftKey;
+    scopeGeneration.current++;
+  }
+  const [messagesScope, setMessagesScope] = useState(draftKey);
+  const visibleMessages = messagesScope === draftKey ? messages : [];
+
+  const message = useChatDraftStore((state) => state.drafts[draftKey]?.text ?? "");
+  const setMessage = (text: string) => useChatDraftStore.getState().setDraft(draftKey, text);
+  const [refresh, setRefresh] = useState(0);
+  const [readError, setReadError] = useState(false);
 
   const styles = useMemo(
     () => createStyles({ componentRadii, palette, spacing, semanticSpacing, radii }),
@@ -78,15 +105,37 @@ export function ChatDetailScreen({ navigation, route }: Props) {
 
     let isActive = true;
     const service = getHungryService().chat;
+    const acknowledge = () =>
+      service.markConversationRead(chatId).catch(() => {
+        if (isActive) setReadError(true);
+      });
 
+    setMessagesScope(draftKey);
+    setMessages([]);
+    setReadError(false);
+    setIsSending(false);
     setIsLoading(true);
     setLoadError(null);
+    setOtherParticipant(undefined);
+    service
+      .listConversations()
+      .then((items) => {
+        if (isActive)
+          setOtherParticipant(
+            items
+              .find((item) => item.id === chatId)
+              ?.participants.find((item) => !item.isCurrentUser),
+          );
+      })
+      .catch(() => {
+        /* Message loading and retry remain available without optional header context. */
+      });
     service
       .listMessages(chatId)
       .then((loadedMessages) => {
         if (!isActive) return;
-        setMessages(loadedMessages);
-        void service.markConversationRead(chatId);
+        setMessages((current) => mergeChatMessages(loadedMessages, current));
+        void acknowledge();
       })
       .catch((error: unknown) => {
         if (!isActive) return;
@@ -98,17 +147,20 @@ export function ChatDetailScreen({ navigation, route }: Props) {
 
     const subscription = service.subscribeToConversation(chatId, {
       onMessage: (incomingMessage) => {
-        setMessages((current) => appendUniqueMessage(current, incomingMessage));
+        if (!isActive) return;
+        setMessages((current) => mergeChatMessages(current, [incomingMessage]));
         if (!incomingMessage.sentByCurrentUser) {
-          void service.markConversationRead(chatId);
+          void acknowledge();
         }
       },
       onReadReceipt: (messageId, readAt) => {
+        if (!isActive) return;
         setMessages((current) =>
           current.map((item) => (item.id === messageId ? { ...item, readAt } : item)),
         );
       },
       onError: () => {
+        if (!isActive) return;
         setLoadError(
           "Realtime updates are unavailable. Pull back and reopen this chat to refresh.",
         );
@@ -119,24 +171,32 @@ export function ChatDetailScreen({ navigation, route }: Props) {
       isActive = false;
       subscription.unsubscribe();
     };
-  }, [chatId, hasValidChatTarget]);
+  }, [chatId, hasValidChatTarget, accountId, refresh]);
 
   const sendMessage = async () => {
     const text = message.trim();
     if (!text || isSending || !hasValidChatTarget) return;
 
+    const generation = scopeGeneration.current;
+    const isCurrent = () =>
+      generation === scopeGeneration.current &&
+      currentScope.current === draftKey &&
+      useProfileStore.getState().profile.id === accountId;
     setIsSending(true);
     try {
       const sentMessage = await getHungryService().chat.sendMessage({
         conversationId: chatId,
         body: text,
+        clientNonce: useChatDraftStore.getState().getNonce(draftKey),
       });
-      setMessages((current) => appendUniqueMessage(current, sentMessage));
-      setMessage("");
+      if (!isCurrent()) return;
+      setMessages((current) => mergeChatMessages(current, [sentMessage]));
+      useChatDraftStore.getState().clearDraft(draftKey, text);
     } catch {
+      if (!isCurrent()) return;
       Alert.alert("Message not sent", "Please check your connection and try again.");
     } finally {
-      setIsSending(false);
+      if (isCurrent()) setIsSending(false);
     }
   };
 
@@ -203,6 +263,25 @@ export function ChatDetailScreen({ navigation, route }: Props) {
             ) : null}
           </View>
         </View>
+        {otherParticipant?.userId ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Report or block ${otherParticipant.displayName}`}
+            onPress={() =>
+              promptContentSafetyActions({
+                targetType: "profile",
+                targetId: otherParticipant.userId!,
+                authorId: otherParticipant.userId,
+                authorName: otherParticipant.displayName,
+                label: "conversation author",
+                onBlocked: () => navigation.goBack(),
+              })
+            }
+            style={{ minHeight: 44, justifyContent: "center" }}
+          >
+            <AppText>Safety</AppText>
+          </Pressable>
+        ) : null}
       </View>
 
       <KeyboardAvoidingView
@@ -234,16 +313,34 @@ export function ChatDetailScreen({ navigation, route }: Props) {
                 body="There was a problem loading this chat."
                 errorMessage={loadError}
                 sendErrorContext={`Chat ${name}`}
+                ctaLabel="Retry"
+                onPress={() => setRefresh((value) => value + 1)}
               />
             ) : null}
-            {!isLoading && !loadError && messages.length === 0 ? (
+            {!isLoading && !loadError && visibleMessages.length === 0 ? (
               <View style={styles.unavailableContainer}>
                 <AppText variant="body" tone="muted">
                   Start with a text message.
                 </AppText>
               </View>
             ) : null}
-            {messages.map((msg) => (
+            {readError ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Retry read acknowledgement"
+                onPress={() => {
+                  void getHungryService()
+                    .chat.markConversationRead(chatId)
+                    .then(() => setReadError(false))
+                    .catch(() => setReadError(true));
+                }}
+              >
+                <AppText variant="bodySmall">
+                  Messages are visible, but could not be marked read. Retry
+                </AppText>
+              </Pressable>
+            ) : null}
+            {visibleMessages.map((msg) => (
               <Animated.View
                 key={msg.id}
                 entering={FadeIn.delay(80)}
@@ -303,7 +400,8 @@ export function ChatDetailScreen({ navigation, route }: Props) {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Send message"
-              accessibilityState={{ disabled: !message.trim() || isSending }}
+              accessibilityState={{ disabled: !message.trim() || isSending, busy: isSending }}
+              disabled={!message.trim() || isSending}
               onPress={sendMessage}
               testID="chat-send-message"
               style={[
@@ -345,6 +443,9 @@ const createStyles = ({
     },
     backBtn: {
       marginRight: spacing[3],
+      minWidth: 44,
+      minHeight: 44,
+      justifyContent: "center",
     },
     userInfo: {
       flex: 1,

@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { openTrustedCatalogSourceUrl } from "@/lib/security/safeLinking";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ArrowLeft, ExternalLink, MapPin } from "lucide-react-native";
@@ -30,7 +31,9 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
   const [isLoading, setIsLoading] = useState(true);
   const isDish = route.params.kind === "dish";
 
+  const requestVersion = useRef(0);
   const load = useCallback(async () => {
+    const version = ++requestVersion.current;
     if (!service || !isAuthenticated || getServiceProvider().mode !== "supabase") {
       setError("Sign in with the live Hungry data source to view this catalog record.");
       setIsLoading(false);
@@ -42,18 +45,23 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
       const next = isDish
         ? await service.getDish(route.params.id, route.params.releaseId)
         : await service.getVenue(route.params.id, route.params.releaseId);
-      setDetail(next);
+      if (version === requestVersion.current) setDetail(next);
     } catch (loadError) {
+      if (version !== requestVersion.current) return;
       setError(
         loadError instanceof Error ? loadError.message : "Could not load this catalog record.",
       );
     } finally {
-      setIsLoading(false);
+      if (version === requestVersion.current) setIsLoading(false);
     }
   }, [isAuthenticated, isDish, route.params.id, route.params.releaseId, service]);
 
   useEffect(() => {
+    setDetail(null);
     void load();
+    return () => {
+      requestVersion.current += 1;
+    };
   }, [load]);
 
   if (isLoading) {
@@ -74,8 +82,11 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
         <EmptyState
           title="Catalog record unavailable"
           body={error ?? "This record was not found in the active catalog release."}
-          ctaLabel="Retry"
-          onPress={() => void load()}
+          ctaLabel={isAuthenticated ? "Retry" : "Sign in"}
+          onPress={() => {
+            if (isAuthenticated) void load();
+            else navigation.navigate("AuthStack", { screen: "Login" });
+          }}
         />
       </Screen>
     );
@@ -101,6 +112,7 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Go back"
+            style={{ minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" }}
             onPress={() => navigation.goBack()}
           >
             <ArrowLeft color={palette.text} size={24} />
@@ -156,7 +168,7 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
             <>
               <AppText tone="secondary">{(detail as CatalogRawDishDetail).venueName}</AppText>
               {(detail as CatalogRawDishDetail).price !== undefined ? (
-                <AppText style={{ color: palette.orange }} variant="h2">
+                <AppText style={{ color: palette.orange }} variant="price">
                   S${(detail as CatalogRawDishDetail).price?.toFixed(2)}
                 </AppText>
               ) : null}
@@ -181,12 +193,17 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
             </AppText>
           </View>
           {sourceUrl ? (
-            <View style={{ flexDirection: "row", gap: spacing[2] }}>
+            <Pressable
+              accessibilityRole="link"
+              accessibilityLabel="Open catalog source"
+              onPress={() => void openTrustedCatalogSourceUrl(sourceUrl)}
+              style={{ flexDirection: "row", gap: spacing[2], minHeight: 44, alignItems: "center" }}
+            >
               <ExternalLink color={palette.textMuted} size={18} />
               <AppText tone="muted" variant="bodySmall" numberOfLines={1}>
                 {sourceUrl}
               </AppText>
-            </View>
+            </Pressable>
           ) : null}
         </View>
       </ScrollView>

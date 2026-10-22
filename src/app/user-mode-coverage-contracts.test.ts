@@ -27,7 +27,7 @@ test("user auth and onboarding flows cover account, taste, dietary, and location
     [
       /Login: undefined/,
       /SignUp: undefined/,
-      /EmailVerification: \{ email: string; completedOnboarding\?: boolean \} \| undefined/,
+      /EmailVerification:\s*(?:\|\s*)?\{\s*email:\s*string;\s*completedOnboarding\?:\s*boolean;\s*resumeOnboarding\?:\s*boolean\s*\}\s*\|\s*undefined/,
       /ForgotPassword: undefined/,
       /ResetPassword: \{ email\?: string; code\?: string \} \| undefined/,
       /TasteQuiz: \{ mode\?: "onboarding" \| "profile"; initialPhase\?: "taste" \| "dietary" \} \| undefined/,
@@ -63,7 +63,7 @@ test("user auth and onboarding flows cover account, taste, dietary, and location
       /getHungryService\(\)\.auth\.signIn\(/,
       /service\.auth\.signInWithGoogle\(/,
       /service\.auth\.signInWithApple\(/,
-      /completeAuth\(\{ completedOnboarding: true, skippedTasteQuiz: true \}\)/,
+      /applySignedInProfile/,
     ],
     "LoginScreen",
   );
@@ -80,35 +80,38 @@ test("user auth and onboarding flows cover account, taste, dietary, and location
   assertSourceIncludes(
     settings,
     [
-      /const handleDeleteAccount = \(\) =>/,
-      /purgePersistedAccountData\(\)/,
-      /clearSession\(\)/,
-      /clearProfile\(\)/,
-      /rootNavigation\.navigate\("AuthStack", \{ screen: "SignUp" \}\)/,
+      /requestAccountDeletion/,
+      /cancelAccountDeletion/,
+      /if \(!confirmed\)/,
+      /Keep my account/,
+      /signOut\(\)/,
     ],
-    "SettingsScreen delete account",
+    "Settings deletion requires confirmed cancellation",
+  );
+  assertSourceExcludes(
+    settings,
+    [/purgePersistedAccountData/, /clearProfile\(\)/],
+    "screen cannot partially purge account stores",
   );
   assertSourceIncludes(
     tasteQuiz,
     [
-      /const setTasteVector = useProfileStore/,
-      /const setDietaryPreferences = useProfileStore/,
-      /setTasteVector\(values\)/,
-      /setDietaryPreferences\(dietaryPreferences\)/,
-      /setSkippedTasteQuiz\(true\)/,
-      /navigation\.navigate\("LocationPermission"\)/,
+      /useOnboardingDraftStore/,
+      /committed: true/,
+      /commitQuizProfile/,
+      /applyProfile\(confirmed\)/,
     ],
-    "TasteQuizScreen",
+    "resumable quiz commits confirmed preferences",
   );
   assertSourceIncludes(
     locationPermission,
-    [/grantLocation\(\)/, /completeOnboarding\(hasSkippedTasteQuiz\)/, /ManualLocationPicker/],
-    "LocationPermissionScreen",
+    [/grantLocation\(\)/, /completeOnboarding/, /ManualLocationPicker/],
+    "location recovery",
   );
   assertSourceIncludes(
     manualLocation,
-    [/setManualSelection/, /completeOnboarding\(hasSkippedTasteQuiz\)/],
-    "ManualLocationPickerScreen",
+    [/setManualSelection/, /completeOnboarding/],
+    "manual location",
   );
 });
 
@@ -130,8 +133,8 @@ test("home feed post cards cover carousel media, captions, comments, reactions, 
       /preserveReadyOnError: true, showLoading: false/,
       /const mediaUrls =\s*item\.mediaType === "photo" && item\.mediaUrls\?\.length/,
       /horizontal[\s\S]*pagingEnabled[\s\S]*showsHorizontalScrollIndicator=\{false\}/,
-      /numberOfLines=\{2\}/,
-      /\{" more"\}/,
+      /numberOfLines=\{expandedCaptions\[item.id\] \? undefined : 2\}/,
+      /expandedCaptions\[item.id\] \? "Less" : "More"/,
       /activeCommentItem\.caption/,
       /const openCommentSheet = useCallback/,
       /const commentSheet = commentsSheetRef\.current/,
@@ -228,7 +231,7 @@ test("discover and search keep user mode map-free while browse grids open matchi
     [
       /title: dish\.name,[\s\S]*imageUrl: dish\.imageUrl,[\s\S]*dish,/,
       /title: topDish\.name,[\s\S]*imageUrl: topDish\.imageUrl,[\s\S]*dish: topDish/,
-      /images=\{slides\.map\(\(slide\) => slide\.imageUrl\)\}/,
+      /images=\{\[item\.imageUrl\]\}/,
       /\{activeSlide\.title\}/,
       /navigation\.navigate\("DishDetail", \{ dishId: activeItem\.dish\.id \}\)/,
       /navigation\.navigate\("DishDetail", \{ dishId: dish\.id \}\)/,
@@ -352,109 +355,69 @@ test("review tab covers loading state, review cards, and bite card icon/sheet bo
   );
 });
 
-test("post composer supports long captions, tags, carousel media, publish, draft, and media validation", () => {
-  const composer = readRepoFile("src/app/screens/post/PostComposerScreenV2.tsx");
-  const bottomBar = readRepoFile("src/features/post/components/ComposerBottomBar.tsx");
-  const mediaManager = readRepoFile("src/features/post/components/MediaManager.tsx");
-  const postTab = readRepoFile("src/features/post/components/PostTab.tsx");
-  const sharedMetadata = readRepoFile("src/features/post/components/SharedMetadata.tsx");
-  const statusOverlay = readRepoFile("src/features/post/components/StatusOverlay.tsx");
+test("post composer supports deliberate dish selection, durable drafts, media and confirmed publication", () => {
+  const alias = readRepoFile("src/app/screens/post/PostComposerScreenV2.tsx");
+  const composer = readRepoFile("src/app/screens/post/PostComposerScreen.tsx");
   const publishing = readRepoFile("src/features/post/publishing.ts");
   const store = readRepoFile("src/features/post/useComposerStore.ts");
-
+  assertSourceIncludes(
+    alias,
+    [/<PostComposerScreen/],
+    "prototype route delegates to supported composer",
+  );
   assertSourceIncludes(
     composer,
     [
-      /testID="post-composer-screen"/,
-      /title="Save Draft\?"/,
-      /setPublishingState\("draft"\)/,
-      /navigation\.dispatch\(\{[\s\S]*type: "POP_TO"[\s\S]*name: "MainTabs"/,
-    ],
-    "PostComposerScreenV2 shell",
-  );
-  assertSourceIncludes(
-    bottomBar,
-    [
-      /label="Save Draft"/,
-      /setPublishingState\("draft"\)/,
-      /label=\{getLabel\(\)\}/,
-      /const request = \{ publishMode, routeDishId, routeVenueId \}/,
-      /setLastPublishRequest\(request\)/,
-      /await publishComposerPost\(request\)/,
-      /setPublishingState\("posting"\)/,
-      /setPublishingState\("success"\)/,
-      /setPublishingState\("error"\)/,
-    ],
-    "ComposerBottomBar publish states",
-  );
-  assertSourceIncludes(
-    mediaManager,
-    [
-      /requestMediaLibraryPermissionsAsync/,
+      /discovery.searchDishes/,
+      /discovery.getDish/,
+      /Choose a dish before publishing/,
+      /useDraftExitGuard/,
+      /proceedToExit/,
       /launchImageLibraryAsync/,
-      /allowsMultipleSelection: true/,
-      /mediaTypes: ImagePicker\.MediaTypeOptions\.All/,
-      /testID="post-composer-add-media"/,
-      /accessibilityLabel="Edit with AI"[\s\S]*onPress=\{\(\) => setEditingMediaId\(item\.id\)\}/,
-      /accessibilityLabel="Open video edit tools"[\s\S]*onPress=\{\(\) => setEditingMediaId\(item\.id\)\}/,
+      /allowsMultipleSelection/,
+      /publishingRef/,
+      /await publishComposerPost/,
+      /Could not publish post/,
     ],
-    "MediaManager validation and carousel media entry",
+    "production post composer",
   );
+  const exitGuard = readRepoFile("src/features/post/useDraftExitGuard.ts");
   assertSourceIncludes(
-    postTab,
+    exitGuard,
     [
-      /const ctaButton = useComposerStore\(\(state\) => state\.ctaButton\)/,
-      /const setCTA = useComposerStore\(\(state\) => state\.setCTA\)/,
-      /text: "Order Now"[\s\S]*setCTA\("Order Now"\)/,
-      /text: "View Menu"[\s\S]*setCTA\("View Menu"\)/,
-      /text: "Book Table"[\s\S]*setCTA\("Book Table"\)/,
-      /text: "Remove CTA"[\s\S]*setCTA\(null\)/,
+      /usePreventRemove/,
+      /Save draft/,
+      /Keep editing/,
+      /input.discard\(\)/,
+      /input.dispatch\(pending\)/,
     ],
-    "PostTab CTA selector",
-  );
-  assertSourceIncludes(
-    sharedMetadata,
-    [/toggleTag\(tag, "food"\)/, /toggleTag\(tag, "taste"\)/, /tasteTags\.includes\(tag\)/],
-    "SharedMetadata tags",
-  );
-  assertSourceIncludes(
-    statusOverlay,
-    [
-      /import \{ publishComposerPost \} from "\.\.\/publishing"/,
-      /const retryPublish = async \(\) =>/,
-      /await publishComposerPost\(lastPublishRequest\)/,
-      /label="Try Again"[\s\S]*void retryPublish\(\)/,
-      /isReviewOnlySuccess \? "Review saved" : "Shared!"/,
-      /label=\{isReviewOnlySuccess \? "Done" : "View Post"\}/,
-    ],
-    "StatusOverlay retry",
+    "native route removal protects drafts",
   );
   assertSourceIncludes(
     publishing,
     [
-      /throw new Error\("Add a photo or video before publishing\."\)/,
-      /throw new Error\("Add a rating before publishing a review\."\)/,
-      /await service\.reviews\.submitReview\(/,
-      /const mediaUrls = media\.map\(\(item\) => item\.uri\)/,
-      /caption = state\.postCaption\.trim\(\) \|\| state\.reviewCaption\.trim\(\) \|\| dish\.name/,
-      /mediaUrls,/,
-      /tags: \[\.\.\.state\.foodTags, \.\.\.state\.tasteTags\]/,
-      /usePublishedPostStore\.getState\(\)\.upsertPost\(post\)/,
+      /Choose a dish before publishing/,
+      /Add a photo or video before publishing/,
+      /Add a rating before publishing/,
+      /service\.reviews\.submitReview/,
+      /mediaUrls/,
+      /state.foodTags/,
+      /state.tasteTags/,
+      /upsertPost\(post\)/,
+      /assertAccountGeneration/,
     ],
-    "publishComposerPost data contract",
+    "confirmed publication",
   );
   assertSourceIncludes(
     store,
     [
-      /postCaption: ""/,
-      /reviewCaption: ""/,
-      /media: \[\]/,
-      /foodTags: \[\]/,
-      /tasteTags: \[\]/,
-      /lastPublishRequest: null/,
-      /setLastPublishRequest:/,
+      /accountDraftPersistence\(/,
+      /selectedDishId/,
+      /lastPublishRequest/,
+      /postCaption/,
+      /reviewCaption/,
     ],
-    "composer store initial state",
+    "durable selected dish and retry identity",
   );
 });
 
@@ -494,51 +457,54 @@ test("profile surfaces keep own and other-user layouts linked while hiding taste
     userProfile,
     [
       /ProfileScreenShell title=\{authorName\}/,
-      /Avatar name=\{authorName\} uri=\{resolvedAuthorAvatarUrl\}/,
-      /label="Followers"/,
-      /label="Following"/,
-      /label="Reviews"/,
-      /label="Stalls"/,
-      /activeTab === "posts"/,
-      /activeTab === "reviews"/,
-      /normalizedAuthorId[\s\S]*post\.authorId === normalizedAuthorId[\s\S]*normalizePersonName\(post\.authorName\) === normalizedAuthorName/,
+      /Avatar name=\{authorName\}/,
+      /authorAvatarUrl/,
+      /getUserReviews\(authorId\)/,
+      /listUserPosts\(authorId\)/,
+      /getFollowState\(authorId\)/,
+      /post.authorId === authorId/,
+      /review.authorId === authorId/,
+      /counts.followers/,
+      /counts.following/,
+      /Requested/,
+      /tab === "reviews"/,
     ],
-    "UserProfileContent shared profile layout",
+    "canonical public profile",
   );
   assertSourceExcludes(
     userProfile,
-    [/Taste Fingerprint/, /Detailed Analysis/],
-    "other user profile",
+    [/Taste Fingerprint/, /Detailed Analysis/, /normalizePersonName/, /navigate\("VisitedStalls"/],
+    "public profile cannot impersonate names or open viewer history",
   );
   assertSourceIncludes(
     connections,
     [
-      /authorAvatarUrl: person\.avatarUrl/,
-      /authorLocation: person\.location/,
-      /<Avatar name=\{person\.name\} uri=\{person\.avatarUrl\} size=\{44\}/,
-      /listSharedStallPosts/,
-      /chat\.listConversations\(\)/,
-      /commentsByPostId/,
-      /repliesByCommentId/,
+      /listFollowers\(userId\)/,
+      /listFollowing\(userId\)/,
+      /person.userId/,
+      /person.displayName/,
+      /person.avatarUrl/,
+      /Retry loading connections/,
     ],
-    "ProfileConnectionsScreen avatar consistency",
+    "confirmed relationship identities",
+  );
+  assertSourceExcludes(
+    connections,
+    [/listSharedStallPosts/, /chat.listConversations/, /commentsByPostId/, /repliesByCommentId/],
+    "connections must not fabricate followers from unrelated authors",
   );
   assertSourceIncludes(
     settings,
-    [
-      /label="Profile visibility"/,
-      /onPress: \(\) => setProfileVisibility\("public"\)/,
-      /onPress: \(\) => setProfileVisibility\("private"\)/,
-    ],
-    "Settings profile visibility UI",
+    [/label="Profile visibility"/, /await setVisibility\(value\)/, /busy=\{busy === "privacy"\}/],
+    "confirmed privacy UI",
   );
   assertSourceIncludes(
     profileStore,
     [
       /setProfileVisibility: \(profileVisibility\) =>/,
-      /profileVisibility,/,
-      /getServiceProvider\(\)\.mode === "mock"/,
-      /profile\.updateProfile\(\{ profileVisibility \}\)/,
+      /profileVisibility/,
+      /visibilityQueue/,
+      /profile\.updateProfile\(\{\s*profileVisibility\s*\}\)/,
     ],
     "profile visibility store",
   );

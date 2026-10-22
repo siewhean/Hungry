@@ -1,3 +1,5 @@
+import { useMerchantOperationScope } from "@/features/merchant/useMerchantOperationScope";
+import { useRef as useMerchantRequestRef } from "react";
 import React, { useState, useEffect, useCallback } from "react";
 import { View, StyleSheet, Pressable } from "react-native";
 import { Plus, Calendar, Users, Target, BarChart2, X } from "lucide-react-native";
@@ -49,6 +51,8 @@ function getPromotionStatusTone(status: PromotionStatus): StatusChipTone {
 }
 
 export function PromotionListScreen() {
+  const captureOperation = useMerchantOperationScope();
+
   const { componentRadii, palette, spacing } = useHungryTheme();
   const navigation = useNavigation<NavigationProp>();
   const activeOutlet = useMerchantStore(getActiveOutlet);
@@ -58,7 +62,17 @@ export function PromotionListScreen() {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<PromotionStatus>("active");
 
+  const requestGeneration = useMerchantRequestRef(0);
+  const currentOutlet = useMerchantRequestRef(activeOutlet?.id);
+  currentOutlet.current = activeOutlet?.id;
   const loadPromotions = useCallback(async () => {
+    const isOperationCurrent = captureOperation();
+    if (!isOperationCurrent()) return;
+
+    const request = ++requestGeneration.current;
+    const outletId = activeOutlet?.id;
+    const isCurrent = () =>
+      request === requestGeneration.current && outletId === currentOutlet.current;
     if (!activeOutlet) {
       setPromotions([]);
       setIsLoading(false);
@@ -68,12 +82,20 @@ export function PromotionListScreen() {
     setIsLoading(true);
     try {
       const data = await getHungryService().merchant.getPromotions(activeOutlet.id);
+      if (!isOperationCurrent()) return;
+
+      if (!isCurrent()) return;
       setPromotions(data);
     } catch (e) {
+      if (!isOperationCurrent()) return;
+
+      if (!isCurrent()) return;
       setError(e instanceof Error ? e.message : "Failed to load promotions.");
       console.error(e);
     } finally {
-      setIsLoading(false);
+      if (isOperationCurrent()) {
+        if (isCurrent()) setIsLoading(false);
+      }
     }
   }, [activeOutlet]);
 
@@ -169,6 +191,8 @@ export function PromotionListScreen() {
               return (
                 <Pressable
                   key={promo.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Edit promotion ${promo.title}`}
                   onPress={() => navigation.navigate("PromotionBuilder", { promotionId: promo.id })}
                   style={[
                     styles.promoCard,

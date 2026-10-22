@@ -1,0 +1,956 @@
+
+
+<!DOCTYPE html>
+<!--[if lt IE 7]> <html class="ie6 ie" lang="en" dir="ltr"> <![endif]-->
+<!--[if IE 7]>    <html class="ie7 ie" lang="en" dir="ltr"> <![endif]-->
+<!--[if IE 8]>    <html class="ie8 ie" lang="en" dir="ltr"> <![endif]-->
+<!--[if IE 9]>    <html class="ie9 ie" lang="en" dir="ltr"> <![endif]-->
+<!--[if !IE]> -->
+<html class="js flexbox canvas canvastext webgl no-touch geolocation postmessage no-websqldatabase indexeddb hashchange history draganddrop websockets rgba hsla multiplebgs backgroundsize borderimage borderradius boxshadow textshadow opacity cssanimations csscolumns cssgradients no-cssreflections csstransforms csstransforms3d csstransitions fontface generatedcontent video audio localstorage sessionstorage webworkers applicationcache svg inlinesvg smil svgclippaths js no-touch geolocation hashchange history borderimage csstransforms csstransforms3d inlinesvg" lang="en" dir="ltr">
+<!-- <![endif]-->
+
+<head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-77911566-1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+
+        gtag('config', 'UA-77911566-1');
+    </script>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=0">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <link rel="canonical" href="https://www.burgerking.com.sg/Menu/Category/1" />
+    <link rel="shortlink" href="https://www.burgerking.com.sg/Menu/Category/1" />
+    <meta property="og:site_name" content="Beef Burger" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.burgerking.com.sg/Menu/Category/1" />
+    <meta property="og:title" content="Beef Burger" />
+    <link rel="shortcut icon" href="/Content/img/index.ico">
+
+
+    <link rel="stylesheet" type="text/css" href="/Content/css/jquery.smartbanner.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="/Content/css/print.css" media="print" />
+    <link rel="stylesheet" type="text/css" href="/Content/css/icons.fallback.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="/Content/css/modules-style.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="/Content/css/styles.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="/Content/css/icons.data.png.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="/Content/css/icons.data.svg.css" media="screen" />
+    <style>
+        .lock-body {
+            overflow: hidden;
+            width: 100%;
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+        }
+
+        .lightbox {
+            display: none;
+        }
+
+        .hideMobile {
+            visibility: visible;
+        }
+
+        @media screen and (max-width: 678px) {
+            .hideMobile {
+                visibility: hidden;
+            }
+        }
+
+        .divider {
+            display: block;
+            margin: 0;
+            border-top-width: 1px;
+            border-top-style: solid;
+            border-top-color: rgba(0, 0, 0, .08);
+        }
+
+        .spacer {
+            flex: 1 1 auto;
+        }
+
+        .nav-container {
+            position: relative;
+        }
+
+        .mobile-nav {
+            display: none;
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0);
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            align-items: center;
+            z-index: 1024;
+            transition: all ease-in-out 500ms;
+            font-family: Flame, "Cooper Black", "Helvetica Neue", Helvetica, Arial, sans-serif;
+        }
+
+            .mobile-nav.active {
+                display: flex;
+                background-color: rgba(0, 0, 0, .48);
+            }
+
+        .mobile-nav-content {
+            position: relative;
+            background-color: #f5ebdc;
+            display: flex;
+            flex-direction: column;
+            font-size: 1.125rem;
+            height: 100%;
+            width: 80%;
+            max-width: 280px;
+            box-shadow: 0 0 16px 8px rgba(0, 0, 0, .24);
+            padding: 16px 0;
+            left: -100%;
+            transition: all ease-in-out 250ms;
+            overflow-y: auto;
+        }
+
+            .mobile-nav-content.show {
+                left: 0;
+            }
+
+            .mobile-nav-content svg {
+                max-height: 88px;
+                margin-bottom: 16px;
+            }
+
+            .mobile-nav-content ul {
+                list-style: none;
+                padding: 0;
+                margin: 0;
+            }
+
+                .mobile-nav-content ul li a {
+                    padding: 16px;
+                    display: flex;
+                    flex-direction: row;
+                    align-items: center;
+                    color: #502314
+                }
+
+                .mobile-nav-content ul li.has-menu .sub-menu {
+                    display: none;
+                }
+
+                    .mobile-nav-content ul li.has-menu .sub-menu.open {
+                        display: flex;
+                    }
+
+        #MobileMore.menuOpened svg {
+            transition: all ease-in-out 250ms;
+            transform: rotate(180deg);
+        }
+
+        .mobile-nav-content ul li.has-menu .sub-menu ul {
+            width: 100%;
+        }
+
+            .mobile-nav-content ul li.has-menu .sub-menu ul li a {
+                font-size: 16px;
+                background-color: white;
+            }
+
+        .mobile-nav-content ul li svg {
+            margin-bottom: 0;
+        }
+
+        #mobileHeader, .mobile {
+            display: none;
+            position: relative;
+        }
+
+        #mobileNav .overlay {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            height: 100%;
+            width: 100%;
+        }
+
+        .mobile-header button {
+            background-color: transparent;
+            outline: 0;
+            border: 0;
+            width: 48px;
+            height: 48px;
+            display: block;
+            border-radius: 8px;
+        }
+
+            .mobile-header button svg {
+                fill: rgb(80, 35, 20);
+            }
+
+        @media (max-width: 60em) {
+            #mobileHeader, .mobile {
+                display: block;
+            }
+        }
+
+        #desktopHeader, .desktop {
+            display: block;
+        }
+
+        @media (max-width: 60em) {
+            #desktopHeader, .desktop {
+                display: none;
+            }
+        }
+
+        #aboutMenuEntries ul {
+            padding: 0;
+            margin: 0;
+        }
+
+            #aboutMenuEntries ul li a {
+                display: flex;
+                padding: 16px 0;
+                color: #502314;
+            }
+
+                #aboutMenuEntries ul li a:hover {
+                    color: #2b1007;
+                }
+
+        .kGTJgk:hover,
+        .kGTJgk.active,
+        .kGTJgk:active {
+            color: rgb(214, 35, 0);
+        }
+    </style>
+
+    <title>BURGER KING® Beef Burger</title>
+
+    <!--[if IE 7]>
+      <link rel="stylesheet" href="/Content/css/font-awesome-ie7.min.css" />
+      <![endif]-->
+    <!--[if lt IE 9]>
+        <script src="/Content/js/html5shiv.js"></script>
+        <![endif]-->
+    <link rel="stylesheet" type="text/css" href="/Content/css/website.css" media="screen" />
+    <script type="text/javascript">
+        var base_url = '/';
+    </script>
+    
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-NGG75WS');</script>
+    <!-- End Google Tag Manager -->
+
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NGG75WS"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
+    
+    <link rel="stylesheet" type="text/css" href="/Content/css/website.css" media="screen" />
+    <style>
+        .filter {
+            position: relative;
+            max-width: 1000px;
+            margin: -30px auto;
+            margin-bottom: 50px;
+            align-content: center;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+            .filter .filter-content {
+                border: 1px solid rgb(187, 163, 145);
+                border-radius: 10px;
+                background: white;
+                padding: 32px 54px 32px 54px;
+                position: relative;
+            }
+
+                .filter .filter-content .filter-select {
+                    display: flex;
+                    flex-direction: row;
+                    border-bottom: 1px solid;
+                }
+
+                    .filter .filter-content .filter-select select {
+                        width: 100%;
+                        border: none;
+                        outline: none;
+                        padding-bottom: 10px;
+                    }
+
+                        .filter .filter-content .filter-select select option {
+                            font-weight: bold;
+                        }
+
+                    .filter .filter-content .filter-select button {
+                        padding: 0;
+                        border: none;
+                        background: none;
+                    }
+
+                .filter .filter-content label {
+                    font-weight: lighter;
+                }
+
+            .filter .filter-more {
+                color: rgb(214, 35, 0);
+                line-height: 1.5em;
+                font-size: 14px;
+            }
+
+        .divider-v {
+            border: 1px solid rgba(0, 0, 0, .08);
+            margin: 5px 10px 5px 10px;
+        }
+
+        tbody:before {
+            content: '\200C';
+            line-height: 1rem;
+        }
+    </style>
+
+</head>
+
+<body class="not-front not-logged-in no-sidebars page-taxonomy page-taxonomy-term page-taxonomy-term- page-taxonomy-term-1 i18n-en page-menu page-burgers">
+    <!--[if lt IE 7]>
+        <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+    <![endif]-->
+
+    <div id="mobileNav" class="mobile-nav">
+        <div class="overlay"></div>
+        <div class="mobile-nav-content">
+            <svg aria-hidden="true" viewBox="0 0 92 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <title>Burger King Logo</title>
+                <path d="M45.9375 92C27.1827 92 16.8086 90.4542 10.0552 86.6305C5.0919 83.8237 2 79.5932 2 75.6068V22.6847C2 16.7458 6.35307 9.95254 13.3098 4.98983C19.0868 0.881356 29.461 -4 45.9375 -4C74.619 -4 89.8751 11.4983 89.8751 22.6847V22.9288V75.5661C89.8751 79.5932 86.7832 83.8237 81.7792 86.6305C75.0665 90.4542 64.6924 92 45.9375 92Z" fill="#F5EBDC"></path>
+                <path d="M76.8429 80.6023C70.7842 84.0223 60.39 85 46.0118 85C31.6336 85 21.2395 84.0223 15.1808 80.6023C11.5443 78.5545 9.70361 75.7626 9.70361 73.761C9.70361 72.621 10.3101 71.9693 11.6606 71.9693H80.3617C81.7135 71.9693 82.3188 72.621 82.3188 73.761C82.32 75.7626 80.4793 78.5545 76.8429 80.6023ZM80.3617 27.5478H11.6606C10.3101 27.5478 9.70361 26.8499 9.70361 25.5937C9.70361 18.1469 20.9131 5 46.0118 5C70.878 5 82.32 18.1469 82.32 25.5937C82.32 26.8499 81.7135 27.5478 80.3617 27.5478Z" fill="#FF8732"></path>
+                <path d="M24.3381 58.2642C24.128 57.9383 24.1055 57.7285 24.1055 57.6361C24.1055 57.3802 24.2455 57.1941 24.5244 56.9382C25.1771 56.3326 26.7853 54.8205 27.6706 53.4482C28.3459 52.4006 28.626 51.4467 28.626 50.6563C28.626 48.6322 26.7853 47.049 24.7807 47.049C23.499 47.049 22.2872 47.7707 21.4719 49.0967C20.3765 50.8648 19.071 52.9126 18.2331 53.7279C18.023 53.9377 17.9068 53.9839 17.7442 53.9839C17.4641 53.9839 17.3478 53.7978 17.3478 53.4957V51.1682C17.3478 48.8882 15.996 47.049 13.5488 47.049C11.079 47.049 9.74976 48.887 9.74976 51.1682V65.5025C9.74976 67.7825 11.0778 69.6218 13.5488 69.6218C15.996 69.6218 17.3478 67.7838 17.3478 65.5025V62.1987C17.3478 61.919 17.4641 61.7104 17.7442 61.7104C18.1168 61.7104 18.2106 62.0825 18.3032 62.2686C18.8396 63.5484 20.4002 66.2705 21.8458 67.8762C22.825 68.9463 24.0367 69.6218 25.3185 69.6218C27.4856 69.6218 29.3038 67.7364 29.3038 65.7123C29.3038 64.4562 28.7673 63.5247 27.7419 62.4084C26.4364 60.9862 24.8983 59.1245 24.3381 58.2642Z" fill="#D62300"></path>
+                <path d="M53.3997 45.7217C57.0587 45.7217 59.3658 43.3942 59.3658 39.9979C59.3658 37.834 58.0603 36.3444 55.4505 36.3444H54.7052C53.3297 36.3444 52.258 36.9962 52.258 38.4621C52.258 39.7657 53.3997 40.3937 54.2625 40.3937C54.7052 40.3937 54.9853 40.5336 54.9853 40.8595C54.9853 41.2778 54.4964 41.5575 53.9362 41.5575C52.188 41.5575 51 40.3238 51 38.0201C51 35.4604 52.6319 34.5302 53.8899 34.5302C55.428 34.5302 55.6844 35.3218 56.756 35.3218C57.9915 35.3218 58.8306 34.2979 58.8306 33.2278C58.8306 32.4362 58.4805 31.8319 57.9453 31.4123C56.9661 30.6906 55.5918 30.1562 53.541 30.1562C49.9283 30.1562 46.4094 32.5298 46.4094 38.0213C46.4082 43.2781 49.9271 45.7217 53.3997 45.7217Z" fill="#D62300"></path>
+                <path d="M12.4297 45.5819H15.716C18.816 45.5819 20.703 43.5104 20.703 40.9282C20.703 38.8567 19.4675 37.9028 19.1886 37.6705C19.0723 37.5769 18.956 37.4845 18.956 37.3908C18.956 37.2747 19.0261 37.2285 19.1424 37.0886C19.585 36.5767 20.0277 35.7626 20.0277 34.5751C20.0277 31.7832 18.1395 30.2936 15.2033 30.2936H12.4297C10.589 30.2936 9.70361 31.3649 9.70361 32.8071V43.0684C9.70361 44.5118 10.589 45.5819 12.4297 45.5819ZM13.8052 34.2967C13.8052 33.9945 13.9916 33.761 14.388 33.761H14.6906C15.6922 33.761 15.9961 34.459 15.9961 35.0646C15.9961 35.6227 15.6935 36.4144 14.6906 36.4144H14.388C13.9916 36.4144 13.8052 36.1821 13.8052 35.8787V34.2967ZM13.8052 39.742C13.8052 39.4398 13.9916 39.2063 14.388 39.2063H14.8069C15.9261 39.2063 16.2512 39.9505 16.2512 40.626C16.2512 41.2316 15.9248 42.0919 14.8069 42.0919H14.388C13.9916 42.0919 13.8052 41.8597 13.8052 41.5563V39.742Z" fill="#D62300"></path>
+                <path d="M73.2776 45.698C74.7695 45.698 75.5848 44.5804 75.5848 43.1845V40.7184C75.5848 40.4162 75.7249 40.2764 75.9574 40.2764C76.2376 40.2764 76.3301 40.4387 76.3764 40.7184C76.5864 41.9046 77.1454 43.5103 77.7744 44.3257C78.5672 45.3733 79.3125 45.6992 80.0578 45.6992C81.2696 45.6992 82.3187 44.7452 82.3187 43.5578C82.3187 42.7662 81.9923 42.1843 81.5734 41.6499C80.7806 40.6497 80.2917 39.9979 79.989 39.1838C79.919 38.9978 79.9653 38.8342 80.1754 38.6719C80.8982 38.1137 81.7372 36.8801 81.7372 34.926C81.7372 31.9705 79.29 30.2948 76.3301 30.2948H73.6965C71.8558 30.2948 70.9705 31.3649 70.9705 32.8083V43.1869C70.9705 44.5817 71.7858 45.698 73.2776 45.698ZM75.3284 34.6925C75.3284 34.3903 75.5148 34.1568 75.9112 34.1568H76.2376C77.2167 34.1568 77.5193 34.8548 77.5193 35.4604C77.5193 36.0423 77.2167 36.8102 76.2376 36.8102H75.9112C75.5148 36.8102 75.3284 36.5779 75.3284 36.2745V34.6925Z" fill="#D62300"></path>
+                <path d="M34.965 47.0478C32.3552 47.0478 30.9333 49.0019 30.9333 51.4454V65.2216C30.9333 67.6652 32.3552 69.6193 34.965 69.6193C37.5747 69.6193 38.9966 67.6652 38.9966 65.2216V51.4454C38.9966 49.0031 37.576 47.0478 34.965 47.0478Z" fill="#D62300"></path>
+                <path d="M76.4001 56.0067H75.2584C73.2076 56.0067 71.6232 56.9607 71.6232 59.0546C71.6232 60.9625 73.3476 61.8703 74.6294 61.8703C75.2584 61.8703 75.7011 62.0563 75.7011 62.5445C75.7011 63.1501 74.9557 63.5447 74.1629 63.5447C71.5294 63.5447 69.7349 61.7529 69.7349 58.4253C69.7349 54.7256 72.1821 53.3758 74.0691 53.3758C76.3763 53.3758 76.749 54.5396 78.3571 54.5396C80.2216 54.5396 81.4796 53.0275 81.4796 51.4916C81.4796 50.3516 80.9669 49.4676 80.1516 48.862C78.7298 47.8144 76.5864 47.0465 73.5564 47.0465C68.1268 47.0465 62.8359 50.4665 62.8359 58.4253C62.8359 66.0345 68.1255 69.5943 73.3464 69.5943C78.8223 69.5943 82.2949 66.2205 82.2949 61.2872C82.2962 58.1706 80.3391 56.0067 76.4001 56.0067Z" fill="#D62300"></path>
+                <path d="M67.5918 45.5819C68.8973 45.5819 69.9227 44.814 69.9227 43.418C69.9227 42.0445 68.8973 41.2766 67.5918 41.2766H65.4947C65.0983 41.2766 64.9119 41.0443 64.9119 40.7409V40.2989C64.9119 39.9967 65.0983 39.7632 65.4947 39.7632H67.1028C68.222 39.7632 69.1074 39.089 69.1074 37.9015C69.1074 36.7153 68.222 36.0398 67.1028 36.0398H65.4947C65.0983 36.0398 64.9119 35.8075 64.9119 35.5041V35.132C64.9119 34.8299 65.0983 34.5964 65.4947 34.5964H67.5918C68.8973 34.5964 69.9227 33.8285 69.9227 32.4325C69.9227 31.059 68.8973 30.2911 67.5918 30.2911H63.1875C61.3468 30.2911 60.4614 31.3612 60.4614 32.8046V43.0659C60.4614 44.508 61.3468 45.5794 63.1875 45.5794H67.5918V45.5819Z" fill="#D62300"></path>
+                <path d="M27.5544 45.698C31.3297 45.698 33.3342 43.4404 33.3342 40.6023V32.7609C33.3342 31.3649 32.5189 30.2474 31.027 30.2474C29.5352 30.2474 28.7199 31.3649 28.7199 32.7609V40.3463C28.7199 40.9045 28.3935 41.5563 27.5544 41.5563C26.7153 41.5563 26.4352 40.9045 26.4352 40.3463V32.7609C26.4352 31.3649 25.5961 30.2474 24.1043 30.2474C22.6124 30.2474 21.7971 31.3649 21.7971 32.7609V40.6023C21.7984 43.4417 23.7792 45.698 27.5544 45.698Z" fill="#D62300"></path>
+                <path d="M43.9148 45.698C45.1265 45.698 46.1757 44.744 46.1757 43.5566C46.1757 42.7649 45.8493 42.1831 45.4304 41.6487C44.7551 40.7646 44.1486 39.9967 43.846 39.1826C43.776 38.9966 43.8222 38.833 44.0323 38.6707C44.7551 38.1125 45.5942 36.8789 45.5942 34.9248C45.5942 31.9692 43.147 30.2936 40.1871 30.2936H37.5523C35.7115 30.2936 34.8262 31.3637 34.8262 32.8071V43.1857C34.8262 44.5817 35.6415 45.6992 37.1333 45.6992C38.6252 45.6992 39.4405 44.5817 39.4405 43.1857V40.7197C39.4405 40.4175 39.5806 40.2777 39.8132 40.2777C40.0933 40.2777 40.1858 40.44 40.2321 40.7197C40.4422 41.9059 41.0011 43.5116 41.6301 44.327C42.4229 45.3721 43.1682 45.698 43.9148 45.698ZM40.092 36.809H39.7656C39.3692 36.809 39.1829 36.5767 39.1829 36.2733V34.6925C39.1829 34.3903 39.3692 34.1569 39.7656 34.1569H40.092C41.0712 34.1569 41.3738 34.8548 41.3738 35.4604C41.3738 36.041 41.0712 36.809 40.092 36.809Z" fill="#D62300"></path>
+                <path d="M57.3139 47.0478C54.913 47.0478 53.6087 48.8395 53.6087 51.0971V56.1228C53.6087 56.5411 53.4686 56.7284 53.2123 56.7284C53.026 56.7284 52.8859 56.6123 52.7233 56.2864L49.4845 50.0033C48.2491 47.6059 46.9673 47.0478 45.4992 47.0478C43.052 47.0478 41.7002 48.8858 41.7002 51.1895V65.5712C41.7002 67.8288 43.0057 69.6206 45.4054 69.6206C47.8064 69.6206 49.1107 67.8288 49.1107 65.5712V60.5455C49.1107 60.1272 49.2507 59.9399 49.5071 59.9399C49.6934 59.9399 49.8334 60.056 49.996 60.3819L53.2348 66.665C54.4703 69.0624 55.7983 69.6206 57.2201 69.6206C59.6674 69.6206 61.0191 67.7826 61.0191 65.4788V51.0971C61.0191 48.8395 59.7149 47.0478 57.3139 47.0478Z" fill="#D62300"></path>
+                <path d="M79.0149 83.0196C79.0149 82.3941 79.5001 81.8709 80.1653 81.8709C80.8306 81.8709 81.3158 82.3941 81.3158 83.0196C81.3158 83.6914 80.8306 84.1759 80.1653 84.1759C79.5001 84.1771 79.0149 83.6839 79.0149 83.0196ZM81.0657 83.0196C81.0657 82.4415 80.6118 82.1057 80.1653 82.1057C79.7189 82.1057 79.265 82.4415 79.265 83.0196C79.265 83.6215 79.7189 83.9411 80.1653 83.9411C80.6118 83.9411 81.0657 83.6215 81.0657 83.0196ZM79.7664 83.5128V82.5364C79.7664 82.474 79.8215 82.4116 79.884 82.4116H80.2129C80.4705 82.4116 80.6505 82.5676 80.6505 82.7787C80.6505 82.9585 80.5492 83.1145 80.3142 83.1532L80.5718 83.4429C80.5955 83.4667 80.6105 83.4979 80.6105 83.5203C80.6105 83.5903 80.563 83.6377 80.493 83.6377C80.4455 83.6377 80.4142 83.614 80.3917 83.5828L80.0478 83.177H80.009V83.5128C80.009 83.5753 79.954 83.6302 79.884 83.6302C79.8215 83.629 79.7664 83.5753 79.7664 83.5128ZM80.1816 82.9572C80.3229 82.9572 80.4004 82.8873 80.4004 82.7936C80.4004 82.6925 80.3304 82.6376 80.2054 82.6376H80.0103V82.9585H80.1816V82.9572Z" fill="#D62300"></path>
+            </svg>
+            <span class="divider"></span>
+            <ul>
+                <li>
+                    <a href="/Menu">
+                        Menu
+                        <span class="spacer"></span>
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#000000">
+                            <path d="M0 0h24v24H0V0z" fill="none" />
+                            <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z" />
+                        </svg>
+                    </a>
+                </li>
+                <li>
+                    <a href="/Locator">
+                        Restaurants
+                        <span class="spacer"></span>
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#000000">
+                            <path d="M0 0h24v24H0V0z" fill="none" />
+                            <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z" />
+                        </svg>
+                    </a>
+                </li>
+                <li>
+                    <a href="/Offer">
+                        Offers
+                        <span class="spacer"></span>
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#000000">
+                            <path d="M0 0h24v24H0V0z" fill="none" />
+                            <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z" />
+                        </svg>
+                    </a>
+                </li>
+                <li>
+                    <a href="/Offer/Coupon">
+                        Coupons
+                        <span class="spacer"></span>
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#000000">
+                            <path d="M0 0h24v24H0V0z" fill="none" />
+                            <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z" />
+                        </svg>
+                    </a>
+                </li>
+                <li>
+                    <a href="/Event">
+                        Events
+                        <span class="spacer"></span>
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#000000">
+                            <path d="M0 0h24v24H0V0z" fill="none" />
+                            <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z" />
+                        </svg>
+                    </a>
+                </li>
+                <li>
+                    <a href="/Delivery">
+                        BK Delivery
+                        <span class="spacer"></span>
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#000000">
+                            <path d="M0 0h24v24H0V0z" fill="none" />
+                            <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z" />
+                        </svg>
+                    </a>
+                </li>
+                
+            </ul>
+        </div>
+    </div>
+
+    <div id="root">
+        <div class="toast-containerstyled__ReactToastifyContainer-sc-4k73c9-0 fKxgHx">
+            <div class="Toastify"></div>
+        </div>
+
+        <div aria-hidden="false" class="desktop-header__DesktopHeaderContainer-sc-721c4s-0 cTBlCI">
+            <div class="desktop-header__MeasuredContainer-sc-721c4s-1 Sintw">
+                <nav aria-label="Primary Navigation" class="nav-container__NavContainer-kgkgjo-0 fAZHpH nav-container">
+                    <div class="desktop-header__FlexContainer-sc-721c4s-4 hbwYtq">
+
+                        <div class="desktop-header__LeftNavWrapper-sc-721c4s-2 gAwjMJ" id="desktopHeader">
+                            <a data-testid="Menu" class="link__Link-sc-1onqpzr-0 base__StyledLink-zd37bd-0 styled__StyledLink-sc-1rmf7kj-0 eANBYJ hideMobile" href="/Menu">Menu</a>
+                            <a data-testid="Restaurants" class="link__Link-sc-1onqpzr-0 base__StyledLink-zd37bd-0 styled__StyledLink-sc-1rmf7kj-0 eANBYJ hideMobile" href="/Locator">Restaurants</a>
+                            <a data-testid="Offers" class="link__Link-sc-1onqpzr-0 base__StyledLink-zd37bd-0 styled__StyledLink-sc-1rmf7kj-0 eANBYJ hideMobile" href="/Offer">Offers</a>
+                            <a data-testid="Offers" class="link__Link-sc-1onqpzr-0 base__StyledLink-zd37bd-0 styled__StyledLink-sc-1rmf7kj-0 eANBYJ hideMobile" href="/Offer/Coupon">Coupons</a>
+                            <a data-testid="Event" class="link__Link-sc-1onqpzr-0 base__StyledLink-zd37bd-0 styled__StyledLink-sc-1rmf7kj-0 eANBYJ hideMobile" href="/Event">Events</a>
+                            <a data-testid="Offers" class="link__Link-sc-1onqpzr-0 base__StyledLink-zd37bd-0 styled__StyledLink-sc-1rmf7kj-0 eANBYJ hideMobile" href="/Delivery">BK Delivery</a>
+                            
+                        </div>
+
+                        <div class="mobile-header" id="mobileHeader">
+                            <button>
+                                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#000000">
+                                    <path d="M0 0h24v24H0V0z" fill="none" />
+                                    <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
+                                </svg>
+                            </button>
+
+                        </div>
+
+                        <div class="desktop-header__Center-sc-721c4s-6 gSJZif">
+                            <a aria-current="page" class="link__Link-sc-1onqpzr-0 desktop-header__NoUnderlineLink-sc-721c4s-5 eHBNqN active" href="/">
+                                <div class="logo-containerbk__StyledContainer-sc-1qt261r-0 kUHncO">
+                                    <svg aria-hidden="true" viewBox="0 0 92 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <title>Burger King Logo</title>
+                                        <path d="M45.9375 92C27.1827 92 16.8086 90.4542 10.0552 86.6305C5.0919 83.8237 2 79.5932 2 75.6068V22.6847C2 16.7458 6.35307 9.95254 13.3098 4.98983C19.0868 0.881356 29.461 -4 45.9375 -4C74.619 -4 89.8751 11.4983 89.8751 22.6847V22.9288V75.5661C89.8751 79.5932 86.7832 83.8237 81.7792 86.6305C75.0665 90.4542 64.6924 92 45.9375 92Z" fill="#F5EBDC"></path>
+                                        <path d="M76.8429 80.6023C70.7842 84.0223 60.39 85 46.0118 85C31.6336 85 21.2395 84.0223 15.1808 80.6023C11.5443 78.5545 9.70361 75.7626 9.70361 73.761C9.70361 72.621 10.3101 71.9693 11.6606 71.9693H80.3617C81.7135 71.9693 82.3188 72.621 82.3188 73.761C82.32 75.7626 80.4793 78.5545 76.8429 80.6023ZM80.3617 27.5478H11.6606C10.3101 27.5478 9.70361 26.8499 9.70361 25.5937C9.70361 18.1469 20.9131 5 46.0118 5C70.878 5 82.32 18.1469 82.32 25.5937C82.32 26.8499 81.7135 27.5478 80.3617 27.5478Z" fill="#FF8732"></path>
+                                        <path d="M24.3381 58.2642C24.128 57.9383 24.1055 57.7285 24.1055 57.6361C24.1055 57.3802 24.2455 57.1941 24.5244 56.9382C25.1771 56.3326 26.7853 54.8205 27.6706 53.4482C28.3459 52.4006 28.626 51.4467 28.626 50.6563C28.626 48.6322 26.7853 47.049 24.7807 47.049C23.499 47.049 22.2872 47.7707 21.4719 49.0967C20.3765 50.8648 19.071 52.9126 18.2331 53.7279C18.023 53.9377 17.9068 53.9839 17.7442 53.9839C17.4641 53.9839 17.3478 53.7978 17.3478 53.4957V51.1682C17.3478 48.8882 15.996 47.049 13.5488 47.049C11.079 47.049 9.74976 48.887 9.74976 51.1682V65.5025C9.74976 67.7825 11.0778 69.6218 13.5488 69.6218C15.996 69.6218 17.3478 67.7838 17.3478 65.5025V62.1987C17.3478 61.919 17.4641 61.7104 17.7442 61.7104C18.1168 61.7104 18.2106 62.0825 18.3032 62.2686C18.8396 63.5484 20.4002 66.2705 21.8458 67.8762C22.825 68.9463 24.0367 69.6218 25.3185 69.6218C27.4856 69.6218 29.3038 67.7364 29.3038 65.7123C29.3038 64.4562 28.7673 63.5247 27.7419 62.4084C26.4364 60.9862 24.8983 59.1245 24.3381 58.2642Z" fill="#D62300"></path>
+                                        <path d="M53.3997 45.7217C57.0587 45.7217 59.3658 43.3942 59.3658 39.9979C59.3658 37.834 58.0603 36.3444 55.4505 36.3444H54.7052C53.3297 36.3444 52.258 36.9962 52.258 38.4621C52.258 39.7657 53.3997 40.3937 54.2625 40.3937C54.7052 40.3937 54.9853 40.5336 54.9853 40.8595C54.9853 41.2778 54.4964 41.5575 53.9362 41.5575C52.188 41.5575 51 40.3238 51 38.0201C51 35.4604 52.6319 34.5302 53.8899 34.5302C55.428 34.5302 55.6844 35.3218 56.756 35.3218C57.9915 35.3218 58.8306 34.2979 58.8306 33.2278C58.8306 32.4362 58.4805 31.8319 57.9453 31.4123C56.9661 30.6906 55.5918 30.1562 53.541 30.1562C49.9283 30.1562 46.4094 32.5298 46.4094 38.0213C46.4082 43.2781 49.9271 45.7217 53.3997 45.7217Z" fill="#D62300"></path>
+                                        <path d="M12.4297 45.5819H15.716C18.816 45.5819 20.703 43.5104 20.703 40.9282C20.703 38.8567 19.4675 37.9028 19.1886 37.6705C19.0723 37.5769 18.956 37.4845 18.956 37.3908C18.956 37.2747 19.0261 37.2285 19.1424 37.0886C19.585 36.5767 20.0277 35.7626 20.0277 34.5751C20.0277 31.7832 18.1395 30.2936 15.2033 30.2936H12.4297C10.589 30.2936 9.70361 31.3649 9.70361 32.8071V43.0684C9.70361 44.5118 10.589 45.5819 12.4297 45.5819ZM13.8052 34.2967C13.8052 33.9945 13.9916 33.761 14.388 33.761H14.6906C15.6922 33.761 15.9961 34.459 15.9961 35.0646C15.9961 35.6227 15.6935 36.4144 14.6906 36.4144H14.388C13.9916 36.4144 13.8052 36.1821 13.8052 35.8787V34.2967ZM13.8052 39.742C13.8052 39.4398 13.9916 39.2063 14.388 39.2063H14.8069C15.9261 39.2063 16.2512 39.9505 16.2512 40.626C16.2512 41.2316 15.9248 42.0919 14.8069 42.0919H14.388C13.9916 42.0919 13.8052 41.8597 13.8052 41.5563V39.742Z" fill="#D62300"></path>
+                                        <path d="M73.2776 45.698C74.7695 45.698 75.5848 44.5804 75.5848 43.1845V40.7184C75.5848 40.4162 75.7249 40.2764 75.9574 40.2764C76.2376 40.2764 76.3301 40.4387 76.3764 40.7184C76.5864 41.9046 77.1454 43.5103 77.7744 44.3257C78.5672 45.3733 79.3125 45.6992 80.0578 45.6992C81.2696 45.6992 82.3187 44.7452 82.3187 43.5578C82.3187 42.7662 81.9923 42.1843 81.5734 41.6499C80.7806 40.6497 80.2917 39.9979 79.989 39.1838C79.919 38.9978 79.9653 38.8342 80.1754 38.6719C80.8982 38.1137 81.7372 36.8801 81.7372 34.926C81.7372 31.9705 79.29 30.2948 76.3301 30.2948H73.6965C71.8558 30.2948 70.9705 31.3649 70.9705 32.8083V43.1869C70.9705 44.5817 71.7858 45.698 73.2776 45.698ZM75.3284 34.6925C75.3284 34.3903 75.5148 34.1568 75.9112 34.1568H76.2376C77.2167 34.1568 77.5193 34.8548 77.5193 35.4604C77.5193 36.0423 77.2167 36.8102 76.2376 36.8102H75.9112C75.5148 36.8102 75.3284 36.5779 75.3284 36.2745V34.6925Z" fill="#D62300"></path>
+                                        <path d="M34.965 47.0478C32.3552 47.0478 30.9333 49.0019 30.9333 51.4454V65.2216C30.9333 67.6652 32.3552 69.6193 34.965 69.6193C37.5747 69.6193 38.9966 67.6652 38.9966 65.2216V51.4454C38.9966 49.0031 37.576 47.0478 34.965 47.0478Z" fill="#D62300"></path>
+                                        <path d="M76.4001 56.0067H75.2584C73.2076 56.0067 71.6232 56.9607 71.6232 59.0546C71.6232 60.9625 73.3476 61.8703 74.6294 61.8703C75.2584 61.8703 75.7011 62.0563 75.7011 62.5445C75.7011 63.1501 74.9557 63.5447 74.1629 63.5447C71.5294 63.5447 69.7349 61.7529 69.7349 58.4253C69.7349 54.7256 72.1821 53.3758 74.0691 53.3758C76.3763 53.3758 76.749 54.5396 78.3571 54.5396C80.2216 54.5396 81.4796 53.0275 81.4796 51.4916C81.4796 50.3516 80.9669 49.4676 80.1516 48.862C78.7298 47.8144 76.5864 47.0465 73.5564 47.0465C68.1268 47.0465 62.8359 50.4665 62.8359 58.4253C62.8359 66.0345 68.1255 69.5943 73.3464 69.5943C78.8223 69.5943 82.2949 66.2205 82.2949 61.2872C82.2962 58.1706 80.3391 56.0067 76.4001 56.0067Z" fill="#D62300"></path>
+                                        <path d="M67.5918 45.5819C68.8973 45.5819 69.9227 44.814 69.9227 43.418C69.9227 42.0445 68.8973 41.2766 67.5918 41.2766H65.4947C65.0983 41.2766 64.9119 41.0443 64.9119 40.7409V40.2989C64.9119 39.9967 65.0983 39.7632 65.4947 39.7632H67.1028C68.222 39.7632 69.1074 39.089 69.1074 37.9015C69.1074 36.7153 68.222 36.0398 67.1028 36.0398H65.4947C65.0983 36.0398 64.9119 35.8075 64.9119 35.5041V35.132C64.9119 34.8299 65.0983 34.5964 65.4947 34.5964H67.5918C68.8973 34.5964 69.9227 33.8285 69.9227 32.4325C69.9227 31.059 68.8973 30.2911 67.5918 30.2911H63.1875C61.3468 30.2911 60.4614 31.3612 60.4614 32.8046V43.0659C60.4614 44.508 61.3468 45.5794 63.1875 45.5794H67.5918V45.5819Z" fill="#D62300"></path>
+                                        <path d="M27.5544 45.698C31.3297 45.698 33.3342 43.4404 33.3342 40.6023V32.7609C33.3342 31.3649 32.5189 30.2474 31.027 30.2474C29.5352 30.2474 28.7199 31.3649 28.7199 32.7609V40.3463C28.7199 40.9045 28.3935 41.5563 27.5544 41.5563C26.7153 41.5563 26.4352 40.9045 26.4352 40.3463V32.7609C26.4352 31.3649 25.5961 30.2474 24.1043 30.2474C22.6124 30.2474 21.7971 31.3649 21.7971 32.7609V40.6023C21.7984 43.4417 23.7792 45.698 27.5544 45.698Z" fill="#D62300"></path>
+                                        <path d="M43.9148 45.698C45.1265 45.698 46.1757 44.744 46.1757 43.5566C46.1757 42.7649 45.8493 42.1831 45.4304 41.6487C44.7551 40.7646 44.1486 39.9967 43.846 39.1826C43.776 38.9966 43.8222 38.833 44.0323 38.6707C44.7551 38.1125 45.5942 36.8789 45.5942 34.9248C45.5942 31.9692 43.147 30.2936 40.1871 30.2936H37.5523C35.7115 30.2936 34.8262 31.3637 34.8262 32.8071V43.1857C34.8262 44.5817 35.6415 45.6992 37.1333 45.6992C38.6252 45.6992 39.4405 44.5817 39.4405 43.1857V40.7197C39.4405 40.4175 39.5806 40.2777 39.8132 40.2777C40.0933 40.2777 40.1858 40.44 40.2321 40.7197C40.4422 41.9059 41.0011 43.5116 41.6301 44.327C42.4229 45.3721 43.1682 45.698 43.9148 45.698ZM40.092 36.809H39.7656C39.3692 36.809 39.1829 36.5767 39.1829 36.2733V34.6925C39.1829 34.3903 39.3692 34.1569 39.7656 34.1569H40.092C41.0712 34.1569 41.3738 34.8548 41.3738 35.4604C41.3738 36.041 41.0712 36.809 40.092 36.809Z" fill="#D62300"></path>
+                                        <path d="M57.3139 47.0478C54.913 47.0478 53.6087 48.8395 53.6087 51.0971V56.1228C53.6087 56.5411 53.4686 56.7284 53.2123 56.7284C53.026 56.7284 52.8859 56.6123 52.7233 56.2864L49.4845 50.0033C48.2491 47.6059 46.9673 47.0478 45.4992 47.0478C43.052 47.0478 41.7002 48.8858 41.7002 51.1895V65.5712C41.7002 67.8288 43.0057 69.6206 45.4054 69.6206C47.8064 69.6206 49.1107 67.8288 49.1107 65.5712V60.5455C49.1107 60.1272 49.2507 59.9399 49.5071 59.9399C49.6934 59.9399 49.8334 60.056 49.996 60.3819L53.2348 66.665C54.4703 69.0624 55.7983 69.6206 57.2201 69.6206C59.6674 69.6206 61.0191 67.7826 61.0191 65.4788V51.0971C61.0191 48.8395 59.7149 47.0478 57.3139 47.0478Z" fill="#D62300"></path>
+                                        <path d="M79.0149 83.0196C79.0149 82.3941 79.5001 81.8709 80.1653 81.8709C80.8306 81.8709 81.3158 82.3941 81.3158 83.0196C81.3158 83.6914 80.8306 84.1759 80.1653 84.1759C79.5001 84.1771 79.0149 83.6839 79.0149 83.0196ZM81.0657 83.0196C81.0657 82.4415 80.6118 82.1057 80.1653 82.1057C79.7189 82.1057 79.265 82.4415 79.265 83.0196C79.265 83.6215 79.7189 83.9411 80.1653 83.9411C80.6118 83.9411 81.0657 83.6215 81.0657 83.0196ZM79.7664 83.5128V82.5364C79.7664 82.474 79.8215 82.4116 79.884 82.4116H80.2129C80.4705 82.4116 80.6505 82.5676 80.6505 82.7787C80.6505 82.9585 80.5492 83.1145 80.3142 83.1532L80.5718 83.4429C80.5955 83.4667 80.6105 83.4979 80.6105 83.5203C80.6105 83.5903 80.563 83.6377 80.493 83.6377C80.4455 83.6377 80.4142 83.614 80.3917 83.5828L80.0478 83.177H80.009V83.5128C80.009 83.5753 79.954 83.6302 79.884 83.6302C79.8215 83.629 79.7664 83.5753 79.7664 83.5128ZM80.1816 82.9572C80.3229 82.9572 80.4004 82.8873 80.4004 82.7936C80.4004 82.6925 80.3304 82.6376 80.2054 82.6376H80.0103V82.9585H80.1816V82.9572Z" fill="#D62300"></path>
+                                    </svg>
+                                </div>
+                            </a>
+                        </div>
+                        
+                    </div>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="Custom-Background">
+        <h1 class="menuTitle">
+            Beef Burger
+        </h1>
+    </div>
+
+    <div class="filter">
+<form action="/Menu/Category/1" class="filter-content" id="filter-form" method="get">            <p>I'm Craving</p>
+            <div class="filter-select">
+                <select name="filter" class="filter-input">
+                    <option value="" data-category="1">Select a filter...</option>
+                    <option value="1" data-category="1" >Options under 300 calories</option>
+                    <option value="2" data-category="1" >Flame grilled burgers under 500 calories</option>
+                    <option value="3" data-category="2" >Chicken and more under 500 calories</option>
+                </select>
+                <div class="divider-v"></div>
+                <button type="button" id="filter-reset">✖</button>
+            </div>
+            <div style="display: flex; justify-content: flex-end; margin: 5px">
+                <a class="filter-more" href="javascript:void(0)" id="filter-options-button">
+                More Options</a>
+            </div>
+            <div id="filter-options" style="display: none;">
+                <label for="nutrition1"><input type="checkbox" class="filter-input" id="nutrition1" name="filter" value="4" > Less than 15g fat</label><br>
+                <label for="nutrition2"><input type="checkbox" class="filter-input" id="nutrition2" name="filter" value="5" > Less than 800mg sodium</label><br>
+                <label for="nutrition3"><input type="checkbox" class="filter-input" id="nutrition3" name="filter" value="6" > Less than 30g carbohydrates</label><br>
+                <label for="nutrition4"><input type="checkbox" class="filter-input" id="nutrition4" name="filter" value="7" > Less than 20g sugar</label><br>
+            </div>
+</form>    </div>
+
+    
+    
+
+
+<div class="content">
+    <div id="secondaryNav">
+        <ul class="secondaryNav">
+                    <li class="menu_category ">
+                        <a href="/Menu/Category/9">
+                            <img src="/upload/image/Category/9/BK%2725_Website-New-Images_Product-Images_300x270px.png">
+                            Breakfast Platter
+                        </a>
+                    </li>
+                    <li class="menu_category ">
+                        <a href="/Menu/Category/4">
+                            <img src="/upload/image/Category/4/BK%2725_Website-New-Images_Product-Images_300x270px-5.png">
+                            Breakfast Croissan&#39;wich
+                        </a>
+                    </li>
+                    <li class="menu_category ">
+                        <a href="/Menu/Category/3">
+                            <img src="/upload/image/Category/3/0-BK%2725_Website-New-Images_Product-Images_300x270px-2.png">
+                            Ultimate Selections
+                        </a>
+                    </li>
+                    <li class="menu_category active">
+                        <a href="/Menu/Category/1">
+                            <img src="/upload/image/Category/1/BK%2725_Website-New-Images_Product-Images_300x270px-6.png">
+                            Beef Burger
+                        </a>
+                    </li>
+                    <li class="menu_category ">
+                        <a href="/Menu/Category/2">
+                            <img src="/upload/image/Category/2/0-BK%2725_Website-New-Images_Product-Images_300x270px-4.png">
+                            Chicken &amp; Fish Burgers
+                        </a>
+                    </li>
+                    <li class="menu_category ">
+                        <a href="/Menu/Category/11">
+                            <img src="/upload/image/Category/11/0-BK%2725_Website-New-Images_Product-Images_300x270px-3.png">
+                            Plant-Based 
+                        </a>
+                    </li>
+                    <li class="menu_category ">
+                        <a href="/Menu/Category/7">
+                            <img src="/upload/image/Category/7/BKWebsite%20_UpdateMenuCategory-07.png">
+                            Sides
+                        </a>
+                    </li>
+                    <li class="menu_category ">
+                        <a href="/Menu/Category/8">
+                            <img src="/upload/image/Category/8/BK_Vanilla_512x512px%20%281%29.png">
+                            Sweets
+                        </a>
+                    </li>
+                    <li class="menu_category ">
+                        <a href="/Menu/Category/5">
+                            <img src="/upload/image/Category/5/BKWebsite%20_UpdateMenuCategory-06.png">
+                            Beverages
+                        </a>
+                    </li>
+
+        </ul>
+    </div>
+</div>
+
+
+    
+
+
+
+<section class="container-fluid menu-grid">
+    <div class="main-menu-linkbk__LinkContainer-sc-11268z9-0 jarUJf">
+        <div class="main-menu-linkbk__InnerContainer-sc-11268z9-1 fEXufA">
+            <a variant="1" starticon="[object Object]" class="action-button__UnStyledLink-sc-10odr36-3 jSWczr" href="http://www.burgerking.com.sg/Menu">
+                <button aria-disabled="false" class="sc-AxiKw hLarHX sc-AxhCb dFVBxS" tabindex="0">
+                    <div color="primary" class="sc-AxjAm cwaRCU">
+                        <svg viewBox="0.5 0.5 8.5 12.5">
+                            <title>Arrow Left Icon</title>
+                            <path d="M3.768 6.95l4.066-4.066a1.25 1.25 0 0 0-1.768-1.768l-4.95 4.95a1.25 1.25 0 0 0 0 1.768l4.596 4.596a1.25 1.25 0 1 0 1.768-1.768L3.768 6.95z"></path>
+                        </svg>
+                    </div>
+                    <span>Main menu</span>
+                </button>
+            </a>
+        </div>
+    </div>
+    <div class="row content desktop">
+        <span class="top-banner offer"></span>
+
+                    <div data-ga="send,event,product,click,detailsOpen" data-product-id="2" class="col-xs-12 col-sm-4 food-item food-item-block">
+                        <div class="inner">
+                            <div class="imgWrap">
+                                <img src="/upload/image/Product/2/0-WHOPPER (1).png" typeof="foaf:Image">
+                            </div>
+                            <div class="title"><span>WHOPPER&#174;</span></div>
+                        </div>
+                    </div>
+                    <div data-ga="send,event,product,click,detailsOpen" data-product-id="5" class="col-xs-12 col-sm-4 food-item food-item-block">
+                        <div class="inner">
+                            <div class="imgWrap">
+                                <img src="/upload/image/Product/5/Western WHOPPER 300x270.png" typeof="foaf:Image">
+                            </div>
+                            <div class="title"><span>Western WHOPPER&#174;</span></div>
+                        </div>
+                    </div>
+                    <div data-ga="send,event,product,click,detailsOpen" data-product-id="97" class="col-xs-12 col-sm-4 food-item food-item-block">
+                        <div class="inner">
+                            <div class="imgWrap">
+                                <img src="/upload/image/Product/97/BK&#39;25_Website-Images_Product-Images_300x270px-3.png" typeof="foaf:Image">
+                            </div>
+                            <div class="title"><span>WHOPPER&#174; with Cheese</span></div>
+                        </div>
+                    </div>
+                    <div data-ga="send,event,product,click,detailsOpen" data-product-id="4" class="col-xs-12 col-sm-4 food-item food-item-block">
+                        <div class="inner">
+                            <div class="imgWrap">
+                                <img src="/upload/image/Product/4/WHOPPER Jr 300x270.png" typeof="foaf:Image">
+                            </div>
+                            <div class="title"><span>Whopper Jr.&#174;</span></div>
+                        </div>
+                    </div>
+                    <div data-ga="send,event,product,click,detailsOpen" data-product-id="6" class="col-xs-12 col-sm-4 food-item food-item-block">
+                        <div class="inner">
+                            <div class="imgWrap">
+                                <img src="/upload/image/Product/6/BK&#39;25_Website-Images_Product-Images_300x270px-4.png" typeof="foaf:Image">
+                            </div>
+                            <div class="title"><span>Single Mushroom Swiss</span></div>
+                        </div>
+                    </div>
+                    <div data-ga="send,event,product,click,detailsOpen" data-product-id="9" class="col-xs-12 col-sm-4 food-item food-item-block">
+                        <div class="inner">
+                            <div class="imgWrap">
+                                <img src="/upload/image/Product/9/Double Cheeseburger 300x270 (1).png" typeof="foaf:Image">
+                            </div>
+                            <div class="title"><span>Cheeseburger</span></div>
+                        </div>
+                    </div>
+                    <div data-ga="send,event,product,click,detailsOpen" data-product-id="10" class="col-xs-12 col-sm-4 food-item food-item-block">
+                        <div class="inner">
+                            <div class="imgWrap">
+                                <img src="/upload/image/Product/10/Hamburger 300x270.png" typeof="foaf:Image">
+                            </div>
+                            <div class="title"><span>Hamburger</span></div>
+                        </div>
+                    </div>
+                    <div data-ga="send,event,product,click,detailsOpen" data-product-id="96" class="col-xs-12 col-sm-4 food-item food-item-block">
+                        <div class="inner">
+                            <div class="imgWrap">
+                                <img src="/upload/image/Product/96/BK&#39;25_Website-Images_Product-Images_300x270px-5.png" typeof="foaf:Image">
+                            </div>
+                            <div class="title"><span>Single BBQ Turkey Bacon</span></div>
+                        </div>
+                    </div>
+
+
+    </div>
+
+    <div class="row mobile">
+                    <div data-ga="send,event,product,click,detailsOpen" data-product-id="2" class="ePJNwC food-item-block">
+                        <a aria-labelledby="section_4833" class="tile-linkbk__TileListLink-fepcm3-2 fGbzQA" href="javascript:void(0)">
+                            <div data-testid="menu-tile-bk" class="hNJrG dRGaLt">
+                                <div class="dPMtDT" data-testid="picture-boundary">
+                                    <img src="/upload/image/Product/2/0-WHOPPER (1).png" typeof="foaf:Image" class="emmwLI">
+                                    <div class="gbENUL"></div>
+                                </div>
+                                <div class="dBqEnF">
+                                    <h2 data-testid="tile-header-breakfastmeals" id="section_4833" class="cFFcdJ">WHOPPER&#174;</h2>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div data-ga="send,event,product,click,detailsOpen" data-product-id="5" class="ePJNwC food-item-block">
+                        <a aria-labelledby="section_4833" class="tile-linkbk__TileListLink-fepcm3-2 fGbzQA" href="javascript:void(0)">
+                            <div data-testid="menu-tile-bk" class="hNJrG dRGaLt">
+                                <div class="dPMtDT" data-testid="picture-boundary">
+                                    <img src="/upload/image/Product/5/Western WHOPPER 300x270.png" typeof="foaf:Image" class="emmwLI">
+                                    <div class="gbENUL"></div>
+                                </div>
+                                <div class="dBqEnF">
+                                    <h2 data-testid="tile-header-breakfastmeals" id="section_4833" class="cFFcdJ">Western WHOPPER&#174;</h2>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div data-ga="send,event,product,click,detailsOpen" data-product-id="97" class="ePJNwC food-item-block">
+                        <a aria-labelledby="section_4833" class="tile-linkbk__TileListLink-fepcm3-2 fGbzQA" href="javascript:void(0)">
+                            <div data-testid="menu-tile-bk" class="hNJrG dRGaLt">
+                                <div class="dPMtDT" data-testid="picture-boundary">
+                                    <img src="/upload/image/Product/97/BK&#39;25_Website-Images_Product-Images_300x270px-3.png" typeof="foaf:Image" class="emmwLI">
+                                    <div class="gbENUL"></div>
+                                </div>
+                                <div class="dBqEnF">
+                                    <h2 data-testid="tile-header-breakfastmeals" id="section_4833" class="cFFcdJ">WHOPPER&#174; with Cheese</h2>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div data-ga="send,event,product,click,detailsOpen" data-product-id="4" class="ePJNwC food-item-block">
+                        <a aria-labelledby="section_4833" class="tile-linkbk__TileListLink-fepcm3-2 fGbzQA" href="javascript:void(0)">
+                            <div data-testid="menu-tile-bk" class="hNJrG dRGaLt">
+                                <div class="dPMtDT" data-testid="picture-boundary">
+                                    <img src="/upload/image/Product/4/WHOPPER Jr 300x270.png" typeof="foaf:Image" class="emmwLI">
+                                    <div class="gbENUL"></div>
+                                </div>
+                                <div class="dBqEnF">
+                                    <h2 data-testid="tile-header-breakfastmeals" id="section_4833" class="cFFcdJ">Whopper Jr.&#174;</h2>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div data-ga="send,event,product,click,detailsOpen" data-product-id="6" class="ePJNwC food-item-block">
+                        <a aria-labelledby="section_4833" class="tile-linkbk__TileListLink-fepcm3-2 fGbzQA" href="javascript:void(0)">
+                            <div data-testid="menu-tile-bk" class="hNJrG dRGaLt">
+                                <div class="dPMtDT" data-testid="picture-boundary">
+                                    <img src="/upload/image/Product/6/BK&#39;25_Website-Images_Product-Images_300x270px-4.png" typeof="foaf:Image" class="emmwLI">
+                                    <div class="gbENUL"></div>
+                                </div>
+                                <div class="dBqEnF">
+                                    <h2 data-testid="tile-header-breakfastmeals" id="section_4833" class="cFFcdJ">Single Mushroom Swiss</h2>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div data-ga="send,event,product,click,detailsOpen" data-product-id="9" class="ePJNwC food-item-block">
+                        <a aria-labelledby="section_4833" class="tile-linkbk__TileListLink-fepcm3-2 fGbzQA" href="javascript:void(0)">
+                            <div data-testid="menu-tile-bk" class="hNJrG dRGaLt">
+                                <div class="dPMtDT" data-testid="picture-boundary">
+                                    <img src="/upload/image/Product/9/Double Cheeseburger 300x270 (1).png" typeof="foaf:Image" class="emmwLI">
+                                    <div class="gbENUL"></div>
+                                </div>
+                                <div class="dBqEnF">
+                                    <h2 data-testid="tile-header-breakfastmeals" id="section_4833" class="cFFcdJ">Cheeseburger</h2>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div data-ga="send,event,product,click,detailsOpen" data-product-id="10" class="ePJNwC food-item-block">
+                        <a aria-labelledby="section_4833" class="tile-linkbk__TileListLink-fepcm3-2 fGbzQA" href="javascript:void(0)">
+                            <div data-testid="menu-tile-bk" class="hNJrG dRGaLt">
+                                <div class="dPMtDT" data-testid="picture-boundary">
+                                    <img src="/upload/image/Product/10/Hamburger 300x270.png" typeof="foaf:Image" class="emmwLI">
+                                    <div class="gbENUL"></div>
+                                </div>
+                                <div class="dBqEnF">
+                                    <h2 data-testid="tile-header-breakfastmeals" id="section_4833" class="cFFcdJ">Hamburger</h2>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div data-ga="send,event,product,click,detailsOpen" data-product-id="96" class="ePJNwC food-item-block">
+                        <a aria-labelledby="section_4833" class="tile-linkbk__TileListLink-fepcm3-2 fGbzQA" href="javascript:void(0)">
+                            <div data-testid="menu-tile-bk" class="hNJrG dRGaLt">
+                                <div class="dPMtDT" data-testid="picture-boundary">
+                                    <img src="/upload/image/Product/96/BK&#39;25_Website-Images_Product-Images_300x270px-5.png" typeof="foaf:Image" class="emmwLI">
+                                    <div class="gbENUL"></div>
+                                </div>
+                                <div class="dBqEnF">
+                                    <h2 data-testid="tile-header-breakfastmeals" id="section_4833" class="cFFcdJ">Single BBQ Turkey Bacon</h2>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+
+    </div>
+
+    
+
+
+    
+
+</section>
+
+
+
+
+
+    <footer id="footer">
+        <div class="footerBg">
+            <div class="row content links footerList">
+                <div>
+                    <ul class="footerLinks">
+                        <li>
+                            <h4>BK Info</h4>
+                            <ul class="subList clearfix">
+                                <li><a href="/About">About BK</a></li>
+                                
+                                
+                                <li><a href="/News">News &amp; Press</a></li>
+                                <li><a href="/Legal">Legal</a></li>
+                                <li><a href="/Contact">Contact Us</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+                <div>
+                    <ul class="footerLinks">
+                        <li>
+                            <h4>My BK</h4>
+                            <ul class="subList clearfix">
+                                <li><a href="/Event" class="nav_deliver">Events</a></li>
+                                <li><a href="/Delivery" class="nav_deliver">BK Delivery</a></li>
+                                <li><a href="/Locator">Restaurant</a></li>
+                                <li><a href="/SignUp/form">Sign up for BK Alerts</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+                <div>
+                    <ul class="footerLinks">
+                        <li>
+                            <h4>Careers</h4>
+                            <ul class="subList clearfix">
+                                <li><a href="/Career">Job Opportunities</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+                <div>
+                    <ul class="footerLinks">
+                        <li>
+                            <h4>BK Cares</h4>
+                            <ul class="subList clearfix">
+                                <li><a href="/Privacy">Privacy Policy</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="row ">
+                <div class="col-sm-8 col-xs-12 bk-logo" style="padding-left: 30px;">
+                    <i class="icon icon_logo-word"></i>
+                    <path fill="#F5EBDC" fill-rule="evenodd"
+                          d="M20.092 13.046c0 3.812 2.68 6.85 7.714 6.85 5.034 0 7.744-3.038 7.744-6.85v-9.71c0-1.787-1.102-3.217-3.127-3.217-2.026 0-3.128 1.43-3.128 3.217v9.53c0 .805-.446 1.639-1.489 1.639-1.042 0-1.43-.834-1.43-1.638V3.336c0-1.787-1.131-3.217-3.157-3.217-2.025 0-3.127 1.43-3.127 3.217v9.71zm-8.131 6.7H7.493c-2.501 0-3.693-1.37-3.693-3.216V3.395C3.8 1.55 4.992.18 7.493.18h3.783c3.961 0 6.523 1.906 6.523 5.48 0 1.519-.566 2.591-1.192 3.217l-.076.075c-.128.124-.192.186-.192.312 0 .102.132.204.263.306l.065.051.026.02c.43.33 2.029 1.555 2.029 4.15 0 3.306-2.562 5.957-6.761 5.957zM9.37 7.327c0 .388.238.686.774.686h.417c1.37 0 1.787-1.013 1.787-1.728 0-.774-.417-1.667-1.787-1.667h-.417c-.536 0-.774.297-.774.685v2.025zm1.34 4.26h-.566c-.536 0-.774.298-.774.685v2.323c0 .387.238.685.774.685h.566c1.52 0 1.966-1.102 1.966-1.876 0-.864-.447-1.817-1.966-1.817zm32.673-3.753c0 .387.238.685.775.685h.446c1.34 0 1.758-.983 1.758-1.727 0-.775-.417-1.668-1.758-1.668h-.446c-.537 0-.775.298-.775.685v2.025zm-2.8 12.063c-2.025 0-3.127-1.43-3.127-3.217V3.395C37.456 1.55 38.677.18 41.18.18h3.544c4.021 0 7.357 2.144 7.357 5.927 0 2.502-1.132 4.11-2.115 4.795-.297.208-.357.417-.268.655.364.978 1.12 1.904 1.975 2.95l.17.207c.566.685 1.013 1.43 1.013 2.443 0 1.519-1.4 2.74-3.068 2.74-1.013 0-2.026-.417-3.098-1.758-.834-1.042-1.489-3.127-1.876-4.616-.09-.357-.209-.566-.596-.566-.298 0-.506.179-.506.566v3.157c0 1.787-1.102 3.217-3.127 3.217zm47.983 0c-2.026 0-3.128-1.43-3.128-3.217V3.395C85.438 1.55 86.63.18 89.132.18h3.574c4.02 0 7.327 2.144 7.327 5.927 0 2.502-1.132 4.11-2.115 4.795-.298.208-.328.417-.238.655.387 1.043 1.072 1.877 2.144 3.157.566.685 1.013 1.43 1.013 2.443 0 1.519-1.43 2.74-3.068 2.74-1.013 0-1.996-.447-3.098-1.758-.863-1.042-1.638-3.097-1.906-4.616-.06-.357-.178-.566-.566-.566-.327 0-.506.179-.506.566v3.157c0 1.787-1.102 3.217-3.127 3.217zm25.614-6.88v3.693c0 1.757-1.162 3.187-3.127 3.187-2.026 0-3.158-1.43-3.158-3.187V3.336c0-1.787 1.132-3.187 3.158-3.187 1.965 0 3.127 1.4 3.127 3.187v2.919c0 .208.089.417.328.417.178 0 .268-.06.476-.298.804-.924 1.847-2.591 2.591-4.14.834-1.698 2.026-2.115 3.038-2.115 1.668 0 3.128 1.191 3.128 2.86 0 .625-.268 1.25-.477 1.697-.685 1.46-2.531 3.306-3.336 4.11-.208.209-.298.358-.298.596 0 .127.065.297.14.492l.039.104c.447 1.22 1.787 2.978 2.979 4.318l.018.021c.562.621 1.233 1.362 1.233 2.481 0 1.787-1.638 3.098-3.336 3.098-1.043 0-2.026-.536-2.8-1.34-1.251-1.281-2.353-3.843-2.919-5.51-.089-.269-.208-.447-.476-.447-.239 0-.328.178-.328.417zm25.406 3.663v-4.795c0-.328.089-.477.327-.477.09 0 .269.06.417.358l2.77 5.57c1.043 2.114 2.175 2.56 3.366 2.56 2.085 0 3.246-1.459 3.246-3.305V3.336c0-1.787-1.131-3.217-3.097-3.217-2.055 0-3.187 1.43-3.187 3.217v4.706c0 .327-.119.506-.298.506-.119 0-.298-.03-.447-.357l-2.74-5.51C138.871.536 137.739.119 136.548.119c-2.085 0-3.247 1.49-3.247 3.306V16.68c0 1.787 1.132 3.217 3.187 3.217 1.936 0 3.098-1.43 3.098-3.217zm-61.445-4.378h2.204c1.49 0 2.71-.864 2.71-2.383 0-1.519-1.22-2.383-2.71-2.383h-2.204c-.536 0-.774-.297-.774-.685v-.476c0-.387.238-.685.774-.685h2.86c1.757 0 3.157-.983 3.157-2.77 0-1.757-1.4-2.74-3.157-2.74h-5.987c-2.502 0-3.693 1.37-3.693 3.216V16.53c0 1.847 1.191 3.217 3.693 3.217H81c1.757 0 3.157-.983 3.157-2.77 0-1.757-1.4-2.74-3.157-2.74h-2.86c-.536 0-.774-.298-.774-.685v-.566c0-.387.238-.685.774-.685zM62.385 0c2.71 0 4.498.625 5.749 1.608.685.536 1.161 1.281 1.161 2.323 0 1.37-1.102 2.681-2.71 2.681-.635 0-1.05-.209-1.503-.436-.544-.275-1.144-.577-2.25-.577-1.638 0-3.753 1.192-3.753 4.468 0 2.949 1.55 4.527 3.813 4.527.744 0 1.37-.357 1.37-.893 0-.417-.358-.596-.923-.596-1.132 0-2.621-.804-2.621-2.472 0-1.876 1.4-2.71 3.186-2.71h.983c3.396 0 5.093 1.906 5.093 4.676 0 4.348-3.008 7.327-7.773 7.327-4.527 0-9.114-3.128-9.114-9.859C53.093 3.038 57.68 0 62.385 0zm28.95 7.833c0 .387.269.685.805.685h.447c1.31 0 1.727-.983 1.727-1.727 0-.775-.417-1.668-1.727-1.668h-.447c-.536 0-.804.298-.804.685v2.025zm33.806-4.497v13.343c0 1.787 1.102 3.217 3.127 3.217 2.025 0 3.127-1.43 3.127-3.217V3.336c0-1.787-1.102-3.217-3.127-3.217-2.025 0-3.127 1.43-3.127 3.217zM160.494 0c2.711 0 4.498.625 5.749 1.608.685.536 1.161 1.281 1.161 2.323 0 1.37-1.102 2.681-2.71 2.681-.636 0-1.05-.209-1.503-.437-.544-.274-1.144-.576-2.25-.576-1.638 0-3.753 1.192-3.753 4.468 0 2.949 1.549 4.527 3.813 4.527.744 0 1.37-.357 1.37-.893 0-.417-.358-.596-.924-.596-1.131 0-2.621-.804-2.621-2.472 0-1.876 1.4-2.71 3.187-2.71h.983c3.396 0 5.093 1.906 5.093 4.676 0 4.348-3.008 7.327-7.773 7.327-4.528 0-9.114-3.128-9.114-9.859 0-7.029 4.586-10.067 9.292-10.067zm9.076 18.523c0 .1-.083.175-.234.175h-.183v-.342h.208c.134 0 .209.058.209.167zm-.676-.275v1.043c0 .066.059.125.125.125.076 0 .134-.059.134-.125v-.36h.042l.367.435c.025.033.058.058.108.058.075 0 .125-.05.125-.125 0-.025-.016-.058-.041-.083l-.276-.31c.251-.041.359-.208.359-.4 0-.225-.192-.392-.467-.392h-.351c-.066 0-.125.067-.125.134zm.426-.46c.475 0 .959.36.959.977 0 .642-.484.985-.959.985-.476 0-.96-.343-.96-.985 0-.617.484-.976.96-.976zm0-.25c-.709 0-1.227.56-1.227 1.227 0 .71.518 1.235 1.227 1.235.709 0 1.226-.517 1.226-1.235 0-.668-.517-1.227-1.226-1.227z"
+                          clip-rule="evenodd"></path>
+                    <br>
+                    <br>
+                    <p>
+                        TM & (C) 2026 BURGER KING COMPANY LLC. USED UNDER LICENSE. ALL RIGHTS RESERVED.
+                    </p>
+                    <br>
+
+                </div>
+                <div class="col-sm-4 col-xs-12 shareSection" style="text-align: right;">
+                    <div class="socialLinks">
+                        <a href="https://www.facebook.com/BurgerKingSG/" target="_blank" data-ga="send,social,facebook,share,http://www.bk.com,page-url"><i class="icon icon_facebook-crm-offwhite"></i></a>
+                        <a href="https://www.instagram.com/burgerkingsg/" target="_blank" data-ga="send,social,facebook,share,http://www.bk.com,page-url"><i class="icon icon_instagram-crm-offwhite"></i></a>
+                        <a href="https://www.youtube.com/user/BurgerKingSg" target="_blank" data-ga="send,social,facebook,share,http://www.bk.com,page-url"><i class="icon icon_youtube-crm-offwhite"></i></a>
+                        <a href="https://www.tiktok.com/@burgerking_sg" target="_blank" data-ga="send,social,facebook,share,http://www.bk.com,page-url"><i class="icon icon_twitter-crm-offwhite"></i></a>
+                        
+                </div>
+            </div>
+
+        </div>
+    </footer>
+
+    <script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js#pubid=ra-4f5890e00ab23e53"></script>
+
+    <script type="text/javascript" src="/Content/js/jquery.min.js"></script>
+    <script type="text/javascript" src="/Content/js/jquery.once.js"></script>
+    <script type="text/javascript" src="/Content/js/drupal.js"></script>
+    <script type="text/javascript" src="/Content/js/modules/contentanalysis.js"></script>
+    <script type="text/javascript" src="/Content/js/modules/contentoptimizer.js"></script>
+    <script type="text/javascript" src="/Content/js/vendor/modernizr-min.js"></script>
+    <script type="text/javascript" src="/Content/js/plugins/plugins.js"></script>
+    <script type="text/javascript" src="/Content/js/plugins/homePlugins.js"></script>
+    <script type="text/javascript" src="/Content/js/main.js"></script>
+    <script>
+        (function (i, s, o, g, r, a, m) {
+            i['GoogleAnalyticsObject'] = r; i[r] = i[r] || function () {
+                (i[r].q = i[r].q || []).push(arguments)
+            }, i[r].l = 1 * new Date(); a = s.createElement(o),
+                m = s.getElementsByTagName(o)[0]; a.async = 1; a.src = g; m.parentNode.insertBefore(a, m)
+        })(window, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga');
+
+        ga('create', 'UA-77911566-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+    <script>
+        var base_url = 'bk';
+
+        $(function () {
+            $("#aboutMenuEntries").hide();
+            $('#about-menu-entries').on('click', function (e) {
+                $("#aboutMenuEntries").toggle();
+            });
+            $(document).on('click', function () {
+                var container = $("#desktopHeader");
+
+                if (!container.is(event.target) && !container.has(event.target).length) {
+                    $("#aboutMenuEntries").hide();
+                }
+            });
+
+            // Mobile Header
+
+            $("#mobileHeader").on('click', function () {
+                $("#mobileNav").toggleClass("active");
+                setTimeout(function () {
+                    $("#mobileNav .mobile-nav-content").toggleClass("show")
+                }, 250);
+                $("body").toggleClass("lock-body");
+            });
+
+            $("#mobileNav .overlay").on('click', function () {
+                $("#mobileNav").removeClass("active");
+                setTimeout(function () {
+                    $("#mobileNav .mobile-nav-content").removeClass("show")
+                }, 250);
+                $("body").removeClass("lock-body");
+            });
+
+            $("#MobileMore").on('click', function () {
+                $("#mobileSubMenu").toggleClass("open");
+                $("#MobileMore").toggleClass("menuOpened");
+            });
+        });
+    </script>
+    
+    <script>
+        window.BK_MENU_PRODUCTS = {"2":{"id":"2","title":"WHOPPER®","subtitle":"","size":"","calories":"625","fat":"35","saturatedfat":"12","transfat":"0","cholesterol":"0","sodium":"1400","carbohydrates":"54","fiber":"4.5","sugar":"17","protein":"24","allergens":"Egg","image":"/upload/image/Product/2/0-WHOPPER.png","description":"\u003cp\u003eLook who\u0026#39;s here - THE burger to rule them all. A real meaty flame-grilled WHOPPER\u0026reg;\u0026nbsp;beef patty, topped with tangy pickles, ketchup, fresh tomatoes, crisp lettuce and fresh onions, finished with creamy mayo , and served on a toasted 5\u0026quot; sesame seed bun. Feeling hungry for a real meaty burger yet?\u003c/p\u003e\r\n\r\n\u003cp\u003eDouble WHOPPER\u0026reg;\u0026nbsp;Burger is also available.\u003c/p\u003e\r\n","url":"http://www.burgerking.com.sg/Menu/Item/2"},"5":{"id":"5","title":"Western WHOPPER®","subtitle":"Just as tasty, pardner","size":"","calories":"711","fat":"43","saturatedfat":"17","transfat":"0","cholesterol":"0","sodium":"4.5","carbohydrates":"56","fiber":"7.6","sugar":"14","protein":"37","allergens":"Egg, Milk, Soya Beans","image":"/upload/image/Product/5/Western WHOPPER 500x540.png","description":"\u003cp\u003eA full-flavored western, in a regular size offering! A mouth-watering, flame-grilled beef patty topped with crunchy turkey bacon, American cheese, fresh tomatoes, crisp lettuce, tangy pickles and fresh onions, served on a toasted sesame seed bun and flavored with creamy mayo,tangy BBQ sauce. Take your tastebuds out on a wild ride!\u003c/p\u003e\r\n\r\n\u003cp\u003eDouble Western WHOPPER\u0026reg; Burger is also available.\u0026nbsp;\u003c/p\u003e\r\n","url":"http://www.burgerking.com.sg/Menu/Item/5"},"97":{"id":"97","title":"WHOPPER® with Cheese","subtitle":"Say Cheese to the King ","size":"","calories":"700","fat":"40","saturatedfat":"16","transfat":"0","cholesterol":"0","sodium":"1700","carbohydrates":"55","fiber":"4.5","sugar":"18","protein":"29","allergens":"Egg, Milk, Soya Beans","image":"/upload/image/Product/97/BK\u002725_Website-Images_Product-Images_500x540px-3.png","description":"\u003cp\u003eA full-flavored western, in a regular size offering! A mouth-watering, flame-grilled beef patty topped with American cheese, fresh tomatoes, crisp lettuce, tangy pickles and fresh onions, served on a toasted sesame seed bun and flavored with creamy mayo and tangy BBQ sauce. Take your tastebuds out on a wild ride!\u003c/p\u003e\r\n\r\n\u003cp\u003eDouble WHOPPER\u0026reg; with Cheese Burger is also available.\u0026nbsp;\u003c/p\u003e\r\n","url":"http://www.burgerking.com.sg/Menu/Item/97"},"4":{"id":"4","title":"Whopper Jr.®","subtitle":"Big taste, fun size","size":"","calories":"374","fat":"20","saturatedfat":"6.9","transfat":"0","cholesterol":"0","sodium":"650","carbohydrates":"34","fiber":"3.6","sugar":"6.3","protein":"16","allergens":"Egg","image":"/upload/image/Product/4/WHOPPER Jr 500x540.png","description":"\u003cp\u003eThe same big WHOPPER\u0026reg; taste, but in a regular size. A mouth-watering, flame-grilled beef patty topped with fresh tomatoes, crisp lettuce, tangy pickles and crunchy onions, served on a toasted sesame seed bun and flavored with creamy mayo and ketchup. Ummm...yummy.\u003c/p\u003e\r\n","url":"http://www.burgerking.com.sg/Menu/Item/4"},"6":{"id":"6","title":"Single Mushroom Swiss","subtitle":"Gentle…velvety…bliss…","size":"","calories":"351","fat":"17","saturatedfat":"8.2","transfat":"0","cholesterol":"0","sodium":"670","carbohydrates":"32","fiber":"4.1","sugar":"3.5","protein":"19","allergens":"Egg, Milk, Soya Beans","image":"/upload/image/Product/6/BK\u002725_Website-Images_Product-Images_500x540px-4.png","description":"\u003cp\u003eCan\u0026#39;t get enough of that heavenly creamy taste? Go for double the goodness! Melted Swiss cheese on two flame-grilled beef patties, topped with BK\u0026#39;s special mushroom sauce, served on a sesame seed bun. Twice the velvety goodness in every bite.\u003c/p\u003e\r\n\r\n\u003cp\u003eDouble Mushroom Swiss Burger is also available.\u003c/p\u003e\r\n\r\n\u003cp\u003e\u0026nbsp;\u003c/p\u003e\r\n","url":"http://www.burgerking.com.sg/Menu/Item/6"},"9":{"id":"9","title":"Cheeseburger","subtitle":"A Classic","size":"","calories":"346","fat":"16","saturatedfat":"7.7","transfat":"0","cholesterol":"0","sodium":"690","carbohydrates":"34","fiber":"3.2","sugar":"6.3","protein":"19","allergens":"Egg, Milk, Soya Beans","image":"/upload/image/Product/9/Double Cheeseburger 500x540.png","description":"\u003cp\u003eMake room for our Cheeseburger \u0026mdash; featuring a signature flame-grilled beef patty topped with melted American cheese, crinkle-cut pickles, yellow mustard, and ketchup on a toasted sesame seed bun.\u003c/p\u003e\r\n\r\n\u003cp\u003eDouble Cheeseburger also available.\u003c/p\u003e\r\n","url":"http://www.burgerking.com.sg/Menu/Item/9"},"10":{"id":"10","title":"Hamburger","subtitle":"Back to basics, baby","size":"","calories":"309","fat":"13","saturatedfat":"5.7","transfat":"0","cholesterol":"0","sodium":"540","carbohydrates":"33","fiber":"3.2","sugar":"6","protein":"16","allergens":"","image":"/upload/image/Product/10/Hamburger 500x540.png","description":"\u003cp\u003eTry our Hamburger, a signature flame-grilled beef patty topped with a simple layer of crinkle cut pickles, yellow mustard, and ketchup on a toasted sesame seed bun.\u003c/p\u003e\r\n","url":"http://www.burgerking.com.sg/Menu/Item/10"},"96":{"id":"96","title":"Single BBQ Turkey Bacon","subtitle":"","size":"","calories":"352","fat":"17","saturatedfat":"8.1","transfat":"0","cholesterol":"0","sodium":"620","carbohydrates":"36","fiber":"3.4","sugar":"8.2","protein":"21","allergens":"Egg, Milk, Soya Beans","image":"/upload/image/Product/96/BK\u002725_Website-Images_Product-Images_500x540px-5.png","description":"\u003cp\u003eFor double the cheery BBQ fun, go for this hearty BBQ sauce flavored burger. Not one, but two mouth-watering, flame-grilled beef patties topped with American Cheese, crispy Turkey Bacon and BBQ sauce, served on a sesame seed bun.\u003c/p\u003e\r\n\r\n\u003cp\u003eDouble BBQ Turkey Bacon Burger is also available.\u003c/p\u003e\r\n","url":"http://www.burgerking.com.sg/Menu/Item/96"}};
+    </script>
+    <script>
+        $(".filter-input").on('change', function (e) {
+            var category = $("select[name=filter]").find(":selected").data("category");
+            $('#filter-form').attr('action', `/Menu/Category/${category}`);
+            $('#filter-form').submit();
+        });
+
+        if ($("#filter-options input:checkbox:checked").length > 0) {
+            $("#filter-options").show();
+        }
+
+        $("#filter-options-button").click(function () {
+            $("#filter-options").toggle("fast");
+        });
+
+        $("#filter-reset").on('click', function (e) {
+            window.location = window.location.pathname;
+        });
+    </script>
+
+
+
+</body>
+</html>

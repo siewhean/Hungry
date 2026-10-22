@@ -1,0 +1,164 @@
+{
+  "snapshot_id": "plq_official_directory_exact_blank_fields_refresh106_20261018",
+  "observed_at_utc": "2026-10-18T10:14:02+00:00",
+  "source": {
+    "publisher": "Lendlease / Paya Lebar Quarter",
+    "directory_url": "https://www.payalebarquarter.com/directory/mall/",
+    "detail_pages": [
+      "https://www.payalebarquarter.com/directory/mall/ajummas/",
+      "https://www.payalebarquarter.com/directory/mall/papa-ayam/",
+      "https://www.payalebarquarter.com/directory/mall/old-chang-kee/"
+    ],
+    "source_type": "Official tenant detail pages, page-specific location, weekly opening times or telephone link."
+  },
+  "workbook_reference": {
+    "path": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "sha256": "3ce9c0b79a9dbc4fb8724061754b0f3adfdbbeff56aa9caca71b8c5353fff9b7",
+    "sheet": "Public F&B Directory",
+    "read_only": true,
+    "edited": false
+  },
+  "method": {
+    "postal_code": "409057",
+    "join_keys": [
+      "exact SFA licence",
+      "exact profile name",
+      "exact unit token",
+      "postal code"
+    ],
+    "policy": "Propose only blank fields; exclude anomalous or conflicting source values. No website/menu/image values were inferred."
+  },
+  "dedupe": {
+    "proposal_files_checked": [
+      "breadtalk_first_party_menu_image_followon_refresh107_20261018.json",
+      "breadtalk_live_official_refresh_20261018.json",
+      "breadtalk_refresh106_exact_directory_findings_20261018.json",
+      "century_square_official_directory_exact_blank_fields_refresh106_20261018.json",
+      "closure_sweep_sfa_public_official_20261018.json",
+      "contact_website_hours_menu_url_quality_audit_20261018.json",
+      "foodpanda_subway_breadtalk_ihq_menu_candidate_20261018.json",
+      "hdb_existing_building_exact_postal_coordinate_candidates_20261018.json",
+      "jollibee_live_official_delta_20261018.json",
+      "jollibee_official_followon_20261018.json",
+      "northpoint_city_official_directory_exact_blank_fields_refresh106_20261018.json",
+      "old_chang_kee_blank_links_refresh106_20261018.json",
+      "old_chang_kee_live_official_scan_master3ce9c0_20261018.json",
+      "plq_official_directory_exact_blank_fields_refresh106_20261018.json",
+      "subway_official_followon_20261018_refresh106.json",
+      "subway_official_master_scan_20261018.json",
+      "waterway_point_official_directory_blank_fields_refresh106_20261018.json"
+    ],
+    "existing_sfa_field_pairs_scanned": 107,
+    "pairs_already_proposed_withheld": "yes; recursively scanned recognized SFA plus field_proposals/proposals records"
+  },
+  "summary": {
+    "SFA_rows_at_postal": 93,
+    "profile_pages_checked": 3,
+    "exact_name_unit_pages_with_new_values": 3,
+    "outlets_with_proposals": 3,
+    "proposed_blank_values": 3,
+    "field_counts": {
+      "Website": 0,
+      "Contact Details": 1,
+      "Opening Hours / Closed Days": 2,
+      "Menu URL": 0
+    },
+    "new_tenant_rows": 0,
+    "menu_url_candidates": 0,
+    "actual_image_candidates": 0
+  },
+  "proposals": [
+    {
+      "sfa_licence": "SE19S71P000",
+      "existing_name": "Ajumma's",
+      "registered_business_name": "Ajumma's",
+      "existing_address": "Address: 10 PAYA LEBAR ROAD #B2-26,PLQ MALL,Singapore 409057",
+      "official_tenant_name": "Ajumma's",
+      "official_unit": "#B2-26",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact SFA licence, exact postal code 409057, named PLQ Mall profile and exact unit token."
+      },
+      "source_detail_url": "https://www.payalebarquarter.com/directory/mall/ajummas/",
+      "http_status": 200,
+      "detail_response_sha256": "ccd58dbae9f91dd3339cf2cd25ee709030dc353ae5c06b6f42903eed3d5fb245",
+      "field_proposals": {
+        "Opening Hours / Closed Days": "Monday to Sunday | 11:30am - 9:30pm"
+      },
+      "field_evidence": {
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.payalebarquarter.com/directory/mall/ajummas/",
+          "source_type": "Lendlease / Paya Lebar Quarter official tenant detail page",
+          "outlet_specific": true,
+          "confidence": "high",
+          "freshness": "live page captured 2026-10-18 Asia/Singapore",
+          "basis": "Direct page names tenant and PLQ unit; exact SFA licence, postal code 409057 and unit token match one canonical workbook row. All seven weekday entries were individually checked and agree."
+        }
+      }
+    },
+    {
+      "sfa_licence": "SE19907L000",
+      "existing_name": "Papa Ayam",
+      "registered_business_name": "Papa Ayam",
+      "existing_address": "Address: 10 PAYA LEBAR ROAD #B2-K3,PAYA LEBAR QUARTER,Singapore 409057",
+      "official_tenant_name": "Papa Ayam",
+      "official_unit": "#B2-K3",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact SFA licence, exact postal code 409057, named PLQ Mall profile and exact unit token."
+      },
+      "source_detail_url": "https://www.payalebarquarter.com/directory/mall/papa-ayam/",
+      "http_status": 200,
+      "detail_response_sha256": "d389d7a6290b38e9e5314454972f4caa7de12e66ea723d6f94f12f03305f5793",
+      "field_proposals": {
+        "Contact Details": "9726 1300"
+      },
+      "field_evidence": {
+        "Contact Details": {
+          "source_url": "https://www.payalebarquarter.com/directory/mall/papa-ayam/",
+          "source_type": "Lendlease / Paya Lebar Quarter official tenant detail page",
+          "outlet_specific": true,
+          "confidence": "high",
+          "freshness": "live page captured 2026-10-18 Asia/Singapore",
+          "basis": "Telephone link is printed on the named tenant detail page. Exact SFA licence, postal code 409057 and unit token match one canonical workbook row."
+        }
+      }
+    },
+    {
+      "sfa_licence": "SE19616E000",
+      "existing_name": "OLD CHANG KEE",
+      "registered_business_name": "OLD CHANG KEE",
+      "existing_address": "Address: 10 PAYA LEBAR ROAD #B2-32,Singapore 409057",
+      "official_tenant_name": "OLD CHANG KEE",
+      "official_unit": "#B2-32",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact SFA licence, exact postal code 409057, named PLQ Mall profile and exact unit token."
+      },
+      "source_detail_url": "https://www.payalebarquarter.com/directory/mall/old-chang-kee/",
+      "http_status": 200,
+      "detail_response_sha256": "61ef2ebe00a8f45ba7b7acf06656a58cbfd256709c3406cd716344d623caa80a",
+      "field_proposals": {
+        "Opening Hours / Closed Days": "Monday to Sunday | 10am - 10pm"
+      },
+      "field_evidence": {
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.payalebarquarter.com/directory/mall/old-chang-kee/",
+          "source_type": "Lendlease / Paya Lebar Quarter official tenant detail page",
+          "outlet_specific": true,
+          "confidence": "high",
+          "freshness": "live page captured 2026-10-18 Asia/Singapore",
+          "basis": "Direct page names tenant and PLQ unit; exact SFA licence, postal code 409057 and unit token match one canonical workbook row. All seven weekday entries were individually checked and agree."
+        }
+      }
+    }
+  ],
+  "withheld": [
+    {
+      "official_tenant_name": "Papa Ayam",
+      "official_unit": "#B2-K3",
+      "field": "Opening Hours / Closed Days",
+      "reason": "Official page has six days 11am–9:30pm but Thursday says 11am–9:30am; inconsistent daily hours withheld."
+    }
+  ]
+}

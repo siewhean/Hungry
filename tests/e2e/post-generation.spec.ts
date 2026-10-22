@@ -13,7 +13,6 @@ test.describe("post generation and publishing", () => {
     const caption = uniqueCaption(testInfo);
 
     await publishPostFromComposer(page, caption);
-    await page.getByRole("button", { name: "View Post" }).first().click();
 
     await expectPostCaptionVisible(page, caption, "home-social-feed");
   });

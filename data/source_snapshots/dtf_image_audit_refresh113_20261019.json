@@ -1,0 +1,73 @@
+{
+  "schema_version": "1.0",
+  "snapshot_id": "dtf_image_audit_refresh113_20261019",
+  "observed_at_sgt": "2026-10-19",
+  "workbook_path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "b99b56a466a9116223f7f1c2d2f1ad2f0140bfcca78440af0b488729e2f1c247",
+  "workbook_edited": false,
+  "input_scout_snapshot": "data/source_snapshots/restaurant_group_official_menu_image_scout_20261018.json",
+  "input_scout_snapshot_sha256": "2076ff0a268f4379df9288b6abde3f0a0af8d0498d8767a6e0cb056e7ff62e3c",
+  "source_page": {
+    "url": "https://www.dintaifung.com.sg/menu/",
+    "http_status": 200,
+    "capture_sha256": "4be3a43ed21b73b6f3ec84ecb16deb94f03afc94ba65a6fba987d210586a441d",
+    "capture_bytes": 335839,
+    "current_fetch_observed": "2026-10-19",
+    "prior_fetch_observed": "2026-10-18",
+    "unchanged_from_prior_capture": true,
+    "interpretation": "Live official page currently lists these item cards; the page has no item-level update timestamp or prices and does not prove availability at every outlet."
+  },
+  "audit_counts": {
+    "candidate_items": 108,
+    "exact_source_card_item_and_image_url_matches": 108,
+    "present_in_current_refresh113_image_candidates": 108,
+    "exact_workbook_item_matches": 108,
+    "assets_http_200_with_image_mime": 108,
+    "assets_visually_checked": 108,
+    "obvious_stock_placeholder_or_wrong_dish_found": 0,
+    "rights_review_only": 108,
+    "new_workbook_rows_recommended": 0
+  },
+  "visual_review": "All 108 direct official menu-card assets were reviewed in labeled contact sheets. They appear to be genuine menu/product food photography; no obvious placeholder, unrelated stock graphic, or wrong-dish asset was observed. Visual review cannot independently establish photographer or ownership provenance.",
+  "dedupe_and_matching": "The 108 distinct official_image_url values already appear in Refresh113 Image Candidates. Every matched row has brand DIN TAI FUNG, an exact item-name match after whitespace normalization, brand-level scope, and review-only rights status. Do not append duplicate candidate rows.",
+  "same_binary_item_associations": [
+    {
+      "asset_sha256": "673812e6e97cd48966748f514bac91c9f060191fe852076dcd98b3e10cdd3e48",
+      "items": [
+        {
+          "item": "Stir-fried Nai Bai with Garlic",
+          "image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2022/07/Vegetarian-Stir-fried-Nai-Bai-01.png"
+        },
+        {
+          "item": "Stir-Fried Nai Bai",
+          "image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2022/03/Vegetarian-Stir-fried-Nai-Bai-01.png"
+        }
+      ],
+      "note": "Two distinct menu-card URLs resolve to identical image bytes; note reused imagery rather than imply two distinct photographs."
+    }
+  ],
+  "url_encoding_exception": {
+    "item": "Double-boiled Papaya & Snow Fungus with Rock Sugar",
+    "source_url_raw": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Double-boiled-Papaya-Snow-Fungus-with-Rock-Sugar-hotcold.png",
+    "percent_encoded_path_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Double-boiled-Papaya-Snow-Fungus-with-Rock-Sugar-hot%EF%80%A2cold.png",
+    "http_status_percent_encoded": 200,
+    "content_type": "image/png",
+    "note": "Source HTML includes U+F022 in the path; consumer URL handling should preserve or percent-encode this character."
+  },
+  "rights": {
+    "status": "Review only; no permission/license identified for reuse or republication.",
+    "source_page_footer": "©2026 Taster Food Pte Ltd. All rights reserved.",
+    "note": "Official-site accessibility does not grant image reuse rights. Keep all 108 rows unapproved pending permission."
+  },
+  "freshness_limits": {
+    "page_presence": "Verified live 2026-10-19; source HTML SHA matches 2026-10-18 capture byte-for-byte.",
+    "asset_upload_path_year_counts": {
+      "2021": 70,
+      "2022": 6,
+      "2024": 9,
+      "2025": 17,
+      "2026": 6
+    },
+    "limits": "Upload-path years are not photo capture dates. Menu listing does not establish outlet-level availability or current plate presentation."
+  }
+}

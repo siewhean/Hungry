@@ -18,12 +18,13 @@ import { useEffect, useRef } from "react";
 import { Animated, Easing, Pressable, View, StyleSheet } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Play } from "lucide-react-native";
-import * as Haptics from "expo-haptics";
+import * as Haptics from "@/lib/haptics";
 import { LinearGradient } from "expo-linear-gradient";
 
 import { AppText, Badge, Card } from "@/components/ui";
 import { MemberAvatarRow } from "@/components/wheel/MemberAvatarRow";
 import { WheelSvg } from "@/components/wheel/WheelSvg";
+import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { useWheelStore } from "@/store/useWheelStore";
 import { useHungryTheme } from "@/theme";
 import type { WheelStackParamList } from "./WheelStack";
@@ -35,6 +36,7 @@ const WHEEL_SIZE = 300;
 export function WheelSpinScreen({ navigation }: Props) {
   const { motion, palette, radii, spacing, zIndex, shadows } = useHungryTheme();
 
+  const reduceMotion = useReduceMotion();
   const party = useWheelStore((s) => s.party);
   const members = useWheelStore((s) => s.members);
   const entries = useWheelStore((s) => s.entries);
@@ -84,7 +86,12 @@ export function WheelSpinScreen({ navigation }: Props) {
 
   // Watch for spin_triggered event — party.spinSeed is set when it fires.
   useEffect(() => {
-    if (!party?.spinSeed || !party.spinStartedAt) return;
+    if (
+      party?.spinSeed === undefined ||
+      party.spinStartedAt === undefined ||
+      party.status !== "spinning"
+    )
+      return;
     if (isSpinning.current) return;
     if (activeEntries.length < 2) return;
 
@@ -107,35 +114,32 @@ export function WheelSpinScreen({ navigation }: Props) {
 
       Animated.timing(spinAnim, {
         toValue: totalRotation,
-        duration: motion.wheelSpin,
+        duration: reduceMotion ? 0 : motion.wheelSpin,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }).start(({ finished }) => {
+        useWheelStore.getState().finishSpin(startedAt);
         if (!finished) return;
         isSpinning.current = false;
-
-        const winnerEntry = activeEntries[winnerIndex];
-        if (!winnerEntry) return;
-
-        // Navigate to result when spin animation completes.
-        // party_resolved / round_resolved event will have already updated store.
-        const currentParty = useWheelStore.getState().party;
-        if (currentParty?.winnerEntryId) {
-          navigation.replace("WheelResult", {
-            partyId: currentParty.id,
-            winnerEntryId: currentParty.winnerEntryId,
-          });
-        } else {
-          // Elimination mode: go back to lobby for next round.
-          navigation.replace("WheelLobby", {
-            partyId: currentParty?.id ?? party.id,
-          });
-        }
       });
     }, delay);
 
-    return () => clearTimeout(timer);
-  }, [motion.wheelSpin, party?.spinSeed, party?.spinStartedAt]);
+    return () => {
+      clearTimeout(timer);
+      spinAnim.stopAnimation();
+      isSpinning.current = false;
+      useWheelStore.getState().finishSpin(startedAt);
+    };
+  }, [reduceMotion, motion.wheelSpin, party?.spinSeed, party?.spinStartedAt]);
+
+  const presentedResult = useRef<string | null>(null);
+  useEffect(() => {
+    if (party?.status !== "resolved" || !party.winnerEntryId) return;
+    const resultKey = `${party.id}:${party.spinStartedAt}:${party.winnerEntryId}`;
+    if (presentedResult.current === resultKey) return;
+    presentedResult.current = resultKey;
+    navigation.replace("WheelResult", { partyId: party.id, winnerEntryId: party.winnerEntryId });
+  }, [party?.id, party?.status, party?.spinStartedAt, party?.winnerEntryId, navigation]);
 
   const rotation = spinAnim.interpolate({
     inputRange: [0, 360],
@@ -145,7 +149,7 @@ export function WheelSpinScreen({ navigation }: Props) {
   if (!party) return null;
 
   const spinning = party.status === "spinning";
-  const canSpin = isHost && !spinning && activeEntries.length >= 2;
+  const canSpin = isHost && party.status === "lobby" && activeEntries.length >= 2;
 
   return (
     <View style={{ flex: 1, backgroundColor: palette.bg }}>

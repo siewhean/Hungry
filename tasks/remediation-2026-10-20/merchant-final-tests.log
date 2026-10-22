@@ -1,0 +1,71 @@
+(node:71077) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ merchant access, dashboard, and tab routes cover primary merchant entry points (1.992125ms)
+✔ merchant profile edits validate fields and propagate to user-side venue reads (1.207458ms)
+✔ merchant menu and OCR flows cover catalog writes that become consumer-visible dishes (1.470709ms)
+✔ merchant inbox, promotions, AI assistant, and settings use service-backed state (1.634917ms)
+✔ merchant Playwright and native smoke coverage entry points stay registered (2.165291ms)
+(node:71079) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Merchant screen contract: every merchant route is typed, registered, and backed by a screen (1.157791ms)
+✔ Merchant screen contract: verified-only routes are guarded by merchant access status (0.680125ms)
+✔ Merchant screen contract: extended merchant sections stay hidden from the tab bar (0.237584ms)
+✔ Merchant screen contract: merchant navigation buttons are accessible and hidden sections are reachable (0.249084ms)
+✔ Merchant screen contract: merchant route params match editable sub-screen needs (0.136625ms)
+✔ Merchant screen contract: menu management screens are wired to merchant services (0.311583ms)
+✔ Merchant screen contract: profile, menu, and analytics use production-ready controls (52.477458ms)
+✔ Merchant screen contract: dish details record merchant dish views once per screen (0.216417ms)
+✔ Merchant screen contract: inbox, promotions, assistant, and settings screens use merchant services (0.486375ms)
+✔ Merchant screen contract: merchant screens resolve services through provider (3.388792ms)
+(node:71080) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ isCustomerVisiblePromotion only allows available active-window promotions (2.318ms)
+✔ filterCustomerVisiblePromotions keeps outlet-level and matching dish offers only (0.536792ms)
+(node:71081) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ late merchant settlements are invalid after account/outlet switch away and back (0.936041ms)
+✔ batch stops issuing remaining writes after outlet changes mid-first mutation (0.992833ms)
+(node:71082) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ validateMerchantProfileUpdates trims and normalizes string fields (2.154458ms)
+✔ validateMerchantProfileUpdates rejects invalid contact fields (1.072417ms)
+✔ validateMerchantProfileUpdates rejects exact privacy for home-based businesses (0.184792ms)
+(node:71083) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ validateMerchantPromotionInput normalizes a valid existing-item promotion (2.383583ms)
+✔ validateMerchantPromotionInput accepts timezone-qualified datetimes only (0.434875ms)
+✔ validateMerchantPromotionInput rejects invalid promotion rules (0.277875ms)
+(node:71084) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ merchant reply drafts restore per account, survive composer close and reject delayed former-account writes (0.897083ms)
+(node:71085) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ transitionVerificationStatus allows expected transitions (0.504125ms)
+✔ transitionVerificationStatus blocks invalid transitions (0.25275ms)
+✔ applyVerificationSubmission appends evidence and preserves rejection history (1.468333ms)
+(node:71086) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ merchant price rejects missing/malformed inputs instead of turning them into free (1.232916ms)
+✔ availability edits preserve unknown flags (2.117625ms)
+✔ promotion calendar dates use Singapore midnight (30.108792ms)
+✔ batch result retains failed canonical fixture items (0.303959ms)
+✔ OCR acceptance applies corrections before publication and repeated acceptance returns same dish (55.145667ms)
+(node:71087) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Supabase merchant service is wired to linked consumer venue and dish tables (1.480542ms)
+✔ Supabase merchant dish writes persist user-visible metadata and media (1.2715ms)
+✔ Supabase repository reads dish metadata from normalized catalog tables (1.262208ms)
+✔ Supabase migration links merchant writes to non-merchant read surfaces (0.541209ms)
+✔ Supabase merchant RLS hardening limits review replies and settings writes (3.609083ms)
+✔ Supabase merchant catalog metadata RLS covers images and dietary links (1.123166ms)
+✔ Supabase merchant portal readiness covers views, notifications, and promo pricing (35.9085ms)
+✔ Supabase merchant analytics foundation uses RPC-backed dynamic events and rollups (2.031ms)
+✔ Supabase popular visitor pins are review-backed, merchant-managed, and public-active readable (1.290417ms)
+ℹ tests 43
+ℹ suites 0
+ℹ pass 43
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 737.909209

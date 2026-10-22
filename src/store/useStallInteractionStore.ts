@@ -8,11 +8,10 @@
  * hydrates and upserts `user_stall_interactions`.
  */
 
+import { getAccountGeneration, assertAccountGeneration } from "@/lib/security/accountScope";
 import { create } from "zustand";
 import { getDataRepository } from "@/lib/services/serviceProvider";
-import { useFoodCredStore } from "./useFoodCredStore";
 import { trackStallSaved, trackStallMarkedTried } from "@/lib/analytics/gamificationEvents";
-import { withinCredCutoff } from "@/constants/gamificationLimits";
 import type { StallInteraction } from "@/types/domain";
 
 // ─── State Interface ──────────────────────────────────────────────────────────
@@ -29,6 +28,7 @@ interface StallInteractionState {
 
   // Actions
   loadInteractions: (userId: string) => Promise<void>;
+  setVisited: (userId: string, stallId: string, desired: boolean) => Promise<boolean>;
   toggleSaved: (userId: string, stallId: string) => Promise<void>;
   /**
    * Toggle `isTried` for a stall.
@@ -68,9 +68,11 @@ export const useStallInteractionStore = create<StallInteractionState>()((set, ge
     if (get().isLoaded) return;
 
     // Active repository handles mock or Supabase `user_stall_interactions` hydration.
+    const generation = getAccountGeneration();
     const repo = getDataRepository();
     const list: StallInteraction[] = (await repo.listStallInteractions?.(userId)) ?? [];
 
+    assertAccountGeneration(generation);
     const map: Record<string, StallInteraction> = {};
     for (const item of list) {
       map[item.stallId] = item;
@@ -80,97 +82,38 @@ export const useStallInteractionStore = create<StallInteractionState>()((set, ge
   },
 
   toggleSaved: async (userId, stallId) => {
-    const existing = get().interactions[stallId];
-    const wasSaved = existing?.isSaved ?? false;
-    const now = new Date().toISOString();
-
-    const updated: StallInteraction = {
+    const generation = getAccountGeneration();
+    const current = get().interactions[stallId];
+    const desired = !(current?.isSaved ?? false);
+    const remote = await getDataRepository().upsertStallInteraction?.(userId, stallId, {
+      isSaved: desired,
+    });
+    assertAccountGeneration(generation);
+    if (!remote) throw new Error("The save could not be confirmed. Try again.");
+    set((state) => ({ interactions: { ...state.interactions, [stallId]: remote } }));
+    if (desired) trackStallSaved({ stallId, sourceScreen: "StallDetail" });
+  },
+  setVisited: async (userId, stallId, desired) => {
+    const generation = getAccountGeneration();
+    const current = get().interactions[stallId];
+    if (current?.userId === userId && current.isTried === desired) return desired;
+    const remote = await getDataRepository().upsertStallInteraction?.(userId, stallId, {
+      isTried: desired,
+    });
+    assertAccountGeneration(generation);
+    if (!remote) throw new Error("Your visit could not be confirmed. Try again.");
+    set((state) => ({ interactions: { ...state.interactions, [stallId]: remote } }));
+    if (desired) trackStallMarkedTried({ stallId, sourceScreen: "StallDetail" });
+    return remote.isTried;
+  },
+  markTried: async (userId, stallId) => ({
+    isTried: await get().setVisited(
       userId,
       stallId,
-      isSaved: !wasSaved,
-      isTried: existing?.isTried ?? false,
-      isReviewed: existing?.isReviewed ?? false,
-      savedAt: !wasSaved ? now : existing?.savedAt,
-      triedAt: existing?.triedAt,
-      reviewedAt: existing?.reviewedAt,
-    };
-
-    set((state) => ({
-      interactions: { ...state.interactions, [stallId]: updated },
-    }));
-
-    const remoteUpdated = await getDataRepository().upsertStallInteraction?.(userId, stallId, {
-      isSaved: !wasSaved,
-    });
-    if (remoteUpdated) {
-      set((state) => ({
-        interactions: { ...state.interactions, [stallId]: remoteUpdated },
-      }));
-    }
-
-    if (!wasSaved) {
-      // Rate-limit: count today's saves
-      const todaySaveCount = Object.values(get().interactions).filter(
-        (i) => i.isSaved && i.savedAt && isToday(i.savedAt),
-      ).length;
-      if (withinCredCutoff("stall_saved", todaySaveCount)) {
-        await useFoodCredStore.getState().awardPoints("stall_saved", stallId);
-      }
-    }
-
-    if (!wasSaved) {
-      trackStallSaved({ stallId, sourceScreen: "StallDetail" });
-    }
-  },
-
-  markTried: async (userId, stallId) => {
-    const existing = get().interactions[stallId];
-    const shouldUnmark = existing?.isTried ?? false;
-    const now = new Date().toISOString();
-
-    const updated: StallInteraction = {
-      userId,
-      stallId,
-      isSaved: existing?.isSaved ?? false,
-      isTried: !shouldUnmark,
-      isReviewed: existing?.isReviewed ?? false,
-      savedAt: existing?.savedAt,
-      triedAt: shouldUnmark ? undefined : now,
-      reviewedAt: existing?.reviewedAt,
-    };
-
-    set((state) => ({
-      interactions: { ...state.interactions, [stallId]: updated },
-    }));
-
-    const remoteUpdated = await getDataRepository().upsertStallInteraction?.(userId, stallId, {
-      isTried: !shouldUnmark,
-    });
-    if (remoteUpdated) {
-      set((state) => ({
-        interactions: { ...state.interactions, [stallId]: remoteUpdated },
-      }));
-    }
-
-    let pointsAwarded = 0;
-    if (!shouldUnmark) {
-      // Rate-limit: count today's tried marks
-      const todayTriedCount = Object.values(get().interactions).filter(
-        (i) => i.isTried && i.triedAt && isToday(i.triedAt),
-      ).length;
-      if (withinCredCutoff("stall_marked_tried", todayTriedCount)) {
-        await useFoodCredStore.getState().awardPoints("stall_marked_tried", stallId);
-        pointsAwarded = 5;
-      }
-
-      trackStallMarkedTried({ stallId, sourceScreen: "StallDetail" });
-    }
-
-    return {
-      isTried: !shouldUnmark,
-      pointsAwarded,
-    };
-  },
+      !(get().interactions[stallId]?.isTried ?? false),
+    ),
+    pointsAwarded: 0,
+  }),
 
   markReviewed: async (userId, stallId) => {
     const existing = get().interactions[stallId];
@@ -206,16 +149,3 @@ export const useStallInteractionStore = create<StallInteractionState>()((set, ge
 
   _reset: () => set({ interactions: {}, isLoaded: false }),
 }));
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-/** Returns true when an ISO timestamp falls within today (Singapore UTC+8). */
-function isToday(isoString: string): boolean {
-  const d = new Date(isoString);
-  const now = new Date();
-  return (
-    d.getFullYear() === now.getFullYear() &&
-    d.getMonth() === now.getMonth() &&
-    d.getDate() === now.getDate()
-  );
-}

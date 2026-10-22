@@ -1,0 +1,62 @@
+{
+  "proposal_id": "refresh134_ratings_source_20261019",
+  "baseline_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_sha256": "2e398d1a6c872287c0b093a40cac17a63557293b27471b82832756ba6019a916",
+  "observed_date": "2026-10-19",
+  "scope": "read-only survey of free, durable public sources for current outlet-level consumer ratings and review counts in Singapore",
+  "workbook_check": {
+    "sheet": "Public F&B Directory",
+    "records": 38273,
+    "rating_column": "Rating / Review Count",
+    "currently_populated": 0,
+    "method": "Read-only streaming inspection of the canonical workbook with openpyxl; no cells changed."
+  },
+  "findings": [
+    {
+      "source": "Google Maps Platform Places API",
+      "url": "https://developers.google.com/maps/documentation/places/web-service/policies",
+      "status": "not_eligible_for_bulk_catalogue_population",
+      "coverage": "Potentially high exact-place coverage through API lookup, subject to matching and SKU availability; not tested or queried.",
+      "reason": "Places API is pay-as-you-go and requires billing. Google policy prohibits prefetching, caching, or storing Places content beyond limited exceptions; place IDs are exempt, but ratings/review counts are not. Displaying reviews and ratings also has attribution and Google Maps link requirements. This does not fit a durable offline Excel catalogue or the zero-spend constraint.",
+      "terms_and_cost_reference": "https://developers.google.com/maps/documentation/places/web-service/usage-and-billing"
+    },
+    {
+      "source": "OpenStreetMap (OSM) / ODbL",
+      "url": "https://wiki.openstreetmap.org/wiki/Key:stars",
+      "status": "not_a_source_for_consumer_ratings_or_review_counts",
+      "coverage": "Potentially sparse and not reliable enough for a catalogue-wide join.",
+      "reason": "OSM's stars key is intended for formal classifications/awards such as Michelin, not subjective ratings from review platforms. The key's own guidance says to use only recognized classifications and warns some rating sources have incompatible licensing. OSM does not provide a standard review-count field. Any OSM-derived database must satisfy ODbL attribution/share-alike obligations.",
+      "license_reference": "https://www.openstreetmap.org/copyright"
+    },
+    {
+      "source": "Singapore data.gov.sg / NEA-SFA licensed eating-establishment data",
+      "url": "https://data.gov.sg/datasets?page=8&resultId=d_227473e811b09731e64725f140b77697&sidebar=true&topics=environment",
+      "status": "official_nonconsumer_quality_measure_only",
+      "coverage": "Exact establishment/stall and licence identifiers can support hygiene-grade joins where the published dataset includes a grade; it is not a consumer rating source and should not be put into Rating / Review Count.",
+      "reason": "The official listing contains regulatory hygiene grade/status fields, which measure hygiene compliance rather than customer satisfaction. Keep this data in the existing SFA Status / Hygiene Grade field with the official observation date/source. Dataset catalogue states Singapore Open Data Licence availability; check the selected dataset's licence metadata at download time."
+    },
+    {
+      "source": "Yelp public dataset / other review-site pages",
+      "status": "not_a_current_Singapore_open_source",
+      "coverage": "No verified current, reusable Singapore-wide branch-level dataset identified.",
+      "reason": "Do not scrape review sites or reuse their ratings/counts absent an explicit public data licence and permitted API terms. A research/training dataset is not evidence of a current production feed or Singapore branch coverage."
+    }
+  ],
+  "exact_match_proposal": {
+    "consumer_rating_records": [],
+    "consumer_rating_records_added": 0,
+    "reason": "No source found that simultaneously offers current Singapore outlet-level ratings/review counts, free access, durable bulk storage rights, and a defensible exact-branch match. No rating values should be fabricated, scraped, or inferred from establishment-level data.",
+    "possible_separate_field": {
+      "name": "Official award/classification",
+      "source": "OSM objects tagged award:michelin or stars, when present and independently verified against the current official award list",
+      "treatment": "Keep distinct from user rating/review count; retain source, observed date, and ODbL attribution. Sparse coverage means this is a later separate enrichment, not a substitute for ratings."
+    }
+  },
+  "recommended_catalogue_policy": [
+    "Leave Rating / Review Count blank unless a source has explicit durable storage rights or the business owner supplies the value with date and provenance.",
+    "Continue using SFA/NEA hygiene grades only in SFA Status / Hygiene Grade and label the measure clearly; it is not a popularity or food-quality score.",
+    "If live ratings are later desired, link users to the originating provider instead of copying provider ratings into the offline workbook, unless a new provider contract explicitly allows durable storage and redistribution.",
+    "Recheck provider terms and pricing before each future integration; do not assume a free quota means no-spend unless billing is disabled or hard-capped."
+  ],
+  "no_spend_no_mapbox_no_workbook_edit": true
+}

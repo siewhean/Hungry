@@ -1,0 +1,683 @@
+{
+  "snapshot": "refresh136_directory_fields_20261019",
+  "baseline_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_workbook_sha256": "dfdd8b9833f249e0c4539c8c8ed861f06df7f40ba842875aa6375b13d3c7e999",
+  "scope": "Read-only first-party branch-directory audit of up to 40 exact McDonalds Singapore licence records with blank opening-hours cells. Workbook untouched; no spending.",
+  "observed_at_local": "2026-10-19 12:23:26 Asia/Singapore",
+  "sources_checked": [
+    {
+      "url": "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+      "source_type": "First-party current outlet address/contact directory",
+      "observed_at_local": "2026-10-19 12:23:26 Asia/Singapore",
+      "evidence": "Provides branch names, addresses, units, postal codes, and phone numbers. Exact address/unit/postal match confirms identity; page does not publish hours."
+    },
+    {
+      "url": "https://www.mcdonalds.com.sg/our-green-commitment",
+      "source_type": "First-party branch-specific green restaurant schedule",
+      "observed_at_local": "2026-10-19 12:23:26 Asia/Singapore",
+      "evidence": "Publishes outlet addresses and operating hours for included green restaurants. Exact matches among reviewed records already have populated hours; it does not provide schedules for remaining blank-hour branches."
+    },
+    {
+      "url": "https://www.mcdonalds.com.sg/locate-us",
+      "source_type": "First-party locator guidance",
+      "observed_at_local": "2026-10-19 12:23:26 Asia/Singapore",
+      "evidence": "Directs customers to My McDonalds App for latest location information; webpage exposes no branch-specific schedules."
+    }
+  ],
+  "field_deltas": [],
+  "screened_no_delta": [
+    {
+      "sfa_licence": "B91065P000",
+      "f_and_b_name": "MCDONALD",
+      "postal_code": "760846",
+      "sfa_address": "Address: 846 YISHUN RING ROAD #01-3669,Singapore 760846",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": null,
+      "source_urls": [
+        "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+        "https://www.mcdonalds.com.sg/our-green-commitment",
+        "https://www.mcdonalds.com.sg/locate-us"
+      ],
+      "source_observation": "Current operator address/contact directory confirms this exact outlet identity but does not publish hours. The official green-restaurants schedule lists only its included outlets; no hours were transferred from another branch or mall.",
+      "disposition": "no_fill_first_party_hours_not_published_for_exact_branch"
+    },
+    {
+      "sfa_licence": "B97026C000",
+      "f_and_b_name": "MCDONALD",
+      "postal_code": "758382",
+      "sfa_address": "Address: 369 SEMBAWANG ROAD #01-01,Singapore 758382",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": null,
+      "source_urls": [
+        "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+        "https://www.mcdonalds.com.sg/our-green-commitment",
+        "https://www.mcdonalds.com.sg/locate-us"
+      ],
+      "source_observation": "Current operator address/contact directory confirms this exact outlet identity but does not publish hours. The official green-restaurants schedule lists only its included outlets; no hours were transferred from another branch or mall.",
+      "disposition": "no_fill_first_party_hours_not_published_for_exact_branch"
+    },
+    {
+      "sfa_licence": "E85146J000",
+      "f_and_b_name": "MCDONALD",
+      "postal_code": "350148",
+      "sfa_address": "Address: 148 POTONG PASIR AVENUE 1 #01-43,Singapore 350148",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": null,
+      "source_urls": [
+        "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+        "https://www.mcdonalds.com.sg/our-green-commitment",
+        "https://www.mcdonalds.com.sg/locate-us"
+      ],
+      "source_observation": "Current operator address/contact directory confirms this exact outlet identity but does not publish hours. The official green-restaurants schedule lists only its included outlets; no hours were transferred from another branch or mall.",
+      "disposition": "no_fill_first_party_hours_not_published_for_exact_branch"
+    },
+    {
+      "sfa_licence": "S02085N000",
+      "f_and_b_name": "MCDONALD",
+      "postal_code": "310490",
+      "sfa_address": "Address: 490 LORONG 6 TOA PAYOH #01-11,Singapore 310490",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": null,
+      "source_urls": [
+        "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+        "https://www.mcdonalds.com.sg/our-green-commitment",
+        "https://www.mcdonalds.com.sg/locate-us"
+      ],
+      "source_observation": "Current operator address/contact directory confirms this exact outlet identity but does not publish hours. The official green-restaurants schedule lists only its included outlets; no hours were transferred from another branch or mall.",
+      "disposition": "no_fill_first_party_hours_not_published_for_exact_branch"
+    },
+    {
+      "sfa_licence": "S79145J000",
+      "f_and_b_name": "MCDONALD",
+      "postal_code": "560448",
+      "sfa_address": "Address: 448 ANG MO KIO AVENUE 10 #01-1693,Singapore 560448",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": null,
+      "source_urls": [
+        "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+        "https://www.mcdonalds.com.sg/our-green-commitment",
+        "https://www.mcdonalds.com.sg/locate-us"
+      ],
+      "source_observation": "Current operator address/contact directory confirms this exact outlet identity but does not publish hours. The official green-restaurants schedule lists only its included outlets; no hours were transferred from another branch or mall.",
+      "disposition": "no_fill_first_party_hours_not_published_for_exact_branch"
+    },
+    {
+      "sfa_licence": "SW04044N000",
+      "f_and_b_name": "MCDONALD",
+      "postal_code": "126844",
+      "sfa_address": "Address: 71 WEST COAST HIGHWAY Singapore 126844",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": null,
+      "source_urls": [
+        "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+        "https://www.mcdonalds.com.sg/our-green-commitment",
+        "https://www.mcdonalds.com.sg/locate-us"
+      ],
+      "source_observation": "Current operator address/contact directory confirms this exact outlet identity but does not publish hours. The official green-restaurants schedule lists only its included outlets; no hours were transferred from another branch or mall.",
+      "disposition": "no_fill_first_party_hours_not_published_for_exact_branch"
+    },
+    {
+      "sfa_licence": "SW09255A000",
+      "f_and_b_name": "MCDONALD",
+      "postal_code": "680624",
+      "sfa_address": "Address: 624 CHOA CHU KANG STREET 62 #01-262,YEW TEE SHOPPING CENTRE,Singapore 680624",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": null,
+      "source_urls": [
+        "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+        "https://www.mcdonalds.com.sg/our-green-commitment",
+        "https://www.mcdonalds.com.sg/locate-us"
+      ],
+      "source_observation": "Current operator address/contact directory confirms this exact outlet identity but does not publish hours. The official green-restaurants schedule lists only its included outlets; no hours were transferred from another branch or mall.",
+      "disposition": "no_fill_first_party_hours_not_published_for_exact_branch"
+    },
+    {
+      "sfa_licence": "S95119N000",
+      "f_and_b_name": "MCDONALD S",
+      "postal_code": "529284",
+      "sfa_address": "Address: 5 TAMPINES STREET 32 #01-01,Singapore 529284",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": null,
+      "source_urls": [
+        "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+        "https://www.mcdonalds.com.sg/our-green-commitment",
+        "https://www.mcdonalds.com.sg/locate-us"
+      ],
+      "source_observation": "Current operator address/contact directory confirms this exact outlet identity but does not publish hours. The official green-restaurants schedule lists only its included outlets; no hours were transferred from another branch or mall.",
+      "disposition": "no_fill_first_party_hours_not_published_for_exact_branch"
+    },
+    {
+      "sfa_licence": "W98021K000",
+      "f_and_b_name": "MCDONALD S",
+      "postal_code": "188307",
+      "sfa_address": "Address: 35 SELEGIE ROAD #B1-38,PARKLANE SHOPPING MALL,Singapore 188307",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": null,
+      "source_urls": [
+        "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+        "https://www.mcdonalds.com.sg/our-green-commitment",
+        "https://www.mcdonalds.com.sg/locate-us"
+      ],
+      "source_observation": "Current operator address/contact directory confirms this exact outlet identity but does not publish hours. The official green-restaurants schedule lists only its included outlets; no hours were transferred from another branch or mall.",
+      "disposition": "no_fill_first_party_hours_not_published_for_exact_branch"
+    },
+    {
+      "sfa_licence": "CE19P07P000",
+      "f_and_b_name": "MCDONALD''S",
+      "postal_code": "329984",
+      "sfa_address": "Address: 20 AH HOOD ROAD #01-16,#01-K3,Singapore 329984",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": null,
+      "source_urls": [
+        "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+        "https://www.mcdonalds.com.sg/our-green-commitment",
+        "https://www.mcdonalds.com.sg/locate-us"
+      ],
+      "source_observation": "Current operator address/contact directory confirms this exact outlet identity but does not publish hours. The official green-restaurants schedule lists only its included outlets; no hours were transferred from another branch or mall.",
+      "disposition": "no_fill_first_party_hours_not_published_for_exact_branch"
+    },
+    {
+      "sfa_licence": "NE16759A000",
+      "f_and_b_name": "MCDONALD''S",
+      "postal_code": "519599",
+      "sfa_address": "Address: 1 PASIR RIS CLOSE #01-338,E!HUB@DOWNTOWN EAST,Singapore 519599 E!HUB@DOWNTOWN EAST",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": null,
+      "source_urls": [
+        "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+        "https://www.mcdonalds.com.sg/our-green-commitment",
+        "https://www.mcdonalds.com.sg/locate-us"
+      ],
+      "source_observation": "Current operator address/contact directory confirms this exact outlet identity but does not publish hours. The official green-restaurants schedule lists only its included outlets; no hours were transferred from another branch or mall.",
+      "disposition": "no_fill_first_party_hours_not_published_for_exact_branch"
+    },
+    {
+      "sfa_licence": "NE17087C000",
+      "f_and_b_name": "MCDONALD''S",
+      "postal_code": "510258",
+      "sfa_address": "Address: 258 PASIR RIS STREET 21 #01-25,LOYANG POINT,Singapore 510258",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": null,
+      "source_urls": [
+        "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+        "https://www.mcdonalds.com.sg/our-green-commitment",
+        "https://www.mcdonalds.com.sg/locate-us"
+      ],
+      "source_observation": "Current operator address/contact directory confirms this exact outlet identity but does not publish hours. The official green-restaurants schedule lists only its included outlets; no hours were transferred from another branch or mall.",
+      "disposition": "no_fill_first_party_hours_not_published_for_exact_branch"
+    },
+    {
+      "sfa_licence": "NW18123K000",
+      "f_and_b_name": "MCDONALD''S",
+      "postal_code": "760293",
+      "sfa_address": "Address: 293 YISHUN STREET 22 #01-237,(PART OF - RIGHT UNIT),Singapore 760293",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": null,
+      "source_urls": [
+        "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+        "https://www.mcdonalds.com.sg/our-green-commitment",
+        "https://www.mcdonalds.com.sg/locate-us"
+      ],
+      "source_observation": "Current operator address/contact directory confirms this exact outlet identity but does not publish hours. The official green-restaurants schedule lists only its included outlets; no hours were transferred from another branch or mall.",
+      "disposition": "no_fill_first_party_hours_not_published_for_exact_branch"
+    },
+    {
+      "sfa_licence": "NW19520E000",
+      "f_and_b_name": "MCDONALD''S",
+      "postal_code": "760461",
+      "sfa_address": "Address: 461 YISHUN AVENUE 6 #01-03,MULTI STOREY CAR PARK,Singapore 760461 MULTI STOREY CAR PARK",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": null,
+      "source_urls": [
+        "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+        "https://www.mcdonalds.com.sg/our-green-commitment",
+        "https://www.mcdonalds.com.sg/locate-us"
+      ],
+      "source_observation": "Current operator address/contact directory confirms this exact outlet identity but does not publish hours. The official green-restaurants schedule lists only its included outlets; no hours were transferred from another branch or mall.",
+      "disposition": "no_fill_first_party_hours_not_published_for_exact_branch"
+    },
+    {
+      "sfa_licence": "B00101J000",
+      "f_and_b_name": "MCDONALD'S",
+      "postal_code": "730548",
+      "sfa_address": "Address: 548 WOODLANDS DRIVE 44 #01-20,VISTA POINT,Singapore 730548",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": null,
+      "source_urls": [
+        "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+        "https://www.mcdonalds.com.sg/our-green-commitment",
+        "https://www.mcdonalds.com.sg/locate-us"
+      ],
+      "source_observation": "Current operator address/contact directory confirms this exact outlet identity but does not publish hours. The official green-restaurants schedule lists only its included outlets; no hours were transferred from another branch or mall.",
+      "disposition": "no_fill_first_party_hours_not_published_for_exact_branch"
+    },
+    {
+      "sfa_licence": "B00102E000",
+      "f_and_b_name": "MCDONALD'S",
+      "postal_code": "730900",
+      "sfa_address": "Address: 900 SOUTH WOODLANDS DRIVE #01-01,WOODLANDS CIVIC CENTRE,Singapore 730900",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": null,
+      "source_urls": [
+        "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+        "https://www.mcdonalds.com.sg/our-green-commitment",
+        "https://www.mcdonalds.com.sg/locate-us"
+      ],
+      "source_observation": "Current operator address/contact directory confirms this exact outlet identity but does not publish hours. The official green-restaurants schedule lists only its included outlets; no hours were transferred from another branch or mall.",
+      "disposition": "no_fill_first_party_hours_not_published_for_exact_branch"
+    },
+    {
+      "sfa_licence": "B02080L000",
+      "f_and_b_name": "MCDONALD'S",
+      "postal_code": "730768",
+      "sfa_address": "Address: 768 WOODLANDS AVENUE 6 #01-01,Singapore 730768",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": null,
+      "source_urls": [
+        "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+        "https://www.mcdonalds.com.sg/our-green-commitment",
+        "https://www.mcdonalds.com.sg/locate-us"
+      ],
+      "source_observation": "Current operator address/contact directory confirms this exact outlet identity but does not publish hours. The official green-restaurants schedule lists only its included outlets; no hours were transferred from another branch or mall.",
+      "disposition": "no_fill_first_party_hours_not_published_for_exact_branch"
+    },
+    {
+      "sfa_licence": "B88097P000",
+      "f_and_b_name": "MCDONALD'S",
+      "postal_code": "569922",
+      "sfa_address": "Address: 51 ANG MO KIO AVENUE 3 Singapore 569922",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": null,
+      "source_urls": [
+        "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+        "https://www.mcdonalds.com.sg/our-green-commitment",
+        "https://www.mcdonalds.com.sg/locate-us"
+      ],
+      "source_observation": "Current operator address/contact directory confirms this exact outlet identity but does not publish hours. The official green-restaurants schedule lists only its included outlets; no hours were transferred from another branch or mall.",
+      "disposition": "no_fill_first_party_hours_not_published_for_exact_branch"
+    },
+    {
+      "sfa_licence": "B97165E000",
+      "f_and_b_name": "MCDONALD'S",
+      "postal_code": "677743",
+      "sfa_address": "Address: 1 JELEBU ROAD #02-01,BUKIT PANJANG PLAZA,Singapore 677743",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": null,
+      "source_urls": [
+        "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+        "https://www.mcdonalds.com.sg/our-green-commitment",
+        "https://www.mcdonalds.com.sg/locate-us"
+      ],
+      "source_observation": "Current operator address/contact directory confirms this exact outlet identity but does not publish hours. The official green-restaurants schedule lists only its included outlets; no hours were transferred from another branch or mall.",
+      "disposition": "no_fill_first_party_hours_not_published_for_exact_branch"
+    },
+    {
+      "sfa_licence": "B98063J000",
+      "f_and_b_name": "MCDONALD'S",
+      "postal_code": "739065",
+      "sfa_address": "Address: 30 WOODLANDS AVENUE 1 #01-06,THE WOODGROVE,Singapore 739065",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": null,
+      "source_urls": [
+        "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+        "https://www.mcdonalds.com.sg/our-green-commitment",
+        "https://www.mcdonalds.com.sg/locate-us"
+      ],
+      "source_observation": "Current operator address/contact directory confirms this exact outlet identity but does not publish hours. The official green-restaurants schedule lists only its included outlets; no hours were transferred from another branch or mall.",
+      "disposition": "no_fill_first_party_hours_not_published_for_exact_branch"
+    },
+    {
+      "sfa_licence": "C83285L000",
+      "f_and_b_name": "MCDONALD'S",
+      "postal_code": "600256",
+      "sfa_address": "Address: 256 JURONG EAST STREET 24 #01-381,Singapore 600256",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": null,
+      "source_urls": [
+        "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+        "https://www.mcdonalds.com.sg/our-green-commitment",
+        "https://www.mcdonalds.com.sg/locate-us"
+      ],
+      "source_observation": "Current operator address/contact directory confirms this exact outlet identity but does not publish hours. The official green-restaurants schedule lists only its included outlets; no hours were transferred from another branch or mall.",
+      "disposition": "no_fill_first_party_hours_not_published_for_exact_branch"
+    },
+    {
+      "sfa_licence": "C84333E000",
+      "f_and_b_name": "MCDONALD'S",
+      "postal_code": "618640",
+      "sfa_address": "Address: YUAN CHING ROAD Singapore 618640",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": null,
+      "source_urls": [
+        "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+        "https://www.mcdonalds.com.sg/our-green-commitment",
+        "https://www.mcdonalds.com.sg/locate-us"
+      ],
+      "source_observation": "Current operator address/contact directory confirms this exact outlet identity but does not publish hours. The official green-restaurants schedule lists only its included outlets; no hours were transferred from another branch or mall.",
+      "disposition": "no_fill_first_party_hours_not_published_for_exact_branch"
+    },
+    {
+      "sfa_licence": "C95242C000",
+      "f_and_b_name": "MCDONALD'S",
+      "postal_code": "648886",
+      "sfa_address": "Address: 1 JURONG WEST CENTRAL 2 #01-31,JURONG POINT,Singapore 648886",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": null,
+      "source_urls": [
+        "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+        "https://www.mcdonalds.com.sg/our-green-commitment",
+        "https://www.mcdonalds.com.sg/locate-us"
+      ],
+      "source_observation": "Current operator address/contact directory confirms this exact outlet identity but does not publish hours. The official green-restaurants schedule lists only its included outlets; no hours were transferred from another branch or mall.",
+      "disposition": "no_fill_first_party_hours_not_published_for_exact_branch"
+    },
+    {
+      "sfa_licence": "CE04150E000",
+      "f_and_b_name": "McDonald's",
+      "postal_code": "159953",
+      "sfa_address": "Address: 370 ALEXANDRA ROAD #01-34,#01-32/33,ANCHORPOINT SHOPPING CENTRE,Singapore 159953",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": null,
+      "source_urls": [
+        "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+        "https://www.mcdonalds.com.sg/our-green-commitment",
+        "https://www.mcdonalds.com.sg/locate-us"
+      ],
+      "source_observation": "Current operator address/contact directory confirms this exact outlet identity but does not publish hours. The official green-restaurants schedule lists only its included outlets; no hours were transferred from another branch or mall.",
+      "disposition": "no_fill_first_party_hours_not_published_for_exact_branch"
+    },
+    {
+      "sfa_licence": "CE05729A000",
+      "f_and_b_name": "MCDONALD'S",
+      "postal_code": "039594",
+      "sfa_address": "Address: 6 RAFFLES BOULEVARD MARINA SQUARE,Singapore 039594 #02-156/157/166",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": null,
+      "source_urls": [
+        "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+        "https://www.mcdonalds.com.sg/our-green-commitment",
+        "https://www.mcdonalds.com.sg/locate-us"
+      ],
+      "source_observation": "Current operator address/contact directory confirms this exact outlet identity but does not publish hours. The official green-restaurants schedule lists only its included outlets; no hours were transferred from another branch or mall.",
+      "disposition": "no_fill_first_party_hours_not_published_for_exact_branch"
+    },
+    {
+      "sfa_licence": "CE06I46L000",
+      "f_and_b_name": "MCDONALD'S",
+      "postal_code": "567740",
+      "sfa_address": "Address: 10 ANG MO KIO STREET 12 Singapore 567740",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": null,
+      "source_urls": [
+        "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+        "https://www.mcdonalds.com.sg/our-green-commitment",
+        "https://www.mcdonalds.com.sg/locate-us"
+      ],
+      "source_observation": "Current operator address/contact directory confirms this exact outlet identity but does not publish hours. The official green-restaurants schedule lists only its included outlets; no hours were transferred from another branch or mall.",
+      "disposition": "no_fill_first_party_hours_not_published_for_exact_branch"
+    },
+    {
+      "sfa_licence": "CE08423E000",
+      "f_and_b_name": "McDonald's",
+      "postal_code": "569777",
+      "sfa_address": "Address: 210 ANG MO KIO AVENUE 9 #01-212,YIO CHU KANG STADIUM,Singapore 569777",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": null,
+      "source_urls": [
+        "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+        "https://www.mcdonalds.com.sg/our-green-commitment",
+        "https://www.mcdonalds.com.sg/locate-us"
+      ],
+      "source_observation": "Current operator address/contact directory confirms this exact outlet identity but does not publish hours. The official green-restaurants schedule lists only its included outlets; no hours were transferred from another branch or mall.",
+      "disposition": "no_fill_first_party_hours_not_published_for_exact_branch"
+    },
+    {
+      "sfa_licence": "CE11434B000",
+      "f_and_b_name": "MCDONALD'S",
+      "postal_code": "569981",
+      "sfa_address": "Address: 1378 ANG MO KIO AVENUE 1 BISHAN-ANG MO KIO PARK,Singapore 569981",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": null,
+      "source_urls": [
+        "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+        "https://www.mcdonalds.com.sg/our-green-commitment",
+        "https://www.mcdonalds.com.sg/locate-us"
+      ],
+      "source_observation": "Current operator address/contact directory confirms this exact outlet identity but does not publish hours. The official green-restaurants schedule lists only its included outlets; no hours were transferred from another branch or mall.",
+      "disposition": "no_fill_first_party_hours_not_published_for_exact_branch"
+    },
+    {
+      "sfa_licence": "CE11634L000",
+      "f_and_b_name": "MCDONALD'S",
+      "postal_code": "208767",
+      "sfa_address": "Address: 70 JELLICOE ROAD #01-20,V HOTEL @ LAVENDER,Singapore 208767",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": null,
+      "source_urls": [
+        "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+        "https://www.mcdonalds.com.sg/our-green-commitment",
+        "https://www.mcdonalds.com.sg/locate-us"
+      ],
+      "source_observation": "Current operator address/contact directory confirms this exact outlet identity but does not publish hours. The official green-restaurants schedule lists only its included outlets; no hours were transferred from another branch or mall.",
+      "disposition": "no_fill_first_party_hours_not_published_for_exact_branch"
+    },
+    {
+      "sfa_licence": "CE11F38P000",
+      "f_and_b_name": "MCDONALD'S",
+      "postal_code": "238868",
+      "sfa_address": "Address: 350 ORCHARD ROAD #05-21,SHAW HOUSE,Singapore 238868",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": null,
+      "source_urls": [
+        "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+        "https://www.mcdonalds.com.sg/our-green-commitment",
+        "https://www.mcdonalds.com.sg/locate-us"
+      ],
+      "source_observation": "Current operator address/contact directory confirms this exact outlet identity but does not publish hours. The official green-restaurants schedule lists only its included outlets; no hours were transferred from another branch or mall.",
+      "disposition": "no_fill_first_party_hours_not_published_for_exact_branch"
+    },
+    {
+      "sfa_licence": "CE12739K000",
+      "f_and_b_name": "MCDONALD'S",
+      "postal_code": "538692",
+      "sfa_address": "Address: 1 HOUGANG STREET 91 #01-26/39,HOUGANG 1,Singapore 538692",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": null,
+      "source_urls": [
+        "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+        "https://www.mcdonalds.com.sg/our-green-commitment",
+        "https://www.mcdonalds.com.sg/locate-us"
+      ],
+      "source_observation": "Current operator address/contact directory confirms this exact outlet identity but does not publish hours. The official green-restaurants schedule lists only its included outlets; no hours were transferred from another branch or mall.",
+      "disposition": "no_fill_first_party_hours_not_published_for_exact_branch"
+    },
+    {
+      "sfa_licence": "CE12G34K000",
+      "f_and_b_name": "MCDONALD'S",
+      "postal_code": "059413",
+      "sfa_address": "Address: 133 NEW BRIDGE ROAD #01-03,CHINATOWN POINT,Singapore 059413",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": null,
+      "source_urls": [
+        "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+        "https://www.mcdonalds.com.sg/our-green-commitment",
+        "https://www.mcdonalds.com.sg/locate-us"
+      ],
+      "source_observation": "Current operator address/contact directory confirms this exact outlet identity but does not publish hours. The official green-restaurants schedule lists only its included outlets; no hours were transferred from another branch or mall.",
+      "disposition": "no_fill_first_party_hours_not_published_for_exact_branch"
+    },
+    {
+      "sfa_licence": "CE18U62B000",
+      "f_and_b_name": "MCDONALD'S",
+      "postal_code": "339511",
+      "sfa_address": "Address: 12 KALLANG AVENUE #01-24,APERIA,Singapore 339511",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": null,
+      "source_urls": [
+        "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+        "https://www.mcdonalds.com.sg/our-green-commitment",
+        "https://www.mcdonalds.com.sg/locate-us"
+      ],
+      "source_observation": "Current operator address/contact directory confirms this exact outlet identity but does not publish hours. The official green-restaurants schedule lists only its included outlets; no hours were transferred from another branch or mall.",
+      "disposition": "no_fill_first_party_hours_not_published_for_exact_branch"
+    },
+    {
+      "sfa_licence": "CE21A74K000",
+      "f_and_b_name": "McDonald's",
+      "postal_code": "169637",
+      "sfa_address": "Address: 548 HAVELOCK ROAD SHELL SERVICE STATION,Singapore 169637 (Part Of)",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": null,
+      "source_urls": [
+        "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+        "https://www.mcdonalds.com.sg/our-green-commitment",
+        "https://www.mcdonalds.com.sg/locate-us"
+      ],
+      "source_observation": "Current operator address/contact directory confirms this exact outlet identity but does not publish hours. The official green-restaurants schedule lists only its included outlets; no hours were transferred from another branch or mall.",
+      "disposition": "no_fill_first_party_hours_not_published_for_exact_branch"
+    },
+    {
+      "sfa_licence": "CE23132V000",
+      "f_and_b_name": "McDonald's",
+      "postal_code": "309436",
+      "sfa_address": "Address: 130 DUNEARN ROAD CALTEX SERVICE STATION,Singapore 309436",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": null,
+      "source_urls": [
+        "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+        "https://www.mcdonalds.com.sg/our-green-commitment",
+        "https://www.mcdonalds.com.sg/locate-us"
+      ],
+      "source_observation": "Current operator address/contact directory confirms this exact outlet identity but does not publish hours. The official green-restaurants schedule lists only its included outlets; no hours were transferred from another branch or mall.",
+      "disposition": "no_fill_first_party_hours_not_published_for_exact_branch"
+    },
+    {
+      "sfa_licence": "CE23568P000",
+      "f_and_b_name": "McDonald's",
+      "postal_code": "367803",
+      "sfa_address": "Address: 11 BIDADARI PARK DRIVE #B1-11,#B1-12,THE WOODLEIGH MALL,Singapore 367803",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": null,
+      "source_urls": [
+        "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+        "https://www.mcdonalds.com.sg/our-green-commitment",
+        "https://www.mcdonalds.com.sg/locate-us"
+      ],
+      "source_observation": "Current operator address/contact directory confirms this exact outlet identity but does not publish hours. The official green-restaurants schedule lists only its included outlets; no hours were transferred from another branch or mall.",
+      "disposition": "no_fill_first_party_hours_not_published_for_exact_branch"
+    },
+    {
+      "sfa_licence": "CE23A60L000",
+      "f_and_b_name": "McDonald's",
+      "postal_code": "158790",
+      "sfa_address": "Address: 900 TIONG BAHRU ROAD #01-04,DELTA SPORTS COMPLEX,Singapore 158790",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": null,
+      "source_urls": [
+        "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+        "https://www.mcdonalds.com.sg/our-green-commitment",
+        "https://www.mcdonalds.com.sg/locate-us"
+      ],
+      "source_observation": "Current operator address/contact directory confirms this exact outlet identity but does not publish hours. The official green-restaurants schedule lists only its included outlets; no hours were transferred from another branch or mall.",
+      "disposition": "no_fill_first_party_hours_not_published_for_exact_branch"
+    },
+    {
+      "sfa_licence": "CE25D90P000",
+      "f_and_b_name": "McDonald's",
+      "postal_code": "574339",
+      "sfa_address": "Address: 194 UPPER THOMSON ROAD #01-02,#01-03,THOMSON COMMUNITY CENTRE,Singapore 574339",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": null,
+      "source_urls": [
+        "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+        "https://www.mcdonalds.com.sg/our-green-commitment",
+        "https://www.mcdonalds.com.sg/locate-us"
+      ],
+      "source_observation": "Current operator address/contact directory confirms this exact outlet identity but does not publish hours. The official green-restaurants schedule lists only its included outlets; no hours were transferred from another branch or mall.",
+      "disposition": "no_fill_first_party_hours_not_published_for_exact_branch"
+    },
+    {
+      "sfa_licence": "E73003X000",
+      "f_and_b_name": "MCDONALD'S",
+      "postal_code": "330022",
+      "sfa_address": "Address: 22 BOON KENG ROAD #01-01,Singapore 330022",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": null,
+      "source_urls": [
+        "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+        "https://www.mcdonalds.com.sg/our-green-commitment",
+        "https://www.mcdonalds.com.sg/locate-us"
+      ],
+      "source_observation": "Current operator address/contact directory confirms this exact outlet identity but does not publish hours. The official green-restaurants schedule lists only its included outlets; no hours were transferred from another branch or mall.",
+      "disposition": "no_fill_first_party_hours_not_published_for_exact_branch"
+    },
+    {
+      "sfa_licence": "E78064X000",
+      "f_and_b_name": "MCDONALD'S",
+      "postal_code": "397801",
+      "sfa_address": "Address: 200 STADIUM BOULEVARD Singapore 397801",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": null,
+      "source_urls": [
+        "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+        "https://www.mcdonalds.com.sg/our-green-commitment",
+        "https://www.mcdonalds.com.sg/locate-us"
+      ],
+      "source_observation": "Current operator address/contact directory confirms this exact outlet identity but does not publish hours. The official green-restaurants schedule lists only its included outlets; no hours were transferred from another branch or mall.",
+      "disposition": "no_fill_first_party_hours_not_published_for_exact_branch"
+    }
+  ],
+  "summary": {
+    "exact_licence_records_screened": 40,
+    "blank_hours_records": 40,
+    "eligible_first_party_hours_fills": 0,
+    "populated_cells_overwritten": 0,
+    "workbook_modified": false,
+    "spend": 0
+  },
+  "limitations": [
+    "Public first-party pages only; no app-only schedules assumed.",
+    "No hours inferred from adjacent branches, mall schedules, third-party directories, or generic brand hours.",
+    "GYG and Hans records and prior Refresh135 coverage were not revisited."
+  ]
+}

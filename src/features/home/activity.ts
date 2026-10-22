@@ -35,7 +35,7 @@ export type SharedPostPayload = {
   authorName: string;
 };
 
-export type ActivityUpdateKind = "comment" | "like" | "share" | "submission";
+export type ActivityUpdateKind = "comment" | "like" | "share" | "submission" | "follow";
 export type ActivityItemType = "message" | "update";
 
 export type ActivityUpdate = {
@@ -44,6 +44,8 @@ export type ActivityUpdate = {
   postId: string;
   actorName: string;
   actorId?: string;
+  targetType?: string;
+  targetId?: string;
   recipientUserId?: string;
   text: string;
   target: string;
@@ -163,9 +165,10 @@ export function getActivityReadKey(type: ActivityItemType, id: string) {
 export function getActivityUnreadCount(
   readActivityIds: string[] = [],
   activityUpdates: ActivityUpdate[] = ACTIVITY_UPDATES,
+  userId?: string,
 ) {
   const readIds = new Set(readActivityIds);
-  return activityUpdates.filter(
+  return selectVisibleActivityUpdates(activityUpdates, userId).filter(
     (update) => update.unread && !readIds.has(getActivityReadKey("update", update.id)),
   ).length;
 }
@@ -177,4 +180,14 @@ export function getActivityMessageUnreadCount(
   return message.unread && !readActivityIds.includes(getActivityReadKey("message", message.id))
     ? (message.unreadCount ?? 1)
     : 0;
+}
+
+export function selectVisibleActivityUpdates(updates: ActivityUpdate[], userId?: string) {
+  const seen = new Set<string>();
+  return updates.filter((update) => {
+    if (update.recipientUserId && update.recipientUserId !== userId) return false;
+    if (seen.has(update.id)) return false;
+    seen.add(update.id);
+    return true;
+  });
 }

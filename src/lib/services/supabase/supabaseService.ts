@@ -1,14 +1,25 @@
+import { useUIStore } from "@/store/useUIStore";
+import { buildReviewMediaManifest } from "@/features/review/reviewMediaManifest";
+import { reviewAttemptPayload } from "@/features/review/reviewPublication";
+import { normalizeReviewFeedOptions } from "@/features/review/reviewFeedQuery";
+import {
+  parseDeletionStatus,
+  isDeletionCancellationConfirmed,
+} from "@/features/auth/accountDeletionOutcomes";
+import { createRecoveryCodeExchange } from "@/features/auth/recoveryCodeExchange";
+import { getAuthStorageGeneration } from "@/lib/services/supabase/authStorage";
 import type {
   PostgrestError,
   Session as SupabaseAuthSession,
   SupabaseClient,
 } from "@supabase/supabase-js";
 import * as WebBrowser from "expo-web-browser";
+import * as Crypto from "expo-crypto";
+import { getAccountGeneration, assertAccountGeneration } from "@/lib/security/accountScope";
 
 import { getFloorPlan } from "@/lib/geo/floorPlans";
 import { similarityScore } from "@/lib/ai/similarityScore";
 import { computeTasteProfileFromQuiz } from "@/lib/ai/tasteQuiz";
-import { STORY_GALLERY_ASSETS } from "@/lib/services/storyGalleryAssets";
 import {
   averageTasteVectors,
   processExplicitFeedback as processExplicitFeedbackCore,
@@ -32,7 +43,7 @@ import {
   searchVenuesByLocationViaRpc,
   supabaseRepository,
 } from "@/lib/services/supabase/supabaseRepository";
-import { getSupabaseClient } from "@/lib/services/supabase/client";
+import { getSupabaseClient, retireSupabaseClient } from "@/lib/services/supabase/client";
 import { hungryPersistStorage } from "@/store/persistStorage";
 import {
   assertValidMenuPhotoUpload,
@@ -63,6 +74,7 @@ import type {
   Session,
   SubmitReviewInput,
   RecentReviewFeedEntry,
+  ReviewPublicationReceipt,
 } from "@/lib/services/types";
 import type {
   AIBusinessInsight,
@@ -101,8 +113,6 @@ import type {
   TasteInteractionType,
   TasteVector,
   VenueSummary,
-  Story,
-  StoryContent,
   UserStallSubmission,
   UserStallSubmissionDeliveryLink,
   UserStallSubmissionMenuItem,
@@ -636,8 +646,7 @@ async function fetchUserProfile(client: SupabaseClient, userId: string, email?: 
   const privacyRow = (privacyData ?? {}) as Row;
   // user_profiles.email is often null (OAuth/new sign-ups), so fall back to the
   // auth session's address; otherwise Edit Profile reopens with an empty email.
-  const resolvedEmail =
-    asString(row.email) ?? email ?? (await getSessionEmailForUser(client, userId));
+  const resolvedEmail = email ?? (await getSessionEmailForUser(client, userId));
   const favouriteDishIds = await fetchFavouriteDishIdsForUser(client, userId);
   const reviewedDishIds = asStringArray(row.reviewed_dish_ids);
   const accountVisibility = asString(privacyRow.account_visibility);
@@ -654,6 +663,9 @@ async function fetchUserProfile(client: SupabaseClient, userId: string, email?: 
     tasteVector: toTasteVector(row),
     tasteProfile: (row.taste_profile as TasteProfile | undefined) ?? undefined,
     dietaryPreferences: asStringArray(row.dietary_preferences) as DietaryFlag[],
+    onboardingCuisineIds: asStringArray(row.onboarding_cuisine_ids),
+    onboardingSelectedDishIds: asStringArray(row.onboarding_selected_dish_ids),
+    maxDishBudget: asNumber(row.max_dish_budget),
     favouriteDishIds,
     reviewedDishIds,
     stats: {
@@ -726,106 +738,6 @@ function getFallbackDiscoveryFeed(request: {
   };
 }
 
-function cloneStory(story: Story): Story {
-  return {
-    ...story,
-    content: { ...story.content },
-    interaction: { ...story.interaction },
-  };
-}
-
-function cloneStoryList(stories: Story[]): Story[] {
-  return stories.map((story) => cloneStory(story));
-}
-
-function sanitizeStoryTimestamp(story: Story): Story {
-  const createdAt = new Date(story.createdAt).getTime();
-  if (Number.isFinite(createdAt)) return story;
-  return {
-    ...story,
-    createdAt: new Date().toISOString(),
-  };
-}
-
-function isFreshStory(story: Story): boolean {
-  const createdAt = new Date(story.createdAt).getTime();
-  if (!Number.isFinite(createdAt)) return true;
-  return Date.now() - createdAt < STORY_TTL_MS;
-}
-
-function buildStorySeed(profile: {
-  id: string;
-  displayName: string;
-  avatarUrl?: string;
-  profileVisibility?: ProfileVisibility;
-}): Story[] {
-  const now = Date.now();
-  return [
-    {
-      id: `s_${now}`,
-      displayName: profile.displayName,
-      authorId: profile.id,
-      authorProfileVisibility: profile.profileVisibility,
-      avatarUrl: profile.avatarUrl,
-      hasUnseen: false,
-      isStall: false,
-      isOwn: true,
-      content: {
-        type: "image",
-        url: "https://i.pravatar.cc/150?u=me",
-      },
-      createdAt: new Date(now).toISOString(),
-      interaction: { liked: false, saved: false, likeCount: 0, commentCount: 0, shareCount: 0 },
-    },
-    {
-      id: `s_${now + 1}`,
-      displayName: "Tian Tian",
-      authorId: "story-author-tian-tian",
-      authorProfileVisibility: "public",
-      avatarUrl:
-        "https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?w=150&h=150&fit=crop",
-      hasUnseen: true,
-      isStall: true,
-      content: {
-        type: "image",
-        url: "https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?w=800&q=80",
-      },
-      createdAt: new Date(now - 3_600_000).toISOString(),
-      interaction: { liked: false, saved: false, likeCount: 0, commentCount: 0, shareCount: 0 },
-    },
-    {
-      id: `s_${now + 2}`,
-      displayName: "Wei Ming",
-      authorId: "story-author-wei-ming",
-      authorProfileVisibility: "public",
-      avatarUrl: "https://i.pravatar.cc/150?u=wm",
-      hasUnseen: true,
-      isStall: false,
-      content: {
-        type: "image",
-        url: "https://images.unsplash.com/photo-1563245372-f21724e3856d?w=800&q=80",
-      },
-      createdAt: new Date(now - 7_200_000).toISOString(),
-      interaction: { liked: false, saved: false, likeCount: 0, commentCount: 0, shareCount: 0 },
-    },
-  ];
-}
-
-let supabaseStoryCache: Story[] | null = null;
-
-async function getStoryCache(): Promise<Story[]> {
-  if (supabaseStoryCache && supabaseStoryCache.length > 0) {
-    return cloneStoryList(supabaseStoryCache.map(sanitizeStoryTimestamp).filter(isFreshStory));
-  }
-  const profile = await getCurrentUserProfileOrGuest();
-  supabaseStoryCache = buildStorySeed(profile);
-  return cloneStoryList(supabaseStoryCache.map(sanitizeStoryTimestamp).filter(isFreshStory));
-}
-
-function persistStoryCache(stories: Story[]) {
-  supabaseStoryCache = stories.map(sanitizeStoryTimestamp);
-}
-
 async function toAppSession(client: SupabaseClient): Promise<Session | null> {
   let data;
   try {
@@ -856,6 +768,13 @@ function toAppSessionFromAuthSession(
   profile: UserProfile,
   profileReady?: Promise<UserProfile>,
 ): Session {
+  const createdAtMs = session.user.created_at
+    ? new Date(session.user.created_at).getTime()
+    : undefined;
+  const isNewUser =
+    typeof createdAtMs === "number" && !Number.isNaN(createdAtMs)
+      ? Date.now() - createdAtMs < 60_000
+      : undefined;
   return {
     userId: session.user.id,
     accessToken: session.access_token,
@@ -863,6 +782,7 @@ function toAppSessionFromAuthSession(
     expiresAt: new Date(session.expires_at ? session.expires_at * 1000 : Date.now()).toISOString(),
     profile,
     profileReady,
+    isNewUser,
   };
 }
 
@@ -870,32 +790,27 @@ async function uploadReviewPhotos(
   client: SupabaseClient,
   userId: string,
   reviewId: string,
+  attempt: string,
   photos: string[],
-): Promise<Row[]> {
-  const uploaded: Row[] = [];
-  // Uploads never overwrite, so a retried submission needs fresh object paths.
-  const attempt = Date.now().toString(36);
-  for (let index = 0; index < photos.length; index += 1) {
-    const uri = photos[index];
-    if (!uri) continue;
-    if (!isLocalUri(uri)) {
-      throw new Error("Review photos must be uploaded from local device files.");
-    }
-    const extension = uri.split(".").pop()?.toLowerCase() || "jpg";
-    const path = `${userId}/${reviewId}/photo-${index}-${attempt}.${extension}`;
-    const asset = await uploadImageFromUri({
-      client,
-      bucket: "review-media",
-      path,
-      uri,
-    });
-    uploaded.push({
-      url: asset.path,
-      storage_bucket: "review-media",
-      storage_path: asset.path,
-    });
-  }
-  return uploaded;
+  generation: number,
+): Promise<{ bucket: string; path: string; sortOrder: number }[]> {
+  if (photos.some((uri) => !isLocalUri(uri))) throw new Error("Review photos must be local files.");
+  return buildReviewMediaManifest({
+    folder: `${userId}/${reviewId}/${attempt}`,
+    photos,
+    assertActive: () => assertAccountGeneration(generation),
+    listExisting: async () => {
+      const { data, error } = await client.rpc("list_review_attempt_media_v2", {
+        p_review_id: reviewId,
+        p_attempt_version: attempt,
+      });
+      if (error) throw error;
+      if (!Array.isArray(data) || data.some((row) => !row || typeof row.path !== "string"))
+        throw new Error("Could not confirm uploaded attempt metadata.");
+      return data as { path: string }[];
+    },
+    upload: (path, uri) => uploadImageFromUri({ client, bucket: "review-media-v2", path, uri }),
+  });
 }
 
 async function mapSupabaseReviewRows(
@@ -911,12 +826,14 @@ async function mapSupabaseReviewRows(
   const avatarsByUserId = new Map<string, string>();
 
   if (reviewIds.length > 0) {
-    const { data: photoRows } = await client
+    const { data: photoRows, error: photoError } = await client
       .from("review_photos")
       .select("review_id,url,storage_bucket,storage_path,sort_order")
       .in("review_id", reviewIds)
       .order("sort_order", { ascending: true });
 
+    if (photoError) throw photoError;
+    if (!Array.isArray(photoRows)) throw new Error("Could not load review media.");
     if (Array.isArray(photoRows)) {
       for (const photoRow of photoRows as Row[]) {
         const reviewId = asString(photoRow.review_id);
@@ -925,21 +842,23 @@ async function mapSupabaseReviewRows(
         const path = asString(photoRow.storage_path);
         const legacyUrl = asString(photoRow.url);
         const displayUrl =
-          path && bucket === "review-media"
-            ? ((await createSignedStorageUrl(client, bucket, path)) ?? legacyUrl)
+          path && (bucket === "review-media" || bucket === "review-media-v2")
+            ? ((await createSignedStorageUrl(client, bucket, path)) ??
+              (bucket === "review-media" ? legacyUrl : undefined))
             : legacyUrl;
-        if (!displayUrl) continue;
+        if (!displayUrl) throw new Error("Could not load a review photo. Try again.");
         photosByReviewId.set(reviewId, [...(photosByReviewId.get(reviewId) ?? []), displayUrl]);
       }
     }
   }
 
   if (userIds.length > 0) {
-    const { data: profileRows } = await client
+    const { data: profileRows, error: profileError } = await client
       .from("public_profiles")
       .select("id,display_name,avatar_url")
       .in("id", Array.from(new Set(userIds)));
 
+    if (profileError) throw profileError;
     if (Array.isArray(profileRows)) {
       (profileRows as Row[]).forEach((profileRow) => {
         const userId = asString(profileRow.id);
@@ -953,19 +872,23 @@ async function mapSupabaseReviewRows(
   }
 
   return rows.map((row) => {
-    const id = asString(row.id) ?? `${Date.now()}`;
+    const id = asString(row.id);
     const userId = asString(row.user_id);
+    const createdAt = asString(row.created_at);
+    if (!id || !createdAt || !Number.isFinite(Date.parse(createdAt)))
+      throw new Error("Invalid review identity or date.");
     return {
       id,
       dishId: asString(row.dish_id),
       venueId: asString(row.venue_id),
+      authorId: userId,
       authorName:
         (userId ? namesByUserId.get(userId) : undefined) ??
         asString(row.author_name) ??
         "Hungry User",
       authorAvatarUrl: (userId ? avatarsByUserId.get(userId) : undefined) ?? undefined,
       rating: asNumber(row.rating) ?? 0,
-      createdAt: asString(row.created_at) ?? new Date().toISOString(),
+      createdAt,
       text: asString(row.text) ?? "",
       tags: asStringArray(row.tags),
       wouldRecommend: asBoolean(row.would_recommend) ?? true,
@@ -1362,8 +1285,10 @@ function getRankedRecommendations(
   request: RecommendationSlateRequest,
   profile: UserProfile = DEFAULT_GUEST_PROFILE,
 ): RankedRecommendation[] {
-  const dishes = listAllDishesFromRepository().filter((dish) =>
-    matchesRecommendationQuery(dish, request.query),
+  const dishes = listAllDishesFromRepository().filter(
+    (dish) =>
+      matchesRecommendationQuery(dish, request.query) &&
+      (profile.maxDishBudget === undefined || dish.price <= profile.maxDishBudget),
   );
   const ranked = runRecommendationPipeline(dishes, {
     userVector: request.tasteProfile,
@@ -1433,24 +1358,34 @@ async function getLiveTasteRecommendations(
   client: SupabaseClient,
   request: RecommendationSlateRequest,
   profile: UserProfile,
-): Promise<RankedRecommendation[] | undefined> {
-  const { data, error } = await client.rpc("get_taste_recommendations", {
+): Promise<RankedRecommendation[]> {
+  const { data, error } = await client.rpc("get_taste_recommendations_v2", {
     p_surface: request.surface,
     p_user_vector: tasteVectorToArray(request.tasteProfile),
-    p_dietary_flags: request.dietaryFlags ?? profile.dietaryPreferences,
+    p_dietary_flags: Array.from(
+      new Set([...profile.dietaryPreferences, ...(request.dietaryFlags ?? [])]),
+    ),
     p_query: request.query ?? null,
     p_lat: request.latitude ?? null,
     p_lng: request.longitude ?? null,
     p_radius_meters: request.radiusMeters ?? null,
     p_exclude_dish_ids: request.excludeDishIds ?? [],
     p_limit: request.limit ?? 20,
+    p_max_price:
+      request.maxPrice === undefined
+        ? (profile.maxDishBudget ?? null)
+        : profile.maxDishBudget === undefined
+          ? request.maxPrice
+          : Math.min(request.maxPrice, profile.maxDishBudget),
+    p_preferred_cuisines: Array.from(
+      new Set([...(request.preferredCuisineTags ?? []), ...(profile.onboardingCuisineIds ?? [])]),
+    ),
   });
 
   if (error) {
-    console.warn("Failed to fetch live taste recommendations", error.message);
-    return undefined;
+    throw new Error(`Recommendations unavailable: ${error.message}`);
   }
-  if (!Array.isArray(data)) return undefined;
+  if (!Array.isArray(data)) throw new Error("Recommendations returned an invalid response.");
 
   const rows = data as Row[];
   let mapped = mapRecommendationRpcRows(rows);
@@ -1458,6 +1393,8 @@ async function getLiveTasteRecommendations(
     await refreshSupabaseRepositoryCache();
     mapped = mapRecommendationRpcRows(rows);
   }
+  if (rows.length && !mapped.length)
+    throw new Error("Recommendation details could not be loaded. Retry.");
   return mapped;
 }
 
@@ -1828,6 +1765,8 @@ function normalizeCallbackPath(path: string): string {
   return normalized || "/";
 }
 
+const exchangeRecoveryCode = createRecoveryCodeExchange();
+
 async function exchangeRecoveryCodeIfPresent(client: SupabaseClient, token: string): Promise<void> {
   const trimmed = token.trim();
   if (!trimmed) return;
@@ -1857,8 +1796,11 @@ async function exchangeRecoveryCodeIfPresent(client: SupabaseClient, token: stri
     throw new Error("Password recovery callback did not include a code.");
   }
 
-  const { error } = await client.auth.exchangeCodeForSession(code);
-  if (error) throw error;
+  const generation = getAuthStorageGeneration();
+  await exchangeRecoveryCode(client, code, generation, getAuthStorageGeneration, async () => {
+    const { error } = await client.auth.exchangeCodeForSession(code);
+    if (error) throw error;
+  });
 }
 
 function getOAuthStateFromUrl(url: string): string | undefined {
@@ -1976,29 +1918,43 @@ async function toMerchantOutlet(client: SupabaseClient, row: Row): Promise<Merch
   const venueId = asString(row.venue_id);
   const venue = venueId ? supabaseRepository.getVenueById(venueId) : undefined;
   const venueDishes = venueId ? supabaseRepository.listDishesByVenue(venueId) : [];
+  let exactLocation: Row | null = null;
+  if (row.business_type === "home_based") {
+    const { data, error } = await client.rpc("merchant_get_exact_location_v2", {
+      p_outlet_id: asString(row.id) ?? "",
+    });
+    if (error) throw error;
+    exactLocation = data as Row | null;
+  }
   return {
     id: asString(row.id) ?? "",
+    venueId,
     merchantAccountId: asString(row.merchant_account_id) ?? "",
     name: asString(row.name) ?? venue?.name ?? "",
     businessType: (asString(row.business_type) as MerchantOutlet["businessType"]) ?? "hawker_stall",
     buildingId: asString(row.building_id) ?? venue?.buildingId,
-    unitNumber: asString(row.unit_number) ?? venue?.unitNumber,
-    floor: asString(row.floor) ?? venue?.floor,
+    unitNumber:
+      asString(exactLocation?.unit_number) ?? asString(row.unit_number) ?? venue?.unitNumber,
+    floor: asString(exactLocation?.floor) ?? asString(row.floor) ?? venue?.floor,
     locationPrivacy:
       (asString(row.location_privacy) as MerchantOutlet["locationPrivacy"]) ?? "approximate",
     description: asString(row.description) ?? "",
-    cuisineCategories: [],
+    cuisineCategories: asStringArray(row.cuisine_categories),
     operatingHours: asString(row.operating_hours) ?? venue?.operatingHours ?? "",
     temporaryClosure: asString(row.temporary_closure),
     profilePhotoUrl: asString(row.profile_photo_url),
     coverPhotoUrl: asString(row.cover_photo_url),
-    galleryUrls: [],
+    galleryUrls: asStringArray(row.gallery_urls),
     contactPhone: asString(row.contact_phone),
     contactEmail: asString(row.contact_email),
-    socialLinks: [],
-    deliveryLinks: venue?.deliveryLinks ?? [],
-    dietaryLabels: [],
-    tasteTags: [],
+    socialLinks: (Array.isArray(row.social_links)
+      ? row.social_links
+      : []) as MerchantOutlet["socialLinks"],
+    deliveryLinks: (Array.isArray(row.delivery_links)
+      ? row.delivery_links
+      : (venue?.deliveryLinks ?? [])) as MerchantOutlet["deliveryLinks"],
+    dietaryLabels: asStringArray(row.dietary_labels) as MerchantOutlet["dietaryLabels"],
+    tasteTags: asStringArray(row.taste_tags),
     signatureDishIds: venueDishes.slice(0, 3).map((dish) => dish.id),
     isLive: asBoolean(row.is_live) ?? false,
     verification: await fetchVerificationForOutlet(client, asString(row.id) ?? ""),
@@ -2355,9 +2311,35 @@ async function resolveMerchantDishGalleryUrls(
   const venueId = asString(outlet.venue_id) ?? "unlinked";
   const safeDishId = sanitizeStorageSegment(dishId);
   const uploadedUrls: string[] = [];
+  const { data: existingDish, error: existingDishError } = await client
+    .from("dishes")
+    .select("image_url")
+    .eq("id", dishId)
+    .eq("venue_id", venueId)
+    .maybeSingle();
+  if (existingDishError) throw existingDishError;
+  const { data: existingImages, error: existingImagesError } = await client
+    .from("dish_images")
+    .select("url")
+    .eq("dish_id", dishId);
+  if (existingImagesError) throw existingImagesError;
+  const ownedUrls = new Set(
+    [
+      asString((existingDish as Row | null)?.image_url),
+      ...(Array.isArray(existingImages)
+        ? existingImages.map((image) => asString((image as Row).url))
+        : []),
+    ].filter(Boolean),
+  );
 
   for (let index = 0; index < requestedUrls.length; index += 1) {
     const url = requestedUrls[index];
+    if (!isLocalUri(url)) {
+      if (!ownedUrls.has(url))
+        throw new Error("Select a local image or retain an existing photo owned by this dish.");
+      uploadedUrls.push(url);
+      continue;
+    }
     assertLocalUserMediaUri(url, "Merchant dish image");
     if (!userId) throw new Error("You must be signed in to upload merchant dish images.");
     const extension = extensionFromUri(url);
@@ -2878,6 +2860,15 @@ export const supabaseService: HungryService = {
       if (error) throw error;
     },
 
+    async verifyEmailOtp(email, token) {
+      const client = requireSupabaseClient();
+      const { error } = await client.auth.verifyOtp({ email, token, type: "signup" });
+      if (error) throw error;
+      const session = await toAppSession(client);
+      if (!session) throw new Error("Verification succeeded but no session was returned.");
+      return session;
+    },
+
     async signIn(email, password) {
       const client = requireSupabaseClient();
       const { error } = await client.auth.signInWithPassword({ email, password });
@@ -2896,51 +2887,49 @@ export const supabaseService: HungryService = {
     },
 
     async signOut() {
-      const client = requireSupabaseClient();
-      const { error } = await client.auth.signOut();
-      if (error) throw error;
+      const { client: capturedClient, cleanup, retiredAccessToken } = retireSupabaseClient();
+      void retiredAccessToken
+        .then(async (token) => {
+          if (token && capturedClient) await capturedClient.auth.admin.signOut(token, "local");
+        })
+        .catch(() => undefined);
+      await cleanup;
     },
 
     async requestAccountDeletion(request) {
       const client = requireSupabaseClient();
-      const userId = await getCurrentSupabaseUserId();
-      if (!userId) throw new Error("You must be signed in to request account deletion.");
-
-      const { error } = await client.from("account_deletion_requests").insert({
-        user_id: userId,
-        reason: request?.reason ?? "user_initiated_settings_flow",
+      const { data, error } = await client.rpc("request_account_deletion_v2", {
+        p_reason: request?.reason ?? "user_initiated_settings_flow",
       });
       if (error) throw error;
-
-      // The request is queued; a failed token unbind or sign-out must not report
-      // the deletion itself as failed. The caller clears the local session.
+      if (!parseDeletionStatus(data)) {
+        throw new Error(
+          "Account deletion request could not be confirmed. Check its status before retrying.",
+        );
+      }
+      // Queue confirmation is final. Cleanup cannot reverse it or report it as failed.
       await unregisterStoredPushToken(client).catch(() => undefined);
       await this.signOut().catch(() => undefined);
     },
 
     async getPendingAccountDeletion() {
       const client = requireSupabaseClient();
-      const userId = await getCurrentSupabaseUserId();
-      if (!userId) return null;
-
-      const { data, error } = await client
-        .from("account_deletion_requests")
-        .select("scheduled_for")
-        .eq("user_id", userId)
-        .eq("status", "requested")
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      const generation = getAuthStorageGeneration();
+      const { data, error } = await client.rpc("get_account_deletion_status_v2");
       if (error) throw error;
-      const scheduledFor = asString((data as Row | null)?.scheduled_for);
-      return scheduledFor ? { scheduledFor } : null;
+      if (generation !== getAuthStorageGeneration())
+        throw new Error("Account changed while checking deletion status.");
+      return parseDeletionStatus(data);
     },
 
     async cancelAccountDeletion() {
       const client = requireSupabaseClient();
-      const { data, error } = await client.rpc("cancel_my_account_deletion");
+      const generation = getAuthStorageGeneration();
+      const { data, error } = await client.rpc("cancel_account_deletion_v2");
       if (error) throw error;
-      return data === true;
+      if (generation !== getAuthStorageGeneration())
+        throw new Error("Account changed while cancelling deletion.");
+      return isDeletionCancellationConfirmed(data);
     },
 
     async forgotPassword(email) {
@@ -2953,7 +2942,10 @@ export const supabaseService: HungryService = {
 
     async resetPassword(token, password) {
       const client = requireSupabaseClient();
+      const generation = getAuthStorageGeneration();
       await exchangeRecoveryCodeIfPresent(client, token);
+      if (generation !== getAuthStorageGeneration())
+        throw new Error("Recovery session changed. Request a new reset email.");
       const { error } = await client.auth.updateUser({ password });
       if (error) throw error;
     },
@@ -2970,6 +2962,23 @@ export const supabaseService: HungryService = {
       const { error } = await client.auth.refreshSession();
       if (error) throw error;
       return toAppSession(client);
+    },
+
+    async changePassword(currentPassword, newPassword) {
+      const client = requireSupabaseClient();
+      // Re-authenticate with the current password before updating.
+      const {
+        data: { user },
+        error: userError,
+      } = await client.auth.getUser();
+      if (userError || !user?.email) throw userError ?? new Error("Not signed in.");
+      const { error: reAuthError } = await client.auth.signInWithPassword({
+        email: user.email,
+        password: currentPassword,
+      });
+      if (reAuthError) throw new Error("Current password is incorrect.");
+      const { error } = await client.auth.updateUser({ password: newPassword });
+      if (error) throw error;
     },
   },
 
@@ -3146,10 +3155,10 @@ export const supabaseService: HungryService = {
           "id,user_id,dish_id,venue_id,author_name,rating,created_at,text,tags,would_recommend",
         )
         .eq("dish_id", dishId)
-        .order("created_at", { ascending: false });
-      if (error || !Array.isArray(data)) {
-        return [];
-      }
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false });
+      if (error) throw error;
+      if (!Array.isArray(data)) throw new Error("Could not load reviews.");
       return mapSupabaseReviewRows(client, data as Row[]);
     },
 
@@ -3161,109 +3170,105 @@ export const supabaseService: HungryService = {
           "id,user_id,dish_id,venue_id,author_name,rating,created_at,text,tags,would_recommend",
         )
         .eq("user_id", userId)
-        .order("created_at", { ascending: false });
-      if (error || !Array.isArray(data)) {
-        return [];
-      }
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false });
+      if (error) throw error;
+      if (!Array.isArray(data)) throw new Error("Could not load reviews.");
       return mapSupabaseReviewRows(client, data as Row[]);
     },
 
     async submitReview(draft: SubmitReviewInput) {
+      const generation = getAccountGeneration();
       const client = requireSupabaseClient();
       const userId = await getCurrentSupabaseUserId();
+      assertAccountGeneration(generation);
       if (!userId) throw new Error("You must be signed in to submit reviews.");
-
-      const reviewRow: Row = {
-        user_id: userId,
-        dish_id: draft.dishId,
-        venue_id: draft.venueId,
-        rating: draft.rating,
-        text: draft.text,
-        tags: draft.tags,
-        would_recommend: draft.wouldRecommend ?? true,
-      };
-      if (draft.clientReviewId) {
-        reviewRow.id = draft.clientReviewId;
-      }
-
-      const { data, error } = await client
-        .from("reviews")
-        .insert(reviewRow)
-        .select("id")
-        .maybeSingle();
-      let reviewId = asString(data?.id);
-      let isResumedSubmission = false;
-      if (error || !reviewId) {
-        // A retry reuses the client id, so a unique violation means an earlier attempt
-        // already created this review: resume with the remaining steps instead of duplicating it.
-        if (!draft.clientReviewId || error?.code !== "23505") {
-          throw error ?? new Error("Review insert failed.");
-        }
-        const { data: existing, error: existingError } = await client
-          .from("reviews")
-          .select("id")
-          .eq("id", draft.clientReviewId)
-          .eq("user_id", userId)
-          .maybeSingle();
-        if (existingError || !existing?.id) {
-          throw existingError ?? error;
-        }
-        reviewId = draft.clientReviewId;
-        isResumedSubmission = true;
-        // Keep any edits made between attempts.
-        const { error: updateError } = await client
-          .from("reviews")
-          .update({
-            rating: reviewRow.rating,
-            text: reviewRow.text,
-            tags: reviewRow.tags,
-            would_recommend: reviewRow.would_recommend,
-          })
-          .eq("id", reviewId)
-          .eq("user_id", userId);
-        if (updateError) throw updateError;
-      }
-
-      if (isResumedSubmission) {
-        const { count, error: photoCountError } = await client
-          .from("review_photos")
-          .select("id", { count: "exact", head: true })
-          .eq("review_id", reviewId);
-        if (photoCountError) throw photoCountError;
-        if ((count ?? 0) > 0) return;
-      }
-
-      const uploadedPhotos = await uploadReviewPhotos(client, userId, reviewId, draft.photos);
-      if (uploadedPhotos.length > 0) {
-        const { error: photoInsertError } = await client.from("review_photos").insert(
-          uploadedPhotos.map((photo, index) => ({
-            review_id: reviewId,
-            url: photo.url,
-            storage_bucket: photo.storage_bucket,
-            storage_path: photo.storage_path,
-            sort_order: index,
-          })),
+      if (
+        !draft.clientReviewId ||
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          draft.clientReviewId,
+        )
+      )
+        throw new Error("A stable review submission id is required.");
+      if (
+        !Number.isFinite(draft.rating) ||
+        draft.rating < 1 ||
+        draft.rating > 5 ||
+        Math.round(draft.rating * 10) !== draft.rating * 10
+      )
+        throw new Error("Choose a valid rating before publishing.");
+      if (draft.photos.length > 10 || draft.photos.some((uri) => !isLocalUri(uri)))
+        throw new Error("Review photos must be local files (maximum ten).");
+      const reviewId = draft.clientReviewId;
+      const payload = await reviewAttemptPayload(draft, async (uri) => {
+        assertAccountGeneration(generation);
+        const response = await fetch(uri);
+        if (!response.ok)
+          throw new Error("Could not read a review photo. Your draft is preserved.");
+        const bytes = await response.arrayBuffer();
+        if (!bytes.byteLength || bytes.byteLength > 10 * 1024 * 1024)
+          throw new Error("Review photos must be between 1 byte and 10 MB.");
+        const digest = await Crypto.digest(Crypto.CryptoDigestAlgorithm.SHA256, bytes);
+        return Array.from(new Uint8Array(digest), (byte) =>
+          byte.toString(16).padStart(2, "0"),
+        ).join("");
+      });
+      const attempt = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, payload);
+      assertAccountGeneration(generation);
+      const photos = await uploadReviewPhotos(
+        client,
+        userId,
+        reviewId,
+        attempt,
+        draft.photos,
+        generation,
+      );
+      assertAccountGeneration(generation);
+      const { data, error } = await client.rpc("publish_review_v2", {
+        p_review_id: reviewId,
+        p_dish_id: draft.dishId,
+        p_venue_id: draft.venueId,
+        p_rating: draft.rating,
+        p_text: draft.text,
+        p_tags: draft.tags,
+        p_would_recommend: draft.wouldRecommend ?? true,
+        p_attempt_version: attempt,
+        p_photos: photos,
+      });
+      if (error)
+        throw new Error(
+          `Review publication could not be confirmed. Your draft and uploaded attempt are preserved for retry. ${error.message}`,
         );
-        if (photoInsertError) throw photoInsertError;
-      }
+      assertAccountGeneration(generation);
+      if (!data || typeof data !== "object" || !("reviewId" in data) || data.reviewId !== reviewId)
+        throw new Error("Publication returned no matching receipt. Retry with this draft.");
+      return data as ReviewPublicationReceipt;
+    },
+
+    async getReviewsForVenue(venueId, options) {
+      const entries = await supabaseService.reviews.listRecentReviews({
+        venueId,
+        limit: options?.limit ?? 50,
+      });
+      return entries.map((entry) => entry.review);
     },
 
     async listRecentReviews(options) {
       const client = requireSupabaseClient();
-      const limit = Math.min(Math.max(Math.floor(options?.limit ?? 50), 1), 100);
-      let query = client
-        .from("reviews")
-        .select(
-          "id,user_id,dish_id,venue_id,author_name,rating,created_at,text,tags,would_recommend",
-        )
-        .order("created_at", { ascending: false })
-        .limit(limit);
-      if (options?.before) {
-        query = query.lt("created_at", options.before);
-      }
-      const { data, error } = await query;
+      const normalized = normalizeReviewFeedOptions(options);
+      const { data, error } = await client.rpc("list_recent_reviews_v2", {
+        p_limit: normalized.limit,
+        p_query: normalized.query,
+        p_sort: normalized.sort,
+        p_cursor_created_at: normalized.cursor?.createdAt ?? null,
+        p_cursor_id: normalized.cursor?.id ?? null,
+        p_cursor_rating: normalized.cursor?.rating ?? null,
+        p_venue_id: normalized.venueId ?? null,
+        p_before: normalized.before ?? null,
+      });
       if (error) throw error;
-      const rows = Array.isArray(data) ? (data as Row[]) : [];
+      if (!Array.isArray(data)) throw new Error("Could not load reviews.");
+      const rows = data as Row[];
       if (rows.length === 0) return [];
 
       const dishIds = Array.from(
@@ -3294,10 +3299,11 @@ export const supabaseService: HungryService = {
       );
       const venueNameById = new Map<string, string>();
       if (venueIds.length > 0) {
-        const { data: venueRows } = await client
+        const { data: venueRows, error: venueError } = await client
           .from("venues")
           .select("id,name")
           .in("id", venueIds);
+        if (venueError) throw venueError;
         for (const venueRow of (Array.isArray(venueRows) ? venueRows : []) as Row[]) {
           const id = asString(venueRow.id);
           const name = asString(venueRow.name);
@@ -3339,7 +3345,16 @@ export const supabaseService: HungryService = {
       if (!userId) throw new Error("You must be signed in to update your profile.");
       const payload: Record<string, unknown> = { id: userId };
       if (updates.displayName !== undefined) payload.display_name = updates.displayName;
-      if (updates.email !== undefined) payload.email = updates.email;
+      if (updates.tasteVector) {
+        const vector = clampTasteVector(updates.tasteVector);
+        Object.assign(payload, vector);
+      }
+      if (updates.onboardingCuisineIds !== undefined)
+        payload.onboarding_cuisine_ids = updates.onboardingCuisineIds;
+      if (updates.onboardingSelectedDishIds !== undefined)
+        payload.onboarding_selected_dish_ids = updates.onboardingSelectedDishIds;
+      if (Object.prototype.hasOwnProperty.call(updates, "maxDishBudget"))
+        payload.max_dish_budget = updates.maxDishBudget ?? null;
       if (updates.dietaryPreferences !== undefined) {
         payload.dietary_preferences = updates.dietaryPreferences;
       }
@@ -3367,7 +3382,7 @@ export const supabaseService: HungryService = {
         if (error) throw error;
       }
 
-      return fetchUserProfile(client, userId, updates.email);
+      return fetchUserProfile(client, userId);
     },
 
     async updateDietaryPreferences(flags: DietaryFlag[]) {
@@ -3384,6 +3399,25 @@ export const supabaseService: HungryService = {
       return DEFAULT_GUEST_PROFILE;
     },
 
+    async setFavourite(dishId, desired) {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("Sign in required");
+      const { error } = desired
+        ? await client
+            .from("user_favourite_dishes")
+            .upsert(
+              { user_id: userId, dish_id: dishId },
+              { onConflict: "user_id,dish_id", ignoreDuplicates: true },
+            )
+        : await client
+            .from("user_favourite_dishes")
+            .delete()
+            .eq("user_id", userId)
+            .eq("dish_id", dishId);
+      if (error) throw error;
+      return desired;
+    },
     async toggleFavourite(dishId: string) {
       const client = requireSupabaseClient();
       const userId = await getCurrentSupabaseUserId();
@@ -3758,105 +3792,30 @@ export const supabaseService: HungryService = {
       if (error) throw error;
     },
 
+    // No persisted story backend exists. Live callers must not receive demo success.
     async getStories() {
-      return getStoryCache();
+      return [];
     },
-
     async listStoryGalleryAssets() {
-      return [...STORY_GALLERY_ASSETS];
+      return [];
     },
-
-    async likeStory(storyId: string) {
-      const stories = await getStoryCache();
-      const target = stories.find((story) => story.id === storyId);
-      if (!target) return;
-
-      const nextStories = stories.map((story) => {
-        if (story.id !== storyId) return story;
-        const nextLiked = !story.interaction.liked;
-        const likeCount = Math.max(0, story.interaction.likeCount + (nextLiked ? 1 : -1));
-        return {
-          ...story,
-          interaction: {
-            ...story.interaction,
-            liked: nextLiked,
-            likeCount,
-          },
-        };
-      });
-
-      persistStoryCache(nextStories);
+    async likeStory() {
+      throw new Error("Stories are local demos only.");
     },
-
-    async saveStory(storyId: string) {
-      const stories = await getStoryCache();
-      const target = stories.find((story) => story.id === storyId);
-      if (!target) return;
-
-      const nextStories = stories.map((story) => {
-        if (story.id !== storyId) return story;
-        return {
-          ...story,
-          interaction: {
-            ...story.interaction,
-            saved: !story.interaction.saved,
-          },
-        };
-      });
-
-      persistStoryCache(nextStories);
+    async saveStory() {
+      throw new Error("Stories are local demos only.");
     },
-
-    async shareStory(storyId: string) {
-      const stories = await getStoryCache();
-      const target = stories.find((story) => story.id === storyId);
-      if (!target) return;
-
-      const nextStories = stories.map((story) => {
-        if (story.id !== storyId) return story;
-        return {
-          ...story,
-          interaction: {
-            ...story.interaction,
-            shareCount: story.interaction.shareCount + 1,
-          },
-        };
-      });
-
-      persistStoryCache(nextStories);
+    async shareStory() {
+      throw new Error("Stories are local demos only.");
     },
-
-    async addStory(content: StoryContent) {
-      const stories = await getStoryCache();
-      const profile = await getCurrentUserProfileOrGuest();
-      const newStory: Story = {
-        id: `s_${Date.now()}`,
-        displayName: profile.displayName,
-        authorId: profile.id,
-        authorProfileVisibility: profile.profileVisibility,
-        avatarUrl: profile.avatarUrl,
-        hasUnseen: false,
-        isStall: false,
-        isOwn: true,
-        content,
-        createdAt: new Date().toISOString(),
-        interaction: { liked: false, saved: false, likeCount: 0, commentCount: 0, shareCount: 0 },
-      };
-
-      const nextStories = stories.filter((story) => !story.isOwn);
-      nextStories.unshift(newStory);
-      persistStoryCache(nextStories);
-      return newStory;
+    async addStory() {
+      throw new Error("Stories are local demos only.");
     },
-
     async getLikedStories() {
-      const stories = await getStoryCache();
-      return stories.filter((story) => story.interaction.liked);
+      return [];
     },
-
     async getSavedStories() {
-      const stories = await getStoryCache();
-      return stories.filter((story) => story.interaction.saved);
+      return [];
     },
 
     async getSavedBites() {
@@ -3889,16 +3848,76 @@ export const supabaseService: HungryService = {
       return (await fetchPublishedPostBites(client)).filter((bite) => likedIds.has(bite.id));
     },
 
-    async followUser(userId: string) {
+    async getFollowState(userId) {
       const client = requireSupabaseClient();
-      const currentUserId = await getCurrentSupabaseUserId();
-      if (!currentUserId) throw new Error("You must be signed in to follow users.");
-      const { error } = await client
+      const me = await getCurrentSupabaseUserId();
+      if (!me) return "none";
+      const { data, error } = await client
         .from("follows")
-        .upsert(
-          { follower_id: currentUserId, followee_id: userId, status: "approved" },
-          { onConflict: "follower_id,followee_id" },
-        );
+        .select("status")
+        .eq("follower_id", me)
+        .eq("followee_id", userId)
+        .maybeSingle();
+      if (error) throw error;
+      return data?.status === "approved"
+        ? "approved"
+        : data?.status === "pending"
+          ? "pending"
+          : "none";
+    },
+    async listFollowRequests() {
+      const client = requireSupabaseClient();
+      const me = await getCurrentSupabaseUserId();
+      if (!me) return [];
+      const { data, error } = await client
+        .from("follows")
+        .select("follower_id")
+        .eq("followee_id", me)
+        .eq("status", "pending");
+      if (error) throw error;
+      const ids = ((data ?? []) as Row[]).map((row) => String(row.follower_id));
+      if (!ids.length) return [];
+      const { data: profiles, error: profileError } = await client
+        .from("public_profiles")
+        .select("id,display_name,avatar_url")
+        .in("id", ids);
+      if (profileError) throw profileError;
+      const byId = new Map(
+        ((profiles ?? []) as Row[]).map((profile) => [String(profile.id), profile]),
+      );
+      return ids.map((id) => ({
+        userId: id,
+        displayName: asString(byId.get(id)?.display_name) ?? "Hungry diner",
+        avatarUrl: asString(byId.get(id)?.avatar_url),
+      }));
+    },
+    async respondToFollowRequest(requesterId, decision) {
+      const { error } = await requireSupabaseClient().rpc("decide_follow_request_v2", {
+        p_follower_id: requesterId,
+        p_accept: decision === "approved",
+      });
+      if (error) throw error;
+    },
+    async searchUsers(query, limit = 20) {
+      const client = requireSupabaseClient();
+      const text = query.trim().replace(/[%_,()]/g, "");
+      if (!text) return [];
+      const { data, error } = await client
+        .from("public_profiles")
+        .select("id,display_name,avatar_url")
+        .ilike("display_name", `%${text}%`)
+        .limit(Math.min(50, limit));
+      if (error) throw error;
+      return ((data ?? []) as Row[]).map((p) => ({
+        userId: String(p.id),
+        displayName: asString(p.display_name) ?? "Hungry diner",
+        avatarUrl: asString(p.avatar_url),
+      }));
+    },
+    async followUser(userId: string) {
+      const { error } = await requireSupabaseClient().rpc("request_follow_v2", {
+        p_target_user_id: userId,
+      });
       if (error) throw error;
     },
 
@@ -3915,39 +3934,28 @@ export const supabaseService: HungryService = {
     },
 
     async listFollowers(userId: string) {
-      const client = requireSupabaseClient();
-      const { data, error } = await client
-        .from("follows")
-        .select("follower_id, user_profiles!follows_follower_id_fkey(id, display_name, avatar_url)")
-        .eq("followee_id", userId)
-        .eq("status", "approved");
-      if (error || !data) return [];
-      return (data as Row[]).map((row) => {
-        const p = row.user_profiles as Row | null;
-        return {
-          userId: asString(row.follower_id) ?? "",
-          displayName: asString(p?.display_name) ?? "",
-          avatarUrl: asString(p?.avatar_url),
-        };
+      const { data, error } = await requireSupabaseClient().rpc("get_user_relationships_v2", {
+        p_user_id: userId,
+        p_direction: "followers",
       });
+      if (error) throw error;
+      return ((data ?? []) as Row[]).map((row) => ({
+        userId: String(row.user_id),
+        displayName: asString(row.display_name) ?? "Hungry diner",
+        avatarUrl: asString(row.avatar_url),
+      }));
     },
-
     async listFollowing(userId: string) {
-      const client = requireSupabaseClient();
-      const { data, error } = await client
-        .from("follows")
-        .select("followee_id, user_profiles!follows_followee_id_fkey(id, display_name, avatar_url)")
-        .eq("follower_id", userId)
-        .eq("status", "approved");
-      if (error || !data) return [];
-      return (data as Row[]).map((row) => {
-        const p = row.user_profiles as Row | null;
-        return {
-          userId: asString(row.followee_id) ?? "",
-          displayName: asString(p?.display_name) ?? "",
-          avatarUrl: asString(p?.avatar_url),
-        };
+      const { data, error } = await requireSupabaseClient().rpc("get_user_relationships_v2", {
+        p_user_id: userId,
+        p_direction: "following",
       });
+      if (error) throw error;
+      return ((data ?? []) as Row[]).map((row) => ({
+        userId: String(row.user_id),
+        displayName: asString(row.display_name) ?? "Hungry diner",
+        avatarUrl: asString(row.avatar_url),
+      }));
     },
 
     async isFollowing(userId: string) {
@@ -4170,12 +4178,17 @@ export const supabaseService: HungryService = {
         .maybeSingle();
       if (error || !data) throw error ?? new Error("Failed to send message.");
 
-      const participantRows = await listConversationParticipantRows(client, [input.conversationId]);
-      const participantsByKey = await hydrateChatParticipants(
-        client,
-        participantRows,
-        currentUserId,
-      );
+      // The RPC receipt is authoritative. Optional profile hydration must not turn a
+      // committed message into a failed send and provoke duplicate delivery.
+      let participantsByKey = new Map<string, ChatParticipant>();
+      try {
+        const participantRows = await listConversationParticipantRows(client, [
+          input.conversationId,
+        ]);
+        participantsByKey = await hydrateChatParticipants(client, participantRows, currentUserId);
+      } catch {
+        /* mapChatMessage retains the canonical sender IDs from the receipt. */
+      }
       return mapChatMessage(data as Row, currentUserId, participantsByKey);
     },
 
@@ -4997,7 +5010,16 @@ export const supabaseService: HungryService = {
 
       const userId = await getCurrentSupabaseUserId();
       if (!userId) throw new Error("You must be signed in to upload verification evidence.");
-      assertLocalUserMediaUri(evidence.fileUrl, "Merchant verification evidence");
+      const evidenceItems: readonly Omit<VerificationEvidence, "id" | "uploadedAt">[] =
+        Array.isArray(evidence)
+          ? evidence
+          : [evidence as Omit<VerificationEvidence, "id" | "uploadedAt">];
+      if (!evidenceItems.length) throw new Error("Add verification evidence before submitting.");
+      const method = evidenceItems[0].method;
+      if (evidenceItems.some((item) => item.method !== method))
+        throw new Error("Use one verification method per submission.");
+      for (const item of evidenceItems)
+        assertLocalUserMediaUri(item.fileUrl, "Merchant verification evidence");
 
       const { data: existingVerification, error: existingError } = await client
         .from("merchant_verifications")
@@ -5013,7 +5035,7 @@ export const supabaseService: HungryService = {
           .insert({
             outlet_id: resolvedOutletId,
             status: "draft",
-            method: evidence.method,
+            method,
           })
           .select("id")
           .single();
@@ -5024,40 +5046,40 @@ export const supabaseService: HungryService = {
         throw new Error("Unable to prepare verification evidence upload.");
       }
 
-      const evidenceExtension = extensionFromUri(evidence.fileUrl);
-      const evidencePath = `${userId}/${resolvedOutletId}/${verificationId}-${Date.now()}.${evidenceExtension}`;
-      const uploadedEvidence = await uploadPostMediaFromUri({
-        client,
-        bucket: "merchant-verification-evidence",
-        path: evidencePath,
-        uri: evidence.fileUrl,
+      let uploadedCount = 0;
+      try {
+        for (const evidence of evidenceItems) {
+          const evidenceExtension = extensionFromUri(evidence.fileUrl);
+          const evidencePath = `${userId}/${resolvedOutletId}/${verificationId}-${Date.now()}.${evidenceExtension}`;
+          const uploadedEvidence = await uploadPostMediaFromUri({
+            client,
+            bucket: "merchant-verification-evidence",
+            path: evidencePath,
+            uri: evidence.fileUrl,
+          });
+          const { error: evidenceError } = await client
+            .from("merchant_verification_evidence")
+            .insert({
+              verification_id: verificationId,
+              method,
+              file_url: `supabase://merchant-verification-evidence/${uploadedEvidence.path}`,
+              storage_bucket: "merchant-verification-evidence",
+              storage_path: uploadedEvidence.path,
+              uploaded_by: userId,
+              review_note: evidence.reviewNote ?? null,
+            });
+          if (evidenceError) throw evidenceError;
+          uploadedCount++;
+        }
+      } catch (error) {
+        throw new Error(
+          `${uploadedCount} of ${evidenceItems.length} evidence files were saved. Submission is incomplete. Retry with your retained files. ${error instanceof Error ? error.message : "Upload failed."}`,
+        );
+      }
+      const { error } = await client.rpc("merchant_submit_verification_v2", {
+        p_outlet_id: resolvedOutletId,
+        p_method: method,
       });
-      const { error: evidenceError } = await client.from("merchant_verification_evidence").insert({
-        verification_id: verificationId,
-        method: evidence.method,
-        file_url: `supabase://merchant-verification-evidence/${uploadedEvidence.path}`,
-        storage_bucket: "merchant-verification-evidence",
-        storage_path: uploadedEvidence.path,
-        uploaded_by: userId,
-        review_note: evidence.reviewNote ?? null,
-      });
-      if (evidenceError) throw evidenceError;
-
-      const { error } = await client
-        .from("merchant_verifications")
-        .upsert(
-          {
-            outlet_id: resolvedOutletId,
-            status: "submitted",
-            method: evidence.method,
-            submitted_at: new Date().toISOString(),
-            rejected_at: null,
-            rejection_reason: null,
-          },
-          { onConflict: "outlet_id" },
-        )
-        .select("id")
-        .single();
       if (error) throw error;
     },
 
@@ -5069,7 +5091,22 @@ export const supabaseService: HungryService = {
       const client = requireSupabaseClient();
       const currentOutlet = await getMerchantOutletRow(client, outletId);
       const resolvedOutletId = asString(currentOutlet.id) ?? outletId;
-      const normalized = validateMerchantProfileUpdates(updates);
+      const normalized = validateMerchantProfileUpdates({
+        ...updates,
+        businessType:
+          updates.businessType ?? (currentOutlet.business_type as MerchantOutlet["businessType"]),
+      });
+      const ownedBusinessImages = new Set(
+        [
+          asString(currentOutlet.profile_photo_url),
+          asString(currentOutlet.cover_photo_url),
+          ...asStringArray(currentOutlet.gallery_urls),
+        ].filter(Boolean),
+      );
+      for (const uri of [normalized.profilePhotoUrl, normalized.coverPhotoUrl]) {
+        if (uri && !isLocalUri(uri) && !ownedBusinessImages.has(uri))
+          throw new Error("Choose a local photo or retain an existing owned business photo.");
+      }
       const payload: Row = {};
       if (normalized.name !== undefined) payload.name = normalized.name;
       if (normalized.businessType !== undefined) payload.business_type = normalized.businessType;
@@ -5118,7 +5155,56 @@ export const supabaseService: HungryService = {
           payload.cover_photo_url = upload.publicUrl;
         }
       }
+      for (const [key, column] of [
+        ["cuisineCategories", "cuisine_categories"],
+        ["dietaryLabels", "dietary_labels"],
+        ["tasteTags", "taste_tags"],
+        ["socialLinks", "social_links"],
+        ["deliveryLinks", "delivery_links"],
+      ] as const) {
+        if (normalized[key] !== undefined) payload[column] = normalized[key];
+      }
+      if (normalized.galleryUrls !== undefined) {
+        const owned = new Set(
+          [
+            asString(currentOutlet.profile_photo_url),
+            asString(currentOutlet.cover_photo_url),
+            ...asStringArray(currentOutlet.gallery_urls),
+          ].filter(Boolean),
+        );
+        const resolved: string[] = [];
+        for (const uri of normalized.galleryUrls) {
+          if (uri === normalized.profilePhotoUrl) {
+            if (payload.profile_photo_url) resolved.push(String(payload.profile_photo_url));
+            continue;
+          }
+          if (uri === normalized.coverPhotoUrl) {
+            if (payload.cover_photo_url) resolved.push(String(payload.cover_photo_url));
+            continue;
+          }
+          if (!isLocalUri(uri)) {
+            if (!owned.has(uri))
+              throw new Error(
+                "Business gallery may only retain owned images or upload a new local image.",
+              );
+            resolved.push(uri);
+            continue;
+          }
+          const userId = await getCurrentSupabaseUserId();
+          if (!userId) throw new Error("Sign in to upload business photos.");
+          const uploaded = await uploadImageFromUri({
+            client,
+            bucket: "merchant-stall-images",
+            path: `${userId}/${resolvedOutletId}/gallery-${Date.now()}-${resolved.length}.${extensionFromUri(uri)}`,
+            uri,
+          });
+          resolved.push(uploaded.publicUrl);
+        }
+        payload.gallery_urls = Array.from(new Set(resolved));
+      }
       if (normalized.isLive !== undefined) payload.is_live = normalized.isLive;
+      if ((normalized.businessType ?? currentOutlet.business_type) === "home_based")
+        payload.is_live = false;
 
       const { data, error } = await client
         .from("merchant_outlets")
@@ -5130,7 +5216,8 @@ export const supabaseService: HungryService = {
 
       const outlet = data as Row;
       const venueId = asString(outlet.venue_id);
-      if (venueId) {
+      const verification = await fetchVerificationForOutlet(client, resolvedOutletId);
+      if (venueId && verification.status === "verified") {
         const venuePayload: Row = {};
         if (normalized.name !== undefined) venuePayload.name = normalized.name;
         if (normalized.buildingId !== undefined) venuePayload.building_id = normalized.buildingId;
@@ -5138,6 +5225,22 @@ export const supabaseService: HungryService = {
         if (normalized.floor !== undefined) venuePayload.floor = normalized.floor;
         if (normalized.operatingHours !== undefined) {
           venuePayload.operating_hours = normalized.operatingHours;
+        }
+        if (
+          (normalized.businessType ?? currentOutlet.business_type) === "home_based" &&
+          (normalized.unitNumber !== undefined || normalized.floor !== undefined)
+        ) {
+          const patch: Row = {};
+          if (normalized.unitNumber !== undefined)
+            patch.unit_number = normalized.unitNumber || null;
+          if (normalized.floor !== undefined) patch.floor = normalized.floor || null;
+          const { error: locationError } = await client.rpc("merchant_update_exact_location_v2", {
+            p_outlet_id: resolvedOutletId,
+            p_patch: patch,
+          });
+          if (locationError) throw locationError;
+          delete venuePayload.unit_number;
+          delete venuePayload.floor;
         }
         if (Object.keys(venuePayload).length > 0) {
           const { error: venueError } = await client
@@ -5301,17 +5404,18 @@ export const supabaseService: HungryService = {
     async getOCRDrafts(outletId) {
       const client = requireSupabaseClient();
       const outlet = await requireLinkedMerchantOutlet(client, outletId);
-      const { data, error } = await client
-        .from("dishes_draft")
-        .select("*")
-        .eq("venue_id", asString(outlet.venue_id) ?? "")
-        .order("created_at", { ascending: false });
+      const { data, error } = await client.rpc("merchant_get_ocr_drafts_v2", {
+        p_outlet_id: asString(outlet.id) ?? outletId,
+      });
       if (error) throw error;
       return (Array.isArray(data) ? (data as Row[]) : []).map((row) => ({
         id: asString(row.id) ?? "",
         outletId,
         name: asString(row.name) ?? "",
-        price: asNumber(row.price_cents) ? (asNumber(row.price_cents) ?? 0) / 100 : undefined,
+        price:
+          asNumber(row.price_cents) !== undefined
+            ? (asNumber(row.price_cents) ?? 0) / 100
+            : undefined,
         confidence: asNumber(row.extraction_confidence) ?? 0,
         sourcePhotoUrl: asString(row.source_photo_url) ?? "",
         suggestedDescription: asString(row.ocr_raw_text),
@@ -5326,42 +5430,29 @@ export const supabaseService: HungryService = {
       }));
     },
 
-    async acceptOCRDraft(draftId) {
+    async acceptOCRDraft(draftId, corrections, expectedUpdatedAt) {
       const client = requireSupabaseClient();
-      const { data, error } = await client
-        .from("dishes_draft")
-        .select("*")
-        .eq("id", draftId)
-        .single();
-      if (error) throw error;
-      const draft = data as Row;
-      const venueId = asString(draft.venue_id) ?? "";
-      const { data: outletData, error: outletError } = await client
-        .from("merchant_outlets")
-        .select("*")
-        .eq("venue_id", venueId)
-        .limit(1)
-        .single();
-      if (outletError) throw outletError;
-      const dish = await this.addDish(asString((outletData as Row).id) ?? "", {
-        id: `dish-from-${draftId}`,
-        name: asString(draft.name) ?? "New dish",
-        price: asNumber(draft.price_cents) ? (asNumber(draft.price_cents) ?? 0) / 100 : 0,
-        tasteTags: [],
+      const { data, error } = await client.rpc("merchant_accept_ocr_draft_v2", {
+        p_draft_id: draftId,
+        p_corrections: corrections ?? {},
+        p_expected_updated_at: expectedUpdatedAt ?? null,
       });
-      const { error: updateError } = await client
-        .from("dishes_draft")
-        .update({ review_status: "accepted", promoted_dish_id: dish.id })
-        .eq("id", draftId);
-      if (updateError) throw updateError;
-      return dish;
+      if (error) throw error;
+      const row = data as Row;
+      await refreshSupabaseRepositoryCache();
+      const id = asString(row.id) ?? "";
+      const presentation = await fetchDishPresentationMap(client, [id]);
+      return mapSupabaseDish(
+        row,
+        await fetchVenueRow(client, asString(row.venue_id) ?? ""),
+        presentation.get(id),
+      );
     },
 
     async rejectOCRDraft(draftId) {
-      const { error } = await requireSupabaseClient()
-        .from("dishes_draft")
-        .update({ review_status: "rejected" })
-        .eq("id", draftId);
+      const { error } = await requireSupabaseClient().rpc("merchant_reject_ocr_draft_v2", {
+        p_draft_id: draftId,
+      });
       if (error) throw error;
     },
 
@@ -5393,6 +5484,7 @@ export const supabaseService: HungryService = {
               }
             : undefined,
           sourceId: asString(row.id),
+          sourceDishId: asString(row.dish_id),
           sentiment:
             rating === undefined
               ? "neutral"
@@ -5833,7 +5925,7 @@ export const supabaseService: HungryService = {
       const summary = await this.getWeeklySummaryStats(outletId);
       const members = await this.getTeamMembers(merchantAccountId);
       const rows = members
-        .filter((member) => member.inviteStatus !== "removed")
+        .filter((member) => member.inviteStatus === "accepted" && Boolean(member.userId))
         .map((member) => ({
           merchant_account_id: merchantAccountId,
           outlet_id: resolvedOutletId,
@@ -6125,17 +6217,24 @@ export const supabaseService: HungryService = {
 
   recommendations: {
     async getSlate(request) {
+      const generation = getAccountGeneration();
       const profile = await supabaseService.profile.getProfile();
+      assertAccountGeneration(generation);
       const client = getSupabaseClient();
-      const liveItems = client
-        ? await getLiveTasteRecommendations(client, request, profile)
-        : undefined;
-
-      return {
-        surface: request.surface,
-        generatedAt: new Date().toISOString(),
-        items: liveItems ?? getRankedRecommendations(request, profile),
-      };
+      if (!client) throw new Error("Recommendations require a connected data source.");
+      const excludeDishIds = Array.from(
+        new Set([
+          ...(request.excludeDishIds ?? []),
+          ...(useUIStore.getState().hideReviewedDishesFromFeed ? profile.reviewedDishIds : []),
+        ]),
+      );
+      const items = await getLiveTasteRecommendations(
+        client,
+        { ...request, excludeDishIds },
+        profile,
+      );
+      assertAccountGeneration(generation);
+      return { surface: request.surface, generatedAt: new Date().toISOString(), items };
     },
 
     async recordImpression(surface, dishIds) {
@@ -6400,6 +6499,37 @@ export const supabaseService: HungryService = {
 
   // ── Checklist ───────────────────────────────────────────────────────────────
 
+  collections: {
+    async listSavedCollectionIds() {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) return [];
+      const { data, error } = await client
+        .from("user_collection_saves")
+        .select("collection_id")
+        .eq("user_id", userId);
+      if (error) throw error;
+      return (data ?? []).map((row) => String(row.collection_id));
+    },
+    async setCollectionSaved(collectionId, saved) {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("Sign in required");
+      const { error } = saved
+        ? await client
+            .from("user_collection_saves")
+            .upsert(
+              { user_id: userId, collection_id: collectionId },
+              { onConflict: "user_id,collection_id", ignoreDuplicates: true },
+            )
+        : await client
+            .from("user_collection_saves")
+            .delete()
+            .eq("user_id", userId)
+            .eq("collection_id", collectionId);
+      if (error) throw error;
+    },
+  },
   checklist: {
     async createChecklist(name: string) {
       const client = getSupabaseClient();
@@ -6496,6 +6626,13 @@ export const supabaseService: HungryService = {
       if (error) throw error;
     },
 
+    async setChecklistItemTried(id, tried) {
+      const { error } = await requireSupabaseClient()
+        .from("checklist_items")
+        .update({ tried_at: tried ? new Date().toISOString() : null })
+        .eq("id", id);
+      if (error) throw error;
+    },
     async markChecklistItemTried(id: string) {
       const client = getSupabaseClient();
       if (!client) throw new Error("Supabase client not initialized");
@@ -6640,7 +6777,7 @@ export const supabaseService: HungryService = {
       if (!client) throw new Error("Supabase client not initialized");
       const { error } = await client.rpc("publish_portfolio_with_passport", {
         p_portfolio_id: id,
-        p_expected_portfolio_updated_at: options?.expectedUpdatedAt,
+        p_expected_portfolio_updated_at: options?.expectedUpdatedAt ?? null,
       });
       if (error) throw error;
     },
@@ -6648,15 +6785,15 @@ export const supabaseService: HungryService = {
     async addPortfolioItem(input: any, options?: PortfolioMutationOptions) {
       const client = getSupabaseClient();
       if (!client) throw new Error("Supabase client not initialized");
-      const { data, error } = await client.rpc("add_portfolio_item_with_passport", {
+      const { data, error } = await client.rpc("add_portfolio_item_v2", {
         p_portfolio_id: input.portfolioId,
         p_item_type: input.itemType,
-        p_dish_id: input.dishId,
-        p_stall_id: input.stallId,
-        p_score: input.score,
-        p_public_notes: input.publicNotes,
-        p_private_notes: input.privateNotes,
-        p_expected_portfolio_updated_at: options?.expectedUpdatedAt,
+        p_dish_id: input.dishId ?? null,
+        p_stall_id: input.stallId ?? null,
+        p_score: input.score ?? null,
+        p_public_notes: input.publicNotes ?? null,
+        p_private_notes: input.privateNotes ?? null,
+        p_expected_portfolio_updated_at: options?.expectedUpdatedAt ?? null,
       });
       if (error) throw error;
       const insertedId = String(data ?? "");
@@ -6666,7 +6803,14 @@ export const supabaseService: HungryService = {
         .eq("id", insertedId)
         .single();
       if (fetchError) throw fetchError;
-      return mapPortfolioItem(row as Row);
+      const notes = await client.rpc("get_portfolio_private_notes_v2", {
+        p_portfolio_id: input.portfolioId,
+      });
+      if (notes.error) throw notes.error;
+      const note = (notes.data as Row[] | null)?.find(
+        (entry) => String(entry.item_id) === insertedId,
+      );
+      return mapPortfolioItem({ ...row, private_notes: note?.private_notes });
     },
 
     async getPortfolioItems(portfolioId: string) {
@@ -6678,18 +6822,30 @@ export const supabaseService: HungryService = {
         .eq("portfolio_id", portfolioId)
         .order("position", { ascending: true });
       if (error) throw error;
-      return (data || []).map((row) => mapPortfolioItem(row as Row));
+      const notes = await client.rpc("get_portfolio_private_notes_v2", {
+        p_portfolio_id: portfolioId,
+      });
+      if (notes.error) throw notes.error;
+      const privateNotes = new Map(
+        ((notes.data as Row[] | null) ?? []).map((row) => [String(row.item_id), row.private_notes]),
+      );
+      return (data || []).map((row) =>
+        mapPortfolioItem({ ...row, private_notes: privateNotes.get(String(row.id)) }),
+      );
     },
 
     async updatePortfolioItem(id: string, updates: any, options?: PortfolioMutationOptions) {
       const client = getSupabaseClient();
       if (!client) throw new Error("Supabase client not initialized");
-      const { error } = await client.rpc("update_portfolio_item_with_version", {
+      const { error } = await client.rpc("update_portfolio_item_v2", {
         p_item_id: id,
-        p_score: updates.score,
-        p_public_notes: updates.publicNotes,
-        p_private_notes: updates.privateNotes,
-        p_expected_portfolio_updated_at: options?.expectedUpdatedAt,
+        p_patch: Object.fromEntries(
+          Object.entries(updates).filter(
+            ([key, value]) =>
+              ["score", "publicNotes", "privateNotes"].includes(key) && value !== undefined,
+          ),
+        ),
+        p_expected_portfolio_updated_at: options?.expectedUpdatedAt ?? null,
       });
       if (error) throw error;
     },
@@ -6699,7 +6855,7 @@ export const supabaseService: HungryService = {
       if (!client) throw new Error("Supabase client not initialized");
       const { error } = await client.rpc("delete_portfolio_item_with_version", {
         p_item_id: id,
-        p_expected_portfolio_updated_at: options?.expectedUpdatedAt,
+        p_expected_portfolio_updated_at: options?.expectedUpdatedAt ?? null,
       });
       if (error) throw error;
     },
@@ -6714,7 +6870,7 @@ export const supabaseService: HungryService = {
       const { error } = await client.rpc("reorder_portfolio_items", {
         p_portfolio_id: portfolioId,
         p_item_ids: itemIds,
-        p_expected_portfolio_updated_at: options?.expectedUpdatedAt,
+        p_expected_portfolio_updated_at: options?.expectedUpdatedAt ?? null,
       });
       if (error) throw error;
     },

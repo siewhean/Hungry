@@ -31,11 +31,11 @@ export const DISCOVER_CUISINE_FILTERS = [
 ];
 
 const COLLECTION_SEARCH_CATEGORIES: Record<DiscoverCollection, SearchCategory[]> = {
-  quickBites: ["local favourites"],
-  trending: ["local favourites"],
-  editorChoice: ["local favourites"],
-  budget: ["local favourites"],
-  lateNight: ["late night"],
+  quickBites: [],
+  trending: [],
+  editorChoice: [],
+  budget: [],
+  lateNight: [],
 };
 
 const COLLECTION_SEARCH_QUERY: Record<DiscoverCollection, string> = {
@@ -43,7 +43,7 @@ const COLLECTION_SEARCH_QUERY: Record<DiscoverCollection, string> = {
   trending: "",
   editorChoice: "",
   budget: "",
-  lateNight: "late night",
+  lateNight: "",
 };
 
 const HUNGRY_LOGO_IMAGE_URL =
@@ -207,7 +207,7 @@ function dishToBite(dish: DishDetail, post: StallPost | undefined, index: number
     caption: post?.caption ?? dish.description ?? dish.name,
     tasteStamp: dish.tasteVector,
     cravingCount: dish.reviewCount,
-    savedCount: Math.floor(dish.reviewCount / 4),
+    savedCount: 0,
     rating: dish.rating,
     price: dish.price,
     expiresAt: new Date(new Date(createdAt).getTime() + 24 * 60 * 60 * 1000).toISOString(),
@@ -240,10 +240,11 @@ export async function getDiscoverBitesFromSearch(
     radiusMeters?: number;
     tasteVector?: TasteVector;
     dietaryFlags?: DietaryFlag[];
+    maxPrice?: number;
   } = {},
 ): Promise<Bite[]> {
   const tasteVector = options.tasteVector ?? NEUTRAL_TASTE_VECTOR;
-  const maxPrice = collection === "budget" ? 8 : undefined;
+  const maxPrice = collection === "budget" ? Math.min(8, options.maxPrice ?? 8) : options.maxPrice;
   const results = await getHungryService().discovery.searchDishes(
     {
       query: COLLECTION_SEARCH_QUERY[collection],
@@ -261,7 +262,11 @@ export async function getDiscoverBitesFromSearch(
 
   return results
     .map((result) => result.dish)
-    .filter((dish) => (maxPrice ? dish.price <= maxPrice : true))
+    .filter(
+      (dish) =>
+        (maxPrice ? dish.price <= maxPrice : true) &&
+        (options.dietaryFlags ?? []).every((flag) => dish.dietaryFlags.includes(flag)),
+    )
     .map((dish, index) => dishToBite(dish, undefined, index));
 }
 
@@ -351,17 +356,6 @@ export function getDiscoverBiteCollections(
   const bitesWithImages = syncedBites.map(({ bite }) => bite);
   const imagePriorityBites = sortBitesByImagePriority(bitesWithImages);
 
-  const lateNight = syncedBites
-    .filter(({ bite, dish }) => {
-      return (
-        dish?.availabilityFlags.some((flag) => flag.toLowerCase().includes("dinner")) ||
-        bite.dishName.toLowerCase().includes("satay") ||
-        bite.dishName.toLowerCase().includes("laksa") ||
-        bite.dishName.toLowerCase().includes("mala")
-      );
-    })
-    .map(({ bite }) => bite);
-
   return {
     quickBites: imagePriorityBites,
     budget: sortBitesByImagePriority(bitesWithImages.filter((bite) => bite.price < 8)),
@@ -372,6 +366,6 @@ export function getDiscoverBiteCollections(
       if (imagePriority !== 0) return imagePriority;
       return b.cravingCount - a.cravingCount;
     }),
-    lateNight: sortBitesByImagePriority(lateNight),
+    lateNight: [],
   };
 }

@@ -1,0 +1,85 @@
+{
+  "schema_version": "1.0",
+  "snapshot_id": "refresh122_official_media_batch_20261019",
+  "observed_at_local": "2026-10-19 Asia/Singapore",
+  "canonical_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256_read_only_baseline": "e75b32a39d9840532afbff2f5b497cc7a3a12870097418716f7d0b92f503f84f",
+  "workbook_edited": false,
+  "scope": "Read-only search for up to 10 direct official restaurant/hawker operator image URLs tied to exact workbook outlets with blank Approved Image URL. No delivery-platform or Google user-uploaded images. No image file was downloaded or copied.",
+  "result": "1 exact outlet page reviewed; 2 direct menu-item image URLs visually checked. Both are held from dataset incorporation/reuse because the official site states all copyright reserved and grants no reuse licence.",
+  "source_evidence": [
+    {
+      "publisher": "Komala’s Restaurants official ordering site",
+      "source_page_url": "https://www.komalasrestaurants.com/Order/FusionDining",
+      "page_title": "Order @RaceCourse Outlet (Fusion Dining)",
+      "retrieved_at_local": "2026-10-19 Asia/Singapore",
+      "http_status": 200,
+      "page_bytes": 2027545,
+      "page_sha256": "d68c30a31be1a709be10470e3404b78ad20dc50843eace0728dc2c8b5750ef87",
+      "outlet_crosswalk": {
+        "sfa_licence": "CE05006L000",
+        "directory_name": "KOMALAS",
+        "directory_address": "42/42A Race Course Road, Singapore 218557 (Level 1 & 2)",
+        "official_page_outlet": "KOMALA’S @ Race Course Road, 42 Race Course Road, Singapore 218557",
+        "match": "Brand, road, building number and postcode match the workbook row; the current official order page is explicitly labelled RaceCourse Outlet."
+      },
+      "rights_evidence": "Official page footer states “Komala’s Restaurants © 2020. All Copyright Reserved”. No open image licence or permission to reproduce, cache, hotlink, or redistribute was found. Treat as restricted pending written permission.",
+      "page_observations": "The current official outlet order page displays both item names with corresponding direct product-image URLs. The images include Komala’s branding and are specific menu-item graphics. Current presence on the operator page was checked 2026-10-19."
+    }
+  ],
+  "held_images": [
+    {
+      "sfa_licence": "CE05006L000",
+      "directory_name": "KOMALAS",
+      "image_type": "Menu item photo — V15 2 Pcs Parotta Meal",
+      "direct_image_url": "https://adm.komalasrestaurants.com/Dynamic/Products/473/Images/V15%20-%20Parotta%20Meal.jpg",
+      "source_page_url": "https://www.komalasrestaurants.com/Order/FusionDining",
+      "observed_date": "2026-10-19",
+      "visual_check": {
+        "performed": true,
+        "method": "Opened the direct official image URL in the browser and visually inspected it; image was not downloaded or copied.",
+        "observation": "Shows two parotta with curry, with Komala’s logo and the title “V15 2 Pcs Parotta Meal”; content agrees with the official menu item label. No stock or placeholder content observed."
+      },
+      "reuse_status": "HELD — official site states all copyright reserved; no reuse licence located. Do not place in Approved Image URL, display, embed, cache, or redistribute absent written permission."
+    },
+    {
+      "sfa_licence": "CE05006L000",
+      "directory_name": "KOMALAS",
+      "image_type": "Menu item photo — Masala Dosai",
+      "direct_image_url": "https://adm.komalasrestaurants.com/Dynamic/Products/690/Images/MASALA%20DOSAI.jpg",
+      "source_page_url": "https://www.komalasrestaurants.com/Order/FusionDining",
+      "observed_date": "2026-10-19",
+      "visual_check": {
+        "performed": true,
+        "method": "Opened the direct official image URL in the browser and visually inspected it; image was not downloaded or copied.",
+        "observation": "Shows a masala dosa with accompaniments and branded Komala’s cup; content is consistent with the official menu item context. No stock or placeholder content observed."
+      },
+      "reuse_status": "HELD — official site states all copyright reserved; no reuse licence located. Do not place in Approved Image URL, display, embed, cache, or redistribute absent written permission."
+    }
+  ],
+  "excluded_or_held_research": [
+    {
+      "source": "JUMBO Seafood Dempsey Hill official outlet page",
+      "reason": "Outlet page confirms exact address, but no distinct direct food/storefront photograph was found in the page HTML; available share image is not proven branch-specific."
+    },
+    {
+      "source": "NG AH SIO official menu page",
+      "reason": "Observed only logos, promotion, and retail-pack imagery in the page HTML; no exact outlet-linked food photo direct URL verified."
+    },
+    {
+      "source": "Hawker Chan official locations page",
+      "reason": "Observed a location-page banner but could not establish that it depicts the exact workbook outlet; excluded."
+    },
+    {
+      "source": "Founder Bak Kut Teh official site",
+      "reason": "Observed general brand/menu/outlet images, not images tied to an exact outlet; excluded."
+    }
+  ],
+  "integration_recommendation": "No image candidate rows or Approved Image URL values should be added from this batch unless the rights holder grants written reuse permission. This is evidence for a manual permission follow-up, not approval.",
+  "quality_notes": [
+    "Exact outlet identity cross-checked against the workbook SFA licence/address and the official Race Course outlet order page.",
+    "Visual inspection was completed for both direct image assets.",
+    "Workbook was read-only and its SHA-256 matched the requested baseline before and after research.",
+    "No platform-derived or Google user-uploaded content was used."
+  ]
+}

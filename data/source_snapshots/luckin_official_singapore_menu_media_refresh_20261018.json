@@ -1,0 +1,2044 @@
+{
+  "snapshot_type": "read-only first-party brand menu/image refresh",
+  "captured_at_sgt": "2026-10-18T18:34:38+08:00",
+  "master_workbook_path": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "master_workbook_sha256": "69c17622f7e7dd965b09955a7383465eae54fd1b06cc09db97c1dbe4cf088548",
+  "workbook_edited": false,
+  "brand": "Luckin Coffee",
+  "geography": "Singapore brand catalogue, not branch-specific menu data",
+  "official_sources": [
+    {
+      "url": "https://www.luckincoffee.com.sg/menu",
+      "purpose": "official Singapore menu category index",
+      "http_status": 200,
+      "response_headers": {
+        "status_line": "HTTP/1.1 200 OK",
+        "server": "openresty",
+        "date": "Sun, 18 Oct 2026 10:34:38 GMT",
+        "connection": "keep-alive",
+        "vary": "Origin, Accept-Encoding",
+        "accept-ranges": "bytes",
+        "set-cookie": "X-LK-Tenant=LKSG; path=/; secure; httponly",
+        "cache-control": "no-store",
+        "trace-id": "63d60547-6a36-40ba-bc2a-5887dcfe2ca3"
+      },
+      "response_sha256": "ddafb31883b6917c1c2b53156aab5460e3a4c7cda87a6667ed5171c0491196d6"
+    },
+    {
+      "url": "https://www.luckincoffee.com.sg/menu/signature-lattes",
+      "category": "Signature Lattes",
+      "http_status": 200,
+      "response_headers": {
+        "status_line": "HTTP/1.1 200 OK",
+        "server": "openresty",
+        "date": "Sun, 18 Oct 2026 10:34:32 GMT",
+        "connection": "keep-alive",
+        "vary": "Origin, Accept-Encoding",
+        "accept-ranges": "bytes",
+        "set-cookie": "X-LK-Tenant=LKSG; path=/; secure; httponly",
+        "cache-control": "no-store",
+        "trace-id": "790c734b-1094-4beb-84b9-8c1641b46c1b"
+      },
+      "response_sha256": "09e0d3cc517d3d06a6fd54e2a82e932458625b8b73f97f58be8e9211676ab5d1",
+      "raw_item_count": 6
+    },
+    {
+      "url": "https://www.luckincoffee.com.sg/menu/barista-coffee",
+      "category": "BARISTA COFFEE",
+      "http_status": 200,
+      "response_headers": {
+        "status_line": "HTTP/1.1 200 OK",
+        "server": "openresty",
+        "date": "Sun, 18 Oct 2026 10:34:33 GMT",
+        "connection": "keep-alive",
+        "vary": "Origin, Accept-Encoding",
+        "accept-ranges": "bytes",
+        "set-cookie": "X-LK-Tenant=LKSG; path=/; secure; httponly",
+        "cache-control": "no-store",
+        "trace-id": "3b37923f-1068-4bab-bfd4-045f4bdffc49"
+      },
+      "response_sha256": "81582966da888f937ebe618dde5f5444ce612a5da3c1d262e540ca437bb9b9f6",
+      "raw_item_count": 7
+    },
+    {
+      "url": "https://www.luckincoffee.com.sg/menu/fruity-americano",
+      "category": "FRUITY AMERICANO",
+      "http_status": 200,
+      "response_headers": {
+        "status_line": "HTTP/1.1 200 OK",
+        "server": "openresty",
+        "date": "Sun, 18 Oct 2026 10:34:33 GMT",
+        "connection": "keep-alive",
+        "vary": "Origin, Accept-Encoding",
+        "accept-ranges": "bytes",
+        "set-cookie": "X-LK-Tenant=LKSG; path=/; secure; httponly",
+        "cache-control": "no-store",
+        "trace-id": "9fb03ecb-b10f-418d-941f-e66fec2bf05a"
+      },
+      "response_sha256": "13e51aae4aeac69c42daaaef95f32ae35fd8d1babc5c657e77742bba0eb5a153",
+      "raw_item_count": 4
+    },
+    {
+      "url": "https://www.luckincoffee.com.sg/menu/single-origin-espresso",
+      "category": "Single Origin Espresso",
+      "http_status": 200,
+      "response_headers": {
+        "status_line": "HTTP/1.1 200 OK",
+        "server": "openresty",
+        "date": "Sun, 18 Oct 2026 10:34:34 GMT",
+        "connection": "keep-alive",
+        "vary": "Origin, Accept-Encoding",
+        "accept-ranges": "bytes",
+        "set-cookie": "X-LK-Tenant=LKSG; path=/; secure; httponly",
+        "cache-control": "no-store",
+        "trace-id": "eaec83fb-75aa-449a-b052-fd9da9c50ef0"
+      },
+      "response_sha256": "fa228ce715175cb9f13b79b473f96e3cdcf3db1ee91c06e4872dd584a317507e",
+      "raw_item_count": 3
+    },
+    {
+      "url": "https://www.luckincoffee.com.sg/menu/matcha",
+      "category": "Matcha",
+      "http_status": 200,
+      "response_headers": {
+        "status_line": "HTTP/1.1 200 OK",
+        "server": "openresty",
+        "date": "Sun, 18 Oct 2026 10:34:34 GMT",
+        "connection": "keep-alive",
+        "vary": "Origin, Accept-Encoding",
+        "accept-ranges": "bytes",
+        "set-cookie": "X-LK-Tenant=LKSG; path=/; secure; httponly",
+        "cache-control": "no-store",
+        "trace-id": "5e321e4c-3c03-4703-938e-c656708fb3d4"
+      },
+      "response_sha256": "23fe6a2c20969bbd517c08837d9fd353eb1ed15f4ffb3664bfd91500daba3f87",
+      "raw_item_count": 5
+    }
+  ],
+  "scope_limitations": [
+    "The official catalogue page does not publish prices. No prices are added or inferred.",
+    "Menu presentation is brand-level; branch-specific availability is not stated.",
+    "The official web site crawl exposes no current Singapore store address/unit/postal locator endpoint on these catalogue pages. No directory field change is proposed from brand-level evidence.",
+    "Existing legacy menu rows and prices are preserved for the workbook integrator to assess; they are not confirmed by this first-party catalogue.",
+    "Official image URLs are candidate links only; they remain unapproved and rights are not cleared."
+  ],
+  "directory_existing_match_count": 96,
+  "directory_existing_exact_matches": [
+    {
+      "sfa_licence": "B02079V000",
+      "name": "luckin coffee",
+      "full_address": "Address: 930 YISHUN AVENUE 2 #01-17,#01-18,NORTHPOINT CITY,Singapore 769098",
+      "postal_code": "769098",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "CE05511K000",
+      "name": "luckin coffee",
+      "full_address": "Address: 51 BRAS BASAH ROAD #01-02,LAZADA ONE,Singapore 189554",
+      "postal_code": "189554",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": "Hours: Mo-Su 07:30-21:00",
+      "contact": null
+    },
+    {
+      "sfa_licence": "CE07451E000",
+      "name": "luckin coffee",
+      "full_address": "Address: 68 ORCHARD ROAD #B2-64,PLAZA SINGAPURA,Singapore 238839",
+      "postal_code": "238839",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "CE07R72L000",
+      "name": "luckin coffee",
+      "full_address": "Address: 120 ROBINSON ROAD #01-01,Singapore 068913",
+      "postal_code": "068913",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "CE08J23C000",
+      "name": "luckin coffee",
+      "full_address": "Address: 1 RAFFLES LINK #B1-15,#B1-17,ONE RAFFLES LINK,Singapore 039393",
+      "postal_code": "039393",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "CE12652A000",
+      "name": "luckin coffee",
+      "full_address": "Address: 63 PAGODA STREET HERITAGE COLLECTION ON PAGODA,Singapore 059222 (Level 1)",
+      "postal_code": "059222",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "CE12722E000",
+      "name": "luckin coffee",
+      "full_address": "Address: 1 RAFFLES PLACE #01-62,ONE RAFFLES PLACE,Singapore 048616",
+      "postal_code": "048616",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "CE13756A000",
+      "name": "LUCKIN COFFEE",
+      "full_address": "Address: 20 AH HOOD ROAD #01-07,ZHONGSHAN MALL,Singapore 329984",
+      "postal_code": "329984",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "CE14A28C000",
+      "name": "luckin coffee",
+      "full_address": "Address: 1 RAFFLES LINK #B1-66,CITYLINK MALL,Singapore 039393",
+      "postal_code": "039393",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "CE14N49C000",
+      "name": "luckin coffee",
+      "full_address": "Address: 200 HOLLAND AVENUE #B1-07,Singapore 278995",
+      "postal_code": "278995",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "CE15H98N000",
+      "name": "luckin coffee",
+      "full_address": "Address: 80 MIDDLE ROAD #01-71,#01-72,Singapore 188966",
+      "postal_code": "188966",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "CE16123J000",
+      "name": "Luckin Coffee",
+      "full_address": "Address: 77 ROBINSON ROAD #01-03,ROBINSON 77,Singapore 068896",
+      "postal_code": "068896",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": "Contact: +6585111769"
+    },
+    {
+      "sfa_licence": "CE16654J000",
+      "name": "LUCKIN COFFEE",
+      "full_address": "Address: 320 ORCHARD ROAD #01-K2,SINGAPORE MARRIOTT TANG PLAZA HOTEL,Singapore 238865",
+      "postal_code": "238865",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "CE18016X000",
+      "name": "luckin coffee",
+      "full_address": "Address: 103 IRRAWADDY ROAD #01-11,ROYAL SQUARE AT NOVENA,Singapore 329566",
+      "postal_code": "329566",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "CE18133K000",
+      "name": "luckin coffee",
+      "full_address": "Address: 70 JELLICOE ROAD #01-16,V HOTEL LAVENDER,Singapore 208767",
+      "postal_code": "208767",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "CE18462C000",
+      "name": "luckin coffee",
+      "full_address": "Address: 10 ANSON ROAD #01-03,INTERNATIONAL PLAZA,Singapore 079903",
+      "postal_code": "079903",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "CE18981L000",
+      "name": "luckin coffee",
+      "full_address": "Address: 3 TEMASEK BOULEVARD #02-375,#02-376,SUNTEC CITY MALL,Singapore 038983",
+      "postal_code": "038983",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "CE18B78L000",
+      "name": "luckin coffee",
+      "full_address": "Address: 5 STRAITS VIEW #B2-30,THE HEART,Singapore 018935",
+      "postal_code": "018935",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "CE19244L000",
+      "name": "luckin coffee",
+      "full_address": "Address: 12 KALLANG AVENUE #01-34,APERIA,Singapore 339511",
+      "postal_code": "339511",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": "Contact: +6597104635"
+    },
+    {
+      "sfa_licence": "CE19I75L000",
+      "name": "luckin coffee",
+      "full_address": "Address: 100 BUKIT TIMAH ROAD #01-K1,KK WOMEN'S AND CHILDREN'S HOSPITAL,Singapore 229899",
+      "postal_code": "229899",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "CE19M47X000",
+      "name": "luckin coffee",
+      "full_address": "Address: 371 BEACH ROAD #01-35,CITY GATE,Singapore 199597",
+      "postal_code": "199597",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "CE19Z32A000",
+      "name": "LUCKIN COFFEE",
+      "full_address": "Address: 51 UPPER SERANGOON ROAD #01-12,THE POIZ CENTRE,Singapore 347697",
+      "postal_code": "347697",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "CE20L64X000",
+      "name": "luckin coffee",
+      "full_address": "Address: 12 ALEXANDRA VIEW #01-09,ARTRA,Singapore 158736",
+      "postal_code": "158736",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "CE21462E000",
+      "name": "luckin coffee",
+      "full_address": "Address: 9 PENANG ROAD #01-12,Singapore 238459",
+      "postal_code": "238459",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "CE22N75V000",
+      "name": "LUCKIN COFFEE",
+      "full_address": "Address: 100 TRAS STREET #01-13A,100 AM,Singapore 079027",
+      "postal_code": "079027",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "CE23259N000",
+      "name": "Luckin Coffee",
+      "full_address": "Address: 6 RAFFLES BOULEVARD #02-153,MARINA SQUARE,Singapore 039594",
+      "postal_code": "039594",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "CE23305N000",
+      "name": "Luckin Coffee",
+      "full_address": "Address: 391 ORCHARD ROAD #01-K2,NGEE ANN CITY,Singapore 238872",
+      "postal_code": "238872",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "CE23488N000",
+      "name": "luckin coffee",
+      "full_address": "Address: 7 WALLICH STREET #B1-24,TANJONG PAGAR CENTRE,Singapore 078884",
+      "postal_code": "078884",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "CE23860N000",
+      "name": "luckin coffee",
+      "full_address": "Address: 11 BIDADARI PARK DRIVE #B1-03,THE WOODLEIGH MALL,Singapore 367803",
+      "postal_code": "367803",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "CE23A17L000",
+      "name": "luckin coffee",
+      "full_address": "Address: 101 THOMSON ROAD #01-62,#01-63,UNITED SQUARE,Singapore 307591",
+      "postal_code": "307591",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "CE23C29X000",
+      "name": "luckin coffee",
+      "full_address": "Address: 38 MARGARET DRIVE #01-06,MARGARET DRIVE MARKETPLACE,Singapore 141038",
+      "postal_code": "141038",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "CE23L20L000",
+      "name": "luckin coffee",
+      "full_address": "Address: 313 ORCHARD ROAD #B3-50,#B3-53,313 @ SOMERSET,Singapore 238895 | Unit: B3-50 | Postal code: 238895",
+      "postal_code": "238895",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": "Hours: Mon–Thu and Sun 10am–10pm; Fri–Sat 10am–11pm",
+      "contact": null
+    },
+    {
+      "sfa_licence": "CE23O96V000",
+      "name": "luckin coffee",
+      "full_address": "Address: 7 FRASER STREET #B3-08,DUO GALLERIA,Singapore 189356",
+      "postal_code": "189356",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "CE24277B000",
+      "name": "luckin coffee",
+      "full_address": "Address: 180 KITCHENER ROAD #B2-K1,#B2-K2,CITY SQUARE MALL,Singapore 208539",
+      "postal_code": "208539",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "CE24928A000",
+      "name": "LUCKIN COFFEE",
+      "full_address": "Address: 81 CLEMENCEAU AVENUE #01-25,UE SQUARE,Singapore 239917",
+      "postal_code": "239917",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "CE24B13J000",
+      "name": "LUCKIN COFFEE",
+      "full_address": "Address: 8 CLUB STREET #B2-25,Singapore 069472",
+      "postal_code": "069472",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "CE24C45K000",
+      "name": "luckin coffee",
+      "full_address": "Address: 9 BISHAN PLACE #01-43,JUNCTION 8,Singapore 579837",
+      "postal_code": "579837",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "CE25G13J000",
+      "name": "luckin coffee",
+      "full_address": "Address: 53 ANG MO KIO AVENUE 3 #01-37,AMK HUB,Singapore 569933 (PART OF)",
+      "postal_code": "569933",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "CE25I02P000",
+      "name": "luckin coffee",
+      "full_address": "Address: 38 BEACH ROAD #01-12,SOUTH BEACH TOWER,Singapore 189767",
+      "postal_code": "189767",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "CE25I69L000",
+      "name": "luckin coffee",
+      "full_address": "Address: 10/1 BUANGKOK VIEW INSTITUTE OF MENTAL HEALTH,Singapore 539747 Level 1 Main Lobby",
+      "postal_code": "539747",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "CE26914X000",
+      "name": "luckin coffee",
+      "full_address": "Address: 14 SCOTTS ROAD FAR EAST PLAZA,Singapore 228213 14E",
+      "postal_code": "228213",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "CE26B08J000",
+      "name": "luckin coffee",
+      "full_address": "Address: 304 ORCHARD ROAD #01-02,LUCKY PLAZA,Singapore 238863",
+      "postal_code": "238863",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "CE26E44P000",
+      "name": "luckin coffee",
+      "full_address": "Address: 991 BUANGKOK LINK #02-08,Singapore 530991",
+      "postal_code": "530991",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "E83147B000",
+      "name": "luckin coffee",
+      "full_address": "Address: 80 AIRPORT BOULEVARD #02-59,CHANGI AIRPORT TERMINAL 1,Singapore 819642",
+      "postal_code": "819642",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "NE04071K000",
+      "name": "luckin coffee",
+      "full_address": "Address: 11 RIVERVALE CRESCENT #01-K5,#01-K6,RIVERVALE MALL,Singapore 545082",
+      "postal_code": "545082",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "NE08097B000",
+      "name": "LUCKIN COFFEE",
+      "full_address": "Address: 1 PASIR RIS CLOSE #02-102,E!HUB@DOWNTOWN EAST,Singapore 519599",
+      "postal_code": "519599",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "NE09009C000",
+      "name": "Luckin Coffee",
+      "full_address": "Address: 10 TAMPINES CENTRAL 1 #01-17,#01-18,TAMPINES ONE,Singapore 529536",
+      "postal_code": "529536",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "NE16394X000",
+      "name": "luckin coffee",
+      "full_address": "Address: 90 HOUGANG AVENUE 10 #B1-04,HOUGANG MALL,Singapore 538766",
+      "postal_code": "538766",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "NE20J100N000",
+      "name": "luckin coffee",
+      "full_address": "Address: 1 SENGKANG SQUARE #01-23,COMPASS ONE,Singapore 545078",
+      "postal_code": "545078",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "NE21600J000",
+      "name": "luckin coffee",
+      "full_address": "Address: 151 LORONG CHUAN #01-18,NEW TECH PARK,Singapore 556741",
+      "postal_code": "556741",
+      "website": "https://www.luckincoffee.com",
+      "menu_url": null,
+      "opening_hours": "Hours: Mo-Fr 07:30-21:00; Sa-Su 08:00-20:00",
+      "contact": null
+    },
+    {
+      "sfa_licence": "NE22L41X000",
+      "name": "luckin coffee",
+      "full_address": "Address: 168 PUNGGOL FIELD #01-K3,#01-K4,PUNGGOL PLAZA,Singapore 820168",
+      "postal_code": "820168",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "NE23H58B000",
+      "name": "Luckin Coffee",
+      "full_address": "Address: 2 TAMPINES CENTRAL 5 #01-31,CENTURY SQUARE,Singapore 529509",
+      "postal_code": "529509",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "NE23K01X000",
+      "name": "Luckin Coffee",
+      "full_address": "Address: 83 PUNGGOL CENTRAL #01-K12,#01-K15,WATERWAY POINT,Singapore 828761",
+      "postal_code": "828761",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "NE24824A000",
+      "name": "luckin coffee",
+      "full_address": "Address: 7 PASIR RIS CENTRAL #B1-37,Singapore 519612",
+      "postal_code": "519612",
+      "website": "https://www.luckincoffee.com/",
+      "menu_url": null,
+      "opening_hours": "Hours: Mo-Su 08:00-22:00",
+      "contact": null
+    },
+    {
+      "sfa_licence": "NE24C99L000",
+      "name": "LUCKIN COFFEE",
+      "full_address": "Address: 1 PASIR RIS CENTRAL STREET 3 #01-12A,Singapore 518457",
+      "postal_code": "518457",
+      "website": "https://www.luckincoffee.com/",
+      "menu_url": "https://www.luckincoffee.com/menu",
+      "opening_hours": "Hours: Mo-Su 08:00-22:00",
+      "contact": null
+    },
+    {
+      "sfa_licence": "NE25188B000",
+      "name": "luckin coffee",
+      "full_address": "Address: 88 PUNGGOL WAY #02-128,Singapore 829913",
+      "postal_code": "829913",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "NE26E39L000",
+      "name": "luckin coffee",
+      "full_address": "Address: 24 TANAH MERAH KECHIL LINK #01-16,Singapore 468456",
+      "postal_code": "468456",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "NE26E81N000",
+      "name": "luckin coffee",
+      "full_address": "Address: 118 RIVERVALE DRIVE #01-35,RIVERVALE PLAZA,Singapore 540118 (PART LEFT)",
+      "postal_code": "540118",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "NW09229P000",
+      "name": "luckin coffee",
+      "full_address": "Address: 587 BUKIT TIMAH ROAD #01-03,CORONATION SHOPPING PLAZA,Singapore 269707",
+      "postal_code": "269707",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "NW17113A000",
+      "name": "luckin coffee",
+      "full_address": "Address: 17 PETIR ROAD #B2-52,HILLION MALL,Singapore 678278",
+      "postal_code": "678278",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "NW19470N000",
+      "name": "LUCKIN COFFEE",
+      "full_address": "Address: 1 WOODLANDS SQUARE #02-K10,CAUSEWAY POINT,Singapore 738099",
+      "postal_code": "738099",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "NW20T93A000",
+      "name": "luckin coffee",
+      "full_address": "Address: 6 WOODLANDS SQUARE #01-05,WOODS SQUARE,Singapore 737737",
+      "postal_code": "737737",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "NW24739B000",
+      "name": "LUCKIN COFFEE",
+      "full_address": "Address: 4 DAIRY FARM LANE #B1-04,DAIRY FARM MALL,Singapore 677622",
+      "postal_code": "677622",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": "Contact: +6580869063"
+    },
+    {
+      "sfa_licence": "NW25007J000",
+      "name": "LUCKIN COFFEE",
+      "full_address": "Address: 18 YISHUN AVENUE 9 #01-84,JUNCTION NINE,Singapore 768897",
+      "postal_code": "768897",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "NW25L04X000",
+      "name": "luckin coffee",
+      "full_address": "Address: 888 WOODLANDS DRIVE 50 #01-749,888 PLAZA,Singapore 730888 (PART LEFT)",
+      "postal_code": "730888",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "NW25O47X000",
+      "name": "luckin coffee",
+      "full_address": "Address: 476 UPPER BUKIT TIMAH ROAD THE RAIL MALL,Singapore 678083",
+      "postal_code": "678083",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "NW26I90E000",
+      "name": "luckin coffee",
+      "full_address": "Address: 533 CHOA CHU KANG STREET 51 #01-04,LIMBANG SHOPPING CENTRE,Singapore 680533",
+      "postal_code": "680533",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "S01192X000",
+      "name": "LUCKIN COFFEE",
+      "full_address": "Address: 5 TAMPINES STREET 32 #01-14,Singapore 529284",
+      "postal_code": "529284",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "S99151N000",
+      "name": "luckin coffee",
+      "full_address": "Address: 1 HOUGANG STREET 91 #01-41,HOUGANG 1,Singapore 538692",
+      "postal_code": "538692",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "SE17734L000",
+      "name": "luckin coffee",
+      "full_address": "Address: 10 EUNOS ROAD 8 #B1-149,SINGAPORE POST CENTRE,Singapore 408600",
+      "postal_code": "408600",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "SE21D03K000",
+      "name": "luckin coffee",
+      "full_address": "Address: 1 PAYA LEBAR LINK #01-02,PAYA LEBAR QUARTER,Singapore 408533",
+      "postal_code": "408533",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "SE22067A000",
+      "name": "luckin coffee",
+      "full_address": "Address: 80 MARINE PARADE ROAD #01-16A,PARKWAY PARADE,Singapore 449269",
+      "postal_code": "449269",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "SE23996P000",
+      "name": "luckin coffee",
+      "full_address": "Address: 112 EAST COAST ROAD #02-22,112 KATONG,Singapore 428802",
+      "postal_code": "428802",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": "Contact: +6591519942"
+    },
+    {
+      "sfa_licence": "SE24L92C000",
+      "name": "LUCKIN COFFEE",
+      "full_address": "Address: 5 CHANGI BUSINESS PARK CENTRAL 1 #01-39,CHANGI CITY POINT,Singapore 486038",
+      "postal_code": "486038",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "SE25477N000",
+      "name": "luckin coffee",
+      "full_address": "Address: 3 SIMEI STREET 6 #01-K8,EASTPOINT MALL,Singapore 528833",
+      "postal_code": "528833",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "SE25725V000",
+      "name": "LUCKIN COFFEE",
+      "full_address": "Address: 50 TANAH MERAH FERRY ROAD #01-01A,TANAH MERAH FERRY TERMINAL,Singapore 498833",
+      "postal_code": "498833",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "SW11B15P000",
+      "name": "luckin coffee",
+      "full_address": "Address: 460 ALEXANDRA ROAD #01-13,MTOWER,Singapore 119963",
+      "postal_code": "119963",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "SW12L90N000",
+      "name": "LUCKIN COFFEE",
+      "full_address": "Address: 43 SILOSO BEACH WALK #01-02,IFLY SINGAPORE,Singapore 099010",
+      "postal_code": "099010",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "SW13W86V000",
+      "name": "luckin coffee",
+      "full_address": "Address: 1 LOWER KENT RIDGE ROAD #03-12,NUH MEDICAL CENTRE,Singapore 119082",
+      "postal_code": "119082",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "SW17391N000",
+      "name": "luckin coffee",
+      "full_address": "Address: 3155 COMMONWEALTH AVENUE WEST #01-11,THE CLEMENTI MALL,Singapore 129588",
+      "postal_code": "129588",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "SW17B97V000",
+      "name": "luckin coffee",
+      "full_address": "Address: 1 HARBOURFRONT PLACE #01-03,HARBOURFRONT TOWER ONE,Singapore 098633",
+      "postal_code": "098633",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "SW18018V000",
+      "name": "luckin coffee",
+      "full_address": "Address: 2 INTERNATIONAL BUSINESS PARK #01-26,THE STRATEGY,Singapore 609930",
+      "postal_code": "609930",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "SW19737J000",
+      "name": "luckin coffee",
+      "full_address": "Address: 50 JURONG GATEWAY ROAD #B1-15,#B1-K28,JEM,Singapore 608549",
+      "postal_code": "608549",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "SW19D48K000",
+      "name": "luckin coffee",
+      "full_address": "Address: 40 PASIR PANJANG ROAD #02-32,MAPLETREE BUSINESS CITY,Singapore 117383",
+      "postal_code": "117383",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": "Contact: +6580681136"
+    },
+    {
+      "sfa_licence": "SW20M16L000",
+      "name": "luckin coffee",
+      "full_address": "Address: 438B ALEXANDRA ROAD #01-09,ALEXANDRA TECHNOPARK,Singapore 119968",
+      "postal_code": "119968",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "SW20Q78C000",
+      "name": "LUCKIN COFFEE",
+      "full_address": "Address: 4 BUKIT BATOK STREET 41 #01-47,LE QUEST,Singapore 657991",
+      "postal_code": "657991",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "SW21190A000",
+      "name": "luckin coffee",
+      "full_address": "Address: 1 JOO KOON CIRCLE #01-41,FAIRPRICE HUB,Singapore 629117",
+      "postal_code": "629117",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "SW21Q50B000",
+      "name": "luckin coffee",
+      "full_address": "Address: 1 HARBOURFRONT WALK #02-119,VIVO CITY,Singapore 098585",
+      "postal_code": "098585",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "SW21R43X000",
+      "name": "luckin coffee",
+      "full_address": "Address: 1 FUSIONOPOLIS PLACE #01-16,GALAXIS,Singapore 138522",
+      "postal_code": "138522",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "SW23G16B000",
+      "name": "luckin coffee",
+      "full_address": "Address: 1 GATEWAY DRIVE #L2-01,WESTGATE TOWER,Singapore 608531",
+      "postal_code": "608531",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "SW25223E000",
+      "name": "LUCKIN COFFEE",
+      "full_address": "Address: 1B SCIENCE PARK DRIVE #01-32,GENEO,Singapore 119315",
+      "postal_code": "119315",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "SW25309X000",
+      "name": "LUCKIN COFFEE",
+      "full_address": "Address: 1 BUKIT BATOK CENTRAL LINK #B1-K22,WEST MALL,Singapore 658713",
+      "postal_code": "658713",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "SW26298C000",
+      "name": "luckin coffee",
+      "full_address": "Address: 302 TENGAH PARK AVENUE #01-07,PARC POINT,Singapore 690302",
+      "postal_code": "690302",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "W01012C000",
+      "name": "luckin coffee",
+      "full_address": "Address: 1 SELEGIE ROAD #01-05,GR.ID,Singapore 188306",
+      "postal_code": "188306",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": "Contact: +6580680755"
+    },
+    {
+      "sfa_licence": "W96187E000",
+      "name": "luckin coffee",
+      "full_address": "Address: 16 COLLYER QUAY #01-05,COLLYER QUAY CENTRE,Singapore 049318",
+      "postal_code": "049318",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    },
+    {
+      "sfa_licence": "W97241V000",
+      "name": "luckin coffee",
+      "full_address": "Address: 3 PHILLIP STREET #01-01,ROYAL GROUP BUILDING,Singapore 048693",
+      "postal_code": "048693",
+      "website": null,
+      "menu_url": null,
+      "opening_hours": null,
+      "contact": null
+    }
+  ],
+  "existing_brand_menu_rows_count": 11,
+  "existing_brand_menu_rows": [
+    {
+      "menu_item": "Classic Milk Tea with Golden Pearls",
+      "price_as_published": "4",
+      "source_url": "https://data.gov.sg/datasets/d_1f0313499a17075d13aae6ed3e825bc6/view",
+      "scope": "Legacy branch association from prior dataset",
+      "sfa_licences": "B02079V000"
+    },
+    {
+      "menu_item": "Jasmine Green Tea",
+      "price_as_published": "6",
+      "source_url": "https://data.gov.sg/datasets/d_1f0313499a17075d13aae6ed3e825bc6/view",
+      "scope": "Legacy branch association from prior dataset",
+      "sfa_licences": "B02079V000"
+    },
+    {
+      "menu_item": "Red Velvet Cupcake",
+      "price_as_published": "6",
+      "source_url": "https://data.gov.sg/datasets/d_1f0313499a17075d13aae6ed3e825bc6/view",
+      "scope": "Legacy branch association from prior dataset",
+      "sfa_licences": "CE07451E000"
+    },
+    {
+      "menu_item": "Cream Cheese Garlic Bread",
+      "price_as_published": "6",
+      "source_url": "https://data.gov.sg/datasets/d_1f0313499a17075d13aae6ed3e825bc6/view",
+      "scope": "Legacy branch association from prior dataset",
+      "sfa_licences": "CE07R72L000"
+    },
+    {
+      "menu_item": "Jamaica Blue Mountain Coffee",
+      "price_as_published": "15",
+      "source_url": "https://data.gov.sg/datasets/d_1f0313499a17075d13aae6ed3e825bc6/view",
+      "scope": "Legacy branch association from prior dataset",
+      "sfa_licences": "CE12722E000"
+    },
+    {
+      "menu_item": "Golden Bubble Milk Tea",
+      "price_as_published": "6",
+      "source_url": "https://data.gov.sg/datasets/d_1f0313499a17075d13aae6ed3e825bc6/view",
+      "scope": "Legacy branch association from prior dataset",
+      "sfa_licences": "CE14A28C000"
+    },
+    {
+      "menu_item": "Bento Sets",
+      "price_as_published": "6",
+      "source_url": "https://data.gov.sg/datasets/d_1f0313499a17075d13aae6ed3e825bc6/view",
+      "scope": "Legacy branch association from prior dataset",
+      "sfa_licences": "CE15H98N000"
+    },
+    {
+      "menu_item": "Americano",
+      "price_as_published": "5",
+      "source_url": "https://data.gov.sg/datasets/d_1f0313499a17075d13aae6ed3e825bc6/view",
+      "scope": "Legacy branch association from prior dataset",
+      "sfa_licences": "CE16123J000"
+    },
+    {
+      "menu_item": "Cleanse Juice",
+      "price_as_published": "5",
+      "source_url": "https://data.gov.sg/datasets/d_1f0313499a17075d13aae6ed3e825bc6/view",
+      "scope": "Legacy branch association from prior dataset",
+      "sfa_licences": "CE18B78L000"
+    },
+    {
+      "menu_item": "Hainanese Chicken Rice",
+      "price_as_published": "6",
+      "source_url": "https://data.gov.sg/datasets/d_1f0313499a17075d13aae6ed3e825bc6/view",
+      "scope": "Legacy branch association from prior dataset",
+      "sfa_licences": "NW17113A000"
+    },
+    {
+      "menu_item": "Curry Puff",
+      "price_as_published": "6",
+      "source_url": "https://data.gov.sg/datasets/d_1f0313499a17075d13aae6ed3e825bc6/view",
+      "scope": "Legacy branch association from prior dataset",
+      "sfa_licences": "SE17734L000"
+    }
+  ],
+  "menu": [
+    {
+      "item_name": "Coconut Latte",
+      "category": "Signature Lattes",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/6030dd8f-08e0-423f-b1fe-e9020f91d151.jpg",
+      "description": "One of our Best Sellers Coconut Latte Freshly Made With Your Favorite Taste —— Mixed with your favorite coconut flavor, extracted professionally to retain the original taste of coconut milk.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/signature-lattes",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Velvet Latte",
+      "category": "Signature Lattes",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/b395b11e-1df8-4e3a-ba2c-6904a4b35881.jpg",
+      "description": "SMOOTH AND VELVETY. We are proud to present you the Velvet Latte. Added VELVET-FLAVORED THICK MILK. We've enhanced this latte by incorporating velvet-flavored thick milk, bringing you a silky-smooth texture, gentle sweetness, and a rich milky aroma.* *This product contains skimmed milk.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/signature-lattes",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Little Butter Latte",
+      "category": "Signature Lattes",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/a6fc4502-374d-44f3-9267-77dc161b5a46.jpg",
+      "description": "2024 Top #1 Bestseller*. The Little Butter Latte takes the crown! Crafted with upgraded French butter, delivering an even smoother, creamier experience. Rich yet smooth. Buttery aroma lingers, while a nutty fragrance fills the air. *Based on the consumer repurchase statistics of Luckin Coffee products launched in Singapore in 2024, Little Butter Latte ranks first in repurchase rate within 28 days.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/signature-lattes",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Creamy Dreamy Latte",
+      "category": "Signature Lattes",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/f87739a7-9578-47f9-8c90-56a8a2187ee3.jpg",
+      "description": "Creamy Dreamy Latte —— luckin coffee's innovation Special Selection of Creamy Flavored Milk. Indulge in a latte with a rich texture made from creamy flavored milk. Mellow and Yummy!",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/signature-lattes",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Vanilla Flavored Creamy Latte",
+      "category": "Signature Lattes",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/5100ea95-a0cf-45a6-9a09-832c8f195b0e.jpg",
+      "description": "Classic Vanilla Flavor from Madagascar Indulge in our new twist on the classic espresso, featuring premium vanilla extract from Madagascar's Kingdom of Vanilla, and creamy flavored milk for a rich and smooth flavor that's simply exquisite.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/signature-lattes",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Coconut Velvet Latte",
+      "category": "Signature Lattes",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/09ed6d71-cea0-42d6-b85f-568f951fa1a2.jpg",
+      "description": "Coconut + Velvety Milk = Double Enjoyment Made with IIAC Gold Medal coffee beans, paired with coconut milk beverage and Hokkaido's velvet-flavored thick milk. Experience a delicious and unique milky latte like no other.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/signature-lattes",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Americano",
+      "category": "BARISTA COFFEE",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/5abfe4cb-20d7-4192-b7f9-b7a5fec6fd4e.jpg",
+      "description": "CLASSIC ITALIAN AMERICANO —— Selected the golden ratio of rich espresso and water. BARISTA-CUSTOMIZED ESPRESSO Derived from IIAC Gold Medal Coffee Beans Luckin Coffee's World Barista Champion team carefully selects 100% Arabica coffee beans from Ethiopia, Brazil, Colombia, Guatemala, and other regions to capture unique flavors and deliver a mellow taste.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/barista-coffee",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": true
+    },
+    {
+      "item_name": "Extra Strong Americano",
+      "category": "BARISTA COFFEE",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/1874e70e-1442-4481-93e9-2535a46854a1.jpg",
+      "description": "Richer & Stronger - Extra Strong Americano We offer an extra-strong Americano with a rich coffee texture, nutty aroma, and a longer-lasting aftertaste.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/barista-coffee",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Latte",
+      "category": "BARISTA COFFEE",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/6311403d-f6b0-4e1f-8f6a-6491a850129e.jpg",
+      "description": "Classic Italian Milk Coffee - Latte The espresso and milk in our blend are expertly combined to create a milky and mellow taste. *This product can only be prepared with skimmed milk.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/barista-coffee",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Caramel Macchiato",
+      "category": "BARISTA COFFEE",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/8265e9de-3729-4acf-a4f1-e27c771f521a.jpg",
+      "description": "Caramel-flavored milk coffee topped with rich foam.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/barista-coffee",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Flat White",
+      "category": "BARISTA COFFEE",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/c00b5c4c-9125-47e0-8624-d0e46da8d1ca.jpg",
+      "description": "Brought to You by 2014 World Barista Champion - Hideroni Izaki The master barista of Luckin Coffee, Hideroni Izaki, who was 2014 World Barista Champion, upgraded this flat white by improving coffee extraction, milk proportion, and foam fineness. RISTRETTO, not espresso Adopted the Ristretto extraction process to obtain a brighter sweetness with less water and shorter extraction time.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/barista-coffee",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Caffe Mocha",
+      "category": "BARISTA COFFEE",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/db3a22b4-d255-4140-ba70-8360697e73f2.jpg",
+      "description": "Espresso and milk blended with rich chocolate flavor.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/barista-coffee",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Cappuccino",
+      "category": "BARISTA COFFEE",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/28d5c1be-9ebc-454b-b28e-a1ad02299f97.jpg",
+      "description": "Classic espresso with a short pour of steamed milk. Tips: Best enjoyed before foam dissipates.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/barista-coffee",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Orange Americano",
+      "category": "FRUITY AMERICANO",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/58c109a4-b46c-49f8-815e-aeada3a4982a.jpg",
+      "description": "Fat-Free. Juice content exceeds 1 orange* Enrich your Americano with a zesty orange burst. The vibrant harmony of robust coffee entwines with the refreshing zest of orange, awakening your taste buds to a delightful symphony of flavors! *We estimate the orange juice content of this beverage based on the criterion that a 150g orange typically contains 52.5ml of orange juice. Thus, the regular juice content of this beverage should normally exceed that of 1 orange. Manual preparation may lead to minor deviations, and hence the actual volumn may vary.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/fruity-americano",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Pomelo Americano",
+      "category": "FRUITY AMERICANO",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/2238cfb1-b9ff-4cd0-9d8f-b1741be6d04f.jpg",
+      "description": "Made with zesty pomelo juice beverage, our Pomelo Americano gives you a fresh and unique aroma. A mix of three pomelo varieties creates a harmonious flavor that complements the rich Ristretto perfectly. The citrusy notes are amplified for a refreshing burst of flavor, just for you.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/fruity-americano",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Apple Fizzy Americano",
+      "category": "FRUITY AMERICANO",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/72cf3536-4573-4d56-a962-7beefe7525a4.jpg",
+      "description": "Apple Fizzy Americano. Enjoy a fresh start in the New Year. Packed with the goodness of 1.4 apples in every cup, each sip delivers a burst of crisp apple flavor, blended with sparkling soda and bold Americano coffee notes. Fat-free, guilt-free, it's just pure, refreshing joy.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/fruity-americano",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Grape Fizzy Americano",
+      "category": "FRUITY AMERICANO",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/d2b561d9-0ac4-4d87-bfad-2eb11667ce3e.jpg",
+      "description": "The captivating flavor of grape pulp creates a delightful summer sensation in your mouth. The fruit essence and natural aroma are well preserved. Enhanced by refreshing bubbles, it offers a truly magical experience. Embrace the Guilt Free delight of our Fat Free, light burden beverage.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/fruity-americano",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Yirgacheffe Americano",
+      "category": "Single Origin Espresso",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/4631bb2e-0424-4993-b104-23f79e580539.jpg",
+      "description": "The World's Only Single Origin Coffee Beans of IIAC Platinum Medal This Yirgacheffe Americano smooths into your mouth with citrus flavor, bringing you the texture of caramel and nuts while retaining the mellow taste till the end. luckin coffee's Yirgacheffe Americano adopts the Distinct Aroma recipe.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/single-origin-espresso",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Yirgacheffe Latte",
+      "category": "Single Origin Espresso",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/4820668c-27c0-4734-98fe-145d8fd54cd9.jpg",
+      "description": "The World's Only Single Origin Coffee Beans of IIAC Platinum Medal Selected milk professionally proportions with citrus flavor, bringing you the unforgettable taste of toffee & milk chocolate, and ending up with the wonderful nuts flavor. luckin coffee's Yirgacheffe Latte adopts the Distinct Aroma recipe.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/single-origin-espresso",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Yirgacheffe Flat White",
+      "category": "Single Origin Espresso",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/71b5fcf6-7feb-48c4-96f5-51919b9ccb46.jpg",
+      "description": "The World's Only Single Origin Coffee Beans of IIAC Platinum Medal Single-origin coffee beans freshly ground, presenting the best flavor from Yirgacheffe. This cup of SOE (Single Origin Espresso) Flat White, which comes with a delicate ratio of milk and coffee, also combines with the unique acidity and aroma of Yirgacheffe, creating a silky and smooth taste just for you.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/single-origin-espresso",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Matcha Latte",
+      "category": "Matcha",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/500a0b56-9200-4675-b381-b85b93bc6aa5.jpg",
+      "description": "Silky, velvety, and not greasy at all! Ideal for matcha lovers.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/matcha",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Matcha Oat Latte",
+      "category": "Matcha",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/62d12d86-14b9-4118-a412-61bf552e91f9.jpg",
+      "description": "Enjoy your favourite in a new way. Crafted with OATLY Barista Edition oat milk. A new addition to the matcha family, ideal for matcha lovers. Smooth and creamy, with a nice blend of matcha and oat milk.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/matcha",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Coconut Matcha Latte",
+      "category": "Matcha",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/f830d8ab-319b-449e-827c-b9febe9972ae.jpg",
+      "description": "Introducing our latest creation - Luckin's Matcha Latte with a twist of your favorite taste of coconut milk! This delightful fusion brings together the classic matcha flavor with the smooth and refreshing taste of coconut milk. Feeling like sipping on a slice of heaven while basking in the sun-kissed beach vibes.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/matcha",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Matcha Frappe",
+      "category": "Matcha",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/75d7a7a5-8450-4d04-95ee-ce965f57d61b.jpg",
+      "description": "Matcha Lovers. We're calling out for you! Our matcha icy smoothie comes with thickened cream and strong green tea aroma. Moreover, it's non-coffee! Indulge in our refreshing Matcha Frappe like no others!",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/matcha",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Matcha Jasmine Frappe",
+      "category": "Matcha",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/9fc49470-a03c-45d3-b22f-83c8cd8c682d.jpg",
+      "description": "The flavored milk is whipped into a smoothie, a wonderful blend of refreshing tea flavor and silky milk flavor. It's the best choice to feel refreshed and cool off from the summer heat.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/matcha",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    }
+  ],
+  "official_menu_item_count": 25,
+  "exact_item_name_already_present_count": 1,
+  "new_exact_item_name_candidates": [
+    {
+      "item_name": "Coconut Latte",
+      "category": "Signature Lattes",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/6030dd8f-08e0-423f-b1fe-e9020f91d151.jpg",
+      "description": "One of our Best Sellers Coconut Latte Freshly Made With Your Favorite Taste —— Mixed with your favorite coconut flavor, extracted professionally to retain the original taste of coconut milk.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/signature-lattes",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Velvet Latte",
+      "category": "Signature Lattes",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/b395b11e-1df8-4e3a-ba2c-6904a4b35881.jpg",
+      "description": "SMOOTH AND VELVETY. We are proud to present you the Velvet Latte. Added VELVET-FLAVORED THICK MILK. We've enhanced this latte by incorporating velvet-flavored thick milk, bringing you a silky-smooth texture, gentle sweetness, and a rich milky aroma.* *This product contains skimmed milk.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/signature-lattes",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Little Butter Latte",
+      "category": "Signature Lattes",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/a6fc4502-374d-44f3-9267-77dc161b5a46.jpg",
+      "description": "2024 Top #1 Bestseller*. The Little Butter Latte takes the crown! Crafted with upgraded French butter, delivering an even smoother, creamier experience. Rich yet smooth. Buttery aroma lingers, while a nutty fragrance fills the air. *Based on the consumer repurchase statistics of Luckin Coffee products launched in Singapore in 2024, Little Butter Latte ranks first in repurchase rate within 28 days.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/signature-lattes",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Creamy Dreamy Latte",
+      "category": "Signature Lattes",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/f87739a7-9578-47f9-8c90-56a8a2187ee3.jpg",
+      "description": "Creamy Dreamy Latte —— luckin coffee's innovation Special Selection of Creamy Flavored Milk. Indulge in a latte with a rich texture made from creamy flavored milk. Mellow and Yummy!",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/signature-lattes",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Vanilla Flavored Creamy Latte",
+      "category": "Signature Lattes",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/5100ea95-a0cf-45a6-9a09-832c8f195b0e.jpg",
+      "description": "Classic Vanilla Flavor from Madagascar Indulge in our new twist on the classic espresso, featuring premium vanilla extract from Madagascar's Kingdom of Vanilla, and creamy flavored milk for a rich and smooth flavor that's simply exquisite.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/signature-lattes",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Coconut Velvet Latte",
+      "category": "Signature Lattes",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/09ed6d71-cea0-42d6-b85f-568f951fa1a2.jpg",
+      "description": "Coconut + Velvety Milk = Double Enjoyment Made with IIAC Gold Medal coffee beans, paired with coconut milk beverage and Hokkaido's velvet-flavored thick milk. Experience a delicious and unique milky latte like no other.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/signature-lattes",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Extra Strong Americano",
+      "category": "BARISTA COFFEE",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/1874e70e-1442-4481-93e9-2535a46854a1.jpg",
+      "description": "Richer & Stronger - Extra Strong Americano We offer an extra-strong Americano with a rich coffee texture, nutty aroma, and a longer-lasting aftertaste.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/barista-coffee",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Latte",
+      "category": "BARISTA COFFEE",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/6311403d-f6b0-4e1f-8f6a-6491a850129e.jpg",
+      "description": "Classic Italian Milk Coffee - Latte The espresso and milk in our blend are expertly combined to create a milky and mellow taste. *This product can only be prepared with skimmed milk.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/barista-coffee",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Caramel Macchiato",
+      "category": "BARISTA COFFEE",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/8265e9de-3729-4acf-a4f1-e27c771f521a.jpg",
+      "description": "Caramel-flavored milk coffee topped with rich foam.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/barista-coffee",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Flat White",
+      "category": "BARISTA COFFEE",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/c00b5c4c-9125-47e0-8624-d0e46da8d1ca.jpg",
+      "description": "Brought to You by 2014 World Barista Champion - Hideroni Izaki The master barista of Luckin Coffee, Hideroni Izaki, who was 2014 World Barista Champion, upgraded this flat white by improving coffee extraction, milk proportion, and foam fineness. RISTRETTO, not espresso Adopted the Ristretto extraction process to obtain a brighter sweetness with less water and shorter extraction time.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/barista-coffee",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Caffe Mocha",
+      "category": "BARISTA COFFEE",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/db3a22b4-d255-4140-ba70-8360697e73f2.jpg",
+      "description": "Espresso and milk blended with rich chocolate flavor.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/barista-coffee",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Cappuccino",
+      "category": "BARISTA COFFEE",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/28d5c1be-9ebc-454b-b28e-a1ad02299f97.jpg",
+      "description": "Classic espresso with a short pour of steamed milk. Tips: Best enjoyed before foam dissipates.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/barista-coffee",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Orange Americano",
+      "category": "FRUITY AMERICANO",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/58c109a4-b46c-49f8-815e-aeada3a4982a.jpg",
+      "description": "Fat-Free. Juice content exceeds 1 orange* Enrich your Americano with a zesty orange burst. The vibrant harmony of robust coffee entwines with the refreshing zest of orange, awakening your taste buds to a delightful symphony of flavors! *We estimate the orange juice content of this beverage based on the criterion that a 150g orange typically contains 52.5ml of orange juice. Thus, the regular juice content of this beverage should normally exceed that of 1 orange. Manual preparation may lead to minor deviations, and hence the actual volumn may vary.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/fruity-americano",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Pomelo Americano",
+      "category": "FRUITY AMERICANO",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/2238cfb1-b9ff-4cd0-9d8f-b1741be6d04f.jpg",
+      "description": "Made with zesty pomelo juice beverage, our Pomelo Americano gives you a fresh and unique aroma. A mix of three pomelo varieties creates a harmonious flavor that complements the rich Ristretto perfectly. The citrusy notes are amplified for a refreshing burst of flavor, just for you.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/fruity-americano",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Apple Fizzy Americano",
+      "category": "FRUITY AMERICANO",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/72cf3536-4573-4d56-a962-7beefe7525a4.jpg",
+      "description": "Apple Fizzy Americano. Enjoy a fresh start in the New Year. Packed with the goodness of 1.4 apples in every cup, each sip delivers a burst of crisp apple flavor, blended with sparkling soda and bold Americano coffee notes. Fat-free, guilt-free, it's just pure, refreshing joy.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/fruity-americano",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Grape Fizzy Americano",
+      "category": "FRUITY AMERICANO",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/d2b561d9-0ac4-4d87-bfad-2eb11667ce3e.jpg",
+      "description": "The captivating flavor of grape pulp creates a delightful summer sensation in your mouth. The fruit essence and natural aroma are well preserved. Enhanced by refreshing bubbles, it offers a truly magical experience. Embrace the Guilt Free delight of our Fat Free, light burden beverage.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/fruity-americano",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Yirgacheffe Americano",
+      "category": "Single Origin Espresso",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/4631bb2e-0424-4993-b104-23f79e580539.jpg",
+      "description": "The World's Only Single Origin Coffee Beans of IIAC Platinum Medal This Yirgacheffe Americano smooths into your mouth with citrus flavor, bringing you the texture of caramel and nuts while retaining the mellow taste till the end. luckin coffee's Yirgacheffe Americano adopts the Distinct Aroma recipe.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/single-origin-espresso",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Yirgacheffe Latte",
+      "category": "Single Origin Espresso",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/4820668c-27c0-4734-98fe-145d8fd54cd9.jpg",
+      "description": "The World's Only Single Origin Coffee Beans of IIAC Platinum Medal Selected milk professionally proportions with citrus flavor, bringing you the unforgettable taste of toffee & milk chocolate, and ending up with the wonderful nuts flavor. luckin coffee's Yirgacheffe Latte adopts the Distinct Aroma recipe.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/single-origin-espresso",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Yirgacheffe Flat White",
+      "category": "Single Origin Espresso",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/71b5fcf6-7feb-48c4-96f5-51919b9ccb46.jpg",
+      "description": "The World's Only Single Origin Coffee Beans of IIAC Platinum Medal Single-origin coffee beans freshly ground, presenting the best flavor from Yirgacheffe. This cup of SOE (Single Origin Espresso) Flat White, which comes with a delicate ratio of milk and coffee, also combines with the unique acidity and aroma of Yirgacheffe, creating a silky and smooth taste just for you.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/single-origin-espresso",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Matcha Latte",
+      "category": "Matcha",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/500a0b56-9200-4675-b381-b85b93bc6aa5.jpg",
+      "description": "Silky, velvety, and not greasy at all! Ideal for matcha lovers.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/matcha",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Matcha Oat Latte",
+      "category": "Matcha",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/62d12d86-14b9-4118-a412-61bf552e91f9.jpg",
+      "description": "Enjoy your favourite in a new way. Crafted with OATLY Barista Edition oat milk. A new addition to the matcha family, ideal for matcha lovers. Smooth and creamy, with a nice blend of matcha and oat milk.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/matcha",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Coconut Matcha Latte",
+      "category": "Matcha",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/f830d8ab-319b-449e-827c-b9febe9972ae.jpg",
+      "description": "Introducing our latest creation - Luckin's Matcha Latte with a twist of your favorite taste of coconut milk! This delightful fusion brings together the classic matcha flavor with the smooth and refreshing taste of coconut milk. Feeling like sipping on a slice of heaven while basking in the sun-kissed beach vibes.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/matcha",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Matcha Frappe",
+      "category": "Matcha",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/75d7a7a5-8450-4d04-95ee-ce965f57d61b.jpg",
+      "description": "Matcha Lovers. We're calling out for you! Our matcha icy smoothie comes with thickened cream and strong green tea aroma. Moreover, it's non-coffee! Indulge in our refreshing Matcha Frappe like no others!",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/matcha",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    },
+    {
+      "item_name": "Matcha Jasmine Frappe",
+      "category": "Matcha",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/9fc49470-a03c-45d3-b22f-83c8cd8c682d.jpg",
+      "description": "The flavored milk is whipped into a smoothie, a wonderful blend of refreshing tea flavor and silky milk flavor. It's the best choice to feel refreshed and cool off from the summer heat.",
+      "menu_item_page_url": "https://www.luckincoffee.com.sg/menu/matcha",
+      "price": null,
+      "price_status": "Not displayed on official Singapore menu page; do not infer or reuse delivery prices.",
+      "image_http_status": 200,
+      "already_in_menu_sheet_exact_name": false
+    }
+  ],
+  "image_candidate_count_new_url": 25,
+  "image_candidates": [
+    {
+      "brand": "Luckin Coffee",
+      "menu_item": "Coconut Latte",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/6030dd8f-08e0-423f-b1fe-e9020f91d151.jpg",
+      "source_page_url": "https://www.luckincoffee.com.sg/menu/signature-lattes",
+      "visual_check": "Not visually reviewed in this collection pass",
+      "reuse_status": "Review only; copyright/reuse permission not cleared",
+      "menu_scope": "Brand-level official menu image; branch assortment not established."
+    },
+    {
+      "brand": "Luckin Coffee",
+      "menu_item": "Velvet Latte",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/b395b11e-1df8-4e3a-ba2c-6904a4b35881.jpg",
+      "source_page_url": "https://www.luckincoffee.com.sg/menu/signature-lattes",
+      "visual_check": "Not visually reviewed in this collection pass",
+      "reuse_status": "Review only; copyright/reuse permission not cleared",
+      "menu_scope": "Brand-level official menu image; branch assortment not established."
+    },
+    {
+      "brand": "Luckin Coffee",
+      "menu_item": "Little Butter Latte",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/a6fc4502-374d-44f3-9267-77dc161b5a46.jpg",
+      "source_page_url": "https://www.luckincoffee.com.sg/menu/signature-lattes",
+      "visual_check": "Not visually reviewed in this collection pass",
+      "reuse_status": "Review only; copyright/reuse permission not cleared",
+      "menu_scope": "Brand-level official menu image; branch assortment not established."
+    },
+    {
+      "brand": "Luckin Coffee",
+      "menu_item": "Creamy Dreamy Latte",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/f87739a7-9578-47f9-8c90-56a8a2187ee3.jpg",
+      "source_page_url": "https://www.luckincoffee.com.sg/menu/signature-lattes",
+      "visual_check": "Not visually reviewed in this collection pass",
+      "reuse_status": "Review only; copyright/reuse permission not cleared",
+      "menu_scope": "Brand-level official menu image; branch assortment not established."
+    },
+    {
+      "brand": "Luckin Coffee",
+      "menu_item": "Vanilla Flavored Creamy Latte",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/5100ea95-a0cf-45a6-9a09-832c8f195b0e.jpg",
+      "source_page_url": "https://www.luckincoffee.com.sg/menu/signature-lattes",
+      "visual_check": "Not visually reviewed in this collection pass",
+      "reuse_status": "Review only; copyright/reuse permission not cleared",
+      "menu_scope": "Brand-level official menu image; branch assortment not established."
+    },
+    {
+      "brand": "Luckin Coffee",
+      "menu_item": "Coconut Velvet Latte",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/09ed6d71-cea0-42d6-b85f-568f951fa1a2.jpg",
+      "source_page_url": "https://www.luckincoffee.com.sg/menu/signature-lattes",
+      "visual_check": "Not visually reviewed in this collection pass",
+      "reuse_status": "Review only; copyright/reuse permission not cleared",
+      "menu_scope": "Brand-level official menu image; branch assortment not established."
+    },
+    {
+      "brand": "Luckin Coffee",
+      "menu_item": "Americano",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/5abfe4cb-20d7-4192-b7f9-b7a5fec6fd4e.jpg",
+      "source_page_url": "https://www.luckincoffee.com.sg/menu/barista-coffee",
+      "visual_check": "Not visually reviewed in this collection pass",
+      "reuse_status": "Review only; copyright/reuse permission not cleared",
+      "menu_scope": "Brand-level official menu image; branch assortment not established."
+    },
+    {
+      "brand": "Luckin Coffee",
+      "menu_item": "Extra Strong Americano",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/1874e70e-1442-4481-93e9-2535a46854a1.jpg",
+      "source_page_url": "https://www.luckincoffee.com.sg/menu/barista-coffee",
+      "visual_check": "Not visually reviewed in this collection pass",
+      "reuse_status": "Review only; copyright/reuse permission not cleared",
+      "menu_scope": "Brand-level official menu image; branch assortment not established."
+    },
+    {
+      "brand": "Luckin Coffee",
+      "menu_item": "Latte",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/6311403d-f6b0-4e1f-8f6a-6491a850129e.jpg",
+      "source_page_url": "https://www.luckincoffee.com.sg/menu/barista-coffee",
+      "visual_check": "Not visually reviewed in this collection pass",
+      "reuse_status": "Review only; copyright/reuse permission not cleared",
+      "menu_scope": "Brand-level official menu image; branch assortment not established."
+    },
+    {
+      "brand": "Luckin Coffee",
+      "menu_item": "Caramel Macchiato",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/8265e9de-3729-4acf-a4f1-e27c771f521a.jpg",
+      "source_page_url": "https://www.luckincoffee.com.sg/menu/barista-coffee",
+      "visual_check": "Not visually reviewed in this collection pass",
+      "reuse_status": "Review only; copyright/reuse permission not cleared",
+      "menu_scope": "Brand-level official menu image; branch assortment not established."
+    },
+    {
+      "brand": "Luckin Coffee",
+      "menu_item": "Flat White",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/c00b5c4c-9125-47e0-8624-d0e46da8d1ca.jpg",
+      "source_page_url": "https://www.luckincoffee.com.sg/menu/barista-coffee",
+      "visual_check": "Not visually reviewed in this collection pass",
+      "reuse_status": "Review only; copyright/reuse permission not cleared",
+      "menu_scope": "Brand-level official menu image; branch assortment not established."
+    },
+    {
+      "brand": "Luckin Coffee",
+      "menu_item": "Caffe Mocha",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/db3a22b4-d255-4140-ba70-8360697e73f2.jpg",
+      "source_page_url": "https://www.luckincoffee.com.sg/menu/barista-coffee",
+      "visual_check": "Not visually reviewed in this collection pass",
+      "reuse_status": "Review only; copyright/reuse permission not cleared",
+      "menu_scope": "Brand-level official menu image; branch assortment not established."
+    },
+    {
+      "brand": "Luckin Coffee",
+      "menu_item": "Cappuccino",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/28d5c1be-9ebc-454b-b28e-a1ad02299f97.jpg",
+      "source_page_url": "https://www.luckincoffee.com.sg/menu/barista-coffee",
+      "visual_check": "Not visually reviewed in this collection pass",
+      "reuse_status": "Review only; copyright/reuse permission not cleared",
+      "menu_scope": "Brand-level official menu image; branch assortment not established."
+    },
+    {
+      "brand": "Luckin Coffee",
+      "menu_item": "Orange Americano",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/58c109a4-b46c-49f8-815e-aeada3a4982a.jpg",
+      "source_page_url": "https://www.luckincoffee.com.sg/menu/fruity-americano",
+      "visual_check": "Not visually reviewed in this collection pass",
+      "reuse_status": "Review only; copyright/reuse permission not cleared",
+      "menu_scope": "Brand-level official menu image; branch assortment not established."
+    },
+    {
+      "brand": "Luckin Coffee",
+      "menu_item": "Pomelo Americano",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/2238cfb1-b9ff-4cd0-9d8f-b1741be6d04f.jpg",
+      "source_page_url": "https://www.luckincoffee.com.sg/menu/fruity-americano",
+      "visual_check": "Not visually reviewed in this collection pass",
+      "reuse_status": "Review only; copyright/reuse permission not cleared",
+      "menu_scope": "Brand-level official menu image; branch assortment not established."
+    },
+    {
+      "brand": "Luckin Coffee",
+      "menu_item": "Apple Fizzy Americano",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/72cf3536-4573-4d56-a962-7beefe7525a4.jpg",
+      "source_page_url": "https://www.luckincoffee.com.sg/menu/fruity-americano",
+      "visual_check": "Not visually reviewed in this collection pass",
+      "reuse_status": "Review only; copyright/reuse permission not cleared",
+      "menu_scope": "Brand-level official menu image; branch assortment not established."
+    },
+    {
+      "brand": "Luckin Coffee",
+      "menu_item": "Grape Fizzy Americano",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/d2b561d9-0ac4-4d87-bfad-2eb11667ce3e.jpg",
+      "source_page_url": "https://www.luckincoffee.com.sg/menu/fruity-americano",
+      "visual_check": "Not visually reviewed in this collection pass",
+      "reuse_status": "Review only; copyright/reuse permission not cleared",
+      "menu_scope": "Brand-level official menu image; branch assortment not established."
+    },
+    {
+      "brand": "Luckin Coffee",
+      "menu_item": "Yirgacheffe Americano",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/4631bb2e-0424-4993-b104-23f79e580539.jpg",
+      "source_page_url": "https://www.luckincoffee.com.sg/menu/single-origin-espresso",
+      "visual_check": "Not visually reviewed in this collection pass",
+      "reuse_status": "Review only; copyright/reuse permission not cleared",
+      "menu_scope": "Brand-level official menu image; branch assortment not established."
+    },
+    {
+      "brand": "Luckin Coffee",
+      "menu_item": "Yirgacheffe Latte",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/4820668c-27c0-4734-98fe-145d8fd54cd9.jpg",
+      "source_page_url": "https://www.luckincoffee.com.sg/menu/single-origin-espresso",
+      "visual_check": "Not visually reviewed in this collection pass",
+      "reuse_status": "Review only; copyright/reuse permission not cleared",
+      "menu_scope": "Brand-level official menu image; branch assortment not established."
+    },
+    {
+      "brand": "Luckin Coffee",
+      "menu_item": "Yirgacheffe Flat White",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/71b5fcf6-7feb-48c4-96f5-51919b9ccb46.jpg",
+      "source_page_url": "https://www.luckincoffee.com.sg/menu/single-origin-espresso",
+      "visual_check": "Not visually reviewed in this collection pass",
+      "reuse_status": "Review only; copyright/reuse permission not cleared",
+      "menu_scope": "Brand-level official menu image; branch assortment not established."
+    },
+    {
+      "brand": "Luckin Coffee",
+      "menu_item": "Matcha Latte",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/500a0b56-9200-4675-b381-b85b93bc6aa5.jpg",
+      "source_page_url": "https://www.luckincoffee.com.sg/menu/matcha",
+      "visual_check": "Not visually reviewed in this collection pass",
+      "reuse_status": "Review only; copyright/reuse permission not cleared",
+      "menu_scope": "Brand-level official menu image; branch assortment not established."
+    },
+    {
+      "brand": "Luckin Coffee",
+      "menu_item": "Matcha Oat Latte",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/62d12d86-14b9-4118-a412-61bf552e91f9.jpg",
+      "source_page_url": "https://www.luckincoffee.com.sg/menu/matcha",
+      "visual_check": "Not visually reviewed in this collection pass",
+      "reuse_status": "Review only; copyright/reuse permission not cleared",
+      "menu_scope": "Brand-level official menu image; branch assortment not established."
+    },
+    {
+      "brand": "Luckin Coffee",
+      "menu_item": "Coconut Matcha Latte",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/f830d8ab-319b-449e-827c-b9febe9972ae.jpg",
+      "source_page_url": "https://www.luckincoffee.com.sg/menu/matcha",
+      "visual_check": "Not visually reviewed in this collection pass",
+      "reuse_status": "Review only; copyright/reuse permission not cleared",
+      "menu_scope": "Brand-level official menu image; branch assortment not established."
+    },
+    {
+      "brand": "Luckin Coffee",
+      "menu_item": "Matcha Frappe",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/75d7a7a5-8450-4d04-95ee-ce965f57d61b.jpg",
+      "source_page_url": "https://www.luckincoffee.com.sg/menu/matcha",
+      "visual_check": "Not visually reviewed in this collection pass",
+      "reuse_status": "Review only; copyright/reuse permission not cleared",
+      "menu_scope": "Brand-level official menu image; branch assortment not established."
+    },
+    {
+      "brand": "Luckin Coffee",
+      "menu_item": "Matcha Jasmine Frappe",
+      "official_image_url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/9fc49470-a03c-45d3-b22f-83c8cd8c682d.jpg",
+      "source_page_url": "https://www.luckincoffee.com.sg/menu/matcha",
+      "visual_check": "Not visually reviewed in this collection pass",
+      "reuse_status": "Review only; copyright/reuse permission not cleared",
+      "menu_scope": "Brand-level official menu image; branch assortment not established."
+    }
+  ],
+  "image_http_checks": [
+    {
+      "url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/09ed6d71-cea0-42d6-b85f-568f951fa1a2.jpg",
+      "http_status": 200
+    },
+    {
+      "url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/1874e70e-1442-4481-93e9-2535a46854a1.jpg",
+      "http_status": 200
+    },
+    {
+      "url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/2238cfb1-b9ff-4cd0-9d8f-b1741be6d04f.jpg",
+      "http_status": 200
+    },
+    {
+      "url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/28d5c1be-9ebc-454b-b28e-a1ad02299f97.jpg",
+      "http_status": 200
+    },
+    {
+      "url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/4631bb2e-0424-4993-b104-23f79e580539.jpg",
+      "http_status": 200
+    },
+    {
+      "url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/4820668c-27c0-4734-98fe-145d8fd54cd9.jpg",
+      "http_status": 200
+    },
+    {
+      "url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/500a0b56-9200-4675-b381-b85b93bc6aa5.jpg",
+      "http_status": 200
+    },
+    {
+      "url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/5100ea95-a0cf-45a6-9a09-832c8f195b0e.jpg",
+      "http_status": 200
+    },
+    {
+      "url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/58c109a4-b46c-49f8-815e-aeada3a4982a.jpg",
+      "http_status": 200
+    },
+    {
+      "url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/5abfe4cb-20d7-4192-b7f9-b7a5fec6fd4e.jpg",
+      "http_status": 200
+    },
+    {
+      "url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/6030dd8f-08e0-423f-b1fe-e9020f91d151.jpg",
+      "http_status": 200
+    },
+    {
+      "url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/62d12d86-14b9-4118-a412-61bf552e91f9.jpg",
+      "http_status": 200
+    },
+    {
+      "url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/6311403d-f6b0-4e1f-8f6a-6491a850129e.jpg",
+      "http_status": 200
+    },
+    {
+      "url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/71b5fcf6-7feb-48c4-96f5-51919b9ccb46.jpg",
+      "http_status": 200
+    },
+    {
+      "url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/72cf3536-4573-4d56-a962-7beefe7525a4.jpg",
+      "http_status": 200
+    },
+    {
+      "url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/75d7a7a5-8450-4d04-95ee-ce965f57d61b.jpg",
+      "http_status": 200
+    },
+    {
+      "url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/8265e9de-3729-4acf-a4f1-e27c771f521a.jpg",
+      "http_status": 200
+    },
+    {
+      "url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/9fc49470-a03c-45d3-b22f-83c8cd8c682d.jpg",
+      "http_status": 200
+    },
+    {
+      "url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/a6fc4502-374d-44f3-9267-77dc161b5a46.jpg",
+      "http_status": 200
+    },
+    {
+      "url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/b395b11e-1df8-4e3a-ba2c-6904a4b35881.jpg",
+      "http_status": 200
+    },
+    {
+      "url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/c00b5c4c-9125-47e0-8624-d0e46da8d1ca.jpg",
+      "http_status": 200
+    },
+    {
+      "url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/d2b561d9-0ac4-4d87-bfad-2eb11667ce3e.jpg",
+      "http_status": 200
+    },
+    {
+      "url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/db3a22b4-d255-4140-ba70-8360697e73f2.jpg",
+      "http_status": 200
+    },
+    {
+      "url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/f830d8ab-319b-449e-827c-b9febe9972ae.jpg",
+      "http_status": 200
+    },
+    {
+      "url": "https://ilucky-fe-outside-oss-prod.luckincdn.com/iadmin/f87739a7-9578-47f9-8c90-56a8a2187ee3.jpg",
+      "http_status": 200
+    }
+  ],
+  "pricing_statement": "No item-level price was visible in the current official Singapore menu catalogue pages; prices intentionally null."
+}

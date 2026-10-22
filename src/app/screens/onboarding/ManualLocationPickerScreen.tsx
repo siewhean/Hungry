@@ -1,5 +1,12 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Pressable, ScrollView, View } from "react-native";
+import {
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft, MapPin } from "lucide-react-native";
 
@@ -125,7 +132,10 @@ export function ManualLocationPickerScreen({ navigation }: Props) {
       style={{ backgroundColor: palette.bg, flex: 1 }}
       edges={["top", "left", "right", "bottom"]}
     >
-      <View style={{ backgroundColor: palette.bg, flex: 1, paddingHorizontal: spacing[3] }}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ backgroundColor: palette.bg, flex: 1, paddingHorizontal: spacing[3] }}
+      >
         <AppHeader
           title="Pick a location"
           onBackPress={() => navigation.goBack()}
@@ -154,6 +164,8 @@ export function ManualLocationPickerScreen({ navigation }: Props) {
           onChangeText={setQuery}
           enableMovingPlaceholder={false}
           accessibilityLabel="Search Singapore location"
+          returnKeyType="done"
+          onSubmitEditing={Keyboard.dismiss}
         />
         {selectedArea ? (
           <Button
@@ -226,7 +238,7 @@ export function ManualLocationPickerScreen({ navigation }: Props) {
             style={shadows.floating}
           />
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

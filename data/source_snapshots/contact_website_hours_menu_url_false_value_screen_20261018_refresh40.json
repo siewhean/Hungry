@@ -1,0 +1,39 @@
+{
+  "audit_id": "contact_website_hours_menu_url_false_value_screen_20261018_refresh40",
+  "observed_at": "2026-10-18",
+  "workbook_path": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "8463f68eef5d04ec42339496ff07b22fe6c251ac23ccd42d30e90a6cbfb205d8",
+  "read_only": true,
+  "scope": "Bounded false-value screen of current exact Refresh 40 baseline. Checked all populated directory entries for phone values using a non-Singapore international country prefix and all Website/Menu URL values for non-http(s)/malformed URL syntax; compared findings against earlier row-level live-link audit. No workbook changes.",
+  "populated_directory_cells": {
+    "Contact Details": 2658,
+    "Website": 2734,
+    "Menu URL": 1384,
+    "Opening Hours / Closed Days": 1411
+  },
+  "checks": {
+    "contact_non_singapore_international_prefix_candidates": 0,
+    "website_or_menu_url_malformed_syntax_candidates": 0,
+    "confirmed_false_values": 0,
+    "proposed_removals_or_corrections": [],
+    "unresolved_url_availability": {
+      "distinct_menu_urls_prior_audit": 107,
+      "conclusive_4xx_or_5xx": 0,
+      "transport_or_tls_failures_inconclusive": 106,
+      "note": "Prior live probes were performed against an earlier workbook SHA and are not treated as proof for the current file. TLS/transport errors do not establish that URLs are false."
+    }
+  },
+  "related_prior_evidence": {
+    "path": "/Users/Siew Hean/Documents/GitHub/Hungry/data/source_snapshots/contact_website_hours_menu_url_quality_audit_20261018.json",
+    "sha256": "0bd7bb769a31f0190b7a8f0d165beba3f4556e0831bfb7f5a6dab20326dc93ff",
+    "workbook_sha256_at_prior_audit": "3ce9c0b79a9dbc4fb8724061754b0f3adfdbbeff56aa9caca71b8c5353fff9b7",
+    "disposition": "Used only as triage context; it is bound to an older workbook and does not establish current row-level validity."
+  },
+  "limitations": [
+    "This screen does not prove every contact, business-to-domain match, schedule, or URL is current.",
+    "Brand/mall contact values are not false solely because they are shared across outlets.",
+    "Opening-hours variants without weekdays may be abbreviated or copied from a directory; no removals proposed without an exact outlet source contradicting them.",
+    "No delivery-platform pages/data were accessed.",
+    "No Mapbox requests were made."
+  ]
+}

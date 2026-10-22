@@ -1,0 +1,910 @@
+{
+  "snapshot_date": "2026-10-19",
+  "purpose": "Research-only risk screen for restricted-public-access F&B records. No workbook edits or removals made.",
+  "baseline_workbook_sha256": "2674213d695cbe29ef25cab0ca9535a1dbca6dbf81b5b1ea983561632994e233",
+  "current_workbook_sha256_observed": "fe31f2c8926d09ce592189efa8012987f6a3e878ef2977f50fe466873d567a64",
+  "current_workbook_matches_baseline": false,
+  "high_confidence_exclusions": {
+    "conclusion": "These tenant records are at SAFRA member clubhouses. Current SAFRA By-Laws §6.4 require guests, where applicable, to be signed in by members and accompanied in clubs/facilities; SAFRA FAQ describes club access as member and invited guest access for most SAFRA-managed facilities. Ordinary independent public entry is not established. Treat as exclusion candidates pending tenant-specific proof of an independent public entrance or public-only dining access.",
+    "confidence": "medium-high for restricted clubhouse access; medium per tenant because rule says where applicable and vendor list is historical",
+    "records": [
+      {
+        "sfa_licence": "CE04627X000",
+        "name": "FOREST5 DARTS CAFE",
+        "full_address": "Address: 2 TELOK BLANGAH WAY #01-10,SAFRA MOUNT FABER,Singapore 098803",
+        "business_type": "within Pubs/Bars/Nightclubs/Disco",
+        "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      {
+        "sfa_licence": "CE19O15A000",
+        "name": "SAKUNTHALA'S RECIPE",
+        "full_address": "Address: 2 TELOK BLANGAH WAY #01-07,SAFRA CLUBHOUSE (MOUNT FABER),Singapore 098803",
+        "business_type": "Restaurant",
+        "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      {
+        "sfa_licence": "SW09358K000",
+        "name": "JACK\"S PLACE",
+        "full_address": "Address: 333 BOON LAY WAY SAFRA CLUBHOUSE (JURONG),Singapore 649848",
+        "business_type": "Restaurant",
+        "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      {
+        "sfa_licence": "SW09448J000",
+        "name": "SPRINGLEAF PRATA PLACE",
+        "full_address": "Address: 333 BOON LAY WAY #2C-01,SAFRA CLUBHOUSE (JURONG),Singapore 649848",
+        "business_type": "Restaurant",
+        "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      {
+        "sfa_licence": "SW11408L000",
+        "record_found": false
+      },
+      {
+        "sfa_licence": "SW09366K000",
+        "name": "Pearl Garden Restaurant Pte Ltd",
+        "full_address": "Address: 333 BOON LAY WAY SAFRA JURONG CLUB,Singapore 649848",
+        "business_type": "Restaurant",
+        "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      {
+        "sfa_licence": "CE12880B000",
+        "name": "MCDONALD'S",
+        "full_address": "Address: 293 LORONG 6 TOA PAYOH #01-02,SAFRA TOA PAYOH CLUB,Singapore 319387",
+        "business_type": "Restaurant",
+        "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      {
+        "sfa_licence": "CE12C58X000",
+        "name": "Ya Kun Kaya Toast",
+        "full_address": "Address: 293 LORONG 6 TOA PAYOH #01-01,SAFRA CLUBHOUSE (TOA PAYOH),Singapore 319387",
+        "business_type": "Restaurant",
+        "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      {
+        "sfa_licence": "CE12B42X000",
+        "name": "JUBILEE GARDEN RESTAURANT",
+        "full_address": "Address: 293 LORONG 6 TOA PAYOH #03-01,SAFRA CLUBHOUSE,Singapore 319387",
+        "business_type": "Restaurant",
+        "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      {
+        "sfa_licence": "NE16077P000",
+        "name": "Wingstop",
+        "full_address": "Address: 9 SENTUL CRESCENT #02-02,SAFRA PUNGGOL,Singapore 828654",
+        "business_type": "Restaurant",
+        "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      {
+        "sfa_licence": "NE16179E000",
+        "name": "JACK'S PLACE PUNGGOL SAFRA",
+        "full_address": "Address: 9 SENTUL CRESCENT #01-01,SAFRA PUNGGOL CLUB,Singapore 828654 SAFRA PUNGGOL CLUB",
+        "business_type": "Restaurant",
+        "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      {
+        "sfa_licence": "SE17044E000",
+        "name": "7TH HEAVEN KTV & CAFE",
+        "full_address": "Address: 1 TAMPINES STREET 92 #03-02,SAFRA CLUBHOUSE (TAMPINES),Singapore 528882",
+        "business_type": "Restaurant",
+        "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      {
+        "sfa_licence": "SE13U09X000",
+        "name": "Sarpino's",
+        "full_address": "Address: 1 TAMPINES STREET 92 #01-00B,SAFRA CLUBHOUSE (TAMPINES),Singapore 528882",
+        "business_type": "Snack Counter",
+        "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      {
+        "sfa_licence": "SE19495K000",
+        "name": "SPRINGLEAF PRATA PLACE",
+        "full_address": "Address: 1 TAMPINES STREET 92 #01-K1,SAFRA TAMPINES,Singapore 528882",
+        "business_type": "Restaurant",
+        "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      {
+        "sfa_licence": "S88236N000",
+        "name": "KENG ENG KEE SEAFOOD",
+        "full_address": "Address: 1A TAMPINES STREET 92 #01-K2,SAFRA CLUBHOUSE (TAMPINES),Singapore 528882",
+        "business_type": "Restaurant",
+        "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      {
+        "sfa_licence": "NW12G11V000",
+        "name": "MCDONALD'S",
+        "full_address": "Address: 60 YISHUN AVENUE 4 #01-11,SAFRA YISHUN COUNTRY CLUB,Singapore 769027",
+        "business_type": "Restaurant",
+        "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      {
+        "sfa_licence": "B00034X000",
+        "name": "eatzi gourmet",
+        "full_address": "Address: 60 YISHUN AVENUE 4 SAFRA YISHUN CLUB HOUSE,Singapore 769027",
+        "business_type": "Restaurant",
+        "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      {
+        "sfa_licence": "NW20C50V000",
+        "name": "SPRINGLEAF PRATA PLACE",
+        "full_address": "Address: 60 YISHUN AVENUE 4 #01-07,SAFRA COUNTRY CLUB (YISHUN),Singapore 769027",
+        "business_type": "Restaurant",
+        "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      {
+        "sfa_licence": "NW20D44C000",
+        "name": "HAVE FUN YISHUN",
+        "full_address": "Address: 60 YISHUN AVENUE 4 #01-05,#01-06,SAFRA COUNTRY CLUB (YISHUN),Singapore 769027",
+        "business_type": "within Pubs/Bars/Nightclubs/Disco",
+        "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      {
+        "sfa_licence": "SW23625P000",
+        "name": "BURGER KING",
+        "full_address": "Address: 28 CHOA CHU KANG DRIVE #01-01,SAFRA,Singapore 689964",
+        "business_type": "Restaurant",
+        "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      {
+        "sfa_licence": "SW23549E000",
+        "name": "Food Paradise Enterprise Holding Pte Ltd",
+        "full_address": "Address: 28 CHOA CHU KANG DRIVE #01-02,SAFRA,Singapore 689964",
+        "business_type": "Food Court",
+        "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      {
+        "sfa_licence": "SW09359J000",
+        "name": "Jewel Music Box",
+        "full_address": "Address: 333 BOON LAY WAY #3A-01,SAFRA CLUBHOUSE (JURONG),Singapore 649848",
+        "business_type": "within Pubs/Bars/Nightclubs/Disco",
+        "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.safra.sg/docs/default-source/default-document-library/about/safra-by-laws.pdf?sfvrsn=ef984fd1_2",
+        "evidence": "By-Laws §§6.1, 6.4; §6.4 says guests are signed in by members where applicable and accompanied by member at club/facility."
+      },
+      {
+        "url": "https://www.safra.sg/faq/safra-membership-FAQs",
+        "evidence": "FAQ frames club access as members and family/friends for most SAFRA-managed facilities; advises checking individual facilities."
+      },
+      {
+        "url": "https://prd-afd-sitefinity-h0ardtc3d4awdubh.a01.azurefd.net/media-library/docs/default-source/default-document-library/safra_reciprocalarrangement_feb234d16d07679ee47f0a8a9f2ca90e6339b.pdf?sfvrsn=c6f8971d_0",
+        "evidence": "Venue/vendor listing says all guests must be accompanied by SAFRA, HomeTeamNS or NSRCC members and names the matching operators/sites. Historical 2023/24 corroboration, not current outlet proof."
+      }
+    ]
+  },
+  "requires_review": {
+    "safra_unmatched_and_nonstandard_facilities": {
+      "conclusion": "Do not exclude from SAFRA keyword alone; venue-specific access rules unresolved. Includes NSRCC resort/sea-sports sites and unmatched SAFRA tenants. The JU has public-facing reservations/contact and public dining evidence.",
+      "records": [
+        {
+          "sfa_licence": "E94173K000",
+          "name": "BISTRO BOWL @ NSRCC",
+          "full_address": "Address: 10 CHANGI COAST WALK SAFRA (SAFRA BOWL),Singapore 499739",
+          "business_type": "Takeaway",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SE10441A000",
+          "name": "PINEAPPLE @ AAANNNGG PTE LTD",
+          "full_address": "Address: 11 CHANGI COAST WALK SAFRA RESORT SEA SPORTS CENTRE,Singapore 499740",
+          "business_type": "Restaurant with Catering",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "E97038K000",
+          "name": "STELLA SEASIDE LOUNGE",
+          "full_address": "Address: 11 CHANGI COAST WALK SAFRA RESORT SEA SPORTS CENTRE,Singapore 499740 (LEVEL 1 - POOLSIDE)",
+          "business_type": "Restaurant",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SE10332J000",
+          "name": "ZHENG ZICHAR",
+          "full_address": "Address: 11 CHANGI COAST WALK SAFRA RESORT SEA SPORTS CENTRE,Singapore 499740",
+          "business_type": "Restaurant",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "NW26722C000",
+          "name": "BKK BISTRO & BAR",
+          "full_address": "Address: 60 YISHUN AVENUE 4 #01-04,SAFRA COUNTRY CLUB (YISHUN),Singapore 769027",
+          "business_type": "Restaurant",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "CE19I10B000",
+          "name": "Food Paradise",
+          "full_address": "Address: 2 TELOK BLANGAH WAY #01-08,SAFRA CLUBHOUSE (MOUNT FABER),Singapore 098803",
+          "business_type": "Food Court",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "CE19L90X000",
+          "name": "Food Paradise Enterprise Holding Pte. Ltd.",
+          "full_address": "Address: 2 TELOK BLANGAH WAY #01-08,SAFRA CLUBHOUSE (MOUNT FABER),Singapore 098803 (MR1)",
+          "business_type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "CE19I10B001",
+          "name": "Food Paradise Enterprise Pte Ltd",
+          "full_address": "Address: 2 TELOK BLANGAH WAY #01-08,SAFRA CLUBHOUSE (MOUNT FABER),Singapore 098803",
+          "business_type": "Foodcourt",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "CE19E81X000",
+          "name": "Kopifellas Cafe",
+          "full_address": "Address: 2 TELOK BLANGAH WAY #01-05,SAFRA CLUBHOUSE (MOUNT FABER),Singapore 098803",
+          "business_type": "Snack Counter",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "CE23468A000",
+          "name": "Lickers ice cream",
+          "full_address": "Address: 2 TELOK BLANGAH WAY #02-06,SAFRA CLUBHOUSE (MOUNT FABER),Singapore 098803",
+          "business_type": "Takeaway",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "CE19I10B002",
+          "name": "SWK Noodle",
+          "full_address": "Address: 2 TELOK BLANGAH WAY #01-08,SAFRA CLUBHOUSE (MOUNT FABER),Singapore 098803",
+          "business_type": "Foodcourt",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "CE14I32J000",
+          "name": "Treasure paradise",
+          "full_address": "Address: 2 TELOK BLANGAH WAY #01-09,SAFRA CLUBHOUSE (MOUNT FABER),Singapore 098803 SAFRA CLUBHOUSE (MOUNT FABER)",
+          "business_type": "Restaurant",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "CE19M53A000",
+          "name": null,
+          "full_address": "Address: 2 TELOK BLANGAH WAY #01-08,SAFRA CLUBHOUSE (MOUNT FABER),Singapore 098803 (MR3)",
+          "business_type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "CE19I10B003",
+          "name": null,
+          "full_address": "Address: 2 TELOK BLANGAH WAY #01-08,SAFRA CLUBHOUSE (MOUNT FABER),Singapore 098803",
+          "business_type": "Foodcourt",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "CE14F60X000",
+          "name": "Have Fun TPY",
+          "full_address": "Address: 293 LORONG 6 TOA PAYOH #02-06,SAFRA CLUBHOUSE (TOA PAYOH),Singapore 319387 SAFRA CLUBHOUSE (TOA PAYOH)",
+          "business_type": "Restaurant",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "CE12A95V000",
+          "name": "Swensens",
+          "full_address": "Address: 293 LORONG 6 TOA PAYOH #01-05,SAFRA CLUBHOUSE (TOA PAYOH),Singapore 319387",
+          "business_type": "Restaurant",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "CE12C19K000",
+          "name": "VAJEHA EMPIRE PTE. LTD.",
+          "full_address": "Address: 293 LORONG 6 TOA PAYOH #01-04,SAFRA CLUBHOUSE (TOA PAYOH),Singapore 319387",
+          "business_type": "Restaurant with Catering",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "CE12C23X000",
+          "name": "NIL",
+          "full_address": "Address: 293 LORONG 6 TOA PAYOH #02-05,SAFRA CLUBHOUSE,Singapore 319387",
+          "business_type": "Snack Counter",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "CE12D39X000",
+          "name": null,
+          "full_address": "Address: 293 LORONG 6 TOA PAYOH #03-02,SAFRA CLUBHOUSE (TOA PAYOH),Singapore 319387 (PART OF)",
+          "business_type": "Restaurant",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "NE16284E000",
+          "name": "Kopi Korner",
+          "full_address": "Address: 9 SENTUL CRESCENT #03-04,SAFRA CLUBHOUSE (PUNGGOL),Singapore 828654",
+          "business_type": "Restaurant",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SE16917K000",
+          "name": "Kopifellas Cafe",
+          "full_address": "Address: 1A TAMPINES STREET 92 #01-15,SAFRA CLUBHOUSE (TAMPINES),Singapore 528882",
+          "business_type": "Snack Counter",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "S90123P000",
+          "name": "LAGOON CAFE",
+          "full_address": "Address: 1 TAMPINES STREET 92 SAFRA CLUBHOUSE (TAMPINES),Singapore 528882",
+          "business_type": "Restaurant",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SE24G81B000",
+          "name": "TAIRA PASTRY",
+          "full_address": "Address: 1A TAMPINES STREET 92 #02-04A,SAFRA CLUBHOUSE (TAMPINES),Singapore 528882",
+          "business_type": "Snack Counter",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://theju.sg/pages/contact",
+          "evidence": "Public contact, opening hours and reservation details."
+        },
+        {
+          "url": "https://theju.sg/pages/about-theju",
+          "evidence": "Venue describes itself as a place for all ages to gather."
+        }
+      ]
+    },
+    "campus_or_institution_food_courts": {
+      "conclusion": "Review only; official sources show visitor controls but do not establish that ordinary members of the public cannot obtain access. Campus/canteen address or SFA licence alone is insufficient to remove.",
+      "records": [
+        {
+          "sfa_licence": "SW21S39E000",
+          "name": "The Arcade People Pte Ltd",
+          "full_address": "Address: 333 BOON LAY WAY SAFRA CLUBHOUSE (JURONG),Singapore 649848 (LEVEL 2 BESIDE KIDZ AMAZE)",
+          "business_type": "Food Vending Machines",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "C01076E000",
+          "name": "PGPR AIR-CON FOOD COURT",
+          "full_address": "Address: 27 PRINCE GEORGE'S PARK PRINCE GEORGE'S PK RESIDENCES,Singapore 118425 1ST & 2ND STY, NUS",
+          "business_type": "Food Court",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "C01076E001",
+          "name": "Indian Veg",
+          "full_address": "Address: 27 PRINCE GEORGE'S PARK Singapore 118425 1ST & 2ND STY, NUS",
+          "business_type": "Foodcourt",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "C01076E002",
+          "name": "Salad",
+          "full_address": "Address: 27 PRINCE GEORGE'S PARK Singapore 118425",
+          "business_type": "Foodcourt",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "C01076E003",
+          "name": "Dough Magic",
+          "full_address": "Address: 27 PRINCE GEORGE'S PARK Singapore 118425 (PGPR CANTEEN)",
+          "business_type": "Foodcourt",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "C01076E004",
+          "name": "TONG JI FISH SOUP",
+          "full_address": "Address: 27 PRINCE GEORGE'S PARK Singapore 118425",
+          "business_type": "Foodcourt",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "C01076E005",
+          "name": "MALAXIANGGUO",
+          "full_address": "Address: 27 PRINCE GEORGE'S PARK Singapore 118425",
+          "business_type": "Foodcourt",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "C01076E006",
+          "name": "E2 KITCHEN PTE LTD",
+          "full_address": "Address: 27 PRINCE GEORGE'S PARK Singapore 118425 1ST & 2ND STY, NUS",
+          "business_type": "Foodcourt",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "C01076E008",
+          "name": "WoW Western",
+          "full_address": "Address: 27 PRINCE GEORGE'S PARK Singapore 118425 (1ST & 2ND STOREY)",
+          "business_type": "Foodcourt",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "C01076E010",
+          "name": null,
+          "full_address": "Address: 27 PRINCE GEORGE'S PARK Singapore 118425",
+          "business_type": "Foodcourt",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "C01076E012",
+          "name": "The Acai Truck",
+          "full_address": "Address: 27 PRINCE GEORGE'S PARK Singapore 118425",
+          "business_type": "Foodcourt",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SW24F32V000",
+          "name": "A HOT HIDEOUT",
+          "full_address": "Address: 27 PRINCE GEORGE'S PARK #02-01,Singapore 118425",
+          "business_type": "Restaurant",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SW07287A000",
+          "name": "supersnacks",
+          "full_address": "Address: 29 PRINCE GEORGE'S PARK BLK 10 - LEVEL 1,Singapore 118426",
+          "business_type": "Snack Counter",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "C81041N000",
+          "name": "the deck",
+          "full_address": "Address: 21 LOWER KENT RIDGE ROAD FACULTY OF ART & SOCIAL SCIENCES,Singapore 119077 THE DECK",
+          "business_type": "Coffeeshop/Eating House",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "C81041N001",
+          "name": null,
+          "full_address": "Address: 21 LOWER KENT RIDGE ROAD THE DECK, FACULTY OF ART & SOCIAL SCIENCES,Singapore 119077",
+          "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "C81041N002",
+          "name": "Scholar Delights Pte. Ltd.",
+          "full_address": "Address: 21 LOWER KENT RIDGE ROAD Singapore 119077",
+          "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "C81041N003",
+          "name": "KANEDA JAPANESE CUISINE",
+          "full_address": "Address: 21 LOWER KENT RIDGE ROAD THE DECK, FACULTY OF ART & SOCIAL SCIENCES,Singapore 119077",
+          "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "C81041N004",
+          "name": "snacks and fried kway te0w",
+          "full_address": "Address: 21 LOWER KENT RIDGE ROAD THE DECK, FACULTY OF ART & SOCIAL SCIENCES,Singapore 119077",
+          "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "C81041N005",
+          "name": "E2 KITCHEN PTE. LTD.",
+          "full_address": "Address: 21 LOWER KENT RIDGE ROAD Singapore 119077",
+          "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "C81041N006",
+          "name": "Western Crave",
+          "full_address": "Address: 21 LOWER KENT RIDGE ROAD The Deck,Singapore 119077",
+          "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "C81041N007",
+          "name": "Ba Wei Ban Mian",
+          "full_address": "Address: 21 LOWER KENT RIDGE ROAD Faculty of Arts and Social Sciences,Singapore 119077 The Deck Canteen",
+          "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "C81041N008",
+          "name": "Sin Kee Chicken Rice",
+          "full_address": "Address: 21 LOWER KENT RIDGE ROAD Singapore 119077 THE DECK",
+          "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "C81041N009",
+          "name": "vegetarian stall",
+          "full_address": "Address: 21 LOWER KENT RIDGE ROAD Singapore 119077",
+          "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "C81041N010",
+          "name": "Jito's Dhaba",
+          "full_address": "Address: 21 LOWER KENT RIDGE ROAD The Deck Canteen, Faculty of Arts and Social Sciences,Singapore 119077",
+          "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "C81041N011",
+          "name": "UFS FOOD INDUSTRIES PTE LTD",
+          "full_address": "Address: 21 LOWER KENT RIDGE ROAD THE DECK,Singapore 119077",
+          "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "C81041N012",
+          "name": "fresh fruits & juices",
+          "full_address": "Address: 21 LOWER KENT RIDGE ROAD THE DECK, FACULTY OF ART & SOCIAL SCIENCES,Singapore 119077",
+          "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "C81041N013",
+          "name": "GC FOOD (GIDEON 300) PTE LTD",
+          "full_address": "Address: 21 LOWER KENT RIDGE ROAD THE DECK FACULTY OF ART & SOCIAL SCIENCES,Singapore 119077",
+          "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SW19Z33C000",
+          "name": "Liang Ban Kung Fu",
+          "full_address": "Address: 21 LOWER KENT RIDGE ROAD The Deck Level 2 (Kiosk 1),Singapore 119077",
+          "business_type": "Takeaway",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SW16953V000",
+          "name": "LI JI COFFEE HOUSE",
+          "full_address": "Address: 21 LOWER KENT RIDGE ROAD FRONTIER (PHASE 1), FACULTY OF SCIENCE (KIOSK 3),Singapore 119077",
+          "business_type": "Takeaway",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SW16954X000",
+          "name": "Pasta Express",
+          "full_address": "Address: 21 LOWER KENT RIDGE ROAD FACULTY OF SCIENCE,Singapore 119077 FRONTIER (PHASE 1)",
+          "business_type": "Takeaway",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SW16956N000",
+          "name": "TAIWAN ICHIBAN",
+          "full_address": "Address: 21 LOWER KENT RIDGE ROAD FRONTIER (PHASE 1), FACULTY OF SCIENCE (KIOSK 1),Singapore 119077",
+          "business_type": "Takeaway",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SW16902V000",
+          "name": "UNCLE PENYET",
+          "full_address": "Address: 21 LOWER KENT RIDGE ROAD FACULTY OF SCIENCE (PHASE 1),Singapore 119077",
+          "business_type": "Takeaway",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SW25199P000",
+          "name": null,
+          "full_address": "Address: 31 LOWER KENT RIDGE ROAD YUSOF ISHAK HOUSE,Singapore 119078 (LEVEL 1)",
+          "business_type": "Food Court",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SW25199P001",
+          "name": null,
+          "full_address": "Address: 31 LOWER KENT RIDGE ROAD YUSOF ISHAK HOUSE,Singapore 119078 (LEVEL 1)",
+          "business_type": "Foodcourt",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SW25199P002",
+          "name": "WOK AI YIH",
+          "full_address": "Address: 31 LOWER KENT RIDGE ROAD YUSOF ISHAK HOUSE,Singapore 119078 (LEVEL 1)",
+          "business_type": "Foodcourt",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SW25199P003",
+          "name": "Indian Veg",
+          "full_address": "Address: 31 LOWER KENT RIDGE ROAD Yusof Ishak House Canteen,Singapore 119078",
+          "business_type": "Foodcourt",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SW25199P005",
+          "name": null,
+          "full_address": "Address: 31 LOWER KENT RIDGE ROAD YUSOF ISHAK HOUSE,Singapore 119078 (LEVEL 1)",
+          "business_type": "Foodcourt",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SW25199P006",
+          "name": "GC CAFE (GIDEON 300) PTE LTD",
+          "full_address": "Address: 31 LOWER KENT RIDGE ROAD Singapore 119078",
+          "business_type": "Foodcourt",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SW25585C000",
+          "name": null,
+          "full_address": "Address: 31 LOWER KENT RIDGE ROAD YUSOF ISHAK HOUSE,Singapore 119078 (LEVEL 1 KIOSK 3)",
+          "business_type": "Takeaway",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SW25235V000",
+          "name": "TEMPURA RAMEN",
+          "full_address": "Address: 31 LOWER KENT RIDGE ROAD NUS YUSOF ISHAK HOUSE,Singapore 119078 (LEVEL 1 KIOSK 2)",
+          "business_type": "Takeaway",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SW25727L000",
+          "name": "CHAGEE",
+          "full_address": "Address: 31 LOWER KENT RIDGE ROAD #01-09,YUSOF ISHAK HOUSE,Singapore 119078",
+          "business_type": "Snack Counter",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SW19D47L000",
+          "name": "Mixue",
+          "full_address": "Address: 3 SCIENCE DRIVE 2 Singapore 117543 (KIOSK 6 Canteen 4 (FRONTIER))",
+          "business_type": "Takeaway",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SW20B70E000",
+          "name": "Helen's Korean and Japanese",
+          "full_address": "Address: 35 STUDENTS WALK CANTEEN 2,Singapore 639548 MR4",
+          "business_type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SW20A92P000",
+          "name": "HELEN'S MINI WOK",
+          "full_address": "Address: 35 STUDENTS WALK Singapore 639548 NTU CANTEEN 2 (MR3)",
+          "business_type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SSW24057E000",
+          "name": "PRIME",
+          "full_address": "Address: 35 STUDENTS WALK #01-01,Singapore 639548",
+          "business_type": "Supermarket (Large) - Sale area more than 200 sq metres",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SW20A18N000",
+          "name": "TIAN HUOHUO PTE LTD",
+          "full_address": "Address: 35 STUDENTS WALK Singapore 639548 (MR2)",
+          "business_type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SW26422K000",
+          "name": null,
+          "full_address": "Address: 35 STUDENTS WALK Singapore 639548 NTU CANTEEN 2 (MR6)",
+          "business_type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SW14704A003",
+          "name": "DINGO FOODS",
+          "full_address": "Address: 162 NANYANG CRESCENT Singapore 637033 NTU (PIONEER FOOD COURT)",
+          "business_type": "Foodcourt",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SW14704A000",
+          "name": "FOOD HAVEN @ SIMEI PTE LTD",
+          "full_address": "Address: 162 NANYANG CRESCENT FIRST STOREY, NTU (PIONEER FOOD COURT),Singapore 637033 FIRST STOREY",
+          "business_type": "Food Court",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SW14704A005",
+          "name": "Healthy Salads",
+          "full_address": "Address: 162 NANYANG CRESCENT NTU (PIONEER FOOD COURT),Singapore 637033 (FIRST STOREY)",
+          "business_type": "Foodcourt",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SW14704A007",
+          "name": "MR PASTA",
+          "full_address": "Address: 162 NANYANG CRESCENT Singapore 637033 (NTU PIONEER FOOD COURT)",
+          "business_type": "Foodcourt",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SW14704A002",
+          "name": "THAI CUISINE",
+          "full_address": "Address: 162 NANYANG CRESCENT FIRST STOREY, NTU (PIONEER FOOD COURT),Singapore 637033",
+          "business_type": "Foodcourt",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SW24E22E000",
+          "name": "Bismillah Biryani",
+          "full_address": "Address: 50 NANYANG AVENUE #01-12,NTU NORTH SPINE PLAZA NS3,Singapore 639798",
+          "business_type": "Takeaway",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SW15905A000",
+          "name": "THE SOUP SPOON UNION",
+          "full_address": "Address: 50 NANYANG AVENUE NORTH SPINE, NTU,Singapore 639798 NS3-01-14",
+          "business_type": "Restaurant",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SW14885C001",
+          "name": "Indian Cuisine",
+          "full_address": "Address: 76 NANYANG DRIVE NTU North Spine,Singapore 637331 #02-01B",
+          "business_type": "Foodcourt",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SW08260N000",
+          "name": "STARBUCKS COFFEE SINGAPORE PTE. LTD.",
+          "full_address": "Address: 76 NANYANG DRIVE UNIT N2.1-01-06 NTU,Singapore 637331",
+          "business_type": "Snack Counter",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SW08251P000",
+          "name": "Universite Pte Ltd",
+          "full_address": "Address: 76 NANYANG DRIVE #01-01,Blk N2 NTU,Singapore 637331",
+          "business_type": "Restaurant",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SW06925P000",
+          "name": "Brunch Cafe",
+          "full_address": "Address: 500 DOVER ROAD (FOOD COURT 5) UNIT 14,Singapore 139651",
+          "business_type": "Takeaway",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "NE24C59E009",
+          "name": "Hungry Bruh",
+          "full_address": "Address: 1 PUNGGOL COAST ROAD #01-10,SINGAPORE INSTITUTE OF TECHNOLOGY (CAMPUS COURT),Singapore 828608",
+          "business_type": "Foodcourt",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "CE22K18E000",
+          "name": null,
+          "full_address": "Address: 2 ANG MO KIO DRIVE #01-14/29,CARPE DIEM @ ITE PTE. LTD.,Singapore 567720 MR1",
+          "business_type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SW10407A000",
+          "name": "AMBER WEST",
+          "full_address": "Address: 1 CHOA CHU KANG GROVE #04-01,ITE COLLEGE WEST,Singapore 688236",
+          "business_type": "Restaurant",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SW10415A000",
+          "name": "CHEZ WEST",
+          "full_address": "Address: 1 CHOA CHU KANG GROVE #03-01,(BLOCK 2) ITE COLLEGE WEST,Singapore 688236",
+          "business_type": "Restaurant",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SW13X34P000",
+          "name": "CREMA",
+          "full_address": "Address: 1 CHOA CHU KANG GROVE #04-14,ITE COLLEGE WEST BLOCK 3,Singapore 688236",
+          "business_type": "Snack Counter",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SW19618V000",
+          "name": "BAN MIAN & MALA",
+          "full_address": "Address: 48 TOH GUAN ROAD EAST #01-124,(MINI CANTEEN 1),Singapore 608586",
+          "business_type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "CE19308N000",
+          "name": "Indian Muslim",
+          "full_address": "Address: 978 TOA PAYOH NORTH #02-01,Singapore 319001 (CANTEEN WITHOUT STALL - MR1)",
+          "business_type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "CE19238J000",
+          "name": "PIPING HOT PTE. LTD.",
+          "full_address": "Address: 978 TOA PAYOH NORTH #02-01,Singapore 319001 Canteen without stall 2",
+          "business_type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SW16416P000",
+          "name": "Cafe Melba @MediaPolis",
+          "full_address": "Address: 1 STARS AVENUE #03-01,MEDIACORP CAMPUS,Singapore 138507",
+          "business_type": "Restaurant",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SW22E59L000",
+          "name": "Foreword Coffee Roasters",
+          "full_address": "Address: 1 STARS AVENUE #03-02,MEDIACORP CAMPUS,Singapore 138507",
+          "business_type": "Takeaway",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "SW24770N000",
+          "name": "ROBO-T",
+          "full_address": "Address: 36 CLEANTECH LOOP #01-21A,SURBANA JURONG CAMPUS,Singapore 636740",
+          "business_type": "Takeaway",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "CE10269A000",
+          "name": "SERVICE PANTRY 1",
+          "full_address": "Address: 1 BAYFRONT AVENUE MARINA BAY SANDS,Singapore 018971 BASEMENT 2 (SERVICE PANTRY 1)",
+          "business_type": "Takeaway",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        },
+        {
+          "sfa_licence": "CE10282E000",
+          "name": "SERVICE PANTRY 2",
+          "full_address": "Address: 1 BAYFRONT AVENUE MARINA BAY SANDS,Singapore 018971 BASEMENT 2 (SERVICE PANTRY 2)",
+          "business_type": "Takeaway",
+          "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+        }
+      ],
+      "sources": [
+        {
+          "url": "https://inetapps.nus.edu.sg/vpass/terms-conditions",
+          "evidence": "NUS Visitor Pass terms govern authorized visits and specify dining access; sponsorship/purpose checks may apply, ordinary public eligibility unresolved."
+        },
+        {
+          "url": "https://www.ntu.edu.sg/life-at-ntu/accommodation/FAQ",
+          "evidence": "Hall visitors are allowed during visiting hours with a hall resident present; food-court-only access rule not established."
+        },
+        {
+          "url": "https://www.sp.edu.sg/about-sp/campus-map-and-facilities",
+          "evidence": "Lists campus food court and hours; public entry rule unresolved."
+        },
+        {
+          "url": "https://www.singaporetech.edu.sg/about/punggol-campus",
+          "evidence": "Public can access campus floors through Level 2 including food courts; counterexample to exclusion by campus label."
+        },
+        {
+          "url": "https://www.ite.edu.sg/about-ite/colleges/college-central/facilities/other-facilties/",
+          "evidence": "Lists Foodgle Hub as foodcourt and separates Carpe Diem preschool by unit; entry eligibility unresolved."
+        }
+      ]
+    }
+  },
+  "false_positive_notes": [
+    {
+      "records": [
+        {
+          "sfa_licence": "SW25642V000",
+          "name": "GUO CHANG",
+          "full_address": "431 Clementi Ave 3 #01-296"
+        },
+        {
+          "sfa_licence": "CE25M36N000",
+          "full_address": "7030 Ang Mo Kio Ave 5 #01-30"
+        }
+      ],
+      "finding": "Do not exclude as school/preschool records based on proximity: corresponding preschool addresses are different units (#01-348 and #01-32/33). Verify exact unit if reconsidered."
+    },
+    {
+      "record": {
+        "sfa_licence": "NE24C59E009",
+        "name": "Hungry Bruh",
+        "full_address": "Address: 1 PUNGGOL COAST ROAD #01-10,SINGAPORE INSTITUTE OF TECHNOLOGY (CAMPUS COURT),Singapore 828608",
+        "business_type": "Foodcourt",
+        "public_access_status_in_workbook": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      "finding": "SIT official campus information says public can access through Level 2 including food courts."
+    },
+    {
+      "finding": "Changi Airport official articles describe Orchis/staff canteen at T1 B1 as a public-area food court; do not exclude solely because it also serves airport staff."
+    }
+  ],
+  "scope_note": "Risk screen only. Exact records are drawn from observed current workbook and may differ from requested baseline because SHA differs."
+}

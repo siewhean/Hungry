@@ -1,0 +1,3938 @@
+{
+  "proposal_type": "coordinate_open_data_batch",
+  "created_at": "2026-10-18",
+  "workbook": {
+    "path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "sha256": "986a2656c3243d55c1a3914a3c5fbbdf2052e0423a69705785cbba0b7fee154e",
+    "sheet": "Public F&B Directory",
+    "blank_coordinate_rows_at_baseline": 2545
+  },
+  "coordinate_rule": "Only exact six-digit postal code plus compatible numbered full address/facility identity; coordinates must be labeled at source precision. Do not infer outlet/unit location from building/facility points.",
+  "onemap_api_token_configured_locally": false,
+  "accepted_proposals": [
+    {
+      "sfa_licence": "CE20D04B000",
+      "f_and_b_name": "Arnold's Fried Chicken Marymount CC",
+      "match_basis": "Exact six-digit postal code 575738; target Full Address is 191 SIN MING AVENUE #02-02; source address is 191 Sin Ming Avenue #01-01; same numbered street/building; target business name explicitly says Marymount CC and source feature is Marymount Community Club. This is a facility/building coordinate only, not outlet/unit precision.",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "575738",
+        "Full Address": "Address: 191 SIN MING AVENUE #02-02,Singapore 575738"
+      },
+      "proposed_after": {
+        "Latitude": 1.3621375715832422,
+        "Longitude": 103.84128616880905,
+        "Coordinate Precision": "MOH Dementia Friendly Go-To-Point: Marymount Community Club facility/building address point; not outlet, unit, or stall-front precision."
+      },
+      "source_feature": {
+        "OBJECTID": 38937,
+        "NAME": "Marymount Community Club",
+        "ADDRESS": "191, Sin Ming Avenue, #01-01",
+        "POSTAL_CODE": "575738",
+        "FMEL_UPD_D": "20240927150731"
+      },
+      "source_url": "https://data.gov.sg/datasets/d_e2d10e591bc8560b8946a0da24790fa5/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_e2d10e591bc8560b8946a0da24790fa5/poll-download",
+      "source_capture_sha256": "8ece10b8c30fc3586919611e525e61ab19597f464eec4d7b848def96d78636f2",
+      "license": "Singapore Open Data Licence v1.0; free for personal and commercial reuse with attribution",
+      "attribution": "Ministry of Health (MOH), Singapore, Dementia Friendly Go-To-Points dataset; accessed 2026-10-18"
+    }
+  ],
+  "held_candidates": [
+    {
+      "sfa_licence": "SW09816A000",
+      "f_and_b_name": "15F",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "098269",
+        "Full Address": "Address: SENTOSA GATEWAY #01-K221,USS,Singapore 098269 SCI-FI PLANET YEN"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.2562898155044109,
+        "Longitude": 103.81993474428393
+      },
+      "source_feature_names": [
+        "Resorts World Sentosa Beach Villas",
+        "Resorts World Sentosa",
+        "Resorts World Sentosa - Hotel Michael",
+        "Resorts World Sentosa - Maritime Experiential Museum",
+        "Resorts World Sentosa - Hard Rock Hotel",
+        "Resort World Sentosa - Equarius Hotel",
+        "Resorts World Convention Centre",
+        "Resorts World Sentosa - Festive Hotel",
+        "Resorts World Sentosa ESPA",
+        "Resorts World Sentosa Hotel Michael",
+        "Resort World Sentosa - Marine Life Park"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Resorts World Sentosa Beach Villas",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 10264
+        },
+        {
+          "name": "Resorts World Sentosa",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 10555
+        },
+        {
+          "name": "Resorts World Sentosa - Hotel Michael",
+          "award": "GoldPlus",
+          "description": "2020",
+          "objectid": 10766
+        },
+        {
+          "name": "Resorts World Sentosa - Maritime Experiential Museum",
+          "award": "Platinum",
+          "description": "2016",
+          "objectid": 10767
+        },
+        {
+          "name": "Resorts World Sentosa - Hard Rock Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 10951
+        },
+        {
+          "name": "Resort World Sentosa - Equarius Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 11289
+        },
+        {
+          "name": "Resorts World Convention Centre",
+          "award": "Platinum",
+          "description": "2017",
+          "objectid": 11677
+        },
+        {
+          "name": "Resorts World Sentosa - Festive Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 11894
+        },
+        {
+          "name": "Resorts World Sentosa ESPA",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 12211
+        },
+        {
+          "name": "Resorts World Sentosa Hotel Michael",
+          "award": "GoldPlus",
+          "description": "2014",
+          "objectid": 12265
+        },
+        {
+          "name": "Resort World Sentosa - Marine Life Park",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 12280
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "SW09812J000",
+      "f_and_b_name": "18F",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "098269",
+        "Full Address": "Address: SENTOSA GATEWAY USS,Singapore 098269"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.2562898155044109,
+        "Longitude": 103.81993474428393
+      },
+      "source_feature_names": [
+        "Resorts World Sentosa Beach Villas",
+        "Resorts World Sentosa",
+        "Resorts World Sentosa - Hotel Michael",
+        "Resorts World Sentosa - Maritime Experiential Museum",
+        "Resorts World Sentosa - Hard Rock Hotel",
+        "Resort World Sentosa - Equarius Hotel",
+        "Resorts World Convention Centre",
+        "Resorts World Sentosa - Festive Hotel",
+        "Resorts World Sentosa ESPA",
+        "Resorts World Sentosa Hotel Michael",
+        "Resort World Sentosa - Marine Life Park"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Resorts World Sentosa Beach Villas",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 10264
+        },
+        {
+          "name": "Resorts World Sentosa",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 10555
+        },
+        {
+          "name": "Resorts World Sentosa - Hotel Michael",
+          "award": "GoldPlus",
+          "description": "2020",
+          "objectid": 10766
+        },
+        {
+          "name": "Resorts World Sentosa - Maritime Experiential Museum",
+          "award": "Platinum",
+          "description": "2016",
+          "objectid": 10767
+        },
+        {
+          "name": "Resorts World Sentosa - Hard Rock Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 10951
+        },
+        {
+          "name": "Resort World Sentosa - Equarius Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 11289
+        },
+        {
+          "name": "Resorts World Convention Centre",
+          "award": "Platinum",
+          "description": "2017",
+          "objectid": 11677
+        },
+        {
+          "name": "Resorts World Sentosa - Festive Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 11894
+        },
+        {
+          "name": "Resorts World Sentosa ESPA",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 12211
+        },
+        {
+          "name": "Resorts World Sentosa Hotel Michael",
+          "award": "GoldPlus",
+          "description": "2014",
+          "objectid": 12265
+        },
+        {
+          "name": "Resort World Sentosa - Marine Life Park",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 12280
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "CE07024N000",
+      "f_and_b_name": "7-Eleven",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "539747",
+        "Full Address": "Address: 10/1 BUANGKOK VIEW INSTITUTE OF MENTAL HEALTH,Singapore 539747 Level 1 Unit 11-130"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3815895497997452,
+        "Longitude": 103.88334880331543
+      },
+      "source_feature_names": [
+        "Institute of Mental Health New Administration Building",
+        "Institute of Mental Health IMH Block 3 and 6"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Institute of Mental Health New Administration Building",
+          "award": "Gold",
+          "description": "2014",
+          "objectid": 10303
+        },
+        {
+          "name": "Institute of Mental Health IMH Block 3 and 6",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 12033
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "CE18808N006",
+      "f_and_b_name": "ASAM TREE NASI PADANG",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "544835",
+        "Full Address": "Address: 1 ANCHORVALE STREET #01-21,SENGKANG GENERAL HOSPITAL,Singapore 544835"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3960223803739464,
+        "Longitude": 103.89183405437679
+      },
+      "source_feature_names": [
+        "Sengkang General and Community Hospitals"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Sengkang General and Community Hospitals",
+          "award": "Platinum",
+          "description": "2014",
+          "objectid": 11946
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "CE18808N007",
+      "f_and_b_name": "AYAM PENYET",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "544835",
+        "Full Address": "Address: 1 ANCHORVALE STREET #01-21,SENGKANG GENERAL HOSPITAL,Singapore 544835"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3960223803739464,
+        "Longitude": 103.89183405437679
+      },
+      "source_feature_names": [
+        "Sengkang General and Community Hospitals"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Sengkang General and Community Hospitals",
+          "award": "Platinum",
+          "description": "2014",
+          "objectid": 11946
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "CE18808N009",
+      "f_and_b_name": "BAN MIAN & FISH SOUP",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "544835",
+        "Full Address": "Address: 1 ANCHORVALE STREET #01-21,SENGKANG COMMUNITY HOSPITAL,Singapore 544835"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3960223803739464,
+        "Longitude": 103.89183405437679
+      },
+      "source_feature_names": [
+        "Sengkang General and Community Hospitals"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Sengkang General and Community Hospitals",
+          "award": "Platinum",
+          "description": "2014",
+          "objectid": 11946
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "C81041N007",
+      "f_and_b_name": "Ba Wei Ban Mian",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "119077",
+        "Full Address": "Address: 21 LOWER KENT RIDGE ROAD Faculty of Arts and Social Sciences,Singapore 119077 The Deck Canteen"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3013273095479683,
+        "Longitude": 103.77427725965474
+      },
+      "source_feature_names": [
+        "University Hall, National University of Singapore",
+        "University Hall",
+        "University Hall, National University of Singapore (1st Recertification)",
+        "School of Computing Block COM3 at National University of Singapore",
+        "National University of Singapore University Town"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "University Hall, National University of Singapore",
+          "award": "GoldPlus",
+          "description": "2012",
+          "objectid": 9673
+        },
+        {
+          "name": "University Hall",
+          "award": "Platinum",
+          "description": "2021",
+          "objectid": 10079
+        },
+        {
+          "name": "University Hall, National University of Singapore (1st Recertification)",
+          "award": "GoldPlus",
+          "description": "2016",
+          "objectid": 10920
+        },
+        {
+          "name": "School of Computing Block COM3 at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 11738
+        },
+        {
+          "name": "National University of Singapore University Town",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 11602
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "SW09823B000",
+      "f_and_b_name": "cairo market",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "098269",
+        "Full Address": "Address: SENTOSA GATEWAY #01-K202,USS,Singapore 098269 EGYPT CAIRO MARKET"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.2562898155044109,
+        "Longitude": 103.81993474428393
+      },
+      "source_feature_names": [
+        "Resorts World Sentosa Beach Villas",
+        "Resorts World Sentosa",
+        "Resorts World Sentosa - Hotel Michael",
+        "Resorts World Sentosa - Maritime Experiential Museum",
+        "Resorts World Sentosa - Hard Rock Hotel",
+        "Resort World Sentosa - Equarius Hotel",
+        "Resorts World Convention Centre",
+        "Resorts World Sentosa - Festive Hotel",
+        "Resorts World Sentosa ESPA",
+        "Resorts World Sentosa Hotel Michael",
+        "Resort World Sentosa - Marine Life Park"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Resorts World Sentosa Beach Villas",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 10264
+        },
+        {
+          "name": "Resorts World Sentosa",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 10555
+        },
+        {
+          "name": "Resorts World Sentosa - Hotel Michael",
+          "award": "GoldPlus",
+          "description": "2020",
+          "objectid": 10766
+        },
+        {
+          "name": "Resorts World Sentosa - Maritime Experiential Museum",
+          "award": "Platinum",
+          "description": "2016",
+          "objectid": 10767
+        },
+        {
+          "name": "Resorts World Sentosa - Hard Rock Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 10951
+        },
+        {
+          "name": "Resort World Sentosa - Equarius Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 11289
+        },
+        {
+          "name": "Resorts World Convention Centre",
+          "award": "Platinum",
+          "description": "2017",
+          "objectid": 11677
+        },
+        {
+          "name": "Resorts World Sentosa - Festive Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 11894
+        },
+        {
+          "name": "Resorts World Sentosa ESPA",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 12211
+        },
+        {
+          "name": "Resorts World Sentosa Hotel Michael",
+          "award": "GoldPlus",
+          "description": "2014",
+          "objectid": 12265
+        },
+        {
+          "name": "Resort World Sentosa - Marine Life Park",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 12280
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "C97162E006",
+      "f_and_b_name": "CCT ENTERPRISE PTE LTD",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "117606",
+        "Full Address": "Address: 33 HARBOUR DRIVE PASIR PANJANG TERMINAL BUILDING,Singapore 117606"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.2757582120112176,
+        "Longitude": 103.7690968144275
+      },
+      "source_feature_names": [
+        "Pasir Panjang Terminal Building",
+        "Pasir Panjang Terminal Building"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Pasir Panjang Terminal Building",
+          "award": "Gold",
+          "description": "2012",
+          "objectid": 10141
+        },
+        {
+          "name": "Pasir Panjang Terminal Building",
+          "award": "Gold",
+          "description": "2019",
+          "objectid": 10531
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "C97162E005",
+      "f_and_b_name": "CCT ENTERPRISE PTE LTD",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "117606",
+        "Full Address": "Address: 33 HARBOUR DRIVE PASIR PANJANG TERMINAL BUILDING,Singapore 117606 BUILDING 1"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.2757582120112176,
+        "Longitude": 103.7690968144275
+      },
+      "source_feature_names": [
+        "Pasir Panjang Terminal Building",
+        "Pasir Panjang Terminal Building"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Pasir Panjang Terminal Building",
+          "award": "Gold",
+          "description": "2012",
+          "objectid": 10141
+        },
+        {
+          "name": "Pasir Panjang Terminal Building",
+          "award": "Gold",
+          "description": "2019",
+          "objectid": 10531
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "C97162E001",
+      "f_and_b_name": "CHAMBER FINE FOOD PTE LTD",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "117606",
+        "Full Address": "Address: 33 HARBOUR DRIVE PASIR PANJANG TERMINAL BUILDING 1,Singapore 117606"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.2757582120112176,
+        "Longitude": 103.7690968144275
+      },
+      "source_feature_names": [
+        "Pasir Panjang Terminal Building",
+        "Pasir Panjang Terminal Building"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Pasir Panjang Terminal Building",
+          "award": "Gold",
+          "description": "2012",
+          "objectid": 10141
+        },
+        {
+          "name": "Pasir Panjang Terminal Building",
+          "award": "Gold",
+          "description": "2019",
+          "objectid": 10531
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "CE18J56V000",
+      "f_and_b_name": "CHEERS",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "544835",
+        "Full Address": "Address: 1 ANCHORVALE STREET #01-23,SENGKANG COMMUNITY HOSPITAL,Singapore 544835 SENGKANG COMMUNITY HOSPITAL"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3960223803739464,
+        "Longitude": 103.89183405437679
+      },
+      "source_feature_names": [
+        "Sengkang General and Community Hospitals"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Sengkang General and Community Hospitals",
+          "award": "Platinum",
+          "description": "2014",
+          "objectid": 11946
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "SW16921N000",
+      "f_and_b_name": "CHENNAI TRADING & SUPERMARKET",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "619392",
+        "Full Address": "Address: 1 JALAN PAPAN #01-35,#01-36,Singapore 619392"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.320484248168483,
+        "Longitude": 103.72672284196923
+      },
+      "source_feature_names": [
+        "Jalan Terusan Recreation Centre"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Jalan Terusan Recreation Centre",
+          "award": "Certified",
+          "description": "2016",
+          "objectid": 10481
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "CE18808N004",
+      "f_and_b_name": "Cinta Hainanese Chicken Rice",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "544835",
+        "Full Address": "Address: 1 ANCHORVALE STREET #01-21,SENGKANG COMMUNITY HOSPITAL,Singapore 544835"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3960223803739464,
+        "Longitude": 103.89183405437679
+      },
+      "source_feature_names": [
+        "Sengkang General and Community Hospitals"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Sengkang General and Community Hospitals",
+          "award": "Platinum",
+          "description": "2014",
+          "objectid": 11946
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "SW05182K006",
+      "f_and_b_name": "DRINKS STALL",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "698928",
+        "Full Address": "Address: 501 OLD CHOA CHU KANG ROAD Singapore 698928"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3736261702753347,
+        "Longitude": 103.72002272726745
+      },
+      "source_feature_names": [
+        "Home Team Academy"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Home Team Academy",
+          "award": "Platinum Super Low E",
+          "description": "2019",
+          "objectid": 11907
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "C81041N005",
+      "f_and_b_name": "E2 KITCHEN PTE. LTD.",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "119077",
+        "Full Address": "Address: 21 LOWER KENT RIDGE ROAD Singapore 119077"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3013273095479683,
+        "Longitude": 103.77427725965474
+      },
+      "source_feature_names": [
+        "University Hall, National University of Singapore",
+        "University Hall",
+        "University Hall, National University of Singapore (1st Recertification)",
+        "School of Computing Block COM3 at National University of Singapore",
+        "National University of Singapore University Town"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "University Hall, National University of Singapore",
+          "award": "GoldPlus",
+          "description": "2012",
+          "objectid": 9673
+        },
+        {
+          "name": "University Hall",
+          "award": "Platinum",
+          "description": "2021",
+          "objectid": 10079
+        },
+        {
+          "name": "University Hall, National University of Singapore (1st Recertification)",
+          "award": "GoldPlus",
+          "description": "2016",
+          "objectid": 10920
+        },
+        {
+          "name": "School of Computing Block COM3 at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 11738
+        },
+        {
+          "name": "National University of Singapore University Town",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 11602
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "C81041N012",
+      "f_and_b_name": "fresh fruits & juices",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "119077",
+        "Full Address": "Address: 21 LOWER KENT RIDGE ROAD THE DECK, FACULTY OF ART & SOCIAL SCIENCES,Singapore 119077"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3013273095479683,
+        "Longitude": 103.77427725965474
+      },
+      "source_feature_names": [
+        "University Hall, National University of Singapore",
+        "University Hall",
+        "University Hall, National University of Singapore (1st Recertification)",
+        "School of Computing Block COM3 at National University of Singapore",
+        "National University of Singapore University Town"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "University Hall, National University of Singapore",
+          "award": "GoldPlus",
+          "description": "2012",
+          "objectid": 9673
+        },
+        {
+          "name": "University Hall",
+          "award": "Platinum",
+          "description": "2021",
+          "objectid": 10079
+        },
+        {
+          "name": "University Hall, National University of Singapore (1st Recertification)",
+          "award": "GoldPlus",
+          "description": "2016",
+          "objectid": 10920
+        },
+        {
+          "name": "School of Computing Block COM3 at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 11738
+        },
+        {
+          "name": "National University of Singapore University Town",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 11602
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "SW09814C000",
+      "f_and_b_name": "frozen fuel",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "098269",
+        "Full Address": "Address: SENTOSA GATEWAY #01-K212,USS,Singapore 098269 SCI-FI FROZEN FUEL"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.2562898155044109,
+        "Longitude": 103.81993474428393
+      },
+      "source_feature_names": [
+        "Resorts World Sentosa Beach Villas",
+        "Resorts World Sentosa",
+        "Resorts World Sentosa - Hotel Michael",
+        "Resorts World Sentosa - Maritime Experiential Museum",
+        "Resorts World Sentosa - Hard Rock Hotel",
+        "Resort World Sentosa - Equarius Hotel",
+        "Resorts World Convention Centre",
+        "Resorts World Sentosa - Festive Hotel",
+        "Resorts World Sentosa ESPA",
+        "Resorts World Sentosa Hotel Michael",
+        "Resort World Sentosa - Marine Life Park"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Resorts World Sentosa Beach Villas",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 10264
+        },
+        {
+          "name": "Resorts World Sentosa",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 10555
+        },
+        {
+          "name": "Resorts World Sentosa - Hotel Michael",
+          "award": "GoldPlus",
+          "description": "2020",
+          "objectid": 10766
+        },
+        {
+          "name": "Resorts World Sentosa - Maritime Experiential Museum",
+          "award": "Platinum",
+          "description": "2016",
+          "objectid": 10767
+        },
+        {
+          "name": "Resorts World Sentosa - Hard Rock Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 10951
+        },
+        {
+          "name": "Resort World Sentosa - Equarius Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 11289
+        },
+        {
+          "name": "Resorts World Convention Centre",
+          "award": "Platinum",
+          "description": "2017",
+          "objectid": 11677
+        },
+        {
+          "name": "Resorts World Sentosa - Festive Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 11894
+        },
+        {
+          "name": "Resorts World Sentosa ESPA",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 12211
+        },
+        {
+          "name": "Resorts World Sentosa Hotel Michael",
+          "award": "GoldPlus",
+          "description": "2014",
+          "objectid": 12265
+        },
+        {
+          "name": "Resort World Sentosa - Marine Life Park",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 12280
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "C81041N013",
+      "f_and_b_name": "GC FOOD (GIDEON 300) PTE LTD",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "119077",
+        "Full Address": "Address: 21 LOWER KENT RIDGE ROAD THE DECK FACULTY OF ART & SOCIAL SCIENCES,Singapore 119077"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3013273095479683,
+        "Longitude": 103.77427725965474
+      },
+      "source_feature_names": [
+        "University Hall, National University of Singapore",
+        "University Hall",
+        "University Hall, National University of Singapore (1st Recertification)",
+        "School of Computing Block COM3 at National University of Singapore",
+        "National University of Singapore University Town"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "University Hall, National University of Singapore",
+          "award": "GoldPlus",
+          "description": "2012",
+          "objectid": 9673
+        },
+        {
+          "name": "University Hall",
+          "award": "Platinum",
+          "description": "2021",
+          "objectid": 10079
+        },
+        {
+          "name": "University Hall, National University of Singapore (1st Recertification)",
+          "award": "GoldPlus",
+          "description": "2016",
+          "objectid": 10920
+        },
+        {
+          "name": "School of Computing Block COM3 at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 11738
+        },
+        {
+          "name": "National University of Singapore University Town",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 11602
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "SW09820J000",
+      "f_and_b_name": "GOLDILOCKS FC",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "098269",
+        "Full Address": "Address: 30 SENTOSA GATEWAY #01-332,USS,Singapore 098269 SHREK (FFA) GOLDILOCKS F.C."
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.2562898155044109,
+        "Longitude": 103.81993474428393
+      },
+      "source_feature_names": [
+        "Resorts World Sentosa Beach Villas",
+        "Resorts World Sentosa",
+        "Resorts World Sentosa - Hotel Michael",
+        "Resorts World Sentosa - Maritime Experiential Museum",
+        "Resorts World Sentosa - Hard Rock Hotel",
+        "Resort World Sentosa - Equarius Hotel",
+        "Resorts World Convention Centre",
+        "Resorts World Sentosa - Festive Hotel",
+        "Resorts World Sentosa ESPA",
+        "Resorts World Sentosa Hotel Michael",
+        "Resort World Sentosa - Marine Life Park"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Resorts World Sentosa Beach Villas",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 10264
+        },
+        {
+          "name": "Resorts World Sentosa",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 10555
+        },
+        {
+          "name": "Resorts World Sentosa - Hotel Michael",
+          "award": "GoldPlus",
+          "description": "2020",
+          "objectid": 10766
+        },
+        {
+          "name": "Resorts World Sentosa - Maritime Experiential Museum",
+          "award": "Platinum",
+          "description": "2016",
+          "objectid": 10767
+        },
+        {
+          "name": "Resorts World Sentosa - Hard Rock Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 10951
+        },
+        {
+          "name": "Resort World Sentosa - Equarius Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 11289
+        },
+        {
+          "name": "Resorts World Convention Centre",
+          "award": "Platinum",
+          "description": "2017",
+          "objectid": 11677
+        },
+        {
+          "name": "Resorts World Sentosa - Festive Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 11894
+        },
+        {
+          "name": "Resorts World Sentosa ESPA",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 12211
+        },
+        {
+          "name": "Resorts World Sentosa Hotel Michael",
+          "award": "GoldPlus",
+          "description": "2014",
+          "objectid": 12265
+        },
+        {
+          "name": "Resort World Sentosa - Marine Life Park",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 12280
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "SW23B93L000",
+      "f_and_b_name": "Good Day Cafe",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "119083",
+        "Full Address": "Address: 11 LOWER KENT RIDGE ROAD #01-02,Singapore 119083"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.2969283581654976,
+        "Longitude": 103.781790504575
+      },
+      "source_feature_names": [
+        "Medicine-Science Knowledge Hub at National University of Singapore"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Medicine-Science Knowledge Hub at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 9952
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "CE18808N005",
+      "f_and_b_name": "HAUS SPINACH & NOODLES",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "544835",
+        "Full Address": "Address: 1 ANCHORVALE STREET #01-21,SENGKANG COMMUNITY HOSPITAL,Singapore 544835"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3960223803739464,
+        "Longitude": 103.89183405437679
+      },
+      "source_feature_names": [
+        "Sengkang General and Community Hospitals"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Sengkang General and Community Hospitals",
+          "award": "Platinum",
+          "description": "2014",
+          "objectid": 11946
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "CE20Q42A000",
+      "f_and_b_name": "Herbal Soup",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "544835",
+        "Full Address": "Address: 1 ANCHORVALE STREET #01-21,SENGKANG COMMUNITY HOSPITAL,Singapore 544835 MR1"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3960223803739464,
+        "Longitude": 103.89183405437679
+      },
+      "source_feature_names": [
+        "Sengkang General and Community Hospitals"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Sengkang General and Community Hospitals",
+          "award": "Platinum",
+          "description": "2014",
+          "objectid": 11946
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "CE25K13N000",
+      "f_and_b_name": "Hey Apple",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "148951",
+        "Full Address": "Address: 501 STIRLING ROAD Singapore 148951"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.297388363536522,
+        "Longitude": 103.80072903736477
+      },
+      "source_feature_names": [
+        "MDIS Block A",
+        "MDIS Block A",
+        "MDIS Residences @ Stirling"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "MDIS Block A",
+          "award": "GoldPlus",
+          "description": "2013",
+          "objectid": 10158
+        },
+        {
+          "name": "MDIS Block A",
+          "award": "GoldPlus",
+          "description": "2013",
+          "objectid": 10504
+        },
+        {
+          "name": "MDIS Residences @ Stirling",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 12354
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "CE18808N012",
+      "f_and_b_name": "JIA JIA LE CUISINE F&B PTE LTD",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "544835",
+        "Full Address": "Address: 1 ANCHORVALE STREET #01-21,Singapore 544835"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3960223803739464,
+        "Longitude": 103.89183405437679
+      },
+      "source_feature_names": [
+        "Sengkang General and Community Hospitals"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Sengkang General and Community Hospitals",
+          "award": "Platinum",
+          "description": "2014",
+          "objectid": 11946
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "C81041N010",
+      "f_and_b_name": "Jito's Dhaba",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "119077",
+        "Full Address": "Address: 21 LOWER KENT RIDGE ROAD The Deck Canteen, Faculty of Arts and Social Sciences,Singapore 119077"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3013273095479683,
+        "Longitude": 103.77427725965474
+      },
+      "source_feature_names": [
+        "University Hall, National University of Singapore",
+        "University Hall",
+        "University Hall, National University of Singapore (1st Recertification)",
+        "School of Computing Block COM3 at National University of Singapore",
+        "National University of Singapore University Town"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "University Hall, National University of Singapore",
+          "award": "GoldPlus",
+          "description": "2012",
+          "objectid": 9673
+        },
+        {
+          "name": "University Hall",
+          "award": "Platinum",
+          "description": "2021",
+          "objectid": 10079
+        },
+        {
+          "name": "University Hall, National University of Singapore (1st Recertification)",
+          "award": "GoldPlus",
+          "description": "2016",
+          "objectid": 10920
+        },
+        {
+          "name": "School of Computing Block COM3 at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 11738
+        },
+        {
+          "name": "National University of Singapore University Town",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 11602
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "SW15E12P001",
+      "f_and_b_name": "JJ BAZAAR",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "619392",
+        "Full Address": "Address: 1 JALAN PAPAN #01-02,TERUSAN RECREATION CENTRE,Singapore 619392"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.320484248168483,
+        "Longitude": 103.72672284196923
+      },
+      "source_feature_names": [
+        "Jalan Terusan Recreation Centre"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Jalan Terusan Recreation Centre",
+          "award": "Certified",
+          "description": "2016",
+          "objectid": 10481
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "SW15E12P004",
+      "f_and_b_name": "JTC PREMISES AT 1 JALAN PAPAN #01-05",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "619392",
+        "Full Address": "Address: 1 JALAN PAPAN TERUSAN RECREATION CENTRE,Singapore 619392"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.320484248168483,
+        "Longitude": 103.72672284196923
+      },
+      "source_feature_names": [
+        "Jalan Terusan Recreation Centre"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Jalan Terusan Recreation Centre",
+          "award": "Certified",
+          "description": "2016",
+          "objectid": 10481
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "CE14A48X000",
+      "f_and_b_name": "KAFEI & CHA",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "148951",
+        "Full Address": "Address: 501 STIRLING ROAD MDIS,Singapore 148951 (BLK B , LEVEL 1)"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.297388363536522,
+        "Longitude": 103.80072903736477
+      },
+      "source_feature_names": [
+        "MDIS Block A",
+        "MDIS Block A",
+        "MDIS Residences @ Stirling"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "MDIS Block A",
+          "award": "GoldPlus",
+          "description": "2013",
+          "objectid": 10158
+        },
+        {
+          "name": "MDIS Block A",
+          "award": "GoldPlus",
+          "description": "2013",
+          "objectid": 10504
+        },
+        {
+          "name": "MDIS Residences @ Stirling",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 12354
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "C81041N003",
+      "f_and_b_name": "KANEDA JAPANESE CUISINE",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "119077",
+        "Full Address": "Address: 21 LOWER KENT RIDGE ROAD THE DECK, FACULTY OF ART & SOCIAL SCIENCES,Singapore 119077"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3013273095479683,
+        "Longitude": 103.77427725965474
+      },
+      "source_feature_names": [
+        "University Hall, National University of Singapore",
+        "University Hall",
+        "University Hall, National University of Singapore (1st Recertification)",
+        "School of Computing Block COM3 at National University of Singapore",
+        "National University of Singapore University Town"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "University Hall, National University of Singapore",
+          "award": "GoldPlus",
+          "description": "2012",
+          "objectid": 9673
+        },
+        {
+          "name": "University Hall",
+          "award": "Platinum",
+          "description": "2021",
+          "objectid": 10079
+        },
+        {
+          "name": "University Hall, National University of Singapore (1st Recertification)",
+          "award": "GoldPlus",
+          "description": "2016",
+          "objectid": 10920
+        },
+        {
+          "name": "School of Computing Block COM3 at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 11738
+        },
+        {
+          "name": "National University of Singapore University Town",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 11602
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "CE22G64K000",
+      "f_and_b_name": "KOI",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "544835",
+        "Full Address": "Address: 1 ANCHORVALE STREET #01-24,SENGKANG COMMUNITY HOSPITAL,Singapore 544835"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3960223803739464,
+        "Longitude": 103.89183405437679
+      },
+      "source_feature_names": [
+        "Sengkang General and Community Hospitals"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Sengkang General and Community Hospitals",
+          "award": "Platinum",
+          "description": "2014",
+          "objectid": 11946
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "CE18808N016",
+      "f_and_b_name": "KOUFU PTD LTD",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "544835",
+        "Full Address": "Address: 1 ANCHORVALE STREET #01-21,Singapore 544835"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3960223803739464,
+        "Longitude": 103.89183405437679
+      },
+      "source_feature_names": [
+        "Sengkang General and Community Hospitals"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Sengkang General and Community Hospitals",
+          "award": "Platinum",
+          "description": "2014",
+          "objectid": 11946
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "CE18808N000",
+      "f_and_b_name": "KOUFU PTE LTD",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "544835",
+        "Full Address": "Address: 1 ANCHORVALE STREET #01-21,Singapore 544835"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3960223803739464,
+        "Longitude": 103.89183405437679
+      },
+      "source_feature_names": [
+        "Sengkang General and Community Hospitals"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Sengkang General and Community Hospitals",
+          "award": "Platinum",
+          "description": "2014",
+          "objectid": 11946
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "SW09813E000",
+      "f_and_b_name": "kt's grill",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "098269",
+        "Full Address": "Address: SENTOSA GATEWAY #01-304,USS,Singapore 098269 NEW YORK - KT'S GRILL (L1 & L2)"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.2562898155044109,
+        "Longitude": 103.81993474428393
+      },
+      "source_feature_names": [
+        "Resorts World Sentosa Beach Villas",
+        "Resorts World Sentosa",
+        "Resorts World Sentosa - Hotel Michael",
+        "Resorts World Sentosa - Maritime Experiential Museum",
+        "Resorts World Sentosa - Hard Rock Hotel",
+        "Resort World Sentosa - Equarius Hotel",
+        "Resorts World Convention Centre",
+        "Resorts World Sentosa - Festive Hotel",
+        "Resorts World Sentosa ESPA",
+        "Resorts World Sentosa Hotel Michael",
+        "Resort World Sentosa - Marine Life Park"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Resorts World Sentosa Beach Villas",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 10264
+        },
+        {
+          "name": "Resorts World Sentosa",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 10555
+        },
+        {
+          "name": "Resorts World Sentosa - Hotel Michael",
+          "award": "GoldPlus",
+          "description": "2020",
+          "objectid": 10766
+        },
+        {
+          "name": "Resorts World Sentosa - Maritime Experiential Museum",
+          "award": "Platinum",
+          "description": "2016",
+          "objectid": 10767
+        },
+        {
+          "name": "Resorts World Sentosa - Hard Rock Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 10951
+        },
+        {
+          "name": "Resort World Sentosa - Equarius Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 11289
+        },
+        {
+          "name": "Resorts World Convention Centre",
+          "award": "Platinum",
+          "description": "2017",
+          "objectid": 11677
+        },
+        {
+          "name": "Resorts World Sentosa - Festive Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 11894
+        },
+        {
+          "name": "Resorts World Sentosa ESPA",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 12211
+        },
+        {
+          "name": "Resorts World Sentosa Hotel Michael",
+          "award": "GoldPlus",
+          "description": "2014",
+          "objectid": 12265
+        },
+        {
+          "name": "Resort World Sentosa - Marine Life Park",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 12280
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "SW19Z33C000",
+      "f_and_b_name": "Liang Ban Kung Fu",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "119077",
+        "Full Address": "Address: 21 LOWER KENT RIDGE ROAD The Deck Level 2 (Kiosk 1),Singapore 119077"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3013273095479683,
+        "Longitude": 103.77427725965474
+      },
+      "source_feature_names": [
+        "University Hall, National University of Singapore",
+        "University Hall",
+        "University Hall, National University of Singapore (1st Recertification)",
+        "School of Computing Block COM3 at National University of Singapore",
+        "National University of Singapore University Town"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "University Hall, National University of Singapore",
+          "award": "GoldPlus",
+          "description": "2012",
+          "objectid": 9673
+        },
+        {
+          "name": "University Hall",
+          "award": "Platinum",
+          "description": "2021",
+          "objectid": 10079
+        },
+        {
+          "name": "University Hall, National University of Singapore (1st Recertification)",
+          "award": "GoldPlus",
+          "description": "2016",
+          "objectid": 10920
+        },
+        {
+          "name": "School of Computing Block COM3 at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 11738
+        },
+        {
+          "name": "National University of Singapore University Town",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 11602
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "SW16953V000",
+      "f_and_b_name": "LI JI COFFEE HOUSE",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "119077",
+        "Full Address": "Address: 21 LOWER KENT RIDGE ROAD FRONTIER (PHASE 1), FACULTY OF SCIENCE (KIOSK 3),Singapore 119077"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3013273095479683,
+        "Longitude": 103.77427725965474
+      },
+      "source_feature_names": [
+        "University Hall, National University of Singapore",
+        "University Hall",
+        "University Hall, National University of Singapore (1st Recertification)",
+        "School of Computing Block COM3 at National University of Singapore",
+        "National University of Singapore University Town"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "University Hall, National University of Singapore",
+          "award": "GoldPlus",
+          "description": "2012",
+          "objectid": 9673
+        },
+        {
+          "name": "University Hall",
+          "award": "Platinum",
+          "description": "2021",
+          "objectid": 10079
+        },
+        {
+          "name": "University Hall, National University of Singapore (1st Recertification)",
+          "award": "GoldPlus",
+          "description": "2016",
+          "objectid": 10920
+        },
+        {
+          "name": "School of Computing Block COM3 at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 11738
+        },
+        {
+          "name": "National University of Singapore University Town",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 11602
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "CE18808N011",
+      "f_and_b_name": "Li Xing FoodStuff",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "544835",
+        "Full Address": "Address: 1 ANCHORVALE STREET #01-21,SENGKANG COMMUNITY HOSPITAL,Singapore 544835"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3960223803739464,
+        "Longitude": 103.89183405437679
+      },
+      "source_feature_names": [
+        "Sengkang General and Community Hospitals"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Sengkang General and Community Hospitals",
+          "award": "Platinum",
+          "description": "2014",
+          "objectid": 11946
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "CE25I69L000",
+      "f_and_b_name": "luckin coffee",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "539747",
+        "Full Address": "Address: 10/1 BUANGKOK VIEW INSTITUTE OF MENTAL HEALTH,Singapore 539747 Level 1 Main Lobby"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3815895497997452,
+        "Longitude": 103.88334880331543
+      },
+      "source_feature_names": [
+        "Institute of Mental Health New Administration Building",
+        "Institute of Mental Health IMH Block 3 and 6"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Institute of Mental Health New Administration Building",
+          "award": "Gold",
+          "description": "2014",
+          "objectid": 10303
+        },
+        {
+          "name": "Institute of Mental Health IMH Block 3 and 6",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 12033
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "SW09807B000",
+      "f_and_b_name": "MEL'S DRIVE-IN",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "098269",
+        "Full Address": "Address: SENTOSA GATEWAY #01-303,USS,Singapore 098269 HOLLYWOOD - MEL'S DRIVE-IN"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.2562898155044109,
+        "Longitude": 103.81993474428393
+      },
+      "source_feature_names": [
+        "Resorts World Sentosa Beach Villas",
+        "Resorts World Sentosa",
+        "Resorts World Sentosa - Hotel Michael",
+        "Resorts World Sentosa - Maritime Experiential Museum",
+        "Resorts World Sentosa - Hard Rock Hotel",
+        "Resort World Sentosa - Equarius Hotel",
+        "Resorts World Convention Centre",
+        "Resorts World Sentosa - Festive Hotel",
+        "Resorts World Sentosa ESPA",
+        "Resorts World Sentosa Hotel Michael",
+        "Resort World Sentosa - Marine Life Park"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Resorts World Sentosa Beach Villas",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 10264
+        },
+        {
+          "name": "Resorts World Sentosa",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 10555
+        },
+        {
+          "name": "Resorts World Sentosa - Hotel Michael",
+          "award": "GoldPlus",
+          "description": "2020",
+          "objectid": 10766
+        },
+        {
+          "name": "Resorts World Sentosa - Maritime Experiential Museum",
+          "award": "Platinum",
+          "description": "2016",
+          "objectid": 10767
+        },
+        {
+          "name": "Resorts World Sentosa - Hard Rock Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 10951
+        },
+        {
+          "name": "Resort World Sentosa - Equarius Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 11289
+        },
+        {
+          "name": "Resorts World Convention Centre",
+          "award": "Platinum",
+          "description": "2017",
+          "objectid": 11677
+        },
+        {
+          "name": "Resorts World Sentosa - Festive Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 11894
+        },
+        {
+          "name": "Resorts World Sentosa ESPA",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 12211
+        },
+        {
+          "name": "Resorts World Sentosa Hotel Michael",
+          "award": "GoldPlus",
+          "description": "2014",
+          "objectid": 12265
+        },
+        {
+          "name": "Resort World Sentosa - Marine Life Park",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 12280
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "C97162E003",
+      "f_and_b_name": "MIX VEGITABLE RICE",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "117606",
+        "Full Address": "Address: 33 HARBOUR DRIVE PASIR PANJANG TERMINAL BUILDING 1,Singapore 117606"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.2757582120112176,
+        "Longitude": 103.7690968144275
+      },
+      "source_feature_names": [
+        "Pasir Panjang Terminal Building",
+        "Pasir Panjang Terminal Building"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Pasir Panjang Terminal Building",
+          "award": "Gold",
+          "description": "2012",
+          "objectid": 10141
+        },
+        {
+          "name": "Pasir Panjang Terminal Building",
+          "award": "Gold",
+          "description": "2019",
+          "objectid": 10531
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "SW08381V004",
+      "f_and_b_name": "Nasi Padang",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "117606",
+        "Full Address": "Address: 33 HARBOUR DRIVE PASIR PANJANG TERMINAL BUILDING,Singapore 117606"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.2757582120112176,
+        "Longitude": 103.7690968144275
+      },
+      "source_feature_names": [
+        "Pasir Panjang Terminal Building",
+        "Pasir Panjang Terminal Building"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Pasir Panjang Terminal Building",
+          "award": "Gold",
+          "description": "2012",
+          "objectid": 10141
+        },
+        {
+          "name": "Pasir Panjang Terminal Building",
+          "award": "Gold",
+          "description": "2019",
+          "objectid": 10531
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "SW16735N000",
+      "f_and_b_name": "NIL",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "619392",
+        "Full Address": "Address: 1 JALAN PAPAN #01-32,#01-31,Singapore 619392"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.320484248168483,
+        "Longitude": 103.72672284196923
+      },
+      "source_feature_names": [
+        "Jalan Terusan Recreation Centre"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Jalan Terusan Recreation Centre",
+          "award": "Certified",
+          "description": "2016",
+          "objectid": 10481
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "SW16954X000",
+      "f_and_b_name": "Pasta Express",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "119077",
+        "Full Address": "Address: 21 LOWER KENT RIDGE ROAD FACULTY OF SCIENCE,Singapore 119077 FRONTIER (PHASE 1)"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3013273095479683,
+        "Longitude": 103.77427725965474
+      },
+      "source_feature_names": [
+        "University Hall, National University of Singapore",
+        "University Hall",
+        "University Hall, National University of Singapore (1st Recertification)",
+        "School of Computing Block COM3 at National University of Singapore",
+        "National University of Singapore University Town"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "University Hall, National University of Singapore",
+          "award": "GoldPlus",
+          "description": "2012",
+          "objectid": 9673
+        },
+        {
+          "name": "University Hall",
+          "award": "Platinum",
+          "description": "2021",
+          "objectid": 10079
+        },
+        {
+          "name": "University Hall, National University of Singapore (1st Recertification)",
+          "award": "GoldPlus",
+          "description": "2016",
+          "objectid": 10920
+        },
+        {
+          "name": "School of Computing Block COM3 at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 11738
+        },
+        {
+          "name": "National University of Singapore University Town",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 11602
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "SW15E12P002",
+      "f_and_b_name": "Pavithra Vilas",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "619392",
+        "Full Address": "Address: 1 JALAN PAPAN #01-03,TERUSAN RECREATION CENTRE,Singapore 619392"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.320484248168483,
+        "Longitude": 103.72672284196923
+      },
+      "source_feature_names": [
+        "Jalan Terusan Recreation Centre"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Jalan Terusan Recreation Centre",
+          "award": "Certified",
+          "description": "2016",
+          "objectid": 10481
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "CE11371V001",
+      "f_and_b_name": "Perky Penguin Coffee",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "148951",
+        "Full Address": "Address: 501 STIRLING ROAD MDIS,Singapore 148951"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.297388363536522,
+        "Longitude": 103.80072903736477
+      },
+      "source_feature_names": [
+        "MDIS Block A",
+        "MDIS Block A",
+        "MDIS Residences @ Stirling"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "MDIS Block A",
+          "award": "GoldPlus",
+          "description": "2013",
+          "objectid": 10158
+        },
+        {
+          "name": "MDIS Block A",
+          "award": "GoldPlus",
+          "description": "2013",
+          "objectid": 10504
+        },
+        {
+          "name": "MDIS Residences @ Stirling",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 12354
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "SW09821E000",
+      "f_and_b_name": "pharoh's",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "098269",
+        "Full Address": "Address: SENTOSA GATEWAY #01-K203,USS,Singapore 098269 EGYPT PHARAOH'S-DESSERT OASIS"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.2562898155044109,
+        "Longitude": 103.81993474428393
+      },
+      "source_feature_names": [
+        "Resorts World Sentosa Beach Villas",
+        "Resorts World Sentosa",
+        "Resorts World Sentosa - Hotel Michael",
+        "Resorts World Sentosa - Maritime Experiential Museum",
+        "Resorts World Sentosa - Hard Rock Hotel",
+        "Resort World Sentosa - Equarius Hotel",
+        "Resorts World Convention Centre",
+        "Resorts World Sentosa - Festive Hotel",
+        "Resorts World Sentosa ESPA",
+        "Resorts World Sentosa Hotel Michael",
+        "Resort World Sentosa - Marine Life Park"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Resorts World Sentosa Beach Villas",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 10264
+        },
+        {
+          "name": "Resorts World Sentosa",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 10555
+        },
+        {
+          "name": "Resorts World Sentosa - Hotel Michael",
+          "award": "GoldPlus",
+          "description": "2020",
+          "objectid": 10766
+        },
+        {
+          "name": "Resorts World Sentosa - Maritime Experiential Museum",
+          "award": "Platinum",
+          "description": "2016",
+          "objectid": 10767
+        },
+        {
+          "name": "Resorts World Sentosa - Hard Rock Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 10951
+        },
+        {
+          "name": "Resort World Sentosa - Equarius Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 11289
+        },
+        {
+          "name": "Resorts World Convention Centre",
+          "award": "Platinum",
+          "description": "2017",
+          "objectid": 11677
+        },
+        {
+          "name": "Resorts World Sentosa - Festive Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 11894
+        },
+        {
+          "name": "Resorts World Sentosa ESPA",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 12211
+        },
+        {
+          "name": "Resorts World Sentosa Hotel Michael",
+          "award": "GoldPlus",
+          "description": "2014",
+          "objectid": 12265
+        },
+        {
+          "name": "Resort World Sentosa - Marine Life Park",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 12280
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "W98295E000",
+      "f_and_b_name": "POLAR CAFE",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "169608",
+        "Full Address": "Address: 7 OUTRAM ROAD #01-01,SINGAPORE GENERAL HOSPITAL,Singapore 169608"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.2799396824700044,
+        "Longitude": 103.8307217776313
+      },
+      "source_feature_names": [
+        "Singapore General Hospital (Bowyer Block A,B & C)",
+        "National Cancer Center Singapore",
+        "Outram Community Hospital"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Singapore General Hospital (Bowyer Block A,B & C)",
+          "award": "Gold",
+          "description": "2007",
+          "objectid": 10562
+        },
+        {
+          "name": "National Cancer Center Singapore",
+          "award": "Platinum",
+          "description": "2019",
+          "objectid": 11583
+        },
+        {
+          "name": "Outram Community Hospital",
+          "award": "Platinum",
+          "description": "2018",
+          "objectid": 12212
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "CE21L84L000",
+      "f_and_b_name": "Roasted Delights",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "544835",
+        "Full Address": "Address: 1 ANCHORVALE STREET #01-21,SENGKANG COMMUNITY HOSPITAL,Singapore 544835 (MR3)"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3960223803739464,
+        "Longitude": 103.89183405437679
+      },
+      "source_feature_names": [
+        "Sengkang General and Community Hospitals"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Sengkang General and Community Hospitals",
+          "award": "Platinum",
+          "description": "2014",
+          "objectid": 11946
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "SW15E12P006",
+      "f_and_b_name": "sai foods",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "619392",
+        "Full Address": "Address: 1 JALAN PAPAN TERUSAN RECREATION CENTRE,Singapore 619392"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.320484248168483,
+        "Longitude": 103.72672284196923
+      },
+      "source_feature_names": [
+        "Jalan Terusan Recreation Centre"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Jalan Terusan Recreation Centre",
+          "award": "Certified",
+          "description": "2016",
+          "objectid": 10481
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "SW15E12P003",
+      "f_and_b_name": "Samy's Kitchen",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "619392",
+        "Full Address": "Address: 1 JALAN PAPAN Singapore 619392 #01-04"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.320484248168483,
+        "Longitude": 103.72672284196923
+      },
+      "source_feature_names": [
+        "Jalan Terusan Recreation Centre"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Jalan Terusan Recreation Centre",
+          "award": "Certified",
+          "description": "2016",
+          "objectid": 10481
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "C81041N002",
+      "f_and_b_name": "Scholar Delights Pte. Ltd.",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "119077",
+        "Full Address": "Address: 21 LOWER KENT RIDGE ROAD Singapore 119077"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3013273095479683,
+        "Longitude": 103.77427725965474
+      },
+      "source_feature_names": [
+        "University Hall, National University of Singapore",
+        "University Hall",
+        "University Hall, National University of Singapore (1st Recertification)",
+        "School of Computing Block COM3 at National University of Singapore",
+        "National University of Singapore University Town"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "University Hall, National University of Singapore",
+          "award": "GoldPlus",
+          "description": "2012",
+          "objectid": 9673
+        },
+        {
+          "name": "University Hall",
+          "award": "Platinum",
+          "description": "2021",
+          "objectid": 10079
+        },
+        {
+          "name": "University Hall, National University of Singapore (1st Recertification)",
+          "award": "GoldPlus",
+          "description": "2016",
+          "objectid": 10920
+        },
+        {
+          "name": "School of Computing Block COM3 at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 11738
+        },
+        {
+          "name": "National University of Singapore University Town",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 11602
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "CE21917J000",
+      "f_and_b_name": "SEABAY WOK DELIGHT",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "544835",
+        "Full Address": "Address: 1 ANCHORVALE STREET #01-21,SENGKANG COMMUNITY HOSPITAL,Singapore 544835 MR 2"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3960223803739464,
+        "Longitude": 103.89183405437679
+      },
+      "source_feature_names": [
+        "Sengkang General and Community Hospitals"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Sengkang General and Community Hospitals",
+          "award": "Platinum",
+          "description": "2014",
+          "objectid": 11946
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "CE18808N002",
+      "f_and_b_name": "Sheng Tang F&B Management",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "544835",
+        "Full Address": "Address: 1 ANCHORVALE STREET #01-21,SENGKANG COMMUNITY HOSPITAL,Singapore 544835"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3960223803739464,
+        "Longitude": 103.89183405437679
+      },
+      "source_feature_names": [
+        "Sengkang General and Community Hospitals"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Sengkang General and Community Hospitals",
+          "award": "Platinum",
+          "description": "2014",
+          "objectid": 11946
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "C81041N008",
+      "f_and_b_name": "Sin Kee Chicken Rice",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "119077",
+        "Full Address": "Address: 21 LOWER KENT RIDGE ROAD Singapore 119077 THE DECK"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3013273095479683,
+        "Longitude": 103.77427725965474
+      },
+      "source_feature_names": [
+        "University Hall, National University of Singapore",
+        "University Hall",
+        "University Hall, National University of Singapore (1st Recertification)",
+        "School of Computing Block COM3 at National University of Singapore",
+        "National University of Singapore University Town"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "University Hall, National University of Singapore",
+          "award": "GoldPlus",
+          "description": "2012",
+          "objectid": 9673
+        },
+        {
+          "name": "University Hall",
+          "award": "Platinum",
+          "description": "2021",
+          "objectid": 10079
+        },
+        {
+          "name": "University Hall, National University of Singapore (1st Recertification)",
+          "award": "GoldPlus",
+          "description": "2016",
+          "objectid": 10920
+        },
+        {
+          "name": "School of Computing Block COM3 at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 11738
+        },
+        {
+          "name": "National University of Singapore University Town",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 11602
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "C81041N004",
+      "f_and_b_name": "snacks and fried kway te0w",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "119077",
+        "Full Address": "Address: 21 LOWER KENT RIDGE ROAD THE DECK, FACULTY OF ART & SOCIAL SCIENCES,Singapore 119077"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3013273095479683,
+        "Longitude": 103.77427725965474
+      },
+      "source_feature_names": [
+        "University Hall, National University of Singapore",
+        "University Hall",
+        "University Hall, National University of Singapore (1st Recertification)",
+        "School of Computing Block COM3 at National University of Singapore",
+        "National University of Singapore University Town"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "University Hall, National University of Singapore",
+          "award": "GoldPlus",
+          "description": "2012",
+          "objectid": 9673
+        },
+        {
+          "name": "University Hall",
+          "award": "Platinum",
+          "description": "2021",
+          "objectid": 10079
+        },
+        {
+          "name": "University Hall, National University of Singapore (1st Recertification)",
+          "award": "GoldPlus",
+          "description": "2016",
+          "objectid": 10920
+        },
+        {
+          "name": "School of Computing Block COM3 at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 11738
+        },
+        {
+          "name": "National University of Singapore University Town",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 11602
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "SW15E12P005",
+      "f_and_b_name": "SRI MARAVS KAMPONG FOODS PTE. LTD.",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "619392",
+        "Full Address": "Address: 1 JALAN PAPAN #01-03,TERUSAN RECREATION CENTRE,Singapore 619392 (#01-06)"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.320484248168483,
+        "Longitude": 103.72672284196923
+      },
+      "source_feature_names": [
+        "Jalan Terusan Recreation Centre"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Jalan Terusan Recreation Centre",
+          "award": "Certified",
+          "description": "2016",
+          "objectid": 10481
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "SW09805E000",
+      "f_and_b_name": "STARBUCKS COFFEE",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "098269",
+        "Full Address": "Address: SENTOSA GATEWAY #01-309,UNIVERSAL STUDIO SINGAPORE, RESORTS WORLD SENTOSA,Singapore 098269"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.2562898155044109,
+        "Longitude": 103.81993474428393
+      },
+      "source_feature_names": [
+        "Resorts World Sentosa Beach Villas",
+        "Resorts World Sentosa",
+        "Resorts World Sentosa - Hotel Michael",
+        "Resorts World Sentosa - Maritime Experiential Museum",
+        "Resorts World Sentosa - Hard Rock Hotel",
+        "Resort World Sentosa - Equarius Hotel",
+        "Resorts World Convention Centre",
+        "Resorts World Sentosa - Festive Hotel",
+        "Resorts World Sentosa ESPA",
+        "Resorts World Sentosa Hotel Michael",
+        "Resort World Sentosa - Marine Life Park"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Resorts World Sentosa Beach Villas",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 10264
+        },
+        {
+          "name": "Resorts World Sentosa",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 10555
+        },
+        {
+          "name": "Resorts World Sentosa - Hotel Michael",
+          "award": "GoldPlus",
+          "description": "2020",
+          "objectid": 10766
+        },
+        {
+          "name": "Resorts World Sentosa - Maritime Experiential Museum",
+          "award": "Platinum",
+          "description": "2016",
+          "objectid": 10767
+        },
+        {
+          "name": "Resorts World Sentosa - Hard Rock Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 10951
+        },
+        {
+          "name": "Resort World Sentosa - Equarius Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 11289
+        },
+        {
+          "name": "Resorts World Convention Centre",
+          "award": "Platinum",
+          "description": "2017",
+          "objectid": 11677
+        },
+        {
+          "name": "Resorts World Sentosa - Festive Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 11894
+        },
+        {
+          "name": "Resorts World Sentosa ESPA",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 12211
+        },
+        {
+          "name": "Resorts World Sentosa Hotel Michael",
+          "award": "GoldPlus",
+          "description": "2014",
+          "objectid": 12265
+        },
+        {
+          "name": "Resort World Sentosa - Marine Life Park",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 12280
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "SW16956N000",
+      "f_and_b_name": "TAIWAN ICHIBAN",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "119077",
+        "Full Address": "Address: 21 LOWER KENT RIDGE ROAD FRONTIER (PHASE 1), FACULTY OF SCIENCE (KIOSK 1),Singapore 119077"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3013273095479683,
+        "Longitude": 103.77427725965474
+      },
+      "source_feature_names": [
+        "University Hall, National University of Singapore",
+        "University Hall",
+        "University Hall, National University of Singapore (1st Recertification)",
+        "School of Computing Block COM3 at National University of Singapore",
+        "National University of Singapore University Town"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "University Hall, National University of Singapore",
+          "award": "GoldPlus",
+          "description": "2012",
+          "objectid": 9673
+        },
+        {
+          "name": "University Hall",
+          "award": "Platinum",
+          "description": "2021",
+          "objectid": 10079
+        },
+        {
+          "name": "University Hall, National University of Singapore (1st Recertification)",
+          "award": "GoldPlus",
+          "description": "2016",
+          "objectid": 10920
+        },
+        {
+          "name": "School of Computing Block COM3 at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 11738
+        },
+        {
+          "name": "National University of Singapore University Town",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 11602
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "SW23P22V000",
+      "f_and_b_name": "The Crowded Bowl",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "639956",
+        "Full Address": "Address: 91 NANYANG AVENUE #01-13A,Singapore 639956 ABS"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3415466540712597,
+        "Longitude": 103.68250275542648
+      },
+      "source_feature_names": [
+        "NTU Academic Building South"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "NTU Academic Building South",
+          "award": "Platinum Zero Energy",
+          "description": "2021",
+          "objectid": 11608
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "C81041N000",
+      "f_and_b_name": "the deck",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "119077",
+        "Full Address": "Address: 21 LOWER KENT RIDGE ROAD FACULTY OF ART & SOCIAL SCIENCES,Singapore 119077 THE DECK"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3013273095479683,
+        "Longitude": 103.77427725965474
+      },
+      "source_feature_names": [
+        "University Hall, National University of Singapore",
+        "University Hall",
+        "University Hall, National University of Singapore (1st Recertification)",
+        "School of Computing Block COM3 at National University of Singapore",
+        "National University of Singapore University Town"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "University Hall, National University of Singapore",
+          "award": "GoldPlus",
+          "description": "2012",
+          "objectid": 9673
+        },
+        {
+          "name": "University Hall",
+          "award": "Platinum",
+          "description": "2021",
+          "objectid": 10079
+        },
+        {
+          "name": "University Hall, National University of Singapore (1st Recertification)",
+          "award": "GoldPlus",
+          "description": "2016",
+          "objectid": 10920
+        },
+        {
+          "name": "School of Computing Block COM3 at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 11738
+        },
+        {
+          "name": "National University of Singapore University Town",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 11602
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "C81041N011",
+      "f_and_b_name": "UFS FOOD INDUSTRIES PTE LTD",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "119077",
+        "Full Address": "Address: 21 LOWER KENT RIDGE ROAD THE DECK,Singapore 119077"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3013273095479683,
+        "Longitude": 103.77427725965474
+      },
+      "source_feature_names": [
+        "University Hall, National University of Singapore",
+        "University Hall",
+        "University Hall, National University of Singapore (1st Recertification)",
+        "School of Computing Block COM3 at National University of Singapore",
+        "National University of Singapore University Town"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "University Hall, National University of Singapore",
+          "award": "GoldPlus",
+          "description": "2012",
+          "objectid": 9673
+        },
+        {
+          "name": "University Hall",
+          "award": "Platinum",
+          "description": "2021",
+          "objectid": 10079
+        },
+        {
+          "name": "University Hall, National University of Singapore (1st Recertification)",
+          "award": "GoldPlus",
+          "description": "2016",
+          "objectid": 10920
+        },
+        {
+          "name": "School of Computing Block COM3 at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 11738
+        },
+        {
+          "name": "National University of Singapore University Town",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 11602
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "SW16902V000",
+      "f_and_b_name": "UNCLE PENYET",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "119077",
+        "Full Address": "Address: 21 LOWER KENT RIDGE ROAD FACULTY OF SCIENCE (PHASE 1),Singapore 119077"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3013273095479683,
+        "Longitude": 103.77427725965474
+      },
+      "source_feature_names": [
+        "University Hall, National University of Singapore",
+        "University Hall",
+        "University Hall, National University of Singapore (1st Recertification)",
+        "School of Computing Block COM3 at National University of Singapore",
+        "National University of Singapore University Town"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "University Hall, National University of Singapore",
+          "award": "GoldPlus",
+          "description": "2012",
+          "objectid": 9673
+        },
+        {
+          "name": "University Hall",
+          "award": "Platinum",
+          "description": "2021",
+          "objectid": 10079
+        },
+        {
+          "name": "University Hall, National University of Singapore (1st Recertification)",
+          "award": "GoldPlus",
+          "description": "2016",
+          "objectid": 10920
+        },
+        {
+          "name": "School of Computing Block COM3 at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 11738
+        },
+        {
+          "name": "National University of Singapore University Town",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 11602
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "CE18808N015",
+      "f_and_b_name": "Vegetarian",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "544835",
+        "Full Address": "Address: 1 ANCHORVALE STREET #01-21,SENGKANG COMMUNITY HOSPITAL,Singapore 544835"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3960223803739464,
+        "Longitude": 103.89183405437679
+      },
+      "source_feature_names": [
+        "Sengkang General and Community Hospitals"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Sengkang General and Community Hospitals",
+          "award": "Platinum",
+          "description": "2014",
+          "objectid": 11946
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "C81041N009",
+      "f_and_b_name": "vegetarian stall",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "119077",
+        "Full Address": "Address: 21 LOWER KENT RIDGE ROAD Singapore 119077"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3013273095479683,
+        "Longitude": 103.77427725965474
+      },
+      "source_feature_names": [
+        "University Hall, National University of Singapore",
+        "University Hall",
+        "University Hall, National University of Singapore (1st Recertification)",
+        "School of Computing Block COM3 at National University of Singapore",
+        "National University of Singapore University Town"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "University Hall, National University of Singapore",
+          "award": "GoldPlus",
+          "description": "2012",
+          "objectid": 9673
+        },
+        {
+          "name": "University Hall",
+          "award": "Platinum",
+          "description": "2021",
+          "objectid": 10079
+        },
+        {
+          "name": "University Hall, National University of Singapore (1st Recertification)",
+          "award": "GoldPlus",
+          "description": "2016",
+          "objectid": 10920
+        },
+        {
+          "name": "School of Computing Block COM3 at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 11738
+        },
+        {
+          "name": "National University of Singapore University Town",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 11602
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "SW23M57C000",
+      "f_and_b_name": "Venture Drive Coffee",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "639956",
+        "Full Address": "Address: 91 NANYANG AVENUE #01-13B,GAIA,Singapore 639956"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3415466540712597,
+        "Longitude": 103.68250275542648
+      },
+      "source_feature_names": [
+        "NTU Academic Building South"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "NTU Academic Building South",
+          "award": "Platinum Zero Energy",
+          "description": "2021",
+          "objectid": 11608
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "SW16814X000",
+      "f_and_b_name": "VINAYAK TRADERS PTE LTD",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "619392",
+        "Full Address": "Address: 1 JALAN PAPAN #01-33,#01-34,Singapore 619392"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.320484248168483,
+        "Longitude": 103.72672284196923
+      },
+      "source_feature_names": [
+        "Jalan Terusan Recreation Centre"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Jalan Terusan Recreation Centre",
+          "award": "Certified",
+          "description": "2016",
+          "objectid": 10481
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "CE18808N014",
+      "f_and_b_name": "Wanton mee",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "544835",
+        "Full Address": "Address: 1 ANCHORVALE STREET #01-21,SENGKANG COMMUNITY HOSPITAL,Singapore 544835"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3960223803739464,
+        "Longitude": 103.89183405437679
+      },
+      "source_feature_names": [
+        "Sengkang General and Community Hospitals"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Sengkang General and Community Hospitals",
+          "award": "Platinum",
+          "description": "2014",
+          "objectid": 11946
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "C81041N006",
+      "f_and_b_name": "Western Crave",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "119077",
+        "Full Address": "Address: 21 LOWER KENT RIDGE ROAD The Deck,Singapore 119077"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3013273095479683,
+        "Longitude": 103.77427725965474
+      },
+      "source_feature_names": [
+        "University Hall, National University of Singapore",
+        "University Hall",
+        "University Hall, National University of Singapore (1st Recertification)",
+        "School of Computing Block COM3 at National University of Singapore",
+        "National University of Singapore University Town"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "University Hall, National University of Singapore",
+          "award": "GoldPlus",
+          "description": "2012",
+          "objectid": 9673
+        },
+        {
+          "name": "University Hall",
+          "award": "Platinum",
+          "description": "2021",
+          "objectid": 10079
+        },
+        {
+          "name": "University Hall, National University of Singapore (1st Recertification)",
+          "award": "GoldPlus",
+          "description": "2016",
+          "objectid": 10920
+        },
+        {
+          "name": "School of Computing Block COM3 at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 11738
+        },
+        {
+          "name": "National University of Singapore University Town",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 11602
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "CE22D25J000",
+      "f_and_b_name": "XR Western",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "544835",
+        "Full Address": "Address: 1 ANCHORVALE STREET #01-21,SENGKANG COMMUNITY HOSPITAL,Singapore 544835 (MR4)"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3960223803739464,
+        "Longitude": 103.89183405437679
+      },
+      "source_feature_names": [
+        "Sengkang General and Community Hospitals"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Sengkang General and Community Hospitals",
+          "award": "Platinum",
+          "description": "2014",
+          "objectid": 11946
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "CE18808N001",
+      "f_and_b_name": "Yong Tau Foo",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "544835",
+        "Full Address": "Address: 1 ANCHORVALE STREET #01-21,SENGKANG COMMUNITY HOSPITAL,Singapore 544835"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3960223803739464,
+        "Longitude": 103.89183405437679
+      },
+      "source_feature_names": [
+        "Sengkang General and Community Hospitals"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Sengkang General and Community Hospitals",
+          "award": "Platinum",
+          "description": "2014",
+          "objectid": 11946
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "SW16856V000",
+      "f_and_b_name": null,
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "619392",
+        "Full Address": "Address: 1 JALAN PAPAN #01-29,#01-30,TERUSAN RECREATION CENTRE,Singapore 619392"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.320484248168483,
+        "Longitude": 103.72672284196923
+      },
+      "source_feature_names": [
+        "Jalan Terusan Recreation Centre"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Jalan Terusan Recreation Centre",
+          "award": "Certified",
+          "description": "2016",
+          "objectid": 10481
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "SW15E12P000",
+      "f_and_b_name": null,
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "619392",
+        "Full Address": "Address: 1 JALAN PAPAN TERUSAN RECREATION CENTRE,Singapore 619392"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.320484248168483,
+        "Longitude": 103.72672284196923
+      },
+      "source_feature_names": [
+        "Jalan Terusan Recreation Centre"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Jalan Terusan Recreation Centre",
+          "award": "Certified",
+          "description": "2016",
+          "objectid": 10481
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "W01078L000",
+      "f_and_b_name": null,
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "248163",
+        "Full Address": "Address: 1 SHERWOOD ROAD MINISTRY OF FOREIGN AFFAIRS,Singapore 248163"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3040331400799805,
+        "Longitude": 103.81738755676676
+      },
+      "source_feature_names": [
+        "Ministry of Foreign Affairs",
+        "Ministry of Foreign Affairs Headquarters",
+        "MFA Standalone Building",
+        "Ministry of Foreign Affairs Headquarters"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Ministry of Foreign Affairs",
+          "award": "GoldPlus",
+          "description": "2021",
+          "objectid": 10159
+        },
+        {
+          "name": "Ministry of Foreign Affairs Headquarters",
+          "award": "Gold",
+          "description": "2018",
+          "objectid": 10827
+        },
+        {
+          "name": "MFA Standalone Building",
+          "award": "GoldPlus",
+          "description": "2018",
+          "objectid": 11405
+        },
+        {
+          "name": "Ministry of Foreign Affairs Headquarters",
+          "award": "Gold",
+          "description": "2015",
+          "objectid": 12182
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "SW19X66V000",
+      "f_and_b_name": null,
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "119077",
+        "Full Address": "Address: 21 LOWER KENT RIDGE ROAD Singapore 119077 (KIOSK 2)"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3013273095479683,
+        "Longitude": 103.77427725965474
+      },
+      "source_feature_names": [
+        "University Hall, National University of Singapore",
+        "University Hall",
+        "University Hall, National University of Singapore (1st Recertification)",
+        "School of Computing Block COM3 at National University of Singapore",
+        "National University of Singapore University Town"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "University Hall, National University of Singapore",
+          "award": "GoldPlus",
+          "description": "2012",
+          "objectid": 9673
+        },
+        {
+          "name": "University Hall",
+          "award": "Platinum",
+          "description": "2021",
+          "objectid": 10079
+        },
+        {
+          "name": "University Hall, National University of Singapore (1st Recertification)",
+          "award": "GoldPlus",
+          "description": "2016",
+          "objectid": 10920
+        },
+        {
+          "name": "School of Computing Block COM3 at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 11738
+        },
+        {
+          "name": "National University of Singapore University Town",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 11602
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "C81041N001",
+      "f_and_b_name": null,
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "119077",
+        "Full Address": "Address: 21 LOWER KENT RIDGE ROAD THE DECK, FACULTY OF ART & SOCIAL SCIENCES,Singapore 119077"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3013273095479683,
+        "Longitude": 103.77427725965474
+      },
+      "source_feature_names": [
+        "University Hall, National University of Singapore",
+        "University Hall",
+        "University Hall, National University of Singapore (1st Recertification)",
+        "School of Computing Block COM3 at National University of Singapore",
+        "National University of Singapore University Town"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "University Hall, National University of Singapore",
+          "award": "GoldPlus",
+          "description": "2012",
+          "objectid": 9673
+        },
+        {
+          "name": "University Hall",
+          "award": "Platinum",
+          "description": "2021",
+          "objectid": 10079
+        },
+        {
+          "name": "University Hall, National University of Singapore (1st Recertification)",
+          "award": "GoldPlus",
+          "description": "2016",
+          "objectid": 10920
+        },
+        {
+          "name": "School of Computing Block COM3 at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 11738
+        },
+        {
+          "name": "National University of Singapore University Town",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 11602
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "C97162E000",
+      "f_and_b_name": null,
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "117606",
+        "Full Address": "Address: 33 HARBOUR DRIVE PASIR PANJANG TERMINAL BUILDING 1,Singapore 117606"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.2757582120112176,
+        "Longitude": 103.7690968144275
+      },
+      "source_feature_names": [
+        "Pasir Panjang Terminal Building",
+        "Pasir Panjang Terminal Building"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Pasir Panjang Terminal Building",
+          "award": "Gold",
+          "description": "2012",
+          "objectid": 10141
+        },
+        {
+          "name": "Pasir Panjang Terminal Building",
+          "award": "Gold",
+          "description": "2019",
+          "objectid": 10531
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "C97162E004",
+      "f_and_b_name": null,
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "117606",
+        "Full Address": "Address: 33 HARBOUR DRIVE PASIR PANJANG TERMINAL BUILDING 1,Singapore 117606"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.2757582120112176,
+        "Longitude": 103.7690968144275
+      },
+      "source_feature_names": [
+        "Pasir Panjang Terminal Building",
+        "Pasir Panjang Terminal Building"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Pasir Panjang Terminal Building",
+          "award": "Gold",
+          "description": "2012",
+          "objectid": 10141
+        },
+        {
+          "name": "Pasir Panjang Terminal Building",
+          "award": "Gold",
+          "description": "2019",
+          "objectid": 10531
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "SW05182K001",
+      "f_and_b_name": null,
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "698928",
+        "Full Address": "Address: 501 OLD CHOA CHU KANG ROAD Singapore 698928"
+      },
+      "candidate_coordinates": {
+        "Latitude": 1.3736261702753347,
+        "Longitude": 103.72002272726745
+      },
+      "source_feature_names": [
+        "Home Team Academy"
+      ],
+      "source_feature_refs": [
+        {
+          "name": "Home Team Academy",
+          "award": "Platinum Super Low E",
+          "description": "2019",
+          "objectid": 11907
+        }
+      ],
+      "source_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "source_capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "hold_reason": "Exact postal overlap only does not prove the BCA Green Mark facility point matches the target premises. BCA feature names are absent from or broader/different than the target full address; multiple facilities share postal 098269 and/or the target is a hospital/institution/complex. No coordinate proposed."
+    },
+    {
+      "sfa_licence": "W98295E000",
+      "f_and_b_name": "POLAR CAFE",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "169608",
+        "Full Address": "Address: 7 OUTRAM ROAD #01-01,SINGAPORE GENERAL HOSPITAL,Singapore 169608"
+      },
+      "source_candidate": {
+        "source_name": "Orchid Thai @ Bowyer",
+        "source_address_line": "1 Hospital Crescent",
+        "source_floor": "1",
+        "source_unit": "1A",
+        "coordinates_lon_lat": [
+          103.8307217776313,
+          1.2799396824699967
+        ],
+        "source_objectid": 16761,
+        "source_fmel_update": "20241129164607"
+      },
+      "source_url": "https://data.gov.sg/datasets/d_2925c2ccf75d1c135c2d469e0de3cee6/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_2925c2ccf75d1c135c2d469e0de3cee6/poll-download",
+      "source_capture_sha256": "0611cdc814a4e8a31888d27e615d151f52b87fa6fcb60563d53efb91c8b03ffb",
+      "license": "Singapore Open Data Licence v1.0; free reuse including commercial use with attribution",
+      "hold_reason": "Postal code overlaps, but HPB source address does not establish that the target is at the same street/building. Held without copying coordinates."
+    },
+    {
+      "sfa_licence": "SW20I74P000",
+      "f_and_b_name": "Mix Beverages",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "599727",
+        "Full Address": "Address: 2A CHEONG CHIN NAM ROAD Singapore 599727"
+      },
+      "source_candidate": {
+        "source_name": "Lao Jiang Superior Soup (Beauty World)",
+        "source_address_line": "2 Cheong Chin Nam Road",
+        "source_floor": null,
+        "source_unit": null,
+        "coordinates_lon_lat": [
+          103.77529722858709,
+          1.3422793154866348
+        ],
+        "source_objectid": 15736,
+        "source_fmel_update": "20241129164607"
+      },
+      "source_url": "https://data.gov.sg/datasets/d_2925c2ccf75d1c135c2d469e0de3cee6/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_2925c2ccf75d1c135c2d469e0de3cee6/poll-download",
+      "source_capture_sha256": "0611cdc814a4e8a31888d27e615d151f52b87fa6fcb60563d53efb91c8b03ffb",
+      "license": "Singapore Open Data Licence v1.0; free reuse including commercial use with attribution",
+      "hold_reason": "Postal code overlaps, but HPB source address does not establish that the target is at the same street/building. Held without copying coordinates."
+    },
+    {
+      "sfa_licence": "W98295E000",
+      "f_and_b_name": "POLAR CAFE",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "169608",
+        "Full Address": "Address: 7 OUTRAM ROAD #01-01,SINGAPORE GENERAL HOSPITAL,Singapore 169608"
+      },
+      "source_candidate": {
+        "source_name": "The Coffee Bean & Tea Leaf (G&G) - Singapore General Hospital",
+        "source_address_line": "1 Outram Road",
+        "source_floor": "1",
+        "source_unit": null,
+        "coordinates_lon_lat": [
+          103.8307217776313,
+          1.2799396824699967
+        ],
+        "source_objectid": 16688,
+        "source_fmel_update": "20241129164607"
+      },
+      "source_url": "https://data.gov.sg/datasets/d_2925c2ccf75d1c135c2d469e0de3cee6/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_2925c2ccf75d1c135c2d469e0de3cee6/poll-download",
+      "source_capture_sha256": "0611cdc814a4e8a31888d27e615d151f52b87fa6fcb60563d53efb91c8b03ffb",
+      "license": "Singapore Open Data Licence v1.0; free reuse including commercial use with attribution",
+      "hold_reason": "Postal code overlaps, but HPB source address does not establish that the target is at the same street/building. Held without copying coordinates."
+    },
+    {
+      "sfa_licence": "CE19U53V000",
+      "f_and_b_name": "DARK HORSE",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "049819",
+        "Full Address": "Address: 30B BOAT QUAY Singapore 049819 (3RD STOREY)"
+      },
+      "source_candidate": {
+        "source_name": "Pasta Fresca Da Salvatore - Boat Quay",
+        "source_address_line": "30 Boat Quay",
+        "source_floor": "1",
+        "source_unit": "0",
+        "coordinates_lon_lat": [
+          103.84983184218459,
+          1.2860373694354779
+        ],
+        "source_objectid": 16055,
+        "source_fmel_update": "20241129164607"
+      },
+      "source_url": "https://data.gov.sg/datasets/d_2925c2ccf75d1c135c2d469e0de3cee6/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_2925c2ccf75d1c135c2d469e0de3cee6/poll-download",
+      "source_capture_sha256": "0611cdc814a4e8a31888d27e615d151f52b87fa6fcb60563d53efb91c8b03ffb",
+      "license": "Singapore Open Data Licence v1.0; free reuse including commercial use with attribution",
+      "hold_reason": "Postal code overlaps, but HPB source address does not establish that the target is at the same street/building. Held without copying coordinates."
+    },
+    {
+      "sfa_licence": "SSW24061N000",
+      "f_and_b_name": "SARATHA",
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "689463",
+        "Full Address": "Address: 184 CHOA CHU KANG AVENUE 1 COMFORT GARDEN,Singapore 689463 (LEFT PART OF)"
+      },
+      "source_candidate": {
+        "source_name": "Pizza Hut - Keat Hong (DEL)",
+        "source_address_line": "184A Choa Chu Kang Avenue 1",
+        "source_floor": null,
+        "source_unit": null,
+        "coordinates_lon_lat": [
+          103.74570821798848,
+          1.3770226541220891
+        ],
+        "source_objectid": 16096,
+        "source_fmel_update": "20241129164607"
+      },
+      "source_url": "https://data.gov.sg/datasets/d_2925c2ccf75d1c135c2d469e0de3cee6/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_2925c2ccf75d1c135c2d469e0de3cee6/poll-download",
+      "source_capture_sha256": "0611cdc814a4e8a31888d27e615d151f52b87fa6fcb60563d53efb91c8b03ffb",
+      "license": "Singapore Open Data Licence v1.0; free reuse including commercial use with attribution",
+      "hold_reason": "Postal code overlaps, but HPB source address does not establish that the target is at the same street/building. Held without copying coordinates."
+    },
+    {
+      "sfa_licence": "CE20J92A000",
+      "f_and_b_name": null,
+      "exact_before": {
+        "Latitude": null,
+        "Longitude": null,
+        "Coordinate Precision": null,
+        "Postal Code": "277735",
+        "Full Address": "Address: 25 LORONG LIPUT HOLLAND VILLAGE,Singapore 277735 1ST STOREY"
+      },
+      "source_candidate": {
+        "source_name": "Subway - Holland Village",
+        "source_address_line": "25B Lorong Liput",
+        "source_floor": "1",
+        "source_unit": "0",
+        "coordinates_lon_lat": [
+          103.79468209892426,
+          1.3103080743829572
+        ],
+        "source_objectid": 16430,
+        "source_fmel_update": "20241129164607"
+      },
+      "source_url": "https://data.gov.sg/datasets/d_2925c2ccf75d1c135c2d469e0de3cee6/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_2925c2ccf75d1c135c2d469e0de3cee6/poll-download",
+      "source_capture_sha256": "0611cdc814a4e8a31888d27e615d151f52b87fa6fcb60563d53efb91c8b03ffb",
+      "license": "Singapore Open Data Licence v1.0; free reuse including commercial use with attribution",
+      "hold_reason": "Postal code overlaps, but HPB source address does not establish that the target is at the same street/building. Held without copying coordinates."
+    }
+  ],
+  "sources": [
+    {
+      "publisher": "Ministry of Health (MOH), Singapore",
+      "dataset": "Dementia Friendly Go-To-Points",
+      "dataset_id": "d_e2d10e591bc8560b8946a0da24790fa5",
+      "url": "https://data.gov.sg/datasets/d_e2d10e591bc8560b8946a0da24790fa5/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_e2d10e591bc8560b8946a0da24790fa5/poll-download",
+      "license": "Singapore Open Data Licence v1.0; free for personal/commercial reuse with attribution",
+      "capture_sha256": "8ece10b8c30fc3586919611e525e61ab19597f464eec4d7b848def96d78636f2",
+      "feature_count": 831,
+      "dataset_last_updated": "2026-08-20",
+      "evaluation": "One exact postal + numbered-street + named-facility candidate proposed."
+    },
+    {
+      "publisher": "Building and Construction Authority (BCA), Singapore",
+      "dataset": "Green Mark Buildings (GEOJSON)",
+      "dataset_id": "d_da116ef216e3fb501846e1c9faf7e683",
+      "url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "license": "Singapore Open Data Licence v1.0; free for personal/commercial reuse with attribution",
+      "capture_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "feature_count": 2919,
+      "dataset_last_updated": "2026-04-18",
+      "evaluation": "78 target rows held; postal alone and broad/ambiguous facility labels were insufficient."
+    },
+    {
+      "publisher": "Housing & Development Board (HDB), Singapore",
+      "dataset": "Existing Buildings (2026)",
+      "dataset_id": "d_16b157c52ed637edd6ba1232e026258d",
+      "url": "https://data.gov.sg/datasets/d_16b157c52ed637edd6ba1232e026258d/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_16b157c52ed637edd6ba1232e026258d/poll-download",
+      "license": "Singapore Open Data Licence v1.0; free perpetual royalty-free commercial/non-commercial reuse with attribution",
+      "capture_sha256": "7c987511548de3a82da403cabca02702031e02ade8703a9e401417883dfeb702",
+      "feature_count": 13436,
+      "evaluation": "No exact postal-code matches among blank-coordinate workbook rows."
+    },
+    {
+      "publisher": "National Environment Agency (NEA), Singapore",
+      "dataset": "Market and Food Centre",
+      "dataset_id": "d_a57a245b3cf3ec76ad36d55393a16e97",
+      "url": "https://data.gov.sg/datasets/d_a57a245b3cf3ec76ad36d55393a16e97/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_a57a245b3cf3ec76ad36d55393a16e97/poll-download",
+      "license": "Singapore Open Data Licence; free for personal/commercial use with attribution",
+      "capture_sha256": "8483e841e0b799b2ed06b3f7846a29692915e86c5f2e34c12b624fd5b3fe172c",
+      "feature_count": 110,
+      "evaluation": "No exact postal-code matches among blank-coordinate workbook rows; 0 overlapping postcodes exist only on rows already carrying coordinates."
+    }
+  ],
+  "summary": {
+    "proposed_rows": 1,
+    "held_bca_green_mark_rows": 78,
+    "held_hpb_postal_overlaps": 6,
+    "blank_coordinate_rows": 2545,
+    "workbook_modified": false
+  }
+}

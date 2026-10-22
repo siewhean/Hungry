@@ -1,3 +1,4 @@
+import { assertAccountGeneration, getAccountGeneration } from "@/lib/security/accountScope";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import { createClientReviewId } from "@/features/review/reviewDraft";
 import { biteToStallPost } from "@/lib/services/postTransforms";
@@ -69,6 +70,7 @@ function resolveMedia(media: MediaItem[]) {
 }
 
 export async function publishComposerPost(options: PublishComposerPostOptions) {
+  const generation = getAccountGeneration();
   const repository = getDataRepository();
   const service = getHungryService();
   const state = useComposerStore.getState();
@@ -79,6 +81,7 @@ export async function publishComposerPost(options: PublishComposerPostOptions) {
       ? repository.getProfile(true)
       : storedProfile;
   const { dish, venueId } = await resolvePublishTarget(repository, service, options);
+  assertAccountGeneration(generation);
   const shouldPublishPost = options.publishMode === "both" || options.publishMode === "post";
   const shouldSubmitReview =
     options.publishMode === "review" ||
@@ -87,6 +90,7 @@ export async function publishComposerPost(options: PublishComposerPostOptions) {
   const rating = state.rating > 0 ? state.rating : dish.rating;
   const media = shouldPublishPost ? resolveMedia(state.media) : null;
   const applyReviewProfileState = () => {
+    assertAccountGeneration(generation);
     const profileStore = useProfileStore.getState();
     profileStore.addReviewedDish(dish.id);
     profileStore.addReview(dish);
@@ -116,6 +120,7 @@ export async function publishComposerPost(options: PublishComposerPostOptions) {
     });
   }
 
+  assertAccountGeneration(generation);
   if (!shouldPublishPost) {
     if (shouldSubmitReview) {
       applyReviewProfileState();
@@ -146,6 +151,7 @@ export async function publishComposerPost(options: PublishComposerPostOptions) {
     },
   });
 
+  assertAccountGeneration(generation);
   const transformedPost = biteToStallPost(bite, {
     authorAvatarUrl: bite.authorAvatar ?? profile.avatarUrl ?? bite.photoUrl,
     mediaType: bite.mediaType ?? media.mediaType,

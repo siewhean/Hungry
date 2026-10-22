@@ -1,0 +1,240 @@
+{
+  "audit": "independent read-only candidate QA; source workbook not edited",
+  "baseline_path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_sha256": "2e398d1a6c872287c0b093a40cac17a63557293b27471b82832756ba6019a916",
+  "expected_baseline_sha256": "2e398d1a6c872287c0b093a40cac17a63557293b27471b82832756ba6019a916",
+  "candidate_path": "/tmp/hungry-r134-node/refresh134-candidate.xlsx",
+  "candidate_sha256": "bf28dd39739f1ab1ecf6137b4f6028305c1c26ed0541dd463e369d48c8b0e795",
+  "expected_candidate_sha256": "bf28dd39739f1ab1ecf6137b4f6028305c1c26ed0541dd463e369d48c8b0e795",
+  "proposal_baselines": {
+    "refresh134_official_menus_20261019.json": "2e398d1a6c872287c0b093a40cac17a63557293b27471b82832756ba6019a916",
+    "refresh134_delivery_menus_20261019.json": "2e398d1a6c872287c0b093a40cac17a63557293b27471b82832756ba6019a916",
+    "refresh134_directory_fields_20261019.json": "2e398d1a6c872287c0b093a40cac17a63557293b27471b82832756ba6019a916",
+    "refresh134_names_20261019.json": "2e398d1a6c872287c0b093a40cac17a63557293b27471b82832756ba6019a916",
+    "refresh134_menu_links_20261019.json": "2e398d1a6c872287c0b093a40cac17a63557293b27471b82832756ba6019a916"
+  },
+  "proposal_value_matches": {
+    "KAD0212001:F&B Name": true,
+    "CE04553V000:Website": true,
+    "CE06B75A000:Website": true,
+    "CE13M19J000:Website": true,
+    "CE14I30L000:Website": true,
+    "CE16687L000:Website": true,
+    "CE16D72E000:Website": true,
+    "CE19472N000:Website": true,
+    "CE23O13J000:Website": true,
+    "CE26E34V000:Website": true,
+    "NE16440X000:Website": true,
+    "NE25708V000:Website": true,
+    "S96213L000:Website": true,
+    "SE19262X000:Website": true,
+    "SW08939K000:Website": true,
+    "SW13T88L000:Website": true,
+    "SW24O07X000:Website": true,
+    "SW25F83L000:Website": true,
+    "W03362P000:Website": true,
+    "CE13571N000:Menu URL": true,
+    "CE13571N000:Menu / Price": true,
+    "CE13Z25A000:Menu URL": true,
+    "CE13Z25A000:Menu / Price": true
+  },
+  "directory": {
+    "rows": 38273,
+    "unique_licences": 38273,
+    "same_licence_set": true,
+    "alphabetical_order": true,
+    "diff_count": 23,
+    "expected_diff_count": 23,
+    "diffs": [
+      {
+        "licence": "CE04553V000",
+        "field": "Website"
+      },
+      {
+        "licence": "CE06B75A000",
+        "field": "Website"
+      },
+      {
+        "licence": "CE13M19J000",
+        "field": "Website"
+      },
+      {
+        "licence": "CE14I30L000",
+        "field": "Website"
+      },
+      {
+        "licence": "CE16687L000",
+        "field": "Website"
+      },
+      {
+        "licence": "CE16D72E000",
+        "field": "Website"
+      },
+      {
+        "licence": "CE19472N000",
+        "field": "Website"
+      },
+      {
+        "licence": "CE23O13J000",
+        "field": "Website"
+      },
+      {
+        "licence": "CE26E34V000",
+        "field": "Website"
+      },
+      {
+        "licence": "NE16440X000",
+        "field": "Website"
+      },
+      {
+        "licence": "NE25708V000",
+        "field": "Website"
+      },
+      {
+        "licence": "S96213L000",
+        "field": "Website"
+      },
+      {
+        "licence": "SE19262X000",
+        "field": "Website"
+      },
+      {
+        "licence": "SW08939K000",
+        "field": "Website"
+      },
+      {
+        "licence": "SW13T88L000",
+        "field": "Website"
+      },
+      {
+        "licence": "SW24O07X000",
+        "field": "Website"
+      },
+      {
+        "licence": "SW25F83L000",
+        "field": "Website"
+      },
+      {
+        "licence": "W03362P000",
+        "field": "Website"
+      },
+      {
+        "licence": "CE13Z25A000",
+        "field": "Menu / Price"
+      },
+      {
+        "licence": "CE13Z25A000",
+        "field": "Menu URL"
+      },
+      {
+        "licence": "CE13571N000",
+        "field": "Menu / Price"
+      },
+      {
+        "licence": "CE13571N000",
+        "field": "Menu URL"
+      },
+      {
+        "licence": "KAD0212001",
+        "field": "F&B Name"
+      }
+    ],
+    "unapproved_coordinate_rating_access_changes": false
+  },
+  "menus": {
+    "baseline_rows": 13858,
+    "candidate_rows": 13990,
+    "added_rows": 132,
+    "added_by_licence": {
+      "CE13571N000": 80,
+      "CE13Z25A000": 52
+    },
+    "proposal_row_mismatches": [],
+    "timezone_normalized_timestamp_count": 52,
+    "timezone_normalized_timestamps_equal_instants": true
+  },
+  "images": {
+    "image_candidates_sheet_unchanged": true,
+    "Refresh134 image proposal applied": false
+  },
+  "coverage": {
+    "actual_counts": {
+      "Rows with a usable F&B name": 32800,
+      "Rows with no usable F&B name": 5473,
+      "Rows with website": 2840,
+      "Rows with menu URL": 1483,
+      "Rows with menu summary": 541,
+      "Menu item rows": 13990
+    },
+    "stored_counts": {
+      "Rows with a usable F&B name": 32800,
+      "Rows with no usable F&B name": 5473,
+      "Rows with website": 2840,
+      "Rows with menu URL": 1483,
+      "Rows with menu summary": 541,
+      "Menu item rows": 13990
+    },
+    "metrics_match": {
+      "Rows with a usable F&B name": true,
+      "Rows with no usable F&B name": true,
+      "Rows with website": true,
+      "Rows with menu URL": true,
+      "Rows with menu summary": true,
+      "Menu item rows": true
+    },
+    "provenance_row_present": true
+  },
+  "structure": {
+    "sheets_and_tables": {
+      "Public F&B Directory": {
+        "used_range": "A1:U38274",
+        "tables": [
+          {
+            "name": "PublicFnbDirectory",
+            "address": "A1:U38274"
+          }
+        ]
+      },
+      "Menu Items": {
+        "used_range": "A1:L13991",
+        "tables": [
+          {
+            "name": "MenuItems",
+            "address": "A1:L13991"
+          }
+        ]
+      },
+      "Image Candidates": {
+        "used_range": "A1:I2767",
+        "tables": [
+          {
+            "name": "ImageCandidates",
+            "address": "A1:I2767"
+          }
+        ]
+      },
+      "Coverage & Sources": {
+        "used_range": "A1:C232",
+        "tables": [
+          {
+            "name": "CoverageSources",
+            "address": "A1:C232"
+          }
+        ]
+      }
+    },
+    "formula_count": 0,
+    "zip_integrity": true,
+    "external_links": false
+  },
+  "data_xlsx_inventory": [
+    "Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "Hungry F&B Database.xlsx",
+    "dish-food-types-to-vet.xlsx",
+    "singapore_food_stalls.xlsx",
+    "stall-logo-candidates.xlsx",
+    "taste-answer-key.xlsx"
+  ],
+  "issues": [],
+  "pass": true
+}

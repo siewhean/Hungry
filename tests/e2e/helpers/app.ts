@@ -1,6 +1,6 @@
 import { expect, type Page, type TestInfo } from "@playwright/test";
 
-const CAPTION_PLACEHOLDER = "Write your masterpiece... Use @ to tag or # for topics.";
+const CAPTION_PLACEHOLDER = "What makes this worth the queue?";
 
 function toDevTestId(value: string) {
   return value
@@ -143,8 +143,10 @@ export async function openComposerFromLauncher(
     await page.getByLabel("Enable business mode in composer").click();
   }
   await clickDevButton(page, "Launch V2 Composer");
-  await expect(page.getByText("New post", { exact: true }).first()).toBeVisible();
-  await expect(page.getByRole("button", { name: "Publish Both" }).first()).toBeVisible();
+  await expect(
+    page.getByText("Create post", { exact: true }).filter({ visible: true }).first(),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Publish post" }).first()).toBeVisible();
 }
 
 export async function publishPostFromComposer(
@@ -154,8 +156,10 @@ export async function publishPostFromComposer(
 ) {
   await openComposerFromLauncher(page, { seedMedia: true, account: options?.account });
   await page.getByPlaceholder(CAPTION_PLACEHOLDER).first().fill(caption);
-  await page.getByRole("button", { name: "Publish Both" }).first().click();
-  await expect(page.getByText("Shared!", { exact: true }).first()).toBeVisible();
+  await page.getByRole("button", { name: "Publish post" }).first().click();
+  await expect(
+    page.getByText("Post published successfully.", { exact: true }).first(),
+  ).toBeVisible();
 }
 
 export async function expectPostCaptionVisible(page: Page, caption: string, testId?: string) {

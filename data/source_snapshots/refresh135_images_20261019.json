@@ -1,0 +1,66 @@
+{
+  "schema_version": "hungry-image-rights-proposal-v1",
+  "snapshot_id": "refresh135_images_20261019",
+  "captured_at_sgt": "2026-10-19",
+  "workbook_path": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "bf28dd39739f1ab1ecf6137b4f6028305c1c26ed0541dd463e369d48c8b0e795",
+  "workbook_edited": false,
+  "scope": "Read-only search of Wikimedia Commons exact restaurant photos cross-checked against the canonical Public F&B Directory and live first-party restaurant information. One net-new exact-branch image candidate found. Original image was downloaded to /tmp only for pixel inspection and is not retained in the dataset or repository. No spending or Mapbox requests.",
+  "summary": {
+    "new_candidates": 1,
+    "exact_directory_joins": 1,
+    "exact_menu_item_joins": 0,
+    "pixel_inspected": 1,
+    "approved_for_current_display": 0,
+    "review_only": 1,
+    "already_in_workbook_exact_url": 0,
+    "workbook_changes": 0
+  },
+  "candidates": [
+    {
+      "action": "add_exact_branch_image_candidate_review_only",
+      "sfa_licence": "CE16369L000",
+      "workbook_outlet_name": "SHOUKOUWA RESTAURANT",
+      "workbook_directory_address": "1 Fullerton Road #02-02A, One Fullerton, Singapore 049213",
+      "item_or_image_type": "Exact restaurant entrance / storefront photograph",
+      "pictured_menu_item": null,
+      "menu_item_join": null,
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/a/ae/20241226_ShouKouWa_singapore.jpg",
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:20241226_ShouKouWa_singapore.jpg",
+      "source_page_capture_sha256": "cfd905ed4b2fa381849fbf381823fedab0c0fe7ed1fb1936c804f0ccb77df106",
+      "source_page_sha256_scope": "SHA-256 of HTML source page fetched 2026-10-19; direct image URL verified HTTP 200 and JPEG bytes.",
+      "image_file_sha256": "12c7a7192fcbd65a8eef567651ba585d0dfe560a960893dda372061cf36449ab",
+      "observed_at_sgt": "2026-10-19",
+      "photograph_date": "2024-12-26 20:21:47 (EXIF and Commons metadata)",
+      "creator": "Earthkingfather (Wikimedia Commons uploader; source page identifies own work)",
+      "license": "Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "attribution": "Earthkingfather, “20241226 ShouKouWa singapore.jpg,” via Wikimedia Commons, CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/; no changes made.",
+      "rights_basis": "Commons source page explicitly states uploader own work and CC BY-SA 4.0. Reuse requires attribution, license link, indication of modifications, and ShareAlike for adaptations.",
+      "pixel_inspection": {
+        "status": "pass",
+        "method": "Downloaded original JPEG temporarily to /tmp and visually inspected it on 2026-10-19; temporary image removed after inspection.",
+        "native_dimensions": "4032 x 1960",
+        "visual_observations": "Genuine restaurant entrance photograph; white noren curtain and illuminated sign visibly show Shoukouwa branding in Japanese characters. Not stock, generated, or placeholder content."
+      },
+      "exact_outlet_join_evidence": "Commons title/caption names the Shoukouwa Sushi Restaurant, Singapore, and pixels show its branded entrance. Canonical workbook has a single exact SFA directory row CE16369L000, SHOUKOUWA RESTAURANT, at 1 Fullerton Road #02-02A, One Fullerton. The operator official site independently confirms the same address and outlet identity. Exact branch is supported; image is not tied to a menu item.",
+      "current_operating_evidence": {
+        "source_url": "https://www.shoukouwa.com.sg/",
+        "source_type": "operator-owned official restaurant website",
+        "observed_at_sgt": "2026-10-19",
+        "evidence": "Official homepage displayed restaurant name, current 2026 operating hours and booking call-to-action and lists 1 Fullerton Road, #02-02A, One Fullerton, Singapore 049213. This verifies current operation and same address; it does not establish that the 2024 photo reflects today’s appearance."
+      },
+      "official_source_capture_sha256": "3a17db150eab9b5d20740205a455946419485988d713013f61dbd8311936c37b",
+      "display_status": "Review only; do not mark as current appearance or approved image until a maintainer accepts historical-photo freshness. Rights and exact branch are verified. Photo is dated 2024-12-26; current operation is verified from operator site as of 2026-10-19."
+    }
+  ],
+  "sources": [
+    "https://commons.wikimedia.org/wiki/File:20241226_ShouKouWa_singapore.jpg",
+    "https://www.shoukouwa.com.sg/"
+  ],
+  "notes": [
+    "No Google user-uploaded photos or delivery-platform photos used.",
+    "No source photo added to the workbook.",
+    "No image bytes retained in the repository."
+  ]
+}

@@ -30,6 +30,7 @@ import { prefetchMerchantTab, preloadRoute } from "@/features/navigation/prefetc
 import { listSharedStallPosts } from "@/features/social/sharedStallPosts";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
+import { useUIStore } from "@/store/useUIStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -67,22 +68,6 @@ type ProfileRouteParams = {
 
 function normalizePersonName(name: string) {
   return name.trim().toLowerCase();
-}
-
-function mergeFollowerNames(
-  users: { name: string; userId?: string }[],
-  targetName: string,
-): Set<string> {
-  const normalizedTarget = normalizePersonName(targetName);
-  const names = new Set<string>();
-
-  users.forEach((user) => {
-    const normalized = normalizePersonName(user.name);
-    if (!normalized || normalized === normalizedTarget) return;
-    names.add(normalized);
-  });
-
-  return names;
 }
 
 function haveEqualPosts(left: StallPost[], right: StallPost[]) {
@@ -148,7 +133,6 @@ export function ProfileHomeScreen({
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const signOut = useSessionStore((state) => state.signOut);
   const merchantAccount = useMerchantStore((state) => state.account);
-  const followedAuthors = useSocialStore((state) => state.followedAuthors);
   const followedUserIds = useSocialStore((state) => state.followedUserIds);
   const reviewEntries = useProfileStore((state) => state.reviewEntries);
   const sharePostToChat = useActivityStore((state) => state.sharePostToChat);
@@ -163,12 +147,8 @@ export function ProfileHomeScreen({
   const insets = useSafeAreaInsets();
   const shareSheetRef = useRef<BottomSheetModal>(null);
   const shareSnapPoints = useMemo(() => ["45%"], []);
-  const [profileFollowerCount, setProfileFollowerCount] = useState<number>(
-    profile.stats.followersCount,
-  );
-  const [profileFollowingCount, setProfileFollowingCount] = useState<number>(
-    profile.stats.followingCount,
-  );
+  const [profileFollowerCount, setProfileFollowerCount] = useState<number | null>(null);
+  const [profileFollowingCount, setProfileFollowingCount] = useState<number | null>(null);
   const triedStallIds = useMemo(
     () =>
       Object.values(stallInteractions)
@@ -176,8 +156,6 @@ export function ProfileHomeScreen({
         .map((interaction) => interaction.stallId),
     [stallInteractions],
   );
-  const commentsByPostId = useSocialStore((state) => state.commentsByPostId);
-  const repliesByCommentId = useSocialStore((state) => state.repliesByCommentId);
 
   const [selectedShareChatIds, setSelectedShareChatIds] = useState<string[]>([]);
   const [shareRecipients, setShareRecipients] = useState<ChatShareRecipient[]>([]);
@@ -263,17 +241,29 @@ export function ProfileHomeScreen({
   useEffect(() => {
     if (isAuthenticated) {
       if (storiesEnabled) {
-        void loadStories();
+        void loadStories().catch(() => undefined);
       }
 
-      void loadStallSubmissions();
+      void loadStallSubmissions().catch(() =>
+        useUIStore.getState().showToast({
+          message: "Could not load your stall submissions. Try again.",
+          tone: "warning",
+        }),
+      );
 
       if (gamificationEnabled) {
-        void loadCredProfile(profile.id);
-        void loadMissions(profile.id);
-        void loadStallInteractions(profile.id).then(() => {
-          computePassportProgress(triedStallIds);
-        });
+        void loadCredProfile(profile.id).catch(() => undefined);
+        void loadMissions(profile.id).catch(() => undefined);
+        void loadStallInteractions(profile.id)
+          .then(() => {
+            computePassportProgress(triedStallIds);
+          })
+          .catch(() =>
+            useUIStore.getState().showToast({
+              message: "Could not refresh visited stalls. Open Visited stalls to retry.",
+              tone: "warning",
+            }),
+          );
       }
     }
   }, [
@@ -302,17 +292,14 @@ export function ProfileHomeScreen({
       try {
         const posts = await listSharedStallPosts();
         if (!isMounted) return;
-        const nextPosts = posts.filter(
-          (post) =>
-            post.authorId === profile.id ||
-            post.authorName.toLowerCase() === profile.displayName.toLowerCase(),
-        );
+        const nextPosts = posts.filter((post) => post.authorId === profile.id);
         setProfilePosts((current) => (haveEqualPosts(current, nextPosts) ? current : nextPosts));
-      } catch (error) {
-        console.error("Failed to load profile posts:", error);
-        if (isMounted) {
-          setProfilePosts([]);
-        }
+      } catch {
+        if (isMounted)
+          useUIStore.getState().showToast({
+            message: "Could not refresh your posts. Your last loaded posts are still available.",
+            tone: "warning",
+          });
       }
     };
 
@@ -354,89 +341,41 @@ export function ProfileHomeScreen({
     });
   }, [profile.reviewedDishIds, reviewEntries]);
 
-  const localFollowingCount = useMemo(
-    () =>
-      Object.values(followedUserIds).filter((isFollowing) => isFollowing).length +
-      Object.values(followedAuthors).filter((isFollowing) => isFollowing).length,
-    [followedAuthors, followedUserIds],
-  );
-  const followedCount = localFollowingCount;
   const profileStatSummary = useMemo(
     () => ({
-      followers: profile.stats.followersCount,
-      following: profile.stats.followingCount + followedCount,
-      saved: profile.stats.favouritesCount,
+      followers: profileFollowerCount ?? "unavailable",
+      following: profileFollowingCount ?? "unavailable",
+      saved: profile.favouriteDishIds.length,
     }),
-    [
-      followedCount,
-      profile.stats.favouritesCount,
-      profile.stats.followersCount,
-      profile.stats.followingCount,
-    ],
+    [profileFollowerCount, profileFollowingCount, profile.favouriteDishIds.length],
   );
-  const localFollowerCount = useMemo(() => {
-    const candidates = [
-      ...profilePosts.map((post) => ({ name: post.authorName, userId: post.authorId })),
-      ...Object.values(commentsByPostId)
-        .flat()
-        .map((comment) => ({ name: comment.authorName, userId: comment.userId })),
-      ...Object.values(repliesByCommentId)
-        .flat()
-        .map((reply) => ({ name: reply.authorName, userId: reply.userId })),
-      ...getDataRepository()
-        .listStallPosts()
-        .map((post) => ({ name: post.authorName, userId: post.authorId })),
-    ];
-
-    return mergeFollowerNames(candidates, profile.displayName).size;
-  }, [commentsByPostId, profile.displayName, profilePosts, repliesByCommentId]);
-
   useEffect(() => {
-    if (!isAuthenticated) {
-      setProfileFollowerCount(Math.max(profile.stats.followersCount, localFollowerCount));
-      setProfileFollowingCount(profile.stats.followingCount + localFollowingCount);
-      return;
+    let active = true;
+    setProfileFollowerCount(null);
+    setProfileFollowingCount(null);
+    if (isAuthenticated && isFocused) {
+      void Promise.all([
+        getHungryService().social.listFollowers(profile.id),
+        getHungryService().social.listFollowing(profile.id),
+      ])
+        .then(([followers, following]) => {
+          if (!active) return;
+          setProfileFollowerCount(new Set(followers.map((person) => person.userId)).size);
+          setProfileFollowingCount(new Set(following.map((person) => person.userId)).size);
+        })
+        .catch(() => {
+          if (active)
+            useUIStore.getState().showToast({
+              message:
+                "Could not refresh relationship counts. Open Followers or Following to retry.",
+              tone: "warning",
+            });
+        });
     }
-
-    let isActive = true;
-
-    void Promise.all([
-      getHungryService().social.listFollowers(profile.id),
-      getHungryService().social.listFollowing(profile.id),
-    ])
-      .then(([followersList, followingList]) => {
-        if (!isActive) return;
-
-        const followersFromService = mergeFollowerNames(
-          followersList.map((user) => ({ name: user.displayName, userId: user.userId })),
-          profile.displayName,
-        );
-
-        const fallbackFollowingCount = Math.max(profile.stats.followingCount, followingList.length);
-
-        setProfileFollowerCount(
-          Math.max(profile.stats.followersCount, followersFromService.size, localFollowerCount),
-        );
-        setProfileFollowingCount(fallbackFollowingCount + localFollowingCount);
-      })
-      .catch(() => {
-        if (!isActive) return;
-
-        setProfileFollowerCount(Math.max(profile.stats.followersCount, localFollowerCount));
-        setProfileFollowingCount(profile.stats.followingCount + localFollowingCount);
-      });
-
     return () => {
-      isActive = false;
+      active = false;
     };
-  }, [
-    isAuthenticated,
-    localFollowingCount,
-    profile.id,
-    profile.stats.followersCount,
-    profile.stats.followingCount,
-    localFollowerCount,
-  ]);
+  }, [isAuthenticated, isFocused, profile.id, followedUserIds]);
 
   const handleShareTaste = useCallback(async () => {
     if (!isAuthenticated) return;
@@ -757,7 +696,7 @@ export function ProfileHomeScreen({
           <View style={{ flexDirection: "row", gap: spacing[2] }}>
             <StatBlock
               label="Followers"
-              value={profileFollowerCount}
+              value={profileFollowerCount ?? "—"}
               icon={<Heart size={14} color={palette.orange} />}
               onPress={() =>
                 openProfileConnections("Followers", {
@@ -768,7 +707,7 @@ export function ProfileHomeScreen({
             />
             <StatBlock
               label="Following"
-              value={profileFollowingCount}
+              value={profileFollowingCount ?? "—"}
               icon={<Send size={14} color={palette.orange} />}
               onPress={() =>
                 openProfileConnections("Following", {
@@ -822,6 +761,14 @@ export function ProfileHomeScreen({
             onPressIn={() => preloadRoute(navigation, "AddStall")}
             onPress={() => navigation.navigate("AddStall")}
           />
+          {stallSubmissions.slice(0, 3).map((submission) => (
+            <Card key={submission.id}>
+              <AppText variant="bodyBold">{submission.stallName}</AppText>
+              <AppText tone="muted">
+                {submission.status} · {new Date(submission.createdAt).toLocaleDateString()}
+              </AppText>
+            </Card>
+          ))}
           {/* Taste Fingerprint Section */}
           <View style={{ gap: spacing[4], marginTop: spacing[4] }}>
             <View
@@ -1069,7 +1016,7 @@ export function ProfileHomeScreen({
                 quickActions={[
                   {
                     key: "copy",
-                    label: "Copy link",
+                    label: "Copy taste summary",
                     accessibilityLabel: "Copy taste fingerprint link",
                     icon: ({ color, size }) => <Copy color={color} size={size} />,
                     onPress: copyTasteFingerprintLink,
@@ -1266,7 +1213,7 @@ function StatBlock({
   onPress,
 }: {
   label: string;
-  value: number;
+  value: number | string;
   icon: ReactNode;
   onPressIn?: () => void;
   onPress?: () => void;

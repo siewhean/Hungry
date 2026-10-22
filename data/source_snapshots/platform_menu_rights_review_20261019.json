@@ -1,0 +1,71 @@
+{
+  "snapshot_id": "platform_menu_rights_review_20261019",
+  "reviewed_at": "2026-10-19",
+  "workbook_path": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "a70390e62c4b5a9605f8041e4136f92024d93275d99c58f8de7ebaf73c8c96b6",
+  "scope": "Read-only assessment of exact outlet platform listings; no workbook edits, platform API calls, login, order, image downloads, or automated scraping performed.",
+  "cost": "No spend; public web research only.",
+  "findings": [
+    {
+      "platform": "Foodpanda Singapore",
+      "exact_outlet": "Domino's Pizza (Yio Chu Kang)",
+      "sfa_licence": "NE22172V000",
+      "exact_sfa_directory_address": "44 Yio Chu Kang Road, Singapore 545557",
+      "source_url": "https://www.foodpanda.sg/restaurant/zsrr/dominos-pizza-yio-chu-kang-restaurant-delivery",
+      "page_observation": "Current public page retrieved 2026-10-19; rendered content shows outlet name, address, menu categories, item names and prices. Page included short-duration deals and delivery/order-area fees.",
+      "observed_items": [
+        {
+          "name": "1-for-1 Large Pizza",
+          "current_display_price": "S$39.90",
+          "note": "Promotional combo price; page also showed S$79.80 crossed/reference price."
+        },
+        {
+          "name": "1-for-1 Regular Pizza",
+          "current_display_price": "S$29.90",
+          "note": "Promotional combo price; page also showed S$59.80 crossed/reference price."
+        },
+        {
+          "name": "6pcs Golden Roasted Wings",
+          "current_display_price": "S$10.71",
+          "note": "Discounted display, reference price S$11.90."
+        },
+        {
+          "name": "Mac & Cheese (Chicken)",
+          "current_display_price": "S$10.96",
+          "note": "Page displayed S$10.96 and S$12.90 reference price."
+        }
+      ],
+      "freshness_delta": "The existing workbook row observed 2026-10-18 records Mac & Cheese (Chicken) at SGD 10.97. Current page reads 10.96, a one-cent discrepancy. Existing snapshot explicitly reported menu variation within minutes; delivery price/promo is volatile and may not equal dine-in price.",
+      "menu_reuse_assessment": "Potentially useful as a timestamped cross-check for exact outlet and delivery menu, not a stable canonical menu source. Terms do not grant a general republication license; exact menu data should be confirmed from the operator before durable catalog publication. Current page itself disclaims accuracy/completeness of menu information.",
+      "image_assessment": "Page exposes delivery-platform image links, but terms state images are Foodpanda/third-party IP and prohibit copying/reproducing/reposting without prior express written consent. Do not import, embed, cache, or republish image URLs/assets based on this review.",
+      "terms_url": "https://www.foodpanda.sg/contents/terms-and-conditions.htm",
+      "terms_evidence": "Clauses 4 (lines 126-128): trademarks/logos/images/service marks are Foodpanda/authorized third-party IP; copying/reproducing/reposting/distributing/modifying requires prior express written consent. Clause 10.3 (lines 346-347): Foodpanda does not guarantee menu information, photos, or images accuracy/completeness. The reviewed Singapore terms do not show an explicit general scrape clause in searched text; that absence is not permission to republish or a finding that broader use is authorized.",
+      "evidence_source": "https://www.foodpanda.sg/restaurant/zsrr/dominos-pizza-yio-chu-kang-restaurant-delivery (retrieved current page; item/price evidence near lines 65-95; address near page end); workbook Directory/Menu Items sheets by exact SFA licence.",
+      "recommendation": "Use only as a lead for timestamped manual validation. Do not approve images or treat deals as canonical dine-in prices; operator confirmation is required for permanent update."
+    },
+    {
+      "platform": "Oddle Eats",
+      "exact_outlet": "The White Label",
+      "sfa_licence": "CE11G65C000",
+      "exact_sfa_directory_address": "101 Jalan Sultan #01-02/#02-00, The Sultan, Singapore 199002",
+      "source_url": "https://eats.oddle.me/menus/the-white-label",
+      "page_observation": "Public page/search-index content retrieved during this review presents a Dishes We Love list; page included season-specific category labels and public listing data. No detailed item prices were returned by this public text view.",
+      "menu_reuse_assessment": "The page is a useful operator-linked discovery lead, but Oddle's current Acceptable Use Policy expressly prohibits creating a database by downloading/storing platform contents and using tools to scrape/data-mine/crawl/gather platform content absent express prior written consent. Therefore do not extract items/prices into Hungry workbook absent written authorization. A direct operator's own website/menu can be used instead if independently published and permitted.",
+      "image_assessment": "No media downloaded or assessed. Do not import/embed/cache Oddle image URLs absent prior written consent.",
+      "terms_url": "https://docs.oddle.me/general/acceptable-use-policy/",
+      "terms_evidence": "AUP effective 2026-01-26, clauses 1.4 and 1.10 (lines 61-70) prohibit creating a database by downloading/storing platform contents and automated/manual retrieval/scraping/data mining/crawling without express prior written consent. Clause 1.16 prohibits caching, framing, or linking without prior written consent. Terms of Service effective 2026-01-15, sections 9.1-9.2 (lines 176-180) reserve platform/content IP and prohibit reproduction, republication, distribution, or exploitation without prior express consent.",
+      "recommendation": "Do not harvest this listing into the workbook without written consent; source the merchant's first-party menu directly."
+    },
+    {
+      "platform": "GrabFood Singapore",
+      "exact_outlet": "No current exact-outlet Grab listing was identified in this bounded source review; workbook scan found no Grab source URL among its Menu Items rows.",
+      "source_url": "https://food.grab.com/sg/en/",
+      "menu_reuse_assessment": "Grab's current Singapore Consumer Terms explicitly prohibit compiling a collection/directory from Platform content except personal non-commercial use, copying content for republication, and data mining/scraping absent a legal exception (clause 3.1.12). The consumer account/book page is not a permission to harvest listing data. For a directory/catalogue workflow, do not harvest Grab listings/images absent written approval or an applicable authorized program.",
+      "image_assessment": "No Grab images retrieved. No reuse rights established.",
+      "terms_url": "https://www.grab.com/sg/terms-policies/transport-delivery-logistics/",
+      "terms_evidence": "Clause 3.1.12(a)-(c) (page lines 119-124) bars non-personal directory compilation, copying for republication, and data mining/scraping, except as specifically permitted in writing or by applicable-law exception. Grab content/tools/API were not called.",
+      "recommendation": "Use direct first-party merchant pages or obtain written permission / authorized developer access before adding Grab-derived menu or media."
+    }
+  ],
+  "overall": "Platform pages can surface recent menu leads, but listing prices can be promotion- and delivery-specific, and platform media have no established reuse authorization. Current terms expressly block Grab directory compilation and Oddle database/scrape reuse absent permission. Foodpanda image/branding reuse is expressly restricted and listing accuracy is disclaimed. Therefore this review adds no workbook content or image URLs; operator-first-party sources are the actionable path."
+}

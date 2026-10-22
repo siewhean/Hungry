@@ -1,0 +1,1566 @@
+{
+  "snapshot_id": "mapbox_coordinates_batch6_20261019",
+  "observed_at": "2026-10-19",
+  "workbook": "Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "e2b0a7e63ab806176f9476b6c79e00c9f9233d1918f023f39c1aa59031fa4583",
+  "source": "Mapbox Search Box API via connected Mapbox tool",
+  "account_usage_note": "User previously reported 59/50,000 Search Box requests; current account stats are not exposed. This batch made 25 more requests, within the reported free tier.",
+  "requests_attempted": 25,
+  "requests_captured": 25,
+  "candidate_count": 28,
+  "results": [
+    {
+      "target": {
+        "address": "512/514 GEYLANG ROAD ATRIUM RESIDENCES,Singapore 389468",
+        "postal_code": "389468",
+        "sfa_licence": "SE09283X000",
+        "fnb_name": "512 Coffee House",
+        "record_count": 3
+      },
+      "query": "512/514 GEYLANG ROAD ATRIUM RESIDENCES,Singapore 389468 Singapore 389468",
+      "isError": false,
+      "features": []
+    },
+    {
+      "target": {
+        "address": "42 JALAN BENAAN KAPAL Singapore 399637",
+        "postal_code": "399637",
+        "sfa_licence": "E03026J004",
+        "fnb_name": "One Pot",
+        "record_count": 3
+      },
+      "query": "42 JALAN BENAAN KAPAL Singapore 399637 Singapore 399637",
+      "isError": false,
+      "features": [
+        {
+          "feature_type": "address",
+          "name": "42 Jalan Benaan Kapal",
+          "full_address": "42 Jalan Benaan Kapal, Kallang, Singapore 399646",
+          "coordinates": {
+            "longitude": 103.878063,
+            "latitude": 1.300531,
+            "accuracy": "proximate",
+            "routable_points": [
+              {
+                "name": "Address",
+                "latitude": 1.300531,
+                "longitude": 103.878063
+              }
+            ]
+          },
+          "context": {
+            "region": {
+              "name": "South East Community Development Council",
+              "region_code": "04",
+              "region_code_full": "SG-04"
+            },
+            "postcode": {
+              "name": "399646"
+            },
+            "place": {
+              "name": "Singapore"
+            },
+            "locality": {
+              "name": "Kallang"
+            },
+            "neighborhood": {
+              "name": "Tanjong Rhu"
+            },
+            "street": {
+              "name": "Jalan Benaan Kapal"
+            },
+            "address": {
+              "address_number": "42",
+              "street_name": "Jalan Benaan Kapal"
+            }
+          },
+          "mapbox_id": "dXJuOm1ieGFkci1pdHA6ZXlKaGRYUnZZMjl0Y0d4bGRHVWlPaUptWVd4elpTSXNJbU52ZFc1MGNua2lPaUpUUnlJc0ltVnVkSEpoYm1ObGN5STZJblJ5ZFdVaUxDSm1kWHA2ZVUxaGRHTm9Jam9pZEhKMVpTSXNJbXhoYm1kMVlXZGxJam9pWlc0aUxDSnNhVzFwZENJNklqTXdJaXdpY205MWRHbHVaeUk2SW5SeWRXVWlMQ0owZVhCbGN5STZJbUZrWkhKbGMzTWlMQ0psZUhCdmMyVlFjbTl0YVc1bGJtTmxJam9pZEhKMVpTSXNJbWx1WTJ4MVpHVmZiV0YwWTJocGJtZGZiR0Z1WjNWaFoyVWlPaUowY25WbElpd2lkbVZ5YzJsdmJpSTZOU3dpWTJGc2JHSmhZMnNpT201MWJHd3NJbkVpT2lJME1pQnFZV3hoYmlCaVpXNWhZVzRnYTJGd1lXd2djMmx1WjJGd2IzSmxJRE01T1RZek55QnphVzVuWVhCdmNtVWdNems1TmpNM0luMDow"
+        },
+        {
+          "feature_type": "address",
+          "name": "42 Malan Road",
+          "full_address": "42 Malan Road, Bukit Merah, Singapore 109454",
+          "coordinates": {
+            "longitude": 103.804265,
+            "latitude": 1.275258,
+            "accuracy": "proximate",
+            "routable_points": [
+              {
+                "name": "Address",
+                "latitude": 1.275258,
+                "longitude": 103.804265
+              }
+            ]
+          },
+          "context": {
+            "region": {
+              "name": "South West Community Development Council",
+              "region_code": "05",
+              "region_code_full": "SG-05"
+            },
+            "postcode": {
+              "name": "109454"
+            },
+            "place": {
+              "name": "Singapore"
+            },
+            "locality": {
+              "name": "Bukit Merah"
+            },
+            "neighborhood": {
+              "name": "Telok Blangah Drive"
+            },
+            "street": {
+              "name": "Malan Road"
+            },
+            "address": {
+              "address_number": "42",
+              "street_name": "Malan Road"
+            }
+          },
+          "mapbox_id": "dXJuOm1ieGFkci1pdHA6ZXlKaGRYUnZZMjl0Y0d4bGRHVWlPaUptWVd4elpTSXNJbU52ZFc1MGNua2lPaUpUUnlJc0ltVnVkSEpoYm1ObGN5STZJblJ5ZFdVaUxDSm1kWHA2ZVUxaGRHTm9Jam9pZEhKMVpTSXNJbXhoYm1kMVlXZGxJam9pWlc0aUxDSnNhVzFwZENJNklqTXdJaXdpY205MWRHbHVaeUk2SW5SeWRXVWlMQ0owZVhCbGN5STZJbUZrWkhKbGMzTWlMQ0psZUhCdmMyVlFjbTl0YVc1bGJtTmxJam9pZEhKMVpTSXNJbWx1WTJ4MVpHVmZiV0YwWTJocGJtZGZiR0Z1WjNWaFoyVWlPaUowY25WbElpd2lkbVZ5YzJsdmJpSTZOU3dpWTJGc2JHSmhZMnNpT201MWJHd3NJbkVpT2lJME1pQnFZV3hoYmlCaVpXNWhZVzRnYTJGd1lXd2djMmx1WjJGd2IzSmxJRE01T1RZek55QnphVzVuWVhCdmNtVWdNems1TmpNM0luMDoy"
+        }
+      ]
+    },
+    {
+      "target": {
+        "address": "5 GUILLEMARD ROAD WING FONG BUILDING,Singapore 399685",
+        "postal_code": "399685",
+        "sfa_licence": "E98005V000",
+        "fnb_name": "XIN LONGXING WBH",
+        "record_count": 3
+      },
+      "query": "5 GUILLEMARD ROAD WING FONG BUILDING,Singapore 399685 Singapore 399685",
+      "isError": false,
+      "features": [
+        {
+          "feature_type": "address",
+          "name": "5 Guillemard Lane",
+          "full_address": "5 Guillemard Lane, Geylang, Singapore 399873",
+          "coordinates": {
+            "longitude": 103.881008,
+            "latitude": 1.309773,
+            "accuracy": "rooftop",
+            "routable_points": [
+              {
+                "name": "Address",
+                "latitude": 1.309769,
+                "longitude": 103.880852
+              }
+            ]
+          },
+          "context": {
+            "region": {
+              "name": "South East Community Development Council",
+              "region_code": "04",
+              "region_code_full": "SG-04"
+            },
+            "postcode": {
+              "name": "399873"
+            },
+            "place": {
+              "name": "Singapore"
+            },
+            "locality": {
+              "name": "Geylang"
+            },
+            "neighborhood": {
+              "name": "Aljunied"
+            },
+            "street": {
+              "name": "Guillemard Lane"
+            },
+            "address": {
+              "address_number": "5",
+              "street_name": "Guillemard Lane"
+            }
+          },
+          "mapbox_id": "dXJuOm1ieGFkcjpjZDYwYTY4NC1jOWU5LTQ0ZTMtYTljOC1iMzdhYzdmYmNkYmE"
+        },
+        {
+          "feature_type": "address",
+          "name": "5 Guillemard Road",
+          "full_address": "5 Guillemard Road, Geylang, Singapore 399685",
+          "coordinates": {
+            "longitude": 103.877269,
+            "latitude": 1.308886,
+            "accuracy": "rooftop",
+            "routable_points": [
+              {
+                "name": "Address",
+                "latitude": 1.308697,
+                "longitude": 103.877579
+              }
+            ]
+          },
+          "context": {
+            "region": {
+              "name": "Central Singapore Community Development Council",
+              "region_code": "01",
+              "region_code_full": "SG-01"
+            },
+            "postcode": {
+              "name": "399685"
+            },
+            "place": {
+              "name": "Singapore"
+            },
+            "locality": {
+              "name": "Geylang"
+            },
+            "neighborhood": {
+              "name": "Aljunied"
+            },
+            "street": {
+              "name": "Guillemard Road"
+            },
+            "address": {
+              "address_number": "5",
+              "street_name": "Guillemard Road"
+            }
+          },
+          "mapbox_id": "dXJuOm1ieGFkcjowODAxNzRhMi1hN2UyLTRmOWQtYjhmMC00YTU2Zjc1NjM3MDE"
+        }
+      ]
+    },
+    {
+      "target": {
+        "address": "300/302 JOO CHIAT ROAD Singapore 427551",
+        "postal_code": "427551",
+        "sfa_licence": "E55010A001",
+        "fnb_name": "TECK EE FOOD HOLDINGS PTE. LTD.",
+        "record_count": 3
+      },
+      "query": "300/302 JOO CHIAT ROAD Singapore 427551 Singapore 427551",
+      "isError": false,
+      "features": []
+    },
+    {
+      "target": {
+        "address": "64 JOO CHIAT PLACE Singapore 427786",
+        "postal_code": "427786",
+        "sfa_licence": "E56014V003",
+        "fnb_name": "HOONG WEY TRADING PTE LTD",
+        "record_count": 3
+      },
+      "query": "64 JOO CHIAT PLACE Singapore 427786 Singapore 427786",
+      "isError": false,
+      "features": [
+        {
+          "feature_type": "address",
+          "name": "64 Joo Chiat Place",
+          "full_address": "64 Joo Chiat Place, Geylang, Singapore 427786",
+          "coordinates": {
+            "longitude": 103.901866,
+            "latitude": 1.31342,
+            "accuracy": "rooftop",
+            "routable_points": [
+              {
+                "name": "Address",
+                "latitude": 1.313565,
+                "longitude": 103.901847
+              }
+            ]
+          },
+          "context": {
+            "region": {
+              "name": "South East Community Development Council",
+              "region_code": "04",
+              "region_code_full": "SG-04"
+            },
+            "postcode": {
+              "name": "427786"
+            },
+            "place": {
+              "name": "Singapore"
+            },
+            "locality": {
+              "name": "Geylang"
+            },
+            "neighborhood": {
+              "name": "Geylang East"
+            },
+            "street": {
+              "name": "Joo Chiat Place"
+            },
+            "address": {
+              "address_number": "64",
+              "street_name": "Joo Chiat Place"
+            }
+          },
+          "mapbox_id": "dXJuOm1ieGFkcjo4ZTY2NmEwZC0xODUwLTRlNTEtYTBmZS05NTg4YzBkZDkwM2M"
+        }
+      ]
+    },
+    {
+      "target": {
+        "address": "238 TANJONG KATONG ROAD Singapore 437026",
+        "postal_code": "437026",
+        "sfa_licence": "E97007B000",
+        "fnb_name": "Ponggol Nasi Lemak Centre Pte Ltd",
+        "record_count": 3
+      },
+      "query": "238 TANJONG KATONG ROAD Singapore 437026 Singapore 437026",
+      "isError": false,
+      "features": [
+        {
+          "feature_type": "address",
+          "name": "238 Tanjong Katong Road",
+          "full_address": "238 Tanjong Katong Road, Marine Parade, Singapore 437026",
+          "coordinates": {
+            "longitude": 103.895474,
+            "latitude": 1.306758,
+            "accuracy": "rooftop",
+            "routable_points": [
+              {
+                "name": "Address",
+                "latitude": 1.306825,
+                "longitude": 103.895649
+              }
+            ]
+          },
+          "context": {
+            "region": {
+              "name": "South East Community Development Council",
+              "region_code": "04",
+              "region_code_full": "SG-04"
+            },
+            "postcode": {
+              "name": "437026"
+            },
+            "place": {
+              "name": "Singapore"
+            },
+            "locality": {
+              "name": "Marine Parade"
+            },
+            "neighborhood": {
+              "name": "Mountbatten"
+            },
+            "street": {
+              "name": "Tanjong Katong Road"
+            },
+            "address": {
+              "address_number": "238",
+              "street_name": "Tanjong Katong Road"
+            }
+          },
+          "mapbox_id": "dXJuOm1ieGFkcjo3YjgxZWMxNS1kYTgzLTQwM2EtOTJjMi04NTA2NzFhMzRlYzE"
+        }
+      ]
+    },
+    {
+      "target": {
+        "address": "364 TANJONG KATONG ROAD Singapore 437123",
+        "postal_code": "437123",
+        "sfa_licence": "E86070E003",
+        "fnb_name": "Drink Stall",
+        "record_count": 3
+      },
+      "query": "364 TANJONG KATONG ROAD Singapore 437123 Singapore 437123",
+      "isError": false,
+      "features": [
+        {
+          "feature_type": "address",
+          "name": "364 Tanjong Katong Road",
+          "full_address": "364 Tanjong Katong Road, Marine Parade, Singapore 437124",
+          "coordinates": {
+            "longitude": 103.896628,
+            "latitude": 1.303012,
+            "accuracy": "rooftop",
+            "routable_points": [
+              {
+                "name": "Address",
+                "latitude": 1.30306,
+                "longitude": 103.896845
+              }
+            ]
+          },
+          "context": {
+            "region": {
+              "name": "South East Community Development Council",
+              "region_code": "04",
+              "region_code_full": "SG-04"
+            },
+            "postcode": {
+              "name": "437124"
+            },
+            "place": {
+              "name": "Singapore"
+            },
+            "locality": {
+              "name": "Marine Parade"
+            },
+            "neighborhood": {
+              "name": "Mountbatten"
+            },
+            "street": {
+              "name": "Tanjong Katong Road"
+            },
+            "address": {
+              "address_number": "364",
+              "street_name": "Tanjong Katong Road"
+            }
+          },
+          "mapbox_id": "dXJuOm1ieGFkcjoxOGUzYTAzMi03MTNmLTRmOWEtODdmNi1hZTQ5MzNlYjE2MjI"
+        }
+      ]
+    },
+    {
+      "target": {
+        "address": "1 ANCHORVALE STREET #01-21,Singapore 544835",
+        "postal_code": "544835",
+        "sfa_licence": "CE18808N012",
+        "fnb_name": "JIA JIA LE CUISINE F&B PTE LTD",
+        "record_count": 3
+      },
+      "query": "1 ANCHORVALE STREET #01-21,Singapore 544835 Singapore 544835",
+      "isError": false,
+      "features": [
+        {
+          "feature_type": "address",
+          "name": "1 Anchorvale Street",
+          "full_address": "1 Anchorvale Street, Sengkang, Singapore 544835",
+          "coordinates": {
+            "longitude": 103.892406,
+            "latitude": 1.395838,
+            "accuracy": "rooftop",
+            "routable_points": [
+              {
+                "name": "Address",
+                "latitude": 1.396584,
+                "longitude": 103.892598
+              }
+            ]
+          },
+          "context": {
+            "region": {
+              "name": "North East Community Development Council",
+              "region_code": "02",
+              "region_code_full": "SG-02"
+            },
+            "postcode": {
+              "name": "544835"
+            },
+            "place": {
+              "name": "Singapore"
+            },
+            "locality": {
+              "name": "Sengkang"
+            },
+            "neighborhood": {
+              "name": "Anchorvale"
+            },
+            "street": {
+              "name": "Anchorvale Street"
+            },
+            "address": {
+              "address_number": "1",
+              "street_name": "Anchorvale Street"
+            }
+          },
+          "mapbox_id": "dXJuOm1ieGFkcjo3Y2IwYWUyOC1iOTg5LTRiOWUtOGFiYy03NjEyMzcxYzE0YjQ"
+        }
+      ]
+    },
+    {
+      "target": {
+        "address": "244 UPPER THOMSON ROAD THOMSON GARDEN ESTATE,Singapore 574369",
+        "postal_code": "574369",
+        "sfa_licence": "S68008V000",
+        "fnb_name": "SING HIN HUAT COFFEE TRADING",
+        "record_count": 3
+      },
+      "query": "244 UPPER THOMSON ROAD THOMSON GARDEN ESTATE,Singapore 574369 Singapore 574369",
+      "isError": false,
+      "features": [
+        {
+          "feature_type": "address",
+          "name": "244 Upper Thomson Road",
+          "full_address": "244 Upper Thomson Road, Bishan, Singapore 574369",
+          "coordinates": {
+            "longitude": 103.834731,
+            "latitude": 1.353378,
+            "accuracy": "rooftop",
+            "routable_points": [
+              {
+                "name": "Address",
+                "latitude": 1.35328,
+                "longitude": 103.834642
+              }
+            ]
+          },
+          "context": {
+            "region": {
+              "name": "Central Singapore Community Development Council",
+              "region_code": "01",
+              "region_code_full": "SG-01"
+            },
+            "postcode": {
+              "name": "574369"
+            },
+            "place": {
+              "name": "Singapore"
+            },
+            "locality": {
+              "name": "Bishan"
+            },
+            "neighborhood": {
+              "name": "Upper Thomson"
+            },
+            "street": {
+              "name": "Upper Thomson Road"
+            },
+            "address": {
+              "address_number": "244",
+              "street_name": "Upper Thomson Road"
+            }
+          },
+          "mapbox_id": "dXJuOm1ieGFkcjo3MzkxNjExOS00OTc5LTQ0NmItODNiMy0zN2M3NmJkMjQ1YWI"
+        }
+      ]
+    },
+    {
+      "target": {
+        "address": "11 CLOVER WAY CLOVER PARK,Singapore 579082",
+        "postal_code": "579082",
+        "sfa_licence": "S85082C000",
+        "fnb_name": "Kopi Plus",
+        "record_count": 3
+      },
+      "query": "11 CLOVER WAY CLOVER PARK,Singapore 579082 Singapore 579082",
+      "isError": false,
+      "features": [
+        {
+          "feature_type": "address",
+          "name": "11 Clover Way",
+          "full_address": "11 Clover Way, Bishan, Singapore 579082",
+          "coordinates": {
+            "longitude": 103.843197,
+            "latitude": 1.350116,
+            "accuracy": "rooftop",
+            "routable_points": [
+              {
+                "name": "Address",
+                "latitude": 1.349996,
+                "longitude": 103.843093
+              }
+            ]
+          },
+          "context": {
+            "region": {
+              "name": "Central Singapore Community Development Council",
+              "region_code": "01",
+              "region_code_full": "SG-01"
+            },
+            "postcode": {
+              "name": "579082"
+            },
+            "place": {
+              "name": "Singapore"
+            },
+            "locality": {
+              "name": "Bishan"
+            },
+            "neighborhood": {
+              "name": "Marymount"
+            },
+            "street": {
+              "name": "Clover Way"
+            },
+            "address": {
+              "address_number": "11",
+              "street_name": "Clover Way"
+            }
+          },
+          "mapbox_id": "dXJuOm1ieGFkcjphYTVlOGZlYy1iZGNjLTQ4OGEtOGEwOS02MTlmYjNmNWJkMDM"
+        },
+        {
+          "feature_type": "address",
+          "name": "11 Clover Avenue",
+          "full_address": "11 Clover Avenue, Bishan, Singapore 579300",
+          "coordinates": {
+            "longitude": 103.842726,
+            "latitude": 1.349655,
+            "accuracy": "rooftop",
+            "routable_points": [
+              {
+                "name": "Address",
+                "latitude": 1.349541,
+                "longitude": 103.842863
+              }
+            ]
+          },
+          "context": {
+            "region": {
+              "name": "Central Singapore Community Development Council",
+              "region_code": "01",
+              "region_code_full": "SG-01"
+            },
+            "postcode": {
+              "name": "579300"
+            },
+            "place": {
+              "name": "Singapore"
+            },
+            "locality": {
+              "name": "Bishan"
+            },
+            "neighborhood": {
+              "name": "Marymount"
+            },
+            "street": {
+              "name": "Clover Avenue"
+            },
+            "address": {
+              "address_number": "11",
+              "street_name": "Clover Avenue"
+            }
+          },
+          "mapbox_id": "dXJuOm1ieGFkcjozOGUyYWUzOS02MmMxLTQwZTItYmE1OC1hN2I4MjAxMmY4NjA"
+        }
+      ]
+    },
+    {
+      "target": {
+        "address": "1 ENG KONG TERRACE ENG KONG PARK,Singapore 598973",
+        "postal_code": "598973",
+        "sfa_licence": "C72034N000",
+        "fnb_name": "",
+        "record_count": 3
+      },
+      "query": "1 ENG KONG TERRACE ENG KONG PARK,Singapore 598973 Singapore 598973",
+      "isError": false,
+      "features": [
+        {
+          "feature_type": "address",
+          "name": "1 Eng Kong Road",
+          "full_address": "1 Eng Kong Road, Bukit Timah, Singapore 599089",
+          "coordinates": {
+            "longitude": 103.768048,
+            "latitude": 1.337181,
+            "accuracy": "rooftop",
+            "routable_points": [
+              {
+                "name": "Address",
+                "latitude": 1.337155,
+                "longitude": 103.767891
+              }
+            ]
+          },
+          "context": {
+            "region": {
+              "name": "North West Community Development Council",
+              "region_code": "03",
+              "region_code_full": "SG-03"
+            },
+            "postcode": {
+              "name": "599089"
+            },
+            "place": {
+              "name": "Singapore"
+            },
+            "locality": {
+              "name": "Bukit Timah"
+            },
+            "neighborhood": {
+              "name": "Anak Bukit"
+            },
+            "street": {
+              "name": "Eng Kong Road"
+            },
+            "address": {
+              "address_number": "1",
+              "street_name": "Eng Kong Road"
+            }
+          },
+          "mapbox_id": "dXJuOm1ieGFkcjo4NTI1Y2NiNS0zNzY5LTQzNGMtODhhOC0yYzczNTg1MDM5YTQ"
+        },
+        {
+          "feature_type": "address",
+          "name": "1 Eng Kong Lane",
+          "full_address": "1 Eng Kong Lane, Bukit Timah, Singapore 599197",
+          "coordinates": {
+            "longitude": 103.770763,
+            "latitude": 1.336421,
+            "accuracy": "rooftop",
+            "routable_points": [
+              {
+                "name": "Address",
+                "latitude": 1.336336,
+                "longitude": 103.770583
+              }
+            ]
+          },
+          "context": {
+            "region": {
+              "name": "North West Community Development Council",
+              "region_code": "03",
+              "region_code_full": "SG-03"
+            },
+            "postcode": {
+              "name": "599197"
+            },
+            "place": {
+              "name": "Singapore"
+            },
+            "locality": {
+              "name": "Bukit Timah"
+            },
+            "neighborhood": {
+              "name": "Anak Bukit"
+            },
+            "street": {
+              "name": "Eng Kong Lane"
+            },
+            "address": {
+              "address_number": "1",
+              "street_name": "Eng Kong Lane"
+            }
+          },
+          "mapbox_id": "dXJuOm1ieGFkcjozOWYzMTdkOC1mZDc4LTRkMjktOWNmYS1lZDEwNTgwNzgxMDA"
+        },
+        {
+          "feature_type": "address",
+          "name": "1 Eng Kong Terrace",
+          "full_address": "1 Eng Kong Terrace, Bukit Timah, Singapore 598973",
+          "coordinates": {
+            "longitude": 103.768925,
+            "latitude": 1.336443,
+            "accuracy": "rooftop",
+            "routable_points": [
+              {
+                "name": "Address",
+                "latitude": 1.336526,
+                "longitude": 103.76892
+              }
+            ]
+          },
+          "context": {
+            "region": {
+              "name": "North West Community Development Council",
+              "region_code": "03",
+              "region_code_full": "SG-03"
+            },
+            "postcode": {
+              "name": "598973"
+            },
+            "place": {
+              "name": "Singapore"
+            },
+            "locality": {
+              "name": "Bukit Timah"
+            },
+            "neighborhood": {
+              "name": "Anak Bukit"
+            },
+            "street": {
+              "name": "Eng Kong Terrace"
+            },
+            "address": {
+              "address_number": "1",
+              "street_name": "Eng Kong Terrace"
+            }
+          },
+          "mapbox_id": "dXJuOm1ieGFkcjo5YzZjNTViMS0yZDY2LTRiYmMtODQ5YS02NGE4NTFlNDVlNjA"
+        }
+      ]
+    },
+    {
+      "target": {
+        "address": "1 JALAN PAPAN TERUSAN RECREATION CENTRE,Singapore 619392",
+        "postal_code": "619392",
+        "sfa_licence": "SW15E12P004",
+        "fnb_name": "JTC PREMISES AT 1 JALAN PAPAN #01-05",
+        "record_count": 3
+      },
+      "query": "1 JALAN PAPAN TERUSAN RECREATION CENTRE,Singapore 619392 Singapore 619392",
+      "isError": false,
+      "features": [
+        {
+          "feature_type": "address",
+          "name": "1 Jalan Papan",
+          "full_address": "1 Jalan Papan, Jurong East, Singapore 619415",
+          "coordinates": {
+            "longitude": 103.729704,
+            "latitude": 1.32031,
+            "accuracy": "proximate",
+            "routable_points": [
+              {
+                "name": "Address",
+                "latitude": 1.32031,
+                "longitude": 103.729704
+              }
+            ]
+          },
+          "context": {
+            "region": {
+              "name": "South West Community Development Council",
+              "region_code": "05",
+              "region_code_full": "SG-05"
+            },
+            "postcode": {
+              "name": "619415"
+            },
+            "place": {
+              "name": "Singapore"
+            },
+            "locality": {
+              "name": "Jurong East"
+            },
+            "neighborhood": {
+              "name": "Jurong River"
+            },
+            "street": {
+              "name": "Jalan Papan"
+            },
+            "address": {
+              "address_number": "1",
+              "street_name": "Jalan Papan"
+            }
+          },
+          "mapbox_id": "dXJuOm1ieGFkci1pdHA6ZXlKaGRYUnZZMjl0Y0d4bGRHVWlPaUptWVd4elpTSXNJbU52ZFc1MGNua2lPaUpUUnlJc0ltVnVkSEpoYm1ObGN5STZJblJ5ZFdVaUxDSm1kWHA2ZVUxaGRHTm9Jam9pZEhKMVpTSXNJbXhoYm1kMVlXZGxJam9pWlc0aUxDSnNhVzFwZENJNklqTXdJaXdpY205MWRHbHVaeUk2SW5SeWRXVWlMQ0owZVhCbGN5STZJbUZrWkhKbGMzTWlMQ0psZUhCdmMyVlFjbTl0YVc1bGJtTmxJam9pZEhKMVpTSXNJbWx1WTJ4MVpHVmZiV0YwWTJocGJtZGZiR0Z1WjNWaFoyVWlPaUowY25WbElpd2lkbVZ5YzJsdmJpSTZOU3dpWTJGc2JHSmhZMnNpT201MWJHd3NJbkVpT2lJeElHcGhiR0Z1SUhCaGNHRnVJSFJsY25WellXNGdjbVZqY21WaGRHbHZiaUJqWlc1MGNtVXNjMmx1WjJGd2IzSmxJRFl4T1RNNU1pQnphVzVuWVhCdmNtVWdOakU1TXpreUluMDow"
+        },
+        {
+          "feature_type": "address",
+          "name": "1 Malan Road",
+          "full_address": "1 Malan Road, Bukit Merah, Singapore 108934",
+          "coordinates": {
+            "longitude": 103.803971,
+            "latitude": 1.276856,
+            "accuracy": "proximate",
+            "routable_points": [
+              {
+                "name": "Address",
+                "latitude": 1.276856,
+                "longitude": 103.803971
+              }
+            ]
+          },
+          "context": {
+            "region": {
+              "name": "South West Community Development Council",
+              "region_code": "05",
+              "region_code_full": "SG-05"
+            },
+            "postcode": {
+              "name": "108934"
+            },
+            "place": {
+              "name": "Singapore"
+            },
+            "locality": {
+              "name": "Bukit Merah"
+            },
+            "neighborhood": {
+              "name": "Telok Blangah Drive"
+            },
+            "street": {
+              "name": "Malan Road"
+            },
+            "address": {
+              "address_number": "1",
+              "street_name": "Malan Road"
+            }
+          },
+          "mapbox_id": "dXJuOm1ieGFkci1pdHA6ZXlKaGRYUnZZMjl0Y0d4bGRHVWlPaUptWVd4elpTSXNJbU52ZFc1MGNua2lPaUpUUnlJc0ltVnVkSEpoYm1ObGN5STZJblJ5ZFdVaUxDSm1kWHA2ZVUxaGRHTm9Jam9pZEhKMVpTSXNJbXhoYm1kMVlXZGxJam9pWlc0aUxDSnNhVzFwZENJNklqTXdJaXdpY205MWRHbHVaeUk2SW5SeWRXVWlMQ0owZVhCbGN5STZJbUZrWkhKbGMzTWlMQ0psZUhCdmMyVlFjbTl0YVc1bGJtTmxJam9pZEhKMVpTSXNJbWx1WTJ4MVpHVmZiV0YwWTJocGJtZGZiR0Z1WjNWaFoyVWlPaUowY25WbElpd2lkbVZ5YzJsdmJpSTZOU3dpWTJGc2JHSmhZMnNpT201MWJHd3NJbkVpT2lJeElHcGhiR0Z1SUhCaGNHRnVJSFJsY25WellXNGdjbVZqY21WaGRHbHZiaUJqWlc1MGNtVXNjMmx1WjJGd2IzSmxJRFl4T1RNNU1pQnphVzVuWVhCdmNtVWdOakU1TXpreUluMDox"
+        }
+      ]
+    },
+    {
+      "target": {
+        "address": "1 BAYFRONT AVENUE MARINA BAY SANDS,Singapore 018971 LEVEL 1",
+        "postal_code": "018971",
+        "sfa_licence": "CE10524J000",
+        "fnb_name": "LE JU XUAN",
+        "record_count": 2
+      },
+      "query": "1 BAYFRONT AVENUE MARINA BAY SANDS,Singapore 018971 LEVEL 1 Singapore 018971",
+      "isError": false,
+      "features": [
+        {
+          "feature_type": "address",
+          "name": "1 Bayfront Avenue",
+          "full_address": "1 Bayfront Avenue, Downtown Core, Singapore 018971",
+          "coordinates": {
+            "longitude": 103.860836,
+            "latitude": 1.284041,
+            "accuracy": "rooftop",
+            "routable_points": [
+              {
+                "name": "Address",
+                "latitude": 1.284173,
+                "longitude": 103.860537
+              }
+            ]
+          },
+          "context": {
+            "region": {
+              "name": "Central Singapore Community Development Council",
+              "region_code": "01",
+              "region_code_full": "SG-01"
+            },
+            "postcode": {
+              "name": "018971"
+            },
+            "place": {
+              "name": "Singapore"
+            },
+            "locality": {
+              "name": "Downtown Core"
+            },
+            "neighborhood": {
+              "name": "Bayfront Subzone"
+            },
+            "street": {
+              "name": "Bayfront Avenue"
+            },
+            "address": {
+              "address_number": "1",
+              "street_name": "Bayfront Avenue"
+            }
+          },
+          "mapbox_id": "dXJuOm1ieGFkcjoxYjgwNDRjMy01YWRjLTQ0NjctOTNlZS01Y2NkOWM2YzU1Mjk"
+        }
+      ]
+    },
+    {
+      "target": {
+        "address": "8 UPPER CROSS STREET Singapore 058327",
+        "postal_code": "058327",
+        "sfa_licence": "W94098A000",
+        "fnb_name": "CHEW KEE EATING HOUSE",
+        "record_count": 2
+      },
+      "query": "8 UPPER CROSS STREET Singapore 058327 Singapore 058327",
+      "isError": false,
+      "features": [
+        {
+          "feature_type": "address",
+          "name": "8 Upper Cross Street",
+          "full_address": "8 Upper Cross Street, Outram, Singapore 058327",
+          "coordinates": {
+            "longitude": 103.845622,
+            "latitude": 1.28371,
+            "accuracy": "rooftop",
+            "routable_points": [
+              {
+                "name": "Address",
+                "latitude": 1.283862,
+                "longitude": 103.845714
+              }
+            ]
+          },
+          "context": {
+            "region": {
+              "name": "Central Singapore Community Development Council",
+              "region_code": "01",
+              "region_code_full": "SG-01"
+            },
+            "postcode": {
+              "name": "058327"
+            },
+            "place": {
+              "name": "Singapore"
+            },
+            "locality": {
+              "name": "Outram"
+            },
+            "neighborhood": {
+              "name": "Chinatown"
+            },
+            "street": {
+              "name": "Upper Cross Street"
+            },
+            "address": {
+              "address_number": "8",
+              "street_name": "Upper Cross Street"
+            }
+          },
+          "mapbox_id": "dXJuOm1ieGFkcjpiY2E4ZThkNi03NDQyLTRmOWMtOTlkNi1kMWEwOTQzZjM1MmU"
+        }
+      ]
+    },
+    {
+      "target": {
+        "address": "8 CLUB STREET #B2-34,MERCURE ICON SINGAPORE CITY CENTRE,Singapore 069472",
+        "postal_code": "069472",
+        "sfa_licence": "CE25D16J002",
+        "fnb_name": "Dian rice noodle",
+        "record_count": 2
+      },
+      "query": "8 CLUB STREET #B2-34,MERCURE ICON SINGAPORE CITY CENTRE,Singapore 069472 Singapore 069472",
+      "isError": false,
+      "features": [
+        {
+          "feature_type": "address",
+          "name": "8 Club Street",
+          "full_address": "8 Club Street, Outram, Singapore 069472",
+          "coordinates": {
+            "longitude": 103.84652,
+            "latitude": 1.28295,
+            "accuracy": "rooftop",
+            "routable_points": [
+              {
+                "name": "Address",
+                "latitude": 1.282584,
+                "longitude": 103.846651
+              }
+            ]
+          },
+          "context": {
+            "region": {
+              "name": "Central Singapore Community Development Council",
+              "region_code": "01",
+              "region_code_full": "SG-01"
+            },
+            "postcode": {
+              "name": "069472"
+            },
+            "place": {
+              "name": "Singapore"
+            },
+            "locality": {
+              "name": "Outram"
+            },
+            "neighborhood": {
+              "name": "Chinatown"
+            },
+            "street": {
+              "name": "Club Street"
+            },
+            "address": {
+              "address_number": "8",
+              "street_name": "Club Street"
+            }
+          },
+          "mapbox_id": "dXJuOm1ieGFkcjo2YjI3MzY2OC0wNzhmLTQxODMtYjdiNC04ZmMxZmI1YTk1ZTg"
+        }
+      ]
+    },
+    {
+      "target": {
+        "address": "8 CLUB STREET #B2-34,Singapore 069472",
+        "postal_code": "069472",
+        "sfa_licence": "CE25D16J004",
+        "fnb_name": "Foodelic",
+        "record_count": 2
+      },
+      "query": "8 CLUB STREET #B2-34,Singapore 069472 Singapore 069472",
+      "isError": false,
+      "features": [
+        {
+          "feature_type": "address",
+          "name": "8 Club Street",
+          "full_address": "8 Club Street, Outram, Singapore 069472",
+          "coordinates": {
+            "longitude": 103.84652,
+            "latitude": 1.28295,
+            "accuracy": "rooftop",
+            "routable_points": [
+              {
+                "name": "Address",
+                "latitude": 1.282584,
+                "longitude": 103.846651
+              }
+            ]
+          },
+          "context": {
+            "region": {
+              "name": "Central Singapore Community Development Council",
+              "region_code": "01",
+              "region_code_full": "SG-01"
+            },
+            "postcode": {
+              "name": "069472"
+            },
+            "place": {
+              "name": "Singapore"
+            },
+            "locality": {
+              "name": "Outram"
+            },
+            "neighborhood": {
+              "name": "Chinatown"
+            },
+            "street": {
+              "name": "Club Street"
+            },
+            "address": {
+              "address_number": "8",
+              "street_name": "Club Street"
+            }
+          },
+          "mapbox_id": "dXJuOm1ieGFkcjo2YjI3MzY2OC0wNzhmLTQxODMtYjdiNC04ZmMxZmI1YTk1ZTg"
+        }
+      ]
+    },
+    {
+      "target": {
+        "address": "32 TRAS STREET ST SIGNATURE TANJONG PAGAR,Singapore 078972",
+        "postal_code": "078972",
+        "sfa_licence": "CE26619C000",
+        "fnb_name": "iBoozee",
+        "record_count": 2
+      },
+      "query": "32 TRAS STREET ST SIGNATURE TANJONG PAGAR,Singapore 078972 Singapore 078972",
+      "isError": false,
+      "features": [
+        {
+          "feature_type": "address",
+          "name": "32 Tuas West Street",
+          "full_address": "32 Tuas West Street, Tuas, Singapore 637449",
+          "coordinates": {
+            "longitude": 103.635488,
+            "latitude": 1.331673,
+            "accuracy": "proximate",
+            "routable_points": [
+              {
+                "name": "Address",
+                "latitude": 1.331673,
+                "longitude": 103.635488
+              }
+            ]
+          },
+          "context": {
+            "region": {
+              "name": "South West Community Development Council",
+              "region_code": "05",
+              "region_code_full": "SG-05"
+            },
+            "postcode": {
+              "name": "637449"
+            },
+            "place": {
+              "name": "Singapore"
+            },
+            "locality": {
+              "name": "Tuas"
+            },
+            "neighborhood": {
+              "name": "Tuas Promenade"
+            },
+            "street": {
+              "name": "Tuas West Street"
+            },
+            "address": {
+              "address_number": "32",
+              "street_name": "Tuas West Street"
+            }
+          },
+          "mapbox_id": "dXJuOm1ieGFkci1pdHA6ZXlKaGRYUnZZMjl0Y0d4bGRHVWlPaUptWVd4elpTSXNJbU52ZFc1MGNua2lPaUpUUnlJc0ltVnVkSEpoYm1ObGN5STZJblJ5ZFdVaUxDSm1kWHA2ZVUxaGRHTm9Jam9pZEhKMVpTSXNJbXhoYm1kMVlXZGxJam9pWlc0aUxDSnNhVzFwZENJNklqTXdJaXdpY205MWRHbHVaeUk2SW5SeWRXVWlMQ0owZVhCbGN5STZJbUZrWkhKbGMzTWlMQ0psZUhCdmMyVlFjbTl0YVc1bGJtTmxJam9pZEhKMVpTSXNJbWx1WTJ4MVpHVmZiV0YwWTJocGJtZGZiR0Z1WjNWaFoyVWlPaUowY25WbElpd2lkbVZ5YzJsdmJpSTZOU3dpWTJGc2JHSmhZMnNpT201MWJHd3NJbkVpT2lJek1pQjBjbUZ6SUhOMGNtVmxkQ0J6ZENCemFXZHVZWFIxY21VZ2RHRnVhbTl1WnlCd1lXZGhjaXh6YVc1bllYQnZjbVVnTURjNE9UY3lJSE5wYm1kaGNHOXlaU0F3TnpnNU56SWlmUToy"
+        },
+        {
+          "feature_type": "address",
+          "name": "32 Tuas Street",
+          "full_address": "32 Tuas Street, Tuas, Singapore 638458",
+          "coordinates": {
+            "longitude": 103.65313,
+            "latitude": 1.320565,
+            "accuracy": "proximate",
+            "routable_points": [
+              {
+                "name": "Address",
+                "latitude": 1.320565,
+                "longitude": 103.65313
+              }
+            ]
+          },
+          "context": {
+            "region": {
+              "name": "South West Community Development Council",
+              "region_code": "05",
+              "region_code_full": "SG-05"
+            },
+            "postcode": {
+              "name": "638458"
+            },
+            "place": {
+              "name": "Singapore"
+            },
+            "locality": {
+              "name": "Tuas"
+            },
+            "neighborhood": {
+              "name": "Tuas North"
+            },
+            "street": {
+              "name": "Tuas Street"
+            },
+            "address": {
+              "address_number": "32",
+              "street_name": "Tuas Street"
+            }
+          },
+          "mapbox_id": "dXJuOm1ieGFkci1pdHA6ZXlKaGRYUnZZMjl0Y0d4bGRHVWlPaUptWVd4elpTSXNJbU52ZFc1MGNua2lPaUpUUnlJc0ltVnVkSEpoYm1ObGN5STZJblJ5ZFdVaUxDSm1kWHA2ZVUxaGRHTm9Jam9pZEhKMVpTSXNJbXhoYm1kMVlXZGxJam9pWlc0aUxDSnNhVzFwZENJNklqTXdJaXdpY205MWRHbHVaeUk2SW5SeWRXVWlMQ0owZVhCbGN5STZJbUZrWkhKbGMzTWlMQ0psZUhCdmMyVlFjbTl0YVc1bGJtTmxJam9pZEhKMVpTSXNJbWx1WTJ4MVpHVmZiV0YwWTJocGJtZGZiR0Z1WjNWaFoyVWlPaUowY25WbElpd2lkbVZ5YzJsdmJpSTZOU3dpWTJGc2JHSmhZMnNpT201MWJHd3NJbkVpT2lJek1pQjBjbUZ6SUhOMGNtVmxkQ0J6ZENCemFXZHVZWFIxY21VZ2RHRnVhbTl1WnlCd1lXZGhjaXh6YVc1bllYQnZjbVVnTURjNE9UY3lJSE5wYm1kaGNHOXlaU0F3TnpnNU56SWlmUTox"
+        },
+        {
+          "feature_type": "address",
+          "name": "32 Tuas Road",
+          "full_address": "32 Tuas Road, Tuas, Singapore 638493",
+          "coordinates": {
+            "longitude": 103.652365,
+            "latitude": 1.310794,
+            "accuracy": "proximate",
+            "routable_points": [
+              {
+                "name": "Address",
+                "latitude": 1.310794,
+                "longitude": 103.652365
+              }
+            ]
+          },
+          "context": {
+            "region": {
+              "name": "South West Community Development Council",
+              "region_code": "05",
+              "region_code_full": "SG-05"
+            },
+            "postcode": {
+              "name": "638493"
+            },
+            "place": {
+              "name": "Singapore"
+            },
+            "locality": {
+              "name": "Tuas"
+            },
+            "neighborhood": {
+              "name": "Tuas Bay"
+            },
+            "street": {
+              "name": "Tuas Road"
+            },
+            "address": {
+              "address_number": "32",
+              "street_name": "Tuas Road"
+            }
+          },
+          "mapbox_id": "dXJuOm1ieGFkci1pdHA6ZXlKaGRYUnZZMjl0Y0d4bGRHVWlPaUptWVd4elpTSXNJbU52ZFc1MGNua2lPaUpUUnlJc0ltVnVkSEpoYm1ObGN5STZJblJ5ZFdVaUxDSm1kWHA2ZVUxaGRHTm9Jam9pZEhKMVpTSXNJbXhoYm1kMVlXZGxJam9pWlc0aUxDSnNhVzFwZENJNklqTXdJaXdpY205MWRHbHVaeUk2SW5SeWRXVWlMQ0owZVhCbGN5STZJbUZrWkhKbGMzTWlMQ0psZUhCdmMyVlFjbTl0YVc1bGJtTmxJam9pZEhKMVpTSXNJbWx1WTJ4MVpHVmZiV0YwWTJocGJtZGZiR0Z1WjNWaFoyVWlPaUowY25WbElpd2lkbVZ5YzJsdmJpSTZOU3dpWTJGc2JHSmhZMnNpT201MWJHd3NJbkVpT2lJek1pQjBjbUZ6SUhOMGNtVmxkQ0J6ZENCemFXZHVZWFIxY21VZ2RHRnVhbTl1WnlCd1lXZGhjaXh6YVc1bllYQnZjbVVnTURjNE9UY3lJSE5wYm1kaGNHOXlaU0F3TnpnNU56SWlmUToz"
+        }
+      ]
+    },
+    {
+      "target": {
+        "address": "33 HARBOUR DRIVE PASIR PANJANG TERMINAL BUILDING,Singapore 117606",
+        "postal_code": "117606",
+        "sfa_licence": "C97162E006",
+        "fnb_name": "CCT ENTERPRISE PTE LTD",
+        "record_count": 2
+      },
+      "query": "33 HARBOUR DRIVE PASIR PANJANG TERMINAL BUILDING,Singapore 117606 Singapore 117606",
+      "isError": false,
+      "features": [
+        {
+          "feature_type": "address",
+          "name": "33 Harbour Drive",
+          "full_address": "33 Harbour Drive, Queenstown, Singapore 117606",
+          "coordinates": {
+            "longitude": 103.773917,
+            "latitude": 1.283091,
+            "accuracy": "rooftop",
+            "routable_points": [
+              {
+                "name": "Address",
+                "latitude": 1.283239,
+                "longitude": 103.774104
+              }
+            ]
+          },
+          "context": {
+            "region": {
+              "name": "South West Community Development Council",
+              "region_code": "05",
+              "region_code_full": "SG-05"
+            },
+            "postcode": {
+              "name": "117606"
+            },
+            "place": {
+              "name": "Singapore"
+            },
+            "locality": {
+              "name": "Queenstown"
+            },
+            "neighborhood": {
+              "name": "Port"
+            },
+            "street": {
+              "name": "Harbour Drive"
+            },
+            "address": {
+              "address_number": "33",
+              "street_name": "Harbour Drive"
+            }
+          },
+          "mapbox_id": "dXJuOm1ieGFkcjphMzFiZWJmNi0wOTc4LTRhODMtYWNiZC04MTY4YjVkNzhhZmM"
+        }
+      ]
+    },
+    {
+      "target": {
+        "address": "83/85 PASIR PANJANG ROAD WEST SEA GARDENS,Singapore 118508",
+        "postal_code": "118508",
+        "sfa_licence": "C67009J008",
+        "fnb_name": "83 Drinks Stall",
+        "record_count": 2
+      },
+      "query": "83/85 PASIR PANJANG ROAD WEST SEA GARDENS,Singapore 118508 Singapore 118508",
+      "isError": false,
+      "features": []
+    },
+    {
+      "target": {
+        "address": "715 HAVELOCK ROAD Singapore 169642",
+        "postal_code": "169642",
+        "sfa_licence": "W88025L002",
+        "fnb_name": "MK RESTAURANT",
+        "record_count": 2
+      },
+      "query": "715 HAVELOCK ROAD Singapore 169642 Singapore 169642",
+      "isError": false,
+      "features": [
+        {
+          "feature_type": "address",
+          "name": "715 Havelock Road",
+          "full_address": "715 Havelock Road, Bukit Merah, Singapore 169642",
+          "coordinates": {
+            "longitude": 103.82802,
+            "latitude": 1.289187,
+            "accuracy": "rooftop",
+            "routable_points": [
+              {
+                "name": "Address",
+                "latitude": 1.28931,
+                "longitude": 103.828076
+              }
+            ]
+          },
+          "context": {
+            "region": {
+              "name": "Central Singapore Community Development Council",
+              "region_code": "01",
+              "region_code_full": "SG-01"
+            },
+            "postcode": {
+              "name": "169642"
+            },
+            "place": {
+              "name": "Singapore"
+            },
+            "locality": {
+              "name": "Bukit Merah"
+            },
+            "neighborhood": {
+              "name": "Bukit Ho Swee"
+            },
+            "street": {
+              "name": "Havelock Road"
+            },
+            "address": {
+              "address_number": "715",
+              "street_name": "Havelock Road"
+            }
+          },
+          "mapbox_id": "dXJuOm1ieGFkcjo5NTgyYWY2OC1hZDNjLTQ3ZDItYTEzOS05NGQ0NjVmZDJlNmU"
+        }
+      ]
+    },
+    {
+      "target": {
+        "address": "715/717 HAVELOCK ROAD Singapore 169642",
+        "postal_code": "169642",
+        "sfa_licence": "W88025L001",
+        "fnb_name": "DURR SERVICES PTE LTD",
+        "record_count": 2
+      },
+      "query": "715/717 HAVELOCK ROAD Singapore 169642 Singapore 169642",
+      "isError": false,
+      "features": [
+        {
+          "feature_type": "address",
+          "name": "717 Havelock Road",
+          "full_address": "717 Havelock Road, Bukit Merah, Singapore 169643",
+          "coordinates": {
+            "longitude": 103.827972,
+            "latitude": 1.289204,
+            "accuracy": "rooftop",
+            "routable_points": [
+              {
+                "name": "Address",
+                "latitude": 1.289331,
+                "longitude": 103.828029
+              }
+            ]
+          },
+          "context": {
+            "region": {
+              "name": "Central Singapore Community Development Council",
+              "region_code": "01",
+              "region_code_full": "SG-01"
+            },
+            "postcode": {
+              "name": "169643"
+            },
+            "place": {
+              "name": "Singapore"
+            },
+            "locality": {
+              "name": "Bukit Merah"
+            },
+            "neighborhood": {
+              "name": "Bukit Ho Swee"
+            },
+            "street": {
+              "name": "Havelock Road"
+            },
+            "address": {
+              "address_number": "717",
+              "street_name": "Havelock Road"
+            }
+          },
+          "mapbox_id": "dXJuOm1ieGFkcjo3NTZmZmZhMS1hMDE3LTQxM2QtODY1OC0yZDQzZGY3MjQxZWY"
+        }
+      ]
+    },
+    {
+      "target": {
+        "address": "719 HAVELOCK ROAD Singapore 169644",
+        "postal_code": "169644",
+        "sfa_licence": "W96009X001",
+        "fnb_name": "SANGAM (SG) PTE. LTD.",
+        "record_count": 2
+      },
+      "query": "719 HAVELOCK ROAD Singapore 169644 Singapore 169644",
+      "isError": false,
+      "features": [
+        {
+          "feature_type": "address",
+          "name": "719 Havelock Road",
+          "full_address": "719 Havelock Road, Bukit Merah, Singapore 169644",
+          "coordinates": {
+            "longitude": 103.827925,
+            "latitude": 1.289227,
+            "accuracy": "rooftop",
+            "routable_points": [
+              {
+                "name": "Address",
+                "latitude": 1.289353,
+                "longitude": 103.827982
+              }
+            ]
+          },
+          "context": {
+            "region": {
+              "name": "Central Singapore Community Development Council",
+              "region_code": "01",
+              "region_code_full": "SG-01"
+            },
+            "postcode": {
+              "name": "169644"
+            },
+            "place": {
+              "name": "Singapore"
+            },
+            "locality": {
+              "name": "Bukit Merah"
+            },
+            "neighborhood": {
+              "name": "Bukit Ho Swee"
+            },
+            "street": {
+              "name": "Havelock Road"
+            },
+            "address": {
+              "address_number": "719",
+              "street_name": "Havelock Road"
+            }
+          },
+          "mapbox_id": "dXJuOm1ieGFkcjozNmZhMDRhNS1lY2I3LTRmN2MtYjVjMC1hMzU2NmM0NzEzYmI"
+        }
+      ]
+    },
+    {
+      "target": {
+        "address": "745/743 HAVELOCK ROAD Singapore 169657",
+        "postal_code": "169657",
+        "sfa_licence": "CE04072A004",
+        "fnb_name": "JIAYANGDI PTE. LTD.",
+        "record_count": 2
+      },
+      "query": "745/743 HAVELOCK ROAD Singapore 169657 Singapore 169657",
+      "isError": false,
+      "features": []
+    },
+    {
+      "target": {
+        "address": "812/814/816 NORTH BRIDGE ROAD 814/816,Singapore 198779",
+        "postal_code": "198779",
+        "sfa_licence": "W46101A000",
+        "fnb_name": "Nan Hwa Chong Fish Head Steamboat Corner",
+        "record_count": 2
+      },
+      "query": "812/814/816 NORTH BRIDGE ROAD 814/816,Singapore 198779 Singapore 198779",
+      "isError": false,
+      "features": []
+    },
+    {
+      "target": {
+        "address": "92 SYED ALWI ROAD Singapore 207668",
+        "postal_code": "207668",
+        "sfa_licence": "W65012A000",
+        "fnb_name": "AL MUBIN EATING HOUSE PTE.LTD.",
+        "record_count": 2
+      },
+      "query": "92 SYED ALWI ROAD Singapore 207668 Singapore 207668",
+      "isError": false,
+      "features": [
+        {
+          "feature_type": "address",
+          "name": "92 Syed Alwi Road",
+          "full_address": "92 Syed Alwi Road, Rochor, Singapore 207668",
+          "coordinates": {
+            "longitude": 103.855548,
+            "latitude": 1.309398,
+            "accuracy": "rooftop",
+            "routable_points": [
+              {
+                "name": "Address",
+                "latitude": 1.309538,
+                "longitude": 103.855694
+              }
+            ]
+          },
+          "context": {
+            "region": {
+              "name": "Central Singapore Community Development Council",
+              "region_code": "01",
+              "region_code_full": "SG-01"
+            },
+            "postcode": {
+              "name": "207668"
+            },
+            "place": {
+              "name": "Singapore"
+            },
+            "locality": {
+              "name": "Rochor"
+            },
+            "neighborhood": {
+              "name": "Little India"
+            },
+            "street": {
+              "name": "Syed Alwi Road"
+            },
+            "address": {
+              "address_number": "92",
+              "street_name": "Syed Alwi Road"
+            }
+          },
+          "mapbox_id": "dXJuOm1ieGFkcjozZDZmOTAwNC1hODI3LTQxYWUtODQzNS0xYjM3ZDg5OWFlMDQ"
+        }
+      ]
+    }
+  ],
+  "workbook_modified": false
+}

@@ -1,0 +1,140 @@
+{
+  "schema_version": "1.0",
+  "snapshot_id": "next_image_refs_20261019",
+  "snapshot_type": "read_only_image_reference_proposal",
+  "observed_at_local": "2026-10-19 Asia/Singapore",
+  "canonical_workbook": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256_read_only_baseline": "00a13d50c650e1bcbde0f51f15260e4f8aeecbd9d0372bae284c6c50558e2967",
+  "workbook_edited": false,
+  "scope": "Targeted search for net-new direct authentic food/menu image URLs with explicit outlet/item crosswalk from official mall tenant pages. No image bytes downloaded, copied, or added to workbook. No paid services or APIs used.",
+  "source_page_capture_sha256": {
+    "https://paragon.com.sg/store-detail/madam-ang-kk/": "483317240245d083dd17dcf72da5706b9b5c3c558788adae0ca6a0f2f3b43bc0",
+    "https://paragon.com.sg/store-detail/le-shrimp-ramen/": "59a9bbb9c656bbee66a38c82bf383a133c41044429545bfbdef6150cd0fda2a8",
+    "https://paragon.com.sg/store-detail/soup-restaurant/": "7b102830a462254d22de543e27f4021770a0680023c3fafdd22734831aafaa53"
+  },
+  "rights_policy": "All new URLs are reference-only. Paragon page footer states: © PARAGON 2026 … All rights reserved. Any redistribution or reproduction of part or all of the contents and images in any form is prohibited. No permission or open license located. Do not approve or display pending explicit rights-holder permission.",
+  "result": {
+    "new_direct_image_urls": 3,
+    "new_urls_http_200_image_jpeg": 3,
+    "duplicates_excluded": 3,
+    "approved_for_display_or_reuse": 0,
+    "workbook_rows_added": 0
+  },
+  "new_image_candidates": [
+    {
+      "sfa_licence": "CE24A64L000",
+      "item_or_image_type": "Menu item / food assortment image",
+      "depicted_item": "Ang Ku Kueh assortment",
+      "image_url": "https://paragon.com.sg/wp-content/uploads/2024/10/Slideshow-Ang-Ku-Kueh-Group.jpg",
+      "source_page_url": "https://paragon.com.sg/store-detail/madam-ang-kk/",
+      "alt_text": "Slideshow Ang Ku Kueh Group",
+      "http_status": 200,
+      "mime_type": "image/jpeg",
+      "content_length_bytes": 183769,
+      "image_url_sha256_check": "HEAD only; image bytes not downloaded",
+      "visual_check": "Not visually inspected in this pass. Official image alt text and gallery placement identify the product subject; no claim about visual details beyond that metadata.",
+      "rights_status": "Rights restricted; Paragon page states redistribution or reproduction of site content/images is prohibited. No license/permission found. Reference-only; not approved for display, embedding, caching, or republication.",
+      "dedupe": "Exact image URL not present in Image Candidates sheet.",
+      "outlet_crosswalk": {
+        "fnb_name": "Madam Ang KK",
+        "registered_business_name": "Madam Ang KK",
+        "full_address": "Address: 290 ORCHARD ROAD #B1-K12,THE PARAGON,Singapore 238859",
+        "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+        "approved_image_url": null
+      },
+      "branch_match_basis": "Paragon page identifies the named tenant and unit; workbook SFA record matches tenant name, Paragon address/postcode and unit. Page is an official mall tenant detail page.",
+      "observed_at_local": "2026-10-19 Asia/Singapore",
+      "not_in_workbook_image_urls": true
+    },
+    {
+      "sfa_licence": "CE24A64L000",
+      "item_or_image_type": "Menu item / food assortment image",
+      "depicted_item": "Rice assortment",
+      "image_url": "https://paragon.com.sg/wp-content/uploads/2024/10/Slideshow-Rice-Group-shot-1200-x-900-px_.jpg",
+      "source_page_url": "https://paragon.com.sg/store-detail/madam-ang-kk/",
+      "alt_text": "Slideshow Rice Group shot 1200 x 900 px_",
+      "http_status": 200,
+      "mime_type": "image/jpeg",
+      "content_length_bytes": 23777,
+      "image_url_sha256_check": "HEAD only; image bytes not downloaded",
+      "visual_check": "Not visually inspected in this pass. Official image alt text and gallery placement identify the product subject; no claim about visual details beyond that metadata.",
+      "rights_status": "Rights restricted; Paragon page states redistribution or reproduction of site content/images is prohibited. No license/permission found. Reference-only; not approved for display, embedding, caching, or republication.",
+      "dedupe": "Exact image URL not present in Image Candidates sheet.",
+      "outlet_crosswalk": {
+        "fnb_name": "Madam Ang KK",
+        "registered_business_name": "Madam Ang KK",
+        "full_address": "Address: 290 ORCHARD ROAD #B1-K12,THE PARAGON,Singapore 238859",
+        "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+        "approved_image_url": null
+      },
+      "branch_match_basis": "Paragon page identifies the named tenant and unit; workbook SFA record matches tenant name, Paragon address/postcode and unit. Page is an official mall tenant detail page.",
+      "observed_at_local": "2026-10-19 Asia/Singapore",
+      "not_in_workbook_image_urls": true
+    },
+    {
+      "sfa_licence": "CE18T89J000",
+      "item_or_image_type": "Menu item photo",
+      "depicted_item": "Le Signature Trio Shrimp Ramen",
+      "image_url": "https://paragon.com.sg/wp-content/uploads/2024/10/Le-Signature-Trio-Shrimp-Ramen.jpg",
+      "source_page_url": "https://paragon.com.sg/store-detail/le-shrimp-ramen/",
+      "alt_text": "Le Signature Trio Shrimp Ramen",
+      "http_status": 200,
+      "mime_type": "image/jpeg",
+      "content_length_bytes": 243481,
+      "image_url_sha256_check": "HEAD only; image bytes not downloaded",
+      "visual_check": "Not visually inspected in this pass. Official image alt text, page menu description, and gallery placement explicitly name the item; no claim about visual details beyond that metadata.",
+      "rights_status": "Rights restricted; Paragon page states redistribution or reproduction of site content/images is prohibited. No license/permission found. Reference-only; not approved for display, embedding, caching, or republication.",
+      "dedupe": "Exact image URL not present in Image Candidates sheet.",
+      "outlet_crosswalk": {
+        "fnb_name": "LE SHRIMP",
+        "registered_business_name": "LE SHRIMP",
+        "full_address": "Address: 290 ORCHARD ROAD #B1-42,THE PARAGON,Singapore 238859",
+        "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+        "approved_image_url": null
+      },
+      "branch_match_basis": "Paragon page identifies the named tenant and unit; workbook SFA record matches tenant name, Paragon address/postcode and unit. Page is an official mall tenant detail page.",
+      "observed_at_local": "2026-10-19 Asia/Singapore",
+      "not_in_workbook_image_urls": true
+    }
+  ],
+  "duplicates_excluded": [
+    {
+      "sfa_licence": "CE09M15A000",
+      "fnb_name": "SOUP RESTAURANT",
+      "image_url": "https://paragon.com.sg/wp-content/uploads/2024/12/Soup-Restaurant_Whole-Coconut-with-Black-Chicken-Soup-scaled.jpg",
+      "source_page_url": "https://paragon.com.sg/store-detail/soup-restaurant/",
+      "duplicate_reason": "Exact URL already exists in current Image Candidates sheet for this SFA licence; do not add duplicate row."
+    },
+    {
+      "sfa_licence": "CE09M15A000",
+      "fnb_name": "SOUP RESTAURANT",
+      "image_url": "https://paragon.com.sg/wp-content/uploads/2024/12/Hometown-Tofu-scaled.jpg",
+      "source_page_url": "https://paragon.com.sg/store-detail/soup-restaurant/",
+      "duplicate_reason": "Exact URL already exists in current Image Candidates sheet for this SFA licence; do not add duplicate row."
+    },
+    {
+      "sfa_licence": "CE09M15A000",
+      "fnb_name": "SOUP RESTAURANT",
+      "image_url": "https://paragon.com.sg/wp-content/uploads/2024/12/Samsui-Ginger-Chicken-scaled.jpg",
+      "source_page_url": "https://paragon.com.sg/store-detail/soup-restaurant/",
+      "duplicate_reason": "Exact URL already exists in current Image Candidates sheet for this SFA licence; do not add duplicate row."
+    }
+  ],
+  "provenance_pages": [
+    {
+      "url": "https://paragon.com.sg/store-detail/madam-ang-kk/",
+      "evidence": "Official Paragon page names Madam Ang KK, unit #B1-K12, and contains gallery img tags with alt text for Ang Ku Kueh Group and Rice Group. Footer explicitly prohibits redistribution or reproduction of images.",
+      "http_status": 200
+    },
+    {
+      "url": "https://paragon.com.sg/store-detail/le-shrimp-ramen/",
+      "evidence": "Official Paragon page names Le Shrimp Ramen, unit #B1-42, contains gallery image with alt text Le Signature Trio Shrimp Ramen, and describes the ramen menu. Footer explicitly prohibits redistribution or reproduction of images.",
+      "http_status": 200
+    },
+    {
+      "url": "https://paragon.com.sg/store-detail/soup-restaurant/",
+      "evidence": "Official Paragon tenant page contains 3 named food photos; their exact image URLs were checked and found already present for workbook SFA CE09M15A000.",
+      "http_status": 200
+    }
+  ]
+}

@@ -1,0 +1,69 @@
+{
+  "snapshot_date": "2026-10-19",
+  "task": "Bounded official mall-directory cross-check for exact matched blank public F&B records; proposal only, workbook not edited",
+  "workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "source_set": [
+    "CapitaLand Malls official directory and mall listing pages",
+    "Kopitiam official website"
+  ],
+  "proposals": [
+    {
+      "sfa_licence": "CE21713E000",
+      "matched_existing_address": "68 ORCHARD ROAD #06-15,#06-16,#06-17,PLAZA SINGAPURA,Singapore 238839",
+      "matched_existing_postal_code": "238839",
+      "evidence": [
+        {
+          "url": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/kopitiam.html",
+          "source_date": "Observed 2026-10-19",
+          "supports": ["outlet name Kopitiam", "Plaza Singapura location", "units #06-15 to 17"],
+          "confidence": "high",
+          "notes": "Official CapitaLand Plaza Singapura page. Exact unit range and center match the workbook record."
+        },
+        {
+          "url": "https://www.kopitiam.biz/",
+          "source_date": "Observed 2026-10-19",
+          "supports": ["official brand website"],
+          "confidence": "high",
+          "notes": "Official Kopitiam website linked from CapitaLand's official Kopitiam store listing."
+        }
+      ],
+      "field_updates": {
+        "F&B Name": "Kopitiam",
+        "Website": "https://www.kopitiam.biz/"
+      },
+      "unchanged_fields": ["Full Address", "Postal Code"],
+      "do_not_infer": ["registered business name", "contact details", "hours", "stall-level menu items", "rating/review count", "images"],
+      "reason": "CapitaLand's official listing explicitly names Kopitiam and gives the exact Plaza Singapura unit range corresponding to this SFA-licensed food-court record."
+    },
+    {
+      "sfa_licence": "SW14236N000",
+      "matched_existing_address": "3 GATEWAY DRIVE #03-07,WESTGATE,Singapore 608532",
+      "matched_existing_postal_code": "608532",
+      "evidence": [
+        {
+          "url": "https://www.capitaland.com/sg/malls/westgate/en/stores/yun-nans.html",
+          "source_date": "Observed 2026-10-19",
+          "supports": ["outlet name YUN NANS", "Westgate location", "unit 03-07", "official outlet page URL"],
+          "confidence": "high",
+          "notes": "Official Westgate page presents YUN NANS as a Food & Beverage tenant and explicitly lists unit 03-07; exact match to the workbook address."
+        }
+      ],
+      "field_updates": {
+        "F&B Name": "YUN NANS",
+        "Website": "https://www.capitaland.com/sg/malls/westgate/en/stores/yun-nans.html"
+      },
+      "unchanged_fields": ["Full Address", "Postal Code"],
+      "do_not_infer": ["registered business name", "contact details", "hours", "menu items", "rating/review count", "images"],
+      "reason": "Official Westgate directory outlet detail gives an exact tenant name and unit match."
+    }
+  ],
+  "not_proposed": [
+    {
+      "sfa_licences": ["S93076E012", "S93076E013"],
+      "center_unit": "Junction 8 #04-1/2E",
+      "reason": "Official mall sources confirm the Food Junction food-court location, but do not identify the corresponding individual licensed stalls by SFA licence. The public sources found do not establish a safe one-to-one name-to-licence mapping."
+    }
+  ],
+  "dedupe_notes": "Two distinct SFA licences at the same Junction 8 food-court address were retained as unresolved; no merge or name assignment proposed.",
+  "integration_status": "pending parent review and independent QA; workbook not edited"
+}

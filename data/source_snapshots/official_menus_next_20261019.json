@@ -1,0 +1,150 @@
+{
+  "snapshot_date": "2026-10-19",
+  "status": "integrated_refresh127_with_online-channel_scope",
+  "slice": "KFC Singapore official online menu, matched to one exact public-access SFA outlet record with blank Menu / Price",
+  "source_set": [
+    {
+      "url": "https://www.kfc.com.sg/menu/burgers-wraps",
+      "publisher": "KFC Singapore",
+      "source_type": "first_party_online_ordering_menu",
+      "observed": "2026-10-19 via web search indexing; page states Dine-in, Takeaway, Delivery options",
+      "evidence_note": "Current page result included names and prices for menu products. Page is JavaScript-driven and did not render product rows in direct open. Treat listed prices as online ordering prices only; source terms say menu differs at selected outlets for dine-in and takeaway. No inference that all prices apply to in-store dining."
+    },
+    {
+      "url": "https://beta.kfc.com.sg/terms-condition",
+      "publisher": "KFC Singapore",
+      "source_type": "first_party_terms",
+      "observed": "2026-10-19 via indexed result",
+      "evidence_note": "States menu differs at selected KFC restaurants for Dine-in and Takeaway. Supports channel-specific price caveat."
+    }
+  ],
+  "matched_outlets": [
+    {
+      "sfa_licence": "NW18291B000",
+      "directory_name": "KFC",
+      "exact_directory_address": "598 YISHUN RING ROAD #01-13,#01-58,WISTERIA MALL,Singapore 768698",
+      "match_method": "Exact name-and-address branch match to Singapore public listing; official Singapore brand menu matched at brand level, not a branch-specific menu page.",
+      "directory_menu_was_blank": true,
+      "confidence": "medium",
+      "caveat": "The first-party menu is not outlet-specific. Current SFA licence listing establishes a licensed food outlet record but does not independently prove every listed item is sold at this branch today."
+    }
+  ],
+  "menu_items": [
+    {
+      "sfa_licence": "NW18291B000",
+      "name": "2 pcs Chicken Meal",
+      "price_sgd": "9.95",
+      "section": "Chicken",
+      "menu_scope": "KFC Singapore online ordering menu; channel shown as online order, delivery/takeaway mode unverified for captured listing; not verified dine-in price",
+      "source_url": "https://www.kfc.com.sg/menu/burgers-wraps",
+      "observed": "2026-10-19",
+      "source_type": "first_party_online_ordering_menu",
+      "rights_status": "names and prices as factual reference; product imagery not collected"
+    },
+    {
+      "sfa_licence": "NW18291B000",
+      "name": "Original Recipe Chicken",
+      "price_sgd": "4.50",
+      "section": "Chicken",
+      "menu_scope": "KFC Singapore online ordering menu; channel shown as online order, delivery/takeaway mode unverified for captured listing; not verified dine-in price",
+      "source_url": "https://www.kfc.com.sg/menu/burgers-wraps",
+      "observed": "2026-10-19",
+      "source_type": "first_party_online_ordering_menu",
+      "rights_status": "names and prices as factual reference; product imagery not collected"
+    },
+    {
+      "sfa_licence": "NW18291B000",
+      "name": "Original Recipe Burger",
+      "price_sgd": "7.00",
+      "section": "Burgers/Wraps",
+      "menu_scope": "KFC Singapore online ordering menu; channel shown as online order, delivery/takeaway mode unverified for captured listing; not verified dine-in price",
+      "source_url": "https://www.kfc.com.sg/menu/burgers-wraps",
+      "observed": "2026-10-19",
+      "source_type": "first_party_online_ordering_menu",
+      "rights_status": "names and prices as factual reference; product imagery not collected"
+    },
+    {
+      "sfa_licence": "NW18291B000",
+      "name": "Original Recipe Burger Meal",
+      "price_sgd": "8.35",
+      "section": "Burgers/Wraps",
+      "menu_scope": "KFC Singapore online ordering menu; channel shown as online order, delivery/takeaway mode unverified for captured listing; not verified dine-in price",
+      "source_url": "https://www.kfc.com.sg/menu/burgers-wraps",
+      "observed": "2026-10-19",
+      "source_type": "first_party_online_ordering_menu",
+      "rights_status": "names and prices as factual reference; product imagery not collected"
+    },
+    {
+      "sfa_licence": "NW18291B000",
+      "name": "Zinger",
+      "price_sgd": "7.00",
+      "section": "Burgers/Wraps",
+      "menu_scope": "KFC Singapore online ordering menu; channel shown as online order, delivery/takeaway mode unverified for captured listing; not verified dine-in price",
+      "source_url": "https://www.kfc.com.sg/menu/burgers-wraps",
+      "observed": "2026-10-19",
+      "source_type": "first_party_online_ordering_menu",
+      "rights_status": "names and prices as factual reference; product imagery not collected"
+    },
+    {
+      "sfa_licence": "NW18291B000",
+      "name": "Zinger Meal",
+      "price_sgd": "8.35",
+      "section": "Burgers/Wraps",
+      "menu_scope": "KFC Singapore online ordering menu; channel shown as online order, delivery/takeaway mode unverified for captured listing; not verified dine-in price",
+      "source_url": "https://www.kfc.com.sg/menu/burgers-wraps",
+      "observed": "2026-10-19",
+      "source_type": "first_party_online_ordering_menu",
+      "rights_status": "names and prices as factual reference; product imagery not collected"
+    },
+    {
+      "sfa_licence": "NW18291B000",
+      "name": "Loaded Salad Bowl",
+      "price_sgd": "7.85",
+      "section": "Bowls",
+      "menu_scope": "KFC Singapore online ordering menu; channel shown as online order, delivery/takeaway mode unverified for captured listing; not verified dine-in price",
+      "source_url": "https://www.kfc.com.sg/menu/burgers-wraps",
+      "observed": "2026-10-19",
+      "source_type": "first_party_online_ordering_menu",
+      "rights_status": "names and prices as factual reference; product imagery not collected"
+    },
+    {
+      "sfa_licence": "NW18291B000",
+      "name": "3 pcs Original Recipe Tenders",
+      "price_sgd": "6.80",
+      "section": "Sides/Snack",
+      "menu_scope": "KFC Singapore online ordering menu; channel shown as online order, delivery/takeaway mode unverified for captured listing; not verified dine-in price",
+      "source_url": "https://www.kfc.com.sg/menu/burgers-wraps",
+      "observed": "2026-10-19",
+      "source_type": "first_party_online_ordering_menu",
+      "rights_status": "names and prices as factual reference; product imagery not collected"
+    },
+    {
+      "sfa_licence": "NW18291B000",
+      "name": "Fries Regular",
+      "price_sgd": "3.55",
+      "section": "Sides/Snack",
+      "menu_scope": "KFC Singapore online ordering menu; channel shown as online order, delivery/takeaway mode unverified for captured listing; not verified dine-in price",
+      "source_url": "https://www.kfc.com.sg/menu/burgers-wraps",
+      "observed": "2026-10-19",
+      "source_type": "first_party_online_ordering_menu",
+      "rights_status": "names and prices as factual reference; product imagery not collected"
+    },
+    {
+      "sfa_licence": "NW18291B000",
+      "name": "Egg Tart",
+      "price_sgd": "2.00",
+      "section": "Sides/Snack",
+      "menu_scope": "KFC Singapore online ordering menu; channel shown as online order, delivery/takeaway mode unverified for captured listing; not verified dine-in price",
+      "source_url": "https://www.kfc.com.sg/menu/burgers-wraps",
+      "observed": "2026-10-19",
+      "source_type": "first_party_online_ordering_menu",
+      "rights_status": "names and prices as factual reference; product imagery not collected"
+    }
+  ],
+  "excluded": [
+    "Promotional items dated 12 Oct 2026 or other time-bound items whose validity could not be confirmed for 19 Oct 2026.",
+    "Menu images and asset URLs: not harvested; no reuse permission review performed.",
+    "No delivery-platform content was used in this slice."
+  ],
+  "integration_guidance": "If parent workflow accepts this proposal, add these ten menu rows linked to NW18291B000 and consider a concise Menu / Price summary such as 'Online menu: selected items $2.00-$9.95; see official KFC menu'. Preserve the channel caveat and never label these as confirmed dine-in prices."
+}

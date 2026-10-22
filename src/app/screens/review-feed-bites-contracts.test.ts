@@ -34,7 +34,7 @@ test("Review feed cards do not render bottom bites sections", () => {
   assert.match(reviewFeed, /toggleFavourite\(localDish\)/);
   assert.match(reviewFeed, /saved: favouriteDishIds\.includes\(item\.dishId\)/);
   assert.match(reviewFeed, /saveCount: baseInteraction\.saveCount/);
-  assert.match(reviewFeed, /incrementShare/);
+  assert.doesNotMatch(reviewFeed, /incrementShare/);
   assert.match(reviewFeed, /ReviewCommentsSheet/);
   assert.match(reviewFeed, /ReviewShareSheet/);
   assert.match(reviewFeed, /commentsEnabled=\{commentsEnabled\}/);
@@ -51,7 +51,7 @@ test("Review feed cards do not render bottom bites sections", () => {
     /<AppText variant="micro" tone="muted" numberOfLines=\{1\}>\s*\{item\.venueName\}\s*<\/AppText>/,
   );
   assert.match(reviewFeed, /\{reviewDate\}[\s\S]*<Send/);
-  assert.match(reviewFeed, /accessibilityLabel="Share review"/);
+  assert.match(reviewFeed, /accessibilityLabel="Share dish"/);
   assert.match(reviewFeed, /"Remove saved dish"/);
   assert.match(reviewFeed, /"Save dish"/);
   assert.doesNotMatch(reviewFeed, /"Unsave review"/);
@@ -65,7 +65,7 @@ test("Review feed cards do not render bottom bites sections", () => {
   assert.match(reviewFeed, /interaction\.likeCount > 0/);
   assert.match(reviewFeed, /interaction\.shareCount > 0/);
   assert.match(reviewFeed, /shareCount: 0/);
-  assert.match(reviewFeed, /postId: linkedPost\?\.id \?\? ""/);
+  assert.doesNotMatch(reviewFeed, /postId: linkedPost/);
   assert.doesNotMatch(reviewFeed, /postId: linkedPost\?\.id \?\? item\.review\.id/);
   assert.match(reviewFeed, /commentCount: 0/);
   assert.match(reviewFeed, /likeCount: 0/);
@@ -93,7 +93,8 @@ test("Review feed cards do not render bottom bites sections", () => {
   assert.match(reviewShareSheet, /toChatShareRecipient/);
   assert.doesNotMatch(reviewShareSheet, /ACTIVITY_MESSAGES/);
   assert.match(reviewShareSheet, /selectedChatIds/);
-  assert.match(reviewShareSheet, /sharePostToChat\(chatId,/);
+  assert.match(reviewShareSheet, /chat\.sendMessage\(/);
+  assert.match(reviewShareSheet, /clientNonce/);
   assert.match(
     reviewShareSheet,
     /Clipboard\.setString\(withShareSource\(activeReview\.link, "copy_link"\)\)/,
@@ -102,7 +103,7 @@ test("Review feed cards do not render bottom bites sections", () => {
   assert.match(reviewShareSheet, /recipientAccessibilityLabelPrefix="Select"/);
   assert.match(reviewShareSheet, /FloatingShareSendButton/);
   assert.match(reviewShareSheet, /selectedCount=\{selectedChatIds\.length\}/);
-  assert.match(reviewShareSheet, /accessibilityLabel="Send shared review"/);
+  assert.match(reviewShareSheet, /accessibilityLabel=\{`Send \$\{subjectLabel\} link`\}/);
   assert.doesNotMatch(reviewShareSheet, /showSendAction/);
 
   assert.match(bitesCarousel, /FEATURE_FLAGS\.commentsEnabled/);

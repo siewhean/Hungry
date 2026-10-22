@@ -1,0 +1,278 @@
+{
+  "snapshot_type": "Refresh132 installed workbook final QA",
+  "captured_at_local": "2026-10-19",
+  "workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "b9b4d654cac9131405caf8c84c81194af8d4b856ab8bffbfdc746ae6cfad7463",
+  "baseline_workbook_sha256": "66d0b6438982c0b74715bd83db5636392399f40b279ad615ee8e27afd7869611",
+  "baseline_available_at_this_pass": false,
+  "result": "PASS",
+  "summary": {
+    "directory_rows": 38273,
+    "unique_sfa_licences": 38273,
+    "menu_rows": 13798,
+    "image_candidate_rows": 2765,
+    "coverage_rows": 229,
+    "approved_image_urls": 2,
+    "preinstall_delta_verified_against_baseline_sha256": "66d0b6438982c0b74715bd83db5636392399f40b279ad615ee8e27afd7869611",
+    "preinstall_candidate_delta_evidence": "Installed SHA matches candidate independently compared to baseline by read-only QA before installation: directory same keyset/0 removals, +136 menu rows, image rows 2763 to 2765 via 4 replacements/additions and 2 superseded rows deleted; +4 names; +1 exact building-level coordinate; 42 access field changes."
+  },
+  "checks": [
+    {
+      "check": "zip_integrity",
+      "status": "PASS",
+      "evidence": {
+        "bad_member": null
+      }
+    },
+    {
+      "check": "sheet_names",
+      "status": "PASS",
+      "evidence": {
+        "actual": [
+          "Public F&B Directory",
+          "Menu Items",
+          "Image Candidates",
+          "Coverage & Sources"
+        ],
+        "expected": [
+          "Public F&B Directory",
+          "Menu Items",
+          "Image Candidates",
+          "Coverage & Sources"
+        ]
+      }
+    },
+    {
+      "check": "table_references",
+      "status": "PASS",
+      "evidence": {
+        "Public F&B Directory": [
+          [
+            "PublicFnbDirectory",
+            "A1:U38274"
+          ]
+        ],
+        "Menu Items": [
+          [
+            "MenuItems",
+            "A1:L13799"
+          ]
+        ],
+        "Image Candidates": [
+          [
+            "ImageCandidates",
+            "A1:I2766"
+          ]
+        ],
+        "Coverage & Sources": [
+          [
+            "CoverageSources",
+            "A1:C229"
+          ]
+        ]
+      }
+    },
+    {
+      "check": "external_links",
+      "status": "PASS",
+      "evidence": {
+        "count": 0
+      }
+    },
+    {
+      "check": "no_formulas_or_excel_errors",
+      "status": "PASS",
+      "evidence": {
+        "formula_count": 0,
+        "error_count": 0,
+        "formula_examples": [],
+        "error_examples": []
+      }
+    },
+    {
+      "check": "directory_records_unique_sfa",
+      "status": "PASS",
+      "evidence": {
+        "rows": 38273,
+        "unique_sfa_licences": 38273
+      }
+    },
+    {
+      "check": "alphabetical_blank_last",
+      "status": "PASS",
+      "evidence": {
+        "usable_names": 32797,
+        "blank_names": 5476
+      }
+    },
+    {
+      "check": "coverage_counts_match_actual",
+      "status": "PASS",
+      "evidence": {
+        "Active public-access directory rows": {
+          "actual": 38273,
+          "coverage_sheet": 38273,
+          "matches": true
+        },
+        "Unique SFA licences": {
+          "actual": 38273,
+          "coverage_sheet": 38273,
+          "matches": true
+        },
+        "Rows with a usable F&B name": {
+          "actual": 32797,
+          "coverage_sheet": 32797,
+          "matches": true
+        },
+        "Rows with no usable F&B name": {
+          "actual": 5476,
+          "coverage_sheet": 5476,
+          "matches": true
+        },
+        "Rows with coordinates": {
+          "actual": 35736,
+          "coverage_sheet": 35736,
+          "matches": true
+        },
+        "Rows with contact details": {
+          "actual": 2708,
+          "coverage_sheet": 2708,
+          "matches": true
+        },
+        "Rows with website": {
+          "actual": 2819,
+          "coverage_sheet": 2819,
+          "matches": true
+        },
+        "Rows with menu URL": {
+          "actual": 1478,
+          "coverage_sheet": 1478,
+          "matches": true
+        },
+        "Rows with menu summary": {
+          "actual": 536,
+          "coverage_sheet": 536,
+          "matches": true
+        },
+        "Rows with rating/review count": {
+          "actual": 0,
+          "coverage_sheet": 0,
+          "matches": true
+        },
+        "Rows with approved image URL": {
+          "actual": 2,
+          "coverage_sheet": 2,
+          "matches": true
+        }
+      }
+    },
+    {
+      "check": "four_exact_name_proposals",
+      "status": "PASS",
+      "evidence": [
+        {
+          "licence": "GM20154002",
+          "actual": "Ghim Moh Chwee Kueh",
+          "expected": "Ghim Moh Chwee Kueh",
+          "matches": true
+        },
+        {
+          "licence": "OA201128001",
+          "actual": "Salt.Singapore",
+          "expected": "Salt.Singapore",
+          "matches": true
+        },
+        {
+          "licence": "GMFB153003",
+          "actual": "Da Po Hainanese Chicken Rice & Curry Chicken Noodle",
+          "expected": "Da Po Hainanese Chicken Rice & Curry Chicken Noodle",
+          "matches": true
+        },
+        {
+          "licence": "SE19336P000",
+          "actual": "BHC Chicken",
+          "expected": "BHC Chicken",
+          "matches": true
+        }
+      ]
+    },
+    {
+      "check": "coordinate_proposal_and_attribution",
+      "status": "PASS",
+      "evidence": [
+        {
+          "licence": "W46018A000",
+          "actual_latitude": 1.280453,
+          "actual_longitude": 103.841705,
+          "proposal_latitude": 1.280453,
+          "proposal_longitude": 103.841705,
+          "actual_precision": "OpenStreetMap contributors (ODbL 1.0; see Coverage & Sources). building footprint centroid (not outlet/unit point); address/postcode exact; not an outlet/unit point.",
+          "matches": true
+        }
+      ]
+    },
+    {
+      "check": "136_menu_proposals_present_with_exact_branch_source_scope",
+      "status": "PASS",
+      "evidence": {
+        "menu_rows": 13798,
+        "proposed_additions": 136,
+        "official_first_party_count": 56,
+        "delivery_count": 80,
+        "missing_or_mismatched": [],
+        "proposed_delivery_labels": [
+          "Foodpanda branch delivery listing; not verified as in-store menu"
+        ],
+        "proposed_delivery_source_types": [
+          "Foodpanda outlet-specific menu"
+        ]
+      }
+    },
+    {
+      "check": "menu_proposals_unique",
+      "status": "PASS",
+      "evidence": {
+        "proposals": 136,
+        "unique_keys": 136
+      }
+    },
+    {
+      "check": "access_review_scope_and_retained_directory_membership",
+      "status": "PASS",
+      "evidence": {
+        "records_reviewed": 50,
+        "all_retained": true,
+        "removals_recommended": 0,
+        "closures_confirmed": 0
+      }
+    },
+    {
+      "check": "no_refresh132_workbook_copy_in_data",
+      "status": "PASS",
+      "evidence": {
+        "matches": []
+      }
+    },
+    {
+      "check": "installed_sha_matches_preinstall_qa_candidate",
+      "status": "PASS",
+      "evidence": {
+        "sha256": "b9b4d654cac9131405caf8c84c81194af8d4b856ab8bffbfdc746ae6cfad7463",
+        "expected_preinstall_qa_candidate_sha256": "b9b4d654cac9131405caf8c84c81194af8d4b856ab8bffbfdc746ae6cfad7463"
+      }
+    },
+    {
+      "check": "image_inventory_and_approved_url",
+      "status": "PASS",
+      "evidence": {
+        "image_candidate_rows": 2765,
+        "approved_image_count": 2,
+        "A_Noodle_Story_approved_url": "https://upload.wikimedia.org/wikipedia/commons/b/b9/A_Noodle_Story.jpg"
+      }
+    }
+  ],
+  "limitations": [
+    "Original baseline workbook bytes were replaced during canonical installation and were not available to this post-install pass. Installed bytes are identical to the pre-install candidate SHA that was independently compared against the baseline in the previous read-only QA pass.",
+    "Coverage reconciliation covers the workbook coverage metrics that have exact labels; non-count narrative source rows are provenance, not inferred totals."
+  ]
+}

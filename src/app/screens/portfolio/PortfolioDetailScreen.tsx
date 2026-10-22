@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ArrowLeft, Flag, Plus, Share2 } from "lucide-react-native";
@@ -30,18 +31,24 @@ function showPortfolioError(error: unknown) {
 }
 
 export function PortfolioDetailScreen({ navigation, route }: Props) {
+  const insets = useSafeAreaInsets();
   const { palette, spacing } = useHungryTheme();
   const profile = useProfileStore((state) => state.profile);
   const portfolioId = route.params.portfolioId;
   const {
     portfolios,
+    collaborators,
+    loadPortfolioCollaborators,
+    checkFollowStatus,
     items,
     follows,
+    followerCounts,
     loadPortfolios,
     loadPortfolioItems,
     updatePortfolio,
-    publishPortfolio,
     deleteItem,
+    updateItem,
+    deletePortfolio,
     reorderItems,
     followPortfolio,
     unfollowPortfolio,
@@ -53,19 +60,58 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
   const conflict = conflicts[portfolioId];
   const portfolioItems = items[portfolioId] ?? [];
   const isOwner = portfolio?.ownerId === profile.id;
+  const collaborator = (collaborators[portfolioId] ?? []).find(
+    (person) => person.userId === profile.id,
+  );
+  const canEdit = isOwner || collaborator?.role === "editor";
   const isFollowing = follows[portfolioId] === true;
   const [draftName, setDraftName] = useState(portfolio?.name ?? "");
   const [draftDescription, setDraftDescription] = useState(portfolio?.description ?? "");
+  const [loadState, setLoadState] = useState<"loading" | "ready" | "failed">("loading");
+  const [loadError, setLoadError] = useState("");
+  const [retry, setRetry] = useState(0);
   const [labels, setLabels] = useState<Record<string, string>>({});
+  const [editingItem, setEditingItem] = useState<PortfolioItem | null>(null);
+  const [itemScore, setItemScore] = useState("");
+  const [itemPublicNotes, setItemPublicNotes] = useState("");
+  const [itemPrivateNotes, setItemPrivateNotes] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
+  const initializedPortfolio = useRef<string | undefined>(portfolio?.id);
   useEffect(() => {
-    void loadPortfolios();
-    void loadPortfolioItems(portfolioId);
-  }, [loadPortfolioItems, loadPortfolios, portfolioId]);
+    let active = true;
+    setLoadState("loading");
+    void Promise.all([
+      loadPortfolios(),
+      loadPortfolioItems(portfolioId),
+      loadPortfolioCollaborators(portfolioId),
+      checkFollowStatus(portfolioId),
+    ])
+      .then(() => {
+        if (active) setLoadState("ready");
+      })
+      .catch((error: unknown) => {
+        if (active) {
+          setLoadState("failed");
+          setLoadError(error instanceof Error ? error.message : "Please retry.");
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [
+    loadPortfolioItems,
+    loadPortfolios,
+    loadPortfolioCollaborators,
+    checkFollowStatus,
+    portfolioId,
+    retry,
+  ]);
 
   useEffect(() => {
-    setDraftName(portfolio?.name ?? "");
+    if (!portfolio || initializedPortfolio.current === portfolio.id) return;
+    initializedPortfolio.current = portfolio.id;
+    setDraftName(portfolio.name);
     setDraftDescription(portfolio?.description ?? "");
   }, [portfolio?.description, portfolio?.name]);
 
@@ -90,7 +136,13 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
       if (mounted) setLabels(nextLabels);
     }
 
-    void hydrateLabels();
+    void hydrateLabels().catch((error: unknown) => {
+      if (mounted)
+        Alert.alert(
+          "Could not load item details",
+          error instanceof Error ? error.message : "Please retry.",
+        );
+    });
     return () => {
       mounted = false;
     };
@@ -110,7 +162,7 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
     try {
       await updatePortfolio(portfolio.id, {
         name: nextName,
-        description: nextDescription || undefined,
+        description: nextDescription || null,
         type: portfolio.type,
         visibility: portfolio.visibility,
       });
@@ -139,7 +191,19 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
   if (!portfolio) {
     return (
       <View style={[styles.centered, { backgroundColor: palette.bg, padding: spacing[5] }]}>
-        <AppText variant="h2">Portfolio not found</AppText>
+        <AppText variant="h2">
+          {loadState === "loading"
+            ? "Loading portfolio…"
+            : loadState === "failed"
+              ? "Could not load portfolio"
+              : "Portfolio not found"}
+        </AppText>
+        {loadState === "failed" ? (
+          <>
+            <AppText>{loadError}</AppText>
+            <Button label="Retry" onPress={() => setRetry((value) => value + 1)} />
+          </>
+        ) : null}
         <Button
           label="Go back"
           onPress={() => navigation.goBack()}
@@ -151,9 +215,17 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
 
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: palette.bg }}
+      keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets
+      style={{ flex: 1, backgroundColor: palette.bg, paddingTop: insets.top }}
       contentContainerStyle={[styles.content, { gap: spacing[4], padding: spacing[4] }]}
     >
+      {loadState === "failed" ? (
+        <Card>
+          <AppText>{loadError}</AppText>
+          <Button label="Retry loading" onPress={() => setRetry((value) => value + 1)} />
+        </Card>
+      ) : null}
       <View style={styles.header}>
         <Pressable
           accessibilityRole="button"
@@ -215,7 +287,7 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
           </>
         )}
         <View style={styles.actionRow}>
-          {isOwner ? (
+          {canEdit ? (
             <>
               <Button
                 label="Dish"
@@ -236,24 +308,8 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
                 }
               />
               <Button
-                label={portfolio.publishedAt ? "Published" : "Publish"}
-                size="sm"
-                fullWidth={false}
-                variant={portfolio.publishedAt ? "secondary" : "primary"}
-                disabled={Boolean(portfolio.publishedAt) || isSaving}
-                onPress={async () => {
-                  setIsSaving(true);
-                  try {
-                    await publishPortfolio(portfolio.id);
-                  } catch (error) {
-                    showPortfolioError(error);
-                  } finally {
-                    setIsSaving(false);
-                  }
-                }}
-              />
-              <Button
                 label="Edit"
+                disabled={!isOwner}
                 size="sm"
                 fullWidth={false}
                 variant="secondary"
@@ -261,6 +317,7 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
               />
               <Button
                 label="Collaborators"
+                disabled={!isOwner}
                 size="sm"
                 fullWidth={false}
                 variant="secondary"
@@ -300,6 +357,83 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
         </View>
       </Card>
 
+      {editingItem && canEdit ? (
+        <Card>
+          <Input
+            label="Score (1–10, one decimal)"
+            value={itemScore}
+            onChangeText={setItemScore}
+            keyboardType="decimal-pad"
+          />
+          <Input
+            label="Public notes"
+            value={itemPublicNotes}
+            onChangeText={setItemPublicNotes}
+            multiline
+          />
+          <Input
+            label="Private notes"
+            value={itemPrivateNotes}
+            onChangeText={setItemPrivateNotes}
+            multiline
+          />
+          <Button
+            label="Save item"
+            loading={isSaving}
+            disabled={isSaving}
+            onPress={() => {
+              if (itemScore.trim() && !/^(?:[1-9](?:\.\d)?|10(?:\.0)?)$/.test(itemScore.trim())) {
+                Alert.alert("Invalid score", "Use 1–10 with at most one decimal.");
+                return;
+              }
+              setIsSaving(true);
+              void updateItem(editingItem.id, {
+                score: itemScore.trim() ? Number(itemScore) : null,
+                publicNotes: itemPublicNotes.trim() || null,
+                privateNotes: itemPrivateNotes.trim() || null,
+              })
+                .then(() => setEditingItem(null))
+                .catch(showPortfolioError)
+                .finally(() => setIsSaving(false));
+            }}
+          />
+          <Button
+            label="Cancel item edit"
+            variant="secondary"
+            onPress={() => setEditingItem(null)}
+          />
+        </Card>
+      ) : null}
+      {isOwner ? (
+        <Button
+          label="Delete portfolio"
+          variant="secondary"
+          onPress={() =>
+            Alert.alert(
+              "Delete portfolio?",
+              "This permanently removes this portfolio and its items.",
+              [
+                { text: "Cancel", style: "cancel" },
+                {
+                  text: "Delete",
+                  style: "destructive",
+                  onPress: () => {
+                    void deletePortfolio(portfolioId)
+                      .then(() => navigation.goBack())
+                      .catch(showPortfolioError);
+                  },
+                },
+              ],
+            )
+          }
+        />
+      ) : null}
+
+      {followerCounts[portfolioId] !== undefined ? (
+        <AppText variant="bodySmall" tone="secondary">
+          {followerCounts[portfolioId]} followers
+        </AppText>
+      ) : null}
       <View style={styles.sectionHeader}>
         <AppText variant="h2">Items</AppText>
         <AppText variant="bodySmall" tone="secondary">
@@ -322,7 +456,14 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
             label={formatPortfolioItemLabel(item, labels)}
             index={index}
             totalCount={portfolioItems.length}
-            isOwner={isOwner}
+            isOwner={canEdit}
+            canReadPrivateNotes={isOwner || Boolean(collaborator)}
+            onEdit={() => {
+              setEditingItem(item);
+              setItemScore(item.score?.toString() ?? "");
+              setItemPublicNotes(item.publicNotes ?? "");
+              setItemPrivateNotes(item.privateNotes ?? "");
+            }}
             onMoveUp={() => moveItem(item.id, -1)}
             onMoveDown={() => moveItem(item.id, 1)}
             onDelete={() => {

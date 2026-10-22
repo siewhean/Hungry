@@ -1,8 +1,6 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { getHungryService } from "@/lib/services/serviceProvider";
-import { hungryPersistStorage } from "@/store/persistStorage";
 import { useProfileStore } from "@/store/useProfileStore";
 import type { Portfolio, PortfolioItem, PortfolioCollaborator } from "@/types/domain";
 import type {
@@ -19,11 +17,43 @@ interface PortfolioEditConflict {
   detectedAt: string;
 }
 
+let generation = 0;
+function scopedService(expectedGeneration = generation): ReturnType<typeof getHungryService> {
+  if (expectedGeneration !== generation) throw new Error("Account changed. Reopen this tool.");
+  const subject = useProfileStore.getState().profile.id;
+  const wrap = (value: object): object =>
+    new Proxy(value, {
+      get(target, key, receiver) {
+        const member: unknown = Reflect.get(target, key, receiver);
+        if (typeof member === "function")
+          return (...args: unknown[]) => {
+            if (
+              generation !== expectedGeneration ||
+              subject !== useProfileStore.getState().profile.id
+            )
+              throw new Error("Account changed. Reopen this tool.");
+            const result: unknown = Reflect.apply(member, target, args);
+            return Promise.resolve(result).then((resolved: unknown) => {
+              if (
+                generation !== expectedGeneration ||
+                subject !== useProfileStore.getState().profile.id
+              )
+                throw new Error("Account changed. Reopen this tool.");
+              return resolved;
+            });
+          };
+        return member && typeof member === "object" ? wrap(member) : member;
+      },
+    });
+  return wrap(getHungryService()) as ReturnType<typeof getHungryService>;
+}
+
 interface PortfolioState {
   portfolios: Portfolio[];
   items: Record<string, PortfolioItem[]>;
   collaborators: Record<string, PortfolioCollaborator[]>;
   follows: Record<string, boolean>;
+  followerCounts: Record<string, number>;
   conflicts: Record<string, PortfolioEditConflict>;
   isLoaded: boolean;
 
@@ -80,12 +110,12 @@ function getAnalyticsUserId(): string | undefined {
   return useProfileStore.getState().profile.id;
 }
 
-function normalizeScore(score: PortfolioItemCreateInput["score"]): number | undefined {
-  if (score === undefined) return undefined;
-  if (!Number.isFinite(score) || score < 1 || score > 10) {
+function normalizeScore(score: PortfolioItemCreateInput["score"]): number | null | undefined {
+  if (score === undefined || score === null) return score;
+  if (!Number.isFinite(score) || score < 1 || score > 10 || !Number.isInteger(score * 10)) {
     throw new Error("Portfolio item score must be between 1 and 10");
   }
-  return Math.round(score * 10) / 10;
+  return score;
 }
 
 function isSamePortfolioTarget(item: PortfolioItem, input: PortfolioItemCreateInput): boolean {
@@ -154,10 +184,11 @@ async function ensurePortfolioFresh(
   set: PortfolioSet,
   portfolioId: string,
 ): Promise<void> {
+  const epoch = generation;
   const localPortfolio = get().portfolios.find((portfolio) => portfolio.id === portfolioId);
   if (!localPortfolio) return;
 
-  const service = getHungryService();
+  const service = scopedService();
   const remotePortfolio = await service.portfolio.getPortfolio(portfolioId);
   if (remotePortfolio.updatedAt === localPortfolio.updatedAt) return;
 
@@ -166,6 +197,7 @@ async function ensurePortfolioFresh(
     service.portfolio.getPortfolioCollaborators(portfolioId),
   ]);
 
+  if (epoch !== generation) throw new Error("Account changed. Reopen this tool.");
   const conflict = makePortfolioConflict(
     portfolioId,
     localPortfolio.updatedAt,
@@ -189,364 +221,367 @@ async function ensurePortfolioFresh(
   throw new Error(conflict.message);
 }
 
-export const usePortfolioStore = create<PortfolioState>()(
-  persist(
-    (set, get) => ({
+export const usePortfolioStore = create<PortfolioState>()((set, get) => ({
+  portfolios: [],
+  items: {},
+  collaborators: {},
+  follows: {},
+  followerCounts: {},
+  conflicts: {},
+  isLoaded: false,
+
+  loadPortfolios: async (filters) => {
+    const actionGeneration = generation;
+    const service = scopedService(actionGeneration);
+    try {
+      const portfolios = await service.portfolio.getPortfolios(filters);
+      set({ portfolios, isLoaded: true });
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  loadPortfolioItems: async (portfolioId: string) => {
+    const actionGeneration = generation;
+    const service = scopedService(actionGeneration);
+    try {
+      const items = await service.portfolio.getPortfolioItems(portfolioId);
+      set((state) => ({
+        items: { ...state.items, [portfolioId]: items },
+      }));
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  loadPortfolioCollaborators: async (portfolioId: string) => {
+    const actionGeneration = generation;
+    const service = scopedService(actionGeneration);
+    try {
+      const collaborators = await service.portfolio.getPortfolioCollaborators(portfolioId);
+      set((state) => ({
+        collaborators: { ...state.collaborators, [portfolioId]: collaborators },
+      }));
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  checkFollowStatus: async (portfolioId: string) => {
+    const actionGeneration = generation;
+    const service = scopedService(actionGeneration);
+    try {
+      const [isFollowing, followers] = await Promise.all([
+        service.portfolio.isFollowingPortfolio(portfolioId),
+        service.portfolio.getPortfolioFollows(portfolioId),
+      ]);
+      set((state) => ({
+        follows: { ...state.follows, [portfolioId]: isFollowing },
+        followerCounts: { ...state.followerCounts, [portfolioId]: followers.length },
+      }));
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  createPortfolio: async (input: PortfolioCreateInput) => {
+    const actionGeneration = generation;
+    const service = scopedService(actionGeneration);
+    const portfolio = await service.portfolio.createPortfolio(input);
+    set((state) => ({
+      portfolios: [...state.portfolios, portfolio],
+      conflicts: Object.fromEntries(
+        Object.entries(state.conflicts).filter(([key]) => key !== portfolio.id),
+      ),
+    }));
+    trackAnalyticsEvent(
+      "portfolio_created",
+      {
+        portfolio_id: portfolio.id,
+        type: portfolio.type,
+        visibility: portfolio.visibility,
+      },
+      { userId: getAnalyticsUserId() },
+    );
+    return portfolio;
+  },
+
+  updatePortfolio: async (id: string, updates: Partial<PortfolioCreateInput>) => {
+    const actionGeneration = generation;
+    await ensurePortfolioFresh(get, set, id);
+    const service = scopedService(actionGeneration);
+    await service.portfolio.updatePortfolio(
+      id,
+      updates,
+      getPortfolioMutationOptions(get().portfolios, id),
+    );
+    await get().refreshPortfolio(id);
+  },
+
+  deletePortfolio: async (id: string) => {
+    const actionGeneration = generation;
+    await ensurePortfolioFresh(get, set, id);
+    const service = scopedService(actionGeneration);
+    await service.portfolio.deletePortfolio(id, getPortfolioMutationOptions(get().portfolios, id));
+    set((state) => ({
+      portfolios: state.portfolios.filter((p) => p.id !== id),
+      items: Object.fromEntries(Object.entries(state.items).filter(([key]) => key !== id)),
+      collaborators: Object.fromEntries(
+        Object.entries(state.collaborators).filter(([key]) => key !== id),
+      ),
+      follows: Object.fromEntries(Object.entries(state.follows).filter(([key]) => key !== id)),
+      conflicts: Object.fromEntries(Object.entries(state.conflicts).filter(([key]) => key !== id)),
+    }));
+  },
+
+  publishPortfolio: async (id: string) => {
+    const actionGeneration = generation;
+    await ensurePortfolioFresh(get, set, id);
+    const portfolioBeforePublish = get().portfolios.find((portfolio) => portfolio.id === id);
+    const service = scopedService(actionGeneration);
+    await service.portfolio.publishPortfolio(id, getPortfolioMutationOptions(get().portfolios, id));
+    await get().refreshPortfolio(id);
+    if (!portfolioBeforePublish?.publishedAt) {
+      trackAnalyticsEvent(
+        "portfolio_published",
+        {
+          portfolio_id: id,
+          type: portfolioBeforePublish?.type,
+          visibility: "public",
+        },
+        { userId: getAnalyticsUserId() },
+      );
+    }
+  },
+
+  addItem: async (input: PortfolioItemCreateInput) => {
+    const actionGeneration = generation;
+    await ensurePortfolioFresh(get, set, input.portfolioId);
+    const normalizedInput = { ...input, score: normalizeScore(input.score) };
+    if (!get().items[input.portfolioId]) {
+      await get().loadPortfolioItems(input.portfolioId);
+    }
+    const currentItems = get().items[input.portfolioId] ?? [];
+    if (currentItems.some((item) => isSamePortfolioTarget(item, normalizedInput))) {
+      throw new Error("This item is already in the portfolio");
+    }
+    const service = scopedService(actionGeneration);
+    const item = await service.portfolio.addPortfolioItem(
+      normalizedInput,
+      getPortfolioMutationOptions(get().portfolios, input.portfolioId),
+    );
+    set((state) => ({
+      items: {
+        ...state.items,
+        [input.portfolioId]: [...(state.items[input.portfolioId] || []), item],
+      },
+    }));
+    await get().refreshPortfolio(input.portfolioId);
+    trackAnalyticsEvent(
+      "portfolio_item_added",
+      {
+        portfolio_id: normalizedInput.portfolioId,
+        item_type: normalizedInput.itemType,
+        dish_id: normalizedInput.dishId,
+        stall_id: normalizedInput.stallId,
+        score: normalizedInput.score,
+      },
+      { userId: getAnalyticsUserId() },
+    );
+    return item;
+  },
+
+  updateItem: async (id: string, updates: Partial<PortfolioItemCreateInput>) => {
+    const actionGeneration = generation;
+    const portfolioId = getPortfolioIdForItem(get().items, id);
+    if (portfolioId) {
+      await ensurePortfolioFresh(get, set, portfolioId);
+    }
+    const service = scopedService(actionGeneration);
+    const normalizedUpdates = {
+      ...updates,
+      ...(Object.hasOwn(updates, "score") ? { score: normalizeScore(updates.score) } : {}),
+    };
+    await service.portfolio.updatePortfolioItem(
+      id,
+      normalizedUpdates,
+      portfolioId ? getPortfolioMutationOptions(get().portfolios, portfolioId) : undefined,
+    );
+    set((state) => {
+      const newItems = { ...state.items };
+      for (const portfolioId in newItems) {
+        newItems[portfolioId] = newItems[portfolioId].map((item) =>
+          item.id === id
+            ? {
+                ...item,
+                ...normalizedUpdates,
+                score:
+                  normalizedUpdates.score === undefined
+                    ? item.score
+                    : (normalizedUpdates.score ?? undefined),
+                publicNotes:
+                  normalizedUpdates.publicNotes === undefined
+                    ? item.publicNotes
+                    : (normalizedUpdates.publicNotes ?? undefined),
+                privateNotes:
+                  normalizedUpdates.privateNotes === undefined
+                    ? item.privateNotes
+                    : (normalizedUpdates.privateNotes ?? undefined),
+              }
+            : item,
+        );
+      }
+      return { items: newItems };
+    });
+    if (portfolioId) {
+      await get().refreshPortfolio(portfolioId);
+    }
+  },
+
+  deleteItem: async (id: string, portfolioId: string) => {
+    const actionGeneration = generation;
+    await ensurePortfolioFresh(get, set, portfolioId);
+    const service = scopedService(actionGeneration);
+    await service.portfolio.deletePortfolioItem(
+      id,
+      getPortfolioMutationOptions(get().portfolios, portfolioId),
+    );
+    set((state) => ({
+      items: {
+        ...state.items,
+        [portfolioId]: (state.items[portfolioId] ?? []).filter((item) => item.id !== id),
+      },
+    }));
+    await get().refreshPortfolio(portfolioId);
+  },
+
+  reorderItems: async (portfolioId: string, itemIds: string[]) => {
+    const actionGeneration = generation;
+    await ensurePortfolioFresh(get, set, portfolioId);
+    const service = scopedService(actionGeneration);
+    const items = get().items[portfolioId] || [];
+    assertCompleteReorder(portfolioId, items, itemIds);
+    await service.portfolio.reorderPortfolioItems(
+      portfolioId,
+      itemIds,
+      getPortfolioMutationOptions(get().portfolios, portfolioId),
+    );
+    set((state) => {
+      const items = state.items[portfolioId] || [];
+      const itemById = new Map(items.map((item) => [item.id, item]));
+      const reordered = itemIds.map((id) => itemById.get(id)).filter(Boolean) as PortfolioItem[];
+      return {
+        items: { ...state.items, [portfolioId]: reordered },
+      };
+    });
+    await get().refreshPortfolio(portfolioId);
+  },
+
+  addCollaborator: async (portfolioId: string, userId: string, role: "viewer" | "editor") => {
+    const actionGeneration = generation;
+    await ensurePortfolioFresh(get, set, portfolioId);
+    const service = scopedService(actionGeneration);
+    await service.portfolio.addPortfolioCollaborator(
+      portfolioId,
+      userId,
+      role,
+      getPortfolioMutationOptions(get().portfolios, portfolioId),
+    );
+    await get().loadPortfolioCollaborators(portfolioId);
+    await get().refreshPortfolio(portfolioId);
+  },
+
+  removeCollaborator: async (portfolioId: string, userId: string) => {
+    const actionGeneration = generation;
+    await ensurePortfolioFresh(get, set, portfolioId);
+    const service = scopedService(actionGeneration);
+    await service.portfolio.removePortfolioCollaborator(
+      portfolioId,
+      userId,
+      getPortfolioMutationOptions(get().portfolios, portfolioId),
+    );
+    set((state) => ({
+      collaborators: {
+        ...state.collaborators,
+        [portfolioId]: (state.collaborators[portfolioId] ?? []).filter((c) => c.userId !== userId),
+      },
+    }));
+    await get().refreshPortfolio(portfolioId);
+  },
+
+  followPortfolio: async (portfolioId: string) => {
+    const actionGeneration = generation;
+    const service = scopedService(actionGeneration);
+    await service.portfolio.followPortfolio(portfolioId);
+    set((state) => ({
+      follows: { ...state.follows, [portfolioId]: true },
+    }));
+    trackAnalyticsEvent(
+      "portfolio_followed",
+      { portfolio_id: portfolioId },
+      { userId: getAnalyticsUserId() },
+    );
+  },
+
+  unfollowPortfolio: async (portfolioId: string) => {
+    const actionGeneration = generation;
+    const service = scopedService(actionGeneration);
+    await service.portfolio.unfollowPortfolio(portfolioId);
+    set((state) => ({
+      follows: { ...state.follows, [portfolioId]: false },
+    }));
+  },
+
+  flagPortfolio: async (portfolioId: string, reason: string, details?: string) => {
+    const actionGeneration = generation;
+    const service = scopedService(actionGeneration);
+    await service.portfolio.flagPortfolio(portfolioId, reason, details);
+    trackAnalyticsEvent(
+      "portfolio_flagged",
+      { portfolio_id: portfolioId, reason },
+      { userId: getAnalyticsUserId() },
+    );
+  },
+
+  searchPortfolios: async (query: string, filters?: { type?: string; visibility?: string }) => {
+    const actionGeneration = generation;
+    const service = scopedService(actionGeneration);
+    return await service.portfolio.searchPortfolios(query, filters);
+  },
+
+  refreshPortfolio: async (portfolioId: string) => {
+    const actionGeneration = generation;
+    const service = scopedService(actionGeneration);
+    const portfolio = await service.portfolio.getPortfolio(portfolioId);
+    set((state) => ({
+      portfolios: [portfolio, ...state.portfolios.filter((entry) => entry.id !== portfolioId)].sort(
+        (left, right) => right.updatedAt.localeCompare(left.updatedAt),
+      ),
+      conflicts: Object.fromEntries(
+        Object.entries(state.conflicts).filter(([key]) => key !== portfolioId),
+      ),
+    }));
+    return portfolio;
+  },
+
+  clearConflict: (portfolioId: string) => {
+    set((state) => ({
+      conflicts: Object.fromEntries(
+        Object.entries(state.conflicts).filter(([key]) => key !== portfolioId),
+      ),
+    }));
+  },
+
+  _reset: () => {
+    generation++;
+    set({
       portfolios: [],
       items: {},
       collaborators: {},
       follows: {},
+      followerCounts: {},
       conflicts: {},
       isLoaded: false,
-
-      loadPortfolios: async (filters) => {
-        const service = getHungryService();
-        try {
-          const portfolios = await service.portfolio.getPortfolios(filters);
-          set({ portfolios, isLoaded: true });
-        } catch (error) {
-          const cachedPortfolios = get().portfolios.filter((portfolio) =>
-            matchesPortfolioFilters(portfolio, filters),
-          );
-          if (cachedPortfolios.length > 0) {
-            set({ portfolios: cachedPortfolios, isLoaded: true });
-            return;
-          }
-          throw error;
-        }
-      },
-
-      loadPortfolioItems: async (portfolioId: string) => {
-        const service = getHungryService();
-        try {
-          const items = await service.portfolio.getPortfolioItems(portfolioId);
-          set((state) => ({
-            items: { ...state.items, [portfolioId]: items },
-          }));
-        } catch (error) {
-          if (get().items[portfolioId]) {
-            return;
-          }
-          throw error;
-        }
-      },
-
-      loadPortfolioCollaborators: async (portfolioId: string) => {
-        const service = getHungryService();
-        try {
-          const collaborators = await service.portfolio.getPortfolioCollaborators(portfolioId);
-          set((state) => ({
-            collaborators: { ...state.collaborators, [portfolioId]: collaborators },
-          }));
-        } catch (error) {
-          if (get().collaborators[portfolioId]) {
-            return;
-          }
-          throw error;
-        }
-      },
-
-      checkFollowStatus: async (portfolioId: string) => {
-        const service = getHungryService();
-        try {
-          const isFollowing = await service.portfolio.isFollowingPortfolio(portfolioId);
-          set((state) => ({
-            follows: { ...state.follows, [portfolioId]: isFollowing },
-          }));
-        } catch (error) {
-          if (portfolioId in get().follows) {
-            return;
-          }
-          throw error;
-        }
-      },
-
-      createPortfolio: async (input: PortfolioCreateInput) => {
-        const service = getHungryService();
-        const portfolio = await service.portfolio.createPortfolio(input);
-        set((state) => ({
-          portfolios: [...state.portfolios, portfolio],
-          conflicts: Object.fromEntries(
-            Object.entries(state.conflicts).filter(([key]) => key !== portfolio.id),
-          ),
-        }));
-        trackAnalyticsEvent(
-          "portfolio_created",
-          {
-            portfolio_id: portfolio.id,
-            type: portfolio.type,
-            visibility: portfolio.visibility,
-          },
-          { userId: getAnalyticsUserId() },
-        );
-        return portfolio;
-      },
-
-      updatePortfolio: async (id: string, updates: Partial<PortfolioCreateInput>) => {
-        await ensurePortfolioFresh(get, set, id);
-        const service = getHungryService();
-        await service.portfolio.updatePortfolio(
-          id,
-          updates,
-          getPortfolioMutationOptions(get().portfolios, id),
-        );
-        await get().refreshPortfolio(id);
-      },
-
-      deletePortfolio: async (id: string) => {
-        await ensurePortfolioFresh(get, set, id);
-        const service = getHungryService();
-        await service.portfolio.deletePortfolio(
-          id,
-          getPortfolioMutationOptions(get().portfolios, id),
-        );
-        set((state) => ({
-          portfolios: state.portfolios.filter((p) => p.id !== id),
-          items: Object.fromEntries(Object.entries(state.items).filter(([key]) => key !== id)),
-          collaborators: Object.fromEntries(
-            Object.entries(state.collaborators).filter(([key]) => key !== id),
-          ),
-          follows: Object.fromEntries(Object.entries(state.follows).filter(([key]) => key !== id)),
-          conflicts: Object.fromEntries(
-            Object.entries(state.conflicts).filter(([key]) => key !== id),
-          ),
-        }));
-      },
-
-      publishPortfolio: async (id: string) => {
-        await ensurePortfolioFresh(get, set, id);
-        const portfolioBeforePublish = get().portfolios.find((portfolio) => portfolio.id === id);
-        const service = getHungryService();
-        await service.portfolio.publishPortfolio(
-          id,
-          getPortfolioMutationOptions(get().portfolios, id),
-        );
-        await get().refreshPortfolio(id);
-        if (!portfolioBeforePublish?.publishedAt) {
-          trackAnalyticsEvent(
-            "portfolio_published",
-            {
-              portfolio_id: id,
-              type: portfolioBeforePublish?.type,
-              visibility: "public",
-            },
-            { userId: getAnalyticsUserId() },
-          );
-        }
-      },
-
-      addItem: async (input: PortfolioItemCreateInput) => {
-        await ensurePortfolioFresh(get, set, input.portfolioId);
-        const normalizedInput = { ...input, score: normalizeScore(input.score) };
-        if (!get().items[input.portfolioId]) {
-          await get().loadPortfolioItems(input.portfolioId);
-        }
-        const currentItems = get().items[input.portfolioId] ?? [];
-        if (currentItems.some((item) => isSamePortfolioTarget(item, normalizedInput))) {
-          throw new Error("This item is already in the portfolio");
-        }
-        const service = getHungryService();
-        const item = await service.portfolio.addPortfolioItem(
-          normalizedInput,
-          getPortfolioMutationOptions(get().portfolios, input.portfolioId),
-        );
-        set((state) => ({
-          items: {
-            ...state.items,
-            [input.portfolioId]: [...(state.items[input.portfolioId] || []), item],
-          },
-        }));
-        await get().refreshPortfolio(input.portfolioId);
-        trackAnalyticsEvent(
-          "portfolio_item_added",
-          {
-            portfolio_id: normalizedInput.portfolioId,
-            item_type: normalizedInput.itemType,
-            dish_id: normalizedInput.dishId,
-            stall_id: normalizedInput.stallId,
-            score: normalizedInput.score,
-          },
-          { userId: getAnalyticsUserId() },
-        );
-        return item;
-      },
-
-      updateItem: async (id: string, updates: Partial<PortfolioItemCreateInput>) => {
-        const portfolioId = getPortfolioIdForItem(get().items, id);
-        if (portfolioId) {
-          await ensurePortfolioFresh(get, set, portfolioId);
-        }
-        const service = getHungryService();
-        const normalizedUpdates = { ...updates, score: normalizeScore(updates.score) };
-        await service.portfolio.updatePortfolioItem(
-          id,
-          normalizedUpdates,
-          portfolioId ? getPortfolioMutationOptions(get().portfolios, portfolioId) : undefined,
-        );
-        set((state) => {
-          const newItems = { ...state.items };
-          for (const portfolioId in newItems) {
-            newItems[portfolioId] = newItems[portfolioId].map((item) =>
-              item.id === id ? { ...item, ...normalizedUpdates } : item,
-            );
-          }
-          return { items: newItems };
-        });
-        if (portfolioId) {
-          await get().refreshPortfolio(portfolioId);
-        }
-      },
-
-      deleteItem: async (id: string, portfolioId: string) => {
-        await ensurePortfolioFresh(get, set, portfolioId);
-        const service = getHungryService();
-        await service.portfolio.deletePortfolioItem(
-          id,
-          getPortfolioMutationOptions(get().portfolios, portfolioId),
-        );
-        set((state) => ({
-          items: {
-            ...state.items,
-            [portfolioId]: (state.items[portfolioId] ?? []).filter((item) => item.id !== id),
-          },
-        }));
-        await get().refreshPortfolio(portfolioId);
-      },
-
-      reorderItems: async (portfolioId: string, itemIds: string[]) => {
-        await ensurePortfolioFresh(get, set, portfolioId);
-        const service = getHungryService();
-        const items = get().items[portfolioId] || [];
-        assertCompleteReorder(portfolioId, items, itemIds);
-        await service.portfolio.reorderPortfolioItems(
-          portfolioId,
-          itemIds,
-          getPortfolioMutationOptions(get().portfolios, portfolioId),
-        );
-        set((state) => {
-          const items = state.items[portfolioId] || [];
-          const itemById = new Map(items.map((item) => [item.id, item]));
-          const reordered = itemIds
-            .map((id) => itemById.get(id))
-            .filter(Boolean) as PortfolioItem[];
-          return {
-            items: { ...state.items, [portfolioId]: reordered },
-          };
-        });
-        await get().refreshPortfolio(portfolioId);
-      },
-
-      addCollaborator: async (portfolioId: string, userId: string, role: "viewer" | "editor") => {
-        await ensurePortfolioFresh(get, set, portfolioId);
-        const service = getHungryService();
-        await service.portfolio.addPortfolioCollaborator(
-          portfolioId,
-          userId,
-          role,
-          getPortfolioMutationOptions(get().portfolios, portfolioId),
-        );
-        await get().loadPortfolioCollaborators(portfolioId);
-        await get().refreshPortfolio(portfolioId);
-      },
-
-      removeCollaborator: async (portfolioId: string, userId: string) => {
-        await ensurePortfolioFresh(get, set, portfolioId);
-        const service = getHungryService();
-        await service.portfolio.removePortfolioCollaborator(
-          portfolioId,
-          userId,
-          getPortfolioMutationOptions(get().portfolios, portfolioId),
-        );
-        set((state) => ({
-          collaborators: {
-            ...state.collaborators,
-            [portfolioId]: (state.collaborators[portfolioId] ?? []).filter(
-              (c) => c.userId !== userId,
-            ),
-          },
-        }));
-        await get().refreshPortfolio(portfolioId);
-      },
-
-      followPortfolio: async (portfolioId: string) => {
-        const service = getHungryService();
-        await service.portfolio.followPortfolio(portfolioId);
-        set((state) => ({
-          follows: { ...state.follows, [portfolioId]: true },
-        }));
-        trackAnalyticsEvent(
-          "portfolio_followed",
-          { portfolio_id: portfolioId },
-          { userId: getAnalyticsUserId() },
-        );
-      },
-
-      unfollowPortfolio: async (portfolioId: string) => {
-        const service = getHungryService();
-        await service.portfolio.unfollowPortfolio(portfolioId);
-        set((state) => ({
-          follows: { ...state.follows, [portfolioId]: false },
-        }));
-      },
-
-      flagPortfolio: async (portfolioId: string, reason: string, details?: string) => {
-        const service = getHungryService();
-        await service.portfolio.flagPortfolio(portfolioId, reason, details);
-        trackAnalyticsEvent(
-          "portfolio_flagged",
-          { portfolio_id: portfolioId, reason },
-          { userId: getAnalyticsUserId() },
-        );
-      },
-
-      searchPortfolios: async (query: string, filters?: { type?: string; visibility?: string }) => {
-        const service = getHungryService();
-        return await service.portfolio.searchPortfolios(query, filters);
-      },
-
-      refreshPortfolio: async (portfolioId: string) => {
-        const service = getHungryService();
-        const portfolio = await service.portfolio.getPortfolio(portfolioId);
-        set((state) => ({
-          portfolios: [
-            portfolio,
-            ...state.portfolios.filter((entry) => entry.id !== portfolioId),
-          ].sort((left, right) => right.updatedAt.localeCompare(left.updatedAt)),
-          conflicts: Object.fromEntries(
-            Object.entries(state.conflicts).filter(([key]) => key !== portfolioId),
-          ),
-        }));
-        return portfolio;
-      },
-
-      clearConflict: (portfolioId: string) => {
-        set((state) => ({
-          conflicts: Object.fromEntries(
-            Object.entries(state.conflicts).filter(([key]) => key !== portfolioId),
-          ),
-        }));
-      },
-
-      _reset: () =>
-        set({
-          portfolios: [],
-          items: {},
-          collaborators: {},
-          follows: {},
-          conflicts: {},
-          isLoaded: false,
-        }),
-    }),
-    {
-      name: "portfolio-storage",
-      storage: hungryPersistStorage,
-      partialize: (state) => ({
-        portfolios: state.portfolios,
-        items: state.items,
-        collaborators: state.collaborators,
-        follows: state.follows,
-        conflicts: state.conflicts,
-      }),
-    },
-  ),
-);
+    });
+  },
+}));

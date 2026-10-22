@@ -1,0 +1,41 @@
+(node:70877) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ catalog read v2 uses RPC pages instead of the BrowseIndex in its active branch (1.114458ms)
+✔ raw catalog service is authenticated, cursor-paged, and non-persistent (0.272917ms)
+✔ raw catalog migration preserves a separate authenticated release lane (1.111125ms)
+✔ V2 discovery entry points do not warm the legacy browse index and map passes viewport filters (0.962083ms)
+✔ catalog release publisher fails when count validation does not activate a release (0.504042ms)
+(node:70878) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ stall detail uses real venue hours and popular visitors (2.530916ms)
+✔ dish detail V2 avoids invented wait times and fake hours (0.871875ms)
+✔ dish detail V2 action dock is labelled, stateful and meets 44px targets (0.670041ms)
+(node:70879) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Browse Stalls uses the active repository before showing empty state (2.019291ms)
+✔ Browse image-grid cards use the same dish image and destination as dish detail (0.471625ms)
+✔ image grids retain one dish identity through image failures and gestures (0.505333ms)
+(node:70880) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Screen header contract: shared app headers use one fixed title treatment (1.027208ms)
+✔ Screen header contract: live Discover, Review, and New Post headers use AppHeader (2.249625ms)
+✔ Discover V1 contract: situation intents live in their matching sections (125.222875ms)
+✔ Discover V1 contract: browse cards open the image-feed browse mode (4.21575ms)
+✔ Quick Bites contract: empty-state icon is not clipped (4.847625ms)
+✔ Discover collapses empty rails and offers pull-to-refresh plus one error state (5.445375ms)
+(node:70881) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ buildDishGallery keeps hero first and removes duplicate URLs (0.850625ms)
+✔ deriveStallCommunityReviews flattens dish reviews with deterministic metadata (0.217ms)
+(node:70882) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ failed gallery images retain the source index of the surviving image (1.872458ms)
+✔ a failed gallery never substitutes unrelated media (0.128375ms)
+ℹ tests 21
+ℹ suites 0
+ℹ pass 21
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 713.513042

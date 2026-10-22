@@ -1,0 +1,23 @@
+(node:94240) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[1A[2K[2m[WebServer] [22m(node:94251) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 4 tests using 1 worker
+
+[1A[2K(node:94457) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:94457) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+
+[1A[2K(node:94457) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K[1/4] [chromium] › tests/e2e/buttons-interactions.spec.ts:12:7 › supported buttons and composer interactions › launcher buttons open the supported composer
+[1A[2K[2/4] [chromium] › tests/e2e/buttons-interactions.spec.ts:24:7 › supported buttons and composer interactions › an account-scoped composer draft survives reload and returning to that account
+[1A[2K[3/4] [chromium] › tests/e2e/buttons-interactions.spec.ts:42:7 › supported buttons and composer interactions › unsupported AI and scheduling controls are absent from the supported composer
+[1A[2K[4/4] [chromium] › tests/e2e/buttons-interactions.spec.ts:63:7 › supported buttons and composer interactions › missing media keeps publication disabled while preserving the entered draft
+[1A[2K  4 passed (1.0m)

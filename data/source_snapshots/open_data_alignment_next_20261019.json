@@ -1,0 +1,101 @@
+{
+  "task": "Read-only official open-data alignment for the current public-access F&B workbook",
+  "observed_at": "2026-10-19",
+  "workbook": {
+    "path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "sha256": "1f32e2fe53ca6e82bffab65f1f39e21d197c8d1ea040018933e1b8cb26638081",
+    "directory_records": 38278,
+    "field_coverage": {
+      "F&B Name": 32796,
+      "Registered Business Name": 0,
+      "Cuisine": 1520,
+      "Menu / Price": 522,
+      "Opening Hours / Closed Days": 1474,
+      "Contact Details": 2704,
+      "Website": 2814,
+      "Menu URL": 1471,
+      "Full Address": 38278,
+      "Postal Code": 38176,
+      "Latitude and Longitude": 35740,
+      "Rating / Review Count": 0,
+      "Approved Image URL": 0
+    }
+  },
+  "official_open_dataset": {
+    "name": "Hawker Centres (GEOJSON)",
+    "agency": "National Environment Agency (NEA)",
+    "dataset_id": "d_4a086da0a5553be1d89383cd90d07ecd",
+    "dataset_url": "https://data.gov.sg/datasets/d_4a086da0a5553be1d89383cd90d07ecd/view",
+    "download_api": "https://api-open.data.gov.sg/v1/public/api/datasets/d_4a086da0a5553be1d89383cd90d07ecd/initiate-download",
+    "source_data_coverage": "Nov 2025",
+    "catalogue_page_observation": "data.gov.sg search result indexed for 2026-10-19 reported last updated about 14 hours before observation; check its metadata again before each refresh",
+    "reuse": "data.gov.sg Open Data Licence; free for personal or commercial use per dataset page",
+    "feature_count": 129,
+    "source_payload_sha256": "722ffdb3e68627c1724bc47f72889e09e790904ff23a1fa630595d76265f7451",
+    "fields": [
+      "NAME",
+      "ADDRESSPOSTALCODE",
+      "ADDRESS_MYENV",
+      "STATUS",
+      "PHOTOURL",
+      "NUMBER_OF_COOKED_FOOD_STALLS",
+      "FMEL_UPD_D",
+      "geometry.coordinates"
+    ]
+  },
+  "exact_join_audit": {
+    "join_key": "six-digit workbook Postal Code == NEA ADDRESSPOSTALCODE",
+    "distinct_hawker_centre_postcodes": 129,
+    "distinct_centres_with_photo_url": 111,
+    "matched_directory_records": 6258,
+    "matched_directory_records_at_centres_with_photo_url": 5694,
+    "matched_rows_missing_latitude_or_longitude": 0,
+    "unnamed_outlets_with_matching_hawker_centre_postcode": 1790,
+    "workbook_changed": false
+  },
+  "actionable_proposal": {
+    "disposition": "Do not copy centre PHOTOURL to outlet Approved Image URL or label it as a stall image. It depicts the hawker centre, not the exact tenant, so that would misrepresent image scope.",
+    "possible_future_use": "If the workbook gains a separate location/entity-level image catalogue, add the 111 NEA PHOTOURL values as centre-context references, joined on exact six-digit postal code and named with NEA NAME; retain source URL, observation date, and centre-only scope.",
+    "fields_not_safely_enriched_from_this_dataset": [
+      "stall name",
+      "registered business name",
+      "menu",
+      "price",
+      "hours",
+      "contact",
+      "rating",
+      "stall image"
+    ],
+    "coordinate_value": "No coordinate enrichment opportunity for matched rows; all 6258 exact-postcode outlet matches already have latitude and longitude. NEA coordinates are centre points, not stall/unit points."
+  },
+  "other_official_source_checks": [
+    {
+      "source": "SFA Eating Establishments legacy dataset d_1f0313499a17075d13aae6ed3e825bc6",
+      "result": "The public data.gov.sg download endpoint returned DATASET_DOES_NOT_EXIST on 2026-10-19; do not treat it as a live refresh feed without locating the replacement collection.",
+      "endpoint": "https://api-open.data.gov.sg/v1/public/api/datasets/d_1f0313499a17075d13aae6ed3e825bc6/poll-download"
+    },
+    {
+      "source": "SFA certificate grading dataset d_546a95c5e6a0a264a82247ec107a0629",
+      "result": "Legacy page URL resolved as dataset not found; a current replacement identifier/feed must be verified before use."
+    },
+    {
+      "source": "OneMap Search API",
+      "result": "Not called; ONEMAP_API_TOKEN was absent from this worker process environment. No credential value was read or printed."
+    },
+    {
+      "source": "Mapbox Search Box API",
+      "result": "Not called."
+    }
+  ],
+  "cost": {
+    "paid_services_used": false,
+    "paid_api_calls": 0
+  },
+  "evidence": [
+    "https://data.gov.sg/datasets/d_4a086da0a5553be1d89383cd90d07ecd/view",
+    "https://api-open.data.gov.sg/v1/public/api/datasets/d_4a086da0a5553be1d89383cd90d07ecd/initiate-download",
+    "https://data.gov.sg/datasets/d_1f0313499a17075d13aae6ed3e825bc6/view",
+    "https://data.gov.sg/datasets/d_546a95c5e6a0a264a82247ec107a0629/view"
+  ],
+  "integration_status": "reviewed only; no centre-level image/coordinates applied to individual stalls"
+}

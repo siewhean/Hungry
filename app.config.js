@@ -50,6 +50,7 @@ module.exports = ({ config } = {}) => {
   const isProduction = appEnv === "production";
 
   resolvedConfig.plugins = withSentryPluginEnv(resolvedConfig.plugins || []);
+  if (!resolvedConfig.plugins.some((plugin) => pluginName(plugin) === "expo-sharing")) resolvedConfig.plugins.push("expo-sharing");
 
   if (hasExplicitAppEnv()) {
     resolvedConfig.extra = {

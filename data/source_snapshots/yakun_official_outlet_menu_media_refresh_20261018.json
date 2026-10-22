@@ -1,0 +1,1327 @@
+{
+  "snapshot_id": "yakun_official_outlet_menu_media_refresh_20261018",
+  "captured_at": "2026-10-18T18:14:33+08:00",
+  "scope": "Read-only official-source enrichment evidence; current public-access master. Workbook not edited.",
+  "master_workbook_path": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "master_workbook_sha256": "3ce9c0b79a9dbc4fb8724061754b0f3adfdbbeff56aa9caca71b8c5353fff9b7",
+  "source_urls": [
+    "https://app.yakun.com/find-us",
+    "https://app.yakun.com/menu.html"
+  ],
+  "source_content_sha256": {
+    "master_workbook_sha256": "3ce9c0b79a9dbc4fb8724061754b0f3adfdbbeff56aa9caca71b8c5353fff9b7",
+    "yakun_find_us_html_sha256": "d0e4f74ad4c08cf305d7c1022b732af310310541277e9c330ce1da87ddd32ce9",
+    "yakun_menu_pages": [
+      "b6407b8f0d887537f32b06b5e269f7ed92b85d1edf2abf1516b2ecbfd20717a8",
+      "9d81bbd1e50feadb824eddb6fe4fc5767ba9d056d3dec9ddde5a6522fc783258",
+      "99423d85a5c1c0feea4ade9f8b9977c50b380c9a6a54ade7ced1c5450f577f60",
+      "80ca0e5195e1586d4f74d36dc3ad8219311e1f230a628c1de81bb960dee68405",
+      "21d85fc67a69ffb8c5fe6a3b01983be79cef7c72bb1f2a6f6826daa978dfc062",
+      "d1ed4491e05983198ea8388dab918ab1aca1af3c02177302d64f4af7a252bef0"
+    ]
+  },
+  "join_policy": "Exact postal code and exact floor/unit token where both provide a unit; no name-only joins. Add candidates only when destination workbook cell is blank; never overwrite existing values.",
+  "counts": {
+    "master_yakun_rows": 88,
+    "unique_official_outlets": 93,
+    "exact_outlet_join_licenses": 75,
+    "rows_with_blank_only_candidates": 3,
+    "blank_cell_candidates": 10,
+    "official_menu_items_with_image_urls": 68,
+    "ambiguous_matches": 0,
+    "official_menu_items_exact_name_already_in_workbook": 68,
+    "official_image_urls_new_vs_existing_image_sheet": 68,
+    "image_url_http_200_image_type_verified": 68,
+    "image_url_unverified_or_non_image": 0
+  },
+  "blank_only_outlet_candidates": [
+    {
+      "sfa_license": "CE18V18C000",
+      "fnb_name": "YA KUN KAYA TOAST",
+      "postal_code": "339511",
+      "db_address": "Address: 12 KALLANG AVENUE #01-28B,#01-33,APERIA,Singapore 339511",
+      "official_outlet": {
+        "official_outlet_name": "Aperia",
+        "official_address": "12 Kallang Ave #01-33, Singapore 339511",
+        "postal_code": "339511",
+        "unit_tokens": [
+          [
+            "01",
+            "33"
+          ]
+        ],
+        "phone": null,
+        "hours": "Mon - Fri: 7:30am - 7:00pm Sat & Sun: 7:30am - 6:00pm (Last Order is half an hour before closing time)"
+      },
+      "blank_only_field_candidates": {
+        "Opening Hours / Closed Days": "Hours: Mon - Fri: 7:30am - 7:00pm Sat & Sun: 7:30am - 6:00pm (Last Order is half an hour before closing time)",
+        "Website": "https://app.yakun.com/",
+        "Menu URL": "https://app.yakun.com/menu.html"
+      },
+      "source_url": "https://app.yakun.com/find-us"
+    },
+    {
+      "sfa_license": "SE13196J000",
+      "fnb_name": "Ya Kun Kaya Toast",
+      "postal_code": "486038",
+      "db_address": "Address: 5 CHANGI BUSINESS PARK CENTRAL 1 #B1-K1,CHANGI CITY,Singapore 486038",
+      "official_outlet": {
+        "official_outlet_name": "Changi City Point",
+        "official_address": "5 Changi Business Park Central 1, #B1- K1, Singapore 486038",
+        "postal_code": "486038",
+        "unit_tokens": [
+          [
+            "B1",
+            "K1"
+          ]
+        ],
+        "phone": "+65 6909 8274",
+        "hours": "Mon - Fri & PH: 7:30am - 5:30pm Sat - Sun: 7:30am - 7:30pm (Last Order is half an hour before closing time)"
+      },
+      "blank_only_field_candidates": {
+        "Contact Details": "Contact: +65 6909 8274",
+        "Opening Hours / Closed Days": "Hours: Mon - Fri & PH: 7:30am - 5:30pm Sat - Sun: 7:30am - 7:30pm (Last Order is half an hour before closing time)",
+        "Website": "https://app.yakun.com/",
+        "Menu URL": "https://app.yakun.com/menu.html"
+      },
+      "source_url": "https://app.yakun.com/find-us"
+    },
+    {
+      "sfa_license": "SW17661J000",
+      "fnb_name": "Ya Kun Kaya Toast - Harbourfront Tower One",
+      "postal_code": "098633",
+      "db_address": "Address: 1 HARBOURFRONT PLACE #01-08A,HARBOURFRONT TOWER ONE,Singapore 098633",
+      "official_outlet": {
+        "official_outlet_name": "HarbourFront Tower (Tower 1)",
+        "official_address": "1 Harbourfront Place #01-08A Harbourfront Tower One, Singapore 098633",
+        "postal_code": "098633",
+        "unit_tokens": [
+          [
+            "01",
+            "08A"
+          ]
+        ],
+        "phone": null,
+        "hours": "Mon - Fri: 7:00am - 7:00pm Sat: 7:30am - 1:00pm Sun & PH: Closed (Last Order is half an hour before closing time)"
+      },
+      "blank_only_field_candidates": {
+        "Opening Hours / Closed Days": "Hours: Mon - Fri: 7:00am - 7:00pm Sat: 7:30am - 1:00pm Sun & PH: Closed (Last Order is half an hour before closing time)",
+        "Website": "https://app.yakun.com/",
+        "Menu URL": "https://app.yakun.com/menu.html"
+      },
+      "source_url": "https://app.yakun.com/find-us"
+    }
+  ],
+  "ambiguous_matches": [],
+  "menu_catalogue": {
+    "scope": "Brand-level catalogue, no branch-specific availability or price inference",
+    "pages": [
+      {
+        "page": 1,
+        "url": "https://app.yakun.com/menu.html",
+        "sha256": "b6407b8f0d887537f32b06b5e269f7ed92b85d1edf2abf1516b2ecbfd20717a8",
+        "bytes": 90540
+      },
+      {
+        "page": 2,
+        "url": "https://app.yakun.com/menu.html?p=2",
+        "sha256": "9d81bbd1e50feadb824eddb6fe4fc5767ba9d056d3dec9ddde5a6522fc783258",
+        "bytes": 90953
+      },
+      {
+        "page": 3,
+        "url": "https://app.yakun.com/menu.html?p=3",
+        "sha256": "99423d85a5c1c0feea4ade9f8b9977c50b380c9a6a54ade7ced1c5450f577f60",
+        "bytes": 90784
+      },
+      {
+        "page": 4,
+        "url": "https://app.yakun.com/menu.html?p=4",
+        "sha256": "80ca0e5195e1586d4f74d36dc3ad8219311e1f230a628c1de81bb960dee68405",
+        "bytes": 90616
+      },
+      {
+        "page": 5,
+        "url": "https://app.yakun.com/menu.html?p=5",
+        "sha256": "21d85fc67a69ffb8c5fe6a3b01983be79cef7c72bb1f2a6f6826daa978dfc062",
+        "bytes": 90718
+      },
+      {
+        "page": 6,
+        "url": "https://app.yakun.com/menu.html?p=6",
+        "sha256": "d1ed4491e05983198ea8388dab918ab1aca1af3c02177302d64f4af7a252bef0",
+        "bytes": 86800
+      }
+    ],
+    "items": [
+      {
+        "item_name": "Kaya Toast with Butter",
+        "official_item_page_url": "https://app.yakun.com/kaya-toast-with-butter.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/k/a/kaya-toast-with-butter.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Kaya Peanut Toast",
+        "official_item_page_url": "https://app.yakun.com/kaya-peanut-toast.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/k/a/kaya-toast-with-peanut.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Butter Sugar Toast",
+        "official_item_page_url": "https://app.yakun.com/butter-sugar-toast.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/b/u/butter-sugar-toast.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "French Toast with Kaya",
+        "official_item_page_url": "https://app.yakun.com/french-toast-with-kaya.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/f/r/french-toast-with-kaya.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Cheezy French Toast with Kaya",
+        "official_item_page_url": "https://app.yakun.com/cheezy-french-toast-with-kaya.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/s/m/smoked-cheese-french-toast-with-kaya.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Kaya Butter Steamed Bread",
+        "official_item_page_url": "https://app.yakun.com/kaya-butter-steamed-bread.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/s/t/steamed-bread.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Chicken Char Siew Toastwich",
+        "official_item_page_url": "https://app.yakun.com/chicken-char-siew-toastwich.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/c/h/chicken-char-siew-toastwich.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Fish Otah Toastwich",
+        "official_item_page_url": "https://app.yakun.com/fish-otah-toastwich.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/f/i/fish-otah-toastwich.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Rendang Chicken Toastwich",
+        "official_item_page_url": "https://app.yakun.com/rendang-chicken-toastwich.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/r/e/rendang-chicken-toastwich.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Tuna Mayo Toastwich",
+        "official_item_page_url": "https://app.yakun.com/tuna-mayo-toastwich.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/t/u/tuna-mayo-toastwich.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Kaya Balls",
+        "official_item_page_url": "https://app.yakun.com/kaya-balls.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/k/a/kaya-balls.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Cheese Balls",
+        "official_item_page_url": "https://app.yakun.com/cheese-balls.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/c/h/cheese-balls.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Kaya Butter Crackers",
+        "official_item_page_url": "https://app.yakun.com/kaya-butter-crackers.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/k/a/kaya-butter-crackers.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Soft Boiled Eggs",
+        "official_item_page_url": "https://app.yakun.com/soft-boiled-eggs.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/s/o/soft-boiled-eggs.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Laksa",
+        "official_item_page_url": "https://app.yakun.com/laksa.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/p/r/prawn-laksa.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Mee Rebus",
+        "official_item_page_url": "https://app.yakun.com/mee-rebus.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/m/e/mee-rebus.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Mee Siam",
+        "official_item_page_url": "https://app.yakun.com/mee-siam.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/m/e/mee-siam.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Prawn Noodle Soup",
+        "official_item_page_url": "https://app.yakun.com/prawn-noodle-soup.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/p/r/prawn-noodle.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Satay Chicken Cutlet with Rice",
+        "official_item_page_url": "https://app.yakun.com/satay-chicken-cutlet-with-rice.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/s/a/satay-chicken-cutlet-with-rice.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Chicken Curry (Bread/Noodles/Rice)",
+        "official_item_page_url": "https://app.yakun.com/chicken-curry-bread-noodles-rice.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/c/u/curry-chicken-noodle.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Chicken Wing Nasi Lemak Istimewa",
+        "official_item_page_url": "https://app.yakun.com/chicken-wing-nasi-lemak-istimewa.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/c/h/chicken-wing-nasi-lemak-istimewa.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Fish Otah Nasi Lemak Istimewa",
+        "official_item_page_url": "https://app.yakun.com/fish-otah-nasi-lemak-istimewa.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/f/i/fish-otah-nasi-lemak-istimewa.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Chicken Laksa",
+        "official_item_page_url": "https://app.yakun.com/chicken-laksa.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/c/h/chicken-laksa.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Signature Kaya Pandan Muffin",
+        "official_item_page_url": "https://app.yakun.com/signature-kaya-pandan-muffin.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/s/i/signature-kaya-pandan-muffin.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Orange Choco Muffin",
+        "official_item_page_url": "https://app.yakun.com/orange-choco-muffin.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/o/r/orange-choco-muffin.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Double Choco Muffin",
+        "official_item_page_url": "https://app.yakun.com/double-choco-muffin.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/d/o/double-choco-muffin.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Banana Walnut Muffin",
+        "official_item_page_url": "https://app.yakun.com/banana-walnut-muffin.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/b/a/banana-walnut.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Ondeh Pandan Swiss Roll",
+        "official_item_page_url": "https://app.yakun.com/ondeh-pandan-swiss-roll.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/o/n/ondeh-pandan-swiss-roll.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Black Sesame Swiss Roll",
+        "official_item_page_url": "https://app.yakun.com/black-sesame-swiss-roll.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/b/l/black-sesame-swiss-roll.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Coffee Walnut Swiss Roll",
+        "official_item_page_url": "https://app.yakun.com/coffee-walnut-swiss-roll.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/c/o/coffeewalnut-swiss-roll.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Kaya Pandan Chiffon",
+        "official_item_page_url": "https://app.yakun.com/kaya-pandan-chiffon.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/k/a/kaya-pandan-chiffon.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Coffee",
+        "official_item_page_url": "https://app.yakun.com/coffee.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/c/o/coffee.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Coffee O",
+        "official_item_page_url": "https://app.yakun.com/coffee-o.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/c/o/coffee-o.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Coffee C",
+        "official_item_page_url": "https://app.yakun.com/coffee-c.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/c/o/coffee-c.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Tea",
+        "official_item_page_url": "https://app.yakun.com/tea.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/t/e/tea.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Tea O",
+        "official_item_page_url": "https://app.yakun.com/tea-o.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/t/e/tea-o.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Tea C",
+        "official_item_page_url": "https://app.yakun.com/tea-c.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/t/e/tea-c.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Yuan Yang",
+        "official_item_page_url": "https://app.yakun.com/yuan-yang.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/y/u/yuan-yang.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Yuan Yang O",
+        "official_item_page_url": "https://app.yakun.com/yuan-yang-o.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/y/u/yuan-yang-o.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Yuan Yang C",
+        "official_item_page_url": "https://app.yakun.com/yuan-yang-c.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/y/u/yuan-yang-c.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Ginger Tea",
+        "official_item_page_url": "https://app.yakun.com/ginger-tea.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/g/i/ginger-milk-tea.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Ginger Tea O",
+        "official_item_page_url": "https://app.yakun.com/ginger-tea-o.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/g/i/ginger-tea-o.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Ginger Water",
+        "official_item_page_url": "https://app.yakun.com/ginger-water.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/g/i/ginger-water.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Horlick",
+        "official_item_page_url": "https://app.yakun.com/horlick.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/h/o/horlicks.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Milo",
+        "official_item_page_url": "https://app.yakun.com/milo.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/m/i/milo.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Lemon Tea",
+        "official_item_page_url": "https://app.yakun.com/lemon-tea.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/l/e/lemon-tea.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Honey Lemon",
+        "official_item_page_url": "https://app.yakun.com/honey-lemon.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/b/u/buzzy-honey-lemon.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Silky Barley",
+        "official_item_page_url": "https://app.yakun.com/silky-barley.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/s/i/silky-barley.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Chinese Tea",
+        "official_item_page_url": "https://app.yakun.com/chinese-tea.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/c/h/chinese-tea.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Iced Coffee",
+        "official_item_page_url": "https://app.yakun.com/iced-coffee.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/i/c/iced-coffee.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Iced Coffee O",
+        "official_item_page_url": "https://app.yakun.com/iced-coffee-o.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/i/c/iced-coffee-o.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Iced Coffee C",
+        "official_item_page_url": "https://app.yakun.com/iced-coffee-c.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/i/c/iced-coffee-c.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Iced Tea",
+        "official_item_page_url": "https://app.yakun.com/iced-tea.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/i/c/iced-tea.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Iced Tea O",
+        "official_item_page_url": "https://app.yakun.com/iced-tea-o.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/i/c/iced-tea-o.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Iced Tea C",
+        "official_item_page_url": "https://app.yakun.com/iced-tea-c.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/i/c/iced-tea-c.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Iced Yuan Yang",
+        "official_item_page_url": "https://app.yakun.com/iced-yuan-yang.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/i/c/iced-yuan-yang.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Iced Yuan Yang O",
+        "official_item_page_url": "https://app.yakun.com/iced-yuan-yang-o.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/i/c/iced-yuan-yang-o.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Iced Yuan Yang C",
+        "official_item_page_url": "https://app.yakun.com/iced-yuan-yang-c.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/i/c/iced-yuan-yang-c.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Iced Ginger Tea",
+        "official_item_page_url": "https://app.yakun.com/iced-ginger-tea.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/i/c/iced-ginger-milk-tea.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Iced Horlick",
+        "official_item_page_url": "https://app.yakun.com/iced-horlick.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/i/c/iced-horlicks.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Iced Milo",
+        "official_item_page_url": "https://app.yakun.com/iced-milo.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/i/c/iced-milo.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Iced Lemon Tea",
+        "official_item_page_url": "https://app.yakun.com/iced-lemon-tea.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/i/c/iced-lemon-tea.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Iced Honey Lemon",
+        "official_item_page_url": "https://app.yakun.com/iced-honey-lemon.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/i/c/iced-buzzy-honey-lemon.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Iced Silky Barley",
+        "official_item_page_url": "https://app.yakun.com/iced-silky-barley.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/i/c/iced-silkyz-barley.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Iced Soya Coffee O",
+        "official_item_page_url": "https://app.yakun.com/iced-soya-coffee-o.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/i/c/iced-soya-coffee-o.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Iced Soya Coffee",
+        "official_item_page_url": "https://app.yakun.com/iced-soya-coffee.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/i/c/iced-soya-coffee.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Iced Soya Tea O",
+        "official_item_page_url": "https://app.yakun.com/iced-soya-tea-o.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/i/c/iced-soya-tea.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      },
+      {
+        "item_name": "Iced Soya Tea",
+        "official_item_page_url": "https://app.yakun.com/iced-soya-tea.html",
+        "official_image_url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/i/c/iced-soya-tea-o.jpg",
+        "image_rights_status": "official-hosted; reuse/display rights unreviewed; review-only"
+      }
+    ]
+  },
+  "image_rights": "Officially hosted URLs; not stock/generated/placeholder images. No downloaded copies or display approvals. Reuse/display rights remain unreviewed.",
+  "deduplication": "Directory outlet dedupe by postal+address+name; menu dedupe by official product detail URL.",
+  "limitations": [
+    "Official menu items are brand-level and may not be available at every SFA outlet.",
+    "Official page unit/postal had to match workbook exactly; unclear/mismatched records were excluded.",
+    "curl certificate verification was bypassed because the local Python CA chain is missing; hosts were official source domains and bytes are pinned by SHA-256.",
+    "No closures inferred, no rows deleted.",
+    "No paid API, Mapbox, or third-party delivery source used."
+  ],
+  "spend_sgd": 0,
+  "image_url_head_checks": [
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/k/a/kaya-toast-with-butter.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 13249",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/k/a/kaya-toast-with-peanut.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 12452",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/b/u/butter-sugar-toast.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 13099",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/f/r/french-toast-with-kaya.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 11641",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/s/m/smoked-cheese-french-toast-with-kaya.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 12329",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/s/t/steamed-bread.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 12251",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/c/h/chicken-char-siew-toastwich.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 12860",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/f/i/fish-otah-toastwich.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 12641",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/r/e/rendang-chicken-toastwich.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 13560",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/t/u/tuna-mayo-toastwich.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 12963",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/k/a/kaya-balls.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 12495",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/c/h/cheese-balls.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 12091",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/k/a/kaya-butter-crackers.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 12840",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/s/o/soft-boiled-eggs.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 8530",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/p/r/prawn-laksa.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 11323",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/m/e/mee-rebus.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 9686",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/m/e/mee-siam.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 9773",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/p/r/prawn-noodle.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 11168",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/s/a/satay-chicken-cutlet-with-rice.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 12790",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/c/u/curry-chicken-noodle.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 13551",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/c/h/chicken-wing-nasi-lemak-istimewa.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 12546",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/f/i/fish-otah-nasi-lemak-istimewa.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 11449",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/c/h/chicken-laksa.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 12330",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/s/i/signature-kaya-pandan-muffin.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 11233",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/o/r/orange-choco-muffin.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 14422",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/d/o/double-choco-muffin.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 12986",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/b/a/banana-walnut.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 9173",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/o/n/ondeh-pandan-swiss-roll.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 15857",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/b/l/black-sesame-swiss-roll.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 19221",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/c/o/coffeewalnut-swiss-roll.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 11779",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/k/a/kaya-pandan-chiffon.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 8702",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/c/o/coffee.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 11353",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/c/o/coffee-o.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 10875",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/c/o/coffee-c.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 11395",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/t/e/tea.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 10589",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/t/e/tea-o.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 10737",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/t/e/tea-c.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 11425",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/y/u/yuan-yang.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 11326",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/y/u/yuan-yang-o.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 10880",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/y/u/yuan-yang-c.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 11279",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/g/i/ginger-milk-tea.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 11401",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/g/i/ginger-tea-o.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 10755",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/g/i/ginger-water.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 10903",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/h/o/horlicks.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 10757",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/m/i/milo.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 11354",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/l/e/lemon-tea.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 11328",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/b/u/buzzy-honey-lemon.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 11148",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/s/i/silky-barley.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 10503",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/c/h/chinese-tea.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 11144",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/i/c/iced-coffee.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 11902",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/i/c/iced-coffee-o.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 14466",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/i/c/iced-coffee-c.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 11835",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/i/c/iced-tea.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 13424",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/i/c/iced-tea-o.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 13818",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/i/c/iced-tea-c.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 13488",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/i/c/iced-yuan-yang.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 11924",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/i/c/iced-yuan-yang-o.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 14459",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/i/c/iced-yuan-yang-c.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 12181",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/i/c/iced-ginger-milk-tea.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 13231",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/i/c/iced-horlicks.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 11592",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/i/c/iced-milo.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 12185",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/i/c/iced-lemon-tea.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 12037",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/i/c/iced-buzzy-honey-lemon.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 10481",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/i/c/iced-silkyz-barley.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 11300",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/i/c/iced-soya-coffee-o.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 15805",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/i/c/iced-soya-coffee.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 12871",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/i/c/iced-soya-tea.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 12153",
+        "content-type: image/jpeg"
+      ]
+    },
+    {
+      "url": "https://app.yakun.com/media/catalog/product/cache/9e5079f55496898341602af14db46af7/i/c/iced-soya-tea-o.jpg",
+      "curl_exit": 0,
+      "status": "200",
+      "content_type": "image/jpeg",
+      "head_response": [
+        "HTTP/2 200",
+        "content-length: 13713",
+        "content-type: image/jpeg"
+      ]
+    }
+  ]
+}

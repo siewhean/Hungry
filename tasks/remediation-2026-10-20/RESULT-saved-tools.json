@@ -1,0 +1,381 @@
+[
+  {
+    "id": "ST-01",
+    "status": "shared",
+    "files": [
+      "src/lib/services/supabase/supabaseService.ts",
+      "src/lib/services/mock/mockService.ts",
+      "src/components/portfolio/PortfolioItemRow.tsx"
+    ],
+    "checks": [
+      {
+        "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/saved-tools-remediation.test.ts src/store/checklist-portfolio-store.test.ts src/lib/services/mock/service-methods.test.ts",
+        "result": "50 passed, 0 failed; Node module.register deprecation warning only"
+      },
+      {
+        "command": "node scripts/run-eslint.cjs [owned stores, saved-tool screens and components, MockRealtimeChannel]",
+        "result": "Passed, exit 0"
+      }
+    ],
+    "reason": "Protected v2 private-note hydration; mock projection and owner/collaborator rendering. Database authorization and negative role tests owned by database agent.",
+    "remaining": [
+      "Deployed database owner/editor/viewer/stranger/anonymous authorization proof"
+    ],
+    "sharedOwner": "database"
+  },
+  {
+    "id": "ST-02",
+    "status": "implemented",
+    "files": [
+      "src/store/useWheelStore.ts",
+      "src/app/screens/wheel/WheelSpinScreen.tsx",
+      "src/app/screens/wheel/WheelResultModal.tsx"
+    ],
+    "checks": [
+      {
+        "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/saved-tools-remediation.test.ts src/store/checklist-portfolio-store.test.ts src/lib/services/mock/service-methods.test.ts",
+        "result": "50 passed, 0 failed; Node module.register deprecation warning only"
+      },
+      {
+        "command": "node scripts/run-eslint.cjs [owned stores, saved-tool screens and components, MockRealtimeChannel]",
+        "result": "Passed, exit 0"
+      }
+    ],
+    "reason": "Integer zero-safe central winner, exactly-once completion, interruption completion, repeated rounds, reduced motion.",
+    "remaining": [
+      "Native interrupted-animation and reduced-motion verification"
+    ]
+  },
+  {
+    "id": "ST-03",
+    "status": "shared",
+    "files": [
+      "src/store/usePortfolioStore.ts",
+      "src/store/useChecklistStore.ts",
+      "src/store/useCollectionStore.ts",
+      "src/store/useWheelStore.ts",
+      "src/lib/services/realtime/MockRealtimeChannel.ts"
+    ],
+    "checks": [
+      {
+        "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/saved-tools-remediation.test.ts src/store/checklist-portfolio-store.test.ts src/lib/services/mock/service-methods.test.ts",
+        "result": "50 passed, 0 failed; Node module.register deprecation warning only"
+      },
+      {
+        "command": "node scripts/run-eslint.cjs [owned stores, saved-tool screens and components, MockRealtimeChannel]",
+        "result": "Passed, exit 0"
+      }
+    ],
+    "reason": "Removed global private-row persistence; generation/subject guards reject late responses; reset hooks invalidate caches and queued events.",
+    "remaining": [
+      "Root account transition integration and legacy persisted-key deletion"
+    ],
+    "sharedOwner": "root"
+  },
+  {
+    "id": "ST-04",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/checklist",
+      "src/app/screens/portfolio",
+      "src/app/screens/discover/CollectionDetailScreen.tsx",
+      "src/app/screens/discover/CollectionListScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/saved-tools-remediation.test.ts src/store/checklist-portfolio-store.test.ts src/lib/services/mock/service-methods.test.ts",
+        "result": "50 passed, 0 failed; Node module.register deprecation warning only"
+      },
+      {
+        "command": "node scripts/run-eslint.cjs [owned stores, saved-tool screens and components, MockRealtimeChannel]",
+        "result": "Passed, exit 0"
+      }
+    ],
+    "reason": "Caught mutation/load failures; details/list distinguish loading/failure/empty/missing, preserve usable content and provide retry.",
+    "remaining": [
+      "Runtime offline/forbidden failure matrix across all saved-tool routes"
+    ]
+  },
+  {
+    "id": "ST-05",
+    "status": "implemented",
+    "files": [
+      "src/store/usePortfolioStore.ts",
+      "src/app/screens/portfolio/PortfolioDetailScreen.tsx",
+      "src/app/screens/portfolio/PortfolioPublicViewScreen.tsx",
+      "src/app/screens/portfolio/PortfoliosHomeScreen.tsx",
+      "src/components/portfolio/PortfolioCard.tsx"
+    ],
+    "checks": [
+      {
+        "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/saved-tools-remediation.test.ts src/store/checklist-portfolio-store.test.ts src/lib/services/mock/service-methods.test.ts",
+        "result": "50 passed, 0 failed; Node module.register deprecation warning only"
+      },
+      {
+        "command": "node scripts/run-eslint.cjs [owned stores, saved-tool screens and components, MockRealtimeChannel]",
+        "result": "Passed, exit 0"
+      }
+    ],
+    "reason": "Hydrate actual follow status and follower counts; omit unknown item counts.",
+    "remaining": [
+      "Live RLS read/count smoke"
+    ]
+  },
+  {
+    "id": "ST-06",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/portfolio/PortfolioCollaboratorsScreen.tsx",
+      "src/app/screens/portfolio/PortfolioDetailScreen.tsx",
+      "src/lib/services/mock/mockService.ts"
+    ],
+    "checks": [
+      {
+        "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/saved-tools-remediation.test.ts src/store/checklist-portfolio-store.test.ts src/lib/services/mock/service-methods.test.ts",
+        "result": "50 passed, 0 failed; Node module.register deprecation warning only"
+      },
+      {
+        "command": "node scripts/run-eslint.cjs [owned stores, saved-tool screens and components, MockRealtimeChannel]",
+        "result": "Passed, exit 0"
+      }
+    ],
+    "reason": "Human account search/select and viewer/editor capabilities; item edits permitted to editors; collaborator/metadata administration owner only.",
+    "remaining": [
+      "Live role matrix and keyboard interaction smoke"
+    ]
+  },
+  {
+    "id": "ST-07",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/portfolio/PortfolioDetailScreen.tsx",
+      "src/lib/services/supabase/supabaseService.ts",
+      "src/lib/services/mock/mockService.ts"
+    ],
+    "checks": [
+      {
+        "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/saved-tools-remediation.test.ts src/store/checklist-portfolio-store.test.ts src/lib/services/mock/service-methods.test.ts",
+        "result": "50 passed, 0 failed; Node module.register deprecation warning only"
+      },
+      {
+        "command": "node scripts/run-eslint.cjs [owned stores, saved-tool screens and components, MockRealtimeChannel]",
+        "result": "Passed, exit 0"
+      }
+    ],
+    "reason": "Inline item editing, explicit null clear for score and notes, portfolio deletion with confirmation; v2 patch omits unchanged fields.",
+    "remaining": [
+      "Live mutation smoke"
+    ]
+  },
+  {
+    "id": "ST-08",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/portfolio/PortfolioEditScreen.tsx",
+      "src/app/screens/portfolio/PortfolioDetailScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/saved-tools-remediation.test.ts src/store/checklist-portfolio-store.test.ts src/lib/services/mock/service-methods.test.ts",
+        "result": "50 passed, 0 failed; Node module.register deprecation warning only"
+      },
+      {
+        "command": "node scripts/run-eslint.cjs [owned stores, saved-tool screens and components, MockRealtimeChannel]",
+        "result": "Passed, exit 0"
+      }
+    ],
+    "reason": "Initialize forms once, preserve dirty text during remote refresh; show remote title/description for conflicts; route removal guard on portfolio editor.",
+    "remaining": [
+      "Native route-removal/conflict interaction verification"
+    ]
+  },
+  {
+    "id": "ST-09",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/portfolio/PortfolioItemPickerScreen.tsx",
+      "src/app/screens/checklist/ChecklistItemPickerScreen.tsx",
+      "src/app/screens/wheel/WheelEntryAddSheet.tsx"
+    ],
+    "checks": [
+      {
+        "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/saved-tools-remediation.test.ts src/store/checklist-portfolio-store.test.ts src/lib/services/mock/service-methods.test.ts",
+        "result": "50 passed, 0 failed; Node module.register deprecation warning only"
+      },
+      {
+        "command": "node scripts/run-eslint.cjs [owned stores, saved-tool screens and components, MockRealtimeChannel]",
+        "result": "Passed, exit 0"
+      }
+    ],
+    "reason": "Service-backed bounded venue search replaces first-six-building/synchronous cache discovery; mounted request guards and recoverable search errors.",
+    "remaining": [
+      "Live cold catalog search coverage; category/favourite Wheel tabs still use already available dish metadata"
+    ]
+  },
+  {
+    "id": "ST-10",
+    "status": "removed",
+    "files": [
+      "src/components/portfolio/PortfolioCard.tsx",
+      "src/app/screens/portfolio/PortfolioDetailScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/saved-tools-remediation.test.ts src/store/checklist-portfolio-store.test.ts src/lib/services/mock/service-methods.test.ts",
+        "result": "50 passed, 0 failed; Node module.register deprecation warning only"
+      },
+      {
+        "command": "node scripts/run-eslint.cjs [owned stores, saved-tool screens and components, MockRealtimeChannel]",
+        "result": "Passed, exit 0"
+      }
+    ],
+    "reason": "Removed Publish CTA and Draft/Published labels; existing visibility remains immediate authority.",
+    "remaining": []
+  },
+  {
+    "id": "ST-11",
+    "status": "shared",
+    "files": [
+      "src/lib/services/mock/mockService.ts",
+      "src/store/saved-tools-remediation.test.ts"
+    ],
+    "checks": [
+      {
+        "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/saved-tools-remediation.test.ts src/store/checklist-portfolio-store.test.ts src/lib/services/mock/service-methods.test.ts",
+        "result": "50 passed, 0 failed; Node module.register deprecation warning only"
+      },
+      {
+        "command": "node scripts/run-eslint.cjs [owned stores, saved-tool screens and components, MockRealtimeChannel]",
+        "result": "Passed, exit 0"
+      }
+    ],
+    "reason": "Mock moderation removal excludes ordinary/search/public views; forward database migration provides production enforcement.",
+    "remaining": [
+      "Deployed migration moderation negative cases"
+    ],
+    "sharedOwner": "database"
+  },
+  {
+    "id": "ST-12",
+    "status": "shared",
+    "files": [
+      "src/store/usePortfolioStore.ts",
+      "src/app/screens/portfolio/PortfolioItemPickerScreen.tsx",
+      "src/lib/services/supabase/supabaseService.ts",
+      "src/lib/services/mock/mockService.ts"
+    ],
+    "checks": [
+      {
+        "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/saved-tools-remediation.test.ts src/store/checklist-portfolio-store.test.ts src/lib/services/mock/service-methods.test.ts",
+        "result": "50 passed, 0 failed; Node module.register deprecation warning only"
+      },
+      {
+        "command": "node scripts/run-eslint.cjs [owned stores, saved-tool screens and components, MockRealtimeChannel]",
+        "result": "Passed, exit 0"
+      }
+    ],
+    "reason": "Strict decimal parsing/validation, no silent rounding, v2 numeric RPC and nullable patch.",
+    "remaining": [
+      "Clean replay/upgrade and direct database precision rejection"
+    ],
+    "sharedOwner": "database"
+  },
+  {
+    "id": "ST-13",
+    "status": "external_pending",
+    "files": [
+      "tasks/remediation-2026-10-20/DESIGN-saved-tools.md",
+      "src/app/screens/portfolio",
+      "src/app/screens/checklist",
+      "src/app/screens/wheel",
+      "src/components/collections/CollectionCard.tsx"
+    ],
+    "checks": [
+      {
+        "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/saved-tools-remediation.test.ts src/store/checklist-portfolio-store.test.ts src/lib/services/mock/service-methods.test.ts",
+        "result": "50 passed, 0 failed; Node module.register deprecation warning only"
+      },
+      {
+        "command": "node scripts/run-eslint.cjs [owned stores, saved-tool screens and components, MockRealtimeChannel]",
+        "result": "Passed, exit 0"
+      }
+    ],
+    "reason": "Added safe-area/keyboard adjustments, accessible save busy/selection states, 44-point save target, Wheel reduced motion.",
+    "remaining": [
+      "Complete native large-text, focus, contrast, VoiceOver/TalkBack and visual design comparison on identifiable candidates"
+    ]
+  },
+  {
+    "id": "ST-14",
+    "status": "implemented",
+    "files": [
+      "src/store/useWheelStore.ts",
+      "src/app/screens/wheel/WheelEntryAddSheet.tsx"
+    ],
+    "checks": [
+      {
+        "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/saved-tools-remediation.test.ts src/store/checklist-portfolio-store.test.ts src/lib/services/mock/service-methods.test.ts",
+        "result": "50 passed, 0 failed; Node module.register deprecation warning only"
+      },
+      {
+        "command": "node scripts/run-eslint.cjs [owned stores, saved-tool screens and components, MockRealtimeChannel]",
+        "result": "Passed, exit 0"
+      }
+    ],
+    "reason": "Venue deduplication; random choice uses current service results; remove unsupported nearby/group ranking claim; no synthetic taste ranking.",
+    "remaining": [
+      "Native candidate-scope and gated demo flow smoke"
+    ]
+  },
+  {
+    "id": "ST-15",
+    "status": "implemented",
+    "files": [
+      "src/store/useCollectionStore.ts",
+      "src/components/collections/CollectionCard.tsx",
+      "src/app/screens/discover/CollectionDetailScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/saved-tools-remediation.test.ts src/store/checklist-portfolio-store.test.ts src/lib/services/mock/service-methods.test.ts",
+        "result": "50 passed, 0 failed; Node module.register deprecation warning only"
+      },
+      {
+        "command": "node scripts/run-eslint.cjs [owned stores, saved-tool screens and components, MockRealtimeChannel]",
+        "result": "Passed, exit 0"
+      },
+      {
+        "command": "focused saved-tools-remediation.test.ts",
+        "result": "10 passed, including deferred load/save, concurrent loads and failed-save regressions"
+      }
+    ],
+    "reason": "Confirmed service-backed collection save/reload; pending deduplication, failed handoff feedback, late-result rejection. Same-account confirmed-save revisions invalidate in-flight loads and refetch both snapshots; request IDs reject older simultaneous loads.",
+    "remaining": [
+      "Live user_collection_saves RLS and account-switch smoke"
+    ]
+  },
+  {
+    "id": "ST-16",
+    "status": "implemented",
+    "files": [
+      "src/store/useChecklistStore.ts",
+      "src/app/screens/checklist/ChecklistDetailScreen.tsx",
+      "src/app/screens/checklist/ChecklistItemPickerScreen.tsx",
+      "src/components/checklist/ChecklistItemRow.tsx"
+    ],
+    "checks": [
+      {
+        "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/saved-tools-remediation.test.ts src/store/checklist-portfolio-store.test.ts src/lib/services/mock/service-methods.test.ts",
+        "result": "50 passed, 0 failed; Node module.register deprecation warning only"
+      },
+      {
+        "command": "node scripts/run-eslint.cjs [owned stores, saved-tool screens and components, MockRealtimeChannel]",
+        "result": "Passed, exit 0"
+      }
+    ],
+    "reason": "Planned time wording, Singapore date edit/clear, explicit tried undo with confirmed service mutation.",
+    "remaining": [
+      "Native keyboard and date-edit/clear interaction smoke"
+    ]
+  }
+]

@@ -1,3 +1,4 @@
+import { useReduceMotion } from "@/hooks/useReduceMotion";
 /**
  * OnboardingIntroTemplate — rich stories-style layout
  *
@@ -27,9 +28,15 @@ import { ONBOARDING_ACTIONS_BOTTOM_PADDING, ONBOARDING_ACTIONS_GAP } from "./lay
 
 function ProgressBar({ total, current }: { total: number; current: number }) {
   const { motion, palette, radii } = useHungryTheme();
+  const reduceMotion = useReduceMotion();
   const anim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    if (reduceMotion) {
+      anim.stopAnimation();
+      anim.setValue(1);
+      return;
+    }
     anim.setValue(0);
     Animated.timing(anim, {
       toValue: 1,
@@ -37,7 +44,7 @@ function ProgressBar({ total, current }: { total: number; current: number }) {
       easing: Easing.out(Easing.quad),
       useNativeDriver: false,
     }).start();
-  }, [current, motion.onboardingSegmentFill]);
+  }, [current, motion.onboardingSegmentFill, reduceMotion]);
 
   return (
     <View style={styles.progressRow}>
@@ -91,9 +98,15 @@ function ProgressBar({ total, current }: { total: number; current: number }) {
 
 function SlideIllustration({ step, accentColor }: { step: number; accentColor: string }) {
   const { palette, radii } = useHungryTheme();
+  const reduceMotion = useReduceMotion();
   const anim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    if (reduceMotion) {
+      anim.stopAnimation();
+      anim.setValue(1);
+      return;
+    }
     anim.setValue(0);
     Animated.spring(anim, {
       toValue: 1,
@@ -102,7 +115,7 @@ function SlideIllustration({ step, accentColor }: { step: number; accentColor: s
       stiffness: 150,
       useNativeDriver: true,
     }).start();
-  }, [step]);
+  }, [step, reduceMotion]);
 
   const shapes: Record<number, React.ReactNode> = {
     0: (
@@ -234,9 +247,15 @@ function SlideIllustration({ step, accentColor }: { step: number; accentColor: s
 
 function BulletItem({ text, index }: { text: string; index: number }) {
   const { motion, palette, spacing, radii } = useHungryTheme();
+  const reduceMotion = useReduceMotion();
   const anim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    if (reduceMotion) {
+      anim.stopAnimation();
+      anim.setValue(1);
+      return;
+    }
     Animated.timing(anim, {
       toValue: 1,
       duration: motion.onboardingBulletEnter,
@@ -244,7 +263,7 @@ function BulletItem({ text, index }: { text: string; index: number }) {
       easing: Easing.out(Easing.quad),
       useNativeDriver: true,
     }).start();
-  }, [index, motion.buttonPress, motion.onboardingBulletEnter]);
+  }, [index, motion.buttonPress, motion.onboardingBulletEnter, reduceMotion]);
 
   return (
     <Animated.View
@@ -315,9 +334,15 @@ export function OnboardingIntroTemplate({
     navigation.navigate("LocationPermission");
   };
 
+  const reduceMotion = useReduceMotion();
   const headlineAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    if (reduceMotion) {
+      headlineAnim.stopAnimation();
+      headlineAnim.setValue(1);
+      return;
+    }
     headlineAnim.setValue(0);
     Animated.timing(headlineAnim, {
       toValue: 1,
@@ -326,7 +351,7 @@ export function OnboardingIntroTemplate({
       easing: Easing.out(Easing.quad),
       useNativeDriver: true,
     }).start();
-  }, [headlineAnim, motion.buttonPress, motion.onboardingHeadlineEnter, stepIndex]);
+  }, [headlineAnim, motion.buttonPress, motion.onboardingHeadlineEnter, stepIndex, reduceMotion]);
 
   return (
     <View style={[styles.screen, { backgroundColor: palette.bg }]}>

@@ -1,0 +1,25 @@
+(node:92360) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ primary mock email signup and login apply an authoritative demo identity before completing auth (56.808125ms)
+(node:92361) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ session store persists app auth state through the durable app storage adapter (1.835041ms)
+✔ durable app storage migrates legacy SecureStore session metadata (0.466959ms)
+✔ guest onboarding survives first sign-in but is not inherited by a different account (45.988708ms)
+✔ completeAuth records the Supabase user and data source for reload restoration (0.526792ms)
+✔ invalid Supabase auth restoration is rejected instead of persisting a mock id (6.290542ms)
+✔ Supabase auth restoration preserves a service-hydrated profile with the same user id (0.861333ms)
+✔ explicit auth sign-out clears the restored app session (3.564416ms)
+✔ manual signOut clears auth state but keeps returning users on login (4.001166ms)
+✔ manual signOut clears account-scoped optimistic caches (2.797291ms)
+✔ visible sign-out actions reset to login instead of onboarding (0.8085ms)
+✔ clearing or signing out does not reset completed runtime hydration (4.867917ms)
+✔ a completion receipt cannot authenticate a different profile (0.245292ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 509.604333

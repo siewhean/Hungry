@@ -1,0 +1,95 @@
+{
+  "snapshot_id": "mall_media_delta_refresh117_20261019",
+  "observed_date": "2026-10-19",
+  "purpose": "Propose additional direct, tenant-mapped menu image URLs from an official mall page. Workbook intentionally unchanged.",
+  "source": {
+    "operator": "Paragon Shopping Mall",
+    "directory_url": "https://paragon.com.sg/store-directory/",
+    "tenant_page_url": "https://paragon.com.sg/store-detail/crystal-jade-golden-palace/",
+    "page_title": "Paragon | Crystal Jade Golden Palace",
+    "page_last_modified": "2025-05-28T11:33:21+08:00",
+    "page_mapping_evidence": "Official tenant detail page title and tenant logo identify Crystal Jade Golden Palace. Its gallery directly labels each image with the dish name in the image alt text.",
+    "workbook_exact_match": {
+      "sheet": "Public F&B Directory",
+      "sfa_licence": "W02322X000",
+      "f_and_b_name": "Crystal Jade Golden Palace",
+      "address": "290 ORCHARD ROAD #05-21,#05-22,#05-23,THE PARAGON,Singapore 238859",
+      "match_basis": "Exact tenant name and Paragon address/unit from the workbook match the official mall page."
+    },
+    "rights_notice": "Official Paragon page footer states: 'All rights reserved. Any redistribution or reproduction of part or all of the contents and images in any form is prohibited.' Keep these as review-only references; do not cache, redistribute, or display without written permission.",
+    "rights_notice_source": "https://paragon.com.sg/store-detail/crystal-jade-golden-palace/"
+  },
+  "duplicate_check": {
+    "checked_sheet": "Image Candidates",
+    "workbook": "Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "method": "Exact Image URL comparison against all existing Image Candidates rows.",
+    "proposed_urls_already_present": 0,
+    "proposed_urls_checked": 5
+  },
+  "image_candidates": [
+    {
+      "image_type": "Menu item photo",
+      "item_name": "Crispy Applewood Smoked American Duck",
+      "image_url": "https://paragon.com.sg/wp-content/uploads/2025/01/Crispy-Applewood-Smoked-American-Duck.jpg",
+      "source_page_url": "https://paragon.com.sg/store-detail/crystal-jade-golden-palace/",
+      "source_page_alt_text": "Crispy Applewood Smoked American Duck",
+      "http_status": 200,
+      "content_type": "image/jpeg",
+      "visual_check": "Downloaded and visually inspected; image is a plated roast duck dish and is consistent with the official alt text.",
+      "reuse_status": "Review-only; Paragon prohibits redistribution/reproduction without permission; not approved for display."
+    },
+    {
+      "image_type": "Menu item photo",
+      "item_name": "Roasted Baby Suckling Pig rolled with Black Truffle Rice",
+      "image_url": "https://paragon.com.sg/wp-content/uploads/2025/01/Roasted-Baby-Suckling-Pig-rolled-with-Black-Truffle-Rice.jpg",
+      "source_page_url": "https://paragon.com.sg/store-detail/crystal-jade-golden-palace/",
+      "source_page_alt_text": "Roasted Baby Suckling Pig rolled with Black Truffle Rice",
+      "http_status": 200,
+      "content_type": "image/jpeg",
+      "visual_check": "Downloaded and visually inspected; image depicts a sliced rolled dish with truffle/rice-like filling, consistent with the official page label.",
+      "reuse_status": "Review-only; Paragon prohibits redistribution/reproduction without permission; not approved for display."
+    },
+    {
+      "image_type": "Menu item photo",
+      "item_name": "Teochew Happiness Four Platter",
+      "image_url": "https://paragon.com.sg/wp-content/uploads/2025/01/Teochew-Happiness-Four-Platter.jpg",
+      "source_page_url": "https://paragon.com.sg/store-detail/crystal-jade-golden-palace/",
+      "source_page_alt_text": "Teochew Happiness Four Platter",
+      "http_status": 200,
+      "content_type": "image/jpeg",
+      "visual_check": "Downloaded and visually inspected; image shows a four-compartment composed platter, consistent with the official page label.",
+      "reuse_status": "Review-only; Paragon prohibits redistribution/reproduction without permission; not approved for display."
+    },
+    {
+      "image_type": "Menu item photo",
+      "item_name": "Teochew Seafood Crispy Noodle",
+      "image_url": "https://paragon.com.sg/wp-content/uploads/2025/01/Teochew-Seafood-Crispy-Noodle.jpg",
+      "source_page_url": "https://paragon.com.sg/store-detail/crystal-jade-golden-palace/",
+      "source_page_alt_text": "Teochew Seafood Crispy Noodle",
+      "http_status": 200,
+      "content_type": "image/jpeg",
+      "visual_check": "Downloaded and visually inspected; image shows a crisp noodle disc with seafood topping, consistent with the official page label.",
+      "reuse_status": "Review-only; Paragon prohibits redistribution/reproduction without permission; not approved for display."
+    },
+    {
+      "image_type": "Menu item photo",
+      "item_name": "Double-boiled Fish Maw, Sea Whelk with Xinhui Sanbao Zha Chicken Soup",
+      "image_url": "https://paragon.com.sg/wp-content/uploads/2025/01/Double-boiled-Fish-Maw-Sea-Whelk-with-Xinhui-Sanbao-Zha-Chicken-Soup.jpg",
+      "source_page_url": "https://paragon.com.sg/store-detail/crystal-jade-golden-palace/",
+      "source_page_alt_text": "Double-boiled Fish Maw, Sea Whelk with Xinhui Sanbao Zha Chicken Soup",
+      "http_status": 200,
+      "content_type": "image/jpeg",
+      "visual_check": "Downloaded and visually inspected; image shows a bowl of soup with visible ingredients, consistent with the official page label.",
+      "reuse_status": "Review-only; Paragon prohibits redistribution/reproduction without permission; not approved for display."
+    }
+  ],
+  "limitations": [
+    "The official page labels the photos but does not provide a downloadable reuse licence.",
+    "These image URLs are current live references observed on 2026-10-19; the page metadata indicates its last modification was 2025-05-28.",
+    "No candidate was marked approved, and no workbook rows were modified."
+  ],
+  "installed_sha256": "90c4aa1f41751bea26fe0a27f87cf3e5b22258db1b63642e7231b67fd0eea4cb",
+  "integration_note": "Five links are stored as restricted review-only references; they are not approved or reusable and must not be displayed, embedded, or cached absent written permission.",
+  "integration_status": "Five restricted-reference rows were integrated in Refresh117 Image Candidates and Coverage & Sources; none were approved for display.",
+  "installed_refresh117_sha256": "a70390e62c4b5a9605f8041e4136f92024d93275d99c58f8de7ebaf73c8c96b6"
+}

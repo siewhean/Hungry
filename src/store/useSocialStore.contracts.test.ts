@@ -9,12 +9,17 @@ function read(relativePath: string): string {
   return readFileSync(path.join(root, relativePath), "utf8");
 }
 
-test("social store contract: post interactions persist locally", () => {
+test("social store contract: post interactions persist in account-partitioned storage", () => {
   const source = read("src/store/useSocialStore.ts");
 
   assert.match(source, /persist\(/);
   assert.match(source, /name: "hungry-social-v1"/);
-  assert.match(source, /storage: hungryPersistStorage/);
+  assert.match(source, /storage: createAccountPersistStorage\("hungry-social-v1"\)/);
+  assert.doesNotMatch(
+    source,
+    /storage: hungryPersistStorage/,
+    "private social state must be partitioned by account",
+  );
   assert.match(source, /interactions: Record<string, InteractionState>/);
   assert.match(source, /followedAuthors: Record<string, boolean>/);
   assert.match(source, /followedUserIds: Record<string, boolean>/);
@@ -55,30 +60,19 @@ test("social store contract: UUID follows sync to service while local-name fallb
     homeSource,
     /followTargetId[\s\S]*\? toggleFollow\(followTargetId\)[\s\S]*: toggleAuthorFollow\(item\.authorName\)/,
   );
-  assert.match(profileSource, /Object\.values\(followedUserIds\)\.filter/);
-  assert.match(profileSource, /Object\.values\(followedAuthors\)\.filter/);
-  assert.match(connectionsSource, /const targetUserId = route\.params\?\.userId \?\? profile\.id/);
-  assert.match(connectionsSource, /service\.listFollowers\(targetUserId\)/);
-  assert.match(connectionsSource, /service\.listFollowing\(targetUserId\)/);
-  assert.match(connectionsSource, /const canUseAuthorFallbackFollow =/);
-  assert.match(connectionsSource, /const followedNames = canUseAuthorFallbackFollow/);
-  assert.match(
-    connectionsSource,
-    /const canShowFollowButton =\s*Boolean\(person\.userId\) \|\| canUseAuthorFallbackFollow/,
-  );
-  assert.match(
-    connectionsSource,
-    /person\.userId[\s\S]*\? toggleFollow\(person\.userId\)[\s\S]*: toggleAuthorFollow\(person\.name\)/,
-  );
-  assert.match(profileContentSource, /const canUseAuthorFallbackFollow =/);
-  assert.match(
-    profileContentSource,
-    /const canShowFollowButton = Boolean\(resolvedAuthorId\) \|\| canUseAuthorFallbackFollow/,
-  );
-  assert.match(
-    profileContentSource,
-    /resolvedAuthorId \? toggleFollow\(resolvedAuthorId\) : toggleAuthorFollow\(authorName\)/,
-  );
+  assert.match(profileSource, /social\.listFollowers\(profile\.id\)/);
+  assert.match(profileSource, /social\.listFollowing\(profile\.id\)/);
+  assert.match(profileSource, /new Set\(followers\.map/);
+  assert.match(connectionsSource, /const userId = route\.params\?\.userId \?\? profileId/);
+  assert.match(connectionsSource, /social\.listFollowers\(userId\)/);
+  assert.match(connectionsSource, /social\.listFollowing\(userId\)/);
+  assert.match(connectionsSource, /authorId: person\.userId/);
+  assert.doesNotMatch(connectionsSource, /toggleAuthorFollow/);
+  assert.match(profileContentSource, /if \(!authorId\)/);
+  assert.match(profileContentSource, /social\.getFollowState\(authorId\)/);
+  assert.match(profileContentSource, /social\.followUser\(target\)/);
+  assert.match(profileContentSource, /followState === "pending"/);
+  assert.doesNotMatch(profileContentSource, /toggleAuthorFollow|resolvedAuthorId/);
 });
 
 test("social store contract: like and save toggles roll back failed Supabase sync", () => {
@@ -111,13 +105,22 @@ test("social store contract: real post shares sync to Supabase and unsupported i
   assert.match(source, /isUuidPostId\(postId\)/);
   assert.match(source, /social\.shareBite\(postId, \{ channel \}\)/);
   assert.match(source, /rolled back optimistic state/);
+  assert.match(reviewShareSheet, /subjectLabel = "dish"/);
+  assert.match(reviewShareSheet, /accessibilityLabel=\{`Share \$\{subjectLabel\}`\}/);
   assert.match(
     reviewShareSheet,
-    /if \(activeReview\.postId\) \{\s*onShared\(activeReview\.postId, "in_app"\)/,
+    /Clipboard\.setString\(withShareSource\(activeReview\.link, "copy_link"\)\)/,
   );
-  assert.match(reviewShareSheet, /onShared\(activeReview\.postId, "copy_link"\)/);
-  assert.match(reviewShareSheet, /onShared\(activeReview\.postId, "system_share"\)/);
-  assert.match(reviewFeed, /postId: linkedPost\?\.id \?\? ""/);
+  assert.match(reviewShareSheet, /result\.action === Share\.sharedAction/);
+  assert.match(reviewShareSheet, /Promise\.allSettled/);
+  assert.match(reviewShareSheet, /clientNonce/);
+  assert.match(reviewShareSheet, /setSelectedChatIds\(failed\)/);
+  assert.doesNotMatch(
+    reviewShareSheet,
+    /onShared|incrementShare/,
+    "dish sharing must not fabricate a post share",
+  );
+  assert.match(reviewFeed, /link: webShareUrl\("dish", item\.dishId\)/);
   assert.match(reviewFeed, /shareCount: 0/);
   assert.doesNotMatch(reviewFeed, /postId: linkedPost\?\.id \?\? item\.review\.id/);
   assert.doesNotMatch(reviewFeed, /stallPosts\[0\]/);
@@ -148,8 +151,9 @@ test("public profile post history has a service-backed user post path", () => {
   assert.match(serviceTypes, /listUserPosts\(userId: string\): Promise<Bite\[\]>/);
   assert.match(mockService, /async listUserPosts\(userId: string\)/);
   assert.match(supabaseService, /async listUserPosts\(userId: string\)/);
-  assert.match(profileContent, /service\s*\.\s*listUserPosts\(normalizedAuthorId\)/);
-  assert.match(profileContent, /biteToStallPost/);
+  assert.match(profileContent, /service\.social\.listUserPosts\(authorId\)/);
+  assert.match(profileContent, /nextPosts\.filter\(\(post\) => post\.authorId === authorId\)/);
+  assert.match(profileContent, /service\.reviews\.getUserReviews\(authorId\)/);
 });
 
 test("public profile does not expose the current user's saved card", () => {

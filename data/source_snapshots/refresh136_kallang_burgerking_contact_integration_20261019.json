@@ -1,0 +1,15 @@
+{
+  "snapshot": "refresh136_kallang_burgerking_contact_integration_20261019",
+  "baseline_sha256": "27204a078d6cd4bf399e6c9a4a41965f6c042b0b296b713d9cefd91c5507dc29",
+  "workbook_sha256_after": "79faa88e6bbd2fc9118358a264047edd9179a6c086bddbe1438262b5c391907e",
+  "sfa_licence": "SE09686K000",
+  "row": 4670,
+  "field": "Contact Details",
+  "value": "Contact: +65 6016 0771",
+  "field_source": "https://leisurepark.com.sg/discover/burger-king/",
+  "observed_date": "2026-10-19",
+  "operator_source": "https://www.burgerking.com.sg/Locator/Details/20",
+  "operator_source_state": "exact branch locator lists closed every day; not treated as final permanent-closure confirmation",
+  "mapbox_cross_check": "Search Box found exact Burger King POI at 5 Stadium Walk; Places details reported active with hours. Result is temporary-use only and was not persisted; conflicting with operator locator, so not used as database field.",
+  "integration_reason": "Mall tenant page lists exact #01-43 branch and phone. Contact only; status and hours were left unchanged."
+}

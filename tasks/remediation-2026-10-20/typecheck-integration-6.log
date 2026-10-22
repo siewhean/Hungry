@@ -1,0 +1,5 @@
+
+> hungry-mobile@0.1.0 typecheck
+> tsc --noEmit
+
+src/app/screens/merchant/MerchantSettingsScreen.tsx(474,24): error TS2304: Cannot find name 'isSending'.

@@ -1,0 +1,710 @@
+{
+  "snapshot_id": "osm_official_independent_validation_refresh112_20261018",
+  "generated_at": "2026-10-18",
+  "mode": "read_only_independent_source_validation",
+  "baseline_workbook_sha256": "ba519451ef5fa46aafcac14d67a1563365e6a15601c1ddc778d71ac20a960ef1",
+  "input_snapshot": {
+    "path": "data/source_snapshots/osm_exact_outlet_blank_field_candidates_20261018.json",
+    "sha256": "7168e337ec1e87a1a5b533238cb76ab0528b517b1607e97d590ad687f90dedac",
+    "candidate_count": 36,
+    "candidate_fields_total": 49
+  },
+  "validation_summary": {
+    "field_proposals_reviewed": 49,
+    "supported": 12,
+    "unsupported": 5,
+    "ambiguous": 32,
+    "workbook_edits": 0,
+    "mapbox_calls": 0,
+    "spend": 0,
+    "delivery_platform_sources_used": 0
+  },
+  "limitation": "Only exact outlet-level first-party or authoritative public evidence is accepted. Where official pages conflict, are generic, inaccessible, or do not resolve licence-to-outlet identity, candidate remains withheld. OSM is never used as independent verification. No source bytes could be downloaded in this shell for hashing; source capture is represented by URL and observed page/search date only.",
+  "validations": [
+    {
+      "sfa_licence": "W84200E000",
+      "business_name": "ASK COFFEE ROASTERY",
+      "field": "Website",
+      "candidate_value": "https://akusukakopi.com/",
+      "assessment": "ambiguous",
+      "evidence": [],
+      "finding": "No qualifying independent first-party or authoritative open-source evidence established this exact value for the exact licensed outlet during this pass.",
+      "verified_replacement_value": null,
+      "withhold_from_workbook": true
+    },
+    {
+      "sfa_licence": "CE08826V000",
+      "business_name": "BALESTIER MARKET",
+      "field": "Opening Hours / Closed Days",
+      "candidate_value": "24/7",
+      "assessment": "ambiguous",
+      "evidence": [
+        {
+          "url": "https://www.ura.gov.sg/conservation/find-a-building/conservation-portal/blstrd-00055/",
+          "observed_date": "2026-10-18",
+          "currentness_note": "official facility page observed 2026-10-18; no outlet-level hours"
+        }
+      ],
+      "finding": "URA describes the building/facility as a 24-hour food centre; this does not establish the licensed business outlet operating hours.",
+      "verified_replacement_value": null,
+      "withhold_from_workbook": true
+    },
+    {
+      "sfa_licence": "CE16641X000",
+      "business_name": "BEAST & BUTTERFLIES",
+      "field": "Contact Details",
+      "candidate_value": "+65 6657 0018",
+      "assessment": "supported",
+      "evidence": [
+        {
+          "url": "https://www.millenniumhotels.com/en/destinations/asia/singapore/m-social-singapore/dining/beast-and-butterflies/",
+          "observed_date": "2026-10-18",
+          "currentness_note": "official hotel venue page; crawled 3 weeks before 2026-10-18"
+        }
+      ],
+      "finding": "Official M Social Singapore venue page matches 90 Robertson Quay, Singapore 238259 and phone +65 6657 0018.",
+      "verified_replacement_value": "+65 6657 0018",
+      "withhold_from_workbook": false
+    },
+    {
+      "sfa_licence": "SW06007J000",
+      "business_name": "BOUNTIFUL RESTAURANT",
+      "field": "Website",
+      "candidate_value": "https://www.qianxi.com.sg/",
+      "assessment": "ambiguous",
+      "evidence": [],
+      "finding": "No qualifying independent first-party or authoritative open-source evidence established this exact value for the exact licensed outlet during this pass.",
+      "verified_replacement_value": null,
+      "withhold_from_workbook": true
+    },
+    {
+      "sfa_licence": "SW06007J000",
+      "business_name": "BOUNTIFUL RESTAURANT",
+      "field": "Contact Details",
+      "candidate_value": "+65 62703323",
+      "assessment": "ambiguous",
+      "evidence": [],
+      "finding": "No qualifying independent first-party or authoritative open-source evidence established this exact value for the exact licensed outlet during this pass.",
+      "verified_replacement_value": null,
+      "withhold_from_workbook": true
+    },
+    {
+      "sfa_licence": "CE17M50A000",
+      "business_name": "ChaoNiu HotPot",
+      "field": "Opening Hours / Closed Days",
+      "candidate_value": "Mo-Su 11:00-23:00",
+      "assessment": "ambiguous",
+      "evidence": [],
+      "finding": "No qualifying independent first-party or authoritative open-source evidence established this exact value for the exact licensed outlet during this pass.",
+      "verified_replacement_value": null,
+      "withhold_from_workbook": true
+    },
+    {
+      "sfa_licence": "CE07182K000",
+      "business_name": "CHOPSUEY CAFE",
+      "field": "Opening Hours / Closed Days",
+      "candidate_value": "Mo-Fr 11:30-23:00; Sa-Su 10:30-23:00",
+      "assessment": "unsupported",
+      "evidence": [
+        {
+          "url": "https://www.pscafe.com/chopsuey-cafe-at-dempsey-hill",
+          "observed_date": "2026-10-18",
+          "currentness_note": "official operator page observed 2026-10-18"
+        }
+      ],
+      "finding": "Official operator hours at exact Dempsey address are Sun–Thu/PH 11:00–23:00 and Fri/Sat/eve PH 11:00–23:30; candidate start times conflict.",
+      "verified_replacement_value": "Sun-Thu,PH 11:00-23:00; Fr-Sa,evePH 11:00-23:30",
+      "withhold_from_workbook": true
+    },
+    {
+      "sfa_licence": "SW04012J000",
+      "business_name": "Colbar",
+      "field": "Opening Hours / Closed Days",
+      "candidate_value": "Tu-Su 11:00-22:00; Mo off",
+      "assessment": "ambiguous",
+      "evidence": [],
+      "finding": "No qualifying independent first-party or authoritative open-source evidence established this exact value for the exact licensed outlet during this pass.",
+      "verified_replacement_value": null,
+      "withhold_from_workbook": true
+    },
+    {
+      "sfa_licence": "NE16440X000",
+      "business_name": "Din Tai Fung",
+      "field": "Website",
+      "candidate_value": "https://www.dintaifung.com.tw/",
+      "assessment": "unsupported",
+      "evidence": [
+        {
+          "url": "https://www.dintaifung.com.sg/contact-us/",
+          "observed_date": "2026-10-18",
+          "currentness_note": "official Singapore operator page; observed 2026-10-18"
+        }
+      ],
+      "finding": "Candidate is Taiwan parent-domain, not Singapore operator website; official Singapore site is dintaifung.com.sg.",
+      "verified_replacement_value": null,
+      "withhold_from_workbook": true
+    },
+    {
+      "sfa_licence": "NE16440X000",
+      "business_name": "Din Tai Fung",
+      "field": "Contact Details",
+      "candidate_value": "+65 6243 7366",
+      "assessment": "supported",
+      "evidence": [
+        {
+          "url": "https://www.dintaifung.com.sg/contact-us/",
+          "observed_date": "2026-10-18",
+          "currentness_note": "official operator locator; observed 2026-10-18"
+        }
+      ],
+      "finding": "Official Singapore outlet locator matches Compass One address and phone +65 6243 7366.",
+      "verified_replacement_value": "+65 6243 7366",
+      "withhold_from_workbook": false
+    },
+    {
+      "sfa_licence": "NE16440X000",
+      "business_name": "Din Tai Fung",
+      "field": "Opening Hours / Closed Days",
+      "candidate_value": "Mo-Th 11:30-21:30; Fr 11:30-22:00; Sa,PH 11:00-22:00; Su 11:00-21:30",
+      "assessment": "ambiguous",
+      "evidence": [
+        {
+          "url": "https://www.dintaifung.com.sg/contact-us/",
+          "observed_date": "2026-10-18",
+          "currentness_note": "official operator locator; observed 2026-10-18"
+        }
+      ],
+      "finding": "Official operator says hours vary by restaurant and directs customers to call; candidate schedule is not independently confirmed.",
+      "verified_replacement_value": null,
+      "withhold_from_workbook": true
+    },
+    {
+      "sfa_licence": "CE17H73P000",
+      "business_name": "Dosirak",
+      "field": "Website",
+      "candidate_value": "https://dosirak.com.sg/",
+      "assessment": "ambiguous",
+      "evidence": [],
+      "finding": "No qualifying independent first-party or authoritative open-source evidence established this exact value for the exact licensed outlet during this pass.",
+      "verified_replacement_value": null,
+      "withhold_from_workbook": true
+    },
+    {
+      "sfa_licence": "CE17H73P000",
+      "business_name": "Dosirak",
+      "field": "Opening Hours / Closed Days",
+      "candidate_value": "Mo-Fr 10:30-20:30; Sa,PH 11:00-19:00; Su off",
+      "assessment": "ambiguous",
+      "evidence": [],
+      "finding": "No qualifying independent first-party or authoritative open-source evidence established this exact value for the exact licensed outlet during this pass.",
+      "verified_replacement_value": null,
+      "withhold_from_workbook": true
+    },
+    {
+      "sfa_licence": "NW17075A000",
+      "business_name": "HAN''S",
+      "field": "Website",
+      "candidate_value": "https://hans.com.sg/",
+      "assessment": "supported",
+      "evidence": [
+        {
+          "url": "https://www.hans.com.sg/pages/store-locator",
+          "observed_date": "2026-10-18",
+          "currentness_note": "official locator crawled on 2026-10-18"
+        }
+      ],
+      "finding": "Official Han’s website/locator identifies Hillion outlet; exact outlet and brand match.",
+      "verified_replacement_value": "https://www.hans.com.sg/",
+      "withhold_from_workbook": false
+    },
+    {
+      "sfa_licence": "NW17075A000",
+      "business_name": "HAN''S",
+      "field": "Contact Details",
+      "candidate_value": "+65 6708 6775",
+      "assessment": "supported",
+      "evidence": [
+        {
+          "url": "https://www.hans.com.sg/pages/store-locator",
+          "observed_date": "2026-10-18",
+          "currentness_note": "official locator crawled on 2026-10-18"
+        }
+      ],
+      "finding": "Official locator lists Hillion phone 6708 6775.",
+      "verified_replacement_value": "+65 6708 6775",
+      "withhold_from_workbook": false
+    },
+    {
+      "sfa_licence": "NW17075A000",
+      "business_name": "HAN''S",
+      "field": "Opening Hours / Closed Days",
+      "candidate_value": "07:00-22:00",
+      "assessment": "supported",
+      "evidence": [
+        {
+          "url": "https://www.hans.com.sg/pages/store-locator",
+          "observed_date": "2026-10-18",
+          "currentness_note": "official locator crawled on 2026-10-18"
+        }
+      ],
+      "finding": "Official locator lists Hillion daily 7am–10pm, matching candidate.",
+      "verified_replacement_value": "Daily 07:00-22:00",
+      "withhold_from_workbook": false
+    },
+    {
+      "sfa_licence": "W91007X000",
+      "business_name": "IZAKAYA NININGASHI",
+      "field": "Website",
+      "candidate_value": "https://izakaya-niningashi.business.site/",
+      "assessment": "ambiguous",
+      "evidence": [],
+      "finding": "No qualifying independent first-party or authoritative open-source evidence established this exact value for the exact licensed outlet during this pass.",
+      "verified_replacement_value": null,
+      "withhold_from_workbook": true
+    },
+    {
+      "sfa_licence": "CE14B13L000",
+      "business_name": "Joy Luck Teahouse",
+      "field": "Opening Hours / Closed Days",
+      "candidate_value": "Mo-Su 09:00-22:00",
+      "assessment": "ambiguous",
+      "evidence": [
+        {
+          "url": "https://joyluckteahouse.com/contact/",
+          "observed_date": "2026-10-18",
+          "currentness_note": "operator page crawled 2 days prior; mall page crawled 1 day prior to 2026-10-18"
+        },
+        {
+          "url": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/joy-luck-teahouse.html",
+          "observed_date": "2026-10-18",
+          "currentness_note": "operator page crawled 2 days prior; mall page crawled 1 day prior to 2026-10-18"
+        }
+      ],
+      "finding": "Operator contact page lists 10:00–22:00 while current mall directory lists 09:00–22:00 for same Bugis Junction #B1-K25 outlet. Conflicting current sources; candidate matches mall, not operator.",
+      "verified_replacement_value": null,
+      "withhold_from_workbook": true
+    },
+    {
+      "sfa_licence": "CE16P15X000",
+      "business_name": "KAFFE & TOAST",
+      "field": "Website",
+      "candidate_value": "https://www.coffeeandtoast.com.sg/",
+      "assessment": "ambiguous",
+      "evidence": [
+        {
+          "url": "https://www.kaffeandtoast.sg/our-shops",
+          "observed_date": "2026-10-18",
+          "currentness_note": "official operator site observed 2026-10-18"
+        }
+      ],
+      "finding": "Official operator uses kaffeandtoast.sg, while candidate is coffeeandtoast.com.sg. A current redirect or official linkage was not independently confirmed; withhold candidate URL.",
+      "verified_replacement_value": null,
+      "withhold_from_workbook": true
+    },
+    {
+      "sfa_licence": "CE16P15X000",
+      "business_name": "KAFFE & TOAST",
+      "field": "Opening Hours / Closed Days",
+      "candidate_value": "Mo-Fr 07:00-18:00;Sa 07:30-13:00",
+      "assessment": "unsupported",
+      "evidence": [
+        {
+          "url": "https://www.kaffeandtoast.sg/our-shops",
+          "observed_date": "2026-10-18",
+          "currentness_note": "official operator locator observed 2026-10-18; outlet in hospital campus; public entry not independently confirmed"
+        }
+      ],
+      "finding": "Official operator locator confirms NHCS outlet schedule Mon-Fri 07:00-18:00; Sat 07:30-14:00; Sun/PH closed. Candidate Saturday close time 13:00 conflicts.",
+      "verified_replacement_value": "Mo-Fr 07:00-18:00; Sa 07:30-14:00; Su,PH off",
+      "withhold_from_workbook": true
+    },
+    {
+      "sfa_licence": "S02107N000",
+      "business_name": "KFC",
+      "field": "Opening Hours / Closed Days",
+      "candidate_value": "08:00-22:00",
+      "assessment": "ambiguous",
+      "evidence": [],
+      "finding": "No qualifying independent first-party or authoritative open-source evidence established this exact value for the exact licensed outlet during this pass.",
+      "verified_replacement_value": null,
+      "withhold_from_workbook": true,
+      "related_snapshot": "data/source_snapshots/mcdonalds_kfc_official_source_refresh_20261018.json",
+      "related_snapshot_note": "Contains official generic KFC menu/store captures, but no independently verified outlet-specific current hours were established; do not duplicate its proposals."
+    },
+    {
+      "sfa_licence": "CE15290K000",
+      "business_name": "KRISPY KREME",
+      "field": "Opening Hours / Closed Days",
+      "candidate_value": "Su-Th 10:00-21:00; Fr-Sa,PH 10:00-22:00",
+      "assessment": "ambiguous",
+      "evidence": [],
+      "finding": "No qualifying independent first-party or authoritative open-source evidence established this exact value for the exact licensed outlet during this pass.",
+      "verified_replacement_value": null,
+      "withhold_from_workbook": true
+    },
+    {
+      "sfa_licence": "SW21T24P000",
+      "business_name": "LES BOUCHONS ROCHESTER",
+      "field": "Website",
+      "candidate_value": "https://www.lesbouchons.sg/",
+      "assessment": "supported",
+      "evidence": [
+        {
+          "url": "https://www.lesbouchons.sg/rochester",
+          "observed_date": "2026-10-18",
+          "currentness_note": "official operator page crawled 1 day before 2026-10-18"
+        }
+      ],
+      "finding": "Official Les Bouchons Rochester page matches outlet and address.",
+      "verified_replacement_value": "https://www.lesbouchons.sg/",
+      "withhold_from_workbook": false
+    },
+    {
+      "sfa_licence": "SW21T24P000",
+      "business_name": "LES BOUCHONS ROCHESTER",
+      "field": "Contact Details",
+      "candidate_value": "+65 6904 8972",
+      "assessment": "supported",
+      "evidence": [
+        {
+          "url": "https://www.lesbouchons.sg/rochester",
+          "observed_date": "2026-10-18",
+          "currentness_note": "official operator page crawled 1 day before 2026-10-18"
+        }
+      ],
+      "finding": "Official outlet page lists phone +65 6904 8972.",
+      "verified_replacement_value": "+65 6904 8972",
+      "withhold_from_workbook": false
+    },
+    {
+      "sfa_licence": "CE11434B000",
+      "business_name": "MCDONALD'S",
+      "field": "Opening Hours / Closed Days",
+      "candidate_value": "Mo-Fr 07:00-23:00, Sa-Su 07:00-02:00",
+      "assessment": "ambiguous",
+      "evidence": [],
+      "finding": "No qualifying independent first-party or authoritative open-source evidence established this exact value for the exact licensed outlet during this pass.",
+      "verified_replacement_value": null,
+      "withhold_from_workbook": true
+    },
+    {
+      "sfa_licence": "E02141L000",
+      "business_name": "Megumi Japanese Restaurant",
+      "field": "Website",
+      "candidate_value": "https://megumi.oddle.me/en_SG/",
+      "assessment": "ambiguous",
+      "evidence": [],
+      "finding": "No qualifying independent first-party or authoritative open-source evidence established this exact value for the exact licensed outlet during this pass.",
+      "verified_replacement_value": null,
+      "withhold_from_workbook": true
+    },
+    {
+      "sfa_licence": "W97377L000",
+      "business_name": "MIZ JAPANESE RESTAURANT",
+      "field": "Website",
+      "candidate_value": "https://miz-japanese-restaurant.business.site/",
+      "assessment": "ambiguous",
+      "evidence": [],
+      "finding": "No qualifying independent first-party or authoritative open-source evidence established this exact value for the exact licensed outlet during this pass.",
+      "verified_replacement_value": null,
+      "withhold_from_workbook": true
+    },
+    {
+      "sfa_licence": "CE04432N000",
+      "business_name": "Old Airport Road Lor Mee",
+      "field": "Website",
+      "candidate_value": "https://www.lormee.sg/",
+      "assessment": "ambiguous",
+      "evidence": [],
+      "finding": "No qualifying independent first-party or authoritative open-source evidence established this exact value for the exact licensed outlet during this pass.",
+      "verified_replacement_value": null,
+      "withhold_from_workbook": true
+    },
+    {
+      "sfa_licence": "NE16502B000",
+      "business_name": "Pepper Lunch",
+      "field": "Opening Hours / Closed Days",
+      "candidate_value": "Mo-Su 10:00-22:00",
+      "assessment": "supported",
+      "evidence": [
+        {
+          "url": "https://www.pepperlunch.com.sg/location/",
+          "observed_date": "2026-10-18",
+          "currentness_note": "official operator locator crawled 3 days before 2026-10-18"
+        }
+      ],
+      "finding": "Official outlet locator confirms exact outlet and lists 10:00-22:00, matching candidate.",
+      "verified_replacement_value": "Daily 10:00-22:00",
+      "withhold_from_workbook": false
+    },
+    {
+      "sfa_licence": "SW13T16A000",
+      "business_name": "PEPPER LUNCH",
+      "field": "Opening Hours / Closed Days",
+      "candidate_value": "Mo-Su 10:00-22:00",
+      "assessment": "supported",
+      "evidence": [
+        {
+          "url": "https://www.pepperlunch.com.sg/location/",
+          "observed_date": "2026-10-18",
+          "currentness_note": "official operator locator crawled 3 days before 2026-10-18"
+        }
+      ],
+      "finding": "Official outlet locator confirms exact outlet and lists 10:00-22:00, matching candidate.",
+      "verified_replacement_value": "Daily 10:00-22:00",
+      "withhold_from_workbook": false
+    },
+    {
+      "sfa_licence": "CE13N26C000",
+      "business_name": "Plain Vanilla",
+      "field": "Latitude",
+      "candidate_value": 1.2822682,
+      "assessment": "ambiguous",
+      "evidence": [],
+      "finding": "No qualifying independent first-party or authoritative open-source evidence established this exact value for the exact licensed outlet during this pass.",
+      "verified_replacement_value": null,
+      "withhold_from_workbook": true
+    },
+    {
+      "sfa_licence": "CE13N26C000",
+      "business_name": "Plain Vanilla",
+      "field": "Longitude",
+      "candidate_value": 103.8304572,
+      "assessment": "ambiguous",
+      "evidence": [],
+      "finding": "No qualifying independent first-party or authoritative open-source evidence established this exact value for the exact licensed outlet during this pass.",
+      "verified_replacement_value": null,
+      "withhold_from_workbook": true
+    },
+    {
+      "sfa_licence": "CE17L36B000",
+      "business_name": "Poke Theory",
+      "field": "Website",
+      "candidate_value": "https://poketheory.com.sg/",
+      "assessment": "ambiguous",
+      "evidence": [],
+      "finding": "No qualifying independent first-party or authoritative open-source evidence established this exact value for the exact licensed outlet during this pass.",
+      "verified_replacement_value": null,
+      "withhold_from_workbook": true
+    },
+    {
+      "sfa_licence": "CE17L36B000",
+      "business_name": "Poke Theory",
+      "field": "Contact Details",
+      "candidate_value": "+65 9309 8797",
+      "assessment": "ambiguous",
+      "evidence": [],
+      "finding": "No qualifying independent first-party or authoritative open-source evidence established this exact value for the exact licensed outlet during this pass.",
+      "verified_replacement_value": null,
+      "withhold_from_workbook": true
+    },
+    {
+      "sfa_licence": "CE17L36B000",
+      "business_name": "Poke Theory",
+      "field": "Opening Hours / Closed Days",
+      "candidate_value": "Mo-Fr 11:00-20:00; Sa-Su 11:00-18:30",
+      "assessment": "ambiguous",
+      "evidence": [],
+      "finding": "No qualifying independent first-party or authoritative open-source evidence established this exact value for the exact licensed outlet during this pass.",
+      "verified_replacement_value": null,
+      "withhold_from_workbook": true
+    },
+    {
+      "sfa_licence": "CE05560N000",
+      "business_name": "RAPPU",
+      "field": "Website",
+      "candidate_value": "https://www.merchantsofsingapore.com.sg/",
+      "assessment": "unsupported",
+      "evidence": [
+        {
+          "url": "https://www.rappu.sg/",
+          "observed_date": "2026-10-18",
+          "currentness_note": "official brand site crawled last week"
+        }
+      ],
+      "finding": "Candidate merchant-of-singapore site is not the exact brand site. RAPPU’s official operator site is rappu.sg.",
+      "verified_replacement_value": "https://www.rappu.sg/",
+      "withhold_from_workbook": true
+    },
+    {
+      "sfa_licence": "CE24I14E000",
+      "business_name": "SAIZERIYA",
+      "field": "Opening Hours / Closed Days",
+      "candidate_value": "11:00-22:00",
+      "assessment": "supported",
+      "evidence": [
+        {
+          "url": "https://www.saizeriya.com.sg/search/",
+          "observed_date": "2026-10-18",
+          "currentness_note": "official pages crawled 2026-10-18"
+        },
+        {
+          "url": "https://www.saizeriya.com.sg/company/",
+          "observed_date": "2026-10-18",
+          "currentness_note": "official pages crawled 2026-10-18"
+        }
+      ],
+      "finding": "Official Saizeriya locator matches City Square Mall outlet and brand publishes 11:00–22:00 operating hours.",
+      "verified_replacement_value": "Daily 11:00-22:00",
+      "withhold_from_workbook": false,
+      "related_snapshot": "data/source_snapshots/sfa_track_records_update_proposal_20261018.json",
+      "related_snapshot_note": "SFA record proposal does not contain operating hours; no duplicate field proposal."
+    },
+    {
+      "sfa_licence": "SE19124N000",
+      "business_name": "Shake Shack",
+      "field": "Website",
+      "candidate_value": "https://www.shakeshack.com/",
+      "assessment": "ambiguous",
+      "evidence": [],
+      "finding": "No qualifying independent first-party or authoritative open-source evidence established this exact value for the exact licensed outlet during this pass.",
+      "verified_replacement_value": null,
+      "withhold_from_workbook": true
+    },
+    {
+      "sfa_licence": "W01148X000",
+      "business_name": "Shake Shack",
+      "field": "Website",
+      "candidate_value": "https://www.shakeshack.com/",
+      "assessment": "ambiguous",
+      "evidence": [],
+      "finding": "No qualifying independent first-party or authoritative open-source evidence established this exact value for the exact licensed outlet during this pass.",
+      "verified_replacement_value": null,
+      "withhold_from_workbook": true
+    },
+    {
+      "sfa_licence": "W01148X000",
+      "business_name": "Shake Shack",
+      "field": "Opening Hours / Closed Days",
+      "candidate_value": "Su-Th 11:00-22:00;Fr-Sa,PH 11:00-24:00",
+      "assessment": "ambiguous",
+      "evidence": [],
+      "finding": "No qualifying independent first-party or authoritative open-source evidence established this exact value for the exact licensed outlet during this pass.",
+      "verified_replacement_value": null,
+      "withhold_from_workbook": true
+    },
+    {
+      "sfa_licence": "C98157N000",
+      "business_name": "Simply Bread",
+      "field": "Website",
+      "candidate_value": "https://simplybread.oddle.me/en_SG",
+      "assessment": "ambiguous",
+      "evidence": [],
+      "finding": "No qualifying independent first-party or authoritative open-source evidence established this exact value for the exact licensed outlet during this pass.",
+      "verified_replacement_value": null,
+      "withhold_from_workbook": true
+    },
+    {
+      "sfa_licence": "NE16445J000",
+      "business_name": "Swensens",
+      "field": "Opening Hours / Closed Days",
+      "candidate_value": "Mo-Fr 10:30-22:30; PH,Sa,Su 08:00-22:30",
+      "assessment": "unsupported",
+      "evidence": [
+        {
+          "url": "https://swensens.com.sg/singapore/",
+          "observed_date": "2026-10-18",
+          "currentness_note": "official locator crawled 2 days before 2026-10-18"
+        }
+      ],
+      "finding": "Official Swensen’s outlet locator lists Compass One daily 11:00–22:30; candidate claims weekdays 10:30 and weekends/PH 08:00.",
+      "verified_replacement_value": "Daily 11:00-22:30",
+      "withhold_from_workbook": true
+    },
+    {
+      "sfa_licence": "CE23H59J000",
+      "business_name": "TAMBA",
+      "field": "Website",
+      "candidate_value": "https://tamba.life/",
+      "assessment": "ambiguous",
+      "evidence": [],
+      "finding": "No qualifying independent first-party or authoritative open-source evidence established this exact value for the exact licensed outlet during this pass.",
+      "verified_replacement_value": null,
+      "withhold_from_workbook": true
+    },
+    {
+      "sfa_licence": "CE12Y69L000",
+      "business_name": "Tanjong Hwaro",
+      "field": "Website",
+      "candidate_value": "http://www.koryo.com.sg/",
+      "assessment": "ambiguous",
+      "evidence": [],
+      "finding": "No qualifying independent first-party or authoritative open-source evidence established this exact value for the exact licensed outlet during this pass.",
+      "verified_replacement_value": null,
+      "withhold_from_workbook": true
+    },
+    {
+      "sfa_licence": "NW13M94C000",
+      "business_name": "TOAST BOX",
+      "field": "Opening Hours / Closed Days",
+      "candidate_value": "Mo-Su 08:00-20:00",
+      "assessment": "ambiguous",
+      "evidence": [
+        {
+          "url": "https://www.toastbox.com.sg/locations/",
+          "observed_date": "2026-10-18",
+          "currentness_note": "official locator crawled 2 months before 2026-10-18"
+        }
+      ],
+      "finding": "Official Toast Box locator lists numerous outlets but the exact licence outlet could not be identified reliably from supplied OSM proposal details. Candidate hours not verifiable outlet-specifically.",
+      "verified_replacement_value": null,
+      "withhold_from_workbook": true
+    },
+    {
+      "sfa_licence": "NE16460K000",
+      "business_name": "ToastBox",
+      "field": "Opening Hours / Closed Days",
+      "candidate_value": "08:00-22:00",
+      "assessment": "supported",
+      "evidence": [
+        {
+          "url": "https://toastbox.com.sg/store/compass-one/",
+          "observed_date": "2026-10-18",
+          "currentness_note": "official store page crawled 3 months before 2026-10-18"
+        }
+      ],
+      "finding": "Official Toast Box Compass One page confirms outlet and daily 08:00–21:30, differing from candidate 22:00 close.",
+      "verified_replacement_value": "Daily 08:00-21:30",
+      "withhold_from_workbook": false
+    },
+    {
+      "sfa_licence": "CE13V12L000",
+      "business_name": "UNCLE FONG HOT POT RESTAURANT",
+      "field": "Contact Details",
+      "candidate_value": "+65 65139565",
+      "assessment": "ambiguous",
+      "evidence": [],
+      "finding": "No qualifying first-party non-delivery source found for this exact outlet; candidate withheld.",
+      "verified_replacement_value": null,
+      "withhold_from_workbook": true
+    },
+    {
+      "sfa_licence": "CE13V12L000",
+      "business_name": "UNCLE FONG HOT POT RESTAURANT",
+      "field": "Opening Hours / Closed Days",
+      "candidate_value": "Mo-Su 11:30-22:00",
+      "assessment": "ambiguous",
+      "evidence": [],
+      "finding": "No qualifying first-party non-delivery source found for this exact outlet; candidate withheld.",
+      "verified_replacement_value": null,
+      "withhold_from_workbook": true
+    },
+    {
+      "sfa_licence": "CE09F02J000",
+      "business_name": "WINGSTOP",
+      "field": "Contact Details",
+      "candidate_value": "+65 6509 6571",
+      "assessment": "supported",
+      "evidence": [
+        {
+          "url": "https://www.citysquaremall.com.sg/shops/shop-list/wingstop/",
+          "observed_date": "2026-10-18",
+          "currentness_note": "official mall directory crawled 1 day before 2026-10-18"
+        }
+      ],
+      "finding": "City Square Mall official directory lists Wingstop contact 6509 6571 and outlet at City Square Mall; candidate contact matches.",
+      "verified_replacement_value": "+65 6509 6571",
+      "withhold_from_workbook": false
+    }
+  ]
+}

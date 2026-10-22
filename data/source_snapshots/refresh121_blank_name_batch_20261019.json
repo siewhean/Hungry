@@ -1,0 +1,261 @@
+{
+  "snapshot_type": "refresh121_exact_blank_public_names_official_mall_batch",
+  "observed_at_local": "2026-10-19 Asia/Singapore",
+  "master_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "master_sha256": "6fca59ec8c51d62bfa8cf2ec556397fdb8b0eb780f0fc1bb8e39cc46e228c8dc",
+  "worksheet": "Public F&B Directory",
+  "scope": "Read-only exact public-facing name review for blank-name SFA rows at selected public shopping malls. No workbook edits, paid calls, delivery-platform sources, or fabricated fields. Public Access Status is not changed by this snapshot.",
+  "source_set": [
+    {
+      "publisher": "NEX",
+      "url": "https://www.nex.com.sg/Directory/ShopName/s",
+      "observed_date": "2026-10-19",
+      "capture_method": "Current official mall directory Shop Name and shop detail pages reviewed via web search.",
+      "limitations": "Used for exact tenant and unit matches only; foodcourt multi-license rows held."
+    },
+    {
+      "publisher": "NEX",
+      "url": "https://www.nex.com.sg/Directory/ShopName/u",
+      "observed_date": "2026-10-19",
+      "capture_method": "Current official mall directory Shop Name and shop detail pages reviewed via web search.",
+      "limitations": "Used for exact tenant and unit matches only."
+    },
+    {
+      "publisher": "City Square Mall",
+      "url": "https://www.citysquaremall.com.sg/shops/shop-list/shop-category/all-fb/",
+      "observed_date": "2026-10-19",
+      "capture_method": "Official mall All F&B and shop-category pages reviewed via web search.",
+      "limitations": "Venue-level foodcourt records held."
+    },
+    {
+      "publisher": "CapitaLand / Sengkang Grand Mall",
+      "url": "https://www.sengkanggrandmall.com.sg/en/stores/chagee.html",
+      "observed_date": "2026-10-19",
+      "capture_method": "Official mall current store pages reviewed via web search.",
+      "limitations": "Dumpling Ji listing records #01-65 only while the workbook licensed address includes #01-65 and #01-66."
+    },
+    {
+      "publisher": "Heartland Mall-Kovan",
+      "url": "https://heartlandmall.com.sg/the-son-cafe/",
+      "observed_date": "2026-10-19",
+      "capture_method": "Official mall store page reviewed via web search.",
+      "limitations": "Page slug is legacy, but page content identifies The Summer Acai at #02-12A."
+    },
+    {
+      "publisher": "West Mall",
+      "url": "https://www.westmall.com.sg/stores/56",
+      "observed_date": "2026-10-19",
+      "capture_method": "Official mall current store page reviewed via web search.",
+      "limitations": "Exact tenant and unit match."
+    },
+    {
+      "publisher": "CapitaLand / Bedok Mall",
+      "url": "https://www.capitaland.com/sg/malls/bedokmall/en/stores/playmade.html",
+      "observed_date": "2026-10-19",
+      "capture_method": "Official mall current store page and current mall campaign page reviewed via web search.",
+      "limitations": "Exact tenant and unit match."
+    }
+  ],
+  "summary": {
+    "blank_records_reviewed_in_selected_exact_match_slice": 14,
+    "exact_public_name_proposals": 8,
+    "held_for_license_or_name_ambiguity": 6,
+    "workbook_edits": 0,
+    "proposal_fields": 8,
+    "selection_note": "Only exact current official mall directory matches were proposed; multi-license foodcourt rows and venue-only labels were held."
+  },
+  "proposals": [
+    {
+      "sfa_licence": "SE18362V000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "SEOUL NOODLE SHOP",
+      "business_type": "Restaurant",
+      "existing_address": "Address: 23 SERANGOON CENTRAL #B2-58,NEX,Singapore 556083",
+      "postal_code": "556083",
+      "official_mall": "NEX",
+      "exact_unit_match": "B2-58/59",
+      "source_type": "official_mall_directory_or_operator_page",
+      "source_url": "https://www.nex.com.sg/Directory/ShopName/s",
+      "observed_date": "2026-10-19",
+      "evidence": "NEX official Shop Name directory and shop detail currently list SEOUL NOODLE SHOP at #B2-58/59. Workbook licence address is 23 Serangoon Central #B2-58, postal 556083.",
+      "matching_rule": "Exact SFA licence crosswalk to the current workbook row; matching postal code and mall, with the directory confirming the same unit or a unit that contains the licensed unit.",
+      "confidence": "high",
+      "proposed_fields": [
+        "F&B Name"
+      ],
+      "limitations": "Name-only proposal; the current official mall directory confirms the trading name at the matching unit. It does not verify other blank fields. Apply only after matching the SFA Licence and confirming the workbook SHA."
+    },
+    {
+      "sfa_licence": "SE18910J000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "UMAI",
+      "business_type": "Bakery",
+      "existing_address": "Address: 23 SERANGOON CENTRAL #03-01,NEX,Singapore 556083",
+      "postal_code": "556083",
+      "official_mall": "NEX",
+      "exact_unit_match": "03-01",
+      "source_type": "official_mall_directory_or_operator_page",
+      "source_url": "https://www.nex.com.sg/Directory/ShopName/u",
+      "observed_date": "2026-10-19",
+      "evidence": "NEX official directory lists UMAI, Bakery & Confectionery, at #03-01. Workbook licence address is 23 Serangoon Central #03-01, postal 556083.",
+      "matching_rule": "Exact SFA licence crosswalk to the current workbook row; matching postal code and mall, with the directory confirming the same unit or a unit that contains the licensed unit.",
+      "confidence": "high",
+      "proposed_fields": [
+        "F&B Name"
+      ],
+      "limitations": "Name-only proposal; the current official mall directory confirms the trading name at the matching unit. It does not verify other blank fields. Apply only after matching the SFA Licence and confirming the workbook SHA."
+    },
+    {
+      "sfa_licence": "CE09G52C000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "BakeInc",
+      "business_type": "Bakery",
+      "existing_address": "Address: 180 KITCHENER ROAD #B1-35,CITY SQUARE MALL,Singapore 208539",
+      "postal_code": "208539",
+      "official_mall": "City Square Mall",
+      "exact_unit_match": "B1-35",
+      "source_type": "official_mall_directory_or_operator_page",
+      "source_url": "https://www.citysquaremall.com.sg/shops/shop-list/shop-category/all-fb/",
+      "observed_date": "2026-10-19",
+      "evidence": "City Square Mall current All F&B directory lists BakeInc at #B1-35. Workbook licence address is 180 Kitchener Road #B1-35, postal 208539.",
+      "matching_rule": "Exact SFA licence crosswalk to the current workbook row; matching postal code and mall, with the directory confirming the same unit or a unit that contains the licensed unit.",
+      "confidence": "high",
+      "proposed_fields": [
+        "F&B Name"
+      ],
+      "limitations": "Name-only proposal; the current official mall directory confirms the trading name at the matching unit. It does not verify other blank fields. Apply only after matching the SFA Licence and confirming the workbook SHA."
+    },
+    {
+      "sfa_licence": "NE23269X000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "DUMPLING JI 吉吉饺子",
+      "business_type": "Restaurant",
+      "existing_address": "Address: 70 COMPASSVALE BOW #01-65,#01-66,SENGKANG GRAND MALL,Singapore 544692",
+      "postal_code": "544692",
+      "official_mall": "Sengkang Grand Mall",
+      "exact_unit_match": "01-65",
+      "source_type": "official_mall_directory_or_operator_page",
+      "source_url": "https://www.sengkanggrandmall.com.sg/en/stores/dumpling-ji-.html",
+      "observed_date": "2026-10-19",
+      "evidence": "Sengkang Grand Mall official current store page names DUMPLING JI 吉吉饺子 and lists location #01-65. Workbook address lists the same public mall at #01-65 and #01-66, postal 544692. Exact unit overlap; official page omits the adjacent licensed #01-66.",
+      "matching_rule": "Exact SFA licence crosswalk to the current workbook row; matching postal code and mall, with the directory confirming the same unit or a unit that contains the licensed unit.",
+      "confidence": "high",
+      "proposed_fields": [
+        "F&B Name"
+      ],
+      "limitations": "Name-only proposal; the current official mall directory confirms the trading name at the matching unit. It does not verify other blank fields. Apply only after matching the SFA Licence and confirming the workbook SHA."
+    },
+    {
+      "sfa_licence": "NE26A99C000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "CHAGEE",
+      "business_type": "Snack Counter",
+      "existing_address": "Address: 70 COMPASSVALE BOW #01-47,#01-48,#01-49,SENGKANG GRAND MALL,Singapore 544692",
+      "postal_code": "544692",
+      "official_mall": "Sengkang Grand Mall",
+      "exact_unit_match": "01-47/48/49",
+      "source_type": "official_mall_directory_or_operator_page",
+      "source_url": "https://www.sengkanggrandmall.com.sg/en/stores/chagee.html",
+      "observed_date": "2026-10-19",
+      "evidence": "Sengkang Grand Mall official current store page names CHAGEE and lists #01-47, #01-48, and #01-49, exactly matching the SFA address 70 Compassvale Bow #01-47/#01-48/#01-49, postal 544692.",
+      "matching_rule": "Exact SFA licence crosswalk to the current workbook row; matching postal code and mall, with the directory confirming the same unit or a unit that contains the licensed unit.",
+      "confidence": "high",
+      "proposed_fields": [
+        "F&B Name"
+      ],
+      "limitations": "Name-only proposal; the current official mall directory confirms the trading name at the matching unit. It does not verify other blank fields. Apply only after matching the SFA Licence and confirming the workbook SHA."
+    },
+    {
+      "sfa_licence": "NE24801N000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "The Summer Acai",
+      "business_type": "Takeaway",
+      "existing_address": "Address: 205 HOUGANG STREET 21 #02-12A,HEARTLAND MALL-KOVAN,Singapore 530205",
+      "postal_code": "530205",
+      "official_mall": "Heartland Mall-Kovan",
+      "exact_unit_match": "02-12A",
+      "source_type": "official_mall_directory_or_operator_page",
+      "source_url": "https://heartlandmall.com.sg/the-son-cafe/",
+      "observed_date": "2026-10-19",
+      "evidence": "Heartland Mall official store page currently identifies The Summer Acai at Level 2 #02-12A and gives Block 205 Hougang Street 21. Workbook address is 205 Hougang Street 21 #02-12A, postal 530205.",
+      "matching_rule": "Exact SFA licence crosswalk to the current workbook row; matching postal code and mall, with the directory confirming the same unit or a unit that contains the licensed unit.",
+      "confidence": "high",
+      "proposed_fields": [
+        "F&B Name"
+      ],
+      "limitations": "Name-only proposal; the current official mall directory confirms the trading name at the matching unit. It does not verify other blank fields. Apply only after matching the SFA Licence and confirming the workbook SHA."
+    },
+    {
+      "sfa_licence": "SW10162C000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "Kopi Korner",
+      "business_type": "Snack Counter",
+      "existing_address": "Address: 1 BUKIT BATOK CENTRAL LINK #02-10A,WEST MALL,Singapore 658713",
+      "postal_code": "658713",
+      "official_mall": "West Mall",
+      "exact_unit_match": "02-10A",
+      "source_type": "official_mall_directory_or_operator_page",
+      "source_url": "https://www.westmall.com.sg/stores/56",
+      "observed_date": "2026-10-19",
+      "evidence": "West Mall official current store page identifies Kopi Korner at L2 #02-10A and 1 Bukit Batok Central Link. Workbook address is 1 Bukit Batok Central Link #02-10A, postal 658713.",
+      "matching_rule": "Exact SFA licence crosswalk to the current workbook row; matching postal code and mall, with the directory confirming the same unit or a unit that contains the licensed unit.",
+      "confidence": "high",
+      "proposed_fields": [
+        "F&B Name"
+      ],
+      "limitations": "Name-only proposal; the current official mall directory confirms the trading name at the matching unit. It does not verify other blank fields. Apply only after matching the SFA Licence and confirming the workbook SHA."
+    },
+    {
+      "sfa_licence": "SE13304N000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "PlayMade",
+      "business_type": "Takeaway",
+      "existing_address": "Address: 311 NEW UPPER CHANGI ROAD #01-09,BEDOK MALL,Singapore 467360",
+      "postal_code": "467360",
+      "official_mall": "Bedok Mall",
+      "exact_unit_match": "01-09",
+      "source_type": "official_mall_directory_or_operator_page",
+      "source_url": "https://www.capitaland.com/sg/malls/bedokmall/en/stores/playmade.html",
+      "observed_date": "2026-10-19",
+      "evidence": "Bedok Mall official PlayMade store page lists location #01-09. A current mall campaign page identifies PlayMade at the same unit. Workbook address is 311 New Upper Changi Road #01-09, Bedok Mall, postal 467360.",
+      "matching_rule": "Exact SFA licence crosswalk to the current workbook row; matching postal code and mall, with the directory confirming the same unit or a unit that contains the licensed unit.",
+      "confidence": "high",
+      "proposed_fields": [
+        "F&B Name"
+      ],
+      "limitations": "Name-only proposal; the current official mall directory confirms the trading name at the matching unit. It does not verify other blank fields. Apply only after matching the SFA Licence and confirming the workbook SHA."
+    }
+  ],
+  "held_records": [
+    {
+      "sfa_licence": "SE10643E002",
+      "existing_address": "Address: 23 SERANGOON CENTRAL #04-36,#04-37,NEX,Singapore 556083",
+      "reason": "NEX #04-36/#04-37 Foodcourt record; official directory identifies Food Junction venue but not individual stall/licensee."
+    },
+    {
+      "sfa_licence": "SE10643E009",
+      "existing_address": "Address: 23 SERANGOON CENTRAL #04-36,#04-37,NEX,Singapore 556083",
+      "reason": "Same NEX foodcourt unit shared with multiple records; official Food Junction listing does not map this licence to an individual stall."
+    },
+    {
+      "sfa_licence": "SE26H07L000",
+      "existing_address": "Address: 23 SERANGOON CENTRAL #04-36,#04-37,NEX,Singapore 556083 (MR9)",
+      "reason": "NEX #04-36/#04-37 within-foodcourt licence; official directory identifies Food Junction but not this licencee’s public-facing stall name."
+    },
+    {
+      "sfa_licence": "CE18U28E000",
+      "existing_address": "Address: 180 KITCHENER ROAD #B2-05,CITY SQUARE MALL,Singapore 208539",
+      "reason": "City Square Mall #B2-05 food court venue-level record; current official F&B directory evidence did not uniquely establish a separate trading name for this licence."
+    },
+    {
+      "sfa_licence": "CE24324A012",
+      "existing_address": "Address: 180 KITCHENER ROAD #B3-04,CITY SQUARE MALL,Singapore 208539",
+      "reason": "City Square Mall #B3-04 foodcourt record; no exact current official tenant name found in the reviewed official directory pages."
+    },
+    {
+      "sfa_licence": "CE26I57L000",
+      "existing_address": "Address: 180 KITCHENER ROAD #B2-05,CITY SQUARE MALL,Singapore 208539 (MR1)",
+      "reason": "City Square Mall #B2-05 within-foodcourt licence; venue-level/adjacent licence ambiguity, no individual stall name established."
+    }
+  ]
+}

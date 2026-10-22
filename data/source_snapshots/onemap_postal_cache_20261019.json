@@ -1,0 +1,1712 @@
+{
+  "423619": {
+    "latitude": 1.311151427716488,
+    "longitude": 103.902190727106,
+    "building": "NIL",
+    "source": "OneMap SLA API"
+  },
+  "069463": {
+    "latitude": 1.281523290161501,
+    "longitude": 103.8456289624611,
+    "building": "TELOK AYER CONSERVATION AREA",
+    "source": "OneMap SLA API"
+  },
+  "089121": {
+    "latitude": 1.27984915318355,
+    "longitude": 103.8416379652543,
+    "building": "NIL",
+    "source": "OneMap SLA API"
+  },
+  "209597": {
+    "latitude": 1.30867398806786,
+    "longitude": 103.8554666540169,
+    "building": "DESKER ROAD CONSERVATION AREA",
+    "source": "OneMap SLA API"
+  },
+  "078995": {
+    "latitude": 1.277971240953925,
+    "longitude": 103.8441602970911,
+    "building": "NIL",
+    "source": "OneMap SLA API"
+  },
+  "049026": {
+    "latitude": 1.286711865193686,
+    "longitude": 103.8484390102222,
+    "building": "BOAT QUAY CONSERVATION AREA",
+    "road": "LORONG TELOK",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "049380": {
+    "latitude": 1.287156340793303,
+    "longitude": 103.8490275210084,
+    "building": "BOAT QUAY CONSERVATION AREA",
+    "road": "CIRCULAR ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "049381": {
+    "latitude": 1.287110098190323,
+    "longitude": 103.8490379499622,
+    "building": "BOAT QUAY CONSERVATION AREA",
+    "road": "CIRCULAR ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "049384": {
+    "latitude": 1.286969019824849,
+    "longitude": 103.8490709880222,
+    "building": "BOAT QUAY CONSERVATION AREA",
+    "road": "CIRCULAR ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "049395": {
+    "latitude": 1.286473436464744,
+    "longitude": 103.8492699900636,
+    "building": "BOAT QUAY CONSERVATION AREA",
+    "road": "CIRCULAR ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "049860": {
+    "latitude": 1.288014887190457,
+    "longitude": 103.8492367629746,
+    "building": "BOAT QUAY CONSERVATION AREA",
+    "road": "BOAT QUAY",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "058464": {
+    "latitude": 1.283162491345158,
+    "longitude": 103.8441280532078,
+    "building": "KRETA AYER CONSERVATION AREA",
+    "road": "TRENGGANU STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "058557": {
+    "latitude": 1.282330425512842,
+    "longitude": 103.8448395479675,
+    "building": "KRETA AYER CONSERVATION AREA",
+    "road": "TEMPLE STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "058565": {
+    "latitude": 1.282739639306136,
+    "longitude": 103.8446802316244,
+    "building": "KRETA AYER CONSERVATION AREA",
+    "road": "TEMPLE STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "058575": {
+    "latitude": 1.282868493542259,
+    "longitude": 103.844457285358,
+    "building": "KRETA AYER CONSERVATION AREA",
+    "road": "TEMPLE STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "058593": {
+    "latitude": 1.283302191935792,
+    "longitude": 103.8437044321903,
+    "building": "KRETA AYER CONSERVATION AREA",
+    "road": "TEMPLE STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "058604": {
+    "latitude": 1.283174364962121,
+    "longitude": 103.8433501106833,
+    "building": "KRETA AYER CONSERVATION AREA",
+    "road": "TEMPLE STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "058680": {
+    "latitude": 1.287326323817558,
+    "longitude": 103.8484834072447,
+    "building": "BOAT QUAY CONSERVATION AREA",
+    "road": "SOUTH BRIDGE ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "058684": {
+    "latitude": 1.287189779679027,
+    "longitude": 103.8484069298108,
+    "building": "BOAT QUAY CONSERVATION AREA",
+    "road": "SOUTH BRIDGE ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "058779": {
+    "latitude": 1.282925438595212,
+    "longitude": 103.8454537826289,
+    "building": "KRETA AYER CONSERVATION AREA",
+    "road": "SOUTH BRIDGE ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "058781": {
+    "latitude": 1.282891164046956,
+    "longitude": 103.8454304950677,
+    "building": "KRETA AYER CONSERVATION AREA",
+    "road": "SOUTH BRIDGE ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "058782": {
+    "latitude": 1.282632292498068,
+    "longitude": 103.8457230482938,
+    "building": "TELOK AYER CONSERVATION AREA",
+    "road": "SOUTH BRIDGE ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "058813": {
+    "latitude": 1.282001455901732,
+    "longitude": 103.8449599607408,
+    "building": "KRETA AYER CONSERVATION AREA",
+    "road": "SOUTH BRIDGE ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "058822": {
+    "latitude": 1.281842506431488,
+    "longitude": 103.8452757204481,
+    "building": "TELOK AYER CONSERVATION AREA",
+    "road": "SOUTH BRIDGE ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "058936": {
+    "latitude": 1.282293914169532,
+    "longitude": 103.8444731237448,
+    "building": "KRETA AYER CONSERVATION AREA",
+    "road": "SMITH STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "058957": {
+    "latitude": 1.282800500573039,
+    "longitude": 103.8435810157932,
+    "building": "KRETA AYER CONSERVATION AREA",
+    "road": "SMITH STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "058965": {
+    "latitude": 1.282992096953036,
+    "longitude": 103.8432456306589,
+    "building": "YES CHINATOWN POINT HOTEL",
+    "road": "SMITH STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "059020": {
+    "latitude": 1.281920629672644,
+    "longitude": 103.8441493935334,
+    "building": "KRETA AYER CONSERVATION AREA",
+    "road": "SAGO STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "059021": {
+    "latitude": 1.281943114275455,
+    "longitude": 103.8441088296436,
+    "building": "KRETA AYER CONSERVATION AREA",
+    "road": "SAGO STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "059028": {
+    "latitude": 1.282069338328273,
+    "longitude": 103.8438455519538,
+    "building": "KRETA AYER CONSERVATION AREA",
+    "road": "SAGO STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "059201": {
+    "latitude": 1.283509505481728,
+    "longitude": 103.844497401754,
+    "building": "KRETA AYER CONSERVATION AREA",
+    "road": "PAGODA STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "059221": {
+    "latitude": 1.283762277801323,
+    "longitude": 103.8440863108172,
+    "building": "KRETA AYER CONSERVATION AREA",
+    "road": "PAGODA STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "059222": {
+    "latitude": 1.283449545707785,
+    "longitude": 103.8439035015455,
+    "building": "HERITAGE COLLECTION ON PAGODA",
+    "road": "PAGODA STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "059237": {
+    "latitude": 1.283924177754999,
+    "longitude": 103.843755304733,
+    "building": "KRETA AYER CONSERVATION AREA",
+    "road": "PAGODA STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "059297": {
+    "latitude": 1.287169979827114,
+    "longitude": 103.8469420471489,
+    "building": "NIL",
+    "road": "NORTH CANAL ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "059504": {
+    "latitude": 1.283610435306259,
+    "longitude": 103.8447870325273,
+    "building": "NIL",
+    "road": "MOSQUE STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "068580": {
+    "latitude": 1.281599699808504,
+    "longitude": 103.8483201477647,
+    "building": "TELOK AYER CONSERVATION AREA",
+    "road": "TELOK AYER STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "068589": {
+    "latitude": 1.281971476646803,
+    "longitude": 103.8481262549584,
+    "building": "TELOK AYER CONSERVATION AREA",
+    "road": "TELOK AYER STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "068597": {
+    "latitude": 1.281823961083188,
+    "longitude": 103.8480347698213,
+    "building": "TELOK AYER CONSERVATION AREA",
+    "road": "TELOK AYER STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "068614": {
+    "latitude": 1.280353207265744,
+    "longitude": 103.8475963275149,
+    "building": "TELOK AYER CONSERVATION AREA",
+    "road": "TELOK AYER STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "068616": {
+    "latitude": 1.280243200239259,
+    "longitude": 103.8475508378571,
+    "building": "TELOK AYER CONSERVATION AREA",
+    "road": "TELOK AYER STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "068626": {
+    "latitude": 1.28063385387124,
+    "longitude": 103.8473669141797,
+    "building": "TELOK AYER CONSERVATION AREA",
+    "road": "TELOK AYER STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "069458": {
+    "latitude": 1.28178385630118,
+    "longitude": 103.8455261235984,
+    "building": "TELOK AYER CONSERVATION AREA",
+    "road": "CLUB STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "069865": {
+    "latitude": 1.280650322953874,
+    "longitude": 103.8470776013856,
+    "building": "TELOK AYER CONSERVATION AREA",
+    "road": "AMOY STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "069879": {
+    "latitude": 1.280083934431286,
+    "longitude": 103.8468456697187,
+    "building": "TELOK AYER CONSERVATION AREA",
+    "road": "AMOY STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "069887": {
+    "latitude": 1.28008620782345,
+    "longitude": 103.8465247013105,
+    "building": "TELOK AYER CONSERVATION AREA",
+    "road": "AMOY STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "069890": {
+    "latitude": 1.280226967223925,
+    "longitude": 103.8465524904984,
+    "building": "TELOK AYER CONSERVATION AREA",
+    "road": "AMOY STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "069894": {
+    "latitude": 1.280429595358818,
+    "longitude": 103.8466052492431,
+    "building": "TELOK AYER CONSERVATION AREA",
+    "road": "AMOY STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "069904": {
+    "latitude": 1.280944436185254,
+    "longitude": 103.8468288676019,
+    "building": "TELOK AYER CONSERVATION AREA",
+    "road": "AMOY STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "069906": {
+    "latitude": 1.281046987201976,
+    "longitude": 103.8468897920121,
+    "building": "TELOK AYER CONSERVATION AREA",
+    "road": "AMOY STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "069907": {
+    "latitude": 1.281100431488209,
+    "longitude": 103.8469218088078,
+    "building": "TELOK AYER CONSERVATION AREA",
+    "road": "AMOY STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "069908": {
+    "latitude": 1.281156121741734,
+    "longitude": 103.8469560149708,
+    "building": "TELOK AYER CONSERVATION AREA",
+    "road": "AMOY STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "069914": {
+    "latitude": 1.281352975086981,
+    "longitude": 103.8470795412801,
+    "building": "TELOK AYER CONSERVATION AREA",
+    "road": "AMOY STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "078983": {
+    "latitude": 1.278257990207453,
+    "longitude": 103.8442385590456,
+    "building": "TANJONG PAGAR CONSERVATION AREA",
+    "road": "TRAS STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "078985": {
+    "latitude": 1.278210866841648,
+    "longitude": 103.8442269457645,
+    "building": "TANJONG PAGAR CONSERVATION AREA",
+    "road": "TRAS STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "078997": {
+    "latitude": 1.277921712576289,
+    "longitude": 103.8441470109206,
+    "building": "TANJONG PAGAR CONSERVATION AREA",
+    "road": "TRAS STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "079015": {
+    "latitude": 1.277475319247642,
+    "longitude": 103.8440578986621,
+    "building": "TANJONG PAGAR CONSERVATION AREA",
+    "road": "TRAS STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "079017": {
+    "latitude": 1.277426603008781,
+    "longitude": 103.8440508987925,
+    "building": "TANJONG PAGAR CONSERVATION AREA",
+    "road": "TRAS STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "079323": {
+    "latitude": 1.277654552875885,
+    "longitude": 103.8447342454472,
+    "building": "HERITAGE COURT",
+    "road": "PECK SEAH STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "079325": {
+    "latitude": 1.277557752464169,
+    "longitude": 103.8447174658886,
+    "building": "HERITAGE COURT",
+    "road": "PECK SEAH STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "088333": {
+    "latitude": 1.279798223117409,
+    "longitude": 103.8407913474706,
+    "building": "NIL",
+    "road": "TEO HONG ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "088379": {
+    "latitude": 1.279991745357757,
+    "longitude": 103.8418908618349,
+    "building": "NIL",
+    "road": "TECK LIM ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "088387": {
+    "latitude": 1.28037792347078,
+    "longitude": 103.8419918075391,
+    "building": "CLAUDE HOTEL",
+    "road": "TECK LIM ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "088445": {
+    "latitude": 1.279864230492333,
+    "longitude": 103.8437044107464,
+    "building": "TANJONG PAGAR CONSERVATION AREA",
+    "road": "TANJONG PAGAR ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "088473": {
+    "latitude": 1.279155718653325,
+    "longitude": 103.8436737479926,
+    "building": "TANJONG PAGAR CONSERVATION AREA",
+    "road": "TANJONG PAGAR ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "088478": {
+    "latitude": 1.278408358983214,
+    "longitude": 103.8440199758884,
+    "building": "TANJONG PAGAR CONSERVATION AREA",
+    "road": "TANJONG PAGAR ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "088513": {
+    "latitude": 1.278317814005504,
+    "longitude": 103.8436481939536,
+    "building": "TANJONG PAGAR CONSERVATION AREA",
+    "road": "TANJONG PAGAR ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "088525": {
+    "latitude": 1.278056769795081,
+    "longitude": 103.843529703851,
+    "building": "TANJONG PAGAR CONSERVATION AREA",
+    "road": "TANJONG PAGAR ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "088528": {
+    "latitude": 1.277949523857661,
+    "longitude": 103.8434790540759,
+    "building": "TANJONG PAGAR CONSERVATION AREA",
+    "road": "TANJONG PAGAR ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "088533": {
+    "latitude": 1.277705565328351,
+    "longitude": 103.8434059309655,
+    "building": "TANJONG PAGAR CONSERVATION AREA",
+    "road": "TANJONG PAGAR ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "088747": {
+    "latitude": 1.282461286431694,
+    "longitude": 103.8422951566339,
+    "building": "NIL",
+    "road": "NEW BRIDGE ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "088805": {
+    "latitude": 1.280153929392607,
+    "longitude": 103.8437426853405,
+    "building": "NIL",
+    "road": "NEIL ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "088809": {
+    "latitude": 1.280061630512356,
+    "longitude": 103.8435916356462,
+    "building": "NIL",
+    "road": "NEIL ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "088811": {
+    "latitude": 1.280013036359655,
+    "longitude": 103.8435159765767,
+    "building": "NIL",
+    "road": "NEIL ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "088852": {
+    "latitude": 1.279179014869243,
+    "longitude": 103.8417698638319,
+    "building": "NIL",
+    "road": "NEIL ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "088892": {
+    "latitude": 1.279499676961042,
+    "longitude": 103.8425616830372,
+    "building": "NIL",
+    "road": "NEIL ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "088894": {
+    "latitude": 1.279437183148621,
+    "longitude": 103.8424895764167,
+    "building": "NIL",
+    "road": "NEIL ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "088895": {
+    "latitude": 1.279399241677131,
+    "longitude": 103.8424570427744,
+    "building": "NIL",
+    "road": "NEIL ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "088896": {
+    "latitude": 1.279361909263747,
+    "longitude": 103.8424237954879,
+    "building": "NIL",
+    "road": "NEIL ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "088898": {
+    "latitude": 1.279293875071476,
+    "longitude": 103.8423571279684,
+    "building": "NIL",
+    "road": "NEIL ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "088901": {
+    "latitude": 1.279125263088677,
+    "longitude": 103.8423076607982,
+    "building": "NIL",
+    "road": "NEIL ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "089111": {
+    "latitude": 1.279258555781689,
+    "longitude": 103.8413958413668,
+    "building": "NIL",
+    "road": "KEONG SAIK ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "089116": {
+    "latitude": 1.279546670109189,
+    "longitude": 103.841595431821,
+    "building": "NIL",
+    "road": "KEONG SAIK ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "089129": {
+    "latitude": 1.280046252910414,
+    "longitude": 103.841668648925,
+    "building": "NIL",
+    "road": "KEONG SAIK ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "089134": {
+    "latitude": 1.279912202998422,
+    "longitude": 103.8413615714653,
+    "building": "NIL",
+    "road": "KEONG SAIK ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "089170": {
+    "latitude": 1.282304472070404,
+    "longitude": 103.8424010428189,
+    "building": "NIL",
+    "road": "KEONG SAIK ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "089498": {
+    "latitude": 1.278986509173049,
+    "longitude": 103.8434787162811,
+    "building": "TANJONG PAGAR CONSERVATION AREA",
+    "road": "DUXTON ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "089683": {
+    "latitude": 1.277990804945913,
+    "longitude": 103.8420056642516,
+    "building": "TANJONG PAGAR CONSERVATION AREA",
+    "road": "CRAIG ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "117418": {
+    "latitude": 1.293731857767132,
+    "longitude": 103.7741618832574,
+    "building": "NATIONAL UNIVERSITY OF SINGAPORE (COM2)",
+    "road": "COMPUTING DRIVE",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "117581": {
+    "latitude": 1.299587082179698,
+    "longitude": 103.771744521389,
+    "building": "NATIONAL UNIVERSITY OF SINGAPORE (E3)",
+    "road": "ENGINEERING DRIVE 3",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "118157": {
+    "latitude": 1.280470949104134,
+    "longitude": 103.7868390096254,
+    "building": "NIL",
+    "road": "SOUTH BUONA VISTA ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "118501": null,
+  "119083": {
+    "latitude": 1.297037845262674,
+    "longitude": 103.7815859056655,
+    "building": "NATIONAL UNIVERSITY OF SINGAPORE (FACULTY OF DENTISTRY)",
+    "road": "LOWER KENT RIDGE ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "168651": {
+    "latitude": 1.282766494951198,
+    "longitude": 103.8300832985843,
+    "building": "YONG SIAK VIEW",
+    "road": "YONG SIAK STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "169364": {
+    "latitude": 1.276659333028606,
+    "longitude": 103.8361144113014,
+    "building": "BLAIR PLAIN CONSERVATION AREA",
+    "road": "KAMPONG BAHRU ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "188309": {
+    "latitude": 1.30277801701808,
+    "longitude": 103.8498513436258,
+    "building": "NIL",
+    "road": "SELEGIE ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "189230": {
+    "latitude": 1.300852919732893,
+    "longitude": 103.8589217793782,
+    "building": "KAMPONG GLAM CONSERVATION AREA",
+    "road": "HAJI LANE",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "189247": {
+    "latitude": 1.301204250055228,
+    "longitude": 103.8588325202199,
+    "building": "KAMPONG GLAM CONSERVATION AREA",
+    "road": "HAJI LANE",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "189258": {
+    "latitude": 1.301304860648374,
+    "longitude": 103.8585576964052,
+    "building": "KAMPONG GLAM CONSERVATION AREA",
+    "road": "HAJI LANE",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "189856": {
+    "latitude": 1.300904717525175,
+    "longitude": 103.8587209667304,
+    "building": "KAMPONG GLAM CONSERVATION AREA",
+    "road": "BALI LANE",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "189861": {
+    "latitude": 1.301088695750214,
+    "longitude": 103.858574384608,
+    "building": "KAMPONG GLAM CONSERVATION AREA",
+    "road": "BALI LANE",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "189876": {
+    "latitude": 1.300673802101928,
+    "longitude": 103.8548309434393,
+    "building": "BUGIS STREET",
+    "road": "VICTORIA STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "198491": {
+    "latitude": 1.301569470490149,
+    "longitude": 103.8605598549391,
+    "building": "KAMPONG GLAM CONSERVATION AREA",
+    "road": "SULTAN GATE",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "198738": {
+    "latitude": 1.303383372451366,
+    "longitude": 103.8598332604268,
+    "building": "KAMPONG GLAM CONSERVATION AREA",
+    "road": "NORTH BRIDGE ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "198991": {
+    "latitude": 1.302867391971841,
+    "longitude": 103.8612087722088,
+    "building": "NIL",
+    "road": "JALAN SULTAN",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "199319": {
+    "latitude": 1.304137090870611,
+    "longitude": 103.8597361142432,
+    "building": "KAMPONG GLAM CONSERVATION AREA",
+    "road": "JALAN KLAPA",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "199466": {
+    "latitude": 1.301813466998863,
+    "longitude": 103.8592711782218,
+    "building": "KAMPONG GLAM CONSERVATION AREA",
+    "road": "BUSSORAH STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "199470": null,
+  "199569": {
+    "latitude": 1.301577790443245,
+    "longitude": 103.8616367556605,
+    "building": "KAMPONG GLAM CONSERVATION AREA",
+    "road": "BEACH ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "199806": {
+    "latitude": 1.301976147782536,
+    "longitude": 103.8587179947308,
+    "building": "KAMPONG GLAM CONSERVATION AREA",
+    "road": "ARAB STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "199894": {
+    "latitude": 1.301647595856431,
+    "longitude": 103.8612506424352,
+    "building": "CHENN LEONN BUILDING",
+    "road": "ALIWAL STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "199896": {
+    "latitude": 1.3016947381608,
+    "longitude": 103.8612247246033,
+    "building": "CHENN LEONN BUILDING",
+    "road": "ALIWAL STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "207277": {
+    "latitude": 1.309785485399033,
+    "longitude": 103.85619043695,
+    "building": "VERDUN HOUSE",
+    "road": "VERDUN ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "207550": {
+    "latitude": 1.311273522359846,
+    "longitude": 103.8597528351692,
+    "building": "PETAIN ROAD/TYRWHITT ROAD CONSERVATION AREA",
+    "road": "TYRWHITT ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "207741": {
+    "latitude": 1.308058281955855,
+    "longitude": 103.8575807195047,
+    "building": "NIL",
+    "road": "SYED ALWI ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "207968": {
+    "latitude": 1.30897636768269,
+    "longitude": 103.8540048895846,
+    "building": "LITTLE INDIA CONSERVATION AREA",
+    "road": "ROWELL ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "207971": {
+    "latitude": 1.309039659117025,
+    "longitude": 103.8544623098937,
+    "building": "DESKER ROAD CONSERVATION AREA",
+    "road": "ROWELL ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "207977": {
+    "latitude": 1.308966284865902,
+    "longitude": 103.8545745658886,
+    "building": "DESKER ROAD CONSERVATION AREA",
+    "road": "ROWELL ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "207986": {
+    "latitude": 1.308894865083374,
+    "longitude": 103.8546844516541,
+    "building": "DESKER ROAD CONSERVATION AREA",
+    "road": "ROWELL ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "208023": {
+    "latitude": 1.308020611665436,
+    "longitude": 103.8560377765187,
+    "building": "DESKER ROAD CONSERVATION AREA",
+    "road": "ROWELL ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "208852": {
+    "latitude": 1.306686454995311,
+    "longitude": 103.8564012006513,
+    "building": "WINK @ JALAN BESAR",
+    "road": "JALAN BESAR",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "208941": {
+    "latitude": 1.310535006888888,
+    "longitude": 103.8584455556785,
+    "building": "PETAIN ROAD/TYRWHITT ROAD CONSERVATION AREA",
+    "road": "JALAN BESAR",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "209005": {
+    "latitude": 1.313433434226422,
+    "longitude": 103.8597298361449,
+    "building": "PETAIN ROAD/TYRWHITT ROAD CONSERVATION AREA",
+    "road": "JALAN BESAR",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "209076": {
+    "latitude": 1.31063171909669,
+    "longitude": 103.8608378404378,
+    "building": "NIL",
+    "road": "HORNE ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "209081": {
+    "latitude": 1.310828195538523,
+    "longitude": 103.8606663399295,
+    "building": "NIL",
+    "road": "HORNE ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "209185": {
+    "latitude": 1.311444111944089,
+    "longitude": 103.8608598989425,
+    "building": "PETAIN ROAD/TYRWHITT ROAD CONSERVATION AREA",
+    "road": "HAMILTON ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "209189": {
+    "latitude": 1.31150009626637,
+    "longitude": 103.8609416529047,
+    "building": "PETAIN ROAD/TYRWHITT ROAD CONSERVATION AREA",
+    "road": "HAMILTON ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "209193": {
+    "latitude": 1.311556700593502,
+    "longitude": 103.8610231781483,
+    "building": "PETAIN ROAD/TYRWHITT ROAD CONSERVATION AREA",
+    "road": "HAMILTON ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "209198": {
+    "latitude": 1.311758182173019,
+    "longitude": 103.8610561586834,
+    "building": "PETAIN ROAD/TYRWHITT ROAD CONSERVATION AREA",
+    "road": "HAMILTON ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "209345": {
+    "latitude": 1.304578876147216,
+    "longitude": 103.8542055653846,
+    "building": "LITTLE INDIA CONSERVATION AREA",
+    "road": "DUNLOP STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "209358": {
+    "latitude": 1.304772466203472,
+    "longitude": 103.8539978862057,
+    "building": "LITTLE INDIA CONSERVATION AREA",
+    "road": "DUNLOP STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "209406": {
+    "latitude": 1.305102367012759,
+    "longitude": 103.8532177192994,
+    "building": "LITTLE INDIA CONSERVATION AREA",
+    "road": "DUNLOP STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "209407": {
+    "latitude": 1.305510904282537,
+    "longitude": 103.8532014686438,
+    "building": "LITTLE INDIA CONSERVATION AREA",
+    "road": "DUNLOP STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "209443": {
+    "latitude": 1.306071490768063,
+    "longitude": 103.8523945288513,
+    "building": "LITTLE INDIA CONSERVATION AREA",
+    "road": "DUNLOP STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "209511": {
+    "latitude": 1.305457978815989,
+    "longitude": 103.8541782535853,
+    "building": "LITTLE INDIA CONSERVATION AREA",
+    "road": "DICKSON ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "209642": {
+    "latitude": 1.308259908957233,
+    "longitude": 103.856607789415,
+    "building": "DESKER ROAD CONSERVATION AREA",
+    "road": "DESKER ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "209671": {
+    "latitude": 1.305006068245147,
+    "longitude": 103.8519088267377,
+    "building": "LITTLE INDIA CONSERVATION AREA",
+    "road": "DALHOUSIE LANE",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "209679": {
+    "latitude": 1.304898847220272,
+    "longitude": 103.8520318282659,
+    "building": "LITTLE INDIA CONSERVATION AREA",
+    "road": "DALHOUSIE LANE",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "209685": {
+    "latitude": 1.304967710802374,
+    "longitude": 103.8523540570922,
+    "building": "LITTLE INDIA CONSERVATION AREA",
+    "road": "DALHOUSIE LANE",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "209686": {
+    "latitude": 1.304940761881965,
+    "longitude": 103.8523781856993,
+    "building": "LITTLE INDIA CONSERVATION AREA",
+    "road": "DALHOUSIE LANE",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "209691": null,
+  "209716": {
+    "latitude": 1.307230567589861,
+    "longitude": 103.8527449455066,
+    "building": "LITTLE INDIA CONSERVATION AREA",
+    "road": "CUFF ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "209742": {
+    "latitude": 1.306758361782556,
+    "longitude": 103.8532006769387,
+    "building": "LITTLE INDIA CONSERVATION AREA",
+    "road": "CUFF ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "209855": {
+    "latitude": 1.310928974515674,
+    "longitude": 103.8618533695155,
+    "building": "NIL",
+    "road": "CAVAN ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "218115": {
+    "latitude": 1.312389071999028,
+    "longitude": 103.8555810286049,
+    "building": "NIL",
+    "road": "SERANGOON ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "218178": {
+    "latitude": 1.314325342456487,
+    "longitude": 103.8577118057761,
+    "building": "NIL",
+    "road": "SERANGOON ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "218429": {
+    "latitude": 1.316188394195556,
+    "longitude": 103.8534492749535,
+    "building": "NIL",
+    "road": "RANGOON ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "218452": {
+    "latitude": 1.317591542870344,
+    "longitude": 103.8529457457911,
+    "building": "HONG BUILDING",
+    "road": "RANGOON ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "218456": {
+    "latitude": 1.31763684321664,
+    "longitude": 103.8523837260153,
+    "building": "NIL",
+    "road": "RANGOON ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "218554": {
+    "latitude": 1.307933495027094,
+    "longitude": 103.8507693615562,
+    "building": "LITTLE INDIA CONSERVATION AREA",
+    "road": "RACE COURSE ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "218671": {
+    "latitude": 1.315871970483484,
+    "longitude": 103.8575161752703,
+    "building": "NIL",
+    "road": "RACE COURSE ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "218895": {
+    "latitude": 1.313109319072934,
+    "longitude": 103.8533786282085,
+    "building": "NIL",
+    "road": "OWEN ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "219108": {
+    "latitude": 1.310553398239756,
+    "longitude": 103.8528171528502,
+    "building": "NIL",
+    "road": "KINTA ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "219539": {
+    "latitude": 1.308225299162005,
+    "longitude": 103.8512508399907,
+    "building": "LITTLE INDIA CONSERVATION AREA",
+    "road": "CHANDER ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "219887": {
+    "latitude": 1.310896974343482,
+    "longitude": 103.8538493979116,
+    "building": "NIL",
+    "road": "BIRCH ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "228711": {
+    "latitude": 1.306761645684367,
+    "longitude": 103.8471698833471,
+    "building": "NIL",
+    "road": "MACKENZIE ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "239544": {
+    "latitude": 1.298185703759698,
+    "longitude": 103.8389614994387,
+    "building": "NIL",
+    "road": "KILLINEY ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "248357": {
+    "latitude": 1.293686040790285,
+    "longitude": 103.826498562688,
+    "building": "NIL",
+    "road": "RIVER VALLEY ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "249405": {
+    "latitude": 1.296482472991937,
+    "longitude": 103.8300032109962,
+    "building": "HOOT KIAM MANSION",
+    "road": "HOOT KIAM ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "278978": {
+    "latitude": 1.311108224264316,
+    "longitude": 103.7956284905167,
+    "building": "HOLLAND VILLAGE",
+    "road": "HOLLAND AVENUE",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "278988": {
+    "latitude": 1.311599721582649,
+    "longitude": 103.7954323517207,
+    "building": "HOLLAND VILLAGE",
+    "road": "HOLLAND AVENUE",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "278991": {
+    "latitude": 1.311715030671791,
+    "longitude": 103.7953376727682,
+    "building": "HOLLAND VILLAGE",
+    "road": "HOLLAND AVENUE",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "307621": {
+    "latitude": 1.317962140241591,
+    "longitude": 103.8434230124125,
+    "building": "GOLDHILL SHOPPING CENTRE",
+    "road": "THOMSON ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "328195": {
+    "latitude": 1.324024216058741,
+    "longitude": 103.8652918128302,
+    "building": "NIL",
+    "road": "SERANGOON ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "328418": {
+    "latitude": 1.328061019169694,
+    "longitude": 103.8670843546325,
+    "building": "NIL",
+    "road": "OPAL CRESCENT",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "328419": {
+    "latitude": 1.327796507150698,
+    "longitude": 103.8666305163092,
+    "building": "NIL",
+    "road": "OPAL CRESCENT",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "338714": {
+    "latitude": 1.309990337427329,
+    "longitude": 103.8629794806016,
+    "building": "NIL",
+    "road": "LAVENDER STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "338772": {
+    "latitude": 1.314533361545204,
+    "longitude": 103.85960397043,
+    "building": "NIL",
+    "road": "LAVENDER STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "338802": {
+    "latitude": 1.314480095433149,
+    "longitude": 103.8602562285452,
+    "building": "NIL",
+    "road": "LAVENDER STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "338813": {
+    "latitude": 1.315097184389264,
+    "longitude": 103.8597517286772,
+    "building": "NIL",
+    "road": "LAVENDER STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "338816": {
+    "latitude": 1.315377952773169,
+    "longitude": 103.8595480542501,
+    "building": "NIL",
+    "road": "LAVENDER STREET",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "368214": {
+    "latitude": 1.332290244013189,
+    "longitude": 103.8841994870018,
+    "building": "NIL",
+    "road": "MACPHERSON ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "368228": {
+    "latitude": 1.332398909689399,
+    "longitude": 103.8849298333823,
+    "building": "NIL",
+    "road": "MACPHERSON ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "368232": {
+    "latitude": 1.332441045970752,
+    "longitude": 103.8851222689844,
+    "building": "NIL",
+    "road": "MACPHERSON ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "387512": {
+    "latitude": 1.314737576186734,
+    "longitude": 103.8816828482409,
+    "building": "NIL",
+    "road": "SIMS AVENUE",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "388196": {
+    "latitude": 1.316076523645191,
+    "longitude": 103.8840184317461,
+    "building": "NIL",
+    "road": "LORONG 27 GEYLANG",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "389252": {
+    "latitude": 1.311561539277892,
+    "longitude": 103.8758954765066,
+    "building": "NIL",
+    "road": "GEYLANG ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "389254": {
+    "latitude": 1.311605756536067,
+    "longitude": 103.876002076382,
+    "building": "GEYLANG CONSERVATION AREA",
+    "road": "GEYLANG ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "389261": null,
+  "389293": {
+    "latitude": 1.312207211133545,
+    "longitude": 103.8764658492414,
+    "building": "GEYLANG CONSERVATION AREA",
+    "road": "GEYLANG ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "389315": {
+    "latitude": 1.312487267395921,
+    "longitude": 103.877424666128,
+    "building": "GEYLANG CONSERVATION AREA",
+    "road": "GEYLANG ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "389321": {
+    "latitude": 1.312326176750957,
+    "longitude": 103.8784735088927,
+    "building": "NIL",
+    "road": "GEYLANG ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "389334": {
+    "latitude": 1.312628134111257,
+    "longitude": 103.8782381300665,
+    "building": "GEYLANG CONSERVATION AREA",
+    "road": "GEYLANG ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "389352": {
+    "latitude": 1.312761200627993,
+    "longitude": 103.879016974535,
+    "building": "GEYLANG CONSERVATION AREA",
+    "road": "GEYLANG ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "389356": {
+    "latitude": 1.312775098332591,
+    "longitude": 103.8791055269372,
+    "building": "GEYLANG CONSERVATION AREA",
+    "road": "GEYLANG ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "389358": {
+    "latitude": 1.312788898858092,
+    "longitude": 103.8791941190465,
+    "building": "GEYLANG CONSERVATION AREA",
+    "road": "GEYLANG ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "389380": {
+    "latitude": 1.312740411696282,
+    "longitude": 103.8813267532126,
+    "building": "NIL",
+    "road": "GEYLANG ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "389387": {
+    "latitude": 1.312818683593877,
+    "longitude": 103.8817832285842,
+    "building": "GEYLANG CONSERVATION AREA",
+    "road": "GEYLANG ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "389404": {
+    "latitude": 1.313229955833592,
+    "longitude": 103.8835285557274,
+    "building": "NIL",
+    "road": "GEYLANG ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "389547": {
+    "latitude": 1.314150012720839,
+    "longitude": 103.8885448660853,
+    "building": "NIL",
+    "road": "GEYLANG ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "389599": {
+    "latitude": 1.314522377014308,
+    "longitude": 103.8902868880921,
+    "building": "GEYLANG CONSERVATION AREA",
+    "road": "GEYLANG ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "389601": {
+    "latitude": 1.314528844453104,
+    "longitude": 103.8903485189265,
+    "building": "GEYLANG CONSERVATION AREA",
+    "road": "GEYLANG ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "389604": {
+    "latitude": 1.314546169879524,
+    "longitude": 103.890441365424,
+    "building": "GEYLANG CONSERVATION AREA",
+    "road": "GEYLANG ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "399086": {
+    "latitude": 1.311516370922186,
+    "longitude": 103.8771855648039,
+    "building": "NIL",
+    "road": "LORONG 8 GEYLANG",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "399645": null,
+  "408603": {
+    "latitude": 1.321233110277084,
+    "longitude": 103.8920971986881,
+    "building": "PAYA LEBAR GREEN SOUTH",
+    "road": "EUNOS ROAD 8",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "419706": {
+    "latitude": 1.31628989298863,
+    "longitude": 103.8992469354956,
+    "building": "NIL",
+    "road": "CHANGI ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "427027": {
+    "latitude": 1.31183610406663,
+    "longitude": 103.9048833725441,
+    "building": "NIL",
+    "road": "KOON SENG ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "427446": {
+    "latitude": 1.312421393873081,
+    "longitude": 103.9004206580624,
+    "building": "NIL",
+    "road": "JOO CHIAT ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "427464": {
+    "latitude": 1.311947858788358,
+    "longitude": 103.9007987460433,
+    "building": "NIL",
+    "road": "JOO CHIAT ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "427493": {
+    "latitude": 1.31172324549801,
+    "longitude": 103.900604772211,
+    "building": "NIL",
+    "road": "JOO CHIAT ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "427511": {
+    "latitude": 1.310612001283733,
+    "longitude": 103.9016698955548,
+    "building": "NIL",
+    "road": "JOO CHIAT ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "427523": {
+    "latitude": 1.310345749706848,
+    "longitude": 103.9018562261318,
+    "building": "NIL",
+    "road": "JOO CHIAT ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "427606": {
+    "latitude": 1.308439486653834,
+    "longitude": 103.9032972806226,
+    "building": "NIL",
+    "road": "JOO CHIAT ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "427638": {
+    "latitude": 1.307112018893283,
+    "longitude": 103.9038859710808,
+    "building": "NIL",
+    "road": "JOO CHIAT ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "427647": {
+    "latitude": 1.306755464632706,
+    "longitude": 103.9041500100186,
+    "building": "NIL",
+    "road": "JOO CHIAT ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "427659": {
+    "latitude": 1.306483046103034,
+    "longitude": 103.9043604004301,
+    "building": "NIL",
+    "road": "JOO CHIAT ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "427667": {
+    "latitude": 1.306340229888339,
+    "longitude": 103.9044845668352,
+    "building": "NIL",
+    "road": "JOO CHIAT ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "427776": {
+    "latitude": 1.313364872059389,
+    "longitude": 103.9015408327143,
+    "building": "NIL",
+    "road": "JOO CHIAT PLACE",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "427779": {
+    "latitude": 1.313588343851316,
+    "longitude": 103.901133939288,
+    "building": "NIL",
+    "road": "JOO CHIAT PLACE",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "427780": {
+    "latitude": 1.313382065527456,
+    "longitude": 103.9016489600083,
+    "building": "NIL",
+    "road": "JOO CHIAT PLACE",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "428723": {
+    "latitude": 1.303974711375365,
+    "longitude": 103.9023695778624,
+    "building": "NIL",
+    "road": "EAST COAST ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "428753": {
+    "latitude": 1.304807234034772,
+    "longitude": 103.9028146149093,
+    "building": "NIL",
+    "road": "EAST COAST ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "437009": {
+    "latitude": 1.30724792286536,
+    "longitude": 103.8952644172775,
+    "building": "NIL",
+    "road": "TANJONG KATONG ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "437049": {
+    "latitude": 1.305978924086253,
+    "longitude": 103.8957590805836,
+    "building": "NIL",
+    "road": "TANJONG KATONG ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "437116": {
+    "latitude": 1.303541764732298,
+    "longitude": 103.896555704956,
+    "building": "NIL",
+    "road": "TANJONG KATONG ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "456157": {
+    "latitude": 1.315928463996533,
+    "longitude": 103.9196888022699,
+    "building": "FRANKEL ESTATE",
+    "road": "SIGLAP DRIVE",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "456169": {
+    "latitude": 1.316180726679012,
+    "longitude": 103.9199637502434,
+    "building": "FRANKEL ESTATE",
+    "road": "SIGLAP DRIVE",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "457247": {
+    "latitude": 1.315584934903912,
+    "longitude": 103.9255081509308,
+    "building": "NIL",
+    "road": "JALAN TUA KONG",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "459118": {
+    "latitude": 1.312392644635961,
+    "longitude": 103.9250744774895,
+    "building": "NIL",
+    "road": "EAST COAST ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "487370": {
+    "latitude": 1.338655205858645,
+    "longitude": 103.9628892254265,
+    "building": "SINGAPORE EXPO (HALL 10)",
+    "road": "SOMAPAH ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "529442": null,
+  "534622": {
+    "latitude": 1.353731964819976,
+    "longitude": 103.8783680843614,
+    "building": "NIL",
+    "road": "UPPER SERANGOON ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "534634": {
+    "latitude": 1.354164170347963,
+    "longitude": 103.8788303963417,
+    "building": "NIL",
+    "road": "UPPER SERANGOON ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "534853": {
+    "latitude": 1.33939279389251,
+    "longitude": 103.8857026378178,
+    "building": "NIL",
+    "road": "UPPER PAYA LEBAR ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "534862": {
+    "latitude": 1.339801066228081,
+    "longitude": 103.8853250188766,
+    "building": "NIL",
+    "road": "UPPER PAYA LEBAR ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "536960": {
+    "latitude": 1.367701787280542,
+    "longitude": 103.8902315039118,
+    "building": "PEOPLE'S GARDEN",
+    "road": "LORONG 1 REALTY PARK",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "547441": {
+    "latitude": 1.361402528593341,
+    "longitude": 103.8831638894757,
+    "building": "NIL",
+    "road": "LOWLAND ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "547735": {
+    "latitude": 1.35394656254896,
+    "longitude": 103.8773169424165,
+    "building": "NIL",
+    "road": "LIM TUA TOW ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "555967": {
+    "latitude": 1.363706235294501,
+    "longitude": 103.8652275069026,
+    "building": "SERANGOON GARDEN ESTATE",
+    "road": "SERANGOON GARDEN WAY",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "555974": {
+    "latitude": 1.36428136996969,
+    "longitude": 103.8651339383801,
+    "building": "SERANGOON GARDEN ESTATE",
+    "road": "SERANGOON GARDEN WAY",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "556835": {
+    "latitude": 1.364588804953842,
+    "longitude": 103.869994847831,
+    "building": "SERANGOON GARDEN ESTATE",
+    "road": "LICHFIELD ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "559216": {
+    "latitude": 1.362945974992721,
+    "longitude": 103.8712697525262,
+    "building": "NIL",
+    "road": "BRIGHTON CRESCENT",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "570000": null,
+  "574362": {
+    "latitude": 1.352887144870305,
+    "longitude": 103.8343229753693,
+    "building": "THOMSON RIDGE",
+    "road": "UPPER THOMSON ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "574388": {
+    "latitude": 1.35353700881009,
+    "longitude": 103.8334459081156,
+    "building": "SOO CHOW GARDEN",
+    "road": "UPPER THOMSON ROAD",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "578191": {
+    "latitude": 1.373140344268474,
+    "longitude": 103.8301848097632,
+    "building": "SEMBAWANG HILLS ESTATE",
+    "road": "JALAN GELENGGANG",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "589823": {
+    "latitude": 1.336154293787172,
+    "longitude": 103.7868304992448,
+    "building": "BINJAI PARK",
+    "road": "BINJAI PARK",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "589824": {
+    "latitude": 1.336223986607681,
+    "longitude": 103.7868538325989,
+    "building": "BINJAI PARK",
+    "road": "BINJAI PARK",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "589827": {
+    "latitude": 1.336399124908261,
+    "longitude": 103.7868792288098,
+    "building": "BINJAI PARK",
+    "road": "BINJAI PARK",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "589832": {
+    "latitude": 1.336666256339282,
+    "longitude": 103.7870207023744,
+    "building": "BINJAI PARK",
+    "road": "BINJAI PARK",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "598999": {
+    "latitude": 1.336192425504201,
+    "longitude": 103.7683525019272,
+    "building": "ENG KONG PARK",
+    "road": "ENG KONG TERRACE",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "599006": {
+    "latitude": 1.336180570707157,
+    "longitude": 103.7685902289689,
+    "building": "ENG KONG PARK",
+    "road": "ENG KONG TERRACE",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "639956": {
+    "latitude": 1.341546654382705,
+    "longitude": 103.6825027551619,
+    "building": "NIL",
+    "road": "NANYANG AVENUE",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "789385": {
+    "latitude": 1.381608594245302,
+    "longitude": 103.8300390682525,
+    "building": "TEACHER'S HOUSING ESTATE",
+    "road": "KALIDASA AVENUE",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "799455": {
+    "latitude": 1.396034281164575,
+    "longitude": 103.872811911101,
+    "building": "JALAN KAYU ESTATE",
+    "road": "JALAN KAYU",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "799457": {
+    "latitude": 1.396096708057684,
+    "longitude": 103.8728143425739,
+    "building": "JALAN KAYU ESTATE",
+    "road": "JALAN KAYU",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "799469": {
+    "latitude": 1.396425704695875,
+    "longitude": 103.8728447725236,
+    "building": "JALAN KAYU ESTATE",
+    "road": "JALAN KAYU",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "799499": {
+    "latitude": 1.397174401122671,
+    "longitude": 103.8729434188222,
+    "building": "JALAN KAYU ESTATE",
+    "road": "JALAN KAYU",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "808435": {
+    "latitude": 1.3861553151384,
+    "longitude": 103.8733168326059,
+    "building": "SELETAR HILLS ESTATE",
+    "road": "JALAN SELASEH",
+    "source": "Singapore Land Authority OneMap"
+  },
+  "809043": {
+    "latitude": 1.383435363110813,
+    "longitude": 103.8755553211995,
+    "building": "SELETAR HILLS ESTATE",
+    "road": "JALAN KELULUT",
+    "source": "Singapore Land Authority OneMap"
+  }
+}

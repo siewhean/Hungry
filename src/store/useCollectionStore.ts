@@ -11,7 +11,8 @@
  */
 
 import { create } from "zustand";
-import { getDataRepository } from "@/lib/services/serviceProvider";
+import { useProfileStore } from "@/store/useProfileStore";
+import { getHungryService, getDataRepository } from "@/lib/services/serviceProvider";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import type { CollectionItem, FoodCollection } from "@/types/domain";
 
@@ -40,6 +41,11 @@ interface CollectionState {
 
 // ─── Store ────────────────────────────────────────────────────────────────────
 
+let generation = 0;
+let loadRequest = 0;
+let mutationRevision = 0;
+const pendingSaves = new Set<string>();
+
 export const useCollectionStore = create<CollectionState>()((set, get) => ({
   collections: [],
   itemCache: {},
@@ -57,10 +63,22 @@ export const useCollectionStore = create<CollectionState>()((set, get) => ({
   loadCollections: async () => {
     if (get().isLoaded) return;
 
-    const repo = getDataRepository();
-    const list: FoodCollection[] = (await repo.listCollections?.()) ?? [];
-
-    set({ collections: list, isLoaded: true });
+    const epoch = generation;
+    const request = ++loadRequest;
+    // A save can finish while either snapshot is in flight. Reload both rather
+    // than publishing an older saved set or guessing whether counts include it.
+    while (epoch === generation && request === loadRequest) {
+      const revision = mutationRevision;
+      const repo = getDataRepository();
+      const [saved, list] = await Promise.all([
+        getHungryService().collections.listSavedCollectionIds(),
+        repo.listCollections?.() ?? Promise.resolve([] as FoodCollection[]),
+      ]);
+      if (epoch !== generation || request !== loadRequest) return;
+      if (revision !== mutationRevision) continue;
+      set({ collections: list, savedCollectionIds: new Set(saved), isLoaded: true });
+      return;
+    }
   },
 
   loadCollectionItems: async (collectionId) => {
@@ -68,8 +86,10 @@ export const useCollectionStore = create<CollectionState>()((set, get) => ({
     if (get().itemCache[collectionId]) return get().itemCache[collectionId];
 
     const repo = getDataRepository();
+    const epoch = generation;
     const items: CollectionItem[] = (await repo.listCollectionItems?.(collectionId)) ?? [];
 
+    if (epoch !== generation) return [];
     set((state) => ({
       itemCache: { ...state.itemCache, [collectionId]: items },
     }));
@@ -78,33 +98,46 @@ export const useCollectionStore = create<CollectionState>()((set, get) => ({
   },
 
   toggleSaveCollection: async (userId, collectionId) => {
+    if (userId !== useProfileStore.getState().profile.id)
+      throw new Error("Account changed. Reopen collections.");
+    if (pendingSaves.has(collectionId)) return;
+    const epoch = generation;
     const wasSaved = get().savedCollectionIds.has(collectionId);
-
-    set((state) => {
-      const next = new Set(state.savedCollectionIds);
-      if (wasSaved) {
-        next.delete(collectionId);
-      } else {
-        next.add(collectionId);
-      }
-      return { savedCollectionIds: next };
-    });
-
-    // Optimistically update saveCount on the collection object
-    set((state) => ({
-      collections: state.collections.map((c) =>
-        c.id === collectionId ? { ...c, saveCount: c.saveCount + (wasSaved ? -1 : 1) } : c,
-      ),
-    }));
-
-    trackAnalyticsEvent(wasSaved ? "collection_unsaved" : "collection_saved", {
-      collection_id: collectionId,
-      source_screen: "collections",
-    });
-
-    // TODO (production): supabase.from('user_collection_saves').upsert / .delete
+    pendingSaves.add(collectionId);
+    try {
+      await getHungryService().collections.setCollectionSaved(collectionId, !wasSaved);
+      if (epoch !== generation || userId !== useProfileStore.getState().profile.id) return;
+      mutationRevision++;
+      set((state) => {
+        const next = new Set(state.savedCollectionIds);
+        if (wasSaved) next.delete(collectionId);
+        else next.add(collectionId);
+        return {
+          savedCollectionIds: next,
+          collections: state.collections.map((collection) =>
+            collection.id === collectionId
+              ? {
+                  ...collection,
+                  saveCount: Math.max(0, collection.saveCount + (wasSaved ? -1 : 1)),
+                }
+              : collection,
+          ),
+        };
+      });
+      trackAnalyticsEvent(wasSaved ? "collection_unsaved" : "collection_saved", {
+        collection_id: collectionId,
+        source_screen: "collections",
+      });
+    } finally {
+      if (epoch === generation) pendingSaves.delete(collectionId);
+    }
   },
 
-  _reset: () =>
-    set({ collections: [], itemCache: {}, savedCollectionIds: new Set(), isLoaded: false }),
+  _reset: () => {
+    generation++;
+    loadRequest++;
+    mutationRevision = 0;
+    pendingSaves.clear();
+    set({ collections: [], itemCache: {}, savedCollectionIds: new Set(), isLoaded: false });
+  },
 }));

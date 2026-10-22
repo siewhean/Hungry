@@ -1,7 +1,11 @@
+import { getAccountGeneration } from "@/lib/security/accountScope";
 import { create } from "zustand";
 
 import { getHungryService } from "@/lib/services/serviceProvider";
 import type { SubmitUserStallSubmissionInput, UserStallSubmission } from "@/types/domain";
+
+let storeEpoch = 0;
+const accountStamp = () => `${getAccountGeneration()}:${storeEpoch}`;
 
 interface StallSubmissionState {
   submissions: UserStallSubmission[];
@@ -18,11 +22,13 @@ export const useStallSubmissionStore = create<StallSubmissionState>()((set, get)
   isSubmitting: false,
 
   loadSubmissions: async () => {
+    const stamp = accountStamp();
     const submissions = await getHungryService().contributions.listMyDiscoveredStalls();
-    set({ submissions, isLoaded: true });
+    if (stamp === accountStamp()) set({ submissions, isLoaded: true });
   },
 
   submitStall: async (input) => {
+    const stamp = accountStamp();
     if (get().isSubmitting) {
       throw new Error("A stall submission is already in progress.");
     }
@@ -30,6 +36,7 @@ export const useStallSubmissionStore = create<StallSubmissionState>()((set, get)
     set({ isSubmitting: true });
     try {
       const submission = await getHungryService().contributions.submitDiscoveredStall(input);
+      if (stamp !== accountStamp()) throw new Error("Your account changed.");
       set((state) => ({
         submissions: [
           submission,
@@ -40,10 +47,13 @@ export const useStallSubmissionStore = create<StallSubmissionState>()((set, get)
       }));
       return submission;
     } catch (error) {
-      set({ isSubmitting: false });
+      if (stamp === accountStamp()) set({ isSubmitting: false });
       throw error;
     }
   },
 
-  _reset: () => set({ submissions: [], isLoaded: false, isSubmitting: false }),
+  _reset: () => {
+    storeEpoch++;
+    set({ submissions: [], isLoaded: false, isSubmitting: false });
+  },
 }));

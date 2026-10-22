@@ -1,5 +1,7 @@
-import { useEffect, useRef, useState } from "react";
-import { PanResponder, Platform, Pressable, ScrollView, View } from "react-native";
+import { useEffect, useRef, useState, type SetStateAction } from "react";
+import { usePreventRemove } from "@react-navigation/native";
+import { useProfileFormDraft } from "@/features/profile/useProfileFormDraft";
+import { Alert, PanResponder, Platform, Pressable, ScrollView, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
@@ -92,7 +94,7 @@ function resolveSubmitErrorMessage(error: unknown): string {
     asText &&
     asText.toLowerCase().includes("could not find the function public.submit_user_stall_submission")
   ) {
-    return "Unable to submit stall right now. Please retry after syncing the latest backend migration.";
+    return "Unable to submit stall right now. Please retry later. Your draft is preserved.";
   }
 
   if (
@@ -101,7 +103,7 @@ function resolveSubmitErrorMessage(error: unknown): string {
     asText.toLowerCase().includes("column") &&
     asText.toLowerCase().includes("schema cache")
   ) {
-    return "Unable to submit stall right now. Please retry after syncing the latest backend migration.";
+    return "Unable to submit stall right now. Please retry later. Your draft is preserved.";
   }
 
   if (
@@ -217,22 +219,87 @@ export function AddStallScreen({ navigation }: Props) {
   const recordPassportContribution = usePassportStore((state) => state.recordContribution);
   const timePickerSheetRef = useRef<BottomSheetModal>(null);
 
-  const [stallName, setStallName] = useState("");
-  const [selectedImages, setSelectedImages] = useState<SelectedStallImage[]>([]);
-  const [buildingName, setBuildingName] = useState("");
-  const [area, setArea] = useState<SingaporeAreaValue>("");
-  const [address, setAddress] = useState("");
-  const [postalCode, setPostalCode] = useState("");
-  const [unitNumber, setUnitNumber] = useState("");
-  const [floor, setFloor] = useState("");
-  const [timeSlots, setTimeSlots] = useState<TimeRange[]>([
-    {
-      id: "slot-1",
-      days: ["Mon"],
-      startMinutes: DEFAULT_START_MINUTES,
-      endMinutes: DEFAULT_END_MINUTES,
+  const form = useProfileFormDraft("add-stall", {
+    stallName: "",
+    selectedImages: [] as SelectedStallImage[],
+    buildingName: "",
+    area: "" as SingaporeAreaValue,
+    address: "",
+    postalCode: "",
+    unitNumber: "",
+    floor: "",
+    timeSlots: [] as TimeRange[],
+    sourceUrl: "",
+    menuItemDrafts: [{ id: "menu-item-1", name: "", priceRange: "" }] as MenuItemDraft[],
+    deliveryLink: "",
+  });
+  const {
+    stallName,
+    selectedImages,
+    buildingName,
+    area,
+    address,
+    postalCode,
+    unitNumber,
+    floor,
+    timeSlots,
+    menuItemDrafts,
+    deliveryLink,
+    sourceUrl,
+  } = form.value;
+  const setStallName = (next: SetStateAction<string>) => form.update("stallName", next);
+  const setSelectedImages = (next: SetStateAction<SelectedStallImage[]>) =>
+    form.update("selectedImages", next);
+  const setBuildingName = (next: SetStateAction<string>) => form.update("buildingName", next);
+  const setArea = (next: SetStateAction<SingaporeAreaValue>) => form.update("area", next);
+  const setAddress = (next: SetStateAction<string>) => form.update("address", next);
+  const setPostalCode = (next: SetStateAction<string>) => form.update("postalCode", next);
+  const setUnitNumber = (next: SetStateAction<string>) => form.update("unitNumber", next);
+  const setFloor = (next: SetStateAction<string>) => form.update("floor", next);
+  const setTimeSlots = (next: SetStateAction<TimeRange[]>) => form.update("timeSlots", next);
+  const setMenuItemDrafts = (next: SetStateAction<MenuItemDraft[]>) =>
+    form.update("menuItemDrafts", next);
+  const setDeliveryLink = (next: SetStateAction<string>) => form.update("deliveryLink", next);
+  const [submitted, setSubmitted] = useState(false);
+  useEffect(() => {
+    if (submitted) navigation.goBack();
+  }, [submitted, navigation]);
+  usePreventRemove(
+    form.ready &&
+      !isSubmitting &&
+      !submitted &&
+      Boolean(
+        stallName ||
+        selectedImages.length ||
+        address ||
+        buildingName ||
+        timeSlots.length ||
+        deliveryLink ||
+        menuItemDrafts.some((item) => item.name || item.priceRange),
+      ),
+    ({ data }) => {
+      Alert.alert(
+        "Leave stall submission?",
+        "Keep this account's draft for later, or discard it.",
+        [
+          { text: "Keep editing", style: "cancel" },
+          { text: "Save draft and leave", onPress: () => navigation.dispatch(data.action) },
+          {
+            text: "Discard draft",
+            style: "destructive",
+            onPress: () => {
+              void form
+                .clear()
+                .then(() => navigation.dispatch(data.action))
+                .catch(() =>
+                  showToast({ message: "Could not discard draft. Try again.", tone: "error" }),
+                );
+            },
+          },
+        ],
+      );
     },
-  ]);
+  );
   const [activeTimePicker, setActiveTimePicker] = useState<{
     slotId: string;
     type: "start" | "end";
@@ -240,10 +307,6 @@ export function AddStallScreen({ navigation }: Props) {
   } | null>(null);
   const [timePickerDraftDate, setTimePickerDraftDate] = useState<Date | null>(null);
   const shouldApplyTimePickerDraftOnDismissRef = useRef(true);
-  const [menuItemDrafts, setMenuItemDrafts] = useState<MenuItemDraft[]>([
-    { id: "menu-item-1", name: "", priceRange: "" },
-  ]);
-  const [deliveryLink, setDeliveryLink] = useState("");
   const [errors, setErrors] = useState<FormErrors>({});
   const [isPhotoDragging, setIsPhotoDragging] = useState(false);
 
@@ -365,9 +428,7 @@ export function AddStallScreen({ navigation }: Props) {
         return {
           ...slot,
           days: alreadySelected
-            ? slot.days.length > 1
-              ? slot.days.filter((candidate) => candidate !== day)
-              : slot.days
+            ? slot.days.filter((candidate) => candidate !== day)
             : [...slot.days, day],
         };
       }),
@@ -454,6 +515,7 @@ export function AddStallScreen({ navigation }: Props) {
   };
 
   const submit = async () => {
+    if (isSubmitting || !form.ready) return;
     const nextErrors: FormErrors = {};
     if (!stallName.trim()) nextErrors.stallName = "Stall name is required.";
     if (!coverImage?.uri.trim()) nextErrors.imageUri = "At least one stall photo is required.";
@@ -475,6 +537,7 @@ export function AddStallScreen({ navigation }: Props) {
       : [];
 
     const input: SubmitUserStallSubmissionInput = {
+      sourceUrl: sourceUrl.trim() || undefined,
       stallName: stallName.trim(),
       imageUri: coverImage?.uri ?? "",
       imageMimeType: coverImage?.mimeType,
@@ -514,7 +577,13 @@ export function AddStallScreen({ navigation }: Props) {
         message: "Stall details submitted. Update added to Activities.",
         tone: "success",
       });
-      navigation.goBack();
+      await form.clear().catch(() =>
+        showToast({
+          message: "Submission saved. Local draft cleanup will be retried later.",
+          tone: "warning",
+        }),
+      );
+      setSubmitted(true);
     } catch (error) {
       showToast({
         message: resolveSubmitErrorMessage(error),
@@ -525,6 +594,11 @@ export function AddStallScreen({ navigation }: Props) {
 
   return (
     <ProfileScreenShell title="Add a stall" testID="add-stall-screen">
+      {form.storageError ? (
+        <AppText tone="muted">
+          Draft could not be saved on this device. Keep this screen open or retry later.
+        </AppText>
+      ) : null}
       <Card style={{ gap: spacing[4], padding: spacing[4] }}>
         <View style={{ gap: spacing[1] }}>
           <AppText variant="h3">Photos</AppText>
@@ -616,7 +690,31 @@ export function AddStallScreen({ navigation }: Props) {
                   <AppText variant="micro" tone={index === 0 ? "accent" : "secondary"}>
                     {index === 0 ? "Cover" : `Photo ${index + 1}`}
                   </AppText>
-                  <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
+                  <View style={{ gap: spacing[2] }}>
+                    <Button
+                      label={`Move photo ${index + 1} earlier`}
+                      variant="secondary"
+                      disabled={index === 0}
+                      onPress={() =>
+                        setSelectedImages((images) => {
+                          const next = [...images];
+                          [next[index - 1], next[index]] = [next[index], next[index - 1]];
+                          return next;
+                        })
+                      }
+                    />
+                    <Button
+                      label={`Move photo ${index + 1} later`}
+                      variant="secondary"
+                      disabled={index === selectedImages.length - 1}
+                      onPress={() =>
+                        setSelectedImages((images) => {
+                          const next = [...images];
+                          [next[index], next[index + 1]] = [next[index + 1], next[index]];
+                          return next;
+                        })
+                      }
+                    />
                     {selectedImages.length > 1 ? (
                       <View
                         accessibilityLabel={`Drag photo ${index + 1}`}
@@ -787,6 +885,9 @@ export function AddStallScreen({ navigation }: Props) {
         />
         <View style={{ gap: spacing[3] }}>
           <AppText variant="h3">Opening hours</AppText>
+          {!timeSlots.length ? (
+            <AppText tone="muted">Unknown. Add hours only if you can confirm them.</AppText>
+          ) : null}
           {errors.openingHours ? (
             <AppText variant="micro" style={{ color: palette.error }}>
               {errors.openingHours}
@@ -818,15 +919,15 @@ export function AddStallScreen({ navigation }: Props) {
                       {minutesToTimeLabel(slot.endMinutes)}
                     </AppText>
                   </View>
-                  {timeSlots.length > 1 ? (
+                  {true ? (
                     <Pressable
                       accessibilityRole="button"
                       accessibilityLabel="Remove opening hours option"
                       accessibilityHint="Removes this opening hour option"
                       onPress={() => removeTimeSlot(slot.id)}
                       style={{
-                        width: 28,
-                        height: 28,
+                        width: spacing[12],
+                        height: spacing[12],
                         borderRadius: radii.pill,
                         alignItems: "center",
                         justifyContent: "center",
@@ -1093,9 +1194,18 @@ export function AddStallScreen({ navigation }: Props) {
         />
       </Card>
 
+      <Input
+        label="Source link (optional)"
+        placeholder="Official website or menu link"
+        value={sourceUrl}
+        onChangeText={(value) => form.update("sourceUrl", value)}
+        autoCapitalize="none"
+        keyboardType="url"
+      />
       <Button
         label={isSubmitting ? "Submitting stall..." : "Submit stall"}
         loading={isSubmitting}
+        disabled={!form.ready || isSubmitting}
         onPress={submit}
         leftIcon={<Store color={palette.textOnOrange} size={18} />}
       />

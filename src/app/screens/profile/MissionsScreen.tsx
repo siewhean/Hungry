@@ -4,12 +4,13 @@
  * Navigated to from Profile's MissionBanner or profile links.
  */
 
-import { useEffect, useMemo } from "react";
+import { useCallback, useMemo } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import { View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, EmptyState } from "@/components/ui";
+import { AppText, Button, EmptyState } from "@/components/ui";
 import { ProfileScreenShell } from "@/app/screens/profile/ProfileScreenShell";
 import { MissionCard } from "@/components/gamification/MissionCard";
 import { useMissionStore } from "@/store/useMissionStore";
@@ -25,6 +26,8 @@ export function MissionsScreen({ navigation: _nav }: Props) {
   const profile = useProfileStore((s) => s.profile);
   const progressMap = useMissionStore((s) => s.progressMap);
   const loadMissions = useMissionStore((s) => s.loadMissions);
+  const loadError = useMissionStore((s) => s.loadError);
+  const isLoaded = useMissionStore((s) => s.isLoaded);
   const missions = useMissionStore((s) => s.missions);
   const completedMissions = useMemo(() => {
     return missions.filter((mission) => !!progressMap[mission.id]?.completedAt);
@@ -35,10 +38,17 @@ export function MissionsScreen({ navigation: _nav }: Props) {
   const completedCount = completedMissions.length;
   const disclosure = getDataTrustDisclosure("missions");
 
-  useEffect(() => {
-    loadMissions(profile.id);
-    trackMissionViewed();
-  }, [loadMissions, profile.id]);
+  useFocusEffect(
+    useCallback(() => {
+      const load = () => {
+        void loadMissions(profile.id).catch(() => undefined);
+      };
+      load();
+      trackMissionViewed();
+      const interval = setInterval(load, 60_000);
+      return () => clearInterval(interval);
+    }, [loadMissions, profile.id]),
+  );
 
   const weekLabel = (() => {
     if (!missions[0]) return "This week";
@@ -51,7 +61,14 @@ export function MissionsScreen({ navigation: _nav }: Props) {
       title="Weekly Missions"
       subtitle={`${completedCount}/${missions.length} completed · ${weekLabel} · ${disclosure}`}
     >
-      {missions.length === 0 ? (
+      {loadError ? (
+        <Button
+          label="Retry loading missions"
+          onPress={() => void loadMissions(profile.id).catch(() => undefined)}
+        />
+      ) : !isLoaded ? (
+        <AppText>Loading missions…</AppText>
+      ) : missions.length === 0 ? (
         <EmptyState title="No missions this week" body="Check back on Monday for new missions." />
       ) : (
         <View style={{ gap: spacing[3] }}>

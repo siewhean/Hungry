@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { View, FlatList, Pressable, StyleSheet } from "react-native";
+import { Alert, View, FlatList, Pressable, StyleSheet } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Bookmark, BookmarkCheck, ChevronLeft } from "lucide-react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -54,11 +54,17 @@ export function CollectionDetailScreen({ route, navigation }: Props) {
   const isAuthenticated = useSessionStore((s) => s.isAuthenticated);
 
   const [rows, setRows] = useState<StallRow[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [retry, setRetry] = useState(0);
+  const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const userId = isAuthenticated ? profile.id : undefined;
 
   useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setLoadError(null);
     async function load() {
       await loadCollections();
       const items = await loadItems(collectionId);
@@ -67,11 +73,19 @@ export function CollectionDetailScreen({ route, navigation }: Props) {
         item,
         venue: repo.getVenueById(item.stallId),
       }));
-      setRows(resolved);
-      setLoading(false);
+      if (active) setRows(resolved);
     }
-    void load();
-  }, [collectionId, loadCollections, loadItems]);
+    void load()
+      .catch((error: unknown) => {
+        if (active) setLoadError(error instanceof Error ? error.message : "Please retry.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [collectionId, loadCollections, loadItems, retry]);
 
   // Track view after collection resolves
   useEffect(() => {
@@ -97,6 +111,20 @@ export function CollectionDetailScreen({ route, navigation }: Props) {
       </SafeAreaView>
     );
   }
+
+  if (loadError)
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["top"]}>
+        <EmptyState title="Could not load collection" body={loadError} />
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => setRetry((value) => value + 1)}
+          style={{ padding: spacing[4] }}
+        >
+          <AppText>Retry</AppText>
+        </Pressable>
+      </SafeAreaView>
+    );
 
   if (!collection) {
     return (
@@ -134,9 +162,18 @@ export function CollectionDetailScreen({ route, navigation }: Props) {
           <IconButton
             variant="floating"
             accessibilityLabel={isSaved ? "Unsave collection" : "Save collection"}
+            disabled={saving}
             onPress={() => {
+              setSaving(true);
               if (!isSaved) trackCollectionSaved(collectionId);
-              toggleSave(userId, collectionId);
+              void toggleSave(userId, collectionId)
+                .catch((error: unknown) =>
+                  Alert.alert(
+                    "Could not save collection",
+                    error instanceof Error ? error.message : "Please retry.",
+                  ),
+                )
+                .finally(() => setSaving(false));
             }}
             icon={
               <SaveIcon

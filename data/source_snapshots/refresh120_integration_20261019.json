@@ -1,0 +1,97 @@
+{
+  "snapshot_id": "refresh120_integration_20261019",
+  "observed_local_date": "2026-10-19",
+  "canonical_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_sha256": "0e3f6c7cc1594ba701f6fa4de6d11c6db1db9643060907f7292fb8a634d6eb6f",
+  "installed_sha256": "6fca59ec8c51d62bfa8cf2ec556397fdb8b0eb780f0fc1bb8e39cc46e228c8dc",
+  "applied_changes": {
+    "exact_public_facing_name_fills": 11,
+    "chagee_cuisine_fills": 43,
+    "chagee_official_website_links": 24,
+    "chagee_brand_level_menu_links": 9,
+    "komalas_outlet_menu_link_with_address_caveat": 1,
+    "ng_ah_sio_outlet_menu_links": 3,
+    "ng_ah_sio_priced_menu_item_rows": 128,
+    "hawker_chan_hours_fills": 1,
+    "dated_open_license_review_only_image_candidates": 1,
+    "directory_field_changes": 92,
+    "approved_image_urls": 0,
+    "rating_review_updates": 0,
+    "coordinate_pairs_added": 0,
+    "exact_permanent_closures_removed": 0,
+    "public_access_status_changes": 0,
+    "directory_sort_inversions": 0
+  },
+  "result_counts": {
+    "Public F&B Directory": 38279,
+    "Menu Items": 13092,
+    "Image Candidates": 2578,
+    "Coverage & Sources": 214
+  },
+  "field_coverage": {
+    "named": 32768,
+    "unnamed": 5511,
+    "coordinates": 35735,
+    "contacts": 2692,
+    "websites": 2799,
+    "menu_urls": 1439,
+    "hours": 1460,
+    "ratings": 0,
+    "approved_images": 0,
+    "menu_summaries": 460,
+    "unique_sfa": 38279
+  },
+  "menu_items": {
+    "count": 128,
+    "source": "https://www.ngahsio.com/pdf/NAS-TS-Menu.pdf; https://www.ngahsio.com/pdf/NAS-RG-Menu.pdf; https://www.ngahsio.com/pdf/NAS-CC-Menu.pdf",
+    "branch_ids": [
+      "SE25E75V000",
+      "W88145L000",
+      "CE19R73E000"
+    ],
+    "prices_present": 128,
+    "source_last_modified": "2026-08-31",
+    "price_caveat": "Prices as published; exclude service charge and GST."
+  },
+  "image_candidate": {
+    "sfa_licence": "SM102126004",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/3/36/Singapore_today-Chinatown-Smith_Street-Hawker_Chan-151236.jpg",
+    "source_page": "https://commons.wikimedia.org/wiki/File:Singapore_today-Chinatown-Smith_Street-Hawker_Chan-151236.jpg",
+    "creator": "Rainer Halama",
+    "captured": "2023-08-24",
+    "license": "CC BY-SA 4.0",
+    "status": "Review only; not approved; dish/brand-context image, not storefront; current appearance/operation not inferred. Attribution/share-alike and creator specimen notice requirements recorded."
+  },
+  "verified_current_fields": {
+    "SM102126004": {
+      "Opening Hours / Closed Days": "Mon-Sat 10:30am-3:30pm; Sun closed",
+      "source": "https://www.liaofanhawkerchan.com/locations"
+    }
+  },
+  "source_snapshot_paths": {
+    "refresh120_blank_names_batch_20261019.json": "data/source_snapshots/refresh120_blank_names_batch_20261019.json",
+    "refresh120_directory_fields_batch_20261019.json": "data/source_snapshots/refresh120_directory_fields_batch_20261019.json",
+    "refresh120_menu_urls_batch_20261019.json": "data/source_snapshots/refresh120_menu_urls_batch_20261019.json",
+    "refresh120_official_menu_items_20261019.json": "data/source_snapshots/refresh120_official_menu_items_20261019.json",
+    "refresh120_public_mall_batch_20261019.json": "data/source_snapshots/refresh120_public_mall_batch_20261019.json",
+    "refresh120_open_images_batch_20261019.json": "data/source_snapshots/refresh120_open_images_batch_20261019.json",
+    "refresh120_hawker_chan_image_visual_addendum_20261019.json": "data/source_snapshots/refresh120_hawker_chan_image_visual_addendum_20261019.json"
+  },
+  "source_snapshot_sha256s": {
+    "refresh120_blank_names_batch_20261019.json": "7b3b0038c8fc838b7163ec9ce2a1c78c6de715ab961a2559fb71b5bf2e4cd72b",
+    "refresh120_directory_fields_batch_20261019.json": "e58c0275ecc8efa62d86ed18f297ca97b11c5d91ce6a00adc6a4db4232d46ef0",
+    "refresh120_menu_urls_batch_20261019.json": "03952d4d1c7f049ed71ad9d9240216e4147c76f6382673b101e77a034a926c81",
+    "refresh120_official_menu_items_20261019.json": "796d50b4c55eb231ebcd772f2ed1ecebed5600ded23d2da42aad8be6f0c4753d",
+    "refresh120_public_mall_batch_20261019.json": "33f312cc2bd83efbe1cc6a0035dd37db20cb3e1c36566017fc2a20e49fd2f376",
+    "refresh120_open_images_batch_20261019.json": "47fd550430bac707844d70c90d6a9091d3d9fa08a582255ee265c8eeaeaf92dc",
+    "refresh120_hawker_chan_image_visual_addendum_20261019.json": "4c9a18a2ad1ca17f868825adbe8fd6eeb8fe0e3cab654fafcc9c91a10491dfa0"
+  },
+  "audit_findings": {
+    "CHAGEE": "43 exact SFA outlet crosswalks; cuisine and official locator URLs filled only when blank. Nine menu URLs point to a brand-level product page and do not prove branch availability or menu prices. Public-access classifications unchanged, including campus record SW25727L000.",
+    "KOMALAS": "Outlet menu URL added to CE05006L000 only; workbook address 42/42A versus operator page 42 retained as a crosswalk caveat.",
+    "Junction 8": "49 name/unit tenant matches retained as research-only; admission policy not verified, no access status change.",
+    "image": "Hawker Chan image retained only as dated review-only candidate with CC BY-SA 4.0 obligations. No approved image added.",
+    "other": "No closure, coordinate, rating, or public-access changes. Dataset objective remains active and incomplete."
+  },
+  "status": "Refresh120 installed to the canonical workbook; nationwide verification and field population remain active."
+}

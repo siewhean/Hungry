@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { X } from "lucide-react-native";
 
@@ -16,6 +17,7 @@ const steps = [
 ];
 
 export function MerchantClaimExplainerScreen({ navigation }: Props) {
+  const insets = useSafeAreaInsets();
   const { spacing, palette, shadows, componentRadii } = useHungryTheme();
 
   return (
@@ -24,6 +26,8 @@ export function MerchantClaimExplainerScreen({ navigation }: Props) {
         flex: 1,
         backgroundColor: "transparent",
         padding: spacing[3],
+        paddingTop: insets.top + spacing[3],
+        paddingBottom: insets.bottom + spacing[3],
         justifyContent: "center",
       }}
     >
@@ -38,50 +42,63 @@ export function MerchantClaimExplainerScreen({ navigation }: Props) {
         accessibilityHint="Dismisses this popup"
       />
 
-      <Card
-        style={{
-          gap: spacing[3],
-          padding: spacing[4],
-          backgroundColor: palette.surface,
-          borderRadius: componentRadii.card,
-          borderWidth: 1,
-          borderColor: palette.border,
-          ...shadows.floating,
-        }}
+      <ScrollView
+        style={{ maxHeight: "100%" }}
+        contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
       >
-        <View style={{ alignItems: "flex-end" }}>
-          <Pressable
-            onPress={() => navigation.goBack()}
-            accessibilityRole="button"
-            accessibilityLabel="Close claim verification"
-          >
-            <X size={18} color={palette.text} />
-          </Pressable>
-        </View>
-        <View style={{ gap: spacing[2], paddingBottom: spacing[1] }}>
-          <AppText variant="h2">Claim Verification</AppText>
-          <AppText variant="bodySmall" tone="secondary">
-            How stall ownership verification works in Singapore.
-          </AppText>
-        </View>
-
-        <View style={{ gap: spacing[3] }}>
-          <AppText variant="bodyBold">What happens after you tap “Claim this stall”</AppText>
-          {steps.map((step, index) => (
-            <AppText key={step} variant="bodySmall">
-              {index + 1}. {step}
+        <Card
+          style={{
+            gap: spacing[3],
+            padding: spacing[4],
+            backgroundColor: palette.surface,
+            borderRadius: componentRadii.card,
+            borderWidth: 1,
+            borderColor: palette.border,
+            ...shadows.floating,
+          }}
+        >
+          <View style={{ alignItems: "flex-end" }}>
+            <Pressable
+              onPress={() => navigation.goBack()}
+              accessibilityRole="button"
+              accessibilityLabel="Close claim verification"
+              style={{
+                minWidth: 44,
+                minHeight: 44,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <X size={18} color={palette.text} />
+            </Pressable>
+          </View>
+          <View style={{ gap: spacing[2], paddingBottom: spacing[1] }}>
+            <AppText variant="h2">Claim Verification</AppText>
+            <AppText variant="bodySmall" tone="secondary">
+              How stall ownership verification works in Singapore.
             </AppText>
-          ))}
-        </View>
-        <View style={{ gap: spacing[2] }}>
-          <AppText variant="bodyBold">Accepted verification inputs</AppText>
-          <AppText variant="bodySmall">
-            - UEN and registered business details (fastest path)
-          </AppText>
-          <AppText variant="bodySmall">- NEA/SFA licence details for stall operators</AppText>
-          <AppText variant="bodySmall">- Contact name + contact email/phone for follow-up</AppText>
-        </View>
-      </Card>
+          </View>
+
+          <View style={{ gap: spacing[3] }}>
+            <AppText variant="bodyBold">What happens after you tap “Claim this stall”</AppText>
+            {steps.map((step, index) => (
+              <AppText key={step} variant="bodySmall">
+                {index + 1}. {step}
+              </AppText>
+            ))}
+          </View>
+          <View style={{ gap: spacing[2] }}>
+            <AppText variant="bodyBold">Accepted verification inputs</AppText>
+            <AppText variant="bodySmall">
+              - UEN and registered business details (fastest path)
+            </AppText>
+            <AppText variant="bodySmall">- NEA/SFA licence details for stall operators</AppText>
+            <AppText variant="bodySmall">
+              - Contact name + contact email/phone for follow-up
+            </AppText>
+          </View>
+        </Card>
+      </ScrollView>
     </View>
   );
 }

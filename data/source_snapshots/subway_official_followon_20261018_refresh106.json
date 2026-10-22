@@ -1,0 +1,1544 @@
+{
+  "dataset": "Subway Singapore official locator contact revalidation against Refresh106 staging",
+  "captured_at": "2026-10-18T17:49:42+08:00",
+  "workbook_path": "/tmp/hungry-refresh106-staged.xlsx",
+  "workbook_sha256": "fce81938ecec07cbd54555577f98a773e06aa839ad978b60800b5345b900ff96",
+  "official_sources": {
+    "locator_page": {
+      "url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "http_status": 200,
+      "observed_at": "2026-10-18T17:49:42+08:00",
+      "response_date_header": "Sun, 18 Oct 2026 09:49:42 GMT",
+      "sha256": "15d49bcc9dfb2a49e80aa8a943349ecde931cfd2423d514f8cee9d91a5f79ed1",
+      "bytes": 137194
+    },
+    "locator_data": {
+      "endpoint": "https://subwayisfresh.com.sg/wp-admin/admin-ajax.php",
+      "request": {
+        "method": "GET",
+        "parameters": {
+          "action": "asl_load_stores",
+          "load_all": "1",
+          "layout": "0",
+          "nonce": "fresh page-provided nonce; intentionally not retained"
+        },
+        "response_http_status": 200
+      },
+      "http_status": 200,
+      "response_sha256": "8b532f1bf7bbd60008ae76195eb508f2a0f948b09966567900bcc567c3b332b4",
+      "response_bytes": 111424,
+      "record_count": 152,
+      "observed_at": "2026-10-18T17:49:42+08:00"
+    }
+  },
+  "join_method": "A locator record was joined only to a unique SFA licence row when normalized postal code, leading street number, and unit string matched exactly. No fuzzy/name-only/postal-only matching. Duplicate locator records per licence, conflicts, and non-matches were excluded from additions.",
+  "revalidation_summary": {
+    "staged_subway_directory_rows": 138,
+    "locator_records": 152,
+    "strict_locator_to_sfa_rows": 92,
+    "unique_sfa_licences_with_a_strict_match": 91,
+    "duplicate_locator_groups_excluded": 1,
+    "unique_nonduplicate_strict_sfa_matches": 90,
+    "blank_contact_additions_revalidated": 42,
+    "existing_contacts_match_locator": 43,
+    "conflicting_existing_contacts_excluded": 5,
+    "non_exact_locator_records_excluded": 60,
+    "ambiguous_exact_matches_excluded": 0,
+    "phone_format_valid_and_unique": true
+  },
+  "proposed_blank_contact_additions": [
+    {
+      "sfa_licence": "C76094A000",
+      "locator_record_id": "147",
+      "locator_name": "45 Telok Blangah",
+      "locator_address": "45 Telok Blangah Drive #01-163",
+      "postal_code": "100045",
+      "locator_phone_raw": "6589023037",
+      "candidate_contact_value": "Contact: +65 8902 3037",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 45 TELOK BLANGAH DRIVE #01-163,BLANGAH COURT,Singapore 100045",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "CE08G83V000",
+      "locator_record_id": "145",
+      "locator_name": "GRiD",
+      "locator_address": "1 Selegie Rd #01-08, GRiD",
+      "postal_code": "188306",
+      "locator_phone_raw": "6588788878",
+      "candidate_contact_value": "Contact: +65 8878 8878",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 1 SELEGIE ROAD #01-08,GR.ID,Singapore 188306",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "CE08I61V000",
+      "locator_record_id": "131",
+      "locator_name": "632 Ang Mo Kio Ave 4",
+      "locator_address": "632 Ang Mo Kio Ave 4 #01-964 ",
+      "postal_code": "560632",
+      "locator_phone_raw": "6565924553",
+      "candidate_contact_value": "Contact: +65 6592 4553",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 632 ANG MO KIO AVENUE 4 #01-964,Singapore 560632",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "CE10K37X000",
+      "locator_record_id": "136",
+      "locator_name": "Wisma Atria",
+      "locator_address": "435 Orchard Road #B1-47 Wisma Atria ",
+      "postal_code": "238877",
+      "locator_phone_raw": "6596638276",
+      "candidate_contact_value": "Contact: +65 9663 8276",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 435 ORCHARD ROAD #B1-47,WISMA ATRIA,Singapore 238877",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "CE13U87B000",
+      "locator_record_id": "90",
+      "locator_name": "Zhongshan Mall",
+      "locator_address": "20 Ah Hood Road, #01-33/34",
+      "postal_code": "329984",
+      "locator_phone_raw": "6566840228",
+      "candidate_contact_value": "Contact: +65 6684 0228",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 20 AH HOOD ROAD #01-33/34,ZHONGSHAN MALL,Singapore 329984",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "CE14I34C000",
+      "locator_record_id": "64",
+      "locator_name": "The Seletar Mall",
+      "locator_address": "33 Sengkang West Ave., #B1-08, Basement 1 Level",
+      "postal_code": "797653",
+      "locator_phone_raw": "6568449240",
+      "candidate_contact_value": "Contact: +65 6844 9240",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 33 SENGKANG WEST AVENUE #B1-08,THE SELETAR MALL,Singapore 797653 THE SELETAR MALL",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "CE15285C000",
+      "locator_record_id": "134",
+      "locator_name": "452 Ang Mo Kio Ave 10",
+      "locator_address": "452 Ang Mo Kio Ave 10 #01-1777 ",
+      "postal_code": "560452",
+      "locator_phone_raw": "6569020294",
+      "candidate_contact_value": "Contact: +65 6902 0294",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 452 ANG MO KIO AVENUE 10 #01-1777,Singapore 560452",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "CE15F97E000",
+      "locator_record_id": "43",
+      "locator_name": "Ci Yuan Community Centre",
+      "locator_address": "51 Hougang Avenue 9, #01-02",
+      "postal_code": "538776",
+      "locator_phone_raw": "6563853368",
+      "candidate_contact_value": "Contact: +65 6385 3368",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 51 HOUGANG AVENUE 9 #01-02,Singapore 538776",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "CE16470V000",
+      "locator_record_id": "50",
+      "locator_name": "Far East Plaza",
+      "locator_address": "14 Scotts Road, #01-36",
+      "postal_code": "228213",
+      "locator_phone_raw": "6567348108",
+      "candidate_contact_value": "Contact: +65 6734 8108",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 14 SCOTTS ROAD #01-36,FAR EAST PLAZA,Singapore 228213",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "CE16683V000",
+      "locator_record_id": "11",
+      "locator_name": "Tiong Bahru Plaza",
+      "locator_address": "302 Tiong Bahru Road, #01-103",
+      "postal_code": "168732",
+      "locator_phone_raw": "6563529058",
+      "candidate_contact_value": "Contact: +65 6352 9058",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 302 TIONG BAHRU ROAD #01-103,TIONG BAHRU PLAZA,Singapore 168732",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "CE20E35C000",
+      "locator_record_id": "141",
+      "locator_name": "Outram Community Hospital",
+      "locator_address": "10 Hospital Boulevard #01-04 SingHealth Tower ",
+      "postal_code": "168582",
+      "locator_phone_raw": "6565920113",
+      "candidate_contact_value": "Contact: +65 6592 0113",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 10 HOSPITAL BOULEVARD #01-04,OUTRAM COMMUNITY HOSPITAL,Singapore 168582",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "CE20L39V000",
+      "locator_record_id": "117",
+      "locator_name": "Artra",
+      "locator_address": "12 Alexandra View, #01-12",
+      "postal_code": "158736",
+      "locator_phone_raw": "6562083472",
+      "candidate_contact_value": "Contact: +65 6208 3472",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 12 ALEXANDRA VIEW #01-12,ARTRA,Singapore 158736 ARTRA",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "CE21R98C000",
+      "locator_record_id": "150",
+      "locator_name": "KK Women's & Children's Hospital ",
+      "locator_address": "100 Bukit Timah Road #01-01A",
+      "postal_code": "229899",
+      "locator_phone_raw": "6590264923",
+      "candidate_contact_value": "Contact: +65 9026 4923",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 100 BUKIT TIMAH ROAD #01-01A,KK WOMEN'S AND CHILDREN'S HOSPITAL,Singapore 229899",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "CE22512L000",
+      "locator_record_id": "27",
+      "locator_name": "Thomson Plaza",
+      "locator_address": "301 Thomson Road, #01-97",
+      "postal_code": "574408",
+      "locator_phone_raw": "6564599880",
+      "candidate_contact_value": "Contact: +65 6459 9880",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 301 UPPER THOMSON ROAD #01-97,THOMSON PLAZA,Singapore 574408",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "CE23187L000",
+      "locator_record_id": "124",
+      "locator_name": "Woodleigh",
+      "locator_address": "11 Bidadari Park Drive #B1-05 ",
+      "postal_code": "367803",
+      "locator_phone_raw": "6565179729",
+      "candidate_contact_value": "Contact: +65 6517 9729",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 11 BIDADARI PARK DRIVE #B1-05,THE WOODLEIGH MALL,Singapore 367803",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "CE24317V000",
+      "locator_record_id": "143",
+      "locator_name": "Tan Tock Seng Hospital",
+      "locator_address": "11 Jalan Tan Tock Seng #01-18 ",
+      "postal_code": "308433",
+      "locator_phone_raw": "6580820028",
+      "candidate_contact_value": "Contact: +65 8082 0028",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 11 JALAN TAN TOCK SENG #01-18,TAN TOCK SENG HOSPITAL,Singapore 308433",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "CE24601X000",
+      "locator_record_id": "138",
+      "locator_name": "Great World City",
+      "locator_address": "1 Kim Seng Promenade, #01-142 ",
+      "postal_code": "237994",
+      "locator_phone_raw": "6593846887",
+      "candidate_contact_value": "Contact: +65 9384 6887",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 1 KIM SENG PROMENADE #01-142,GREAT WORLD CITY,Singapore 237994",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "CE24C57B000",
+      "locator_record_id": "55",
+      "locator_name": "Thomson Medical Center ",
+      "locator_address": "339 Thomson Road #01-07",
+      "postal_code": "307677",
+      "locator_phone_raw": "6560220602",
+      "candidate_contact_value": "Contact: +65 6022 0602",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 339 THOMSON ROAD #01-07,THOMSON MEDICAL CENTRE,Singapore 307677",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "CE24G64P000",
+      "locator_record_id": "107",
+      "locator_name": "66 Kallang Bahru",
+      "locator_address": "66 Kallang Bahru #01-503",
+      "postal_code": "330066",
+      "locator_phone_raw": "6568082728",
+      "candidate_contact_value": "Contact: +65 6808 2728",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 66 KALLANG BAHRU #01-503,Singapore 330066",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "E01197K000",
+      "locator_record_id": "130",
+      "locator_name": "57 Marine Terrace",
+      "locator_address": "57 Marine Terrace #01-119 ",
+      "postal_code": "440057",
+      "locator_phone_raw": "6596955771",
+      "candidate_contact_value": "Contact: +65 9695 5771",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 57 MARINE TERRACE #01-119,MARINE TERRACE HAVEN,Singapore 440057",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "E95224E000",
+      "locator_record_id": "8",
+      "locator_name": "Tanah Merah Ferry Terminal",
+      "locator_address": "50 Tanah Merah Ferry Terminal Road #01-02",
+      "postal_code": "498833",
+      "locator_phone_raw": "6593378701",
+      "candidate_contact_value": "Contact: +65 9337 8701",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 50 TANAH MERAH FERRY ROAD #01-02,TANAH MERAH FERRY TERMINAL,Singapore 498833",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "J01011L000",
+      "locator_record_id": "115",
+      "locator_name": "Choa Chu Kang Sports Centre",
+      "locator_address": "1 Choa Chu Kang Street 53, #02-04",
+      "postal_code": "689236",
+      "locator_phone_raw": "6569087025",
+      "candidate_contact_value": "Contact: +65 6908 7025",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 1 CHOA CHU KANG STREET 53 #02-04,CHOA CHU KANG SPORTS CENTRE,Singapore 689236",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "NE08194B000",
+      "locator_record_id": "121",
+      "locator_name": "Buangkok Kopitiam City",
+      "locator_address": "Blk 275D Compassvale Link, #01-01",
+      "postal_code": "544275",
+      "locator_phone_raw": "6569663509",
+      "candidate_contact_value": "Contact: +65 6966 3509",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 275D COMPASSVALE LINK #01-01,KOPITIAM CITY,Singapore 544275 (UNIT 2 / #01-02)",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "NE10309C000",
+      "locator_record_id": "47",
+      "locator_name": "Rivervale Mall",
+      "locator_address": "11 Rivervale Crescent, #01-31",
+      "postal_code": "545082",
+      "locator_phone_raw": "6563120289",
+      "candidate_contact_value": "Contact: +65 6312 0289",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 11 RIVERVALE CRESCENT #01-31,RIVERVALE MALL,Singapore 545082",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "NE14021V000",
+      "locator_record_id": "96",
+      "locator_name": "Tampines West Community Club",
+      "locator_address": "5 Tampines Avenue 3, #01-08",
+      "postal_code": "529705",
+      "locator_phone_raw": "6565441108",
+      "candidate_contact_value": "Contact: +65 6544 1108",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 5 TAMPINES AVENUE 3 #01-08,TAMPINES WEST COMMUNITY CLUB,Singapore 529705",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "NE21M52P000",
+      "locator_record_id": "118",
+      "locator_name": "Serangoon North",
+      "locator_address": "152 Serangoon North Ave 1, #01-326",
+      "postal_code": "550152",
+      "locator_phone_raw": "6569085700",
+      "candidate_contact_value": "Contact: +65 6908 5700",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 152 SERANGOON NORTH AVENUE 1 #01-326,Singapore 550152",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "NE22M51K000",
+      "locator_record_id": "66",
+      "locator_name": "Hougang Rivercourt",
+      "locator_address": "377 Hougang St 32 #01-26",
+      "postal_code": "530377",
+      "locator_phone_raw": "6598331353",
+      "candidate_contact_value": "Contact: +65 9833 1353",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 377 HOUGANG STREET 32 #01-26,Singapore 530377",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "NE23Q53C000",
+      "locator_record_id": "139",
+      "locator_name": "108 Hougang Ave 1",
+      "locator_address": "108 Hougang Avenue 1, #01-1303 ",
+      "postal_code": "530108",
+      "locator_phone_raw": "6569949441",
+      "candidate_contact_value": "Contact: +65 6994 9441",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 108 HOUGANG AVENUE 1 #01-1303,Singapore 530108",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "NE24231P000",
+      "locator_record_id": "74",
+      "locator_name": "One Punggol",
+      "locator_address": "1 Punggol Drive, One Punggol, #01-02 ",
+      "postal_code": "828629",
+      "locator_phone_raw": "6563383886",
+      "candidate_contact_value": "Contact: +65 6338 3886",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 1 PUNGGOL DRIVE #01-02,ONE PUNGGOL,Singapore 828629",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "NW11157B000",
+      "locator_record_id": "100",
+      "locator_name": "SIM HQ",
+      "locator_address": "461 Clementi Road Block B, #01-05 Singapore Insti of Mgmt",
+      "postal_code": "599491",
+      "locator_phone_raw": "6569179054",
+      "candidate_contact_value": "Contact: +65 6917 9054",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 461 CLEMENTI ROAD #01-05,#L1-05,Singapore 599491 BLK B",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "NW17456C000",
+      "locator_record_id": "132",
+      "locator_name": "418 Yishun Ave 11",
+      "locator_address": "418 Yishun Ave 11 #01-401 ",
+      "postal_code": "760418",
+      "locator_phone_raw": "6565303271",
+      "candidate_contact_value": "Contact: +65 6530 3271",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 418 YISHUN AVENUE 11 #01-401,Singapore 760418",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "NW17605N000",
+      "locator_record_id": "62",
+      "locator_name": "Greenridge Shopping Centre",
+      "locator_address": "Blk 524A Jelapang Road, #02-14",
+      "postal_code": "671524",
+      "locator_phone_raw": "6567605833",
+      "candidate_contact_value": "Contact: +65 6760 5833",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 524A JELAPANG ROAD #02-14,GREENRIDGE SHOPPING CENTRE,Singapore 671524",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "NW19U97N000",
+      "locator_record_id": "79",
+      "locator_name": "Hillion Mall",
+      "locator_address": "17 Petir Road #02-21, Hillion Mall",
+      "postal_code": "678278",
+      "locator_phone_raw": "6566109571",
+      "candidate_contact_value": "Contact: +65 6610 9571",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 17 PETIR ROAD #02-21,HILLION MALL,Singapore 678278",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "NW22J92J000",
+      "locator_record_id": "129",
+      "locator_name": "Junction 9",
+      "locator_address": "18 Yishun Ave 9, #02-03 ",
+      "postal_code": "768897",
+      "locator_phone_raw": "6560150593",
+      "candidate_contact_value": "Contact: +65 6015 0593",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 18 YISHUN AVENUE 9 #02-03,JUNCTION NINE,Singapore 768897",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "NW23002L000",
+      "locator_record_id": "123",
+      "locator_name": "Admiralty Place",
+      "locator_address": "678A Woodlands Ave 6 #01-29 ",
+      "postal_code": "731678",
+      "locator_phone_raw": "6562195868",
+      "candidate_contact_value": "Contact: +65 6219 5868",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 678A WOODLANDS AVENUE 6 #01-29,ADMIRALTY PLACE,Singapore 731678",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "SE14599N000",
+      "locator_record_id": "45",
+      "locator_name": "Kallang Wave Mall",
+      "locator_address": "1 Stadium Place, #01-55",
+      "postal_code": "397628",
+      "locator_phone_raw": "6568449938",
+      "candidate_contact_value": "Contact: +65 6844 9938",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 1 STADIUM PLACE #01-55,KALLANG WAVE MALL,Singapore 397628",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "SE15348X000",
+      "locator_record_id": "76",
+      "locator_name": "Parkway Centre",
+      "locator_address": "1 Marine Parade Central, #01-05",
+      "postal_code": "449408",
+      "locator_phone_raw": "6590888801",
+      "candidate_contact_value": "Contact: +65 9088 8801",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 1 MARINE PARADE CENTRAL #01-05,PARKWAY CENTRE,Singapore 449408",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "SE16591N005",
+      "locator_record_id": "75",
+      "locator_name": "T1 Foodcourt",
+      "locator_address": "80 Airport Boulevard, #03-47 / #03-48, Changi Airport T1 Singapore 819642",
+      "postal_code": "819642",
+      "locator_phone_raw": "6588942897",
+      "candidate_contact_value": "Contact: +65 8894 2897",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 80 AIRPORT BOULEVARD #03-47,#03-48,CHANGI AIRPORT TERMINAL 1,Singapore 819642",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "SE23Q44J000",
+      "locator_record_id": "144",
+      "locator_name": "Leisure Park Kallang",
+      "locator_address": "5 Stadium Walk, #01-31",
+      "postal_code": "397693",
+      "locator_phone_raw": "6564470797",
+      "candidate_contact_value": "Contact: +65 6447 0797",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 5 STADIUM WALK #01-31,LEISURE PARK KALLANG,Singapore 397693",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "SW12I21N000",
+      "locator_record_id": "86",
+      "locator_name": "One North MRT Station",
+      "locator_address": "9 Ayer rajah Avenue, #B2-04",
+      "postal_code": "138647",
+      "locator_phone_raw": "6567778234",
+      "candidate_contact_value": "Contact: +65 6777 8234",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 9 AYER RAJAH AVENUE #B2-04,ONE-NORTH MRT STATION (CC23),Singapore 138647",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "SW24B43B000",
+      "locator_record_id": "125",
+      "locator_name": "Yuhua Village",
+      "locator_address": "253 Jurong East Dtreet 24 #01-261",
+      "postal_code": "600253",
+      "locator_phone_raw": "6560220803",
+      "candidate_contact_value": "Contact: +65 6022 0803",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 253 JURONG EAST STREET 24 #01-261,YUHUA VILLAGE,Singapore 600253 PART RIGHT",
+        "phone_format_valid": true
+      }
+    },
+    {
+      "sfa_licence": "SW24G80A000",
+      "locator_record_id": "148",
+      "locator_name": "Plantation Plaza",
+      "locator_address": "126B Tengah Drive #01-335",
+      "postal_code": "692126",
+      "locator_phone_raw": "6560411955",
+      "candidate_contact_value": "Contact: +65 6041 1955",
+      "workbook_contact_value": null,
+      "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "source_observed_at": "2026-10-18T17:49:42+08:00",
+      "join_evidence": {
+        "postal_code_exact": true,
+        "street_number_exact": true,
+        "unit_exact": true,
+        "matched_workbook_address": "Address: 126B TENGAH DRIVE #01-335,Singapore 692126",
+        "phone_format_valid": true
+      }
+    }
+  ],
+  "conflicting_existing_contacts_excluded": [
+    {
+      "sfa_licence": "CE24E86E000",
+      "locator_record_id": "38",
+      "locator_name": "City Square Mall",
+      "workbook_contact_value": "Contact: +6587748013",
+      "locator_contact_value": "Contact: +65 6509 6354",
+      "action": "Excluded; no overwrite."
+    },
+    {
+      "sfa_licence": "NE16790B000",
+      "locator_record_id": "5",
+      "locator_name": "Pasir Ris West Plaza",
+      "workbook_contact_value": "Contact: +6569084353",
+      "locator_contact_value": "Contact: +65 6246 2860",
+      "action": "Excluded; no overwrite."
+    },
+    {
+      "sfa_licence": "NE24628C000",
+      "locator_record_id": "36",
+      "locator_name": "Tampines One",
+      "workbook_contact_value": "Contact: +6588041869",
+      "locator_contact_value": "Contact: +65 6587 3771",
+      "action": "Excluded; no overwrite."
+    },
+    {
+      "sfa_licence": "NW20H92J000",
+      "locator_record_id": "78",
+      "locator_name": "Vista Point",
+      "workbook_contact_value": "Contact: +6596285851",
+      "locator_contact_value": "Contact: +65 6970 8102",
+      "action": "Excluded; no overwrite."
+    },
+    {
+      "sfa_licence": "S96191A000",
+      "locator_record_id": "12",
+      "locator_name": "Junction 8 Shopping Ctr",
+      "workbook_contact_value": "Contact: +6587748917",
+      "locator_contact_value": "Contact: +65 6358 2686",
+      "action": "Excluded; no overwrite."
+    }
+  ],
+  "already_matching_contacts": [
+    {
+      "sfa_licence": "B92064K000",
+      "locator_record_id": "33",
+      "workbook_contact_value": "Contact: +6565926698",
+      "locator_contact_value": "Contact: +65 6592 6698"
+    },
+    {
+      "sfa_licence": "C98077L000",
+      "locator_record_id": "29",
+      "workbook_contact_value": "Contact: +6568618556",
+      "locator_contact_value": "Contact: +65 6861 8556"
+    },
+    {
+      "sfa_licence": "CE04295X000",
+      "locator_record_id": "63",
+      "workbook_contact_value": "Contact: +6564720970",
+      "locator_contact_value": "Contact: +65 6472 0970"
+    },
+    {
+      "sfa_licence": "CE07W58A000",
+      "locator_record_id": "25",
+      "workbook_contact_value": "Contact: +6563972737",
+      "locator_contact_value": "Contact: +65 6397 2737"
+    },
+    {
+      "sfa_licence": "CE08D10E000",
+      "locator_record_id": "16",
+      "workbook_contact_value": "Contact: +6564749742",
+      "locator_contact_value": "Contact: +65 6474 9742"
+    },
+    {
+      "sfa_licence": "CE09N23P000",
+      "locator_record_id": "46",
+      "workbook_contact_value": "Contact: +6564565058",
+      "locator_contact_value": "Contact: +65 6456 5058"
+    },
+    {
+      "sfa_licence": "CE09N25L000",
+      "locator_record_id": "40",
+      "workbook_contact_value": "Contact: +6568365295",
+      "locator_contact_value": "Contact: +65 6836 5295"
+    },
+    {
+      "sfa_licence": "CE10D80K000",
+      "locator_record_id": "67",
+      "workbook_contact_value": "Contact: +6562504351",
+      "locator_contact_value": "Contact: +65 6250 4351"
+    },
+    {
+      "sfa_licence": "CE14O55B000",
+      "locator_record_id": "97",
+      "workbook_contact_value": "Contact: +6562912007",
+      "locator_contact_value": "Contact: +65 6291 2007"
+    },
+    {
+      "sfa_licence": "CE17I13L000",
+      "locator_record_id": "111",
+      "workbook_contact_value": "Contact: +6569095784",
+      "locator_contact_value": "Contact: +65 6909 5784"
+    },
+    {
+      "sfa_licence": "E96236B000",
+      "locator_record_id": "84",
+      "workbook_contact_value": "Contact: +6564497726",
+      "locator_contact_value": "Contact: +65 6449 7726"
+    },
+    {
+      "sfa_licence": "NE06150V000",
+      "locator_record_id": "53",
+      "workbook_contact_value": "Contact: +6563866624",
+      "locator_contact_value": "Contact: +65 6386 6624"
+    },
+    {
+      "sfa_licence": "NE14474N000",
+      "locator_record_id": "99",
+      "workbook_contact_value": "Contact: +6566361662",
+      "locator_contact_value": "Contact: +65 6636 1662"
+    },
+    {
+      "sfa_licence": "NE15188L000",
+      "locator_record_id": "48",
+      "workbook_contact_value": "Contact: +65 65851251",
+      "locator_contact_value": "Contact: +65 6585 1251"
+    },
+    {
+      "sfa_licence": "NE16357E000",
+      "locator_record_id": "101",
+      "workbook_contact_value": "Contact: +6563862172",
+      "locator_contact_value": "Contact: +65 6386 2172"
+    },
+    {
+      "sfa_licence": "NE16438E000",
+      "locator_record_id": "34",
+      "workbook_contact_value": "Contact: +6563863702",
+      "locator_contact_value": "Contact: +65 6386 3702"
+    },
+    {
+      "sfa_licence": "NE17217V000",
+      "locator_record_id": "106",
+      "workbook_contact_value": "Contact: +6563865453",
+      "locator_contact_value": "Contact: +65 6386 5453"
+    },
+    {
+      "sfa_licence": "NE17353E000",
+      "locator_record_id": "110",
+      "workbook_contact_value": "Contact: +6567027027",
+      "locator_contact_value": "Contact: +65 6702 7027"
+    },
+    {
+      "sfa_licence": "NW19446N000",
+      "locator_record_id": "102",
+      "workbook_contact_value": "Contact: +6567600853",
+      "locator_contact_value": "Contact: +65 6760 0853"
+    },
+    {
+      "sfa_licence": "NW19701A000",
+      "locator_record_id": "113",
+      "workbook_contact_value": "Contact: +6567601135",
+      "locator_contact_value": "Contact: +65 6760 1135"
+    },
+    {
+      "sfa_licence": "S03164K000",
+      "locator_record_id": "92",
+      "workbook_contact_value": "Contact: +6567897374",
+      "locator_contact_value": "Contact: +65 6789 7374"
+    },
+    {
+      "sfa_licence": "SE10661B000",
+      "locator_record_id": "54",
+      "workbook_contact_value": "Contact: +6566344758",
+      "locator_contact_value": "Contact: +65 6634 4758"
+    },
+    {
+      "sfa_licence": "SE10825V000",
+      "locator_record_id": "68",
+      "workbook_contact_value": "Contact: +6562462860",
+      "locator_contact_value": "Contact: +65 6246 2860"
+    },
+    {
+      "sfa_licence": "SE12K28N000",
+      "locator_record_id": "82",
+      "workbook_contact_value": "Contact: +6567831863",
+      "locator_contact_value": "Contact: +65 6783 1863"
+    },
+    {
+      "sfa_licence": "SE13227E000",
+      "locator_record_id": "88",
+      "workbook_contact_value": "Contact: +6568449620",
+      "locator_contact_value": "Contact: +65 6844 9620"
+    },
+    {
+      "sfa_licence": "SE14B31X000",
+      "locator_record_id": "41",
+      "workbook_contact_value": "Contact: +6565382994",
+      "locator_contact_value": "Contact: +65 6538 2994"
+    },
+    {
+      "sfa_licence": "SE15131C000",
+      "locator_record_id": "3",
+      "workbook_contact_value": "Contact: +6564437343",
+      "locator_contact_value": "Contact: +65 6443 7343"
+    },
+    {
+      "sfa_licence": "SE17744J000",
+      "locator_record_id": "24",
+      "workbook_contact_value": "Contact: +6569090705",
+      "locator_contact_value": "Contact: +65 6909 0705"
+    },
+    {
+      "sfa_licence": "SW07488J000",
+      "locator_record_id": "70",
+      "workbook_contact_value": "Contact: +65 6567 0345",
+      "locator_contact_value": "Contact: +65 6567 0345"
+    },
+    {
+      "sfa_licence": "SW08676X000",
+      "locator_record_id": "37",
+      "workbook_contact_value": "Contact: +6567676007",
+      "locator_contact_value": "Contact: +65 6767 6007"
+    },
+    {
+      "sfa_licence": "SW08838X000",
+      "locator_record_id": "10",
+      "workbook_contact_value": "Contact: +6567766048",
+      "locator_contact_value": "Contact: +65 6776 6048"
+    },
+    {
+      "sfa_licence": "SW09101L000",
+      "locator_record_id": "30",
+      "workbook_contact_value": "Contact: +6562197862",
+      "locator_contact_value": "Contact: +65 6219 7862"
+    },
+    {
+      "sfa_licence": "SW09881C000",
+      "locator_record_id": "61",
+      "workbook_contact_value": "Contact: +6564620810",
+      "locator_contact_value": "Contact: +65 6462 0810"
+    },
+    {
+      "sfa_licence": "SW12K37J000",
+      "locator_record_id": "73",
+      "workbook_contact_value": "Contact: +6566944208",
+      "locator_contact_value": "Contact: +65 6694 4208"
+    },
+    {
+      "sfa_licence": "SW13302N000",
+      "locator_record_id": "59",
+      "workbook_contact_value": "Contact: +6563397367",
+      "locator_contact_value": "Contact: +65 6339 7367"
+    },
+    {
+      "sfa_licence": "SW14952P000",
+      "locator_record_id": "95",
+      "workbook_contact_value": "Contact: +65 63163063",
+      "locator_contact_value": "Contact: +65 6316 3063"
+    },
+    {
+      "sfa_licence": "SW16D09C000",
+      "locator_record_id": "56",
+      "workbook_contact_value": "Contact: +6565706671",
+      "locator_contact_value": "Contact: +65 6570 6671"
+    },
+    {
+      "sfa_licence": "SW17765P000",
+      "locator_record_id": "116",
+      "workbook_contact_value": "Contact: +6565926746",
+      "locator_contact_value": "Contact: +65 6592 6746"
+    },
+    {
+      "sfa_licence": "SW17C57J000",
+      "locator_record_id": "23",
+      "workbook_contact_value": "Contact: +6567694917",
+      "locator_contact_value": "Contact: +65 6769 4917"
+    },
+    {
+      "sfa_licence": "SW18713K000",
+      "locator_record_id": "105",
+      "workbook_contact_value": "Contact: +6569097260",
+      "locator_contact_value": "Contact: +65 6909 7260"
+    },
+    {
+      "sfa_licence": "SW24J78V000",
+      "locator_record_id": "15",
+      "workbook_contact_value": "Contact: +6565651337",
+      "locator_contact_value": "Contact: +65 6565 1337"
+    },
+    {
+      "sfa_licence": "W00113C000",
+      "locator_record_id": "49",
+      "workbook_contact_value": "Contact: +6567371578",
+      "locator_contact_value": "Contact: +65 6737 1578"
+    },
+    {
+      "sfa_licence": "W94056V000",
+      "locator_record_id": "65",
+      "workbook_contact_value": "Contact: +6562746074",
+      "locator_contact_value": "Contact: +65 6274 6074"
+    }
+  ],
+  "duplicate_locator_groups_excluded": [
+    {
+      "sfa_licence": "NE18187L000",
+      "locator_ids": [
+        "152",
+        "135"
+      ],
+      "titles": [
+        "Oasis Terraces",
+        "Punggol Oasis"
+      ],
+      "addresses": [
+        "681 Punggol Drive, #01-14",
+        "681 Punggol Drive #01-14"
+      ],
+      "action": "Excluded duplicate locator records sharing one SFA licence."
+    }
+  ],
+  "non_exact_locator_records_excluded": [
+    {
+      "locator_id": "2",
+      "title": "100 AM Complex",
+      "postal_code": "79027",
+      "address": "100 Tras Street, #01-15"
+    },
+    {
+      "locator_id": "133",
+      "title": "128 Toa Payoh Lor 1",
+      "postal_code": "310125",
+      "address": "128 Toa Payoh Lorong 1 #01-819 "
+    },
+    {
+      "locator_id": "104",
+      "title": "302 Ubi",
+      "postal_code": "400302",
+      "address": "Blk 302 Ubi Avenue 1, #01-35"
+    },
+    {
+      "locator_id": "87",
+      "title": "Alocassia Apartments",
+      "postal_code": "259727",
+      "address": "383 Bukit Timah Road, #01-05"
+    },
+    {
+      "locator_id": "18",
+      "title": "AMK Hub",
+      "postal_code": "569933",
+      "address": "53 Ang Mo Kio Ave 3, #01-35"
+    },
+    {
+      "locator_id": "140",
+      "title": "Anchorvale Vilage",
+      "postal_code": "541339",
+      "address": "339 Anchorvale Rd #B1-17 Anchorvale Village"
+    },
+    {
+      "locator_id": "6",
+      "title": "Asia Square Tower 2",
+      "postal_code": "18961",
+      "address": "12 Marina View, #02-07"
+    },
+    {
+      "locator_id": "17",
+      "title": "Bedok Reservoir",
+      "postal_code": "470744",
+      "address": "744 Bedok Reservoir Rd, #01-3031"
+    },
+    {
+      "locator_id": "142",
+      "title": "Boon Lay Shopping Center",
+      "postal_code": "640221",
+      "address": "221 Boon Lay Place #01-08 Boon Lay Shopping Center "
+    },
+    {
+      "locator_id": "57",
+      "title": "Bugis Junction",
+      "postal_code": "188021",
+      "address": "200 Victoria Street, #B1-25A"
+    },
+    {
+      "locator_id": "32",
+      "title": "Bukit Panjang Plaza",
+      "postal_code": "677743",
+      "address": "1 Jelebu Road, #02-11"
+    },
+    {
+      "locator_id": "112",
+      "title": "Changi Airport T3 Food Hall",
+      "postal_code": "819663",
+      "address": "65, Airport Boulevard, Terminal 3, #B2-26"
+    },
+    {
+      "locator_id": "71",
+      "title": "Changi Airport Terminal 2 Departure Transit",
+      "postal_code": "819643",
+      "address": "65 Airport Boulevard, #036-141-02, Changi Airport T2 Departure Transit Lounge Central "
+    },
+    {
+      "locator_id": "93",
+      "title": "Chinatown Point",
+      "postal_code": "59413",
+      "address": "133 New Bridge Road, #B1-37"
+    },
+    {
+      "locator_id": "109",
+      "title": "City Gate",
+      "postal_code": "199597",
+      "address": "City Gate, 371 Beach Road, #01-33"
+    },
+    {
+      "locator_id": "58",
+      "title": "Courts Megastore",
+      "postal_code": "528766",
+      "address": "50 Tampines North Drive 2, "
+    },
+    {
+      "locator_id": "108",
+      "title": "Design Hub",
+      "postal_code": "637548",
+      "address": "30 Tuas Bay Drive, #01-1B"
+    },
+    {
+      "locator_id": "149",
+      "title": "Downtown East",
+      "postal_code": "519599",
+      "address": "1 Pasir Ris Close #02-307/308"
+    },
+    {
+      "locator_id": "9",
+      "title": "Esplanade",
+      "postal_code": "39802",
+      "address": "8 Raffles Avenue #01-06/08"
+    },
+    {
+      "locator_id": "94",
+      "title": "Fairprice Hub",
+      "postal_code": "629117",
+      "address": "1 Joo Koon Circle, #01-58"
+    },
+    {
+      "locator_id": "69",
+      "title": "Fengshan Community Center",
+      "postal_code": "469644",
+      "address": "20 Bedok North Street 2 #01-04"
+    },
+    {
+      "locator_id": "114",
+      "title": "Funan",
+      "postal_code": "179105",
+      "address": "107 North Bridge Road, #B2-10"
+    },
+    {
+      "locator_id": "77",
+      "title": "Gek Poh Shopping Centre",
+      "postal_code": "640762",
+      "address": "762 Jurong West Street 75, #01-324"
+    },
+    {
+      "locator_id": "7",
+      "title": "HarbourFront Centre",
+      "postal_code": "99253",
+      "address": "1 Maritime Square, #02-81/82 Harbourfront Centre"
+    },
+    {
+      "locator_id": "1",
+      "title": "Holland V",
+      "postal_code": "277735",
+      "address": "25B Lorong Liput, "
+    },
+    {
+      "locator_id": "151",
+      "title": "Jewel Changi Airport",
+      "postal_code": "819666",
+      "address": "78 Airport Boulevard, #B2-245"
+    },
+    {
+      "locator_id": "14",
+      "title": "Jurong Point Shopping Ctr",
+      "postal_code": "648886",
+      "address": "1 Jurong West Central 2, #01-32A"
+    },
+    {
+      "locator_id": "60",
+      "title": "Khoo Teck Puat Hospital",
+      "postal_code": "768828",
+      "address": "90 Yishun Central, #01-02/03,Bistro Outlet (F&B)"
+    },
+    {
+      "locator_id": "128",
+      "title": "Le Quest",
+      "postal_code": "657991",
+      "address": "4 Bukit Batok Street 41 #01-06"
+    },
+    {
+      "locator_id": "39",
+      "title": "Marina Bay Link Mall",
+      "postal_code": "18984",
+      "address": "8A Marina Boulevard, #B2-19"
+    },
+    {
+      "locator_id": "91",
+      "title": "Nanyang Polytechnic",
+      "postal_code": "569830",
+      "address": "180 Ang Mo Kio Avenue 8, Block A, Level 2, #A229"
+    },
+    {
+      "locator_id": "22",
+      "title": "Nanyang Tech University",
+      "postal_code": "637331",
+      "address": "76 Nanyang Drive, The North Spine, N2."
+    },
+    {
+      "locator_id": "137",
+      "title": "Northshore Plaza",
+      "postal_code": "820407",
+      "address": "407 Northshore Drive #02-06/07 Northshore Plaza II "
+    },
+    {
+      "locator_id": "44",
+      "title": "Novena Square",
+      "postal_code": "307683",
+      "address": "238 Thomson Road #02-28/29, "
+    },
+    {
+      "locator_id": "98",
+      "title": "NUS Stephen Riady Center",
+      "postal_code": "138607",
+      "address": "2 College Avenue West #01-08"
+    },
+    {
+      "locator_id": "126",
+      "title": "Ocean Financial Centre",
+      "postal_code": "49315",
+      "address": "10 Collyer Quay, #B1-05"
+    },
+    {
+      "locator_id": "21",
+      "title": "One Raffles Place",
+      "postal_code": "48616",
+      "address": "1 Raffles Place, Tower 1, 02-24"
+    },
+    {
+      "locator_id": "72",
+      "title": "Orchid Country Club",
+      "postal_code": "769162",
+      "address": "1 Orchid Club Road, Recreation Clubhouse #01-38"
+    },
+    {
+      "locator_id": "122",
+      "title": "Paragon",
+      "postal_code": "238859",
+      "address": "290 Orchard Road #B1-30/40"
+    },
+    {
+      "locator_id": "81",
+      "title": "Plaza Singapura",
+      "postal_code": "238839",
+      "address": "68 Orchard Rd #B2-33/34"
+    },
+    {
+      "locator_id": "146",
+      "title": "Queens Peak",
+      "postal_code": "149456",
+      "address": "1 Dundee Road #01-01"
+    },
+    {
+      "locator_id": "4",
+      "title": "Raffles City",
+      "postal_code": "179103",
+      "address": "252 North Bridge Rd, #B1-36 Raffles City Shop Ctr"
+    },
+    {
+      "locator_id": "52",
+      "title": "Republic Polytechnic",
+      "postal_code": "738964",
+      "address": "9 Woodlands Avenue 9, #01-02/03"
+    },
+    {
+      "locator_id": "80",
+      "title": "Safra Mount Faber",
+      "postal_code": "98803",
+      "address": "2 Telok Blangah Way, #301-06A"
+    },
+    {
+      "locator_id": "85",
+      "title": "Sembawang SC",
+      "postal_code": "758459",
+      "address": "604 Sembawang Road #02-23"
+    },
+    {
+      "locator_id": "119",
+      "title": "Sengkang Hospital",
+      "postal_code": "544886",
+      "address": "110 Sengkang East Way #02-07/08 "
+    },
+    {
+      "locator_id": "103",
+      "title": "Sim Lim Square",
+      "postal_code": "188504",
+      "address": "1, Rochor Canal Road, #B1-27 & 28"
+    },
+    {
+      "locator_id": "28",
+      "title": "Singapore Expo ",
+      "postal_code": "486150",
+      "address": "1 Expo Drive, #01-01, Singapore Expo "
+    },
+    {
+      "locator_id": "42",
+      "title": "Singapore Polytechnic",
+      "postal_code": "139651",
+      "address": "500 Dover Road, Foodcourt 5"
+    },
+    {
+      "locator_id": "13",
+      "title": "SMU City Campus",
+      "postal_code": "178902",
+      "address": "80 Stamford Rd, #01-62, School Info Systems Bldg"
+    },
+    {
+      "locator_id": "20",
+      "title": "Suntec City Mall",
+      "postal_code": "38983",
+      "address": "3 Temasek Boulevard, #B1-173"
+    },
+    {
+      "locator_id": "83",
+      "title": "Temasek Polytechnic",
+      "postal_code": "529757",
+      "address": "21 Tampines Avenue 1, F&B Outlet 3, #30-03, 30B-01-0"
+    },
+    {
+      "locator_id": "26",
+      "title": "The Central",
+      "postal_code": "59817",
+      "address": "6 Eu Tong Sen Street, #01-66"
+    },
+    {
+      "locator_id": "35",
+      "title": "The Clementi Mall",
+      "postal_code": "129588",
+      "address": "3155 Commonwealth Avenue West, #B1-24/25"
+    },
+    {
+      "locator_id": "120",
+      "title": "The POIZ Centre",
+      "postal_code": "347697",
+      "address": "51 Upper Serangoon Rd, #01-06"
+    },
+    {
+      "locator_id": "31",
+      "title": "The Rail Mall",
+      "postal_code": "678056",
+      "address": "430 Upper Bukit Timah Road, "
+    },
+    {
+      "locator_id": "19",
+      "title": "U.S. Naval Base, Bldg 7-4",
+      "postal_code": "759657",
+      "address": "Deptford Road PSA Sembawang Terminal, "
+    },
+    {
+      "locator_id": "89",
+      "title": "Waterway Point",
+      "postal_code": "828761",
+      "address": "83 punggol Central, #B1-16"
+    },
+    {
+      "locator_id": "127",
+      "title": "Westgate",
+      "postal_code": "608532",
+      "address": "3 Gateway Dr #B2-09"
+    },
+    {
+      "locator_id": "51",
+      "title": "Wisteria Mall",
+      "postal_code": "768698",
+      "address": "598 Yishun Ring Rd, Unit B1-08, Lot 3852N Mukim 19, Basement 1"
+    }
+  ],
+  "ambiguous_matches_excluded": [],
+  "opening_hours_decision": {
+    "locator_records": 152,
+    "distinct_open_hours_payloads": 1,
+    "records_with_most_common_payload": 152,
+    "decision": "Do not use generic hours. All 152 locator rows contain the exact same Mon–Sun 09:30 AM–06:30 PM schedule, which is an implausible uniformity signal. No hours are proposed."
+  },
+  "scope_and_caveats": [
+    "This is an official locator listing observed at capture time; it provides no per-record last-updated timestamp and phones were not call-tested. Treat proposals as official-source candidate values, not independently telephone-verified.",
+    "All 42 proposed numbers had a valid +65 plus eight-digit format and were unique within the proposed set.",
+    "Only blank Contact Details cells are proposed. Existing contacts are never overwritten.",
+    "No workbook was modified. No opening hours, menu items, images, ratings, website values, or coordinates are proposed."
+  ]
+}

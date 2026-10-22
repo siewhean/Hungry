@@ -1,0 +1,128 @@
+{
+  "qa_id": "refresh133_final_qa_20261019",
+  "verified_at": "2026-10-19",
+  "workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_backup": "/tmp/hungry-r133-node/refresh132-baseline-backup.xlsx",
+  "sha256": {
+    "baseline": "b9b4d654cac9131405caf8c84c81194af8d4b856ab8bffbfdc746ae6cfad7463",
+    "installed": "2e398d1a6c872287c0b093a40cac17a63557293b27471b82832756ba6019a916",
+    "expected_baseline": "b9b4d654cac9131405caf8c84c81194af8d4b856ab8bffbfdc746ae6cfad7463",
+    "expected_installed": "2e398d1a6c872287c0b093a40cac17a63557293b27471b82832756ba6019a916"
+  },
+  "checks": {
+    "installed_sha_matches_expected": true,
+    "baseline_sha_matches_expected": true,
+    "candidate_receipt_hashes_match": true,
+    "zip_integrity_installed": true,
+    "zip_integrity_baseline": true,
+    "sheet_names_match": true,
+    "external_links_zero": true,
+    "formulas_zero": true,
+    "cell_errors_zero": true,
+    "tables_have_expected_dimensions": true,
+    "directory_row_count_unchanged": true,
+    "directory_licence_set_unchanged": true,
+    "directory_alphabetical_blanks_last": true,
+    "directory_changes_exactly_match_proposals": true,
+    "name_proposal_row_joins_exact": true,
+    "directory_field_proposal_joins_exact": true,
+    "all_60_menu_additions_join_exact_to_proposal": true,
+    "image_candidate_exact_proposal_and_review_only": true,
+    "coverage_metrics_recount": true,
+    "data_xlsx_inventory_expected": true,
+    "closures_proposal_removals_zero": true,
+    "proposal_baseline_sha_all_match": true
+  },
+  "details": {
+    "directory_change_count": 16,
+    "directory_unexpected_changes": [],
+    "menu_rows_added": 60,
+    "menu_additions_by_licence": {
+      "SE19093P000": 20,
+      "SE23F29P000": 20,
+      "SW23Q75L000": 20
+    },
+    "coverage_metrics": {
+      "Rows with a usable F&B name": {
+        "recount": 32799,
+        "coverage_values": [
+          32799
+        ],
+        "matches": true
+      },
+      "Rows with no usable F&B name": {
+        "recount": 5474,
+        "coverage_values": [
+          5474
+        ],
+        "matches": true
+      },
+      "Rows with website": {
+        "recount": 2822,
+        "coverage_values": [
+          2822
+        ],
+        "matches": true
+      },
+      "Rows with menu URL": {
+        "recount": 1482,
+        "coverage_values": [
+          1482
+        ],
+        "matches": true
+      },
+      "Rows with menu summary": {
+        "recount": 539,
+        "coverage_values": [
+          539
+        ],
+        "matches": true
+      },
+      "Rows with opening hours": {
+        "recount": 1492,
+        "coverage_values": [
+          1492
+        ],
+        "matches": true
+      }
+    },
+    "data_xlsx_inventory": [
+      "Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+      "Hungry F&B Database.xlsx",
+      "dish-food-types-to-vet.xlsx",
+      "singapore_food_stalls.xlsx",
+      "stall-logo-candidates.xlsx",
+      "taste-answer-key.xlsx"
+    ]
+  },
+  "table_refs": {
+    "Public F&B Directory": [
+      [
+        "PublicFnbDirectory",
+        "A1:U38274"
+      ]
+    ],
+    "Menu Items": [
+      [
+        "MenuItems",
+        "A1:L13859"
+      ]
+    ],
+    "Image Candidates": [
+      [
+        "ImageCandidates",
+        "A1:I2767"
+      ]
+    ],
+    "Coverage & Sources": [
+      [
+        "CoverageSources",
+        "A1:C231"
+      ]
+    ]
+  },
+  "formula_cells": [],
+  "cell_errors": [],
+  "external_link_count": 0,
+  "pass": true
+}

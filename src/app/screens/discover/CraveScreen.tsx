@@ -11,7 +11,7 @@ import { Heart, X, ChevronLeft, Sparkles } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import * as Haptics from "expo-haptics";
+import * as Haptics from "@/lib/haptics";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AccessibleImage, AppText, Button, HungryLogo } from "@/components/ui";
@@ -53,6 +53,7 @@ export function CraveScreen() {
   const currentDish = dishes[currentIndex];
   const nextDish = dishes[currentIndex + 1];
 
+  const swipeActions = useRef({ right: () => {}, left: () => {} });
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
@@ -61,9 +62,9 @@ export function CraveScreen() {
       },
       onPanResponderRelease: (_, gestureState) => {
         if (gestureState.dx > SWIPE_THRESHOLD) {
-          swipeRight();
+          swipeActions.current.right();
         } else if (gestureState.dx < -SWIPE_THRESHOLD) {
-          swipeLeft();
+          swipeActions.current.left();
         } else {
           Animated.spring(position, {
             toValue: { x: 0, y: 0 },
@@ -89,7 +90,8 @@ export function CraveScreen() {
     }
 
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    if (currentDish) toggleFavourite(currentDish);
+    if (currentDish && !profile.favouriteDishIds.includes(currentDish.id))
+      toggleFavourite(currentDish);
 
     Animated.timing(position, {
       toValue: { x: screenWidth + 100, y: 0 },
@@ -106,6 +108,8 @@ export function CraveScreen() {
       useNativeDriver: true,
     }).start(() => nextCard());
   };
+
+  swipeActions.current = { right: swipeRight, left: swipeLeft };
 
   const nextCard = () => {
     setCurrentIndex((prev) => prev + 1);

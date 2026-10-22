@@ -1,0 +1,60 @@
+{
+  "snapshot_type": "refresh134_exact_public_fnb_name_proposals",
+  "observed_at_local": "2026-10-19 Asia/Singapore",
+  "master_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "master_sha256": "2e398d1a6c872287c0b093a40cac17a63557293b27471b82832756ba6019a916",
+  "worksheet": "Public F&B Directory",
+  "scope": "Read-only exact name discovery from current government and public directory sources. No workbook edits.",
+  "matching_rule": "Require exact workbook SFA licence, six-digit postal code, street address, and unit; corroborate the public-facing stall name from authoritative source(s); no name-only or fuzzy joins.",
+  "summary": {
+    "blank_public_rows_checked": 5474,
+    "exact_names_proposed": 1,
+    "other_records_reviewed": 0,
+    "ambiguous_or_stale_evidence_excluded": 1,
+    "workbook_edits": 0,
+    "spending": 0,
+    "mapbox_calls": 0
+  },
+  "proposals": [
+    {
+      "excel_row": 35509,
+      "sfa_licence": "KAD0212001",
+      "before_fnb_name": null,
+      "proposed_fnb_name": "Long Ding Seafood",
+      "business_type": "MA Managed Foodstall",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "existing_full_address": "Address: 676 WOODLANDS DRIVE 71 #02-12,KAMPUNG ADMIRALTY,Singapore 730676",
+      "existing_postal_code": "730676",
+      "exact_join": {
+        "sfa_licence": "KAD0212001",
+        "street_address": "676 Woodlands Drive 71",
+        "unit": "#02-12",
+        "postal_code": "730676",
+        "premise": "Kampung Admiralty Hawker Centre"
+      },
+      "sources": [
+        {
+          "publisher": "National Environment Agency / FMAS / NHB",
+          "kind": "government_joint_news_release",
+          "url": "https://www.nea.gov.sg/media/news/news/index/singapore-hawkers--celebration-and-awards-2025-honours-heritage-and-inspires-the-next-generation-of-culinary-excellence",
+          "observed_date": "2026-10-19",
+          "published_date": "2025-11-24",
+          "evidence": "2025 Outstanding Hawker Mentor Award annex lists Xu Can Bin, Long Ding Seafood, Kampung Admiralty Hawker Centre / #02-12."
+        },
+        {
+          "publisher": "Belanja A Meal @ Woodlands",
+          "kind": "current_public_directory",
+          "url": "https://bam.sayangsembawang.sg/public/where-to-go",
+          "observed_date": "2026-10-19",
+          "evidence": "Current directory lists Long Ding Seafood - Kampung Admiralty at 676 Woodlands Drive 71, Singapore 730676."
+        }
+      ],
+      "confidence": "high",
+      "scope": "Name-only proposal. The workbook SFA licence row uniquely matches exact address, unit and postal code. Sources support the public-facing stall name; no other fields are proposed.",
+      "limitations": [
+        "NEA award release is the exact-unit name source but was published in November 2025; the 2026 community directory corroborates brand and centre/address but does not display unit number. Current operation at the exact unit was not independently observed in person.",
+        "Do not infer hours, menu, contact details, image or other attributes from this name evidence."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,385 @@
+{
+  "schema": "hungry.menu_gap_proposal.v1",
+  "proposal_only": true,
+  "audit_date": "2026-10-19",
+  "workbook": {
+    "path": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "sha256": "e2b0a7e63ab806176f9476b6c79e00c9f9233d1918f023f39c1aa59031fa4583",
+    "edited": false
+  },
+  "outlet": {
+    "brand": "Din Tai Fung",
+    "branch": "Novena Square / Velocity @ Novena Square",
+    "sfa_licence": "CE13M19J000",
+    "sfa_name": "DIN TAI FUNG",
+    "sfa_address": "238 THOMSON ROAD #01-05,#01-06,NOVENA SQUARE,Singapore 307683",
+    "postal_code": "307683",
+    "exact_join_basis": "Foodpanda page title identifies Din Tai Fung (Novena Square); its location section states “Velocity @ Novena Square, 238 Thomson Road, #01-05”, which matches the SFA directory address at #01-05 (and #01-06) and postal 307683. Exact licence CE13M19J000 is unique for this brand+address in the workbook.",
+    "existing_menu_items_for_licence": 1,
+    "existing_items": [
+      "Chicken Katsu Curry"
+    ],
+    "menu_item_candidates_count": 30
+  },
+  "source": {
+    "source_type": "public Foodpanda branch delivery listing",
+    "url": "https://www.foodpanda.sg/restaurant/orww/din-tai-fung-novena-square",
+    "observed_at": "2026-10-19",
+    "page_reported_crawl_age": "3 days before observation",
+    "location_evidence": "Page title: Din Tai Fung (Novena Square); location section: Velocity @ Novena Square, 238 Thomson Road, #01-05.",
+    "dynamic_status_observed": "Page displayed CLOSED at observation. This is delivery service state only and is not evidence of permanent venue closure.",
+    "price_caveat": "Foodpanda page FAQ says listed prices may differ from in-store prices; preserve as delivery-only price data."
+  },
+  "menu_item_candidates": [
+    {
+      "section": "Popular",
+      "item": "3003. Fried Rice With Pork Chop & Eggs 排骨蛋炒饭",
+      "variant": null,
+      "price_as_displayed": "S$ 17.44",
+      "price_scope": "Foodpanda delivery listing price; Foodpanda states prices may differ from store; from qualifier retained where displayed",
+      "menu_scope": "This named Novena Square listing only; delivery catalogue, not verified dine-in menu. Item availability may change; some section is explicitly labelled Novena Square Exclusive.",
+      "source_url": "https://www.foodpanda.sg/restaurant/orww/din-tai-fung-novena-square",
+      "source_date": "Observed 2026-10-19; page search index showed crawled 3 days before observation",
+      "notes": "Candidate for integration only; recheck live price and delivery listing before use."
+    },
+    {
+      "section": "Steamed Dumplings",
+      "item": "2501. Steamed Pork Xiao Long Bao 小笼包 (10Pcs)",
+      "variant": "10 pcs",
+      "price_as_displayed": "S$ 16.35",
+      "price_scope": "Foodpanda delivery listing price; Foodpanda states prices may differ from store; from qualifier retained where displayed",
+      "menu_scope": "This named Novena Square listing only; delivery catalogue, not verified dine-in menu. Item availability may change; some section is explicitly labelled Novena Square Exclusive.",
+      "source_url": "https://www.foodpanda.sg/restaurant/orww/din-tai-fung-novena-square",
+      "source_date": "Observed 2026-10-19; page search index showed crawled 3 days before observation",
+      "notes": "Candidate for integration only; recheck live price and delivery listing before use."
+    },
+    {
+      "section": "Rice",
+      "item": "3001. Fried Rice With Shrimps & Eggs 虾仁蛋炒饭",
+      "variant": null,
+      "price_as_displayed": "S$ 17.99",
+      "price_scope": "Foodpanda delivery listing price; Foodpanda states prices may differ from store; from qualifier retained where displayed",
+      "menu_scope": "This named Novena Square listing only; delivery catalogue, not verified dine-in menu. Item availability may change; some section is explicitly labelled Novena Square Exclusive.",
+      "source_url": "https://www.foodpanda.sg/restaurant/orww/din-tai-fung-novena-square",
+      "source_date": "Observed 2026-10-19; page search index showed crawled 3 days before observation",
+      "notes": "Candidate for integration only; recheck live price and delivery listing before use."
+    },
+    {
+      "section": "Rice",
+      "item": "3004. Fried Rice With Eggs 蛋炒饭",
+      "variant": null,
+      "price_as_displayed": "S$ 11.99",
+      "price_scope": "Foodpanda delivery listing price; Foodpanda states prices may differ from store; from qualifier retained where displayed",
+      "menu_scope": "This named Novena Square listing only; delivery catalogue, not verified dine-in menu. Item availability may change; some section is explicitly labelled Novena Square Exclusive.",
+      "source_url": "https://www.foodpanda.sg/restaurant/orww/din-tai-fung-novena-square",
+      "source_date": "Observed 2026-10-19; page search index showed crawled 3 days before observation",
+      "notes": "Candidate for integration only; recheck live price and delivery listing before use."
+    },
+    {
+      "section": "Snacks",
+      "item": "1504. Oriental Wantons With Black Vinegar & Chilli Oil 红油抄手",
+      "variant": null,
+      "price_as_displayed": "S$ 12.54",
+      "price_scope": "Foodpanda delivery listing price; Foodpanda states prices may differ from store; from qualifier retained where displayed",
+      "menu_scope": "This named Novena Square listing only; delivery catalogue, not verified dine-in menu. Item availability may change; some section is explicitly labelled Novena Square Exclusive.",
+      "source_url": "https://www.foodpanda.sg/restaurant/orww/din-tai-fung-novena-square",
+      "source_date": "Observed 2026-10-19; page search index showed crawled 3 days before observation",
+      "notes": "Candidate for integration only; recheck live price and delivery listing before use."
+    },
+    {
+      "section": "Appetisers",
+      "item": "1001. Oriental Salad In Special Vinegar Dressing 小菜",
+      "variant": null,
+      "price_as_displayed": "S$ 7.67",
+      "price_scope": "Foodpanda delivery listing price; Foodpanda states prices may differ from store; from qualifier retained where displayed",
+      "menu_scope": "This named Novena Square listing only; delivery catalogue, not verified dine-in menu. Item availability may change; some section is explicitly labelled Novena Square Exclusive.",
+      "source_url": "https://www.foodpanda.sg/restaurant/orww/din-tai-fung-novena-square",
+      "source_date": "Observed 2026-10-19; page search index showed crawled 3 days before observation",
+      "notes": "Candidate for integration only; recheck live price and delivery listing before use."
+    },
+    {
+      "section": "Pan Fried Buns",
+      "item": "Pan Fried Shrimp And Pork Buns 虾仁鲜肉鼎煎包 (3pcs)",
+      "variant": "3 pcs",
+      "price_as_displayed": "S$ 11.99",
+      "price_scope": "Foodpanda delivery listing price; Foodpanda states prices may differ from store; from qualifier retained where displayed",
+      "menu_scope": "This named Novena Square listing only; delivery catalogue, not verified dine-in menu. Item availability may change; some section is explicitly labelled Novena Square Exclusive.",
+      "source_url": "https://www.foodpanda.sg/restaurant/orww/din-tai-fung-novena-square",
+      "source_date": "Observed 2026-10-19; page search index showed crawled 3 days before observation",
+      "notes": "Candidate for integration only; recheck live price and delivery listing before use."
+    },
+    {
+      "section": "Pan Fried Buns",
+      "item": "Pan Fried Shrimp And Pork Bun 虾仁鲜肉鼎煎包 (1pc)",
+      "variant": "1 pc",
+      "price_as_displayed": "S$ 4.25",
+      "price_scope": "Foodpanda delivery listing price; Foodpanda states prices may differ from store; from qualifier retained where displayed",
+      "menu_scope": "This named Novena Square listing only; delivery catalogue, not verified dine-in menu. Item availability may change; some section is explicitly labelled Novena Square Exclusive.",
+      "source_url": "https://www.foodpanda.sg/restaurant/orww/din-tai-fung-novena-square",
+      "source_date": "Observed 2026-10-19; page search index showed crawled 3 days before observation",
+      "notes": "Candidate for integration only; recheck live price and delivery listing before use."
+    },
+    {
+      "section": "Pan Fried Buns",
+      "item": "Pan Fried Pork Buns 鲜肉鼎煎包 (3 Pcs)",
+      "variant": "3 pcs",
+      "price_as_displayed": "S$ 10.46",
+      "price_scope": "Foodpanda delivery listing price; Foodpanda states prices may differ from store; from qualifier retained where displayed",
+      "menu_scope": "This named Novena Square listing only; delivery catalogue, not verified dine-in menu. Item availability may change; some section is explicitly labelled Novena Square Exclusive.",
+      "source_url": "https://www.foodpanda.sg/restaurant/orww/din-tai-fung-novena-square",
+      "source_date": "Observed 2026-10-19; page search index showed crawled 3 days before observation",
+      "notes": "Candidate for integration only; recheck live price and delivery listing before use."
+    },
+    {
+      "section": "Pan Fried Buns",
+      "item": "Pan Fried Pork Bun 鲜肉鼎煎包 (1 Pc)",
+      "variant": "1 pc",
+      "price_as_displayed": "S$ 3.92",
+      "price_scope": "Foodpanda delivery listing price; Foodpanda states prices may differ from store; from qualifier retained where displayed",
+      "menu_scope": "This named Novena Square listing only; delivery catalogue, not verified dine-in menu. Item availability may change; some section is explicitly labelled Novena Square Exclusive.",
+      "source_url": "https://www.foodpanda.sg/restaurant/orww/din-tai-fung-novena-square",
+      "source_date": "Observed 2026-10-19; page search index showed crawled 3 days before observation",
+      "notes": "Candidate for integration only; recheck live price and delivery listing before use."
+    },
+    {
+      "section": "Pan Fried Buns",
+      "item": "Pan Fried Cabbage And Pork Buns 白菜鲜肉鼎煎包 (3pcs)",
+      "variant": "3 pcs",
+      "price_as_displayed": "S$ 10.46",
+      "price_scope": "Foodpanda delivery listing price; Foodpanda states prices may differ from store; from qualifier retained where displayed",
+      "menu_scope": "This named Novena Square listing only; delivery catalogue, not verified dine-in menu. Item availability may change; some section is explicitly labelled Novena Square Exclusive.",
+      "source_url": "https://www.foodpanda.sg/restaurant/orww/din-tai-fung-novena-square",
+      "source_date": "Observed 2026-10-19; page search index showed crawled 3 days before observation",
+      "notes": "Candidate for integration only; recheck live price and delivery listing before use."
+    },
+    {
+      "section": "Pan Fried Buns",
+      "item": "Pan Fried Cabbage And Pork Bun 白菜鲜肉鼎煎包 (1pc)",
+      "variant": "1 pc",
+      "price_as_displayed": "S$ 3.92",
+      "price_scope": "Foodpanda delivery listing price; Foodpanda states prices may differ from store; from qualifier retained where displayed",
+      "menu_scope": "This named Novena Square listing only; delivery catalogue, not verified dine-in menu. Item availability may change; some section is explicitly labelled Novena Square Exclusive.",
+      "source_url": "https://www.foodpanda.sg/restaurant/orww/din-tai-fung-novena-square",
+      "source_date": "Observed 2026-10-19; page search index showed crawled 3 days before observation",
+      "notes": "Candidate for integration only; recheck live price and delivery listing before use."
+    },
+    {
+      "section": "Pan Fried Buns",
+      "item": "Pan Fried Chilli Crab & Pork Buns (3pcs) 辣蟹鲜肉鼎煎包",
+      "variant": "3 pcs",
+      "price_as_displayed": "S$ 13.08",
+      "price_scope": "Foodpanda delivery listing price; Foodpanda states prices may differ from store; from qualifier retained where displayed",
+      "menu_scope": "This named Novena Square listing only; delivery catalogue, not verified dine-in menu. Item availability may change; some section is explicitly labelled Novena Square Exclusive.",
+      "source_url": "https://www.foodpanda.sg/restaurant/orww/din-tai-fung-novena-square",
+      "source_date": "Observed 2026-10-19; page search index showed crawled 3 days before observation",
+      "notes": "Candidate for integration only; recheck live price and delivery listing before use."
+    },
+    {
+      "section": "Pan Fried Buns",
+      "item": "Pan Fried Chilli Crab & Pork Buns (1pc) 辣蟹鲜肉鼎煎包",
+      "variant": "1 pc",
+      "price_as_displayed": "S$ 4.69",
+      "price_scope": "Foodpanda delivery listing price; Foodpanda states prices may differ from store; from qualifier retained where displayed",
+      "menu_scope": "This named Novena Square listing only; delivery catalogue, not verified dine-in menu. Item availability may change; some section is explicitly labelled Novena Square Exclusive.",
+      "source_url": "https://www.foodpanda.sg/restaurant/orww/din-tai-fung-novena-square",
+      "source_date": "Observed 2026-10-19; page search index showed crawled 3 days before observation",
+      "notes": "Candidate for integration only; recheck live price and delivery listing before use."
+    },
+    {
+      "section": "Steamed Dumplings",
+      "item": "Mixed Greens & Mushroom Xiao Long Bao 蔬食小笼包 (6pcs)",
+      "variant": "6 pcs",
+      "price_as_displayed": "S$ 12.64",
+      "price_scope": "Foodpanda delivery listing price; Foodpanda states prices may differ from store; from qualifier retained where displayed",
+      "menu_scope": "This named Novena Square listing only; delivery catalogue, not verified dine-in menu. Item availability may change; some section is explicitly labelled Novena Square Exclusive.",
+      "source_url": "https://www.foodpanda.sg/restaurant/orww/din-tai-fung-novena-square",
+      "source_date": "Observed 2026-10-19; page search index showed crawled 3 days before observation",
+      "notes": "Candidate for integration only; recheck live price and delivery listing before use."
+    },
+    {
+      "section": "Steamed Dumplings",
+      "item": "Mixed Greens & Mushroom Xiao Long Bao 蔬食小笼包 (10pcs)",
+      "variant": "10 pcs",
+      "price_as_displayed": "S$ 16.90",
+      "price_scope": "Foodpanda delivery listing price; Foodpanda states prices may differ from store; from qualifier retained where displayed",
+      "menu_scope": "This named Novena Square listing only; delivery catalogue, not verified dine-in menu. Item availability may change; some section is explicitly labelled Novena Square Exclusive.",
+      "source_url": "https://www.foodpanda.sg/restaurant/orww/din-tai-fung-novena-square",
+      "source_date": "Observed 2026-10-19; page search index showed crawled 3 days before observation",
+      "notes": "Candidate for integration only; recheck live price and delivery listing before use."
+    },
+    {
+      "section": "Steamed Dumplings",
+      "item": "Steamed Shrimp & Pork Shao-mai (6pcs) 虾肉烧卖",
+      "variant": "6 pcs",
+      "price_as_displayed": "S$ 15.81",
+      "price_scope": "Foodpanda delivery listing price; Foodpanda states prices may differ from store; from qualifier retained where displayed",
+      "menu_scope": "This named Novena Square listing only; delivery catalogue, not verified dine-in menu. Item availability may change; some section is explicitly labelled Novena Square Exclusive.",
+      "source_url": "https://www.foodpanda.sg/restaurant/orww/din-tai-fung-novena-square",
+      "source_date": "Observed 2026-10-19; page search index showed crawled 3 days before observation",
+      "notes": "Candidate for integration only; recheck live price and delivery listing before use."
+    },
+    {
+      "section": "Steamed Dumplings",
+      "item": "Steamed Shrimp & Pork Shao-mai (10pcs) 虾肉烧卖",
+      "variant": "10 pcs",
+      "price_as_displayed": "S$ 21.58",
+      "price_scope": "Foodpanda delivery listing price; Foodpanda states prices may differ from store; from qualifier retained where displayed",
+      "menu_scope": "This named Novena Square listing only; delivery catalogue, not verified dine-in menu. Item availability may change; some section is explicitly labelled Novena Square Exclusive.",
+      "source_url": "https://www.foodpanda.sg/restaurant/orww/din-tai-fung-novena-square",
+      "source_date": "Observed 2026-10-19; page search index showed crawled 3 days before observation",
+      "notes": "Candidate for integration only; recheck live price and delivery listing before use."
+    },
+    {
+      "section": "Steamed Dumplings",
+      "item": "2515. Steamed Crab Meat & Pork Xiao Long Bao 蟹粉小笼包 (10 Pcs)",
+      "variant": "10 pcs",
+      "price_as_displayed": "S$ 23.11",
+      "price_scope": "Foodpanda delivery listing price; Foodpanda states prices may differ from store; from qualifier retained where displayed",
+      "menu_scope": "This named Novena Square listing only; delivery catalogue, not verified dine-in menu. Item availability may change; some section is explicitly labelled Novena Square Exclusive.",
+      "source_url": "https://www.foodpanda.sg/restaurant/orww/din-tai-fung-novena-square",
+      "source_date": "Observed 2026-10-19; page search index showed crawled 3 days before observation",
+      "notes": "Candidate for integration only; recheck live price and delivery listing before use."
+    },
+    {
+      "section": "Steamed Dumplings",
+      "item": "2514. Steamed Crab Meat & Pork Xiao Long Bao 蟹粉小笼包 (6 Pcs)",
+      "variant": "6 pcs",
+      "price_as_displayed": "S$ 16.57",
+      "price_scope": "Foodpanda delivery listing price; Foodpanda states prices may differ from store; from qualifier retained where displayed",
+      "menu_scope": "This named Novena Square listing only; delivery catalogue, not verified dine-in menu. Item availability may change; some section is explicitly labelled Novena Square Exclusive.",
+      "source_url": "https://www.foodpanda.sg/restaurant/orww/din-tai-fung-novena-square",
+      "source_date": "Observed 2026-10-19; page search index showed crawled 3 days before observation",
+      "notes": "Candidate for integration only; recheck live price and delivery listing before use."
+    },
+    {
+      "section": "Steamed Dumplings",
+      "item": "2502. Steamed Pork Xiao Long Bao 小笼包 (6Pcs)",
+      "variant": "6 pcs",
+      "price_as_displayed": "from S$ 11.99",
+      "price_scope": "Foodpanda delivery listing price; Foodpanda states prices may differ from store; from qualifier retained where displayed",
+      "menu_scope": "This named Novena Square listing only; delivery catalogue, not verified dine-in menu. Item availability may change; some section is explicitly labelled Novena Square Exclusive.",
+      "source_url": "https://www.foodpanda.sg/restaurant/orww/din-tai-fung-novena-square",
+      "source_date": "Observed 2026-10-19; page search index showed crawled 3 days before observation",
+      "notes": "Candidate for integration only; recheck live price and delivery listing before use."
+    },
+    {
+      "section": "Steamed Dumplings",
+      "item": "2504. Steamed Shrimp & Pork Dumplings 虾肉蒸饺 (10Pcs)",
+      "variant": "10 pcs",
+      "price_as_displayed": "S$ 19.40",
+      "price_scope": "Foodpanda delivery listing price; Foodpanda states prices may differ from store; from qualifier retained where displayed",
+      "menu_scope": "This named Novena Square listing only; delivery catalogue, not verified dine-in menu. Item availability may change; some section is explicitly labelled Novena Square Exclusive.",
+      "source_url": "https://www.foodpanda.sg/restaurant/orww/din-tai-fung-novena-square",
+      "source_date": "Observed 2026-10-19; page search index showed crawled 3 days before observation",
+      "notes": "Candidate for integration only; recheck live price and delivery listing before use."
+    },
+    {
+      "section": "Steamed Dumplings",
+      "item": "2505. Steamed Shrimp & Pork Dumplings 虾肉蒸饺 (6Pcs)",
+      "variant": "6 pcs",
+      "price_as_displayed": "from S$ 13.63",
+      "price_scope": "Foodpanda delivery listing price; Foodpanda states prices may differ from store; from qualifier retained where displayed",
+      "menu_scope": "This named Novena Square listing only; delivery catalogue, not verified dine-in menu. Item availability may change; some section is explicitly labelled Novena Square Exclusive.",
+      "source_url": "https://www.foodpanda.sg/restaurant/orww/din-tai-fung-novena-square",
+      "source_date": "Observed 2026-10-19; page search index showed crawled 3 days before observation",
+      "notes": "Candidate for integration only; recheck live price and delivery listing before use."
+    },
+    {
+      "section": "Noodles",
+      "item": "Dry Noodle Tossed in Scallion Oil with Shredded Pork 肉丝干拌葱油面",
+      "variant": null,
+      "price_as_displayed": "S$ 15.59",
+      "price_scope": "Foodpanda delivery listing price; Foodpanda states prices may differ from store; from qualifier retained where displayed",
+      "menu_scope": "This named Novena Square listing only; delivery catalogue, not verified dine-in menu. Item availability may change; some section is explicitly labelled Novena Square Exclusive.",
+      "source_url": "https://www.foodpanda.sg/restaurant/orww/din-tai-fung-novena-square",
+      "source_date": "Observed 2026-10-19; page search index showed crawled 3 days before observation",
+      "notes": "Candidate for integration only; recheck live price and delivery listing before use."
+    },
+    {
+      "section": "Noodles",
+      "item": "3507. Noodle Soup With Fried Pork Chop 排骨面",
+      "variant": null,
+      "price_as_displayed": "S$ 16.90",
+      "price_scope": "Foodpanda delivery listing price; Foodpanda states prices may differ from store; from qualifier retained where displayed",
+      "menu_scope": "This named Novena Square listing only; delivery catalogue, not verified dine-in menu. Item availability may change; some section is explicitly labelled Novena Square Exclusive.",
+      "source_url": "https://www.foodpanda.sg/restaurant/orww/din-tai-fung-novena-square",
+      "source_date": "Observed 2026-10-19; page search index showed crawled 3 days before observation",
+      "notes": "Candidate for integration only; recheck live price and delivery listing before use."
+    },
+    {
+      "section": "Noodles",
+      "item": "3510. Dan Dan Noodle 担担面",
+      "variant": null,
+      "price_as_displayed": "from S$ 11.99",
+      "price_scope": "Foodpanda delivery listing price; Foodpanda states prices may differ from store; from qualifier retained where displayed",
+      "menu_scope": "This named Novena Square listing only; delivery catalogue, not verified dine-in menu. Item availability may change; some section is explicitly labelled Novena Square Exclusive.",
+      "source_url": "https://www.foodpanda.sg/restaurant/orww/din-tai-fung-novena-square",
+      "source_date": "Observed 2026-10-19; page search index showed crawled 3 days before observation",
+      "notes": "Candidate for integration only; recheck live price and delivery listing before use."
+    },
+    {
+      "section": "Noodles",
+      "item": "3513. Noodle Soup With Shrimps, Bamboo Shoots & Vegetables 虾仁汤面",
+      "variant": null,
+      "price_as_displayed": "S$ 15.75",
+      "price_scope": "Foodpanda delivery listing price; Foodpanda states prices may differ from store; from qualifier retained where displayed",
+      "menu_scope": "This named Novena Square listing only; delivery catalogue, not verified dine-in menu. Item availability may change; some section is explicitly labelled Novena Square Exclusive.",
+      "source_url": "https://www.foodpanda.sg/restaurant/orww/din-tai-fung-novena-square",
+      "source_date": "Observed 2026-10-19; page search index showed crawled 3 days before observation",
+      "notes": "Candidate for integration only; recheck live price and delivery listing before use."
+    },
+    {
+      "section": "Beverages",
+      "item": "6063. Fresh Soya Milk (Cold) 鲜豆浆 (冷)",
+      "variant": null,
+      "price_as_displayed": "S$ 6.54",
+      "price_scope": "Foodpanda delivery listing price; Foodpanda states prices may differ from store; from qualifier retained where displayed",
+      "menu_scope": "This named Novena Square listing only; delivery catalogue, not verified dine-in menu. Item availability may change; some section is explicitly labelled Novena Square Exclusive.",
+      "source_url": "https://www.foodpanda.sg/restaurant/orww/din-tai-fung-novena-square",
+      "source_date": "Observed 2026-10-19; page search index showed crawled 3 days before observation",
+      "notes": "Candidate for integration only; recheck live price and delivery listing before use."
+    },
+    {
+      "section": "Beverages",
+      "item": "6064. Fresh Soya Milk (Hot) 鲜豆浆 (热)",
+      "variant": null,
+      "price_as_displayed": "S$ 6.54",
+      "price_scope": "Foodpanda delivery listing price; Foodpanda states prices may differ from store; from qualifier retained where displayed",
+      "menu_scope": "This named Novena Square listing only; delivery catalogue, not verified dine-in menu. Item availability may change; some section is explicitly labelled Novena Square Exclusive.",
+      "source_url": "https://www.foodpanda.sg/restaurant/orww/din-tai-fung-novena-square",
+      "source_date": "Observed 2026-10-19; page search index showed crawled 3 days before observation",
+      "notes": "Candidate for integration only; recheck live price and delivery listing before use."
+    },
+    {
+      "section": "Beverages",
+      "item": "6065. Brewed Barley Drink (Cold) 薏米水 (冷)",
+      "variant": null,
+      "price_as_displayed": "S$ 6.54",
+      "price_scope": "Foodpanda delivery listing price; Foodpanda states prices may differ from store; from qualifier retained where displayed",
+      "menu_scope": "This named Novena Square listing only; delivery catalogue, not verified dine-in menu. Item availability may change; some section is explicitly labelled Novena Square Exclusive.",
+      "source_url": "https://www.foodpanda.sg/restaurant/orww/din-tai-fung-novena-square",
+      "source_date": "Observed 2026-10-19; page search index showed crawled 3 days before observation",
+      "notes": "Candidate for integration only; recheck live price and delivery listing before use."
+    }
+  ],
+  "image_provenance": {
+    "platform_image_links_visible": true,
+    "urls_added": false,
+    "reason": "Foodpanda image assets are hosted by Delivery Hero/platform domains, not verified as official operator-owned images; permission to reuse or republish was not established. No image candidate should be promoted from this page without rights review.",
+    "official_image_search_required": "Use Din Tai Fung Singapore official site or outlet-owned media for display assets; none proposed in this audit."
+  },
+  "dedupe_and_validation": {
+    "dedupe_key": "SFA licence + normalized item + variant",
+    "candidate_duplicates_with_existing_exact_licence": 0,
+    "excluded_exact_existing_item_names": [],
+    "workbook_rows_changed": 0,
+    "workbook_sha256_after": "e2b0a7e63ab806176f9476b6c79e00c9f9233d1918f023f39c1aa59031fa4583"
+  },
+  "limitations": [
+    "This is a third-party delivery menu, not the operator’s dine-in menu.",
+    "Do not use these delivery prices as in-store prices.",
+    "Foodpanda page displayed CLOSED during the snapshot; this may reflect service hours or availability and must not be used as permanent-closure evidence.",
+    "No platform-hosted photos were added because reuse permission was not confirmed.",
+    "Menu candidates remain proposal-only pending the parent integration and a fresh source recheck."
+  ]
+}

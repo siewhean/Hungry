@@ -1,0 +1,35 @@
+(node:87126) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Sprint 9 screen contract: Login screen uses service auth + error boundary (8.009375ms)
+✔ Sprint 9 screen contract: Review screen submits via service and triggers success UI (0.323625ms)
+✔ Sprint 9 screen contract: onboarding icon controls and location rows are labelled (0.830208ms)
+✔ Sprint 9 screen contract: stall menu cards expose dish actions (0.239416ms)
+✔ Sprint 9 screen contract: Search cards expose actionable semantics (0.36925ms)
+✔ Sprint 9 screen contract: Home feed interactions are wired for like/save/comment/share (4.007792ms)
+✔ Sprint 9 screen contract: Home feed double tap likes with heart animation (1.341042ms)
+✔ Sprint 9 screen contract: Home feed supports pull-to-refresh without hiding ready content (0.378625ms)
+✔ Sprint 9 screen contract: feed videos pause on tap and fast-forward only from edge holds (4.575375ms)
+✔ Sprint 9 screen contract: Home feed header follows app header scale (0.50375ms)
+✔ Taste recommendation contract: core surfaces use shared ranking and explicit signals (0.812209ms)
+✔ Sprint 9 screen contract: routed dish detail uses gallery-backed share flow (0.221667ms)
+✔ Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and data-backed (0.898667ms)
+✔ search home shows debounced inline results and keeps a see-all action (0.23ms)
+(node:87127) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ failed Finish preserves previous profile and leaves staged retake retryable (0.970125ms)
+✔ confirmed Finish writes all preferences once and applies only the server response (0.388083ms)
+✔ account transition while Finish awaits cannot apply or commit its late response (0.129542ms)
+✔ guest Finish merges the staged fields locally without a service write (0.125541ms)
+(node:87128) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ restoring a saved sweet answer cannot commit the carousel's transient Light offset (0.618333ms)
+✔ actual drag end and final momentum can select an answer for the current question (0.091375ms)
+✔ a late old-question momentum event cannot answer the new question (0.06625ms)
+ℹ tests 21
+ℹ suites 0
+ℹ pass 21
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1391.381042

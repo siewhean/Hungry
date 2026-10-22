@@ -1,0 +1,851 @@
+{
+  "task": "refresh133 coordinate candidate audit",
+  "generated_at_utc": "2026-10-18T21:33:35.834005+00:00",
+  "canonical_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "canonical_sha256": "b9b4d654cac9131405caf8c84c81194af8d4b856ab8bffbfdc746ae6cfad7463",
+  "missing_coordinate_records_at_baseline": 2537,
+  "review_scope": "First 100 missing-coordinate records with a valid six-digit postal code, one record per distinct postal code, in workbook row order.",
+  "reviewed_record_count": 100,
+  "candidate_count": 0,
+  "candidates": [],
+  "sources_checked": [
+    {
+      "name": "HDB Existing Building (GEOJSON)",
+      "agency": "Housing & Development Board",
+      "dataset_url": "https://data.gov.sg/datasets/d_16b157c52ed637edd6ba1232e026258d/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_16b157c52ed637edd6ba1232e026258d/poll-download",
+      "dataset_coverage": "Nov 2025",
+      "data_gov_last_updated": "21 Jun 2026",
+      "licence": "Singapore Open Data Licence; free for personal or commercial use",
+      "features_downloaded": 13436,
+      "method": "Exact six-digit postal-code join; HDB polygons would only support building-footprint precision and must not be assigned as stall precision.",
+      "missing_postal_code_matches": 0,
+      "decision": "No missing-coordinate record had a postal code in the HDB existing-building dataset."
+    },
+    {
+      "name": "Hawker Centres (GEOJSON)",
+      "agency": "National Environment Agency",
+      "dataset_url": "https://data.gov.sg/datasets/d_4a086da0a5553be1d89383cd90d07ecd/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_4a086da0a5553be1d89383cd90d07ecd/poll-download",
+      "licence": "Singapore Open Data Licence; free for personal or commercial use",
+      "features_downloaded": 129,
+      "method": "Exact six-digit postal-code join; NEA point denotes centre/building-level location, not stall/front-door location.",
+      "missing_postal_code_matches": 0,
+      "decision": "No missing-coordinate record had a postal code in the NEA hawker-centre dataset."
+    },
+    {
+      "name": "OpenStreetMap / Overpass",
+      "url": "https://wiki.openstreetmap.org/wiki/Overpass_API",
+      "licence": "Open Database Licence (ODbL); requires attribution and share-alike for derived database redistribution",
+      "method": "Attempted one bounded query for the reviewed postal-code set; public Overpass endpoints returned HTTP 406/500 and no OSM elements were retrieved.",
+      "decision": "No coordinates proposed from this source."
+    }
+  ],
+  "osm_attribution_and_share_alike_note": "If OSM-derived values are later accepted, retain OSM attribution with the dataset and assess ODbL share-alike obligations for a derived database. No OSM data was incorporated here.",
+  "precision_policy": "Do not convert a centre/building centroid into a stall coordinate. Any accepted candidate must state building, centre, or stall precision and match source address/postcode; no candidate met this bar.",
+  "integration_recommendation": "No workbook change. Retain all current blanks until a source returns exact postal/address matches. Retry only with an allowed bulk open-data extract or authenticated OneMap setup, and keep point precision explicit.",
+  "reviewed_postal_codes": [
+    "209078",
+    "388264",
+    "209263",
+    "207522",
+    "419737",
+    "049441",
+    "328187",
+    "387449",
+    "068592",
+    "307606",
+    "207566",
+    "427433",
+    "098269",
+    "389347",
+    "078885",
+    "427435",
+    "209855",
+    "419793",
+    "389338",
+    "437080",
+    "399684",
+    "209268",
+    "556680",
+    "239554",
+    "389468",
+    "069879",
+    "049845",
+    "458225",
+    "508754",
+    "088445",
+    "229453",
+    "219547",
+    "276481",
+    "459062",
+    "427509",
+    "787113",
+    "276472",
+    "088528",
+    "799499",
+    "209404",
+    "089129",
+    "539747",
+    "018971",
+    "328811",
+    "059435",
+    "068626",
+    "557255",
+    "419701",
+    "437124",
+    "389286",
+    "589619",
+    "574369",
+    "428992",
+    "389617",
+    "388250",
+    "099567",
+    "329772",
+    "277672",
+    "459073",
+    "528882",
+    "427431",
+    "368216",
+    "118508",
+    "338814",
+    "338813",
+    "229459",
+    "118156",
+    "427542",
+    "799501",
+    "307630",
+    "669723",
+    "555966",
+    "218141",
+    "049364",
+    "758353",
+    "209393",
+    "247781",
+    "218671",
+    "389599",
+    "389604",
+    "208970",
+    "198705",
+    "209008",
+    "088475",
+    "238846",
+    "088895",
+    "089142",
+    "579077",
+    "069472",
+    "329799",
+    "529684",
+    "427786",
+    "428925",
+    "189876",
+    "388831",
+    "423623",
+    "088840",
+    "598603",
+    "068580",
+    "188661"
+  ],
+  "reviewed_records": [
+    {
+      "excel_row": 16,
+      "sfa_licence": "CE12H36A000",
+      "postal_code": "209078",
+      "f_and_b_name": "#WLJK",
+      "full_address": "Address: 78 HORNE ROAD Singapore 209078"
+    },
+    {
+      "excel_row": 53,
+      "sfa_licence": "E89072A000",
+      "postal_code": "388264",
+      "f_and_b_name": ".8890 eating house",
+      "full_address": "Address: 88/90 LORONG 25A GEYLANG Singapore 388264"
+    },
+    {
+      "excel_row": 67,
+      "sfa_licence": "CE08217N000",
+      "postal_code": "209263",
+      "f_and_b_name": "1 SGP",
+      "full_address": "Address: 24A FOCH ROAD Singapore 209263"
+    },
+    {
+      "excel_row": 68,
+      "sfa_licence": "E99126X000",
+      "postal_code": "207522",
+      "f_and_b_name": "1 TYRWHITT BISTRO BAR PTE LTD",
+      "full_address": "Address: 1/3/5 TYRWHITT ROAD Singapore 207522"
+    },
+    {
+      "excel_row": 96,
+      "sfa_licence": "E65007A002",
+      "postal_code": "419737",
+      "f_and_b_name": "108-ALL",
+      "full_address": "Address: 218 CHANGI ROAD PKMS BUILDING,Singapore 419737"
+    },
+    {
+      "excel_row": 97,
+      "sfa_licence": "CE06A04N000",
+      "postal_code": "049441",
+      "f_and_b_name": "109 Food Teochew Yong Tau Foo",
+      "full_address": "Address: 90 CIRCULAR ROAD Singapore 049441"
+    },
+    {
+      "excel_row": 129,
+      "sfa_licence": "CE11F43A000",
+      "postal_code": "328187",
+      "f_and_b_name": "126",
+      "full_address": "Address: 1086 SERANGOON ROAD Singapore 328187"
+    },
+    {
+      "excel_row": 131,
+      "sfa_licence": "E86090V000",
+      "postal_code": "387449",
+      "f_and_b_name": "126 DIM SUM",
+      "full_address": "Address: 126 SIMS AVENUE Singapore 387449"
+    },
+    {
+      "excel_row": 144,
+      "sfa_licence": "CE17M69A000",
+      "postal_code": "068592",
+      "f_and_b_name": "13% WINE BISTRO",
+      "full_address": "Address: 123A TELOK AYER STREET Singapore 068592"
+    },
+    {
+      "excel_row": 167,
+      "sfa_licence": "W84332L000",
+      "postal_code": "307606",
+      "f_and_b_name": "151 rocovo restaurant",
+      "full_address": "Address: 151 THOMSON ROAD #01-151,GOLDHILL SHOPPING CENTRE,Singapore 307606"
+    },
+    {
+      "excel_row": 169,
+      "sfa_licence": "CE16L23V000",
+      "postal_code": "207566",
+      "f_and_b_name": "153 BREW CAFE",
+      "full_address": "Address: 153 TYRWHITT ROAD QINAN BUILDING,Singapore 207566"
+    },
+    {
+      "excel_row": 173,
+      "sfa_licence": "E93130N000",
+      "postal_code": "427433",
+      "f_and_b_name": "155",
+      "full_address": "Address: 155 JOO CHIAT ROAD Singapore 427433 Level 1"
+    },
+    {
+      "excel_row": 175,
+      "sfa_licence": "SW09816A000",
+      "postal_code": "098269",
+      "f_and_b_name": "15F",
+      "full_address": "Address: SENTOSA GATEWAY #01-K221,USS,Singapore 098269 SCI-FI PLANET YEN"
+    },
+    {
+      "excel_row": 177,
+      "sfa_licence": "E76080L000",
+      "postal_code": "389347",
+      "f_and_b_name": "16 Geylang Eating House",
+      "full_address": "Address: 306 GEYLANG ROAD Singapore 389347"
+    },
+    {
+      "excel_row": 224,
+      "sfa_licence": "CE17E60A000",
+      "postal_code": "078885",
+      "f_and_b_name": "1864",
+      "full_address": "Address: 9 WALLICH STREET #05-02,Singapore 078885"
+    },
+    {
+      "excel_row": 311,
+      "sfa_licence": "SE07480E000",
+      "postal_code": "427435",
+      "f_and_b_name": "233 Vietnamese Kitchen",
+      "full_address": "Address: 157 JOO CHIAT ROAD Singapore 427435 1st Storey"
+    },
+    {
+      "excel_row": 337,
+      "sfa_licence": "CE22778J000",
+      "postal_code": "209855",
+      "f_and_b_name": "28 cavan road",
+      "full_address": "Address: 28 CAVAN ROAD Singapore 209855"
+    },
+    {
+      "excel_row": 343,
+      "sfa_licence": "SE10095X000",
+      "postal_code": "419793",
+      "f_and_b_name": "283 Cafe",
+      "full_address": "Address: 318 CHANGI ROAD Singapore 419793"
+    },
+    {
+      "excel_row": 353,
+      "sfa_licence": "E55001C000",
+      "postal_code": "389338",
+      "f_and_b_name": "291 geylang eating house",
+      "full_address": "Address: 291 GEYLANG ROAD Singapore 389338"
+    },
+    {
+      "excel_row": 354,
+      "sfa_licence": "SE04246B000",
+      "postal_code": "437080",
+      "f_and_b_name": "297 Tanjong Katong",
+      "full_address": "Address: 297 TANJONG KATONG ROAD Singapore 437080"
+    },
+    {
+      "excel_row": 472,
+      "sfa_licence": "E91065J003",
+      "postal_code": "399684",
+      "f_and_b_name": "3D Food",
+      "full_address": "Address: 3D GUILLEMARD ROAD Singapore 399684"
+    },
+    {
+      "excel_row": 485,
+      "sfa_licence": "CE06K78E000",
+      "postal_code": "209268",
+      "f_and_b_name": "40 degree live lounge pte ltd",
+      "full_address": "Address: 40 FOCH ROAD Singapore 209268"
+    },
+    {
+      "excel_row": 529,
+      "sfa_licence": "NE25M50K000",
+      "postal_code": "556680",
+      "f_and_b_name": "4FINGERS CRISPY CHICKEN",
+      "full_address": "2 MAJU AVENUE SERANGOON GARDEN ESTATE,Singapore 556680 MR2"
+    },
+    {
+      "excel_row": 587,
+      "sfa_licence": "W97021X002",
+      "postal_code": "239554",
+      "f_and_b_name": "511 HABIB DELIGHTS PTE. LTD.",
+      "full_address": "Address: 117 KILLINEY ROAD Singapore 239554"
+    },
+    {
+      "excel_row": 588,
+      "sfa_licence": "SE09283X000",
+      "postal_code": "389468",
+      "f_and_b_name": "512 Coffee House",
+      "full_address": "Address: 512/514 GEYLANG ROAD ATRIUM RESIDENCES,Singapore 389468"
+    },
+    {
+      "excel_row": 601,
+      "sfa_licence": "CE20C70P000",
+      "postal_code": "069879",
+      "f_and_b_name": "54 STEAKHOUSE",
+      "full_address": "Address: 53/54 AMOY STREET Singapore 069879"
+    },
+    {
+      "excel_row": 606,
+      "sfa_licence": "W92097X000",
+      "postal_code": "049845",
+      "f_and_b_name": "56 boat quay",
+      "full_address": "Address: 56 BOAT QUAY BOAT QUAY CONSERVATION AREA,Singapore 049845"
+    },
+    {
+      "excel_row": 625,
+      "sfa_licence": "E94230N000",
+      "postal_code": "458225",
+      "f_and_b_name": "6 Letter Brunch",
+      "full_address": "Address: 103 FRANKEL AVENUE FRANKEL ESTATE,Singapore 458225 1ST STOREY"
+    },
+    {
+      "excel_row": 645,
+      "sfa_licence": "E87111P012",
+      "postal_code": "508754",
+      "f_and_b_name": "64 CHAR SIEW WANTON NOODLES",
+      "full_address": "Address: 64 LOYANG WAY Singapore 508754"
+    },
+    {
+      "excel_row": 650,
+      "sfa_licence": "CE21M36B000",
+      "postal_code": "088445",
+      "f_and_b_name": "66 Chambers",
+      "full_address": "Address: 22A TANJONG PAGAR ROAD Singapore 088445"
+    },
+    {
+      "excel_row": 664,
+      "sfa_licence": "CE08558A000",
+      "postal_code": "229453",
+      "f_and_b_name": "6IX 6IX",
+      "full_address": "Address: 23 CUPPAGE ROAD CUPPAGE TERRACE,Singapore 229453"
+    },
+    {
+      "excel_row": 665,
+      "sfa_licence": "CE05298C000",
+      "postal_code": "219547",
+      "f_and_b_name": "6ixers Cuisine",
+      "full_address": "Address: 49 CHANDER ROAD LITTLE INDIA CONSERVATION AREA,Singapore 219547"
+    },
+    {
+      "excel_row": 672,
+      "sfa_licence": "C85136N004",
+      "postal_code": "276481",
+      "f_and_b_name": "6th Avenue Wanton Mee",
+      "full_address": "Address: 24 SIXTH AVENUE Singapore 276481"
+    },
+    {
+      "excel_row": 685,
+      "sfa_licence": "E85246J000",
+      "postal_code": "459062",
+      "f_and_b_name": "7 ELEVEN",
+      "full_address": "Address: 705 EAST COAST ROAD FRANKEL ESTATE,Singapore 459062"
+    },
+    {
+      "excel_row": 694,
+      "sfa_licence": "SE22F70E000",
+      "postal_code": "427509",
+      "f_and_b_name": "7 Jiu ba",
+      "full_address": "Address: 255 JOO CHIAT ROAD #01-00,Singapore 427509"
+    },
+    {
+      "excel_row": 717,
+      "sfa_licence": "B83096X000",
+      "postal_code": "787113",
+      "f_and_b_name": "7-ELEVEN",
+      "full_address": "Address: 912 UPPER THOMSON ROAD Singapore 787113"
+    },
+    {
+      "excel_row": 728,
+      "sfa_licence": "C83191P000",
+      "postal_code": "276472",
+      "f_and_b_name": "7-ELEVEN",
+      "full_address": "Address: 6 SIXTH AVENUE Singapore 276472"
+    },
+    {
+      "excel_row": 747,
+      "sfa_licence": "CE05530C000",
+      "postal_code": "088528",
+      "f_and_b_name": "7-Eleven",
+      "full_address": "Address: 112 TANJONG PAGAR ROAD Singapore 088528"
+    },
+    {
+      "excel_row": 748,
+      "sfa_licence": "CE05580E000",
+      "postal_code": "799499",
+      "f_and_b_name": "7-ELEVEN",
+      "full_address": "Address: 271 JALAN KAYU Singapore 799499"
+    },
+    {
+      "excel_row": 749,
+      "sfa_licence": "CE05631X000",
+      "postal_code": "209404",
+      "f_and_b_name": "7-Eleven",
+      "full_address": "Address: 77 DUNLOP STREET LITTLE INDIA CONSERVATION AREA,Singapore 209404"
+    },
+    {
+      "excel_row": 756,
+      "sfa_licence": "CE06F27N000",
+      "postal_code": "089129",
+      "f_and_b_name": "7-ELEVEN",
+      "full_address": "Address: 22 KEONG SAIK ROAD Singapore 089129 (1ST STOREY)"
+    },
+    {
+      "excel_row": 759,
+      "sfa_licence": "CE07024N000",
+      "postal_code": "539747",
+      "f_and_b_name": "7-Eleven",
+      "full_address": "Address: 10/1 BUANGKOK VIEW INSTITUTE OF MENTAL HEALTH,Singapore 539747 Level 1 Unit 11-130"
+    },
+    {
+      "excel_row": 779,
+      "sfa_licence": "CE10654L000",
+      "postal_code": "018971",
+      "f_and_b_name": "7-Eleven",
+      "full_address": "Address: 1 BAYFRONT AVENUE #B2-01,MARINA BAY SANDS SINGAPORE,Singapore 018971"
+    },
+    {
+      "excel_row": 783,
+      "sfa_licence": "CE10G50C000",
+      "postal_code": "328811",
+      "f_and_b_name": "7-Eleven",
+      "full_address": "Address: 34 KIM KEAT ROAD Singapore 328811"
+    },
+    {
+      "excel_row": 819,
+      "sfa_licence": "CE18R38V000",
+      "postal_code": "059435",
+      "f_and_b_name": "7-Eleven",
+      "full_address": "Address: 231 NEW BRIDGE ROAD Singapore 059435 (1st storey)"
+    },
+    {
+      "excel_row": 825,
+      "sfa_licence": "CE19H35L000",
+      "postal_code": "068626",
+      "f_and_b_name": "7-ELEVEN",
+      "full_address": "Address: 178 TELOK AYER STREET Singapore 068626"
+    },
+    {
+      "excel_row": 860,
+      "sfa_licence": "E83165P000",
+      "postal_code": "557255",
+      "f_and_b_name": "7-Eleven",
+      "full_address": "Address: 3 KENSINGTON PARK ROAD SERANGOON GARDEN ESTATE,Singapore 557255"
+    },
+    {
+      "excel_row": 861,
+      "sfa_licence": "E83168P000",
+      "postal_code": "419701",
+      "f_and_b_name": "7-Eleven",
+      "full_address": "Address: 38A CHANGI ROAD Singapore 419701"
+    },
+    {
+      "excel_row": 862,
+      "sfa_licence": "E85055L000",
+      "postal_code": "437124",
+      "f_and_b_name": "7-ELEVEN",
+      "full_address": "Address: 366 TANJONG KATONG ROAD Singapore 437124"
+    },
+    {
+      "excel_row": 868,
+      "sfa_licence": "E95148P000",
+      "postal_code": "389286",
+      "f_and_b_name": "7-Eleven",
+      "full_address": "Address: 226 GEYLANG ROAD GEYLANG CONSERVATION AREA,Singapore 389286"
+    },
+    {
+      "excel_row": 912,
+      "sfa_licence": "NW04002B000",
+      "postal_code": "589619",
+      "f_and_b_name": "7-Eleven",
+      "full_address": "Address: 901 BUKIT TIMAH ROAD Singapore 589619"
+    },
+    {
+      "excel_row": 958,
+      "sfa_licence": "S85148B000",
+      "postal_code": "574369",
+      "f_and_b_name": "7-Eleven",
+      "full_address": "Address: 244H UPPER THOMSON ROAD THOMSON GARDEN ESTATE,Singapore 574369"
+    },
+    {
+      "excel_row": 967,
+      "sfa_licence": "SE04028X000",
+      "postal_code": "428992",
+      "f_and_b_name": "7-Eleven",
+      "full_address": "Address: 392 EAST COAST ROAD Singapore 428992"
+    },
+    {
+      "excel_row": 968,
+      "sfa_licence": "SE04054N000",
+      "postal_code": "389617",
+      "f_and_b_name": "7-Eleven",
+      "full_address": "Address: 700 GEYLANG ROAD Singapore 389617"
+    },
+    {
+      "excel_row": 969,
+      "sfa_licence": "SE04235J000",
+      "postal_code": "388250",
+      "f_and_b_name": "7-ELEVEN",
+      "full_address": "Address: 60 LORONG 25A GEYLANG Singapore 388250"
+    },
+    {
+      "excel_row": 1037,
+      "sfa_licence": "SW19D15E000",
+      "postal_code": "099567",
+      "f_and_b_name": "7-Eleven",
+      "full_address": "Address: 2 GUNNER LANE #01-03,SENTOSA MESS HALL,Singapore 099567"
+    },
+    {
+      "excel_row": 1072,
+      "sfa_licence": "W83279N000",
+      "postal_code": "329772",
+      "f_and_b_name": "7-Eleven",
+      "full_address": "Address: 340 BALESTIER ROAD Singapore 329772"
+    },
+    {
+      "excel_row": 1073,
+      "sfa_licence": "W84338A000",
+      "postal_code": "277672",
+      "f_and_b_name": "7-Eleven",
+      "full_address": "Address: 4 LORONG MAMBONG HOLLAND VILLAGE,Singapore 277672"
+    },
+    {
+      "excel_row": 1094,
+      "sfa_licence": "E55011N000",
+      "postal_code": "459073",
+      "f_and_b_name": "727 BREW KOPI",
+      "full_address": "Address: 727 EAST COAST ROAD FRANKEL ESTATE,Singapore 459073"
+    },
+    {
+      "excel_row": 1122,
+      "sfa_licence": "SE17044E000",
+      "postal_code": "528882",
+      "f_and_b_name": "7TH HEAVEN KTV & CAFE",
+      "full_address": "Address: 1 TAMPINES STREET 92 #03-02,SAFRA CLUBHOUSE (TAMPINES),Singapore 528882"
+    },
+    {
+      "excel_row": 1138,
+      "sfa_licence": "SE14247L000",
+      "postal_code": "427431",
+      "f_and_b_name": "808 EATING HOUSE",
+      "full_address": "Address: 153 JOO CHIAT ROAD Singapore 427431 (1ST STOREY)"
+    },
+    {
+      "excel_row": 1146,
+      "sfa_licence": "SE23924C000",
+      "postal_code": "368216",
+      "f_and_b_name": "825 CAFE",
+      "full_address": "Address: 526 MACPHERSON ROAD #---,Singapore 368216 (LEVEL 1)"
+    },
+    {
+      "excel_row": 1149,
+      "sfa_licence": "C67009J008",
+      "postal_code": "118508",
+      "f_and_b_name": "83 Drinks Stall",
+      "full_address": "Address: 83/85 PASIR PANJANG ROAD WEST SEA GARDENS,Singapore 118508"
+    },
+    {
+      "excel_row": 1190,
+      "sfa_licence": "E57001K000",
+      "postal_code": "338814",
+      "f_and_b_name": "88 HONGKONG CAFE PTE LTD",
+      "full_address": "Address: 308 LAVENDER STREET Singapore 338814"
+    },
+    {
+      "excel_row": 1193,
+      "sfa_licence": "CE21M10P000",
+      "postal_code": "338813",
+      "f_and_b_name": "88 ROAST MEAT",
+      "full_address": "Address: 306 LAVENDER STREET Singapore 338813"
+    },
+    {
+      "excel_row": 1262,
+      "sfa_licence": "CE08F07E000",
+      "postal_code": "229459",
+      "f_and_b_name": "99",
+      "full_address": "Address: 35 CUPPAGE ROAD CUPPAGE TERRACE,Singapore 229459"
+    },
+    {
+      "excel_row": 1263,
+      "sfa_licence": "C93182J000",
+      "postal_code": "118156",
+      "f_and_b_name": "99 BUONA VISTA KITCHEN PTE LTD",
+      "full_address": "Address: 22 SOUTH BUONA VISTA ROAD Singapore 118156"
+    },
+    {
+      "excel_row": 1290,
+      "sfa_licence": "E74082P000",
+      "postal_code": "427542",
+      "f_and_b_name": "A Gun Pub",
+      "full_address": "Address: 290N JOO CHIAT ROAD Singapore 427542"
+    },
+    {
+      "excel_row": 1307,
+      "sfa_licence": "S99126P000",
+      "postal_code": "799501",
+      "f_and_b_name": "A KITCHEN JALAN KAYU",
+      "full_address": "Address: 273 JALAN KAYU Singapore 799501 (LEVEL 1)"
+    },
+    {
+      "excel_row": 1310,
+      "sfa_licence": "CE22355B000",
+      "postal_code": "307630",
+      "f_and_b_name": "A KITCHEN NOVENA",
+      "full_address": "Address: 187/185 THOMSON ROAD GOLDHILL SHOPPING CENTRE,Singapore 307630 (1ST STOREY)"
+    },
+    {
+      "excel_row": 1323,
+      "sfa_licence": "NW25G67V000",
+      "postal_code": "669723",
+      "f_and_b_name": "A Taste of Korea",
+      "full_address": "Address: 91 HILLVIEW LINK #02-05,CMPB,Singapore 669723 (MR14)"
+    },
+    {
+      "excel_row": 1330,
+      "sfa_licence": "E63024B003",
+      "postal_code": "555966",
+      "f_and_b_name": "A&J Gourmet Pte Ltd",
+      "full_address": "Address: 70 SERANGOON GARDEN WAY SERANGOON GARDEN ESTATE,Singapore 555966"
+    },
+    {
+      "excel_row": 1372,
+      "sfa_licence": "CE24J76X001",
+      "postal_code": "218141",
+      "f_and_b_name": "A2B",
+      "full_address": "Address: 462 SERANGOON ROAD Singapore 218141"
+    },
+    {
+      "excel_row": 1378,
+      "sfa_licence": "W02187X000",
+      "postal_code": "049364",
+      "f_and_b_name": "A8",
+      "full_address": "Address: 8A CIRCULAR ROAD Singapore 049364 Level 2 only"
+    },
+    {
+      "excel_row": 1387,
+      "sfa_licence": "B87050N000",
+      "postal_code": "758353",
+      "f_and_b_name": "AA SPECIAL RESTAURANT",
+      "full_address": "Address: 343 SEMBAWANG ROAD Singapore 758353"
+    },
+    {
+      "excel_row": 1391,
+      "sfa_licence": "W95364P004",
+      "postal_code": "209393",
+      "f_and_b_name": "AAQIL FOOD AND CAFE PTE. LTD.",
+      "full_address": "Address: 65 DUNLOP STREET Singapore 209393 Level 1"
+    },
+    {
+      "excel_row": 1434,
+      "sfa_licence": "W54009J000",
+      "postal_code": "247781",
+      "f_and_b_name": "ABC D CORNER RESTAURANT",
+      "full_address": "Address: 56 ZION ROAD Singapore 247781 (1ST STOREY)"
+    },
+    {
+      "excel_row": 1450,
+      "sfa_licence": "CE22M75B000",
+      "postal_code": "218671",
+      "f_and_b_name": "Abex Masbie Chocolate",
+      "full_address": "Address: 425 RACE COURSE ROAD Singapore 218671 (1ST STOREY)"
+    },
+    {
+      "excel_row": 1455,
+      "sfa_licence": "E98070B000",
+      "postal_code": "389599",
+      "f_and_b_name": "Abila Pte Ltd",
+      "full_address": "Address: 672 GEYLANG ROAD Singapore 389599"
+    },
+    {
+      "excel_row": 1459,
+      "sfa_licence": "SE06379E000",
+      "postal_code": "389604",
+      "f_and_b_name": "ABILA PTE LTD",
+      "full_address": "Address: 678 GEYLANG ROAD Singapore 389604 (1st Storey)"
+    },
+    {
+      "excel_row": 1469,
+      "sfa_licence": "CE21621L000",
+      "postal_code": "208970",
+      "f_and_b_name": "ABSURDITIES",
+      "full_address": "Address: 311 JALAN BESAR Singapore 208970 LEVEL 1"
+    },
+    {
+      "excel_row": 1470,
+      "sfa_licence": "CE09H15J000",
+      "postal_code": "198705",
+      "f_and_b_name": "ABU MUBARAK MANDI RICE",
+      "full_address": "Address: 737 NORTH BRIDGE ROAD Singapore 198705"
+    },
+    {
+      "excel_row": 1474,
+      "sfa_licence": "CE14859B000",
+      "postal_code": "209008",
+      "f_and_b_name": "Abundance (Jalan Besar)",
+      "full_address": "Address: 399 JALAN BESAR Singapore 209008"
+    },
+    {
+      "excel_row": 1488,
+      "sfa_licence": "W90041A000",
+      "postal_code": "088475",
+      "f_and_b_name": "ACE OF SPADES BAR",
+      "full_address": "Address: 54 TANJONG PAGAR ROAD Singapore 088475 (LEVEL 1 & 2)"
+    },
+    {
+      "excel_row": 1492,
+      "sfa_licence": "W91165B000",
+      "postal_code": "238846",
+      "f_and_b_name": "Acid Bar",
+      "full_address": "Address: 180 ORCHARD ROAD Singapore 238846"
+    },
+    {
+      "excel_row": 1493,
+      "sfa_licence": "CE21G50J000",
+      "postal_code": "088895",
+      "f_and_b_name": "Acoustics Coffee Bar",
+      "full_address": "Address: 61 NEIL ROAD Singapore 088895 (Ground Level)"
+    },
+    {
+      "excel_row": 1496,
+      "sfa_licence": "W03269J000",
+      "postal_code": "089142",
+      "f_and_b_name": "Acqua e Farina",
+      "full_address": "Address: 35A KEONG SAIK ROAD Singapore 089142"
+    },
+    {
+      "excel_row": 1508,
+      "sfa_licence": "S81103P000",
+      "postal_code": "579077",
+      "f_and_b_name": "Addiction Bistro",
+      "full_address": "Address: 1 CLOVER WAY CLOVER PARK,Singapore 579077"
+    },
+    {
+      "excel_row": 1582,
+      "sfa_licence": "CE25H35N000",
+      "postal_code": "069472",
+      "f_and_b_name": "Ah Gong Teochew Noodle",
+      "full_address": "Address: 8 CLUB STREET #B2-06,Singapore 069472"
+    },
+    {
+      "excel_row": 1587,
+      "sfa_licence": "W53012X004",
+      "postal_code": "329799",
+      "f_and_b_name": "AH HAK BAK KUT TEH",
+      "full_address": "Address: 395/397 BALESTIER ROAD Singapore 329799"
+    },
+    {
+      "excel_row": 1628,
+      "sfa_licence": "NE16699L000",
+      "postal_code": "529684",
+      "f_and_b_name": "AH KHOO",
+      "full_address": "Address: 51 TAMPINES AVENUE 4 #B1-39,OUR TAMPINES HUB,Singapore 529684 OUR TAMPINES HUB"
+    },
+    {
+      "excel_row": 1639,
+      "sfa_licence": "E56014V000",
+      "postal_code": "427786",
+      "f_and_b_name": "AH LIM MEE POK",
+      "full_address": "Address: 64 JOO CHIAT PLACE Singapore 427786 LEVEL 1"
+    },
+    {
+      "excel_row": 1640,
+      "sfa_licence": "E58014V003",
+      "postal_code": "428925",
+      "f_and_b_name": "Ah Lim Mee Pok",
+      "full_address": "Address: 228 EAST COAST ROAD Singapore 428925"
+    },
+    {
+      "excel_row": 1694,
+      "sfa_licence": "CE25N22E000",
+      "postal_code": "189876",
+      "f_and_b_name": "AH SEAH TRADING",
+      "full_address": "Address: 261 VICTORIA STREET #01-242,#01-243,Singapore 189876"
+    },
+    {
+      "excel_row": 1725,
+      "sfa_licence": "CE06G45C000",
+      "postal_code": "388831",
+      "f_and_b_name": "AH YAT SEAFOOD RESTAURANT",
+      "full_address": "Address: 19/17 SIMS WAY Singapore 388831"
+    },
+    {
+      "excel_row": 1729,
+      "sfa_licence": "SE11B74V000",
+      "postal_code": "423623",
+      "f_and_b_name": "AH YEE'S SOON KUEH",
+      "full_address": "Address: 124 TEMBELING ROAD Singapore 423623"
+    },
+    {
+      "excel_row": 1741,
+      "sfa_licence": "CE15H68C000",
+      "postal_code": "088840",
+      "f_and_b_name": "AHIMSA",
+      "full_address": "Address: 76 NEIL ROAD Singapore 088840"
+    },
+    {
+      "excel_row": 1752,
+      "sfa_licence": "SW16B62E000",
+      "postal_code": "598603",
+      "f_and_b_name": "AI RYORI F&B",
+      "full_address": "Address: 104 JALAN JURONG KECHIL #01-02,Singapore 598603"
+    },
+    {
+      "excel_row": 1758,
+      "sfa_licence": "CE25R25E000",
+      "postal_code": "068580",
+      "f_and_b_name": "Aifokato",
+      "full_address": "Address: 111 TELOK AYER STREET Singapore 068580"
+    },
+    {
+      "excel_row": 1771,
+      "sfa_licence": "W97277X000",
+      "postal_code": "188661",
+      "f_and_b_name": "Aisekiya Restaurant Bar",
+      "full_address": "Address: 68/70 PRINSEP STREET Singapore 188661 (1st storey)"
+    }
+  ]
+}

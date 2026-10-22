@@ -1,0 +1,72 @@
+{
+  "schema_version": "hungry.first_party_menu_increment.v1",
+  "snapshot_id": "refresh136_official_menus_20261019",
+  "observed_at_sgt": "2026-10-19",
+  "workbook_path": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "dfdd8b9833f249e0c4539c8c8ed861f06df7f40ba842875aa6375b13d3c7e999",
+  "workbook_edited": false,
+  "scope": "Read-only research proposal for up to two exact SFA branches with zero menu rows. No Refresh135 target branches repeated.",
+  "sources": [
+    {
+      "url": "https://jollibee.com.sg/our-menu",
+      "source_type": "Official Jollibee Singapore menu",
+      "retrieved_at": "2026-10-19",
+      "http_status": 200,
+      "facts_captured": "Current menu categories, displayed item names, and displayed numeric prices. Page does not explicitly label currency or confirm availability by branch."
+    },
+    {
+      "url": "https://jollibee.com.sg/locate",
+      "source_type": "Official Jollibee Singapore outlet locator",
+      "retrieved_at": "2026-10-19",
+      "http_status": 200,
+      "facts_captured": "Exact City Square Mall and Suntec City outlet names and addresses."
+    }
+  ],
+  "workbook_match": {
+    "directory_sheet": "Public F&B Directory",
+    "menu_sheet": "Menu Items",
+    "dedupe_rule": "Exact SFA licence; item candidates are proposals only and were not inserted into the workbook.",
+    "branches": [
+      {
+        "branch": "City Square Mall",
+        "sfa_licence": "CE15H95V000",
+        "directory_name": "JOLLIBEE",
+        "directory_address": "180 KITCHENER ROAD #B1-07,CITY SQUARE MALL,Singapore 208539",
+        "official_locator_address": "180 Kitchener Road, B1-07, City Square Mall, 208539",
+        "existing_menu_rows": 0,
+        "match": "Exact outlet name, street address, unit and mall match between official locator and SFA directory."
+      },
+      {
+        "branch": "Suntec City",
+        "sfa_licence": "CE19U03X000",
+        "directory_name": "JOLLIBEE",
+        "directory_address": "3 TEMASEK BOULEVARD #B1-123,#B1-124,SUNTEC CITY MALL,Singapore 038983",
+        "official_locator_address": "3 Temasek Blvd, #B1-123/124 Singapore, 038983",
+        "existing_menu_rows": 0,
+        "match": "Exact outlet name, street address, units and mall match between official locator and SFA directory."
+      }
+    ],
+    "refresh135_exclusion_check": "Neither proposed branch is Jollibee AMK Hub; excluded named Refresh135 targets are not included."
+  },
+  "menu_scope_limit": "Official source is a Singapore brand-level menu. Outlet-level availability is not stated, so the candidate items must not be represented as verified available at either target branch without further branch-specific evidence. Prices are transcribed exactly as displayed; the page does not explicitly state a currency code, so SGD is not asserted.",
+  "menu_item_proposals": [
+    {"Applicable SFA Licence(s)": "CE15H95V000; CE19U03X000", "F&B Name": "JOLLIBEE", "Menu Item": "1pc Chickenjoy Ala Carte", "Section": "Chickenjoy / Ala Carte", "Variant / Notes": "Original or spicy selectable", "Price As Published": "4.95", "Menu Scope": "Singapore brand-level official menu; availability at the exact branches is unconfirmed.", "Official / Source URL": "https://jollibee.com.sg/our-menu", "Observed / Updated": "2026-10-19", "Freshness Status": "Official menu page observed 2026-10-19; prices may change.", "Source Type": "Official Singapore brand menu page", "Rights / Reuse Status": "Facts transcribed; copyright/reuse permission for menu text not assessed."},
+    {"Applicable SFA Licence(s)": "CE15H95V000; CE19U03X000", "F&B Name": "JOLLIBEE", "Menu Item": "6pc Chickenjoy Bucket", "Section": "Chickenjoy / Ala Carte", "Variant / Notes": "Original or spicy; combo option shown", "Price As Published": "20.00", "Menu Scope": "Singapore brand-level official menu; availability at the exact branches is unconfirmed.", "Official / Source URL": "https://jollibee.com.sg/our-menu", "Observed / Updated": "2026-10-19", "Freshness Status": "Official menu page observed 2026-10-19; prices may change.", "Source Type": "Official Singapore brand menu page", "Rights / Reuse Status": "Facts transcribed; copyright/reuse permission for menu text not assessed."},
+    {"Applicable SFA Licence(s)": "CE15H95V000; CE19U03X000", "F&B Name": "JOLLIBEE", "Menu Item": "1pc Chickenjoy with 1 Side", "Section": "Chickenjoy / Ala Carte", "Variant / Notes": "Original or spicy selectable", "Price As Published": "5.95", "Menu Scope": "Singapore brand-level official menu; availability at the exact branches is unconfirmed.", "Official / Source URL": "https://jollibee.com.sg/our-menu", "Observed / Updated": "2026-10-19", "Freshness Status": "Official menu page observed 2026-10-19; prices may change.", "Source Type": "Official Singapore brand menu page", "Rights / Reuse Status": "Facts transcribed; copyright/reuse permission for menu text not assessed."},
+    {"Applicable SFA Licence(s)": "CE15H95V000; CE19U03X000", "F&B Name": "JOLLIBEE", "Menu Item": "1pc Chickenjoy with Jolly Spaghetti", "Section": "Chickenjoy / Ala Carte", "Variant / Notes": "Original or spicy selectable", "Price As Published": "7.50", "Menu Scope": "Singapore brand-level official menu; availability at the exact branches is unconfirmed.", "Official / Source URL": "https://jollibee.com.sg/our-menu", "Observed / Updated": "2026-10-19", "Freshness Status": "Official menu page observed 2026-10-19; prices may change.", "Source Type": "Official Singapore brand menu page", "Rights / Reuse Status": "Facts transcribed; copyright/reuse permission for menu text not assessed."},
+    {"Applicable SFA Licence(s)": "CE15H95V000; CE19U03X000", "F&B Name": "JOLLIBEE", "Menu Item": "1pc Chickenjoy with 1 Side Value Meal", "Section": "Chickenjoy / Value Meals", "Variant / Notes": "Original or spicy selectable", "Price As Published": "6.95", "Menu Scope": "Singapore brand-level official menu; availability at the exact branches is unconfirmed.", "Official / Source URL": "https://jollibee.com.sg/our-menu", "Observed / Updated": "2026-10-19", "Freshness Status": "Official menu page observed 2026-10-19; prices may change.", "Source Type": "Official Singapore brand menu page", "Rights / Reuse Status": "Facts transcribed; copyright/reuse permission for menu text not assessed."},
+    {"Applicable SFA Licence(s)": "CE15H95V000; CE19U03X000", "F&B Name": "JOLLIBEE", "Menu Item": "1pc Chickenjoy with Jolly Spaghetti Value Meal", "Section": "Chickenjoy / Value Meals", "Variant / Notes": "Original or spicy selectable", "Price As Published": "8.50", "Menu Scope": "Singapore brand-level official menu; availability at the exact branches is unconfirmed.", "Official / Source URL": "https://jollibee.com.sg/our-menu", "Observed / Updated": "2026-10-19", "Freshness Status": "Official menu page observed 2026-10-19; prices may change.", "Source Type": "Official Singapore brand menu page", "Rights / Reuse Status": "Facts transcribed; copyright/reuse permission for menu text not assessed."},
+    {"Applicable SFA Licence(s)": "CE15H95V000; CE19U03X000", "F&B Name": "JOLLIBEE", "Menu Item": "Chickenjoy Nasi Lemak", "Section": "Nasi Lemak / Ala Carte", "Variant / Notes": "Original or spicy selectable", "Price As Published": "5.50", "Menu Scope": "Singapore brand-level official menu; availability at the exact branches is unconfirmed.", "Official / Source URL": "https://jollibee.com.sg/our-menu", "Observed / Updated": "2026-10-19", "Freshness Status": "Official menu page observed 2026-10-19; prices may change.", "Source Type": "Official Singapore brand menu page", "Rights / Reuse Status": "Facts transcribed; copyright/reuse permission for menu text not assessed."},
+    {"Applicable SFA Licence(s)": "CE15H95V000; CE19U03X000", "F&B Name": "JOLLIBEE", "Menu Item": "Yumburger", "Section": "Beef Burgers / Ala Carte", "Variant / Notes": "Normal or cheesy selectable", "Price As Published": "2.95", "Menu Scope": "Singapore brand-level official menu; availability at the exact branches is unconfirmed.", "Official / Source URL": "https://jollibee.com.sg/our-menu", "Observed / Updated": "2026-10-19", "Freshness Status": "Official menu page observed 2026-10-19; prices may change.", "Source Type": "Official Singapore brand menu page", "Rights / Reuse Status": "Facts transcribed; copyright/reuse permission for menu text not assessed."},
+    {"Applicable SFA Licence(s)": "CE15H95V000; CE19U03X000", "F&B Name": "JOLLIBEE", "Menu Item": "Yumburger Value Meal", "Section": "Beef Burgers / Value Meal", "Variant / Notes": "Normal or cheesy selectable", "Price As Published": "4.95", "Menu Scope": "Singapore brand-level official menu; availability at the exact branches is unconfirmed.", "Official / Source URL": "https://jollibee.com.sg/our-menu", "Observed / Updated": "2026-10-19", "Freshness Status": "Official menu page observed 2026-10-19; prices may change.", "Source Type": "Official Singapore brand menu page", "Rights / Reuse Status": "Facts transcribed; copyright/reuse permission for menu text not assessed."},
+    {"Applicable SFA Licence(s)": "CE15H95V000; CE19U03X000", "F&B Name": "JOLLIBEE", "Menu Item": "Chicken Sandwich", "Section": "Chicken Sandwich / Ala Carte", "Variant / Notes": "Classic or spicy selectable", "Price As Published": "6.90", "Menu Scope": "Singapore brand-level official menu; availability at the exact branches is unconfirmed.", "Official / Source URL": "https://jollibee.com.sg/our-menu", "Observed / Updated": "2026-10-19", "Freshness Status": "Official menu page observed 2026-10-19; prices may change.", "Source Type": "Official Singapore brand menu page", "Rights / Reuse Status": "Facts transcribed; copyright/reuse permission for menu text not assessed."},
+    {"Applicable SFA Licence(s)": "CE15H95V000; CE19U03X000", "F&B Name": "JOLLIBEE", "Menu Item": "4pcs Original Chicken Nuggets", "Section": "Chicken Nuggets / Ala Carte", "Variant / Notes": "Classic or spicy selectable", "Price As Published": "4.95", "Menu Scope": "Singapore brand-level official menu; availability at the exact branches is unconfirmed.", "Official / Source URL": "https://jollibee.com.sg/our-menu", "Observed / Updated": "2026-10-19", "Freshness Status": "Official menu page observed 2026-10-19; prices may change.", "Source Type": "Official Singapore brand menu page", "Rights / Reuse Status": "Facts transcribed; copyright/reuse permission for menu text not assessed."},
+    {"Applicable SFA Licence(s)": "CE15H95V000; CE19U03X000", "F&B Name": "JOLLIBEE", "Menu Item": "Jolly Hot Dog", "Section": "Jolly Hotdog / Ala Carte", "Variant / Notes": "Classic or spicy selectable", "Price As Published": "4.50", "Menu Scope": "Singapore brand-level official menu; availability at the exact branches is unconfirmed.", "Official / Source URL": "https://jollibee.com.sg/our-menu", "Observed / Updated": "2026-10-19", "Freshness Status": "Official menu page observed 2026-10-19; prices may change.", "Source Type": "Official Singapore brand menu page", "Rights / Reuse Status": "Facts transcribed; copyright/reuse permission for menu text not assessed."},
+    {"Applicable SFA Licence(s)": "CE15H95V000; CE19U03X000", "F&B Name": "JOLLIBEE", "Menu Item": "Fiesta Noodles", "Section": "Noodles / Pasta / Ala Carte", "Variant / Notes": null, "Price As Published": "6.30", "Menu Scope": "Singapore brand-level official menu; availability at the exact branches is unconfirmed.", "Official / Source URL": "https://jollibee.com.sg/our-menu", "Observed / Updated": "2026-10-19", "Freshness Status": "Official menu page observed 2026-10-19; prices may change.", "Source Type": "Official Singapore brand menu page", "Rights / Reuse Status": "Facts transcribed; copyright/reuse permission for menu text not assessed."},
+    {"Applicable SFA Licence(s)": "CE15H95V000; CE19U03X000", "F&B Name": "JOLLIBEE", "Menu Item": "Jolly Spaghetti", "Section": "Noodles / Pasta / Ala Carte", "Variant / Notes": null, "Price As Published": "5.30", "Menu Scope": "Singapore brand-level official menu; availability at the exact branches is unconfirmed.", "Official / Source URL": "https://jollibee.com.sg/our-menu", "Observed / Updated": "2026-10-19", "Freshness Status": "Official menu page observed 2026-10-19; prices may change.", "Source Type": "Official Singapore brand menu page", "Rights / Reuse Status": "Facts transcribed; copyright/reuse permission for menu text not assessed."},
+    {"Applicable SFA Licence(s)": "CE15H95V000; CE19U03X000", "F&B Name": "JOLLIBEE", "Menu Item": "Peach Mango Pie", "Section": "Desserts / Ala Carte", "Variant / Notes": null, "Price As Published": "1.90", "Menu Scope": "Singapore brand-level official menu; availability at the exact branches is unconfirmed.", "Official / Source URL": "https://jollibee.com.sg/our-menu", "Observed / Updated": "2026-10-19", "Freshness Status": "Official menu page observed 2026-10-19; prices may change.", "Source Type": "Official Singapore brand menu page", "Rights / Reuse Status": "Facts transcribed; copyright/reuse permission for menu text not assessed."},
+    {"Applicable SFA Licence(s)": "CE15H95V000; CE19U03X000", "F&B Name": "JOLLIBEE", "Menu Item": "Fries", "Section": "Sides", "Variant / Notes": "Size options displayed as Lrg, Med, and Red; the source does not define the labels", "Price As Published": "4.30", "Menu Scope": "Singapore brand-level official menu; availability at the exact branches is unconfirmed.", "Official / Source URL": "https://jollibee.com.sg/our-menu", "Observed / Updated": "2026-10-19", "Freshness Status": "Official menu page observed 2026-10-19; prices may change.", "Source Type": "Official Singapore brand menu page", "Rights / Reuse Status": "Facts transcribed; copyright/reuse permission for menu text not assessed."}
+  ],
+  "untouched_fields": ["Workbook file and all sheets", "Public F&B Directory rows and fields", "Menu Items rows", "Image Candidates", "Coverage & Sources"],
+  "limitations": ["Proposal only; no workbook cells or runtime data changed.", "Branch locator evidence confirms outlet identity and address, not branch-specific menu inventory.", "Official menu price strings are reproduced as displayed without an explicit currency label.", "Menu facts and listed prices may change; rights to reuse menu text were not assessed."]
+}

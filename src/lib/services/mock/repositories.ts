@@ -92,7 +92,15 @@ export const dataRepositoryMock = {
         );
 
       return (
-        matchesQuery && matchesDietary && matchesCategory && dish.distanceMeters <= filters.radius
+        matchesQuery &&
+        matchesDietary &&
+        matchesCategory &&
+        dish.distanceMeters <= filters.radius &&
+        (filters.maxPrice === undefined || dish.price <= filters.maxPrice) &&
+        (!filters.foodTypeTag || dish.foodTypeTag === filters.foodTypeTag) &&
+        (!filters.cuisineTags?.length ||
+          (dish.foodTypeTag !== undefined && filters.cuisineTags.includes(dish.foodTypeTag))) &&
+        (!filters.openOnly || venues.some((venue) => venue.id === dish.venueId && venue.isOpen))
       );
     });
 

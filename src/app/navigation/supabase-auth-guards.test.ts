@@ -18,7 +18,7 @@ test("Supabase auth bootstrap gates protected-route redirects until session rest
   assert.match(sessionStore, /isAuthReady: false/);
   assert.match(sessionStore, /markAuthReady: \(\) => set\(\{ isAuthReady: true \}\)/);
   assert.match(bootstrap, /const hasHydrated = useSessionStore/);
-  assert.match(bootstrap, /if \(!hasHydrated\) \{\s*return;\s*\}/);
+  assert.match(bootstrap, /if \(!hasHydrated \|\| !privateStoresHydrated\) \{\s*return;\s*\}/);
   assert.match(bootstrap, /client\.auth\s*\.\s*getSession\(\)/);
   assert.match(bootstrap, /client\.auth\.onAuthStateChange/);
   assert.match(rootNavigator, /const isAuthReady = useSessionStore/);
@@ -60,10 +60,7 @@ test("Supabase auth responses hydrate the app profile store", () => {
     supabaseService.indexOf("function participantKey"),
   );
   assert.doesNotMatch(oauthHandler, /await toAppSession\(client\)/);
-  assert.match(
-    profileHelper,
-    /options\.profileReady \?\? getHungryService\(\)\.profile\.getProfile\(\)/,
-  );
+  assert.match(profileHelper, /await options\.profileReady/);
   assert.doesNotMatch(
     loginScreen,
     /await getHungryService\(\)\.auth\.signIn\(values\.email, values\.password\);\s*\n\s*\}/,

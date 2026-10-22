@@ -1,0 +1,134 @@
+{
+  "proposal_id": "refresh134_menu_links_20261019",
+  "observed_date": "2026-10-19",
+  "baseline_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_sha256": "2e398d1a6c872287c0b093a40cac17a63557293b27471b82832756ba6019a916",
+  "workbook_edited": false,
+  "proposal_status": "evidence_only_not_integrated",
+  "method": "Supplemental proposal only. Adds an exact outlet-specific first-party pickup ordering URL and concise count summary for Segar @ Chinatown. For Jollibee AMK Hub, preserves the current first-party brand menu URL and appends a separately labelled Foodpanda delivery listing URL, plus a concise delivery-only menu snapshot summary. Exact outlet matches use SFA licence, address, unit and postal code. No workbook edits or paid sources.",
+  "source_set": [
+    {
+      "url": "https://www.segar.group/",
+      "publisher": "Segar Group Singapore",
+      "source_class": "first-party pickup ordering",
+      "observed_at": "2026-10-19 05:49 SGT",
+      "description": "Outlet-selected Segar @ Chinatown pickup menu and item/SGD prices; exact pickup address displayed."
+    },
+    {
+      "url": "https://www.foodpanda.sg/restaurant/zihd/jollibee-amk-hub",
+      "publisher": "Foodpanda Singapore",
+      "source_class": "third-party delivery marketplace",
+      "observed_at": "2026-10-19 05:49:54 SGT",
+      "description": "Jollibee AMK Hub delivery menu; 52 distinct item/section pairs observed. Delivery-only price scope retained."
+    },
+    {
+      "url": "https://jollibee.com.sg/our-menu",
+      "publisher": "Jollibee Singapore",
+      "source_class": "first-party brand menu",
+      "observed_at": "2026-10-18 research snapshot",
+      "description": "Existing brand-wide menu URL retained and labelled separately from the outlet-specific Foodpanda link."
+    }
+  ],
+  "summary": {
+    "records": 2,
+    "field_proposals": 4,
+    "field_counts": {
+      "Menu URL": 2,
+      "Menu / Price": 2
+    },
+    "source_types": {
+      "first_party_pickup_ordering_page": 2,
+      "third_party_delivery_listing_supplement_to_first_party_menu_url": 1,
+      "third_party_delivery_listing_snapshot_summary": 1
+    },
+    "menu_snapshots": {
+      "CE13571N000": {
+        "outlet": "Segar @ Chinatown",
+        "item_count": 80,
+        "price_scope": "pickup",
+        "source_class": "first-party",
+        "observed_date": "2026-10-19"
+      },
+      "CE13Z25A000": {
+        "outlet": "Jollibee AMK Hub",
+        "distinct_item_section_pairs": 52,
+        "price_scope": "Foodpanda delivery only; not dine-in verified",
+        "source_class": "third-party marketplace",
+        "observed_date": "2026-10-19"
+      }
+    },
+    "clears": 0
+  },
+  "proposals": [
+    {
+      "row_number": 24441,
+      "sfa_licence": "CE13571N000",
+      "existing_name": "SEGAR RESTAURANT",
+      "existing_address": "Address: 133 NEW BRIDGE ROAD #B2-39,#B2-40,#B2-41,CHINATOWN POINT,Singapore 059413",
+      "field": "Menu URL",
+      "before": null,
+      "after": "https://www.segar.group/",
+      "source_url": "https://www.segar.group/",
+      "source_type": "first_party_pickup_ordering_page",
+      "menu_scope": "Outlet-specific pickup ordering menu; Segar @ Chinatown, 133 New Bridge Road #B2-39/40/41, Chinatown Point, Singapore 059413.",
+      "evidence": "Official ordering page had Segar @ Chinatown selected and displayed the matching pickup address, item names and SGD pickup prices. Exact outlet crosswalk matches SFA licence CE13571N000, units and postal code. Observed live 2026-10-19 05:49 SGT.",
+      "freshness_caveat": "Dynamic pickup menu, price and availability can change; shown availability is not a guarantee of stock at order time.",
+      "observed_date": "2026-10-19",
+      "confidence": "high"
+    },
+    {
+      "row_number": 24441,
+      "sfa_licence": "CE13571N000",
+      "existing_name": "SEGAR RESTAURANT",
+      "existing_address": "Address: 133 NEW BRIDGE ROAD #B2-39,#B2-40,#B2-41,CHINATOWN POINT,Singapore 059413",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Snapshot (2026-10-19): 80 outlet-specific pickup menu items with SGD prices on the official Segar @ Chinatown ordering page; prices and availability may change.",
+      "source_url": "https://www.segar.group/",
+      "source_type": "first_party_pickup_ordering_page_snapshot_summary",
+      "menu_scope": "Outlet-specific pickup ordering menu; not claimed as dine-in pricing.",
+      "evidence": "Concise roll-up of 80 item records from the exact selected outlet page. Source page displayed the Chinatown Point pickup address and published item prices.",
+      "freshness_caveat": "Captured live 2026-10-19 05:49 SGT; dynamic pickup menu, price and stock may change.",
+      "observed_date": "2026-10-19",
+      "confidence": "high"
+    },
+    {
+      "row_number": 14289,
+      "sfa_licence": "CE13Z25A000",
+      "existing_name": "Jollibee",
+      "existing_address": "Address: 53 ANG MO KIO AVENUE 3 #B1-47,#B1-48,#B1-51,#B1-51A,AMK HUB,Singapore 569933",
+      "field": "Menu URL",
+      "before": "https://jollibee.com.sg/our-menu",
+      "after": "Official menu: https://jollibee.com.sg/our-menu | Foodpanda delivery menu (AMK Hub): https://www.foodpanda.sg/restaurant/zihd/jollibee-amk-hub",
+      "source_url": "https://www.foodpanda.sg/restaurant/zihd/jollibee-amk-hub",
+      "source_type": "third_party_delivery_listing_supplement_to_first_party_menu_url",
+      "menu_scope": "Foodpanda listing is outlet-specific delivery menu; preserve the existing first-party brand menu URL as separately labelled.",
+      "evidence": "Foodpanda listing name is Jollibee (AMK Hub) and its address is 53 Ang Mo Kio Avenue 3 #B1-51, AMK Hub, Singapore 569933, matching SFA licence CE13Z25A000 address/unit/postal. Existing directory value is the first-party brand menu and is retained, explicitly labelled.",
+      "freshness_caveat": "Foodpanda page observed 2026-10-19 SGT; search result suggested last crawl was the prior week. Delivery availability and prices are dynamic; prices are not verified dine-in prices.",
+      "observed_date": "2026-10-19",
+      "confidence": "high"
+    },
+    {
+      "row_number": 14289,
+      "sfa_licence": "CE13Z25A000",
+      "existing_name": "Jollibee",
+      "existing_address": "Address: 53 ANG MO KIO AVENUE 3 #B1-47,#B1-48,#B1-51,#B1-51A,AMK HUB,Singapore 569933",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Snapshot (2026-10-19): 52 distinct Foodpanda AMK Hub menu item/section pairs; delivery listing prices only, not verified dine-in prices. Availability and prices may change.",
+      "source_url": "https://www.foodpanda.sg/restaurant/zihd/jollibee-amk-hub",
+      "source_type": "third_party_delivery_listing_snapshot_summary",
+      "menu_scope": "Foodpanda delivery listing; listing page exact-matched to Jollibee AMK Hub. No dine-in price assertion.",
+      "evidence": "Roll-up of 52 distinct item/section records transcribed from Foodpanda page for the exact AMK Hub branch; address and unit match SFA licence CE13Z25A000.",
+      "freshness_caveat": "Page observed 2026-10-19 SGT; search result suggested last crawl was the prior week. Dynamic listing and discounts can change.",
+      "observed_date": "2026-10-19",
+      "confidence": "high"
+    }
+  ],
+  "limitations": [
+    "Segar pickup prices and stock can change and are not asserted as dine-in price.",
+    "Jollibee Foodpanda prices are delivery listing prices only; not verified as dine-in prices. Foodpanda search crawl timing was at least several days uncertain.",
+    "The Jollibee existing first-party brand menu URL remains preserved, separately labelled from the delivery URL.",
+    "Summaries describe observed proposal snapshots and do not guarantee menu completeness or present availability."
+  ]
+}

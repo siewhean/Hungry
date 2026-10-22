@@ -1,0 +1,52 @@
+{
+  "schema": "hungry.refresh138.integration.v1",
+  "integration_date": "2026-10-19",
+  "workbook": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_sha256": "bb74665b20d62a711463850a4d5de0648dc0237c4e1d75e96c9eb5f5a89d2d93",
+  "workbook_sha256_after": "e2b0a7e63ab806176f9476b6c79e00c9f9233d1918f023f39c1aa59031fa4583",
+  "integrated": {
+    "subway_directory_fields": 99,
+    "public_names": 2,
+    "menu_items_total": 55,
+    "menu_items_by_source": {
+      "jollibee_official_brand_level": 16,
+      "funtoast_foodpanda_delivery_only": 19,
+      "saizeriya_official_brand_level": 20
+    },
+    "image_candidates_review_only": 3,
+    "approved_image_urls_added": 0,
+    "coordinates_added": 0,
+    "permanent_closures_removed": 0
+  },
+  "source_snapshots": [
+    "subway_official_locator_blank_contact_proposal_20261019.json",
+    "exact_blank_name_closure_review_20261019.json",
+    "refresh136_official_menus_20261019.json",
+    "funtoast_junction8_delivery_menu_proposal_20261019.json",
+    "saizeriya_citysquare_menu_proposal_20261019.json",
+    "canonical_image_gap_proposals_20261019.json"
+  ],
+  "validation": {
+    "Subway_cells_exact_blank": 99,
+    "Bugis_names_exact_blank": 2,
+    "menu_outlet_licence_name_postal_exact": true,
+    "menu_proposal_rows_appended": 55,
+    "image_urls_unique": true,
+    "directory_ids_preserved": true,
+    "directory_alphabetical_blank_last": true,
+    "xlsx_zip_crc_pass": true
+  },
+  "limitations": [
+    "Jollibee and Saizeriya menu rows are brand-level official menus; exact branch item availability is unconfirmed.",
+    "Fun Toast prices are Foodpanda delivery listing prices, not verified dine-in prices.",
+    "Makan Prata images are tiny official menu thumbnails; not visually checked and reuse rights are not established; review-only.",
+    "No permanent closure removal; Kallang Leisure Park Burger King remains in conflict review.",
+    "No new coordinates were established; OneMap token was absent from the executing process."
+  ],
+  "source_revalidation": {
+    "jollibee_official_menu_snapshot_sha256": "dfdd8b9833f249e0c4539c8c8ed861f06df7f40ba842875aa6375b13d3c7e999",
+    "snapshot_predates_refresh137": true,
+    "revalidated_against_installed_refresh137_sha256": "bb74665b20d62a711463850a4d5de0648dc0237c4e1d75e96c9eb5f5a89d2d93",
+    "revalidation": "Both listed licence IDs remain unique current Jollibee directory rows with matching names and postal codes; exact duplicate source rows were checked against the installed Menu Items sheet. Menu association remains explicitly brand-level and branch availability is not claimed."
+  }
+}

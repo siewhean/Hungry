@@ -1,8 +1,14 @@
-import { useEffect, useState } from "react";
+import {
+  useCommunitySafetyRevision,
+  isContentHiddenForSession,
+} from "@/lib/security/communitySafety";
+import { useProfileStore } from "@/store/useProfileStore";
+import { filterConversations } from "@/features/home/socialState";
+import { useCallback, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ChevronLeft, Search } from "lucide-react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NavigationProp } from "@react-navigation/native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
@@ -30,28 +36,50 @@ export function DirectMessagesScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let isActive = true;
-    setIsLoading(true);
-    setLoadError(null);
-    getHungryService()
-      .chat.listConversations()
-      .then((loadedConversations) => {
-        if (!isActive) return;
-        setConversations(loadedConversations);
-      })
-      .catch((error: unknown) => {
-        if (!isActive) return;
-        setLoadError(error instanceof Error ? error.message : "Messages could not be loaded.");
-        setConversations([]);
-      })
-      .finally(() => {
-        if (isActive) setIsLoading(false);
-      });
-    return () => {
-      isActive = false;
-    };
-  }, []);
+  const accountId = useProfileStore((state) => state.profile.id);
+  const safetyRevision = useCommunitySafetyRevision();
+  const [loadedAccountId, setLoadedAccountId] = useState(accountId);
+  const [query, setQuery] = useState("");
+  const [retry, setRetry] = useState(0);
+  const visibleConversations = filterConversations(
+    loadedAccountId === accountId ? conversations : [],
+    query,
+  ).filter(
+    (conversation) =>
+      !conversation.participants.some(
+        (participant) =>
+          !participant.isCurrentUser &&
+          participant.userId &&
+          isContentHiddenForSession({ id: "", authorId: participant.userId }),
+      ),
+  );
+  void safetyRevision;
+
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+      setLoadedAccountId(accountId);
+      setConversations([]);
+      setIsLoading(true);
+      setLoadError(null);
+      getHungryService()
+        .chat.listConversations()
+        .then((loadedConversations) => {
+          if (!isActive) return;
+          setConversations(loadedConversations);
+        })
+        .catch((error: unknown) => {
+          if (!isActive) return;
+          setLoadError(error instanceof Error ? error.message : "Messages could not be loaded.");
+        })
+        .finally(() => {
+          if (isActive) setIsLoading(false);
+        });
+      return () => {
+        isActive = false;
+      };
+    }, [retry, accountId]),
+  );
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["top", "left", "right"]}>
@@ -68,6 +96,7 @@ export function DirectMessagesScreen() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Go back"
+            style={{ minWidth: 44, minHeight: 44, justifyContent: "center" }}
             onPress={() => navigation.goBack()}
           >
             <ChevronLeft color={palette.text} size={28} />
@@ -78,6 +107,9 @@ export function DirectMessagesScreen() {
 
         <View style={{ paddingHorizontal: spacing[3], marginBottom: spacing[4] }}>
           <Input
+            value={query}
+            onChangeText={setQuery}
+            accessibilityLabel="Search conversations"
             placeholder="Search messages..."
             leftIcon={<Search color={palette.textMuted} size={18} />}
           />
@@ -99,11 +131,12 @@ export function DirectMessagesScreen() {
               body="Unable to load your conversations."
               errorMessage={loadError}
               sendErrorContext="Direct messages screen"
+              ctaLabel="Retry"
+              onPress={() => setRetry((value) => value + 1)}
             />
           ) : null}
           {!isLoading &&
-            !loadError &&
-            conversations.map((chat) => {
+            visibleConversations.map((chat) => {
               const chatId = chat.id.trim();
               const name = chat.title.trim();
               const avatar = chat.avatarUrl?.trim() ?? "";
@@ -114,7 +147,11 @@ export function DirectMessagesScreen() {
                   accessibilityRole="button"
                   accessibilityLabel={`Open chat with ${name}`}
                   onPress={() => {
-                    void getHungryService().chat.markConversationRead(chatId);
+                    void getHungryService()
+                      .chat.markConversationRead(chatId)
+                      .catch(() =>
+                        setLoadError("Could not mark this chat as read. Retry to refresh."),
+                      );
                     navigation.navigate("ChatDetail", {
                       chatId,
                       name,
@@ -169,9 +206,9 @@ export function DirectMessagesScreen() {
               );
             })}
 
-          {!isLoading && !loadError && conversations.length === 0 ? (
+          {!isLoading && !loadError && visibleConversations.length === 0 ? (
             <EmptyState
-              title="No messages yet"
+              title={query ? "No matching conversations" : "No messages yet"}
               body="Chats will appear here once you start messaging."
             />
           ) : null}

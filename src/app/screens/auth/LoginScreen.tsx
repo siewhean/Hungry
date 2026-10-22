@@ -1,3 +1,4 @@
+import { useAuthOperation } from "@/features/auth/useAuthOperation";
 import type { NavigationProp } from "@react-navigation/native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Controller, useForm } from "react-hook-form";
@@ -7,11 +8,13 @@ import { useState } from "react";
 
 import { AppText, Button, FeedErrorBoundary, Input } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
-import { applySignedInProfile } from "@/features/auth/applySignedInProfile";
+import {
+  applySignedInProfile,
+  captureGuestProfileSnapshot,
+} from "@/features/auth/applySignedInProfile";
 import { getMockLoginFailure } from "@/features/auth/mockAuth";
 import { validateEmail, validateRequired } from "@/features/auth/validation";
-import { getHungryService } from "@/lib/services/serviceProvider";
-import { getConfiguredDataSource } from "@/lib/services/supabase/client";
+import { getHungryService, getServiceProvider } from "@/lib/services/serviceProvider";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -29,6 +32,7 @@ type FormValues = {
 };
 
 export function LoginScreen({ navigation }: Props) {
+  const { busy, run } = useAuthOperation();
   const { colorScheme, palette, spacing } = useHungryTheme();
   const oauthProvidersEnabled = FEATURE_FLAGS.oauthProvidersEnabled;
   const [showPassword, setShowPassword] = useState(false);
@@ -51,103 +55,121 @@ export function LoginScreen({ navigation }: Props) {
     });
   };
 
-  const handleLogin = handleSubmit(async (values) => {
-    try {
-      if (getConfiguredDataSource() === "supabase") {
+  const handleLogin = handleSubmit(async (values) =>
+    run(async () => {
+      const guestSnapshot = captureGuestProfileSnapshot();
+      try {
+        if (getServiceProvider().mode !== "supabase") {
+          const failure = getMockLoginFailure(values.email, values.password);
+          if (failure) {
+            showToast({ message: failure.message, tone: "error" });
+            return;
+          }
+        }
         const session = await getHungryService().auth.signIn(values.email, values.password);
-        await applySignedInProfile(session.profile, {
-          profileReady: session.profileReady,
-          onSyncWarning: () =>
-            showToast({
-              message: "Signed in, but your taste profile could not sync. Try updating it later.",
-              tone: "warning",
-            }),
-        });
-      } else {
-        const failure = getMockLoginFailure(values.email, values.password);
-        if (failure) {
-          showToast({ message: failure.message, tone: "error" });
+        if (
+          !(await applySignedInProfile(session.profile, {
+            profileReady: session.profileReady,
+            guestSnapshot,
+            onSyncWarning: () =>
+              showToast({
+                message: "Signed in, but your taste profile could not sync. Try updating it later.",
+                tone: "warning",
+              }),
+          }))
+        )
           return;
-        }
-      }
-      completeAuth({ completedOnboarding: true, skippedTasteQuiz: true });
-      showToast({ message: AUTH_COPY.login.successToast, tone: "success" });
-    } catch (err) {
-      const code =
-        (err as { error_code?: string; code?: string })?.error_code ??
-        (err as { error_code?: string; code?: string })?.code;
-      if (code === "email_not_confirmed") {
-        showToast({ message: AUTH_COPY.login.emailNotConfirmedToast, tone: "error" });
-      } else if (code === "invalid_credentials") {
-        showToast({ message: AUTH_COPY.login.invalidCredentialsToast, tone: "error" });
-      } else {
-        showToast({ message: AUTH_COPY.login.genericErrorToast, tone: "error" });
-      }
-    }
-  });
-
-  const handleProviderLogin = async (provider: AuthProvider) => {
-    const providerErrorMessage = (error: unknown) => {
-      const rawMessage =
-        (error as { message?: string })?.message ?? AUTH_COPY.login.genericErrorToast;
-      const message = rawMessage.toLowerCase();
-      if (message.includes("provider is not enabled")) {
-        return getAuthProviderUnavailableMessage(provider);
-      }
-      if (message.includes("cancelled")) {
-        return AUTH_COPY.login.providerCancelledToast;
-      }
-      if (message.includes("callback url was not trusted")) {
-        return message;
-      }
-      if (message.includes("state did not match")) {
-        return message;
-      }
-      if (message.includes("no active session") || message.includes("session credentials")) {
-        return rawMessage;
-      }
-
-      if (typeof __DEV__ !== "undefined" && __DEV__) {
-        return rawMessage;
-      }
-
-      return AUTH_COPY.login.genericErrorToast;
-    };
-
-    try {
-      if (getConfiguredDataSource() === "supabase") {
-        const service = getHungryService();
-        let session;
-        if (provider === "google") {
-          session = await service.auth.signInWithGoogle();
+        completeAuth({
+          userId: session.profile.id,
+          authProvider: "email",
+          completedOnboarding: true,
+        });
+        showToast({ message: AUTH_COPY.login.successToast, tone: "success" });
+      } catch (err) {
+        const code =
+          (err as { error_code?: string; code?: string })?.error_code ??
+          (err as { error_code?: string; code?: string })?.code;
+        if (code === "email_not_confirmed") {
+          showToast({ message: AUTH_COPY.login.emailNotConfirmedToast, tone: "info" });
+          navigation.navigate("EmailVerification", { email: values.email.trim() });
+        } else if (code === "invalid_credentials") {
+          showToast({ message: AUTH_COPY.login.invalidCredentialsToast, tone: "error" });
         } else {
-          session = await service.auth.signInWithApple();
+          showToast({ message: AUTH_COPY.login.genericErrorToast, tone: "error" });
         }
-        await applySignedInProfile(session.profile, {
-          profileReady: session.profileReady,
-          onSyncWarning: () =>
-            showToast({
-              message: "Signed in, but your taste profile could not sync. Try updating it later.",
-              tone: "warning",
-            }),
+      }
+    }),
+  );
+
+  const handleProviderLogin = async (provider: AuthProvider) =>
+    run(async () => {
+      const guestSnapshot = captureGuestProfileSnapshot();
+      const providerErrorMessage = (error: unknown) => {
+        const rawMessage =
+          (error as { message?: string })?.message ?? AUTH_COPY.login.genericErrorToast;
+        const message = rawMessage.toLowerCase();
+        if (message.includes("provider is not enabled")) {
+          return getAuthProviderUnavailableMessage(provider);
+        }
+        if (message.includes("cancelled")) {
+          return AUTH_COPY.login.providerCancelledToast;
+        }
+        if (message.includes("callback url was not trusted")) {
+          return message;
+        }
+        if (message.includes("state did not match")) {
+          return message;
+        }
+        if (message.includes("no active session") || message.includes("session credentials")) {
+          return rawMessage;
+        }
+
+        if (typeof __DEV__ !== "undefined" && __DEV__) {
+          return rawMessage;
+        }
+
+        return AUTH_COPY.login.genericErrorToast;
+      };
+
+      try {
+        if (getServiceProvider().mode === "supabase") {
+          const service = getHungryService();
+          let session;
+          if (provider === "google") {
+            session = await service.auth.signInWithGoogle();
+          } else {
+            session = await service.auth.signInWithApple();
+          }
+          if (
+            !(await applySignedInProfile(session.profile, {
+              profileReady: session.profileReady,
+              guestSnapshot,
+              onSyncWarning: () =>
+                showToast({
+                  message:
+                    "Signed in, but your taste profile could not sync. Try updating it later.",
+                  tone: "warning",
+                }),
+            }))
+          )
+            return;
+        }
+        completeAuth({ completedOnboarding: true });
+        showToast({ message: AUTH_COPY.login.providerSuccessToast, tone: "success" });
+      } catch (err) {
+        const message = providerErrorMessage(err);
+        showToast({
+          message,
+          tone: message === AUTH_COPY.login.providerCancelledToast ? "warning" : "error",
         });
       }
-      completeAuth({ completedOnboarding: true, skippedTasteQuiz: true });
-      showToast({ message: AUTH_COPY.login.providerSuccessToast, tone: "success" });
-    } catch (err) {
-      const message = providerErrorMessage(err);
-      showToast({
-        message,
-        tone: message === AUTH_COPY.login.providerCancelledToast ? "warning" : "error",
-      });
-    }
-  };
+    });
 
   return (
     <FeedErrorBoundary title={AUTH_COPY.login.errorTitle} body={AUTH_COPY.login.errorBody}>
       <AuthScreenShell
         title={AUTH_COPY.login.title}
-        scroll={false}
+        scroll
         compact
         contentOffsetTop={spacing[16]}
         wordmarkColor={colorScheme === "dark" ? palette.white : palette.navy}
@@ -166,6 +188,8 @@ export function LoginScreen({ navigation }: Props) {
                 accessible
                 accessibilityRole="button"
                 accessibilityLabel={AUTH_COPY.login.footerAction}
+                disabled={busy}
+                style={{ minHeight: 44, justifyContent: "center" }}
                 accessibilityHint="Opens the account creation screen"
                 onPress={() => navigation.navigate("SignUp")}
               >
@@ -199,6 +223,10 @@ export function LoginScreen({ navigation }: Props) {
                 <Input
                   autoCapitalize="none"
                   keyboardType="email-address"
+                  textContentType="emailAddress"
+                  autoComplete="email"
+                  autoCorrect={false}
+                  spellCheck={false}
                   placeholder={AUTH_COPY.login.emailPlaceholder}
                   value={value}
                   onChangeText={onChange}
@@ -220,7 +248,12 @@ export function LoginScreen({ navigation }: Props) {
                 <View style={{ gap: spacing[1] }}>
                   <Input
                     placeholder={AUTH_COPY.login.passwordPlaceholder}
+                    textContentType="password"
+                    autoComplete="current-password"
                     secureTextEntry={!showPassword}
+                    autoCorrect={false}
+                    spellCheck={false}
+                    autoCapitalize="none"
                     value={value}
                     onChangeText={onChange}
                     leftIcon={<Lock color={palette.textMuted} size={18} />}
@@ -235,7 +268,7 @@ export function LoginScreen({ navigation }: Props) {
                             : "Shows the password characters"
                         }
                         onPress={() => setShowPassword((current) => !current)}
-                        hitSlop={8}
+                        hitSlop={16}
                       >
                         {showPassword ? (
                           <EyeOff color={palette.textMuted} size={18} />
@@ -252,6 +285,8 @@ export function LoginScreen({ navigation }: Props) {
                       accessible
                       accessibilityRole="button"
                       accessibilityLabel={AUTH_COPY.login.forgotPasswordLink}
+                      disabled={busy}
+                      style={{ minHeight: 44, justifyContent: "center" }}
                       accessibilityHint="Opens password reset"
                       onPress={() => navigation.navigate("ForgotPassword")}
                     >
@@ -267,44 +302,48 @@ export function LoginScreen({ navigation }: Props) {
 
           <Button
             label={AUTH_COPY.login.primaryButton}
+            loading={busy}
             onPress={handleLogin}
-            rightIcon={<ArrowRight size={18} color={palette.white} />}
-            labelColor={palette.white}
+            rightIcon={<ArrowRight size={18} color={palette.navy} />}
           />
 
-          <View
-            style={{
-              alignItems: "center",
-              flexDirection: "row",
-              gap: spacing[3],
-              marginVertical: spacing[2],
-            }}
-          >
-            <View style={{ backgroundColor: palette.border, flex: 1, height: 1 }} />
-            <AppText variant="micro" tone="muted">
-              {AUTH_COPY.login.divider}
-            </AppText>
-            <View style={{ backgroundColor: palette.border, flex: 1, height: 1 }} />
-          </View>
+          {oauthProvidersEnabled ? (
+            <>
+              <View
+                style={{
+                  alignItems: "center",
+                  flexDirection: "row",
+                  gap: spacing[3],
+                  marginVertical: spacing[2],
+                }}
+              >
+                <View style={{ backgroundColor: palette.border, flex: 1, height: 1 }} />
+                <AppText variant="micro" tone="muted">
+                  {AUTH_COPY.login.divider}
+                </AppText>
+                <View style={{ backgroundColor: palette.border, flex: 1, height: 1 }} />
+              </View>
 
-          <View style={{ gap: spacing[3] }}>
-            <AuthProviderButton
-              disabled={!oauthProvidersEnabled}
-              intent="signIn"
-              provider="google"
-              onPress={() => {
-                void handleProviderLogin("google");
-              }}
-            />
-            <AuthProviderButton
-              disabled={!oauthProvidersEnabled}
-              intent="signIn"
-              provider="apple"
-              onPress={() => {
-                void handleProviderLogin("apple");
-              }}
-            />
-          </View>
+              <View style={{ gap: spacing[3] }}>
+                <AuthProviderButton
+                  disabled={busy}
+                  intent="signIn"
+                  provider="google"
+                  onPress={() => {
+                    void handleProviderLogin("google");
+                  }}
+                />
+                <AuthProviderButton
+                  disabled={busy}
+                  intent="signIn"
+                  provider="apple"
+                  onPress={() => {
+                    void handleProviderLogin("apple");
+                  }}
+                />
+              </View>
+            </>
+          ) : null}
         </View>
       </AuthScreenShell>
     </FeedErrorBoundary>

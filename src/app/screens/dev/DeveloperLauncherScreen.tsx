@@ -9,7 +9,8 @@
  *  - V1 vs V2 side-by-side comparison grid with compact buttons
  */
 
-import { useState, useMemo } from "react";
+import { getAccountGeneration, assertAccountGeneration } from "@/lib/security/accountScope";
+import { useState, useMemo, useRef } from "react";
 import { Pressable, Switch, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ChevronDown, ChevronRight, Wifi, WifiOff, Zap } from "lucide-react-native";
@@ -86,38 +87,11 @@ function getSampleComposerParams(repository = getLauncherRepository()) {
 
 // ─── Feature Flags (local state — resets on restart) ─────────────────────────
 
-const DEFAULT_FLAGS = {
-  floorPlanViewer: true,
-  socialBites: true,
-  decideForMe: true,
-  aiRecommendations: false,
-  mapClusterPins: true,
-  reviewSuccessModal: true,
-};
-
-type FeatureFlags = typeof DEFAULT_FLAGS;
-type FlagKey = keyof FeatureFlags;
-
-function isUuidLikeUserId(value?: string | null): value is string {
-  return Boolean(
-    value?.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i),
-  );
-}
-
-const FLAG_LABELS: Record<FlagKey, string> = {
-  floorPlanViewer: "Floor Plan Viewer (SVG)",
-  socialBites: "Social Bites feed",
-  decideForMe: "Dish Roulette / Decide-for-me",
-  aiRecommendations: "AI taste recommendations (alpha)",
-  mapClusterPins: "Map cluster pins",
-  reviewSuccessModal: "Review success modal",
-};
-
 // ─── Network Presets ──────────────────────────────────────────────────────────
 
 const NETWORK_PRESETS = [
   { id: "live" as const, label: "Live", icon: "live" },
-  { id: "slow" as const, label: "Slow 3G", icon: "slow" },
+
   { id: "offline" as const, label: "Offline", icon: "offline" },
 ];
 
@@ -214,7 +188,7 @@ function DevButton({
       onPress={onPress}
       onPressIn={onPressIn}
       testID={`dev-button-${toDevTestId(label)}`}
-      style={[{ minHeight: 32, paddingVertical: 4 }, style]}
+      style={[{ minHeight: 44, paddingVertical: 4 }, style]}
       size="sm"
       fullWidth={false}
     />
@@ -248,9 +222,14 @@ function VersionPair({
         {label}
       </AppText>
       <View style={{ flexDirection: "row", gap: spacing[1] }}>
-        <DevButton label="V1" onPressIn={onV1PressIn} onPress={onV1} style={{ minWidth: 40 }} />
         <DevButton
-          label="V2"
+          label={`${label} V1`}
+          onPressIn={onV1PressIn}
+          onPress={onV1}
+          style={{ minWidth: 40 }}
+        />
+        <DevButton
+          label={`${label} V2`}
           onPressIn={onV2PressIn}
           onPress={onV2}
           variant="primary"
@@ -263,6 +242,7 @@ function VersionPair({
 
 function DataInspectorContent() {
   const { spacing } = useHungryTheme();
+  const [revision, refresh] = useState(0);
   const stats = useMemo(() => {
     const repository = getLauncherRepository();
     return {
@@ -273,15 +253,16 @@ function DataInspectorContent() {
       articles: repository.listBlogPosts().length,
       dishes: repository.listPopularNearby().length,
     };
-  }, []);
+  }, [revision]);
 
   return (
     <View style={{ gap: spacing[1] }}>
+      <Button label="Refresh cached counts" onPress={() => refresh((value) => value + 1)} />
       {[
         { label: "Buildings", value: stats.buildings },
         { label: "Venues", value: stats.venues },
         { label: "Articles", value: stats.articles },
-        { label: "Dishes", value: stats.dishes },
+        { label: "Cached popular dishes", value: stats.dishes },
       ].map(({ label, value }) => (
         <View
           key={label}
@@ -401,14 +382,17 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
   const setOffline = useUIStore((state) => state.setOffline);
 
   // Feature flags
-  const [flags, setFlags] = useState<FeatureFlags>(DEFAULT_FLAGS);
-  const toggleFlag = (key: FlagKey) => setFlags((prev) => ({ ...prev, [key]: !prev[key] }));
+  const presetBusy = useRef(false);
 
   // Network
   const [network, setNetwork] = useState<"live" | "slow" | "offline">("live");
 
   // Helpers
   const resetToSignedOut = () => {
+    if (presetBusy.current) {
+      showToast({ message: "Wait for the current session change.", tone: "info" });
+      return;
+    }
     clearSession();
     setReturnRoute(undefined);
     hideReviewSuccess();
@@ -419,71 +403,122 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
     });
   };
   const seedMockAuthProfile = async (profile?: { email: string; displayName: string }) => {
+    const generation = getAccountGeneration();
     const session = profile
       ? await getHungryService().auth.signUp(profile.email, "dev-password", profile.displayName)
       : await getHungryService().auth.signIn("weiming@example.sg", "dev-password");
     if (!session) {
       throw new Error("Unable to seed mock auth profile.");
     }
+    assertAccountGeneration(generation);
     applyProfile(session.profile);
   };
 
   const resetToNamedAuthComplete = (profile: { email: string; displayName: string }) => {
+    if (presetBusy.current) {
+      showToast({ message: "Wait for the current session change.", tone: "info" });
+      return;
+    }
     setMockServiceProvider();
     clearSession();
     setDeveloperMerchantMode(true);
     setMerchantAccount(null);
-    void seedMockAuthProfile(profile).then(() => {
-      completeAuth();
-      completeOnboarding(false);
-      setReturnRoute(undefined);
-      hideReviewSuccess();
-      showToast({ message: `Session → ${profile.displayName}`, tone: "success" });
-      navigation.reset({
-        index: 0,
-        routes: [{ name: "DeveloperLauncher" }],
+    presetBusy.current = true;
+    void seedMockAuthProfile(profile)
+      .then(() => {
+        completeAuth();
+        completeOnboarding(false);
+        setReturnRoute(undefined);
+        hideReviewSuccess();
+        showToast({ message: `Mock session → ${profile.displayName}`, tone: "success" });
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "DeveloperLauncher" }],
+        });
+      })
+      .catch((error: unknown) => {
+        showToast({
+          message: error instanceof Error ? error.message : "Could not prepare the mock session.",
+          tone: "error",
+        });
+      })
+      .finally(() => {
+        presetBusy.current = false;
       });
-    });
   };
 
   const resetToAuthIncomplete = () => {
+    if (presetBusy.current) {
+      showToast({ message: "Wait for the current session change.", tone: "info" });
+      return;
+    }
     setMockServiceProvider();
     clearSession();
     setDeveloperMerchantMode(true);
     setMerchantAccount(null);
-    void seedMockAuthProfile().then(() => {
-      completeAuth();
-      setReturnRoute(undefined);
-      hideReviewSuccess();
-      showToast({
-        message: "Session → Authenticated (onboarding pending)",
-        tone: "info",
+    presetBusy.current = true;
+    void seedMockAuthProfile()
+      .then(() => {
+        completeAuth();
+        setReturnRoute(undefined);
+        hideReviewSuccess();
+        showToast({
+          message: "Mock session → Authenticated (onboarding pending)",
+          tone: "info",
+        });
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "DeveloperLauncher" }],
+        });
+      })
+      .catch((error: unknown) => {
+        showToast({
+          message: error instanceof Error ? error.message : "Could not prepare the mock session.",
+          tone: "error",
+        });
+      })
+      .finally(() => {
+        presetBusy.current = false;
       });
-      navigation.reset({
-        index: 0,
-        routes: [{ name: "DeveloperLauncher" }],
-      });
-    });
   };
   const resetToAuthComplete = () => {
+    if (presetBusy.current) {
+      showToast({ message: "Wait for the current session change.", tone: "info" });
+      return;
+    }
     setMockServiceProvider();
     clearSession();
     setDeveloperMerchantMode(true);
     setMerchantAccount(null);
-    void seedMockAuthProfile().then(() => {
-      completeAuth();
-      completeOnboarding(false);
-      setReturnRoute(undefined);
-      hideReviewSuccess();
-      showToast({ message: "Session → Fully authenticated", tone: "success" });
-      navigation.reset({
-        index: 0,
-        routes: [{ name: "DeveloperLauncher" }],
+    presetBusy.current = true;
+    void seedMockAuthProfile()
+      .then(() => {
+        completeAuth();
+        completeOnboarding(false);
+        setReturnRoute(undefined);
+        hideReviewSuccess();
+        showToast({ message: "Mock session → Fully authenticated", tone: "success" });
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "DeveloperLauncher" }],
+        });
+      })
+      .catch((error: unknown) => {
+        showToast({
+          message: error instanceof Error ? error.message : "Could not prepare the mock session.",
+          tone: "error",
+        });
+      })
+      .finally(() => {
+        presetBusy.current = false;
       });
-    });
   };
 
   const enterMerchantMode = () => {
+    if (presetBusy.current) {
+      showToast({ message: "Wait for the current session change.", tone: "info" });
+      return;
+    }
     clearSession();
     completeAuth();
     completeOnboarding(false);
@@ -492,11 +527,15 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
     setMerchantAccount(JSON.parse(JSON.stringify(getMockData().merchantAccount)));
     setReturnRoute(undefined);
     hideReviewSuccess();
-    showToast({ message: "Mode → Merchant", tone: "success" });
+    showToast({ message: "Mock mode → Merchant", tone: "success" });
     navigation.navigate("MerchantTabs" as any);
   };
 
   const enterDeveloperMode = () => {
+    if (presetBusy.current) {
+      showToast({ message: "Wait for the current session change.", tone: "info" });
+      return;
+    }
     clearSession();
     completeAuth();
     completeOnboarding(false);
@@ -505,26 +544,28 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
     setMerchantAccount(null);
     setReturnRoute(undefined);
     hideReviewSuccess();
-    showToast({ message: "Mode → Developer", tone: "success" });
+    showToast({ message: "Mock mode → Developer", tone: "success" });
     navigation.navigate("MainTabs", { screen: "Home" });
   };
 
   const enterUserMode = () => {
+    if (presetBusy.current) {
+      showToast({ message: "Wait for the current session change.", tone: "info" });
+      return;
+    }
     setDeveloperMerchantMode(false);
     setSupabaseServiceProvider();
     setMerchantAccount(null);
     setReturnRoute(undefined);
     hideReviewSuccess();
 
-    if (isAuthenticated && isUuidLikeUserId(authenticatedUserId)) {
-      showToast({ message: "Mode → User", tone: "info" });
-      navigation.navigate("MainTabs", { screen: "Home" });
-      return;
-    }
+    presetBusy.current = true;
+    const generation = getAccountGeneration();
 
     void getHungryService()
       .auth.getCurrentSession()
       .then((session) => {
+        assertAccountGeneration(generation);
         if (!session) {
           clearSession();
           showToast({ message: "Please sign in to enter User mode.", tone: "info" });
@@ -545,16 +586,24 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
         navigation.navigate("MainTabs", { screen: "Home" });
       })
       .catch(() => {
+        if (generation !== getAccountGeneration()) return;
         clearSession();
         showToast({ message: "Please sign in to enter User mode.", tone: "info" });
         navigation.reset({
           index: 0,
           routes: [{ name: "AuthStack", params: { screen: "Login" } }],
         });
+      })
+      .finally(() => {
+        presetBusy.current = false;
       });
   };
 
   const openActivityInboxSmoke = () => {
+    if (presetBusy.current) {
+      showToast({ message: "Wait for the current session change.", tone: "info" });
+      return;
+    }
     setMockServiceProvider();
     setDeveloperMerchantMode(true);
     setMerchantAccount(null);
@@ -585,11 +634,6 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
     if (!dish) {
       showToast({ message: "No sample dish is available.", tone: "error" });
       return;
-    }
-
-    if (!isAuthenticated) {
-      completeAuth();
-      completeOnboarding(false);
     }
 
     navigation.navigate("DishDetail", { dishId: dish.id });
@@ -740,32 +784,11 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
         </CollapsibleSection>
 
         {/* ── Feature Flags ──────────────────────────────── */}
-        <CollapsibleSection title="Feature flags" subtitle="Toggle features." badge="Local">
-          {(Object.keys(flags) as FlagKey[]).map((key) => (
-            <View
-              key={key}
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                paddingVertical: 2,
-              }}
-            >
-              <AppText variant="bodySmall" style={{ flex: 1 }}>
-                {FLAG_LABELS[key]}
-              </AppText>
-              <Switch
-                value={flags[key]}
-                onValueChange={() => toggleFlag(key)}
-                trackColor={{
-                  false: palette.border,
-                  true: `${palette.orange}66`,
-                }}
-                thumbColor={flags[key] ? palette.orange : palette.textMuted}
-                style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
-              />
-            </View>
-          ))}
+        <CollapsibleSection
+          title="Feature availability"
+          subtitle="Controlled by the application build."
+        >
+          <AppText tone="secondary">Feature gates cannot be changed from this preview.</AppText>
         </CollapsibleSection>
 
         {/* ── Core app ───────────────────────────────────── */}
@@ -959,17 +982,15 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
         </CollapsibleSection>
 
         {/* ── Network Simulation ─────────────────────────── */}
-        <CollapsibleSection title="Network simulation" subtitle="Connectivity testing.">
+        <CollapsibleSection
+          title="Connectivity UI preview"
+          subtitle="Changes the banner only; requests still use the selected provider."
+        >
           <View style={{ flexDirection: "row", gap: spacing[2] }}>
             {NETWORK_PRESETS.map((preset) => {
               const icon =
                 preset.id === "live" ? (
                   <Zap
-                    size={14}
-                    color={network === preset.id ? palette.white : palette.textMuted}
-                  />
-                ) : preset.id === "slow" ? (
-                  <Wifi
                     size={14}
                     color={network === preset.id ? palette.white : palette.textMuted}
                   />
@@ -983,6 +1004,9 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
               return (
                 <Pressable
                   key={preset.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${preset.label} connectivity preview`}
+                  accessibilityState={{ selected: network === preset.id }}
                   onPress={() => {
                     setNetwork(preset.id);
                     setOffline(preset.id === "offline");

@@ -1,0 +1,79 @@
+{
+  "schema_version": "hungry-image-rights-proposal-v1",
+  "snapshot_id": "refresh134_images_20261019",
+  "captured_at_sgt": "2026-10-19",
+  "workbook_path": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "2e398d1a6c872287c0b093a40cac17a63557293b27471b82832756ba6019a916",
+  "workbook_edited": false,
+  "scope": "Read-only Wikimedia Commons search for genuinely captured, rights-licensed images that can be joined to an exact current SFA directory record. No workbook edits, image assets retained, Mapbox requests, or spending.",
+  "summary": {
+    "new_candidates": 1,
+    "exact_directory_joins": 1,
+    "exact_menu_item_joins": 0,
+    "pixel_inspected": 0,
+    "approved_for_current_display": 0,
+    "review_only": 1,
+    "workbook_changes": 0
+  },
+  "candidates": [
+    {
+      "action": "add_exact_branch_image_candidate_review_only",
+      "sfa_licence": "W94340N000",
+      "workbook_outlet_name": "LES AMIS RESTAURANT",
+      "workbook_directory_address": "1 Scotts Road #01-16, #01-17, #01-18, #02-14, #02-15, #02-16, Shaw Centre, Singapore 228208",
+      "item_or_image_type": "Exact-restaurant entrance photograph",
+      "pictured_menu_item": null,
+      "menu_item_join": null,
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/0/0f/Les_Amis_restaurant%2C_Singapore.jpg",
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:Les_Amis_restaurant,_Singapore.jpg",
+      "observed_at_sgt": "2026-10-19",
+      "photograph_date": "2026-04-22 15:44:16 (Commons page and EXIF; page time zone not stated)",
+      "creator": "Ltbdl (Commons author/uploader field)",
+      "license": "WTFPL version 2 (WTF Public License)",
+      "license_url": "http://www.wtfpl.net/about/",
+      "attribution": "Ltbdl, “Les Amis restaurant, Singapore.jpg,” via Wikimedia Commons, WTFPL version 2. Retain attribution/provenance even though the stated license does not require it.",
+      "source_evidence": {
+        "description": "Commons page caption explicitly says the image shows the entrance to the Les Amis restaurant in Singapore.",
+        "capture_metadata": "Commons gives date 22 April 2026, creator Ltbdl, own-work source, and camera coordinates 1.306600, 103.831400; EXIF says directly photographed image and matching capture timestamp.",
+        "directory_match": "Workbook has active SFA record W94340N000, LES AMIS RESTAURANT, at 1 Scotts Road in Shaw Centre. Workbook building point is 1.3061133, 103.8319706; image camera point is approximately 85 m away, consistent with a nearby entrance photograph but not precise stall-front proof.",
+        "pixel_inspection": "Not completed: browser retrieval of both Commons thumbnail and original timed out. Do not describe the visible pixels as independently verified."
+      },
+      "match_confidence": 0.82,
+      "currentness_assessment": "Photograph is dated 2026-04-22, about six months before this review. Workbook contains the corresponding SFA listing, but the photographer's description says the restaurant was closed when the photograph was taken; this does not establish a permanent closure, but current operation and current appearance need separate confirmation.",
+      "display_reuse_status": "review_only; do not place in Approved Image URL yet. The Commons page states WTFPL v2, an unusual license that should receive rights-policy review. Pixel-level content could not be independently inspected because image fetch timed out. Current operation is also not confirmed.",
+      "caveats": [
+        "Community-uploaded photo, not an official restaurant image.",
+        "License is stated on Commons as WTFPL version 2; confirm the catalogue's policy accepts this license before use.",
+        "The image itself was not pixel-inspected in this pass because thumbnail and original retrieval timed out.",
+        "Photographer's description notes the restaurant was closed at the instant of capture; do not interpret this as proof of permanent closure or current operation.",
+        "No menu item or current menu availability is shown or asserted.",
+        "Commons-hosted image availability can change; preserve the source page and attribution.",
+        "No persistent image copy was downloaded or retained."
+      ],
+      "evidence_urls": [
+        "https://commons.wikimedia.org/wiki/File:Les_Amis_restaurant,_Singapore.jpg",
+        "http://www.wtfpl.net/about/"
+      ]
+    }
+  ],
+  "excluded_or_not_reproposed": [
+    {
+      "candidate": "TWG Tea shop entrance in Singapore.jpg",
+      "reason": "Commons identifies a Marina Bay Sands mall tea-shop entrance, but the workbook contains multiple TWG SFA licences at Marina Bay Sands and the image page did not establish the exact licensed unit. No exact SFA branch join proposed."
+    },
+    {
+      "candidate": "Sushi Masa by Ki-setsu Singapore Omakase Restaurant.jpg and Swensen's Thomson Plaza restaurant photo",
+      "reason": "Already present in prior image research/workbook candidate records; not duplicated in this proposal."
+    },
+    {
+      "candidate": "Central Hong Kong Café sign, Star Vista, Singapore.jpg",
+      "reason": "Commons description explicitly says the restaurant had closed; not a valid open-venue image candidate."
+    }
+  ],
+  "integration_recommendation": "Add only as a review-only image candidate if the project accepts WTFPL v2; first complete pixel inspection and independently confirm the outlet's current operation. Do not populate Approved Image URL at this stage.",
+  "limitations": [
+    "One new exact-venue candidate was found in this bounded pass; this is not complete image coverage.",
+    "No candidate is approved for current display.",
+    "No workbook changes, spending, or Mapbox requests occurred."
+  ]
+}

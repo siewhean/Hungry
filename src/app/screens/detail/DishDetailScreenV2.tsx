@@ -1,3 +1,9 @@
+import { getDishVenueContext } from "@/features/detail/dishVenueContext";
+import {
+  isContentHiddenForSession,
+  promptReportReview,
+  useCommunitySafetyRevision,
+} from "@/lib/security/communitySafety";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, View, useWindowDimensions } from "react-native";
 import type { ColorValue } from "react-native";
@@ -199,12 +205,15 @@ function getSignatureDishes(currentDish: DishDetail, venueDishes: DishDetail[]) 
 }
 
 export function DishDetailScreenV2({ navigation, route }: Props) {
+  useCommunitySafetyRevision();
   const repository = getDataRepository();
   const dishId = route.params?.dishId ?? route.params?.id ?? "";
+  const [detailError, setDetailError] = useState(false);
+  const [detailRetry, setDetailRetry] = useState(0);
   const cachedDish = repository.getDishById(dishId);
   const [hydratedDish, setHydratedDish] = useState<DishDetail | undefined>();
   const [hasLoadedDishDetail, setHasLoadedDishDetail] = useState(Boolean(cachedDish));
-  const dish = hydratedDish ?? cachedDish;
+  const dish = hydratedDish?.id === dishId ? hydratedDish : cachedDish;
   const { componentRadii, palette, radii, spacing, shadows } = useHungryTheme();
   const waitEstimateDisclosure = getDataTrustDisclosure("waitEstimate");
   const { width } = useWindowDimensions();
@@ -218,7 +227,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const showToast = useUIStore((state) => state.showToast);
   const stallInteractions = useStallInteractionStore((state) => state.interactions);
   const stallInteraction = dish?.venueId ? stallInteractions[dish.venueId] : undefined;
-  const markTried = useStallInteractionStore((state) => state.markTried);
+  const setVisited = useStallInteractionStore((state) => state.setVisited);
   const incrementShare = useSocialStore((state) => state.incrementShare);
   const [tasteProfileOpen, setTasteProfileOpen] = useState(false);
   const [operatingHoursOpen, setOperatingHoursOpen] = useState(false);
@@ -236,13 +245,11 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     },
   });
 
-  const cachedVenue = useMemo(
-    () => (dish ? repository.getVenueById(dish.venueId) : undefined),
-    [dish, repository],
-  );
+  const venueContext = useMemo(() => getDishVenueContext(dish, repository), [dish, repository]);
+  const cachedVenue = venueContext.venue;
   const [hydratedVenue, setHydratedVenue] = useState<typeof cachedVenue>();
   const [hasLoadedVenueDetail, setHasLoadedVenueDetail] = useState(Boolean(cachedVenue));
-  const venue = hydratedVenue ?? cachedVenue;
+  const venue = hydratedVenue?.id === dish?.venueId ? hydratedVenue : cachedVenue;
 
   const gallery = useMemo(() => (dish ? buildDishGallery(dish) : []), [dish]);
   const heroImage = gallery[0] ?? dish?.imageUrl;
@@ -250,10 +257,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     () => (dish ? getTasteSimilarityWithDish(profile, dish) : 0),
     [dish, profile],
   );
-  const venueDishes = useMemo(
-    () => (dish ? repository.listDishesByVenue(dish.venueId) : []),
-    [dish, repository],
-  );
+  const venueDishes = venueContext.dishes;
   const signatureDishes = useMemo(
     () => (dish ? getSignatureDishes(dish, venueDishes) : []),
     [dish, venueDishes],
@@ -263,6 +267,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
 
   useEffect(() => {
     let active = true;
+    setDetailError(false);
     setHydratedDish(undefined);
     setHasLoadedDishDetail(Boolean(cachedDish));
     if (!dishId || cachedDish) {
@@ -279,13 +284,16 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
         setHasLoadedDishDetail(true);
       })
       .catch(() => {
-        if (active) setHasLoadedDishDetail(true);
+        if (active) {
+          setHasLoadedDishDetail(true);
+          setDetailError(true);
+        }
       });
 
     return () => {
       active = false;
     };
-  }, [cachedDish, dishId]);
+  }, [cachedDish, dishId, detailRetry]);
 
   useEffect(() => {
     let active = true;
@@ -305,13 +313,16 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
         setHasLoadedVenueDetail(true);
       })
       .catch(() => {
-        if (active) setHasLoadedVenueDetail(true);
+        if (active) {
+          setHasLoadedVenueDetail(true);
+          setDetailError(true);
+        }
       });
 
     return () => {
       active = false;
     };
-  }, [cachedVenue, dish?.venueId]);
+  }, [cachedVenue, dish?.venueId, detailRetry]);
 
   useEffect(() => {
     if (!dish || lastRecordedDishViewId.current === dish.id) return;
@@ -329,6 +340,18 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const isDetailLoading =
     (Boolean(dishId) && !dish && !hasLoadedDishDetail) ||
     (Boolean(dish?.venueId) && !venue && !hasLoadedVenueDetail);
+
+  if (detailError && (!dish || !venue))
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }}>
+        <EmptyState
+          title="Dish unavailable"
+          body="Could not load this dish. Check your connection and retry."
+          ctaLabel="Retry"
+          onPress={() => setDetailRetry((value) => value + 1)}
+        />
+      </SafeAreaView>
+    );
 
   if (isDetailLoading) {
     return (
@@ -370,7 +393,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
 
   const dominantTaste = getDominantTaste(dish);
   const isSaved = profile.favouriteDishIds.includes(dish.id);
-  const waitTime = formatWaitTime(venue.liveCrowd ?? dish.liveCrowd);
+  const waitTime: string | undefined = undefined;
   const isVenueOpen = isVenueOpenFromHours(venue.operatingHours, venue.isOpen);
   const attributes: Attribute[] = [
     {
@@ -417,7 +440,6 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const headerButtonBorder = palette.detailHeaderBorder;
   const shareReviewTarget = {
     reviewId: `dish-${dish.id}`,
-    postId: "",
     title: dish.name,
     subtitle: `${venue.name} · ${venue.unitNumber}`,
     imageUrl: gallery[0] ?? dish.imageUrl,
@@ -483,7 +505,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     });
   };
 
-  const isDishTried = profile.reviewedDishIds.includes(dish.id);
+  const isDishTried = stallInteraction?.isTried ?? false;
   const isVenueVisited = stallInteraction?.isTried ?? false;
 
   const handleTryFood = async () => {
@@ -500,42 +522,13 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
 
     setIsTryingFood(true);
     try {
-      const didMark = await markTried(profile.id, dish.venueId);
-
-      if (didMark.isTried) {
-        addReviewedDish(dish.id);
-        trackAnalyticsEvent("dish_marked_tried", { dish_id: dish.id, stall_id: dish.venueId });
-        showToast({
-          message:
-            didMark.pointsAwarded > 0
-              ? "+5 Food Cred"
-              : isVenueVisited
-                ? "Marked as tried again."
-                : "Marked this stall as visited.",
-          tone: "success",
-          backgroundColor: palette.surfaceTranslucent,
-          borderColor: palette.orange,
-          textColor: palette.text,
-          iconColor: palette.text,
-          borderWidth: 1,
-          duration: 3000,
-        });
-      } else {
-        removeReviewedDish(dish.id);
-        await useFoodCredStore
-          .getState()
-          .adjustPoints(-didMark.pointsAwarded, dish.venueId, "stall_marked_tried");
-        showToast({
-          message: didMark.pointsAwarded > 0 ? "-5 Food Cred" : "Food try check removed.",
-          tone: "success",
-          backgroundColor: palette.surfaceTranslucent,
-          borderColor: palette.orange,
-          textColor: palette.text,
-          iconColor: palette.text,
-          borderWidth: 1,
-          duration: 3000,
-        });
-      }
+      await setVisited(profile.id, dish.venueId, !isVenueVisited);
+      showToast({
+        message: isVenueVisited ? "Visit removed." : "Marked this stall as visited.",
+        tone: "success",
+      });
+    } catch {
+      showToast({ message: "Could not update your visit. Please try again.", tone: "warning" });
     } finally {
       setIsTryingFood(false);
     }
@@ -928,38 +921,55 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
               <View style={{ gap: spacing[3] }}>
                 <AppText variant="h2">From the Community</AppText>
                 {dish.reviews.length ? (
-                  dish.reviews.slice(0, 3).map((review) => (
-                    <View
-                      key={review.id}
-                      style={{
-                        backgroundColor: palette.surface,
-                        borderColor: palette.border,
-                        borderRadius: componentRadii.card,
-                        borderWidth: 1,
-                        gap: spacing[2],
-                        padding: spacing[4],
-                      }}
-                    >
+                  dish.reviews
+                    .filter((review) => !isContentHiddenForSession(review))
+                    .slice(0, 3)
+                    .map((review) => (
                       <View
+                        key={review.id}
                         style={{
-                          alignItems: "center",
-                          flexDirection: "row",
-                          justifyContent: "space-between",
+                          backgroundColor: palette.surface,
+                          borderColor: palette.border,
+                          borderRadius: componentRadii.card,
+                          borderWidth: 1,
+                          gap: spacing[2],
+                          padding: spacing[4],
                         }}
                       >
-                        <AppText style={{ fontWeight: "900" }}>{review.authorName}</AppText>
-                        <View style={{ alignItems: "center", flexDirection: "row", gap: 2 }}>
-                          <Star color={palette.amber} fill={palette.amber} size={13} />
-                          <AppText variant="micro" style={{ fontWeight: "800" }}>
-                            {review.rating}
-                          </AppText>
+                        <View
+                          style={{
+                            alignItems: "center",
+                            flexDirection: "row",
+                            justifyContent: "space-between",
+                          }}
+                        >
+                          <AppText style={{ fontWeight: "900" }}>{review.authorName}</AppText>
+                          <Pressable
+                            accessibilityRole="button"
+                            accessibilityLabel={`Report or block ${review.authorName}`}
+                            onPress={() =>
+                              promptReportReview({
+                                reviewId: review.id,
+                                authorName: review.authorName,
+                                authorId: review.authorId,
+                              })
+                            }
+                            style={{ minHeight: 44, justifyContent: "center" }}
+                          >
+                            <AppText variant="micro">Review options</AppText>
+                          </Pressable>
+                          <View style={{ alignItems: "center", flexDirection: "row", gap: 2 }}>
+                            <Star color={palette.amber} fill={palette.amber} size={13} />
+                            <AppText variant="micro" style={{ fontWeight: "800" }}>
+                              {review.rating}
+                            </AppText>
+                          </View>
                         </View>
+                        <AppText variant="bodySmall" tone="secondary">
+                          {review.text}
+                        </AppText>
                       </View>
-                      <AppText variant="bodySmall" tone="secondary">
-                        {review.text}
-                      </AppText>
-                    </View>
-                  ))
+                    ))
                 ) : (
                   <EmptyState
                     title="No reviews yet"
@@ -1026,7 +1036,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
             </Pressable>
             <Pressable
               accessibilityRole="checkbox"
-              accessibilityLabel="Tried"
+              accessibilityLabel="Visited this stall"
               accessibilityState={{ checked: isDishTried, disabled: isTryingFood }}
               onPress={handleTryFood}
               disabled={isTryingFood}
@@ -1135,9 +1145,6 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
             bottomInset={insets.bottom}
             onDismiss={() => {
               setActiveShareReview(null);
-            }}
-            onShared={(postId, channel) => {
-              incrementShare(postId, channel);
             }}
           />
         </View>

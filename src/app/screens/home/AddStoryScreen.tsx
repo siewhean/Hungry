@@ -1,3 +1,4 @@
+import { ZoomableVideo } from "@/components/social/ZoomableVideo";
 import { useEffect, useMemo, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
@@ -9,7 +10,7 @@ import { useStoryStore } from "@/store/useStoryStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { StoryContent, StoryGalleryAsset } from "@/types/domain";
-import { getHungryService } from "@/lib/services/serviceProvider";
+import { getHungryService, getServiceProvider } from "@/lib/services/serviceProvider";
 
 type GalleryFilter = "all" | StoryContent["type"];
 
@@ -26,6 +27,7 @@ export function AddStoryScreen() {
   const [filter, setFilter] = useState<GalleryFilter>("all");
 
   useEffect(() => {
+    if (getServiceProvider().mode !== "mock") return;
     let isMounted = true;
 
     getHungryService()
@@ -51,9 +53,10 @@ export function AddStoryScreen() {
     [filter, galleryAssets],
   );
   const selectedAsset =
-    galleryAssets.find((asset) => asset.id === selectedAssetId) ?? visibleAssets[0];
+    visibleAssets.find((asset) => asset.id === selectedAssetId) ?? visibleAssets[0];
 
   const handlePost = async () => {
+    if (isSubmitting) return;
     if (!selectedAsset) {
       Alert.alert("Select a story", "Choose a photo or video from your gallery first.");
       return;
@@ -62,13 +65,21 @@ export function AddStoryScreen() {
     setIsSubmitting(true);
     try {
       await addStory({ type: selectedAsset.type, url: selectedAsset.url });
-      showToast({ message: "Story posted!", tone: "success" });
+      showToast({ message: "Local demo story added", tone: "success" });
       navigation.goBack();
     } catch {
       showToast({ message: "Failed to post story.", tone: "error" });
       setIsSubmitting(false);
     }
   };
+
+  if (getServiceProvider().mode !== "mock")
+    return (
+      <Screen title="Story demos">
+        <AppText>Stories are available as local demos only.</AppText>
+        <Button label="Go back" onPress={() => navigation.goBack()} />
+      </Screen>
+    );
 
   return (
     <Screen fullWidth style={{ backgroundColor: palette.bg }}>
@@ -109,12 +120,20 @@ export function AddStoryScreen() {
       >
         {selectedAsset ? (
           <View style={[styles.preview, { borderRadius: componentRadii.card }]}>
-            <AccessibleImage
-              source={{ uri: selectedAsset.url }}
-              contentFit="cover"
-              style={StyleSheet.absoluteFill}
-              accessibilityLabel={`Selected ${selectedAsset.type} preview`}
-            />
+            {selectedAsset.type === "video" ? (
+              <ZoomableVideo
+                uri={selectedAsset.url}
+                style={StyleSheet.absoluteFill}
+                accessibilityLabel="Selected demo video"
+              />
+            ) : (
+              <AccessibleImage
+                source={{ uri: selectedAsset.url }}
+                contentFit="cover"
+                style={StyleSheet.absoluteFill}
+                accessibilityLabel={`Selected ${selectedAsset.type} preview`}
+              />
+            )}
             {selectedAsset.type === "video" ? (
               <View style={[styles.videoPill, { backgroundColor: palette.detailImageOverlay }]}>
                 <Film color={palette.white} size={16} />
@@ -214,7 +233,7 @@ export function AddStoryScreen() {
         ]}
       >
         <Button
-          label={isSubmitting ? "Posting..." : "Post to Your Story"}
+          label={isSubmitting ? "Adding demo..." : "Add local demo story"}
           variant="primary"
           fullWidth
           disabled={!selectedAsset || isSubmitting || galleryAssets.length === 0}

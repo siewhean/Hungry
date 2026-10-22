@@ -1,0 +1,38 @@
+{
+  "snapshot_id": "kuroki_official_directory_enrichment_refresh116_20261019",
+  "observed_date": "2026-10-19",
+  "workbook_baseline_sha256": "1da3fa30b03df12c559bb29e1137775aa3f6f61a88eef65a23e81b7b048a6292",
+  "scope": "Exact current directory outlet CE21966L000, KUROKI at Paragon #05-03, postal 238859.",
+  "field_proposals": [
+    {
+      "field": "Website",
+      "value": "https://kuroki.com.sg/",
+      "before_value": null,
+      "source_url": "https://kuroki.com.sg/",
+      "evidence": "Current official Kuroki homepage identifies outlet at 290 Orchard Rd #05-03, Paragon, Singapore 238859; retrieved 2026-10-19."
+    },
+    {
+      "field": "Menu URL",
+      "value": "https://sushitei.com/wp-content/uploads/2026/10/Kuroki-Website-Menu.pdf",
+      "before_value": null,
+      "source_url": "https://kuroki.com.sg/",
+      "evidence": "The official homepage Menu button resolves to the October 2026 PDF URL. PDF content could not be retrieved in this shell (web cache miss; direct HTTP HEAD returned Cloudflare 403), so this link is recorded as a first-party destination only; do not treat its menu contents as verified."
+    }
+  ],
+  "existing_verified_values_preserved": [
+    {
+      "field": "Contact Details",
+      "value": "Contact: +65 6339 3383",
+      "evidence_url": "https://paragon.com.sg/store-detail/kuroki/",
+      "note": "Present in the current workbook already; current Paragon result reconfirms exact #05-03 tenant and number."
+    }
+  ],
+  "excluded_updates": [
+    {
+      "field": "Opening Hours / Closed Days",
+      "reason": "Mall-level hours are not outlet-specific; no first-party Kuroki hours were independently verified."
+    }
+  ],
+  "images_added": 0,
+  "mapbox_data_retained": false
+}

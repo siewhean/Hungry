@@ -46,15 +46,17 @@ export async function openTrustedExternalUrl(url: string): Promise<void> {
   }
 }
 
-export async function openTrustedBlogUrl(url: string): Promise<void> {
+export async function openTrustedBlogUrl(url: string): Promise<boolean> {
   try {
     const parsed = parseUrl(url);
     if (parsed.protocol !== "https:" || !ALLOWED_BLOG_HOSTS.has(parsed.hostname.toLowerCase())) {
       throw new Error("Blocked non-allowlisted article host.");
     }
     await WebBrowser.openBrowserAsync(url);
+    return true;
   } catch {
     Alert.alert("Unable to open article", "Please try again later.");
+    return false;
   }
 }
 
@@ -74,7 +76,7 @@ export async function openTrustedMapsUrl(url: string): Promise<void> {
 }
 
 /** Opens a WhatsApp (wa.me) or Telegram (t.me/share) share link; any other host is refused. */
-export async function openTrustedMessagingShareUrl(url: string): Promise<void> {
+export async function openTrustedMessagingShareUrl(url: string): Promise<boolean> {
   try {
     const parsed = parseUrl(url);
     if (
@@ -84,8 +86,10 @@ export async function openTrustedMessagingShareUrl(url: string): Promise<void> {
       throw new Error("Blocked non-allowlisted messaging host.");
     }
     await Linking.openURL(url);
+    return true;
   } catch {
     Alert.alert("Unable to open app", "Please try again later.");
+    return false;
   }
 }
 
@@ -116,5 +120,24 @@ export async function openTrustedDeliveryUrl(
     await Linking.openURL(webUrl);
   } catch {
     Alert.alert("Unable to open delivery link", "Please try again later.");
+  }
+}
+
+/** Catalog attribution is limited to the explicit provenance publisher allowlist. */
+export async function openTrustedCatalogSourceUrl(url: string): Promise<boolean> {
+  const { isTrustedCatalogSourceUrl } = await import("./catalogSourcePolicy");
+  if (!isTrustedCatalogSourceUrl(url)) {
+    Alert.alert(
+      "Source link unavailable",
+      "This source is not yet approved for opening in Hungry.",
+    );
+    return false;
+  }
+  try {
+    await WebBrowser.openBrowserAsync(url);
+    return true;
+  } catch {
+    Alert.alert("Unable to open source", "Please try again later.");
+    return false;
   }
 }

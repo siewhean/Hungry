@@ -1,0 +1,1310 @@
+{
+  "snapshot": "Refresh125 authentic media URL audit",
+  "observed_at_local": "2026-10-19 Asia/Singapore",
+  "baseline_workbook": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_sha256": "fe31f2c8926d09ce592189efa8012987f6a3e878ef2977f50fe466873d567a64",
+  "method": "Selected candidates from the existing Image Candidates sheet and crosswalked the listed SFA licences against exact rows in Public F&B Directory. HEAD-only checks were made for image and cited-page URLs; response bodies were not retrieved and no images were downloaded. No Google Images, stock, generated, synthetic, or Mapbox assets used.",
+  "selection_limit": 30,
+  "candidate_count": 30,
+  "unique_sfa_licences_crosswalked": 13,
+  "rights_policy": "Every image remains an unapproved reference unless reuse permission or a licence is documented.",
+  "candidates": [
+    {
+      "sfa_licence_field": "CE19V79P000",
+      "f_and_b_name_in_candidate_sheet": "% Arabica",
+      "item_or_image_type": "Outlet photo candidate",
+      "image_url": "https://arabica.sg/wp-content/uploads/2026/02/313-1-scaled-1.webp",
+      "source_page_url": "https://arabica.sg/arabica-store/arabica-singapore-313-somerset/",
+      "observed_in_refresh40": "2026-10-18",
+      "prior_visual_check": "Page and image match; not visually checked",
+      "prior_image_scope": "Operator outlet photo candidate",
+      "prior_reuse_status": "Review only; operator copyright reserved; permission required; not approved for display.",
+      "directory_crosswalk": [
+        {
+          "sfa_licence": "CE19V79P000",
+          "directory_name": "% Arabica",
+          "registered_business_name": "% Arabica",
+          "business_type": "Snack Counter",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: A",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "Address: 313 ORCHARD ROAD #01-14,#01-15,313 @ SOMERSET,Singapore 238895 313 @ SOMERSET",
+          "postal_code": "238895"
+        }
+      ],
+      "image_url_head_check": {
+        "status": 200,
+        "content_type": "image/webp",
+        "final_url": "https://arabica.sg/wp-content/uploads/2026/02/313-1-scaled-1.webp",
+        "error": null
+      },
+      "source_page_head_check": {
+        "status": 200,
+        "content_type": "text/html; charset=UTF-8",
+        "final_url": "https://arabica.sg/arabica-store/arabica-singapore-313-somerset/",
+        "error": null
+      },
+      "crosswalk_precision": "Outlet-specific official operator page or exact first-party source mapping. Page-to-image relationship follows the pre-existing Refresh40 research note; URL responses checked now.",
+      "reuse_rights": "URL discovery only. Rights remain with operator/platform; no reuse licence or permission established. Do not embed, cache, republish, or mark approved without permission."
+    },
+    {
+      "sfa_licence_field": "CE19Z37L000",
+      "f_and_b_name_in_candidate_sheet": "% Arabica",
+      "item_or_image_type": "Outlet interior",
+      "image_url": "https://arabica.sg/wp-content/uploads/2026/02/marina_bay_sands.webp",
+      "source_page_url": "https://arabica.sg/arabica-store/arabica-singapore-marina-bay-sands/",
+      "observed_in_refresh40": "2026-10-18",
+      "prior_visual_check": "Visually checked",
+      "prior_image_scope": "Operator outlet photo candidate",
+      "prior_reuse_status": "Review only; operator copyright reserved; permission required; not approved for display.",
+      "directory_crosswalk": [
+        {
+          "sfa_licence": "CE19Z37L000",
+          "directory_name": "% ARABICA",
+          "registered_business_name": "% ARABICA",
+          "business_type": "Takeaway",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: A",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "Address: 2 BAYFRONT AVENUE #01-75,#01-76,MARINA BAY SANDS,Singapore 018972",
+          "postal_code": "018972"
+        }
+      ],
+      "image_url_head_check": {
+        "status": 200,
+        "content_type": "image/webp",
+        "final_url": "https://arabica.sg/wp-content/uploads/2026/02/marina_bay_sands.webp",
+        "error": null
+      },
+      "source_page_head_check": {
+        "status": 200,
+        "content_type": "text/html; charset=UTF-8",
+        "final_url": "https://arabica.sg/arabica-store/arabica-singapore-marina-bay-sands/",
+        "error": null
+      },
+      "crosswalk_precision": "Outlet-specific official operator page or exact first-party source mapping. Page-to-image relationship follows the pre-existing Refresh40 research note; URL responses checked now.",
+      "reuse_rights": "URL discovery only. Rights remain with operator/platform; no reuse licence or permission established. Do not embed, cache, republish, or mark approved without permission."
+    },
+    {
+      "sfa_licence_field": "CE22908B000",
+      "f_and_b_name_in_candidate_sheet": "% Arabica",
+      "item_or_image_type": "Outlet kiosk",
+      "image_url": "https://arabica.sg/wp-content/uploads/2026/02/01-scaled-1.jpg",
+      "source_page_url": "https://arabica.sg/arabica-store/arabica-singapore-capitaspring/",
+      "observed_in_refresh40": "2026-10-18",
+      "prior_visual_check": "Visually checked",
+      "prior_image_scope": "Operator outlet photo candidate",
+      "prior_reuse_status": "Review only; operator copyright reserved; permission required; not approved for display.",
+      "directory_crosswalk": [
+        {
+          "sfa_licence": "CE22908B000",
+          "directory_name": "% ARABICA",
+          "registered_business_name": "% ARABICA",
+          "business_type": "Takeaway",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: A",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "Address: 86 MARKET STREET #01-K2,CAPITASPRING,Singapore 048947",
+          "postal_code": "048947"
+        }
+      ],
+      "image_url_head_check": {
+        "status": 200,
+        "content_type": "image/jpeg",
+        "final_url": "https://arabica.sg/wp-content/uploads/2026/02/01-scaled-1.jpg",
+        "error": null
+      },
+      "source_page_head_check": {
+        "status": 200,
+        "content_type": "text/html; charset=UTF-8",
+        "final_url": "https://arabica.sg/arabica-store/arabica-singapore-capitaspring/",
+        "error": null
+      },
+      "crosswalk_precision": "Outlet-specific official operator page or exact first-party source mapping. Page-to-image relationship follows the pre-existing Refresh40 research note; URL responses checked now.",
+      "reuse_rights": "URL discovery only. Rights remain with operator/platform; no reuse licence or permission established. Do not embed, cache, republish, or mark approved without permission."
+    },
+    {
+      "sfa_licence_field": "CE24F09E000",
+      "f_and_b_name_in_candidate_sheet": "% Arabica",
+      "item_or_image_type": "Outlet interior",
+      "image_url": "https://arabica.sg/wp-content/uploads/2026/02/Singapore_IOI_Central_Boulevard_Landing-Page-Photo-scaled.webp",
+      "source_page_url": "https://arabica.sg/arabica-store/arabica-singapore-ioi-central-boulevard/",
+      "observed_in_refresh40": "2026-10-18",
+      "prior_visual_check": "Visually checked",
+      "prior_image_scope": "Operator outlet photo candidate",
+      "prior_reuse_status": "Review only; operator copyright reserved; permission required; not approved for display.",
+      "directory_crosswalk": [
+        {
+          "sfa_licence": "CE24F09E000",
+          "directory_name": "% Arabica",
+          "registered_business_name": "% Arabica",
+          "business_type": "Snack Counter",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: B",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "Address: 2 CENTRAL BOULEVARD #02-02,IOI CENTRAL BOULEVARD TOWERS,Singapore 018916",
+          "postal_code": "018916"
+        }
+      ],
+      "image_url_head_check": {
+        "status": 200,
+        "content_type": "image/webp",
+        "final_url": "https://arabica.sg/wp-content/uploads/2026/02/Singapore_IOI_Central_Boulevard_Landing-Page-Photo-scaled.webp",
+        "error": null
+      },
+      "source_page_head_check": {
+        "status": 200,
+        "content_type": "text/html; charset=UTF-8",
+        "final_url": "https://arabica.sg/arabica-store/arabica-singapore-ioi-central-boulevard/",
+        "error": null
+      },
+      "crosswalk_precision": "Outlet-specific official operator page or exact first-party source mapping. Page-to-image relationship follows the pre-existing Refresh40 research note; URL responses checked now.",
+      "reuse_rights": "URL discovery only. Rights remain with operator/platform; no reuse licence or permission established. Do not embed, cache, republish, or mark approved without permission."
+    },
+    {
+      "sfa_licence_field": "CE24M79A000",
+      "f_and_b_name_in_candidate_sheet": "% Arabica",
+      "item_or_image_type": "Outlet photo candidate",
+      "image_url": "https://arabica.sg/wp-content/uploads/2026/02/SG-18-Cross_Landing-Page-Photo-scaled.webp",
+      "source_page_url": "https://arabica.sg/arabica-store/arabica-singapore-18-cross-street/",
+      "observed_in_refresh40": "2026-10-18",
+      "prior_visual_check": "Page and image match; not visually checked",
+      "prior_image_scope": "Operator outlet photo candidate",
+      "prior_reuse_status": "Review only; operator copyright reserved; permission required; not approved for display.",
+      "directory_crosswalk": [
+        {
+          "sfa_licence": "CE24M79A000",
+          "directory_name": "% Arabica",
+          "registered_business_name": "% Arabica",
+          "business_type": "Takeaway",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: B",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "Address: 18 CROSS STREET #01-11,CROSS STREET EXCHANGE,Singapore 048423",
+          "postal_code": "048423"
+        }
+      ],
+      "image_url_head_check": {
+        "status": 200,
+        "content_type": "image/webp",
+        "final_url": "https://arabica.sg/wp-content/uploads/2026/02/SG-18-Cross_Landing-Page-Photo-scaled.webp",
+        "error": null
+      },
+      "source_page_head_check": {
+        "status": 200,
+        "content_type": "text/html; charset=UTF-8",
+        "final_url": "https://arabica.sg/arabica-store/arabica-singapore-18-cross-street/",
+        "error": null
+      },
+      "crosswalk_precision": "Outlet-specific official operator page or exact first-party source mapping. Page-to-image relationship follows the pre-existing Refresh40 research note; URL responses checked now.",
+      "reuse_rights": "URL discovery only. Rights remain with operator/platform; no reuse licence or permission established. Do not embed, cache, republish, or mark approved without permission."
+    },
+    {
+      "sfa_licence_field": "W78126N000",
+      "f_and_b_name_in_candidate_sheet": "% Arabica",
+      "item_or_image_type": "Outlet photo candidate",
+      "image_url": "https://arabica.sg/wp-content/uploads/2026/02/c02-1-scaled-1.webp",
+      "source_page_url": "https://arabica.sg/arabica-store/arabica-singapore-chip-bee-gardens/",
+      "observed_in_refresh40": "2026-10-18",
+      "prior_visual_check": "Page and image match; not visually checked",
+      "prior_image_scope": "Operator outlet photo candidate",
+      "prior_reuse_status": "Review only; operator copyright reserved; permission required; not approved for display.",
+      "directory_crosswalk": [
+        {
+          "sfa_licence": "W78126N000",
+          "directory_name": "% Arabica",
+          "registered_business_name": "% Arabica",
+          "business_type": "Restaurant",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: A",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "Address: 44 JALAN MERAH SAGA #01-58,Singapore 278116",
+          "postal_code": "278116"
+        }
+      ],
+      "image_url_head_check": {
+        "status": 200,
+        "content_type": "image/webp",
+        "final_url": "https://arabica.sg/wp-content/uploads/2026/02/c02-1-scaled-1.webp",
+        "error": null
+      },
+      "source_page_head_check": {
+        "status": 200,
+        "content_type": "text/html; charset=UTF-8",
+        "final_url": "https://arabica.sg/arabica-store/arabica-singapore-chip-bee-gardens/",
+        "error": null
+      },
+      "crosswalk_precision": "Outlet-specific official operator page or exact first-party source mapping. Page-to-image relationship follows the pre-existing Refresh40 research note; URL responses checked now.",
+      "reuse_rights": "URL discovery only. Rights remain with operator/platform; no reuse licence or permission established. Do not embed, cache, republish, or mark approved without permission."
+    },
+    {
+      "sfa_licence_field": "CE20Z99B000",
+      "f_and_b_name_in_candidate_sheet": "Khao",
+      "item_or_image_type": "Chicken Everyday Bowl",
+      "image_url": "https://static.wixstatic.com/media/d68e0f_4033b8a404974700bd8a5befa6a291d5~mv2.jpg",
+      "source_page_url": "https://static.wixstatic.com/media/d68e0f_4033b8a404974700bd8a5befa6a291d5~mv2.jpg",
+      "observed_in_refresh40": "2026-10-18",
+      "prior_visual_check": "Visually checked",
+      "prior_image_scope": "Item photo candidate",
+      "prior_reuse_status": "Review only; not approved for display",
+      "directory_crosswalk": [
+        {
+          "sfa_licence": "CE20Z99B000",
+          "directory_name": "Khao",
+          "registered_business_name": "Khao",
+          "business_type": "Takeaway",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: B",
+          "public_access_status_in_refresh40": "public_access_verified_operator_source",
+          "address": "1 KIM SENG PROMENADE #B1-K101,GREAT WORLD CITY,Singapore 237994",
+          "postal_code": "237994"
+        }
+      ],
+      "image_url_head_check": {
+        "status": 200,
+        "content_type": "image/jpeg",
+        "final_url": "https://static.wixstatic.com/media/d68e0f_4033b8a404974700bd8a5befa6a291d5~mv2.jpg",
+        "error": null
+      },
+      "source_page_head_check": {
+        "status": 200,
+        "content_type": "image/jpeg",
+        "final_url": "https://static.wixstatic.com/media/d68e0f_4033b8a404974700bd8a5befa6a291d5~mv2.jpg",
+        "error": null
+      },
+      "crosswalk_precision": "Exact SFA licence is found; asset is menu-level/brand-level and does not prove branch availability.",
+      "reuse_rights": "URL discovery only. Rights remain with operator/platform; no reuse licence or permission established. Do not embed, cache, republish, or mark approved without permission."
+    },
+    {
+      "sfa_licence_field": "CE20Z99B000",
+      "f_and_b_name_in_candidate_sheet": "Khao",
+      "item_or_image_type": "Fish Everyday Bowl",
+      "image_url": "https://static.wixstatic.com/media/d68e0f_607ea002c9b046e39057626b26924e22~mv2.jpg",
+      "source_page_url": "https://static.wixstatic.com/media/d68e0f_607ea002c9b046e39057626b26924e22~mv2.jpg",
+      "observed_in_refresh40": "2026-10-18",
+      "prior_visual_check": "Visually checked",
+      "prior_image_scope": "Item photo candidate",
+      "prior_reuse_status": "Review only; not approved for display",
+      "directory_crosswalk": [
+        {
+          "sfa_licence": "CE20Z99B000",
+          "directory_name": "Khao",
+          "registered_business_name": "Khao",
+          "business_type": "Takeaway",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: B",
+          "public_access_status_in_refresh40": "public_access_verified_operator_source",
+          "address": "1 KIM SENG PROMENADE #B1-K101,GREAT WORLD CITY,Singapore 237994",
+          "postal_code": "237994"
+        }
+      ],
+      "image_url_head_check": {
+        "status": 200,
+        "content_type": "image/jpeg",
+        "final_url": "https://static.wixstatic.com/media/d68e0f_607ea002c9b046e39057626b26924e22~mv2.jpg",
+        "error": null
+      },
+      "source_page_head_check": {
+        "status": 200,
+        "content_type": "image/jpeg",
+        "final_url": "https://static.wixstatic.com/media/d68e0f_607ea002c9b046e39057626b26924e22~mv2.jpg",
+        "error": null
+      },
+      "crosswalk_precision": "Exact SFA licence is found; asset is menu-level/brand-level and does not prove branch availability.",
+      "reuse_rights": "URL discovery only. Rights remain with operator/platform; no reuse licence or permission established. Do not embed, cache, republish, or mark approved without permission."
+    },
+    {
+      "sfa_licence_field": "CE20Z99B000",
+      "f_and_b_name_in_candidate_sheet": "Khao",
+      "item_or_image_type": "Pork Everyday Bowl",
+      "image_url": "https://static.wixstatic.com/media/d68e0f_59faee56fedc453dad9b504ac3b1a7db~mv2.jpg",
+      "source_page_url": "https://static.wixstatic.com/media/d68e0f_59faee56fedc453dad9b504ac3b1a7db~mv2.jpg",
+      "observed_in_refresh40": "2026-10-18",
+      "prior_visual_check": "Visually checked",
+      "prior_image_scope": "Item photo candidate",
+      "prior_reuse_status": "Review only; not approved for display",
+      "directory_crosswalk": [
+        {
+          "sfa_licence": "CE20Z99B000",
+          "directory_name": "Khao",
+          "registered_business_name": "Khao",
+          "business_type": "Takeaway",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: B",
+          "public_access_status_in_refresh40": "public_access_verified_operator_source",
+          "address": "1 KIM SENG PROMENADE #B1-K101,GREAT WORLD CITY,Singapore 237994",
+          "postal_code": "237994"
+        }
+      ],
+      "image_url_head_check": {
+        "status": 200,
+        "content_type": "image/jpeg",
+        "final_url": "https://static.wixstatic.com/media/d68e0f_59faee56fedc453dad9b504ac3b1a7db~mv2.jpg",
+        "error": null
+      },
+      "source_page_head_check": {
+        "status": 200,
+        "content_type": "image/jpeg",
+        "final_url": "https://static.wixstatic.com/media/d68e0f_59faee56fedc453dad9b504ac3b1a7db~mv2.jpg",
+        "error": null
+      },
+      "crosswalk_precision": "Exact SFA licence is found; asset is menu-level/brand-level and does not prove branch availability.",
+      "reuse_rights": "URL discovery only. Rights remain with operator/platform; no reuse licence or permission established. Do not embed, cache, republish, or mark approved without permission."
+    },
+    {
+      "sfa_licence_field": "CE20Z99B000",
+      "f_and_b_name_in_candidate_sheet": "Khao",
+      "item_or_image_type": "Veggie Everyday Bowl",
+      "image_url": "https://static.wixstatic.com/media/d68e0f_bad89e00149e4f45a99a395888ae1c93~mv2.jpeg",
+      "source_page_url": "https://static.wixstatic.com/media/d68e0f_bad89e00149e4f45a99a395888ae1c93~mv2.jpeg",
+      "observed_in_refresh40": "2026-10-18",
+      "prior_visual_check": "Visually checked",
+      "prior_image_scope": "Item photo candidate",
+      "prior_reuse_status": "Review only; not approved for display",
+      "directory_crosswalk": [
+        {
+          "sfa_licence": "CE20Z99B000",
+          "directory_name": "Khao",
+          "registered_business_name": "Khao",
+          "business_type": "Takeaway",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: B",
+          "public_access_status_in_refresh40": "public_access_verified_operator_source",
+          "address": "1 KIM SENG PROMENADE #B1-K101,GREAT WORLD CITY,Singapore 237994",
+          "postal_code": "237994"
+        }
+      ],
+      "image_url_head_check": {
+        "status": 200,
+        "content_type": "image/jpeg",
+        "final_url": "https://static.wixstatic.com/media/d68e0f_bad89e00149e4f45a99a395888ae1c93~mv2.jpeg",
+        "error": null
+      },
+      "source_page_head_check": {
+        "status": 200,
+        "content_type": "image/jpeg",
+        "final_url": "https://static.wixstatic.com/media/d68e0f_bad89e00149e4f45a99a395888ae1c93~mv2.jpeg",
+        "error": null
+      },
+      "crosswalk_precision": "Exact SFA licence is found; asset is menu-level/brand-level and does not prove branch availability.",
+      "reuse_rights": "URL discovery only. Rights remain with operator/platform; no reuse licence or permission established. Do not embed, cache, republish, or mark approved without permission."
+    },
+    {
+      "sfa_licence_field": "SE19V41K000",
+      "f_and_b_name_in_candidate_sheet": "PS CAFE",
+      "item_or_image_type": "Outlet photo",
+      "image_url": "https://images.squarespace-cdn.com/content/v1/5326c064e4b011eeaa057a38/1580438128824-B0KUDGCC0WH5D9C5UJE0/DSC06722-34_web.jpg",
+      "source_page_url": "https://www.pscafe.com/pscafe-east-coast-park",
+      "observed_in_refresh40": "2026-10-17",
+      "prior_visual_check": "Review-only per asset inventory; visual status not specified",
+      "prior_image_scope": "PS.Cafe East Coast Park outlet photo candidate",
+      "prior_reuse_status": "Official operator-hosted URL; reuse permission unknown; review-only, not approved for display",
+      "directory_crosswalk": [
+        {
+          "sfa_licence": "SE19V41K000",
+          "directory_name": "PS CAFE",
+          "registered_business_name": "PS CAFE",
+          "business_type": "Restaurant",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: A",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "Address: 1110 EAST COAST PARKWAY #01-06,#01-05,#01-07,GOLDKIST BEACH RESORT,Singapore 449880",
+          "postal_code": "449880"
+        }
+      ],
+      "image_url_head_check": {
+        "status": 200,
+        "content_type": "image/webp",
+        "final_url": "https://images.squarespace-cdn.com/content/v1/5326c064e4b011eeaa057a38/1580438128824-B0KUDGCC0WH5D9C5UJE0/DSC06722-34_web.jpg",
+        "error": null
+      },
+      "source_page_head_check": {
+        "status": 200,
+        "content_type": "text/html;charset=utf-8",
+        "final_url": "https://www.pscafe.com/pscafe-east-coast-park",
+        "error": null
+      },
+      "crosswalk_precision": "Outlet-specific official operator page or exact first-party source mapping. Page-to-image relationship follows the pre-existing Refresh40 research note; URL responses checked now.",
+      "reuse_rights": "URL discovery only. Rights remain with operator/platform; no reuse licence or permission established. Do not embed, cache, republish, or mark approved without permission."
+    },
+    {
+      "sfa_licence_field": "NW10303C000, SE25F72A000, W02041J000",
+      "f_and_b_name_in_candidate_sheet": "#87 JUST THAI",
+      "item_or_image_type": "Menu item image candidate: Crabmeat with Thai Yellow Curry Powder",
+      "image_url": "https://87justthai.com/wp-content/uploads/2025/05/ChefSpecials_Crabmeat-Yellow-Curry-Powder-1-scaled-90x90.jpg",
+      "source_page_url": "https://87justthai.com/menu/",
+      "observed_in_refresh40": "2026-10-18",
+      "prior_visual_check": "Not visually checked; source HTML declares 90 × 90 px.",
+      "prior_image_scope": "Operator brand menu thumbnail; branch availability unresolved.",
+      "prior_reuse_status": "Review only; rights unresolved; 90 × 90 thumbnail; not approved for display.",
+      "directory_crosswalk": [
+        {
+          "sfa_licence": "NW10303C000",
+          "directory_name": "#87 JUST THAI",
+          "registered_business_name": "#87 JUST THAI",
+          "business_type": "Restaurant",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: A",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "34B LORONG MAMBONG HOLLAND VILLAGE,Singapore 277691 (1st storey)",
+          "postal_code": "277691"
+        },
+        {
+          "sfa_licence": "SE25F72A000",
+          "directory_name": "#87 JUST THAI",
+          "registered_business_name": "#87 JUST THAI",
+          "business_type": "Restaurant",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: B",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "98 PUNGGOL WAY #01-213,Singapore 829857",
+          "postal_code": "829857"
+        },
+        {
+          "sfa_licence": "W02041J000",
+          "directory_name": "#87 JUST THAI",
+          "registered_business_name": "#87 JUST THAI",
+          "business_type": "Restaurant",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: A",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "57 KILLINEY ROAD #01-01,Singapore 239520",
+          "postal_code": "239520"
+        }
+      ],
+      "image_url_head_check": {
+        "status": 200,
+        "content_type": "image/jpeg",
+        "final_url": "https://87justthai.com/wp-content/uploads/2025/05/ChefSpecials_Crabmeat-Yellow-Curry-Powder-1-scaled-90x90.jpg",
+        "error": null
+      },
+      "source_page_head_check": {
+        "status": 200,
+        "content_type": "text/html; charset=UTF-8",
+        "final_url": "https://87justthai.com/menu/",
+        "error": null
+      },
+      "crosswalk_precision": "Multi-outlet brand/menu source; licences are grouped in the existing candidate row. No branch-level item availability claim.",
+      "reuse_rights": "URL discovery only. Rights remain with operator/platform; no reuse licence or permission established. Do not embed, cache, republish, or mark approved without permission."
+    },
+    {
+      "sfa_licence_field": "NW10303C000, SE25F72A000, W02041J000",
+      "f_and_b_name_in_candidate_sheet": "#87 JUST THAI",
+      "item_or_image_type": "Menu item image candidate: Seabass with thai spicy lime sauce",
+      "image_url": "https://87justthai.com/wp-content/uploads/2025/10/Seabass-with-thai-spicy-lime-sauce_New_small-90x90.jpg",
+      "source_page_url": "https://87justthai.com/menu/",
+      "observed_in_refresh40": "2026-10-18",
+      "prior_visual_check": "Not visually checked; source HTML declares 90 × 90 px.",
+      "prior_image_scope": "Operator brand menu thumbnail; branch availability unresolved.",
+      "prior_reuse_status": "Review only; rights unresolved; 90 × 90 thumbnail; not approved for display.",
+      "directory_crosswalk": [
+        {
+          "sfa_licence": "NW10303C000",
+          "directory_name": "#87 JUST THAI",
+          "registered_business_name": "#87 JUST THAI",
+          "business_type": "Restaurant",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: A",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "34B LORONG MAMBONG HOLLAND VILLAGE,Singapore 277691 (1st storey)",
+          "postal_code": "277691"
+        },
+        {
+          "sfa_licence": "SE25F72A000",
+          "directory_name": "#87 JUST THAI",
+          "registered_business_name": "#87 JUST THAI",
+          "business_type": "Restaurant",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: B",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "98 PUNGGOL WAY #01-213,Singapore 829857",
+          "postal_code": "829857"
+        },
+        {
+          "sfa_licence": "W02041J000",
+          "directory_name": "#87 JUST THAI",
+          "registered_business_name": "#87 JUST THAI",
+          "business_type": "Restaurant",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: A",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "57 KILLINEY ROAD #01-01,Singapore 239520",
+          "postal_code": "239520"
+        }
+      ],
+      "image_url_head_check": {
+        "status": 200,
+        "content_type": "image/jpeg",
+        "final_url": "https://87justthai.com/wp-content/uploads/2025/10/Seabass-with-thai-spicy-lime-sauce_New_small-90x90.jpg",
+        "error": null
+      },
+      "source_page_head_check": {
+        "status": 200,
+        "content_type": "text/html; charset=UTF-8",
+        "final_url": "https://87justthai.com/menu/",
+        "error": null
+      },
+      "crosswalk_precision": "Multi-outlet brand/menu source; licences are grouped in the existing candidate row. No branch-level item availability claim.",
+      "reuse_rights": "URL discovery only. Rights remain with operator/platform; no reuse licence or permission established. Do not embed, cache, republish, or mark approved without permission."
+    },
+    {
+      "sfa_licence_field": "NW10303C000, SE25F72A000, W02041J000",
+      "f_and_b_name_in_candidate_sheet": "#87 JUST THAI",
+      "item_or_image_type": "Menu item image candidate: Seabass with thai soya sauce",
+      "image_url": "https://87justthai.com/wp-content/uploads/2025/10/Seabass-Soy-Sauce-Black-90x90.jpg",
+      "source_page_url": "https://87justthai.com/menu/",
+      "observed_in_refresh40": "2026-10-18",
+      "prior_visual_check": "Not visually checked; source HTML declares 90 × 90 px.",
+      "prior_image_scope": "Operator brand menu thumbnail; branch availability unresolved.",
+      "prior_reuse_status": "Review only; rights unresolved; 90 × 90 thumbnail; not approved for display.",
+      "directory_crosswalk": [
+        {
+          "sfa_licence": "NW10303C000",
+          "directory_name": "#87 JUST THAI",
+          "registered_business_name": "#87 JUST THAI",
+          "business_type": "Restaurant",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: A",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "34B LORONG MAMBONG HOLLAND VILLAGE,Singapore 277691 (1st storey)",
+          "postal_code": "277691"
+        },
+        {
+          "sfa_licence": "SE25F72A000",
+          "directory_name": "#87 JUST THAI",
+          "registered_business_name": "#87 JUST THAI",
+          "business_type": "Restaurant",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: B",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "98 PUNGGOL WAY #01-213,Singapore 829857",
+          "postal_code": "829857"
+        },
+        {
+          "sfa_licence": "W02041J000",
+          "directory_name": "#87 JUST THAI",
+          "registered_business_name": "#87 JUST THAI",
+          "business_type": "Restaurant",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: A",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "57 KILLINEY ROAD #01-01,Singapore 239520",
+          "postal_code": "239520"
+        }
+      ],
+      "image_url_head_check": {
+        "status": 200,
+        "content_type": "image/jpeg",
+        "final_url": "https://87justthai.com/wp-content/uploads/2025/10/Seabass-Soy-Sauce-Black-90x90.jpg",
+        "error": null
+      },
+      "source_page_head_check": {
+        "status": 200,
+        "content_type": "text/html; charset=UTF-8",
+        "final_url": "https://87justthai.com/menu/",
+        "error": null
+      },
+      "crosswalk_precision": "Multi-outlet brand/menu source; licences are grouped in the existing candidate row. No branch-level item availability claim.",
+      "reuse_rights": "URL discovery only. Rights remain with operator/platform; no reuse licence or permission established. Do not embed, cache, republish, or mark approved without permission."
+    },
+    {
+      "sfa_licence_field": "NW10303C000, SE25F72A000, W02041J000",
+      "f_and_b_name_in_candidate_sheet": "#87 JUST THAI",
+      "item_or_image_type": "Menu item image candidate: Deep Fried Century Egg with hot basil chicken/pork",
+      "image_url": "https://87justthai.com/wp-content/uploads/2025/05/ChefSpecials_Deep-Fried-Century-Egg-with-hot-basil-chicken-or-pork-1-90x90.jpg",
+      "source_page_url": "https://87justthai.com/menu/",
+      "observed_in_refresh40": "2026-10-18",
+      "prior_visual_check": "Not visually checked; source HTML declares 90 × 90 px.",
+      "prior_image_scope": "Operator brand menu thumbnail; branch availability unresolved.",
+      "prior_reuse_status": "Review only; rights unresolved; 90 × 90 thumbnail; not approved for display.",
+      "directory_crosswalk": [
+        {
+          "sfa_licence": "NW10303C000",
+          "directory_name": "#87 JUST THAI",
+          "registered_business_name": "#87 JUST THAI",
+          "business_type": "Restaurant",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: A",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "34B LORONG MAMBONG HOLLAND VILLAGE,Singapore 277691 (1st storey)",
+          "postal_code": "277691"
+        },
+        {
+          "sfa_licence": "SE25F72A000",
+          "directory_name": "#87 JUST THAI",
+          "registered_business_name": "#87 JUST THAI",
+          "business_type": "Restaurant",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: B",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "98 PUNGGOL WAY #01-213,Singapore 829857",
+          "postal_code": "829857"
+        },
+        {
+          "sfa_licence": "W02041J000",
+          "directory_name": "#87 JUST THAI",
+          "registered_business_name": "#87 JUST THAI",
+          "business_type": "Restaurant",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: A",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "57 KILLINEY ROAD #01-01,Singapore 239520",
+          "postal_code": "239520"
+        }
+      ],
+      "image_url_head_check": {
+        "status": 200,
+        "content_type": "image/jpeg",
+        "final_url": "https://87justthai.com/wp-content/uploads/2025/05/ChefSpecials_Deep-Fried-Century-Egg-with-hot-basil-chicken-or-pork-1-90x90.jpg",
+        "error": null
+      },
+      "source_page_head_check": {
+        "status": 200,
+        "content_type": "text/html; charset=UTF-8",
+        "final_url": "https://87justthai.com/menu/",
+        "error": null
+      },
+      "crosswalk_precision": "Multi-outlet brand/menu source; licences are grouped in the existing candidate row. No branch-level item availability claim.",
+      "reuse_rights": "URL discovery only. Rights remain with operator/platform; no reuse licence or permission established. Do not embed, cache, republish, or mark approved without permission."
+    },
+    {
+      "sfa_licence_field": "NW10303C000, SE25F72A000, W02041J000",
+      "f_and_b_name_in_candidate_sheet": "#87 JUST THAI",
+      "item_or_image_type": "Menu item image candidate: Deep Fried Century Egg with hot basil beef",
+      "image_url": "https://87justthai.com/wp-content/uploads/2025/05/ChefSpecials_Deep-Fried-Century-Egg-with-Hot-Basil-Beef-1-90x90.jpg",
+      "source_page_url": "https://87justthai.com/menu/",
+      "observed_in_refresh40": "2026-10-18",
+      "prior_visual_check": "Not visually checked; source HTML declares 90 × 90 px.",
+      "prior_image_scope": "Operator brand menu thumbnail; branch availability unresolved.",
+      "prior_reuse_status": "Review only; rights unresolved; 90 × 90 thumbnail; not approved for display.",
+      "directory_crosswalk": [
+        {
+          "sfa_licence": "NW10303C000",
+          "directory_name": "#87 JUST THAI",
+          "registered_business_name": "#87 JUST THAI",
+          "business_type": "Restaurant",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: A",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "34B LORONG MAMBONG HOLLAND VILLAGE,Singapore 277691 (1st storey)",
+          "postal_code": "277691"
+        },
+        {
+          "sfa_licence": "SE25F72A000",
+          "directory_name": "#87 JUST THAI",
+          "registered_business_name": "#87 JUST THAI",
+          "business_type": "Restaurant",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: B",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "98 PUNGGOL WAY #01-213,Singapore 829857",
+          "postal_code": "829857"
+        },
+        {
+          "sfa_licence": "W02041J000",
+          "directory_name": "#87 JUST THAI",
+          "registered_business_name": "#87 JUST THAI",
+          "business_type": "Restaurant",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: A",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "57 KILLINEY ROAD #01-01,Singapore 239520",
+          "postal_code": "239520"
+        }
+      ],
+      "image_url_head_check": {
+        "status": 200,
+        "content_type": "image/jpeg",
+        "final_url": "https://87justthai.com/wp-content/uploads/2025/05/ChefSpecials_Deep-Fried-Century-Egg-with-Hot-Basil-Beef-1-90x90.jpg",
+        "error": null
+      },
+      "source_page_head_check": {
+        "status": 200,
+        "content_type": "text/html; charset=UTF-8",
+        "final_url": "https://87justthai.com/menu/",
+        "error": null
+      },
+      "crosswalk_precision": "Multi-outlet brand/menu source; licences are grouped in the existing candidate row. No branch-level item availability claim.",
+      "reuse_rights": "URL discovery only. Rights remain with operator/platform; no reuse licence or permission established. Do not embed, cache, republish, or mark approved without permission."
+    },
+    {
+      "sfa_licence_field": "NW10303C000, SE25F72A000, W02041J000",
+      "f_and_b_name_in_candidate_sheet": "#87 JUST THAI",
+      "item_or_image_type": "Menu item image candidate: Deep Fried Century Egg with hot basil prawns",
+      "image_url": "https://87justthai.com/wp-content/uploads/2025/07/New_Deep-Fried-Century-Egg-with-Prawn-1-scaled-90x90.jpg",
+      "source_page_url": "https://87justthai.com/menu/",
+      "observed_in_refresh40": "2026-10-18",
+      "prior_visual_check": "Not visually checked; source HTML declares 90 × 90 px.",
+      "prior_image_scope": "Operator brand menu thumbnail; branch availability unresolved.",
+      "prior_reuse_status": "Review only; rights unresolved; 90 × 90 thumbnail; not approved for display.",
+      "directory_crosswalk": [
+        {
+          "sfa_licence": "NW10303C000",
+          "directory_name": "#87 JUST THAI",
+          "registered_business_name": "#87 JUST THAI",
+          "business_type": "Restaurant",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: A",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "34B LORONG MAMBONG HOLLAND VILLAGE,Singapore 277691 (1st storey)",
+          "postal_code": "277691"
+        },
+        {
+          "sfa_licence": "SE25F72A000",
+          "directory_name": "#87 JUST THAI",
+          "registered_business_name": "#87 JUST THAI",
+          "business_type": "Restaurant",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: B",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "98 PUNGGOL WAY #01-213,Singapore 829857",
+          "postal_code": "829857"
+        },
+        {
+          "sfa_licence": "W02041J000",
+          "directory_name": "#87 JUST THAI",
+          "registered_business_name": "#87 JUST THAI",
+          "business_type": "Restaurant",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: A",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "57 KILLINEY ROAD #01-01,Singapore 239520",
+          "postal_code": "239520"
+        }
+      ],
+      "image_url_head_check": {
+        "status": 200,
+        "content_type": "image/jpeg",
+        "final_url": "https://87justthai.com/wp-content/uploads/2025/07/New_Deep-Fried-Century-Egg-with-Prawn-1-scaled-90x90.jpg",
+        "error": null
+      },
+      "source_page_head_check": {
+        "status": 200,
+        "content_type": "text/html; charset=UTF-8",
+        "final_url": "https://87justthai.com/menu/",
+        "error": null
+      },
+      "crosswalk_precision": "Multi-outlet brand/menu source; licences are grouped in the existing candidate row. No branch-level item availability claim.",
+      "reuse_rights": "URL discovery only. Rights remain with operator/platform; no reuse licence or permission established. Do not embed, cache, republish, or mark approved without permission."
+    },
+    {
+      "sfa_licence_field": "NW10303C000, SE25F72A000, W02041J000",
+      "f_and_b_name_in_candidate_sheet": "#87 JUST THAI",
+      "item_or_image_type": "Menu item image candidate: Claypot Tang Hoon with Prawns (6pcs)",
+      "image_url": "https://87justthai.com/wp-content/uploads/2025/05/ChefSpecials_Claypot-Tanghoon-With-Prawns-1-scaled-90x90.jpg",
+      "source_page_url": "https://87justthai.com/menu/",
+      "observed_in_refresh40": "2026-10-18",
+      "prior_visual_check": "Not visually checked; source HTML declares 90 × 90 px.",
+      "prior_image_scope": "Operator brand menu thumbnail; branch availability unresolved.",
+      "prior_reuse_status": "Review only; rights unresolved; 90 × 90 thumbnail; not approved for display.",
+      "directory_crosswalk": [
+        {
+          "sfa_licence": "NW10303C000",
+          "directory_name": "#87 JUST THAI",
+          "registered_business_name": "#87 JUST THAI",
+          "business_type": "Restaurant",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: A",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "34B LORONG MAMBONG HOLLAND VILLAGE,Singapore 277691 (1st storey)",
+          "postal_code": "277691"
+        },
+        {
+          "sfa_licence": "SE25F72A000",
+          "directory_name": "#87 JUST THAI",
+          "registered_business_name": "#87 JUST THAI",
+          "business_type": "Restaurant",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: B",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "98 PUNGGOL WAY #01-213,Singapore 829857",
+          "postal_code": "829857"
+        },
+        {
+          "sfa_licence": "W02041J000",
+          "directory_name": "#87 JUST THAI",
+          "registered_business_name": "#87 JUST THAI",
+          "business_type": "Restaurant",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: A",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "57 KILLINEY ROAD #01-01,Singapore 239520",
+          "postal_code": "239520"
+        }
+      ],
+      "image_url_head_check": {
+        "status": 200,
+        "content_type": "image/jpeg",
+        "final_url": "https://87justthai.com/wp-content/uploads/2025/05/ChefSpecials_Claypot-Tanghoon-With-Prawns-1-scaled-90x90.jpg",
+        "error": null
+      },
+      "source_page_head_check": {
+        "status": 200,
+        "content_type": "text/html; charset=UTF-8",
+        "final_url": "https://87justthai.com/menu/",
+        "error": null
+      },
+      "crosswalk_precision": "Multi-outlet brand/menu source; licences are grouped in the existing candidate row. No branch-level item availability claim.",
+      "reuse_rights": "URL discovery only. Rights remain with operator/platform; no reuse licence or permission established. Do not embed, cache, republish, or mark approved without permission."
+    },
+    {
+      "sfa_licence_field": "NW10303C000, SE25F72A000, W02041J000",
+      "f_and_b_name_in_candidate_sheet": "#87 JUST THAI",
+      "item_or_image_type": "Menu item image candidate: Pandan Fried Chicken",
+      "image_url": "https://87justthai.com/wp-content/uploads/2025/05/ChefSpecials_Pandan-Fried-Chicken-PFC-1-90x90.jpg",
+      "source_page_url": "https://87justthai.com/menu/",
+      "observed_in_refresh40": "2026-10-18",
+      "prior_visual_check": "Not visually checked; source HTML declares 90 × 90 px.",
+      "prior_image_scope": "Operator brand menu thumbnail; branch availability unresolved.",
+      "prior_reuse_status": "Review only; rights unresolved; 90 × 90 thumbnail; not approved for display.",
+      "directory_crosswalk": [
+        {
+          "sfa_licence": "NW10303C000",
+          "directory_name": "#87 JUST THAI",
+          "registered_business_name": "#87 JUST THAI",
+          "business_type": "Restaurant",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: A",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "34B LORONG MAMBONG HOLLAND VILLAGE,Singapore 277691 (1st storey)",
+          "postal_code": "277691"
+        },
+        {
+          "sfa_licence": "SE25F72A000",
+          "directory_name": "#87 JUST THAI",
+          "registered_business_name": "#87 JUST THAI",
+          "business_type": "Restaurant",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: B",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "98 PUNGGOL WAY #01-213,Singapore 829857",
+          "postal_code": "829857"
+        },
+        {
+          "sfa_licence": "W02041J000",
+          "directory_name": "#87 JUST THAI",
+          "registered_business_name": "#87 JUST THAI",
+          "business_type": "Restaurant",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: A",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "57 KILLINEY ROAD #01-01,Singapore 239520",
+          "postal_code": "239520"
+        }
+      ],
+      "image_url_head_check": {
+        "status": 200,
+        "content_type": "image/jpeg",
+        "final_url": "https://87justthai.com/wp-content/uploads/2025/05/ChefSpecials_Pandan-Fried-Chicken-PFC-1-90x90.jpg",
+        "error": null
+      },
+      "source_page_head_check": {
+        "status": 200,
+        "content_type": "text/html; charset=UTF-8",
+        "final_url": "https://87justthai.com/menu/",
+        "error": null
+      },
+      "crosswalk_precision": "Multi-outlet brand/menu source; licences are grouped in the existing candidate row. No branch-level item availability claim.",
+      "reuse_rights": "URL discovery only. Rights remain with operator/platform; no reuse licence or permission established. Do not embed, cache, republish, or mark approved without permission."
+    },
+    {
+      "sfa_licence_field": "NW10303C000, SE25F72A000, W02041J000",
+      "f_and_b_name_in_candidate_sheet": "#87 JUST THAI",
+      "item_or_image_type": "Menu item image candidate: Tom Yum Oh Ho (Tom Yum Mama Hotpot)",
+      "image_url": "https://87justthai.com/wp-content/uploads/2025/05/ChefSpecials_Tom-Yum-Oh-Ho-Mama-1-90x90.jpg",
+      "source_page_url": "https://87justthai.com/menu/",
+      "observed_in_refresh40": "2026-10-18",
+      "prior_visual_check": "Not visually checked; source HTML declares 90 × 90 px.",
+      "prior_image_scope": "Operator brand menu thumbnail; branch availability unresolved.",
+      "prior_reuse_status": "Review only; rights unresolved; 90 × 90 thumbnail; not approved for display.",
+      "directory_crosswalk": [
+        {
+          "sfa_licence": "NW10303C000",
+          "directory_name": "#87 JUST THAI",
+          "registered_business_name": "#87 JUST THAI",
+          "business_type": "Restaurant",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: A",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "34B LORONG MAMBONG HOLLAND VILLAGE,Singapore 277691 (1st storey)",
+          "postal_code": "277691"
+        },
+        {
+          "sfa_licence": "SE25F72A000",
+          "directory_name": "#87 JUST THAI",
+          "registered_business_name": "#87 JUST THAI",
+          "business_type": "Restaurant",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: B",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "98 PUNGGOL WAY #01-213,Singapore 829857",
+          "postal_code": "829857"
+        },
+        {
+          "sfa_licence": "W02041J000",
+          "directory_name": "#87 JUST THAI",
+          "registered_business_name": "#87 JUST THAI",
+          "business_type": "Restaurant",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: A",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "57 KILLINEY ROAD #01-01,Singapore 239520",
+          "postal_code": "239520"
+        }
+      ],
+      "image_url_head_check": {
+        "status": 200,
+        "content_type": "image/jpeg",
+        "final_url": "https://87justthai.com/wp-content/uploads/2025/05/ChefSpecials_Tom-Yum-Oh-Ho-Mama-1-90x90.jpg",
+        "error": null
+      },
+      "source_page_head_check": {
+        "status": 200,
+        "content_type": "text/html; charset=UTF-8",
+        "final_url": "https://87justthai.com/menu/",
+        "error": null
+      },
+      "crosswalk_precision": "Multi-outlet brand/menu source; licences are grouped in the existing candidate row. No branch-level item availability claim.",
+      "reuse_rights": "URL discovery only. Rights remain with operator/platform; no reuse licence or permission established. Do not embed, cache, republish, or mark approved without permission."
+    },
+    {
+      "sfa_licence_field": "CE22G07P000",
+      "f_and_b_name_in_candidate_sheet": "Starbucks",
+      "item_or_image_type": "37Smith Street outlet banner (exact image subject not visually checked)",
+      "image_url": "https://www.starbucks.com.sg/media/2025/spring/37S%20home%20banner.png",
+      "source_page_url": "https://www.starbucks.com.sg/starbucks-37smith-street",
+      "observed_in_refresh40": "2026-10-18",
+      "prior_visual_check": "Not visually inspected; branch linkage is from filename and first-party page markup.",
+      "prior_image_scope": "Asset named 37S home banner and embedded directly in Starbucks 37Smith Street page.",
+      "prior_reuse_status": "Review only; Starbucks retains copyright; no redistribution/display permission established; not approved for display.",
+      "directory_crosswalk": [
+        {
+          "sfa_licence": "CE22G07P000",
+          "directory_name": "Starbucks",
+          "registered_business_name": "Starbucks",
+          "business_type": "Snack Counter",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: B",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "Address: 37 SMITH STREET Singapore 058950 1st and 2nd Storey",
+          "postal_code": "058950"
+        }
+      ],
+      "image_url_head_check": {
+        "status": 200,
+        "content_type": "image/png",
+        "final_url": "https://www.starbucks.com.sg/media/2025/spring/37S%20home%20banner.png",
+        "error": null
+      },
+      "source_page_head_check": {
+        "status": 200,
+        "content_type": "text/html; charset=utf-8",
+        "final_url": "https://www.starbucks.com.sg/starbucks-37smith-street",
+        "error": null
+      },
+      "crosswalk_precision": "Outlet-specific official operator page or exact first-party source mapping. Page-to-image relationship follows the pre-existing Refresh40 research note; URL responses checked now.",
+      "reuse_rights": "URL discovery only. Rights remain with operator/platform; no reuse licence or permission established. Do not embed, cache, republish, or mark approved without permission."
+    },
+    {
+      "sfa_licence_field": "CE22G07P000",
+      "f_and_b_name_in_candidate_sheet": "Starbucks",
+      "item_or_image_type": "37Smith Street outlet main banner (exact image subject not visually checked)",
+      "image_url": "https://www.starbucks.com.sg/media/2025/spring/37S%20main%20banner%20750x750.png",
+      "source_page_url": "https://www.starbucks.com.sg/starbucks-37smith-street",
+      "observed_in_refresh40": "2026-10-18",
+      "prior_visual_check": "Not visually inspected; branch linkage is from filename and first-party page markup.",
+      "prior_image_scope": "Asset named 37S main banner and embedded directly in Starbucks 37Smith Street page.",
+      "prior_reuse_status": "Review only; Starbucks retains copyright; no redistribution/display permission established; not approved for display.",
+      "directory_crosswalk": [
+        {
+          "sfa_licence": "CE22G07P000",
+          "directory_name": "Starbucks",
+          "registered_business_name": "Starbucks",
+          "business_type": "Snack Counter",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: B",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "Address: 37 SMITH STREET Singapore 058950 1st and 2nd Storey",
+          "postal_code": "058950"
+        }
+      ],
+      "image_url_head_check": {
+        "status": 200,
+        "content_type": "image/png",
+        "final_url": "https://www.starbucks.com.sg/media/2025/spring/37S%20main%20banner%20750x750.png",
+        "error": null
+      },
+      "source_page_head_check": {
+        "status": 200,
+        "content_type": "text/html; charset=utf-8",
+        "final_url": "https://www.starbucks.com.sg/starbucks-37smith-street",
+        "error": null
+      },
+      "crosswalk_precision": "Outlet-specific official operator page or exact first-party source mapping. Page-to-image relationship follows the pre-existing Refresh40 research note; URL responses checked now.",
+      "reuse_rights": "URL discovery only. Rights remain with operator/platform; no reuse licence or permission established. Do not embed, cache, republish, or mark approved without permission."
+    },
+    {
+      "sfa_licence_field": "CE22G07P000",
+      "f_and_b_name_in_candidate_sheet": "Starbucks",
+      "item_or_image_type": "Black Sesame Oatmilk Coffee Frappuccino® with Soy Pudding",
+      "image_url": "https://www.starbucks.com.sg/media/2026/SummerOne/F%26B/Drinks/Black-Sesame-%20Oatmilk-Coffee-OnGreen_750x750.png",
+      "source_page_url": "https://www.starbucks.com.sg/menu/beverages/seasonal/black-sesame-oatmilk-coffee-frappuccino-with-soy-pudding",
+      "observed_in_refresh40": "2026-10-18",
+      "prior_visual_check": "Not visually inspected; exact asset association is evidenced in current first-party HTML markup.",
+      "prior_image_scope": "Named product and image asset are paired in first-party outlet page markup; outlet page names it among Starbucks 37Smith Street exclusive food.",
+      "prior_reuse_status": "Review only; Starbucks retains copyright; no redistribution/display permission established; not approved for display.",
+      "directory_crosswalk": [
+        {
+          "sfa_licence": "CE22G07P000",
+          "directory_name": "Starbucks",
+          "registered_business_name": "Starbucks",
+          "business_type": "Snack Counter",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: B",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "Address: 37 SMITH STREET Singapore 058950 1st and 2nd Storey",
+          "postal_code": "058950"
+        }
+      ],
+      "image_url_head_check": {
+        "status": 200,
+        "content_type": "image/png",
+        "final_url": "https://www.starbucks.com.sg/media/2026/SummerOne/F%26B/Drinks/Black-Sesame-%20Oatmilk-Coffee-OnGreen_750x750.png",
+        "error": null
+      },
+      "source_page_head_check": {
+        "status": 200,
+        "content_type": "text/html; charset=utf-8",
+        "final_url": "https://www.starbucks.com.sg/menu/beverages/seasonal/black-sesame-oatmilk-coffee-frappuccino-with-soy-pudding",
+        "error": null
+      },
+      "crosswalk_precision": "Outlet-specific official operator page or exact first-party source mapping. Page-to-image relationship follows the pre-existing Refresh40 research note; URL responses checked now.",
+      "reuse_rights": "URL discovery only. Rights remain with operator/platform; no reuse licence or permission established. Do not embed, cache, republish, or mark approved without permission."
+    },
+    {
+      "sfa_licence_field": "CE22G07P000",
+      "f_and_b_name_in_candidate_sheet": "Starbucks",
+      "item_or_image_type": "Starbucks® Coffee Crust Polo Bun (Served with chilled butter)",
+      "image_url": "https://www.starbucks.com.sg/media/2025/spring/Beverage%20%26%20Food/4.png",
+      "source_page_url": "https://www.starbucks.com.sg/menu/food/desserts/starbucks-coffee-crust-polo-bun-served-with-chilled-butter",
+      "observed_in_refresh40": "2026-10-18",
+      "prior_visual_check": "Not visually inspected; exact asset association is evidenced in current first-party HTML markup.",
+      "prior_image_scope": "Named product and image asset are paired in first-party outlet page markup; outlet page names it among Starbucks 37Smith Street exclusive food.",
+      "prior_reuse_status": "Review only; Starbucks retains copyright; no redistribution/display permission established; not approved for display.",
+      "directory_crosswalk": [
+        {
+          "sfa_licence": "CE22G07P000",
+          "directory_name": "Starbucks",
+          "registered_business_name": "Starbucks",
+          "business_type": "Snack Counter",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: B",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "Address: 37 SMITH STREET Singapore 058950 1st and 2nd Storey",
+          "postal_code": "058950"
+        }
+      ],
+      "image_url_head_check": {
+        "status": 200,
+        "content_type": "image/png",
+        "final_url": "https://www.starbucks.com.sg/media/2025/spring/Beverage%20%26%20Food/4.png",
+        "error": null
+      },
+      "source_page_head_check": {
+        "status": 200,
+        "content_type": "text/html; charset=utf-8",
+        "final_url": "https://www.starbucks.com.sg/menu/food/desserts/starbucks-coffee-crust-polo-bun-served-with-chilled-butter",
+        "error": null
+      },
+      "crosswalk_precision": "Outlet-specific official operator page or exact first-party source mapping. Page-to-image relationship follows the pre-existing Refresh40 research note; URL responses checked now.",
+      "reuse_rights": "URL discovery only. Rights remain with operator/platform; no reuse licence or permission established. Do not embed, cache, republish, or mark approved without permission."
+    },
+    {
+      "sfa_licence_field": "CE22G07P000",
+      "f_and_b_name_in_candidate_sheet": "Starbucks",
+      "item_or_image_type": "Lychee Swiss Roll",
+      "image_url": "https://www.starbucks.com.sg/media/2025/spring/Beverage%20%26%20Food/9.png",
+      "source_page_url": "https://www.starbucks.com.sg/menu/food/desserts/lychee-swiss-roll",
+      "observed_in_refresh40": "2026-10-18",
+      "prior_visual_check": "Not visually inspected; exact asset association is evidenced in current first-party HTML markup.",
+      "prior_image_scope": "Named product and image asset are paired in first-party outlet page markup; outlet page names it among Starbucks 37Smith Street exclusive food.",
+      "prior_reuse_status": "Review only; Starbucks retains copyright; no redistribution/display permission established; not approved for display.",
+      "directory_crosswalk": [
+        {
+          "sfa_licence": "CE22G07P000",
+          "directory_name": "Starbucks",
+          "registered_business_name": "Starbucks",
+          "business_type": "Snack Counter",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: B",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "Address: 37 SMITH STREET Singapore 058950 1st and 2nd Storey",
+          "postal_code": "058950"
+        }
+      ],
+      "image_url_head_check": {
+        "status": 200,
+        "content_type": "image/png",
+        "final_url": "https://www.starbucks.com.sg/media/2025/spring/Beverage%20%26%20Food/9.png",
+        "error": null
+      },
+      "source_page_head_check": {
+        "status": 200,
+        "content_type": "text/html; charset=utf-8",
+        "final_url": "https://www.starbucks.com.sg/menu/food/desserts/lychee-swiss-roll",
+        "error": null
+      },
+      "crosswalk_precision": "Outlet-specific official operator page or exact first-party source mapping. Page-to-image relationship follows the pre-existing Refresh40 research note; URL responses checked now.",
+      "reuse_rights": "URL discovery only. Rights remain with operator/platform; no reuse licence or permission established. Do not embed, cache, republish, or mark approved without permission."
+    },
+    {
+      "sfa_licence_field": "CE22G07P000",
+      "f_and_b_name_in_candidate_sheet": "Starbucks",
+      "item_or_image_type": "Pandan Chiffon Cake",
+      "image_url": "https://www.starbucks.com.sg/media/2025/spring/Beverage%20%26%20Food/7.png",
+      "source_page_url": "https://www.starbucks.com.sg/menu/food/desserts/pandan-chiffon-cake",
+      "observed_in_refresh40": "2026-10-18",
+      "prior_visual_check": "Not visually inspected; exact asset association is evidenced in current first-party HTML markup.",
+      "prior_image_scope": "Named product and image asset are paired in first-party outlet page markup; outlet page names it among Starbucks 37Smith Street exclusive food.",
+      "prior_reuse_status": "Review only; Starbucks retains copyright; no redistribution/display permission established; not approved for display.",
+      "directory_crosswalk": [
+        {
+          "sfa_licence": "CE22G07P000",
+          "directory_name": "Starbucks",
+          "registered_business_name": "Starbucks",
+          "business_type": "Snack Counter",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: B",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "Address: 37 SMITH STREET Singapore 058950 1st and 2nd Storey",
+          "postal_code": "058950"
+        }
+      ],
+      "image_url_head_check": {
+        "status": 200,
+        "content_type": "image/png",
+        "final_url": "https://www.starbucks.com.sg/media/2025/spring/Beverage%20%26%20Food/7.png",
+        "error": null
+      },
+      "source_page_head_check": {
+        "status": 200,
+        "content_type": "text/html; charset=utf-8",
+        "final_url": "https://www.starbucks.com.sg/menu/food/desserts/pandan-chiffon-cake",
+        "error": null
+      },
+      "crosswalk_precision": "Outlet-specific official operator page or exact first-party source mapping. Page-to-image relationship follows the pre-existing Refresh40 research note; URL responses checked now.",
+      "reuse_rights": "URL discovery only. Rights remain with operator/platform; no reuse licence or permission established. Do not embed, cache, republish, or mark approved without permission."
+    },
+    {
+      "sfa_licence_field": "CE22G07P000",
+      "f_and_b_name_in_candidate_sheet": "Starbucks",
+      "item_or_image_type": "Starbucks® Gem Icing Cookie",
+      "image_url": "https://www.starbucks.com.sg/media/2025/spring/Beverage%20%26%20Food/11.png",
+      "source_page_url": "https://www.starbucks.com.sg/menu/food/desserts/starbucks-gem-icing-cookie",
+      "observed_in_refresh40": "2026-10-18",
+      "prior_visual_check": "Not visually inspected; exact asset association is evidenced in current first-party HTML markup.",
+      "prior_image_scope": "Named product and image asset are paired in first-party outlet page markup; outlet page names it among Starbucks 37Smith Street exclusive food.",
+      "prior_reuse_status": "Review only; Starbucks retains copyright; no redistribution/display permission established; not approved for display.",
+      "directory_crosswalk": [
+        {
+          "sfa_licence": "CE22G07P000",
+          "directory_name": "Starbucks",
+          "registered_business_name": "Starbucks",
+          "business_type": "Snack Counter",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: B",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "Address: 37 SMITH STREET Singapore 058950 1st and 2nd Storey",
+          "postal_code": "058950"
+        }
+      ],
+      "image_url_head_check": {
+        "status": 200,
+        "content_type": "image/png",
+        "final_url": "https://www.starbucks.com.sg/media/2025/spring/Beverage%20%26%20Food/11.png",
+        "error": null
+      },
+      "source_page_head_check": {
+        "status": 200,
+        "content_type": "text/html; charset=utf-8",
+        "final_url": "https://www.starbucks.com.sg/menu/food/desserts/starbucks-gem-icing-cookie",
+        "error": null
+      },
+      "crosswalk_precision": "Outlet-specific official operator page or exact first-party source mapping. Page-to-image relationship follows the pre-existing Refresh40 research note; URL responses checked now.",
+      "reuse_rights": "URL discovery only. Rights remain with operator/platform; no reuse licence or permission established. Do not embed, cache, republish, or mark approved without permission."
+    },
+    {
+      "sfa_licence_field": "CE22G07P000",
+      "f_and_b_name_in_candidate_sheet": "Starbucks",
+      "item_or_image_type": "Laksa Mac & Cheese Pie",
+      "image_url": "https://www.starbucks.com.sg/media/2025/spring/Beverage%20%26%20Food/2.png",
+      "source_page_url": "https://www.starbucks.com.sg/menu/food/pie-quiches/laksa-mac-cheese-pie-0",
+      "observed_in_refresh40": "2026-10-18",
+      "prior_visual_check": "Not visually inspected; exact asset association is evidenced in current first-party HTML markup.",
+      "prior_image_scope": "Named product and image asset are paired in first-party outlet page markup; outlet page names it among Starbucks 37Smith Street exclusive food.",
+      "prior_reuse_status": "Review only; Starbucks retains copyright; no redistribution/display permission established; not approved for display.",
+      "directory_crosswalk": [
+        {
+          "sfa_licence": "CE22G07P000",
+          "directory_name": "Starbucks",
+          "registered_business_name": "Starbucks",
+          "business_type": "Snack Counter",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: B",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "Address: 37 SMITH STREET Singapore 058950 1st and 2nd Storey",
+          "postal_code": "058950"
+        }
+      ],
+      "image_url_head_check": {
+        "status": 200,
+        "content_type": "image/png",
+        "final_url": "https://www.starbucks.com.sg/media/2025/spring/Beverage%20%26%20Food/2.png",
+        "error": null
+      },
+      "source_page_head_check": {
+        "status": 200,
+        "content_type": "text/html; charset=utf-8",
+        "final_url": "https://www.starbucks.com.sg/menu/food/pie-quiches/laksa-mac-cheese-pie-0",
+        "error": null
+      },
+      "crosswalk_precision": "Outlet-specific official operator page or exact first-party source mapping. Page-to-image relationship follows the pre-existing Refresh40 research note; URL responses checked now.",
+      "reuse_rights": "URL discovery only. Rights remain with operator/platform; no reuse licence or permission established. Do not embed, cache, republish, or mark approved without permission."
+    },
+    {
+      "sfa_licence_field": "CE05006L000",
+      "f_and_b_name_in_candidate_sheet": "KOMALAS",
+      "item_or_image_type": "Menu item photo — V15 2 Pcs Parotta Meal",
+      "image_url": "https://adm.komalasrestaurants.com/Dynamic/Products/473/Images/V15%20-%20Parotta%20Meal.jpg",
+      "source_page_url": "https://www.komalasrestaurants.com/Order/FusionDining",
+      "observed_in_refresh40": "2026-10-19",
+      "prior_visual_check": "Direct official asset and menu context visually checked in prior research snapshot; authentic item photo, no stock/placeholder. (check recorded in cited prior research snapshot)",
+      "prior_image_scope": "Exact outlet-specific official-source menu item; URL reference only.",
+      "prior_reuse_status": "Reference only; all rights reserved/no reuse licence found. Not approved for display, embedding, caching, or redistribution; obtain written permission.",
+      "directory_crosswalk": [
+        {
+          "sfa_licence": "CE05006L000",
+          "directory_name": "KOMALAS",
+          "registered_business_name": "KOMALAS",
+          "business_type": "Restaurant",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: B",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "Address: 42/42A RACE COURSE ROAD Singapore 218557 (LEVEL 1 & 2)",
+          "postal_code": "218557"
+        }
+      ],
+      "image_url_head_check": {
+        "status": 200,
+        "content_type": "image/jpeg",
+        "final_url": "https://adm.komalasrestaurants.com/Dynamic/Products/473/Images/V15%20-%20Parotta%20Meal.jpg",
+        "error": null
+      },
+      "source_page_head_check": {
+        "status": 200,
+        "content_type": "text/html; charset=utf-8",
+        "final_url": "https://www.komalasrestaurants.com/Order/FusionDining",
+        "error": null
+      },
+      "crosswalk_precision": "Outlet-specific official operator page or exact first-party source mapping. Page-to-image relationship follows the pre-existing Refresh40 research note; URL responses checked now.",
+      "reuse_rights": "URL discovery only. Rights remain with operator/platform; no reuse licence or permission established. Do not embed, cache, republish, or mark approved without permission."
+    },
+    {
+      "sfa_licence_field": "CE05006L000",
+      "f_and_b_name_in_candidate_sheet": "KOMALAS",
+      "item_or_image_type": "Menu item photo — Masala Dosai",
+      "image_url": "https://adm.komalasrestaurants.com/Dynamic/Products/690/Images/MASALA%20DOSAI.jpg",
+      "source_page_url": "https://www.komalasrestaurants.com/Order/FusionDining",
+      "observed_in_refresh40": "2026-10-19",
+      "prior_visual_check": "Direct official asset and menu context visually checked in prior research snapshot; authentic item photo, no stock/placeholder. (check recorded in cited prior research snapshot)",
+      "prior_image_scope": "Exact outlet-specific official-source menu item; URL reference only.",
+      "prior_reuse_status": "Reference only; all rights reserved/no reuse licence found. Not approved for display, embedding, caching, or redistribution; obtain written permission.",
+      "directory_crosswalk": [
+        {
+          "sfa_licence": "CE05006L000",
+          "directory_name": "KOMALAS",
+          "registered_business_name": "KOMALAS",
+          "business_type": "Restaurant",
+          "sfa_status_hygiene_grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: B",
+          "public_access_status_in_refresh40": "public_access_candidate_based_on_sfa_type_and_address",
+          "address": "Address: 42/42A RACE COURSE ROAD Singapore 218557 (LEVEL 1 & 2)",
+          "postal_code": "218557"
+        }
+      ],
+      "image_url_head_check": {
+        "status": 200,
+        "content_type": "image/jpeg",
+        "final_url": "https://adm.komalasrestaurants.com/Dynamic/Products/690/Images/MASALA%20DOSAI.jpg",
+        "error": null
+      },
+      "source_page_head_check": {
+        "status": 200,
+        "content_type": "text/html; charset=utf-8",
+        "final_url": "https://www.komalasrestaurants.com/Order/FusionDining",
+        "error": null
+      },
+      "crosswalk_precision": "Outlet-specific official operator page or exact first-party source mapping. Page-to-image relationship follows the pre-existing Refresh40 research note; URL responses checked now.",
+      "reuse_rights": "URL discovery only. Rights remain with operator/platform; no reuse licence or permission established. Do not embed, cache, republish, or mark approved without permission."
+    }
+  ],
+  "image_head_status_counts": {
+    "200": 30
+  },
+  "page_head_status_counts": {
+    "200": 30
+  },
+  "selection_note": "30 candidates retained. The least useful #87 Just Thai 90x90 thumbnail was omitted to honor the 30-item cap. #87 records group three licences, so their crosswalk is brand-level and is not branch-specific."
+}

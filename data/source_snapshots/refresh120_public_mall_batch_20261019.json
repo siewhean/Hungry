@@ -1,0 +1,690 @@
+{
+  "batch": "refresh120_public_mall_batch_20261019",
+  "created_at": "2026-10-19",
+  "workbook": {
+    "path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "sha256": "0e3f6c7cc1594ba701f6fa4de6d11c6db1db9643060907f7292fb8a634d6eb6f",
+    "mode": "read-only; no workbook edits"
+  },
+  "scope": "Current official CapitaLand Junction 8 food-and-beverage directory excerpt crosswalked to exact public-access-address records in the Hungry master. This validates listed mall tenants and matching address records only; it does not prove an individual tenant admission policy or operating status beyond the current directory listing.",
+  "source_set": [
+    {
+      "source_name": "CapitaLand Junction 8 official Stores directory, Food & Beverage filter",
+      "source_url": "https://www.capitaland.com/sg/malls/junction8/en/stores.html?category=foodandbeverage",
+      "source_type": "mall operator tenant directory",
+      "retrieved_on": "2026-10-19",
+      "search_index_observation": "Official CapitaLand page result surfaced on 2026-10-19. Its indexed directory page is crawled last week and reports 62 F&B listings. The result exposed outlet names and units; the crosswalk file preserves the 61 named entries captured from the returned directory text (one of the reported 62 is not recoverable from this excerpt).",
+      "direct_fetch_status": "Direct HTML page fetched 2026-10-19 but rendered 0 stores plus an error message; not used as positive tenant evidence.",
+      "source_confidence": "medium: official source, recent indexed version; not live-rendered for full list."
+    },
+    {
+      "source_name": "Hungry master workbook SFA records",
+      "source_url": null,
+      "source_type": "target crosswalk",
+      "retrieved_on": "2026-10-19",
+      "source_confidence": "high for recorded licence/name/address as held in current workbook; source evidence is the workbook itself."
+    }
+  ],
+  "public_access_interpretation": {
+    "basis": "A current listing in the mall operator’s public F&B tenant directory is evidence the outlet is presented as a mall tenant in a shopping mall directory.",
+    "limit": "Directory listing is not an explicit statement about building admission, tenant opening today, or unrestricted access to any specific stall. Retain public-access classification only as a candidate unless the workbook has separate admission evidence."
+  },
+  "directory_excerpt_records_crosswalked": 49,
+  "proposed_validation_records": [
+    {
+      "official_name": "4 Fingers Crispy Chicken",
+      "official_unit": "01-32",
+      "sfa_licence": "S98078E000",
+      "workbook_name": "4Fingers Crispy Chicken",
+      "workbook_address": "9 BISHAN PLACE #01-32,JUNCTION 8 SHOPPING CENTRE,Singapore 579837",
+      "workbook_unit": "01-32",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "Ajisen Ramen",
+      "official_unit": "B1-19",
+      "sfa_licence": "CE12L44V000",
+      "workbook_name": "AJISEN RAMEN",
+      "workbook_address": "Address: 9 BISHAN PLACE #B1-19,JUNCTION 8 SHOPPING CENTRE,Singapore 579837",
+      "workbook_unit": "B1-19",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "Ambush",
+      "official_unit": "02-19 to 20 & 02-27",
+      "sfa_licence": "CE11902K000",
+      "workbook_name": "AMBUSH",
+      "workbook_address": "Address: 9 BISHAN PLACE #02-19,JUNCTION 8 SHOPPING CENTRE,Singapore 579837",
+      "workbook_unit": "02-19",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "Bari Bari Steak",
+      "official_unit": "01-37",
+      "sfa_licence": "CE04244X000",
+      "workbook_name": "BARI BARI STEAK",
+      "workbook_address": "Address: 9 BISHAN PLACE #01-37,JUNCTION 8 SHOPPING CENTRE,Singapore 579837",
+      "workbook_unit": "01-37",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "BBQ Express",
+      "official_unit": "B1-K10 to K11",
+      "sfa_licence": "CE07125E000",
+      "workbook_name": "BBQ express",
+      "workbook_address": "Address: 9 BISHAN PLACE #B1-K10,#B1-K10,#B1-K11,JUNCTION 8 SHOPPING CENTRE,Singapore 579837",
+      "workbook_unit": "B1-K10",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "Bee Cheng Hiang",
+      "official_unit": "B1-13",
+      "sfa_licence": "W03497K000",
+      "workbook_name": "bee cheng hiang",
+      "workbook_address": "Address: 9 BISHAN PLACE #B1-13,JUNCTION 8 SHOPPING CENTRE,Singapore 579837",
+      "workbook_unit": "B1-13",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "Bengawan Solo",
+      "official_unit": "B1-02",
+      "sfa_licence": "CE16500V000",
+      "workbook_name": "Bengawan Solo",
+      "workbook_address": "Address: 9 BISHAN PLACE #B1-02,JUNCTION 8 SHOPPING CENTRE,Singapore 579837",
+      "workbook_unit": "B1-02",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "BEUTEA",
+      "official_unit": "02-30",
+      "sfa_licence": "CE20M64L000",
+      "workbook_name": "BEUTEA",
+      "workbook_address": "Address: 9 BISHAN PLACE #02-30,JUNCTION 8,Singapore 579837",
+      "workbook_unit": "02-30",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "Boost Juice Bars",
+      "official_unit": "B1-K1",
+      "sfa_licence": "CE06M38K000",
+      "workbook_name": "BOOST JUICE BARS",
+      "workbook_address": "Address: 9 BISHAN PLACE #B1-K1,JUNCTION 8 SHOPPING CENTRE,Singapore 579837",
+      "workbook_unit": "B1-K1",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "BreadTalk",
+      "official_unit": "01-35 to 36",
+      "sfa_licence": "S00147N000",
+      "workbook_name": "BreadTalk",
+      "workbook_address": "Address: 9 BISHAN PLACE #01-35/36,JUNCTION 8 SHOPPING CENTRE,Singapore 579837",
+      "workbook_unit": "01-35/36",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "Cat & the Fiddle",
+      "official_unit": "02-32A",
+      "sfa_licence": "CE20E39X000",
+      "workbook_name": "Cat & the FIddle",
+      "workbook_address": "Address: 9 BISHAN PLACE #02-32A,JUNCTION 8 SHOPPING CENTRE,Singapore 579837 JUNCTION 8 SHOPPING CENTRE",
+      "workbook_unit": "02-32A",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "CHAGEE",
+      "official_unit": "01-10 to 11",
+      "sfa_licence": "CE25I23X000",
+      "workbook_name": "CHAGEE",
+      "workbook_address": "Address: 9 BISHAN PLACE #01-10,#01-11,JUNCTION 8,Singapore 579837",
+      "workbook_unit": "01-10",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "Chateraise",
+      "official_unit": "B1-19B",
+      "sfa_licence": "CE17B30J000",
+      "workbook_name": "Chateraise",
+      "workbook_address": "Address: 9 BISHAN PLACE #B1-19B,JUNCTION 8 SHOPPING CENTRE,Singapore 579837",
+      "workbook_unit": "B1-19B",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "Chocolate Origin",
+      "official_unit": "02-33",
+      "sfa_licence": "CE21628V000",
+      "workbook_name": "CHOCOLATE ORIGIN",
+      "workbook_address": "Address: 9 BISHAN PLACE #02-33,JUNCTION 8,Singapore 579837",
+      "workbook_unit": "02-33",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "CRAVE",
+      "official_unit": "B1-K8",
+      "sfa_licence": "CE07016N000",
+      "workbook_name": "CRAVE",
+      "workbook_address": "Address: 9 BISHAN PLACE #B1-K8,JUNCTION 8 SHOPPING CENTRE,Singapore 579837",
+      "workbook_unit": "B1-K8",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "Dian Xiao Er",
+      "official_unit": "B1-07",
+      "sfa_licence": "W03188J000",
+      "workbook_name": "DIAN XIAO ER",
+      "workbook_address": "Address: 9 BISHAN PLACE #B1-07,JUNCTION 8 SHOPPING CENTRE,Singapore 579837",
+      "workbook_unit": "B1-07",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "Din Tai Fung",
+      "official_unit": "01-41",
+      "sfa_licence": "CE04553V000",
+      "workbook_name": "Din Tai Fung",
+      "workbook_address": "Address: 9 BISHAN PLACE #01-41,JUNCTION 8 SHOPPING CENTRE,Singapore 579837",
+      "workbook_unit": "01-41",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "Food Junction",
+      "official_unit": "04-01 & 04-02E",
+      "sfa_licence": "S93076E000",
+      "workbook_name": "Food Junction",
+      "workbook_address": "Address: 9 BISHAN PLACE #04-01,#04-2E,JUNCTION 8 SHOPPING CENTRE,Singapore 579837",
+      "workbook_unit": "04-01",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "Four Leaves",
+      "official_unit": "B1-10",
+      "sfa_licence": "W03470K000",
+      "workbook_name": "FOUR LEAVES",
+      "workbook_address": "Address: 9 BISHAN PLACE #B1-10,JUNCTION 8 SHOPPING CENTRE,Singapore 579837",
+      "workbook_unit": "B1-10",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "Fun Toast",
+      "official_unit": "03-09",
+      "sfa_licence": "CE05204C000",
+      "workbook_name": "FUN TOAST",
+      "workbook_address": "Address: 9 BISHAN PLACE #03-09,JUNCTION 8 SHOPPING CENTRE,Singapore 579837",
+      "workbook_unit": "03-09",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "Greendot",
+      "official_unit": "B1-24 & B1-24A",
+      "sfa_licence": "W03409V000",
+      "workbook_name": "GREENDOT",
+      "workbook_address": "Address: 9 BISHAN PLACE #B1-24A,#B1-24,JUNCTION 8 SHOPPING CENTRE,Singapore 579837",
+      "workbook_unit": "B1-24A",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "GRUB",
+      "official_unit": "01-38",
+      "sfa_licence": "CE04252X000",
+      "workbook_name": "GRUB",
+      "workbook_address": "Address: 9 BISHAN PLACE #01-38,JUNCTION 8 SHOPPING CENTRE,Singapore 579837",
+      "workbook_unit": "01-38",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "I Love Taimei",
+      "official_unit": "B1-22",
+      "sfa_licence": "CE13L77P000",
+      "workbook_name": "I Love Taimei",
+      "workbook_address": "Address: 9 BISHAN PLACE #B1-22,JUNCTION 8,Singapore 579837",
+      "workbook_unit": "B1-22",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "KFC",
+      "official_unit": "01-21",
+      "sfa_licence": "S93086B000",
+      "workbook_name": "KFC",
+      "workbook_address": "Address: 9/178/180 BISHAN PLACE #01-21,JUNCTION 8 SHOPPING CENTRE,Singapore 579837",
+      "workbook_unit": "01-21",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "Long John Silver's",
+      "official_unit": "01-19A",
+      "sfa_licence": "W03552J000",
+      "workbook_name": "LONG JOHN SILVER'S",
+      "workbook_address": "Address: 9 BISHAN PLACE #01-19A,JUNCTION 8 SHOPPING CENTRE,Singapore 579837",
+      "workbook_unit": "01-19A",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "McDonald's",
+      "official_unit": "01-20",
+      "sfa_licence": "S93080N000",
+      "workbook_name": "McDonalds",
+      "workbook_address": "Address: 9 BISHAN PLACE #01-20,JUNCTION 8 SHOPPING CENTRE,Singapore 579837",
+      "workbook_unit": "01-20",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "Mister Donut",
+      "official_unit": "02-27A",
+      "sfa_licence": "CE11819V000",
+      "workbook_name": "Mister Donut",
+      "workbook_address": "Address: 9 BISHAN PLACE #02-27A,JUNCTION 8,Singapore 579837",
+      "workbook_unit": "02-27A",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "Mr. Coconut",
+      "official_unit": "B1-K6",
+      "sfa_licence": "CE06K16L000",
+      "workbook_name": "Mr Coconut",
+      "workbook_address": "Address: 9 BISHAN PLACE #B1-K6,JUNCTION 8 SHOPPING CENTRE,Singapore 579837",
+      "workbook_unit": "B1-K6",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "munchi PANCAKES",
+      "official_unit": "B1-K13",
+      "sfa_licence": "CE07007P000",
+      "workbook_name": "MUNCHI PANCAKES",
+      "workbook_address": "Address: 9 BISHAN PLACE #B1-K13,JUNCTION 8,Singapore 579837",
+      "workbook_unit": "B1-K13",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "NINE FRESH",
+      "official_unit": "B1-K12",
+      "sfa_licence": "CE07X67N000",
+      "workbook_name": "NINE FRESH",
+      "workbook_address": "Address: 9 BISHAN PLACE #B1-K12,JUNCTION 8,Singapore 579837",
+      "workbook_unit": "B1-K12",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "Nunsaram Korean Dessert Café",
+      "official_unit": "02-52",
+      "sfa_licence": "CE04600X000",
+      "workbook_name": "NUNSARAM KOREAN DESSERT CAFE",
+      "workbook_address": "Address: 9 BISHAN PLACE #02-52,JUNCTION 8,Singapore 579837",
+      "workbook_unit": "02-52",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "Old Chang Kee",
+      "official_unit": "B1-12",
+      "sfa_licence": "W03485X000",
+      "workbook_name": "Old Chang Kee",
+      "workbook_address": "Address: 9 BISHAN PLACE #B1-12,JUNCTION 8 SHOPPING CENTRE,Singapore 579837",
+      "workbook_unit": "B1-12",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "POLAR Puffs & Cakes",
+      "official_unit": "B1-K2",
+      "sfa_licence": "CE06K73P000",
+      "workbook_name": "POLAR PUFFS & CAKES",
+      "workbook_address": "Address: 9 BISHAN PLACE #B1-K2,JUNCTION 8 SHOPPING CENTRE,Singapore 579837",
+      "workbook_unit": "B1-K2",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "RANDY INDULGENCE ACAI BAR",
+      "official_unit": "B1-K5",
+      "sfa_licence": "CE04209B000",
+      "workbook_name": "RANDY INDULGENCE ACAI BAR",
+      "workbook_address": "Address: 9 BISHAN PLACE #B1-K5,JUNCTION 8,Singapore 579837",
+      "workbook_unit": "B1-K5",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "Ritz Apple Strudel",
+      "official_unit": "B1-K3",
+      "sfa_licence": "CE06L29X000",
+      "workbook_name": "RITZ APPLE STRUDEL",
+      "workbook_address": "Address: 9 BISHAN PLACE #B1-K3,JUNCTION 8,Singapore 579837",
+      "workbook_unit": "B1-K3",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "Shake Shack",
+      "official_unit": "01-51",
+      "sfa_licence": "CE10H40B000",
+      "workbook_name": "SHAKE SHACK",
+      "workbook_address": "Address: 9 BISHAN PLACE #01-51,JUNCTION 8,Singapore 579837",
+      "workbook_unit": "01-51",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "Subway",
+      "official_unit": "01-31",
+      "sfa_licence": "S96191A000",
+      "workbook_name": "SUBWAY",
+      "workbook_address": "Address: 9 BISHAN PLACE #01-31,JUNCTION 8,Singapore 579837",
+      "workbook_unit": "01-31",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "SUSHI GOGO",
+      "official_unit": "B1-23",
+      "sfa_licence": "W03503C000",
+      "workbook_name": "Sushi GOGO",
+      "workbook_address": "Address: 9 BISHAN PLACE #B1-23,JUNCTION 8 SHOPPING CENTRE,Singapore 579837",
+      "workbook_unit": "B1-23",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "Swensen's",
+      "official_unit": "01-39",
+      "sfa_licence": "CE04371E000",
+      "workbook_name": "Swensen's",
+      "workbook_address": "Address: 9 BISHAN PLACE #01-39,JUNCTION 8 SHOPPING CENTRE,Singapore 579837",
+      "workbook_unit": "01-39",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "TALAD THAI BANANA",
+      "official_unit": "B1-K15",
+      "sfa_licence": "CE15481A000",
+      "workbook_name": "TALAD THAI BANANA",
+      "workbook_address": "Address: 9 BISHAN PLACE #B1-K15,JUNCTION 8,Singapore 579837",
+      "workbook_unit": "B1-K15",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "The Coffee Bean & Tea Leaf",
+      "official_unit": "01-34",
+      "sfa_licence": "S00158J000",
+      "workbook_name": "The Coffeebean & Tea Leaf",
+      "workbook_address": "Address: 9 BISHAN PLACE #01-34,JUNCTION 8 SHOPPING CENTRE,Singapore 579837",
+      "workbook_unit": "01-34",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "TOAST BOX",
+      "official_unit": "01-35 to 36",
+      "sfa_licence": "CE14H96C000",
+      "workbook_name": "TOAST BOX",
+      "workbook_address": "Address: 9 BISHAN PLACE #01-35,JUNCTION 8 SHOPPING CENTRE,Singapore 579837 JUNCTION 8 SHOPPING CENTRE",
+      "workbook_unit": "01-35",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "TORI Q",
+      "official_unit": "B1-25",
+      "sfa_licence": "W03496L000",
+      "workbook_name": "Tori Q",
+      "workbook_address": "Address: 9 BISHAN PLACE #B1-25,JUNCTION 8 SHOPPING CENTRE,Singapore 579837",
+      "workbook_unit": "B1-25",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "WATAMI Japanese Dining",
+      "official_unit": "01-33",
+      "sfa_licence": "S98119A000",
+      "workbook_name": "WATAMI JAPANESE DINING",
+      "workbook_address": "Address: 9 BISHAN PLACE #01-33,Singapore 579837",
+      "workbook_unit": "01-33",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "Wok Hey",
+      "official_unit": "B1-11",
+      "sfa_licence": "W03444N000",
+      "workbook_name": "WOK HEY",
+      "workbook_address": "Address: 9 BISHAN PLACE #B1-11,JUNCTION 8 SHOPPING CENTRE,Singapore 579837",
+      "workbook_unit": "B1-11",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "Ya Kun Kaya Toast",
+      "official_unit": "B1-03 to 05",
+      "sfa_licence": "CE24I21J000",
+      "workbook_name": "Ya Kun Kaya Toast",
+      "workbook_address": "Address: 9 BISHAN PLACE #B1-03,#B1-04,#B1-05,#B1-03A,JUNCTION 8,Singapore 579837",
+      "workbook_unit": "B1-03",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "Yakiniku Like",
+      "official_unit": "01-40",
+      "sfa_licence": "CE04351N000",
+      "workbook_name": "Yakiniku Like",
+      "workbook_address": "Address: 9 BISHAN PLACE #01-40,JUNCTION 8 SHOPPING CENTRE,Singapore 579837",
+      "workbook_unit": "01-40",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "Yoshinoya",
+      "official_unit": "01-49 to 50",
+      "sfa_licence": "CE07611K000",
+      "workbook_name": "Yoshinoya",
+      "workbook_address": "Address: 9 BISHAN PLACE #01-49/50,JUNCTION 8,Singapore 579837",
+      "workbook_unit": "01-49/50",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    },
+    {
+      "official_name": "Zhang Liang Mala Tang",
+      "official_unit": "02-34 to 35A",
+      "sfa_licence": "CE10L77X000",
+      "workbook_name": "ZHANG LIANG MALATANG",
+      "workbook_address": "Address: 9 BISHAN PLACE #02-34,#02-35,#02-35A,JUNCTION 8,Singapore 579837",
+      "workbook_unit": "02-34",
+      "name_similarity": 1.0,
+      "unit_overlap": true,
+      "exact_match": true
+    }
+  ],
+  "held_records": [
+    {
+      "official_name": "stuff'd",
+      "official_unit": "01-19A",
+      "reason": "SFA record unit is B1-19A; unit level conflicts despite similar unit digits; do not crosswalk without official outlet detail confirmation."
+    },
+    {
+      "official_name": "TamJai SamGor Mixian",
+      "official_unit": "01-20",
+      "reason": "SFA record unit is B1-20; floor/unit-level mismatch."
+    }
+  ],
+  "constraints": [
+    "No paid APIs or third-party delivery platform data used.",
+    "No menu/image data, closures, ratings, phone, hours or URLs proposed from this directory excerpt.",
+    "No workbook edits; proposal only.",
+    "Use SFA Licence as stable join key; workbook is already alphabetically sorted, so no row index is emitted."
+  ],
+  "next_step": "Before integrating these validations, have the workbook integration/QA stage re-read the current workbook hash and SFA IDs. If the official directory becomes fully available in direct page or endpoint form, refresh the listing evidence and add explicit outlet detail URLs.",
+  "captured_directory_names": 61,
+  "not_confirmed_name_or_unit_candidates": [
+    {
+      "official_name": "Seoul Noodle",
+      "official_unit": "01-19",
+      "workbook_name": "Seoul Noodle Shop",
+      "sfa_licence": "S93100X000",
+      "workbook_address": "9 BISHAN PLACE #01-19,JUNCTION 8,Singapore 579837",
+      "reason": "Exact outlet name differs; same unit and postal suggest a likely alias but hold pending official outlet detail page."
+    },
+    {
+      "official_name": "Serangoon BBQ & Curry since 1983",
+      "official_unit": "B1-26",
+      "workbook_name": "Serangoon BBQ & Curry",
+      "sfa_licence": "W03477X000",
+      "workbook_address": "9 BISHAN PLACE #B1-26,JUNCTION 8,Singapore 579837",
+      "reason": "Same brand stem and unit, but source and workbook names differ; do not normalize without outlet detail confirmation."
+    },
+    {
+      "official_name": "Eighteen Plum",
+      "official_unit": "01-18",
+      "sfa_licence": null,
+      "reason": "No exact SFA name-and-unit crosswalk found at postal 579837."
+    },
+    {
+      "official_name": "Fei Siong",
+      "official_unit": "B1-K9",
+      "sfa_licence": "CE07Y61V000",
+      "workbook_name": "Fei Siong @ Junction 8 - EAT",
+      "workbook_address": "9 BISHAN PLACE #B1-K9,JUNCTION 8,Singapore 579837",
+      "reason": "Name differs; same location may indicate chain/operator rather than exact business entity."
+    },
+    {
+      "official_name": "Genki Sushi",
+      "official_unit": "01-22 & 01-30",
+      "sfa_licence": "S93082K000",
+      "workbook_name": "GENKI SUSHI SINGAPORE PTE LTD",
+      "workbook_address": "9/187 BISHAN PLACE #01-22/30,JUNCTION 8 SHOPPING CENTRE,Singapore 579837",
+      "reason": "Exact outlet unit/address match but workbook name is a legal entity; requires manual confirmation before name replacement."
+    },
+    {
+      "official_name": "KOI Thé",
+      "official_unit": "02-26",
+      "sfa_licence": "CE19666V000",
+      "workbook_name": "KOI THE SINGAPORE PTE LTD",
+      "workbook_address": "9 BISHAN PLACE #02-26,JUNCTION 8 SHOPPING CENTRE,Singapore 579837",
+      "reason": "Same unit and brand stem, but legal entity vs trading name."
+    },
+    {
+      "official_name": "LiHO TEA",
+      "official_unit": "02-18A",
+      "sfa_licence": "CE10N63X000",
+      "workbook_name": "LIHO",
+      "workbook_address": "9 BISHAN PLACE #02-18A,JUNCTION 8 SHOPPING CENTRE,Singapore 579837",
+      "reason": "Same exact unit and brand stem; workbook has shortened name."
+    },
+    {
+      "official_name": "Nam Kee Pau",
+      "official_unit": "B1-K4",
+      "sfa_licence": "CE06K83L000",
+      "workbook_name": "Nam Kee @ Junction 8",
+      "workbook_address": "9 BISHAN PLACE #B1-K4,JUNCTION 8,Singapore 579837",
+      "reason": "Same unit and likely trading-name relation, but exact outlet name mismatch."
+    },
+    {
+      "official_name": "Saybons French Food Factory",
+      "official_unit": "02-43",
+      "sfa_licence": "CE17473E000",
+      "workbook_name": "SAYBONS",
+      "workbook_address": "9 BISHAN PLACE #02-43,JUNCTION 8 SHOPPING CENTRE,Singapore 579837",
+      "reason": "Same unit and brand stem; exact trading-name match unconfirmed."
+    },
+    {
+      "official_name": "SF Fruits",
+      "official_unit": "B1-K7",
+      "sfa_licence": "CE07054B000",
+      "workbook_name": "SF FRUITS AND JUICES",
+      "workbook_address": "9 BISHAN PLACE #B1-K7,JUNCTION 8 SHOPPING CENTRE,Singapore 579837",
+      "reason": "Same unit and brand stem; exact trading-name match unconfirmed."
+    },
+    {
+      "official_name": "stuff'd",
+      "official_unit": "01-19A",
+      "sfa_licence": "CE13L62J000",
+      "workbook_name": "STUFF'D",
+      "workbook_address": "9 BISHAN PLACE #B1-19A,JUNCTION 8 SHOPPING CENTRE,Singapore 579837",
+      "reason": "Floor mismatch: directory says 01-19A, SFA record says B1-19A."
+    },
+    {
+      "official_name": "TamJai SamGor Mixian",
+      "official_unit": "01-20",
+      "sfa_licence": "W03478P000",
+      "workbook_name": "Tamjai Samgor Mixian",
+      "workbook_address": "9 BISHAN PLACE #B1-20,JUNCTION 8 SHOPPING CENTRE,Singapore 579837",
+      "reason": "Floor mismatch: directory says 01-20, SFA record says B1-20."
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "snapshot_id": "refresh119_official_images_20261019",
+  "observed_date": "2026-10-19",
+  "canonical_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256_read_only_baseline": "028e757cf68c3fd6be935a2908484a98ba1865c4318975cfde543d1175bf5475",
+  "workbook_edited": false,
+  "existing_candidate_check": "Image Candidates sheet searched by SFA ID, outlet name, and exact image URL; no duplicate candidate found.",
+  "candidate_count": 1,
+  "qualifying_candidates": [
+    {
+      "sfa_licence": "W84231K002",
+      "outlet_name": "Hill Street Tai Hwa Pork Noodle",
+      "outlet_address": "465 Crawford Lane #01-12, Singapore 190465",
+      "image_type": "Historical outlet / food photo candidate",
+      "image_url": "https://live.staticflickr.com/7173/6686264727_2112320896_o.jpg",
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:Hill_Street_Tai_Hwa_Pork_Noodle.jpg",
+      "original_source_url": "https://www.flickr.com/photos/50178625@N00/6686264727",
+      "author": "Ken Marshall (Flickr: kenner116)",
+      "license": "Creative Commons Attribution 2.0 Generic (CC BY 2.0)",
+      "license_url": "https://creativecommons.org/licenses/by/2.0/",
+      "license_basis": "Wikimedia Commons file page states CC BY 2.0, permits sharing and adaptation with attribution, and records Flickr review confirming the license on 2018-09-23.",
+      "content_date": "2011-12-21",
+      "exact_match_evidence": "Commons file title identifies Hill Street Tai Hwa Pork Noodle; embedded camera coordinates are 1.304952, 103.862322, matching the Crawford Lane outlet vicinity. Current workbook Directory row for SFA W84231K002 identifies the same outlet at 465 Crawford Lane #01-12. No branch-level or current menu claim is made.",
+      "currentness": "Historical (2011); current appearance and current menu availability are unverified.",
+      "url_check": "2026-10-19 HTTP HEAD returned 200 image/jpeg, 2,276,649 bytes, 4000 x 3000.",
+      "visual_check": "Not visually inspected during this pass. The file page title and location metadata support outlet association, but confirm the visual before publication.",
+      "workbook_recommendation": "Add as a review-only historical image candidate with author, license, license link, capture date, and attribution obligations. Do not set as an approved/current image without visual and freshness review."
+    }
+  ],
+  "rejected_candidates_count": 0,
+  "sources": [
+    "https://commons.wikimedia.org/wiki/File:Hill_Street_Tai_Hwa_Pork_Noodle.jpg",
+    "https://www.flickr.com/photos/50178625@N00/6686264727",
+    "https://creativecommons.org/licenses/by/2.0/"
+  ],
+  "scope_note": "Read-only media-rights research. This is a third-party openly licensed image, not an official operator image. No image rights are inferred from an official page. A CC BY 2.0 candidate still requires attribution and review for current relevance."
+}

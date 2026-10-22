@@ -1,0 +1,181 @@
+{
+  "snapshot_type": "refresh135_read_only_coordinate_research",
+  "captured_at_sgt": "2026-10-19",
+  "baseline_workbook": {
+    "path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "sha256": "bf28dd39739f1ab1ecf6137b4f6028305c1c26ed0541dd463e369d48c8b0e795",
+    "worksheet": "Public F&B Directory",
+    "record_count": 38273,
+    "workbook_modified": false
+  },
+  "scope": {
+    "sample_method": "First 100 distinct six-digit postal codes after the 200 distinct postal codes reviewed in Refresh133/Refresh134, workbook row order.",
+    "sample_size": 100,
+    "externally_queried_count": 10,
+    "reviewed_records": [
+      {
+        "sfa_licence": "CE07C91J000",
+        "f_and_b_name": "BAR.B Q TONIGHT RESTAURANT",
+        "postal_code": "218289",
+        "full_address": "Address: 10 ROBERTS LANE Singapore 218289",
+        "status": "candidate",
+        "reason": null
+      },
+      {
+        "sfa_licence": "CE19F73L000",
+        "f_and_b_name": "BARI BARI GRAND",
+        "postal_code": "178906",
+        "full_address": "Address: 15 STAMFORD ROAD #01-82,THE CAPITOL KEMPINSKI HOTEL SINGAPORE,Singapore 178906",
+        "status": "withheld_no_exact_unambiguous_address_match",
+        "reason": "No result for the exact source address."
+      },
+      {
+        "sfa_licence": "C75012B000",
+        "f_and_b_name": "BARRELS ENTERTAINMENT",
+        "postal_code": "118162",
+        "full_address": "Address: 34 SOUTH BUONA VISTA ROAD Singapore 118162 Level 1",
+        "status": "withheld_no_exact_unambiguous_address_match",
+        "reason": "No result for the exact source address."
+      },
+      {
+        "sfa_licence": "E53006K004",
+        "f_and_b_name": "BASIL KING",
+        "postal_code": "347858",
+        "full_address": "Address: 29 TAI THONG CRESCENT SENNETT ESTATE,Singapore 347858",
+        "status": "withheld_no_exact_unambiguous_address_match",
+        "reason": "No result for the exact source address."
+      },
+      {
+        "sfa_licence": "E85220J000",
+        "f_and_b_name": "Bastille",
+        "postal_code": "427515",
+        "full_address": "Address: 261 JOO CHIAT ROAD Singapore 427515 (1ST STOREY)",
+        "status": "withheld_no_exact_unambiguous_address_match",
+        "reason": "No result for the exact source address."
+      },
+      {
+        "sfa_licence": "NE12E76K000",
+        "f_and_b_name": "BBQ FRIEND",
+        "postal_code": "547772",
+        "full_address": "Address: 22 LIM TUA TOW ROAD Singapore 547772",
+        "status": "withheld_no_exact_unambiguous_address_match",
+        "reason": "Results returned, but none matched the exact six-digit postal code and house number at the exact address; no road-only or wrong-postcode result accepted."
+      },
+      {
+        "sfa_licence": "E88030E000",
+        "f_and_b_name": "BBQ MASTER",
+        "postal_code": "389414",
+        "full_address": "Address: 455 GEYLANG ROAD Singapore 389414",
+        "status": "withheld_no_exact_unambiguous_address_match",
+        "reason": "Results returned, but none matched the exact six-digit postal code and house number at the exact address; no road-only or wrong-postcode result accepted."
+      },
+      {
+        "sfa_licence": "E92063C000",
+        "f_and_b_name": "BBQ PEOPLE",
+        "postal_code": "389469",
+        "full_address": "Address: 513 GEYLANG ROAD Singapore 389469",
+        "status": "withheld_no_exact_unambiguous_address_match",
+        "reason": "Results returned, but none matched the exact six-digit postal code and house number at the exact address; no road-only or wrong-postcode result accepted."
+      },
+      {
+        "sfa_licence": "E85163J000",
+        "f_and_b_name": "Beach Road Prawn Noodle",
+        "postal_code": "428981",
+        "full_address": "Address: 370 EAST COAST ROAD Singapore 428981",
+        "status": "candidate",
+        "reason": null
+      },
+      {
+        "sfa_licence": "S99088P000",
+        "f_and_b_name": "Beach Road Scissors Cut Curry Rice",
+        "postal_code": "574354",
+        "full_address": "Address: 222 UPPER THOMSON ROAD THOMSON GARDEN ESTATE,Singapore 574354 1ST STOREY",
+        "status": "withheld_no_exact_unambiguous_address_match",
+        "reason": "No result for the exact source address."
+      }
+    ],
+    "remaining_sample_records_not_externally_queried": 90
+  },
+  "open_source_rechecks": [
+    {
+      "publisher": "Singapore Land Authority via data.gov.sg",
+      "dataset": "SLA Dwelling Information",
+      "url": "https://data.gov.sg/datasets/d_e4495201ba4f77fa2ef9855bad6d2cd1/view",
+      "licence": "Singapore Open Data Licence v1.0; free for personal and commercial use, attribution required",
+      "dataset_features_downloaded": 1420,
+      "source_data_date": "2024-12-15",
+      "method": "Exact postal-code, block and street cross-check against the bounded 100-record sample.",
+      "postal_code_matches": 0,
+      "decision": "No sample postal codes matched; dataset is limited to dwelling information and is not a universal address register."
+    },
+    {
+      "publisher": "OpenStreetMap contributors via Nominatim",
+      "search_api": "https://nominatim.openstreetmap.org/search",
+      "map_license": "Open Database Licence (ODbL) 1.0",
+      "attribution": "© OpenStreetMap contributors",
+      "requests": 10,
+      "method": "Ten full-address queries, spaced at least 1.1 seconds; accepted results only where returned postcode and house number matched the source address, with venue-name corroboration where mapped. Mapbox not used.",
+      "exact_candidates": 2,
+      "result": "2 exact building/venue-point matches; 8 queries yielded no safe match; 90 records in the sample not externally queried."
+    }
+  ],
+  "proposed_coordinate_updates": [
+    {
+      "sfa_licence": "CE07C91J000",
+      "f_and_b_name": "BAR.B Q TONIGHT RESTAURANT",
+      "full_address": "Address: 10 ROBERTS LANE Singapore 218289",
+      "postal_code": "218289",
+      "latitude": 1.310506,
+      "longitude": 103.8538887,
+      "coordinate_precision": "building",
+      "source": "OpenStreetMap contributors via Nominatim Search API",
+      "source_url": "https://www.openstreetmap.org/way/736430181",
+      "match_evidence": {
+        "returned_name": null,
+        "returned_house_number": "10",
+        "returned_road": "Roberts Lane",
+        "returned_postcode": "218289",
+        "exact_postcode_match": true,
+        "exact_house_number_match": true,
+        "named_venue_exact_match": false
+      },
+      "license": "Open Database Licence (ODbL) 1.0; attribute OpenStreetMap contributors and assess share-alike obligations before merging into redistributed database.",
+      "attribution": "© OpenStreetMap contributors",
+      "observed_at": "2026-10-19",
+      "integration_status": "proposal only; no workbook edit",
+      "limitations": "Coordinate describes mapped building/venue point, not a separately surveyed stall entrance or unit."
+    },
+    {
+      "sfa_licence": "E85163J000",
+      "f_and_b_name": "Beach Road Prawn Noodle",
+      "full_address": "Address: 370 EAST COAST ROAD Singapore 428981",
+      "postal_code": "428981",
+      "latitude": 1.3085282,
+      "longitude": 103.9111152,
+      "coordinate_precision": "mapped venue point",
+      "source": "OpenStreetMap contributors via Nominatim Search API",
+      "source_url": "https://www.openstreetmap.org/node/5543056521",
+      "match_evidence": {
+        "returned_name": "Beach Road Prawn Noodles",
+        "returned_house_number": "370",
+        "returned_road": "East Coast Road",
+        "returned_postcode": "428981",
+        "exact_postcode_match": true,
+        "exact_house_number_match": true,
+        "named_venue_exact_match": true
+      },
+      "license": "Open Database Licence (ODbL) 1.0; attribute OpenStreetMap contributors and assess share-alike obligations before merging into redistributed database.",
+      "attribution": "© OpenStreetMap contributors",
+      "observed_at": "2026-10-19",
+      "integration_status": "proposal only; no workbook edit",
+      "limitations": "Coordinate describes mapped building/venue point, not a separately surveyed stall entrance or unit."
+    }
+  ],
+  "decision": {
+    "candidate_count": 2,
+    "records_reviewed_at_source": 10,
+    "no_guess_policy": "No postal centroid or road-only coordinate was accepted. Exact address points represent the building/venue, not stall unit precision.",
+    "integration_recommendation": "Parent should evaluate ODbL share-alike compatibility before merging; proposals do not change the workbook."
+  },
+  "next_action": "Review the two source-linked proposals for coordinate-field precision and licensing before integration. A further open-address bulk check requires a healthy public Overpass service or a non-bulk official lookup source."
+}

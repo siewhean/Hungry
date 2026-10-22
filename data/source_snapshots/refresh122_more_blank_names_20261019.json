@@ -1,0 +1,517 @@
+{
+  "snapshot_type": "refresh122_exact_blank_public_names_official_directory_batch",
+  "observed_at_local": "2026-10-19 Asia/Singapore",
+  "master_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "master_sha256": "e75b32a39d9840532afbff2f5b497cc7a3a12870097418716f7d0b92f503f84f",
+  "worksheet": "Public F&B Directory",
+  "scope": "Read-only research of blank F&B Name records. Only exact current public-facing official mall/landlord/operator directory matches with exact unit/postal are proposed. No workbook edits, paid calls, delivery-platform sources, or access-status changes. Partial unit, foodcourt, campus, and uncertain records are held.",
+  "source_set": [
+    {
+      "publisher": "Link REIT / Jurong Point",
+      "url": "https://sg.linkreit.com/malls/jurong-point/stores/",
+      "observed_date": "2026-10-19",
+      "capture_method": "Current official mall/landlord directory or store detail page reviewed through public web search.",
+      "limitations": "Used only for exact tenant/unit name crosswalk; does not verify other fields or Public Access Status."
+    },
+    {
+      "publisher": "Link REIT / Jurong Point 2026 CNY operating hours",
+      "url": "https://sg.linkreit.com/-/media/images/global/catalogue/malls/jurong-point/cny-2026/jp_cny26_operatinghours_list.pdf",
+      "observed_date": "2026-10-19",
+      "capture_method": "Current official mall/landlord directory or store detail page reviewed through public web search.",
+      "limitations": "Used only for exact tenant/unit name crosswalk; does not verify other fields or Public Access Status."
+    },
+    {
+      "publisher": "Chinatown Point",
+      "url": "https://chinatownpoint.com.sg/stores-cn/",
+      "observed_date": "2026-10-19",
+      "capture_method": "Current official mall/landlord directory or store detail page reviewed through public web search.",
+      "limitations": "Used only for exact tenant/unit name crosswalk; does not verify other fields or Public Access Status."
+    },
+    {
+      "publisher": "Suntec City",
+      "url": "https://sunteccity.com.sg/store_categories/dining?subCategoryID=5",
+      "observed_date": "2026-10-19",
+      "capture_method": "Current official mall/landlord directory or store detail page reviewed through public web search.",
+      "limitations": "Used only for exact tenant/unit name crosswalk; does not verify other fields or Public Access Status."
+    },
+    {
+      "publisher": "Wisma Atria",
+      "url": "https://www.wismaonline.com/store-directory/",
+      "observed_date": "2026-10-19",
+      "capture_method": "Current official mall/landlord directory or store detail page reviewed through public web search.",
+      "limitations": "Used only for exact tenant/unit name crosswalk; does not verify other fields or Public Access Status."
+    },
+    {
+      "publisher": "Century Square",
+      "url": "https://www.centurysquare.com.sg/whats-on/offers/frx50---teahouse-by-soup-restaurant",
+      "observed_date": "2026-10-19",
+      "capture_method": "Current official mall/landlord directory or store detail page reviewed through public web search.",
+      "limitations": "Used only for exact tenant/unit name crosswalk; does not verify other fields or Public Access Status."
+    },
+    {
+      "publisher": "Paragon",
+      "url": "https://paragon.com.sg/store-detail/six-hands-daily/",
+      "observed_date": "2026-10-19",
+      "capture_method": "Current official mall/landlord directory or store detail page reviewed through public web search.",
+      "limitations": "Used only for exact tenant/unit name crosswalk; does not verify other fields or Public Access Status."
+    },
+    {
+      "publisher": "The Clementi Mall",
+      "url": "https://theclementimall.com/stores/eighteen-chefs/",
+      "observed_date": "2026-10-19",
+      "capture_method": "Current official mall/landlord directory or store detail page reviewed through public web search.",
+      "limitations": "Used only for exact tenant/unit name crosswalk; does not verify other fields or Public Access Status."
+    },
+    {
+      "publisher": "Changi City Point",
+      "url": "https://changicitypoint.com.sg/store/thai-baang/",
+      "observed_date": "2026-10-19",
+      "capture_method": "Current official mall/landlord directory or store detail page reviewed through public web search.",
+      "limitations": "Used only for exact tenant/unit name crosswalk; does not verify other fields or Public Access Status."
+    },
+    {
+      "publisher": "VivoCity",
+      "url": "https://www.vivocity.com.sg/stores/ningji/",
+      "observed_date": "2026-10-19",
+      "capture_method": "Current official mall/landlord directory or store detail page reviewed through public web search.",
+      "limitations": "Used only for exact tenant/unit name crosswalk; does not verify other fields or Public Access Status."
+    },
+    {
+      "publisher": "KINEX",
+      "url": "https://kinex.com.sg/public/food-beverages/bingxue-tea-ice-cream/80",
+      "observed_date": "2026-10-19",
+      "capture_method": "Current official mall/landlord directory or store detail page reviewed through public web search.",
+      "limitations": "Used only for exact tenant/unit name crosswalk; does not verify other fields or Public Access Status."
+    }
+  ],
+  "summary": {
+    "blank_name_proposals": 15,
+    "held_records": 17,
+    "workbook_edits": 0,
+    "proposal_fields": 15,
+    "selection_note": "All proposed SFA licence IDs were checked against Refresh120 and Refresh121 proposal lists and do not overlap. Names are proposals only; no access-status or other fields are changed."
+  },
+  "proposals": [
+    {
+      "sfa_licence": "C95250P000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "Tong Heng 東興",
+      "business_type": "Takeaway",
+      "existing_address": "1 JURONG WEST CENTRAL 2 #B1-10,JURONG POINT",
+      "postal_code": "648886",
+      "official_mall": "Jurong Point",
+      "exact_unit_match": "#JP1B1-10",
+      "source_type": "current_official_mall_directory_or_landlord_page",
+      "source_url": "https://sg.linkreit.com/malls/jurong-point/stores/",
+      "observed_date": "2026-10-19",
+      "evidence": "Link REIT official store page lists Tong Heng at the matching unit as Food & Beverage.",
+      "matching_rule": "Exact SFA licence-to-workbook row crosswalk; matching postal code and mall, with current official mall/landlord/operator source confirming the exact licensed unit or full unit range.",
+      "confidence": "high",
+      "proposed_fields": [
+        "F&B Name"
+      ],
+      "limitations": "Name-only research proposal. No other fields or public access status are verified or changed. Apply only after matching SFA Licence and confirming baseline workbook SHA."
+    },
+    {
+      "sfa_licence": "SW06209N000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "Subway",
+      "business_type": "Restaurant",
+      "existing_address": "1 JURONG WEST CENTRAL 2 #01-33A,JURONG POINT",
+      "postal_code": "648886",
+      "official_mall": "Jurong Point",
+      "exact_unit_match": "JP1 #01-33A",
+      "source_type": "current_official_mall_directory_or_landlord_page",
+      "source_url": "https://sg.linkreit.com/-/media/images/global/catalogue/malls/jurong-point/cny-2026/jp_cny26_operatinghours_list.pdf",
+      "observed_date": "2026-10-19",
+      "evidence": "Official Link REIT 2026 mall operating-hours PDF lists Subway at the exact JP1 unit.",
+      "matching_rule": "Exact SFA licence-to-workbook row crosswalk; matching postal code and mall, with current official mall/landlord/operator source confirming the exact licensed unit or full unit range.",
+      "confidence": "high",
+      "proposed_fields": [
+        "F&B Name"
+      ],
+      "limitations": "Name-only research proposal. No other fields or public access status are verified or changed. Apply only after matching SFA Licence and confirming baseline workbook SHA."
+    },
+    {
+      "sfa_licence": "SW08866K000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "Dian Xiao Er",
+      "business_type": "Restaurant",
+      "existing_address": "63 JURONG WEST CENTRAL 3 #B1-57,#B1-58,#B1-59,JURONG POINT",
+      "postal_code": "648331",
+      "official_mall": "Jurong Point",
+      "exact_unit_match": "#JP2B1-57/58/59",
+      "source_type": "current_official_mall_directory_or_landlord_page",
+      "source_url": "https://sg.linkreit.com/malls/jurong-point/stores/dian-xiao-er/",
+      "observed_date": "2026-10-19",
+      "evidence": "Official Link REIT store page lists Dian Xiao Er at the exact three-unit range as Food & Beverage.",
+      "matching_rule": "Exact SFA licence-to-workbook row crosswalk; matching postal code and mall, with current official mall/landlord/operator source confirming the exact licensed unit or full unit range.",
+      "confidence": "high",
+      "proposed_fields": [
+        "F&B Name"
+      ],
+      "limitations": "Name-only research proposal. No other fields or public access status are verified or changed. Apply only after matching SFA Licence and confirming baseline workbook SHA."
+    },
+    {
+      "sfa_licence": "SW08A29J000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "Fragrance Bak Kwa",
+      "business_type": "Grilling and Sale of Grilled Meat Products",
+      "existing_address": "63 JURONG WEST CENTRAL 3 #01-35,JURONG POINT SHOPPING CENTRE",
+      "postal_code": "648331",
+      "official_mall": "Jurong Point",
+      "exact_unit_match": "#JP2 01-35",
+      "source_type": "current_official_mall_directory_or_landlord_page",
+      "source_url": "https://sg.linkreit.com/malls/jurong-point/stores/fragrance/",
+      "observed_date": "2026-10-19",
+      "evidence": "Official Link REIT page identifies Fragrance at the matching store unit as Food & Beverage.",
+      "matching_rule": "Exact SFA licence-to-workbook row crosswalk; matching postal code and mall, with current official mall/landlord/operator source confirming the exact licensed unit or full unit range.",
+      "confidence": "high",
+      "proposed_fields": [
+        "F&B Name"
+      ],
+      "limitations": "Name-only research proposal. No other fields or public access status are verified or changed. Apply only after matching SFA Licence and confirming baseline workbook SHA."
+    },
+    {
+      "sfa_licence": "CE23C06K000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "luckin coffee",
+      "business_type": "Snack Counter",
+      "existing_address": "133 NEW BRIDGE ROAD #01-50,CHINATOWN POINT",
+      "postal_code": "059413",
+      "official_mall": "Chinatown Point",
+      "exact_unit_match": "#01-50",
+      "source_type": "current_official_mall_directory_or_landlord_page",
+      "source_url": "https://chinatownpoint.com.sg/stores-cn/",
+      "observed_date": "2026-10-19",
+      "evidence": "Official Chinatown Point current store directory lists LUCKIN COFFEE at exact unit.",
+      "matching_rule": "Exact SFA licence-to-workbook row crosswalk; matching postal code and mall, with current official mall/landlord/operator source confirming the exact licensed unit or full unit range.",
+      "confidence": "high",
+      "proposed_fields": [
+        "F&B Name"
+      ],
+      "limitations": "Name-only research proposal. No other fields or public access status are verified or changed. Apply only after matching SFA Licence and confirming baseline workbook SHA."
+    },
+    {
+      "sfa_licence": "CE13Y48N000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "365 Juices Bar",
+      "business_type": "Takeaway",
+      "existing_address": "3 TEMASEK BOULEVARD #B1-137,SUNTEC CITY MALL",
+      "postal_code": "038983",
+      "official_mall": "Suntec City",
+      "exact_unit_match": "#B1-137",
+      "source_type": "current_official_mall_directory_or_landlord_page",
+      "source_url": "https://sunteccity.com.sg/store_categories/dining?subCategoryID=5",
+      "observed_date": "2026-10-19",
+      "evidence": "Official Suntec City dining directory lists 365 Juices Bar at exact unit.",
+      "matching_rule": "Exact SFA licence-to-workbook row crosswalk; matching postal code and mall, with current official mall/landlord/operator source confirming the exact licensed unit or full unit range.",
+      "confidence": "high",
+      "proposed_fields": [
+        "F&B Name"
+      ],
+      "limitations": "Name-only research proposal. No other fields or public access status are verified or changed. Apply only after matching SFA Licence and confirming baseline workbook SHA."
+    },
+    {
+      "sfa_licence": "CE23L92B000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "Xiang Xiang Hunan Cuisine",
+      "business_type": "Restaurant",
+      "existing_address": "3 TEMASEK BOULEVARD #B1-159,SUNTEC CITY MALL",
+      "postal_code": "038983",
+      "official_mall": "Suntec City",
+      "exact_unit_match": "#B1-159",
+      "source_type": "current_official_mall_directory_or_landlord_page",
+      "source_url": "https://sunteccity.com.sg/store_categories/dining?subCategoryID=5",
+      "observed_date": "2026-10-19",
+      "evidence": "Official Suntec City dining directory lists Xiang Xiang Hunan Cuisine at exact unit.",
+      "matching_rule": "Exact SFA licence-to-workbook row crosswalk; matching postal code and mall, with current official mall/landlord/operator source confirming the exact licensed unit or full unit range.",
+      "confidence": "high",
+      "proposed_fields": [
+        "F&B Name"
+      ],
+      "limitations": "Name-only research proposal. No other fields or public access status are verified or changed. Apply only after matching SFA Licence and confirming baseline workbook SHA."
+    },
+    {
+      "sfa_licence": "CE19749P000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "itea",
+      "business_type": "Takeaway",
+      "existing_address": "435 ORCHARD ROAD #B1-02,WISMA ATRIA",
+      "postal_code": "238877",
+      "official_mall": "Wisma Atria",
+      "exact_unit_match": "#B1-02",
+      "source_type": "current_official_mall_directory_or_landlord_page",
+      "source_url": "https://www.wismaonline.com/store-directory/",
+      "observed_date": "2026-10-19",
+      "evidence": "Official Wisma Atria store directory lists itea at exact unit.",
+      "matching_rule": "Exact SFA licence-to-workbook row crosswalk; matching postal code and mall, with current official mall/landlord/operator source confirming the exact licensed unit or full unit range.",
+      "confidence": "high",
+      "proposed_fields": [
+        "F&B Name"
+      ],
+      "limitations": "Name-only research proposal. No other fields or public access status are verified or changed. Apply only after matching SFA Licence and confirming baseline workbook SHA."
+    },
+    {
+      "sfa_licence": "CE19U13N000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "Xiao Jiao Tian",
+      "business_type": "Restaurant",
+      "existing_address": "435 ORCHARD ROAD #03-32,#03-33,#03-34,WISMA ATRIA",
+      "postal_code": "238877",
+      "official_mall": "Wisma Atria",
+      "exact_unit_match": "#03-32/33/34",
+      "source_type": "current_official_mall_directory_or_landlord_page",
+      "source_url": "https://www.wismaonline.com/store-directory/",
+      "observed_date": "2026-10-19",
+      "evidence": "Official Wisma Atria directory lists Xiao Jiao Tian at exact three-unit range.",
+      "matching_rule": "Exact SFA licence-to-workbook row crosswalk; matching postal code and mall, with current official mall/landlord/operator source confirming the exact licensed unit or full unit range.",
+      "confidence": "high",
+      "proposed_fields": [
+        "F&B Name"
+      ],
+      "limitations": "Name-only research proposal. No other fields or public access status are verified or changed. Apply only after matching SFA Licence and confirming baseline workbook SHA."
+    },
+    {
+      "sfa_licence": "NE18252E000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "Teahouse by Soup Restaurant",
+      "business_type": "Restaurant",
+      "existing_address": "2 TAMPINES CENTRAL 5 #01-20,CENTURY SQUARE",
+      "postal_code": "529509",
+      "official_mall": "Century Square",
+      "exact_unit_match": "#01-20",
+      "source_type": "current_official_mall_directory_or_landlord_page",
+      "source_url": "https://www.centurysquare.com.sg/whats-on/offers/frx50---teahouse-by-soup-restaurant",
+      "observed_date": "2026-10-19",
+      "evidence": "Current official mall offer valid through 2026 identifies Teahouse by Soup Restaurant at Century Square #01-20.",
+      "matching_rule": "Exact SFA licence-to-workbook row crosswalk; matching postal code and mall, with current official mall/landlord/operator source confirming the exact licensed unit or full unit range.",
+      "confidence": "high",
+      "proposed_fields": [
+        "F&B Name"
+      ],
+      "limitations": "Name-only research proposal. No other fields or public access status are verified or changed. Apply only after matching SFA Licence and confirming baseline workbook SHA."
+    },
+    {
+      "sfa_licence": "CE16I08N000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "Six Hands Daily",
+      "business_type": "Takeaway",
+      "existing_address": "290 ORCHARD ROAD #B1-K25,THE PARAGON",
+      "postal_code": "238859",
+      "official_mall": "Paragon",
+      "exact_unit_match": "#B1-K25",
+      "source_type": "current_official_mall_directory_or_landlord_page",
+      "source_url": "https://paragon.com.sg/store-detail/six-hands-daily/",
+      "observed_date": "2026-10-19",
+      "evidence": "Official Paragon store detail identifies Six Hands Daily at exact unit under Food & Beverages.",
+      "matching_rule": "Exact SFA licence-to-workbook row crosswalk; matching postal code and mall, with current official mall/landlord/operator source confirming the exact licensed unit or full unit range.",
+      "confidence": "high",
+      "proposed_fields": [
+        "F&B Name"
+      ],
+      "limitations": "Name-only research proposal. No other fields or public access status are verified or changed. Apply only after matching SFA Licence and confirming baseline workbook SHA."
+    },
+    {
+      "sfa_licence": "SW17909V000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "Eighteen Chefs",
+      "business_type": "Restaurant",
+      "existing_address": "3155 COMMONWEALTH AVENUE WEST #05-17,#05-16,THE CLEMENTI MALL",
+      "postal_code": "129588",
+      "official_mall": "The Clementi Mall",
+      "exact_unit_match": "#05-16/17",
+      "source_type": "current_official_mall_directory_or_landlord_page",
+      "source_url": "https://theclementimall.com/stores/eighteen-chefs/",
+      "observed_date": "2026-10-19",
+      "evidence": "Official mall store detail lists Eighteen Chefs at exact unit range.",
+      "matching_rule": "Exact SFA licence-to-workbook row crosswalk; matching postal code and mall, with current official mall/landlord/operator source confirming the exact licensed unit or full unit range.",
+      "confidence": "high",
+      "proposed_fields": [
+        "F&B Name"
+      ],
+      "limitations": "Name-only research proposal. No other fields or public access status are verified or changed. Apply only after matching SFA Licence and confirming baseline workbook SHA."
+    },
+    {
+      "sfa_licence": "SE11886J000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "THAI BAANG",
+      "business_type": "Bakery",
+      "existing_address": "5 CHANGI BUSINESS PARK CENTRAL 1 #01-42,CHANGI CITY POINT",
+      "postal_code": "486038",
+      "official_mall": "Changi City Point",
+      "exact_unit_match": "#01-42",
+      "source_type": "current_official_mall_directory_or_landlord_page",
+      "source_url": "https://changicitypoint.com.sg/store/thai-baang/",
+      "observed_date": "2026-10-19",
+      "evidence": "Official mall store page identifies Thai Baang at exact unit.",
+      "matching_rule": "Exact SFA licence-to-workbook row crosswalk; matching postal code and mall, with current official mall/landlord/operator source confirming the exact licensed unit or full unit range.",
+      "confidence": "high",
+      "proposed_fields": [
+        "F&B Name"
+      ],
+      "limitations": "Name-only research proposal. No other fields or public access status are verified or changed. Apply only after matching SFA Licence and confirming baseline workbook SHA."
+    },
+    {
+      "sfa_licence": "SW26798X000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "Ningji",
+      "business_type": "Takeaway",
+      "existing_address": "1 HARBOURFRONT WALK #02-135,VIVOCITY (LEFT PART OF)",
+      "postal_code": "098585",
+      "official_mall": "VivoCity",
+      "exact_unit_match": "#02-135",
+      "source_type": "current_official_mall_directory_or_landlord_page",
+      "source_url": "https://www.vivocity.com.sg/stores/ningji/",
+      "observed_date": "2026-10-19",
+      "evidence": "Official VivoCity store detail identifies Ningji at exact store location. SFA address notes left part of premises.",
+      "matching_rule": "Exact SFA licence-to-workbook row crosswalk; matching postal code and mall, with current official mall/landlord/operator source confirming the exact licensed unit or full unit range.",
+      "confidence": "high",
+      "proposed_fields": [
+        "F&B Name"
+      ],
+      "limitations": "Name-only research proposal. No other fields or public access status are verified or changed. Apply only after matching SFA Licence and confirming baseline workbook SHA."
+    },
+    {
+      "sfa_licence": "SE18939C000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "BINGXUE TEA & ICE CREAM",
+      "business_type": "Takeaway",
+      "existing_address": "11 TANJONG KATONG ROAD #B1-30,KINEX",
+      "postal_code": "437157",
+      "official_mall": "KINEX",
+      "exact_unit_match": "#B1-30",
+      "source_type": "current_official_mall_directory_or_landlord_page",
+      "source_url": "https://kinex.com.sg/public/food-beverages/bingxue-tea-ice-cream/80",
+      "observed_date": "2026-10-19",
+      "evidence": "Current official Kinex directory/store detail lists BingXue Tea & Ice Cream at exact unit; an older 2024 promotion page at the same unit names a prior tenant, so current directory resolves in favor of BingXue.",
+      "matching_rule": "Exact SFA licence-to-workbook row crosswalk; matching postal code and mall, with current official mall/landlord/operator source confirming the exact licensed unit or full unit range.",
+      "confidence": "high",
+      "proposed_fields": [
+        "F&B Name"
+      ],
+      "limitations": "Name-only research proposal. No other fields or public access status are verified or changed. Apply only after matching SFA Licence and confirming baseline workbook SHA."
+    }
+  ],
+  "held_records": [
+    {
+      "sfa_licence": "SW17882J000",
+      "existing_address": "1 JURONG WEST CENTRAL 2 #B1-45,JURONG POINT, Singapore 648886",
+      "reason": "Official Link REIT material associates the unit with Thai Supermarket and an in-market crepe counter; current evidence does not uniquely identify the SFA licensee as one public outlet.",
+      "source_url": "https://sg.linkreit.com/malls/jurong-point/stores/",
+      "action": "hold_no_name_proposal_no_access_status_change"
+    },
+    {
+      "sfa_licence": "CE24310L000",
+      "existing_address": "3 TEMASEK BOULEVARD #02-300,#02-301,SUNTEC CITY MALL, Singapore 038983",
+      "reason": "Official directory identifies Onggii at #02-300 only; workbook license spans #02-300 and #02-301. Partial unit overlap; hold.",
+      "source_url": "https://sunteccity.com.sg/store_categories/dining?subCategoryID=5",
+      "action": "hold_no_name_proposal_no_access_status_change"
+    },
+    {
+      "sfa_licence": "CE13172N000",
+      "existing_address": "3 TEMASEK BOULEVARD #B1-165,#B1-166,SUNTEC CITY MALL, Singapore 038983",
+      "reason": "No current exact official directory match for the complete licensed unit range; hold.",
+      "source_url": "https://sunteccity.com.sg/store_categories/dining?subCategoryID=5",
+      "action": "hold_no_name_proposal_no_access_status_change"
+    },
+    {
+      "sfa_licence": "CE14940X000",
+      "existing_address": "2 JURONG EAST CENTRAL 1 #01-602,#01-607,JEM, Singapore 609731",
+      "reason": "Licensed address overlaps Golden Village cinema complex and no exact public F&B outlet match; hold.",
+      "source_url": "https://www.jem mall.com.sg/",
+      "action": "hold_no_name_proposal_no_access_status_change"
+    },
+    {
+      "sfa_licence": "SW18I61P000",
+      "existing_address": "50 JURONG GATEWAY ROAD #B1-45,JEM, Singapore 608549",
+      "reason": "SFA type is herbal tea, while mall evidence categorizes ZTP at this unit as health/TCM retail; category/name ambiguity.",
+      "source_url": "https://www.jem mall.com.sg/",
+      "action": "hold_no_name_proposal_no_access_status_change"
+    },
+    {
+      "sfa_licence": "SE11925E000",
+      "existing_address": "5 CHANGI BUSINESS PARK CENTRAL 1 #01-15,CHANGI CITY POINT, Singapore 486038",
+      "reason": "Official mall directory lists 7-Eleven at #01-15 under Services rather than F&B; do not infer licensed name from this mismatch.",
+      "source_url": "https://changicitypoint.com.sg/",
+      "action": "hold_no_name_proposal_no_access_status_change"
+    },
+    {
+      "sfa_licence": "CE09J14V000",
+      "existing_address": "181 ORCHARD ROAD #12-02,ORCHARD CENTRAL, Singapore 238896",
+      "reason": "Only historical/older evidence surfaced; no current exact official mall listing verified.",
+      "source_url": "https://www.orchardcentral.com.sg/",
+      "action": "hold_no_name_proposal_no_access_status_change"
+    },
+    {
+      "sfa_licence": "CE18949L000",
+      "existing_address": "181 ORCHARD ROAD #08-06,#08-07,#08-08,ORCHARD CENTRAL, Singapore 238896",
+      "reason": "Current mall evidence associates Da Long Yi with #08-08 only, partial overlap against a three-unit SFA address. Hold.",
+      "source_url": "https://www.orchardcentral.com.sg/",
+      "action": "hold_no_name_proposal_no_access_status_change"
+    },
+    {
+      "sfa_licence": "CE21H97X000",
+      "existing_address": "181 ORCHARD ROAD #02-24,#02-25,#02-25A,ORCHARD CENTRAL, Singapore 238896",
+      "reason": "Current mall evidence identifies Don’t Yell At Me at #02-24 only; incomplete match to three licensed units. Hold.",
+      "source_url": "https://www.orchardcentral.com.sg/",
+      "action": "hold_no_name_proposal_no_access_status_change"
+    },
+    {
+      "sfa_licence": "CE08B54P000",
+      "existing_address": "10 SINARAN DRIVE #B1-126,SQUARE 2, Singapore 307506",
+      "reason": "No exact current official mall directory tenant/unit crosswalk verified. Hold.",
+      "source_url": "https://www.square2.com.sg/",
+      "action": "hold_no_name_proposal_no_access_status_change"
+    },
+    {
+      "sfa_licence": "CE07V22J000",
+      "existing_address": "10 SINARAN DRIVE #02-04,#02-05,#02-06,SQUARE 2, Singapore 307506",
+      "reason": "No exact current official mall directory match for complete unit range verified. Hold.",
+      "source_url": "https://www.square2.com.sg/",
+      "action": "hold_no_name_proposal_no_access_status_change"
+    },
+    {
+      "sfa_licence": "CE08M10X000",
+      "existing_address": "10 SINARAN DRIVE #04-01,#04-02A,#04-02B,#04-02C,SQUARE 2, Singapore 307506",
+      "reason": "No exact current official directory match for complete licensed range verified. Hold.",
+      "source_url": "https://www.square2.com.sg/",
+      "action": "hold_no_name_proposal_no_access_status_change"
+    },
+    {
+      "sfa_licence": "CE07F59L000",
+      "existing_address": "370 ALEXANDRA ROAD #01-13,ANCHORPOINT, Singapore 159953",
+      "reason": "Current official mall directory indicates Ice Bath Club occupies #01-13/13A/14, not an F&B outlet; hold category mismatch.",
+      "source_url": "https://www.anchorpoint.com.sg/",
+      "action": "hold_no_name_proposal_no_access_status_change"
+    },
+    {
+      "sfa_licence": "CE13L71E000",
+      "existing_address": "53 ANG MO KIO AVENUE 3 #B2-07,AMK HUB, Singapore 569933",
+      "reason": "Official Link REIT directory identifies ZTP at #B2-07 as Beauty & Wellness/TCM retail, not a clearly public F&B outlet; hold.",
+      "source_url": "https://sg.linkreit.com/malls/amk-hub/stores/",
+      "action": "hold_no_name_proposal_no_access_status_change"
+    },
+    {
+      "sfa_licence": "NE18402N000",
+      "existing_address": "2 TAMPINES CENTRAL 5 #01-37,CENTURY SQUARE, Singapore 529509",
+      "reason": "No current exact official mall page confirming tenant at the licensed unit found. Hold.",
+      "source_url": "https://www.centurysquare.com.sg/",
+      "action": "hold_no_name_proposal_no_access_status_change"
+    },
+    {
+      "sfa_licence": "SW25894E000",
+      "existing_address": "1 BUKIT BATOK CENTRAL LINK #B1-24,WEST MALL, Singapore 658713",
+      "reason": "No current exact official mall directory match verified. Hold.",
+      "source_url": "https://www.westmall.com.sg/",
+      "action": "hold_no_name_proposal_no_access_status_change"
+    },
+    {
+      "sfa_licence": "CE21548X000",
+      "existing_address": "6 RAFFLES BOULEVARD #03-130A,MARINA SQUARE, Singapore 039594",
+      "reason": "Current official Marina Square listing places Coco Veggie Nyonya Cuisine at #03-122, not licensed #03-130A; mismatch suggests stale/moved record. Hold.",
+      "source_url": "https://www.marinasquare.com.sg/stores",
+      "action": "hold_no_name_proposal_no_access_status_change"
+    }
+  ]
+}

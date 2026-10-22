@@ -27,7 +27,7 @@ export const AUTH_COPY = {
     errorBody: "Couldn't load account creation right now. Please retry.",
     title: "Create account",
     subtitle: "Join our community of food lovers.",
-    displayNamePlaceholder: "Full name",
+    displayNamePlaceholder: "Display name",
     emailPlaceholder: "Email address",
     passwordPlaceholder: "Create password",
     passwordRules:

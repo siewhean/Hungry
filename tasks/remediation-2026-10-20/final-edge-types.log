@@ -1,0 +1,12 @@
+
+> hungry-mobile@0.1.0 check:edge-types
+> node scripts/check-edge-types.mjs
+
+Check supabase/functions/guest-sessions/index.ts
+Check supabase/functions/ingest-menu-photo/index.ts
+Check supabase/functions/mood-search/index.ts
+Check supabase/functions/ops-dishes-draft/index.ts
+Check supabase/functions/process-account-deletions/index.ts
+Check supabase/functions/send-email/index.ts
+Check supabase/functions/send-notifications/index.ts
+Check supabase/functions/tag-dishes/index.ts

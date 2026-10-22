@@ -1,0 +1,59 @@
+{
+  "schema_version": "hungry-image-rights-proposal-v1",
+  "snapshot_id": "refresh133_images_20261019",
+  "captured_at_sgt": "2026-10-19",
+  "workbook_path": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "b9b4d654cac9131405caf8c84c81194af8d4b856ab8bffbfdc746ae6cfad7463",
+  "workbook_edited": false,
+  "scope": "Read-only bounded research for real exact-branch photographs on Wikimedia Commons. Temporary image files were used for pixel verification and deleted immediately after review. No workbook edits, image assets retained, Mapbox requests, or spend.",
+  "summary": {
+    "new_candidates": 1,
+    "exact_directory_joins": 1,
+    "exact_menu_item_joins": 0,
+    "pixel_inspected": 1,
+    "approved_for_current_display": 0,
+    "review_only": 1,
+    "workbook_changes": 0
+  },
+  "candidates": [
+    {
+      "action": "add_exact_branch_image_candidate_review_only",
+      "sfa_licence": "SW08730X000",
+      "workbook_outlet_name": "Ya Kun Kaya Toast",
+      "workbook_directory_address": "Address: 1 MARITIME SQUARE #03-59,HARBOURFRONT CENTRE,Singapore 099253",
+      "item_or_image_type": "Exact-outlet storefront photo",
+      "pictured_menu_item": null,
+      "menu_item_join": null,
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/d/db/HarbourFront_Centre_shops_04-12-2024%2824%29.jpg",
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:HarbourFront_Centre_shops_04-12-2024(24).jpg",
+      "observed_at_sgt": "2026-10-19",
+      "photograph_date": "2024-12-04 12:32:15 (Commons EXIF / source metadata)",
+      "creator": "LN9267 (Commons author/uploader field)",
+      "license": "CC BY-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "attribution": "Photo: LN9267, CC BY-SA 4.0, via Wikimedia Commons. Link to license and mark modifications if any.",
+      "pixel_verification": {
+        "status": "pass",
+        "native_dimensions": "8064 x 6048",
+        "visual_observations": "Visible illuminated “Ya Kun Kaya Toast” storefront sign and branch unit number #03-59 in the same frame; branch unit matches the workbook directory record.",
+        "temporary_asset_deleted": true
+      },
+      "geolocation_metadata": "Commons image metadata reports GPS 1.264964, 103.820564. This supports HarbourFront Centre localization but is not treated as outlet coordinate replacement.",
+      "exact_match_basis": "Visible storefront brand and #03-59 unit match workbook outlet SW08730X000 at 1 Maritime Square #03-59, HarbourFront Centre, postal 099253. Existing directory workbook has no approved image URL.",
+      "currentness_assessment": "Historical but meaningful location proof: image date 2024-12-04, about 10.5 months before audit. It confirms outlet appearance on capture date only. Current workbook SFA listing is not live confirmation that outlet remains open or unchanged.",
+      "display_reuse_status": "Review only; exact branch and reuse license verified, but source image is about 10.5 months old and present outlet operation/appearance is not live confirmed. Could be upgraded for directory display if freshness policy accepts dated storefront media and live branch status is independently confirmed.",
+      "caveats": [
+        "CC BY-SA 4.0 attribution and share-alike obligations must be preserved for any adapted/shared image.",
+        "No menu item is pictured clearly enough for an exact menu-item join.",
+        "The Commons image URL is an externally hosted asset; hotlink availability is not guaranteed.",
+        "Do not infer current menu, prices, or continued operation from this photo."
+      ]
+    }
+  ],
+  "excluded_or_not_reproposed": [],
+  "integration_recommendation": "Add the candidate to Image Candidates with full source, author, license and capture-date attribution, status “review only”. Leave Approved Image URL blank until image-age policy accepts this historic storefront photo and current operation is independently confirmed.",
+  "limitations": [
+    "This bounded pass found one exact outlet branch match; it does not establish complete image coverage.",
+    "No persistent image copies retained; no workbook edits, spending, or Mapbox usage."
+  ]
+}

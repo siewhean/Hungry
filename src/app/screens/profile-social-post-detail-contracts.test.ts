@@ -28,7 +28,8 @@ test("profile social post detail shows a continuous feed of the selected collect
   assert.match(source, /postId/);
   assert.match(source, /orderedPosts/);
   assert.match(source, /selectedPost/);
-  assert.match(source, /orderedPosts\.map\(renderFeedPost\)/);
+  assert.match(source, /data=\{orderedPosts\}/);
+  assert.match(source, /scroll=\{false\}/);
   assert.match(source, /ZoomableMedia/);
   assert.match(source, /LinearGradient/);
   assert.match(source, /styles\.imageContainer/);
@@ -52,8 +53,8 @@ test("profile social grid removes side padding for edge-to-edge tiles", () => {
     gridSource,
     /<Screen[\s\S]*fullWidth[\s\S]*contentContainerStyle=\{\{ paddingHorizontal: 0 \}\}/,
   );
-  assert.match(gridSource, /const ITEM_WIDTH = width \/ COLUMN_COUNT/);
-  assert.match(gridSource, /width: ITEM_WIDTH/);
+  assert.match(gridSource, /const itemWidth = width \/ COLUMN_COUNT/);
+  assert.match(gridSource, /width: itemWidth/);
 });
 
 test("profile social post detail shows only stored social counts", () => {

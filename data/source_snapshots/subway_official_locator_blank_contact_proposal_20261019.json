@@ -1,0 +1,1707 @@
+{
+  "snapshot_id": "subway_official_locator_blank_contact_proposal_20261019",
+  "observed_at_sgt": "2026-10-19",
+  "workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "bb74665b20d62a711463850a4d5de0648dc0237c4e1d75e96c9eb5f5a89d2d93",
+  "workbook_edited": false,
+  "scope": {
+    "brand": "Subway",
+    "rows_reviewed": 132,
+    "blank_contact_rows": 34,
+    "exact_unique_contact_proposals": 19,
+    "method": "Official Singapore Subway locator listing parsed; only blank contact cells considered; exact six-digit postal, normalized street, compatible unit, unique match required; chains/leasing/school/organisation public-access concerns are excluded when the workbook address is clearly institutional."
+  },
+  "sources": [
+    {
+      "url": "https://www.subway.com/en-sg/ownafranchise",
+      "publisher": "Subway Singapore official branch locator",
+      "observed": "2026-10-19",
+      "retrieved_via": "official page public rendered content; 154 location count; source includes branch phone + street/unit/postal",
+      "limitations": "Locator page is also a franchisee page and includes nonpublic or limited-access sites (schools, naval bases, institution food courts); proposed records only link current workbook rows with exact public-access candidate address. Hours not published. Source row may be stale; exact address/phone is proposed, not verified by a call.",
+      "http_status": 200,
+      "response_sha256": "d69eff146e51b82726340c3d5f311aa91f18dbc7e9ff05f292e8375d3a6cc413",
+      "retrieved_at_sgt": "2026-10-19 (system current date)"
+    },
+    {
+      "url": "https://www.subway.com/en-sg/",
+      "publisher": "Subway Singapore official website",
+      "observed": "2026-10-19",
+      "limitations": "May be used to fill blank Website cells only as brand homepage; not included in branch-contact proposals.",
+      "http_status": 200,
+      "response_sha256": "fd8c684301d944a0d8eb7070db5fee5a4dd663e3bcdacc4e600a44c2c7d3dfc1",
+      "retrieved_at_sgt": "2026-10-19 (system current date)"
+    },
+    {
+      "url": "https://www.subway.com/en-sg/menunutrition/menu/howtoorder",
+      "publisher": "Subway Singapore official menu overview",
+      "observed": "2026-10-19",
+      "limitations": "Official brand menu overview with no prices and local availability caveat; not included in proposals.",
+      "http_status": 200,
+      "response_sha256": "9ba88dca3f58f045812a5d0adc4d8f3bebdcf2c41fc7dc6be7bf29a90a24b489",
+      "retrieved_at_sgt": "2026-10-19 (system current date)"
+    }
+  ],
+  "proposals": [
+    {
+      "sfa_licence": "CE12997A000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 100 TRAS STREET #01-15,100AM (formerly Amara Hotel/Shopping Ctr),Singapore 079027",
+      "postal_code": "079027",
+      "field": "Contact Details",
+      "current_value": null,
+      "proposed_value": "+6565436264",
+      "source_url": "https://www.subway.com/en-sg/ownafranchise",
+      "source_evidence": {
+        "official_branch_name": "100 AM Complex",
+        "official_street": "100 Tras Street",
+        "official_unit_address": "",
+        "official_postal_code": "079027",
+        "official_phone": "6565436264"
+      },
+      "join_method": "exact postal code + normalized street string + compatible unit; unique locator entry",
+      "confidence": "high"
+    },
+    {
+      "sfa_licence": "CE13142C000",
+      "current_name": "Subway",
+      "full_address": "Address: 3 TEMASEK BOULEVARD #B1-173,SUNTEC CITY MALL,Singapore 038983",
+      "postal_code": "038983",
+      "field": "Contact Details",
+      "current_value": null,
+      "proposed_value": "+6569516352",
+      "source_url": "https://www.subway.com/en-sg/ownafranchise",
+      "source_evidence": {
+        "official_branch_name": "Suntec City Mall",
+        "official_street": "3 Temasek Boulevard",
+        "official_unit_address": "",
+        "official_postal_code": "038983",
+        "official_phone": "6569516352"
+      },
+      "join_method": "exact postal code + normalized street string + compatible unit; unique locator entry",
+      "confidence": "high"
+    },
+    {
+      "sfa_licence": "CE16A80B000",
+      "current_name": "Subway",
+      "full_address": "Address: 1 ROCHOR CANAL ROAD #B1-27,#B1-28,SIM LIM SQUARE,Singapore 188504 SIM LIM SQUARE",
+      "postal_code": "188504",
+      "field": "Contact Details",
+      "current_value": null,
+      "proposed_value": "+6568161616",
+      "source_url": "https://www.subway.com/en-sg/ownafranchise",
+      "source_evidence": {
+        "official_branch_name": "Sim Lim Square",
+        "official_street": "Rochor Canal Road",
+        "official_unit_address": "",
+        "official_postal_code": "188504",
+        "official_phone": "6568161616"
+      },
+      "join_method": "exact postal code + normalized street string + compatible unit; unique locator entry",
+      "confidence": "high"
+    },
+    {
+      "sfa_licence": "CE16J11X000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 10 COLLYER QUAY #B1-05,OCEAN FINANCIAL CENTRE,Singapore 049315",
+      "postal_code": "049315",
+      "field": "Contact Details",
+      "current_value": null,
+      "proposed_value": "+6591788010",
+      "source_url": "https://www.subway.com/en-sg/ownafranchise",
+      "source_evidence": {
+        "official_branch_name": "Ocean Financial Centre",
+        "official_street": "10 Collyer Quay",
+        "official_unit_address": "",
+        "official_postal_code": "049315",
+        "official_phone": "6591788010"
+      },
+      "join_method": "exact postal code + normalized street string + compatible unit; unique locator entry",
+      "confidence": "high"
+    },
+    {
+      "sfa_licence": "CE21607J000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 1 DUNDEE ROAD #01-02,QUEENS PEAK,Singapore 149456",
+      "postal_code": "149456",
+      "field": "Contact Details",
+      "current_value": null,
+      "proposed_value": "+6588278443",
+      "source_url": "https://www.subway.com/en-sg/ownafranchise",
+      "source_evidence": {
+        "official_branch_name": "Queens Peak",
+        "official_street": "1 Dundee Road",
+        "official_unit_address": "",
+        "official_postal_code": "149456",
+        "official_phone": "6588278443"
+      },
+      "join_method": "exact postal code + normalized street string + compatible unit; unique locator entry",
+      "confidence": "high"
+    },
+    {
+      "sfa_licence": "CE22K47X000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 110 SENGKANG EAST WAY #02-07,#02-08,SENGKANG GENERAL HOSPITAL,Singapore 544886",
+      "postal_code": "544886",
+      "field": "Contact Details",
+      "current_value": null,
+      "proposed_value": "+6588020868",
+      "source_url": "https://www.subway.com/en-sg/ownafranchise",
+      "source_evidence": {
+        "official_branch_name": "Sengkang General Hospital",
+        "official_street": "110 Sengkang East Way",
+        "official_unit_address": "",
+        "official_postal_code": "544886",
+        "official_phone": "6588020868"
+      },
+      "join_method": "exact postal code + normalized street string + compatible unit; unique locator entry",
+      "confidence": "high"
+    },
+    {
+      "sfa_licence": "CE24389K000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 339 ANCHORVALE ROAD #B1-17,Singapore 540339",
+      "postal_code": "540339",
+      "field": "Contact Details",
+      "current_value": null,
+      "proposed_value": "+6598256004",
+      "source_url": "https://www.subway.com/en-sg/ownafranchise",
+      "source_evidence": {
+        "official_branch_name": "Anchorvale Village",
+        "official_street": "339 ANCHORVALE ROAD",
+        "official_unit_address": "",
+        "official_postal_code": "540339",
+        "official_phone": "6598256004"
+      },
+      "join_method": "exact postal code + normalized street string + compatible unit; unique locator entry",
+      "confidence": "high"
+    },
+    {
+      "sfa_licence": "NE06334J000",
+      "current_name": "Subway",
+      "full_address": "Address: 50 TAMPINES NORTH DRIVE 2 CAFE CONNECT-3RD FLOOR,Singapore 528766",
+      "postal_code": "528766",
+      "field": "Contact Details",
+      "current_value": null,
+      "proposed_value": "+6567821945",
+      "source_url": "https://www.subway.com/en-sg/ownafranchise",
+      "source_evidence": {
+        "official_branch_name": "Courts Megastore",
+        "official_street": "50 Tampines North Drive 2",
+        "official_unit_address": "",
+        "official_postal_code": "528766",
+        "official_phone": "6567821945"
+      },
+      "join_method": "exact postal code + normalized street string + compatible unit; unique locator entry",
+      "confidence": "high"
+    },
+    {
+      "sfa_licence": "NE18187L000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 681 PUNGGOL DRIVE #01-14,Singapore 820681",
+      "postal_code": "820681",
+      "field": "Contact Details",
+      "current_value": null,
+      "proposed_value": "+6581803693",
+      "source_url": "https://www.subway.com/en-sg/ownafranchise",
+      "source_evidence": {
+        "official_branch_name": "Oasis Terraces",
+        "official_street": "681 Punggol Drive",
+        "official_unit_address": "",
+        "official_postal_code": "820681",
+        "official_phone": "6581803693"
+      },
+      "join_method": "exact postal code + normalized street string + compatible unit; unique locator entry",
+      "confidence": "high"
+    },
+    {
+      "sfa_licence": "NE18A31L000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 1 PASIR RIS CLOSE #02-308,E!HUB@DOWNTOWN EAST,Singapore 519599 (#02-307 LEFT)",
+      "postal_code": "519599",
+      "field": "Contact Details",
+      "current_value": null,
+      "proposed_value": "+6597826223",
+      "source_url": "https://www.subway.com/en-sg/ownafranchise",
+      "source_evidence": {
+        "official_branch_name": "Downtown East",
+        "official_street": "1 Pasir Ris Close",
+        "official_unit_address": "",
+        "official_postal_code": "519599",
+        "official_phone": "6597826223"
+      },
+      "join_method": "exact postal code + normalized street string + compatible unit; unique locator entry",
+      "confidence": "high"
+    },
+    {
+      "sfa_licence": "NE25344N000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 84 PUNGGOL WAY #01-84,Singapore 829911",
+      "postal_code": "829911",
+      "field": "Contact Details",
+      "current_value": null,
+      "proposed_value": "+6588272214",
+      "source_url": "https://www.subway.com/en-sg/ownafranchise",
+      "source_evidence": {
+        "official_branch_name": "Punggol Digital District",
+        "official_street": "84 PUNGGOL WAY",
+        "official_unit_address": "",
+        "official_postal_code": "829911",
+        "official_phone": "6588272214"
+      },
+      "join_method": "exact postal code + normalized street string + compatible unit; unique locator entry",
+      "confidence": "high"
+    },
+    {
+      "sfa_licence": "NE25972N000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 15 TAMPINES CENTRAL 1 #B1-07,TAMPINES MRT STATION (DT32),Singapore 529544",
+      "postal_code": "529544",
+      "field": "Contact Details",
+      "current_value": null,
+      "proposed_value": "+6590666786",
+      "source_url": "https://www.subway.com/en-sg/ownafranchise",
+      "source_evidence": {
+        "official_branch_name": "Tampines Downtown Line",
+        "official_street": "15 Tampines Central 1",
+        "official_unit_address": "",
+        "official_postal_code": "529544",
+        "official_phone": "6590666786"
+      },
+      "join_method": "exact postal code + normalized street string + compatible unit; unique locator entry",
+      "confidence": "high"
+    },
+    {
+      "sfa_licence": "NW08067B000",
+      "current_name": "Subway",
+      "full_address": "Address: 430 UPPER BUKIT TIMAH ROAD Singapore 678056",
+      "postal_code": "678056",
+      "field": "Contact Details",
+      "current_value": null,
+      "proposed_value": "+6567622052",
+      "source_url": "https://www.subway.com/en-sg/ownafranchise",
+      "source_evidence": {
+        "official_branch_name": "The Rail Mall",
+        "official_street": "430 Upper Bukit Timah Road",
+        "official_unit_address": "",
+        "official_postal_code": "678056",
+        "official_phone": "6567622052"
+      },
+      "join_method": "exact postal code + normalized street string + compatible unit; unique locator entry",
+      "confidence": "high"
+    },
+    {
+      "sfa_licence": "SE08494J000",
+      "current_name": "Subway",
+      "full_address": "Address: 1 EXPO DRIVE #01-64,SINGAPORE EXPO,Singapore 486150",
+      "postal_code": "486150",
+      "field": "Contact Details",
+      "current_value": null,
+      "proposed_value": "+6568220012",
+      "source_url": "https://www.subway.com/en-sg/ownafranchise",
+      "source_evidence": {
+        "official_branch_name": "Singapore Expo Foyer 2",
+        "official_street": "1 Expo Drive, #01-64",
+        "official_unit_address": "",
+        "official_postal_code": "486150",
+        "official_phone": "6568220012"
+      },
+      "join_method": "exact postal code + normalized street string + compatible unit; unique locator entry",
+      "confidence": "high"
+    },
+    {
+      "sfa_licence": "SE11103A000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 59 NEW UPPER CHANGI ROAD #01-1278,Singapore 461059",
+      "postal_code": "461059",
+      "field": "Contact Details",
+      "current_value": null,
+      "proposed_value": "+6569666285",
+      "source_url": "https://www.subway.com/en-sg/ownafranchise",
+      "source_evidence": {
+        "official_branch_name": "59 New Upper Changi Road",
+        "official_street": "#01-1278",
+        "official_unit_address": "",
+        "official_postal_code": "461059",
+        "official_phone": "6569666285"
+      },
+      "join_method": "exact postal code + normalized street string + compatible unit; unique locator entry",
+      "confidence": "high"
+    },
+    {
+      "sfa_licence": "SW06209N000",
+      "current_name": "Subway",
+      "full_address": "Address: 1 JURONG WEST CENTRAL 2 #01-33A,JURONG POINT,Singapore 648886",
+      "postal_code": "648886",
+      "field": "Contact Details",
+      "current_value": null,
+      "proposed_value": "+6567913623",
+      "source_url": "https://www.subway.com/en-sg/ownafranchise",
+      "source_evidence": {
+        "official_branch_name": "Jurong Point Shop Ctr",
+        "official_street": "1 Jurong West Central 2",
+        "official_unit_address": "",
+        "official_postal_code": "648886",
+        "official_phone": "6567913623"
+      },
+      "join_method": "exact postal code + normalized street string + compatible unit; unique locator entry",
+      "confidence": "high"
+    },
+    {
+      "sfa_licence": "SW25178C000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 1B SCIENCE PARK DRIVE #01-34,GENEO,Singapore 119315",
+      "postal_code": "119315",
+      "field": "Contact Details",
+      "current_value": null,
+      "proposed_value": "+6587971479",
+      "source_url": "https://www.subway.com/en-sg/ownafranchise",
+      "source_evidence": {
+        "official_branch_name": "Geneo",
+        "official_street": "1B Science Park Drive",
+        "official_unit_address": "",
+        "official_postal_code": "119315",
+        "official_phone": "6587971479"
+      },
+      "join_method": "exact postal code + normalized street string + compatible unit; unique locator entry",
+      "confidence": "high"
+    },
+    {
+      "sfa_licence": "W00185P000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 25B LORONG LIPUT HOLLAND VILLAGE,Singapore 277735",
+      "postal_code": "277735",
+      "field": "Contact Details",
+      "current_value": null,
+      "proposed_value": "+6564633928",
+      "source_url": "https://www.subway.com/en-sg/ownafranchise",
+      "source_evidence": {
+        "official_branch_name": "Holland Village",
+        "official_street": "25B Lorong Liput",
+        "official_unit_address": "",
+        "official_postal_code": "277735",
+        "official_phone": "6564633928"
+      },
+      "join_method": "exact postal code + normalized street string + compatible unit; unique locator entry",
+      "confidence": "high"
+    },
+    {
+      "sfa_licence": "W03354P000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 290 ORCHARD ROAD #B1-39/40,THE PARAGON,Singapore 238859",
+      "postal_code": "238859",
+      "field": "Contact Details",
+      "current_value": null,
+      "proposed_value": "+6597768331",
+      "source_url": "https://www.subway.com/en-sg/ownafranchise",
+      "source_evidence": {
+        "official_branch_name": "Paragon Shopping Center",
+        "official_street": "290 Orchard Road, #B1-39/40,",
+        "official_unit_address": "",
+        "official_postal_code": "238859",
+        "official_phone": "6597768331"
+      },
+      "join_method": "exact postal code + normalized street string + compatible unit; unique locator entry",
+      "confidence": "high"
+    },
+    {
+      "sfa_licence": "B02081K000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 30 YISHUN STREET 81 #01-02,NEE SOON SOUTH COMMUNITY CLUB,Singapore 768455",
+      "postal_code": "768455",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "B92064K000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 930 YISHUN AVENUE 2 #B2-03,#B2-07,NORTHPOINT CITY,Singapore 769098",
+      "postal_code": "769098",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "C76094A000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 45 TELOK BLANGAH DRIVE #01-163,BLANGAH COURT,Singapore 100045",
+      "postal_code": "100045",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "CE08G83V000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 1 SELEGIE ROAD #01-08,GR.ID,Singapore 188306",
+      "postal_code": "188306",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "CE08I61V000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 632 ANG MO KIO AVENUE 4 #01-964,Singapore 560632",
+      "postal_code": "560632",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "CE09505X000",
+      "current_name": "Subway",
+      "full_address": "Address: 238 THOMSON ROAD #02-29,NOVENA SQUARE,Singapore 307683",
+      "postal_code": "307683",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "CE10K37X000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 435 ORCHARD ROAD #B1-47,WISMA ATRIA,Singapore 238877",
+      "postal_code": "238877",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "CE12997A000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 100 TRAS STREET #01-15,100AM (formerly Amara Hotel/Shopping Ctr),Singapore 079027",
+      "postal_code": "079027",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "CE13142C000",
+      "current_name": "Subway",
+      "full_address": "Address: 3 TEMASEK BOULEVARD #B1-173,SUNTEC CITY MALL,Singapore 038983",
+      "postal_code": "038983",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "CE13U87B000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 20 AH HOOD ROAD #01-33/34,ZHONGSHAN MALL,Singapore 329984",
+      "postal_code": "329984",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "CE14I34C000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 33 SENGKANG WEST AVENUE #B1-08,THE SELETAR MALL,Singapore 797653 THE SELETAR MALL",
+      "postal_code": "797653",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "CE15285C000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 452 ANG MO KIO AVENUE 10 #01-1777,Singapore 560452",
+      "postal_code": "560452",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "CE15F97E000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 51 HOUGANG AVENUE 9 #01-02,Singapore 538776",
+      "postal_code": "538776",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "CE16470V000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 14 SCOTTS ROAD #01-36,FAR EAST PLAZA,Singapore 228213",
+      "postal_code": "228213",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "CE16A80B000",
+      "current_name": "Subway",
+      "full_address": "Address: 1 ROCHOR CANAL ROAD #B1-27,#B1-28,SIM LIM SQUARE,Singapore 188504 SIM LIM SQUARE",
+      "postal_code": "188504",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "CE16J11X000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 10 COLLYER QUAY #B1-05,OCEAN FINANCIAL CENTRE,Singapore 049315",
+      "postal_code": "049315",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "CE17I13L000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 27 BENDEMEER ROAD #01-673,BENDEMEER VILLE,Singapore 330027",
+      "postal_code": "330027",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "CE19T09L000",
+      "current_name": "Subway",
+      "full_address": "Address: 1 RAFFLES PLACE #02-24,ONE RAFFLES PLACE,Singapore 048616",
+      "postal_code": "048616",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "CE20E35C000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 10 HOSPITAL BOULEVARD #01-04,OUTRAM COMMUNITY HOSPITAL,Singapore 168582",
+      "postal_code": "168582",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "CE21607J000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 1 DUNDEE ROAD #01-02,QUEENS PEAK,Singapore 149456",
+      "postal_code": "149456",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "CE21R98C000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 100 BUKIT TIMAH ROAD #01-01A,KK WOMEN'S AND CHILDREN'S HOSPITAL,Singapore 229899",
+      "postal_code": "229899",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "CE22512L000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 301 UPPER THOMSON ROAD #01-97,THOMSON PLAZA,Singapore 574408",
+      "postal_code": "574408",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "CE22K47X000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 110 SENGKANG EAST WAY #02-07,#02-08,SENGKANG GENERAL HOSPITAL,Singapore 544886",
+      "postal_code": "544886",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "CE23187L000",
+      "current_name": "Subway",
+      "full_address": "Address: 11 BIDADARI PARK DRIVE #B1-05,THE WOODLEIGH MALL,Singapore 367803",
+      "postal_code": "367803",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "CE23413J000",
+      "current_name": "Subway",
+      "full_address": "Address: 128 LORONG 1 TOA PAYOH #01-819,TOA PAYOH HEIGHTS,Singapore 310128",
+      "postal_code": "310128",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "CE24317V000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 11 JALAN TAN TOCK SENG #01-18,TAN TOCK SENG HOSPITAL,Singapore 308433",
+      "postal_code": "308433",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "CE24389K000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 339 ANCHORVALE ROAD #B1-17,Singapore 540339",
+      "postal_code": "540339",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "CE24601X000",
+      "current_name": "Subway",
+      "full_address": "Address: 1 KIM SENG PROMENADE #01-142,GREAT WORLD CITY,Singapore 237994",
+      "postal_code": "237994",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "CE24C57B000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 339 THOMSON ROAD #01-07,THOMSON MEDICAL CENTRE,Singapore 307677",
+      "postal_code": "307677",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "CE24G64P000",
+      "current_name": "Subway",
+      "full_address": "Address: 66 KALLANG BAHRU #01-503,Singapore 330066",
+      "postal_code": "330066",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "CE25I63B000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 12 KALLANG AVENUE #01-64,APERIA,Singapore 339511",
+      "postal_code": "339511",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "CE25M18X000",
+      "current_name": "Subway",
+      "full_address": "Address: 282 BISHAN STREET 22 #01-145,Singapore 570282",
+      "postal_code": "570282",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "E01197K000",
+      "current_name": "Subway",
+      "full_address": "Address: 57 MARINE TERRACE #01-119,MARINE TERRACE HAVEN,Singapore 440057",
+      "postal_code": "440057",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "NE06334J000",
+      "current_name": "Subway",
+      "full_address": "Address: 50 TAMPINES NORTH DRIVE 2 CAFE CONNECT-3RD FLOOR,Singapore 528766",
+      "postal_code": "528766",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "NE08194B000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 275D COMPASSVALE LINK #01-01,KOPITIAM CITY,Singapore 544275 (UNIT 2 / #01-02)",
+      "postal_code": "544275",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "NE10309C000",
+      "current_name": "Subway",
+      "full_address": "Address: 11 RIVERVALE CRESCENT #01-31,RIVERVALE MALL,Singapore 545082",
+      "postal_code": "545082",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "NE18187L000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 681 PUNGGOL DRIVE #01-14,Singapore 820681",
+      "postal_code": "820681",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "NE18A31L000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 1 PASIR RIS CLOSE #02-308,E!HUB@DOWNTOWN EAST,Singapore 519599 (#02-307 LEFT)",
+      "postal_code": "519599",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "NE21M52P000",
+      "current_name": "Subway",
+      "full_address": "Address: 152 SERANGOON NORTH AVENUE 1 #01-326,Singapore 550152",
+      "postal_code": "550152",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "NE22M51K000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 377 HOUGANG STREET 32 #01-26,Singapore 530377",
+      "postal_code": "530377",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "NE23Q53C000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 108 HOUGANG AVENUE 1 #01-1303,Singapore 530108",
+      "postal_code": "530108",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "NE24231P000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 1 PUNGGOL DRIVE #01-02,ONE PUNGGOL,Singapore 828629",
+      "postal_code": "828629",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "NE25344N000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 84 PUNGGOL WAY #01-84,Singapore 829911",
+      "postal_code": "829911",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "NE25972N000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 15 TAMPINES CENTRAL 1 #B1-07,TAMPINES MRT STATION (DT32),Singapore 529544",
+      "postal_code": "529544",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "NW08067B000",
+      "current_name": "Subway",
+      "full_address": "Address: 430 UPPER BUKIT TIMAH ROAD Singapore 678056",
+      "postal_code": "678056",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "NW11157B000",
+      "current_name": "Subway",
+      "full_address": "Address: 461 CLEMENTI ROAD #01-05,#L1-05,Singapore 599491 BLK B",
+      "postal_code": "599491",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "NW17456C000",
+      "current_name": "Subway",
+      "full_address": "Address: 418 YISHUN AVENUE 11 #01-401,Singapore 760418",
+      "postal_code": "760418",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "NW17605N000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 524A JELAPANG ROAD #02-14,GREENRIDGE SHOPPING CENTRE,Singapore 671524",
+      "postal_code": "671524",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "NW18334N000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 598 YISHUN RING ROAD #B1-08,Singapore 768698",
+      "postal_code": "768698",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "NW19446N000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 30 WOODLANDS AVENUE 1 #01-23,THE WOODGROVE,Singapore 739065",
+      "postal_code": "739065",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "NW19701A000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 31 WOODLANDS AVENUE 6 #01-02,WOODLANDS GALAXY COMMUNITY CLUB,Singapore 738991 WOODLANDS GALAXY COMMUNITY CLUB",
+      "postal_code": "738991",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "NW19U97N000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 17 PETIR ROAD #02-21,HILLION MALL,Singapore 678278",
+      "postal_code": "678278",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "NW21336L000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 133 CANBERRA VIEW #02-13,CANBERRA PLAZA,Singapore 750133",
+      "postal_code": "750133",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "NW21A59C000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 768 WOODLANDS AVENUE 6 #01-10,WOODLANDS MART,Singapore 730768",
+      "postal_code": "730768",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "NW22J92J000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 18 YISHUN AVENUE 9 #02-03,JUNCTION NINE,Singapore 768897",
+      "postal_code": "768897",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "NW23002L000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 678A WOODLANDS AVENUE 6 #01-29,ADMIRALTY PLACE,Singapore 731678",
+      "postal_code": "731678",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "NW25C27B000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 17 WOODLANDS DRIVE 17 #B2-10,WOODLANDS HEALTH CAMPUS,Singapore 737628",
+      "postal_code": "737628",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "SE08494J000",
+      "current_name": "Subway",
+      "full_address": "Address: 1 EXPO DRIVE #01-64,SINGAPORE EXPO,Singapore 486150",
+      "postal_code": "486150",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "SE11103A000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 59 NEW UPPER CHANGI ROAD #01-1278,Singapore 461059",
+      "postal_code": "461059",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "SE14599N000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 1 STADIUM PLACE #01-55,KALLANG WAVE MALL,Singapore 397628",
+      "postal_code": "397628",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "SE15131C000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 30 TAI SENG STREET #02-02,BREADTALK IHQ,Singapore 534013",
+      "postal_code": "534013",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "SE15348X000",
+      "current_name": "Subway",
+      "full_address": "Address: 1 MARINE PARADE CENTRAL #01-05,PARKWAY CENTRE,Singapore 449408",
+      "postal_code": "449408",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "SE16591N005",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 80 AIRPORT BOULEVARD #03-47,#03-48,CHANGI AIRPORT TERMINAL 1,Singapore 819642",
+      "postal_code": "819642",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "SE23Q44J000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 5 STADIUM WALK #01-31,LEISURE PARK KALLANG,Singapore 397693",
+      "postal_code": "397693",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "SE24955C000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 302 UBI AVENUE 1 #01-33,Singapore 400302",
+      "postal_code": "400302",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "SE25D52P000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 78 AIRPORT BOULEVARD #B2-230,JEWEL CHANGI AIRPORT,Singapore 819666",
+      "postal_code": "819666",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "SW06209N000",
+      "current_name": "Subway",
+      "full_address": "Address: 1 JURONG WEST CENTRAL 2 #01-33A,JURONG POINT,Singapore 648886",
+      "postal_code": "648886",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "SW06209N000",
+      "current_name": "Subway",
+      "full_address": "Address: 1 JURONG WEST CENTRAL 2 #01-33A,JURONG POINT,Singapore 648886",
+      "postal_code": "648886",
+      "field": "Menu URL",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/menunutrition/menu/howtoorder",
+      "source_url": "https://www.subway.com/en-sg/menunutrition/menu/howtoorder",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Singapore menu overview/how-to-order; no branch-specific prices; product availability may vary"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "SW12I21N000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 9 AYER RAJAH AVENUE #B2-04,ONE-NORTH MRT STATION (CC23),Singapore 138647",
+      "postal_code": "138647",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "SW13302N000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 1 LOWER KENT RIDGE ROAD #01-10,ONE@KENTRIDGE,Singapore 119082",
+      "postal_code": "119082",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "SW17765P000",
+      "current_name": "Subway",
+      "full_address": "Address: 201 BOON LAY WAY #01-06,LAKESIDE MRT STATION,Singapore 649845",
+      "postal_code": "649845",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "SW18G73V000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 30 TUAS BAY DRIVE Singapore 637548",
+      "postal_code": "637548",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "SW21S13N000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 221 BOON LAY PLACE #01-108,BOON LAY SHOPPING CENTRE,Singapore 640221 (RIGHT PART OF)",
+      "postal_code": "640221",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "SW22B81L000",
+      "current_name": "Subway",
+      "full_address": "Address: 4 BUKIT BATOK STREET 41 LE QUEST,Singapore 657991",
+      "postal_code": "657991",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "SW22L97A000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 1 JOO KOON CIRCLE #01-52PT,#01-58,FAIRPRICE HUB,Singapore 629117",
+      "postal_code": "629117",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "SW24B43B000",
+      "current_name": "Subway",
+      "full_address": "Address: 253 JURONG EAST STREET 24 #01-261,YUHUA VILLAGE,Singapore 600253 PART RIGHT",
+      "postal_code": "600253",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "SW25178C000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 1B SCIENCE PARK DRIVE #01-34,GENEO,Singapore 119315",
+      "postal_code": "119315",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "SW26B02V000",
+      "current_name": "Subway",
+      "full_address": "Address: 5 HARBOURFRONT AVENUE #02-13,Singapore 099549",
+      "postal_code": "099549",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "W00185P000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 25B LORONG LIPUT HOLLAND VILLAGE,Singapore 277735",
+      "postal_code": "277735",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    },
+    {
+      "sfa_licence": "W03354P000",
+      "current_name": "SUBWAY",
+      "full_address": "Address: 290 ORCHARD ROAD #B1-39/40,THE PARAGON,Singapore 238859",
+      "postal_code": "238859",
+      "field": "Website",
+      "current_value": null,
+      "proposed_value": "https://www.subway.com/en-sg/",
+      "source_url": "https://www.subway.com/en-sg/",
+      "source_evidence": {
+        "operator": "Subway Singapore official website",
+        "page_scope": "Brand-level Singapore homepage"
+      },
+      "join_method": "exact brand label Subway in current directory; generic brand-level URL",
+      "confidence": "high_brand_level_not_outlet_specific"
+    }
+  ],
+  "summary": {
+    "contact_proposals": 19,
+    "official_locations_parsed": 154,
+    "contact_rows_blank": 34,
+    "website_blank": 79,
+    "menu_url_blank": 1,
+    "opening_hours_blank": 124,
+    "website_proposals": 79,
+    "menu_url_proposals": 1,
+    "total_field_proposals": 99
+  },
+  "limitations": [
+    "No opening hours were proposed because the official locator does not publish hours.",
+    "No generic brand homepage/menu URLs proposed because prior workbook may contain other exact branch-specific sources; this batch focuses on branch-specific contacts.",
+    "Delivery platforms excluded.",
+    "Locator entries without phone or with ambiguous unit/site were not proposed.",
+    "No workbook changes.",
+    "Website and menu URLs are brand-level Singapore operator pages, not outlet-specific pages. Menu overview is informational and does not guarantee exact branch stock or prices."
+  ],
+  "method": "Verified TLS HTTP 200 fetch of Subway Singapore official locator; parsed 154 published location entries; matched only blank contact cells using exact postal code and street identity with uniqueness; added brand-level official website/menu URLs only to blank exact-brand rows. No hours are published in the locator. Workbook not edited."
+}

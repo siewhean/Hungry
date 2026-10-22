@@ -1,0 +1,25 @@
+(node:92483) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[1A[2K[2m[WebServer] [22m(node:92519) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 6 tests using 1 worker
+
+[1A[2K(node:92737) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:92737) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+
+[1A[2K(node:92737) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K[1/6] [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:49:5 › fresh Welcome reaches existing-account login with real validation
+[1A[2K[2/6] [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:61:5 › onboarding selection and quiz answer resume after a browser reload
+[1A[2K[3/6] [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:108:5 › mock profile Settings exposes supported preferences and readonly auth email
+[1A[2K[4/6] [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:180:5 › Discover cards keep their dish identity across the former cycle interval
+[1A[2K[5/6] [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:203:5 › supported composer opens a deliberate dish and preserves entered draft
+[1A[2K[6/6] [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:228:5 › valid mock login establishes the authenticated account rather than a guest session
+[1A[2K  6 passed (1.0m)

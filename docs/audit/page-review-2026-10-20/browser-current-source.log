@@ -1,0 +1,82 @@
+(node:7847) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[1A[2K[2m[WebServer] [22m(node:7858) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 9 tests using 2 workers
+
+[1A[2K(node:8044) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:8043) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:8044) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+
+[1A[2K(node:8044) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:8043) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+
+[1A[2K(node:8043) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K[1/9] [chromium] › tests/e2e/guest-browsing.spec.ts:14:7 › signed-out entry › signed-out normal app flow starts at login while explicit public details remain openable
+[1A[2K[2/9] [chromium] › tests/e2e/routes.spec.ts:29:9 › routes › loads Home from the Developer Launcher
+[1A[2K[3/9] [chromium] › tests/e2e/routes.spec.ts:29:9 › routes › loads Discover from the Developer Launcher
+[1A[2K[4/9] [chromium] › tests/e2e/routes.spec.ts:29:9 › routes › loads Search from the Developer Launcher
+[1A[2K[5/9] [chromium] › tests/e2e/routes.spec.ts:29:9 › routes › loads Dish from the Developer Launcher
+[1A[2K[6/9] [chromium] › tests/e2e/routes.spec.ts:29:9 › routes › loads Stall from the Developer Launcher
+[1A[2K[7/9] [chromium] › tests/e2e/routes.spec.ts:29:9 › routes › loads Review from the Developer Launcher
+[1A[2K[8/9] [chromium] › tests/e2e/routes.spec.ts:46:7 › routes › documents Mapbox-backed routes as environment-dependent on web
+[1A[2K  1) [chromium] › tests/e2e/guest-browsing.spec.ts:14:7 › signed-out entry › signed-out normal app flow starts at login while explicit public details remain openable 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByText('Welcome back', { exact: true })
+    Expected: visible
+    Timeout: 30000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 30000ms[22m
+    [2m  - waiting for getByText('Welcome back', { exact: true })[22m
+
+
+      18 |
+      19 |     await page.getByRole("button", { name: "Open normal app flow" }).click();
+    > 20 |     await expect(page.getByText("Welcome back", { exact: true })).toBeVisible({
+         |                                                                   ^
+      21 |       timeout: CONTENT_TIMEOUT_MS,
+      22 |     });
+      23 |
+        at /Users/Siew Hean/Documents/GitHub/Hungry/tests/e2e/guest-browsing.spec.ts:20:67
+
+    [31mTest timeout of 120000ms exceeded.[39m
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    docs/audit/page-review-2026-10-20/playwright-chrome-results/guest-browsing-signed-out--e5d84-lic-details-remain-openable-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: docs/audit/page-review-2026-10-20/playwright-chrome-results/guest-browsing-signed-out--e5d84-lic-details-remain-openable-chromium/error-context.md
+
+
+[1A[2K(node:14739) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:14739) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+
+[1A[2K(node:14739) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K[9/9] [chromium] › tests/e2e/guest-browsing.spec.ts:32:7 › signed-out entry › protected create action redirects guests to login
+[1A[2K  1 failed
+    [chromium] › tests/e2e/guest-browsing.spec.ts:14:7 › signed-out entry › signed-out normal app flow starts at login while explicit public details remain openable 
+  8 passed (18.5m)

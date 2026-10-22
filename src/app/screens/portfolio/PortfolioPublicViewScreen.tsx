@@ -1,5 +1,6 @@
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ArrowLeft } from "lucide-react-native";
 
@@ -15,27 +16,36 @@ import type { PublicPortfolio } from "@/types/domain";
 type Props = NativeStackScreenProps<RootStackParamList, "PortfolioPublicView">;
 
 export function PortfolioPublicViewScreen({ navigation, route }: Props) {
+  const insets = useSafeAreaInsets();
   const { palette, radii, spacing } = useHungryTheme();
   const portfolioId = route.params.portfolioId;
-  const { follows, followPortfolio, unfollowPortfolio } = usePortfolioStore();
+  const { follows, followPortfolio, unfollowPortfolio, checkFollowStatus } = usePortfolioStore();
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   // Shared links usually come from someone else, often before the friend has
   // signed in, so read through the public RPC instead of the owner's tables.
   const [portfolio, setPortfolio] = useState<PublicPortfolio | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [retry, setRetry] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const isFollowing = follows[portfolioId] === true;
 
   useEffect(() => {
     let mounted = true;
     setIsLoading(true);
+    setLoadError(null);
+    if (isAuthenticated)
+      void checkFollowStatus(portfolioId).catch((error: unknown) => {
+        if (mounted)
+          setLoadError(error instanceof Error ? error.message : "Could not load follow status.");
+      });
     void getHungryService()
       .portfolio.getPublicPortfolio(portfolioId)
       .then((next) => {
         if (mounted) setPortfolio(next);
       })
-      .catch(() => {
-        if (mounted) setPortfolio(null);
+      .catch((error: unknown) => {
+        if (mounted) setLoadError(error instanceof Error ? error.message : "Please retry.");
       })
       .finally(() => {
         if (mounted) setIsLoading(false);
@@ -43,7 +53,7 @@ export function PortfolioPublicViewScreen({ navigation, route }: Props) {
     return () => {
       mounted = false;
     };
-  }, [portfolioId]);
+  }, [portfolioId, retry, isAuthenticated, checkFollowStatus]);
 
   const handleFollow = () => {
     // Sign-in is asked only when the friend wants to keep the list.
@@ -52,12 +62,20 @@ export function PortfolioPublicViewScreen({ navigation, route }: Props) {
       navigation.navigate("AuthStack", { screen: "Login" });
       return;
     }
-    void (isFollowing ? unfollowPortfolio(portfolioId) : followPortfolio(portfolioId));
+    void (isFollowing ? unfollowPortfolio(portfolioId) : followPortfolio(portfolioId)).catch(
+      (error: unknown) =>
+        Alert.alert(
+          "Could not update follow",
+          error instanceof Error ? error.message : "Please retry.",
+        ),
+    );
   };
 
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: palette.bg }}
+      keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets
+      style={{ flex: 1, backgroundColor: palette.bg, paddingTop: insets.top }}
       contentContainerStyle={[styles.content, { gap: spacing[4], padding: spacing[4] }]}
     >
       <View style={styles.header}>
@@ -77,9 +95,17 @@ export function PortfolioPublicViewScreen({ navigation, route }: Props) {
         </View>
       </View>
 
+      {loadError ? (
+        <Card>
+          <AppText variant="body">{loadError}</AppText>
+          <Button label="Retry" onPress={() => setRetry((value) => value + 1)} />
+        </Card>
+      ) : null}
       {!portfolio ? (
         <Card>
-          <AppText variant="h3">{isLoading ? "Loading list…" : "List not found"}</AppText>
+          <AppText variant="h3">
+            {isLoading ? "Loading list…" : loadError ? "List unavailable" : "List not found"}
+          </AppText>
           {!isLoading ? (
             <AppText variant="bodySmall" tone="secondary">
               It may be private now or no longer on Hungry.

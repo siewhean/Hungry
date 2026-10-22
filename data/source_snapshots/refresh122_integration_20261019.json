@@ -1,0 +1,60 @@
+{
+  "snapshot_id": "refresh122_integration_20261019",
+  "observed_local_date": "2026-10-19",
+  "canonical_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_sha256": "e75b32a39d9840532afbff2f5b497cc7a3a12870097418716f7d0b92f503f84f",
+  "installed_sha256": "2674213d695cbe29ef25cab0ca9535a1dbca6dbf81b5b1ea983561632994e233",
+  "qa_status": "pending_independent_agent",
+  "applied_changes": {
+    "exact_current_mall_directory_names": 15,
+    "directory_field_changes": 15,
+    "menu_rows_added": 0,
+    "image_candidates_added": 0,
+    "approved_images_added": 0,
+    "coordinate_pairs_added": 0,
+    "hours_contacts_websites_menu_urls_added": 0,
+    "public_access_status_changes": 0,
+    "closures_removed": 0
+  },
+  "result_counts": {
+    "Public F&B Directory": 38279,
+    "Menu Items": 13116,
+    "Image Candidates": 2578,
+    "Coverage & Sources": 216
+  },
+  "field_coverage": {
+    "named": 32790,
+    "unnamed": 5489,
+    "coordinates": 35735,
+    "contacts": 2692,
+    "websites": 2799,
+    "menu_urls": 1444,
+    "hours": 1460,
+    "menu_summaries": 465,
+    "ratings": 0,
+    "approved_images": 0,
+    "unique_sfa": 38279
+  },
+  "research_held": {
+    "GrabFood": "Five exact Genki Sushi branch crosswalks found, but direct page returns 403 and menu is chain-level; no outlet menu information or URLs inserted.",
+    "Oddle": "Rasa Istimewa at SAFRA Jurong has branch-specific ordering menu, but public walk-in access is not confirmed; no menu fields inserted pending access verification.",
+    "official_media": "Two visually verified Komala menu images found on official site, but all-rights-reserved/no reuse licence. Held outside workbook; no approved/candidate image URLs added.",
+    "coordinates": "2,442 blank postal-coded coordinates could potentially be enriched via OneMap. No token configured in the current shell, so no API requests made. Public Nominatim excluded for systematic postcode lookup under its policy.",
+    "platform_data": "No images, descriptions, or ratings sourced from GrabFood/Oddle. No spend."
+  },
+  "source_snapshot_paths": {
+    "refresh122_more_blank_names_20261019.json": "data/source_snapshots/refresh122_more_blank_names_20261019.json",
+    "refresh122_geocode_options_20261019.json": "data/source_snapshots/refresh122_geocode_options_20261019.json",
+    "refresh122_grab_menu_batch_20261019.json": "data/source_snapshots/refresh122_grab_menu_batch_20261019.json",
+    "refresh122_oddle_menu_batch_20261019.json": "data/source_snapshots/refresh122_oddle_menu_batch_20261019.json",
+    "refresh122_official_media_batch_20261019.json": "data/source_snapshots/refresh122_official_media_batch_20261019.json"
+  },
+  "source_snapshot_sha256s": {
+    "refresh122_more_blank_names_20261019.json": "85a93e348f016c147a578c273083d3adf3e39d29de9f55f75996c72602bdbab1",
+    "refresh122_geocode_options_20261019.json": "93e343d12fd94bfd49c72390cfe2138fb08300f9a346df571b09dea0e64e7517",
+    "refresh122_grab_menu_batch_20261019.json": "798879e32254e5ee1b0ccbff6211bda599e694e1e7d4e65f0c16cb96faff8271",
+    "refresh122_oddle_menu_batch_20261019.json": "6b07c3b2ec2d93bce557e758487a25896f2b212f4725b45a0ce0ea262b3fec35",
+    "refresh122_official_media_batch_20261019.json": "6d9daa9c14d972bcad9e8c0feceafe4ad192586b7bda81909ee91efc01efae45"
+  },
+  "status": "Refresh122 name-only update installed; independent QA pending; national field verification remains active."
+}

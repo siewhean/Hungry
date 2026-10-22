@@ -1,0 +1,239 @@
+{
+  "schema": "hungry.refresh136.post_contacts_final_qa.v1",
+  "qa_date": "2026-10-19",
+  "workbook": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "requested_sha256": "51fde2c4bf0308f20e504f7313c0134ee4392ba453f3bf09b332f956df983c1d",
+  "sha256_before": "51fde2c4bf0308f20e504f7313c0134ee4392ba453f3bf09b332f956df983c1d",
+  "sha256_after": "51fde2c4bf0308f20e504f7313c0134ee4392ba453f3bf09b332f956df983c1d",
+  "size_bytes": 5663314,
+  "workbook_stable_during_audit": true,
+  "zip_crc_test_start": null,
+  "zip_crc_test_end": null,
+  "zip_members": 20,
+  "status": "PASS_WITH_LIMITATIONS",
+  "failures": [],
+  "checks": {
+    "package_integrity": {
+      "status": "PASS",
+      "zip_crc_start": null,
+      "zip_crc_end": null,
+      "external_link_parts": [],
+      "stable_file_size_and_mtime": true
+    },
+    "sheets_extents_tables_and_cells": {
+      "status": "PASS",
+      "sheets": {
+        "Public F&B Directory": {
+          "rows": 38274,
+          "columns": 21,
+          "tables": {
+            "PublicFnbDirectory": "A1:U38274"
+          },
+          "blank_rows": 0,
+          "formula_cells": 0,
+          "errors": []
+        },
+        "Menu Items": {
+          "rows": 14271,
+          "columns": 12,
+          "tables": {
+            "MenuItems": "A1:L14271"
+          },
+          "blank_rows": 0,
+          "formula_cells": 0,
+          "errors": []
+        },
+        "Image Candidates": {
+          "rows": 2768,
+          "columns": 9,
+          "tables": {
+            "ImageCandidates": "A1:I2768"
+          },
+          "blank_rows": 0,
+          "formula_cells": 0,
+          "errors": []
+        },
+        "Coverage & Sources": {
+          "rows": 241,
+          "columns": 3,
+          "tables": {
+            "CoverageSources": "A1:C241"
+          },
+          "blank_rows": 0,
+          "formula_cells": 0,
+          "errors": []
+        }
+      }
+    },
+    "directory_inventory": {
+      "status": "PASS",
+      "records": 38273,
+      "unique_sfa_licences": 38273,
+      "blank_licences": 0,
+      "predecessor_snapshot_records": 38273,
+      "row_count_preserved": true,
+      "exact_predecessor_licence_set_comparison": "Unavailable: predecessor workbook binary not tracked or present."
+    },
+    "Koufu_KKH_and_directory_order": {
+      "status": "PASS",
+      "workbook_row": 16067,
+      "fields": {
+        "F&B Name": "Koufu",
+        "Business Type": "Foodcourt",
+        "Full Address": "Address: 100 BUKIT TIMAH ROAD #01-28,KK WOMEN'S AND CHILDREN'S HOSPITAL,Singapore 229899",
+        "Postal Code": "229899"
+      },
+      "source_url": "https://www.kkh.com.sg/patient-services/visitor-info/amenities-facilities/shops-eats",
+      "name_block_neighbours": [
+        "koufu",
+        "koufu",
+        "koufu",
+        "koufu",
+        "koufu",
+        "koufu",
+        "koufu drinks & dim sum",
+        "koufu foodcourt",
+        "koufu foodcourt",
+        "koufu ptd ltd",
+        "koufu pte ltd"
+      ],
+      "unnamed_rows_last": true
+    },
+    "BCA_coordinate": {
+      "status": "PASS",
+      "workbook_row": 759,
+      "fields": {
+        "Full Address": "Address: 10/1 BUANGKOK VIEW INSTITUTE OF MENTAL HEALTH,Singapore 539747 Level 1 Unit 11-130",
+        "Postal Code": "539747",
+        "Latitude": 1.3815895,
+        "Longitude": 103.8833488,
+        "Coordinate Precision": "Building/facility point (BCA); not outlet-front point"
+      },
+      "candidate": {
+        "sfa_licence": "CE07024N000",
+        "f_and_b_name": "7-Eleven",
+        "postal_code": "539747",
+        "full_address": "Address: 10/1 BUANGKOK VIEW INSTITUTE OF MENTAL HEALTH,Singapore 539747 Level 1 Unit 11-130",
+        "latitude": 1.3815895,
+        "longitude": 103.8833488,
+        "coordinate_precision": "building/facility point; not outlet-front point",
+        "source": "BCA Friendly Buildings (data.gov.sg), captured 2026-10-18",
+        "source_url": "https://data.gov.sg/datasets/d_f19704cb6ce76309f3ec0c3a513bdeab/view",
+        "source_address_labels": [
+          "10 Buangkok View, 539747",
+          "10 Buangkok View, Block 5, 539747"
+        ],
+        "source_feature_names": [
+          "Econ Medicare Centre and Nursing Home",
+          "Institute Of Mental Health",
+          "Ren Ci Hospital & Medicare Centre",
+          "Tai Pei Social Service"
+        ],
+        "decision": "exact six-digit postal plus house-number/road-label match; review candidate only; no auto-apply"
+      },
+      "precision": "building/facility point, not outlet-front point"
+    },
+    "Foodpanda_Refresh136_rows": {
+      "status": "PASS",
+      "snapshot_records": 40,
+      "workbook_rows": 40,
+      "keys_and_prices_exact": true,
+      "duplicate_keys": 0,
+      "field_mismatches": [],
+      "checked": [
+        "SFA licence",
+        "item and section",
+        "price",
+        "source URL",
+        "observed timestamp",
+        "delivery-only/not-dine-in scope"
+      ]
+    },
+    "Jollibee_official_menu_links": {
+      "status": "PASS",
+      "links": {
+        "CE15H95V000": "https://jollibee.com.sg/our-menu",
+        "CE19U03X000": "https://jollibee.com.sg/our-menu"
+      },
+      "brand_menu_branch_availability_disclaimed": true,
+      "branch_verified_official_item_rows": 0
+    },
+    "McDonalds_contacts": {
+      "status": "PASS",
+      "integrated_proposals": 2,
+      "rows": [
+        {
+          "sfa_licence": "C84333E000",
+          "row": 18458,
+          "expected_contact": "Contact: +65 6265 9104",
+          "actual_contact": "Contact: +65 6265 9104",
+          "source_url": "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+          "status": "PASS"
+        },
+        {
+          "sfa_licence": "SW09279E000",
+          "row": 18587,
+          "expected_contact": "Contact: +65 6762 8779",
+          "actual_contact": "Contact: +65 6762 8779",
+          "source_url": "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+          "status": "PASS"
+        }
+      ],
+      "source_snapshot_sha_after": "51fde2c4bf0308f20e504f7313c0134ee4392ba453f3bf09b332f956df983c1d"
+    },
+    "typed_dates": {
+      "status": "PASS",
+      "count": 536
+    },
+    "coverage": {
+      "status": "PASS",
+      "Refresh136_coverage_rows": [
+        {
+          "row": 236,
+          "metric": "Refresh136 public name",
+          "value": "1 verified name added: Koufu, KKH #01-28 (W97070A012)"
+        },
+        {
+          "row": 237,
+          "metric": "Refresh136 coordinate",
+          "value": "1 building/facility point added; not outlet-front precision"
+        },
+        {
+          "row": 238,
+          "metric": "Refresh136 delivery menus",
+          "value": "40 exact-branch menu observations across Jollibee Square 2 and City Square Mall"
+        },
+        {
+          "row": 239,
+          "metric": "Refresh136 official menu links",
+          "value": "Both exact Jollibee branches already link to Jollibee Singapore menu"
+        },
+        {
+          "row": 240,
+          "metric": "Refresh136 first-party directory fields",
+          "value": "8 exact-branch blank fields filled (3 Website; 5 Opening Hours / Closed Days)"
+        },
+        {
+          "row": 241,
+          "metric": "Refresh136 first-party McDonald’s contacts",
+          "value": "2 exact-branch phone contacts added"
+        }
+      ],
+      "directory_records": 38273,
+      "menu_item_records": 14270,
+      "image_candidate_records": 2767
+    },
+    "image_urls": {
+      "status": "PASS",
+      "approved_url_count": 2,
+      "candidate_promotions": [],
+      "placeholder_pattern_urls": [],
+      "malformed_urls": [],
+      "historical_set_diff": "Unavailable; prior binary unavailable; Refresh136 image proposal snapshot reports no workbook edits."
+    },
+    "extra_refresh136_xlsx_copies": {
+      "status": "PASS",
+      "matches": []
+    }
+  }
+}

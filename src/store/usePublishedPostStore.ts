@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 import type { StallPost } from "@/types/domain";
-import { hungryPersistStorage } from "./persistStorage";
+import { createAccountPersistStorage } from "./accountPersistStorage";
 
 interface PublishedPostState {
   posts: StallPost[];
@@ -41,7 +41,7 @@ export const usePublishedPostStore = create<PublishedPostState>()(
     }),
     {
       name: "hungry-published-posts-v1",
-      storage: hungryPersistStorage,
+      storage: createAccountPersistStorage("hungry-published-posts-v1"),
       partialize: (state) => ({ posts: state.posts }),
       onRehydrateStorage: () => (state) => {
         if (state) {

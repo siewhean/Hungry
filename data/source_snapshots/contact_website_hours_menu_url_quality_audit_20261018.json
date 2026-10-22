@@ -1,0 +1,83 @@
+{
+  "audit_id": "directory_contact_website_hours_menu_url_quality_20261018",
+  "observed_at": "2026-10-18",
+  "workbook_path": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "3ce9c0b79a9dbc4fb8724061754b0f3adfdbbeff56aa9caca71b8c5353fff9b7",
+  "scope": "Read-only scan of populated directory Website, Contact Details, Opening Hours / Closed Days, and Menu URL cells; structural checks and bounded link probe of the 107 distinct menu URLs.",
+  "read_only": true,
+  "populated_directory_cells": {
+    "Website": 2599,
+    "Contact Details": 2597,
+    "Opening Hours / Closed Days": 1359,
+    "Menu URL": 1317
+  },
+  "format_screen": {
+    "website_and_menu_url": "All populated values passed a basic http(s) URL syntax check in the initial scan.",
+    "contact_details": "No obvious example/test/placeholder markers; values include Singapore phone numbers, operator email contacts, and explicitly labeled brand-level contact values.",
+    "opening_hours": "No obvious placeholder markers; varied schedule text formats are present."
+  },
+  "confirmed_high_confidence_row_level_removals_or_corrections": [],
+  "cleared_false_positive": {
+    "sfa_licence": "NW17863C000",
+    "business": "Ajumma’s (Northpoint City)",
+    "field": "Contact Details",
+    "value": "8892 6047",
+    "evidence_url": "https://www.frasersexperience.com/content/frasersexperience/frx/en/stores/npc/ajummas.html",
+    "evidence": "Official Northpoint City mall tenant page lists Ajumma’s at South Wing #B1-201/202 and contact 8892 6047. Retain; the number is not a placeholder."
+  },
+  "not_found_in_populated_directory": "6123 4567 placeholder phone string; no directory contact contained that exact string.",
+  "coverage_sheet_count_mismatches": [
+    {
+      "coverage_row": "Rows with website",
+      "reported_count": 2498,
+      "directory_count": 2599,
+      "difference": 101
+    },
+    {
+      "coverage_row": "Rows with contact details",
+      "reported_count": 2527,
+      "directory_count": 2597,
+      "difference": 70
+    },
+    {
+      "coverage_row": "Rows with opening hours",
+      "reported_count": 1320,
+      "directory_count": 1359,
+      "difference": 39
+    },
+    {
+      "coverage_row": "Rows with menu URL",
+      "reported_count": 1275,
+      "directory_count": 1317,
+      "difference": 42
+    }
+  ],
+  "menu_url_probe": {
+    "method": "HEAD requests with normal TLS certificate validation; 8 concurrent workers; 8-second timeout.",
+    "distinct_urls": 107,
+    "http_200": 1,
+    "conclusive_http_4xx_or_5xx": 0,
+    "inconclusive_transport_or_tls_errors": 106,
+    "examples": [
+      {
+        "url": "https://www.starbucks.com.sg/menu/",
+        "result": "local TLS certificate verify failure; cannot conclude link is invalid"
+      },
+      {
+        "url": "https://aburi-en.com/menu/",
+        "result": "connection reset; cannot conclude link is invalid"
+      },
+      {
+        "url": "https://qashiereats.com/fourpizzajlnlokam",
+        "result": "self-signed certificate; cannot conclude link is invalid"
+      }
+    ],
+    "interpretation": "No link removal is justified by these failures. The local runtime trust chain rejected certificates for nearly the entire batch; retest with a healthy browser/network environment or source-page inspection."
+  },
+  "limitations": [
+    "This is a syntax/consistency screen plus bounded URL availability probe, not full live validation of every outlet, phone number, schedule, or menu page.",
+    "Duplicate website/contact/hours/menu URL values may be valid chain-level data and were not treated as errors absent contradictory source evidence.",
+    "No row-level contact, website, hours, or menu URL changes are recommended from the current evidence.",
+    "Coverage & Sources totals are stale relative to the current directory and should be recalculated; the directory remains unchanged."
+  ]
+}

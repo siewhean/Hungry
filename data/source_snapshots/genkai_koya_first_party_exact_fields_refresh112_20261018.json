@@ -1,0 +1,59 @@
+{
+  "snapshot_type": "first_party_exact_public_directory_field_proposal",
+  "captured_at_sgt": "2026-10-18T22:38:36+08:00",
+  "read_only": true,
+  "workbook_baseline": {
+    "path": "/tmp/HungryRefresh112.xlsx",
+    "sha256": "ba519451ef5fa46aafcac14d67a1563365e6a15601c1ddc778d71ac20a960ef1",
+    "sheet": "Public F&B Directory",
+    "matched_row": 34067,
+    "matching_rule": "Exact SFA licence plus exact building street, postal code, and unit; one workbook row."
+  },
+  "source_set": [
+    "https://www.genkai-koya.com/reservations"
+  ],
+  "source_capture": {
+    "url": "https://www.genkai-koya.com/reservations",
+    "http_status": 200,
+    "content_type": "text/html; charset=UTF-8",
+    "http_date": "Sun, 18 Oct 2026 14:38:36 GMT",
+    "cache_age_seconds": 23398,
+    "etag": "W/\"d7ff5bb4296dadf8fa55fb92f040556c\"",
+    "body_bytes": 903046,
+    "body_sha256": "99b8741e6dbaa7230a067b47deddd7873ccf1b8271cc8ba4559433a35a2e4dda",
+    "captured_body_path": "/tmp/genkai_reservations.html",
+    "evidence_excerpt": "With effect 13 Oct 2026, we will be operating at 371 Beach Road, #B1-03 City Gate, Singapore 199597. Genkai Koya 玄海屋; WA: (65) 8042 3591; Tue–Sun lunch 11:30am–2:30pm, dinner 6pm–10:30pm (6pm and 8pm seating); close on Monday."
+  },
+  "proposals": [
+    {
+      "sfa_licence": "CE19F34C000",
+      "excel_row": 34067,
+      "before": {
+        "F&B Name": null,
+        "Contact Details": null,
+        "Website": null,
+        "Opening Hours / Closed Days": null
+      },
+      "proposed": {
+        "F&B Name": "Genkai Koya 玄海屋",
+        "Contact Details": "WhatsApp: +65 8042 3591",
+        "Website": "https://www.genkai-koya.com/",
+        "Opening Hours / Closed Days": "Tuesday to Sunday | 11:30am–2:30pm; 6pm–10:30pm (6pm and 8pm seatings) | Monday closed"
+      },
+      "evidence_fields": {
+        "F&B Name": "First-party page identifies Genkai Koya 玄海屋 at exact unit #B1-03 and address.",
+        "Contact Details": "First-party reservation page labels (65) 8042 3591 as WA.",
+        "Website": "Same first-party domain serving reservations, menu, and brand pages.",
+        "Opening Hours / Closed Days": "First-party page publishes weekly Tue–Sun schedule and Monday closure."
+      },
+      "confidence": "high exact outlet identity; current first-party publication",
+      "limitation": "Source cache age was 6.5 hours at retrieval; stated opening effective date has passed (13 Oct 2026). Verify again before integration if the workbook refresh date changes. Contact is explicitly WhatsApp. No coordinates or imagery are published on this captured page."
+    }
+  ],
+  "prior_snapshot_resolution": {
+    "snapshot": "data/source_snapshots/blank_fnb_name_exact_crosswalk_20261018.json",
+    "prior_state": "This exact SFA row was unresolved with F&B Name blank because no public trading-name source had been found. This first-party source resolves that gap and adds contact, website and hours; it does not duplicate any non-null proposal for these fields."
+  },
+  "reuse_and_scope_note": "Only concise factual outlet fields are proposed; no page prose, photo, image URL, rating, or menu content copied. First-party brand site, not a delivery platform. No workbook edited, no paid APIs, no Mapbox.",
+  "workbook_modified": false
+}

@@ -1,0 +1,46 @@
+{
+  "snapshot_date": "2026-10-19",
+  "workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "163a66db016b6f1a93105ea31ce0d84afed7b928ededc8e3d5cf88ab81b755e9",
+  "scope": "One outlet-scoped menu/media lead discovered during a bounded public-source review; no workbook edits.",
+  "candidate": {
+    "fnb_name": "AH TAN WINGS",
+    "sfa_licence": "AVHC0214001",
+    "directory_address": "339 Anchorvale Road #02-14, Singapore 540339",
+    "match_evidence": "Workbook directory record's name, postal code, and unit match the Anchorvale Village shop page's outlet location (#02-14).",
+    "source_pages": [
+      {
+        "url": "https://anchorvalevillage.com/shop/ah-tan-wings-anchorvale-village",
+        "title": "AH TAN WINGS - Anchorvale Village",
+        "observed": "2026-10-19",
+        "use": "Outlet identity/location lead and outbound Visit Website link; page identifies itself as an unofficial fan site, so it was not used as an authoritative menu or media source."
+      },
+      {
+        "url": "https://www.ahtanwings.com/en_SG",
+        "title": "Ah Tan Wings",
+        "observed": "2026-10-19",
+        "use": "First-party merchant storefront candidate. The storefront is powered by Oddle; menu content and platform assets were not copied into this snapshot or workbook."
+      }
+    ],
+    "proposed_directory_field": {
+      "field": "Website",
+      "value": "https://www.ahtanwings.com/en_SG",
+      "confidence": "high that this is the merchant's linked storefront; medium for persisting the storefront URL until project owner approves platform terms interpretation"
+    },
+    "menu_delta": {
+      "qualifying_rows": 0,
+      "reason": "Menu and image data were surfaced only through an Oddle-powered storefront. The project's current permission audit records Oddle's restriction on scraping/storing platform contents to build a database absent prior written consent. No permission was found for this aggregation."
+    },
+    "image_delta": {
+      "qualifying_images": 0,
+      "reason": "No independently hosted first-party image asset and reuse permission were verified."
+    },
+    "dedupe": "Workbook Menu Items sheet contains no rows matching AH TAN WINGS or licence AVHC0214001; no rows added."
+  },
+  "permission_reference": "data/source_snapshots/partner_platform_permission_audit_refresh112_20261018.md",
+  "limitations": [
+    "The Anchorvale Village page labels itself an unofficial fan site and aggregates reviews, so its menu transcription and images were excluded.",
+    "No direct merchant permission or Oddle written permission was located.",
+    "No prices, menu text, image URLs, or platform ratings were retained."
+  ]
+}

@@ -8,7 +8,7 @@ import type {
   MerchantOutlet,
   VerificationStatus,
 } from "@/types/domain";
-import { hungryPersistStorage } from "./persistStorage";
+import { createAccountPersistStorage } from "./accountPersistStorage";
 
 // ─── State ────────────────────────────────────────────────────────────────────
 
@@ -122,7 +122,7 @@ export const useMerchantStore = create<MerchantState & MerchantActions>()(
     }),
     {
       name: "hungry-merchant-v1",
-      storage: hungryPersistStorage,
+      storage: createAccountPersistStorage("hungry-merchant-v1"),
       partialize: (state) => ({
         account: state.account,
         accountSyncedAt: state.accountSyncedAt,

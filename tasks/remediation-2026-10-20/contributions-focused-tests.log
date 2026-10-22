@@ -1,0 +1,43 @@
+(node:59979) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ both composer routes share the supported editor and protect real route removal (1.13025ms)
+✔ finishing a saved draft preserves its content (0.389875ms)
+(node:59980) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ review editor subscribes with selectors and never picks a dish for the user (2.516166ms)
+✔ review submit sends the recommend choice and a retry-stable client review id (0.893541ms)
+✔ prototype-only review features stay out of production (1.042708ms)
+✔ review tab loads one paginated page with refresh, error and empty states (0.398583ms)
+(node:59981) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ drafts stay scoped to the owner and restore after switching back (0.753292ms)
+✔ late hydration cannot replace another account or newly edited work (0.170292ms)
+(node:59982) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ composer publish writes a shared post visible in feed and profile sources (13.94975ms)
+✔ composer publish uses the authenticated profile when profile hydration is still guest (63.514791ms)
+✔ review-only composer publish validates rating and records review state without creating a post (3.795625ms)
+✔ publish-both records a review and still publishes a cross-user home feed post (2.476875ms)
+✔ publish-both validates post media before writing review state (2.280542ms)
+✔ publish-both keeps local review state unchanged when post write fails (2.671083ms)
+✔ composer publish requires an explicit dish and never guesses one from a location (0.280041ms)
+✔ publish-both retry reuses the client review id so the review is not duplicated (2.642625ms)
+✔ late publication receipts cannot populate the next account's local feed (1.861416ms)
+(node:59983) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ article inspector never substitutes a different cached article (1.278584ms)
+✔ article lookup failures propagate for the retry state (0.569375ms)
+(node:59984) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ initial review draft defaults to not recommended (0.820417ms)
+✔ initial review draft factory returns a fresh object (0.085333ms)
+✔ client review ids are RFC 4122 v4 uuids and unique (4.470541ms)
+✔ selecting the same dish keeps the draft; a different dish resets it (2.6645ms)
+ℹ tests 23
+ℹ suites 0
+ℹ pass 23
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 756.627334

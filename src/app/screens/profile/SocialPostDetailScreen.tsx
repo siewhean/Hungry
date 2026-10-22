@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, StyleSheet, TextInput, View, useWindowDimensions } from "react-native";
+import {
+  FlatList,
+  Pressable,
+  StyleSheet,
+  TextInput,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
 import {
@@ -17,7 +24,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import type { ProfileStackParamList, RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, Avatar, Screen } from "@/components/ui";
+import { AppText, Avatar, Button, Screen } from "@/components/ui";
 import {
   ReviewCommentsSheet,
   type ActiveReviewCommentTarget,
@@ -26,12 +33,16 @@ import {
 import { prefetchDishDetail, preloadRoute } from "@/features/navigation/prefetch";
 import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/ReviewShareSheet";
 import { listSharedStallPosts, listSharedStallPostsSync } from "@/features/social/sharedStallPosts";
-import { promptPostSafetyActions, targetAuthorKey } from "@/lib/security/communitySafety";
+import {
+  promptPostSafetyActions,
+  useCommunitySafetyRevision,
+} from "@/lib/security/communitySafety";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import { useSocialStore, type SocialComment } from "@/store/useSocialStore";
 import { useHungryTheme } from "@/theme";
 import type { StallPost } from "@/types/domain";
+import { ProfilePostMedia } from "@/features/profile/ProfilePostMedia";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { webShareUrl } from "@/constants/links";
 
@@ -43,6 +54,7 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
   const { palette, spacing } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
   const { postId, type } = route.params;
+  const safetyRevision = useCommunitySafetyRevision();
   const commentsEnabled = FEATURE_FLAGS.commentsEnabled;
   const interactions = useSocialStore((state) => state.interactions);
   const initializeInteractions = useSocialStore((state) => state.initializeInteractions);
@@ -70,27 +82,32 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
     });
   }, []);
 
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [posts, setPosts] = useState<StallPost[]>(() => listSharedStallPostsSync(repository));
   const hidePostFromCurrentFeed = useCallback((postId: string) => {
     setPosts((current) => current.filter((post) => post.id !== postId));
   }, []);
   const hideAuthorFromCurrentFeed = useCallback((blockedAuthorKey: string) => {
-    setPosts((current) =>
-      current.filter((post) => targetAuthorKey(post.authorName) !== blockedAuthorKey),
-    );
+    setPosts((current) => current.filter((post) => post.authorId !== blockedAuthorKey));
   }, []);
 
   useEffect(() => {
     let isMounted = true;
-    void listSharedStallPosts(repository).then((sharedPosts) => {
-      if (isMounted) {
-        setPosts(sharedPosts);
-      }
-    });
+    setLoadFailed(false);
+    void listSharedStallPosts(repository)
+      .then((sharedPosts) => {
+        if (isMounted) {
+          setPosts(sharedPosts);
+        }
+      })
+      .catch(() => {
+        if (isMounted) setLoadFailed(true);
+      });
     return () => {
       isMounted = false;
     };
-  }, [publishedPosts, repository]);
+  }, [publishedPosts, repository, loadAttempt, safetyRevision]);
 
   useEffect(() => {
     initializeInteractions(posts);
@@ -106,7 +123,7 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
     [interactions, posts, type],
   );
 
-  const selectedPost = posts.find((candidate) => candidate.id === postId) ?? visiblePosts[0];
+  const selectedPost = posts.find((candidate) => candidate.id === postId);
   const orderedPosts = useMemo(() => {
     if (!selectedPost) return visiblePosts;
     return [selectedPost, ...visiblePosts.filter((candidate) => candidate.id !== selectedPost.id)];
@@ -140,7 +157,15 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
     return (
       <Screen title={type === "liked" ? "Liked post" : "Saved post"}>
         <View style={styles.empty}>
-          <AppText tone="secondary">This post is no longer available.</AppText>
+          <AppText tone="secondary">
+            {loadFailed ? "Could not load this post." : "This post is no longer available."}
+          </AppText>
+          {loadFailed ? (
+            <Button
+              label="Retry loading post"
+              onPress={() => setLoadAttempt((value) => value + 1)}
+            />
+          ) : null}
         </View>
       </Screen>
     );
@@ -167,7 +192,6 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
       feedPost.mediaType === "photo" && feedPost.mediaUrls?.length
         ? feedPost.mediaUrls
         : [feedPost.mediaUrl];
-    const isCarousel = feedPost.mediaType === "photo" && mediaUrls.length > 1;
 
     return (
       <View
@@ -175,43 +199,11 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
         style={[styles.feedItemWrap, { backgroundColor: palette.bg, marginBottom: spacing[12] }]}
       >
         <View style={[styles.imageContainer, { height: imageHeight }]}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`Open ${primaryDish?.name ?? venue?.name ?? "post"} details`}
-            accessibilityHint="Opens the linked customer detail page for this post"
-            onPressIn={() => {
-              if (!primaryDish) return;
-              prefetchDishDetail(primaryDish.id, repository);
-              preloadRoute(rootNavigation, "DishDetail", { dishId: primaryDish.id });
-            }}
-            onPress={() => {
-              if (primaryDish) {
-                rootNavigation.navigate("DishDetail", { dishId: primaryDish.id });
-              }
-            }}
-            style={StyleSheet.absoluteFill}
-          >
-            <ZoomableMedia
-              uri={mediaUrls[0]}
-              type={feedPost.mediaType === "video" ? "video" : "image"}
-              accessibilityLabel={`${primaryDish?.name ?? venue?.name ?? "Post"} ${
-                feedPost.mediaType === "video" ? "video" : "image"
-              }`}
-              style={styles.heroImage}
-            />
-          </Pressable>
-
-          {isCarousel ? (
-            <View
-              pointerEvents="none"
-              style={[styles.carouselBadge, { backgroundColor: palette.mediaScrimSoft }]}
-            >
-              <AppText variant="micro" style={{ color: palette.white, fontWeight: "800" }}>
-                1 / {mediaUrls.length}
-              </AppText>
-            </View>
-          ) : null}
-
+          <ProfilePostMedia
+            urls={mediaUrls}
+            video={feedPost.mediaType === "video"}
+            label={primaryDish?.name ?? venue?.name ?? "Post"}
+          />
           {feedPost.mediaType === "video" ? (
             <View pointerEvents="none" style={styles.playButtonContainer}>
               <View
@@ -252,6 +244,17 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
         <View
           style={{ paddingHorizontal: spacing[3], paddingVertical: spacing[3], gap: spacing[2] }}
         >
+          {primaryDish ? (
+            <Button
+              label="Open dish details"
+              variant="secondary"
+              onPressIn={() => {
+                prefetchDishDetail(primaryDish.id, repository);
+                preloadRoute(rootNavigation, "DishDetail", { dishId: primaryDish.id });
+              }}
+              onPress={() => rootNavigation.navigate("DishDetail", { dishId: primaryDish.id })}
+            />
+          ) : null}
           <View style={styles.detailRow}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2], flex: 1 }}>
               <Avatar uri={feedPost.authorAvatarUrl} name={feedPost.authorName} size={32} />
@@ -274,6 +277,7 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
                   promptPostSafetyActions({
                     postId: feedPost.id,
                     authorName: feedPost.authorName,
+                    authorId: feedPost.authorId,
                     label: "post",
                     onHidden: hidePostFromCurrentFeed,
                     onBlocked: hideAuthorFromCurrentFeed,
@@ -289,7 +293,6 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
                   if (!primaryDish) return;
                   setActiveShareReview({
                     reviewId: feedPost.id,
-                    postId: feedPost.id,
                     title: primaryDish.name,
                     subtitle: `${venue?.name ?? feedPost.authorLocation} · ${feedPost.authorName}`,
                     imageUrl: primaryDish.imageUrl,
@@ -392,10 +395,16 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
   return (
     <Screen
       title={type === "liked" ? "Liked post" : "Saved post"}
+      scroll={false}
       fullWidth
       contentContainerStyle={{ paddingHorizontal: 0 }}
     >
-      <View style={{ paddingBottom: spacing[4] }}>{orderedPosts.map(renderFeedPost)}</View>
+      <FlatList
+        data={orderedPosts}
+        keyExtractor={(post) => post.id}
+        renderItem={({ item }) => renderFeedPost(item)}
+        contentContainerStyle={{ paddingBottom: spacing[4] }}
+      />
 
       {commentsEnabled ? (
         <ReviewCommentsSheet
@@ -409,12 +418,10 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
 
       <ReviewShareSheet
         activeReview={activeShareReview}
+        subjectLabel="post"
         bottomInset={insets.bottom}
         innerRef={shareSheetRef}
         onDismiss={() => setActiveShareReview(null)}
-        onShared={(postId, channel) => {
-          incrementShare(postId, channel);
-        }}
       />
     </Screen>
   );

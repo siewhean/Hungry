@@ -1,0 +1,1159 @@
+{
+  "snapshot_id": "refresh120_directory_fields_batch_20261019",
+  "observed_at_utc": "2026-10-18T18:22:06+00:00",
+  "workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "0e3f6c7cc1594ba701f6fa4de6d11c6db1db9643060907f7292fb8a634d6eb6f",
+  "workbook_edited": false,
+  "scope": {
+    "target": "First-party CHAGEE Singapore official locator and product-series pages cross-referenced to exact existing SFA rows with blank fields",
+    "records_reviewed": 43,
+    "field_policy": "Propose blank-only values. Do not overwrite existing values. Website proposals require exact street/unit/postal match to live operator locator. Cuisine and menu URL are brand-wide official categories; menu caveat is retained."
+  },
+  "sources": [
+    {
+      "url": "https://chagee.com.sg/en/stores",
+      "publisher": "CHAGEE Singapore official store locator",
+      "observed": "Opened 2026-10-19; current page content includes © CHAGEE Singapore 2026. Lists 43 outlet entries with street addresses, units, and postcodes.",
+      "facts": "Exact outlet crosswalks used for Website proposals; the page describes CHAGEE as an international tea beverage company.",
+      "role": "Outlet identity and official website."
+    },
+    {
+      "url": "https://www.chagee.com.sg/en/product",
+      "publisher": "CHAGEE Singapore official product/menu page",
+      "observed": "Opened 2026-10-19; current page content includes © CHAGEE Singapore 2026.",
+      "facts": "Seven tea-series categories are named: Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé, and Iced Oriental Tea.",
+      "role": "Cuisine classification and official menu/product-series URL."
+    }
+  ],
+  "proposals": [
+    {
+      "sfa_licence": "CE06I24B000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 238 THOMSON ROAD #01-59,#01-60,#01-61,NOVENA SQUARE,Singapore 307683",
+      "postal_code": "307683",
+      "before": {
+        "Cuisine": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "CE07818E000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 252 NORTH BRIDGE ROAD #01-15,RAFFLES CITY SHOPPING CENTRE,Singapore 179103",
+      "postal_code": "179103",
+      "before": {
+        "Cuisine": null,
+        "Menu URL": null,
+        "Website": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        },
+        {
+          "field": "Menu URL",
+          "before": null,
+          "value": "https://www.chagee.com.sg/en/product",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "medium-high",
+          "evidence": "Official CHAGEE Singapore product-series/menu overview with seven current tea categories. It is not an outlet-specific priced menu; prices and branch-specific availability are not represented."
+        },
+        {
+          "field": "Website",
+          "before": null,
+          "value": "https://chagee.com.sg/en/stores",
+          "source_url": "https://chagee.com.sg/en/stores",
+          "confidence": "high",
+          "evidence": "First-party locator lists the exact outlet address/unit 252 NORTH BRIDGE ROAD #01-15, postal code 179103, and CHAGEE tenant. Website field points directly to the operator locator."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "CE12A58J000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 6 EU TONG SEN STREET #01-61,#01-62,#01-63,#01-53,#01-54,THE CENTRAL,Singapore 059817",
+      "postal_code": "059817",
+      "before": {
+        "Cuisine": null,
+        "Menu URL": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        },
+        {
+          "field": "Menu URL",
+          "before": null,
+          "value": "https://www.chagee.com.sg/en/product",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "medium-high",
+          "evidence": "Official CHAGEE Singapore product-series/menu overview with seven current tea categories. It is not an outlet-specific priced menu; prices and branch-specific availability are not represented."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "CE17292L000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 51/45/47/49 PAGODA STREET Singapore 059210",
+      "postal_code": "059210",
+      "before": {
+        "Cuisine": null,
+        "Menu URL": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        },
+        {
+          "field": "Menu URL",
+          "before": null,
+          "value": "https://www.chagee.com.sg/en/product",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "medium-high",
+          "evidence": "Official CHAGEE Singapore product-series/menu overview with seven current tea categories. It is not an outlet-specific priced menu; prices and branch-specific availability are not represented."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "CE19K89K000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 1 KIM SENG PROMENADE #01-121,GREAT WORLD CITY,Singapore 237994",
+      "postal_code": "237994",
+      "before": {
+        "Cuisine": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "CE20I72N000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 1 RAFFLES PLACE #01-01,#01-14,#01-15,ONE RAFFLES PLACE,Singapore 048616",
+      "postal_code": "048616",
+      "before": {
+        "Cuisine": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "CE20O50X000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 12 ALEXANDRA VIEW #01-13,#01-14,ARTRA,Singapore 158736",
+      "postal_code": "158736",
+      "before": {
+        "Cuisine": null,
+        "Menu URL": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        },
+        {
+          "field": "Menu URL",
+          "before": null,
+          "value": "https://www.chagee.com.sg/en/product",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "medium-high",
+          "evidence": "Official CHAGEE Singapore product-series/menu overview with seven current tea categories. It is not an outlet-specific priced menu; prices and branch-specific availability are not represented."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "CE23185P000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 11 BIDADARI PARK DRIVE #01-25,#01-26,THE WOODLEIGH MALL,Singapore 367803",
+      "postal_code": "367803",
+      "before": {
+        "Cuisine": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "CE24865X000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 277 ORCHARD ROAD #01-18,ORCHARD GATEWAY,Singapore 238858",
+      "postal_code": "238858",
+      "before": {
+        "Cuisine": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "CE24C09X000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 68 ORCHARD ROAD #01-58,#01-59,PLAZA SINGAPURA,Singapore 238839",
+      "postal_code": "238839",
+      "before": {
+        "Cuisine": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "CE24N75C000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 585 NORTH BRIDGE ROAD #01-06,RAFFLES HOSPITAL,Singapore 188770",
+      "postal_code": "188770",
+      "before": {
+        "Cuisine": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "CE24O68V000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 7 WALLICH STREET #B2-K2,TANJONG PAGAR CENTRE,Singapore 078884",
+      "postal_code": "078884",
+      "before": {
+        "Cuisine": null,
+        "Menu URL": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        },
+        {
+          "field": "Menu URL",
+          "before": null,
+          "value": "https://www.chagee.com.sg/en/product",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "medium-high",
+          "evidence": "Official CHAGEE Singapore product-series/menu overview with seven current tea categories. It is not an outlet-specific priced menu; prices and branch-specific availability are not represented."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "CE25296K000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 18 CROSS STREET #01-08,#01-09,CROSS STREET EXCHANGE,Singapore 048423",
+      "postal_code": "048423",
+      "before": {
+        "Cuisine": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "CE25I23X000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 9 BISHAN PLACE #01-10,#01-11,JUNCTION 8,Singapore 579837",
+      "postal_code": "579837",
+      "before": {
+        "Cuisine": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "CE25N87K000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 3 TEMASEK BOULEVARD #01-308,SUNTEC CITY MALL,Singapore 038983",
+      "postal_code": "038983",
+      "before": {
+        "Cuisine": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "NE13155B000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 5 TAMPINES AVENUE 3 #01-09,TAMPINES WEST COMMUNITY CLUB,Singapore 529705",
+      "postal_code": "529705",
+      "before": {
+        "Cuisine": null,
+        "Website": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        },
+        {
+          "field": "Website",
+          "before": null,
+          "value": "https://chagee.com.sg/en/stores",
+          "source_url": "https://chagee.com.sg/en/stores",
+          "confidence": "high",
+          "evidence": "First-party locator lists the exact outlet address/unit 5 TAMPINES AVENUE 3 #01-09, postal code 529705, and CHAGEE tenant. Website field points directly to the operator locator."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "NE16195E000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 83 PUNGGOL CENTRAL #B1-43,#B1-44,WATERWAY POINT,Singapore 828761",
+      "postal_code": "828761",
+      "before": {
+        "Cuisine": null,
+        "Website": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        },
+        {
+          "field": "Website",
+          "before": null,
+          "value": "https://chagee.com.sg/en/stores",
+          "source_url": "https://chagee.com.sg/en/stores",
+          "confidence": "high",
+          "evidence": "First-party locator lists the exact outlet address/unit 83 PUNGGOL CENTRAL #B1-43, postal code 828761, and CHAGEE tenant. Website field points directly to the operator locator."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "NE16610X000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 5 TAMPINES STREET 32 #01-06,#01-17,Singapore 529284",
+      "postal_code": "529284",
+      "before": {
+        "Cuisine": null,
+        "Menu URL": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        },
+        {
+          "field": "Menu URL",
+          "before": null,
+          "value": "https://www.chagee.com.sg/en/product",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "medium-high",
+          "evidence": "Official CHAGEE Singapore product-series/menu overview with seven current tea categories. It is not an outlet-specific priced menu; prices and branch-specific availability are not represented."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "NE17017K000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 11 RIVERVALE CRESCENT #01-12,#01-13,#01-14,RIVERVALE MALL,Singapore 545082",
+      "postal_code": "545082",
+      "before": {
+        "Cuisine": null,
+        "Website": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        },
+        {
+          "field": "Website",
+          "before": null,
+          "value": "https://chagee.com.sg/en/stores",
+          "source_url": "https://chagee.com.sg/en/stores",
+          "confidence": "high",
+          "evidence": "First-party locator lists the exact outlet address/unit 11 RIVERVALE CRESCENT #01-12, postal code 545082, and CHAGEE tenant. Website field points directly to the operator locator."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "NE17428B000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 1 SENGKANG SQUARE #03-39,#03-40,#03-41,COMPASS ONE,Singapore 545078",
+      "postal_code": "545078",
+      "before": {
+        "Cuisine": null,
+        "Website": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        },
+        {
+          "field": "Website",
+          "before": null,
+          "value": "https://chagee.com.sg/en/stores",
+          "source_url": "https://chagee.com.sg/en/stores",
+          "confidence": "high",
+          "evidence": "First-party locator lists the exact outlet address/unit 1 SENGKANG SQUARE #03-39, postal code 545078, and CHAGEE tenant. Website field points directly to the operator locator."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "NE21C66K000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 90 HOUGANG AVENUE 10 #01-01,#01-02,#01-04,#01-05,HOUGANG MALL,Singapore 538766",
+      "postal_code": "538766",
+      "before": {
+        "Cuisine": null,
+        "Website": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        },
+        {
+          "field": "Website",
+          "before": null,
+          "value": "https://chagee.com.sg/en/stores",
+          "source_url": "https://chagee.com.sg/en/stores",
+          "confidence": "high",
+          "evidence": "First-party locator lists the exact outlet address/unit 90 HOUGANG AVENUE 10 #01-01, postal code 538766, and CHAGEE tenant. Website field points directly to the operator locator."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "NE24863J000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 10 TAMPINES CENTRAL 1 #02-13,#02-K5A,TAMPINES ONE,Singapore 529536",
+      "postal_code": "529536",
+      "before": {
+        "Cuisine": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "NE26A89J000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 9 PASIR RIS CENTRAL #01-01,Singapore 519613",
+      "postal_code": "519613",
+      "before": {
+        "Cuisine": null,
+        "Website": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        },
+        {
+          "field": "Website",
+          "before": null,
+          "value": "https://chagee.com.sg/en/stores",
+          "source_url": "https://chagee.com.sg/en/stores",
+          "confidence": "high",
+          "evidence": "First-party locator lists the exact outlet address/unit 9 PASIR RIS CENTRAL #01-01, postal code 519613, and CHAGEE tenant. Website field points directly to the operator locator."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "NW12B25P000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 1 JELEBU ROAD #02-38,#02-39,BUKIT PANJANG PLAZA,Singapore 677743",
+      "postal_code": "677743",
+      "before": {
+        "Cuisine": null,
+        "Website": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        },
+        {
+          "field": "Website",
+          "before": null,
+          "value": "https://chagee.com.sg/en/stores",
+          "source_url": "https://chagee.com.sg/en/stores",
+          "confidence": "high",
+          "evidence": "First-party locator lists the exact outlet address/unit 1 JELEBU ROAD #02-38, postal code 677743, and CHAGEE tenant. Website field points directly to the operator locator."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "NW25K98L000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 1 WOODLANDS SQUARE #01-01,CAUSEWAY POINT,Singapore 738099",
+      "postal_code": "738099",
+      "before": {
+        "Cuisine": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "NW25M72J000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 1 LENTOR CENTRAL #01-27,Singapore 788887",
+      "postal_code": "788887",
+      "before": {
+        "Cuisine": null,
+        "Website": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        },
+        {
+          "field": "Website",
+          "before": null,
+          "value": "https://chagee.com.sg/en/stores",
+          "source_url": "https://chagee.com.sg/en/stores",
+          "confidence": "high",
+          "evidence": "First-party locator lists the exact outlet address/unit 1 LENTOR CENTRAL #01-27, postal code 788887, and CHAGEE tenant. Website field points directly to the operator locator."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "NW26734X000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 598 YISHUN RING ROAD #01-44,#01-45,#01-46,WISTERIA MALL,Singapore 768698",
+      "postal_code": "768698",
+      "before": {
+        "Cuisine": null,
+        "Website": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        },
+        {
+          "field": "Website",
+          "before": null,
+          "value": "https://chagee.com.sg/en/stores",
+          "source_url": "https://chagee.com.sg/en/stores",
+          "confidence": "high",
+          "evidence": "First-party locator lists the exact outlet address/unit 598 YISHUN RING ROAD #01-44, postal code 768698, and CHAGEE tenant. Website field points directly to the operator locator."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "SE07342B000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 117 EAST COAST ROAD Singapore 428805",
+      "postal_code": "428805",
+      "before": {
+        "Cuisine": null,
+        "Menu URL": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        },
+        {
+          "field": "Menu URL",
+          "before": null,
+          "value": "https://www.chagee.com.sg/en/product",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "medium-high",
+          "evidence": "Official CHAGEE Singapore product-series/menu overview with seven current tea categories. It is not an outlet-specific priced menu; prices and branch-specific availability are not represented."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "SE10730K000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 23 SERANGOON CENTRAL #02-K2,#02-K3,#02-K4,NEX,Singapore 556083",
+      "postal_code": "556083",
+      "before": {
+        "Cuisine": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "SE15205B000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 311 NEW UPPER CHANGI ROAD #01-39,#01-40,BEDOK MALL,Singapore 467360",
+      "postal_code": "467360",
+      "before": {
+        "Cuisine": null,
+        "Website": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        },
+        {
+          "field": "Website",
+          "before": null,
+          "value": "https://chagee.com.sg/en/stores",
+          "source_url": "https://chagee.com.sg/en/stores",
+          "confidence": "high",
+          "evidence": "First-party locator lists the exact outlet address/unit 311 NEW UPPER CHANGI ROAD #01-39, postal code 467360, and CHAGEE tenant. Website field points directly to the operator locator."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "SE19S92E000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 10 PAYA LEBAR ROAD #01-39,PLQ MALL,Singapore 409057",
+      "postal_code": "409057",
+      "before": {
+        "Cuisine": null,
+        "Website": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        },
+        {
+          "field": "Website",
+          "before": null,
+          "value": "https://chagee.com.sg/en/stores",
+          "source_url": "https://chagee.com.sg/en/stores",
+          "confidence": "high",
+          "evidence": "First-party locator lists the exact outlet address/unit 10 PAYA LEBAR ROAD #01-39, postal code 409057, and CHAGEE tenant. Website field points directly to the operator locator."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "SE23H50V000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 60 AIRPORT BOULEVARD #02-01,CHANGI AIRPORT TERMINAL 2,Singapore 819643",
+      "postal_code": "819643",
+      "before": {
+        "Cuisine": null,
+        "Website": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        },
+        {
+          "field": "Website",
+          "before": null,
+          "value": "https://chagee.com.sg/en/stores",
+          "source_url": "https://chagee.com.sg/en/stores",
+          "confidence": "high",
+          "evidence": "First-party locator lists the exact outlet address/unit 60 AIRPORT BOULEVARD #02-01, postal code 819643, and CHAGEE tenant. Website field points directly to the operator locator."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "SE25099C000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 80 MARINE PARADE ROAD #01-03,#01-04,#01-05,#01-06,PARKWAY PARADE,Singapore 449269",
+      "postal_code": "449269",
+      "before": {
+        "Cuisine": null,
+        "Website": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        },
+        {
+          "field": "Website",
+          "before": null,
+          "value": "https://chagee.com.sg/en/stores",
+          "source_url": "https://chagee.com.sg/en/stores",
+          "confidence": "high",
+          "evidence": "First-party locator lists the exact outlet address/unit 80 MARINE PARADE ROAD #01-03, postal code 449269, and CHAGEE tenant. Website field points directly to the operator locator."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "SE25N15J000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 30 TAI SENG STREET #01-01,BREADTALK IHQ,Singapore 534013",
+      "postal_code": "534013",
+      "before": {
+        "Cuisine": null,
+        "Website": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        },
+        {
+          "field": "Website",
+          "before": null,
+          "value": "https://chagee.com.sg/en/stores",
+          "source_url": "https://chagee.com.sg/en/stores",
+          "confidence": "high",
+          "evidence": "First-party locator lists the exact outlet address/unit 30 TAI SENG STREET #01-01, postal code 534013, and CHAGEE tenant. Website field points directly to the operator locator."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "SE26C87E000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 24 TANAH MERAH KECHIL LINK #01-03,SCENECA SQUARE,Singapore 468456",
+      "postal_code": "468456",
+      "before": {
+        "Cuisine": null,
+        "Menu URL": null,
+        "Website": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        },
+        {
+          "field": "Menu URL",
+          "before": null,
+          "value": "https://www.chagee.com.sg/en/product",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "medium-high",
+          "evidence": "Official CHAGEE Singapore product-series/menu overview with seven current tea categories. It is not an outlet-specific priced menu; prices and branch-specific availability are not represented."
+        },
+        {
+          "field": "Website",
+          "before": null,
+          "value": "https://chagee.com.sg/en/stores",
+          "source_url": "https://chagee.com.sg/en/stores",
+          "confidence": "high",
+          "evidence": "First-party locator lists the exact outlet address/unit 24 TANAH MERAH KECHIL LINK #01-03, postal code 468456, and CHAGEE tenant. Website field points directly to the operator locator."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "SW12K24X000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 1 VISTA EXCHANGE GREEN #B1-42,THE STAR VISTA,Singapore 138617",
+      "postal_code": "138617",
+      "before": {
+        "Cuisine": null,
+        "Website": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        },
+        {
+          "field": "Website",
+          "before": null,
+          "value": "https://chagee.com.sg/en/stores",
+          "source_url": "https://chagee.com.sg/en/stores",
+          "confidence": "high",
+          "evidence": "First-party locator lists the exact outlet address/unit 1 VISTA EXCHANGE GREEN #B1-42, postal code 138617, and CHAGEE tenant. Website field points directly to the operator locator."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "SW20L96J000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 50 JURONG GATEWAY ROAD #01-64,JEM,Singapore 608549",
+      "postal_code": "608549",
+      "before": {
+        "Cuisine": null,
+        "Website": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        },
+        {
+          "field": "Website",
+          "before": null,
+          "value": "https://chagee.com.sg/en/stores",
+          "source_url": "https://chagee.com.sg/en/stores",
+          "confidence": "high",
+          "evidence": "First-party locator lists the exact outlet address/unit 50 JURONG GATEWAY ROAD #01-64, postal code 608549, and CHAGEE tenant. Website field points directly to the operator locator."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "SW24M07C000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 1 HARBOURFRONT WALK #01-98,VIVO CITY,Singapore 098585",
+      "postal_code": "098585",
+      "before": {
+        "Cuisine": null,
+        "Website": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        },
+        {
+          "field": "Website",
+          "before": null,
+          "value": "https://chagee.com.sg/en/stores",
+          "source_url": "https://chagee.com.sg/en/stores",
+          "confidence": "high",
+          "evidence": "First-party locator lists the exact outlet address/unit 1 HARBOURFRONT WALK #01-98, postal code 098585, and CHAGEE tenant. Website field points directly to the operator locator."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "SW25727L000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 31 LOWER KENT RIDGE ROAD #01-09,YUSOF ISHAK HOUSE,Singapore 119078",
+      "postal_code": "119078",
+      "before": {
+        "Cuisine": null,
+        "Website": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        },
+        {
+          "field": "Website",
+          "before": null,
+          "value": "https://chagee.com.sg/en/stores",
+          "source_url": "https://chagee.com.sg/en/stores",
+          "confidence": "high",
+          "evidence": "First-party locator lists the exact outlet address/unit 31 LOWER KENT RIDGE ROAD #01-09, postal code 119078, and CHAGEE tenant. Website field points directly to the operator locator."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "SW25765A000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 26 SENTOSA GATEWAY #01-227,SHOWPLACE (RESORTS WORLD SENTOSA),Singapore 098138",
+      "postal_code": "098138",
+      "before": {
+        "Cuisine": null,
+        "Website": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        },
+        {
+          "field": "Website",
+          "before": null,
+          "value": "https://chagee.com.sg/en/stores",
+          "source_url": "https://chagee.com.sg/en/stores",
+          "confidence": "high",
+          "evidence": "First-party locator lists the exact outlet address/unit 26 SENTOSA GATEWAY #01-227, postal code 098138, and CHAGEE tenant. Website field points directly to the operator locator."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "SW25932E000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 460 ALEXANDRA ROAD #01-06,ALEXANDRA RETAIL CENTRE (ARC),Singapore 119963",
+      "postal_code": "119963",
+      "before": {
+        "Cuisine": null,
+        "Website": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        },
+        {
+          "field": "Website",
+          "before": null,
+          "value": "https://chagee.com.sg/en/stores",
+          "source_url": "https://chagee.com.sg/en/stores",
+          "confidence": "high",
+          "evidence": "First-party locator lists the exact outlet address/unit 460 ALEXANDRA ROAD #01-06, postal code 119963, and CHAGEE tenant. Website field points directly to the operator locator."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "SW26205B000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 1 JURONG WEST CENTRAL 2 #01-29A,#01-29B,#01-29,JURONG POINT,Singapore 648886",
+      "postal_code": "648886",
+      "before": {
+        "Cuisine": null,
+        "Menu URL": null,
+        "Website": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        },
+        {
+          "field": "Menu URL",
+          "before": null,
+          "value": "https://www.chagee.com.sg/en/product",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "medium-high",
+          "evidence": "Official CHAGEE Singapore product-series/menu overview with seven current tea categories. It is not an outlet-specific priced menu; prices and branch-specific availability are not represented."
+        },
+        {
+          "field": "Website",
+          "before": null,
+          "value": "https://chagee.com.sg/en/stores",
+          "source_url": "https://chagee.com.sg/en/stores",
+          "confidence": "high",
+          "evidence": "First-party locator lists the exact outlet address/unit 1 JURONG WEST CENTRAL 2 #01-29, postal code 648886, and CHAGEE tenant. Website field points directly to the operator locator."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "SW26330P000",
+      "existing_name": "CHAGEE",
+      "existing_address": "Address: 1 BUKIT BATOK CENTRAL LINK #01-16,#01-17,WEST MALL,Singapore 658713",
+      "postal_code": "658713",
+      "before": {
+        "Cuisine": null,
+        "Website": null
+      },
+      "updates": [
+        {
+          "field": "Cuisine",
+          "before": null,
+          "value": "tea_beverage",
+          "source_url": "https://www.chagee.com.sg/en/product",
+          "confidence": "high",
+          "evidence": "First-party CHAGEE Singapore product page categorizes its products as Fresh Milk Tea, Snow Cap Milk Tea, Fresh Fruit Tea, Brewed Tea, Teaspresso Latte, Teaspresso Frappé and Iced Oriental Tea; official store page identifies CHAGEE as a tea beverage company. This broad cuisine label is source-derived; no specific cuisine subtype is asserted."
+        },
+        {
+          "field": "Website",
+          "before": null,
+          "value": "https://chagee.com.sg/en/stores",
+          "source_url": "https://chagee.com.sg/en/stores",
+          "confidence": "high",
+          "evidence": "First-party locator lists the exact outlet address/unit 1 BUKIT BATOK CENTRAL LINK #01-16, postal code 658713, and CHAGEE tenant. Website field points directly to the operator locator."
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "sfa_rows_with_proposals": 43,
+    "blank_cuisine_proposals": 43,
+    "blank_website_proposals": 24,
+    "blank_menu_url_proposals": 9,
+    "total_blank_field_proposals": 76
+  },
+  "limitations": [
+    "No outlet-specific opening hours were proposed: the locator page has no hours.",
+    "No direct phone/contact was proposed: the reviewed pages did not publish a single outlet-specific contact value.",
+    "Cuisine value tea_beverage is a broad category supported by the official product series; it does not assert a specific local menu subtype.",
+    "Menu URL is a brand-wide product-series page and does not provide current outlet-specific prices; do not interpret it as a complete priced menu.",
+    "No official image URL was identified or added during this batch.",
+    "One CHAGEE row with postal code 529284 is not listed on the current official store locator; no website/menu locator match was proposed for it. Other potential address mismatches were withheld from website proposals."
+  ]
+}

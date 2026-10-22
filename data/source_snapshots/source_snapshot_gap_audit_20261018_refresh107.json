@@ -1,0 +1,176 @@
+{
+  "snapshot_id": "source_snapshot_gap_audit_20261018_refresh107",
+  "captured_at_utc": "2026-10-18T10:33:12.455940+00:00",
+  "workbook": {
+    "path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "sha256": "69c17622f7e7dd965b09955a7383465eae54fd1b06cc09db97c1dbe4cf088548",
+    "workbook_edited": false
+  },
+  "scope": "Read-only audit of existing official/public source snapshots against the installed canonical workbook. No network calls made in this audit.",
+  "finding": "No safe, exact-match official menu item, image URL, or blank directory-field candidate was found in the audited snapshot set that is absent from the current workbook.",
+  "integration_checks": [
+    {
+      "dataset": "official image URL candidates",
+      "source_snapshots": [
+        "subway_official_master_scan_20261018.json",
+        "yakun_official_outlet_menu_media_refresh_20261018.json",
+        "breadtalk_live_official_refresh_20261018.json",
+        "old_chang_kee_live_official_scan_master3ce9c0_20261018.json",
+        "brand_first_party_refresh_starbucks_cbtl_20261018.json",
+        "mcdonalds_kfc_official_source_refresh_20261018.json",
+        "jollibee_live_official_delta_20261018.json"
+      ],
+      "candidate_url_counts": [
+        30,
+        68,
+        9,
+        9,
+        12,
+        119,
+        96
+      ],
+      "missing_from_Image_Candidates": 0,
+      "note": "URL presence only; does not grant display/reuse permission. Existing candidates remain review-only where rights/visual review are not cleared.",
+      "finding": "Subway 30, Ya Kun 68, BreadTalk 9, Old Chang Kee 9, Coffee Bean 12, McDonald’s/KFC 119, Jollibee 96; all source-listed official image URLs already exist in Image Candidates."
+    },
+    {
+      "dataset": "official current menu candidates",
+      "source_snapshots": [
+        "subway_official_master_scan_20261018.json",
+        "old_chang_kee_live_official_scan_master3ce9c0_20261018.json",
+        "brand_first_party_refresh_starbucks_cbtl_20261018.json",
+        "mcdonalds_kfc_official_source_refresh_20261018.json",
+        "yakun_official_outlet_menu_media_refresh_20261018.json",
+        "jollibee_live_official_delta_20261018.json"
+      ],
+      "menu_candidates_reviewed": "Current candidate rows were individually cross-checked for Subway (25), Old Chang Kee catalogue items (22) and campaign-only items (3), Coffee Bean catalogue items (12), McDonald’s/KFC products (254), and Ya Kun items (68). Counts are raw per-source and may overlap. Jollibee: 107 official menu products, zero missing from workbook.",
+      "missing_menu_items_or_current_published_prices_found": 0,
+      "note": "The 338 total is raw source product candidates across snapshots and may include overlap; source scope and freshness remain as each record states. Verified current price comparison found no missing McDonald’s/KFC prices for matched records."
+    },
+    {
+      "dataset": "exact outlet blank directory proposals",
+      "source_snapshots": [
+        "northpoint_city_official_directory_exact_blank_fields_refresh106_20261018.json",
+        "century_square_official_directory_exact_blank_fields_refresh106_20261018.json",
+        "plq_official_directory_exact_blank_fields_refresh106_20261018.json",
+        "waterway_point_official_directory_blank_fields_refresh106_20261018.json",
+        "jollibee_official_followon_20261018.json",
+        "yakun_official_outlet_menu_media_refresh_20261018.json",
+        "brand_first_party_refresh_starbucks_cbtl_20261018.json",
+        "mcdonalds_kfc_official_source_refresh_20261018.json",
+        "jollibee_live_official_delta_20261018.json"
+      ],
+      "candidate_field_pairs_checked": 237,
+      "source_backed_values_still_blank": 0,
+      "note": "The four mall directory proposal sets and audited chain field proposals were compared to current rows by SFA licence and exact target field; no remaining blank proposal found.",
+      "candidate_field_pairs_count_basis": "17 Northpoint + 23 Century Square + 3 PLQ + 67 Waterway Point + 11 Jollibee exact-join proposals + 8 Jollibee follow-on + 10 Ya Kun + 1 Starbucks + 97 McDonald’s/KFC source-backed proposal pairs."
+    }
+  ],
+  "withheld_or_non_actionable": [
+    {
+      "source": "public_aed_exact_postal_coordinate_crosscheck_20261018.json",
+      "unintegrated_postal_matches": 86,
+      "action": "Do not write coordinates to outlet rows. AED observations are point locations inside public facilities, frequently indoors/on other floors; source period Feb 2020; calculated means are not verified building/outlet coordinates."
+    },
+    {
+      "source": "hdb_existing_building_exact_postal_coordinate_candidates_20261018.json",
+      "unmatched_targets": 1681,
+      "exact_postal_candidates": 0,
+      "action": "No exact postal coordinate candidate in this source snapshot."
+    },
+    {
+      "source": "foodpanda_subway_breadtalk_ihq_menu_candidate_20261018.json",
+      "action": "Do not reuse stale/conflicting delivery pricing or platform-hosted images. Source notes and access/redistribution limits make these unsuitable for current catalogue facts."
+    },
+    {
+      "source": "mcdonalds_kfc_official_source_refresh_20261018.json",
+      "action": "Official image URLs are catalogued as candidates. Keep unapproved unless visual inspection and reuse permission are resolved."
+    },
+    {
+      "source": "closure_sweep_sfa_public_official_20261018.json",
+      "action": "Two closure leads were not exact outlet matches; zero defensible removals. Current SFA open data in that snapshot is too old to prove live closure status for all outlets."
+    }
+  ],
+  "source_file_hashes": [
+    {
+      "path": "data/source_snapshots/brand_first_party_refresh_starbucks_cbtl_20261018.json",
+      "sha256": "a3e5f406d284665b3ae4343fc05157cb7e002d96bfdd5a0e55045378d3087e19",
+      "bytes": 30558
+    },
+    {
+      "path": "data/source_snapshots/subway_official_master_scan_20261018.json",
+      "sha256": "3c7469420e48ae42d8ce50138e94c8c499df93660da68a23e2b8f878ede0e348",
+      "bytes": 74540
+    },
+    {
+      "path": "data/source_snapshots/yakun_official_outlet_menu_media_refresh_20261018.json",
+      "sha256": "d2d743f575bc999c114114bc26ed249aa860800760b7f47916d10f1428fda3d9",
+      "bytes": 55907
+    },
+    {
+      "path": "data/source_snapshots/breadtalk_live_official_refresh_20261018.json",
+      "sha256": "1ee2f005173b83923d211d7c38418b15050012cfcbbc8f6ce513228f5f28bd16",
+      "bytes": 50178
+    },
+    {
+      "path": "data/source_snapshots/old_chang_kee_live_official_scan_master3ce9c0_20261018.json",
+      "sha256": "7961f7da81c32ddbefd48f0500631aa9e4d1c57ae5bb21269d17c30b6c38f836",
+      "bytes": 83599
+    },
+    {
+      "path": "data/source_snapshots/mcdonalds_kfc_official_source_refresh_20261018.json",
+      "sha256": "d16664a96a86fc32945d22c45148e452ac9f7b467f8dc7abcd65cce71502ff06",
+      "bytes": 314552
+    },
+    {
+      "path": "data/source_snapshots/jollibee_live_official_delta_20261018.json",
+      "sha256": "7097bbcabf45122269f7419bfbd8fe3f210574d0dc4fd8f07033cb94536146e4",
+      "bytes": 88965
+    },
+    {
+      "path": "data/source_snapshots/jollibee_official_followon_20261018.json",
+      "sha256": "5e8c32d96896fee6a09faa3fb6976bef43117fd4b3ac04d62ddcf5a6c7545665",
+      "bytes": 7431
+    },
+    {
+      "path": "data/source_snapshots/northpoint_city_official_directory_exact_blank_fields_refresh106_20261018.json",
+      "sha256": "9c6618cbdd69f9c35fe3cda99f112d8238b8ad8f91b66c409e7560d173605356",
+      "bytes": 18336
+    },
+    {
+      "path": "data/source_snapshots/century_square_official_directory_exact_blank_fields_refresh106_20261018.json",
+      "sha256": "7f14f659aa985af18a4403394ee4f708dd4201082d0c06cb000ac9ffcd0922fb",
+      "bytes": 27108
+    },
+    {
+      "path": "data/source_snapshots/plq_official_directory_exact_blank_fields_refresh106_20261018.json",
+      "sha256": "57a77ffec7967efe93e652b66f298ad979a69cfb5299dc308619c6a924b45f5c",
+      "bytes": 7494
+    },
+    {
+      "path": "data/source_snapshots/waterway_point_official_directory_blank_fields_refresh106_20261018.json",
+      "sha256": "27f1f21f8819e94f33d467596387356db3cb5169c7f6ecbf094d7cf705f6335a",
+      "bytes": 67922
+    },
+    {
+      "path": "data/source_snapshots/public_aed_exact_postal_coordinate_crosscheck_20261018.json",
+      "sha256": "175cb33b7f34a8feb8e5f96c632e60a1c728cfdde3889e822919f559512f33f9",
+      "bytes": 198328
+    },
+    {
+      "path": "data/source_snapshots/hdb_existing_building_exact_postal_coordinate_candidates_20261018.json",
+      "sha256": "bc0057ab4e0e25c337fca2f4db401591cdb77d14622be039e814029370230608",
+      "bytes": 16307
+    },
+    {
+      "path": "data/source_snapshots/foodpanda_subway_breadtalk_ihq_menu_candidate_20261018.json",
+      "sha256": "ca76239e9fdfd3a2bc1e5b3d2ce6d0359eb3e1a8336b95061791c49d35ff7f6b",
+      "bytes": 9415
+    }
+  ],
+  "limitations": [
+    "This is a gap audit of previously captured snapshots, not a fresh crawl of live operator websites.",
+    "A matching official brand catalogue does not prove outlet-level availability.",
+    "No additional records were added because all safe candidates found were already integrated; unverified or ambiguous values were intentionally excluded."
+  ]
+}

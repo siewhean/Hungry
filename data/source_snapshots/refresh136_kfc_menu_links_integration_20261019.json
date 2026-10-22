@@ -1,0 +1,212 @@
+{
+  "snapshot": "refresh136_kfc_menu_links_integration_20261019",
+  "baseline_sha256": "79faa88e6bbd2fc9118358a264047edd9179a6c086bddbe1438262b5c391907e",
+  "workbook_sha256_after": "6b20769d389600a7e7838a64f3350330a6a2cade68a46321ac051fd68986d557",
+  "count": 20,
+  "source_url": "https://www.kfc.com.sg/menu/burgers-wraps",
+  "source_type": "official KFC Singapore national menu page",
+  "observed_date": "2026-10-19",
+  "scope_limitation": "Brand-level official menu link only; no branch-specific menu availability claimed.",
+  "updates": [
+    {
+      "row": 14945,
+      "sfa_licence": "B80109P000",
+      "f_and_b_name": "Kentucky fried chicken",
+      "postal_code": "560715",
+      "address": "Address: 715 ANG MO KIO AVENUE 6 #01-4000,Singapore 560715",
+      "field": "Menu URL",
+      "before": null,
+      "value": "https://www.kfc.com.sg/menu/burgers-wraps"
+    },
+    {
+      "row": 14946,
+      "sfa_licence": "CE12621N000",
+      "f_and_b_name": "KENTUCKY FRIED CHICKEN",
+      "postal_code": "538692",
+      "address": "Address: 1 HOUGANG STREET 91 #01-24/25,HOUGANG 1,Singapore 538692",
+      "field": "Menu URL",
+      "before": null,
+      "value": "https://www.kfc.com.sg/menu/burgers-wraps"
+    },
+    {
+      "row": 14947,
+      "sfa_licence": "CE12E24C000",
+      "f_and_b_name": "KENTUCKY FRIED CHICKEN",
+      "postal_code": "059413",
+      "address": "Address: 133 NEW BRIDGE ROAD #01-35,CHINATOWN POINT,Singapore 059413",
+      "field": "Menu URL",
+      "before": null,
+      "value": "https://www.kfc.com.sg/menu/burgers-wraps"
+    },
+    {
+      "row": 14948,
+      "sfa_licence": "NE04039K000",
+      "f_and_b_name": "KENTUCKY FRIED CHICKEN",
+      "postal_code": "545082",
+      "address": "Address: 11 RIVERVALE CRESCENT #01-36,RIVERVALE MALL,Singapore 545082",
+      "field": "Menu URL",
+      "before": null,
+      "value": "https://www.kfc.com.sg/menu/burgers-wraps"
+    },
+    {
+      "row": 14949,
+      "sfa_licence": "NE08273E000",
+      "f_and_b_name": "Kentucky Fried Chicken",
+      "postal_code": "820168",
+      "address": "Address: 168 PUNGGOL FIELD #B1-02/03,PUNGGOL PLAZA,Singapore 820168",
+      "field": "Menu URL",
+      "before": null,
+      "value": "https://www.kfc.com.sg/menu/burgers-wraps"
+    },
+    {
+      "row": 14950,
+      "sfa_licence": "NW18133E000",
+      "f_and_b_name": "KENTUCKY FRIED CHICKEN",
+      "postal_code": "768019",
+      "address": "Address: 1 NORTHPOINT DRIVE #01-173,#01-174,NORTHPOINT CITY,Singapore 768019 NORTHPOINT CITY",
+      "field": "Menu URL",
+      "before": null,
+      "value": "https://www.kfc.com.sg/menu/burgers-wraps"
+    },
+    {
+      "row": 14951,
+      "sfa_licence": "S00045B000",
+      "f_and_b_name": "kentucky fried chicken",
+      "postal_code": "529284",
+      "address": "Address: 5 TAMPINES STREET 32 #01-07/16,Singapore 529284",
+      "field": "Menu URL",
+      "before": null,
+      "value": "https://www.kfc.com.sg/menu/burgers-wraps"
+    },
+    {
+      "row": 14952,
+      "sfa_licence": "S99131A000",
+      "f_and_b_name": "Kentucky Fried Chicken",
+      "postal_code": "540118",
+      "address": "Address: 118 RIVERVALE DRIVE #01-31,RIVERVALE PLAZA,Singapore 540118",
+      "field": "Menu URL",
+      "before": null,
+      "value": "https://www.kfc.com.sg/menu/burgers-wraps"
+    },
+    {
+      "row": 14953,
+      "sfa_licence": "SW04193L000",
+      "f_and_b_name": "KENTUCKY FRIED CHICKEN",
+      "postal_code": "640501",
+      "address": "Address: 501 JURONG WEST STREET 51 #01-257,Singapore 640501",
+      "field": "Menu URL",
+      "before": null,
+      "value": "https://www.kfc.com.sg/menu/burgers-wraps"
+    },
+    {
+      "row": 14954,
+      "sfa_licence": "SW08862X000",
+      "f_and_b_name": "kentucky fried chicken",
+      "postal_code": "689812",
+      "address": "Address: 21 CHOA CHU KANG AVENUE 4 #B1-28/29,Singapore 689812",
+      "field": "Menu URL",
+      "before": null,
+      "value": "https://www.kfc.com.sg/menu/burgers-wraps"
+    },
+    {
+      "row": 14955,
+      "sfa_licence": "SW14629K000",
+      "f_and_b_name": "KENTUCKY FRIED CHICKEN",
+      "postal_code": "659003",
+      "address": "Address: 2 BUKIT BATOK WEST AVENUE 7 #01-09A,Home TeamNS BUKIT BATOK CLUBHOUSE,Singapore 659003",
+      "field": "Menu URL",
+      "before": null,
+      "value": "https://www.kfc.com.sg/menu/burgers-wraps"
+    },
+    {
+      "row": 14956,
+      "sfa_licence": "W83278C000",
+      "f_and_b_name": "KENTUCKY FRIED CHICKEN",
+      "postal_code": "228213",
+      "address": "Address: 14 SCOTTS ROAD #01-06,FAR EAST PLAZA,Singapore 228213",
+      "field": "Menu URL",
+      "before": null,
+      "value": "https://www.kfc.com.sg/menu/burgers-wraps"
+    },
+    {
+      "row": 14957,
+      "sfa_licence": "B98104B000",
+      "f_and_b_name": "KENTUCKY FRIED CHICKEN MANAGEMENT PTE LTD",
+      "postal_code": "738099",
+      "address": "Address: 1 WOODLANDS SQUARE #01-40,CAUSEWAY POINT,Singapore 738099",
+      "field": "Menu URL",
+      "before": null,
+      "value": "https://www.kfc.com.sg/menu/burgers-wraps"
+    },
+    {
+      "row": 14958,
+      "sfa_licence": "NE07089K000",
+      "f_and_b_name": "KENTUCKY FRIED CHICKEN MANAGEMENT PTE LTD",
+      "postal_code": "518457",
+      "address": "Address: 1 PASIR RIS CENTRAL STREET 3 #01-14,#01-15,WHITE SANDS,Singapore 518457",
+      "field": "Menu URL",
+      "before": null,
+      "value": "https://www.kfc.com.sg/menu/burgers-wraps"
+    },
+    {
+      "row": 14959,
+      "sfa_licence": "NW15037E000",
+      "f_and_b_name": "KENTUCKY FRIED CHICKEN MANAGEMENT PTE LTD",
+      "postal_code": "757713",
+      "address": "Address: 30 SEMBAWANG DRIVE #01-25,SUN PLAZA,Singapore 757713",
+      "field": "Menu URL",
+      "before": null,
+      "value": "https://www.kfc.com.sg/menu/burgers-wraps"
+    },
+    {
+      "row": 14960,
+      "sfa_licence": "NW15104X000",
+      "f_and_b_name": "KENTUCKY FRIED CHICKEN MANAGEMENT PTE LTD",
+      "postal_code": "677743",
+      "address": "Address: 1 JELEBU ROAD #02-12/13,BUKIT PANJANG PLAZA,Singapore 677743",
+      "field": "Menu URL",
+      "before": null,
+      "value": "https://www.kfc.com.sg/menu/burgers-wraps"
+    },
+    {
+      "row": 14961,
+      "sfa_licence": "SE15129N000",
+      "f_and_b_name": "KENTUCKY FRIED CHICKEN MANAGEMENT PTE LTD",
+      "postal_code": "528833",
+      "address": "Address: 3 SIMEI STREET 6 #01-02/03,EASTPOINT MALL,Singapore 528833",
+      "field": "Menu URL",
+      "before": null,
+      "value": "https://www.kfc.com.sg/menu/burgers-wraps"
+    },
+    {
+      "row": 14962,
+      "sfa_licence": "SW09368E000",
+      "f_and_b_name": "KENTUCKY FRIED CHICKEN MANAGEMENT PTE LTD",
+      "postal_code": "128635",
+      "address": "Address: 35 JALAN MAS PUTEH PASIR PANJANG GARDENS,Singapore 128635",
+      "field": "Menu URL",
+      "before": null,
+      "value": "https://www.kfc.com.sg/menu/burgers-wraps"
+    },
+    {
+      "row": 14963,
+      "sfa_licence": "SW10679A000",
+      "f_and_b_name": "KENTUCKY FRIED CHICKEN MANAGEMENT PTE LTD",
+      "postal_code": "680253",
+      "address": "Address: 253 CHOA CHU KANG AVENUE 1 #01-02,KEAT HONG SHOPPING CENTRE,Singapore 680253",
+      "field": "Menu URL",
+      "before": null,
+      "value": "https://www.kfc.com.sg/menu/burgers-wraps"
+    },
+    {
+      "row": 14964,
+      "sfa_licence": "SW14986X000",
+      "f_and_b_name": "KENTUCKY FRIED CHICKEN MANAGEMENT PTE LTD",
+      "postal_code": "629117",
+      "address": "Address: 1 JOO KOON CIRCLE FAIRPRICE HUB,Singapore 629117 #01-21/22/24/25/26",
+      "field": "Menu URL",
+      "before": null,
+      "value": "https://www.kfc.com.sg/menu/burgers-wraps"
+    }
+  ]
+}

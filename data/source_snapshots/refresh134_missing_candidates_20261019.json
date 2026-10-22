@@ -1,0 +1,89 @@
+{
+  "audit_type": "refresh134_official_directory_missing_sfa_catalogue_gap_audit",
+  "observed_at_local": "2026-10-19",
+  "master_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "master_sha256": "2e398d1a6c872287c0b093a40cac17a63557293b27471b82832756ba6019a916",
+  "scope": "Read-only exact-identity review of current official 313@somerset public F&B directory listings against the SFA-based Public F&B Directory; supplemented with the existing mall directories for VivoCity and Wisma Atria, checking only exact normalized names and outlet-unit evidence. No workbook edits, no Mapbox calls, no spending.",
+  "sources": [
+    {
+      "url": "https://www.313somerset.com.sg/store-directory/food-restaurants2/",
+      "source": "313@somerset current food directory",
+      "observed_by_web": "search index crawled 2026-10-19; page states 54 stores",
+      "limit": "Paged directory; searched entries also sampled via exact store pages."
+    },
+    {
+      "url": "https://www.313somerset.com.sg/store-directory/vanda-botanical-desserts/",
+      "source": "Official Vanda listing",
+      "observed_by_web": "crawled about 2 weeks before 2026-10-19",
+      "evidence": "Lists F&B store and location Level 1.01-16/17."
+    },
+    {
+      "url": "https://www.313somerset.com.sg/store-directory/mrs-pho/",
+      "source": "Official Mrs Pho listing",
+      "observed_by_web": "crawled about 2 weeks before 2026-10-19",
+      "evidence": "Lists F&B store and location Level 1.01-16/17; also telephone 9644 5077."
+    },
+    {
+      "url": "https://www.313somerset.com.sg/articles/looking-for-dessert-on-orchard-road-heres-where-to-go/",
+      "source": "Official 313@somerset article",
+      "observed_by_web": "dated 2026-09-10",
+      "evidence": "Calls out Vanda Botanical Desserts at #01-16/17; contradicts Mrs Pho same-unit listing."
+    },
+    {
+      "url": "https://recordowl.com/licensed-food-establishments",
+      "source": "Current SFA licence registry mirror",
+      "observed_by_web": "crawled 2026-10-19",
+      "evidence": "Lists CE21657K000 as Restaurant, SFA grade A, address 313 ORCHARD ROAD #01-16/17 and operator GOURMET FOOD HOLDINGS PTE. LTD.; secondary registry mirror, not primary SFA export."
+    },
+    {
+      "url": "https://www.businesstimes.com.sg/singapore/smes/singapores-fb-space-could-see-uptick-ma-activity-more-businesses-sale-or-seeking",
+      "source": "Business Times",
+      "observed_by_web": "published 2023-07-24",
+      "evidence": "Identifies Mrs Pho as a Gourmet Food Holdings portfolio brand; corroborates operator-brand relationship, but dated."
+    },
+    {
+      "url": "https://vivocitysentosa.com/shops?category=food",
+      "source": "Official VivoCity food directory",
+      "observed_by_web": "search index crawled 2026-10-19"
+    },
+    {
+      "url": "https://www.313somerset.com.sg/store-directory/food-republic/",
+      "source": "Official 313@somerset Food Republic page",
+      "observed_by_web": "search index current; lists public-access food court on Level 5, unit 05.05-01 to 03, >25 stalls"
+    }
+  ],
+  "summary": {
+    "official_directory_datasets_locally_available": 6,
+    "mall_directory_rows_reviewed": 1185,
+    "current_sfa_directory_rows": 38273,
+    "safe_additions": 0,
+    "unresolved_exact_identity_cases": 1,
+    "reason": "Official directories and licensed SFA data mostly indicate outlet/name coverage rather than omitted licensed public-access venues. One blank SFA row shares an exact unit with two different official 313 F&B listings; evidence conflicts, so no name is safely proposed."
+  },
+  "findings": [
+    {
+      "type": "unresolved_exact_identity_conflict",
+      "catalogue_row": {
+        "excel_row": 34177,
+        "name": null,
+        "registered_business_name": null,
+        "sfa_licence": "CE21657K000",
+        "business_type": "Restaurant",
+        "status": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: A",
+        "address": "Address: 313 ORCHARD ROAD #01-16/17,313 @ SOMERSET,Singapore 238895",
+        "postal_code": "238895",
+        "lat": 1.301014364040584,
+        "lon": 103.8383606644851
+      },
+      "potential_names": [
+        "Mrs Pho",
+        "Vanda Botanical Desserts"
+      ],
+      "evidence_conflict": "Both official 313@somerset store pages identify the same location 01-16/17. 313 official article dated 2026-09-10 also names Vanda there. The SFA row operator is GOURMET FOOD HOLDINGS PTE. LTD.; secondary company/operator evidence links that group to Mrs Pho, while company group evidence also lists Vanda in the portfolio. Without primary outlet-to-licence linkage, do not populate the name or add either as separate outlet.",
+      "recommendation": "Hold for primary outlet-to-licence reconciliation; retain blank name currently. Do not count as missing add."
+    }
+  ],
+  "coverage_note": "Existing local mall extracts contain 1,185 F&B-marked tenant records across mall directories; all had at least a loose textual SFA catalogue match in initial broad comparison, but strict exact-identity comparison reveals stale/changed listings and catalog name variation. Directory tenant lists cannot establish all F&B licensed premises are represented, and SFA licensing scope itself excludes some edge cases; no new candidate with both exact identity and independent current SFA evidence was found in this bounded audit.",
+  "method": "Matched official store identity to workbook by normalized outlet name and exact unit/address where available; excluded category/search landing pages and non-F&B entries. Tested 313 current directory plus exact blank-name SFA rows at postal 238895; contextual exact current official outlet pages and SFA licence/operator evidence were required. Existing VivoCity/Wisma/combined mall JSON were treated as leads, not proof of current operation.",
+  "not_in_scope": "No changes to workbook; no full nationwide mall-by-mall and hawker-centre tenant audit; no Mapbox calls; no paid services."
+}

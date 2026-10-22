@@ -1,0 +1,63 @@
+(node:92406) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ stall detail uses real venue hours and popular visitors (0.786333ms)
+✔ dish detail V2 avoids invented wait times and fake hours (0.327ms)
+✔ dish detail V2 action dock is labelled, stateful and meets 44px targets (0.573958ms)
+(node:92407) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ buildDishGallery keeps hero first and removes duplicate URLs (0.84525ms)
+✔ deriveStallCommunityReviews flattens dish reviews with deterministic metadata (0.204667ms)
+(node:92408) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ search Laksa to service detail preserves Katong ownership and related menu (1.771125ms)
+✔ canonical fixture ownership agrees with denormalized dish attribution (0.178208ms)
+✔ detail context rejects another venue's cached attribution and menu rows (0.117042ms)
+(node:92409) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ discovery.getBuildingDetail returns enriched building metadata (0.805958ms)
+✔ discovery.getFloorPlan returns a floor plan with polygon geometry (0.197375ms)
+✔ discovery.searchDishes maps repository results into scored search contracts (0.910792ms)
+✔ reviews.submitReview persists reviewed dish id in profile state (1.594584ms)
+✔ reviews.listRecentReviews pages newest-first reviews across dishes (0.769417ms)
+✔ discovery.decideForMe respects profile dietary preferences (0.284667ms)
+✔ recommendations.getSlate returns shared recommendation shape with hard dietary filters (0.29475ms)
+✔ recommendations.recordExplicitFeedback applies food-specific click signals (0.547666ms)
+✔ checklist mock service persists items, tried state, and reorder (0.7765ms)
+✔ portfolio mock service persists publish, item, follow, flag, and search state (0.718834ms)
+✔ portfolio mock service rejects stale optimistic mutation versions (3.85275ms)
+✔ portfolio mock service records passport contribution progress (0.274208ms)
+✔ ai.processImplicitFeedback is no-op while explicit learning stabilizes (0.075167ms)
+✔ auth.requestAccountDeletion clears mock session (0.152458ms)
+✔ account deletion stays cancellable during the grace period (0.136625ms)
+✔ data export collects the signed-in user's profile and activity (3.888917ms)
+✔ profile.updateProfile persists mock profile visibility (0.094375ms)
+✔ merchant menu methods persist CRUD and status toggles in mock state (0.917375ms)
+✔ merchant seeded menu edits do not overwrite original mock catalog fixtures (0.080791ms)
+✔ merchant seeded menu is immediately visible from mock user catalog (0.061458ms)
+✔ merchant profile updates are visible from mock user venue reads (0.18325ms)
+✔ merchant OCR draft methods filter drafts and publish accepted dishes (0.306833ms)
+✔ merchant AI dish tool methods return canned suggestions without publishing (0.195042ms)
+✔ merchant inbox filters interactions by outlet, type, and unreplied status (0.221792ms)
+✔ merchant inbox reply and report methods validate input and persist replies (0.221167ms)
+✔ merchant AI reply generation follows interaction sentiment and question context (0.149625ms)
+✔ merchant promotion methods filter by outlet and status (0.121834ms)
+✔ merchant promotion create and update persist mock state (0.707958ms)
+✔ merchant promotion analytics returns analytics and rejects missing promotion (0.1165ms)
+✔ customer active promotions only expose active in-window offers for the current dish (0.203667ms)
+✔ merchant popular visitor pins stay review-backed, capped, reorderable, and venue-filtered (0.94925ms)
+✔ merchant analytics records dish views without duplicate session increments (0.394083ms)
+✔ merchant analytics records explicit customer action events (0.252375ms)
+✔ merchant notifications sync low ratings and weekly summaries with dedupe (12.928791ms)
+✔ merchant AI assistant returns insight slices and weekly summary (1.325709ms)
+✔ merchant AI assistant rejects unknown outlet (0.115291ms)
+✔ merchant settings team methods persist members and role changes (0.314709ms)
+✔ merchant settings team methods validate duplicates and protected owner role (0.143583ms)
+✔ merchant settings notification preferences persist partial updates (0.120333ms)
+ℹ tests 47
+ℹ suites 0
+ℹ pass 47
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 417.433084

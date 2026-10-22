@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "snapshot_id": "breadtalk_first_party_menu_image_followon_refresh107_20261018",
+  "observed_at_sgt": "2026-10-18T18:07:41+08:00",
+  "research_scope": "Read-only exact menu-item to official image URL discovery for items already present under an exact SFA licence in the canonical master. No workbook writes.",
+  "workbook": {
+    "path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "sha256": "3ce9c0b79a9dbc4fb8724061754b0f3adfdbbeff56aa9caca71b8c5353fff9b7"
+  },
+  "source": {
+    "publisher": "BreadTalk Singapore",
+    "page_url": "https://www.breadtalk.com.sg/product-category/cakes/",
+    "http_status": 200,
+    "observed_date": "2026-10-18",
+    "response_sha256": "9ff412f9128c55004c4928d656dc239aadc9b05b81c6be0789bfeb50953a435f",
+    "response_bytes": 156907,
+    "method": "Live GET of official Singapore product-category page; extracted each product tile aria-label, product href, image alt, and data-nectar-img-srcset. No image bytes downloaded.",
+    "robots": "robots.txt returned User-agent: * with no disallow or crawl-delay directives."
+  },
+  "candidate_count": 2,
+  "candidates": [
+    {
+      "sfa_licence": "NW04065P000",
+      "f_and_b_name": "BREADTALK",
+      "address": "8 SIXTH AVENUE (UNIT A & B), Singapore 276473",
+      "directory_scope": "SFA-listed Bakery; workbook classifies as public_access_candidate_based_on_sfa_type_and_address; venue operation/access not live independently confirmed.",
+      "menu_item": "Lychee Rose",
+      "menu_row": 4782,
+      "menu_row_scope": "Legacy branch association; original source freshness marked historical/unknown (2026-07-08). The current official brand catalogue lists this product; exact outlet availability is not confirmed by the brand page.",
+      "official_product_page": "https://www.breadtalk.com.sg/product/lychee-rose/",
+      "official_image_url": "https://www.breadtalk.com.sg/wp-content/uploads/2025/11/RevampedCakes046-1000x1000.jpg",
+      "mapping_evidence": "Official category page product tile has aria-label and image alt exactly Lychee Rose, links to its product page, and includes the image URL in data-nectar-img-srcset.",
+      "asset_head_check": {
+        "http_status": 200,
+        "content_type": "image/jpeg",
+        "content_length_bytes": 123983,
+        "last_modified": "2026-02-09T09:52:27Z"
+      },
+      "visual_check": "Not visually inspected; actual pixels unverified.",
+      "rights_status": "Permission required; copyright/reuse rights are not established. Review-only; not approved for public display."
+    },
+    {
+      "sfa_licence": "NW04065P000",
+      "f_and_b_name": "BREADTALK",
+      "address": "8 SIXTH AVENUE (UNIT A & B), Singapore 276473",
+      "directory_scope": "SFA-listed Bakery; workbook classifies as public_access_candidate_based_on_sfa_type_and_address; venue operation/access not live independently confirmed.",
+      "menu_item": "Strawberry Shortcake",
+      "menu_row": 4800,
+      "menu_row_scope": "Legacy branch association; original source freshness marked historical/unknown (2026-07-08). The current official brand catalogue lists this product; exact outlet availability is not confirmed by the brand page.",
+      "official_product_page": "https://www.breadtalk.com.sg/product/strawberry-shortcake/",
+      "official_image_url": "https://www.breadtalk.com.sg/wp-content/uploads/2025/11/RevampedCakes022-1000x1000.jpg",
+      "mapping_evidence": "Official category page product tile has aria-label and image alt exactly Strawberry Shortcake, links to its product page, and includes the image URL in data-nectar-img-srcset.",
+      "asset_head_check": {
+        "http_status": 200,
+        "content_type": "image/jpeg",
+        "content_length_bytes": 98290,
+        "last_modified": "2026-02-09T09:52:04Z"
+      },
+      "visual_check": "Not visually inspected; actual pixels unverified.",
+      "rights_status": "Permission required; copyright/reuse rights are not established. Review-only; not approved for public display."
+    }
+  ],
+  "dedupe": {
+    "image_candidates_sheet_checked": true,
+    "matching_sfa_item_url_rows_found": 0,
+    "matching_asset_urls_found": 0
+  },
+  "source_limits": [
+    "Only candidate pairs whose item name exactly matches a menu row tied to the exact SFA licence were included; other product tiles were excluded where no exact item row exists under this licence.",
+    "Menu rows carry legacy outlet association and stale or unknown freshness; official category page proves current brand catalogue listing, not branch-level sale availability.",
+    "No workbook edits made; image candidate approval and rights permission remain outstanding.",
+    "No paid API or delivery-platform source was used."
+  ]
+}

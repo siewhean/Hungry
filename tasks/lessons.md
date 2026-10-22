@@ -48,6 +48,8 @@
 - Modal composer exits should reset to a known app route after draft state is cleared; do not replay stored back actions when the underlying tab/navigation stack can change while the composer is open.
 - Feed comment creation must update the same social interaction store used by the visible counter; local-only sheet state makes the comment appear while leaving the Home feed metric stale.
 - Small iterative app changes should not trigger full QA/QC, `npm run ios`, the full test suite, or default `npm run typecheck`; choose the smallest useful check and reserve broad gates for broad/risky/release changes.
+- Plant-based or vegetarian restaurant chains like Greendot that do not hold an official MUIS certificate must be marked `Halal Certified: No` while setting `Vegan: Yes`. Absence of meat, pork, or lard does not constitute official MUIS Halal certification.
+- When processing Google Places identifiers from legacy Excel sheets, beware of truncated 64-bit CIDs (due to 53-bit float limitations in spreadsheets) and synthetic place IDs ending in placeholder strings like `googleplaceid`. Direct place queries via official `ChIJ...` IDs or name + address Google Maps search (`maps.google.com/search?q=...`) reliably surface authentic Google business cards and schedules.
 - When comparing tab headers, use simulator screenshots from the same rebuilt bundle before adding offsets; do not add a second safe-area inset to a list header already inside `SafeAreaView`.
 - Do not add skeletons for visual reassurance alone. Skeletons must be tied to a real pending/loading condition and the documented known-shape wait threshold; local synchronous filters should render updated content or contextual empty states.
 - For bottom-sheet controls that must remain visible while the list scrolls, verify with a simulator screenshot; absolute children inside scroll content can sit below the visible viewport instead of behaving like a floating overlay.
@@ -127,3 +129,39 @@
 - Developer Launcher mock-auth presets must set developer/mock mode after any `clearSession()` call; clearing the session also clears account-scoped merchant/developer state.
 - Web E2E for non-map flows should force the mock map branch and keep Mapbox lazy-loaded; a live token or top-level Mapbox import can crash unrelated composer/feed tests before assertions run.
 - Mock cross-account E2E identities should be deterministic per email, and profile sync should preserve an already-hydrated matching profile id; time-based mock user ids and broad profile rehydration can make ownership/follow assertions unstable.
+- A credentialed Brandfetch render URL or matching domain proves only that an icon-render request can be made. It does not prove the image loads, matches the current local brand mark, is the icon rather than a wordmark, or has HD source pixels. Keep render links labeled as candidates until visually checked; 2048px requests do not enlarge smaller raster assets.
+
+- After filling public-facing names in a previously blank-name tail, re-sort the full directory with blank names last and independently check for sort inversions before exporting.
+
+- Preserve timezone-bearing source observations as literal strings with the original offset (for example, `Observed YYYY-MM-DD HH:MM SGT (UTC+08:00)`) when exporting through spreadsheet tooling; automatic date parsing can silently shift an ISO timestamp to the prior UTC day.
+- Mapbox Search Box results are temporary-use only. Do not persist Search Box coordinates or venue metadata in the workbook; use an open/permitted source for stored data and label account-usage estimates as conditional unless the Mapbox dashboard confirms them.
+- Recompute every coverage count from the current directory before recording a workbook refresh; a previously published menu-summary total (533) did not match the installed rows (531) and was corrected to the post-update actual (534).
+- For large Excel workbooks, build to a temporary candidate, raise the Node heap only after an observed default-heap failure, compare the candidate to the exact baseline, and obtain independent candidate and installed QA before replacing the canonical file. Recheck symbol/punctuation ordering with the same comparator used by the workbook contract.
+
+- When re-saving this workbook through openpyxl, scan baseline cells whose OOXML date type is `d`: cells with General format can become numeric serials. Restore typed datetimes and apply an explicit sortable date-time format, then independently compare every existing typed date before install.
+
+- When an operator locator shows a branch closed every day while the landlord directory still lists the exact unit, keep the venue and leave operational status/hours unresolved until direct closure evidence reconciles both sources. A transient Mapbox POI status can guide research but must not be retained as catalogue data.
+
+- After every name-enrichment batch, recompute both named and unnamed row counts and assert their sum equals the fixed directory record count; do not carry the previous blank-name count forward.
+
+- Never copy or synchronize tabular data between sheets or workbooks using positional row indices (`for row in range(...)`). Always match using strict composite business keys (e.g. `(licence, dish_name.lower())`) or enforce guaranteed identical row sequencing beforehand. In addition, always enforce brand-domain consistency checks so official brand CDN assets (e.g., McDonald's, Starbucks, Toast Box) can never be attached to a different brand or generic stall.
+- In database schemas where numeric price columns default to `0.0` for dishes scraped from marketing sites that do not publish numeric prices (such as `mcdonalds.com.sg/food-menu`), export and formatting functions must check `float(price) > 0` before formatting as currency. Never format `0.0` as `S$0.00` for commercial restaurant items; label them explicitly as `Unstated` to avoid misleading users into believing meals are free.
+- For workbook QA, audit every worksheet field for literal placeholders, and compare records by stable business keys instead of row position after sorting. Keep same-name ordering stable unless a documented tie-breaker is required; blank unsupported labels instead of guessing.
+
+- In page audits, cross-check incoming navigation before calling a screen unreachable; distinguish route registration, ordinary production entry, and feature flags. Check later SQL replacements and error prerequisites before describing a source authorization gap as a demonstrated disclosure. Keep measured runtime evidence separate from source critique.
+
+
+## 2026-10-20 — Remediation verification corrections
+
+- Account ID equality misses A→B→A; capture a monotonic account generation across hydration, mutations, callbacks and queued storage operations.
+- Retiring an SDK storage adapter before `getSession()` resolves can erase the token intended for remote revocation. Snapshot the captured generation through a serialized pre-purge read; never revoke a later client/session.
+- Failed credential deletion needs a durable retirement marker, strict read-back and restart recovery. Memory-only logout flags cannot prevent stale credentials restoring after restart.
+- A draft subject field is not a persistence partition. Preserve inactive owner keys and guard disk hydration against account switches and newer edits; normalize legacy guest IDs deliberately.
+- Do not let programmatic carousel momentum become a user answer. Test both durable values and physical option centering after reload; browser accessibility metadata alone may not prove selection.
+- New native candidates and real keyboard interaction can reveal occlusion that source/contract tests miss. Preserve the failing screenshot and retest the exact rebuilt artifact.
+- Update source/browser contracts to supported behavior when removing prototypes; preserve meaningful negative cases and historical failed logs instead of accepting fabricated success.
+
+## 2026-10-21 — Halal Chain Propagation & Word Boundary Verification
+
+- When propagating Halal certification status across multi-outlet chains, always enforce strict word-boundary matching (e.g. `\b`) and explicit brand identity verification. Naive substring matching creates dangerous false positives (such as matching "rhombUS PIZZA" when searching for "US PIZZA"). In addition, always isolate dedicated brand outlets from unrelated independent hawker stalls sharing common names (e.g. Tip Top Curry Puff kiosks vs independent hawker stalls named "Tip Top Vegetarian" or "Tip Top Western Food").
+

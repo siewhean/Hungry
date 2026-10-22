@@ -1,0 +1,264 @@
+{
+  "schema": "hungry.refresh136.final_qa.v1",
+  "qa_timestamp": "2026-10-19",
+  "workbook": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "sha256_checked": "f5e74668be36886b168981d94100a2e09c2bb8238e7a0ed2f2ca86a5d82925c6",
+  "sha256_after_inspection": "f5e74668be36886b168981d94100a2e09c2bb8238e7a0ed2f2ca86a5d82925c6",
+  "unchanged_during_inspection": true,
+  "overall_status": "PASS_WITH_LIMITATIONS",
+  "failures": [],
+  "checks": {
+    "package_integrity": {
+      "status": "PASS",
+      "zip_crc_test": null,
+      "external_link_parts": []
+    },
+    "sheets_tables_extents_and_cells": {
+      "status": "PASS",
+      "sheets": {
+        "Public F&B Directory": {
+          "extent_rows": 38274,
+          "extent_columns": 21,
+          "table_refs": {
+            "PublicFnbDirectory": "A1:U38274"
+          },
+          "blank_rows": 0,
+          "formula_cells": 0,
+          "error_cells": []
+        },
+        "Menu Items": {
+          "extent_rows": 14271,
+          "extent_columns": 12,
+          "table_refs": {
+            "MenuItems": "A1:L14271"
+          },
+          "blank_rows": 0,
+          "formula_cells": 0,
+          "error_cells": []
+        },
+        "Image Candidates": {
+          "extent_rows": 2768,
+          "extent_columns": 9,
+          "table_refs": {
+            "ImageCandidates": "A1:I2768"
+          },
+          "blank_rows": 0,
+          "formula_cells": 0,
+          "error_cells": []
+        },
+        "Coverage & Sources": {
+          "extent_rows": 240,
+          "extent_columns": 3,
+          "table_refs": {
+            "CoverageSources": "A1:C240"
+          },
+          "blank_rows": 0,
+          "formula_cells": 0,
+          "error_cells": []
+        }
+      }
+    },
+    "directory_licence_inventory": {
+      "status": "PASS",
+      "records": 38273,
+      "unique_sfa_licences": 38273,
+      "blank_licences": 0,
+      "predecessor_snapshot_expected_record_count": 38273,
+      "record_count_preserved": true,
+      "exact_licence_set_diff": "UNAVAILABLE; predecessor workbook binary is not present in Git or data/, so only the preserved 38,273 record count can be independently checked."
+    },
+    "Koufu_KKH_exact_row": {
+      "status": "PASS",
+      "workbook_row": 16067,
+      "fields": {
+        "F&B Name": "Koufu",
+        "Business Type": "Foodcourt",
+        "Full Address": "Address: 100 BUKIT TIMAH ROAD #01-28,KK WOMEN'S AND CHILDREN'S HOSPITAL,Singapore 229899",
+        "Postal Code": "229899"
+      },
+      "block_neighbors": [
+        {
+          "row": 16062,
+          "name": "koufu",
+          "licence": "SW09209L000"
+        },
+        {
+          "row": 16063,
+          "name": "KOUFU",
+          "licence": "SW14885C000"
+        },
+        {
+          "row": 16064,
+          "name": "KOUFU",
+          "licence": "SW24980V000"
+        },
+        {
+          "row": 16065,
+          "name": "Koufu",
+          "licence": "SW26146L000"
+        },
+        {
+          "row": 16066,
+          "name": "KOUFU",
+          "licence": "W03535K000"
+        },
+        {
+          "row": 16067,
+          "name": "Koufu",
+          "licence": "W97070A012"
+        },
+        {
+          "row": 16068,
+          "name": "KOUFU DRINKS & DIM SUM",
+          "licence": "E79158X008"
+        },
+        {
+          "row": 16069,
+          "name": "KOUFU FOODCOURT",
+          "licence": "CE07944X000"
+        },
+        {
+          "row": 16070,
+          "name": "KOUFU FOODCOURT",
+          "licence": "S99135N000"
+        },
+        {
+          "row": 16071,
+          "name": "KOUFU PTD LTD",
+          "licence": "CE18808N016"
+        },
+        {
+          "row": 16072,
+          "name": "KOUFU PTE LTD",
+          "licence": "B96086K000"
+        }
+      ],
+      "source_url": "https://www.kkh.com.sg/patient-services/visitor-info/amenities-facilities/shops-eats",
+      "source_evidence": "Current KKH Shops and Eats page lists Unit #01-28 as Koufu and describes it as a food court; page states the hospital address is 100 Bukit Timah Road, Singapore 229899.",
+      "first_party_page_observed_live": "KKH current Shops and Eats page explicitly lists #01-28 Koufu, food court, and 100 Bukit Timah Road, Singapore 229899."
+    },
+    "CE07024N000_BCA_candidate": {
+      "status": "PASS",
+      "workbook_row": 759,
+      "fields": {
+        "F&B Name": "7-Eleven",
+        "Full Address": "Address: 10/1 BUANGKOK VIEW INSTITUTE OF MENTAL HEALTH,Singapore 539747 Level 1 Unit 11-130",
+        "Postal Code": "539747",
+        "Latitude": 1.3815895,
+        "Longitude": 103.8833488,
+        "Coordinate Precision": "Building/facility point (BCA); not outlet-front point"
+      },
+      "BCA_proposal": {
+        "sfa_licence": "CE07024N000",
+        "f_and_b_name": "7-Eleven",
+        "postal_code": "539747",
+        "full_address": "Address: 10/1 BUANGKOK VIEW INSTITUTE OF MENTAL HEALTH,Singapore 539747 Level 1 Unit 11-130",
+        "latitude": 1.3815895,
+        "longitude": 103.8833488,
+        "coordinate_precision": "building/facility point; not outlet-front point",
+        "source": "BCA Friendly Buildings (data.gov.sg), captured 2026-10-18",
+        "source_url": "https://data.gov.sg/datasets/d_f19704cb6ce76309f3ec0c3a513bdeab/view",
+        "source_address_labels": [
+          "10 Buangkok View, 539747",
+          "10 Buangkok View, Block 5, 539747"
+        ],
+        "source_feature_names": [
+          "Econ Medicare Centre and Nursing Home",
+          "Institute Of Mental Health",
+          "Ren Ci Hospital & Medicare Centre",
+          "Tai Pei Social Service"
+        ],
+        "decision": "exact six-digit postal plus house-number/road-label match; review candidate only; no auto-apply"
+      },
+      "precision": "building/facility point, not outlet-front point"
+    },
+    "directory_order": {
+      "status": "PASS",
+      "Koufu_in_exact_name_block": true,
+      "unnamed_rows_last": true,
+      "unnamed_row_count": 5472
+    },
+    "Refresh136_Foodpanda_40": {
+      "status": "PASS",
+      "source_record_count": 40,
+      "workbook_record_count": 40,
+      "keys_match_exactly": true,
+      "duplicate_key_count": 0,
+      "field_mismatches": [],
+      "verified": [
+        "licence / branch",
+        "menu item and section",
+        "price",
+        "listing source URL",
+        "Foodpanda source type",
+        "observed timestamp",
+        "delivery-only scope, not dine-in"
+      ]
+    },
+    "Jollibee_official_menu_URLs": {
+      "status": "PASS",
+      "target_branches": {
+        "CE15H95V000": "https://jollibee.com.sg/our-menu",
+        "CE19U03X000": "https://jollibee.com.sg/our-menu"
+      },
+      "official_menu_scope_caveat_present": true,
+      "branch_verified_official_menu_item_count": 0,
+      "scope_limit": "Official source is a Singapore brand-level menu. Outlet-level availability is not stated, so the candidate items must not be represented as verified available at either target branch without further branch-specific evidence. Prices are transcribed exactly as displayed; the page does not explicitly state a currency code, so SGD is not asserted."
+    },
+    "coverage": {
+      "status": "PASS",
+      "refresh136_rows": [
+        {
+          "row": 236,
+          "metric": "Refresh136 public name",
+          "value": "1 verified name added: Koufu, KKH #01-28 (W97070A012)",
+          "interpretation": "First-party KKH Shops and Eats directory observed 2026-10-19; exact unit, address and postal match. https://www.kkh.com.sg/patient-services/visitor-info/amenities-facilities/shops-eats"
+        },
+        {
+          "row": 237,
+          "metric": "Refresh136 coordinate",
+          "value": "1 building/facility point added; not outlet-front precision",
+          "interpretation": "BCA Friendly Buildings via data.gov.sg, exact postal/address-label match; Singapore Open Data Licence v1.0. https://data.gov.sg/datasets/d_f19704cb6ce76309f3ec0c3a513bdeab/view"
+        },
+        {
+          "row": 238,
+          "metric": "Refresh136 delivery menus",
+          "value": "40 exact-branch menu observations across Jollibee Square 2 and City Square Mall",
+          "interpretation": "Foodpanda branch listings observed 2026-10-19; prices are delivery listing prices, not verified dine-in prices. See item-level links in Menu Items."
+        },
+        {
+          "row": 239,
+          "metric": "Refresh136 official menu links",
+          "value": "Both exact Jollibee branches already link to Jollibee Singapore menu",
+          "interpretation": "Official menu page observed 2026-10-19; branch-level availability is not established by the menu page. https://jollibee.com.sg/our-menu"
+        },
+        {
+          "row": 240,
+          "metric": "Refresh136 first-party directory fields",
+          "value": "8 exact-branch blank fields filled (3 Website; 5 Opening Hours / Closed Days)",
+          "interpretation": "Official operator locators; observed 2026-10-19. Exact SFA licence/address/postal/unit cross-checks documented in data/source_snapshots/refresh136_chain_fields_20261019.json. Burger King Kallang Leisure Park closed-all-days locator listing withheld because venue closure is unresolved and mall directory conflicts."
+        }
+      ],
+      "directory_records": 38273,
+      "menu_rows": 14270,
+      "image_candidate_rows": 2767
+    },
+    "typed_dates_preserved": {
+      "status": "PASS",
+      "count": 536
+    },
+    "image_URL_safety_and_change_scope": {
+      "status": "PASS",
+      "approved_URL_count": 2,
+      "Refresh136_candidate_urls_newly_promoted": [],
+      "placeholder_pattern_urls": [],
+      "malformed_URLs": [],
+      "candidate_overlap_interpretation": "Waffle Up URL overlap is explicitly labeled already approved before Refresh136 in refresh136_images_20261019.json.",
+      "historical_approved_URL_set_diff": "UNAVAILABLE; predecessor workbook binary is not available; Refresh136 image snapshot declares workbook_edits=false, and no Refresh136 candidate was newly promoted."
+    },
+    "extra_Refresh136_xlsx_copies": {
+      "status": "PASS",
+      "matches": []
+    }
+  }
+}

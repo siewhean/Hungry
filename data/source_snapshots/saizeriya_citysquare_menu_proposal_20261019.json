@@ -1,0 +1,219 @@
+{
+  "snapshot_type": "proposal_only_menu_gap_audit",
+  "created_at": "2026-10-19",
+  "access_date": "2026-10-19",
+  "workbook": {
+    "path": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "sha256": "bb74665b20d62a711463850a4d5de0648dc0237c4e1d75e96c9eb5f5a89d2d93"
+  },
+  "candidate_outlets": [
+    {
+      "sfa_licence": "CE09L25B000",
+      "directory_name": "SAIZERIYA",
+      "address": "180 KITCHENER ROAD #B2-55/56, CITY SQUARE MALL, Singapore 208539",
+      "existing_menu_items_rows": 0,
+      "existing_menu_url": "https://www.saizeriya.com.sg/pdf/GrandMenu202609S_single.pdf",
+      "operator_outlet_locator_url": "https://www.saizeriya.com.sg/search/",
+      "menu_source_url": "https://www.saizeriya.com.sg/pdf/GrandMenu202609S_single.pdf",
+      "menu_source_observed": "2026-10-19",
+      "menu_scope": "brand_level_official_dine_in_grand_menu; association to this exact outlet is a proposal and menu availability must not be presumed per branch",
+      "price_scope": "official Singapore dine-in menu prices; nett (GST inclusive, no service charge), subject to change and stock availability",
+      "items": [
+        {
+          "section": "Salad",
+          "item": "Chef Salad",
+          "variant": null,
+          "displayed_price": "S$4.50 nett",
+          "source_url": "https://www.saizeriya.com.sg/pdf/GrandMenu202609S_single.pdf",
+          "source_date": "Grand Menu 2026-09 (inferred from official filename GrandMenu202609S_single.pdf)",
+          "notes": "Transcribed from official operator PDF; verify visual mapping against PDF before import."
+        },
+        {
+          "section": "Salad",
+          "item": "Egg Mayo Salad",
+          "variant": null,
+          "displayed_price": "S$4.90 nett",
+          "source_url": "https://www.saizeriya.com.sg/pdf/GrandMenu202609S_single.pdf",
+          "source_date": "Grand Menu 2026-09 (inferred from official filename GrandMenu202609S_single.pdf)",
+          "notes": "Transcribed from official operator PDF; verify visual mapping against PDF before import."
+        },
+        {
+          "section": "Salad",
+          "item": "Arugula Chicken Salad",
+          "variant": null,
+          "displayed_price": "S$4.90 nett",
+          "source_url": "https://www.saizeriya.com.sg/pdf/GrandMenu202609S_single.pdf",
+          "source_date": "Grand Menu 2026-09 (inferred from official filename GrandMenu202609S_single.pdf)",
+          "notes": "Transcribed from official operator PDF; verify visual mapping against PDF before import."
+        },
+        {
+          "section": "Salad",
+          "item": "Salmon Salad",
+          "variant": null,
+          "displayed_price": "S$5.90 nett",
+          "source_url": "https://www.saizeriya.com.sg/pdf/GrandMenu202609S_single.pdf",
+          "source_date": "Grand Menu 2026-09 (inferred from official filename GrandMenu202609S_single.pdf)",
+          "notes": "Transcribed from official operator PDF; verify visual mapping against PDF before import."
+        },
+        {
+          "section": "Soup",
+          "item": "Seafood Chowder",
+          "variant": null,
+          "displayed_price": "S$2.90 nett",
+          "source_url": "https://www.saizeriya.com.sg/pdf/GrandMenu202609S_single.pdf",
+          "source_date": "Grand Menu 2026-09 (inferred from official filename GrandMenu202609S_single.pdf)",
+          "notes": "Transcribed from official operator PDF; verify visual mapping against PDF before import."
+        },
+        {
+          "section": "Soup",
+          "item": "Corn Cream Soup",
+          "variant": null,
+          "displayed_price": "S$2.90 nett",
+          "source_url": "https://www.saizeriya.com.sg/pdf/GrandMenu202609S_single.pdf",
+          "source_date": "Grand Menu 2026-09 (inferred from official filename GrandMenu202609S_single.pdf)",
+          "notes": "Transcribed from official operator PDF; verify visual mapping against PDF before import."
+        },
+        {
+          "section": "Soup",
+          "item": "Mushroom Soup",
+          "variant": null,
+          "displayed_price": "S$2.90 nett",
+          "source_url": "https://www.saizeriya.com.sg/pdf/GrandMenu202609S_single.pdf",
+          "source_date": "Grand Menu 2026-09 (inferred from official filename GrandMenu202609S_single.pdf)",
+          "notes": "Transcribed from official operator PDF; verify visual mapping against PDF before import."
+        },
+        {
+          "section": "Focaccia",
+          "item": "Original Focaccia",
+          "variant": null,
+          "displayed_price": "S$2.00 nett",
+          "source_url": "https://www.saizeriya.com.sg/pdf/GrandMenu202609S_single.pdf",
+          "source_date": "Grand Menu 2026-09 (inferred from official filename GrandMenu202609S_single.pdf)",
+          "notes": "Transcribed from official operator PDF; verify visual mapping against PDF before import."
+        },
+        {
+          "section": "Focaccia",
+          "item": "Garlic Focaccia",
+          "variant": null,
+          "displayed_price": "S$2.30 nett",
+          "source_url": "https://www.saizeriya.com.sg/pdf/GrandMenu202609S_single.pdf",
+          "source_date": "Grand Menu 2026-09 (inferred from official filename GrandMenu202609S_single.pdf)",
+          "notes": "Transcribed from official operator PDF; verify visual mapping against PDF before import."
+        },
+        {
+          "section": "Focaccia",
+          "item": "Garlic Cheese Focaccia",
+          "variant": null,
+          "displayed_price": "S$2.50 nett",
+          "source_url": "https://www.saizeriya.com.sg/pdf/GrandMenu202609S_single.pdf",
+          "source_date": "Grand Menu 2026-09 (inferred from official filename GrandMenu202609S_single.pdf)",
+          "notes": "Transcribed from official operator PDF; verify visual mapping against PDF before import."
+        },
+        {
+          "section": "Appetiser",
+          "item": "Chicken Wing",
+          "variant": "5 pcs",
+          "displayed_price": "S$4.90 nett",
+          "source_url": "https://www.saizeriya.com.sg/pdf/GrandMenu202609S_single.pdf",
+          "source_date": "Grand Menu 2026-09 (inferred from official filename GrandMenu202609S_single.pdf)",
+          "notes": "Transcribed from official operator PDF; verify visual mapping against PDF before import."
+        },
+        {
+          "section": "Appetiser",
+          "item": "Chicken Wing",
+          "variant": "8 pcs",
+          "displayed_price": "S$7.90 nett",
+          "source_url": "https://www.saizeriya.com.sg/pdf/GrandMenu202609S_single.pdf",
+          "source_date": "Grand Menu 2026-09 (inferred from official filename GrandMenu202609S_single.pdf)",
+          "notes": "Transcribed from official operator PDF; verify visual mapping against PDF before import."
+        },
+        {
+          "section": "Appetiser",
+          "item": "Seafood Fritter",
+          "variant": null,
+          "displayed_price": "S$5.90 nett",
+          "source_url": "https://www.saizeriya.com.sg/pdf/GrandMenu202609S_single.pdf",
+          "source_date": "Grand Menu 2026-09 (inferred from official filename GrandMenu202609S_single.pdf)",
+          "notes": "Transcribed from official operator PDF; verify visual mapping against PDF before import."
+        },
+        {
+          "section": "Appetiser",
+          "item": "Butter Corn",
+          "variant": null,
+          "displayed_price": "S$2.90 nett",
+          "source_url": "https://www.saizeriya.com.sg/pdf/GrandMenu202609S_single.pdf",
+          "source_date": "Grand Menu 2026-09 (inferred from official filename GrandMenu202609S_single.pdf)",
+          "notes": "Transcribed from official operator PDF; verify visual mapping against PDF before import."
+        },
+        {
+          "section": "Pizza",
+          "item": "Arugula Prosciutto",
+          "variant": null,
+          "displayed_price": "S$7.90 nett",
+          "source_url": "https://www.saizeriya.com.sg/pdf/GrandMenu202609S_single.pdf",
+          "source_date": "Grand Menu 2026-09 (inferred from official filename GrandMenu202609S_single.pdf)",
+          "notes": "Transcribed from official operator PDF; verify visual mapping against PDF before import."
+        },
+        {
+          "section": "Pizza",
+          "item": "Margherita",
+          "variant": null,
+          "displayed_price": "S$7.90 nett",
+          "source_url": "https://www.saizeriya.com.sg/pdf/GrandMenu202609S_single.pdf",
+          "source_date": "Grand Menu 2026-09 (inferred from official filename GrandMenu202609S_single.pdf)",
+          "notes": "Transcribed from official operator PDF; verify visual mapping against PDF before import."
+        },
+        {
+          "section": "Pizza",
+          "item": "Pineapple & Bacon",
+          "variant": null,
+          "displayed_price": "S$6.90 nett",
+          "source_url": "https://www.saizeriya.com.sg/pdf/GrandMenu202609S_single.pdf",
+          "source_date": "Grand Menu 2026-09 (inferred from official filename GrandMenu202609S_single.pdf)",
+          "notes": "Transcribed from official operator PDF; verify visual mapping against PDF before import."
+        },
+        {
+          "section": "Pizza",
+          "item": "Pepperoni",
+          "variant": null,
+          "displayed_price": "S$7.90 nett",
+          "source_url": "https://www.saizeriya.com.sg/pdf/GrandMenu202609S_single.pdf",
+          "source_date": "Grand Menu 2026-09 (inferred from official filename GrandMenu202609S_single.pdf)",
+          "notes": "Transcribed from official operator PDF; verify visual mapping against PDF before import."
+        },
+        {
+          "section": "Pizza",
+          "item": "Double Cheese",
+          "variant": null,
+          "displayed_price": "S$7.90 nett",
+          "source_url": "https://www.saizeriya.com.sg/pdf/GrandMenu202609S_single.pdf",
+          "source_date": "Grand Menu 2026-09 (inferred from official filename GrandMenu202609S_single.pdf)",
+          "notes": "Transcribed from official operator PDF; verify visual mapping against PDF before import."
+        },
+        {
+          "section": "Pizza",
+          "item": "BBQ Chicken",
+          "variant": null,
+          "displayed_price": "S$7.90 nett",
+          "source_url": "https://www.saizeriya.com.sg/pdf/GrandMenu202609S_single.pdf",
+          "source_date": "Grand Menu 2026-09 (inferred from official filename GrandMenu202609S_single.pdf)",
+          "notes": "Transcribed from official operator PDF; verify visual mapping against PDF before import."
+        }
+      ],
+      "join_evidence": "Refresh40 directory SFA licence/address exact match; official outlet locator lists City Square Mall at the same address.",
+      "caveats": [
+        "Brand-level menu source, not a branch-specific menu.",
+        "Item presence/availability at CE09L25B000 not independently confirmed.",
+        "Prices are observed in a September 2026 official menu and may have changed by access date.",
+        "Menu page warns items may change without notice or while stocks last.",
+        "No images extracted or retained."
+      ]
+    }
+  ],
+  "source_urls": [
+    "https://www.saizeriya.com.sg/pdf/GrandMenu202609S_single.pdf",
+    "https://www.saizeriya.com.sg/search/"
+  ],
+  "workbook_edited": false,
+  "mapbox_data_used": false
+}

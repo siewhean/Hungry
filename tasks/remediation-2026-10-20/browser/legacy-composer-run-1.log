@@ -1,0 +1,126 @@
+(node:88038) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[1A[2K[2m[WebServer] [22m(node:88106) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 4 tests using 1 worker
+
+[1A[2K(node:88337) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:88337) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+
+[1A[2K(node:88337) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K[1/4] [chromium] › tests/e2e/buttons-interactions.spec.ts:12:7 › supported buttons and composer interactions › launcher buttons open the supported composer
+[1A[2K  1) [chromium] › tests/e2e/buttons-interactions.spec.ts:12:7 › supported buttons and composer interactions › launcher buttons open the supported composer 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByTestId('post-composer-add-media')
+    Expected: visible
+    Error: strict mode violation: getByTestId('post-composer-add-media') resolved to 2 elements:
+        1) <button tabindex="0" role="button" type="button" aria-label="Add post media" data-testid="post-composer-add-media" class="css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73">…</button> aka getByRole('button', { name: 'Add post media' })
+        2) <button tabindex="0" role="button" type="button" aria-label="Add post media" data-testid="post-composer-add-media" class="css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73">…</button> aka getByTestId('post-composer-add-media').nth(1)
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 10000ms[22m
+    [2m  - waiting for getByTestId('post-composer-add-media')[22m
+
+
+      17 |     await expect(page.getByRole("button", { name: "Launch V2 Composer" })).toBeVisible();
+      18 |     await openComposerFromLauncher(page);
+    > 19 |     await expect(page.getByTestId("post-composer-add-media")).toBeVisible();
+         |                                                               ^
+      20 |   });
+      21 |
+      22 |   test("an account-scoped composer draft survives reload and returning to that account", async ({
+        at /Users/Siew Hean/Documents/GitHub/Hungry/tests/e2e/buttons-interactions.spec.ts:19:63
+
+    Error: No critical page errors, console errors, or failed app requests
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoEqual[2m([22m[32mexpected[39m[2m) // deep equality[22m
+
+    [32m- Expected  -  1[39m
+    [31m+ Received  + 10[39m
+
+    [32m- Array [][39m
+    [31m+ Array [[39m
+    [31m+   Object {[39m
+    [31m+     "message": "expo-file-system is not supported on web",[39m
+    [31m+     "type": "console",[39m
+    [31m+   },[39m
+    [31m+   Object {[39m
+    [31m+     "message": "expo-file-system is not supported on web",[39m
+    [31m+     "type": "console",[39m
+    [31m+   },[39m
+    [31m+ ][39m
+
+       at fixtures.ts:100
+
+       98 |       expect
+       99 |         .soft(criticalIssues, "No critical page errors, console errors, or failed app requests")
+    > 100 |         .toEqual([]);
+          |          ^
+      101 |     },
+      102 |     { auto: true },
+      103 |   ],
+        at Object.exports.test._test.test.extend.pageIssues.auto (/Users/Siew Hean/Documents/GitHub/Hungry/tests/e2e/fixtures.ts:100:10)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tasks/remediation-2026-10-20/browser/legacy-composer-results/buttons-interactions-suppo-2283d-open-the-supported-composer-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tasks/remediation-2026-10-20/browser/legacy-composer-results/buttons-interactions-suppo-2283d-open-the-supported-composer-chromium/error-context.md
+
+
+[1A[2K(node:88808) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:88808) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+
+[1A[2K(node:88808) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K[2/4] [chromium] › tests/e2e/buttons-interactions.spec.ts:22:7 › supported buttons and composer interactions › an account-scoped composer draft survives reload and returning to that account
+[1A[2Knode:events:505
+    throw er; // Unhandled 'error' event
+    ^
+
+Error: ENOSPC: no space left on device, write
+    at writeSync (node:fs:1237:3)
+    at SyncWriteStream._write (node:internal/fs/sync_write_stream:27:5)
+    at writeOrBuffer (node:internal/streams/writable:574:12)
+    at _write (node:internal/streams/writable:503:10)
+    at SyncWriteStream.Writable.write (node:internal/streams/writable:512:10)
+    at LineReporter.writeLine (/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/playwright/lib/reporters/base.js:303:25)
+    at LineReporter.onTestEnd (/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/playwright/lib/reporters/line.js:100:12)
+    at /Users/Siew Hean/Documents/GitHub/Hungry/node_modules/playwright/lib/reporters/multiplexer.js:57:38
+    at wrap (/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/playwright/lib/reporters/multiplexer.js:108:5)
+    at Multiplexer.onTestEnd (/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/playwright/lib/reporters/multiplexer.js:57:7)
+    at InternalReporter.onTestEnd (/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/playwright/lib/reporters/internalReporter.js:75:31)
+    at JobDispatcher._reportTestEnd (/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/playwright/lib/runner/dispatcher.js:504:31)
+    at JobDispatcher._onTestEnd (/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/playwright/lib/runner/dispatcher.js:267:10)
+    at WorkerHost.emit (node:events:514:20)
+    at ChildProcess.<anonymous> (/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/playwright/lib/runner/processHost.js:97:16)
+    at ChildProcess.emit (node:events:514:20)
+    at emit (node:internal/child_process:1004:14)
+    at processTicksAndRejections (node:internal/process/task_queues:91:21)
+Emitted 'error' event on SyncWriteStream instance at:
+    at SyncWriteStream.onerror (node:internal/streams/readable:1116:14)
+    at SyncWriteStream.emit (node:events:514:20)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  errno: -28,
+  syscall: 'write',
+  code: 'ENOSPC'
+}
+
+Node.js v26.11.1

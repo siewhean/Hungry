@@ -1,0 +1,668 @@
+(node:68449) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ merchant access, dashboard, and tab routes cover primary merchant entry points (1.160792ms)
+✔ merchant profile edits validate fields and propagate to user-side venue reads (1.363917ms)
+✔ merchant menu and OCR flows cover catalog writes that become consumer-visible dishes (0.92825ms)
+✔ merchant inbox, promotions, AI assistant, and settings use service-backed state (0.708875ms)
+✔ merchant Playwright and native smoke coverage entry points stay registered (0.824625ms)
+(node:68450) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Merchant screen contract: every merchant route is typed, registered, and backed by a screen (2.034125ms)
+✔ Merchant screen contract: verified-only routes are guarded by merchant access status (0.985542ms)
+✔ Merchant screen contract: extended merchant sections stay hidden from the tab bar (0.284584ms)
+✔ Merchant screen contract: merchant navigation buttons are accessible and hidden sections are reachable (0.248833ms)
+✔ Merchant screen contract: merchant route params match editable sub-screen needs (0.134708ms)
+✔ Merchant screen contract: menu management screens are wired to merchant services (0.334333ms)
+✖ Merchant screen contract: profile, menu, and analytics use production-ready controls (6.020834ms)
+✔ Merchant screen contract: dish details record merchant dish views once per screen (0.580292ms)
+✔ Merchant screen contract: inbox, promotions, assistant, and settings screens use merchant services (1.2245ms)
+✔ Merchant screen contract: merchant screens resolve services through provider (1.626084ms)
+(node:68451) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Supabase merchant service is wired to linked consumer venue and dish tables (4.1565ms)
+✔ Supabase merchant dish writes persist user-visible metadata and media (1.116459ms)
+✔ Supabase repository reads dish metadata from normalized catalog tables (0.839083ms)
+✔ Supabase migration links merchant writes to non-merchant read surfaces (0.566166ms)
+✔ Supabase merchant RLS hardening limits review replies and settings writes (1.713833ms)
+✔ Supabase merchant catalog metadata RLS covers images and dietary links (0.331084ms)
+✔ Supabase merchant portal readiness covers views, notifications, and promo pricing (10.262375ms)
+✖ Supabase merchant analytics foundation uses RPC-backed dynamic events and rollups (6.721292ms)
+✔ Supabase popular visitor pins are review-backed, merchant-managed, and public-active readable (2.022209ms)
+ℹ tests 24
+ℹ suites 0
+ℹ pass 22
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 423.963917
+
+✖ failing tests:
+
+test at src/app/screens/merchant-screen-contracts.test.ts:2:8772
+✖ Merchant screen contract: profile, menu, and analytics use production-ready controls (6.020834ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /submitVerification\(activeOutlet\.id/. Input:
+  
+  'import { useMerchantOperationScope } from "@/features/merchant/useMerchantOperationScope";\n' +
+    'import React, { useState } from "react";\n' +
+    'import { View, ScrollView, Pressable } from "react-native";\n' +
+    'import { Camera, CheckCircle2, ArrowLeft, Square, CheckSquare, Home } from "lucide-react-native";\n' +
+    'import type { NativeStackScreenProps } from "@react-navigation/native-stack";\n' +
+    '\n' +
+    'import { useHungryTheme } from "@/theme";\n' +
+    'import { AppText, Button, EmptyState, Screen, IconButton, Input, Card } from "@/components/ui";\n' +
+    'import { confirmGalleryAccess, isGalleryPermissionGranted } from "@/lib/permissions/gallery";\n' +
+    'import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";\n' +
+    'import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";\n' +
+    'import { getHungryService } from "@/lib/services/serviceProvider";\n' +
+    'import type { LocationPrivacy } from "@/types/domain";\n' +
+    '\n' +
+    'type Props = NativeStackScreenProps<MerchantTabParamList, "HomeBasedVerification">;\n' +
+    'type PickedEvidenceAsset = { uri?: string };\n' +
+    'type ImagePickerModule = {\n' +
+    '  MediaTypeOptions: { Images: unknown };\n' +
+    '  requestMediaLibraryPermissionsAsync: () => Promise<{ granted?: boolean; status?: string }>;\n' +
+    '  launchImageLibraryAsync: (options: Record<string, unknown>) => Promise<{\n' +
+    '    canceled: boolean;\n' +
+    '    assets?: PickedEvidenceAsset[];\n' +
+    '  }>;\n' +
+    '};\n' +
+    '\n' +
+    'function loadImagePickerModule(): ImagePickerModule | null {\n' +
+    '  try {\n' +
+    '    return require("expo-image-picker") as ImagePickerModule;\n' +
+    '  } catch {\n' +
+    '    return null;\n' +
+    '  }\n' +
+    '}\n' +
+    '\n' +
+    'export function HomeBasedVerificationScreen({ navigation }: Props) {\n' +
+    '  const captureOperation = useMerchantOperationScope();\n' +
+    '\n' +
+    '  const { componentRadii, palette, spacing, radii } = useHungryTheme();\n' +
+    '  const setAccount = useMerchantStore((state) => state.setAccount);\n' +
+    '  const activeOutlet = useMerchantStore(getActiveOutlet);\n' +
+    '\n' +
+    '  const [displayName, setDisplayName] = useState(activeOutlet?.name || "");\n' +
+    '  const [privacy, setPrivacy] = useState<LocationPrivacy>("approximate");\n' +
+    '  const [photoUris, setPhotoUris] = useState<string[]>([]);\n' +
+    '  const [photoError, setPhotoError] = useState<string | null>(null);\n' +
+    '  const [safetyChecked, setSafetyChecked] = useState(false);\n' +
+    '  const [isSubmitting, setIsSubmitting] = useState(false);\n' +
+    '  const photosAttached = photoUris.length >= 3;\n' +
+    '\n' +
+    '  if (!activeOutlet) {\n' +
+    '    return (\n' +
+    '      <Screen style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>\n' +
+    '        <EmptyState\n' +
+    '          title="No outlet selected"\n' +
+    '          body="Choose an outlet to begin home-based verification."\n' +
+    '          errorMessage="No active outlet was found for home-based verification."\n' +
+    '          sendErrorContext="Home-based verification"\n' +
+    '          icon={<Home color={palette.textMuted} size={36} />}\n' +
+    '        />\n' +
+    '      </Screen>\n' +
+    '    );\n' +
+    '  }\n' +
+    '\n' +
+    '  const handleAttachPhotos = async () => {\n' +
+    '    const isOperationCurrent = captureOperation();\n' +
+    '    if (!isOperationCurrent()) return;\n' +
+    '\n' +
+    '    setPhotoError(null);\n' +
+    '    try {\n' +
+    '      const imagePicker = loadImagePickerModule();\n' +
+    '      if (!imagePicker) {\n' +
+    '        setPhotoError("Media picker is unavailable in this app build.");\n' +
+    '        return;\n' +
+    '      }\n' +
+    '\n' +
+    '      const shouldRequestPermission = await confirmGalleryAccess({\n' +
+    '        title: "Allow gallery access",\n' +
+    '        message:\n' +
+    '          "Hungry needs access to your photo library to upload photos for verification evidence.",\n' +
+    '        confirmLabel: "Allow",\n' +
+    '        cancelLabel: "Not now",\n' +
+    '      });\n' +
+    '      if (!isOperationCurrent()) return;\n' +
+    '\n' +
+    '      if (!shouldRequestPermission) {\n' +
+    '        return;\n' +
+    '      }\n' +
+    '\n' +
+    '      const permission = await imagePicker.requestMediaLibraryPermissionsAsync();\n' +
+    '      if (!isOperationCurrent()) return;\n' +
+    '\n' +
+    '      if (!isGalleryPermissionGranted(permission)) {\n' +
+    '        setPhotoError("Photos permission is required to attach verification evidence.");\n' +
+    '        return;\n' +
+    '      }\n' +
+    '\n' +
+    '      const result = await imagePicker.launchImageLibraryAsync({\n' +
+    '        allowsEditing: false,\n' +
+    '        allowsMultipleSelection: true,\n' +
+    '        mediaTypes: imagePicker.MediaTypeOptions.Images,\n' +
+    '        quality: 0.82,\n' +
+    '        selectionLimit: 4,\n' +
+    '      });\n' +
+    '      if (!isOperationCurrent()) return;\n' +
+    '\n' +
+    '      if (result.canceled || !result.assets?.length) {\n' +
+    '        return;\n' +
+    '      }\n' +
+    '\n' +
+    '      setPhotoUris(\n' +
+    '        result.assets.map((asset) => asset.uri).filter((uri): uri is string => Boolean(uri)),\n' +
+    '      );\n' +
+    '    } catch {\n' +
+    '      if (!isOperationCurrent()) return;\n' +
+    '\n' +
+    '      setPhotoError("Unable to open the photo library right now.");\n' +
+    '    }\n' +
+    '  };\n' +
+    '\n' +
+    '  const handleSubmit = async () => {\n' +
+    '    const isOperationCurrent = captureOperation();\n' +
+    '    if (!isOperationCurrent()) return;\n' +
+    '\n' +
+    '    if (isSubmitting || !displayName.trim() || !photosAttached || !safetyChecked) return;\n' +
+    '\n' +
+    '    setIsSubmitting(true);\n' +
+    '    try {\n' +
+    '      // First update the profile with the specific home-based details\n' +
+    '      await getHungryService().merchant.updateBusinessProfile(activeOutlet.id, {\n' +
+    '        name: displayName,\n' +
+    '        locationPrivacy: privacy,\n' +
+    '      });\n' +
+    '      if (!isOperationCurrent()) return;\n' +
+    '\n' +
+    '      await getHungryService().merchant.submitVerification(\n' +
+    '        activeOutlet.id,\n' +
+    '        photoUris.map((fileUrl) => ({\n' +
+    '          method: "home_based_declaration" as const,\n' +
+    '          fileUrl,\n' +
+    '          reviewNote:\n' +
+    '            "Merchant confirms these include two food photos and one menu photo, and confirms food safety declaration.",\n' +
+    '        })),\n' +
+    '      );\n' +
+    '      if (!isOperationCurrent()) return;\n' +
+    '\n' +
+    '      const updatedAccount = await getHungryService().merchant.getMerchantAccount();\n' +
+    '      if (!isOperationCurrent()) return;\n' +
+    '\n' +
+    '      if (updatedAccount) setAccount(updatedAccount);\n' +
+    '\n' +
+    '      // Go back to the Verification Centre to see the pending status\n' +
+    '      navigation.goBack();\n' +
+    '    } catch (e) {\n' +
+    '      if (!isOperationCurrent()) return;\n' +
+    '\n' +
+    '      setPhotoError(\n' +
+    '        e instanceof Error\n' +
+    '          ? e.message\n' +
+    '          : "Verification could not be submitted. Your evidence remains available to retry.",\n' +
+    '      );\n' +
+    '    } finally {\n' +
+    '      if (isOperationCurrent()) {\n' +
+    '        setIsSubmitting(false);\n' +
+    '      }\n' +
+    '    }\n' +
+    '  };\n' +
+    '\n' +
+    '  return (\n' +
+    '    <Screen scroll={false} fullWidth>\n' +
+    '      <View\n' +
+    '        style={{\n' +
+    '          flexDirection: "row",\n' +
+    '          alignItems: "center",\n' +
+    '          justifyContent: "space-between",\n' +
+    '          paddingHorizontal: spacing[2],\n' +
+    '          paddingVertical: spacing[3],\n' +
+    '          borderBottomWidth: 1,\n' +
+    '          borderBottomColor: palette.border,\n' +
+    '        }}\n' +
+    '      >\n' +
+    '        <IconButton\n' +
+    '          icon={<ArrowLeft size={20} color={palette.text} />}\n' +
+    '          onPress={() => navigation.goBack()}\n' +
+    '          size={24}\n' +
+    '          variant="ghost"\n' +
+    '          accessibilityLabel="Back"\n' +
+    '        />\n' +
+    '        <AppText variant="h3" style={{ color: palette.text }}>\n' +
+    '          Home-Based Verification\n' +
+    '        </AppText>\n' +
+    '        <View style={{ width: 40 }} />\n' +
+    '      </View>\n' +
+    '\n' +
+    '      <ScrollView contentContainerStyle={{ padding: spacing[4] }}>\n' +
+    '        <AppText style={{ color: palette.textSecondary, marginBottom: spacing[4] }}>\n' +
+    '          Please provide the following details to verify your home-based food business. Home-based\n' +
+    '          publication is unavailable until server location privacy has been verified.\n' +
+    '        </AppText>\n' +
+    '\n' +
+    '        <Input\n' +
+    '          label="Business Profile Name"\n' +
+    '          value={displayName}\n' +
+    '          onChangeText={setDisplayName}\n' +
+    `          placeholder="e.g. Auntie Mary's Nasi Lemak"\n` +
+    '          style={{ marginBottom: spacing[6] }}\n' +
+    '        />\n' +
+    '\n' +
+    '        <AppText variant="h3" style={{ color: palette.text, marginBottom: spacing[2] }}>\n' +
+    '          Location Privacy\n' +
+    '        </AppText>\n' +
+    '        <AppText\n' +
+    '          variant="bodySmall"\n' +
+    '          style={{ color: palette.textSecondary, marginBottom: spacing[4] }}\n' +
+    '        >\n' +
+    '          How should your location appear on the map?\n' +
+    '        </AppText>\n' +
+    '\n' +
+    '        <View style={{ gap: spacing[2] }}>\n' +
+    '          <PrivacyOption\n' +
+    '            title="Approximate Area"\n' +
+    '            description="Requested coarse location; publication remains unavailable pending privacy verification"\n' +
+    '            selected={privacy === "approximate"}\n' +
+    '            onSelect={() => setPrivacy("approximate")}\n' +
+    '          />\n' +
+    '          <PrivacyOption\n' +
+    '            title="Hidden"\n' +
+    '            description="Requested hidden location; publication remains unavailable pending privacy verification"\n' +
+    '            selected={privacy === "hidden"}\n' +
+    '            onSelect={() => setPrivacy("hidden")}\n' +
+    '          />\n' +
+    '        </View>\n' +
+    '\n' +
+    '        <AppText\n' +
+    '          variant="h3"\n' +
+    '          style={{ color: palette.text, marginTop: spacing[4], marginBottom: spacing[2] }}\n' +
+    '        >\n' +
+    '          Menu & Food Photos\n' +
+    '        </AppText>\n' +
+    '        <Pressable\n' +
+    '          accessibilityRole="button"\n' +
+    '          accessibilityLabel={\n' +
+    '            photosAttached\n' +
+    '              ? "Home-based verification photos attached"\n' +
+    '              : "Attach menu and food photos"\n' +
+    '          }\n' +
+    '          accessibilityState={{ selected: photosAttached }}\n' +
+    '          onPress={() => void handleAttachPhotos()}\n' +
+    '        >\n' +
+    '          <Card\n' +
+    '            style={[\n' +
+    '              {\n' +
+    '                alignItems: "center",\n' +
+    '                justifyContent: "center",\n' +
+    '                padding: spacing[8],\n' +
+    '                borderWidth: 1,\n' +
+    '                borderStyle: "dashed",\n' +
+    '                marginTop: spacing[2],\n' +
+    '              },\n' +
+    '              {\n' +
+    '                borderColor: photosAttached ? palette.success : palette.border,\n' +
+    '                backgroundColor: photosAttached ? palette.successSoft : palette.surface,\n' +
+    '              },\n' +
+    '            ]}\n' +
+    '          >\n' +
+    '            {photosAttached ? (\n' +
+    '              <CheckCircle2 size={32} color={palette.success} />\n' +
+    '            ) : (\n' +
+    '              <Camera size={32} color={palette.textSecondary} />\n' +
+    '            )}\n' +
+    '            <AppText\n' +
+    '              style={{\n' +
+    '                color: photosAttached ? palette.success : palette.orange,\n' +
+    '                marginTop: spacing[2],\n' +
+    '                fontWeight: "bold",\n' +
+    '              }}\n' +
+    '            >\n' +
+    '              {photosAttached\n' +
+    '                ? `${photoUris.length} photo${photoUris.length === 1 ? "" : "s"} attached`\n' +
+    '                : "Attach photos"}\n' +
+    '            </AppText>\n' +
+    '            <AppText\n' +
+    '              variant="micro"\n' +
+    '              style={{\n' +
+    '       '... 3718 more characters
+  
+      at TestContext.<anonymous> (/Users/Siew Hean/Documents/GitHub/Hungry/src/app/screens/merchant-screen-contracts.test.ts:260:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'import { useMerchantOperationScope } from "@/features/merchant/useMerchantOperationScope";\nimport React, { useState } from "react";\nimport { View, ScrollView, Pressable } from "react-native";\nimport { Camera, CheckCircle2, ArrowLeft, Square, CheckSquare, Home } from "lucide-react-native";\nimport type { NativeStackScreenProps } from "@react-navigation/native-stack";\n\nimport { useHungryTheme } from "@/theme";\nimport { AppText, Button, EmptyState, Screen, IconButton, Input, Card } from "@/components/ui";\nimport { confirmGalleryAccess, isGalleryPermissionGranted } from "@/lib/permissions/gallery";\nimport type { MerchantTabParamList } from "@/app/navigation/navigationTypes";\nimport { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";\nimport { getHungryService } from "@/lib/services/serviceProvider";\nimport type { LocationPrivacy } from "@/types/domain";\n\ntype Props = NativeStackScreenProps<MerchantTabParamList, "HomeBasedVerification">;\ntype PickedEvidenceAsset = { uri?: string };\ntype ImagePickerModule = {\n  MediaTypeOptions: { Images: unknown };\n  requestMediaLibraryPermissionsAsync: () => Promise<{ granted?: boolean; status?: string }>;\n  launchImageLibraryAsync: (options: Record<string, unknown>) => Promise<{\n    canceled: boolean;\n    assets?: PickedEvidenceAsset[];\n  }>;\n};\n\nfunction loadImagePickerModule(): ImagePickerModule | null {\n  try {\n    return require("expo-image-picker") as ImagePickerModule;\n  } catch {\n    return null;\n  }\n}\n\nexport function HomeBasedVerificationScreen({ navigation }: Props) {\n  const captureOperation = useMerchantOperationScope();\n\n  const { componentRadii, palette, spacing, radii } = useHungryTheme();\n  const setAccount = useMerchantStore((state) => state.setAccount);\n  const activeOutlet = useMerchantStore(getActiveOutlet);\n\n  const [displayName, setDisplayName] = useState(activeOutlet?.name || "");\n  const [privacy, setPrivacy] = useState<LocationPrivacy>("approximate");\n  const [photoUris, setPhotoUris] = useState<string[]>([]);\n  const [photoError, setPhotoError] = useState<string | null>(null);\n  const [safetyChecked, setSafetyChecked] = useState(false);\n  const [isSubmitting, setIsSubmitting] = useState(false);\n  const photosAttached = photoUris.length >= 3;\n\n  if (!activeOutlet) {\n    return (\n      <Screen style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>\n        <EmptyState\n          title="No outlet selected"\n          body="Choose an outlet to begin home-based verification."\n          errorMessage="No active outlet was found for home-based verification."\n          sendErrorContext="Home-based verification"\n          icon={<Home color={palette.textMuted} size={36} />}\n        />\n      </Screen>\n    );\n  }\n\n  const handleAttachPhotos = async () => {\n    const isOperationCurrent = captureOperation();\n    if (!isOperationCurrent()) return;\n\n    setPhotoError(null);\n    try {\n      const imagePicker = loadImagePickerModule();\n      if (!imagePicker) {\n        setPhotoError("Media picker is unavailable in this app build.");\n        return;\n      }\n\n      const shouldRequestPermission = await confirmGalleryAccess({\n        title: "Allow gallery access",\n        message:\n          "Hungry needs access to your photo library to upload photos for verification evidence.",\n        confirmLabel: "Allow",\n        cancelLabel: "Not now",\n      });\n      if (!isOperationCurrent()) return;\n\n      if (!shouldRequestPermission) {\n        return;\n      }\n\n      const permission = await imagePicker.requestMediaLibraryPermissionsAsync();\n      if (!isOperationCurrent()) return;\n\n      if (!isGalleryPermissionGranted(permission)) {\n        setPhotoError("Photos permission is required to attach verification evidence.");\n        return;\n      }\n\n      const result = await imagePicker.launchImageLibraryAsync({\n        allowsEditing: false,\n        allowsMultipleSelection: true,\n        mediaTypes: imagePicker.MediaTypeOptions.Images,\n        quality: 0.82,\n        selectionLimit: 4,\n      });\n      if (!isOperationCurrent()) return;\n\n      if (result.canceled || !result.assets?.length) {\n        return;\n      }\n\n      setPhotoUris(\n        result.assets.map((asset) => asset.uri).filter((uri): uri is string => Boolean(uri)),\n      );\n    } catch {\n      if (!isOperationCurrent()) return;\n\n      setPhotoError("Unable to open the photo library right now.");\n    }\n  };\n\n  const handleSubmit = async () => {\n    const isOperationCurrent = captureOperation();\n    if (!isOperationCurrent()) return;\n\n    if (isSubmitting || !displayName.trim() || !photosAttached || !safetyChecked) return;\n\n    setIsSubmitting(true);\n    try {\n      // First update the profile with the specific home-based details\n      await getHungryService().merchant.updateBusinessProfile(activeOutlet.id, {\n        name: displayName,\n        locationPrivacy: privacy,\n      });\n      if (!isOperationCurrent()) return;\n\n      await getHungryService().merchant.submitVerification(\n        activeOutlet.id,\n        photoUris.map((fileUrl) => ({\n          method: "home_based_declaration" as const,\n          fileUrl,\n          reviewNote:\n            "Merchant confirms these include two food photos and one menu photo, and confirms food safety declaration.",\n        })),\n      );\n      if (!isOperationCurrent()) return;\n\n      const updatedAccount = await getHungryService().merchant.getMerchantAccount();\n      if (!isOperationCurrent()) return;\n\n      if (updatedAccount) setAccount(updatedAccount);\n\n      // Go back to the Verification Centre to see the pending status\n      navigation.goBack();\n    } catch (e) {\n      if (!isOperationCurrent()) return;\n\n      setPhotoError(\n        e instanceof Error\n          ? e.message\n          : "Verification could not be submitted. Your evidence remains available to retry.",\n      );\n    } finally {\n      if (isOperationCurrent()) {\n        setIsSubmitting(false);\n      }\n    }\n  };\n\n  return (\n    <Screen scroll={false} fullWidth>\n      <View\n        style={{\n          flexDirection: "row",\n          alignItems: "center",\n          justifyContent: "space-between",\n          paddingHorizontal: spacing[2],\n          paddingVertical: spacing[3],\n          borderBottomWidth: 1,\n          borderBottomColor: palette.border,\n        }}\n      >\n        <IconButton\n          icon={<ArrowLeft size={20} color={palette.text} />}\n          onPress={() => navigation.goBack()}\n          size={24}\n          variant="ghost"\n          accessibilityLabel="Back"\n        />\n        <AppText variant="h3" style={{ color: palette.text }}>\n          Home-Based Verification\n        </AppText>\n        <View style={{ width: 40 }} />\n      </View>\n\n      <ScrollView contentContainerStyle={{ padding: spacing[4] }}>\n        <AppText style={{ color: palette.textSecondary, marginBottom: spacing[4] }}>\n          Please provide the following details to verify your home-based food business. Home-based\n          publication is unavailable until server location privacy has been verified.\n        </AppText>\n\n        <Input\n          label="Business Profile Name"\n          value={displayName}\n          onChangeText={setDisplayName}\n          placeholder="e.g. Auntie Mary\'s Nasi Lemak"\n          style={{ marginBottom: spacing[6] }}\n        />\n\n        <AppText variant="h3" style={{ color: palette.text, marginBottom: spacing[2] }}>\n          Location Privacy\n        </AppText>\n        <AppText\n          variant="bodySmall"\n          style={{ color: palette.textSecondary, marginBottom: spacing[4] }}\n        >\n          How should your location appear on the map?\n        </AppText>\n\n        <View style={{ gap: spacing[2] }}>\n          <PrivacyOption\n            title="Approximate Area"\n            description="Requested coarse location; publication remains unavailable pending privacy verification"\n            selected={privacy === "approximate"}\n            onSelect={() => setPrivacy("approximate")}\n          />\n          <PrivacyOption\n            title="Hidden"\n            description="Requested hidden location; publication remains unavailable pending privacy verification"\n            selected={privacy === "hidden"}\n            onSelect={() => setPrivacy("hidden")}\n          />\n        </View>\n\n        <AppText\n          variant="h3"\n          style={{ color: palette.text, marginTop: spacing[4], marginBottom: spacing[2] }}\n        >\n          Menu & Food Photos\n        </AppText>\n        <Pressable\n          accessibilityRole="button"\n          accessibilityLabel={\n            photosAttached\n              ? "Home-based verification photos attached"\n              : "Attach menu and food photos"\n          }\n          accessibilityState={{ selected: photosAttached }}\n          onPress={() => void handleAttachPhotos()}\n        >\n          <Card\n            style={[\n              {\n                alignItems: "center",\n                justifyContent: "center",\n                padding: spacing[8],\n                borderWidth: 1,\n                borderStyle: "dashed",\n                marginTop: spacing[2],\n              },\n              {\n                borderColor: photosAttached ? palette.success : palette.border,\n                backgroundColor: photosAttached ? palette.successSoft : palette.surface,\n              },\n            ]}\n          >\n            {photosAttached ? (\n              <CheckCircle2 size={32} color={palette.success} />\n            ) : (\n              <Camera size={32} color={palette.textSecondary} />\n            )}\n            <AppText\n              style={{\n                color: photosAttached ? palette.success : palette.orange,\n                marginTop: spacing[2],\n                fontWeight: "bold",\n              }}\n            >\n              {photosAttached\n                ? `${photoUris.length} photo${photoUris.length === 1 ? "" : "s"} attached`\n                : "Attach photos"}\n            </AppText>\n            <AppText\n              variant="micro"\n              style={{\n       '... 3718 more characters,
+    expected: /submitVerification\(activeOutlet\.id/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at src/lib/services/supabase/merchant-linkage.test.ts:2:12143
+✖ Supabase merchant analytics foundation uses RPC-backed dynamic events and rollups (6.721292ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /eventType: "save"/. Input:
+  
+  'import { useStallInteractionStore } from "@/store/useStallInteractionStore";\n' +
+    'import {\n' +
+    '  isContentHiddenForSession,\n' +
+    '  promptReportReview,\n' +
+    '  useCommunitySafetyRevision,\n' +
+    '} from "@/lib/security/communitySafety";\n' +
+    'import {\n' +
+    '  Pressable,\n' +
+    '  ScrollView,\n' +
+    '  StyleSheet,\n' +
+    '  View,\n' +
+    '  type LayoutChangeEvent,\n' +
+    '  type NativeScrollEvent,\n' +
+    '  type NativeSyntheticEvent,\n' +
+    '  useWindowDimensions,\n' +
+    '} from "react-native";\n' +
+    'import { BottomSheetModal } from "@gorhom/bottom-sheet";\n' +
+    'import type { NativeStackScreenProps } from "@react-navigation/native-stack";\n' +
+    'import { useCallback, useEffect, useState, useRef, useMemo } from "react";\n' +
+    'import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";\n' +
+    'import {\n' +
+    '  ChevronRight,\n' +
+    '  ChevronLeft,\n' +
+    '  CircleHelp,\n' +
+    '  Heart,\n' +
+    '  MapPin,\n' +
+    '  MessageCircle,\n' +
+    '  MessageCircleMore,\n' +
+    '  Send,\n' +
+    '  Star,\n' +
+    '} from "lucide-react-native";\n' +
+    '\n' +
+    'import type { RootStackParamList } from "@/app/navigation/navigationTypes";\n' +
+    'import {\n' +
+    '  AccessibleImage,\n' +
+    '  AppText,\n' +
+    '  EmptyState,\n' +
+    '  FeedErrorBoundary,\n' +
+    '  Button,\n' +
+    '  Card,\n' +
+    '  Chip,\n' +
+    '  IconButton,\n' +
+    '  Input,\n' +
+    '  Skeleton,\n' +
+    '} from "@/components/ui";\n' +
+    'import { StallLogoMark } from "@/components/stall/StallLogoMark";\n' +
+    'import { deriveStallCommunityReviews } from "@/features/detail/detailTransforms";\n' +
+    'import {\n' +
+    '  hasPendingClaimForProfile,\n' +
+    '  submitClaimFromStall,\n' +
+    '} from "@/features/merchantClaim/submitClaimFromStall";\n' +
+    'import { formatTimeAgo } from "@/lib/date/formatTimeAgo";\n' +
+    'import { FEATURE_FLAGS } from "@/constants/featureFlags";\n' +
+    'import {\n' +
+    '  getDataRepository,\n' +
+    '  getHungryService,\n' +
+    '  getServiceProvider,\n' +
+    '} from "@/lib/services/serviceProvider";\n' +
+    'import { getBuildingById } from "@/lib/geo/singaporeBuildings";\n' +
+    'import { trackAnalyticsEvent } from "@/lib/analytics";\n' +
+    'import { openTrustedMapsUrl } from "@/lib/security/safeLinking";\n' +
+    'import {\n' +
+    '  buildMapsSearchUrl,\n' +
+    '  formatFoodCentreLocation,\n' +
+    '  formatFullStallAddress,\n' +
+    '  formatWeeklyOperatingHours,\n' +
+    '} from "@/features/detail/stallLocation";\n' +
+    'import { useProfileStore } from "@/store/useProfileStore";\n' +
+    'import { useSocialStore } from "@/store/useSocialStore";\n' +
+    'import { PopularVisitorsSection } from "@/components/stall/PopularVisitorsSection";\n' +
+    'import { StallInteractionBar } from "@/components/stall/StallInteractionBar";\n' +
+    'import { FollowStallButton } from "@/components/stall/FollowStallButton";\n' +
+    'import { useSessionStore } from "@/store/useSessionStore";\n' +
+    'import { useUIStore } from "@/store/useUIStore";\n' +
+    'import { useHungryTheme } from "@/theme";\n' +
+    'import { isVenueOpenFromHours } from "@/utils/stallStatus";\n' +
+    'import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/ReviewShareSheet";\n' +
+    'import {\n' +
+    '  CyclingGridImage,\n' +
+    '  CYCLING_GRID_IMAGE_INTERVAL_MS,\n' +
+    '} from "@/components/discover/CyclingGridImage";\n' +
+    'import { CustomerPromotionCard } from "@/components/promotion/CustomerPromotionCard";\n' +
+    'import type { DishDetail, MerchantPromotion } from "@/types/domain";\n' +
+    'import {\n' +
+    '  DetailSaveActionsCard,\n' +
+    '  useDetailSaveActions,\n' +
+    '} from "@/features/checklistPortfolio/DetailSaveActions";\n' +
+    'import { webShareUrl } from "@/constants/links";\n' +
+    '\n' +
+    'const CommentIcon = MessageCircle ?? MessageCircleMore;\n' +
+    'const INITIAL_MENU_ITEM_COUNT = 10;\n' +
+    'const MENU_ITEM_BATCH_SIZE = 10;\n' +
+    'const MENU_LOAD_THRESHOLD_PX = 280;\n' +
+    'const ALL_MENU_CATEGORY = "All";\n' +
+    'const MENU_CATEGORY_ORDER = [\n' +
+    '  "Popular",\n' +
+    '  "Rice",\n' +
+    '  "Noodles",\n' +
+    '  "Chicken",\n' +
+    '  "Seafood",\n' +
+    '  "Vegetarian",\n' +
+    '  "Drinks",\n' +
+    '  "Dessert",\n' +
+    '  "Sets",\n' +
+    '  "Sides",\n' +
+    '];\n' +
+    '\n' +
+    'function StallDetailSkeleton() {\n' +
+    '  const { spacing, radii, palette } = useHungryTheme();\n' +
+    '  const { width: screenWidth } = useWindowDimensions();\n' +
+    '\n' +
+    '  return (\n' +
+    '    <View style={{ flex: 1, backgroundColor: palette.bg }}>\n' +
+    '      <Skeleton width="100%" height={screenWidth * 0.75} borderRadius={0} />\n' +
+    '      <View style={{ padding: spacing[4], gap: spacing[6], marginTop: 20 }}>\n' +
+    '        <AppText variant="bodyBold" tone="secondary">\n' +
+    '          Loading stall\n' +
+    '        </AppText>\n' +
+    '        <View style={{ gap: spacing[1] }}>\n' +
+    '          <Skeleton width={150} height={20} />\n' +
+    '          <Skeleton width="70%" height={34} />\n' +
+    '          <Skeleton width="40%" height={24} />\n' +
+    '        </View>\n' +
+    '        <Skeleton width="100%" height={80} borderRadius={radii.lg} />\n' +
+    '        <View style={{ gap: spacing[4] }}>\n' +
+    '          <Skeleton width={200} height={28} />\n' +
+    '          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[3] }}>\n' +
+    '            <Skeleton width="45%" height={160} borderRadius={radii.lg} />\n' +
+    '            <Skeleton width="45%" height={160} borderRadius={radii.lg} />\n' +
+    '          </View>\n' +
+    '        </View>\n' +
+    '      </View>\n' +
+    '    </View>\n' +
+    '  );\n' +
+    '}\n' +
+    '\n' +
+    'type Props = NativeStackScreenProps<RootStackParamList, "StallDetail">;\n' +
+    '\n' +
+    'type ReviewReply = {\n' +
+    '  id: string;\n' +
+    '  reviewId: string;\n' +
+    '  authorName: string;\n' +
+    '  text: string;\n' +
+    '  createdAt: string;\n' +
+    '};\n' +
+    '\n' +
+    'const EMPTY_DISHES: DishDetail[] = [];\n' +
+    '\n' +
+    'function formatMenuCategoryLabel(value: string) {\n' +
+    '  return value\n' +
+    '    .replace(/[_-]+/g, " ")\n' +
+    '    .replace(/\\s+/g, " ")\n' +
+    '    .trim()\n' +
+    '    .replace(/\\b\\w/g, (letter) => letter.toUpperCase());\n' +
+    '}\n' +
+    '\n' +
+    'function inferDishCategory(dish: DishDetail) {\n' +
+    '  const name = dish.name.toLowerCase();\n' +
+    '  if (dish.mustOrder) return "Popular";\n' +
+    '  if (/(rice|nasi|biryani|donburi|porridge|congee)/.test(name)) return "Rice";\n' +
+    '  if (/(noodle|mee|hor fun|kway teow|ramen|pasta|spaghetti|bee hoon|udon|soba)/.test(name)) {\n' +
+    '    return "Noodles";\n' +
+    '  }\n' +
+    '  if (/(chicken|ayam|wing|drumstick)/.test(name)) return "Chicken";\n' +
+    '  if (/(fish|prawn|crab|seafood|squid|sotong|salmon)/.test(name)) return "Seafood";\n' +
+    '  if (/(vegetarian|vegan|tofu|mushroom|salad)/.test(name)) return "Vegetarian";\n' +
+    '  if (/(coffee|tea|milo|juice|drink|latte|smoothie|water|soda|kopi|teh)/.test(name)) {\n' +
+    '    return "Drinks";\n' +
+    '  }\n' +
+    '  if (/(cake|dessert|ice cream|pudding|waffle|tart|muffin|sweet)/.test(name)) return "Dessert";\n' +
+    '  if (/(set|combo|meal|bundle|platter|party)/.test(name)) return "Sets";\n' +
+    '  if (/(side|fries|snack|soup|egg|toast|bread)/.test(name)) return "Sides";\n' +
+    '\n' +
+    '  const dietaryLabels = dish.dietaryFlags ?? [];\n' +
+    '  if (dietaryLabels.some((label) => /vegetarian|vegan/i.test(label))) return "Vegetarian";\n' +
+    '\n' +
+    '  const availabilityCategory = (dish.availabilityFlags ?? [])\n' +
+    '    .map(formatMenuCategoryLabel)\n' +
+    '    .find((tag) => tag.length > 0);\n' +
+    '  if (availabilityCategory) return availabilityCategory;\n' +
+    '\n' +
+    '  return "Menu";\n' +
+    '}\n' +
+    '\n' +
+    'function getStallDishCycleSlides(dish: DishDetail, dishes: DishDetail[]) {\n' +
+    '  return [dish, ...dishes.filter((candidate) => candidate.id !== dish.id)].slice(0, 4);\n' +
+    '}\n' +
+    '\n' +
+    'function StallMenuDishCard({\n' +
+    '  dish,\n' +
+    '  dishes,\n' +
+    '  index,\n' +
+    '  onPress,\n' +
+    '  width,\n' +
+    '}: {\n' +
+    '  dish: DishDetail;\n' +
+    '  dishes: DishDetail[];\n' +
+    '  index: number;\n' +
+    '  onPress: (dish: DishDetail) => void;\n' +
+    '  width: number;\n' +
+    '}) {\n' +
+    '  const { componentRadii, palette, spacing } = useHungryTheme();\n' +
+    '  const slides = useMemo(() => getStallDishCycleSlides(dish, dishes), [dish, dishes]);\n' +
+    '  const [activeIndex, setActiveIndex] = useState(0);\n' +
+    '  const activeDish = dish;\n' +
+    '  const handleActiveIndexChange = useCallback((nextIndex: number) => {\n' +
+    '    setActiveIndex(nextIndex);\n' +
+    '  }, []);\n' +
+    '\n' +
+    '  useEffect(() => {\n' +
+    '    if (activeIndex >= slides.length) {\n' +
+    '      setActiveIndex(0);\n' +
+    '    }\n' +
+    '  }, [activeIndex, slides.length]);\n' +
+    '\n' +
+    '  return (\n' +
+    '    <Pressable\n' +
+    '      accessibilityRole="button"\n' +
+    '      accessibilityLabel={`Open ${activeDish.name}`}\n' +
+    '      accessibilityHint="Opens this dish detail page"\n' +
+    '      onPress={() => onPress(activeDish)}\n' +
+    '      style={{ width }}\n' +
+    '    >\n' +
+    '      <View style={{ gap: spacing[2] }}>\n' +
+    '        <CyclingGridImage\n' +
+    '          images={[dish.imageUrl]}\n' +
+    '          cycleMs={CYCLING_GRID_IMAGE_INTERVAL_MS}\n' +
+    '          startDelayMs={(index % 4) * 350}\n' +
+    '          onActiveIndexChange={handleActiveIndexChange}\n' +
+    '          style={{\n' +
+    '            width: "100%",\n' +
+    '            height: 120,\n' +
+    '            borderRadius: componentRadii.card,\n' +
+    '          }}\n' +
+    '        />\n' +
+    '        <View style={{ gap: spacing[1] }}>\n' +
+    '          <AppText variant="bodyBold" numberOfLines={1}>\n' +
+    '            {activeDish.name}\n' +
+    '          </AppText>\n' +
+    '          <AppText variant="price" style={{ color: palette.orange }}>\n' +
+    '            {activeDish.priceRange}\n' +
+    '          </AppText>\n' +
+    '        </View>\n' +
+    '      </View>\n' +
+    '    </Pressable>\n' +
+    '  );\n' +
+    '}\n' +
+    '\n' +
+    'export function StallDetailScreen({ navigation, route }: Props) {\n' +
+    '  useCommunitySafetyRevision();\n' +
+    '  const venueId = route.params?.venueId ?? route.params?.id ?? "";\n' +
+    '  const repository = getDataRepository();\n' +
+    '  const serviceProviderMode = getServiceProvider().mode;\n' +
+    '  const isLoading = false;\n' +
+    '  const [detailError, setDetailError] = useState(false);\n' +
+    '  const [detailRetry, setDetailRetry] = useState(0);\n' +
+    '  const cachedVenue = repository.getVenueById(venueId);\n' +
+    '  const [hydratedVenue, setHydratedVenue] = useState<typeof cachedVenue>();\n' +
+    '  const [hasLoadedVenueDetail, setHasLoadedVenueDetail] = useState(Boolean(cachedVenue));\n' +
+    '  const venue = hydratedVenue ?? cachedVenue;\n' +
+    '\n' +
+    '  useEffect(() => {\n' +
+    '    let active = true;\n' +
+    '    setDetailError(false);\n' +
+    '    setHydratedVenue(undefined);\n' +
+    '    setHasLoadedVenueDetail(Boolean(cachedVenue));\n' +
+    '    if (!venueId || cachedVenue) {\n' +
+    '      return () => {\n' +
+    '        active = false;\n' +
+    '      };\n' +
+    '    }\n' +
+    '\n' +
+    '    void getHungryService()\n' +
+    '      .discovery.getVenue(venueId)\n' +
+    '      .then((nextVenue) => {\n' +
+    '        if (!active) return;\n' +
+    '        setHydratedVenue(nextVenue);\n' +
+    '        setHasLoadedVenueDetail(true);\n' +
+    '      })\n' +
+    '      .catch(() => {\n' +
+    '        if (active) {\n' +
+    '          setHasLoadedVenueDetail(true);\n' +
+    '          setDetailError(true);\n' +
+    '        }\n' +
+    '      });\n' +
+    '\n' +
+    '    return () => {\n' +
+    '      active = false;\n' +
+    '    };\n' +
+    '  }, [cachedVenue, venueId, detailRetry]);\n' +
+    '\n' +
+    '  const building = venue ? getBuildingById(venue.buildingId) : undefined;\n' +
+    '  const cachedDishes = useMemo(\n' +
+    '    () => (venue ? repository.listDishesByVenue(venue.id) : []),\n' +
+    '    [repository, venue],\n' +
+    '  );\n' +
+    '  const menuVenueId = useRef(venueId);\n' +
+    '  const [hydratedDishes, setHydratedDishes] = useState<DishDetail[] | undefined>();\n' +
+    '  const dishes =\n' +
+    '    hydratedDishes ?? (serviceProviderMode === "supabase" ? EMPTY_DISHES : cachedDishes);\n' +
+    '  const dishIdsKey = useMemo(() => dishes.map((dish) => dish.id).join("|"), [dishes]);\n' +
+    '  const leadDish = dishes[0];\n' +
+    '\n' +
+    '  const profile = useProfileStore((state) => state.profile);\n' +
+    '  const savedInteraction = useStallInteractionSto'... 41946 more characters
+  
+      at TestContext.<anonymous> (/Users/Siew Hean/Documents/GitHub/Hungry/src/lib/services/supabase/merchant-linkage.test.ts:244:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'import { useStallInteractionStore } from "@/store/useStallInteractionStore";\nimport {\n  isContentHiddenForSession,\n  promptReportReview,\n  useCommunitySafetyRevision,\n} from "@/lib/security/communitySafety";\nimport {\n  Pressable,\n  ScrollView,\n  StyleSheet,\n  View,\n  type LayoutChangeEvent,\n  type NativeScrollEvent,\n  type NativeSyntheticEvent,\n  useWindowDimensions,\n} from "react-native";\nimport { BottomSheetModal } from "@gorhom/bottom-sheet";\nimport type { NativeStackScreenProps } from "@react-navigation/native-stack";\nimport { useCallback, useEffect, useState, useRef, useMemo } from "react";\nimport { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";\nimport {\n  ChevronRight,\n  ChevronLeft,\n  CircleHelp,\n  Heart,\n  MapPin,\n  MessageCircle,\n  MessageCircleMore,\n  Send,\n  Star,\n} from "lucide-react-native";\n\nimport type { RootStackParamList } from "@/app/navigation/navigationTypes";\nimport {\n  AccessibleImage,\n  AppText,\n  EmptyState,\n  FeedErrorBoundary,\n  Button,\n  Card,\n  Chip,\n  IconButton,\n  Input,\n  Skeleton,\n} from "@/components/ui";\nimport { StallLogoMark } from "@/components/stall/StallLogoMark";\nimport { deriveStallCommunityReviews } from "@/features/detail/detailTransforms";\nimport {\n  hasPendingClaimForProfile,\n  submitClaimFromStall,\n} from "@/features/merchantClaim/submitClaimFromStall";\nimport { formatTimeAgo } from "@/lib/date/formatTimeAgo";\nimport { FEATURE_FLAGS } from "@/constants/featureFlags";\nimport {\n  getDataRepository,\n  getHungryService,\n  getServiceProvider,\n} from "@/lib/services/serviceProvider";\nimport { getBuildingById } from "@/lib/geo/singaporeBuildings";\nimport { trackAnalyticsEvent } from "@/lib/analytics";\nimport { openTrustedMapsUrl } from "@/lib/security/safeLinking";\nimport {\n  buildMapsSearchUrl,\n  formatFoodCentreLocation,\n  formatFullStallAddress,\n  formatWeeklyOperatingHours,\n} from "@/features/detail/stallLocation";\nimport { useProfileStore } from "@/store/useProfileStore";\nimport { useSocialStore } from "@/store/useSocialStore";\nimport { PopularVisitorsSection } from "@/components/stall/PopularVisitorsSection";\nimport { StallInteractionBar } from "@/components/stall/StallInteractionBar";\nimport { FollowStallButton } from "@/components/stall/FollowStallButton";\nimport { useSessionStore } from "@/store/useSessionStore";\nimport { useUIStore } from "@/store/useUIStore";\nimport { useHungryTheme } from "@/theme";\nimport { isVenueOpenFromHours } from "@/utils/stallStatus";\nimport { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/ReviewShareSheet";\nimport {\n  CyclingGridImage,\n  CYCLING_GRID_IMAGE_INTERVAL_MS,\n} from "@/components/discover/CyclingGridImage";\nimport { CustomerPromotionCard } from "@/components/promotion/CustomerPromotionCard";\nimport type { DishDetail, MerchantPromotion } from "@/types/domain";\nimport {\n  DetailSaveActionsCard,\n  useDetailSaveActions,\n} from "@/features/checklistPortfolio/DetailSaveActions";\nimport { webShareUrl } from "@/constants/links";\n\nconst CommentIcon = MessageCircle ?? MessageCircleMore;\nconst INITIAL_MENU_ITEM_COUNT = 10;\nconst MENU_ITEM_BATCH_SIZE = 10;\nconst MENU_LOAD_THRESHOLD_PX = 280;\nconst ALL_MENU_CATEGORY = "All";\nconst MENU_CATEGORY_ORDER = [\n  "Popular",\n  "Rice",\n  "Noodles",\n  "Chicken",\n  "Seafood",\n  "Vegetarian",\n  "Drinks",\n  "Dessert",\n  "Sets",\n  "Sides",\n];\n\nfunction StallDetailSkeleton() {\n  const { spacing, radii, palette } = useHungryTheme();\n  const { width: screenWidth } = useWindowDimensions();\n\n  return (\n    <View style={{ flex: 1, backgroundColor: palette.bg }}>\n      <Skeleton width="100%" height={screenWidth * 0.75} borderRadius={0} />\n      <View style={{ padding: spacing[4], gap: spacing[6], marginTop: 20 }}>\n        <AppText variant="bodyBold" tone="secondary">\n          Loading stall\n        </AppText>\n        <View style={{ gap: spacing[1] }}>\n          <Skeleton width={150} height={20} />\n          <Skeleton width="70%" height={34} />\n          <Skeleton width="40%" height={24} />\n        </View>\n        <Skeleton width="100%" height={80} borderRadius={radii.lg} />\n        <View style={{ gap: spacing[4] }}>\n          <Skeleton width={200} height={28} />\n          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[3] }}>\n            <Skeleton width="45%" height={160} borderRadius={radii.lg} />\n            <Skeleton width="45%" height={160} borderRadius={radii.lg} />\n          </View>\n        </View>\n      </View>\n    </View>\n  );\n}\n\ntype Props = NativeStackScreenProps<RootStackParamList, "StallDetail">;\n\ntype ReviewReply = {\n  id: string;\n  reviewId: string;\n  authorName: string;\n  text: string;\n  createdAt: string;\n};\n\nconst EMPTY_DISHES: DishDetail[] = [];\n\nfunction formatMenuCategoryLabel(value: string) {\n  return value\n    .replace(/[_-]+/g, " ")\n    .replace(/\\s+/g, " ")\n    .trim()\n    .replace(/\\b\\w/g, (letter) => letter.toUpperCase());\n}\n\nfunction inferDishCategory(dish: DishDetail) {\n  const name = dish.name.toLowerCase();\n  if (dish.mustOrder) return "Popular";\n  if (/(rice|nasi|biryani|donburi|porridge|congee)/.test(name)) return "Rice";\n  if (/(noodle|mee|hor fun|kway teow|ramen|pasta|spaghetti|bee hoon|udon|soba)/.test(name)) {\n    return "Noodles";\n  }\n  if (/(chicken|ayam|wing|drumstick)/.test(name)) return "Chicken";\n  if (/(fish|prawn|crab|seafood|squid|sotong|salmon)/.test(name)) return "Seafood";\n  if (/(vegetarian|vegan|tofu|mushroom|salad)/.test(name)) return "Vegetarian";\n  if (/(coffee|tea|milo|juice|drink|latte|smoothie|water|soda|kopi|teh)/.test(name)) {\n    return "Drinks";\n  }\n  if (/(cake|dessert|ice cream|pudding|waffle|tart|muffin|sweet)/.test(name)) return "Dessert";\n  if (/(set|combo|meal|bundle|platter|party)/.test(name)) return "Sets";\n  if (/(side|fries|snack|soup|egg|toast|bread)/.test(name)) return "Sides";\n\n  const dietaryLabels = dish.dietaryFlags ?? [];\n  if (dietaryLabels.some((label) => /vegetarian|vegan/i.test(label))) return "Vegetarian";\n\n  const availabilityCategory = (dish.availabilityFlags ?? [])\n    .map(formatMenuCategoryLabel)\n    .find((tag) => tag.length > 0);\n  if (availabilityCategory) return availabilityCategory;\n\n  return "Menu";\n}\n\nfunction getStallDishCycleSlides(dish: DishDetail, dishes: DishDetail[]) {\n  return [dish, ...dishes.filter((candidate) => candidate.id !== dish.id)].slice(0, 4);\n}\n\nfunction StallMenuDishCard({\n  dish,\n  dishes,\n  index,\n  onPress,\n  width,\n}: {\n  dish: DishDetail;\n  dishes: DishDetail[];\n  index: number;\n  onPress: (dish: DishDetail) => void;\n  width: number;\n}) {\n  const { componentRadii, palette, spacing } = useHungryTheme();\n  const slides = useMemo(() => getStallDishCycleSlides(dish, dishes), [dish, dishes]);\n  const [activeIndex, setActiveIndex] = useState(0);\n  const activeDish = dish;\n  const handleActiveIndexChange = useCallback((nextIndex: number) => {\n    setActiveIndex(nextIndex);\n  }, []);\n\n  useEffect(() => {\n    if (activeIndex >= slides.length) {\n      setActiveIndex(0);\n    }\n  }, [activeIndex, slides.length]);\n\n  return (\n    <Pressable\n      accessibilityRole="button"\n      accessibilityLabel={`Open ${activeDish.name}`}\n      accessibilityHint="Opens this dish detail page"\n      onPress={() => onPress(activeDish)}\n      style={{ width }}\n    >\n      <View style={{ gap: spacing[2] }}>\n        <CyclingGridImage\n          images={[dish.imageUrl]}\n          cycleMs={CYCLING_GRID_IMAGE_INTERVAL_MS}\n          startDelayMs={(index % 4) * 350}\n          onActiveIndexChange={handleActiveIndexChange}\n          style={{\n            width: "100%",\n            height: 120,\n            borderRadius: componentRadii.card,\n          }}\n        />\n        <View style={{ gap: spacing[1] }}>\n          <AppText variant="bodyBold" numberOfLines={1}>\n            {activeDish.name}\n          </AppText>\n          <AppText variant="price" style={{ color: palette.orange }}>\n            {activeDish.priceRange}\n          </AppText>\n        </View>\n      </View>\n    </Pressable>\n  );\n}\n\nexport function StallDetailScreen({ navigation, route }: Props) {\n  useCommunitySafetyRevision();\n  const venueId = route.params?.venueId ?? route.params?.id ?? "";\n  const repository = getDataRepository();\n  const serviceProviderMode = getServiceProvider().mode;\n  const isLoading = false;\n  const [detailError, setDetailError] = useState(false);\n  const [detailRetry, setDetailRetry] = useState(0);\n  const cachedVenue = repository.getVenueById(venueId);\n  const [hydratedVenue, setHydratedVenue] = useState<typeof cachedVenue>();\n  const [hasLoadedVenueDetail, setHasLoadedVenueDetail] = useState(Boolean(cachedVenue));\n  const venue = hydratedVenue ?? cachedVenue;\n\n  useEffect(() => {\n    let active = true;\n    setDetailError(false);\n    setHydratedVenue(undefined);\n    setHasLoadedVenueDetail(Boolean(cachedVenue));\n    if (!venueId || cachedVenue) {\n      return () => {\n        active = false;\n      };\n    }\n\n    void getHungryService()\n      .discovery.getVenue(venueId)\n      .then((nextVenue) => {\n        if (!active) return;\n        setHydratedVenue(nextVenue);\n        setHasLoadedVenueDetail(true);\n      })\n      .catch(() => {\n        if (active) {\n          setHasLoadedVenueDetail(true);\n          setDetailError(true);\n        }\n      });\n\n    return () => {\n      active = false;\n    };\n  }, [cachedVenue, venueId, detailRetry]);\n\n  const building = venue ? getBuildingById(venue.buildingId) : undefined;\n  const cachedDishes = useMemo(\n    () => (venue ? repository.listDishesByVenue(venue.id) : []),\n    [repository, venue],\n  );\n  const menuVenueId = useRef(venueId);\n  const [hydratedDishes, setHydratedDishes] = useState<DishDetail[] | undefined>();\n  const dishes =\n    hydratedDishes ?? (serviceProviderMode === "supabase" ? EMPTY_DISHES : cachedDishes);\n  const dishIdsKey = useMemo(() => dishes.map((dish) => dish.id).join("|"), [dishes]);\n  const leadDish = dishes[0];\n\n  const profile = useProfileStore((state) => state.profile);\n  const savedInteraction = useStallInteractionSto'... 41946 more characters,
+    expected: /eventType: "save"/,
+    operator: 'match',
+    diff: 'simple'
+  }

@@ -47,3 +47,32 @@ test("refreshLocation never prompts and skips when permission is not granted", a
   assert.equal(await useLocationStore.getState().refreshLocation(), false);
   useLocationStore.getState().resetLocationState();
 });
+
+test("a delayed GPS fix is discarded after manual selection and account reset", async () => {
+  const { resolveCurrentLocationRequest } = await import("./useLocationStore");
+  useLocationStore.getState().resetLocationState();
+  const chosen = useLocationStore.getState().currentLocation;
+  let finish!: (value: typeof chosen) => void;
+  const delayedFix = resolveCurrentLocationRequest(
+    () =>
+      new Promise<typeof chosen>((resolve) => {
+        finish = resolve;
+      }),
+  );
+  useLocationStore.getState().setManualSelection("Selected area", chosen);
+  finish({ ...chosen, latitude: chosen.latitude + 0.01 });
+  assert.equal(await delayedFix, undefined);
+  assert.equal(useLocationStore.getState().manualLocation, "Selected area");
+  assert.deepEqual(useLocationStore.getState().currentLocation, chosen);
+
+  const pendingAfterLogout = resolveCurrentLocationRequest(
+    () =>
+      new Promise<typeof chosen>((resolve) => {
+        finish = resolve;
+      }),
+  );
+  useLocationStore.getState().resetLocationState();
+  finish(chosen);
+  assert.equal(await pendingAfterLogout, undefined);
+  assert.equal(useLocationStore.getState().gpsBadgeState, "unknown");
+});

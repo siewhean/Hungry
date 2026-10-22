@@ -1,38 +1,33 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import path from "node:path";
 import test from "node:test";
 
-const root = process.cwd();
-
-function read(relativePath: string): string {
-  return readFileSync(path.join(root, relativePath), "utf8");
-}
-
-test("Post composer exits return to the home feed instead of replaying stale back actions", () => {
-  const composer = read("src/app/screens/post/PostComposerScreenV2.tsx");
-  const overlay = read("src/features/post/components/StatusOverlay.tsx");
-
-  assert.match(composer, /const allowExitRef = React\.useRef\(false\)/);
-  assert.match(composer, /const returnToHomeFeed = React\.useCallback/);
-  assert.match(composer, /type: "POP_TO"/);
-  assert.match(composer, /payload: \{ name: "MainTabs", params: \{ screen: "Home" \} \}/);
-  assert.match(composer, /const finishAndReturnToHomeFeed = React\.useCallback/);
-  assert.match(composer, /allowExitRef\.current = true/);
-  assert.match(composer, /if \(allowExitRef\.current\) \{\s*return;\s*\}/);
-  assert.match(composer, /<ComposerHeader onClose=\{returnToHomeFeed\} \/>/);
-  assert.match(composer, /<StatusOverlay onFinish=\{finishAndReturnToHomeFeed\} \/>/);
-  assert.match(composer, /reset\(\);\s*finishAndReturnToHomeFeed\(\);/);
-  assert.doesNotMatch(composer, /pendingAction/);
-  assert.doesNotMatch(composer, /navigation\.reset/);
-  assert.doesNotMatch(composer, /navigation\.goBack\(\)/);
-
-  assert.match(overlay, /interface StatusOverlayProps/);
-  assert.match(overlay, /onFinish\?: \(\) => void/);
-  assert.match(overlay, /export function StatusOverlay\(\{ onFinish \}: StatusOverlayProps\)/);
-  assert.match(
-    overlay,
-    /label=\{isReviewOnlySuccess \? "Done" : "View Post"\}[\s\S]*reset\(\);[\s\S]*onFinish\?\.\(\);/,
+test("both composer routes share the supported editor and protect real route removal", () => {
+  const editor = readFileSync("src/app/screens/post/PostComposerScreen.tsx", "utf8");
+  const variant = readFileSync("src/app/screens/post/PostComposerScreenV2.tsx", "utf8");
+  assert.match(variant, /<PostComposerScreen \{\.\.\.props\} \/>/);
+  const guard = readFileSync("src/features/post/useDraftExitGuard.ts", "utf8");
+  const review = readFileSync("src/app/screens/review/ReviewScreen.tsx", "utf8");
+  assert.match(editor, /useDraftExitGuard\(/);
+  assert.match(review, /useDraftExitGuard\(/);
+  assert.match(guard, /usePreventRemove\(input\.dirty && !allowed/);
+  assert.match(guard, /text: "Save draft"/);
+  assert.match(guard, /text: "Keep editing"/);
+  assert.match(guard, /text: "Discard"/);
+  assert.match(guard, /input\.dispatch\(pending\)/);
+  assert.match(guard, /setAllowed\(false\)/);
+  assert.doesNotMatch(
+    variant,
+    /MusicSearchModal|ComposerBottomBar|generateCaptions|suggestBestTime/,
   );
-  assert.match(overlay, /label="Finish Later"[\s\S]*reset\(\);[\s\S]*onFinish\?\.\(\);/);
+});
+
+test("finishing a saved draft preserves its content", () => {
+  const overlay = readFileSync("src/features/post/components/StatusOverlay.tsx", "utf8");
+  const finish = overlay.slice(
+    overlay.indexOf('label="Finish Later"'),
+    overlay.indexOf('publishingState === "error"'),
+  );
+  assert.match(finish, /onFinish\?\.\(\)/);
+  assert.doesNotMatch(finish, /reset\(\)/);
 });

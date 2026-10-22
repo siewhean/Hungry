@@ -1,0 +1,120 @@
+{
+  "snapshot_type": "refresh129_exact_jurong_island_access_and_closure_audit",
+  "observed_local_date": "2026-10-19",
+  "canonical_workbook": {
+    "path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "sha256": "51b0eb281d08e735151ccf4ca99de823c3badf811d46c9ea337b4008b3251e0c",
+    "directory_sheet": "Public F&B Directory"
+  },
+  "scope": {
+    "exact_records_reviewed": 5,
+    "scope_basis": "All exact workbook records at 3 Sakra Road / Oasis @ Sakra, Jurong Island. Read-only audit; no workbook edits.",
+    "recommendations": {
+      "exclude_from_general_public_directory": 5,
+      "permanent_tenant_closures_confirmed": 0
+    },
+    "rules": [
+      "Separate site/facility/operator closure from individual tenant closure.",
+      "Apply access evidence at shared site level only when exact address confirms the row is within that site.",
+      "Do not infer a tenant closure from SFA current-list absence or generic venue/operator closure."
+    ]
+  },
+  "sources": [
+    {
+      "id": "jtc_jurong_island_pass",
+      "publisher": "JTC Corporation",
+      "url": "https://www.jtc.gov.sg/get-help/digital-services/ji-pass",
+      "observed": "JTC states entry to Jurong Island is limited to staff and visitors with a valid Jurong Island Pass; pass sponsorship is required.",
+      "interpretation": "Strong evidence that an ordinary member of the public cannot freely enter the site. The five exact-address workbook records do not meet the database definition of generally public-accessible F&B."
+    },
+    {
+      "id": "mti_oasis_sakra_foodcourt_operator",
+      "publisher": "Ministry of Trade and Industry",
+      "url": "https://www.mti.gov.sg/newsroom/oral-reply-to-pq-on-appointing-food-court-operator-at-jurong-island/",
+      "published": "2026-09-10",
+      "observed": "MTI says the original food-court operator at Oasis @ Sakra ceased operations in Aug 2026; JTC was engaging potential replacements. Workers could use interim options including KJM Curry House and Oasis Café.",
+      "interpretation": "Venue/operator-level closure and transition. Does not name the original operator or confirm each licensed tenant’s closure. KJM/Oasis Cafe have positive presence evidence as of statement date."
+    }
+  ],
+  "records": [
+    {
+      "excel_row": 15481,
+      "fnb_name": "KJM CURRY HOUSE",
+      "sfa_licence": "SW17C61P000",
+      "business_type": "Restaurant",
+      "public_access_status_before": "public_access_candidate_based_on_sfa_type_and_address",
+      "address": "Address: 3 SAKRA ROAD #01-04,OASIS @ SAKRA,Singapore 627878",
+      "access_decision": "exclude_from_general_public_directory",
+      "access_basis": "All five records are at Oasis @ Sakra, 3 Sakra Road, Jurong Island. JTC states entry to Jurong Island is limited to staff and visitors with a valid pass, and visitors require sponsorship; this is not ordinary unrestricted public access.",
+      "access_source": "https://www.jtc.gov.sg/get-help/digital-services/ji-pass",
+      "permanent_tenant_closure_decision": "not_established_for_this_exact_sfa_licence",
+      "tenant_status_note": "MTI (10 Sep 2026) specifically names KJM Curry House / Oasis Café as interim food options for workers at Oasis @ Sakra. Positive evidence of continued operation as of that statement; verify freshness before any operating-status assertion.",
+      "closure_source": "https://www.mti.gov.sg/newsroom/oral-reply-to-pq-on-appointing-food-court-operator-at-jurong-island/"
+    },
+    {
+      "excel_row": 21013,
+      "fnb_name": "OASIS CAFE",
+      "sfa_licence": "C99141A000",
+      "business_type": "Restaurant",
+      "public_access_status_before": "public_access_candidate_based_on_sfa_type_and_address",
+      "address": "Address: 3 SAKRA ROAD #01-03,OASIS @ SAKRA,Singapore 627878",
+      "access_decision": "exclude_from_general_public_directory",
+      "access_basis": "All five records are at Oasis @ Sakra, 3 Sakra Road, Jurong Island. JTC states entry to Jurong Island is limited to staff and visitors with a valid pass, and visitors require sponsorship; this is not ordinary unrestricted public access.",
+      "access_source": "https://www.jtc.gov.sg/get-help/digital-services/ji-pass",
+      "permanent_tenant_closure_decision": "not_established_for_this_exact_sfa_licence",
+      "tenant_status_note": "MTI (10 Sep 2026) specifically names KJM Curry House / Oasis Café as interim food options for workers at Oasis @ Sakra. Positive evidence of continued operation as of that statement; verify freshness before any operating-status assertion.",
+      "closure_source": "https://www.mti.gov.sg/newsroom/oral-reply-to-pq-on-appointing-food-court-operator-at-jurong-island/"
+    },
+    {
+      "excel_row": 21341,
+      "fnb_name": "one family food centre",
+      "sfa_licence": "SW16012C000",
+      "business_type": "Food Court",
+      "public_access_status_before": "public_access_candidate_based_on_sfa_type_and_address",
+      "address": "Address: 3 SAKRA ROAD #01-05,OASIS @ SAKRA,Singapore 627878",
+      "access_decision": "exclude_from_general_public_directory",
+      "access_basis": "All five records are at Oasis @ Sakra, 3 Sakra Road, Jurong Island. JTC states entry to Jurong Island is limited to staff and visitors with a valid pass, and visitors require sponsorship; this is not ordinary unrestricted public access.",
+      "access_source": "https://www.jtc.gov.sg/get-help/digital-services/ji-pass",
+      "permanent_tenant_closure_decision": "not_established_for_this_exact_sfa_licence",
+      "tenant_status_note": "Name/address suggest the licensed food-court record may relate to the original operator, but MTI does not name the operator. Keep tenant-closure status unresolved; verify operator identity before closure or deletion.",
+      "closure_source": "https://www.mti.gov.sg/newsroom/oral-reply-to-pq-on-appointing-food-court-operator-at-jurong-island/"
+    },
+    {
+      "excel_row": 24376,
+      "fnb_name": "SEAFOOD",
+      "sfa_licence": "SW16012C004",
+      "business_type": "Foodcourt",
+      "public_access_status_before": "public_access_candidate_based_on_sfa_type_and_address",
+      "address": "Address: 3 SAKRA ROAD #01-05,OASIS @ SAKRA,Singapore 627878",
+      "access_decision": "exclude_from_general_public_directory",
+      "access_basis": "All five records are at Oasis @ Sakra, 3 Sakra Road, Jurong Island. JTC states entry to Jurong Island is limited to staff and visitors with a valid pass, and visitors require sponsorship; this is not ordinary unrestricted public access.",
+      "access_source": "https://www.jtc.gov.sg/get-help/digital-services/ji-pass",
+      "permanent_tenant_closure_decision": "not_established_for_this_exact_sfa_licence",
+      "tenant_status_note": "Record shares the food-court address. MTI confirms the original operator ceased in Aug 2026 and JTC was engaging replacements, but it does not establish this individual licensed stall closed or remained open.",
+      "closure_source": "https://www.mti.gov.sg/newsroom/oral-reply-to-pq-on-appointing-food-court-operator-at-jurong-island/"
+    },
+    {
+      "excel_row": 32262,
+      "fnb_name": "YT FOOD PTE LTD",
+      "sfa_licence": "SW16012C007",
+      "business_type": "Foodcourt",
+      "public_access_status_before": "public_access_candidate_based_on_sfa_type_and_address",
+      "address": "Address: 3 SAKRA ROAD #01-05,OASIS @ SAKRA,Singapore 627878",
+      "access_decision": "exclude_from_general_public_directory",
+      "access_basis": "All five records are at Oasis @ Sakra, 3 Sakra Road, Jurong Island. JTC states entry to Jurong Island is limited to staff and visitors with a valid pass, and visitors require sponsorship; this is not ordinary unrestricted public access.",
+      "access_source": "https://www.jtc.gov.sg/get-help/digital-services/ji-pass",
+      "permanent_tenant_closure_decision": "not_established_for_this_exact_sfa_licence",
+      "tenant_status_note": "Record shares the food-court address. MTI confirms the original operator ceased in Aug 2026 and JTC was engaging replacements, but it does not establish this individual licensed stall closed or remained open.",
+      "closure_source": "https://www.mti.gov.sg/newsroom/oral-reply-to-pq-on-appointing-food-court-operator-at-jurong-island/"
+    }
+  ],
+  "summary": {
+    "exact_records_reviewed": 5,
+    "public_access_exclusions_recommended": 5,
+    "permanent_tenant_closures_confirmed": 0,
+    "operator_or_venue_closure_followups": 1,
+    "individual_tenant_status_unresolved": 3,
+    "positive_recent_presence_evidence": 2
+  },
+  "limitation": "This is a site-specific access/closure finding, not a nationwide closure audit. No edits or row removals made."
+}

@@ -1,0 +1,372 @@
+{
+  "snapshot_id": "refresh123_official_menu_20261019",
+  "observed_date": "2026-10-19",
+  "baseline_workbook": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_workbook_sha256": "2674213d695cbe29ef25cab0ca9535a1dbca6dbf81b5b1ea983561632994e233",
+  "workbook_modified": false,
+  "research_scope": "Official merchant menu sources only; candidate SFA directory rows had both Menu / Price and Menu URL blank at baseline. No workbook edits made.",
+  "candidate_count": 5,
+  "candidate_records": [
+    {
+      "sfa_licence": "CE24907K000",
+      "directory_name": "PUREGEM CHINESE FINE DINING",
+      "directory_address": "60 ROBINSON ROAD #01-00,#02-00,BEA BUILDING,Singapore 068892",
+      "menu_url": "https://puregem.com.sg/wp-content/uploads/2026/07/2026_Aug_Digital-Menu.pdf",
+      "source_url": "https://puregem.com.sg/food-menu/",
+      "source_type": "Official merchant dine-in menu PDF linked from official menu page",
+      "observed_date": "2026-10-19",
+      "menu_version": "2026 Aug Digital Menu (file linked by official page; URL path 2026/07)",
+      "items": [
+        {
+          "item_name": "Chilled Drunken Yellow Cream Crab (Advance Order)",
+          "price_sgd": 16,
+          "price_unit": "per 100g"
+        },
+        {
+          "item_name": "Marinated Red Cream Mud Crab (Advance Order)",
+          "price_sgd": 16,
+          "price_unit": "per 100g"
+        },
+        {
+          "item_name": "Double-Boiled Pig’s Stomach Soup with Kampung Chicken and Conpoy",
+          "price_sgd": 128,
+          "price_unit": "4 pax"
+        },
+        {
+          "item_name": "Stewed Kampung Chicken in Claypot with Abalone and Japanese Mushrooms",
+          "price_sgd": 58,
+          "price_unit": "regular"
+        },
+        {
+          "item_name": "Signature Eight Treasures Duck with Premium Seafood Delicacies (Advance Order)",
+          "price_sgd": 168,
+          "price_unit": "whole"
+        },
+        {
+          "item_name": "Steamed Coral Trout Grouper with 15 Years Vintage Turnip",
+          "price_sgd": 22,
+          "price_unit": "per 100g"
+        },
+        {
+          "item_name": "Wok-Fried Hor Fun with Prawns in 15 Years Vintage Turnip",
+          "price_sgd": 38,
+          "price_unit": "regular"
+        },
+        {
+          "item_name": "Chilled Cherry Tomatoes with Sour Plum",
+          "price_sgd": 18,
+          "price_unit": "per serving"
+        },
+        {
+          "item_name": "Teochew Handmade Prawn Ball (4pcs)",
+          "price_sgd": 20,
+          "price_unit": "per serving"
+        },
+        {
+          "item_name": "Crispy White Bait with Pepper & Salt",
+          "price_sgd": 16,
+          "price_unit": "per serving"
+        }
+      ],
+      "evidence": "Official page identifies Pure Gem and gives address 60 Robinson Road, #01-00, 02-00, Singapore 068892. Linked PDF is titled 2026 Aug Digital Menu. Its PDF text explicitly labels these dishes and prices. It says dine-in prices exclude service charge and prevailing GST.",
+      "confidence": "high exact branch and item/price match",
+      "caveats": [
+        "Menu is an August 2026 menu, observed linked on 2026-10-19; price availability can change.",
+        "Dine-in service charge and GST are excluded.",
+        "Two crab prices apply per 100g and require advance order."
+      ]
+    },
+    {
+      "sfa_licence": "CE12C17N000",
+      "directory_name": "The Canteen By Enjoy",
+      "directory_address": "383 JALAN BESAR KAM LENG HOTEL,Singapore 209001",
+      "menu_url": "https://www.enjoyeating.sg/canteen-menu",
+      "source_url": "https://www.enjoyeating.sg/canteen-menu",
+      "source_type": "Official merchant webpage with current menu and downloadable PDF link",
+      "observed_date": "2026-10-19",
+      "menu_version": "Current page (no version date stated)",
+      "items": [
+        {
+          "item_name": "Achar",
+          "price_sgd": 4.8,
+          "price_unit": "dish"
+        },
+        {
+          "item_name": "Keropok",
+          "price_sgd": 5.8,
+          "price_unit": "dish"
+        },
+        {
+          "item_name": "White Pepper Crab",
+          "price_sgd": 38.8,
+          "price_unit": "dish"
+        },
+        {
+          "item_name": "Steamed Barramundi",
+          "price_sgd": 28.8,
+          "price_unit": "dish"
+        },
+        {
+          "item_name": "Sambal Stingray",
+          "price_sgd": 24.8,
+          "price_unit": "dish"
+        },
+        {
+          "item_name": "Chilli Prawns",
+          "price_sgd": 26.8,
+          "price_unit": "dish"
+        },
+        {
+          "item_name": "Salted Egg Prawns",
+          "price_sgd": 26.8,
+          "price_unit": "dish"
+        },
+        {
+          "item_name": "Har Jeong Sotong",
+          "price_sgd": 16.8,
+          "price_unit": "dish"
+        },
+        {
+          "item_name": "Sago Gula Melaka",
+          "price_sgd": 6.8,
+          "price_unit": "dessert"
+        },
+        {
+          "item_name": "Caffe Latte",
+          "price_sgd": 4.5,
+          "price_unit": "hot; iced S$5.50"
+        }
+      ],
+      "evidence": "Official menu page heading is “The Canteen by Enjoy Menu — Jalan Besar”; page states Kam Leng Hotel, 383 Jalan Besar, Singapore 209001, matching the SFA address. Menu page displays listed prices and states dine-in prices in SGD.",
+      "confidence": "high exact branch and item/price match",
+      "caveats": [
+        "Page has no publication/version date; checked current 2026-10-19.",
+        "Prices subject to 10% service charge and prevailing GST.",
+        "Caffe Latte variant is explicitly Hot S$4.50 / Iced S$5.50."
+      ]
+    },
+    {
+      "sfa_licence": "CE24166N000",
+      "directory_name": "La Table D' Emma",
+      "directory_address": "8 CLUB STREET #01-04,Singapore 069472",
+      "menu_url": "https://www.latabledemma.com/menu/",
+      "source_url": "https://www.latabledemma.com/menu/",
+      "source_type": "Official merchant menu webpage",
+      "observed_date": "2026-10-19",
+      "menu_version": "Current page copyright 2026; includes items marked New and weekly special section",
+      "items": [
+        {
+          "item_name": "Lobster Bisque",
+          "price_sgd": 38,
+          "price_unit": "dish"
+        },
+        {
+          "item_name": "Pan Seared Duck Liver",
+          "price_sgd": 28,
+          "price_unit": "dish"
+        },
+        {
+          "item_name": "Crab and Comté Flatbread",
+          "price_sgd": 29,
+          "price_unit": "dish"
+        },
+        {
+          "item_name": "Chargrilled Octopus",
+          "price_sgd": 30,
+          "price_unit": "dish"
+        },
+        {
+          "item_name": "Escargots à l’Alsacienne",
+          "price_sgd": 19,
+          "price_unit": "6 pcs; 12 pcs S$34"
+        },
+        {
+          "item_name": "La Tradition",
+          "price_sgd": 24,
+          "price_unit": "tarte flambée"
+        },
+        {
+          "item_name": "Pot au Feu of My Childhood",
+          "price_sgd": 42,
+          "price_unit": "dish"
+        },
+        {
+          "item_name": "Emma’s Bouchée à la Reine",
+          "price_sgd": 42,
+          "price_unit": "dish"
+        },
+        {
+          "item_name": "Crab Tagliatelle",
+          "price_sgd": 48,
+          "price_unit": "dish"
+        },
+        {
+          "item_name": "Roasted Duck Leg",
+          "price_sgd": 42,
+          "price_unit": "dish"
+        }
+      ],
+      "evidence": "Official menu page and footer give address 8 Club Street, #01-04, Singapore 069472; this exactly matches SFA licence CE24166N000. Menu page lists item names/prices, states prices are Singapore dollars, and marks some current items New.",
+      "confidence": "high exact branch and item/price match",
+      "caveats": [
+        "Some dishes are marked New and the menu includes weekly specials; menu may change.",
+        "Prices in SGD; 10% service charge and 9% GST are added."
+      ]
+    },
+    {
+      "sfa_licence": "CE18M44K000",
+      "directory_name": "Neon Pigeon",
+      "directory_address": "36 CARPENTER STREET #01-01,CARPENTER HAUS,Singapore 059915",
+      "menu_url": "https://www.neonpigeonsg.com/_files/ugd/9e8ba5_ad6582dca2784d568758f248400dac59.pdf",
+      "source_url": "https://www.neonpigeonsg.com/menus",
+      "source_type": "Official merchant food menu PDF linked from official menus page",
+      "observed_date": "2026-10-19",
+      "menu_version": "Current linked menu; PDF itself has no date visible in extracted text",
+      "items": [
+        {
+          "item_name": "Shishito Pepper",
+          "price_sgd": 12,
+          "price_unit": "dish"
+        },
+        {
+          "item_name": "Cauliflower",
+          "price_sgd": 17,
+          "price_unit": "dish"
+        },
+        {
+          "item_name": "Caramelized Brussels Sprouts",
+          "price_sgd": 15,
+          "price_unit": "dish"
+        },
+        {
+          "item_name": "Mushroom Rice",
+          "price_sgd": 24,
+          "price_unit": "dish"
+        },
+        {
+          "item_name": "Carbonara Cup Noodle",
+          "price_sgd": 24,
+          "price_unit": "dish"
+        },
+        {
+          "item_name": "Chicken Tsukune",
+          "price_sgd": 15,
+          "price_unit": "dish"
+        },
+        {
+          "item_name": "Scallop",
+          "price_sgd": 18,
+          "price_unit": "dish"
+        },
+        {
+          "item_name": "Shiso Chicken",
+          "price_sgd": 14,
+          "price_unit": "dish"
+        },
+        {
+          "item_name": "KFC Bao",
+          "price_sgd": 12,
+          "price_unit": "1 pc"
+        },
+        {
+          "item_name": "Otah Prawn Toast",
+          "price_sgd": 17,
+          "price_unit": "dish"
+        }
+      ],
+      "evidence": "Official menu page identifies Restaurant Menu, links its food menu PDF, and shows 36 Carpenter St, #01-01, Singapore 059915, matching the SFA record. Official linked PDF shows the listed item names and prices.",
+      "confidence": "high exact branch and item/price match; medium freshness",
+      "caveats": [
+        "PDF is currently linked by merchant site but has no publication date in extractable text; record only as current-linked, observed 2026-10-19.",
+        "Prices are listed as bare amounts; menu excerpt does not specify tax/service-charge treatment."
+      ]
+    },
+    {
+      "sfa_licence": "CE09E77V000",
+      "directory_name": "OTTO RISTORANTE",
+      "directory_address": "32 MAXWELL ROAD #01-03,#01-02,WHITE HOUSE,Singapore 069115",
+      "menu_url": "https://www.ottoristorante.com.sg/www1/wp-content/uploads/2024/02/A-la-carte-July-2026-updated.pdf",
+      "source_url": "https://www.ottoristorante.com.sg/",
+      "source_type": "Official merchant a la carte PDF linked on official restaurant site",
+      "observed_date": "2026-10-19",
+      "menu_version": "A-la-carte-July-2026-updated.pdf",
+      "items": [
+        {
+          "item_name": "Seared foie gras with apple puree, acacia honey and balsamic vinegar",
+          "price_sgd": 46,
+          "price_unit": "dish"
+        },
+        {
+          "item_name": "Octopus carpaccio with grilled eggplant and pickled red Tropea onion",
+          "price_sgd": 48,
+          "price_unit": "dish"
+        },
+        {
+          "item_name": "Smoked Boston lobster with green peas and langoustine sauce",
+          "price_sgd": 52,
+          "price_unit": "dish"
+        },
+        {
+          "item_name": "Burrata cheese with heirloom tomato and 24-month-aged Parma ham",
+          "price_sgd": 38,
+          "price_unit": "dish"
+        },
+        {
+          "item_name": "Wagyu beef carpaccio, arugula, parmesan cheese and brown mushrooms",
+          "price_sgd": 40,
+          "price_unit": "dish"
+        },
+        {
+          "item_name": "Livorno-style seafood soup in a light tomato broth",
+          "price_sgd": 28,
+          "price_unit": "dish"
+        },
+        {
+          "item_name": "Smoked potato and rosemary soup, broiled provolone cheese",
+          "price_sgd": 22,
+          "price_unit": "dish"
+        },
+        {
+          "item_name": "Soup of the day",
+          "price_sgd": 18,
+          "price_unit": "dish"
+        },
+        {
+          "item_name": "Roasted Potatoes",
+          "price_sgd": 14,
+          "price_unit": "side"
+        },
+        {
+          "item_name": "Tiramisu’ alla Maniera di OTTO / Italian coffee Tiramisu’ OTTO",
+          "price_sgd": 18,
+          "price_unit": "dessert"
+        }
+      ],
+      "evidence": "Official restaurant site says OTTO Ristorante is located at 32 Maxwell Road, Maxwell Chambers Building and links its Ala Carte PDF. Its PDF URL/file title specifies July 2026 updated; SFA address has same building/address and #01-02/#01-03 units. PDF lists items/prices and notes prices subject to 10% service charge and prevailing taxes.",
+      "confidence": "high branch and item/price match",
+      "caveats": [
+        "Menu PDF identifies July 2026 update; observed 2026-10-19.",
+        "Prices subject to 10% service charge and prevailing taxes."
+      ]
+    }
+  ],
+  "excluded_sources_or_candidates": [
+    {
+      "name": "East Treasure Toa Payoh / Woods Square menus",
+      "reason": "Official page listed menus, but linked primary PDF is dated March 24, 2025; not included due freshness requirement."
+    },
+    {
+      "name": "VinFlow",
+      "reason": "Official Aug 2026 PDF available and exact branch match, but extracted text was substantially garbled and prices could not be confidently paired with item names; no item-price rows proposed."
+    },
+    {
+      "name": "Lunì",
+      "reason": "Official October 2026 e-menu linked, but 28 MB PDF was unavailable to the web parser (content-size fetch error); not included pending reliable extraction."
+    },
+    {
+      "name": "Bistro du Vin",
+      "reason": "Official current seasonal menu discovered, but no matching record found in the public directory search slice."
+    }
+  ],
+  "integration_note": "For later workbook integration, add the official menu URL and only these extracted items with source URL, observed date, and freshness/tax caveats. Keep prices as SGD menu-listed prices, not delivery-platform prices. Do not imply all menu items are captured."
+}

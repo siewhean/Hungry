@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { View, StyleSheet, Pressable, ActivityIndicator, Dimensions } from "react-native";
+import { View, StyleSheet, Pressable, ActivityIndicator, useWindowDimensions } from "react-native";
 import { FlashList } from "@shopify/flash-list";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 
-import { AccessibleImage, AppText, EmptyState, Screen } from "@/components/ui";
+import { AccessibleImage, AppText, Button, EmptyState, Screen } from "@/components/ui";
 import {
   prefetchDishDetail,
   prefetchImage,
@@ -20,19 +20,21 @@ import { useProfileStore } from "@/store/useProfileStore";
 import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
 import type { Story, StallPost, DishDetail } from "@/types/domain";
+import { useCommunitySafetyRevision } from "@/lib/security/communitySafety";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 
 type SocialGridRouteProp = RouteProp<ProfileStackParamList, "SocialGrid">;
 
-const { width } = Dimensions.get("window");
 const COLUMN_COUNT = 3;
-const ITEM_WIDTH = width / COLUMN_COUNT;
 
 export function SocialGridScreen() {
-  const { palette } = useHungryTheme();
+  const { palette, spacing } = useHungryTheme();
+  const { width } = useWindowDimensions();
+  const itemWidth = width / COLUMN_COUNT;
   const navigation = useNavigation<any>();
   const route = useRoute<SocialGridRouteProp>();
   const { type } = route.params;
+  const safetyRevision = useCommunitySafetyRevision();
 
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const storiesEnabled = FEATURE_FLAGS.storiesEnabled;
@@ -43,6 +45,8 @@ export function SocialGridScreen() {
 
   const [stallPosts, setStallPosts] = useState<StallPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   const getSavedSortKey = useCallback((timestamp?: string) => {
     if (!timestamp) return 0;
@@ -51,9 +55,15 @@ export function SocialGridScreen() {
   }, []);
 
   useEffect(() => {
+    let active = true;
     async function loadData() {
-      if (!isAuthenticated) return;
+      if (!isAuthenticated) {
+        setStallPosts([]);
+        setIsLoading(false);
+        return;
+      }
       setIsLoading(true);
+      setLoadFailed(false);
       try {
         const repository = getDataRepository();
         const posts = await listSharedStallPosts(repository);
@@ -62,16 +72,28 @@ export function SocialGridScreen() {
           await loadStories();
         }
 
+        if (!active) return;
         setStallPosts(posts);
         initializeInteractions(posts);
-      } catch (e) {
-        console.error("Failed to load grid data", e);
+      } catch {
+        if (active) setLoadFailed(true);
       } finally {
-        setIsLoading(false);
+        if (active) setIsLoading(false);
       }
     }
     void loadData();
-  }, [isAuthenticated, loadStories, initializeInteractions, publishedPosts, storiesEnabled]);
+    return () => {
+      active = false;
+    };
+  }, [
+    isAuthenticated,
+    loadStories,
+    initializeInteractions,
+    publishedPosts,
+    storiesEnabled,
+    attempt,
+    safetyRevision,
+  ]);
 
   const items = useMemo(() => {
     const filteredStories = storiesEnabled
@@ -154,7 +176,7 @@ export function SocialGridScreen() {
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={itemLabel}
-        style={styles.gridItem}
+        style={[styles.gridItem, { width: itemWidth, height: itemWidth * 1.5 }]}
         onPressIn={() => {
           if (isStory) {
             if (!storiesEnabled) return;
@@ -212,28 +234,33 @@ export function SocialGridScreen() {
   return (
     <Screen
       title={type === "liked" ? "Liked Content" : "Saved Content"}
+      scroll={false}
       fullWidth
       contentContainerStyle={{ paddingHorizontal: 0 }}
     >
+      {loadFailed ? (
+        <Button
+          label="Retry loading saved content"
+          onPress={() => setAttempt((value) => value + 1)}
+        />
+      ) : null}
       {isLoading ? (
         <View style={styles.center}>
           <ActivityIndicator color={palette.orange} size="large" />
         </View>
-      ) : items.length === 0 ? (
+      ) : items.length === 0 && !loadFailed ? (
         <EmptyState
           title={`No ${type} content found`}
           body="Add content to see it appear in this grid."
         />
-      ) : (
+      ) : items.length ? (
         <FlashList
           data={items}
           renderItem={renderItem}
-          // @ts-ignore
-          estimatedItemSize={ITEM_WIDTH * 1.5}
           numColumns={COLUMN_COUNT}
-          contentContainerStyle={{ paddingBottom: 40 }}
+          contentContainerStyle={{ paddingBottom: spacing[8] }}
         />
-      )}
+      ) : null}
     </Screen>
   );
 }
@@ -246,8 +273,6 @@ const styles = StyleSheet.create({
     paddingTop: 100,
   },
   gridItem: {
-    width: ITEM_WIDTH,
-    height: ITEM_WIDTH * 1.5,
     padding: 1,
   },
   image: {

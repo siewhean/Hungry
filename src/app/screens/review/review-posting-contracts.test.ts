@@ -29,18 +29,18 @@ test("review submit sends the recommend choice and a retry-stable client review 
 
   assert.match(review, /wouldRecommend: draft\.recommend/);
   assert.match(review, /clientReviewId: ensurePendingReviewId\(\)/);
-  assert.match(service, /would_recommend: draft\.wouldRecommend \?\? true/);
+  assert.match(service, /p_would_recommend:\s*draft\.wouldRecommend \?\? true/);
   assert.doesNotMatch(service, /would_recommend: true,/);
-  assert.match(service, /error\?\.code !== "23505"/);
+  assert.match(service, /client\.rpc\("publish_review_v2"/);
 });
 
 test("prototype-only review features stay out of production", () => {
   const review = read("src/app/screens/review/ReviewScreen.tsx");
   const stallDetail = read("src/app/screens/detail/StallDetailScreen.tsx");
 
-  assert.match(review, /const reviewMusicEnabled = FEATURE_FLAGS\.prototypeRoutesEnabled/);
-  assert.match(review, /const reviewVideoEnabled = FEATURE_FLAGS\.prototypeRoutesEnabled/);
-  assert.match(review, /\{reviewMusicEnabled \? \(/);
+  assert.match(review, /const reviewMusicEnabled = false/);
+  assert.match(review, /const reviewVideoEnabled = false/);
+  assert.doesNotMatch(review, /label="Add Music"/);
   assert.match(review, /const hasVideo = reviewVideoEnabled && Boolean\(draft\.videoUri\)/);
   assert.doesNotMatch(review, /\(draft\.videoUri \? 20 : 0\)/);
   assert.match(stallDetail, /const reviewRepliesEnabled = FEATURE_FLAGS\.prototypeRoutesEnabled/);

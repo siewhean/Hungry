@@ -1,0 +1,109 @@
+(node:84089) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[1A[2K[2m[WebServer] [22m(node:84099) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 5 tests using 1 worker
+
+[1A[2K(node:84314) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:84314) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+
+[1A[2K(node:84314) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K[1/5] [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:20:5 › fresh Welcome reaches existing-account login with real validation
+[1A[2K[2/5] [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:32:5 › onboarding selection and quiz answer resume after a browser reload
+[1A[2K  1) [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:32:5 › onboarding selection and quiz answer resume after a browser reload 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByRole('button', { name: 'Deselect Local', exact: true })
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 10000ms[22m
+    [2m  - waiting for getByRole('button', { name: 'Deselect Local', exact: true })[22m
+
+
+      52 |  await page.getByRole('button',{name:'Open normal app flow'}).click();
+      53 |  await page.getByRole('button',{name:'Get started',exact:true}).click();
+    > 54 |  await expect(page.getByRole('button',{name:'Deselect Local',exact:true})).toBeVisible();
+         |                                                                            ^
+      55 |  await page.getByRole('button',{name:'Next',exact:true}).click();
+      56 |  await expect(page.getByText('How spicy tonight?',{exact:true})).toBeVisible();
+      57 |  await capture('resumed-spicy');
+        at /Users/Siew Hean/Documents/GitHub/Hungry/tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:54:76
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tasks/remediation-2026-10-20/browser/results/remediation.browser-onboar-98c9d-sume-after-a-browser-reload-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tasks/remediation-2026-10-20/browser/results/remediation.browser-onboar-98c9d-sume-after-a-browser-reload-chromium/error-context.md
+
+
+[1A[2K(node:84617) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:84617) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+
+[1A[2K(node:84617) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K[3/5] [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:63:5 › mock profile Settings exposes supported preferences and readonly auth email
+[1A[2K  2) [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:63:5 › mock profile Settings exposes supported preferences and readonly auth email 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoHaveAttribute[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator:  getByRole('switch', { name: /Haptic feedback/ })
+    Expected: [32m"true"[39m
+    Received: [31m""[39m
+    Timeout:  10000ms
+
+    Call log:
+    [2m  - Expect "toHaveAttribute" with timeout 10000ms[22m
+    [2m  - waiting for getByRole('switch', { name: /Haptic feedback/ })[22m
+    [2m    14 × locator resolved to <div tabindex="0" role="switch" aria-label="Haptic feedback" class="css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73">…</div>[22m
+    [2m       - unexpected value "null"[22m
+
+
+      71 |  const original=await haptics.getAttribute('aria-checked');
+      72 |  await haptics.click();
+    > 73 |  await expect(haptics).toHaveAttribute('aria-checked',original==='true'?'false':'true');
+         |                        ^
+      74 |  await page.reload({waitUntil:'domcontentloaded'});
+      75 |  await expect(page.getByText('Developer Launcher',{exact:true}).first()).toBeVisible();
+      76 |  await clickDevButton(page,'Settings','Profile & Review');
+        at /Users/Siew Hean/Documents/GitHub/Hungry/tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:73:24
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tasks/remediation-2026-10-20/browser/results/remediation.browser-mock-p-f7167-ces-and-readonly-auth-email-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tasks/remediation-2026-10-20/browser/results/remediation.browser-mock-p-f7167-ces-and-readonly-auth-email-chromium/error-context.md
+
+
+[1A[2K(node:84693) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:84693) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+
+[1A[2K(node:84693) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K[4/5] [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:82:5 › Discover cards keep their dish identity across the former cycle interval
+[1A[2K[5/5] [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:95:5 › supported composer opens a deliberate dish and preserves entered draft
+[1A[2K  2 failed
+    [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:32:5 › onboarding selection and quiz answer resume after a browser reload 
+    [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:63:5 › mock profile Settings exposes supported preferences and readonly auth email 
+  3 passed (1.4m)

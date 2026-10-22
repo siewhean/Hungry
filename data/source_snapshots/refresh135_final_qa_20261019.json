@@ -1,0 +1,90 @@
+{
+  "qa_id": "refresh135_final_installed_qa",
+  "observed_at": "2026-10-19",
+  "canonical_workbook": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "result": "PASS",
+  "checks": {
+    "installed_sha256": "dfdd8b9833f249e0c4539c8c8ed861f06df7f40ba842875aa6375b13d3c7e999",
+    "installed_sha_matches_QA_candidate": true,
+    "installed_matches_independently_qaed_candidate": true,
+    "zip_integrity": true,
+    "external_link_part_count": 0,
+    "formula_count": 0,
+    "sheet_names": [
+      "Public F&B Directory",
+      "Menu Items",
+      "Image Candidates",
+      "Coverage & Sources"
+    ],
+    "four_expected_sheets": true,
+    "table_ranges": {
+      "Public F&B Directory": [
+        "A1:U38274"
+      ],
+      "Menu Items": [
+        "A1:L14231"
+      ],
+      "Image Candidates": [
+        "A1:I2768"
+      ],
+      "Coverage & Sources": [
+        "A1:C235"
+      ]
+    },
+    "table_ranges_exact": {
+      "Public F&B Directory": true,
+      "Menu Items": true,
+      "Image Candidates": true,
+      "Coverage & Sources": true
+    },
+    "directory_data_rows": 38273,
+    "directory_licence_ids_unique": true,
+    "directory_ids_and_order_match_candidate_qa": true,
+    "directory_fill_proposal_count": 101,
+    "directory_fill_proposals_match_installed_values": true,
+    "directory_fill_errors": [],
+    "coordinate_drift_count_from_candidate_qa": 0,
+    "no_coordinate_drift": true,
+    "menu_item_rows": 14230,
+    "new_menu_rows": 240,
+    "menu_240_additions_match_proposals": true,
+    "new_menu_duplicate_licence_item_keys": 0,
+    "no_new_menu_duplicate_keys": true,
+    "typed_date_cells": 536,
+    "536_typed_dates_preserved_from_prior_baseline_qa": true,
+    "image_candidates": 2767,
+    "shoukouwa_review_only_image_count": 1,
+    "shoukouwa_image_review_only": true,
+    "shoukouwa_image_exact_source_page": true,
+    "shoukouwa_image_visual_check_and_license": true,
+    "approved_image_url_unchanged_from_QA_candidate": true,
+    "data_folder_xlsx_inventory": [
+      "Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+      "Hungry F&B Database.xlsx",
+      "dish-food-types-to-vet.xlsx",
+      "singapore_food_stalls.xlsx",
+      "stall-logo-candidates.xlsx",
+      "taste-answer-key.xlsx",
+      "~$stall-logo-candidates.xlsx"
+    ],
+    "single_canonical_workbook_present": true,
+    "no_refresh135_or_duplicate_workbook_created": true,
+    "prior_independent_candidate_QA_result": "PASS",
+    "prior_independent_coordinate_drift_check": true,
+    "prior_independent_directory_order_check": true,
+    "failed_checks": [],
+    "all_checks_pass": true,
+    "actual_xlsx_workbooks_excluding_excel_lock_files": [
+      "Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+      "Hungry F&B Database.xlsx",
+      "dish-food-types-to-vet.xlsx",
+      "singapore_food_stalls.xlsx",
+      "stall-logo-candidates.xlsx",
+      "taste-answer-key.xlsx"
+    ],
+    "excel_lock_files_not_workbooks": [
+      "~$stall-logo-candidates.xlsx"
+    ]
+  },
+  "notes": "Read-only installed-file QA. Installed SHA must match the candidate independently QAed against the Refresh134 baseline before installation. Date-baseline, coordinate-no-drift, approved-image-field and directory-order proofs are referenced from the independent candidate QA receipt because in-place installation replaced the prior canonical workbook."
+}

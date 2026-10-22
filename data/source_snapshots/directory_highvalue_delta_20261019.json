@@ -1,0 +1,71 @@
+{
+  "snapshot_id": "directory_highvalue_delta_20261019",
+  "observed_date": "2026-10-19",
+  "workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "163a66db016b6f1a93105ea31ce0d84afed7b928ededc8e3d5cf88ab81b755e9",
+  "workbook_edited": false,
+  "scope": "Exact public-facing outlet records with blank contact, website, menu URL, or opening-hours fields; official mall and operator sources only.",
+  "summary": {
+    "proposals": 1,
+    "distinct_sfa_licences": 1,
+    "fields_proposed": 3,
+    "field_counts": {
+      "Website": 1,
+      "Menu URL": 1,
+      "Opening Hours / Closed Days": 1
+    },
+    "excluded_candidates": 1,
+    "contact_details_proposed": 0
+  },
+  "proposals": [
+    {
+      "sfa_licence": "CE05227L000",
+      "existing_name": "PS CAFE",
+      "existing_address": "Address: 290 ORCHARD ROAD #03-41/44,THE PARAGON,Singapore 238859",
+      "postal_code": "238859",
+      "official_tenant_name": "PS.Cafe Paragon",
+      "official_unit": "#03-41/42",
+      "field_proposals": {
+        "Website": "https://www.pscafe.com/",
+        "Menu URL": "https://www.pscafe.com/pscafe-paragon-qr-food-menu",
+        "Opening Hours / Closed Days": "Daily: 10:00 AM - 10:00 PM (last order 9:00 PM)"
+      },
+      "before_values": {
+        "Website": null,
+        "Menu URL": null,
+        "Opening Hours / Closed Days": null,
+        "Contact Details": null
+      },
+      "field_evidence": {
+        "Website": {
+          "source_url": "https://www.pscafe.com/pscafe-at-paragon",
+          "supporting_url": "https://www.pscafe.com/",
+          "evidence": "Operator website has a dedicated PS.Cafe Paragon outlet page; the global official brand site is the official website. The outlet page states its name and address at #03-41/42, Paragon, 290 Orchard Road, Singapore 238859. Observed 2026-10-19."
+        },
+        "Menu URL": {
+          "source_url": "https://www.pscafe.com/pscafe-paragon-qr-food-menu",
+          "evidence": "Operator menu page is explicitly titled PS.CAFE PARAGON and presents the all-day and brunch menus. The operator outlet page links to its all-day menu and identifies the Paragon outlet. Observed 2026-10-19."
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.pscafe.com/pscafe-at-paragon",
+          "supporting_url": "https://www.pscafe.com/pscafe-paragon-qr-food-menu",
+          "evidence": "Operator outlet page says Daily, 10.00am-10.00pm, last order 9.00pm. The Paragon-specific menu page independently says Monday-Sunday, 10.00am-10.00pm, last order 9.00pm. Observed 2026-10-19."
+        }
+      },
+      "exact_match_basis": "Current directory licence CE05227L000 is named PS CAFE and lists address 290 ORCHARD ROAD #03-41/44, THE PARAGON, Singapore 238859. Operator page confirms PS.Cafe Paragon at #03-41/42 in the same building and postal code; matching unit #03-41. No conflicting nonblank target fields.",
+      "join_confidence": "high"
+    }
+  ],
+  "excluded_candidates": [
+    {
+      "sfa_licence": "CE23656X000",
+      "existing_name": "Avenue on 3",
+      "reason": "An earlier Paragon-indexed result contained phone 9617 9129 at unit #03-46/56 but was crawled about 1.3 years ago. The official detail URL opened during this audit returns Store Not Found, while the currently indexed Avenue on 3 page refers to #03-48/56 and a mixed retail/food concept. The stale phone cannot be safely attached to this licensed outlet. No field proposed."
+    }
+  ],
+  "withheld": [
+    "Paragon mall concierge/main telephone was not proposed as a tenant contact.",
+    "Paragon mall-wide hours were not used for any outlet-level hours field.",
+    "No new image candidate proposed in this directory-field batch."
+  ]
+}

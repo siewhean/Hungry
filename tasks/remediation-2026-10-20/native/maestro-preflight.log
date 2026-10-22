@@ -1,0 +1,31 @@
+iOS driver not ready in time, consider increasing timeout by configuring MAESTRO_DRIVER_STARTUP_TIMEOUT env variable
+
+The stack trace was:
+xcuitest.installer.LocalXCTestInstaller$IOSDriverTimeoutException: iOS driver not ready in time, consider increasing timeout by configuring MAESTRO_DRIVER_STARTUP_TIMEOUT env variable
+	at xcuitest.installer.LocalXCTestInstaller.start$lambda$3(LocalXCTestInstaller.kt:134)
+	at maestro.utils.Metrics.measured(Metrics.kt:48)
+	at xcuitest.installer.LocalXCTestInstaller.start(LocalXCTestInstaller.kt:104)
+	at xcuitest.XCTestDriverClient.restartXCTestRunner(XCTestDriverClient.kt:59)
+	at ios.xctest.XCTestIOSDevice.open(XCTestIOSDevice.kt:26)
+	at ios.LocalIOSDevice.open(LocalIOSDevice.kt:27)
+	at maestro.drivers.IOSDriver.open$lambda$3(IOSDriver.kt:79)
+	at maestro.utils.Metrics.measured(Metrics.kt:48)
+	at maestro.utils.Metrics.measured$default(Metrics.kt:42)
+	at maestro.drivers.IOSDriver.open(IOSDriver.kt:78)
+	at maestro.Maestro$Companion.ios(Maestro.kt:683)
+	at maestro.cli.session.MaestroSessionManager.createIOS(MaestroSessionManager.kt:447)
+	at maestro.cli.session.MaestroSessionManager.createMaestro(MaestroSessionManager.kt:218)
+	at maestro.cli.session.MaestroSessionManager.newSession(MaestroSessionManager.kt:109)
+	at maestro.cli.session.MaestroSessionManager.newSession$default(MaestroSessionManager.kt:67)
+	at maestro.cli.command.PrintHierarchyCommand.run(PrintHierarchyCommand.kt:130)
+	at picocli.CommandLine.executeUserObject(CommandLine.java:1939)
+	at picocli.CommandLine.access$1300(CommandLine.java:145)
+	at picocli.CommandLine$RunLast.executeUserObjectOfLastSubcommandWithSameParent(CommandLine.java:2358)
+	at picocli.CommandLine$RunLast.handle(CommandLine.java:2352)
+	at picocli.CommandLine$RunLast.handle(CommandLine.java:2314)
+	at picocli.CommandLine$AbstractParseResultHandler.execute(CommandLine.java:2179)
+	at picocli.CommandLine$RunLast.execute(CommandLine.java:2316)
+	at maestro.cli.DisableAnsiMixin$Companion.executionStrategy(DisableAnsiMixin.kt:22)
+	at picocli.CommandLine.execute(CommandLine.java:2078)
+	at maestro.cli.AppKt.main(App.kt:176)
+

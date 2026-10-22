@@ -1,0 +1,134 @@
+{
+  "snapshot_type": "refresh132_exact_public_fnb_name_proposals",
+  "observed_at_local": "2026-10-19 Asia/Singapore",
+  "baseline_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_sha256": "66d0b6438982c0b74715bd83db5636392399f40b279ad615ee8e27afd7869611",
+  "worksheet": "Public F&B Directory",
+  "scope": "Read-only exact-name review of current blank public-access records. Prioritize official mall, hawker-centre and market sources. Propose name only; no workbook edits, spend, or Mapbox calls.",
+  "source_set": [
+    {
+      "publisher": "Jewel Changi Airport",
+      "url": "https://www.jewelchangiairport.com/en/dine/bhc-chicken.html",
+      "observed_date": "2026-10-19",
+      "use": "Current official tenant and exact unit."
+    },
+    {
+      "publisher": "National Environment Agency",
+      "url": "https://www.nea.gov.sg/media/news/news/index/singapore-hawkers--celebration-and-awards-2025-honours-heritage-and-inspires-the-next-generation-of-culinary-excellence",
+      "observed_date": "2026-10-19",
+      "use": "Official 2025 award recipient stall names and exact hawker-centre units."
+    },
+    {
+      "publisher": "Health Promotion Board / HealthHub",
+      "url": "https://www.healthhub.sg/sites/assets/Assets/Programs/healthhub-rewards/pdfs/HPB_Rewards_Programme_FnB_Stalls_Accepting_HPB_Credit.pdf",
+      "observed_date": "2026-10-19",
+      "use": "Public F&B program listing for Da Po with centre, unit and postal."
+    },
+    {
+      "publisher": "Stall operator-linked Linktree",
+      "url": "https://linktr.ee/salt.singapore",
+      "observed_date": "2026-10-19",
+      "use": "Corroborates current Salt outlet/unit."
+    },
+    {
+      "publisher": "Michelin Guide",
+      "url": "https://guide.michelin.com/gb/en/singapore-region/singapore/restaurant/ghim-moh-chwee-kueh",
+      "observed_date": "2026-10-19",
+      "use": "Current secondary cross-check for Ghim Moh Chwee Kueh name and exact unit."
+    },
+    {
+      "publisher": "Michelin Guide",
+      "url": "https://guide.michelin.com/sg/en/best-of/where-to-find-the-best-chicken-rice-in-singapore",
+      "observed_date": "2026-10-19",
+      "use": "2026 guide corroborates Da Po name and exact unit."
+    }
+  ],
+  "summary": {
+    "unnamed_records_reviewed_in_verified_exact_unit_slice": 4,
+    "exact_name_proposals": 4,
+    "ambiguous_or_unconfirmed_fills": 0,
+    "workbook_edits": 0,
+    "spending": 0,
+    "mapbox_requests": 0
+  },
+  "proposals": [
+    {
+      "sfa_licence": "GM20154002",
+      "excel_row": 35196,
+      "before_f_and_b_name": null,
+      "proposed_f_and_b_name": "Ghim Moh Chwee Kueh",
+      "business_type": "NEA Managed Foodstall",
+      "existing_full_address": "Address: 20 GHIM MOH ROAD #01-54,Singapore 270020",
+      "postal_code": "270020",
+      "source_url": "https://www.nea.gov.sg/media/news/news/index/singapore-hawkers--celebration-and-awards-2025-honours-heritage-and-inspires-the-next-generation-of-culinary-excellence",
+      "corroborating_source_url": "https://guide.michelin.com/gb/en/singapore-region/singapore/restaurant/ghim-moh-chwee-kueh",
+      "source_observed_date": "2026-10-19",
+      "match_basis": "NEA 2025 Hawker Heritage Award identifies Ghim Moh Chwee Kueh at Ghim Moh Market & Food Centre #01-54; current Michelin Guide listing also gives 20 Ghim Moh Road Market & Food Centre #01-54.",
+      "confidence": "high",
+      "scope": "exact SFA licence row plus exact public venue unit and postal crosswalk; propose F&B Name only",
+      "limitations": "Name proposal only. Source establishes a public-facing tenant or stall name at this exact unit; it does not verify other directory fields. Reconfirm that the target remains blank and baseline workbook SHA still matches before integration."
+    },
+    {
+      "sfa_licence": "OA201128001",
+      "excel_row": 36327,
+      "before_f_and_b_name": null,
+      "proposed_f_and_b_name": "Salt.Singapore",
+      "business_type": "NEA Managed Foodstall",
+      "existing_full_address": "Address: 51 OLD AIRPORT ROAD #01-128,OLD AIRPORT ROAD HAWKERS' CENTRE,Singapore 390051",
+      "postal_code": "390051",
+      "source_url": "https://www.nea.gov.sg/media/news/news/index/singapore-hawkers--celebration-and-awards-2025-honours-heritage-and-inspires-the-next-generation-of-culinary-excellence",
+      "corroborating_source_url": "https://linktr.ee/salt.singapore",
+      "source_observed_date": "2026-10-19",
+      "match_basis": "NEA 2025 Enterprising Hawker Award identifies Salt.Singapore at Old Airport Road Food Centre #01-128; the operator-linked Linktree currently lists SALT @ Old Airport FC, #01-128.",
+      "confidence": "high",
+      "scope": "exact SFA licence row plus exact public venue unit and postal crosswalk; propose F&B Name only",
+      "limitations": "Name proposal only. Source establishes a public-facing tenant or stall name at this exact unit; it does not verify other directory fields. Reconfirm that the target remains blank and baseline workbook SHA still matches before integration."
+    },
+    {
+      "sfa_licence": "GMFB153003",
+      "excel_row": 35248,
+      "before_f_and_b_name": null,
+      "proposed_f_and_b_name": "Da Po Hainanese Chicken Rice & Curry Chicken Noodle",
+      "business_type": "NEA Managed Foodstall",
+      "existing_full_address": "Address: 505 BEACH ROAD #B1-53,GOLDEN MILE FOOD CENTRE,Singapore 199583",
+      "postal_code": "199583",
+      "source_url": "https://www.healthhub.sg/sites/assets/Assets/Programs/healthhub-rewards/pdfs/HPB_Rewards_Programme_FnB_Stalls_Accepting_HPB_Credit.pdf",
+      "corroborating_source_url": "https://guide.michelin.com/sg/en/best-of/where-to-find-the-best-chicken-rice-in-singapore",
+      "source_observed_date": "2026-10-19",
+      "match_basis": "HealthHub/HPB public F&B stall list identifies Da Po Hainanese Chicken Rice N Curry Chicken Noodle at Golden Mile Food Centre #B1-53, postal 199583; the 2026 Michelin chicken-rice guide also lists Da Po at the same unit.",
+      "confidence": "high",
+      "scope": "exact SFA licence row plus exact public venue unit and postal crosswalk; propose F&B Name only",
+      "limitations": "Name proposal only. Source establishes a public-facing tenant or stall name at this exact unit; it does not verify other directory fields. Reconfirm that the target remains blank and baseline workbook SHA still matches before integration."
+    },
+    {
+      "sfa_licence": "SE19336P000",
+      "excel_row": 36963,
+      "before_f_and_b_name": null,
+      "proposed_f_and_b_name": "BHC Chicken",
+      "business_type": "Restaurant",
+      "existing_full_address": "Address: 78 AIRPORT BOULEVARD #B1-247,JEWEL CHANGI AIRPORT,Singapore 819666",
+      "postal_code": "819666",
+      "source_url": "https://www.jewelchangiairport.com/en/dine/bhc-chicken.html",
+      "corroborating_source_url": null,
+      "source_observed_date": "2026-10-19",
+      "match_basis": "Jewel Changi Airport current tenant detail lists BHC Chicken at #B1-247; exact match to workbook address and postal code 819666.",
+      "confidence": "high",
+      "scope": "exact SFA licence row plus exact public venue unit and postal crosswalk; propose F&B Name only",
+      "limitations": "Name proposal only. Source establishes a public-facing tenant or stall name at this exact unit; it does not verify other directory fields. Reconfirm that the target remains blank and baseline workbook SHA still matches before integration."
+    }
+  ],
+  "held_records": [
+    {
+      "sfa_licence": "CE13L71E000",
+      "reason": "AMK Hub official directory lists ZTP as Beauty & Wellness and describes TCM health products, although SFA categorizes the record as Sales of Herbal Tea. Held from F&B name population because current source does not support classifying it as an F&B tenant.",
+      "source_url": "https://sg.linkreit.com/malls/amk-hub/stores/ztp/"
+    }
+  ],
+  "limitations": [
+    "Only four exact matches were substantiated in this targeted slice; 50 is a maximum, not a quota.",
+    "The NEA award records are dated 2025 and 2024. The 2025 matches are supported by outlet-level sources; the Da Po 2024 award match has a current HPB listing and 2026 Michelin corroboration.",
+    "No other fields were changed or proposed.",
+    "All four rows were blank in the baseline workbook at verification time."
+  ],
+  "next_integration": "Apply only if baseline SHA remains exact and each target licence row still has a blank F&B Name."
+}

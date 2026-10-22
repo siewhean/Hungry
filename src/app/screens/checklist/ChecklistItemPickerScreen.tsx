@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ArrowLeft, Search } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -101,20 +101,18 @@ export function ChecklistItemPickerScreen({ navigation, route }: Props) {
         return;
       }
 
-      const buildings = await service.discovery.listBuildings();
-      const venueLists = await Promise.all(
-        buildings
-          .slice(0, 6)
-          .map((building) => service.discovery.listVenuesByBuilding(building.id)),
-      );
-      const nextVenues = venueLists
-        .flat()
-        .filter((venue) => venue.name.toLowerCase().includes(query.trim().toLowerCase()))
-        .slice(0, 16);
+      const nextVenues = await service.discovery.searchVenuesByLocation({ query, limit: 32 });
+      if (!nextVenues) throw new Error("Venue search is unavailable. Please retry.");
       if (mounted) setVenues(nextVenues);
     }
 
-    void loadChoices();
+    void loadChoices().catch((error: unknown) => {
+      if (mounted)
+        Alert.alert(
+          "Could not load choices",
+          error instanceof Error ? error.message : "Please retry.",
+        );
+    });
     return () => {
       mounted = false;
     };
@@ -135,46 +133,33 @@ export function ChecklistItemPickerScreen({ navigation, route }: Props) {
     };
   }
 
+  async function saveItem(input: Parameters<typeof addItem>[0]) {
+    if (hasScheduleError || isSaving) return;
+    setIsSaving(true);
+    try {
+      await addItem(input);
+      navigation.goBack();
+    } catch (error) {
+      Alert.alert("Could not add item", error instanceof Error ? error.message : "Please retry.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
   async function addDish(dish: DishDetail) {
-    if (hasScheduleError) return;
-    setIsSaving(true);
-    try {
-      await addItem({ checklistId, itemType: "dish", dishId: dish.id, ...getSchedulePayload() });
-      navigation.goBack();
-    } finally {
-      setIsSaving(false);
-    }
+    await saveItem({ checklistId, itemType: "dish", dishId: dish.id, ...getSchedulePayload() });
   }
-
   async function addVenue(venue: VenueSummary) {
-    if (hasScheduleError) return;
-    setIsSaving(true);
-    try {
-      await addItem({
-        checklistId,
-        itemType: "stall",
-        stallId: venue.id,
-        ...getSchedulePayload(),
-      });
-      navigation.goBack();
-    } finally {
-      setIsSaving(false);
-    }
+    await saveItem({ checklistId, itemType: "stall", stallId: venue.id, ...getSchedulePayload() });
   }
-
   async function addCustom() {
-    if (!canSaveCustom || hasScheduleError) return;
-    setIsSaving(true);
-    try {
-      await addItem({ checklistId, itemType: "custom", customText, ...getSchedulePayload() });
-      navigation.goBack();
-    } finally {
-      setIsSaving(false);
-    }
+    if (!canSaveCustom) return;
+    await saveItem({ checklistId, itemType: "custom", customText, ...getSchedulePayload() });
   }
 
   return (
     <ScrollView
+      keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets
       style={{ flex: 1, backgroundColor: palette.bg, paddingTop: topSpacing }}
       contentContainerStyle={[styles.content, { gap: spacing[4], padding: spacing[4] }]}
     >
@@ -328,7 +313,7 @@ function ScheduleFields({
         helperText="Leave blank if you only want to save it for later."
       />
       <Input
-        label="Reminder"
+        label="Planned time"
         placeholder="YYYY-MM-DD HH:mm"
         value={reminderDateTime}
         onChangeText={onReminderDateTimeChange}

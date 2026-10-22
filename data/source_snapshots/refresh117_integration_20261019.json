@@ -1,0 +1,62 @@
+{
+  "snapshot_id": "refresh117_integration_20261019",
+  "observed_date": "2026-10-19",
+  "canonical_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_sha256": "163a66db016b6f1a93105ea31ce0d84afed7b928ededc8e3d5cf88ab81b755e9",
+  "installed_sha256": "a70390e62c4b5a9605f8041e4136f92024d93275d99c58f8de7ebaf73c8c96b6",
+  "source_snapshot": "data/source_snapshots/refresh117_pscafe_kantin_official_source_increment_20261019.json",
+  "applied_changes": {
+    "PS.Cafe Paragon exact blank fields": 3,
+    "Kantin signature menu facts": 5,
+    "Kantin official image candidates review-only": 1,
+    "approved image URLs": 0,
+    "ratings/reviews": 0,
+    "closures removed": 0,
+    "Crystal Jade Golden Palace image URL candidates, visually checked but rights restricted": 5
+  },
+  "result_counts": {
+    "Public F&B Directory": 38279,
+    "Menu Items": 12964,
+    "Image Candidates": 2575,
+    "Coverage & Sources data rows": 211,
+    "rows_with_coordinates": 35735,
+    "rows_with_contact_details": 2691,
+    "rows_with_website": 2773,
+    "rows_with_menu_url": 1387,
+    "rows_with_opening_hours": 1457,
+    "rows_with_rating_or_review_count": 0,
+    "rows_with_approved_image_url": 0,
+    "unnamed_records": 5526
+  },
+  "limitations": [
+    "Kantin listing is descriptive, not a complete menu; five names are recorded without prices.",
+    "Kantin banner was not visually inspected; candidate is review-only and rights are unverified.",
+    "All directory public access still requires venue-by-venue confirmation; Public Access Status was not changed.",
+    "Mapbox account usage is not exposed through the connected tools; latest user-reported count remains 59/50,000."
+  ],
+  "status": "PASS: Refresh117 installed in place and independently QA-verified on the exact canonical workbook SHA.",
+  "table_ranges": {
+    "Public F&B Directory": "A1:U38280",
+    "Menu Items": "A1:L12965",
+    "Image Candidates": "A1:I2576",
+    "Coverage & Sources": "A1:C212"
+  },
+  "independent_qa": {
+    "status": "PASS",
+    "installed_sha256": "a70390e62c4b5a9605f8041e4136f92024d93275d99c58f8de7ebaf73c8c96b6",
+    "checks": "ZIP; all four worksheet/table ranges; expected row counts; zero formula/error cells; unique/sorted Directory IDs; source-to-row matches; image rights/status checks.",
+    "limitation": "Prior baseline workbook unavailable for bytewise Directory row identity comparison; current 38,279 unique IDs and alphabetical order verified."
+  },
+  "source_snapshot_sha256s": {
+    "refresh117_pscafe_kantin_official_source_increment_20261019.json": "cd5236e230ec0d44d2dea7b89f4489a2a1ad5cd6b76ec40a719fe7369bb50c0f",
+    "mall_media_delta_refresh117_20261019.json": "6421670ed73004c53e1910e79bb51e03129ddd3e652b7caa50ed443e48d40b67",
+    "restricted_access_proof_refresh117_20261019.json": "f00f0d60c18eda09b750c4cf72c4040979deacaf352a13e2d5d0e7a83bbc4401",
+    "official_menu_crosswalk_refresh117_20261019.json": "55d8fcd0d204884ceda381413eba2c8560b737d0c584353029c4f2ba0384dd34",
+    "menu_platform_delta_20261019.json": "fb4722299b9bb35607b0ec1b1aa52ecbc0db3b313a5645518cf962dfdc61dd11"
+  },
+  "audits_not_applied": {
+    "public_access": "24 records reviewed; no removals justified; several remain unresolved/candidates.",
+    "legacy_menus": "Five first-party crosswalk checks yielded no current exact-SFA additions.",
+    "delivery_platforms": "No platform menu/media values retained; current project permission audit and source-scope checks not satisfied."
+  }
+}

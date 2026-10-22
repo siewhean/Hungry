@@ -187,13 +187,9 @@ test("Merchant screen contract: merchant navigation buttons are accessible and h
   assert.match(tabs, /accessibilityLabel=\{`Merchant \$\{tabConfig\.label\}`\}/);
   assert.match(tabs, /tabConfig\.label/);
 
-  for (const route of [
-    "FeaturedVisitors",
-    "PromotionList",
-    "AIAssistant",
-    "MerchantSettings",
-    "OrdersComingSoon",
-  ]) {
+  assert.doesNotMatch(dashboard, /QR ordering setup|Preview Ordering|Review menu, photo, demand/);
+  assert.match(dashboard, /Business summary/);
+  for (const route of ["FeaturedVisitors", "PromotionList", "AIAssistant", "MerchantSettings"]) {
     assert.match(dashboard, new RegExp(`prefetchMerchantRoute\\("${route}"\\)`));
     assert.match(dashboard, new RegExp(`navigation\\.navigate\\("${route}"\\)`));
   }
@@ -226,9 +222,13 @@ test("Merchant screen contract: menu management screens are wired to merchant se
 
   assert.match(dishEditor, /merchant\.addDish\(/);
   assert.match(dishEditor, /merchant\.editDish\(/);
-  assert.match(dishEditor, /merchant\.generateDishDescription\(/);
-  assert.match(dishEditor, /merchant\.suggestIngredients\(/);
-  assert.match(dishEditor, /merchant\.suggestAllergens\(/);
+  assert.match(dishEditor, /parseMerchantPrice/);
+  assert.match(dishEditor, /updateMerchantAvailability/);
+  assert.match(dishEditor, /launchImageLibraryAsync/);
+  assert.doesNotMatch(
+    dishEditor,
+    /merchant\.(?:suggestAllergens|generateDishDescription|suggestIngredients)\(/,
+  );
   assert.match(dishEditor, /imageUrl/);
   assert.match(dishEditor, /dietaryFlags/);
 
@@ -253,10 +253,10 @@ test("Merchant screen contract: profile, menu, and analytics use production-read
   assert.match(profile, /BusinessImageField/);
   assert.doesNotMatch(profile, /Profile image upload unavailable/);
   assert.match(verificationCentre, /launchImageLibraryAsync/);
-  assert.match(verificationCentre, /submitVerification\(activeOutlet\.id/);
+  assert.match(verificationCentre, /submitVerification\(\s*activeOutlet\.id/);
   assert.match(homeBasedVerification, /launchImageLibraryAsync/);
-  assert.match(homeBasedVerification, /for \(const fileUrl of photoUris\)/);
-  assert.match(homeBasedVerification, /submitVerification\(activeOutlet\.id/);
+  assert.match(homeBasedVerification, /photoUris\.map\(\(fileUrl\)/);
+  assert.match(homeBasedVerification, /submitVerification\(\s*activeOutlet\.id/);
   assert.doesNotMatch(`${verificationCentre}\n${homeBasedVerification}`, /mock-url:\/\//);
   assert.doesNotMatch(`${verificationCentre}\n${homeBasedVerification}`, /Mock photos|Attach mock/);
   const submitVerification = segmentBetween(
@@ -271,7 +271,7 @@ test("Merchant screen contract: profile, menu, and analytics use production-read
     "verification evidence must be validated before a verification row can be written",
   );
   assert.ok(
-    submitVerification.indexOf('status: "submitted"') >
+    submitVerification.indexOf('"merchant_submit_verification_v2"') >
       submitVerification.indexOf('.from("merchant_verification_evidence").insert'),
     "verification status must become submitted only after evidence insert is attempted",
   );
@@ -305,7 +305,10 @@ test("Merchant screen contract: inbox, promotions, assistant, and settings scree
   assert.match(inbox, /merchant\.getInbox\(/);
   assert.match(inbox, /merchant\.replyToInteraction\(/);
   assert.match(inbox, /merchant\.reportInteraction\(/);
-  assert.match(inbox, /merchant\.generateAIReply\(/);
+  assert.doesNotMatch(inbox, /merchant\.generateAIReply\(/);
+  assert.match(inbox, /sourceDishId/);
+  assert.match(inbox, /writeMerchantReplyDraft/);
+  assert.match(inbox, /usePreventRemove/);
   assert.match(inbox, /onViewOriginal/);
 
   assert.match(featuredVisitors, /merchant\.listPopularVisitorPins\(/);
@@ -324,7 +327,8 @@ test("Merchant screen contract: inbox, promotions, assistant, and settings scree
   assert.match(promotionBuilder, /isAvailable/);
 
   assert.match(assistant, /merchant\.getAIInsights\(/);
-  assert.match(assistant, /merchant\.getWeeklySummary\(/);
+  assert.match(assistant, /data\.find\(.*weekly_summary/);
+  assert.doesNotMatch(assistant, /merchant\.getWeeklySummary\(/);
 
   assert.match(settings, /merchant\.getTeamMembers\(/);
   assert.match(settings, /merchant\.getMerchantNotifications\(/);

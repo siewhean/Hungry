@@ -1,0 +1,245 @@
+{
+  "schema_version": 1,
+  "snapshot_id": "refresh130_candidate_qa_20261019",
+  "created_at_sgt": "2026-10-19",
+  "candidate_path": "/tmp/hungry-refresh130/Refresh130.xlsx",
+  "baseline_path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_sha256_expected": "b76b2a41688b67767fe1dfe7a63690100c6868dd949415b14bd5b224973131bb",
+  "candidate_sha256": "80bbef4c8edee234e7ddad4a9b3390a67e9f7572621a8711fbe3c97fb7066212",
+  "zip_crc": {
+    "result": "PASS",
+    "bad_member": null,
+    "members": 19
+  },
+  "overall": "PASS",
+  "checks": [
+    {
+      "check": "candidate_sha256",
+      "result": "PASS",
+      "detail": {
+        "actual": "80bbef4c8edee234e7ddad4a9b3390a67e9f7572621a8711fbe3c97fb7066212",
+        "expected": "80bbef4c8edee234e7ddad4a9b3390a67e9f7572621a8711fbe3c97fb7066212"
+      }
+    },
+    {
+      "check": "zip_crc",
+      "result": "PASS",
+      "detail": {
+        "testzip_bad_member": null,
+        "zip_members": 19
+      }
+    },
+    {
+      "check": "sheets_and_table_extents",
+      "result": "PASS",
+      "detail": {
+        "Public F&B Directory": {
+          "dimensions": [
+            38274,
+            21
+          ],
+          "table_refs": [
+            "A1:U38274"
+          ],
+          "blank_data_rows": 0,
+          "formulas": 0,
+          "errors": []
+        },
+        "Menu Items": {
+          "dimensions": [
+            13596,
+            12
+          ],
+          "table_refs": [
+            "A1:L13596"
+          ],
+          "blank_data_rows": 0,
+          "formulas": 0,
+          "errors": []
+        },
+        "Image Candidates": {
+          "dimensions": [
+            2763,
+            9
+          ],
+          "table_refs": [
+            "A1:I2763"
+          ],
+          "blank_data_rows": 0,
+          "formulas": 0,
+          "errors": []
+        },
+        "Coverage & Sources": {
+          "dimensions": [
+            225,
+            3
+          ],
+          "table_refs": [
+            "A1:C225"
+          ],
+          "blank_data_rows": 0,
+          "formulas": 0,
+          "errors": []
+        }
+      }
+    },
+    {
+      "check": "no_blank_formula_or_error_cells",
+      "result": "PASS",
+      "detail": {
+        "blank_rows": [],
+        "formula_or_error": []
+      }
+    },
+    {
+      "check": "no_hidden_or_external_content",
+      "result": "PASS",
+      "detail": {
+        "hidden_sheets": [],
+        "external_links": 0,
+        "hidden_row_or_col": false
+      }
+    },
+    {
+      "check": "directory_ids_unique_and_preserved",
+      "result": "PASS",
+      "detail": {
+        "directory_records": 38273,
+        "unique_sfa_licences": 38273,
+        "missing_ids": 0,
+        "extra_ids": 0
+      }
+    },
+    {
+      "check": "directory_sorted_alphabetically_casefold_blank_last",
+      "result": "PASS",
+      "detail": {
+        "nonblank_names": 32791,
+        "blank_names": 5482,
+        "sort_key": "F&B Name casefold; blanks last"
+      }
+    },
+    {
+      "check": "directory_deltas_only_documented_foodpanda_summaries",
+      "result": "PASS",
+      "detail": {
+        "changed_licences": {
+          "C00127C000": [
+            [
+              "Menu / Price",
+              "Verified menu: BRAND-LEVEL SINGAPORE MENU; exact outlet availability unconfirmed. Item names only (no prices): WHOPPER®; Western WHOPPER®; WHOPPER® with Cheese; Whopper Jr.®; Single Mushroom Swiss; Cheeseburger; Hamburger; Ultimate Angus Classic BBQ™; Ultimate Angus Mushroom Swiss™; Ultimate Chicken King; Hashbrowns; French Fries; Onion Rings; Cheesy Fries; Mexican Drumlets; Vanilla Cone; Chocolate Sundae; Taro Turnover; HERSHEY'S® Sundae Pie",
+              "Verified menu: BRAND-LEVEL SINGAPORE MENU; exact outlet availability unconfirmed. Item names only (no prices): WHOPPER®; Western WHOPPER®; WHOPPER® with Cheese; Whopper Jr.®; Single Mushroom Swiss; Cheeseburger; Hamburger; Ultimate Angus Classic BBQ™; Ultimate Angus Mushroom Swiss™; Ultimate Chicken King; Hashbrowns; French Fries; Onion Rings; Cheesy Fries; Mexican Drumlets; Vanilla Cone; Chocolate Sundae; Taro Turnover; HERSHEY'S® Sundae Pie Supplemental Foodpanda delivery menu observed 2026-10-19: 19 listed items and displayed delivery prices in Menu Items; prices and availability are time-sensitive and may differ from in-store."
+            ]
+          ],
+          "SW18617J000": [
+            [
+              "Menu / Price",
+              "Verified menu: MOS BURGER SINGAPORE BRAND CATALOGUE: 54 listed items; branch stock/channel price unconfirmed; outlet-exclusive items restricted by operator notice.",
+              "Verified menu: MOS BURGER SINGAPORE BRAND CATALOGUE: 54 listed items; branch stock/channel price unconfirmed; outlet-exclusive items restricted by operator notice. Supplemental Foodpanda delivery menu observed 2026-10-19: 20 listed items and displayed delivery prices in Menu Items; prices and availability are time-sensitive and may differ from in-store."
+            ]
+          ]
+        },
+        "allowed_licences": [
+          "C00127C000",
+          "SW18617J000"
+        ],
+        "summary_values": {
+          "C00127C000": "Verified menu: BRAND-LEVEL SINGAPORE MENU; exact outlet availability unconfirmed. Item names only (no prices): WHOPPER®; Western WHOPPER®; WHOPPER® with Cheese; Whopper Jr.®; Single Mushroom Swiss; Cheeseburger; Hamburger; Ultimate Angus Classic BBQ™; Ultimate Angus Mushroom Swiss™; Ultimate Chicken King; Hashbrowns; French Fries; Onion Rings; Cheesy Fries; Mexican Drumlets; Vanilla Cone; Chocolate Sundae; Taro Turnover; HERSHEY'S® Sundae Pie Supplemental Foodpanda delivery menu observed 2026-10-19: 19 listed items and displayed delivery prices in Menu Items; prices and availability are time-sensitive and may differ from in-store.",
+          "SW18617J000": "Verified menu: MOS BURGER SINGAPORE BRAND CATALOGUE: 54 listed items; branch stock/channel price unconfirmed; outlet-exclusive items restricted by operator notice. Supplemental Foodpanda delivery menu observed 2026-10-19: 20 listed items and displayed delivery prices in Menu Items; prices and availability are time-sensitive and may differ from in-store."
+        }
+      }
+    },
+    {
+      "check": "menu_rows_exact_proposal_join",
+      "result": "PASS",
+      "detail": {
+        "baseline_rows": 13556,
+        "candidate_rows": 13595,
+        "added_rows": 39,
+        "proposal_rows": 39,
+        "exact_proposal_field_match": true,
+        "added_by_licence": {
+          "C00127C000": 19,
+          "SW18617J000": 20
+        }
+      }
+    },
+    {
+      "check": "menu_exact_branch_joins_delivery_scope_timestamp",
+      "result": "PASS",
+      "detail": {
+        "licenses": {
+          "C00127C000": 19,
+          "SW18617J000": 20
+        },
+        "scopes": {
+          "Foodpanda delivery listing": 39
+        },
+        "observed": {
+          "Observed 2026-10-19 04:32:00 SGT (UTC+08:00)": 39
+        }
+      }
+    },
+    {
+      "check": "image_candidate_exact_source_license_attribution_review_only_unjoined",
+      "result": "PASS",
+      "detail": {
+        "added_image_rows": 1,
+        "license": "Creative Commons Attribution 4.0 International (CC BY 4.0); Chainwit., ‘Song Fa Bak Kut Teh, New Bridge Rd, Singapore (2023) 02.jpg’, via Wikimedia Commons, CC BY 4.0, https://creativecommons.org/licenses/by/4.0/; no changes made. Review-only; not approved for display.",
+        "scope": "Commons title identifies Song Fa Bak Kut Teh, New Bridge Road; the Commons geotag is 1.289211, 103.847664, approximately 22 m from workbook outlet coordinate 1.2890187, 103.8477137. The workbook exact address is 11 New Bridge Road #01-01. The image source is precise enough for an outlet-level historical association, not current operating status. Photographed 2023-06-03; current menu availability and current outlet appearance are not established. Historical food image only. Historical dish photo; menu-item identity unverified.",
+        "image_url": "https://upload.wikimedia.org/wikipedia/commons/5/57/Song_Fa_Bak_Kut_Teh%2C_New_Bridge_Rd%2C_Singapore_%282023%29_02.jpg",
+        "source_page_url": "https://commons.wikimedia.org/wiki/File:Song_Fa_Bak_Kut_Teh,_New_Bridge_Rd,_Singapore_(2023)_02.jpg",
+        "image_sheet_has_menu_item_field": false
+      }
+    },
+    {
+      "check": "coverage_counts_refreshed",
+      "result": "PASS",
+      "detail": {
+        "required_metrics": {
+          "Active public-access directory rows": 38273,
+          "Unique SFA licences": 38273,
+          "Rows with a usable F&B name": 32791,
+          "Rows with no usable F&B name": 5482,
+          "Rows with coordinates": 35735,
+          "Rows with contact details": 2704,
+          "Rows with website": 2819,
+          "Rows with menu URL": 1478,
+          "Rows with menu summary": 531,
+          "Rows with rating/review count": 0,
+          "Rows with approved image URL": 0,
+          "Rows with opening hours": 1486,
+          "Menu item rows": 13595,
+          "Image candidates": 2762,
+          "Official and open-license image candidates": 4
+        },
+        "mismatches": {}
+      }
+    },
+    {
+      "check": "candidate_not_written_as_excel_in_data",
+      "result": "PASS",
+      "detail": {
+        "candidate_path": "/tmp/hungry-refresh130/Refresh130.xlsx",
+        "data_excel_inventory_not_modified": true
+      }
+    },
+    {
+      "check": "integration_receipt_sha_and_zero_paid_usage",
+      "result": "PASS",
+      "detail": {
+        "receipt_sha": "80bbef4c8edee234e7ddad4a9b3390a67e9f7572621a8711fbe3c97fb7066212",
+        "request_count_this_refresh": 0,
+        "no_spending": true
+      }
+    }
+  ],
+  "summary": {
+    "pass_count": 14,
+    "fail_count": 0,
+    "menu_rows_added": 39,
+    "image_candidates_added": 1,
+    "directory_records": 38273,
+    "directory_fields_changed": 2
+  }
+}

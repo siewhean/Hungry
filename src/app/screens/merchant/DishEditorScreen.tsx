@@ -1,7 +1,9 @@
-import React, { useCallback, useState, useEffect } from "react";
-import { View, StyleSheet, Alert, Pressable } from "react-native";
-import { Sparkles, X } from "lucide-react-native";
-import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
+import { useMerchantOperationScope } from "@/features/merchant/useMerchantOperationScope";
+import { useRef as useMerchantRequestRef } from "react";
+import React, { useCallback, useState, useEffect, useRef } from "react";
+import { View, StyleSheet, Alert } from "react-native";
+import { X } from "lucide-react-native";
+import { useRoute, type RouteProp } from "@react-navigation/native";
 
 import {
   AccessibleImage,
@@ -15,10 +17,13 @@ import {
 } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
-import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
+import { getHungryService } from "@/lib/services/serviceProvider";
 import { NEUTRAL_TASTE_VECTOR, TASTE_DIMENSIONS } from "@/constants/taste";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import type { DietaryFlag, DishDetail, TasteVector } from "@/types/domain";
+
+import { parseMerchantPrice, updateMerchantAvailability } from "@/features/merchant/workflowSafety";
+import { useMerchantDirtyExit } from "@/features/merchant/useMerchantDirtyExit";
 
 type RouteProps = RouteProp<MerchantTabParamList, "DishEditor">;
 
@@ -58,18 +63,16 @@ function clampTasteValue(value: string): number {
 }
 
 export function DishEditorScreen() {
+  const captureOperation = useMerchantOperationScope();
+
   const { componentRadii, palette, spacing } = useHungryTheme();
-  const navigation = useNavigation();
   const route = useRoute<RouteProps>();
   const dishId = route.params?.dishId;
   const activeOutlet = useMerchantStore(getActiveOutlet);
-  const repository = getDataRepository();
-  const sampleImageUrl = activeOutlet?.signatureDishIds
-    .map((signatureDishId) => repository.getDishById(signatureDishId)?.imageUrl)
-    .find((candidate): candidate is string => Boolean(candidate));
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  useEffect(() => setIsSaving(false), [activeOutlet?.id]);
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
@@ -81,7 +84,40 @@ export function DishEditorScreen() {
   const [isAvailable, setIsAvailable] = useState(true);
   const [isFeatured, setIsFeatured] = useState(false);
 
+  const [originalGallery, setOriginalGallery] = useState<string[]>([]);
+  const [originalImage, setOriginalImage] = useState("");
+  const [originalFlags, setOriginalFlags] = useState<string[]>([]);
+  const baseline = useRef<string | null>(null);
+  const snapshot = JSON.stringify({
+    name,
+    price,
+    description,
+    ingredients,
+    imageUrl,
+    dietaryFlags,
+    tasteVector,
+    isAvailable,
+    isFeatured,
+  });
+  useEffect(() => {
+    if (!isLoading && baseline.current === null) baseline.current = snapshot;
+  }, [isLoading, snapshot]);
+  const finishBack = useMerchantDirtyExit(
+    baseline.current !== null && baseline.current !== snapshot,
+    isSaving,
+  );
+
+  const requestGeneration = useMerchantRequestRef(0);
+  const currentOutlet = useMerchantRequestRef(activeOutlet?.id);
+  currentOutlet.current = activeOutlet?.id;
   const loadDish = useCallback(async () => {
+    const isOperationCurrent = captureOperation();
+    if (!isOperationCurrent()) return;
+
+    const request = ++requestGeneration.current;
+    const outletId = activeOutlet?.id;
+    const isCurrent = () =>
+      request === requestGeneration.current && outletId === currentOutlet.current;
     setError(null);
     if (!dishId) {
       setIsLoading(false);
@@ -91,7 +127,13 @@ export function DishEditorScreen() {
     setIsLoading(true);
     try {
       const dish = await getHungryService().discovery.getDish(dishId);
+      if (!isOperationCurrent()) return;
+
+      if (!isCurrent()) return;
       if (dish) {
+        setOriginalGallery(dish.gallery ?? []);
+        setOriginalImage(dish.imageUrl);
+        setOriginalFlags(dish.availabilityFlags ?? []);
         setName(dish.name);
         setPrice(dish.price.toString());
         setDescription(dish.description ?? "");
@@ -101,11 +143,18 @@ export function DishEditorScreen() {
         setTasteVector(dish.tasteVector ?? { ...NEUTRAL_TASTE_VECTOR });
         setIsAvailable(!hasAvailabilityFlag(dish.availabilityFlags, "sold_out"));
         setIsFeatured(hasAvailabilityFlag(dish.availabilityFlags, "featured"));
+      } else {
+        throw new Error("This dish is unavailable.");
       }
     } catch (e) {
+      if (!isOperationCurrent()) return;
+
+      if (!isCurrent()) return;
       setError(e instanceof Error ? e.message : "Failed to load dish details.");
     } finally {
-      setIsLoading(false);
+      if (isOperationCurrent()) {
+        if (isCurrent()) setIsLoading(false);
+      }
     }
   }, [dishId]);
 
@@ -114,7 +163,10 @@ export function DishEditorScreen() {
   }, [loadDish]);
 
   const handleSave = async () => {
-    if (!activeOutlet) return;
+    const isOperationCurrent = captureOperation();
+    if (!isOperationCurrent()) return;
+
+    if (!activeOutlet || isSaving) return;
     if (!name.trim()) {
       Alert.alert("Validation", "Dish name is required.");
       return;
@@ -122,7 +174,7 @@ export function DishEditorScreen() {
 
     setIsSaving(true);
     try {
-      const parsedPrice = parseFloat(price) || 0;
+      const parsedPrice = parseMerchantPrice(price);
       const trimmedImageUrl = imageUrl.trim();
       const updates: Partial<DishDetail> = {
         name: name.trim(),
@@ -130,78 +182,41 @@ export function DishEditorScreen() {
         priceRange: `S$${parsedPrice.toFixed(2)}`,
         description: description.trim(),
         imageUrl: trimmedImageUrl,
-        gallery: trimmedImageUrl ? [trimmedImageUrl] : [],
+        gallery: Array.from(
+          new Set([
+            ...(trimmedImageUrl ? [trimmedImageUrl] : []),
+            ...originalGallery.filter((url) => url !== originalImage),
+          ]),
+        ),
         tasteTags: parseCommaSeparated(ingredients),
         tasteVector,
         dietaryFlags,
-        availabilityFlags: [
-          ...(!isAvailable ? ["sold_out"] : []),
-          ...(isFeatured ? ["featured"] : []),
-        ],
+        availabilityFlags: updateMerchantAvailability(originalFlags, isAvailable, isFeatured),
       };
 
       if (dishId) {
         await getHungryService().merchant.editDish(activeOutlet.id, dishId, updates);
+        if (!isOperationCurrent()) return;
       } else {
         await getHungryService().merchant.addDish(activeOutlet.id, updates);
+        if (!isOperationCurrent()) return;
       }
 
       Alert.alert("Success", `Dish ${dishId ? "updated" : "added"} successfully!`);
-      navigation.goBack();
+      baseline.current = snapshot;
+      finishBack();
     } catch (e) {
-      Alert.alert("Error", "Failed to save dish.");
-      console.error(e);
+      if (!isOperationCurrent()) return;
+
+      Alert.alert(
+        "Could not save dish",
+        e instanceof Error ? e.message : "Please retry. Your changes are preserved.",
+      );
     } finally {
-      setIsSaving(false);
+      if (isOperationCurrent()) {
+        setIsSaving(false);
+      }
     }
-  };
-
-  const handleGenerateDescription = async () => {
-    if (!name) {
-      Alert.alert("Notice", "Please enter a dish name first.");
-      return;
-    }
-    const generated = await getHungryService().merchant.generateDishDescription(
-      name,
-      ingredients
-        .split(",")
-        .map((i) => i.trim())
-        .filter(Boolean),
-    );
-    setDescription(generated);
-  };
-
-  const handleSuggestIngredients = async () => {
-    if (!name) {
-      Alert.alert("Notice", "Please enter a dish name first.");
-      return;
-    }
-    const suggestions = await getHungryService().merchant.suggestIngredients(name);
-    setIngredients(suggestions.join(", "));
-  };
-
-  const handleSuggestTags = async () => {
-    if (!name) {
-      Alert.alert("Notice", "Please enter a dish name first.");
-      return;
-    }
-    const suggestions = await getHungryService().merchant.suggestTags(name, description);
-    setIngredients(suggestions.join(", "));
-  };
-
-  const handleSuggestAllergens = async () => {
-    const ingredientList = parseCommaSeparated(ingredients);
-    if (ingredientList.length === 0) {
-      Alert.alert("Notice", "Add ingredients before running the allergen check.");
-      return;
-    }
-    const allergens = await getHungryService().merchant.suggestAllergens(ingredientList);
-    Alert.alert(
-      "Ingredient check",
-      allergens.length > 0
-        ? `Detected: ${allergens.join(", ")}. Choose matching customer indicators below.`
-        : "No common allergens detected from these ingredients.",
-    );
   };
 
   const toggleDietaryFlag = (flag: DietaryFlag) => {
@@ -274,22 +289,45 @@ export function DishEditorScreen() {
               accessibilityLabel="Dish picture preview"
             />
           ) : null}
-          <Input
-            value={imageUrl}
-            onChangeText={setImageUrl}
-            placeholder="Paste image URL or use the sample photo"
-            autoCapitalize="none"
-          />
           <Button
-            label="Use signature photo"
+            label="Choose dish photo"
             variant="secondary"
             fullWidth={false}
-            disabled={!sampleImageUrl}
-            onPress={() => {
-              if (sampleImageUrl) setImageUrl(sampleImageUrl);
+            onPress={async () => {
+              const isOperationCurrent = captureOperation();
+              if (!isOperationCurrent()) return;
+
+              try {
+                const picker = await import("expo-image-picker");
+                if (!isOperationCurrent()) return;
+
+                const permission = await picker.requestMediaLibraryPermissionsAsync();
+                if (!isOperationCurrent()) return;
+
+                if (!permission.granted) {
+                  Alert.alert("Photo access needed", "Allow photo access to choose a dish photo.");
+                  return;
+                }
+                const result = await picker.launchImageLibraryAsync({
+                  mediaTypes: ["images"],
+                  quality: 0.85,
+                });
+                if (!isOperationCurrent()) return;
+
+                if (!result.canceled && result.assets[0]) setImageUrl(result.assets[0].uri);
+              } catch (error) {
+                if (!isOperationCurrent()) return;
+
+                Alert.alert(
+                  "Cannot open photos",
+                  error instanceof Error ? error.message : "Please retry.",
+                );
+              }
             }}
-            style={{ marginTop: spacing[2] }}
           />
+          {imageUrl ? (
+            <Button label="Remove dish photo" variant="ghost" onPress={() => setImageUrl("")} />
+          ) : null}
         </View>
 
         <View>
@@ -313,44 +351,12 @@ export function DishEditorScreen() {
         </View>
 
         <View>
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: spacing[2],
-            }}
-          >
-            <AppText variant="bodyBold">Ingredients</AppText>
-            <Pressable
-              onPress={handleSuggestIngredients}
-              style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
-            >
-              <Sparkles size={14} color={palette.orange} />
-              <AppText variant="micro" style={{ color: palette.orange, fontWeight: "bold" }}>
-                AI Suggest
-              </AppText>
-            </Pressable>
-          </View>
+          <AppText variant="bodyBold">Taste tags</AppText>
           <Input
             value={ingredients}
             onChangeText={setIngredients}
-            placeholder="Comma separated (e.g. noodles, pork, wonton)"
+            placeholder="Comma separated (e.g. savoury, aromatic)"
             multiline
-          />
-          <Button
-            label="Check ingredient indicators"
-            variant="secondary"
-            fullWidth={false}
-            onPress={handleSuggestAllergens}
-            style={{ marginTop: spacing[2] }}
-          />
-          <Button
-            label="Suggest taste tags"
-            variant="secondary"
-            fullWidth={false}
-            onPress={handleSuggestTags}
-            style={{ marginTop: spacing[2] }}
           />
         </View>
 
@@ -372,25 +378,7 @@ export function DishEditorScreen() {
         </View>
 
         <View>
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: spacing[2],
-            }}
-          >
-            <AppText variant="bodyBold">Description</AppText>
-            <Pressable
-              onPress={handleGenerateDescription}
-              style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
-            >
-              <Sparkles size={14} color={palette.orange} />
-              <AppText variant="micro" style={{ color: palette.orange, fontWeight: "bold" }}>
-                AI Generate
-              </AppText>
-            </Pressable>
-          </View>
+          <AppText variant="bodyBold">Description</AppText>
           <Input
             value={description}
             onChangeText={setDescription}
@@ -415,6 +403,7 @@ export function DishEditorScreen() {
         />
 
         <Button
+          loading={isSaving}
           label={isSaving ? "Saving..." : "Save Dish"}
           variant="primary"
           fullWidth

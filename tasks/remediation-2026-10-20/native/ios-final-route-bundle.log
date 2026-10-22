@@ -1,0 +1,34 @@
+env: load .env.local .env.production
+env: export EXPO_PUBLIC_HUNGRY_DATA_SOURCE EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN EXPO_PUBLIC_POSTHOG_API_KEY EXPO_PUBLIC_POSTHOG_HOST EXPO_PUBLIC_SENTRY_DSN EXPO_PUBLIC_SUPABASE_ANON_KEY EXPO_PUBLIC_SUPABASE_URL EXPO_TOKEN MAPBOX_SECRET_TOKEN SENTRY_AUTH_TOKEN SENTRY_ORG SENTRY_PROJECT SUPABASE_SERVICE_ROLE_KEY EXPO_PUBLIC_AUTH_REDIRECT_URL EXPO_PUBLIC_OAUTH_PROVIDERS_ENABLED EXPO_PUBLIC_SUPABASE_KEY HF_TOKEN HUNGRY_ALLOW_SERVICE_ROLE_IMPORT HUNGRY_ALLOW_SERVICE_ROLE_SMOKE HUNGRY_CONSOLE_PASSWORD HUNGRY_CONSOLE_USERNAME HUNGRY_DATA_SOURCE HUNGRY_ENRICHMENT_PAUSE HUNGRY_SUPABASE_IMPORT_PROJECT_REF HUNGRY_SUPABASE_IMPORT_SERVICE_ROLE_KEY HUNGRY_SUPABASE_IMPORT_URL HUNGRY_SUPABASE_SMOKE_ANON_KEY HUNGRY_SUPABASE_SMOKE_PROJECT_REF HUNGRY_SUPABASE_SMOKE_REQUIRED HUNGRY_SUPABASE_SMOKE_SERVICE_ROLE_KEY HUNGRY_SUPABASE_SMOKE_URL HUNGRY_SYNC_PAUSE NEXT_PUBLIC_SITE_URL SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD
+Using src/app as the root directory for Expo Router.
+Starting Metro Bundler
+
+iOS ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+| (node:93241) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:93241) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+iOS ./index.ts ▓▓░░░░░░░░░░░░░░ 16.0% ( 51/185)
+iOS ./index.ts ▓▓░░░░░░░░░░░░░░ 17.6% (109/260)
+iOS ./index.ts ▓▓▓▓▓░░░░░░░░░░░ 31.9% (225/407)
+iOS ./index.ts ▓▓▓▓▓░░░░░░░░░░░ 35.1% (296/718)
+iOS ./index.ts ▓▓▓▓▓░░░░░░░░░░░ 35.1% (345/971)
+iOS ./index.ts ▓▓▓▓▓░░░░░░░░░░░ 35.1% (371/991)
+iOS ./index.ts ▓▓▓▓▓░░░░░░░░░░░ 35.1% ( 488/1022)
+iOS ./index.ts ▓▓▓▓▓░░░░░░░░░░░ 35.1% ( 606/1064)
+iOS ./index.ts ▓▓▓▓▓▓▓▓░░░░░░░░ 54.3% ( 895/1243)
+iOS ./index.ts ▓▓▓▓▓▓▓▓░░░░░░░░ 54.3% ( 944/3046)
+iOS ./index.ts ▓▓▓▓▓▓▓▓░░░░░░░░ 54.3% (1184/3256)
+iOS ./index.ts ▓▓▓▓▓▓▓▓░░░░░░░░ 54.3% (1303/3460)
+iOS ./index.ts ▓▓▓▓▓▓▓▓░░░░░░░░ 54.3% (2305/3469)
+iOS ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 76.7% (3066/3500)
+iOS ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 80.5% (3310/3689)
+iOS ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 80.6% (3414/3806)
+iOS ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ 86.4% (3668/3947)
+iOS ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 88.2% (3915/4172)
+iOS ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 92.0% (4193/4453)
+iOS ./index.ts ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 96.3% (4691/4826)
+iOS Bundled 72427ms index.ts (4861 modules)
+Writing bundle output to: /tmp/hungry-remediation-nativeQA/HungryRouteQA.app/main.jsbundle
+Copying 97 asset files
+Done writing bundle output

@@ -1,0 +1,76 @@
+{
+  "snapshot_type": "read_only_sfa_licence_level_closure_audit",
+  "observed_date": "2026-10-18",
+  "workbook_path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "8463f68eef5d04ec42339496ff07b22fe6c251ac23ccd42d30e90a6cbfb205d8",
+  "scope": "Current exact-address/first-party closure review. No workbook edits. Only explicit permanent closure plus exact licence/outlet match is eligible for removal.",
+  "result": {
+    "confirmed_exact_sfa_licence_permanent_closures": [],
+    "removal_count": 0,
+    "interpretation": "No exact SFA-licence-level permanent closure is proven by the reviewed current official sources."
+  },
+  "review_candidate": {
+    "venue": "Satay by the Bay / unit #01-19",
+    "effective_date": "2026-10-01",
+    "notice_claim": "Gardens by the Bay says Satay by the Bay closes from 1 October 2026 to make way for a refreshed waterfront dining experience as part of Wetlands by the Bay. The notice does not explicitly establish permanent closure and names no SFA licence number.",
+    "exact_named_workbook_licences": [
+      "CE12H48N000",
+      "CE12H48N025"
+    ],
+    "exact_unit_cluster_count": 18,
+    "unit_cluster_licences": [
+      "CE12H48N005",
+      "CE12H48N023",
+      "CE12H48N003",
+      "CE12H48N004",
+      "CE12H48N022",
+      "CE12H48N020",
+      "CE12H48N018",
+      "CE12H48N019",
+      "CE15E21J000",
+      "CE12K69J000",
+      "CE16501X000",
+      "CE12H48N024",
+      "CE12H48N002",
+      "CE12H48N000",
+      "CE12H48N025",
+      "CE12H48N006",
+      "CE12H48N007",
+      "CE12H48N008"
+    ],
+    "decision": "Do not remove on this evidence. Treat outlet/facility as closed for redevelopment from the effective date, but permanence and status of the two named licences are unconfirmed. Nearby same-postal-code units are excluded."
+  },
+  "sources": [
+    {
+      "url": "https://www.gardensbythebay.com.sg/en.html",
+      "type": "official operator venue notice",
+      "observed_date": "2026-10-18",
+      "sha256": "0843a2a282ddb6829ace39a21b7d912ce013dab2a61ac037d0e516d284e58dd8",
+      "bytes": 129150
+    },
+    {
+      "url": "https://www.sfa.gov.sg/tools-and-resources/track-records",
+      "type": "official SFA interactive track-record lookup; reports SAFE grades/track records, not a public bulk active/cancelled licence export",
+      "observed_date": "2026-10-18",
+      "sha256": "b8ef78b20459f67a71197e73d322ec9a6dc35fb4ac6660f003738d9272a784d3",
+      "bytes": 110872
+    },
+    {
+      "url": "https://www.sfa.gov.sg/Mvc/Scripts/TrackRecord/track-record.js?v=1810202615&package=ResourceSFA",
+      "type": "official SFA page client script; individual search by licence, no bulk licence-status feed exposed in reviewed client",
+      "observed_date": "2026-10-18",
+      "sha256": "a188228ba32f43da9baabe08b46086d2341ef0144f97bb7ddf9b3e02e3f46ea6",
+      "bytes": 25805
+    }
+  ],
+  "previous_sweep_reference": {
+    "path": "data/source_snapshots/closure_delta_singapore_wide_20261018.json",
+    "sha256": "6ed58e3fc38acef32037eb452495a65899f3dd544a6fc76cd883e6464a128257",
+    "note": "Query-led earlier sweep, 7 leads; exact matching permanent closure row count was zero. Its workbook hash predates the current workbook and is used only as research context."
+  },
+  "limitations": [
+    "SFA track-record portal is interactive and safety-record focused; no current public bulk cancelled-licence endpoint was identified.",
+    "The audit is source/query-led, not a manual live check of each of 38,280 outlets.",
+    "An SFA licence renewal/expiry date is not proof that a venue permanently closed."
+  ]
+}

@@ -107,6 +107,8 @@ To override these locally, you can use `.env.development` or modify the constant
 
 ## Project Status
 
+Current remediation override (20 October 2026): source fixes/removals and shared-cause corrections are implemented across all eleven audited page groups. The 187-entry [closure ledger](tasks/remediation-2026-10-20/closure-ledger.json) records **171 source-addressed observations and 16 acceptance-pending observations**, with no unmapped IDs. Current source checks pass (802 tests; two existing skips, TypeScript, lint, formatting, actual Edge compilation/webhook tests and Expo Doctor). Independent database authorization tests pass in an explicitly limited local fixture. **Release remains No-Go** pending complete native/device, real Supabase/worker/storage, full migration replay/upgrade and staging acceptance; see [remediation evidence](tasks/remediation-2026-10-20/README.md) and `tasks/verification.md`. Older audit failures and passing status rows below are historical.
+
 | Area                                | Status                                                                                     |
 | ----------------------------------- | ------------------------------------------------------------------------------------------ |
 | Expo scaffold                       | Done                                                                                       |
@@ -122,6 +124,7 @@ To override these locally, you can use `.env.development` or modify the constant
 | Offline + NotFound states           | Done                                                                                       |
 | Marketing launch kit                | Done                                                                                       |
 | Excel Ingestion & ETL Migration     | Done — reconciled workbook and rights-safe runtime catalog published                       |
+| Singapore public-access F&B dataset | 38,257 directory records; 128,175 paired menu rows; latest main SHA `13598511…`; field-by-field source audit remains in progress; see `tasks/backlog.md` and `tasks/verification.md` |
 | Typecheck                           | Passing                                                                                    |
 | Expo Doctor                         | Passing (18/18)                                                                            |
 | Agent harness docs                  | Done                                                                                       |

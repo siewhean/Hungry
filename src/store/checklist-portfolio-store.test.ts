@@ -66,7 +66,7 @@ test("portfolio store tracks create/add/publish and validates scores and duplica
     portfolioId: portfolio.id,
     itemType: "dish",
     dishId: "dish-laksa",
-    score: 8.25,
+    score: 8.2,
   });
 
   await assert.rejects(
@@ -97,7 +97,7 @@ test("portfolio store tracks create/add/publish and validates scores and duplica
   );
 
   const storedItems = usePortfolioStore.getState().items[portfolio.id] ?? [];
-  assert.equal(storedItems[0]?.score, 8.3);
+  assert.equal(storedItems[0]?.score, 8.2);
 
   const events = getTrackedAnalyticsEvents().map((event) => event.event);
   assert.equal(events.filter((event) => event === "portfolio_created").length, 1);

@@ -188,3 +188,8 @@ function createBite(overrides: Partial<Bite>): Bite {
     ...overrides,
   };
 }
+
+test("dish names and dinner metadata never claim verified late-night hours", () => {
+  const collections = getDiscoverBiteCollections();
+  assert.deepEqual(collections.lateNight, []);
+});

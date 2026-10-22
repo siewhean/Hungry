@@ -1,11 +1,13 @@
-import { useMemo } from "react";
-import { Pressable, ScrollView, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Pressable, View } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { MapPin } from "lucide-react-native";
 
-import { AppText, Card, EmptyState } from "@/components/ui";
+import { AppText, Button, Card, EmptyState } from "@/components/ui";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
-import { getDataRepository } from "@/lib/services/serviceProvider";
+import { useResolvedProfileEntities } from "@/features/profile/useResolvedProfileEntities";
+import { useStallInteractionStore } from "@/store/useStallInteractionStore";
+import type { VenueSummary } from "@/types/domain";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
 import { isVenueOpenFromHours } from "@/utils/stallStatus";
@@ -14,53 +16,52 @@ import { ProfileScreenShell } from "./ProfileScreenShell";
 
 type Props = NativeStackScreenProps<ProfileStackParamList, "VisitedStalls">;
 
-type VenueItem = {
-  id: string;
-  name: string;
-  unitNumber?: string;
-  floor?: string;
-  isOpen?: boolean;
-  operatingHours?: string;
-};
-
 export function VisitedStallsScreen({ navigation }: Props) {
   const { componentRadii, palette, spacing } = useHungryTheme();
   const profile = useProfileStore((state) => state.profile);
-  const repository = getDataRepository();
+  const interactions = useStallInteractionStore((state) => state.interactions);
+  const loadInteractions = useStallInteractionStore((state) => state.loadInteractions);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    let active = true;
+    setLoadFailed(false);
+    void loadInteractions(profile.id).catch(() => {
+      if (active) setLoadFailed(true);
+    });
+    return () => {
+      active = false;
+    };
+  }, [loadInteractions, profile.id, attempt]);
   const rootNavigation = getRootNavigation(navigation as any);
 
-  const visitedVenues = useMemo<VenueItem[]>(() => {
-    const venuesById = new Map<string, VenueItem>();
-
-    profile.reviewedDishIds.forEach((dishId) => {
-      const dish = repository.getDishById(dishId);
-      if (!dish) return;
-
-      const venue = repository.getVenueById(dish.venueId);
-      if (!venue) return;
-
-      venuesById.set(venue.id, {
-        id: venue.id,
-        name: venue.name,
-        unitNumber: venue.unitNumber,
-        floor: venue.floor,
-        isOpen: venue.isOpen,
-        operatingHours: venue.operatingHours,
-      });
-    });
-
-    return [...venuesById.values()];
-  }, [profile.reviewedDishIds, repository]);
+  const ids = Object.values(interactions)
+    .filter((item) => item.isTried)
+    .map((item) => item.stallId);
+  const resolved = useResolvedProfileEntities(ids, "venue");
+  const visitedVenues = resolved.items as VenueSummary[];
 
   return (
-    <ProfileScreenShell
-      title="Visited stores"
-      subtitle="Stalls tied to dishes in your review history."
-    >
-      <ScrollView contentContainerStyle={{ gap: spacing[3], paddingBottom: spacing[5] }}>
+    <ProfileScreenShell title="Visited stalls" subtitle="Stalls you marked as visited.">
+      <View style={{ gap: spacing[3], paddingBottom: spacing[5] }}>
+        {resolved.loading ? <AppText>Loading visited stalls…</AppText> : null}
+        {resolved.failed || loadFailed ? (
+          <Button
+            label="Retry loading visited stalls"
+            onPress={() => {
+              resolved.retry();
+              setAttempt((v) => v + 1);
+            }}
+          />
+        ) : null}
+        {resolved.missing ? (
+          <AppText>{resolved.missing} visited stalls are no longer available.</AppText>
+        ) : null}
         {visitedVenues.length ? (
           visitedVenues.map((venue) => (
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Open ${venue.name}`}
               key={venue.id}
               onPress={() => rootNavigation.navigate("StallDetail", { venueId: venue.id })}
               style={({ pressed }) => [
@@ -84,23 +85,22 @@ export function VisitedStallsScreen({ navigation }: Props) {
                         : ""}
                     </AppText>
                     <AppText tone="secondary" variant="micro">
-                      {venue.operatingHours ?? "Hours unavailable"} ·{" "}
-                      {isVenueOpenFromHours(venue.operatingHours, !!venue.isOpen)
-                        ? "Open now"
-                        : "Closed"}
+                      {venue.operatingHours
+                        ? `${venue.operatingHours} · ${isVenueOpenFromHours(venue.operatingHours, !!venue.isOpen) ? "Open now" : "Closed"}`
+                        : "Hours unavailable"}
                     </AppText>
                   </View>
                 </View>
               </Card>
             </Pressable>
           ))
-        ) : (
+        ) : !resolved.loading && !resolved.failed && !loadFailed && !resolved.missing ? (
           <EmptyState
-            title="No visited stores yet"
-            body="Review dishes to add stalls to this list."
+            title="No visited stalls yet"
+            body="Use Visited this stall on a stall page to keep a record here."
           />
-        )}
-      </ScrollView>
+        ) : null}
+      </View>
     </ProfileScreenShell>
   );
 }

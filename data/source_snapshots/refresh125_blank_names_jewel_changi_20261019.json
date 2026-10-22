@@ -1,0 +1,150 @@
+{
+  "snapshot_id": "refresh125_blank_names_jewel_changi_20261019",
+  "snapshot_type": "official_directory_exact_blank_name_proposals",
+  "observed_at_local": "2026-10-19",
+  "canonical_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_sha256": "fe31f2c8926d09ce592189efa8012987f6a3e878ef2977f50fe466873d567a64",
+  "worksheet": "Public F&B Directory",
+  "workbook_edited": false,
+  "scope": "Read-only exact-name review of blank-name SFA records at Jewel Changi Airport and Changi Airport Terminal 1 public area. Prioritize current property/operator directories, matching exact postal code and unit. Do not alter public-access or closure status.",
+  "prior_refresh_overlap_check": {
+    "refreshes_checked": [
+      120,
+      121,
+      122
+    ],
+    "proposal_licences_checked": [
+      "SE19303L000",
+      "SE19336P000",
+      "SE25L15P000",
+      "SE18181C000"
+    ],
+    "overlap_found": false
+  },
+  "source_set": [
+    {
+      "publisher": "Jewel Changi Airport Devt Pte. Ltd.",
+      "directory_url": "https://www.jewelchangiairport.com/en/dine.html",
+      "source_type": "current official mall dining directory",
+      "observed_date": "2026-10-19",
+      "notes": "The directory is current, contains outlet-specific pages and states that operating hours may change. The proposed names below were matched to individual official outlet pages, not the directory landing page alone."
+    },
+    {
+      "publisher": "Changi Airport Group",
+      "directory_url": "https://www.changiairport.com/en/dine-and-shop/dining-directory.html",
+      "source_type": "current official airport dining directory",
+      "observed_date": "2026-10-19",
+      "notes": "Current official dining directory covers public and transit areas separately. The VE/LA detail page explicitly marks its T1 outlet as PUBLIC."
+    }
+  ],
+  "summary": {
+    "proposals": 4,
+    "held_records": 2,
+    "proposed_fields": [
+      "F&B Name"
+    ],
+    "workbook_changes": 0
+  },
+  "proposals": [
+    {
+      "sfa_licence": "SE19303L000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "The 1872 Clipper Tea Co.",
+      "business_type": "Snack Counter",
+      "existing_address": "Address: 78 AIRPORT BOULEVARD #02-237,JEWEL CHANGI AIRPORT,Singapore 819666",
+      "postal_code": "819666",
+      "official_location": "Jewel Changi Airport",
+      "exact_unit_match": "#02-237",
+      "source_url": "https://www.jewelchangiairport.com/en/dine/the-1872-clipper-tea-co-.html",
+      "observed_date": "2026-10-19",
+      "source_evidence": "Jewel's current official outlet detail names The 1872 Clipper Tea Co. and lists Store Location #02-237. Workbook SFA licence SE19303L000 has the same postal code and exact unit at Jewel.",
+      "match_rationale": "Exact SFA licence-to-workbook row; exact mall, postal code and unit match against current official mall outlet detail.",
+      "confidence": "high",
+      "proposed_fields": [
+        "F&B Name"
+      ],
+      "limitations": "Name-only proposal. No other fields or SFA public-access status changed."
+    },
+    {
+      "sfa_licence": "SE19336P000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "BHC Chicken",
+      "business_type": "Restaurant",
+      "existing_address": "Address: 78 AIRPORT BOULEVARD #B1-247,JEWEL CHANGI AIRPORT,Singapore 819666",
+      "postal_code": "819666",
+      "official_location": "Jewel Changi Airport",
+      "exact_unit_match": "#B1-247",
+      "source_url": "https://www.jewelchangiairport.com/en/dine/bhc-chicken.html",
+      "observed_date": "2026-10-19",
+      "source_evidence": "Jewel's current official outlet detail names BHC Chicken, classifies it as a restaurant, and lists Store Location #B1-247. Workbook SFA licence SE19336P000 has the same postal code and exact unit at Jewel.",
+      "match_rationale": "Exact SFA licence-to-workbook row; current official mall outlet detail confirms the same public mall, postal code and licensed unit.",
+      "confidence": "high for the current public-facing tenant name and address crosswalk",
+      "proposed_fields": [
+        "F&B Name"
+      ],
+      "limitations": "The official page verifies the current tenant identity at the licensed unit; it does not independently expose the SFA licence number. No other fields or access status changed."
+    },
+    {
+      "sfa_licence": "SE25L15P000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "Tutto by Da Paolo",
+      "business_type": "Restaurant",
+      "existing_address": "Address: 78 AIRPORT BOULEVARD #02-246,#02-247,JEWEL CHANGI AIRPORT,Singapore 819666",
+      "postal_code": "819666",
+      "official_location": "Jewel Changi Airport",
+      "exact_unit_match": "#02-246/247",
+      "source_url": "https://www.jewelchangiairport.com/en/dine/tutto-by-da-paolo.html",
+      "observed_date": "2026-10-19",
+      "source_evidence": "Jewel's current official outlet detail names Tutto by Da Paolo, classifies it as a restaurant, and lists Store Location #02-246/247. Workbook SFA licence SE25L15P000 lists both #02-246 and #02-247 at Jewel and postal 819666.",
+      "match_rationale": "Exact SFA licence-to-workbook row; complete licensed unit range and postal code match current official mall outlet detail.",
+      "confidence": "high",
+      "proposed_fields": [
+        "F&B Name"
+      ],
+      "limitations": "Name-only proposal. No other fields or SFA public-access status changed."
+    },
+    {
+      "sfa_licence": "SE18181C000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "VE/LA",
+      "business_type": "Snack Counter",
+      "existing_address": "Address: 80 AIRPORT BOULEVARD #01-K22,CHANGI AIRPORT TERMINAL 1,Singapore 819642 (ARRIVAL HALL WEST)",
+      "postal_code": "819642",
+      "official_location": "Changi Airport Terminal 1 Public, Arrival Hall West",
+      "exact_unit_match": "#01-K22",
+      "source_url": "https://www.changiairport.com/zh/dine-and-shop/dining-directory/dine-detail.ve-la-1.html",
+      "crosscheck_source_url": "https://nowboarding.changiairport.com/discover-changi/vela-opens-at-changi-airport.html",
+      "observed_date": "2026-10-19",
+      "source_evidence": "Changi Airport Group's current official outlet detail identifies VE/LA at T1 Public, Level 1, #01-K22. Its official Changi editorial page also places VE/LA in Terminal 1 Arrival Hall West in the public area between T1 and Jewel. Workbook SFA licence SE18181C000 has the exact unit/address, terminal, and postal code.",
+      "match_rationale": "Exact SFA licence-to-workbook row; official airport outlet detail confirms the exact terminal, public-area designation and unit; official airport editorial independently confirms Arrival Hall West.",
+      "confidence": "high",
+      "proposed_fields": [
+        "F&B Name"
+      ],
+      "limitations": "Name-only proposal. Although official page has current hours, this pass does not propose hours or other fields; no public-access status changed."
+    }
+  ],
+  "held_records": [
+    {
+      "sfa_licence": "SE18A24L000",
+      "existing_address": "Address: 78 AIRPORT BOULEVARD #B1-243,JEWEL CHANGI AIRPORT,Singapore 819666",
+      "candidate_name": "Naixue",
+      "reason": "A Jewel official promotional source listed Naixue at #B1-243 in 2025, but no current 2026 official outlet detail for Naixue at that unit was found. The current official Jewel dining pages searched did not confirm it; hold rather than reuse historical tenant evidence.",
+      "source_url": "https://www.jewelchangiairport.com/content/dam/jca-project/documents/Celebrate%20SG60%20with%20Jewel%20Promotions%20%28updated%20as%20of%2024%20July%202025%29.pdf",
+      "action": "hold_no_name_proposal"
+    },
+    {
+      "sfa_licence": "SE18A65P000",
+      "existing_address": "Address: 78 AIRPORT BOULEVARD #B2-238,#B2-239,#B2-240,#B2-241,#B2-242,JEWEL CHANGI AIRPORT,Singapore 819666",
+      "candidate_name": "Food Republic",
+      "reason": "Current official Jewel listing identifies Food Republic at #B2-238/239/240, which only partially overlaps the SFA licensed range through #B2-242. Exact full-range crosswalk is not established; hold.",
+      "source_url": "https://www.jewelchangiairport.com/en/dine/food-republic.html",
+      "action": "hold_no_name_proposal"
+    }
+  ],
+  "limitations": [
+    "Only four new high-confidence name fills were proposed from these two current directories; other Jewel blank-name rows were held for stale evidence or partial unit overlap.",
+    "Name proposals do not establish that SFA records remain in force, and do not change public-access or closure classification.",
+    "No paid sources or APIs were used; the workbook was not edited."
+  ]
+}

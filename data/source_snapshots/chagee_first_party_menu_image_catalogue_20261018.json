@@ -1,0 +1,407 @@
+{
+  "schema": "hungry-source-snapshot/v1",
+  "snapshot_id": "chagee_first_party_menu_image_catalogue_20261018",
+  "captured_at_local": "2026-10-18",
+  "workbook": {
+    "path": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "sha256": "69c17622f7e7dd965b09955a7383465eae54fd1b06cc09db97c1dbe4cf088548"
+  },
+  "scope": "Read-only official menu and image candidate collection. No Excel modification.",
+  "official_sources": [
+    {
+      "category": "Fresh Milk Tea",
+      "url": "https://www.chagee.com.sg/en/product/fresh-milk-tea-series?autoscroll=lists",
+      "observed": "2026-10-18",
+      "evidence": "CHAGEE Singapore official catalogue category page. Current products and descriptions are listed; no published prices on these pages."
+    },
+    {
+      "category": "Snow Cap Milk Tea",
+      "url": "https://www.chagee.com.sg/en/product/snowy-frappe-series?autoscroll=lists",
+      "observed": "2026-10-18",
+      "evidence": "CHAGEE Singapore official catalogue category page. Current products and descriptions are listed; no published prices on these pages."
+    },
+    {
+      "category": "Fresh Fruit Tea",
+      "url": "https://www.chagee.com.sg/en/product/fruit-tea-series?autoscroll=lists",
+      "observed": "2026-10-18",
+      "evidence": "CHAGEE Singapore official catalogue category page. Current products and descriptions are listed; no published prices on these pages."
+    },
+    {
+      "category": "Brewed Tea",
+      "url": "https://www.chagee.com.sg/en/product/brewed-tea-series?autoscroll=lists",
+      "observed": "2026-10-18",
+      "evidence": "CHAGEE Singapore official catalogue category page. Current products and descriptions are listed; no published prices on these pages."
+    },
+    {
+      "category": "Teaspresso Latte",
+      "url": "https://www.chagee.com.sg/en/product/teaspresso-latte?autoscroll=lists",
+      "observed": "2026-10-18",
+      "evidence": "CHAGEE Singapore official catalogue category page. Current products and descriptions are listed; no published prices on these pages."
+    },
+    {
+      "category": "Teaspresso Frappé",
+      "url": "https://www.chagee.com.sg/en/product/teaspresso-frappe?autoscroll=lists",
+      "observed": "2026-10-18",
+      "evidence": "CHAGEE Singapore official catalogue category page. Current products and descriptions are listed; no published prices on these pages."
+    },
+    {
+      "category": "Iced Oriental Tea",
+      "url": "https://www.chagee.com.sg/en/product/iced-oriental-tea-series?autoscroll=lists",
+      "observed": "2026-10-18",
+      "evidence": "CHAGEE Singapore official catalogue category page. Current products and descriptions are listed; no published prices on these pages."
+    }
+  ],
+  "workbook_comparison": {
+    "public_access_record_names_exact_brand": 43,
+    "existing_exact_brand_menu_rows": 4,
+    "existing_rows": [
+      {
+        "item": "Golden Bubble Milk Tea",
+        "price": "6",
+        "source_url": "https://data.gov.sg/datasets/d_1f0313499a17075d13aae6ed3e825bc6/view"
+      },
+      {
+        "item": "Truffle Mushroom Swiss Sandwich",
+        "price": "6",
+        "source_url": "https://data.gov.sg/datasets/d_1f0313499a17075d13aae6ed3e825bc6/view"
+      },
+      {
+        "item": "Special Strawberry Shortcake",
+        "price": "6",
+        "source_url": "https://chateraisesg.getz.co/"
+      },
+      {
+        "item": "Bento Sets",
+        "price": "6",
+        "source_url": "https://data.gov.sg/datasets/d_1f0313499a17075d13aae6ed3e825bc6/view"
+      }
+    ],
+    "existing_exact_brand_image_candidates": 0,
+    "menu_rows_collected": 24,
+    "exact_name_duplicates": 0,
+    "unique_official_image_urls": 24
+  },
+  "menu_candidate_rows": [
+    {
+      "item": "BO•YA JASMINE GREEN MILK TEA",
+      "section": "Fresh Milk Tea",
+      "description": "Fragrant green tea scented over six nights with double-petal jasmine blossoms, paired with fresh milk for a smooth, balanced taste and a gentle floral finish.",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level official catalogue; outlet-level availability not specified",
+      "menu_source_url": "https://www.chagee.com.sg/en/product/fresh-milk-tea-series?autoscroll=lists",
+      "image_url": "https://oss.chagee.com.sg/website/uploads/20260128/d3b0c797-53d9-4867-bedd-ef1963f3bfd6.png",
+      "image_scope": "Official brand catalogue product image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "CEYLON MILK TEA",
+      "section": "Fresh Milk Tea",
+      "description": "A full-bodied Ceylon tea blend, paired with fresh milk for a rich texture and a balanced, satisfying finish.",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level official catalogue; outlet-level availability not specified",
+      "menu_source_url": "https://www.chagee.com.sg/en/product/fresh-milk-tea-series?autoscroll=lists",
+      "image_url": "https://oss.chagee.com.sg/website/uploads/20260128/af9e9874-d950-48e8-a6b2-929b2ef5e6bf.png",
+      "image_scope": "Official brand catalogue product image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "TIE GUAN YIN MILK TEA",
+      "section": "Fresh Milk Tea",
+      "description": "Tie Guan Yin oolong tea with a naturally refreshing character and light orchid notes, paired with fresh milk for a clean and smooth aftertaste.",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level official catalogue; outlet-level availability not specified",
+      "menu_source_url": "https://www.chagee.com.sg/en/product/fresh-milk-tea-series?autoscroll=lists",
+      "image_url": "https://oss.chagee.com.sg/website/uploads/20260128/e0de8ced-42a2-4727-ab0a-6c10383b214d.png",
+      "image_scope": "Official brand catalogue product image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "GLUTINOUS GREEN MILK TEA",
+      "section": "Fresh Milk Tea",
+      "description": "Green tea brewed from a Yunnan plant variety with a distinctive sticky-rice aroma, blended with fresh milk for a warm and lingering aftertaste.",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level official catalogue; outlet-level availability not specified",
+      "menu_source_url": "https://www.chagee.com.sg/en/product/fresh-milk-tea-series?autoscroll=lists",
+      "image_url": "https://oss.chagee.com.sg/website/uploads/20260128/db04609f-1633-4e7c-a943-e087bf932cd3.png",
+      "image_scope": "Official brand catalogue product image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "OSMANTHUS OOLONG MILK TEA",
+      "section": "Fresh Milk Tea",
+      "description": "A roasted oolong infused with osmanthus flowers, bringing together elegant floral notes. Smooth and mellow with a naturally sweet, lingering floral finish. Paired with fresh milk for a soft, well-rounded cup.",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level official catalogue; outlet-level availability not specified",
+      "menu_source_url": "https://www.chagee.com.sg/en/product/fresh-milk-tea-series?autoscroll=lists",
+      "image_url": "https://oss.chagee.com.sg/website/uploads/20260128/668224ff-ea3c-480b-9d8e-faa9e07816d2.png",
+      "image_scope": "Official brand catalogue product image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "DA HONG PAO MILK TEA",
+      "section": "Fresh Milk Tea",
+      "description": "Bold oolong tea from Wuyi Mountain with a robust roasted character, balanced with fresh milk for a smooth and rounded finish.",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level official catalogue; outlet-level availability not specified",
+      "menu_source_url": "https://www.chagee.com.sg/en/product/fresh-milk-tea-series?autoscroll=lists",
+      "image_url": "https://oss.chagee.com.sg/website/uploads/20260128/ef16f34a-3536-429f-8eb0-d4f131cb6f00.png",
+      "image_scope": "Official brand catalogue product image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "ROSE PU'ER MILK TEA",
+      "section": "Fresh Milk Tea",
+      "description": "Aged Pu-er tea creates a deep flavour foundation, blended with the delicate, lingering fragrance of Yunnan roses for a unique and exceptional aftertaste.",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level official catalogue; outlet-level availability not specified",
+      "menu_source_url": "https://www.chagee.com.sg/en/product/fresh-milk-tea-series?autoscroll=lists",
+      "image_url": "https://oss.chagee.com.sg/website/uploads/20260128/b3f55a78-0b76-48b1-8656-d940b175420b.png",
+      "image_scope": "Official brand catalogue product image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "GARDENIA GREEN MILK TEA",
+      "section": "Fresh Milk Tea",
+      "description": "Premium green tea leaves delicately scented with the soft fragrance of gardenia blossoms. Finished with fresh milk for a smooth aftertaste with soft floral notes.",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level official catalogue; outlet-level availability not specified",
+      "menu_source_url": "https://www.chagee.com.sg/en/product/fresh-milk-tea-series?autoscroll=lists",
+      "image_url": "https://oss.chagee.com.sg/website/uploads/20260128/9852bb97-2b4a-44e5-8cae-643948916da5.png",
+      "image_scope": "Official brand catalogue product image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "LAPSANG SOUCHONG BLACK MILK TEA",
+      "section": "Fresh Milk Tea",
+      "description": "Lapsang Souchong black tea, known for its distinctive pine-smoked aroma, bold depth and deep character. Balanced with fresh milk for a smooth, rounded finish.",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level official catalogue; outlet-level availability not specified",
+      "menu_source_url": "https://www.chagee.com.sg/en/product/fresh-milk-tea-series?autoscroll=lists",
+      "image_url": "https://oss.chagee.com.sg/website/uploads/20260128/d2403958-6499-47ae-858f-39a035fc5ce1.png",
+      "image_scope": "Official brand catalogue product image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "DA HONG PAO SNOW CAP MILK TEA",
+      "section": "Snow Cap Milk Tea",
+      "description": "Chilled Da Hong Pao oolong from Wuyi Mountains. Paired with fragrant strawberry cream and topped with crushed chocolate cookies for a smooth, rich, and refreshing finish.",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level official catalogue; outlet-level availability not specified",
+      "menu_source_url": "https://www.chagee.com.sg/en/product/snowy-frappe-series?autoscroll=lists",
+      "image_url": "https://oss.chagee.com.sg/website/uploads/20260128/71834dd0-2b47-474b-809c-e27327805978.png",
+      "image_scope": "Official brand catalogue product image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "OSMANTHUS OOLONG SNOW CAP MILK TEA",
+      "section": "Snow Cap Milk Tea",
+      "description": "Roasted oolong infused with osmanthus flowers, bringing together elegant floral notes. Layered with vanilla cream and topped with crushed pecans.",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level official catalogue; outlet-level availability not specified",
+      "menu_source_url": "https://www.chagee.com.sg/en/product/snowy-frappe-series?autoscroll=lists",
+      "image_url": "https://oss.chagee.com.sg/website/uploads/20260128/e6c6b0c3-b74b-4135-90e1-e0eb9ea60a60.png",
+      "image_scope": "Official brand catalogue product image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "LEMON JASMINE GREEN FRUIT TEA",
+      "section": "Fresh Fruit Tea",
+      "description": "Oolong tea with a gentle camellia floral note and a bright lemon lift for a smooth mouthfeel and refreshing, well-balanced finish.",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level official catalogue; outlet-level availability not specified",
+      "menu_source_url": "https://www.chagee.com.sg/en/product/fruit-tea-series?autoscroll=lists",
+      "image_url": "https://oss.chagee.com.sg/website/uploads/20260313/1881dced-ea63-449b-b635-53a57b12ac6a.png",
+      "image_scope": "Official brand catalogue product image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "LEMON DA HONG PAO FRUIT TEA",
+      "section": "Fresh Fruit Tea",
+      "description": "Da Hong Pao oolong tea paired with fresh lemon, balancing its deep roasted character with a crisp citrus lift.",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level official catalogue; outlet-level availability not specified",
+      "menu_source_url": "https://www.chagee.com.sg/en/product/fruit-tea-series?autoscroll=lists",
+      "image_url": "https://oss.chagee.com.sg/website/uploads/20260313/c1e062ff-e268-43b8-8e13-637ba70c5b76.png",
+      "image_scope": "Official brand catalogue product image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "DA HONG PAO PURE TEA",
+      "section": "Brewed Tea",
+      "description": "Traditionally brewed Da Hong Pao oolong tea with a deep colour and a rich, roasted character that remains clean and refreshing.",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level official catalogue; outlet-level availability not specified",
+      "menu_source_url": "https://www.chagee.com.sg/en/product/brewed-tea-series?autoscroll=lists",
+      "image_url": "https://oss.chagee.com.sg/website/uploads/20260128/2c9e1f78-ef00-4d4e-b0f7-ff7dac18a559.png",
+      "image_scope": "Official brand catalogue product image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "GLUTINOUS GREEN BREWED TEA",
+      "section": "Brewed Tea",
+      "description": "Yunnan green tea roasted to bring out its signature glutinous rice character, finishing smooth with lasting depth.",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level official catalogue; outlet-level availability not specified",
+      "menu_source_url": "https://www.chagee.com.sg/en/product/brewed-tea-series?autoscroll=lists",
+      "image_url": "https://oss.chagee.com.sg/website/uploads/20260128/fad34af6-98e5-43eb-b7be-6315bb94b397.png",
+      "image_scope": "Official brand catalogue product image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "PEACH OOLONG BREWED TEA",
+      "section": "Brewed Tea",
+      "description": "Premium oolong tea leaves blended with real dried peaches, giving a natural fragrance with every sip.",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level official catalogue; outlet-level availability not specified",
+      "menu_source_url": "https://www.chagee.com.sg/en/product/brewed-tea-series?autoscroll=lists",
+      "image_url": "https://oss.chagee.com.sg/website/uploads/20260128/c1fbb0a5-0e14-4b2d-b4cf-2d6567f718c3.png",
+      "image_scope": "Official brand catalogue product image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "OSMANTHUS OOLONG BREWED TEA",
+      "section": "Brewed Tea",
+      "description": "A roasted oolong infused with osmanthus flowers, bringing together elegant floral notes. Smooth and mellow with a naturally sweet, lingering floral finish. Paired with fresh milk for a soft, well-rounded cup.",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level official catalogue; outlet-level availability not specified",
+      "menu_source_url": "https://www.chagee.com.sg/en/product/brewed-tea-series?autoscroll=lists",
+      "image_url": "https://oss.chagee.com.sg/website/uploads/20260128/0322d4e7-1514-4d98-b5d5-957a3cb38355.png",
+      "image_scope": "Official brand catalogue product image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "TIE GUAN YIN BREWED TEA",
+      "section": "Brewed Tea",
+      "description": "Lightly roasted Tie Guan Yin oolong tea with elegant floral notes and a gentle sweetness that unfolds with each sip.",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level official catalogue; outlet-level availability not specified",
+      "menu_source_url": "https://www.chagee.com.sg/en/product/brewed-tea-series?autoscroll=lists",
+      "image_url": "https://oss.chagee.com.sg/website/uploads/20260128/bb374294-45e1-4e99-b3c7-89933f85d70e.png",
+      "image_scope": "Official brand catalogue product image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "DA HONG PAO TEASPRESSO LATTE",
+      "section": "Teaspresso Latte",
+      "description": "Traditionally slow-roasted Da Hong Pao leaves from Wuyi Mountains, brewed using Teaspresso method to extract a concentrated, robust flavour. Balanced with fresh milk for a smooth, full-bodied, and intensely aromatic finish.",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level official catalogue; outlet-level availability not specified",
+      "menu_source_url": "https://www.chagee.com.sg/en/product/teaspresso-latte?autoscroll=lists",
+      "image_url": "https://oss.chagee.com.sg/website/uploads/20260128/bcfc4b1e-37ae-4bab-9933-e5a8f800a61e.png",
+      "image_scope": "Official brand catalogue product image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "LAPSANG SOUCHONG TEASPRESSO LATTE",
+      "section": "Teaspresso Latte",
+      "description": "Lapsang Souchong black tea from Wuyi Mountains, slow-roasted to develop a bold, pine-smoked aroma with deep, layered flavours. Brewed via the Teaspresso method for a rich, smoky cup with a smooth finish, balanced with fresh milk.",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level official catalogue; outlet-level availability not specified",
+      "menu_source_url": "https://www.chagee.com.sg/en/product/teaspresso-latte?autoscroll=lists",
+      "image_url": "https://oss.chagee.com.sg/website/uploads/20260128/63fab869-9fec-4f9c-959a-90c53575812c.png",
+      "image_scope": "Official brand catalogue product image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "CHOCOLATE COOKIE LAPSANG SOUCHONG TEASPRESSO FRAPPÉ",
+      "section": "Teaspresso Frappé",
+      "description": "Smoky black tea from Wuyi Mountains, blended with fresh milk, chocolate cookies and ice. Topped with more crushed chocolate cookies for a rich, indulgent experience.",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level official catalogue; outlet-level availability not specified",
+      "menu_source_url": "https://www.chagee.com.sg/en/product/teaspresso-frappe?autoscroll=lists",
+      "image_url": "https://oss.chagee.com.sg/website/uploads/20260128/19f8fab8-ceba-44b9-848a-3badf83b65f2.png",
+      "image_scope": "Official brand catalogue product image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "CARAMEL DA HONG PAO TEASPRESSO FRAPPÉ",
+      "section": "Teaspresso Frappé",
+      "description": "Traditionally slow-roasted Da Hong Pao leaves from Wuyi Mountains, blended with fresh milk, ice, and caramel for a rich, smooth base. Topped with whipping cream for an indulgent finish.",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level official catalogue; outlet-level availability not specified",
+      "menu_source_url": "https://www.chagee.com.sg/en/product/teaspresso-frappe?autoscroll=lists",
+      "image_url": "https://oss.chagee.com.sg/website/uploads/20260128/c89e538b-c867-4d3b-a8b6-288333430272.png",
+      "image_scope": "Official brand catalogue product image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "JASMINE GREEN ICED TEA",
+      "section": "Iced Oriental Tea",
+      "description": "Green tea scented with jasmine blossoms through a slow infusion process, resulting in a clean taste with gentle floral sweetness.",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level official catalogue; outlet-level availability not specified",
+      "menu_source_url": "https://www.chagee.com.sg/en/product/iced-oriental-tea-series?autoscroll=lists",
+      "image_url": "https://oss.chagee.com.sg/website2025/uploads/20240715/d0c3da00-ce21-40f2-aeb4-96e586ec50e7.png",
+      "image_scope": "Official brand catalogue product image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "GLUTINOUS GREEN ICED TEA",
+      "section": "Iced Oriental Tea",
+      "description": "Green tea blended with a Yunnan aromatic herb, delivering a distinctive glutinous rice character and a mellow, lingering finish.",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level official catalogue; outlet-level availability not specified",
+      "menu_source_url": "https://www.chagee.com.sg/en/product/iced-oriental-tea-series?autoscroll=lists",
+      "image_url": "https://oss.chagee.com.sg/website2025/uploads/20240715/b287d187-0fee-421f-93aa-8c32fe73852d.png",
+      "image_scope": "Official brand catalogue product image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    }
+  ],
+  "field_updates": [],
+  "limitations": [
+    "No prices displayed by the first-party product pages; no prices populated.",
+    "Brand-level catalogue does not confirm every product is sold at every individual outlet.",
+    "Each image URL links from the matching product card on official CHAGEE site; reuse/display rights remain uncleared.",
+    "Two iced-tea product image assets remain in website2025 path with upload date in 2024, though the product page was live when observed on 2026-10-18.",
+    "No location join updates; store locator evidence would need exact SFA row postal/unit matching."
+  ],
+  "recommended_integration": "Append only exact item names absent from Menu Items after normalized brand/item dedupe; attach images in Image Candidates as brand-level review-only; retain Approved Image URL blank."
+}

@@ -1,0 +1,113 @@
+{
+  "snapshot_id": "refresh119_mall_directory_20261019",
+  "observed_date_local": "2026-10-19",
+  "workbook_path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "028e757cf68c3fd6be935a2908484a98ba1865c4318975cfde543d1175bf5475",
+  "workbook_edited": false,
+  "scope": {
+    "source": "official Singapore mall tenant directories",
+    "method": "bounded exact-unit validation of rows missing key directory fields; no delivery platforms, paid sources, or Mapbox requests",
+    "reviewed_exact_rows": 2
+  },
+  "sources": [
+    {
+      "url": "https://shop.greatworld.com.sg/dine/",
+      "publisher": "Great World official Dine directory",
+      "observed": "Search-index content crawled today (2026-10-19)",
+      "evidence": "Lists 365 JUICES BAR at B1 #B1-K112 under Takeaways & Food Court."
+    },
+    {
+      "url": "https://shop.greatworld.com.sg/shops/",
+      "publisher": "Great World official Shop directory",
+      "observed": "Search-index content crawled yesterday (2026-10-18)",
+      "evidence": "Lists 365 JUICES BAR at B1 #B1-K112 under Food & Beverages, Takeaways & Food Court."
+    },
+    {
+      "url": "https://sg.linkreit.com/malls/jurong-point/stores/ztp/",
+      "publisher": "Link REIT / Jurong Point official tenant page",
+      "observed": "Opened 2026-10-19; page copyright 2026",
+      "evidence": "Identifies ZTP at Jurong Point #JP203-08/09; page gives tenant hours 10:30am-9:30pm Mon-Thu and 10:30am-10pm Fri-Sun. However page categorizes ZTP as Beauty & Wellness and describes TCM health products."
+    }
+  ],
+  "findings": [
+    {
+      "sfa_licence": "CE20C18X000",
+      "name": "365 JUICES BAR",
+      "address": "Address: 1 KIM SENG PROMENADE #B1-K112,GREAT WORLD CITY,Singapore 237994",
+      "exact_match_basis": "Brand, mall and unit all match the active official Great World directory entries.",
+      "current_blank_fields": [
+        "Cuisine",
+        "Menu / Price",
+        "Opening Hours / Closed Days",
+        "Contact Details",
+        "Website",
+        "Menu URL",
+        "Rating / Review Count",
+        "Approved Image URL"
+      ],
+      "proposed_field_updates": [],
+      "status_evidence": "Official mall directory currently lists this exact tenant/unit in its F&B directory. This is current occupancy evidence only; it does not publish the individual outlet operating hours, telephone, operator site, or menu.",
+      "held_fields": [
+        {
+          "field": "Opening Hours / Closed Days",
+          "reason": "Mall-wide hours cannot be substituted for tenant-specific hours."
+        },
+        {
+          "field": "Website",
+          "reason": "No operator-controlled URL for this exact outlet confirmed from these official mall directory pages."
+        },
+        {
+          "field": "Menu URL",
+          "reason": "No operator menu link found in the mall directory."
+        },
+        {
+          "field": "Contact Details",
+          "reason": "No tenant-specific phone/email shown in the mall directory record."
+        },
+        {
+          "field": "Approved Image URL",
+          "reason": "Directory search results did not establish a separable official stall or item image URL with reuse permission."
+        }
+      ],
+      "confidence": "high for current mall-listing and exact-unit match; no field fill proposed."
+    },
+    {
+      "sfa_licence": "SW18I63L000",
+      "name": "ZTP",
+      "address": "Address: 63 JURONG WEST CENTRAL 3 #03-08/09,JURONG POINT,Singapore 648331",
+      "exact_match_basis": "Official Jurong Point page states Jurong Point #JP203-08/09, matching SFA floor/unit #03-08/09.",
+      "current_business_type": "Sales of Herbal Tea",
+      "current_blank_fields": [
+        "Cuisine",
+        "Menu / Price",
+        "Opening Hours / Closed Days",
+        "Contact Details",
+        "Website",
+        "Menu URL",
+        "Rating / Review Count",
+        "Approved Image URL"
+      ],
+      "proposed_field_updates": [],
+      "review_flag": {
+        "issue": "Official mall tenant page categorizes ZTP as Beauty & Wellness and describes TCM health products; workbook SFA type identifies Sales of Herbal Tea and this is a public mall outlet.",
+        "recommended_action": "Keep in the dataset pending a scope decision on whether herbal-tea retail outlets qualify as F&B; do not copy the hours into the F&B record until the record classification is resolved.",
+        "source_url": "https://sg.linkreit.com/malls/jurong-point/stores/ztp/"
+      },
+      "official_page_hours_observed": "10:30am-9:30pm Mon-Thu; 10:30am-10pm Fri-Sun",
+      "confidence": "high for exact tenant/unit, but category conflict prevents safe population."
+    }
+  ],
+  "integration_summary": {
+    "safe_directory_field_updates": 0,
+    "menu_item_rows_proposed": 0,
+    "image_urls_proposed": 0,
+    "closure_actions_proposed": 0,
+    "note": "This bounded mall-directory pass confirms current tenant presence for one missing-fields F&B record and identifies one classification discrepancy. No unsupported fields are proposed."
+  },
+  "limitations": [
+    "Read-only research; canonical workbook not modified.",
+    "Mall directory tenant presence does not prove current business operation independently of the mall page.",
+    "Mall-wide hours were not used as outlet hours.",
+    "No menu, item image, stall image, phone, operator website, or rating data were found for the exact reviewed rows."
+  ]
+}

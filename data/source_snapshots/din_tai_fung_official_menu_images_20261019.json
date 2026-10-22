@@ -1,0 +1,203 @@
+{
+  "schema_version": "1.0",
+  "snapshot_id": "din_tai_fung_official_menu_images_20261019",
+  "observed_at_sgt": "2026-10-19",
+  "workbook_path": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "e2b0a7e63ab806176f9476b6c79e00c9f9233d1918f023f39c1aa59031fa4583",
+  "workbook_edited": false,
+  "method": "Read-only audit of official Singapore menu HTML and linked first-party image assets. Direct image URLs were HEAD-checked for HTTP status and MIME; dimensions were read from only the 24-byte PNG signature/IHDR range response. No image bodies were downloaded or visually inspected. No workbook edits.",
+  "source_pages": [
+    {
+      "url": "https://www.dintaifung.com.sg/menu/",
+      "observed": "2026-10-19",
+      "http_status": 200,
+      "type": "official Singapore menu",
+      "evidence": "Lists item names adjacent to linked menu-card images. Introductory text says menu, pricing and serving size may vary across restaurants; preferred restaurant should be checked."
+    },
+    {
+      "url": "https://www.dintaifung.com.sg/contact-us/",
+      "observed": "2026-10-19",
+      "type": "official branch/contact page",
+      "evidence": "Lists Velocity @ Novena Square at 238 Thomson Road, #01-05, Singapore 307683, matching directory licence CE13M19J000 address."
+    }
+  ],
+  "directory_match": {
+    "sfa_licence": "CE13M19J000",
+    "fnb_name": "DIN TAI FUNG",
+    "postal_code": "307683",
+    "database_address": "238 THOMSON ROAD #01-05,#01-06,NOVENA SQUARE,Singapore 307683",
+    "match_basis": "Exact postal/building and #01-05 unit overlap with official branch page. This establishes a current brand branch at the mall, not the branch availability of every listed dish."
+  },
+  "existing_image_candidates": {
+    "image_candidates_sheet_rows_with_unique_urls": 2664,
+    "matching_asset_urls_already_present": 9,
+    "new_unique_candidates": 0,
+    "action": "Do not append duplicates. Existing workbook rows already mark these as brand-level, review-only, not visually checked, and rights/reuse unconfirmed."
+  },
+  "rights_limit": "Official-hosted does not grant reuse permission. No reuse license was established in this pass; retain review-only/do not publish until authorized.",
+  "branch_availability_limit": "These are brand-level Singapore menu images. The official menu warns menus vary by restaurant, so exact availability at CE13M19J000 is unconfirmed.",
+  "candidates": [
+    {
+      "item_name": "Steamed Pork Xiao Long Bao",
+      "image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Pork-Dumplings-10pcs-01.png",
+      "source_page_url": "https://www.dintaifung.com.sg/menu/",
+      "image_alt_attribute": "",
+      "association_evidence": "Official page item title and linked image card; image filename is consistent with item. The page link appears in this item’s card.",
+      "http_status": 200,
+      "content_type": "image/png",
+      "content_length_bytes": 758457,
+      "dimensions_px": {
+        "width": 800,
+        "height": 800
+      },
+      "verification": "HEAD returned HTTP 200 image/png; dimensions parsed from a 24-byte PNG header range only; no image body downloaded or visual inspection performed.",
+      "image_scope": "Brand-level menu image; outlet-level availability unconfirmed.",
+      "reuse_status": "Review only; official hosting is not a reuse grant; permission not verified.",
+      "already_in_workbook": true
+    },
+    {
+      "item_name": "Steamed Chicken Xiao Long Bao",
+      "image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/12/Steamed-Chicken-Dumplings-with-dough-01.png",
+      "source_page_url": "https://www.dintaifung.com.sg/menu/",
+      "image_alt_attribute": "",
+      "association_evidence": "Official page item title and linked image card; image filename is consistent with item. The page link appears in this item’s card.",
+      "http_status": 200,
+      "content_type": "image/png",
+      "content_length_bytes": 753634,
+      "dimensions_px": {
+        "width": 800,
+        "height": 800
+      },
+      "verification": "HEAD returned HTTP 200 image/png; dimensions parsed from a 24-byte PNG header range only; no image body downloaded or visual inspection performed.",
+      "image_scope": "Brand-level menu image; outlet-level availability unconfirmed.",
+      "reuse_status": "Review only; official hosting is not a reuse grant; permission not verified.",
+      "already_in_workbook": true
+    },
+    {
+      "item_name": "Steamed Crab Meat & Pork Xiao Long Bao",
+      "image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Crabmeat-Pork-Dumplings-with-dough-01.png",
+      "source_page_url": "https://www.dintaifung.com.sg/menu/",
+      "image_alt_attribute": "",
+      "association_evidence": "Official page item title and linked image card; image filename is consistent with item. The page link appears in this item’s card.",
+      "http_status": 200,
+      "content_type": "image/png",
+      "content_length_bytes": 828206,
+      "dimensions_px": {
+        "width": 800,
+        "height": 800
+      },
+      "verification": "HEAD returned HTTP 200 image/png; dimensions parsed from a 24-byte PNG header range only; no image body downloaded or visual inspection performed.",
+      "image_scope": "Brand-level menu image; outlet-level availability unconfirmed.",
+      "reuse_status": "Review only; official hosting is not a reuse grant; permission not verified.",
+      "already_in_workbook": true
+    },
+    {
+      "item_name": "Steamed Truffle & Pork Xiao Long Bao",
+      "image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/12/Steamed-Truffles-Pork-Dumplings-10pcs-01.png",
+      "source_page_url": "https://www.dintaifung.com.sg/menu/",
+      "image_alt_attribute": "",
+      "association_evidence": "Official page item title and linked image card; image filename is consistent with item. The page link appears in this item’s card.",
+      "http_status": 200,
+      "content_type": "image/png",
+      "content_length_bytes": 695821,
+      "dimensions_px": {
+        "width": 800,
+        "height": 800
+      },
+      "verification": "HEAD returned HTTP 200 image/png; dimensions parsed from a 24-byte PNG header range only; no image body downloaded or visual inspection performed.",
+      "image_scope": "Brand-level menu image; outlet-level availability unconfirmed.",
+      "reuse_status": "Review only; official hosting is not a reuse grant; permission not verified.",
+      "already_in_workbook": true
+    },
+    {
+      "item_name": "Steamed Shrimp & Pork Dumplings",
+      "image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Shrimp-Pork-Dumplings-10pcs-01.png",
+      "source_page_url": "https://www.dintaifung.com.sg/menu/",
+      "image_alt_attribute": "",
+      "association_evidence": "Official page item title and linked image card; image filename is consistent with item. The page link appears in this item’s card.",
+      "http_status": 200,
+      "content_type": "image/png",
+      "content_length_bytes": 747804,
+      "dimensions_px": {
+        "width": 800,
+        "height": 800
+      },
+      "verification": "HEAD returned HTTP 200 image/png; dimensions parsed from a 24-byte PNG header range only; no image body downloaded or visual inspection performed.",
+      "image_scope": "Brand-level menu image; outlet-level availability unconfirmed.",
+      "reuse_status": "Review only; official hosting is not a reuse grant; permission not verified.",
+      "already_in_workbook": true
+    },
+    {
+      "item_name": "Steamed Vegetable & Pork Dumplings",
+      "image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/12/Steamed-Veg-Pork-Dumplings-10pcs-01.png",
+      "source_page_url": "https://www.dintaifung.com.sg/menu/",
+      "image_alt_attribute": "",
+      "association_evidence": "Official page item title and linked image card; image filename is consistent with item. The page link appears in this item’s card.",
+      "http_status": 200,
+      "content_type": "image/png",
+      "content_length_bytes": 765347,
+      "dimensions_px": {
+        "width": 800,
+        "height": 800
+      },
+      "verification": "HEAD returned HTTP 200 image/png; dimensions parsed from a 24-byte PNG header range only; no image body downloaded or visual inspection performed.",
+      "image_scope": "Brand-level menu image; outlet-level availability unconfirmed.",
+      "reuse_status": "Review only; official hosting is not a reuse grant; permission not verified.",
+      "already_in_workbook": true
+    },
+    {
+      "item_name": "Steamed Shrimp & Pork Shao-Mai",
+      "image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Shrimp-Pork-Shao-Mai10pcs-01.png",
+      "source_page_url": "https://www.dintaifung.com.sg/menu/",
+      "image_alt_attribute": "",
+      "association_evidence": "Official page item title and linked image card; image filename is consistent with item. The page link appears in this item’s card.",
+      "http_status": 200,
+      "content_type": "image/png",
+      "content_length_bytes": 797925,
+      "dimensions_px": {
+        "width": 800,
+        "height": 800
+      },
+      "verification": "HEAD returned HTTP 200 image/png; dimensions parsed from a 24-byte PNG header range only; no image body downloaded or visual inspection performed.",
+      "image_scope": "Brand-level menu image; outlet-level availability unconfirmed.",
+      "reuse_status": "Review only; official hosting is not a reuse grant; permission not verified.",
+      "already_in_workbook": true
+    },
+    {
+      "item_name": "Steamed Vegetarian Dumplings",
+      "image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Vegetarian-Dumplings-10pcs-01.png",
+      "source_page_url": "https://www.dintaifung.com.sg/menu/",
+      "image_alt_attribute": "",
+      "association_evidence": "Official page item title and linked image card; image filename is consistent with item. The page link appears in this item’s card.",
+      "http_status": 200,
+      "content_type": "image/png",
+      "content_length_bytes": 738585,
+      "dimensions_px": {
+        "width": 800,
+        "height": 800
+      },
+      "verification": "HEAD returned HTTP 200 image/png; dimensions parsed from a 24-byte PNG header range only; no image body downloaded or visual inspection performed.",
+      "image_scope": "Brand-level menu image; outlet-level availability unconfirmed.",
+      "reuse_status": "Review only; official hosting is not a reuse grant; permission not verified.",
+      "already_in_workbook": true
+    },
+    {
+      "item_name": "Steamed Angled Gourd & Shrimp Xiao Long Bao",
+      "image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2024/04/Steamed-Angled-Gourd-Shrimp-Dumplingsv2.png",
+      "source_page_url": "https://www.dintaifung.com.sg/menu/",
+      "image_alt_attribute": "",
+      "association_evidence": "Official page item title and linked image card; image filename is consistent with item. The page link appears in this item’s card.",
+      "http_status": 200,
+      "content_type": "image/png",
+      "content_length_bytes": 118590,
+      "dimensions_px": {
+        "width": 279,
+        "height": 279
+      },
+      "verification": "HEAD returned HTTP 200 image/png; dimensions parsed from a 24-byte PNG header range only; no image body downloaded or visual inspection performed.",
+      "image_scope": "Brand-level menu image; outlet-level availability unconfirmed.",
+      "reuse_status": "Review only; official hosting is not a reuse grant; permission not verified.",
+      "already_in_workbook": true
+    }
+  ]
+}

@@ -54,7 +54,7 @@ test("AddStall form requires stall name and image while preserving optional deta
   assert.match(screen, /label="Ordering or delivery link"/);
   assert.doesNotMatch(screen, /label="Where did you find it online\?"/);
   assert.doesNotMatch(screen, /label="Notes"/);
-  assert.doesNotMatch(screen, /sourceUrl: sourceUrl\.trim\(\)/);
+  assert.match(screen, /sourceUrl: sourceUrl\.trim\(\)/);
   assert.match(screen, /submitStall\(input\)/);
   assert.match(screen, /awardFoodCred\("stall_submitted", submission\.id\)/);
   assert.match(screen, /incrementMission\(profile\.id, "add_stall"\)/);

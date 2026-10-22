@@ -1,3 +1,5 @@
+import { useMerchantOperationScope } from "@/features/merchant/useMerchantOperationScope";
+import { useRef as useMerchantRequestRef } from "react";
 import React, { useState, useEffect, useCallback } from "react";
 import { View, StyleSheet, Pressable } from "react-native";
 import { useNavigation } from "@react-navigation/native";
@@ -24,6 +26,8 @@ import type { AIBusinessInsight } from "@/types/domain";
 type MerchantNavigation = BottomTabNavigationProp<MerchantTabParamList>;
 
 export function AIAssistantScreen() {
+  const captureOperation = useMerchantOperationScope();
+
   const { componentRadii, palette, spacing, radii } = useHungryTheme();
   const navigation = useNavigation<MerchantNavigation>();
   const activeOutlet = useMerchantStore(getActiveOutlet);
@@ -33,25 +37,43 @@ export function AIAssistantScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const requestGeneration = useMerchantRequestRef(0);
+  const currentOutlet = useMerchantRequestRef(activeOutlet?.id);
+  currentOutlet.current = activeOutlet?.id;
   const loadInsights = useCallback(async () => {
+    const isOperationCurrent = captureOperation();
+    if (!isOperationCurrent()) return;
+
+    const request = ++requestGeneration.current;
+    const outletId = activeOutlet?.id;
+    const isCurrent = () =>
+      request === requestGeneration.current && outletId === currentOutlet.current;
     setIsLoading(true);
     setError(null);
     if (!activeOutlet) {
-      setError("No active outlet selected for AI insights.");
+      setError("No active outlet selected for this summary.");
       setIsLoading(false);
       return;
     }
     try {
       const data = await getHungryService().merchant.getAIInsights(activeOutlet.id);
-      setInsights(data.filter((i) => i.type !== "weekly_summary" && !i.isDismissed));
+      if (!isOperationCurrent()) return;
 
-      const summary = await getHungryService().merchant.getWeeklySummary(activeOutlet.id);
+      if (!isCurrent()) return;
+      setInsights([]);
+
+      const summary = data.find((item) => item.type === "weekly_summary") ?? null;
       setWeeklySummary(summary);
     } catch (e) {
+      if (!isOperationCurrent()) return;
+
+      if (!isCurrent()) return;
       console.error(e);
-      setError(e instanceof Error ? e.message : "Failed to load AI insights.");
+      setError(e instanceof Error ? e.message : "Failed to load business summary.");
     } finally {
-      setIsLoading(false);
+      if (isOperationCurrent()) {
+        if (isCurrent()) setIsLoading(false);
+      }
     }
   }, [activeOutlet]);
 
@@ -61,13 +83,13 @@ export function AIAssistantScreen() {
 
   if (error) {
     return (
-      <Screen title="AI Assistant">
+      <Screen title="Business summary">
         <EmptyState
-          title="Unable to load AI assistant"
-          body="We could not load your AI assistant data."
+          title="Unable to load business summary"
+          body="We could not load the recorded weekly summary."
           icon={<X size={40} color={palette.error} />}
           errorMessage={error}
-          sendErrorContext="AI assistant"
+          sendErrorContext="Business summary"
           ctaLabel="Retry"
           onPress={loadInsights}
         />
@@ -116,10 +138,10 @@ export function AIAssistantScreen() {
   };
 
   return (
-    <Screen title="AI Assistant">
+    <Screen title="Business summary">
       <View style={{ gap: spacing[6], width: "100%" }}>
         <AppText variant="body" tone="muted" style={{ paddingHorizontal: spacing[1] }}>
-          AI-assisted insights to help you review menu, photo, demand, and promotion opportunities.
+          Recorded weekly business summary. Automated opportunity recommendations are unavailable.
         </AppText>
 
         {weeklySummary && (
@@ -288,8 +310,8 @@ export function AIAssistantScreen() {
           }}
         >
           <AppText variant="micro" tone="muted" style={{ textAlign: "center" }}>
-            AI insights are generated automatically based on your stall&apos;s data. These are
-            suggestions and drafts; nothing is published automatically.
+            This summary reflects recorded business activity for the selected outlet. No automated
+            recommendations or publication are provided.
           </AppText>
         </View>
       </View>

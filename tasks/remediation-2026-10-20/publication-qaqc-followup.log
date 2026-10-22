@@ -1,0 +1,38 @@
+(node:76917) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ both composer routes share the supported editor and protect real route removal (0.948458ms)
+✔ finishing a saved draft preserves its content (0.169125ms)
+(node:76918) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Review feed cards do not render bottom bites sections (2.543667ms)
+(node:76919) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ review filtering precedes limiting and searches dish, stall and tags (3.49725ms)
+✔ same-time review cursor pages use IDs and top-rated uses rating first (0.475333ms)
+✔ cursor keeps microsecond precision and rejects incomplete rating boundaries (1.007167ms)
+(node:76920) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ lost upload acknowledgement recovers immutable object, preserving order and retry identity (1.216791ms)
+✔ partial failure reports exact photo and preserves completed assets (0.36975ms)
+✔ account transition prevents publishing a recovered upload (0.129875ms)
+(node:76921) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ immutable attempts change when bytes change at the same local URI (0.942625ms)
+(node:76922) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ failed messaging handoffs and dismissed sheets never report success (0.548708ms)
+✔ system failures propagate to the recoverable caller without success (0.288875ms)
+(node:76923) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ a gallery or upload callback from before a subject transition cannot apply private state (1.097667ms)
+(node:76924) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ mock review publication is visible, canonical, retry-stable and ownership protected (5.765458ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 510.576958

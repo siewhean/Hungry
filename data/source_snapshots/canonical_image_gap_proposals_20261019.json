@@ -1,0 +1,86 @@
+{
+  "sfa_licence": "CE13L56C000",
+  "name": "Makan Prata",
+  "address": "133 New Bridge Road #B1-44/45, Chinatown Point, Singapore 059413",
+  "postal_code": "059413",
+  "unit": "B1-44/45",
+  "source_page_url": "https://www.makanprata.com/menu",
+  "source_kind": "Official restaurant menu page",
+  "observed_date": "2026-10-19",
+  "menu_association_evidence": {
+    "lava": "$7.90 Lava Prata Set; adjacent alt text “Image: $7.90 Lava Prata Set”",
+    "lunch": "Lunch Special For 2! @$22.90; adjacent alt text “Image: Lunch Special For 2! @$22.90”",
+    "banana": "Try our NEW Banana Prata; adjacent alt text “Image: Try our NEW Banana Prata”"
+  },
+  "source_notes": "Official page also lists 133 New Bridge Rd, B1 - 44 / 45, Chinatown Point, Singapore 059413. Menu page showed current promotion names and prices at observation. Prices are not a claim of dine-in-vs-delivery or an effective publication date.",
+  "canonical_row": {
+    "F&B Name": "Makan Prata",
+    "Registered Business Name": "Makan Prata",
+    "SFA Licence": "CE13L56C000",
+    "Full Address": "Address: 133 NEW BRIDGE ROAD #B1-44/45,CHINATOWN POINT,Singapore 059413",
+    "Postal Code": "059413",
+    "Approved Image URL": null
+  },
+  "existing_candidate_match_count": 0,
+  "page_http": {
+    "http_status": 200,
+    "content_type": "text/html; charset=UTF-8",
+    "error": null
+  },
+  "candidate_urls": [
+    {
+      "item_label": "Lava Prata Set",
+      "image_url": "https://static.wixstatic.com/media/2fba91_f79e39f6bcdb426ebc702ea0e94495b7~mv2.jpeg/v1/fill/w_144%2Ch_204%2Cal_c%2Cq_80%2Cusm_0.66_1.00_0.01%2Cblur_2%2Cenc_auto/2fba91_f79e39f6bcdb426ebc702ea0e94495b7~mv2.jpeg",
+      "source_page_url": "https://www.makanprata.com/menu",
+      "direct_url_http_check": {
+        "http_status": 200,
+        "content_type": "image/jpeg",
+        "error": null
+      },
+      "expected_mime": "image/jpeg",
+      "requested_transform_dimensions": "144x204",
+      "candidate_scope": "Official item-labelled menu image link; exact branch has only one SFA record with the official page address/postal.",
+      "visual_content_checked": false,
+      "image_reuse_permission": "Not established; review-only; not approved for display."
+    },
+    {
+      "item_label": "Lunch Special For 2",
+      "image_url": "https://static.wixstatic.com/media/2fba91_8eae73e1a4594cd1809345be2a6719c9~mv2.jpeg/v1/fill/w_144%2Ch_201%2Cal_c%2Cq_80%2Cusm_0.66_1.00_0.01%2Cblur_2%2Cenc_auto/2fba91_8eae73e1a4594cd1809345be2a6719c9~mv2.jpeg",
+      "source_page_url": "https://www.makanprata.com/menu",
+      "direct_url_http_check": {
+        "http_status": 200,
+        "content_type": "image/jpeg",
+        "error": null
+      },
+      "expected_mime": "image/jpeg",
+      "requested_transform_dimensions": "144x201",
+      "candidate_scope": "Official item-labelled menu image link; exact branch has only one SFA record with the official page address/postal.",
+      "visual_content_checked": false,
+      "image_reuse_permission": "Not established; review-only; not approved for display."
+    },
+    {
+      "item_label": "Banana Prata",
+      "image_url": "https://static.wixstatic.com/media/2fba91_da3c7fdc73e4492eba9438aff2b7fcca~mv2.png/v1/fill/w_49%2Ch_69%2Cal_c%2Cq_85%2Cusm_0.66_1.00_0.01%2Cblur_2%2Cenc_auto/2fba91_da3c7fdc73e4492eba9438aff2b7fcca~mv2.png",
+      "source_page_url": "https://www.makanprata.com/menu",
+      "direct_url_http_check": {
+        "http_status": 200,
+        "content_type": "image/png",
+        "error": null
+      },
+      "expected_mime": "image/png",
+      "requested_transform_dimensions": "49x69",
+      "candidate_scope": "Official item-labelled menu image link; exact branch has only one SFA record with the official page address/postal.",
+      "visual_content_checked": false,
+      "image_reuse_permission": "Not established; review-only; not approved for display."
+    }
+  ],
+  "rights_and_scope_note": "All three URLs are direct Wix static assets linked by exact image alt text from the official menu page. They appear as small transformed thumbnails (49x69 to 144x204), so they are not promoted as final display-quality assets. Copyright/reuse permission is unverified. No image was downloaded or placed in the workbook.",
+  "platform_source_policy_note": "No delivery-platform images were added. Foodpanda Singapore terms (https://www.foodpanda.sg/contents/terms-and-conditions.htm, section 4, viewed 2026-10-19) say images are IP of foodpanda and/or authorized third parties and prohibit use/copy/reproduction/republishing/distribution/modification without prior express written consent. No such consent was found.",
+  "method": {
+    "dedupe_sheet": "Image Candidates",
+    "workbook_sha256_at_start": "bb74665b20d62a711463850a4d5de0648dc0237c4e1d75e96c9eb5f5a89d2d93",
+    "workbook_edited": false,
+    "observed_at_sgt": "2026-10-19T12:56:59.716983+08:00",
+    "workbook_sha256_at_end": "bb74665b20d62a711463850a4d5de0648dc0237c4e1d75e96c9eb5f5a89d2d93"
+  }
+}

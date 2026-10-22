@@ -1,0 +1,65 @@
+{
+  "qa_status": "PASS",
+  "qa_scope": "Read-only final installed Refresh119 workbook QA; separate QA note only",
+  "workbook_path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "0e3f6c7cc1594ba701f6fa4de6d11c6db1db9643060907f7292fb8a634d6eb6f",
+  "zip_crc": "PASS",
+  "receipt_path": "data/source_snapshots/refresh119_integration_20261019.json",
+  "receipt_sha256": "7fa422f9b9963d007df9acf27de2ac37a26936494393d36bb4278f073637d2f1",
+  "receipt_baseline_sha256": "028e757cf68c3fd6be935a2908484a98ba1865c4318975cfde543d1175bf5475",
+  "sheets_and_tables": [
+    {"sheet": "Public F&B Directory", "table_ref": "A1:U38280", "data_rows": 38279},
+    {"sheet": "Menu Items", "table_ref": "A1:L12965", "data_rows": 12964},
+    {"sheet": "Image Candidates", "table_ref": "A1:I2578", "data_rows": 2577},
+    {"sheet": "Coverage & Sources", "table_ref": "A1:C214", "data_rows": 213}
+  ],
+  "structural_checks": {
+    "unique_directory_sfa_ids": 38279,
+    "directory_alphabetical_case_insensitive_blank_names_last": "PASS",
+    "formula_cells": 0,
+    "error_cells": 0,
+    "blank_spill_rows": 0,
+    "approved_image_url_count": 0
+  },
+  "coverage_counts_match_receipt": {
+    "named": 32757,
+    "unnamed": 5522,
+    "coordinate_pairs": 35735,
+    "contacts": 2692,
+    "websites": 2775,
+    "menu_urls": 1426,
+    "opening_hours": 1459,
+    "ratings": 0,
+    "menu_or_price_populated": 460,
+    "unique_sfa_ids": 38279
+  },
+  "targeted_directory_checks": {
+    "BRIO": {"sfa_id": "C01095A000", "name": "BRIO", "result": "PASS"},
+    "SEORAE_JIB": {"sfa_id": "SE10616L000", "website_and_hours_match_proposal": true, "menu_url": "https://www.seoraejib.com.sg/seorae-menu", "result": "PASS"},
+    "JUMBO_ION": {"sfa_id": "CE09A67C000", "menu_url": "https://jumbogroup.sg/eMenus/JS/IO_ALCMenu.pdf", "result": "PASS"},
+    "DTF": {"proposal_ids": 27, "applied_ids": 26, "excluded_jem_id": "SW13T88L000", "jem_current_menu_url_blank": true, "jem_absent_from_changed_id_ledger": true, "result": "PASS_WITH_BASELINE_LIMITATION"},
+    "COLLINS": {"proposal_ids": 7, "applied_ids": 7, "menu_url": "https://www.order.collins.sg/", "result": "PASS"},
+    "changed_id_union_count": 36,
+    "refresh118_historical_sfa_wording_corrections_retained": 47
+  },
+  "image_candidates": [
+    {"sfa_id": "MWF010004", "subject": "Tian Tian Hainanese Chicken Rice", "license": "CC BY-SA 3.0", "creator": "Destron Commander", "attribution_and_sharealike_metadata": true, "review_only": true, "approved_image_url": false},
+    {"sfa_id": "W84231K002", "subject": "Hill Street Tai Hwa Pork Noodle", "license": "CC BY 2.0", "creator": "Ken Marshall", "attribution_metadata": true, "review_only": true, "approved_image_url": false, "visual_reviewed": false}
+  ],
+  "source_snapshot_sha256s_verified": {
+    "refresh119_blank_directory_fields_20261019.json": "6f26b99eb55d1df91b6fb407a57348ea63ee4d50be93c7a9f379df7370599fa3",
+    "refresh119_exact_names_20261019.json": "ddebf787c113d9d8c1e8980d122bb52a0797e49f8e4049c5f1d049aedb28dab3",
+    "refresh119_official_menu_items_20261019.json": "a68807b9f09a3f82b30b3c0d27abc2456545df989d8e695c3c78eafd621372ce",
+    "refresh119_official_menus_2_20261019.json": "89bcb0ab04850ccc3119dabf26f6d18ec26412982379050b8549c905947ccfff",
+    "refresh119_media_rights_20261019.json": "a056509f7f3e56d9c21db7a0355af6dda8249d0e770877d90e51cf7f4fd08e1e",
+    "refresh119_official_images_20261019.json": "074481b32584ddfa395b824a36f09b8db35a6e1e4e0a34bb941c9b0830fdc5df",
+    "refresh119_mall_directory_20261019.json": "ff694cf8797d7597714f45a9b84af7efd2a0c23a2299534152ac32ab0cca865b",
+    "refresh119_open_coordinates_20261019.json": "5063ea9153d86fefee6fe633a46b54b7b9570ca0c9abb4b1adad4d83c5fb5ec3",
+    "refresh119_closure_delta_20261019.json": "7cfc8ced57a68d9efc9e5d55b4a19fb88a75afb1c157dbb54a719c1c193a7a9e",
+    "refresh119_platform_terms_20261019.json": "436aac784b3a1de70f1443c6b6480ff5cf9c6af12938b3ea426dd23adfdb5db5"
+  },
+  "limitations": [
+    "No prior workbook copy was available for bytewise before/after comparison of JEM SW13T88L000. Its current menu URL is blank, it is absent from the changed-ID ledger, and the receipt records its explicit exclusion.",
+    "Hill Street Tai Hwa image candidate has license and attribution metadata but was not visually reviewed; it remains review-only and is not approved for display."
+  ]
+}

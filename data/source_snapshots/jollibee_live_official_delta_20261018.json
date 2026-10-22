@@ -1,0 +1,2403 @@
+{
+  "schema_version": "1.0",
+  "dataset": "Jollibee Singapore live official data delta research",
+  "captured_at_singapore": "2026-10-18T18:02:00+08:00",
+  "workbook_examined": {
+    "path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "sha256": "3ce9c0b79a9dbc4fb8724061754b0f3adfdbbeff56aa9caca71b8c5353fff9b7",
+    "sheets": [
+      "Public F&B Directory",
+      "Menu Items",
+      "Image Candidates"
+    ]
+  },
+  "sources": [
+    {
+      "url": "https://jollibee.com.sg/locate",
+      "role": "Official Singapore branch locator",
+      "http_status": 200,
+      "captured_http_date": "Sun, 18 Oct 2026 10:01:59 GMT",
+      "response_bytes": 198619,
+      "sha256": "63c20e1ec78a81807f6a4f7dd29154a09435bf2a42ff876941f0e26e456c1f0f",
+      "parsed_locator_records": 25
+    },
+    {
+      "url": "https://jollibee.com.sg/our-menu",
+      "role": "Official Singapore menu page; directly references menu JSON below",
+      "http_status": 200,
+      "captured_http_date": "Sun, 18 Oct 2026 10:01:59 GMT",
+      "response_bytes": 188960,
+      "sha256": "530f8e7b02cae1dea64090fd671efc7729098fcfe2fa3a9ead3dc3aac924a2b5"
+    },
+    {
+      "url": "https://assets.limetray.com/assets/image_manager/uploads/21765/jollibeeSNmenuData25.json",
+      "role": "Official menu feed linked from menu page",
+      "http_status": 200,
+      "captured_http_date": "Sun, 18 Oct 2026 03:57:48 GMT",
+      "last_modified": "Fri, 29 Aug 2025 07:24:01 GMT",
+      "etag": "\"ed67e578098640947e733d03048f9eb0\"",
+      "content_length_bytes": 65289,
+      "sha256": "64a3b5045588408816ff1c4d7c8cbe583e5da6191f37563460071a8300b579ca",
+      "source_menu_categories": 13
+    }
+  ],
+  "counts": {
+    "official_locator_records": 25,
+    "unique_exact_postal_and_unit_sfa_joins": 15,
+    "directory_records_with_safe_blank_field_candidates": 3,
+    "safe_directory_field_candidates": 11,
+    "existing_jollibee_menu_rows": 112,
+    "official_menu_items_served": 107,
+    "menu_items_absent_from_workbook": 0,
+    "existing_jollibee_image_candidate_rows": 96,
+    "distinct_official_feed_image_urls": 96,
+    "image_urls_absent_from_workbook_after_whitespace_normalization": 0,
+    "brand_menu_price_gap_items": 107
+  },
+  "exact_outlet_matches": [
+    {
+      "sfa_licence": "CE15H95V000",
+      "workbook_f_and_b_name": "JOLLIBEE",
+      "branch_name_official": "City Square Mall",
+      "official_address": "180 Kitchener Road, B1-07, City Square Mall, 208539",
+      "official_postal_code": "208539",
+      "official_unit_tokens": [
+        "B1-07"
+      ],
+      "official_locator_hours": [
+        "Mon-Sun 10:00am-10:00pm",
+        "Sun 12:00pm-8:30pm"
+      ],
+      "official_locator_phone": "+65 6970 4226",
+      "official_map_url": "https://share.google/e49zdny8S4VX1RDJ2",
+      "workbook_current_values": {
+        "Website": "https://jollibee.com.sg/",
+        "Menu URL": "https://jollibee.com.sg/our-menu",
+        "Contact Details": "Contact: +65 6970 4226",
+        "Opening Hours / Closed Days": null
+      },
+      "exact_join_rule": "single SFA row with exact six-digit postal code and overlapping official/workbook unit token",
+      "candidate_blank_fields": [],
+      "safe_proposed_values": {},
+      "notes": [
+        "Locator shows two conflicting City Square schedules, so hours are not proposed."
+      ]
+    },
+    {
+      "sfa_licence": "CE19U03X000",
+      "workbook_f_and_b_name": "JOLLIBEE",
+      "branch_name_official": "Suntec City",
+      "official_address": "3 Temasek Blvd, #B1-123/124 Singapore, 038983",
+      "official_postal_code": "038983",
+      "official_unit_tokens": [
+        "B1-123"
+      ],
+      "official_locator_hours": [
+        "Mon-Thu 10:00am-9:30pm",
+        "Fri-Sun 10:00am-9:30pm"
+      ],
+      "official_locator_phone": "+65 6970 4226",
+      "official_map_url": "https://maps.app.goo.gl/ypQ1Bryh2hqgRujv7",
+      "workbook_current_values": {
+        "Website": "https://jollibee.com.sg/",
+        "Menu URL": "https://jollibee.com.sg/our-menu",
+        "Contact Details": "Contact: +65 6970 4226",
+        "Opening Hours / Closed Days": "Hours: Mon-Thu 10:00am-9:30pm | Fri-Sun 10:00am-9:30pm"
+      },
+      "exact_join_rule": "single SFA row with exact six-digit postal code and overlapping official/workbook unit token",
+      "candidate_blank_fields": [],
+      "safe_proposed_values": {},
+      "notes": []
+    },
+    {
+      "sfa_licence": "W90169A000",
+      "workbook_f_and_b_name": "JOLLIBEE",
+      "branch_name_official": "Lucky Plaza",
+      "official_address": "304 Orchard Rd, B1-19/24 Lcuky Plaza, Singapore 238863",
+      "official_postal_code": "238863",
+      "official_unit_tokens": [
+        "B1-19"
+      ],
+      "official_locator_hours": [
+        "Mon-Thu 8am-11pm",
+        "Fri-Sun 8am-12am"
+      ],
+      "official_locator_phone": "+65 6735 3491",
+      "official_map_url": "https://maps.app.goo.gl/dZi9PMXA1FWoVC9x9 ",
+      "workbook_current_values": {
+        "Website": "https://jollibee.com.sg/",
+        "Menu URL": "https://jollibee.com.sg/our-menu",
+        "Contact Details": "Contact: +65 6735 3491",
+        "Opening Hours / Closed Days": "Hours: Mon-Thu 8am-11pm | Fri-Sun 8am-12am"
+      },
+      "exact_join_rule": "single SFA row with exact six-digit postal code and overlapping official/workbook unit token",
+      "candidate_blank_fields": [],
+      "safe_proposed_values": {},
+      "notes": []
+    },
+    {
+      "sfa_licence": "NE24A13V000",
+      "workbook_f_and_b_name": "JOLLIBEE",
+      "branch_name_official": "Pasir Ris Mall",
+      "official_address": "7 Pasir Ris Central, B2-27, Singapore 519612",
+      "official_postal_code": "519612",
+      "official_unit_tokens": [
+        "B2-27"
+      ],
+      "official_locator_hours": [
+        "Mon-Thu 9:30am-9pm",
+        "Fri-Sun 9:30am-9:30pm"
+      ],
+      "official_locator_phone": null,
+      "official_map_url": "https://maps.app.goo.gl/hq1vRsCBodNp3UEF7",
+      "workbook_current_values": {
+        "Website": "https://jollibee.com.sg/",
+        "Menu URL": "https://jollibee.com.sg/our-menu",
+        "Contact Details": null,
+        "Opening Hours / Closed Days": "Hours: Mon-Thu 9:30am-9pm | Fri-Sun 9:30am-9:30pm"
+      },
+      "exact_join_rule": "single SFA row with exact six-digit postal code and overlapping official/workbook unit token",
+      "candidate_blank_fields": [],
+      "safe_proposed_values": {},
+      "notes": []
+    },
+    {
+      "sfa_licence": "NE21L09J000",
+      "workbook_f_and_b_name": "JOLLIBEE",
+      "branch_name_official": "Century Square",
+      "official_address": "2 Tampines Central 5, Century Square, #01-09/10, Singapore, 529509",
+      "official_postal_code": "529509",
+      "official_unit_tokens": [
+        "01-09"
+      ],
+      "official_locator_hours": [
+        "Mon-Sun 9:30am-10pm"
+      ],
+      "official_locator_phone": "+65 6518 9228",
+      "official_map_url": "https://maps.app.goo.gl/EfQ2BKbFdjsnq6pLA",
+      "workbook_current_values": {
+        "Website": "https://jollibee.com.sg/",
+        "Menu URL": "https://jollibee.com.sg/our-menu",
+        "Contact Details": "Contact: +65 6518 9228",
+        "Opening Hours / Closed Days": "Hours: Mon-Sun 9:30am-10pm"
+      },
+      "exact_join_rule": "single SFA row with exact six-digit postal code and overlapping official/workbook unit token",
+      "candidate_blank_fields": [],
+      "safe_proposed_values": {},
+      "notes": []
+    },
+    {
+      "sfa_licence": "SE13166V000",
+      "workbook_f_and_b_name": "JOLLIBEE",
+      "branch_name_official": "Bedok Mall",
+      "official_address": "311 New Upper Changi Road, #B2-06/33, Bedok Mall, Singapore 467360",
+      "official_postal_code": "467360",
+      "official_unit_tokens": [
+        "B2-06"
+      ],
+      "official_locator_hours": [
+        "Mon-Sun 9:30am-9.30pm"
+      ],
+      "official_locator_phone": "+65 6518 9800",
+      "official_map_url": "https://maps.app.goo.gl/sajHox9k5vvZZ3Vw5",
+      "workbook_current_values": {
+        "Website": null,
+        "Menu URL": null,
+        "Contact Details": null,
+        "Opening Hours / Closed Days": null
+      },
+      "exact_join_rule": "single SFA row with exact six-digit postal code and overlapping official/workbook unit token",
+      "candidate_blank_fields": [
+        "Website",
+        "Menu URL",
+        "Contact Details",
+        "Opening Hours / Closed Days"
+      ],
+      "safe_proposed_values": {
+        "Website": "https://jollibee.com.sg/",
+        "Menu URL": "https://jollibee.com.sg/our-menu",
+        "Contact Details": "Contact: +65 6518 9800",
+        "Opening Hours / Closed Days": "Hours: Mon-Sun 9:30am-9.30pm"
+      },
+      "notes": []
+    },
+    {
+      "sfa_licence": "SE17225A000",
+      "workbook_f_and_b_name": "JOLLIBEE",
+      "branch_name_official": "Paya Lebar Square",
+      "official_address": "60 Paya Lebar Rd, #01-05/06/07 Singapore, 409051",
+      "official_postal_code": "409051",
+      "official_unit_tokens": [
+        "01-05"
+      ],
+      "official_locator_hours": [
+        "Mon-Sun 8am-1am"
+      ],
+      "official_locator_phone": "+65 6908 4426",
+      "official_map_url": "https://maps.app.goo.gl/LbCs6hHTmmRKS94k9",
+      "workbook_current_values": {
+        "Website": "https://jollibee.com.sg/",
+        "Menu URL": "https://jollibee.com.sg/our-menu",
+        "Contact Details": "Contact: +65 6908 4426",
+        "Opening Hours / Closed Days": "Hours: Mon-Sun 8am-1am"
+      },
+      "exact_join_rule": "single SFA row with exact six-digit postal code and overlapping official/workbook unit token",
+      "candidate_blank_fields": [],
+      "safe_proposed_values": {},
+      "notes": []
+    },
+    {
+      "sfa_licence": "SW11773V000",
+      "workbook_f_and_b_name": "JOLLIBEE",
+      "branch_name_official": "NUS",
+      "official_address": "1 Create Wy, #01-06, Singapore 138602",
+      "official_postal_code": "138602",
+      "official_unit_tokens": [
+        "01-06"
+      ],
+      "official_locator_hours": [
+        "Mon-Sun 9am-9pm"
+      ],
+      "official_locator_phone": null,
+      "official_map_url": "https://maps.app.goo.gl/6peCLKL9F3LxEgD69",
+      "workbook_current_values": {
+        "Website": "https://jollibee.com.sg/",
+        "Menu URL": "https://jollibee.com.sg/our-menu",
+        "Contact Details": null,
+        "Opening Hours / Closed Days": "Hours: Mon-Sun 9am-9pm"
+      },
+      "exact_join_rule": "single SFA row with exact six-digit postal code and overlapping official/workbook unit token",
+      "candidate_blank_fields": [],
+      "safe_proposed_values": {},
+      "notes": [
+        "NUS outlet is on a university campus; public access conditions not checked, keep eligibility status unresolved."
+      ]
+    },
+    {
+      "sfa_licence": "C00031X000",
+      "workbook_f_and_b_name": "Jollibee",
+      "branch_name_official": "Jurong Point",
+      "official_address": "1 Jurong West Central 2, #01-32 Jurong Point Shopping Centre, Singapore, 648886",
+      "official_postal_code": "648886",
+      "official_unit_tokens": [
+        "01-32"
+      ],
+      "official_locator_hours": [
+        "Mon-Thu 9.30am-10pm",
+        "Fri-Sun 9.30am-10pm"
+      ],
+      "official_locator_phone": "+65 6970 7218",
+      "official_map_url": "https://maps.app.goo.gl/jWvj118pwURmGx1Y8",
+      "workbook_current_values": {
+        "Website": "https://jollibee.com.sg/",
+        "Menu URL": "https://jollibee.com.sg/our-menu",
+        "Contact Details": "Contact: +65 6970 7218",
+        "Opening Hours / Closed Days": "Hours: Mon-Thu 9.30am-10pm | Fri-Sun 9.30am-10pm"
+      },
+      "exact_join_rule": "single SFA row with exact six-digit postal code and overlapping official/workbook unit token",
+      "candidate_blank_fields": [],
+      "safe_proposed_values": {},
+      "notes": []
+    },
+    {
+      "sfa_licence": "NW24D76K000",
+      "workbook_f_and_b_name": "JOLLIBEE",
+      "branch_name_official": "Woodlands North Coast",
+      "official_address": "1 N Coast Ave, #01-08 Woodlands North Coast, Singapore 737663",
+      "official_postal_code": "737663",
+      "official_unit_tokens": [
+        "01-08"
+      ],
+      "official_locator_hours": [
+        "Mon-Sun 9:30am-10pm"
+      ],
+      "official_locator_phone": null,
+      "official_map_url": "https://maps.app.goo.gl/fA9n9BjATNr6iv7TA",
+      "workbook_current_values": {
+        "Website": "https://jollibee.com.sg/",
+        "Menu URL": "https://jollibee.com.sg/our-menu",
+        "Contact Details": null,
+        "Opening Hours / Closed Days": "Hours: Mon-Sun 9:30am-10pm"
+      },
+      "exact_join_rule": "single SFA row with exact six-digit postal code and overlapping official/workbook unit token",
+      "candidate_blank_fields": [],
+      "safe_proposed_values": {},
+      "notes": []
+    },
+    {
+      "sfa_licence": "CE24734P000",
+      "workbook_f_and_b_name": "Jollibee",
+      "branch_name_official": "Anchorvale Village",
+      "official_address": "339 Anchorvale Rd, #01-04, Singapore 540339",
+      "official_postal_code": "540339",
+      "official_unit_tokens": [
+        "01-04"
+      ],
+      "official_locator_hours": [
+        "Mon-Thu 9:30am-9:30pm",
+        "Fri-Sun 9:30am-10pm"
+      ],
+      "official_locator_phone": null,
+      "official_map_url": "https://maps.app.goo.gl/ZbtQCsCL1gdhJucDA",
+      "workbook_current_values": {
+        "Website": "https://jollibee.com.sg/",
+        "Menu URL": "https://jollibee.com.sg/our-menu",
+        "Contact Details": null,
+        "Opening Hours / Closed Days": "Hours: Mon-Thu 9:30am-9:30pm | Fri-Sun 9:30am-10pm"
+      },
+      "exact_join_rule": "single SFA row with exact six-digit postal code and overlapping official/workbook unit token",
+      "candidate_blank_fields": [],
+      "safe_proposed_values": {},
+      "notes": []
+    },
+    {
+      "sfa_licence": "NE25157P000",
+      "workbook_f_and_b_name": "JOLLIBEE",
+      "branch_name_official": "Punggol Digital District",
+      "official_address": "88 Punggol Way, Punggol Digital District #01-118, Singapore 829913,",
+      "official_postal_code": "829913",
+      "official_unit_tokens": [
+        "01-118"
+      ],
+      "official_locator_hours": [
+        "Mon-Sun 10am-10pm"
+      ],
+      "official_locator_phone": null,
+      "official_map_url": "https://share.google/zHb5DoM7Mt0xu0gIp",
+      "workbook_current_values": {
+        "Website": "https://jollibee.com.sg/",
+        "Menu URL": "https://jollibee.com.sg/our-menu",
+        "Contact Details": null,
+        "Opening Hours / Closed Days": "Hours: Mon-Sun 10am-10pm"
+      },
+      "exact_join_rule": "single SFA row with exact six-digit postal code and overlapping official/workbook unit token",
+      "candidate_blank_fields": [],
+      "safe_proposed_values": {},
+      "notes": []
+    },
+    {
+      "sfa_licence": "CE13Z25A000",
+      "workbook_f_and_b_name": "Jollibee",
+      "branch_name_official": "Ang Mo Kio Hub",
+      "official_address": "53 Ang Mo Kio Avenue 3, #B1-51 Singapore 569933",
+      "official_postal_code": "569933",
+      "official_unit_tokens": [
+        "B1-51"
+      ],
+      "official_locator_hours": [
+        "Mon-Sun 10am-10pm"
+      ],
+      "official_locator_phone": null,
+      "official_map_url": null,
+      "workbook_current_values": {
+        "Website": null,
+        "Menu URL": null,
+        "Contact Details": null,
+        "Opening Hours / Closed Days": null
+      },
+      "exact_join_rule": "single SFA row with exact six-digit postal code and overlapping official/workbook unit token",
+      "candidate_blank_fields": [
+        "Website",
+        "Menu URL",
+        "Opening Hours / Closed Days"
+      ],
+      "safe_proposed_values": {
+        "Website": "https://jollibee.com.sg/",
+        "Menu URL": "https://jollibee.com.sg/our-menu",
+        "Opening Hours / Closed Days": "Hours: Mon-Sun 10am-10pm"
+      },
+      "notes": []
+    },
+    {
+      "sfa_licence": "SE10539C000",
+      "workbook_f_and_b_name": "Jollibee",
+      "branch_name_official": "Nex Mall",
+      "official_address": "23 Serangoon Central, #B1-28/29 Singapore, 556083",
+      "official_postal_code": "556083",
+      "official_unit_tokens": [
+        "B1-28"
+      ],
+      "official_locator_hours": [
+        "Mon-Sat 10am-10pm",
+        "Sun 9am-10pm"
+      ],
+      "official_locator_phone": "+65 6970 6578",
+      "official_map_url": "https://maps.app.goo.gl/2G6AEoR9jfUCLdLq9",
+      "workbook_current_values": {
+        "Website": null,
+        "Menu URL": null,
+        "Contact Details": null,
+        "Opening Hours / Closed Days": null
+      },
+      "exact_join_rule": "single SFA row with exact six-digit postal code and overlapping official/workbook unit token",
+      "candidate_blank_fields": [
+        "Website",
+        "Menu URL",
+        "Contact Details",
+        "Opening Hours / Closed Days"
+      ],
+      "safe_proposed_values": {
+        "Website": "https://jollibee.com.sg/",
+        "Menu URL": "https://jollibee.com.sg/our-menu",
+        "Contact Details": "Contact: +65 6970 6578",
+        "Opening Hours / Closed Days": "Hours: Mon-Sat 10am-10pm | Sun 9am-10pm"
+      },
+      "notes": []
+    },
+    {
+      "sfa_licence": "S96278V000",
+      "workbook_f_and_b_name": "Jollibee",
+      "branch_name_official": "Hougang Mall",
+      "official_address": "90 Hougang Avenue #01-19, Hougang Mall, 538766",
+      "official_postal_code": "538766",
+      "official_unit_tokens": [
+        "01-19"
+      ],
+      "official_locator_hours": [
+        "Mon-Sun 10am-10pm"
+      ],
+      "official_locator_phone": null,
+      "official_map_url": "https://share.google/QKZ4iwe5PsJ6hQIwg",
+      "workbook_current_values": {
+        "Website": "https://jollibee.com.sg/",
+        "Menu URL": "https://jollibee.com.sg/our-menu",
+        "Contact Details": null,
+        "Opening Hours / Closed Days": "Hours: Mon-Sun 10am-10pm"
+      },
+      "exact_join_rule": "single SFA row with exact six-digit postal code and overlapping official/workbook unit token",
+      "candidate_blank_fields": [],
+      "safe_proposed_values": {},
+      "notes": []
+    }
+  ],
+  "menu_and_image_diff": {
+    "matching_rule": "Menu item name compared after unicode, case and punctuation normalization; candidate image URLs trimmed then compared exactly.",
+    "missing_menu_items": [],
+    "missing_official_image_urls": [],
+    "finding": "All official menu item names and all distinct image URLs from the live feed are already present in workbook. One apparent URL difference was trailing whitespace only and is treated as present. No new menu/image candidate rows recommended."
+  },
+  "brand_level_price_field_gaps": [
+    {
+      "item_name": "1pc Chickenjoy Ala Carte",
+      "category": "Chickenjoy",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Orignal",
+          "price": "4.95"
+        },
+        {
+          "name": "Spicy",
+          "price": "4.95"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "6pc Chickenjoy Bucket",
+      "category": "Chickenjoy",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Orignal",
+          "price": "20.00"
+        },
+        {
+          "name": "Spicy",
+          "price": "20.00"
+        },
+        {
+          "name": "Combo",
+          "price": "20.00"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "8pc Chickenjoy Bucket",
+      "category": "Chickenjoy",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Orignal",
+          "price": "26.50"
+        },
+        {
+          "name": "Spicy",
+          "price": "26.50"
+        },
+        {
+          "name": "Combo",
+          "price": "26.50"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "1pc Chickenjoy with 1 Side",
+      "category": "Chickenjoy",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Orignal",
+          "price": "5.95"
+        },
+        {
+          "name": "Spicy",
+          "price": "5.95"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "1pc Chickenjoy with 2 Sides",
+      "category": "Chickenjoy",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Orignal",
+          "price": "6.95"
+        },
+        {
+          "name": "Spicy",
+          "price": "6.95"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "2pc Chickenjoy with 1 Side",
+      "category": "Chickenjoy",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Orignal",
+          "price": "7.95"
+        },
+        {
+          "name": "Spicy",
+          "price": "7.95"
+        },
+        {
+          "name": "Combo",
+          "price": "7.95"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "2pc Chickenjoy with 2 Sides",
+      "category": "Chickenjoy",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Orignal",
+          "price": "8.95"
+        },
+        {
+          "name": "Spicy",
+          "price": "8.95"
+        },
+        {
+          "name": "Combo",
+          "price": "8.95"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "3pc Chickenjoy with 1 Side",
+      "category": "Chickenjoy",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Orignal",
+          "price": "9.95"
+        },
+        {
+          "name": "Spicy",
+          "price": "9.95"
+        },
+        {
+          "name": "Combo",
+          "price": "9.95"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "3pc Chickenjoy with 2 Sides",
+      "category": "Chickenjoy",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Orignal",
+          "price": "10.95"
+        },
+        {
+          "name": "Spicy",
+          "price": "10.95"
+        },
+        {
+          "name": "Combo",
+          "price": "10.95"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "1pc Chickenjoy with Burger Steak and Rice",
+      "category": "Chickenjoy",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Orignal",
+          "price": "7.95"
+        },
+        {
+          "name": "Spicy",
+          "price": "7.95"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "3pc Combo Chickenjoy with 2 Sides",
+      "category": "Chickenjoy",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Orignal",
+          "price": "10.95"
+        },
+        {
+          "name": "Spicy",
+          "price": "10.95"
+        },
+        {
+          "name": "Combo",
+          "price": "10.95"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "2pc Chickenjoy with Burger Steak and Rice",
+      "category": "Chickenjoy",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Orignal",
+          "price": "9.95"
+        },
+        {
+          "name": "Spicy",
+          "price": "9.95"
+        },
+        {
+          "name": "Spicy",
+          "price": "9.95"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "1pc Chickenjoy with Fiesta Noodles",
+      "category": "Chickenjoy",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Orignal",
+          "price": "8.00"
+        },
+        {
+          "name": "Spicy",
+          "price": "8.00"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "2pc Chickenjoy with Fiesta Noodles",
+      "category": "Chickenjoy",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Orignal",
+          "price": "10.00"
+        },
+        {
+          "name": "Spicy",
+          "price": "10.00"
+        },
+        {
+          "name": "Combo",
+          "price": "10.00"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "1pc Chickenjoy with Jolly Spaghetti",
+      "category": "Chickenjoy",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Orignal",
+          "price": "7.50"
+        },
+        {
+          "name": "Spicy",
+          "price": "7.50"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "2pc Chickenjoy with Jolly Spaghetti",
+      "category": "Chickenjoy",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Orignal",
+          "price": "9.95"
+        },
+        {
+          "name": "Spicy",
+          "price": "9.95"
+        },
+        {
+          "name": "Combo",
+          "price": "9.95"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "1pc Chickenjoy with 1 Side Value Meal",
+      "category": "Chickenjoy",
+      "section": "Value Meals",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Orignal",
+          "price": "6.95"
+        },
+        {
+          "name": "Spicy",
+          "price": "6.95"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "1pc Chickenjoy with 2 Sides Value Meal",
+      "category": "Chickenjoy",
+      "section": "Value Meals",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Orignal",
+          "price": "7.95"
+        },
+        {
+          "name": "Spicy",
+          "price": "7.95"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "2pc Chickenjoy with 1 Side Value Meal",
+      "category": "Chickenjoy",
+      "section": "Value Meals",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Orignal",
+          "price": "8.95"
+        },
+        {
+          "name": "Spicy",
+          "price": "8.95"
+        },
+        {
+          "name": "Combo",
+          "price": "8.95"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "2pc Chickenjoy with 2 Sides Value Meal",
+      "category": "Chickenjoy",
+      "section": "Value Meals",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Orignal",
+          "price": "9.95"
+        },
+        {
+          "name": "Spicy",
+          "price": "9.95"
+        },
+        {
+          "name": "Spicy",
+          "price": "9.95"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "3pc Chickenjoy with 1 Side Value Meal",
+      "category": "Chickenjoy",
+      "section": "Value Meals",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Orignal",
+          "price": "11.00"
+        },
+        {
+          "name": "Spicy",
+          "price": "11.00"
+        },
+        {
+          "name": "Combo",
+          "price": "11.00"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "3pc Chickenjoy with 2 Sides Value Meal",
+      "category": "Chickenjoy",
+      "section": "Value Meals",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Orignal",
+          "price": "11.95"
+        },
+        {
+          "name": "Spicy",
+          "price": "11.95"
+        },
+        {
+          "name": "Combo",
+          "price": "11.95"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "1pc Chickenjoy with Burger Steak and Rice Value Meal",
+      "category": "Chickenjoy",
+      "section": "Value Meals",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Orignal",
+          "price": "8.95"
+        },
+        {
+          "name": "Spicy",
+          "price": "8.95"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "2pc Chickenjoy with Burger Steak and Rice Value Meal",
+      "category": "Chickenjoy",
+      "section": "Value Meals",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Orignal",
+          "price": "10.95"
+        },
+        {
+          "name": "Spicy",
+          "price": "10.95"
+        },
+        {
+          "name": "Combo",
+          "price": "10.95"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "1pc Chickenjoy with Fiesta Noodles Value Meal",
+      "category": "Chickenjoy",
+      "section": "Value Meals",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Orignal",
+          "price": "9.00"
+        },
+        {
+          "name": "Spicy",
+          "price": "9.00"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "2pc Chickenjoy with Fiesta Noodles Value Meal",
+      "category": "Chickenjoy",
+      "section": "Value Meals",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Orignal",
+          "price": "11.00"
+        },
+        {
+          "name": "Spicy",
+          "price": "11.00"
+        },
+        {
+          "name": "Combo",
+          "price": "11.00"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "1pc Chickenjoy with Jolly Spaghetti Value Meal",
+      "category": "Chickenjoy",
+      "section": "Value Meals",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Orignal",
+          "price": "8.50"
+        },
+        {
+          "name": "Spicy",
+          "price": "8.50"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "2pc Chickenjoy with Jolly Spaghetti Value Meal",
+      "category": "Chickenjoy",
+      "section": "Value Meals",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Orignal",
+          "price": "10.95"
+        },
+        {
+          "name": "Spicy",
+          "price": "10.95"
+        },
+        {
+          "name": "Combo",
+          "price": "10.95"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Chickenjoy Nasi Lemak",
+      "category": "Chickenjoy",
+      "section": "Nasi Lemak (Ala Carte)",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Orignal",
+          "price": "5.50"
+        },
+        {
+          "name": "Spicy",
+          "price": "5.50"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Chickenjoy Nasi Lemak Value Meal",
+      "category": "Chickenjoy",
+      "section": "Nasi Lemak (Valiue Meal)",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Orignal",
+          "price": "7.50"
+        },
+        {
+          "name": "Spicy",
+          "price": "7.50"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Yumburger",
+      "category": "Beef Burgers",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Normal",
+          "price": "2.95"
+        },
+        {
+          "name": "Cheesy",
+          "price": "3.50"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Classic Jolliburger",
+      "category": "Beef Burgers",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Double",
+          "price": "6.95"
+        },
+        {
+          "name": "Single",
+          "price": "4.95"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Deluxe Jolliburger",
+      "category": "Beef Burgers",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Deluxe",
+          "price": "7.95"
+        },
+        {
+          "name": "Single",
+          "price": "5.95"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Yumburger Value Meal",
+      "category": "Beef Burgers",
+      "section": "Value Meal",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Normal",
+          "price": "4.95"
+        },
+        {
+          "name": "Cheesy",
+          "price": "5.50"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Classic Jolliburger Value Meal",
+      "category": "Beef Burgers",
+      "section": "Value Meal",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Double",
+          "price": "8.95"
+        },
+        {
+          "name": "Single",
+          "price": "6.95"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Single Deluxe Jolliburger Value Meal",
+      "category": "Beef Burgers",
+      "section": "Value Meal",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Deluxe",
+          "price": "9.95"
+        },
+        {
+          "name": "Single",
+          "price": "7.95"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Chicken Sandwich",
+      "category": "Chicken Sandwich",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Classic",
+          "price": "6.90"
+        },
+        {
+          "name": "Spicy",
+          "price": "6.90"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Chicken Sandwich Value Meal",
+      "category": "Chicken Sandwich",
+      "section": "Value Meal",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Classic",
+          "price": "7.95"
+        },
+        {
+          "name": "Spicy",
+          "price": "7.95"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "4pcs Original Chicken Nuggets",
+      "category": "Chicken Nuggets",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Classic",
+          "price": "4.95"
+        },
+        {
+          "name": "Spicy",
+          "price": "5.25"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "6pcs Original Chicken Nuggets",
+      "category": "Chicken Nuggets",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Classic",
+          "price": "5.95"
+        },
+        {
+          "name": "Spicy",
+          "price": "6.25"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "10pcs Original Chicken Nuggets",
+      "category": "Chicken Nuggets",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Classic",
+          "price": "8.45"
+        },
+        {
+          "name": "Spicy",
+          "price": "8.75"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "VM 6pcs Original Chicken Nuggets",
+      "category": "Chicken Nuggets",
+      "section": "Value Meal",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Classic",
+          "price": "8.40"
+        },
+        {
+          "name": "Spicy",
+          "price": "8.70"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "VM 10pcs Original Chicken Nuggets",
+      "category": "Chicken Nuggets",
+      "section": "Value Meal",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Classic",
+          "price": "10.90"
+        },
+        {
+          "name": "Spicy",
+          "price": "11.20"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Jolly Hot Dog",
+      "category": "Jolly Hotdog",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Classic",
+          "price": "4.50"
+        },
+        {
+          "name": "Spicy",
+          "price": "4.50"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Jolly Hot Dog Value Meal",
+      "category": "Jolly Hotdog",
+      "section": "Value Meal",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Classic",
+          "price": "6.90"
+        },
+        {
+          "name": "Spicy",
+          "price": "6.90"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Fiesta Noodles",
+      "category": "Noodles / Pasta",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "6.30"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Jolly Spaghetti",
+      "category": "Noodles / Pasta",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "5.30"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Fiesta Noodles Value Meal",
+      "category": "Noodles / Pasta",
+      "section": "Value Meal",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "7.95"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Jolly Spaghetti Value Meal",
+      "category": "Noodles / Pasta",
+      "section": "Value Meal",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "6.95"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Jolly Spaghetti Platter",
+      "category": "Noodles / Pasta",
+      "section": "Platters / Combos",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "15.00"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Fiesta Noodles Platter",
+      "category": "Noodles / Pasta",
+      "section": "Platters / Combos",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "18.00"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Chicken Tenders",
+      "category": "Chicken Tenders",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "3pc",
+          "price": "6.00"
+        },
+        {
+          "name": "5pc",
+          "price": "8.50"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Chicken Loaded Fries",
+      "category": "Chicken Tenders",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Sriracha",
+          "price": "7.50"
+        },
+        {
+          "name": "Garlic Ranch",
+          "price": "7.50"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Chicken Tenders Value Meal",
+      "category": "Chicken Tenders",
+      "section": "Value Meal",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "3pc",
+          "price": "7.95"
+        },
+        {
+          "name": "5pc",
+          "price": "9.95"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "VM Chicken Loaded Fries",
+      "category": "Chicken Tenders",
+      "section": "Value Meal",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Sriracha",
+          "price": "8.50"
+        },
+        {
+          "name": "Garlic Ranch",
+          "price": "8.50"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Sriracha Chicken Loaded Fries",
+      "category": "Chicken Loaded Fries",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "7.50"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Garlic Ranch Chicken Loaded Fries",
+      "category": "Chicken Loaded Fries",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "7.50"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "VM Sriracha Chicken Loaded Fries",
+      "category": "Chicken Loaded Fries",
+      "section": "Value Meal",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "8.50"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "VM Garlic Ranch Chicken Loaded Fries",
+      "category": "Chicken Loaded Fries",
+      "section": "Value Meal",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "8.50"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Burger Steak with Rice",
+      "category": "Burger Steak",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "1pc",
+          "price": "5.50"
+        },
+        {
+          "name": "2pc",
+          "price": "7.50"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Burger Steak with Rice Value Meal",
+      "category": "Burger Steak",
+      "section": "Value Meal",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "1pc",
+          "price": "6.50"
+        },
+        {
+          "name": "2pc",
+          "price": "8.50"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Peach Mango Pie",
+      "category": "Desserts",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "1.90"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Coco Pineapple Pie",
+      "category": "Desserts",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "1.90"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Chocolate Sundae",
+      "category": "Desserts",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "2.00"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Vanilla Twirl",
+      "category": "Desserts",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "1.20"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Coke(Regular or Zero)/Sprite/Fanta",
+      "category": "Drinks",
+      "section": "Drinks",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Large",
+          "price": "3.95"
+        },
+        {
+          "name": "Medium",
+          "price": "3.20"
+        },
+        {
+          "name": "Canned (Delivery Exclusive)",
+          "price": "2.95"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Pineapple/Orange/Apple Juice",
+      "category": "Drinks",
+      "section": "Drinks",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Large",
+          "price": "4.45"
+        },
+        {
+          "name": "Medium",
+          "price": "3.95"
+        },
+        {
+          "name": "Canned (Delivery Exclusive)",
+          "price": "2.95"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Milo",
+      "category": "Drinks",
+      "section": "Drinks",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Large",
+          "price": "4.55"
+        },
+        {
+          "name": "Medium",
+          "price": "4.15"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Dasani Bottled Water",
+      "category": "Drinks",
+      "section": "Drinks",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": " ",
+          "price": "2.95"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "1.5L Coca Cola Bottle",
+      "category": "Drinks",
+      "section": "Drinks",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": " ",
+          "price": "3.75"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Coffee",
+      "category": "Drinks",
+      "section": "Drinks",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Black",
+          "price": "3.15"
+        },
+        {
+          "name": "White",
+          "price": "3.15"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Cappuccino",
+      "category": "Drinks",
+      "section": "Drinks",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": " ",
+          "price": "4.15"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Mocha",
+      "category": "Drinks",
+      "section": "Drinks",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": " ",
+          "price": "4.50"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Latte",
+      "category": "Drinks",
+      "section": "Drinks",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": " ",
+          "price": "4.15"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Hot Milo",
+      "category": "Drinks",
+      "section": "Drinks",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "3.45"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Buttered Corn",
+      "category": "Sides",
+      "section": "Sides",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "1.95"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Coleslaw",
+      "category": "Sides",
+      "section": "Sides",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "1.95"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Fries",
+      "category": "Sides",
+      "section": "Sides",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Lrg",
+          "price": "4.30"
+        },
+        {
+          "name": "Med",
+          "price": "3.30"
+        },
+        {
+          "name": "Red",
+          "price": "2.30"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Hash Brown",
+      "category": "Sides",
+      "section": "Sides",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "2.20"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Mashed Potato",
+      "category": "Sides",
+      "section": "Sides",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "1.95"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Rice",
+      "category": "Sides",
+      "section": "Sides",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "1.20"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Garlic Rice",
+      "category": "Sides",
+      "section": "Sides",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "1.20"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "2pc Pancake",
+      "category": "Breakfast",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "4.30"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Breakfast Chickenjoy with Garlic Rice Ala Carte",
+      "category": "Breakfast",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "Orignal",
+          "price": "5.25"
+        },
+        {
+          "name": "Spicy",
+          "price": "5.25"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Breakfast Burger Steak with Garlic Rice Ala Carte",
+      "category": "Breakfast",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "5.25"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Breakfast Jolly Hot Dog with Garlic Rice Ala Carte",
+      "category": "Breakfast",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "5.25"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Pancake Sandwich with Turkey Bacon & Egg Ala Carte",
+      "category": "Breakfast",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "4.30"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Pancake Sandwich with Egg & Cheese Ala Carte",
+      "category": "Breakfast",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "3.80"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Pancake Platter Turkey Bacon Hashbrown Ala Carte",
+      "category": "Breakfast",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "6.60"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Pancake Platter Chicken Sausage Hashbrown Ala Carte",
+      "category": "Breakfast",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "6.60"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Chicken Floss and Egg Toast Ala Carte",
+      "category": "Breakfast",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "6.10"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Turkey Bacon and Egg Toast Ala Carte",
+      "category": "Breakfast",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "7.60"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Breakfast Yumburger Ala Carte",
+      "category": "Breakfast",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "4.30"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Porridge Ala Carte",
+      "category": "Breakfast",
+      "section": "Ala Carte",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "3.20"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "2pc Pancake Valiue Meal",
+      "category": "Breakfast",
+      "section": "Value Meals",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "5.45"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Breakfast Chickenjoy with Garlic Rice Value Meal",
+      "category": "Breakfast",
+      "section": "Value Meals",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "6.40"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Breakfast Spicy Chickenjoy with Garlic Rice Value Meal",
+      "category": "Breakfast",
+      "section": "Value Meals",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "6.40"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Breakfast Burger Steak with Garlic Rice Value Meal",
+      "category": "Breakfast",
+      "section": "Value Meals",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "6.40"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Breakfast Jolly Hot Dog with Garlic Rice Value Meal",
+      "category": "Breakfast",
+      "section": "Value Meals",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "6.40"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Pancake Sandwich with Turkey Bacon & Egg Value Meal",
+      "category": "Breakfast",
+      "section": "Value Meals",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "5.45"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Pancake Sandwich with Egg & Cheese Value Meal",
+      "category": "Breakfast",
+      "section": "Value Meals",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "4.95"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Pancake Platter Turkey Bacon Hashbrown Value Meal",
+      "category": "Breakfast",
+      "section": "Value Meals",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "7.75"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Pancake Platter Chicken Sausage Hashbrown Value Meal",
+      "category": "Breakfast",
+      "section": "Value Meals",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "7.75"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Chicken Floss and Egg Toast Value Meal",
+      "category": "Breakfast",
+      "section": "Value Meals",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "7.25"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Turkey Bacon and Egg Toast Value Meal",
+      "category": "Breakfast",
+      "section": "Value Meals",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "8.75"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Breakfast Yumburger Value Meal",
+      "category": "Breakfast",
+      "section": "Value Meals",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "5.45"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    },
+    {
+      "item_name": "Porridge Value Meal",
+      "category": "Breakfast",
+      "section": "Value Meals",
+      "existing_blank_field": "Price As Published",
+      "published_variations": [
+        {
+          "name": "",
+          "price": "4.35"
+        }
+      ],
+      "sfa_licence": null,
+      "menu_scope": "brand-level only; do not associate to outlet without branch availability evidence",
+      "status": "current official page feed serves these values, but source asset last-modified is old; freshness uncertain; not recommended as verified-current price"
+    }
+  ],
+  "limitations": [
+    "The live operator locator does not specify which branches carry each brand-level menu item; menu rows are not assigned to individual SFA licence IDs.",
+    "The menu feed currently linked by the official menu page returns published prices, but feed Last-Modified is 2025-08-29; the file is byte-identical to earlier fetches. Treat price freshness as uncertain despite live rendering.",
+    "Official menu images are present as candidate rows in workbook, but image bytes were not inspected and reuse rights remain unverified.",
+    "NUS is a campus outlet; public access conditions were not checked.",
+    "City Square has two conflicting Sunday hours entries on the official locator; hours remain unresolved.",
+    "Only exact postcode plus outlet unit overlaps were accepted for SFA joins. Branches without exact unique evidence were excluded."
+  ],
+  "integration_recommendation": "Safe blank-only fields are the global Website/Menu URL on records with missing values, plus current locator phone/hours where an exact branch match exists and the source explicitly publishes them. Do not integrate the stale-date price candidates as verified-current; inspect/confirm separately."
+}

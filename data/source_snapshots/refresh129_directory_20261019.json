@@ -1,0 +1,275 @@
+{
+  "snapshot_date": "2026-10-19",
+  "canonical_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "canonical_workbook_sha256": "51b0eb281d08e735151ccf4ca99de823c3badf811d46c9ea337b4008b3251e0c",
+  "method": "Read-only first-party branch locator cross-check. A proposed fill is included only when SFA address, postal code and outlet unit match the official locator. No contact details were inferred; no Mapbox or paid service used.",
+  "proposal_status": "evidence_only_not_integrated",
+  "source_set": [
+    {
+      "url": "https://www.burgerking.com.sg/locator",
+      "title": "Burger King Singapore official restaurant locator",
+      "retrieved_or_observed": "2026-10-19"
+    },
+    {
+      "url": "https://www.burgerking.com.sg/Locator/Details/90",
+      "title": "Burger King Tampines Mart branch page",
+      "retrieved_or_observed": "2026-10-19"
+    },
+    {
+      "url": "https://www.burgerking.com.sg/Locator/Details/16",
+      "title": "Burger King Changi Airport Terminal 3 branch page",
+      "retrieved_or_observed": "2026-10-19"
+    },
+    {
+      "url": "https://www.burgerking.com.sg/Locator/Details/52",
+      "title": "Burger King NEX branch page",
+      "retrieved_or_observed": "2026-10-19"
+    },
+    {
+      "url": "https://www.burgerking.com.sg/Locator/Details/54",
+      "title": "Burger King Changi Airport Terminal 1 landside branch page",
+      "retrieved_or_observed": "2026-10-19"
+    },
+    {
+      "url": "https://www.burgerking.com.sg/Locator/Details/41",
+      "title": "Burger King Viva Business Park branch page",
+      "retrieved_or_observed": "2026-10-19"
+    },
+    {
+      "url": "https://www.burgerking.com.sg/Locator/Details/86",
+      "title": "Burger King Yew Tee Point branch page",
+      "retrieved_or_observed": "2026-10-19"
+    },
+    {
+      "url": "https://www.burgerking.com.sg/Locator/Details/89",
+      "title": "Burger King SAFRA Choa Chu Kang branch page",
+      "retrieved_or_observed": "2026-10-19"
+    },
+    {
+      "url": "https://www.burgerking.com.sg/Locator/Details/58",
+      "title": "Burger King HillV2 branch page",
+      "retrieved_or_observed": "2026-10-19"
+    },
+    {
+      "url": "https://www.burgerking.com.sg/Locator/Details/14",
+      "title": "Burger King Clarke Quay Central branch page",
+      "retrieved_or_observed": "2026-10-19"
+    },
+    {
+      "url": "https://app.yakun.com/find-us",
+      "title": "Ya Kun official Find Us outlet locator",
+      "retrieved_or_observed": "2026-10-19"
+    }
+  ],
+  "proposed_field_fills": [
+    {
+      "sfa_licence": "NE18023E000",
+      "business_name": "BURGER KING",
+      "current_address": "Address: 5 TAMPINES STREET 32 #02-13/14,Singapore 529284",
+      "postal_code": "529284",
+      "matched_official_outlet": "Burger King — 5 Tampines Street 32, #02-13/14, Singapore 529284",
+      "source_url": "https://www.burgerking.com.sg/Locator/Details/90",
+      "source_type": "official_operator_locator",
+      "fields": [
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "after": "Hours: Daily 00:00–24:00; breakfast daily 05:00–11:00",
+          "source_evidence": "Official locator lists 12:00 AM–12:00 AM daily and breakfast 5:00–11:00 AM; exact street and unit match."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "SE07306K000",
+      "business_name": "Burger King",
+      "current_address": "Address: 65 AIRPORT BOULEVARD (BURGER KING) #L03-AF11,CHANGI AIRPORT TERMINAL 3,Singapore 819663",
+      "postal_code": "819663",
+      "matched_official_outlet": "Burger King — Terminal 3 Departure/Transit Lounge North, Mezzanine Level, #L03-AF11, 65 Airport Boulevard, Singapore 819663",
+      "source_url": "https://www.burgerking.com.sg/Locator/Details/16",
+      "source_type": "official_operator_locator",
+      "fields": [
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "after": "Hours: Daily 00:00–24:00",
+          "source_evidence": "Official locator lists daily 12:00 AM–12:00 AM; exact terminal, unit and postal match."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "SE10343B000",
+      "business_name": "BURGER KING",
+      "current_address": "Address: 23 SERANGOON CENTRAL #B1-30/31,NEX,Singapore 556083",
+      "postal_code": "556083",
+      "matched_official_outlet": "Burger King — 23 Serangoon Central, NEX, #B1-30/31, Singapore 556083",
+      "source_url": "https://www.burgerking.com.sg/Locator/Details/52",
+      "source_type": "official_operator_locator",
+      "fields": [
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "after": "Hours: Mon–Thu 08:00–00:00; Fri–Sat 08:00–02:00; Sun 08:00–00:00; eve of PH 08:00–02:00; PH 08:00–00:00; breakfast daily 08:00–11:00",
+          "source_evidence": "Official locator lists matching NEX address and exact #B1-30/31 unit, plus daily/PH schedule."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "SE11495J000",
+      "business_name": "BURGER KING",
+      "current_address": "Address: 80 AIRPORT BOULEVARD #03-23,CHANGI AIRPORT TERMINAL 1,Singapore 819642 VIEWING MALL EAST(LANDSIDE)",
+      "postal_code": "819642",
+      "matched_official_outlet": "Burger King — Viewing Mall East, Unit #03-23, Terminal 1, 80 Airport Boulevard, Singapore 819642",
+      "source_url": "https://www.burgerking.com.sg/Locator/Details/54",
+      "source_type": "official_operator_locator",
+      "fields": [
+        {
+          "field": "Website",
+          "before": null,
+          "after": "https://www.burgerking.com.sg/Locator/Details/54",
+          "source_evidence": "Official Burger King branch detail page for the exact Terminal 1 landside unit."
+        },
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "after": "Hours: Daily 00:00–24:00; breakfast daily 04:00–11:00",
+          "source_evidence": "Official locator lists 12:00 AM–12:00 AM daily and breakfast 4:00–11:00 AM; exact unit and postal match."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "SE16815V000",
+      "business_name": "BURGER KING",
+      "current_address": "Address: 750A CHAI CHEE ROAD #01-02,VIVA BUSINESS PARK,Singapore 469001",
+      "postal_code": "469001",
+      "matched_official_outlet": "Burger King — 750A Chai Chee Road, #01-02, Viva Business Park, Singapore 469001",
+      "source_url": "https://www.burgerking.com.sg/Locator/Details/41",
+      "source_type": "official_operator_locator",
+      "fields": [
+        {
+          "field": "Website",
+          "before": "http://www.burgerking.com.sg/",
+          "after": "https://www.burgerking.com.sg/Locator/Details/41",
+          "source_evidence": "Official branch detail page is the canonical HTTPS URL; workbook currently has the generic HTTP homepage."
+        },
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "after": "Hours: Daily 08:00–02:00; breakfast daily 08:00–11:00",
+          "source_evidence": "Official locator lists matching exact Viva Business Park unit and daily schedule."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "SW09178N000",
+      "business_name": "BURGER KING",
+      "current_address": "Address: 21 CHOA CHU KANG NORTH 6 #B1-29/30,YEWTEE POINT,Singapore 689578",
+      "postal_code": "689578",
+      "matched_official_outlet": "Burger King — 21 Choa Chu Kang North 6, #B1-29/30, Yew Tee Point, Singapore 689578",
+      "source_url": "https://www.burgerking.com.sg/Locator/Details/86",
+      "source_type": "official_operator_locator",
+      "fields": [
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "after": "Hours: Daily 08:00–22:00; breakfast daily 08:00–11:00",
+          "source_evidence": "Official locator lists matching Yew Tee Point address, exact unit, daily hours and breakfast hours."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "SW23625P000",
+      "business_name": "BURGER KING",
+      "current_address": "Address: 28 CHOA CHU KANG DRIVE #01-01,SAFRA,Singapore 689964",
+      "postal_code": "689964",
+      "matched_official_outlet": "Burger King — 28 Choa Chu Kang Drive, SAFRA Choa Chu Kang, #01-01, Singapore 689964",
+      "source_url": "https://www.burgerking.com.sg/Locator/Details/89",
+      "source_type": "official_operator_locator",
+      "fields": [
+        {
+          "field": "Website",
+          "before": null,
+          "after": "https://www.burgerking.com.sg/Locator/Details/89",
+          "source_evidence": "Official Burger King branch detail page for exact SAFRA Choa Chu Kang address and unit."
+        },
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "after": "Hours: Daily 00:00–24:00; breakfast daily 05:00–11:00",
+          "source_evidence": "Official locator lists 12:00 AM–12:00 AM daily and breakfast 5:00–11:00 AM; exact branch address and unit match."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "SW14714X000",
+      "business_name": "BURGER KING",
+      "current_address": "Address: 4 HILLVIEW RISE #01-06/07,HILLV2,Singapore 667979",
+      "postal_code": "667979",
+      "matched_official_outlet": "Burger King — 4 Hillview Rise, #01-06/07, HillV2, Singapore 667979",
+      "source_url": "https://www.burgerking.com.sg/Locator/Details/58",
+      "source_type": "official_operator_locator",
+      "fields": [
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "after": "Hours: Mon–Thu 08:00–00:00; Fri–Sat 08:00–02:00; Sun 08:00–00:00; eve of PH 08:00–02:00; PH 08:00–00:00; breakfast daily 08:00–11:00",
+          "source_evidence": "Official Burger King locator result lists the matching HillV2 address and exact #01-06/#01-07 units with hours."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "CE07U83K000",
+      "business_name": "BURGER KING CENTRAL",
+      "current_address": "Address: 6 EU TONG SEN STREET #01-23/26,Singapore 059817",
+      "postal_code": "059817",
+      "matched_official_outlet": "Burger King Central — Clarke Quay Central, 6 Eu Tong Sen Street, #01-23 to 26, Singapore 059817",
+      "source_url": "https://www.burgerking.com.sg/Locator/Details/14",
+      "source_type": "official_operator_locator",
+      "fields": [
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "after": "Hours: Mon–Thu and Sun 08:00–00:00; Fri–Sat and eve of PH 08:00–02:00; PH 08:00–00:00; breakfast daily 08:00–11:00",
+          "source_evidence": "Official locator lists exact Clarke Quay Central address and #01-23 to 26 units, with weekday/PH schedule."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "CE22L73K000",
+      "business_name": "Ya Kun Kaya Toast",
+      "current_address": "Address: 391 ORCHARD ROAD #B2-208-8,NGEE ANN CITY,Singapore 238872",
+      "postal_code": "238872",
+      "matched_official_outlet": "Ya Kun Kaya Toast — Takashimaya Departmental Store, 391 Orchard Road, Ngee Ann City, #B208-8, Singapore 238872",
+      "source_url": "https://app.yakun.com/find-us",
+      "source_type": "official_operator_locator",
+      "fields": [
+        {
+          "field": "Website",
+          "before": null,
+          "after": "https://app.yakun.com/find-us",
+          "source_evidence": "Ya Kun official outlet locator lists Takashimaya at 391 Orchard Road, Ngee Ann City, #B208-8, Singapore 238872."
+        },
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "after": "Hours: Mon–Sun 07:30–21:30 (last order 30 minutes before closing)",
+          "source_evidence": "Ya Kun official outlet locator lists the matched Takashimaya location and Mon–Sun 7:30am–9:30pm hours."
+        }
+      ]
+    }
+  ],
+  "review_flags": [
+    {
+      "sfa_licence": "SE09686K000",
+      "business_name": "BURGER KING",
+      "current_address": "Address: 5 STADIUM WALK #01-43,LEISURE PARK,Singapore 397693",
+      "postal_code": "397693",
+      "source_url": "https://www.burgerking.com.sg/Locator/Details/20",
+      "observation": "Official locator currently labels every day, eve of PH and PH as Closed for Kallang Leisure Park, 5 Stadium Walk #01-43, Singapore 397693. This is a closure warning, not proof of permanent closure; verify before removing the SFA row."
+    }
+  ],
+  "limits": [
+    "Official locators publish no direct phone number for these entries; none proposed.",
+    "OneMap/Mapbox and all paid sources were not used.",
+    "Only 10 exact outlets met the strict outlet/address/unit match; one location with all-days-closed locator status is flagged for separate closure verification."
+  ]
+}

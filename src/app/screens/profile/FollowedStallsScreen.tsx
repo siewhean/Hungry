@@ -1,11 +1,12 @@
-import { useEffect, useMemo } from "react";
-import { Pressable, ScrollView, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Pressable, View } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { BellRing } from "lucide-react-native";
 
-import { AppText, Card, EmptyState } from "@/components/ui";
+import { AppText, Button, Card, EmptyState } from "@/components/ui";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
-import { getDataRepository } from "@/lib/services/serviceProvider";
+import { useResolvedProfileEntities } from "@/features/profile/useResolvedProfileEntities";
+import type { VenueSummary } from "@/types/domain";
 import { useStallFollowStore } from "@/store/useStallFollowStore";
 import { useHungryTheme } from "@/theme";
 import type { ProfileStackParamList } from "./ProfileStack";
@@ -17,24 +18,34 @@ export function FollowedStallsScreen({ navigation }: Props) {
   const { componentRadii, palette, spacing } = useHungryTheme();
   const followedStallIds = useStallFollowStore((state) => state.followedStallIds);
   const loadFollowedStalls = useStallFollowStore((state) => state.loadFollowedStalls);
-  const repository = getDataRepository();
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const rootNavigation = getRootNavigation(navigation as any);
 
   useEffect(() => {
-    void loadFollowedStalls().catch(() => {});
-  }, [loadFollowedStalls]);
+    setLoadFailed(false);
+    void loadFollowedStalls().catch(() => setLoadFailed(true));
+  }, [loadFollowedStalls, attempt]);
 
-  const venues = useMemo(
-    () => followedStallIds.map((id) => repository.getVenueById(id)).filter((venue) => !!venue),
-    [followedStallIds, repository],
-  );
+  const resolved = useResolvedProfileEntities(followedStallIds, "venue");
+  const venues = resolved.items as VenueSummary[];
 
   return (
-    <ProfileScreenShell
-      title="Followed stalls"
-      subtitle="Get an alert when these stalls add a dish, change a price or restock."
-    >
-      <ScrollView contentContainerStyle={{ gap: spacing[3], paddingBottom: spacing[5] }}>
+    <ProfileScreenShell title="Followed stalls" subtitle="Stalls you follow, kept in one place.">
+      <View style={{ gap: spacing[3], paddingBottom: spacing[5] }}>
+        {resolved.loading ? <AppText>Loading followed stalls…</AppText> : null}
+        {loadFailed || resolved.failed ? (
+          <Button
+            label="Retry loading followed stalls"
+            onPress={() => {
+              setAttempt((v) => v + 1);
+              resolved.retry();
+            }}
+          />
+        ) : null}
+        {resolved.missing ? (
+          <AppText>{resolved.missing} followed stalls are unavailable.</AppText>
+        ) : null}
         {venues.length ? (
           venues.map((venue) => (
             <Pressable
@@ -67,13 +78,13 @@ export function FollowedStallsScreen({ navigation }: Props) {
               </Card>
             </Pressable>
           ))
-        ) : (
+        ) : !resolved.loading && !resolved.failed && !loadFailed && !resolved.missing ? (
           <EmptyState
             title="No followed stalls yet"
-            body="Tap Follow on a stall page to hear about its menu changes."
+            body="Tap Follow on a stall page to save it here."
           />
-        )}
-      </ScrollView>
+        ) : null}
+      </View>
     </ProfileScreenShell>
   );
 }

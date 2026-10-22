@@ -1,0 +1,202 @@
+{
+  "snapshot_id": "refresh131_rating_sources_20261019",
+  "created_at_sgt": "2026-10-19T04:51:53+08:00",
+  "baseline_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_sha256": "80bbef4c8edee234e7ddad4a9b3390a67e9f7572621a8711fbe3c97fb7066212",
+  "task": "Read-only bounded audit for durable, free, lawfully reusable outlet rating and review-count fields.",
+  "scope": {
+    "source_candidates_reviewed": 3,
+    "sources": [
+      "OpenStreetMap",
+      "Google Maps public listings / Google Maps Platform",
+      "Tripadvisor public listings / widgets"
+    ],
+    "exact_directory_records_inspected": 20,
+    "selection": "First 20 directory rows with blank Rating / Review Count in current workbook, rows 2-21.",
+    "workbook_edits": 0,
+    "network_or_api_calls": 0
+  },
+  "records_inspected": [
+    {
+      "worksheet_row": 2,
+      "sfa_licence": "CE12K77J006",
+      "f_and_b_name": "\"K&P LOCAL DELIGHTS\" AND \"HAK''S FISHBALL NOODLE\"",
+      "address": "Address: 9 TAGORE LANE #01-02,9 @ TAGORE,Singapore 787472",
+      "rating_review_count_blank": true
+    },
+    {
+      "worksheet_row": 3,
+      "sfa_licence": "SW26942P001",
+      "f_and_b_name": "\"Tuckshop\"",
+      "address": "Address: 5 HARBOURFRONT AVENUE #02-11,SINGAPORE CRUISE CENTRE (HARBOURFRONT),Singapore 099549",
+      "rating_review_count_blank": true
+    },
+    {
+      "worksheet_row": 4,
+      "sfa_licence": "MFM0110001",
+      "f_and_b_name": "#01-10",
+      "address": "Address: 4 WOODLANDS STREET 12 #01-10,Singapore 738623",
+      "rating_review_count_blank": true
+    },
+    {
+      "worksheet_row": 5,
+      "sfa_licence": "NMF011080004",
+      "f_and_b_name": "#01-1080",
+      "address": "Address: 32 NEW MARKET ROAD #01-1080,Singapore 050032",
+      "rating_review_count_blank": true
+    },
+    {
+      "worksheet_row": 6,
+      "sfa_licence": "NW10303C000",
+      "f_and_b_name": "#87 JUST THAI",
+      "address": "34B LORONG MAMBONG HOLLAND VILLAGE,Singapore 277691 (1st storey)",
+      "rating_review_count_blank": true
+    },
+    {
+      "worksheet_row": 7,
+      "sfa_licence": "SE25F72A000",
+      "f_and_b_name": "#87 JUST THAI",
+      "address": "98 PUNGGOL WAY #01-213,Singapore 829857",
+      "rating_review_count_blank": true
+    },
+    {
+      "worksheet_row": 8,
+      "sfa_licence": "W02041J000",
+      "f_and_b_name": "#87 JUST THAI",
+      "address": "57 KILLINEY ROAD #01-01,Singapore 239520",
+      "rating_review_count_blank": true
+    },
+    {
+      "worksheet_row": 9,
+      "sfa_licence": "SE18B02X000",
+      "f_and_b_name": "#HTAG CAFE",
+      "address": "Address: 3 IRVING ROAD #01-18,TAI SENG CENTRE,Singapore 369522",
+      "rating_review_count_blank": true
+    },
+    {
+      "worksheet_row": 10,
+      "sfa_licence": "W03051X036",
+      "f_and_b_name": "#MakanBoleh",
+      "address": "Address: 2 SEAH IM ROAD Singapore 099114",
+      "rating_review_count_blank": true
+    },
+    {
+      "worksheet_row": 11,
+      "sfa_licence": "W78127A002",
+      "f_and_b_name": "#MakanBoleh",
+      "address": "Address: 119 BUKIT MERAH LANE 1 #01-40,#MakanBoleh,Singapore 151119",
+      "rating_review_count_blank": true
+    },
+    {
+      "worksheet_row": 12,
+      "sfa_licence": "CE05181E000",
+      "f_and_b_name": "#RAVE",
+      "address": "Address: RAFFLES BOULEVARD #01-213,MARINA SQUARE,Singapore 039594",
+      "rating_review_count_blank": true
+    },
+    {
+      "worksheet_row": 13,
+      "sfa_licence": "CE21467X000",
+      "f_and_b_name": "#thebackyardbakers",
+      "address": "Address: 320 ORCHARD ROAD #01-K9,TANG PLAZA,Singapore 238865",
+      "rating_review_count_blank": true
+    },
+    {
+      "worksheet_row": 14,
+      "sfa_licence": "CE24K23X000",
+      "f_and_b_name": "#thebackyardbakers",
+      "address": "Address: 9 RAFFLES PLACE #01-07,REPUBLIC PLAZA,Singapore 048619",
+      "rating_review_count_blank": true
+    },
+    {
+      "worksheet_row": 15,
+      "sfa_licence": "SE22I83E000",
+      "f_and_b_name": "#thebackyardbakers",
+      "address": "Address: 78 AIRPORT BOULEVARD #01-234,JEWEL CHANGI AIRPORT,Singapore 819666",
+      "rating_review_count_blank": true
+    },
+    {
+      "worksheet_row": 16,
+      "sfa_licence": "CE12H36A000",
+      "f_and_b_name": "#WLJK",
+      "address": "Address: 78 HORNE ROAD Singapore 209078",
+      "rating_review_count_blank": true
+    },
+    {
+      "worksheet_row": 17,
+      "sfa_licence": "W99390B000",
+      "f_and_b_name": "#WTF",
+      "address": "Address: 49 CLUB STREET Singapore 069426",
+      "rating_review_count_blank": true
+    },
+    {
+      "worksheet_row": 18,
+      "sfa_licence": "CE08102L006",
+      "f_and_b_name": "$5 Western",
+      "address": "Address: 5 UPPER BOON KENG ROAD #01-01,KALLANG HEIGHTS,Singapore 380005",
+      "rating_review_count_blank": true
+    },
+    {
+      "worksheet_row": 19,
+      "sfa_licence": "NE21G54J000",
+      "f_and_b_name": "$5 WESTERN",
+      "address": "Address: 121 HOUGANG AVENUE 1 #01-1358,Singapore 530121 MR 1",
+      "rating_review_count_blank": true
+    },
+    {
+      "worksheet_row": 20,
+      "sfa_licence": "NW25N96C000",
+      "f_and_b_name": "$5 Western",
+      "address": "Address: 30 KRANJI LOOP #02-18,Singapore 739570 (MR2)",
+      "rating_review_count_blank": true
+    },
+    {
+      "worksheet_row": 21,
+      "sfa_licence": "S87150E006",
+      "f_and_b_name": "$5 Western",
+      "address": "Address: 406 TAMPINES STREET 41 #01-07,SUN PLAZA GREEN,Singapore 520406",
+      "rating_review_count_blank": true
+    }
+  ],
+  "source_findings": [
+    {
+      "source": "OpenStreetMap",
+      "source_url": "https://www.openstreetmap.org/copyright",
+      "field_semantics": "Community-mapped tags; no dependable standardized public aggregate rating or review-count field for F&B outlets.",
+      "freshness": "Object edit timestamps are available in OSM data, but do not mean a rating was refreshed.",
+      "reuse_constraints": "ODbL 1.0 attribution and share-alike obligations apply to adapted databases; verify obligations before incorporating OSM-derived data into this workbook.",
+      "exact_match_quality": "Not evaluated per outlet because this source does not establish ratings/review counts as a consistent field.",
+      "integration_recommendation": "Do not populate Rating / Review Count from OSM. It may be considered for other fields only after separate license and exact-match review."
+    },
+    {
+      "source": "Google Maps public listings / Google Maps Platform",
+      "source_url": "https://policies.google.com/terms?hl=en-US",
+      "field_semantics": "Ratings and review counts are Google Maps content and are platform-specific aggregates.",
+      "freshness": "Public pages may change; no stable point-in-time export or refresh timestamp verified for the inspected workbook sample.",
+      "reuse_constraints": "No clear open-data grant was found for copying Maps content into an external durable catalogue; use authorized API/display terms rather than scraping.",
+      "exact_match_quality": "No exact outlet probes performed because no reusable open export path was established.",
+      "integration_recommendation": "Do not scrape or persist rating aggregates. A licensed API workflow would require separate terms and cost review; no API calls made."
+    },
+    {
+      "source": "Tripadvisor public listings / widgets",
+      "source_url": "https://www.tripadvisor.com/pages/widget_terms.html",
+      "field_semantics": "Tripadvisor traveller rating and review metrics, distinct from all-customer or venue-wide satisfaction.",
+      "freshness": "Widgets are dynamic and may be changed by Tripadvisor without notice; capture dates would not create a durable refresh guarantee.",
+      "reuse_constraints": "Widget terms section 2.1 prohibit extracting widget/site content and displaying Tripadvisor ratings or reviews outside the widgets; API availability/pricing and license were not used.",
+      "exact_match_quality": "No exact outlet probes performed because the public widget terms block the required spreadsheet extraction/display use.",
+      "integration_recommendation": "Do not populate the workbook from scraped Tripadvisor pages/widgets. Consider only a separately licensed authorized feed with its display/attribution requirements satisfied."
+    }
+  ],
+  "summary": {
+    "ratings_added": 0,
+    "review_counts_added": 0,
+    "sourceable_open_rating_dataset_found": false,
+    "recommendation": "Leave rating fields blank unless an outlet provides its own dated rating or a source provides a clearly reusable, exact-branch, dated rating dataset. If authorized delivery-platform scores are later accepted, preserve platform name, exact branch, capture timestamp, metric semantics, source URL, and explicit reuse permission; never label them venue-wide."
+  },
+  "limitations": [
+    "This is a bounded source/terms audit, not a verification of all Singapore outlets.",
+    "No page/API calls were made to collect ratings; no service spend or Mapbox requests occurred.",
+    "Public visibility alone is not treated as permission to copy metrics into a durable external database."
+  ],
+  "source_terms_reviewed_at_sgt": "2026-10-19T04:51:53+08:00"
+}

@@ -1,0 +1,590 @@
+{
+  "snapshot_id": "installed_workbook_integration_gap_audit_sha2118208143_20261018",
+  "captured_at_utc": "2026-10-18T11:00:34.151208+00:00",
+  "workbook": {
+    "path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "sha256": "2118208143ab9c29af5bd98bf2872f34ca32bf6e08f077925b227e1c6bdbc5cb",
+    "edited": false,
+    "directory_rows": 38280,
+    "menu_rows": 11443,
+    "image_candidate_rows": 1208
+  },
+  "conclusion": "Most prior official source candidates are integrated. Two additional official BreadTalk 1000x1000 image variants are exact product matches and absent from Image Candidates; they are suitable only as additional review-only candidates. No safe exact outlet directory field or current menu fact gap was found in the inspected source set.",
+  "valid_unintegrated_review_candidates": [
+    {
+      "sfa_licence_for_exact_menu_row_join": "NW04065P000",
+      "brand": "BREADTALK",
+      "menu_item": "Lychee Rose",
+      "item_record_scope": "Brand-level current catalogue only; source does not establish availability at this specific outlet. The SFA licence is only the exact join proving the matching menu item row exists.",
+      "candidate_image_url": "https://www.breadtalk.com.sg/wp-content/uploads/2025/11/RevampedCakes046-1000x1000.jpg",
+      "related_image_url_already_in_workbook": "https://www.breadtalk.com.sg/wp-content/uploads/2025/11/RevampedCakes046.jpg",
+      "source_page_url": "https://www.breadtalk.com.sg/product/lychee-rose/",
+      "source_page_observed": "2026-10-18T18:07:41+08:00",
+      "source_page_sha256": "9ff412f9128c55004c4928d656dc239aadc9b05b81c6be0789bfeb50953a435f",
+      "source_page_http_status": 200,
+      "exact_item_mapping_evidence": "Official category page product tile has aria-label and image alt exactly Lychee Rose, links to its product page, and includes the image URL in data-nectar-img-srcset.",
+      "asset_head_check": {
+        "http_status": 200,
+        "content_type": "image/jpeg",
+        "content_length_bytes": 123983,
+        "last_modified": "2026-02-09T09:52:27Z"
+      },
+      "current_workbook_exact_url_present": false,
+      "candidate_action": "Eligible to append as an additional review-only image candidate if higher-resolution alternatives are useful; do not set Approved Image URL.",
+      "visual_check": "Not visually inspected; actual pixels unverified.",
+      "rights_reuse_status": "Permission required; copyright/reuse rights are not established. Review-only; not approved for public display."
+    },
+    {
+      "sfa_licence_for_exact_menu_row_join": "NW04065P000",
+      "brand": "BREADTALK",
+      "menu_item": "Strawberry Shortcake",
+      "item_record_scope": "Brand-level current catalogue only; source does not establish availability at this specific outlet. The SFA licence is only the exact join proving the matching menu item row exists.",
+      "candidate_image_url": "https://www.breadtalk.com.sg/wp-content/uploads/2025/11/RevampedCakes022-1000x1000.jpg",
+      "related_image_url_already_in_workbook": "https://www.breadtalk.com.sg/wp-content/uploads/2025/11/RevampedCakes022.jpg",
+      "source_page_url": "https://www.breadtalk.com.sg/product/strawberry-shortcake/",
+      "source_page_observed": "2026-10-18T18:07:41+08:00",
+      "source_page_sha256": "9ff412f9128c55004c4928d656dc239aadc9b05b81c6be0789bfeb50953a435f",
+      "source_page_http_status": 200,
+      "exact_item_mapping_evidence": "Official category page product tile has aria-label and image alt exactly Strawberry Shortcake, links to its product page, and includes the image URL in data-nectar-img-srcset.",
+      "asset_head_check": {
+        "http_status": 200,
+        "content_type": "image/jpeg",
+        "content_length_bytes": 98290,
+        "last_modified": "2026-02-09T09:52:04Z"
+      },
+      "current_workbook_exact_url_present": false,
+      "candidate_action": "Eligible to append as an additional review-only image candidate if higher-resolution alternatives are useful; do not set Approved Image URL.",
+      "visual_check": "Not visually inspected; actual pixels unverified.",
+      "rights_reuse_status": "Permission required; copyright/reuse rights are not established. Review-only; not approved for public display."
+    }
+  ],
+  "other_source_dispositions": [
+    {
+      "source_snapshot": "coffee_bakery_chain_first_party_refresh_20261018.json",
+      "brand": "Paris Baguette",
+      "missing_menu_item_count": 48,
+      "missing_image_url_count": 46,
+      "menu_item_names": [
+        "Chocolate Macaron",
+        "Signature Natural Yeast Bread",
+        "Smoked Salmon & Avocado Salad",
+        "Caesar Chicken Salad",
+        "Caesar Chicken Baguette Sandwich",
+        "Plain Bagel",
+        "Macaron Set (4pcs)",
+        "Signature Silky Roll Cake",
+        "Hong Kong Peanut Butter French Toast",
+        "Cranberry Chicken Pastry Wrap Sandwich",
+        "Truffle & Parmesan Cheese French Fries",
+        "Real Ice Bar With Mint Chocolate",
+        "Real Ice Bar With Chocolate",
+        "Earl Grey",
+        "Teatra Fruity Green Tea",
+        "Teatra English Breakfast Tea",
+        "Caramel Latte",
+        "Mocha Latte",
+        "Café Latte",
+        "Americano",
+        "Espresso",
+        "No.1 Cheese Tart",
+        "Mr. Bear Madeleine",
+        "Ms. Bear Madeleine",
+        "Vanilla Macaron",
+        "Fresh Cream Cake",
+        "Blueberry Yogurt Cream Cake",
+        "Softness Cranberry Bread",
+        "Best Ever Garlic Bread",
+        "Power Garlic Baguette",
+        "Classic Baguette",
+        "Mini Choco Twist",
+        "Pain au Chocolat",
+        "Croissant",
+        "K-Tradition Black Sesame Sweet Rice Bread",
+        "Soft Strawberry Cheesecake",
+        "Soft Cheesecake",
+        "Korean Milk Cream Bread",
+        "Cream Cheese Swirl Cinnamon Bread",
+        "Peanut Crumble Soboro Bread",
+        "Cheese Sausage Bread",
+        "K-Tradition Red Bean Bread",
+        "Chicken & Avocado Sandwich",
+        "Chicken Slice & Cheese Pastry Wrap Sandwich",
+        "Egg Mayo & Avocado Croissant Sandwich",
+        "Smoked Chicken Slice & Cheese Baguette Sandwich",
+        "Tuna & Tartar Croissant Sandwich",
+        "Salmon Cream Cheese Croissant Sandwich"
+      ],
+      "reason": "Not accepted as current product facts: catalogue URL is on the operator domain but includes /uat/; source explicitly says production status is unverified. Image asset paths mostly date 2021-2023 and visual check/reuse rights are unresolved. Do not populate current menu or image candidates until a production catalogue is confirmed.",
+      "source_page": "https://www.parisbaguette.com.sg/uat/products/"
+    },
+    {
+      "source_snapshot": "foodpanda_subway_breadtalk_ihq_menu_candidate_20261018.json",
+      "item_variants": 10,
+      "unique_official_image_urls": 5,
+      "disposition": "No update from this snapshot: delivery captures conflict in freshness/content, prices need live confirmation; official Subway menu images already have current candidate coverage. These older asset variants do not improve the fresher official menu-card image set; rights remain unresolved."
+    },
+    {
+      "source_snapshot": "bca_friendly_buildings_exact_postal_coordinate_candidates_20261018.json",
+      "remaining_postal_only_coordinate_candidates": [
+        {
+          "sfa_licence": "CE05181E000",
+          "postal_code": "039594",
+          "name": "#RAVE",
+          "latitude": 1.2914553,
+          "longitude": 103.8570073,
+          "coordinate_precision": "building/facility point from BCA Friendly Buildings layer; not a stall-front point"
+        },
+        {
+          "sfa_licence": "SW09816A000",
+          "postal_code": "098269",
+          "name": "15F",
+          "latitude": 1.2549334,
+          "longitude": 103.8202194,
+          "coordinate_precision": "building/facility point from BCA Friendly Buildings layer; not a stall-front point"
+        },
+        {
+          "sfa_licence": "SW09812J000",
+          "postal_code": "098269",
+          "name": "18F",
+          "latitude": 1.2549334,
+          "longitude": 103.8202194,
+          "coordinate_precision": "building/facility point from BCA Friendly Buildings layer; not a stall-front point"
+        },
+        {
+          "sfa_licence": "SW09823B000",
+          "postal_code": "098269",
+          "name": "cairo market",
+          "latitude": 1.2549334,
+          "longitude": 103.8202194,
+          "coordinate_precision": "building/facility point from BCA Friendly Buildings layer; not a stall-front point"
+        },
+        {
+          "sfa_licence": "SW09814C000",
+          "postal_code": "098269",
+          "name": "frozen fuel",
+          "latitude": 1.2549334,
+          "longitude": 103.8202194,
+          "coordinate_precision": "building/facility point from BCA Friendly Buildings layer; not a stall-front point"
+        },
+        {
+          "sfa_licence": "SW09820J000",
+          "postal_code": "098269",
+          "name": "GOLDILOCKS FC",
+          "latitude": 1.2549334,
+          "longitude": 103.8202194,
+          "coordinate_precision": "building/facility point from BCA Friendly Buildings layer; not a stall-front point"
+        },
+        {
+          "sfa_licence": "SW09813E000",
+          "postal_code": "098269",
+          "name": "kt's grill",
+          "latitude": 1.2549334,
+          "longitude": 103.8202194,
+          "coordinate_precision": "building/facility point from BCA Friendly Buildings layer; not a stall-front point"
+        },
+        {
+          "sfa_licence": "SW09807B000",
+          "postal_code": "098269",
+          "name": "MEL'S DRIVE-IN",
+          "latitude": 1.2549334,
+          "longitude": 103.8202194,
+          "coordinate_precision": "building/facility point from BCA Friendly Buildings layer; not a stall-front point"
+        },
+        {
+          "sfa_licence": "SW09821E000",
+          "postal_code": "098269",
+          "name": "pharoh's",
+          "latitude": 1.2549334,
+          "longitude": 103.8202194,
+          "coordinate_precision": "building/facility point from BCA Friendly Buildings layer; not a stall-front point"
+        },
+        {
+          "sfa_licence": "SW09805E000",
+          "postal_code": "098269",
+          "name": "STARBUCKS COFFEE",
+          "latitude": 1.2549334,
+          "longitude": 103.8202194,
+          "coordinate_precision": "building/facility point from BCA Friendly Buildings layer; not a stall-front point"
+        },
+        {
+          "sfa_licence": "W02126A000",
+          "postal_code": "169608",
+          "name": "7-ELEVEN",
+          "latitude": 1.2799397,
+          "longitude": 103.8307218,
+          "coordinate_precision": "building/facility point from BCA Friendly Buildings layer; not a stall-front point"
+        },
+        {
+          "sfa_licence": "W92200L011",
+          "postal_code": "169608",
+          "name": "AR Raheem",
+          "latitude": 1.2799397,
+          "longitude": 103.8307218,
+          "coordinate_precision": "building/facility point from BCA Friendly Buildings layer; not a stall-front point"
+        },
+        {
+          "sfa_licence": "W92200L005",
+          "postal_code": "169608",
+          "name": "Bu by Shenxi",
+          "latitude": 1.2799397,
+          "longitude": 103.8307218,
+          "coordinate_precision": "building/facility point from BCA Friendly Buildings layer; not a stall-front point"
+        },
+        {
+          "sfa_licence": "W92200L002",
+          "postal_code": "169608",
+          "name": "CHICKY FUN PTE LTD",
+          "latitude": 1.2799397,
+          "longitude": 103.8307218,
+          "coordinate_precision": "building/facility point from BCA Friendly Buildings layer; not a stall-front point"
+        },
+        {
+          "sfa_licence": "W92200L013",
+          "postal_code": "169608",
+          "name": "Drinks, Dim Sum, Fruits & Dessert",
+          "latitude": 1.2799397,
+          "longitude": 103.8307218,
+          "coordinate_precision": "building/facility point from BCA Friendly Buildings layer; not a stall-front point"
+        },
+        {
+          "sfa_licence": "W92200L012",
+          "postal_code": "169608",
+          "name": "KIM LEE FOOD DELIGHT",
+          "latitude": 1.2799397,
+          "longitude": 103.8307218,
+          "coordinate_precision": "building/facility point from BCA Friendly Buildings layer; not a stall-front point"
+        },
+        {
+          "sfa_licence": "W92200L000",
+          "postal_code": "169608",
+          "name": "Koufu Pte Ltd",
+          "latitude": 1.2799397,
+          "longitude": 103.8307218,
+          "coordinate_precision": "building/facility point from BCA Friendly Buildings layer; not a stall-front point"
+        },
+        {
+          "sfa_licence": "W92200L004",
+          "postal_code": "169608",
+          "name": "Majulah Nasi Padang",
+          "latitude": 1.2799397,
+          "longitude": 103.8307218,
+          "coordinate_precision": "building/facility point from BCA Friendly Buildings layer; not a stall-front point"
+        },
+        {
+          "sfa_licence": "CE09H63N000",
+          "postal_code": "169608",
+          "name": "MR BEAN",
+          "latitude": 1.2799397,
+          "longitude": 103.8307218,
+          "coordinate_precision": "building/facility point from BCA Friendly Buildings layer; not a stall-front point"
+        },
+        {
+          "sfa_licence": "W92200L009",
+          "postal_code": "169608",
+          "name": "Pin Sin Food and Beverage Management Pte Ltd",
+          "latitude": 1.2799397,
+          "longitude": 103.8307218,
+          "coordinate_precision": "building/facility point from BCA Friendly Buildings layer; not a stall-front point"
+        },
+        {
+          "sfa_licence": "W98295E000",
+          "postal_code": "169608",
+          "name": "POLAR CAFE",
+          "latitude": 1.2799397,
+          "longitude": 103.8307218,
+          "coordinate_precision": "building/facility point from BCA Friendly Buildings layer; not a stall-front point"
+        },
+        {
+          "sfa_licence": "W92200L008",
+          "postal_code": "169608",
+          "name": "Qiu Yuan",
+          "latitude": 1.2799397,
+          "longitude": 103.8307218,
+          "coordinate_precision": "building/facility point from BCA Friendly Buildings layer; not a stall-front point"
+        },
+        {
+          "sfa_licence": "CE16N54P000",
+          "postal_code": "169608",
+          "name": "Rempah",
+          "latitude": 1.2799397,
+          "longitude": 103.8307218,
+          "coordinate_precision": "building/facility point from BCA Friendly Buildings layer; not a stall-front point"
+        },
+        {
+          "sfa_licence": "W92200L003",
+          "postal_code": "169608",
+          "name": "Telur Thai",
+          "latitude": 1.2799397,
+          "longitude": 103.8307218,
+          "coordinate_precision": "building/facility point from BCA Friendly Buildings layer; not a stall-front point"
+        },
+        {
+          "sfa_licence": "CE17O57X000",
+          "postal_code": "169608",
+          "name": "TRIPLETS",
+          "latitude": 1.2799397,
+          "longitude": 103.8307218,
+          "coordinate_precision": "building/facility point from BCA Friendly Buildings layer; not a stall-front point"
+        },
+        {
+          "sfa_licence": "W92200L007",
+          "postal_code": "169608",
+          "name": "WESTERN BRO",
+          "latitude": 1.2799397,
+          "longitude": 103.8307218,
+          "coordinate_precision": "building/facility point from BCA Friendly Buildings layer; not a stall-front point"
+        },
+        {
+          "sfa_licence": "W92200L001",
+          "postal_code": "169608",
+          "name": "Yong Tau Foo",
+          "latitude": 1.2799397,
+          "longitude": 103.8307218,
+          "coordinate_precision": "building/facility point from BCA Friendly Buildings layer; not a stall-front point"
+        },
+        {
+          "sfa_licence": "W92200L006",
+          "postal_code": "169608",
+          "name": "Zhen Neng Zhu Ban Mian",
+          "latitude": 1.2799397,
+          "longitude": 103.8307218,
+          "coordinate_precision": "building/facility point from BCA Friendly Buildings layer; not a stall-front point"
+        },
+        {
+          "sfa_licence": "W92200L010",
+          "postal_code": "169608",
+          "name": null,
+          "latitude": 1.2799397,
+          "longitude": 103.8307218,
+          "coordinate_precision": "building/facility point from BCA Friendly Buildings layer; not a stall-front point"
+        },
+        {
+          "sfa_licence": "W85261P000",
+          "postal_code": "277731",
+          "name": "idaki",
+          "latitude": 1.3102643,
+          "longitude": 103.7950361,
+          "coordinate_precision": "building/facility point from BCA Friendly Buildings layer; not a stall-front point"
+        },
+        {
+          "sfa_licence": "SE17044E000",
+          "postal_code": "528882",
+          "name": "7TH HEAVEN KTV & CAFE",
+          "latitude": 1.3447111,
+          "longitude": 103.9417012,
+          "coordinate_precision": "building/facility point from BCA Friendly Buildings layer; not a stall-front point"
+        },
+        {
+          "sfa_licence": "S90123P000",
+          "postal_code": "528882",
+          "name": "LAGOON CAFE",
+          "latitude": 1.3447111,
+          "longitude": 103.9417012,
+          "coordinate_precision": "building/facility point from BCA Friendly Buildings layer; not a stall-front point"
+        },
+        {
+          "sfa_licence": "SE13U09X000",
+          "postal_code": "528882",
+          "name": "Sarpino's",
+          "latitude": 1.3447111,
+          "longitude": 103.9417012,
+          "coordinate_precision": "building/facility point from BCA Friendly Buildings layer; not a stall-front point"
+        },
+        {
+          "sfa_licence": "CE07024N000",
+          "postal_code": "539747",
+          "name": "7-Eleven",
+          "latitude": 1.3815895,
+          "longitude": 103.8833488,
+          "coordinate_precision": "building/facility point from BCA Friendly Buildings layer; not a stall-front point"
+        },
+        {
+          "sfa_licence": "CE25I69L000",
+          "postal_code": "539747",
+          "name": "luckin coffee",
+          "latitude": 1.3815895,
+          "longitude": 103.8833488,
+          "coordinate_precision": "building/facility point from BCA Friendly Buildings layer; not a stall-front point"
+        }
+      ],
+      "disposition": "Do not apply these postal-only points without strict address reconciliation. The paired strict-address snapshot excludes these records; facility-level point is not a stall-front coordinate."
+    },
+    {
+      "source_snapshot": "closure_delta_exact_match_20261018.json",
+      "facts": {
+        "venue": "Satay by the Bay",
+        "effective_date": "2026-10-01",
+        "notice_says_permanent": false,
+        "matched_sfa_licences": [
+          "CE12H48N000",
+          "CE12H48N025"
+        ]
+      },
+      "current_workbook_rows": [
+        {
+          "sfa_licence": "CE12H48N000",
+          "name": "SATAY BY THE BAY",
+          "coverage_status": "Official source reports closure from 2026-10-01; permanent closure/reopening status not stated. Retained pending recheck. | Operational status (2026-10-18): Satay by the Bay venue closed effective 2026-10-01; exact licence relocation/reopening unverified. Retained pending outlet-specific status. | Source check 2026-10-18: https://www.gardensbythebay.com.sg/en.html"
+        },
+        {
+          "sfa_licence": "CE12H48N025",
+          "name": "SATAY BY THE BAY",
+          "coverage_status": "Official source reports closure from 2026-10-01; permanent closure/reopening status not stated. Retained pending recheck. | Operational status (2026-10-18): Satay by the Bay venue closed effective 2026-10-01; exact licence relocation/reopening unverified. Retained pending outlet-specific status. | Source check 2026-10-18: https://www.gardensbythebay.com.sg/en.html"
+        }
+      ],
+      "disposition": "Closure status is already reflected in both matched records’ Coverage Status. Do not remove: notice does not establish permanence or licence-specific relocation/reopening status."
+    }
+  ],
+  "integrated_or_rechecked_summary": {
+    "7-Eleven": {
+      "menu_candidates": 56,
+      "menu_item_gaps": 0,
+      "image_candidates": 56,
+      "image_url_gaps": 0
+    },
+    "CHAGEE": {
+      "menu_candidates": 24,
+      "menu_item_gaps": 0,
+      "image_candidates": 24,
+      "image_url_gaps": 0
+    },
+    "Luckin Coffee": {
+      "menu_candidates": 24,
+      "menu_item_gaps": 0,
+      "image_candidates": 25,
+      "image_url_gaps": 0
+    },
+    "Wok Hey": {
+      "menu_candidates": 35,
+      "menu_item_gaps": 0,
+      "image_candidates": 35,
+      "image_url_gaps": 0
+    },
+    "restaurant group official sources": {
+      "Din Tai Fung menu candidates": 108,
+      "menu_item_gaps": 0,
+      "image_url_candidates": 108,
+      "image_url_gaps": 0
+    },
+    "Coffee/Bakery chains": {
+      "Mr Bean menu candidates": 41,
+      "Mr Bean item_gaps": 0,
+      "Mr Bean image candidates": 41,
+      "Mr Bean_image_gaps": 0,
+      "Paris Baguette menu candidates": 48,
+      "Paris Baguette item_gaps": 48,
+      "Paris Baguette image_candidates": 46,
+      "Paris Baguette image_url_gaps": 46,
+      "Paris Baguette disposition": "Withhold: official product catalogue path contains /uat/ and snapshot explicitly says production status is not verified; image asset paths are mostly 2021-2023."
+    },
+    "Far East malls": {
+      "exact_field_pairs_in_snapshot": 7,
+      "still_blank": 0
+    },
+    "BCA coordinates": {
+      "strict_address_candidates": 977,
+      "strict_address_candidates_already_present": 977,
+      "postal_only_candidates_still_missing": 35,
+      "postal_only_disposition": "Do not apply without additional address verification; postal-only facility matches include ambiguous/multiple building labels and were excluded by the stricter address matcher."
+    }
+  },
+  "source_hashes": [
+    {
+      "path": "data/source_snapshots/7eleven_official_singapore_product_catalogue_media_refresh_20261018.json",
+      "sha256": "e77813e5be30ed0ea8820567409df4f83f017f1ec65b46ffe536b0f6686c9b3b"
+    },
+    {
+      "path": "data/source_snapshots/bca_friendly_buildings_exact_postal_coordinate_candidates_20261018.json",
+      "sha256": "5ade52dad2db30bdacd72be9373e6530e5e846fe001e1fcaf6917bc386a8b6d7"
+    },
+    {
+      "path": "data/source_snapshots/bca_friendly_buildings_strict_address_coordinate_candidates_20261018.json",
+      "sha256": "d90095c021e5f828f00f4d1482304d06b80a83b5e39dc1d79265f8146aa275cf"
+    },
+    {
+      "path": "data/source_snapshots/brand_first_party_refresh_starbucks_cbtl_20261018.json",
+      "sha256": "a3e5f406d284665b3ae4343fc05157cb7e002d96bfdd5a0e55045378d3087e19"
+    },
+    {
+      "path": "data/source_snapshots/breadtalk_first_party_menu_image_followon_refresh107_20261018.json",
+      "sha256": "4f263db893264184e29d41f9210805656ece91af1cc4936e29079fa4ae460842"
+    },
+    {
+      "path": "data/source_snapshots/breadtalk_live_official_refresh_20261018.json",
+      "sha256": "1ee2f005173b83923d211d7c38418b15050012cfcbbc8f6ce513228f5f28bd16"
+    },
+    {
+      "path": "data/source_snapshots/chagee_first_party_menu_image_catalogue_20261018.json",
+      "sha256": "6e4aabde7de7edf6b2b8d1c72e24535e8e5dd64615c1e5cc06966bf90dceb588"
+    },
+    {
+      "path": "data/source_snapshots/closure_delta_exact_match_20261018.json",
+      "sha256": "6974c8a2a859b76734025d15d829917706ca9c09295f984e1625ec349f1bfec9"
+    },
+    {
+      "path": "data/source_snapshots/closure_sweep_sfa_public_official_20261018.json",
+      "sha256": "c5ee33907e4812a15e84261acc7f661f35e4696b6c82e28831770b832c6a47e0"
+    },
+    {
+      "path": "data/source_snapshots/coffee_bakery_chain_first_party_refresh_20261018.json",
+      "sha256": "518d7a1326043660b5be65699125565b21114531ae7cbd3c2f73590cb29c3b9a"
+    },
+    {
+      "path": "data/source_snapshots/far_east_malls_official_exact_blank_fields_refresh108_20261018.json",
+      "sha256": "ec8b4f87b8131f069b6ceaf9e5e23a615d2512c493817773df42f95dc95825d5"
+    },
+    {
+      "path": "data/source_snapshots/foodpanda_subway_breadtalk_ihq_menu_candidate_20261018.json",
+      "sha256": "ca76239e9fdfd3a2bc1e5b3d2ce6d0359eb3e1a8336b95061791c49d35ff7f6b"
+    },
+    {
+      "path": "data/source_snapshots/jollibee_live_official_delta_20261018.json",
+      "sha256": "7097bbcabf45122269f7419bfbd8fe3f210574d0dc4fd8f07033cb94536146e4"
+    },
+    {
+      "path": "data/source_snapshots/luckin_official_singapore_menu_media_refresh_20261018.json",
+      "sha256": "f66660a7bcc542a8d7bbe32d8d0171dd26e2d51251ad79dff306dc56de3ae711"
+    },
+    {
+      "path": "data/source_snapshots/mcdonalds_kfc_official_source_refresh_20261018.json",
+      "sha256": "d16664a96a86fc32945d22c45148e452ac9f7b467f8dc7abcd65cce71502ff06"
+    },
+    {
+      "path": "data/source_snapshots/restaurant_group_official_menu_image_scout_20261018.json",
+      "sha256": "2076ff0a268f4379df9288b6abde3f0a0af8d0498d8767a6e0cb056e7ff62e3c"
+    },
+    {
+      "path": "data/source_snapshots/subway_official_master_scan_20261018.json",
+      "sha256": "3c7469420e48ae42d8ce50138e94c8c499df93660da68a23e2b8f878ede0e348"
+    },
+    {
+      "path": "data/source_snapshots/wok_hey_first_party_menu_image_refresh_20261018.json",
+      "sha256": "daa1a87c4002221054fdf04651bb87749383e59b714161943488b4243405a41e"
+    },
+    {
+      "path": "data/source_snapshots/yakun_official_outlet_menu_media_refresh_20261018.json",
+      "sha256": "d2d743f575bc999c114114bc26ed249aa860800760b7f47916d10f1428fda3d9"
+    },
+    {
+      "path": "data/source_snapshots/source_snapshot_gap_audit_20261018_refresh107.json",
+      "sha256": "6f43f307977243e50707eaab76e4ee437f4e852756ee28e57df972b30ce4f211"
+    }
+  ],
+  "relevant_source_response_hashes": [
+    {
+      "source_snapshot": "breadtalk_first_party_menu_image_followon_refresh107_20261018.json",
+      "response_sha256": "9ff412f9128c55004c4928d656dc239aadc9b05b81c6be0789bfeb50953a435f"
+    },
+    {
+      "source_snapshot": "coffee_bakery_chain_first_party_refresh_20261018.json",
+      "response_sha256s": [
+        "c6f9fc1d0cdb620113cce5e26161389a01194c52203f535564ec376fd70e6294"
+      ]
+    }
+  ],
+  "limitations": [
+    "Audit compares saved snapshots to the installed workbook and does not constitute a fresh live crawl.",
+    "Candidate image presence does not grant reuse permission; no active image was approved.",
+    "Official brand menu listing does not establish inventory at a specific outlet."
+  ]
+}

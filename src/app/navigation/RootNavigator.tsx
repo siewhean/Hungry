@@ -1,5 +1,6 @@
+import { getAuthOperationCount, subscribeAuthOperations } from "@/features/auth/authOperationState";
 import * as Linking from "expo-linking";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import {
   NavigationContainer,
@@ -370,7 +371,8 @@ function GlobalScrollBackButton() {
  */
 function OfflineBanner() {
   const insets = useSafeAreaInsets();
-  const { palette, radii, shadows, spacing, zIndex } = useHungryTheme();
+  const { palette, radii, shadows, spacing } = useHungryTheme();
+  const [retrying, setRetrying] = useState(false);
   const isOffline = useUIStore((state) => state.isOffline);
   const setOffline = useUIStore((state) => state.setOffline);
 
@@ -379,12 +381,22 @@ function OfflineBanner() {
   }
 
   const retryConnection = async () => {
-    const state = await NetInfo.refresh();
-    setOffline(isNetworkOffline(state));
+    if (retrying) return;
+    setRetrying(true);
+    try {
+      const state = await NetInfo.refresh();
+      setOffline(isNetworkOffline(state));
+    } catch {
+      useUIStore
+        .getState()
+        .showToast({ message: "Connection check failed. Try again.", tone: "error" });
+    } finally {
+      setRetrying(false);
+    }
   };
 
   return (
-    <View pointerEvents="box-none" style={[styles.offlineBannerWrap, { zIndex: zIndex.toast }]}>
+    <View pointerEvents="box-none" style={styles.offlineBannerWrap}>
       <View
         accessibilityLiveRegion="polite"
         accessibilityRole="alert"
@@ -408,12 +420,14 @@ function OfflineBanner() {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Retry connection"
+          accessibilityState={{ busy: retrying, disabled: retrying }}
+          disabled={retrying}
           hitSlop={4}
           onPress={() => void retryConnection()}
           style={{ justifyContent: "center", minHeight: 44, paddingHorizontal: spacing[3] }}
         >
           <AppText variant="bodySmallBold" style={{ color: palette.textOnDark }}>
-            Retry
+            {retrying ? "Checking…" : "Retry"}
           </AppText>
         </Pressable>
       </View>
@@ -455,12 +469,18 @@ function CredEarnedToastHost() {
 }
 
 export function RootNavigator({ theme }: { theme: Theme }) {
+  const pendingAuthOperations = useSyncExternalStore(
+    subscribeAuthOperations,
+    getAuthOperationCount,
+    getAuthOperationCount,
+  );
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const isAuthReady = useSessionStore((state) => state.isAuthReady);
   const hasCompletedOnboarding = useSessionStore((state) => state.hasCompletedOnboarding);
   const sessionExpired = useSessionStore((state) => state.sessionExpired);
   const dismissSessionExpiry = useSessionStore((state) => state.dismissSessionExpiry);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
+  const passwordRecoveryInProgress = useSessionStore((state) => state.passwordRecoveryInProgress);
   const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
   const isMerchantMode = useMerchantStore((state) => state.account !== null);
   const resetScrollBack = useUIStore((state) => state.resetScrollBack);
@@ -577,6 +597,13 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     }
 
     if (currentTopRoute === "AuthStack") {
+      if (pendingAuthOperations > 0) return;
+      // While a password-reset updateUser is in flight, the SIGNED_IN event would
+      // otherwise kick the user off the screen before the update resolves.
+      if (passwordRecoveryInProgress) {
+        return;
+      }
+
       if (isAuthenticated && !hasCompletedOnboarding) {
         navigationRef.resetRoot({
           index: 0,
@@ -600,6 +627,8 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     isDeveloperMode,
     isMerchantMode,
     navigateHome,
+    passwordRecoveryInProgress,
+    pendingAuthOperations,
   ]);
 
   useEffect(() => {
@@ -637,7 +666,8 @@ export function RootNavigator({ theme }: { theme: Theme }) {
   }, [isAuthenticated, isAuthReady, setReturnRoute]);
 
   return (
-    <>
+    <View style={{ flex: 1 }}>
+      <OfflineBanner />
       <NavigationContainer
         ref={navigationRef}
         theme={theme}
@@ -780,12 +810,11 @@ export function RootNavigator({ theme }: { theme: Theme }) {
         </RootStack.Navigator>
       </NavigationContainer>
       <GlobalScrollBackButton />
-      <OfflineBanner />
       <QuickReviewModalHost />
       <ReviewSuccessModalHost onOpenHistory={() => navigationRef.navigate("ReviewHistory")} />
       <FloatingToast />
       <CredEarnedToastHost />
-    </>
+    </View>
   );
 }
 
@@ -798,10 +827,7 @@ const styles = StyleSheet.create({
     top: 0,
   },
   offlineBannerWrap: {
-    left: 0,
-    position: "absolute",
-    right: 0,
-    top: 0,
+    flexShrink: 0,
   },
   offlineBanner: {
     alignItems: "center",

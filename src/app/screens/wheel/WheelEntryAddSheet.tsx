@@ -8,13 +8,13 @@
  *   4. Favourites — from profile favourite dish IDs
  */
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { FlatList, Modal, Pressable, ScrollView, View, Alert } from "react-native";
 import { X, Search, Compass, Heart, Plus, ShieldAlert, Sparkles } from "lucide-react-native";
-import * as Haptics from "expo-haptics";
+import * as Haptics from "@/lib/haptics";
 
 import { AccessibleImage, AppText, Badge, Card, EmptyState, Input } from "@/components/ui";
-import { getDataRepository } from "@/lib/services/serviceProvider";
+import { getHungryService, getDataRepository } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useWheelStore } from "@/store/useWheelStore";
 import { useHungryTheme } from "@/theme";
@@ -33,18 +33,6 @@ type Tab = "search" | "random" | "category" | "favourites";
 interface Props {
   visible: boolean;
   onClose: () => void;
-}
-
-function calculateMatchScore(dish: DishDetail | undefined, userTaste: any): number {
-  if (!dish || !userTaste) return 0;
-  let score = 0;
-  const keys = Object.keys(userTaste) as (keyof typeof userTaste)[];
-  keys.forEach((key) => {
-    const dishVal = (dish.tasteVector as any)[key] || 0;
-    const userVal = userTaste[key] || 0;
-    score += dishVal * userVal;
-  });
-  return score;
 }
 
 function VenueRow({
@@ -193,7 +181,7 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
       if (conflicts.length > 0) {
         Alert.alert(
           "Dietary Warning",
-          `This stall may not accommodate: ${conflicts.join(", ")}. Someone in your party has these restrictions. Add anyway?`,
+          `This stall may not accommodate: ${conflicts.join(", ")}. These requirements are selected. Add anyway?`,
           [
             { text: "Pick Something Else", style: "cancel" },
             {
@@ -215,34 +203,36 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
     onClose();
   }
 
+  const [allVenues, setAllVenues] = useState<(VenueSummary & { matchScore: number })[]>([]);
+  useEffect(() => {
+    let active = true;
+    if (!visible) return;
+    const timer = setTimeout(() => {
+      void getHungryService()
+        .discovery.searchVenuesByLocation({ query, limit: 64 })
+        .then((venues) => {
+          if (!venues) throw new Error("Venue search is unavailable. Please retry.");
+          if (active) setAllVenues(venues.map((venue) => ({ ...venue, matchScore: 0 })));
+        })
+        .catch((error: unknown) => {
+          if (active)
+            Alert.alert("Search failed", error instanceof Error ? error.message : "Please retry.");
+        });
+    }, 250);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [visible, query]);
+
   function addRandom() {
-    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    const all = repository
-      .listBuildings()
-      .flatMap((b) => repository.listVenuesByBuilding(b.id))
-      .filter((v) => !addedVenueIds.has(v.id));
-    if (all.length === 0) return;
-    const pick = all[Math.floor(Math.random() * all.length)];
-    addVenue(pick);
+    const candidates = allVenues.filter((venue) => !addedVenueIds.has(venue.id));
+    if (!candidates.length) {
+      Alert.alert("No candidates", "Search for more stalls before choosing randomly.");
+      return;
+    }
+    addVenue(candidates[Math.floor(Math.random() * candidates.length)]);
   }
-
-  // ── Venue list for search + category ─────────────────────────────────────
-
-  const allVenues = useMemo(() => {
-    return repository
-      .listBuildings()
-      .flatMap((b) =>
-        repository.listVenuesByBuilding(b.id).map((v) => ({
-          ...v,
-          buildingId: b.id,
-          matchScore: calculateMatchScore(
-            repository.listDishesByVenue(v.id)[0],
-            profile.tasteVector,
-          ),
-        })),
-      )
-      .sort((a, b) => b.matchScore - a.matchScore);
-  }, [profile.tasteVector, repository]);
 
   const searchResults = useMemo(
     () =>
@@ -332,7 +322,7 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
               >
                 <ShieldAlert size={12} color={palette.error} />
                 <AppText variant="micro" style={{ color: palette.error, fontWeight: "700" }}>
-                  GROUP NEEDS: {groupDietaryRestrictions.join(", ").toUpperCase()}
+                  DIETARY NEEDS: {groupDietaryRestrictions.join(", ").toUpperCase()}
                 </AppText>
               </View>
             )}
@@ -496,7 +486,7 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
                   style={{ textAlign: "center", paddingHorizontal: spacing[3] }}
                   tone="secondary"
                 >
-                  Can&apos;t decide? Let us pick a random nearby stall for your group.
+                  Choose a random stall from the current search results.
                 </AppText>
               </View>
               <Pressable

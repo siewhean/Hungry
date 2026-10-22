@@ -1,0 +1,139 @@
+{
+  "snapshot_type": "refresh132_read_only_coordinate_review",
+  "captured_at_sgt": "2026-10-19",
+  "baseline_workbook": {
+    "path": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "sha256": "66d0b6438982c0b74715bd83db5636392399f40b279ad615ee8e27afd7869611",
+    "workbook_modified": false
+  },
+  "scope": {
+    "missing_coordinate_records_reviewed": 25,
+    "Mapbox_Search_Box_requests": 20,
+    "independent_OSM_address_queries": 17,
+    "proposals": 1,
+    "rejected_or_unresolved": 24,
+    "Mapbox_raw_queries_results_or_coordinates_persisted": false,
+    "Mapbox_coordinates_proposed": false
+  },
+  "mapbox_usage": {
+    "requests_made_by_this_agent": 20,
+    "account_counter_readable": false,
+    "last_user_reported_account_usage_before_prior_round": "59/50,000",
+    "prior_round_reported_requests": 6,
+    "account_usage_estimate_only_if_all_requests_share_same_counter": "85/50,000",
+    "note": "This is arithmetic from user-reported usage plus agent request counts, not a live account read. Mapbox output was used temporarily and discarded."
+  },
+  "open_source_register": {
+    "publisher": "OpenStreetMap contributors",
+    "data_service": "Nominatim Search API and OpenStreetMap API",
+    "license": "Open Database License (ODbL 1.0)",
+    "attribution": "© OpenStreetMap contributors",
+    "copyright_url": "https://www.openstreetmap.org/copyright",
+    "license_url": "https://opendatacommons.org/licenses/odbl/1-0/",
+    "observed_at_sgt": "2026-10-19"
+  },
+  "coordinate_proposals": [
+    {
+      "sfa_licence": "W46018A000",
+      "workbook_name": "1939",
+      "workbook_address": "36 KEONG SAIK ROAD Singapore 089143 (LEVEL 1 TO 4)",
+      "workbook_postal_code": "089143",
+      "latitude": 1.280453,
+      "longitude": 103.841705,
+      "coordinate_precision": "building footprint centroid (not outlet/unit point)",
+      "independent_source": "OpenStreetMap way/172769221",
+      "source_url": "https://www.openstreetmap.org/way/172769221",
+      "source_api_url": "https://api.openstreetmap.org/api/0.6/way/172769221",
+      "source_match": "OSM object tags confirm house number 36, Keong Saik Road, postcode 089143, Singapore; object is a building polygon, last OSM edit 2025-10-30.",
+      "confidence": "high for building-level coordinate; not an outlet/unit coordinate",
+      "reuse_status": "ODbL 1.0; retain attribution and assess database share-alike obligations before integrating into a distributed database.",
+      "decision": "propose_for_parent_review"
+    }
+  ],
+  "representative_rejections": [
+    {
+      "workbook_address": "78 HORNE ROAD Singapore 209078",
+      "open_source_result": "OSM way/439272347 at 78 Horne Road labels postcode 209075; building number and street match but postal does not.",
+      "decision": "reject_postal_conflict",
+      "source_url": "https://www.openstreetmap.org/way/439272347"
+    },
+    {
+      "workbook_address": "24A FOCH ROAD Singapore 209263",
+      "open_source_result": "Nominatim returned Foch Road highway geometry rather than a matching building footprint or venue point.",
+      "decision": "reject_street_segment_only"
+    },
+    {
+      "workbook_address": "218 CHANGI ROAD PKMS BUILDING Singapore 419737",
+      "open_source_result": "No matching Nominatim result for the exact building/address query.",
+      "decision": "no_independent_coordinate"
+    },
+    {
+      "workbook_address": "90 CIRCULAR ROAD Singapore 049441",
+      "open_source_result": "OSM returned road geometry; nearby street-number result is postcode 049444 rather than workbook postcode 049441.",
+      "decision": "reject_street_segment_and_postal_conflict"
+    },
+    {
+      "workbook_address": "1086 SERANGOON ROAD Singapore 328187",
+      "open_source_result": "OSM building way/699909788 is numbered 1086 but labels postcode 328193.",
+      "decision": "reject_postal_conflict",
+      "source_url": "https://www.openstreetmap.org/way/699909788"
+    },
+    {
+      "workbook_address": "9 WALLICH STREET #05-02 Singapore 078885",
+      "open_source_result": "OSM way/393100850 carries exact building address/postcode but is tagged building:part, min level 6; workbook unit is level 5.",
+      "decision": "reject_level_mismatch_and_not_full_building_footprint",
+      "source_url": "https://www.openstreetmap.org/way/393100850"
+    },
+    {
+      "workbook_address": "126 SIMS AVENUE Singapore 387449",
+      "open_source_result": "An OSM amenity node shares house number and postcode but its business name differs; the OSM building footprint has postcode 387440.",
+      "decision": "hold_identity_conflict"
+    },
+    {
+      "workbook_address": "153 TYRWHITT ROAD QINAN BUILDING Singapore 207566",
+      "open_source_result": "OSM returned nearby building/address data with conflicting postcode 207568.",
+      "decision": "reject_postal_conflict"
+    },
+    {
+      "workbook_address": "155 JOO CHIAT ROAD Singapore 427433",
+      "open_source_result": "OSM building way/310640086 for number 155 labels postcode 427427.",
+      "decision": "reject_postal_conflict",
+      "source_url": "https://www.openstreetmap.org/way/310640086"
+    },
+    {
+      "workbook_address": "306 GEYLANG ROAD Singapore 389347",
+      "open_source_result": "OSM building way/764372572 for number 306 labels postcode 389358.",
+      "decision": "reject_postal_conflict",
+      "source_url": "https://www.openstreetmap.org/way/764372572"
+    },
+    {
+      "workbook_address": "36 KEONG SAIK ROAD Singapore 089143 (LEVEL 1 TO 4)",
+      "open_source_result": "OSM way/172769221 is a building footprint with exact house number, road, and six-digit postal code.",
+      "decision": "proposal_above"
+    },
+    {
+      "workbook_address": "157 JOO CHIAT ROAD Singapore 427435",
+      "open_source_result": "OSM building way/310640062 for number 157 labels postcode 427427.",
+      "decision": "reject_postal_conflict",
+      "source_url": "https://www.openstreetmap.org/way/310640062"
+    },
+    {
+      "workbook_address": "28 CAVAN ROAD Singapore 209855",
+      "open_source_result": "OSM building way/439272124 for number 28 labels postcode 209854.",
+      "decision": "reject_postal_conflict",
+      "source_url": "https://www.openstreetmap.org/way/439272124"
+    },
+    {
+      "workbook_address": "318 CHANGI ROAD Singapore 419793",
+      "open_source_result": "OSM building way/817798941 for number 318 labels postcode 419785.",
+      "decision": "reject_postal_conflict",
+      "source_url": "https://www.openstreetmap.org/way/817798941"
+    }
+  ],
+  "limitations": [
+    "This is a sample review, not a comprehensive audit of all missing coordinate pairs.",
+    "The proposed coordinate identifies the building footprint centroid, not an outlet entrance or unit.",
+    "ODbL attribution and database-sharing obligations need review before redistribution.",
+    "The Mapbox account usage counter was inaccessible, so the stated count is not current verified account usage."
+  ]
+}

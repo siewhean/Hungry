@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ArrowLeft, Plus, Search } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -23,14 +23,32 @@ const TAB_LABELS: Record<PortfolioTab, string> = {
 export function PortfoliosHomeScreen({ navigation }: Props) {
   const { palette, spacing } = useHungryTheme();
   const profile = useProfileStore((state) => state.profile);
-  const { portfolios, items, follows, isLoaded, loadPortfolios } = usePortfolioStore();
+  const { portfolios, items, follows, isLoaded, loadPortfolios, checkFollowStatus } =
+    usePortfolioStore();
   const [activeTab, setActiveTab] = useState<PortfolioTab>("mine");
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [retry, setRetry] = useState(0);
   const [query, setQuery] = useState("");
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
-    void loadPortfolios();
-  }, [loadPortfolios]);
+    let active = true;
+    setLoadError(null);
+    void loadPortfolios()
+      .then(() =>
+        Promise.all(
+          usePortfolioStore
+            .getState()
+            .portfolios.map((portfolio) => checkFollowStatus(portfolio.id)),
+        ),
+      )
+      .catch((error: unknown) => {
+        if (active) setLoadError(error instanceof Error ? error.message : "Please retry.");
+      });
+    return () => {
+      active = false;
+    };
+  }, [loadPortfolios, checkFollowStatus, retry]);
 
   const visiblePortfolios = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -47,6 +65,8 @@ export function PortfoliosHomeScreen({ navigation }: Props) {
 
   return (
     <ScrollView
+      keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets
       style={{ flex: 1, backgroundColor: palette.bg, paddingTop: insets.top }}
       contentContainerStyle={[styles.content, { gap: spacing[4], padding: spacing[4] }]}
     >
@@ -115,7 +135,13 @@ export function PortfoliosHomeScreen({ navigation }: Props) {
         </View>
       ) : null}
 
-      {!isLoaded ? (
+      {loadError ? (
+        <Card>
+          <AppText variant="body">{loadError}</AppText>
+          <Button label="Retry" onPress={() => setRetry((value) => value + 1)} />
+        </Card>
+      ) : null}
+      {!isLoaded && !loadError ? (
         <Card>
           <AppText variant="body" tone="secondary">
             Loading portfolios...
@@ -135,7 +161,7 @@ export function PortfoliosHomeScreen({ navigation }: Props) {
           <PortfolioCard
             key={portfolio.id}
             portfolio={portfolio}
-            itemCount={items[portfolio.id]?.length ?? 0}
+            itemCount={items[portfolio.id]?.length}
             onPress={() => navigation.navigate("PortfolioDetail", { portfolioId: portfolio.id })}
           />
         ))

@@ -1,0 +1,69 @@
+{
+  "schema_version": "1.0",
+  "snapshot_id": "menu_images_next2_20261019",
+  "observed_at_local": "2026-10-19 Asia/Singapore",
+  "canonical_workbook_checked": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_edited": false,
+  "scope": "Rights-aware search for up to eight genuine venue/menu image references with an exact outlet/item join. Open-license sources only; no platform or Google user-uploaded photos. No images downloaded or workbook fields changed.",
+  "result": "0 image candidates meet all requirements for workbook incorporation. One freely licensed historical Wikimedia Commons storefront image was visually checked but excluded because its age and duplicate SFA outlet records prevent a current, exact row join; it does not identify a menu item.",
+  "qualified_candidate_count": 0,
+  "reviewed_references": [
+    {
+      "publisher": "Wikimedia Commons",
+      "title": "Tian Tian Hainanese Chicken Rice, Singapore.JPG",
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:Tian_Tian_Hainanese_Chicken_Rice,_Singapore.JPG",
+      "direct_image_url": "https://upload.wikimedia.org/wikipedia/commons/8/8a/Tian_Tian_Hainanese_Chicken_Rice%2C_Singapore.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=original",
+      "http_status": 200,
+      "http_content_type": "image/jpeg",
+      "content_length_bytes": 171473,
+      "source_last_modified": "2014-10-08T09:26:29Z",
+      "image_inception": "2008-08 (Wikimedia metadata)",
+      "creator_credit": "User: (WT-shared) Shoestring at Wikivoyage",
+      "license": "CC BY-SA 1.0 Generic",
+      "license_url": "https://creativecommons.org/licenses/by-sa/1.0",
+      "rights_status": "Open licence with attribution and ShareAlike obligations; no reuse restrictions observed on file page.",
+      "visual_check": {
+        "performed": true,
+        "method": "Opened the direct Wikimedia image URL in a browser and visually inspected it on 2026-10-19 Asia/Singapore.",
+        "observation": "Photograph shows a visibly branded Tian Tian Hainanese Chicken Rice stall, a stall number 10 sign and its menu board. It is a historical storefront photograph; it does not provide current-appearance evidence or clearly identify a specific food item."
+      },
+      "workbook_join": {
+        "name": "Tian Tian Hainanese Chicken Rice",
+        "address": "1 KADAYANALLUR STREET, Maxwell Food Centre, Singapore 069184",
+        "matching_sfa_licences": [
+          "MWF010004",
+          "MWF011005"
+        ],
+        "exact_join_status": "UNRESOLVED: two matching SFA records share the same centre address; the image shows stall number 10, but no evidence maps that stall number to either workbook licence."
+      },
+      "current_appearance_status": "Not verified; image depicts a 2008 appearance and file last modified in 2014.",
+      "item_identification_status": "No specific dish/item is identified by the image. Workbook has no existing menu item for these two SFA rows.",
+      "decision": "EXCLUDE from workbook: historical-only, no current appearance verification, no menu item match, and ambiguous exact SFA licence join."
+    }
+  ],
+  "other_search_results_excluded": [
+    {
+      "reference": "Subway at Raffles City Shopping Centre (Wikimedia Commons, 2006)",
+      "reason": "Historical licensed interior photo; workbook has no Subway record joined to Raffles City; current branch presence cannot be established."
+    },
+    {
+      "reference": "Hainanese chicken rice credited to Tian Tian, Maxwell Food Centre (Wikimedia Commons, 2014)",
+      "reason": "CC BY 2.0, but source file carries a visible watermark; excluded under image-quality requirement and two workbook SFA licences make outlet join ambiguous."
+    },
+    {
+      "reference": "Food Finders Singapore hawker video (Wikimedia Commons, 2024)",
+      "reason": "CC BY 3.0 video discusses several stalls/items, but it is a video rather than a direct still-image asset; exact relevant workbook join and current appearance were not established in this pass."
+    },
+    {
+      "reference": "Kway Chap Dec 2025 (Wikimedia Commons)",
+      "reason": "CC BY 4.0 dish image, but no stall/outlet identification; coordinates do not establish an exact outlet/item join."
+    }
+  ],
+  "integration_recommendation": "Do not add a workbook image URL from this batch. Continue seeking present-day merchant-authorized or explicitly open-licensed media with a unique SFA outlet and exact depicted item/stall mapping.",
+  "quality_notes": [
+    "No prohibited websites, stock images, generated images, or ambiguous center-only images were proposed for incorporation.",
+    "Direct image response was verified as HTTP 200 image/jpeg.",
+    "The only exact brand image found is visibly historical and cannot be tied to one of two same-address SFA licences.",
+    "No Mapbox or other metered service was used."
+  ]
+}

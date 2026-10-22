@@ -1,3 +1,4 @@
+import { useReduceMotion } from "@/hooks/useReduceMotion";
 /**
  * SplashScreen — animated brand intro
  *
@@ -27,6 +28,7 @@ import { AppText } from "@/components/ui";
 type Props = NativeStackScreenProps<RootStackParamList, "Splash">;
 
 export function SplashScreen({ navigation }: Props) {
+  const reduceMotion = useReduceMotion();
   const hasCompletedOnboarding = useSessionStore((state) => state.hasCompletedOnboarding);
   const isAuthReady = useSessionStore((state) => state.isAuthReady);
   const { palette, motion, spacing, radii, typography } = useHungryTheme();
@@ -42,6 +44,13 @@ export function SplashScreen({ navigation }: Props) {
   const [mountedAt] = useState(() => Date.now());
 
   useEffect(() => {
+    if (reduceMotion) {
+      [logoScale, logoOpacity, taglineOpacity, dotScale, dotOpacity].forEach((value) => {
+        value.stopAnimation();
+        value.setValue(1);
+      });
+      return;
+    }
     // Staggered entrance animation
     Animated.sequence([
       // Logo scales in.
@@ -80,6 +89,7 @@ export function SplashScreen({ navigation }: Props) {
       ]),
     ]).start();
   }, [
+    reduceMotion,
     dotOpacity,
     dotScale,
     logoOpacity,

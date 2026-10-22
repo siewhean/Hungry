@@ -31,6 +31,18 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 export function DesignGalleryScreen() {
   const { componentRadii, palette, spacing } = useHungryTheme();
   const navigation = useNavigation<NavigationProp>();
+  const styles = StyleSheet.create({
+    section: { paddingVertical: spacing[6], borderBottomWidth: 1 },
+    grid: { flexDirection: "row", flexWrap: "wrap", gap: spacing[4] },
+    item: {
+      padding: spacing[4],
+      flexBasis: "45%",
+      flexGrow: 1,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    iconContainer: { minHeight: spacing[16], alignItems: "center", justifyContent: "center" },
+  });
 
   const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
     <View style={[styles.section, { borderBottomColor: palette.border }]}>
@@ -53,7 +65,11 @@ export function DesignGalleryScreen() {
   );
 
   return (
-    <Screen title="Design Gallery V2" subtitle="Preview Phase B brand and icon assets">
+    <Screen
+      scroll={false}
+      title="Design Gallery V2"
+      subtitle="Preview Phase B brand and icon assets"
+    >
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: spacing[20] }}
@@ -107,33 +123,9 @@ export function DesignGalleryScreen() {
         </Section>
 
         <View style={{ marginTop: spacing[8] }}>
-          <Button label="Back to Launcher" onPress={() => navigation.goBack()} />
+          <Button label="Back" onPress={() => navigation.goBack()} />
         </View>
       </ScrollView>
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  section: {
-    paddingVertical: 24,
-    borderBottomWidth: 1,
-  },
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 16,
-  },
-  item: {
-    padding: 16,
-    width: "30%",
-    minWidth: 100,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  iconContainer: {
-    height: 64,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});

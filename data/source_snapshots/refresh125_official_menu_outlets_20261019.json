@@ -1,0 +1,1719 @@
+{
+  "task": "Refresh125 official chain menu/contact-hours enrichment research, read-only",
+  "baseline_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_sha256": "fe31f2c8926d09ce592189efa8012987f6a3e878ef2977f50fe466873d567a64",
+  "observed_on": "2026-10-19",
+  "scope": "44 current exact SFA outlet matches (21 Genki Sushi; 23 Sushiro) with missing menu summaries. Genki menu URLs are absent except one delivery-platform URL; Sushiro official menu URLs already exist. Proposals only; no workbook edits.",
+  "record_count": 44,
+  "proposed_record_field_change_count": 88,
+  "sources": [
+    {
+      "url": "https://www.genkisushi.com.sg/menu/",
+      "publisher": "Genki Sushi Singapore official menu catalogue"
+    },
+    {
+      "url": "https://www.genkisushi.com.sg/locate-us/",
+      "publisher": "Genki Sushi Singapore official outlet directory"
+    },
+    {
+      "url": "https://www.sushiro.com.sg/menu/",
+      "publisher": "Sushiro Singapore official menu page"
+    },
+    {
+      "url": "https://www.sushiro.com.sg/contact-location/",
+      "publisher": "Sushiro Singapore official outlet directory"
+    },
+    {
+      "url": "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png",
+      "publisher": "Sushiro Singapore official menu image"
+    }
+  ],
+  "records": [
+    {
+      "sfa_licence_id": "CE05182C000",
+      "directory_row_1_based": 10283,
+      "record_name": "Genki Sushi",
+      "matched_branch": "Plaza Singapura",
+      "before": {
+        "menu_summary": null,
+        "menu_url": null
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+        "menu_url": "https://www.genkisushi.com.sg/menu/"
+      },
+      "source_urls": [
+        "https://www.genkisushi.com.sg/menu/",
+        "https://www.genkisushi.com.sg/locate-us/"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.genkisushi.com.sg/menu/",
+          "publisher": "Genki Sushi Singapore, first-party menu catalogue",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Current catalogue names menu categories and items; page is the operator menu reference."
+        },
+        {
+          "url": "https://www.genkisushi.com.sg/locate-us/",
+          "publisher": "Genki Sushi Singapore, first-party outlet directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L124-L132",
+          "evidence": "Branch Plaza Singapura and its Singapore outlet listing appear in the current official outlet directory."
+        }
+      ],
+      "confidence": "high for brand menu and exact outlet match; medium for per-outlet item availability and price because the menu is chain-level."
+    },
+    {
+      "sfa_licence_id": "CE12117N000",
+      "directory_row_1_based": 10284,
+      "record_name": "Genki Sushi",
+      "matched_branch": "Bugis+",
+      "before": {
+        "menu_summary": null,
+        "menu_url": "https://www.foodpanda.sg/restaurant/u2wg/genki-sushi-bugis"
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+        "menu_url": "https://www.genkisushi.com.sg/menu/"
+      },
+      "source_urls": [
+        "https://www.genkisushi.com.sg/menu/",
+        "https://www.genkisushi.com.sg/locate-us/"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.genkisushi.com.sg/menu/",
+          "publisher": "Genki Sushi Singapore, first-party menu catalogue",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Current catalogue names menu categories and items; page is the operator menu reference."
+        },
+        {
+          "url": "https://www.genkisushi.com.sg/locate-us/",
+          "publisher": "Genki Sushi Singapore, first-party outlet directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L39-L47",
+          "evidence": "Branch Bugis+ and its Singapore outlet listing appear in the current official outlet directory."
+        }
+      ],
+      "confidence": "high for brand menu and exact outlet match; medium for per-outlet item availability and price because the menu is chain-level."
+    },
+    {
+      "sfa_licence_id": "CE13627P000",
+      "directory_row_1_based": 10285,
+      "record_name": "Genki Sushi",
+      "matched_branch": "United Square",
+      "before": {
+        "menu_summary": null,
+        "menu_url": null
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+        "menu_url": "https://www.genkisushi.com.sg/menu/"
+      },
+      "source_urls": [
+        "https://www.genkisushi.com.sg/menu/",
+        "https://www.genkisushi.com.sg/locate-us/"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.genkisushi.com.sg/menu/",
+          "publisher": "Genki Sushi Singapore, first-party menu catalogue",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Current catalogue names menu categories and items; page is the operator menu reference."
+        },
+        {
+          "url": "https://www.genkisushi.com.sg/locate-us/",
+          "publisher": "Genki Sushi Singapore, first-party outlet directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L206-L218",
+          "evidence": "Branch United Square and its Singapore outlet listing appear in the current official outlet directory."
+        }
+      ],
+      "confidence": "high for brand menu and exact outlet match; medium for per-outlet item availability and price because the menu is chain-level."
+    },
+    {
+      "sfa_licence_id": "CE19B21P000",
+      "directory_row_1_based": 10286,
+      "record_name": "Genki Sushi",
+      "matched_branch": "Chinatown Point",
+      "before": {
+        "menu_summary": null,
+        "menu_url": null
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+        "menu_url": "https://www.genkisushi.com.sg/menu/"
+      },
+      "source_urls": [
+        "https://www.genkisushi.com.sg/menu/",
+        "https://www.genkisushi.com.sg/locate-us/"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.genkisushi.com.sg/menu/",
+          "publisher": "Genki Sushi Singapore, first-party menu catalogue",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Current catalogue names menu categories and items; page is the operator menu reference."
+        },
+        {
+          "url": "https://www.genkisushi.com.sg/locate-us/",
+          "publisher": "Genki Sushi Singapore, first-party outlet directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L27-L35",
+          "evidence": "Branch Chinatown Point and its Singapore outlet listing appear in the current official outlet directory."
+        }
+      ],
+      "confidence": "high for brand menu and exact outlet match; medium for per-outlet item availability and price because the menu is chain-level."
+    },
+    {
+      "sfa_licence_id": "CE23057J000",
+      "directory_row_1_based": 10287,
+      "record_name": "Genki Sushi",
+      "matched_branch": "The Woodleigh Mall",
+      "before": {
+        "menu_summary": null,
+        "menu_url": null
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+        "menu_url": "https://www.genkisushi.com.sg/menu/"
+      },
+      "source_urls": [
+        "https://www.genkisushi.com.sg/menu/",
+        "https://www.genkisushi.com.sg/locate-us/"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.genkisushi.com.sg/menu/",
+          "publisher": "Genki Sushi Singapore, first-party menu catalogue",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Current catalogue names menu categories and items; page is the operator menu reference."
+        },
+        {
+          "url": "https://www.genkisushi.com.sg/locate-us/",
+          "publisher": "Genki Sushi Singapore, first-party outlet directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L248-L256",
+          "evidence": "Branch The Woodleigh Mall and its Singapore outlet listing appear in the current official outlet directory."
+        }
+      ],
+      "confidence": "high for brand menu and exact outlet match; medium for per-outlet item availability and price because the menu is chain-level."
+    },
+    {
+      "sfa_licence_id": "NE09278K000",
+      "directory_row_1_based": 10288,
+      "record_name": "Genki Sushi",
+      "matched_branch": "Tampines Mall",
+      "before": {
+        "menu_summary": null,
+        "menu_url": null
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+        "menu_url": "https://www.genkisushi.com.sg/menu/"
+      },
+      "source_urls": [
+        "https://www.genkisushi.com.sg/menu/",
+        "https://www.genkisushi.com.sg/locate-us/"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.genkisushi.com.sg/menu/",
+          "publisher": "Genki Sushi Singapore, first-party menu catalogue",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Current catalogue names menu categories and items; page is the operator menu reference."
+        },
+        {
+          "url": "https://www.genkisushi.com.sg/locate-us/",
+          "publisher": "Genki Sushi Singapore, first-party outlet directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L86-L94",
+          "evidence": "Branch Tampines Mall and its Singapore outlet listing appear in the current official outlet directory."
+        }
+      ],
+      "confidence": "high for brand menu and exact outlet match; medium for per-outlet item availability and price because the menu is chain-level."
+    },
+    {
+      "sfa_licence_id": "NE16111B000",
+      "directory_row_1_based": 10289,
+      "record_name": "GENKI SUSHI",
+      "matched_branch": "Waterway Point",
+      "before": {
+        "menu_summary": null,
+        "menu_url": null
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+        "menu_url": "https://www.genkisushi.com.sg/menu/"
+      },
+      "source_urls": [
+        "https://www.genkisushi.com.sg/menu/",
+        "https://www.genkisushi.com.sg/locate-us/"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.genkisushi.com.sg/menu/",
+          "publisher": "Genki Sushi Singapore, first-party menu catalogue",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Current catalogue names menu categories and items; page is the operator menu reference."
+        },
+        {
+          "url": "https://www.genkisushi.com.sg/locate-us/",
+          "publisher": "Genki Sushi Singapore, first-party outlet directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L51-L59",
+          "evidence": "Branch Waterway Point and its Singapore outlet listing appear in the current official outlet directory."
+        }
+      ],
+      "confidence": "high for brand menu and exact outlet match; medium for per-outlet item availability and price because the menu is chain-level."
+    },
+    {
+      "sfa_licence_id": "NE21J95A000",
+      "directory_row_1_based": 10290,
+      "record_name": "Genki Sushi",
+      "matched_branch": "Compass One",
+      "before": {
+        "menu_summary": null,
+        "menu_url": null
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+        "menu_url": "https://www.genkisushi.com.sg/menu/"
+      },
+      "source_urls": [
+        "https://www.genkisushi.com.sg/menu/",
+        "https://www.genkisushi.com.sg/locate-us/"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.genkisushi.com.sg/menu/",
+          "publisher": "Genki Sushi Singapore, first-party menu catalogue",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Current catalogue names menu categories and items; page is the operator menu reference."
+        },
+        {
+          "url": "https://www.genkisushi.com.sg/locate-us/",
+          "publisher": "Genki Sushi Singapore, first-party outlet directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L183-L191",
+          "evidence": "Branch Compass One and its Singapore outlet listing appear in the current official outlet directory."
+        }
+      ],
+      "confidence": "high for brand menu and exact outlet match; medium for per-outlet item availability and price because the menu is chain-level."
+    },
+    {
+      "sfa_licence_id": "NW13N42A000",
+      "directory_row_1_based": 10291,
+      "record_name": "Genki Sushi",
+      "matched_branch": "Sembawang Shopping Centre",
+      "before": {
+        "menu_summary": null,
+        "menu_url": null
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+        "menu_url": "https://www.genkisushi.com.sg/menu/"
+      },
+      "source_urls": [
+        "https://www.genkisushi.com.sg/menu/",
+        "https://www.genkisushi.com.sg/locate-us/"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.genkisushi.com.sg/menu/",
+          "publisher": "Genki Sushi Singapore, first-party menu catalogue",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Current catalogue names menu categories and items; page is the operator menu reference."
+        },
+        {
+          "url": "https://www.genkisushi.com.sg/locate-us/",
+          "publisher": "Genki Sushi Singapore, first-party outlet directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L286-L293",
+          "evidence": "Branch Sembawang Shopping Centre and its Singapore outlet listing appear in the current official outlet directory."
+        }
+      ],
+      "confidence": "high for brand menu and exact outlet match; medium for per-outlet item availability and price because the menu is chain-level."
+    },
+    {
+      "sfa_licence_id": "NW17033V000",
+      "directory_row_1_based": 10292,
+      "record_name": "Genki Sushi",
+      "matched_branch": "Hillion Mall",
+      "before": {
+        "menu_summary": null,
+        "menu_url": null
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+        "menu_url": "https://www.genkisushi.com.sg/menu/"
+      },
+      "source_urls": [
+        "https://www.genkisushi.com.sg/menu/",
+        "https://www.genkisushi.com.sg/locate-us/"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.genkisushi.com.sg/menu/",
+          "publisher": "Genki Sushi Singapore, first-party menu catalogue",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Current catalogue names menu categories and items; page is the operator menu reference."
+        },
+        {
+          "url": "https://www.genkisushi.com.sg/locate-us/",
+          "publisher": "Genki Sushi Singapore, first-party outlet directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L136-L144",
+          "evidence": "Branch Hillion Mall and its Singapore outlet listing appear in the current official outlet directory."
+        }
+      ],
+      "confidence": "high for brand menu and exact outlet match; medium for per-outlet item availability and price because the menu is chain-level."
+    },
+    {
+      "sfa_licence_id": "NW17534K000",
+      "directory_row_1_based": 10293,
+      "record_name": "Genki Sushi",
+      "matched_branch": "Northpoint City",
+      "before": {
+        "menu_summary": null,
+        "menu_url": null
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+        "menu_url": "https://www.genkisushi.com.sg/menu/"
+      },
+      "source_urls": [
+        "https://www.genkisushi.com.sg/menu/",
+        "https://www.genkisushi.com.sg/locate-us/"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.genkisushi.com.sg/menu/",
+          "publisher": "Genki Sushi Singapore, first-party menu catalogue",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Current catalogue names menu categories and items; page is the operator menu reference."
+        },
+        {
+          "url": "https://www.genkisushi.com.sg/locate-us/",
+          "publisher": "Genki Sushi Singapore, first-party outlet directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L171-L179",
+          "evidence": "Branch Northpoint City and its Singapore outlet listing appear in the current official outlet directory."
+        }
+      ],
+      "confidence": "high for brand menu and exact outlet match; medium for per-outlet item availability and price because the menu is chain-level."
+    },
+    {
+      "sfa_licence_id": "SE10635E000",
+      "directory_row_1_based": 10294,
+      "record_name": "Genki Sushi",
+      "matched_branch": "NEX",
+      "before": {
+        "menu_summary": null,
+        "menu_url": null
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+        "menu_url": "https://www.genkisushi.com.sg/menu/"
+      },
+      "source_urls": [
+        "https://www.genkisushi.com.sg/menu/",
+        "https://www.genkisushi.com.sg/locate-us/"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.genkisushi.com.sg/menu/",
+          "publisher": "Genki Sushi Singapore, first-party menu catalogue",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Current catalogue names menu categories and items; page is the operator menu reference."
+        },
+        {
+          "url": "https://www.genkisushi.com.sg/locate-us/",
+          "publisher": "Genki Sushi Singapore, first-party outlet directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L148-L156",
+          "evidence": "Branch NEX and its Singapore outlet listing appear in the current official outlet directory."
+        }
+      ],
+      "confidence": "high for brand menu and exact outlet match; medium for per-outlet item availability and price because the menu is chain-level."
+    },
+    {
+      "sfa_licence_id": "SE17609V000",
+      "directory_row_1_based": 10295,
+      "record_name": "Genki Sushi",
+      "matched_branch": "Singpost Centre",
+      "before": {
+        "menu_summary": null,
+        "menu_url": null
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+        "menu_url": "https://www.genkisushi.com.sg/menu/"
+      },
+      "source_urls": [
+        "https://www.genkisushi.com.sg/menu/",
+        "https://www.genkisushi.com.sg/locate-us/"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.genkisushi.com.sg/menu/",
+          "publisher": "Genki Sushi Singapore, first-party menu catalogue",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Current catalogue names menu categories and items; page is the operator menu reference."
+        },
+        {
+          "url": "https://www.genkisushi.com.sg/locate-us/",
+          "publisher": "Genki Sushi Singapore, first-party outlet directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L237-L245",
+          "evidence": "Branch Singpost Centre and its Singapore outlet listing appear in the current official outlet directory."
+        }
+      ],
+      "confidence": "high for brand menu and exact outlet match; medium for per-outlet item availability and price because the menu is chain-level."
+    },
+    {
+      "sfa_licence_id": "SE22E92V000",
+      "directory_row_1_based": 10296,
+      "record_name": "GENKI SUSHI",
+      "matched_branch": "I12 Katong",
+      "before": {
+        "menu_summary": null,
+        "menu_url": null
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+        "menu_url": "https://www.genkisushi.com.sg/menu/"
+      },
+      "source_urls": [
+        "https://www.genkisushi.com.sg/menu/",
+        "https://www.genkisushi.com.sg/locate-us/"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.genkisushi.com.sg/menu/",
+          "publisher": "Genki Sushi Singapore, first-party menu catalogue",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Current catalogue names menu categories and items; page is the operator menu reference."
+        },
+        {
+          "url": "https://www.genkisushi.com.sg/locate-us/",
+          "publisher": "Genki Sushi Singapore, first-party outlet directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L221-L233",
+          "evidence": "Branch I12 Katong and its Singapore outlet listing appear in the current official outlet directory."
+        }
+      ],
+      "confidence": "high for brand menu and exact outlet match; medium for per-outlet item availability and price because the menu is chain-level."
+    },
+    {
+      "sfa_licence_id": "SW13265L000",
+      "directory_row_1_based": 10297,
+      "record_name": "GENKI SUSHI",
+      "matched_branch": "Westgate",
+      "before": {
+        "menu_summary": null,
+        "menu_url": null
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+        "menu_url": "https://www.genkisushi.com.sg/menu/"
+      },
+      "source_urls": [
+        "https://www.genkisushi.com.sg/menu/",
+        "https://www.genkisushi.com.sg/locate-us/"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.genkisushi.com.sg/menu/",
+          "publisher": "Genki Sushi Singapore, first-party menu catalogue",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Current catalogue names menu categories and items; page is the operator menu reference."
+        },
+        {
+          "url": "https://www.genkisushi.com.sg/locate-us/",
+          "publisher": "Genki Sushi Singapore, first-party outlet directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L74-L82",
+          "evidence": "Branch Westgate and its Singapore outlet listing appear in the current official outlet directory."
+        }
+      ],
+      "confidence": "high for brand menu and exact outlet match; medium for per-outlet item availability and price because the menu is chain-level."
+    },
+    {
+      "sfa_licence_id": "SW21C07J000",
+      "directory_row_1_based": 10298,
+      "record_name": "Genki Sushi",
+      "matched_branch": "VivoCity",
+      "before": {
+        "menu_summary": null,
+        "menu_url": null
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+        "menu_url": "https://www.genkisushi.com.sg/menu/"
+      },
+      "source_urls": [
+        "https://www.genkisushi.com.sg/menu/",
+        "https://www.genkisushi.com.sg/locate-us/"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.genkisushi.com.sg/menu/",
+          "publisher": "Genki Sushi Singapore, first-party menu catalogue",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Current catalogue names menu categories and items; page is the operator menu reference."
+        },
+        {
+          "url": "https://www.genkisushi.com.sg/locate-us/",
+          "publisher": "Genki Sushi Singapore, first-party outlet directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L159-L167",
+          "evidence": "Branch VivoCity and its Singapore outlet listing appear in the current official outlet directory."
+        }
+      ],
+      "confidence": "high for brand menu and exact outlet match; medium for per-outlet item availability and price because the menu is chain-level."
+    },
+    {
+      "sfa_licence_id": "SW21Q46P000",
+      "directory_row_1_based": 10299,
+      "record_name": "Genki Sushi",
+      "matched_branch": "Jurong Point",
+      "before": {
+        "menu_summary": null,
+        "menu_url": null
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+        "menu_url": "https://www.genkisushi.com.sg/menu/"
+      },
+      "source_urls": [
+        "https://www.genkisushi.com.sg/menu/",
+        "https://www.genkisushi.com.sg/locate-us/"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.genkisushi.com.sg/menu/",
+          "publisher": "Genki Sushi Singapore, first-party menu catalogue",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Current catalogue names menu categories and items; page is the operator menu reference."
+        },
+        {
+          "url": "https://www.genkisushi.com.sg/locate-us/",
+          "publisher": "Genki Sushi Singapore, first-party outlet directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L194-L202",
+          "evidence": "Branch Jurong Point and its Singapore outlet listing appear in the current official outlet directory."
+        }
+      ],
+      "confidence": "high for brand menu and exact outlet match; medium for per-outlet item availability and price because the menu is chain-level."
+    },
+    {
+      "sfa_licence_id": "CE09D84E000",
+      "directory_row_1_based": 10300,
+      "record_name": "Genki Sushi Singapore",
+      "matched_branch": "City Square Mall",
+      "before": {
+        "menu_summary": null,
+        "menu_url": null
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+        "menu_url": "https://www.genkisushi.com.sg/menu/"
+      },
+      "source_urls": [
+        "https://www.genkisushi.com.sg/menu/",
+        "https://www.genkisushi.com.sg/locate-us/"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.genkisushi.com.sg/menu/",
+          "publisher": "Genki Sushi Singapore, first-party menu catalogue",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Current catalogue names menu categories and items; page is the operator menu reference."
+        },
+        {
+          "url": "https://www.genkisushi.com.sg/locate-us/",
+          "publisher": "Genki Sushi Singapore, first-party outlet directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L109-L121",
+          "evidence": "Branch City Square Mall and its Singapore outlet listing appear in the current official outlet directory."
+        }
+      ],
+      "confidence": "high for brand menu and exact outlet match; medium for per-outlet item availability and price because the menu is chain-level."
+    },
+    {
+      "sfa_licence_id": "CE20Z86L000",
+      "directory_row_1_based": 10301,
+      "record_name": "GENKI SUSHI SINGAPORE",
+      "matched_branch": "Suntec City",
+      "before": {
+        "menu_summary": null,
+        "menu_url": null
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+        "menu_url": "https://www.genkisushi.com.sg/menu/"
+      },
+      "source_urls": [
+        "https://www.genkisushi.com.sg/menu/",
+        "https://www.genkisushi.com.sg/locate-us/"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.genkisushi.com.sg/menu/",
+          "publisher": "Genki Sushi Singapore, first-party menu catalogue",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Current catalogue names menu categories and items; page is the operator menu reference."
+        },
+        {
+          "url": "https://www.genkisushi.com.sg/locate-us/",
+          "publisher": "Genki Sushi Singapore, first-party outlet directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L97-L105",
+          "evidence": "Branch Suntec City and its Singapore outlet listing appear in the current official outlet directory."
+        }
+      ],
+      "confidence": "high for brand menu and exact outlet match; medium for per-outlet item availability and price because the menu is chain-level."
+    },
+    {
+      "sfa_licence_id": "CE23J43A000",
+      "directory_row_1_based": 10302,
+      "record_name": "GENKI SUSHI SINGAPORE",
+      "matched_branch": "313@somerset",
+      "before": {
+        "menu_summary": null,
+        "menu_url": null
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+        "menu_url": "https://www.genkisushi.com.sg/menu/"
+      },
+      "source_urls": [
+        "https://www.genkisushi.com.sg/menu/",
+        "https://www.genkisushi.com.sg/locate-us/"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.genkisushi.com.sg/menu/",
+          "publisher": "Genki Sushi Singapore, first-party menu catalogue",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Current catalogue names menu categories and items; page is the operator menu reference."
+        },
+        {
+          "url": "https://www.genkisushi.com.sg/locate-us/",
+          "publisher": "Genki Sushi Singapore, first-party outlet directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L260-L268",
+          "evidence": "Branch 313@somerset and its Singapore outlet listing appear in the current official outlet directory."
+        }
+      ],
+      "confidence": "high for brand menu and exact outlet match; medium for per-outlet item availability and price because the menu is chain-level."
+    },
+    {
+      "sfa_licence_id": "S93082K000",
+      "directory_row_1_based": 10303,
+      "record_name": "GENKI SUSHI SINGAPORE PTE LTD",
+      "matched_branch": "Junction 8",
+      "before": {
+        "menu_summary": null,
+        "menu_url": null
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+        "menu_url": "https://www.genkisushi.com.sg/menu/"
+      },
+      "source_urls": [
+        "https://www.genkisushi.com.sg/menu/",
+        "https://www.genkisushi.com.sg/locate-us/"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.genkisushi.com.sg/menu/",
+          "publisher": "Genki Sushi Singapore, first-party menu catalogue",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Current catalogue names menu categories and items; page is the operator menu reference."
+        },
+        {
+          "url": "https://www.genkisushi.com.sg/locate-us/",
+          "publisher": "Genki Sushi Singapore, first-party outlet directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L62-L70",
+          "evidence": "Branch Junction 8 and its Singapore outlet listing appear in the current official outlet directory."
+        }
+      ],
+      "confidence": "high for brand menu and exact outlet match; medium for per-outlet item availability and price because the menu is chain-level."
+    },
+    {
+      "sfa_licence_id": "CE04299K000",
+      "directory_row_1_based": 27091,
+      "record_name": "Sushiro",
+      "matched_branch": "Thomson Plaza",
+      "before": {
+        "menu_summary": null,
+        "menu_url": "https://www.sushiro.com.sg/menu/",
+        "opening_hours": "Hours: 11:00AM – 10:00PM"
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+        "opening_hours": "Hours: 11:00–22:00; last order 21:30"
+      },
+      "source_urls": [
+        "https://www.sushiro.com.sg/menu/",
+        "https://www.sushiro.com.sg/contact-location/",
+        "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.sushiro.com.sg/menu/",
+          "publisher": "Sushiro Singapore, first-party menu page",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Links the Normal Menu and Digiro Menu image files."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png",
+          "publisher": "Sushiro Singapore, first-party menu image",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Visual inspection confirmed item examples and price tiers; image states full menu available in store and prices subject to service charge and prevailing taxes."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/contact-location/",
+          "publisher": "Sushiro Singapore, first-party store directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L399-L407",
+          "evidence": "Exact branch Thomson Plaza and location are listed. Directory gives operating hours 11am–10pm (Jewel 10am–10pm) and last order 9:30pm."
+        }
+      ],
+      "confidence": "high for exact SFA outlet match and menu source; medium for outlet-specific item/price availability because the menu is chain-level and the image URL is dated 2026/05."
+    },
+    {
+      "sfa_licence_id": "CE13X73X000",
+      "directory_row_1_based": 27092,
+      "record_name": "Sushiro",
+      "matched_branch": "Chinatown Point",
+      "before": {
+        "menu_summary": null,
+        "menu_url": "https://www.sushiro.com.sg/menu/",
+        "opening_hours": "Hours: 11:00AM – 10:00PM"
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+        "opening_hours": "Hours: 11:00–22:00; last order 21:30"
+      },
+      "source_urls": [
+        "https://www.sushiro.com.sg/menu/",
+        "https://www.sushiro.com.sg/contact-location/",
+        "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.sushiro.com.sg/menu/",
+          "publisher": "Sushiro Singapore, first-party menu page",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Links the Normal Menu and Digiro Menu image files."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png",
+          "publisher": "Sushiro Singapore, first-party menu image",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Visual inspection confirmed item examples and price tiers; image states full menu available in store and prices subject to service charge and prevailing taxes."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/contact-location/",
+          "publisher": "Sushiro Singapore, first-party store directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L283-L291",
+          "evidence": "Exact branch Chinatown Point and location are listed. Directory gives operating hours 11am–10pm (Jewel 10am–10pm) and last order 9:30pm."
+        }
+      ],
+      "confidence": "high for exact SFA outlet match and menu source; medium for outlet-specific item/price availability because the menu is chain-level and the image URL is dated 2026/05."
+    },
+    {
+      "sfa_licence_id": "CE14G84X000",
+      "directory_row_1_based": 27093,
+      "record_name": "Sushiro",
+      "matched_branch": "Suntec City Mall",
+      "before": {
+        "menu_summary": null,
+        "menu_url": "https://www.sushiro.com.sg/menu/",
+        "opening_hours": "Hours: 11:00AM – 10:00PM"
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+        "opening_hours": "Hours: 11:00–22:00; last order 21:30"
+      },
+      "source_urls": [
+        "https://www.sushiro.com.sg/menu/",
+        "https://www.sushiro.com.sg/contact-location/",
+        "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.sushiro.com.sg/menu/",
+          "publisher": "Sushiro Singapore, first-party menu page",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Links the Normal Menu and Digiro Menu image files."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png",
+          "publisher": "Sushiro Singapore, first-party menu image",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Visual inspection confirmed item examples and price tiers; image states full menu available in store and prices subject to service charge and prevailing taxes."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/contact-location/",
+          "publisher": "Sushiro Singapore, first-party store directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L98-L107",
+          "evidence": "Exact branch Suntec City Mall and location are listed. Directory gives operating hours 11am–10pm (Jewel 10am–10pm) and last order 9:30pm."
+        }
+      ],
+      "confidence": "high for exact SFA outlet match and menu source; medium for outlet-specific item/price availability because the menu is chain-level and the image URL is dated 2026/05."
+    },
+    {
+      "sfa_licence_id": "CE18A59B000",
+      "directory_row_1_based": 27094,
+      "record_name": "Sushiro",
+      "matched_branch": "Wisma Atria",
+      "before": {
+        "menu_summary": null,
+        "menu_url": "https://www.sushiro.com.sg/menu/",
+        "opening_hours": "Hours: 11:00AM – 10:00PM"
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+        "opening_hours": "Hours: 11:00–22:00; last order 21:30"
+      },
+      "source_urls": [
+        "https://www.sushiro.com.sg/menu/",
+        "https://www.sushiro.com.sg/contact-location/",
+        "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.sushiro.com.sg/menu/",
+          "publisher": "Sushiro Singapore, first-party menu page",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Links the Normal Menu and Digiro Menu image files."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png",
+          "publisher": "Sushiro Singapore, first-party menu image",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Visual inspection confirmed item examples and price tiers; image states full menu available in store and prices subject to service charge and prevailing taxes."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/contact-location/",
+          "publisher": "Sushiro Singapore, first-party store directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L75-L83",
+          "evidence": "Exact branch Wisma Atria and location are listed. Directory gives operating hours 11am–10pm (Jewel 10am–10pm) and last order 9:30pm."
+        }
+      ],
+      "confidence": "high for exact SFA outlet match and menu source; medium for outlet-specific item/price availability because the menu is chain-level and the image URL is dated 2026/05."
+    },
+    {
+      "sfa_licence_id": "CE19K02L000",
+      "directory_row_1_based": 27095,
+      "record_name": "SUSHIRO",
+      "matched_branch": "Tiong Bahru Plaza",
+      "before": {
+        "menu_summary": null,
+        "menu_url": "https://www.sushiro.com.sg/menu/",
+        "opening_hours": "Hours: 11:00AM – 10:00PM"
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+        "opening_hours": "Hours: 11:00–22:00; last order 21:30"
+      },
+      "source_urls": [
+        "https://www.sushiro.com.sg/menu/",
+        "https://www.sushiro.com.sg/contact-location/",
+        "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.sushiro.com.sg/menu/",
+          "publisher": "Sushiro Singapore, first-party menu page",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Links the Normal Menu and Digiro Menu image files."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png",
+          "publisher": "Sushiro Singapore, first-party menu image",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Visual inspection confirmed item examples and price tiers; image states full menu available in store and prices subject to service charge and prevailing taxes."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/contact-location/",
+          "publisher": "Sushiro Singapore, first-party store directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L63-L71",
+          "evidence": "Exact branch Tiong Bahru Plaza and location are listed. Directory gives operating hours 11am–10pm (Jewel 10am–10pm) and last order 9:30pm."
+        }
+      ],
+      "confidence": "high for exact SFA outlet match and menu source; medium for outlet-specific item/price availability because the menu is chain-level and the image URL is dated 2026/05."
+    },
+    {
+      "sfa_licence_id": "CE20A57P000",
+      "directory_row_1_based": 27096,
+      "record_name": "Sushiro",
+      "matched_branch": "Isetan Scotts / Shaw House",
+      "before": {
+        "menu_summary": null,
+        "menu_url": "https://www.sushiro.com.sg/menu/",
+        "opening_hours": "Hours: 11:00AM – 10:00PM"
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+        "opening_hours": "Hours: 11:00–22:00; last order 21:30"
+      },
+      "source_urls": [
+        "https://www.sushiro.com.sg/menu/",
+        "https://www.sushiro.com.sg/contact-location/",
+        "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.sushiro.com.sg/menu/",
+          "publisher": "Sushiro Singapore, first-party menu page",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Links the Normal Menu and Digiro Menu image files."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png",
+          "publisher": "Sushiro Singapore, first-party menu image",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Visual inspection confirmed item examples and price tiers; image states full menu available in store and prices subject to service charge and prevailing taxes."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/contact-location/",
+          "publisher": "Sushiro Singapore, first-party store directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L86-L94",
+          "evidence": "Exact branch Isetan Scotts / Shaw House and location are listed. Directory gives operating hours 11am–10pm (Jewel 10am–10pm) and last order 9:30pm."
+        }
+      ],
+      "confidence": "high for exact SFA outlet match and menu source; medium for outlet-specific item/price availability because the menu is chain-level and the image URL is dated 2026/05."
+    },
+    {
+      "sfa_licence_id": "CE25B01B000",
+      "directory_row_1_based": 27097,
+      "record_name": "SUSHIRO",
+      "matched_branch": "Holland Road Shopping Centre",
+      "before": {
+        "menu_summary": null,
+        "menu_url": "https://www.sushiro.com.sg/menu/",
+        "opening_hours": "Hours: 11:00AM – 10:00PM"
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+        "opening_hours": "Hours: 11:00–22:00; last order 21:30"
+      },
+      "source_urls": [
+        "https://www.sushiro.com.sg/menu/",
+        "https://www.sushiro.com.sg/contact-location/",
+        "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.sushiro.com.sg/menu/",
+          "publisher": "Sushiro Singapore, first-party menu page",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Links the Normal Menu and Digiro Menu image files."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png",
+          "publisher": "Sushiro Singapore, first-party menu image",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Visual inspection confirmed item examples and price tiers; image states full menu available in store and prices subject to service charge and prevailing taxes."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/contact-location/",
+          "publisher": "Sushiro Singapore, first-party store directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L605-L613",
+          "evidence": "Exact branch Holland Road Shopping Centre and location are listed. Directory gives operating hours 11am–10pm (Jewel 10am–10pm) and last order 9:30pm."
+        }
+      ],
+      "confidence": "high for exact SFA outlet match and menu source; medium for outlet-specific item/price availability because the menu is chain-level and the image URL is dated 2026/05."
+    },
+    {
+      "sfa_licence_id": "CE25M88L000",
+      "directory_row_1_based": 27098,
+      "record_name": "Sushiro",
+      "matched_branch": "Square 2",
+      "before": {
+        "menu_summary": null,
+        "menu_url": "https://www.sushiro.com.sg/menu/",
+        "opening_hours": "Hours: 11:00AM – 10:00PM"
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+        "opening_hours": "Hours: 11:00–22:00; last order 21:30"
+      },
+      "source_urls": [
+        "https://www.sushiro.com.sg/menu/",
+        "https://www.sushiro.com.sg/contact-location/",
+        "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.sushiro.com.sg/menu/",
+          "publisher": "Sushiro Singapore, first-party menu page",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Links the Normal Menu and Digiro Menu image files."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png",
+          "publisher": "Sushiro Singapore, first-party menu image",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Visual inspection confirmed item examples and price tiers; image states full menu available in store and prices subject to service charge and prevailing taxes."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/contact-location/",
+          "publisher": "Sushiro Singapore, first-party store directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L237-L245",
+          "evidence": "Exact branch Square 2 and location are listed. Directory gives operating hours 11am–10pm (Jewel 10am–10pm) and last order 9:30pm."
+        }
+      ],
+      "confidence": "high for exact SFA outlet match and menu source; medium for outlet-specific item/price availability because the menu is chain-level and the image URL is dated 2026/05."
+    },
+    {
+      "sfa_licence_id": "CE26163C000",
+      "directory_row_1_based": 27099,
+      "record_name": "Sushiro",
+      "matched_branch": "New Bahru",
+      "before": {
+        "menu_summary": null,
+        "menu_url": "https://www.sushiro.com.sg/menu/",
+        "opening_hours": "Hours: 11:00AM – 10:00PM"
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+        "opening_hours": "Hours: 11:00–22:00; last order 21:30"
+      },
+      "source_urls": [
+        "https://www.sushiro.com.sg/menu/",
+        "https://www.sushiro.com.sg/contact-location/",
+        "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.sushiro.com.sg/menu/",
+          "publisher": "Sushiro Singapore, first-party menu page",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Links the Normal Menu and Digiro Menu image files."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png",
+          "publisher": "Sushiro Singapore, first-party menu image",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Visual inspection confirmed item examples and price tiers; image states full menu available in store and prices subject to service charge and prevailing taxes."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/contact-location/",
+          "publisher": "Sushiro Singapore, first-party store directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L260-L268",
+          "evidence": "Exact branch New Bahru and location are listed. Directory gives operating hours 11am–10pm (Jewel 10am–10pm) and last order 9:30pm."
+        }
+      ],
+      "confidence": "high for exact SFA outlet match and menu source; medium for outlet-specific item/price availability because the menu is chain-level and the image URL is dated 2026/05."
+    },
+    {
+      "sfa_licence_id": "CE26311P000",
+      "directory_row_1_based": 27100,
+      "record_name": "Sushiro",
+      "matched_branch": "100AM",
+      "before": {
+        "menu_summary": null,
+        "menu_url": "https://www.sushiro.com.sg/menu/",
+        "opening_hours": "Hours: 11:00AM – 10:00PM"
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+        "opening_hours": "Hours: 11:00–22:00; last order 21:30"
+      },
+      "source_urls": [
+        "https://www.sushiro.com.sg/menu/",
+        "https://www.sushiro.com.sg/contact-location/",
+        "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.sushiro.com.sg/menu/",
+          "publisher": "Sushiro Singapore, first-party menu page",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Links the Normal Menu and Digiro Menu image files."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png",
+          "publisher": "Sushiro Singapore, first-party menu image",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Visual inspection confirmed item examples and price tiers; image states full menu available in store and prices subject to service charge and prevailing taxes."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/contact-location/",
+          "publisher": "Sushiro Singapore, first-party store directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L271-L279",
+          "evidence": "Exact branch 100AM and location are listed. Directory gives operating hours 11am–10pm (Jewel 10am–10pm) and last order 9:30pm."
+        }
+      ],
+      "confidence": "high for exact SFA outlet match and menu source; medium for outlet-specific item/price availability because the menu is chain-level and the image URL is dated 2026/05."
+    },
+    {
+      "sfa_licence_id": "CE26C20X000",
+      "directory_row_1_based": 27101,
+      "record_name": "Sushiro",
+      "matched_branch": "Orchard Gateway",
+      "before": {
+        "menu_summary": null,
+        "menu_url": "https://www.sushiro.com.sg/menu/",
+        "opening_hours": "Hours: 11:00AM – 10:00PM"
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+        "opening_hours": "Hours: 11:00–22:00; last order 21:30"
+      },
+      "source_urls": [
+        "https://www.sushiro.com.sg/menu/",
+        "https://www.sushiro.com.sg/contact-location/",
+        "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.sushiro.com.sg/menu/",
+          "publisher": "Sushiro Singapore, first-party menu page",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Links the Normal Menu and Digiro Menu image files."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png",
+          "publisher": "Sushiro Singapore, first-party menu image",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Visual inspection confirmed item examples and price tiers; image states full menu available in store and prices subject to service charge and prevailing taxes."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/contact-location/",
+          "publisher": "Sushiro Singapore, first-party store directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L306-L314",
+          "evidence": "Exact branch Orchard Gateway and location are listed. Directory gives operating hours 11am–10pm (Jewel 10am–10pm) and last order 9:30pm."
+        }
+      ],
+      "confidence": "high for exact SFA outlet match and menu source; medium for outlet-specific item/price availability because the menu is chain-level and the image URL is dated 2026/05."
+    },
+    {
+      "sfa_licence_id": "NE06119X000",
+      "directory_row_1_based": 27102,
+      "record_name": "Sushiro",
+      "matched_branch": "Hougang Mall",
+      "before": {
+        "menu_summary": null,
+        "menu_url": "https://www.sushiro.com.sg/menu/",
+        "opening_hours": "Hours: 11:00AM – 10:00PM"
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+        "opening_hours": "Hours: 11:00–22:00; last order 21:30"
+      },
+      "source_urls": [
+        "https://www.sushiro.com.sg/menu/",
+        "https://www.sushiro.com.sg/contact-location/",
+        "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.sushiro.com.sg/menu/",
+          "publisher": "Sushiro Singapore, first-party menu page",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Links the Normal Menu and Digiro Menu image files."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png",
+          "publisher": "Sushiro Singapore, first-party menu image",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Visual inspection confirmed item examples and price tiers; image states full menu available in store and prices subject to service charge and prevailing taxes."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/contact-location/",
+          "publisher": "Sushiro Singapore, first-party store directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L317-L325",
+          "evidence": "Exact branch Hougang Mall and location are listed. Directory gives operating hours 11am–10pm (Jewel 10am–10pm) and last order 9:30pm."
+        }
+      ],
+      "confidence": "high for exact SFA outlet match and menu source; medium for outlet-specific item/price availability because the menu is chain-level and the image URL is dated 2026/05."
+    },
+    {
+      "sfa_licence_id": "NE16295A000",
+      "directory_row_1_based": 27103,
+      "record_name": "Sushiro",
+      "matched_branch": "Waterway Point",
+      "before": {
+        "menu_summary": null,
+        "menu_url": "https://www.sushiro.com.sg/menu/",
+        "opening_hours": "Hours: 11:00AM – 10:00PM"
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+        "opening_hours": "Hours: 11:00–22:00; last order 21:30"
+      },
+      "source_urls": [
+        "https://www.sushiro.com.sg/menu/",
+        "https://www.sushiro.com.sg/contact-location/",
+        "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.sushiro.com.sg/menu/",
+          "publisher": "Sushiro Singapore, first-party menu page",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Links the Normal Menu and Digiro Menu image files."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png",
+          "publisher": "Sushiro Singapore, first-party menu image",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Visual inspection confirmed item examples and price tiers; image states full menu available in store and prices subject to service charge and prevailing taxes."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/contact-location/",
+          "publisher": "Sushiro Singapore, first-party store directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L133-L141",
+          "evidence": "Exact branch Waterway Point and location are listed. Directory gives operating hours 11am–10pm (Jewel 10am–10pm) and last order 9:30pm."
+        }
+      ],
+      "confidence": "high for exact SFA outlet match and menu source; medium for outlet-specific item/price availability because the menu is chain-level and the image URL is dated 2026/05."
+    },
+    {
+      "sfa_licence_id": "NE20K92B000",
+      "directory_row_1_based": 27104,
+      "record_name": "Sushiro",
+      "matched_branch": "Our Tampines Hub",
+      "before": {
+        "menu_summary": null,
+        "menu_url": "https://www.sushiro.com.sg/menu/",
+        "opening_hours": "Hours: 11:00AM – 10:00PM"
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+        "opening_hours": "Hours: 11:00–22:00; last order 21:30"
+      },
+      "source_urls": [
+        "https://www.sushiro.com.sg/menu/",
+        "https://www.sushiro.com.sg/contact-location/",
+        "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.sushiro.com.sg/menu/",
+          "publisher": "Sushiro Singapore, first-party menu page",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Links the Normal Menu and Digiro Menu image files."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png",
+          "publisher": "Sushiro Singapore, first-party menu image",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Visual inspection confirmed item examples and price tiers; image states full menu available in store and prices subject to service charge and prevailing taxes."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/contact-location/",
+          "publisher": "Sushiro Singapore, first-party store directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L248-L256",
+          "evidence": "Exact branch Our Tampines Hub and location are listed. Directory gives operating hours 11am–10pm (Jewel 10am–10pm) and last order 9:30pm."
+        }
+      ],
+      "confidence": "high for exact SFA outlet match and menu source; medium for outlet-specific item/price availability because the menu is chain-level and the image URL is dated 2026/05."
+    },
+    {
+      "sfa_licence_id": "NE22D35L000",
+      "directory_row_1_based": 27105,
+      "record_name": "Sushiro",
+      "matched_branch": "myVillage",
+      "before": {
+        "menu_summary": null,
+        "menu_url": "https://www.sushiro.com.sg/menu/",
+        "opening_hours": "Hours: 11:00AM – 10:00PM"
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+        "opening_hours": "Hours: 11:00–22:00; last order 21:30"
+      },
+      "source_urls": [
+        "https://www.sushiro.com.sg/menu/",
+        "https://www.sushiro.com.sg/contact-location/",
+        "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.sushiro.com.sg/menu/",
+          "publisher": "Sushiro Singapore, first-party menu page",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Links the Normal Menu and Digiro Menu image files."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png",
+          "publisher": "Sushiro Singapore, first-party menu image",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Visual inspection confirmed item examples and price tiers; image states full menu available in store and prices subject to service charge and prevailing taxes."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/contact-location/",
+          "publisher": "Sushiro Singapore, first-party store directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L294-L302",
+          "evidence": "Exact branch myVillage and location are listed. Directory gives operating hours 11am–10pm (Jewel 10am–10pm) and last order 9:30pm."
+        }
+      ],
+      "confidence": "high for exact SFA outlet match and menu source; medium for outlet-specific item/price availability because the menu is chain-level and the image URL is dated 2026/05."
+    },
+    {
+      "sfa_licence_id": "NE24998B000",
+      "directory_row_1_based": 27106,
+      "record_name": "Sushiro",
+      "matched_branch": "Tampines 1",
+      "before": {
+        "menu_summary": null,
+        "menu_url": "https://www.sushiro.com.sg/menu/",
+        "opening_hours": "Hours: 11:00AM – 10:00PM"
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+        "opening_hours": "Hours: 11:00–22:00; last order 21:30"
+      },
+      "source_urls": [
+        "https://www.sushiro.com.sg/menu/",
+        "https://www.sushiro.com.sg/contact-location/",
+        "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.sushiro.com.sg/menu/",
+          "publisher": "Sushiro Singapore, first-party menu page",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Links the Normal Menu and Digiro Menu image files."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png",
+          "publisher": "Sushiro Singapore, first-party menu image",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Visual inspection confirmed item examples and price tiers; image states full menu available in store and prices subject to service charge and prevailing taxes."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/contact-location/",
+          "publisher": "Sushiro Singapore, first-party store directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L122-L130",
+          "evidence": "Exact branch Tampines 1 and location are listed. Directory gives operating hours 11am–10pm (Jewel 10am–10pm) and last order 9:30pm."
+        }
+      ],
+      "confidence": "high for exact SFA outlet match and menu source; medium for outlet-specific item/price availability because the menu is chain-level and the image URL is dated 2026/05."
+    },
+    {
+      "sfa_licence_id": "NW20C01K000",
+      "directory_row_1_based": 27107,
+      "record_name": "Sushiro",
+      "matched_branch": "Causeway Point",
+      "before": {
+        "menu_summary": "Delivery-only menu observed on Foodpanda 2026-10-18 (23 listed items; see Menu Items). Prices/availability may differ from dine-in; page crawl label was last month and recheck is required before calling current.",
+        "menu_url": "https://www.sushiro.com.sg/menu/",
+        "opening_hours": "Hours: 11:00AM – 10:00PM"
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+        "opening_hours": "Hours: 11:00–22:00; last order 21:30"
+      },
+      "source_urls": [
+        "https://www.sushiro.com.sg/menu/",
+        "https://www.sushiro.com.sg/contact-location/",
+        "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.sushiro.com.sg/menu/",
+          "publisher": "Sushiro Singapore, first-party menu page",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Links the Normal Menu and Digiro Menu image files."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png",
+          "publisher": "Sushiro Singapore, first-party menu image",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Visual inspection confirmed item examples and price tiers; image states full menu available in store and prices subject to service charge and prevailing taxes."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/contact-location/",
+          "publisher": "Sushiro Singapore, first-party store directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L145-L153",
+          "evidence": "Exact branch Causeway Point and location are listed. Directory gives operating hours 11am–10pm (Jewel 10am–10pm) and last order 9:30pm."
+        }
+      ],
+      "confidence": "high for exact SFA outlet match and menu source; medium for outlet-specific item/price availability because the menu is chain-level and the image URL is dated 2026/05."
+    },
+    {
+      "sfa_licence_id": "NW25539E000",
+      "directory_row_1_based": 27108,
+      "record_name": "Sushiro",
+      "matched_branch": "Mandai Wildlife EAST",
+      "before": {
+        "menu_summary": null,
+        "menu_url": "https://www.sushiro.com.sg/menu/",
+        "opening_hours": "Hours: 11:00AM – 10:00PM"
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+        "opening_hours": "Hours: 11:00–22:00; last order 21:30"
+      },
+      "source_urls": [
+        "https://www.sushiro.com.sg/menu/",
+        "https://www.sushiro.com.sg/contact-location/",
+        "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.sushiro.com.sg/menu/",
+          "publisher": "Sushiro Singapore, first-party menu page",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Links the Normal Menu and Digiro Menu image files."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png",
+          "publisher": "Sushiro Singapore, first-party menu image",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Visual inspection confirmed item examples and price tiers; image states full menu available in store and prices subject to service charge and prevailing taxes."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/contact-location/",
+          "publisher": "Sushiro Singapore, first-party store directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L214-L222",
+          "evidence": "Exact branch Mandai Wildlife EAST and location are listed. Directory gives operating hours 11am–10pm (Jewel 10am–10pm) and last order 9:30pm."
+        }
+      ],
+      "confidence": "high for exact SFA outlet match and menu source; medium for outlet-specific item/price availability because the menu is chain-level and the image URL is dated 2026/05."
+    },
+    {
+      "sfa_licence_id": "SE13W32J000",
+      "directory_row_1_based": 27109,
+      "record_name": "Sushiro",
+      "matched_branch": "Bedok Mall",
+      "before": {
+        "menu_summary": null,
+        "menu_url": "https://www.sushiro.com.sg/menu/",
+        "opening_hours": "Hours: 11:00AM – 10:00PM"
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+        "opening_hours": "Hours: 11:00–22:00; last order 21:30"
+      },
+      "source_urls": [
+        "https://www.sushiro.com.sg/menu/",
+        "https://www.sushiro.com.sg/contact-location/",
+        "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.sushiro.com.sg/menu/",
+          "publisher": "Sushiro Singapore, first-party menu page",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Links the Normal Menu and Digiro Menu image files."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png",
+          "publisher": "Sushiro Singapore, first-party menu image",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Visual inspection confirmed item examples and price tiers; image states full menu available in store and prices subject to service charge and prevailing taxes."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/contact-location/",
+          "publisher": "Sushiro Singapore, first-party store directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L156-L164",
+          "evidence": "Exact branch Bedok Mall and location are listed. Directory gives operating hours 11am–10pm (Jewel 10am–10pm) and last order 9:30pm."
+        }
+      ],
+      "confidence": "high for exact SFA outlet match and menu source; medium for outlet-specific item/price availability because the menu is chain-level and the image URL is dated 2026/05."
+    },
+    {
+      "sfa_licence_id": "SE19084X000",
+      "directory_row_1_based": 27110,
+      "record_name": "SUSHIRO",
+      "matched_branch": "Jewel Changi Airport",
+      "before": {
+        "menu_summary": null,
+        "menu_url": "https://www.sushiro.com.sg/menu/",
+        "opening_hours": "Hours: 10:00AM – 10:00PM"
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+        "opening_hours": "Hours: 10:00–22:00; last order 21:30"
+      },
+      "source_urls": [
+        "https://www.sushiro.com.sg/menu/",
+        "https://www.sushiro.com.sg/contact-location/",
+        "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.sushiro.com.sg/menu/",
+          "publisher": "Sushiro Singapore, first-party menu page",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Links the Normal Menu and Digiro Menu image files."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png",
+          "publisher": "Sushiro Singapore, first-party menu image",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Visual inspection confirmed item examples and price tiers; image states full menu available in store and prices subject to service charge and prevailing taxes."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/contact-location/",
+          "publisher": "Sushiro Singapore, first-party store directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L110-L118",
+          "evidence": "Exact branch Jewel Changi Airport and location are listed. Directory gives operating hours 11am–10pm (Jewel 10am–10pm) and last order 9:30pm."
+        }
+      ],
+      "confidence": "high for exact SFA outlet match and menu source; medium for outlet-specific item/price availability because the menu is chain-level and the image URL is dated 2026/05."
+    },
+    {
+      "sfa_licence_id": "SW04035P000",
+      "directory_row_1_based": 27111,
+      "record_name": "Sushiro",
+      "matched_branch": "Lot One",
+      "before": {
+        "menu_summary": null,
+        "menu_url": "https://www.sushiro.com.sg/menu/",
+        "opening_hours": "Hours: 11:00AM – 10:00PM"
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+        "opening_hours": "Hours: 11:00–22:00; last order 21:30"
+      },
+      "source_urls": [
+        "https://www.sushiro.com.sg/menu/",
+        "https://www.sushiro.com.sg/contact-location/",
+        "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.sushiro.com.sg/menu/",
+          "publisher": "Sushiro Singapore, first-party menu page",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Links the Normal Menu and Digiro Menu image files."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png",
+          "publisher": "Sushiro Singapore, first-party menu image",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Visual inspection confirmed item examples and price tiers; image states full menu available in store and prices subject to service charge and prevailing taxes."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/contact-location/",
+          "publisher": "Sushiro Singapore, first-party store directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L168-L176",
+          "evidence": "Exact branch Lot One and location are listed. Directory gives operating hours 11am–10pm (Jewel 10am–10pm) and last order 9:30pm."
+        }
+      ],
+      "confidence": "high for exact SFA outlet match and menu source; medium for outlet-specific item/price availability because the menu is chain-level and the image URL is dated 2026/05."
+    },
+    {
+      "sfa_licence_id": "SW25086K000",
+      "directory_row_1_based": 27112,
+      "record_name": "Sushiro",
+      "matched_branch": "Perennial Business City",
+      "before": {
+        "menu_summary": null,
+        "menu_url": "https://www.sushiro.com.sg/menu/",
+        "opening_hours": "Hours: 11:00AM – 10:00PM"
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+        "opening_hours": "Hours: 11:00–22:00; last order 21:30"
+      },
+      "source_urls": [
+        "https://www.sushiro.com.sg/menu/",
+        "https://www.sushiro.com.sg/contact-location/",
+        "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.sushiro.com.sg/menu/",
+          "publisher": "Sushiro Singapore, first-party menu page",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Links the Normal Menu and Digiro Menu image files."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png",
+          "publisher": "Sushiro Singapore, first-party menu image",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Visual inspection confirmed item examples and price tiers; image states full menu available in store and prices subject to service charge and prevailing taxes."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/contact-location/",
+          "publisher": "Sushiro Singapore, first-party store directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L191-L199",
+          "evidence": "Exact branch Perennial Business City and location are listed. Directory gives operating hours 11am–10pm (Jewel 10am–10pm) and last order 9:30pm."
+        }
+      ],
+      "confidence": "high for exact SFA outlet match and menu source; medium for outlet-specific item/price availability because the menu is chain-level and the image URL is dated 2026/05."
+    },
+    {
+      "sfa_licence_id": "SW25536A000",
+      "directory_row_1_based": 27113,
+      "record_name": "Sushiro",
+      "matched_branch": "The Linq",
+      "before": {
+        "menu_summary": null,
+        "menu_url": "https://www.sushiro.com.sg/menu/",
+        "opening_hours": "Hours: 11:00AM – 10:00PM"
+      },
+      "proposed": {
+        "menu_summary": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+        "opening_hours": "Hours: 11:00–22:00; last order 21:30"
+      },
+      "source_urls": [
+        "https://www.sushiro.com.sg/menu/",
+        "https://www.sushiro.com.sg/contact-location/",
+        "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+      ],
+      "source_evidence": [
+        {
+          "url": "https://www.sushiro.com.sg/menu/",
+          "publisher": "Sushiro Singapore, first-party menu page",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Links the Normal Menu and Digiro Menu image files."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png",
+          "publisher": "Sushiro Singapore, first-party menu image",
+          "retrieved_on": "2026-10-19",
+          "evidence": "Visual inspection confirmed item examples and price tiers; image states full menu available in store and prices subject to service charge and prevailing taxes."
+        },
+        {
+          "url": "https://www.sushiro.com.sg/contact-location/",
+          "publisher": "Sushiro Singapore, first-party store directory",
+          "retrieved_on": "2026-10-19",
+          "page_lines": "L202-L210",
+          "evidence": "Exact branch The Linq and location are listed. Directory gives operating hours 11am–10pm (Jewel 10am–10pm) and last order 9:30pm."
+        }
+      ],
+      "confidence": "high for exact SFA outlet match and menu source; medium for outlet-specific item/price availability because the menu is chain-level and the image URL is dated 2026/05."
+    }
+  ],
+  "limitations": [
+    "Menu evidence is chain-level rather than outlet-specific. Confirm branch availability before treating any item as sold at every branch.",
+    "Sushiro image menu is hosted under a 2026/05 path; it is the currently linked official menu image at retrieval, but listed prices may have changed since that revision.",
+    "Genki current official menu catalogue provides item names but not comprehensive current prices. No prices have been inferred or added for Genki.",
+    "Outlet source lines confirm branch identity and published operating hours; no telephone numbers were added because operator pages used in this pass do not publish direct outlet numbers."
+  ]
+}

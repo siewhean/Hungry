@@ -1,0 +1,420 @@
+{
+  "audit_id": "field_coverage_priority_audit_20261018",
+  "captured_local_date": "2026-10-18",
+  "read_only": true,
+  "workbook": {
+    "path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "sha256": "986a2656c3243d55c1a3914a3c5fbbdf2052e0423a69705785cbba0b7fee154e",
+    "zip_integrity": true,
+    "sheets": {
+      "Public F&B Directory": 38279,
+      "Menu Items": 12416,
+      "Image Candidates": 2327,
+      "Coverage & Sources": 191
+    }
+  },
+  "methods": [
+    "Read exact canonical workbook at assigned SHA with openpyxl data_only/read_only.",
+    "Counted null/blank values by directory column; normalized exact SFA licence and postal joins where source candidates were available.",
+    "Compared saved menu proposals against current Menu Items using normalized exact brand+item keys; any distinct spelling, branch scope, or price difference remains a manual review case.",
+    "Read existing source snapshots only. No network requests, Mapbox results, workbook edits, delivery-platform scraping, or spend."
+  ],
+  "directory_coverage": {
+    "F&B Name": {
+      "rows": 38279,
+      "blank": 5534,
+      "filled": 32745,
+      "filled_pct": 85.54
+    },
+    "Registered Business Name": {
+      "rows": 38279,
+      "blank": 5538,
+      "filled": 32741,
+      "filled_pct": 85.53
+    },
+    "Postal Code": {
+      "rows": 38279,
+      "blank": 102,
+      "filled": 38177,
+      "filled_pct": 99.73
+    },
+    "Cuisine": {
+      "rows": 38279,
+      "blank": 37067,
+      "filled": 1212,
+      "filled_pct": 3.17
+    },
+    "Menu / Price": {
+      "rows": 38279,
+      "blank": 37819,
+      "filled": 460,
+      "filled_pct": 1.2
+    },
+    "Opening Hours / Closed Days": {
+      "rows": 38279,
+      "blank": 36868,
+      "filled": 1411,
+      "filled_pct": 3.69
+    },
+    "Contact Details": {
+      "rows": 38279,
+      "blank": 35620,
+      "filled": 2659,
+      "filled_pct": 6.95
+    },
+    "Website": {
+      "rows": 38279,
+      "blank": 35544,
+      "filled": 2735,
+      "filled_pct": 7.14
+    },
+    "Menu URL": {
+      "rows": 38279,
+      "blank": 36894,
+      "filled": 1385,
+      "filled_pct": 3.62
+    },
+    "Rating / Review Count": {
+      "rows": 38279,
+      "blank": 38279,
+      "filled": 0,
+      "filled_pct": 0.0
+    },
+    "Approved Image URL": {
+      "rows": 38279,
+      "blank": 38279,
+      "filled": 0,
+      "filled_pct": 0.0
+    }
+  },
+  "other_quality_counts": {
+    "unique_sfa_licences": 38279,
+    "duplicate_sfa_licences": 0,
+    "coordinates_missing_pairs": 2545,
+    "coordinates_missing_with_postal": 2443,
+    "distinct_postal_codes_among_coordinate_missing": 1558,
+    "public_access_status": {
+      "public_access_candidate_based_on_sfa_type_and_address": 38267,
+      "public_access_verified_operator_source": 12
+    },
+    "business_types_top20": {
+      "Restaurant": 7787,
+      "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution": 6565,
+      "NEA Managed Foodstall": 5612,
+      "Takeaway": 4322,
+      "Snack Counter": 2743,
+      "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT": 2650,
+      "Foodcourt": 2003,
+      "Coffeeshop/Eating House": 1065,
+      "Bakery": 907,
+      "Small restaurant": 799,
+      "MA Managed Foodstall": 795,
+      "within Pubs/Bars/Nightclubs/Disco": 627,
+      "Supermarket (Large) - Sale area more than 200 sq metres": 455,
+      "Restaurant with Catering": 336,
+      "Market Produce": 247,
+      "Supermarket (Small) - Sale area 200 sq metres or less": 242,
+      "Food Court": 241,
+      "Stall in private market": 211,
+      "Sales of Herbal Tea": 170,
+      "Food Vending Machines": 126
+    },
+    "historical_menu_rows": 7871,
+    "menu_rows": 12416,
+    "historical_menu_pct": 63.39,
+    "menu_source_types": {
+      "spreadsheet": 7402,
+      "Official Saizeriya Singapore brand menu": 3,
+      "Live operator website": 105,
+      "official_operator_page": 1,
+      "scraped_menu_item": 52,
+      "open_web": 10,
+      "Official operator menu": 1169,
+      "official_operator_pdf": 43,
+      "manual": 407,
+      "Official operator menu PDF": 130,
+      "Official Singapore operator menu PDF": 43,
+      "Official operator menu page; visible menu transcription": 111,
+      "Official operator menu PDF linked from exact outlet page": 32,
+      "Official Singapore operator menu catalogue": 39,
+      "Official Singapore operator catalogue": 138,
+      "Official Singapore operator menu page": 56,
+      "Official operator menu index/PDF": 12,
+      "official_operator_menu": 39,
+      "official_operator_catalogue": 25,
+      "operator_owned_official_menu_pdf": 57,
+      "Official Singapore operator article": 7,
+      "Official Singapore operator help center": 4,
+      "operator_first_party_json_api": 120,
+      "Foodpanda Singapore public listing observation": 195,
+      "Foodpanda public listing": 102,
+      "Manually transcribed from visible text in the first-party menu PDF. Prices are printed with $ and the PDF footer states prices are subject to prevailing GST and 10% service charge.": 44,
+      "Foodpanda public listing; review-only": 61,
+      "Oddle public brand listing; review-only": 36,
+      "Official operator menu page": 2,
+      "Foodpanda Singapore public listing": 23,
+      "Official operator outlet-specific menu PDF": 33,
+      "Official operator menu webpage": 78,
+      "Official operator brand menu catalogue": 68,
+      "Official operator menu category page": 53,
+      "Foodpanda delivery listing": 544,
+      "Official operator brand menu": 107,
+      "Official McDonald’s Singapore website": 7,
+      "Official operator campaign": 4,
+      "Official operator catalogue": 121,
+      "Official operator set menu PDF": 13,
+      "First-party Singapore operator site": 399,
+      "Official operator production catalogue": 161,
+      "Official SAIZERIYA Singapore menu": 64,
+      "Official SUKIYA Singapore menu": 80,
+      "Official outlet-specific operator pickup catalogue": 124,
+      "first-party Singapore operator website": 92
+    },
+    "foodpanda_sourced_menu_rows": 739,
+    "menu_rows_missing_source_url": 4679,
+    "menu_rows_missing_sfa_link": 2128,
+    "image_candidate_rows": 2327,
+    "image_candidate_with_sfa_licence": 217,
+    "image_candidate_without_sfa_licence": 2110,
+    "image_candidate_missing_scope": 9,
+    "image_reuse_status": {
+      "Review only; operator copyright reserved; permission required; not approved for display.": 7,
+      "Review only; operator copyright reserved; permission required; branch availability not asserted.": 12,
+      "Review only; not approved for display": 5,
+      "Review only; CC0 1.0; image dated 2013; visual and current menu identity review required.": 1,
+      "Review only; reuse permission not established": 3,
+      "Review only; CC BY-SA 4.0; credit Sgconlaw, link license, indicate changes, share alike.": 4,
+      "Review only; CC BY-SA 4.0; credit Orderinchaos, link license, indicate changes, share alike; exact licence needs verification.": 1,
+      "CC0 1.0; creator/attribution not specified in supplied inventory; review-only, not approved for display": 1,
+      "CC BY 4.0; credit Chainwit.; review-only, not approved for display": 2,
+      "Official operator-hosted URL; reuse permission unknown; review-only, not approved for display": 1,
+      "Review-only; reuse rights unknown; not approved for display.": 40,
+      "Review-only; permission required; not approved for display.": 193,
+      "Review-only; visual association and reuse rights unverified; do not promote": 34,
+      "Review-only; rights/reuse not established; do not promote to Approved Image URL.": 25,
+      "Review-only; GET/asset status unverified and reuse rights unknown": 5,
+      "Review-only; Paragon terms prohibit redistribution/reproduction of images; written permission required; not approved for display.": 5,
+      "CC BY 2.0; credit Sharon Hahn Darlin and link license/source; review-only, not operator-supplied.": 1,
+      "CC BY-SA 4.0; attribution and share-alike conditions apply; review-only due age/current menu status.": 2,
+      "CC BY 2.0; attribution to Choo Yut Shing and license link required; review-only.": 1,
+      "CC0 1.0 as identified by Wikimedia Commons; review-only pending display policy.": 1,
+      "Operator-owned image; display/reuse rights not confirmed; review-only.": 58,
+      "Review only; official operator asset; reuse permission not confirmed; branch availability unconfirmed; not approved for display.": 4,
+      "Review only; operator copyright/reuse permission not confirmed; no branch stock claim; image not visually inspected and not approved for display.": 4,
+      "Review only; rights unresolved; 90 × 90 thumbnail; not approved for display.": 98,
+      "Review only; image not visually inspected; storefront depiction unconfirmed; operator states all rights reserved; permission required; not approved for display.": 4,
+      "Review only; reuse rights unresolved; not approved for display.": 3,
+      "Review-only candidate. Image is operator-hosted; copyright/reuse permission is not established. Do not copy to Approved Image URL.": 1,
+      "Candidate only; visual content and rights/reuse permission not established. Do not publish pending review.": 3,
+      "Candidate only; rights/reuse permission not established. Do not publish or embed pending rights review.": 2,
+      "Candidate only; copyright/reuse permission unresolved; not approved for display.": 5,
+      "Review only; first-party hosted product-image candidate; copyright/reuse permissions not confirmed": 53,
+      "Review only; rights/reuse permission unconfirmed; do not publish until authorized.": 384,
+      "Review only; operator-hosted image appears rights-reserved; permission not confirmed; do not publish/display until authorized.": 8,
+      "Review only; operator_owned; permission required before redistribution/consumer display.": 1,
+      "Review only; Permission required; operator copyright reserved; do not treat as approved for display or reuse..": 1,
+      "Review only; Reuse/display permission unconfirmed.": 39,
+      "Review only; operator-owned; permission required before redistribution or consumer display": 9,
+      "Review only; review_only_rights_not_cleared": 119,
+      "Review only; official-hosted; reuse/display rights unreviewed; review-only": 68,
+      "Review only; rights not cleared": 513,
+      "Review only; image reuse rights not cleared.": 161,
+      "Review only; reuse rights not cleared.": 40,
+      "Official source image; rights not cleared; review-only candidate": 175,
+      "review only; image rights/reuse permission not cleared": 124,
+      "Review only; image rights/reuse permission not cleared": 2,
+      "official URL candidate; reuse rights not assessed; review only, no display approval": 104
+    },
+    "approved_image_url_rows": 0,
+    "candidate_image_url_duplicates": 6,
+    "coverage_source_rows": 191
+  },
+  "prioritized_next_batch": [
+    {
+      "priority": 1,
+      "target": "Add fresh first-party brand-level menu facts absent from canonical Menu Items",
+      "candidate_menu_rows": 99,
+      "unique_brand_item_keys": 96,
+      "source_breakdown": [
+        {
+          "source_snapshot": "first_party_cafe_bakery_menu_batch_20261018_sha1b521ba.json",
+          "source_snapshot_sha256": "aea7b1bb77d9d45b3804e73a79443ac9b5f59cfd1bdf8b78f06939e735e80b29",
+          "candidate_rows": 45,
+          "not_exactly_present_in_current_workbook": 45,
+          "unique_missing_brand_item_keys": 42,
+          "candidate_brands": {
+            "Four Leaves": 10,
+            "Awfully Chocolate": 24,
+            "Swee Heng Bakery": 9,
+            "Heavenly Wang": 2
+          },
+          "scope": "First-party Singapore cafe/bakery catalogue",
+          "status": "actionable_candidate_after exact dup dedupe"
+        },
+        {
+          "source_snapshot": "restaurant_chain_official_singapore_menu_refresh108_20261018.json",
+          "source_snapshot_sha256": "d544b26bd548fbb704719cc99bcbd21a6c619166b8700fc3b011ff4e2827a1b6",
+          "candidate_rows": 179,
+          "not_exactly_present_in_current_workbook": 34,
+          "unique_missing_brand_item_keys": 34,
+          "candidate_brands": {
+            "SAIZERIYA": 34
+          },
+          "scope": "Official Singapore restaurant chain menu",
+          "status": "actionable_candidate"
+        },
+        {
+          "source_snapshot": "restaurant_chain_first_party_menu_refresh_20261018_sushiro_koi.json",
+          "source_snapshot_sha256": "b1a4d956fea8eea6853643977980f4e10b8cae8b9ba3354ca47ae085a340d52e",
+          "candidate_rows": 20,
+          "not_exactly_present_in_current_workbook": 20,
+          "unique_missing_brand_item_keys": 20,
+          "candidate_brands": {
+            "Sushiro": 12,
+            "KOI Thé": 8
+          },
+          "scope": "Official Singapore chain menu",
+          "status": "actionable_candidate"
+        },
+        {
+          "source_snapshot": "coffee_bakery_chain_first_party_refresh_20261018.json",
+          "source_snapshot_sha256": "518d7a1326043660b5be65699125565b21114531ae7cbd3c2f73590cb29c3b9a",
+          "candidate_rows": 89,
+          "not_exactly_present_in_current_workbook": 33,
+          "unique_missing_brand_item_keys": 33,
+          "candidate_brands": {
+            "Paris Baguette": 33
+          },
+          "scope": "First-party chain catalogue",
+          "status": "held_not_actionable",
+          "reason": "All unmatched rows are Paris Baguette candidates from /uat/ catalogue, flagged by existing integration audit as production-unverified."
+        }
+      ],
+      "action": "Integrate only exact new brand/item keys, keep price only where published, preserve explicit brand-level scope, blank SFA licence unless outlet availability is proven, and retain source URL/observed date. The snapshot rows are source facts, not proof of outlet stock.",
+      "held_candidates": {
+        "rows": 33,
+        "unique_brand_item_keys": 33,
+        "brand": "Paris Baguette",
+        "reason": "Source snapshot marks catalogue URL /uat/ and production status unverified; excluded from actionable count until live production catalogue is verified."
+      }
+    },
+    {
+      "priority": 2,
+      "target": "Add one net-new official image URL as a review-only candidate",
+      "new_image_url_candidates": 1,
+      "brand": "KOI Thé",
+      "image_scope": "Full brand menu artwork with product visuals; not an item-specific or stall-front image",
+      "official_image_url": "https://www.koithe.com/upload_file/menu/menu_803.png",
+      "source_page_url": "https://www.koithe.com/en/menu.php",
+      "observed": "2026-10-18",
+      "rights_status": "Official source image; rights not cleared; review-only candidate",
+      "action": "If useful, append only to Image Candidates with no SFA licence association; do not set Approved Image URL or represent it as an outlet photo."
+    },
+    {
+      "priority": 3,
+      "target": "Populate Registered Business Name from current SFA source, not F&B Name",
+      "current_blank_exact_id_postal_candidates": 1850,
+      "source_type_official_sfa": 1848,
+      "source_last_verified": "2026-04-04",
+      "source_dataset_page_last_updated": "2024-06-06",
+      "postal_conflicts_excluded": 12,
+      "action": "Refresh the underlying SFA open dataset first; exact ID+postal candidate join is strong, but old registry names and two non-SFA source-type rows need current-source validation. Use legal/licensed name only in Registered Business Name; never infer trading name."
+    },
+    {
+      "priority": 4,
+      "target": "Resolve public-access eligibility and live-operation status",
+      "current_candidate_based_rows": 38267,
+      "operator_source_verified_rows": 12,
+      "exact_review_candidates_in_snapshot": 941,
+      "targeted_rows_checked_in_snapshot": 17,
+      "confirmed_catering_only_in_targeted_snapshot": 1,
+      "confirmed_public_university_dining_rows_in_targeted_snapshot": 3,
+      "unresolved_targeted_rows": 13,
+      "action": "Continue exact-licence checks against first-party operator/mall/campus access sources. Do not infer closure from source absence; only delete proven out-of-scope or permanently closed records."
+    },
+    {
+      "priority": 5,
+      "target": "Fill remaining coordinates from durable open Singapore geodata",
+      "missing_coordinate_rows": 2545,
+      "missing_coordinate_rows_with_postal": 2443,
+      "distinct_postals": 1558,
+      "action": "Resolve 2,443 coordinate gaps with postal codes using OneMap/open point datasets; verify match precision and record building/postal-level limitations. The saved BCA/HPB candidate snapshots tested against this workbook yield zero additional records because those proposed points are already present. Mapbox Search Box is temporary-result and no result should be stored in this audit."
+    },
+    {
+      "priority": 6,
+      "target": "Refresh stale existing menu records",
+      "historical_rows": 7871,
+      "foodpanda_source_rows": 739,
+      "action": "Replace/confirm old price and item facts from current first-party menus where available. Platform observations are not an open license; use only with explicit permission. A saved catalogue audit identifies 33 Munchi prices as stale candidates and 48 Paris Baguette candidates from a /uat/ source as unverified production; do not apply either without fresh production verification."
+    },
+    {
+      "priority": 7,
+      "target": "Populate images only where source, item/outlet association, and reuse rights are clear",
+      "image_candidate_rows": 2327,
+      "approved_image_url_rows": 0,
+      "action": "Review-only candidates already exist; do not promote official-hosted URLs to Approved Image URL without display/reuse permission. The prior image audit found no verified stall-front photos; image URLs do not prove exact outlet applicability."
+    },
+    {
+      "priority": 8,
+      "target": "Ratings and review counts",
+      "filled_rows": 0,
+      "action": "Keep blank until a source offers free structured access with persistent reuse rights appropriate for a nationwide directory; do not copy Google/third-party platform ratings into this workbook absent permission."
+    }
+  ],
+  "conflicts_and_limits": [
+    "38,267 directory rows are marked public_access_candidate_based_on_sfa_type_and_address; only 12 have public-access verification from operator sources. SFA licence presence does not establish customer access or current operation.",
+    "5,534 F&B trading names and 5,538 registered business names remain blank. The 1,852-row crosswalk is based on a source last verified 2026-04-04 and includes licensed business names, not verified signage/trading names.",
+    "2,545 coordinate pairs are missing; 2,443 have a postal code. Existing BCA/HPB snapshots have zero exact candidates remaining after checking current canonical coordinate values.",
+    "7,871 of 12,416 menu rows (63.40%) carry the workbook status Historical reference; date July 2026 or unknown. 4,679 menu rows have no source URL. 739 rows are labeled Foodpanda sourced; permission for persistent reuse is not established.",
+    "Image Candidates has 2,327 rows, including 217 linked to an SFA licence and 2,110 brand-level/no exact outlet link. All are candidates rather than Approved Image URL rows; rights are not cleared. Nine lack scope text.",
+    "Rating / Review Count is empty for all 38,279 outlets. Existing feasibility snapshot found no confirmed free, persistent-reuse, outlet-level rating source.",
+    "Contact/website false-value screens found zero high-confidence false values in reviewed fields; that is not proof every contact, URL, or opening-hour value is live/current.",
+    "Menu facts are mixed-grain: one brand catalogue item can map to many SFA outlets while branch stock differs. Never collapse outlet price variants without exact scope. Source snapshots show one MOS Burger Teriyaki Chicken Burger source price of S$4.95 alongside multiple existing row prices; keep source/outlet grain intact pending review."
+  ],
+  "source_snapshot_hashes": {
+    "blank_fnb_name_sfa_crosswalk_proposal_20261018.json": {
+      "sha256": "79fe22c83d40e0cec0d08ebe2f36141f63c7affd13fb82e14c76e2a0aed3ac71"
+    },
+    "first_party_cafe_bakery_menu_batch_20261018_sha1b521ba.json": {
+      "sha256": "aea7b1bb77d9d45b3804e73a79443ac9b5f59cfd1bdf8b78f06939e735e80b29"
+    },
+    "restaurant_chain_official_singapore_menu_refresh108_20261018.json": {
+      "sha256": "d544b26bd548fbb704719cc99bcbd21a6c619166b8700fc3b011ff4e2827a1b6"
+    },
+    "restaurant_chain_first_party_menu_refresh_20261018_sushiro_koi.json": {
+      "sha256": "b1a4d956fea8eea6853643977980f4e10b8cae8b9ba3354ca47ae085a340d52e"
+    },
+    "coffee_bakery_chain_first_party_refresh_20261018.json": {
+      "sha256": "518d7a1326043660b5be65699125565b21114531ae7cbd3c2f73590cb29c3b9a"
+    },
+    "first_party_coffee_bakery_dessert_catalogues_refresh_20261018.json": {
+      "sha256": "dc374edbcdbead05cd472da8115c236beedd460c888006ea1568c444f749a9c7"
+    },
+    "installed_workbook_integration_gap_audit_20261018_sha2118208143.json": {
+      "sha256": "24f77b2784a37959f2c907c326d5156d6d63b39b515bbfdf5121ca487e23e165"
+    },
+    "public_access_targeted_source_check_20261018.json": {
+      "sha256": "51e279ac39b834beb394344f8393e7aa706c85da88f35231d5861714a36396c0"
+    },
+    "public_access_integrity_sweep_exact_sfa_20261018.json": {
+      "sha256": "b2911bb97020974a0f801921c2f6c66b6def4c18aa9f5170eb67fe28503dc583"
+    },
+    "contact_website_hours_menu_url_false_value_screen_20261018_refresh40.json": {
+      "sha256": "6f0f576999e87b6e18f64121001db43a46608e802887248182944a66a4d15534"
+    },
+    "rating_source_feasibility_20261018.json": {
+      "sha256": "53e09b3f774063a62e79a3f9e8e426722e4bd0c558191e5521e1ee432cb43ad1"
+    },
+    "bca_friendly_buildings_strict_address_coordinate_candidates_20261018.json": {
+      "sha256": "d90095c021e5f828f00f4d1482304d06b80a83b5e39dc1d79265f8146aa275cf"
+    },
+    "hpb_healthier_eateries_exact_address_coordinate_candidates_20261018.json": {
+      "sha256": "f4df8b672d636446e09ab5b2e19b6b4f95b94663c1ecd4504790220854cac6be"
+    }
+  },
+  "image_candidate_gap": {
+    "net_new_candidates_in_audited_existing_snapshots": 1,
+    "candidate": "KOI Thé full menu artwork",
+    "limitations": "Not a dish-specific image or stall photo; reuse rights not cleared. Two previously identified BreadTalk 1000px variants are now present in the current Image Candidates sheet."
+  }
+}

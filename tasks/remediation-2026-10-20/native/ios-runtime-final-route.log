@@ -1,0 +1,10 @@
+2026-10-20 22:13:20.159 Hungry[87356:33448434] You've implemented -[<UIApplicationDelegate> application:performFetchWithCompletionHandler:], but you still need to add "fetch" to the list of your supported UIBackgroundModes in your Info.plist.
+2026-10-20 22:13:20.159 Hungry[87356:33448434] You've implemented -[<UIApplicationDelegate> application:didReceiveRemoteNotification:fetchCompletionHandler:], but you still need to add "remote-notification" to the list of your supported UIBackgroundModes in your Info.plist.
+2026-10-20 22:13:20.161 Hungry[87356:33448434] _setUpFeatureFlags called with release level 2
+objc[87356]: Class UIAccessibilityLoaderWebShared is implemented in both /Library/Developer/CoreSimulator/Volumes/iOS_23F77/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebCore.axbundle/WebCore (0x10b590310) and /Library/Developer/CoreSimulator/Volumes/iOS_23F77/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebKit.axbundle/WebKit (0x10b62c398). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+W1020 22:13:21.630414 1802563584 ReactInstance.cpp:256] ReactInstance: evaluateJavaScript() with JS bundle
+2026-10-20 22:13:23.097 Hungry[87356:33448434] Session replay disabled via configuration
+I1020 22:13:24.161952 1802563584 UIManagerBinding.cpp:135] instanceHandle is null, event of type topHeaderHeightChange will be dropped
+I1020 22:17:46.855845 1802563584 UIManagerBinding.cpp:135] instanceHandle is null, event of type topLayout will be dropped
+app.hungry.mobile.remediationrouteqa: 87356

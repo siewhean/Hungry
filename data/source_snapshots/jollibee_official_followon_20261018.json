@@ -1,0 +1,198 @@
+{
+  "schema_version": "1.0",
+  "dataset": "Jollibee official directory blank-field follow-on evidence",
+  "captured_at_utc": "2026-10-18T09:49:29Z",
+  "captured_at_singapore": "2026-10-18T17:49:29+08:00",
+  "method": "Fresh direct GET of the official Singapore locator and menu pages; exact SFA licence row and current blank fields read from the refresh106 staged XLSX. No workbook modification.",
+  "workbook_examined": {
+    "path": "/tmp/hungry-refresh106-staged.xlsx",
+    "sha256": "fce81938ecec07cbd54555577f98a773e06aa839ad978b60800b5345b900ff96",
+    "sheet": "Public F&B Directory"
+  },
+  "sources": [
+    {
+      "url": "https://jollibee.com.sg/locate",
+      "role": "official Jollibee Singapore store locator",
+      "http_status": 200,
+      "http_date": "2026-10-18T09:49:29Z",
+      "response_bytes": 198618,
+      "sha256": "db65b5fa47f627f8a64639fddeb04f6c578a653bae8d68f1ad105b8afc5a9ebe",
+      "records_captured": {
+        "Paya Lebar Square": {
+          "branch_name": "Paya Lebar Square",
+          "address": "60 Paya Lebar Rd, #01-05/06/07 Singapore, 409051",
+          "hours": "Mon-Sun 8am-1am",
+          "phone": null,
+          "official_map_link": "https://maps.app.goo.gl/LbCs6hHTmmRKS94k9"
+        },
+        "NUS": {
+          "branch_name": "NUS",
+          "address": "1 Create Wy, #01-06, Singapore 138602",
+          "hours": "Mon-Sun 9am-9pm",
+          "phone": null,
+          "official_map_link": "https://maps.app.goo.gl/6peCLKL9F3LxEgD69"
+        },
+        "Punggol Digital District": {
+          "branch_name": "Punggol Digital District",
+          "address": "88 Punggol Way, Punggol Digital District #01-118, Singapore 829913,",
+          "hours": "Mon-Sun 10am-10pm",
+          "phone": null,
+          "official_map_link": null
+        },
+        "Hougang Mall": {
+          "branch_name": "Hougang Mall",
+          "address": "90 Hougang Avenue #01-19, Hougang Mall, 538766",
+          "hours": "Mon-Sun 10am-10pm",
+          "phone": null,
+          "official_map_link": null
+        }
+      }
+    },
+    {
+      "url": "https://jollibee.com.sg/our-menu",
+      "role": "official Jollibee Singapore menu landing page; evidence for global official Menu URL value",
+      "http_status": 200,
+      "http_date": "2026-10-18T09:49:45Z",
+      "response_bytes": 188960,
+      "sha256": "0ad08839e2b8b1e1e85a1c542f64ceb1efbfbc81c35ee806ec599ab4a5045cb6"
+    }
+  ],
+  "counts": {
+    "exact_unique_sfa_join_candidates": 4,
+    "blank_website_fields": 4,
+    "blank_menu_url_fields": 4,
+    "other_fields_proposed": 0
+  },
+  "records": [
+    {
+      "sfa_licence": "SE17225A000",
+      "workbook_business_name": "JOLLIBEE",
+      "workbook_registered_business_name": "JOLLIBEE",
+      "workbook_address": "Address: 60 PAYA LEBAR ROAD #01-05,#01-06,#01-07,PAYA LEBAR SQUARE,Singapore 409051",
+      "workbook_postal_code": "409051",
+      "workbook_blank_fields": [
+        "Website",
+        "Menu URL"
+      ],
+      "official_locator_record": {
+        "branch_name": "Paya Lebar Square",
+        "address": "60 Paya Lebar Rd, #01-05/06/07 Singapore, 409051",
+        "hours": "Mon-Sun 8am-1am",
+        "phone": null,
+        "official_map_link": "https://maps.app.goo.gl/LbCs6hHTmmRKS94k9"
+      },
+      "exact_join_evidence": {
+        "brand": "Jollibee",
+        "postal_code_exact_match": "409051",
+        "unit_overlap": [
+          "01-05"
+        ],
+        "unique_sfa_licence_row_count": 1
+      },
+      "proposed_blank_only_values": {
+        "Website": "https://jollibee.com.sg/",
+        "Menu URL": "https://jollibee.com.sg/our-menu"
+      },
+      "caveat": "These are global official brand URLs; they do not imply outlet-specific menu availability."
+    },
+    {
+      "sfa_licence": "SW11773V000",
+      "workbook_business_name": "JOLLIBEE",
+      "workbook_registered_business_name": "JOLLIBEE",
+      "workbook_address": "Address: 1 CREATE WAY #01-06,Singapore 138602",
+      "workbook_postal_code": "138602",
+      "workbook_blank_fields": [
+        "Website",
+        "Menu URL"
+      ],
+      "official_locator_record": {
+        "branch_name": "NUS",
+        "address": "1 Create Wy, #01-06, Singapore 138602",
+        "hours": "Mon-Sun 9am-9pm",
+        "phone": null,
+        "official_map_link": "https://maps.app.goo.gl/6peCLKL9F3LxEgD69"
+      },
+      "exact_join_evidence": {
+        "brand": "Jollibee",
+        "postal_code_exact_match": "138602",
+        "unit_overlap": [
+          "01-06"
+        ],
+        "unique_sfa_licence_row_count": 1
+      },
+      "proposed_blank_only_values": {
+        "Website": "https://jollibee.com.sg/",
+        "Menu URL": "https://jollibee.com.sg/our-menu"
+      },
+      "caveat": "These are global official brand URLs; they do not imply outlet-specific menu availability. Confirm public access separately because this record is at NUS."
+    },
+    {
+      "sfa_licence": "NE25157P000",
+      "workbook_business_name": "JOLLIBEE",
+      "workbook_registered_business_name": "JOLLIBEE",
+      "workbook_address": "Address: 88 PUNGGOL WAY #01-118,Singapore 829913",
+      "workbook_postal_code": "829913",
+      "workbook_blank_fields": [
+        "Website",
+        "Menu URL"
+      ],
+      "official_locator_record": {
+        "branch_name": "Punggol Digital District",
+        "address": "88 Punggol Way, Punggol Digital District #01-118, Singapore 829913,",
+        "hours": "Mon-Sun 10am-10pm",
+        "phone": null,
+        "official_map_link": null
+      },
+      "exact_join_evidence": {
+        "brand": "Jollibee",
+        "postal_code_exact_match": "829913",
+        "unit_overlap": [
+          "01-118"
+        ],
+        "unique_sfa_licence_row_count": 1
+      },
+      "proposed_blank_only_values": {
+        "Website": "https://jollibee.com.sg/",
+        "Menu URL": "https://jollibee.com.sg/our-menu"
+      },
+      "caveat": "These are global official brand URLs; they do not imply outlet-specific menu availability."
+    },
+    {
+      "sfa_licence": "S96278V000",
+      "workbook_business_name": "Jollibee",
+      "workbook_registered_business_name": "Jollibee",
+      "workbook_address": "Address: 90 HOUGANG AVENUE 10 #01-19,HOUGANG MALL,Singapore 538766",
+      "workbook_postal_code": "538766",
+      "workbook_blank_fields": [
+        "Website",
+        "Menu URL"
+      ],
+      "official_locator_record": {
+        "branch_name": "Hougang Mall",
+        "address": "90 Hougang Avenue #01-19, Hougang Mall, 538766",
+        "hours": "Mon-Sun 10am-10pm",
+        "phone": null,
+        "official_map_link": null
+      },
+      "exact_join_evidence": {
+        "brand": "Jollibee",
+        "postal_code_exact_match": "538766",
+        "unit_overlap": [
+          "01-19"
+        ],
+        "unique_sfa_licence_row_count": 1
+      },
+      "proposed_blank_only_values": {
+        "Website": "https://jollibee.com.sg/",
+        "Menu URL": "https://jollibee.com.sg/our-menu"
+      },
+      "caveat": "These are global official brand URLs; they do not imply outlet-specific menu availability."
+    }
+  ],
+  "integration_caveats": [
+    "NUS branch may have campus access conditions; public accessibility is unresolved independently.",
+    "No menu item or image records are included, as requested.",
+    "Only global first-party Website/Menu URL fields are proposed. Do not fill contacts or hours beyond existing workbook values.",
+    "No closure or outlet-status inference is made."
+  ]
+}

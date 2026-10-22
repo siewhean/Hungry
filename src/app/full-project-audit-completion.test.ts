@@ -135,15 +135,15 @@ test("full project audit P1: numeric trust surfaces disclose live or preview dat
   const dishDetail = read("src/app/screens/detail/DishDetailScreenV2.tsx");
 
   assert.match(disclosure, /getServiceProvider\(\)\.mode === "supabase"/);
-  assert.match(disclosure, /Live analytics/);
+  assert.match(disclosure, /Recorded analytics/);
   assert.match(disclosure, /Preview analytics/);
-  assert.match(disclosure, /Live mission progress/);
+  assert.match(disclosure, /Recorded mission progress/);
   assert.match(disclosure, /Preview mission progress/);
-  assert.match(disclosure, /Live score/);
+  assert.match(disclosure, /Recorded score/);
   assert.match(disclosure, /Preview score/);
-  assert.match(disclosure, /Live map status/);
+  assert.match(disclosure, /Listed map information/);
   assert.match(disclosure, /Preview map status/);
-  assert.match(disclosure, /Live wait estimate/);
+  assert.match(disclosure, /Wait estimate unavailable/);
   assert.match(disclosure, /Preview wait estimate/);
   assert.match(merchantAnalytics, /getDataTrustDisclosure\("merchantAnalytics"\)/);
   assert.match(merchantDashboard, /getDataTrustDisclosure\("merchantAnalytics"\)/);
@@ -152,6 +152,8 @@ test("full project audit P1: numeric trust surfaces disclose live or preview dat
   assert.match(missionsScreen, /getDataTrustDisclosure\("missions"\)/);
   assert.match(homeMap, /getDataTrustDisclosure\("mapStatus"\)/);
   assert.match(dishDetail, /getDataTrustDisclosure\("waitEstimate"\)/);
+  assert.match(dishDetail, /const waitTime: string \| undefined = undefined/);
+  assert.doesNotMatch(dishDetail, /min wait|prepTime|preparationTime/);
 });
 
 test("full project audit P1: user-facing data trust copy avoids live-result overclaims", () => {
@@ -160,9 +162,9 @@ test("full project audit P1: user-facing data trust copy avoids live-result over
   const promotionBuilder = read("src/app/screens/merchant/PromotionBuilderScreen.tsx");
 
   assert.doesNotMatch(locationPermission, /real-time queues/i);
-  assert.match(locationPermission, /Use timing cues/);
+  assert.match(locationPermission, /available venue locations/);
   assert.doesNotMatch(aiAssistant, /boost\s+sales/i);
-  assert.match(aiAssistant, /AI-assisted insights/);
+  assert.match(aiAssistant, /Recorded weekly business summary/);
   assert.doesNotMatch(promotionBuilder, /AI-targeted users/i);
   assert.match(promotionBuilder, /Users whose taste profile matches your menu/);
 });

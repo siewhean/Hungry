@@ -1,5 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { getAccountGeneration } from "@/lib/security/accountScope";
+import {
+  useCommunitySafetyRevision,
+  isContentHiddenForSession,
+} from "@/lib/security/communitySafety";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ChevronLeft, Heart, MessageCircleMore, Share2, Store } from "lucide-react-native";
@@ -10,6 +15,7 @@ import { AccessibleImage, AppHeader, AppText, EmptyState, IconButton } from "@/c
 import {
   ACTIVITY_UPDATES,
   getActivityReadKey,
+  selectVisibleActivityUpdates,
   type ActivityUpdate,
 } from "@/features/home/activity";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
@@ -19,7 +25,7 @@ import {
   getHungryService,
   getServiceProvider,
 } from "@/lib/services/serviceProvider";
-import type { ChatConversation } from "@/lib/services/types";
+import type { ChatConversation, PublicAccountSummary } from "@/lib/services/types";
 import { useActivityStore } from "@/store/useActivityStore";
 import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -55,6 +61,24 @@ export function ActivityInboxScreen({ navigation, route }: Props) {
   const dbActivityEvents = useActivityStore((state) => state.dbActivityEvents);
   const fetchActivityEvents = useActivityStore((state) => state.fetchActivityEvents);
   const userId = useProfileStore((state) => state.profile.id);
+  const safetyRevision = useCommunitySafetyRevision();
+  const accountScope = `${userId}:${getAccountGeneration()}`;
+  const [conversationOwner, setConversationOwner] = useState("");
+  const visibleConversations = useMemo(
+    () =>
+      conversationOwner === accountScope
+        ? conversations.filter(
+            (conversation) =>
+              !conversation.participants.some(
+                (participant) =>
+                  !participant.isCurrentUser &&
+                  participant.userId &&
+                  isContentHiddenForSession({ id: "", authorId: participant.userId }),
+              ),
+          )
+        : [],
+    [conversations, conversationOwner, accountScope, safetyRevision],
+  );
   const repository = getDataRepository();
   const publishedPosts = usePublishedPostStore((state) => state.posts);
   const posts = useMemo(() => {
@@ -108,9 +132,9 @@ export function ActivityInboxScreen({ navigation, route }: Props) {
       return Date.now() - parseRelativeMinutes(value) * 60_000;
     };
 
-    return allUpdates
-      .filter((update) => !update.recipientUserId || update.recipientUserId === userId)
-      .sort((a, b) => createdAt(b.time) - createdAt(a.time));
+    return selectVisibleActivityUpdates(allUpdates, userId).sort(
+      (a, b) => createdAt(b.time) - createdAt(a.time),
+    );
   }, [allUpdates, userId]);
 
   const styles = useMemo(
@@ -118,7 +142,10 @@ export function ActivityInboxScreen({ navigation, route }: Props) {
     [spacing, semanticSpacing, radii],
   );
 
+  const requestId = useRef(0);
   const loadConversations = useCallback(async () => {
+    const request = ++requestId.current;
+    const generation = getAccountGeneration();
     if (!FEATURE_FLAGS.directMessagesEnabled) {
       setConversations([]);
       setMessagesError(null);
@@ -131,27 +158,27 @@ export function ActivityInboxScreen({ navigation, route }: Props) {
     return getHungryService()
       .chat.listConversations()
       .then((loadedConversations) => {
+        if (request !== requestId.current || generation !== getAccountGeneration()) return;
+        setConversationOwner(accountScope);
         setConversations(loadedConversations);
       })
       .catch((error: unknown) => {
+        if (request !== requestId.current || generation !== getAccountGeneration()) return;
         setMessagesError(error instanceof Error ? error.message : "Messages could not be loaded.");
-        setConversations([]);
       })
       .finally(() => {
-        setIsMessagesLoading(false);
+        if (request === requestId.current && generation === getAccountGeneration())
+          setIsMessagesLoading(false);
       });
-  }, []);
-
-  useEffect(() => {
-    void loadConversations();
-    void fetchActivityEvents();
-  }, [fetchActivityEvents, loadConversations]);
+  }, [accountScope]);
 
   useFocusEffect(
     useCallback(() => {
       void loadConversations();
       void fetchActivityEvents();
-      return undefined;
+      return () => {
+        requestId.current++;
+      };
     }, [fetchActivityEvents, loadConversations]),
   );
 
@@ -176,7 +203,10 @@ export function ActivityInboxScreen({ navigation, route }: Props) {
             const isActive = activeTab === tab;
             const unreadCount =
               tab === "messages"
-                ? conversations.reduce((total, conversation) => total + conversation.unreadCount, 0)
+                ? visibleConversations.reduce(
+                    (total, conversation) => total + conversation.unreadCount,
+                    0,
+                  )
                 : visibleUpdates.filter(
                     (update) =>
                       update.unread &&
@@ -215,7 +245,7 @@ export function ActivityInboxScreen({ navigation, route }: Props) {
 
         {activeTab === "messages" ? (
           <MessagesTab
-            conversations={conversations}
+            conversations={visibleConversations}
             isLoading={isMessagesLoading}
             loadError={messagesError}
             navigation={navigation}
@@ -300,8 +330,15 @@ function MessagesTab({
                     return;
                   }
 
-                  onConversationRead(chatId);
-                  void getHungryService().chat.markConversationRead(chatId);
+                  void getHungryService()
+                    .chat.markConversationRead(chatId)
+                    .then(() => onConversationRead(chatId))
+                    .catch(() =>
+                      Alert.alert(
+                        "Read status not updated",
+                        "Messages remain unread. Retry from the conversation.",
+                      ),
+                    );
                   navigation.navigate("ChatDetail", {
                     chatId,
                     name: normalizedName,
@@ -370,8 +407,46 @@ function UpdatesTab({
 }) {
   const { palette, spacing, semanticSpacing, radii } = useHungryTheme();
   const repository = getDataRepository();
+  const activityError = useActivityStore((state) => state.error);
+  const fetchActivityEvents = useActivityStore((state) => state.fetchActivityEvents);
   const readActivityIds = useActivityStore((state) => state.readActivityIds);
   const markActivityRead = useActivityStore((state) => state.markActivityRead);
+  const requestSubject = useProfileStore((state) => state.profile.id);
+  const [requests, setRequests] = useState<PublicAccountSummary[]>([]);
+  const [requestsError, setRequestsError] = useState(false);
+  const [busyRequester, setBusyRequester] = useState<string | null>(null);
+  const loadRequests = useCallback(() => {
+    const generation = getAccountGeneration();
+    let active = true;
+    setRequests([]);
+    setRequestsError(false);
+    getHungryService()
+      .social.listFollowRequests()
+      .then((items) => {
+        if (active && generation === getAccountGeneration()) setRequests(items);
+      })
+      .catch(() => {
+        if (active && generation === getAccountGeneration()) setRequestsError(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, [requestSubject]);
+  useFocusEffect(loadRequests);
+  const respond = async (requesterId: string, decision: "approved" | "rejected") => {
+    if (busyRequester) return;
+    const generation = getAccountGeneration();
+    setBusyRequester(requesterId);
+    try {
+      await getHungryService().social.respondToFollowRequest(requesterId, decision);
+      if (generation !== getAccountGeneration()) return;
+      setRequests((items) => items.filter((item) => item.userId !== requesterId));
+    } catch {
+      Alert.alert("Request not updated", "Please try again.");
+    } finally {
+      if (generation === getAccountGeneration()) setBusyRequester(null);
+    }
+  };
 
   return (
     <ScrollView
@@ -383,6 +458,45 @@ function UpdatesTab({
         paddingBottom: spacing[12],
       }}
     >
+      {requestsError ? (
+        <EmptyState
+          title="Follow requests unavailable"
+          body="Your requests could not be loaded."
+          ctaLabel="Retry"
+          onPress={loadRequests}
+        />
+      ) : null}
+      {requests.map((request) => (
+        <View key={request.userId} style={{ gap: spacing[2] }}>
+          <AppText variant="bodyBold">{request.displayName} requested to follow you</AppText>
+          <View style={{ flexDirection: "row", gap: spacing[3] }}>
+            {(["approved", "rejected"] as const).map((decision) => (
+              <Pressable
+                key={decision}
+                accessibilityRole="button"
+                accessibilityLabel={`${decision === "approved" ? "Accept" : "Decline"} ${request.displayName}'s follow request`}
+                accessibilityState={{
+                  disabled: Boolean(busyRequester),
+                  busy: busyRequester === request.userId,
+                }}
+                disabled={Boolean(busyRequester)}
+                onPress={() => void respond(request.userId, decision)}
+                style={{ minHeight: 44, justifyContent: "center" }}
+              >
+                <AppText>{decision === "approved" ? "Accept" : "Decline"}</AppText>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      ))}
+      {activityError ? (
+        <EmptyState
+          title="Activity refresh failed"
+          body={activityError}
+          ctaLabel="Retry"
+          onPress={() => void fetchActivityEvents()}
+        />
+      ) : null}
       {updates.map((update) => {
         const post = repository
           .listStallPosts()
@@ -404,12 +518,19 @@ function UpdatesTab({
             accessibilityRole="button"
             accessibilityLabel={`Open update for ${update.target}`}
             onPress={() => {
-              markActivityRead("update", update.id);
-              if (post) {
+              if (update.kind === "follow" && update.actorId) {
+                markActivityRead("update", update.id);
+                navigation.navigate("UserProfile", {
+                  authorId: update.actorId,
+                  authorName: update.actorName,
+                });
+              } else if (update.postId) {
                 navigation.navigate("ActivityPostDetail", {
                   postId: update.postId,
                   updateId: update.id,
                 });
+              } else {
+                Alert.alert("Update unavailable", "This activity has no supported destination.");
               }
             }}
             style={[stylesInline.updateRow, { gap: spacing[3] }]}

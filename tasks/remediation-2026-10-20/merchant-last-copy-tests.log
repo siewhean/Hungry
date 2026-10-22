@@ -1,0 +1,38 @@
+(node:81708) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ merchant access, dashboard, and tab routes cover primary merchant entry points (4.907208ms)
+✔ merchant profile edits validate fields and propagate to user-side venue reads (0.8005ms)
+✔ merchant menu and OCR flows cover catalog writes that become consumer-visible dishes (0.925125ms)
+✔ merchant inbox, promotions, AI assistant, and settings use service-backed state (1.316459ms)
+✔ merchant Playwright and native smoke coverage entry points stay registered (1.738791ms)
+(node:81709) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Merchant screen contract: every merchant route is typed, registered, and backed by a screen (1.091958ms)
+✔ Merchant screen contract: verified-only routes are guarded by merchant access status (0.655958ms)
+✔ Merchant screen contract: extended merchant sections stay hidden from the tab bar (0.247416ms)
+✔ Merchant screen contract: merchant navigation buttons are accessible and hidden sections are reachable (0.271042ms)
+✔ Merchant screen contract: merchant route params match editable sub-screen needs (0.131083ms)
+✔ Merchant screen contract: menu management screens are wired to merchant services (0.956875ms)
+✔ Merchant screen contract: profile, menu, and analytics use production-ready controls (0.919792ms)
+✔ Merchant screen contract: dish details record merchant dish views once per screen (0.139583ms)
+✔ Merchant screen contract: inbox, promotions, assistant, and settings screens use merchant services (0.42225ms)
+✔ Merchant screen contract: merchant screens resolve services through provider (0.578834ms)
+(node:81710) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Supabase merchant service is wired to linked consumer venue and dish tables (1.089875ms)
+✔ Supabase merchant dish writes persist user-visible metadata and media (4.228875ms)
+✔ Supabase repository reads dish metadata from normalized catalog tables (0.546792ms)
+✔ Supabase migration links merchant writes to non-merchant read surfaces (0.36575ms)
+✔ Supabase merchant RLS hardening limits review replies and settings writes (1.39675ms)
+✔ Supabase merchant catalog metadata RLS covers images and dietary links (0.330625ms)
+✔ Supabase merchant portal readiness covers views, notifications, and promo pricing (11.9975ms)
+✔ Supabase merchant analytics foundation uses RPC-backed dynamic events and rollups (1.652125ms)
+✔ Supabase popular visitor pins are review-backed, merchant-managed, and public-active readable (0.917042ms)
+ℹ tests 24
+ℹ suites 0
+ℹ pass 24
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 326.297958

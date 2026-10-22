@@ -1,0 +1,28 @@
+
+> hungry-mobile@0.1.0 typecheck
+> tsc --noEmit
+
+src/app/screens/auth/ResetPasswordScreen.tsx(226,57): error TS2322: Type '"error"' is not assignable to type '"success" | "default" | "secondary" | "muted" | "accent" | "inverse" | undefined'.
+src/app/screens/detail/DishDetailScreenV2.tsx(1151,13): error TS2322: Type '{ activeReview: ReviewShareTarget | null; innerRef: RefObject<BottomSheetModal | null>; bottomInset: number; onDismiss: () => void; onShared: (postId: any, channel: any) => void; }' is not assignable to type 'IntrinsicAttributes & ReviewShareSheetProps'.
+  Property 'onShared' does not exist on type 'IntrinsicAttributes & ReviewShareSheetProps'.
+src/app/screens/detail/DishDetailScreenV2.tsx(1151,24): error TS7006: Parameter 'postId' implicitly has an 'any' type.
+src/app/screens/detail/DishDetailScreenV2.tsx(1151,32): error TS7006: Parameter 'channel' implicitly has an 'any' type.
+src/app/screens/detail/StallDetailScreen.tsx(1372,13): error TS2322: Type '{ activeReview: ReviewShareTarget | null; innerRef: RefObject<BottomSheetModal | null>; bottomInset: number; onDismiss: () => void; onShared: (postId: any, channel: any) => void; }' is not assignable to type 'IntrinsicAttributes & ReviewShareSheetProps'.
+  Property 'onShared' does not exist on type 'IntrinsicAttributes & ReviewShareSheetProps'.
+src/app/screens/detail/StallDetailScreen.tsx(1372,24): error TS7006: Parameter 'postId' implicitly has an 'any' type.
+src/app/screens/detail/StallDetailScreen.tsx(1372,32): error TS7006: Parameter 'channel' implicitly has an 'any' type.
+src/app/screens/home/ActivityPostDetailScreen.tsx(326,21): error TS2353: Object literal may only specify known properties, and 'postId' does not exist in type 'ReviewShareTarget | ((prevState: ReviewShareTarget | null) => ReviewShareTarget | null)'.
+src/app/screens/home/ActivityPostDetailScreen.tsx(429,9): error TS2322: Type '{ activeReview: ReviewShareTarget | null; bottomInset: number; innerRef: RefObject<BottomSheetModal | null>; onDismiss: () => void; onShared: (postId: any, channel: any) => void; }' is not assignable to type 'IntrinsicAttributes & ReviewShareSheetProps'.
+  Property 'onShared' does not exist on type 'IntrinsicAttributes & ReviewShareSheetProps'.
+src/app/screens/home/ActivityPostDetailScreen.tsx(429,20): error TS7006: Parameter 'postId' implicitly has an 'any' type.
+src/app/screens/home/ActivityPostDetailScreen.tsx(429,28): error TS7006: Parameter 'channel' implicitly has an 'any' type.
+src/app/screens/onboarding/OnboardingAuthScreen.tsx(508,42): error TS2367: This comparison appears to be unintentional because the types '"login"' and '"signup"' have no overlap.
+src/app/screens/onboarding/OnboardingAuthScreen.tsx(509,39): error TS2367: This comparison appears to be unintentional because the types '"login"' and '"signup"' have no overlap.
+src/app/screens/profile/SocialPostDetailScreen.tsx(282,21): error TS2353: Object literal may only specify known properties, and 'postId' does not exist in type 'ReviewShareTarget | ((prevState: ReviewShareTarget | null) => ReviewShareTarget | null)'.
+src/app/screens/profile/SocialPostDetailScreen.tsx(411,9): error TS2322: Type '{ activeReview: ReviewShareTarget | null; bottomInset: number; innerRef: RefObject<BottomSheetModal | null>; onDismiss: () => void; onShared: (postId: any, channel: any) => void; }' is not assignable to type 'IntrinsicAttributes & ReviewShareSheetProps'.
+  Property 'onShared' does not exist on type 'IntrinsicAttributes & ReviewShareSheetProps'.
+src/app/screens/profile/SocialPostDetailScreen.tsx(411,20): error TS7006: Parameter 'postId' implicitly has an 'any' type.
+src/app/screens/profile/SocialPostDetailScreen.tsx(411,28): error TS7006: Parameter 'channel' implicitly has an 'any' type.
+src/features/auth/applySignedInProfile.generation.test.ts(20,20): error TS2345: Argument of type 'IdleRequestCallback | (() => void)' is not assignable to parameter of type '() => void'.
+  Type 'IdleRequestCallback' is not assignable to type '() => void'.
+    Target signature provides too few arguments. Expected 1 or more, but got 0.

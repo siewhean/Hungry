@@ -1,0 +1,74 @@
+{
+  "E80138J001": {
+    "name": "Chodee Food Holdings Pte Ltd",
+    "address": "123 BEDOK NORTH STREET 2 #01-142,Singapore 460123",
+    "url": "https://maps.google.com/?cid=51826881610336279",
+    "status": "NO_HOURS",
+    "schedule": null,
+    "updatedAt": "2026-10-21T10:26:06.010Z"
+  },
+  "J85073C008": {
+    "name": "Chodee Food Holdings Pte Ltd",
+    "address": "233 BUKIT BATOK EAST AVENUE 5 #01-53,GOMBAK GARDENS,Singapore 650233",
+    "url": "https://maps.google.com/?cid=7572196562391782",
+    "status": "NO_HOURS",
+    "schedule": null,
+    "updatedAt": "2026-10-21T10:26:06.021Z"
+  },
+  "C90127B001": {
+    "name": "Chodee Food Holdings Pte Ltd",
+    "address": "380 CLEMENTI AVENUE 5 #01-376,Singapore 120380",
+    "url": "https://maps.google.com/?cid=26353814250822639",
+    "status": "NO_HOURS",
+    "schedule": null,
+    "updatedAt": "2026-10-21T10:26:10.179Z"
+  },
+  "C90127B005": {
+    "name": "Chodee Food Holdings Pte Ltd",
+    "address": "380 CLEMENTI AVENUE 5 #01-376,Singapore 120380",
+    "url": "https://maps.google.com/?cid=42920879720338483",
+    "status": "NO_HOURS",
+    "schedule": null,
+    "updatedAt": "2026-10-21T10:26:10.285Z"
+  },
+  "C90127B002": {
+    "name": "Chodee Food Holdings Pte Ltd",
+    "address": "380 CLEMENTI AVENUE 5 #01-376,Singapore 120380",
+    "url": "https://maps.google.com/?cid=93510460848151622",
+    "status": "NO_HOURS",
+    "schedule": null,
+    "updatedAt": "2026-10-21T10:26:14.783Z"
+  },
+  "W91119C020": {
+    "name": "Chodee Food Holdings Pte Ltd",
+    "address": "18 RAFFLES QUAY TELOK AYER FESTIVAL MARKET,Singapore 048582",
+    "url": "https://maps.google.com/?cid=45401646143138330",
+    "status": "NO_HOURS",
+    "schedule": null,
+    "updatedAt": "2026-10-21T10:26:18.770Z"
+  },
+  "SW04211V008": {
+    "name": "drinks",
+    "address": "108 DEPOT ROAD #02-22,DEPOT HEIGHTS SHOPPING CENTRE,Singapore 100108",
+    "url": "https://maps.google.com/?cid=6953441772304",
+    "status": "NO_HOURS",
+    "schedule": null,
+    "updatedAt": "2026-10-21T10:26:19.007Z"
+  },
+  "W84225C003": {
+    "name": "drinks",
+    "address": "269 QUEEN STREET #01-235,Singapore 180269",
+    "url": "https://maps.google.com/?cid=6953441772304",
+    "status": "NO_HOURS",
+    "schedule": null,
+    "updatedAt": "2026-10-21T10:26:22.765Z"
+  },
+  "W01271N000": {
+    "name": "drinks",
+    "address": "14 SCOTTS ROAD #04-109,FAR EAST PLAZA,Singapore 228213",
+    "url": "https://maps.google.com/?cid=6953441772304",
+    "status": "NO_HOURS",
+    "schedule": null,
+    "updatedAt": "2026-10-21T10:26:23.041Z"
+  }
+}

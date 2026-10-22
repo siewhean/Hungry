@@ -1,0 +1,140 @@
+{
+  "snapshot_id": "refresh131_official_menus_20261019",
+  "snapshot_type": "read_only_official_menu_proposal",
+  "observed_at_local_singapore": "2026-10-19 04:52:46 SGT (UTC+08:00)",
+  "workbook_path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_workbook_sha256": "80bbef4c8edee234e7ddad4a9b3390a67e9f7572621a8711fbe3c97fb7066212",
+  "workbook_edited": false,
+  "research_scope": "First-party Singapore restaurant online ordering menus, exact SFA-licence joins, up to 50 item proposals and five outlets. This scan yielded one exact outlet page with a current priced category; other branches are excluded where the page could not be proven to scope the outlet.",
+  "outlets": [
+    {
+      "sfa_licence": "SE17688L000",
+      "directory_name": "CARL'S JR",
+      "directory_address": "10 Eunos Road 8 #03-105, Singapore Post Centre, Singapore 408600",
+      "postal_code": "408600",
+      "baseline_menu_item_count": 0,
+      "baseline_menu_summary_blank": true,
+      "branch_crosswalk": "Exact baseline SFA licence SE17688L000 joins to the directory row at 10 Eunos Road 8 #03-105, Singapore Post Centre, postal 408600. The first-party order page itself is headed “Carl’s Jr. SingPost Centre” and shows the same street/unit/postal address at https://order.carlsjr.com.sg/Category/premium-angus-beef-burger-combo.html. High confidence in outlet identity and displayed prices/menu labels.",
+      "page_observation": "Retrieved the live first-party order page at 2026-10-19 04:52:46 SGT. The server response showed the outlet heading and address plus the Premium Angus Beef Burger (Combo) category with seven named items and SGD prices. This is a pickup/order-menu snapshot; prices and availability may change.",
+      "confidence": "High for exact outlet crosswalk and page-displayed names/prices; medium for sustained availability because this is a time-sensitive online-order menu.",
+      "proposed_item_count": 7
+    }
+  ],
+  "menu_item_proposals": [
+    {
+      "applicable_sfa_licence": "SE17688L000",
+      "f_and_b_name": "CARL'S JR",
+      "menu_item": "Portobello Mushroom Angus Combo",
+      "section": "Premium Angus Beef Burger (Combo)",
+      "variant_notes": "Official online pickup combo listing; scope is Carl’s Jr. SingPost Centre page. Availability can change at order time.",
+      "price_as_published": "SGD 23.30",
+      "menu_scope": "Outlet-specific official online pickup menu (Carl’s Jr. SingPost Centre)",
+      "official_source_url": "https://order.carlsjr.com.sg/Category/premium-angus-beef-burger-combo.html",
+      "observed_updated": "2026-10-19 04:52:46 SGT (UTC+08:00)",
+      "freshness_status": "Observed 2026-10-19; time-sensitive online menu and price snapshot",
+      "source_type": "First-party Singapore online ordering page",
+      "rights_reuse_status": "Menu facts transcribed with attribution; no image content reused"
+    },
+    {
+      "applicable_sfa_licence": "SE17688L000",
+      "f_and_b_name": "CARL'S JR",
+      "menu_item": "Original Angus Combo",
+      "section": "Premium Angus Beef Burger (Combo)",
+      "variant_notes": "Official online pickup combo listing; scope is Carl’s Jr. SingPost Centre page. Availability can change at order time.",
+      "price_as_published": "SGD 19.90",
+      "menu_scope": "Outlet-specific official online pickup menu (Carl’s Jr. SingPost Centre)",
+      "official_source_url": "https://order.carlsjr.com.sg/Category/premium-angus-beef-burger-combo.html",
+      "observed_updated": "2026-10-19 04:52:46 SGT (UTC+08:00)",
+      "freshness_status": "Observed 2026-10-19; time-sensitive online menu and price snapshot",
+      "source_type": "First-party Singapore online ordering page",
+      "rights_reuse_status": "Menu facts transcribed with attribution; no image content reused"
+    },
+    {
+      "applicable_sfa_licence": "SE17688L000",
+      "f_and_b_name": "CARL'S JR",
+      "menu_item": "Double Original Angus Combo (NEW)",
+      "section": "Premium Angus Beef Burger (Combo)",
+      "variant_notes": "Official online pickup combo listing; scope is Carl’s Jr. SingPost Centre page. Availability can change at order time.",
+      "price_as_published": "SGD 25.30",
+      "menu_scope": "Outlet-specific official online pickup menu (Carl’s Jr. SingPost Centre)",
+      "official_source_url": "https://order.carlsjr.com.sg/Category/premium-angus-beef-burger-combo.html",
+      "observed_updated": "2026-10-19 04:52:46 SGT (UTC+08:00)",
+      "freshness_status": "Observed 2026-10-19; time-sensitive online menu and price snapshot",
+      "source_type": "First-party Singapore online ordering page",
+      "rights_reuse_status": "Menu facts transcribed with attribution; no image content reused"
+    },
+    {
+      "applicable_sfa_licence": "SE17688L000",
+      "f_and_b_name": "CARL'S JR",
+      "menu_item": "Western Bacon Angus Combo",
+      "section": "Premium Angus Beef Burger (Combo)",
+      "variant_notes": "Official online pickup combo listing; scope is Carl’s Jr. SingPost Centre page. Availability can change at order time.",
+      "price_as_published": "SGD 22.30",
+      "menu_scope": "Outlet-specific official online pickup menu (Carl’s Jr. SingPost Centre)",
+      "official_source_url": "https://order.carlsjr.com.sg/Category/premium-angus-beef-burger-combo.html",
+      "observed_updated": "2026-10-19 04:52:46 SGT (UTC+08:00)",
+      "freshness_status": "Observed 2026-10-19; time-sensitive online menu and price snapshot",
+      "source_type": "First-party Singapore online ordering page",
+      "rights_reuse_status": "Menu facts transcribed with attribution; no image content reused"
+    },
+    {
+      "applicable_sfa_licence": "SE17688L000",
+      "f_and_b_name": "CARL'S JR",
+      "menu_item": "Guacamole Bacon Angus Combo",
+      "section": "Premium Angus Beef Burger (Combo)",
+      "variant_notes": "Official online pickup combo listing; scope is Carl’s Jr. SingPost Centre page. Availability can change at order time.",
+      "price_as_published": "SGD 21.30",
+      "menu_scope": "Outlet-specific official online pickup menu (Carl’s Jr. SingPost Centre)",
+      "official_source_url": "https://order.carlsjr.com.sg/Category/premium-angus-beef-burger-combo.html",
+      "observed_updated": "2026-10-19 04:52:46 SGT (UTC+08:00)",
+      "freshness_status": "Observed 2026-10-19; time-sensitive online menu and price snapshot",
+      "source_type": "First-party Singapore online ordering page",
+      "rights_reuse_status": "Menu facts transcribed with attribution; no image content reused"
+    },
+    {
+      "applicable_sfa_licence": "SE17688L000",
+      "f_and_b_name": "CARL'S JR",
+      "menu_item": "Jalapeno Angus Combo",
+      "section": "Premium Angus Beef Burger (Combo)",
+      "variant_notes": "Official online pickup combo listing; scope is Carl’s Jr. SingPost Centre page. Availability can change at order time.",
+      "price_as_published": "SGD 19.80",
+      "menu_scope": "Outlet-specific official online pickup menu (Carl’s Jr. SingPost Centre)",
+      "official_source_url": "https://order.carlsjr.com.sg/Category/premium-angus-beef-burger-combo.html",
+      "observed_updated": "2026-10-19 04:52:46 SGT (UTC+08:00)",
+      "freshness_status": "Observed 2026-10-19; time-sensitive online menu and price snapshot",
+      "source_type": "First-party Singapore online ordering page",
+      "rights_reuse_status": "Menu facts transcribed with attribution; no image content reused"
+    },
+    {
+      "applicable_sfa_licence": "SE17688L000",
+      "f_and_b_name": "CARL'S JR",
+      "menu_item": "Chili Cheese Angus Combo",
+      "section": "Premium Angus Beef Burger (Combo)",
+      "variant_notes": "Official online pickup combo listing; scope is Carl’s Jr. SingPost Centre page. Availability can change at order time.",
+      "price_as_published": "SGD 20.90",
+      "menu_scope": "Outlet-specific official online pickup menu (Carl’s Jr. SingPost Centre)",
+      "official_source_url": "https://order.carlsjr.com.sg/Category/premium-angus-beef-burger-combo.html",
+      "observed_updated": "2026-10-19 04:52:46 SGT (UTC+08:00)",
+      "freshness_status": "Observed 2026-10-19; time-sensitive online menu and price snapshot",
+      "source_type": "First-party Singapore online ordering page",
+      "rights_reuse_status": "Menu facts transcribed with attribution; no image content reused"
+    }
+  ],
+  "limitations": [
+    "The order page is pickup/order scoped. Prices are not asserted as dine-in prices and may change.",
+    "Although the page lists other Carl’s Jr. outlets in its selector, testing alternate StoreID query parameters left the rendered page on SingPost Centre. No menu rows are proposed for The Star Vista or King Albert Park without a page state that actually confirms the selected branch.",
+    "The page exposes no durable menu update timestamp; observed time is the direct retrieval time.",
+    "No Mapbox or paid service was used; no workbook or Excel file was edited or generated."
+  ],
+  "no_spending": true,
+  "evidence_sources": [
+    {
+      "url": "https://order.carlsjr.com.sg/Category/premium-angus-beef-burger-combo.html",
+      "source_type": "First-party Singapore official online ordering page",
+      "observed_at_local_singapore": "2026-10-19 04:52:46 SGT (UTC+08:00)",
+      "evidence": "Page heading identifies Carl’s Jr. SingPost Centre; displayed address is 10 Eunos Road 8 #03-105, postal 408600. The Premium Angus Beef Burger (Combo) section displays the seven item names and SGD prices in the page HTML. Direct HTTP response date header was Sun, 18 Oct 2026 20:52:46 GMT (2026-10-19 04:52:46 SGT).",
+      "limitations": "Dynamic ordering page; current availability and prices are subject to change."
+    }
+  ],
+  "proposed_menu_item_count": 7
+}

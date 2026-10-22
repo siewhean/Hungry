@@ -1,3 +1,5 @@
+import { useMerchantOperationScope } from "@/features/merchant/useMerchantOperationScope";
+import { useRef as useMerchantRequestRef } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pressable, View } from "react-native";
 import { ArrowDown, ArrowUp, Pin, PinOff, RefreshCw, Users } from "lucide-react-native";
@@ -9,6 +11,8 @@ import { useHungryTheme } from "@/theme";
 import type { PopularVisitorCandidate, PopularVisitorPin } from "@/types/domain";
 
 export function FeaturedVisitorsScreen() {
+  const captureOperation = useMerchantOperationScope();
+
   const { componentRadii, palette, spacing } = useHungryTheme();
   const activeOutlet = useMerchantStore(getActiveOutlet);
   const [pins, setPins] = useState<PopularVisitorPin[]>([]);
@@ -17,9 +21,20 @@ export function FeaturedVisitorsScreen() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => setBusyId(null), [activeOutlet?.id]);
   const pinnedReviewIds = useMemo(() => new Set(pins.map((pin) => pin.reviewId)), [pins]);
 
+  const requestGeneration = useMerchantRequestRef(0);
+  const currentOutlet = useMerchantRequestRef(activeOutlet?.id);
+  currentOutlet.current = activeOutlet?.id;
   const loadVisitors = useCallback(async () => {
+    const isOperationCurrent = captureOperation();
+    if (!isOperationCurrent()) return;
+
+    const request = ++requestGeneration.current;
+    const outletId = activeOutlet?.id;
+    const isCurrent = () =>
+      request === requestGeneration.current && outletId === currentOutlet.current;
     if (!activeOutlet) {
       setPins([]);
       setCandidates([]);
@@ -34,14 +49,22 @@ export function FeaturedVisitorsScreen() {
         merchant.listPopularVisitorPins(activeOutlet.id),
         merchant.listPopularVisitorCandidates(activeOutlet.id),
       ]);
+      if (!isOperationCurrent()) return;
+
+      if (!isCurrent()) return;
       setPins(activePins);
       setCandidates(reviewCandidates);
     } catch (caughtError) {
+      if (!isOperationCurrent()) return;
+
+      if (!isCurrent()) return;
       setError(
         caughtError instanceof Error ? caughtError.message : "Unable to load featured visitors.",
       );
     } finally {
-      setIsLoading(false);
+      if (isOperationCurrent()) {
+        if (isCurrent()) setIsLoading(false);
+      }
     }
   }, [activeOutlet]);
 
@@ -51,40 +74,64 @@ export function FeaturedVisitorsScreen() {
 
   const handlePin = useCallback(
     async (candidate: PopularVisitorCandidate) => {
-      if (!activeOutlet || pins.length >= 6) return;
+      const isOperationCurrent = captureOperation();
+      if (!isOperationCurrent()) return;
+
+      if (busyId || !activeOutlet || pins.length >= 6) return;
       setBusyId(candidate.reviewId);
       setError(null);
       try {
         await getHungryService().merchant.pinPopularVisitor(activeOutlet.id, candidate.reviewId);
+        if (!isOperationCurrent()) return;
+
         await loadVisitors();
+        if (!isOperationCurrent()) return;
       } catch (caughtError) {
+        if (!isOperationCurrent()) return;
+
         setError(caughtError instanceof Error ? caughtError.message : "Unable to pin visitor.");
       } finally {
-        setBusyId(null);
+        if (isOperationCurrent()) {
+          setBusyId(null);
+        }
       }
     },
-    [activeOutlet, loadVisitors, pins.length],
+    [activeOutlet, loadVisitors, pins.length, busyId],
   );
 
   const handleUnpin = useCallback(
     async (pinId: string) => {
+      const isOperationCurrent = captureOperation();
+      if (!isOperationCurrent()) return;
+
+      if (busyId) return;
       setBusyId(pinId);
       setError(null);
       try {
         await getHungryService().merchant.unpinPopularVisitor(pinId);
+        if (!isOperationCurrent()) return;
+
         await loadVisitors();
+        if (!isOperationCurrent()) return;
       } catch (caughtError) {
+        if (!isOperationCurrent()) return;
+
         setError(caughtError instanceof Error ? caughtError.message : "Unable to unpin visitor.");
       } finally {
-        setBusyId(null);
+        if (isOperationCurrent()) {
+          setBusyId(null);
+        }
       }
     },
-    [loadVisitors],
+    [loadVisitors, busyId],
   );
 
   const handleMove = useCallback(
     async (pinId: string, direction: -1 | 1) => {
-      if (!activeOutlet) return;
+      const isOperationCurrent = captureOperation();
+      if (!isOperationCurrent()) return;
+
+      if (busyId || !activeOutlet) return;
       const index = pins.findIndex((pin) => pin.id === pinId);
       const targetIndex = index + direction;
       if (index < 0 || targetIndex < 0 || targetIndex >= pins.length) return;
@@ -100,17 +147,23 @@ export function FeaturedVisitorsScreen() {
           activeOutlet.id,
           reordered.map((pin) => pin.id),
         );
+        if (!isOperationCurrent()) return;
+
         setPins(updated);
       } catch (caughtError) {
+        if (!isOperationCurrent()) return;
+
         setPins(previousPins);
         setError(
           caughtError instanceof Error ? caughtError.message : "Unable to reorder visitors.",
         );
       } finally {
-        setBusyId(null);
+        if (isOperationCurrent()) {
+          setBusyId(null);
+        }
       }
     },
-    [activeOutlet, pins],
+    [activeOutlet, pins, busyId],
   );
 
   if (!activeOutlet) {
@@ -196,7 +249,7 @@ export function FeaturedVisitorsScreen() {
                         variant="ghost"
                         size="sm"
                         fullWidth={false}
-                        loading={busyId === pin.id}
+                        loading={busyId !== null}
                         leftIcon={<PinOff size={15} color={palette.textSecondary} />}
                         onPress={() => handleUnpin(pin.id)}
                       />
@@ -210,7 +263,7 @@ export function FeaturedVisitorsScreen() {
                         variant="secondary"
                         size="sm"
                         fullWidth={false}
-                        disabled={index === 0 || busyId === pin.id}
+                        disabled={index === 0 || busyId !== null}
                         leftIcon={<ArrowUp size={15} color={palette.textSecondary} />}
                         onPress={() => handleMove(pin.id, -1)}
                       />
@@ -219,7 +272,7 @@ export function FeaturedVisitorsScreen() {
                         variant="secondary"
                         size="sm"
                         fullWidth={false}
-                        disabled={index === pins.length - 1 || busyId === pin.id}
+                        disabled={index === pins.length - 1 || busyId !== null}
                         leftIcon={<ArrowDown size={15} color={palette.textSecondary} />}
                         onPress={() => handleMove(pin.id, 1)}
                       />
@@ -258,7 +311,7 @@ export function FeaturedVisitorsScreen() {
                         size="sm"
                         fullWidth={false}
                         disabled={isPinned || pins.length >= 6}
-                        loading={busyId === candidate.reviewId}
+                        loading={busyId !== null}
                         leftIcon={
                           <Pin
                             size={15}

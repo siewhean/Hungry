@@ -36,16 +36,18 @@ function nowIso(): string {
 }
 
 function appendEntryUnique(entries: WheelEntry[], entry: WheelEntry): WheelEntry[] {
-  return entries.some((existing) => existing.id === entry.id) ? entries : [...entries, entry];
+  return entries.some((existing) => existing.venueId === entry.venueId)
+    ? entries
+    : [...entries, entry];
 }
 
 function dedupeEntries(entries: WheelEntry[]): WheelEntry[] {
   const seen = new Set<string>();
   return entries.filter((entry) => {
-    if (seen.has(entry.id)) {
+    if (seen.has(entry.venueId)) {
       return false;
     }
-    seen.add(entry.id);
+    seen.add(entry.venueId);
     return true;
   });
 }
@@ -78,6 +80,8 @@ interface WheelState {
   updateTrigger(triggerMode: WheelTriggerMode, triggerValue?: TriggerValue): void;
   updateEntryLimit(limit: number): void;
   triggerSpin(): void;
+  finishSpin(startedAt: number): void;
+  prepareNextSpin(): void;
   leaveParty(): void;
   reset(): void;
 
@@ -101,6 +105,7 @@ export const useWheelStore = create<WheelState>((set, get) => ({
   // ── createParty ────────────────────────────────────────────────────────────
 
   async createParty(spinMode, triggerMode, triggerValue, dietaryPreferences) {
+    get().reset();
     const partyId = generateId();
     const code = generateCode();
     const memberId = generateId();
@@ -200,7 +205,14 @@ export const useWheelStore = create<WheelState>((set, get) => ({
 
   addEntry(venueId, buildingId, label, imageUrl) {
     const { party, myMemberId, entries, _channel } = get();
-    if (!party || !myMemberId || !_channel) return;
+    if (
+      !party ||
+      !myMemberId ||
+      !_channel ||
+      party.status !== "lobby" ||
+      entries.some((entry) => entry.venueId === venueId)
+    )
+      return;
 
     if (party.maxEntriesPerMember) {
       const myEntriesCount = entries.filter((e) => e.addedByMemberId === myMemberId).length;
@@ -230,6 +242,8 @@ export const useWheelStore = create<WheelState>((set, get) => ({
 
     // Update local state immediately
     set((state) => ({ entries: appendEntryUnique(state.entries, entry) }));
+    const record = mockPartyStore.get(party.code);
+    if (record) record.entries = get().entries;
   },
 
   // ── removeEntry ────────────────────────────────────────────────────────────
@@ -270,7 +284,10 @@ export const useWheelStore = create<WheelState>((set, get) => ({
     const { party, entries, _channel } = get();
     if (!party || !_channel) return;
 
-    const seed = Math.random();
+    if (party.status === "spinning" || party.hostUserId !== get().myMemberId) return;
+    const candidates = dedupeEntries(entries.filter((entry) => !entry.isEliminated));
+    if (candidates.length < 2) return;
+    const seed = Math.min(candidates.length - 1, Math.floor(Math.random() * candidates.length));
     const startedAt = Date.now();
     const activeEntryIds = entries.filter((e) => !e.isEliminated).map((e) => e.id);
 
@@ -288,9 +305,38 @@ export const useWheelStore = create<WheelState>((set, get) => ({
             status: "spinning",
             spinSeed: seed,
             spinStartedAt: startedAt,
+            winnerEntryId: candidates[seed].id,
           }
         : null,
     }));
+  },
+
+  finishSpin(startedAt) {
+    const { party, _channel } = get();
+    if (
+      !party ||
+      party.status !== "spinning" ||
+      party.spinStartedAt !== startedAt ||
+      !party.winnerEntryId
+    )
+      return;
+    set({ party: { ...party, status: "resolved" } });
+    _channel?.broadcast({ type: "party_resolved", winnerEntryId: party.winnerEntryId });
+  },
+
+  prepareNextSpin() {
+    const { party } = get();
+    if (!party || party.status === "spinning") return;
+    set({
+      party: {
+        ...party,
+        status: "lobby",
+        currentRound: party.currentRound + 1,
+        spinSeed: undefined,
+        spinStartedAt: undefined,
+        winnerEntryId: undefined,
+      },
+    });
   },
 
   // ── leaveParty ──────────────────────────────────────────────────────────────
@@ -316,6 +362,7 @@ export const useWheelStore = create<WheelState>((set, get) => ({
         }));
         break;
       case "spin_triggered":
+        if ((get().party?.spinStartedAt ?? -1) >= event.startedAt) break;
         set((state) => ({
           party: state.party
             ? {
@@ -323,11 +370,20 @@ export const useWheelStore = create<WheelState>((set, get) => ({
                 status: "spinning",
                 spinSeed: event.seed,
                 spinStartedAt: event.startedAt,
+                winnerEntryId:
+                  event.activeEntryIds[
+                    Math.min(event.activeEntryIds.length - 1, Math.floor(event.seed))
+                  ],
               }
             : null,
         }));
         break;
       case "party_resolved":
+        if (
+          get().party?.status !== "spinning" ||
+          get().party?.winnerEntryId !== event.winnerEntryId
+        )
+          break;
         set((state) => ({
           party: state.party
             ? {

@@ -1,0 +1,261 @@
+{
+  "snapshot_id": "mr_bean_official_locator_missing_fields_refresh112_20261018",
+  "observed_at_utc": "2026-10-18T14:08:57+00:00",
+  "master_workbook_path": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "master_sha256": "ba519451ef5fa46aafcac14d67a1563365e6a15601c1ddc778d71ac20a960ef1",
+  "method": "Read-only exact SFA licence crosswalk to the official Mr Bean Singapore store locator. No delivery-platform or Mapbox sources. Search-indexed page extract opened during this review; source page crawl was reported as last week, so observation time is when reviewed, not a publisher update timestamp.",
+  "source": {
+    "publisher": "Mr Bean Singapore",
+    "url": "https://www.mrbean.com.sg/store-locator%C2%A0",
+    "official_homepage": "https://www.mrbean.com.sg/",
+    "capture_mode": "web-indexed page extract",
+    "page_status": "200 (search/open source metadata)",
+    "page_crawled": "last week as reported by web source",
+    "evidence_snippets": [
+      "65-73 Causeway Point | 1 Woodlands Square | #01-K6 | Singapore 738099 | Mon - Sun/PH: 0630 - 2230",
+      "102-110 Khatib Polyclinic | 690 Yishun Ring Rd | Level 1 | Singapore 769567 | Mon - Fri: 0700 - 1700 | Sat: 0730 - 1230 | Sun / PH: Closed",
+      "289-298 Compass One | 1 Sengkang Square | #01-28 | Singapore 545078 | Mon - Sun / PH: 0630 - 2330",
+      "260-270 Changi General Hospital | 2 Simei Street 3 | #01-02 | Singapore 529889 | Mon - Fri : 0700 - 2100 | Sat - Sun / PH: 0700 - 2000",
+      "746-755 Bukit Batok Polyclinic | 50 Bukit Batok West Ave 3 | Singapore 659164 | Mon - Fri: 0730 - 1700 | Sat: 0730 - 1230 | Sun: Closed",
+      "792-801 Choa Chu Kang Polyclinic | 2 Teck Whye Crescent | Singapore 688846 | Mon - Fri: 0730 - 1700 | Sat: 0730 - 1230 | Sun / PH: Closed",
+      "930-939 Pioneer Polyclinic | 26 Jurong West Street 61 | Singapore 648201 | Mon - Fri: 0630 - 1700 | Sat: 0630 - 1300 | Sun / PH: Closed"
+    ],
+    "evidence_sha256": "d7d638d78fa2e239e39c1fb064b5bc9b1b08badcdb8f746ef8300b494c2e0bcc"
+  },
+  "proposal_count": 19,
+  "proposals": [
+    {
+      "sfa_licence": "CE09H63N000",
+      "fnb_name": "MR BEAN",
+      "full_address_before": "Address: 1 OUTRAM ROAD SINGAPORE GENERAL HOSPITAL,Singapore 169608 LEVEL 1",
+      "field": "Website",
+      "before": null,
+      "proposed": "https://www.mrbean.com.sg/",
+      "basis": "Official Mr Bean Singapore website; name/registered operator is exact Mr Bean brand. This is brand-level website association only; it does not assert that the branch is currently open.",
+      "evidence_url": "https://www.mrbean.com.sg/store-locator%C2%A0",
+      "evidence_lines": "Official locator headed SINGAPORE with branch directory; official root site links to brand and locator."
+    },
+    {
+      "sfa_licence": "CE18W64J000",
+      "fnb_name": "MR BEAN",
+      "full_address_before": "Address: 51 UPPER SERANGOON ROAD #01-08,THE POIZ CENTRE,Singapore 347697",
+      "field": "Website",
+      "before": null,
+      "proposed": "https://www.mrbean.com.sg/",
+      "basis": "Official Mr Bean Singapore website; name/registered operator is exact Mr Bean brand. This is brand-level website association only; it does not assert that the branch is currently open.",
+      "evidence_url": "https://www.mrbean.com.sg/store-locator%C2%A0",
+      "evidence_lines": "Official locator headed SINGAPORE with branch directory; official root site links to brand and locator."
+    },
+    {
+      "sfa_licence": "J01008B000",
+      "fnb_name": "Mr Bean",
+      "full_address_before": "Address: 2 TECK WHYE CRESCENT CHOA CHU KANG POLYCLINIC,Singapore 688846",
+      "field": "Website",
+      "before": null,
+      "proposed": "https://www.mrbean.com.sg/",
+      "basis": "Official Mr Bean Singapore website; name/registered operator is exact Mr Bean brand. This is brand-level website association only; it does not assert that the branch is currently open.",
+      "evidence_url": "https://www.mrbean.com.sg/store-locator%C2%A0",
+      "evidence_lines": "Official locator headed SINGAPORE with branch directory; official root site links to brand and locator."
+    },
+    {
+      "sfa_licence": "J01008B000",
+      "fnb_name": "Mr Bean",
+      "full_address_before": "Address: 2 TECK WHYE CRESCENT CHOA CHU KANG POLYCLINIC,Singapore 688846",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "proposed": "Hours: Mon - Fri: 0730 - 1700; Sat: 0730 - 1230; Sun / PH: Closed",
+      "basis": "Official operator locator branch name/address/postal match; exact entry appears in extracted page lines.",
+      "evidence_url": "https://www.mrbean.com.sg/store-locator%C2%A0",
+      "evidence_lines": "792-801: Choa Chu Kang Polyclinic, 2 Teck Whye Crescent, Singapore 688846; hours Mon - Fri: 0730 - 1700; Sat: 0730 - 1230; Sun / PH: Closed"
+    },
+    {
+      "sfa_licence": "J03058K000",
+      "fnb_name": "MR BEAN",
+      "full_address_before": "Address: 50 BUKIT BATOK WEST AVENUE 3 BUKIT BATOK POLYCLINIC,Singapore 659164",
+      "field": "Website",
+      "before": null,
+      "proposed": "https://www.mrbean.com.sg/",
+      "basis": "Official Mr Bean Singapore website; name/registered operator is exact Mr Bean brand. This is brand-level website association only; it does not assert that the branch is currently open.",
+      "evidence_url": "https://www.mrbean.com.sg/store-locator%C2%A0",
+      "evidence_lines": "Official locator headed SINGAPORE with branch directory; official root site links to brand and locator."
+    },
+    {
+      "sfa_licence": "J03058K000",
+      "fnb_name": "MR BEAN",
+      "full_address_before": "Address: 50 BUKIT BATOK WEST AVENUE 3 BUKIT BATOK POLYCLINIC,Singapore 659164",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "proposed": "Hours: Mon - Fri: 0730 - 1700; Sat: 0730 - 1230; Sun: Closed",
+      "basis": "Official operator locator branch name/address/postal match; exact entry appears in extracted page lines.",
+      "evidence_url": "https://www.mrbean.com.sg/store-locator%C2%A0",
+      "evidence_lines": "746-755: Bukit Batok Polyclinic, 50 Bukit Batok West Ave 3, Singapore 659164; hours Mon - Fri: 0730 - 1700; Sat: 0730 - 1230; Sun: Closed"
+    },
+    {
+      "sfa_licence": "NE16478L000",
+      "fnb_name": "MR BEAN",
+      "full_address_before": "Address: 1 SENGKANG SQUARE COMPASS ONE,Singapore 545078 COMPASS ONE",
+      "field": "Website",
+      "before": null,
+      "proposed": "https://www.mrbean.com.sg/",
+      "basis": "Official Mr Bean Singapore website; name/registered operator is exact Mr Bean brand. This is brand-level website association only; it does not assert that the branch is currently open.",
+      "evidence_url": "https://www.mrbean.com.sg/store-locator%C2%A0",
+      "evidence_lines": "Official locator headed SINGAPORE with branch directory; official root site links to brand and locator."
+    },
+    {
+      "sfa_licence": "NE16478L000",
+      "fnb_name": "MR BEAN",
+      "full_address_before": "Address: 1 SENGKANG SQUARE COMPASS ONE,Singapore 545078 COMPASS ONE",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "proposed": "Hours: Mon - Sun / PH: 0630 - 2330",
+      "basis": "Official operator locator branch name/address/postal match; exact entry appears in extracted page lines.",
+      "evidence_url": "https://www.mrbean.com.sg/store-locator%C2%A0",
+      "evidence_lines": "289-298: Compass One, 1 Sengkang Square, #01-28, Singapore 545078; hours Mon - Sun / PH: 0630 - 2330"
+    },
+    {
+      "sfa_licence": "NE16700P000",
+      "fnb_name": "MR BEAN",
+      "full_address_before": "Address: 1 TAMPINES WALK #01-83,OUR TAMPINES HUB,Singapore 528523",
+      "field": "Website",
+      "before": null,
+      "proposed": "https://www.mrbean.com.sg/",
+      "basis": "Official Mr Bean Singapore website; name/registered operator is exact Mr Bean brand. This is brand-level website association only; it does not assert that the branch is currently open.",
+      "evidence_url": "https://www.mrbean.com.sg/store-locator%C2%A0",
+      "evidence_lines": "Official locator headed SINGAPORE with branch directory; official root site links to brand and locator."
+    },
+    {
+      "sfa_licence": "NW24D53J000",
+      "fnb_name": "MR BEAN",
+      "full_address_before": "Address: 690 YISHUN RING ROAD Singapore 769567 (LEVEL 1)",
+      "field": "Website",
+      "before": null,
+      "proposed": "https://www.mrbean.com.sg/",
+      "basis": "Official Mr Bean Singapore website; name/registered operator is exact Mr Bean brand. This is brand-level website association only; it does not assert that the branch is currently open.",
+      "evidence_url": "https://www.mrbean.com.sg/store-locator%C2%A0",
+      "evidence_lines": "Official locator headed SINGAPORE with branch directory; official root site links to brand and locator."
+    },
+    {
+      "sfa_licence": "NW24D53J000",
+      "fnb_name": "MR BEAN",
+      "full_address_before": "Address: 690 YISHUN RING ROAD Singapore 769567 (LEVEL 1)",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "proposed": "Hours: Mon - Fri: 0700 - 1700; Sat: 0730 - 1230; Sun / PH: Closed",
+      "basis": "Official operator locator branch name/address/postal match; exact entry appears in extracted page lines.",
+      "evidence_url": "https://www.mrbean.com.sg/store-locator%C2%A0",
+      "evidence_lines": "102-110: Khatib Polyclinic, 690 Yishun Ring Rd, Level 1, Singapore 769567; hours Mon - Fri: 0700 - 1700; Sat: 0730 - 1230; Sun / PH: Closed"
+    },
+    {
+      "sfa_licence": "NW26D98C000",
+      "fnb_name": "MR BEAN",
+      "full_address_before": "Address: 103 YISHUN RING ROAD #01-53,Singapore 760103 (PART LEFT)",
+      "field": "Website",
+      "before": null,
+      "proposed": "https://www.mrbean.com.sg/",
+      "basis": "Official Mr Bean Singapore website; name/registered operator is exact Mr Bean brand. This is brand-level website association only; it does not assert that the branch is currently open.",
+      "evidence_url": "https://www.mrbean.com.sg/store-locator%C2%A0",
+      "evidence_lines": "Official locator headed SINGAPORE with branch directory; official root site links to brand and locator."
+    },
+    {
+      "sfa_licence": "SE06356V000",
+      "fnb_name": "MR BEAN",
+      "full_address_before": "Address: 2 SIMEI STREET 3 #L1-02,CHANGI GENERAL HOSPITAL,Singapore 529889",
+      "field": "Website",
+      "before": null,
+      "proposed": "https://www.mrbean.com.sg/",
+      "basis": "Official Mr Bean Singapore website; name/registered operator is exact Mr Bean brand. This is brand-level website association only; it does not assert that the branch is currently open.",
+      "evidence_url": "https://www.mrbean.com.sg/store-locator%C2%A0",
+      "evidence_lines": "Official locator headed SINGAPORE with branch directory; official root site links to brand and locator."
+    },
+    {
+      "sfa_licence": "SE06356V000",
+      "fnb_name": "MR BEAN",
+      "full_address_before": "Address: 2 SIMEI STREET 3 #L1-02,CHANGI GENERAL HOSPITAL,Singapore 529889",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "proposed": "Hours: Mon - Fri: 0700 - 2100; Sat - Sun / PH: 0700 - 2000",
+      "basis": "Official operator locator branch name/address/postal match; exact entry appears in extracted page lines.",
+      "evidence_url": "https://www.mrbean.com.sg/store-locator%C2%A0",
+      "evidence_lines": "260-270: Changi General Hospital, 2 Simei Street 3, #01-02, Singapore 529889; workbook unit recorded #L1-02; hours Mon - Fri: 0700 - 2100; Sat - Sun / PH: 0700 - 2000"
+    },
+    {
+      "sfa_licence": "SE24E46K000",
+      "fnb_name": "Mr Bean",
+      "full_address_before": "Address: 23 SERANGOON CENTRAL #B2-04,NEX,Singapore 556083",
+      "field": "Website",
+      "before": null,
+      "proposed": "https://www.mrbean.com.sg/",
+      "basis": "Official Mr Bean Singapore website; name/registered operator is exact Mr Bean brand. This is brand-level website association only; it does not assert that the branch is currently open.",
+      "evidence_url": "https://www.mrbean.com.sg/store-locator%C2%A0",
+      "evidence_lines": "Official locator headed SINGAPORE with branch directory; official root site links to brand and locator."
+    },
+    {
+      "sfa_licence": "SW17981C000",
+      "fnb_name": "MR BEAN",
+      "full_address_before": "Address: 26 JURONG WEST STREET 61 PIONEER POLYCLINIC,Singapore 648201",
+      "field": "Website",
+      "before": null,
+      "proposed": "https://www.mrbean.com.sg/",
+      "basis": "Official Mr Bean Singapore website; name/registered operator is exact Mr Bean brand. This is brand-level website association only; it does not assert that the branch is currently open.",
+      "evidence_url": "https://www.mrbean.com.sg/store-locator%C2%A0",
+      "evidence_lines": "Official locator headed SINGAPORE with branch directory; official root site links to brand and locator."
+    },
+    {
+      "sfa_licence": "SW17981C000",
+      "fnb_name": "MR BEAN",
+      "full_address_before": "Address: 26 JURONG WEST STREET 61 PIONEER POLYCLINIC,Singapore 648201",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "proposed": "Hours: Mon - Fri: 0630 - 1700; Sat: 0630 - 1300; Sun: Closed",
+      "basis": "Official operator locator branch name/address/postal match; exact entry appears in extracted page lines.",
+      "evidence_url": "https://www.mrbean.com.sg/store-locator%C2%A0",
+      "evidence_lines": "930-939: Pioneer Polyclinic, 26 Jurong West Street 61, Singapore 648201; hours Mon - Fri: 0630 - 1700; Sat: 0630 - 1300; Sun: Closed"
+    },
+    {
+      "sfa_licence": "NW11005K000",
+      "fnb_name": "MR BEAN INTERNATIONAL PTE LTD",
+      "full_address_before": "Address: 1 WOODLANDS SQUARE #01-K06,CAUSEWAY POINT,Singapore 738099",
+      "field": "Website",
+      "before": null,
+      "proposed": "https://www.mrbean.com.sg/",
+      "basis": "Official Mr Bean Singapore website; name/registered operator is exact Mr Bean brand. This is brand-level website association only; it does not assert that the branch is currently open.",
+      "evidence_url": "https://www.mrbean.com.sg/store-locator%C2%A0",
+      "evidence_lines": "Official locator headed SINGAPORE with branch directory; official root site links to brand and locator."
+    },
+    {
+      "sfa_licence": "NW11005K000",
+      "fnb_name": "MR BEAN INTERNATIONAL PTE LTD",
+      "full_address_before": "Address: 1 WOODLANDS SQUARE #01-K06,CAUSEWAY POINT,Singapore 738099",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "proposed": "Hours: Mon - Sun/PH: 0630 - 2230",
+      "basis": "Official operator locator branch name/address/postal match; exact entry appears in extracted page lines.",
+      "evidence_url": "https://www.mrbean.com.sg/store-locator%C2%A0",
+      "evidence_lines": "65-73: Causeway Point, 1 Woodlands Square, #01-K6, Singapore 738099; hours Mon - Sun/PH: 0630 - 2230"
+    }
+  ],
+  "excluded_ambiguous": [
+    {
+      "sfa_licence": "NE16700P000",
+      "reason": "Our Tampines Hub SFA row postal code 528523 differs from official locator 529684 despite same street/unit; do not fill pending postal/address reconciliation."
+    },
+    {
+      "sfa_licence": "CE09H63N000",
+      "reason": "Singapore General Hospital entry on locator gives Block 4 Level 1 with no comparable unit; SFA row only says 1 Outram Road Level 1, association not sufficiently outlet-specific."
+    },
+    {
+      "sfa_licence": "CE18W64J000",
+      "reason": "The Poiz Centre official locator gives #01-08A while workbook SFA address shows #01-08; unit mismatch."
+    },
+    {
+      "sfa_licence": "NW26D98C000",
+      "reason": "Northpoint City locator record is #01-05, but workbook SFA row says #01-53; unit mismatch."
+    },
+    {
+      "sfa_licence": "CE26E61N000",
+      "reason": "Official locator labels Citylink Mall entry Opening Soon and provides no operating hours; no hours proposed."
+    }
+  ],
+  "integration_status": "proposal-only; no workbook edits",
+  "notes": "Website proposals use the official brand site and are not assertions of branch operating status. Seven opening-hours proposals are blank-to-value only. The Changi General Hospital SFA unit is recorded as #L1-02 while the locator says #01-02, so review unit interpretation before integration."
+}

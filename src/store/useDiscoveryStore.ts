@@ -1,3 +1,4 @@
+import { getAccountGeneration } from "@/lib/security/accountScope";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -25,6 +26,7 @@ const RECOMMENDATION_CACHE_TTL_MS = 5 * 60 * 1000;
 let popularNearbyRefreshToken = 0;
 
 interface DiscoveryState {
+  clearAccountScopedState: () => void;
   selectedBuilding?: BuildingSummary;
   selectedFloor: string;
   highlightedStallVenueId?: string;
@@ -55,6 +57,18 @@ const initialFilters: MapFilters = {
 export const useDiscoveryStore = create<DiscoveryState>()(
   persist(
     (set, get) => ({
+      clearAccountScopedState: () => {
+        popularNearbyRefreshToken++;
+        set({
+          selectedBuilding: undefined,
+          selectedFloor: "L1",
+          highlightedStallVenueId: undefined,
+          popularNearby: [],
+          decideForMe: undefined,
+          recommendationCache: {},
+          mapFilters: { ...initialFilters },
+        });
+      },
       selectedBuilding: undefined,
       selectedFloor: "L1",
       highlightedStallVenueId: undefined,
@@ -86,15 +100,16 @@ export const useDiscoveryStore = create<DiscoveryState>()(
       setHighlightedStallVenueId: (highlightedStallVenueId) => set({ highlightedStallVenueId }),
       setDecideForMe: (decideForMe) => set({ decideForMe }),
       refreshPopularNearby: async () => {
+        const generation = getAccountGeneration();
         const refreshToken = ++popularNearbyRefreshToken;
         try {
           const nearby = await Promise.resolve(getDataRepository().listPopularNearby());
-          if (refreshToken !== popularNearbyRefreshToken) {
+          if (refreshToken !== popularNearbyRefreshToken || generation !== getAccountGeneration()) {
             return;
           }
           set({ popularNearby: Array.isArray(nearby) ? nearby : [] });
         } catch {
-          if (refreshToken !== popularNearbyRefreshToken) {
+          if (refreshToken !== popularNearbyRefreshToken || generation !== getAccountGeneration()) {
             return;
           }
           set({ popularNearby: [] });

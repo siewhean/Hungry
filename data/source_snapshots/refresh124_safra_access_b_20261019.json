@@ -1,0 +1,232 @@
+{
+  "snapshot_date": "2026-10-19",
+  "purpose": "Official-source, exact-outlet public-access audit of the latter half of refresh123 high_confidence_exclusions and the explicitly requested Jewel Music Box record. Research-only; no workbook changes.",
+  "baseline_workbook_sha256": "fe31f2c8926d09ce592189efa8012987f6a3e878ef2977f50fe466873d567a64",
+  "current_workbook_sha256_observed": "fe31f2c8926d09ce592189efa8012987f6a3e878ef2977f50fe466873d567a64",
+  "source_snapshot": "data/source_snapshots/refresh123_restricted_access_screen_20261019.json",
+  "scope": "Source ordinals 12-22 (1-based), including Jewel Music Box SW09359J000. Exact SFA licence/address and tenant-unit matches are recorded; operator-only matches are marked weaker.",
+  "general_policy_evidence": [
+    {
+      "url": "https://www.safra.sg/docs/default-source/default-document-library/about/safra-by-laws.pdf?sfvrsn=ef984fd1_2",
+      "evidence": "§6.4 states that where applicable members sign in guests and the guest should be accompanied at all times. This is conditional; it does not establish that every tenant is member-only."
+    },
+    {
+      "url": "https://www.safra.sg/faq/safra-membership-FAQs",
+      "evidence": "SAFRA says clubs are open to members and their family/friends for most SAFRA-managed facilities; individual facility information should be checked. It does not expressly say whether the F&B tenant is independently accessible to non-members."
+    }
+  ],
+  "results": [
+    {
+      "ordinal_in_source_list": 12,
+      "sfa_licence": "SE17044E000",
+      "sfa_name": "7TH HEAVEN KTV & CAFE",
+      "sfa_address": "Address: 1 TAMPINES STREET 92 #03-02,SAFRA CLUBHOUSE (TAMPINES),Singapore 528882",
+      "crosswalk": "SAFRA Tampines #03-02",
+      "conclusion": "unresolved",
+      "reason": "Current official material confirms the tenant/outlet existence or operating details, but no current official source establishes an independent public entrance or confirms that a nonmember can reach it without member accompaniment. The general SAFRA rule is conditional and insufficient to prove exclusion. Keep pending direct access confirmation; do not remove on this evidence.",
+      "sources": [
+        {
+          "url": "https://www.safra.sg/clubs/tampines",
+          "evidence": "Current official directory lists 7th Heaven KTV & Cafe, Springleaf Prata Place, Sarpino’s Pizzeria and Keng Eng Kee Seafood as SAFRA Tampines facilities/services."
+        }
+      ]
+    },
+    {
+      "ordinal_in_source_list": 13,
+      "sfa_licence": "SE13U09X000",
+      "sfa_name": "Sarpino's",
+      "sfa_address": "Address: 1 TAMPINES STREET 92 #01-00B,SAFRA CLUBHOUSE (TAMPINES),Singapore 528882",
+      "crosswalk": "SAFRA Tampines #01-00B (SFA); SAFRA official outlet listing omits unit",
+      "conclusion": "unresolved",
+      "reason": "Current official material confirms the tenant/outlet existence or operating details, but no current official source establishes an independent public entrance or confirms that a nonmember can reach it without member accompaniment. The general SAFRA rule is conditional and insufficient to prove exclusion. Keep pending direct access confirmation; do not remove on this evidence.",
+      "sources": [
+        {
+          "url": "https://sfpreprod.safra.sg/amenities-offerings/sarpino%27s-pizzeria",
+          "evidence": "Official SAFRA listing identifies Sarpino’s at Tampines and daily hours, but omits unit and public-entry conditions."
+        },
+        {
+          "url": "https://www.safra.sg/clubs/tampines",
+          "evidence": "Current official directory lists 7th Heaven KTV & Cafe, Springleaf Prata Place, Sarpino’s Pizzeria and Keng Eng Kee Seafood as SAFRA Tampines facilities/services."
+        }
+      ]
+    },
+    {
+      "ordinal_in_source_list": 14,
+      "sfa_licence": "SE19495K000",
+      "sfa_name": "SPRINGLEAF PRATA PLACE",
+      "sfa_address": "Address: 1 TAMPINES STREET 92 #01-K1,SAFRA TAMPINES,Singapore 528882",
+      "crosswalk": "SAFRA Tampines #01-K1",
+      "conclusion": "unresolved",
+      "reason": "Current official material confirms the tenant/outlet existence or operating details, but no current official source establishes an independent public entrance or confirms that a nonmember can reach it without member accompaniment. The general SAFRA rule is conditional and insufficient to prove exclusion. Keep pending direct access confirmation; do not remove on this evidence.",
+      "sources": [
+        {
+          "url": "https://www.safra.sg/amenities-offerings/springleaf-prata-place",
+          "evidence": "Official outlet listing gives SAFRA Yishun #01-07, SAFRA Tampines #01-K1; lists family/friends marketing language and member benefit, but does not establish entry policy."
+        },
+        {
+          "url": "https://www.safra.sg/clubs/tampines",
+          "evidence": "Current official directory lists 7th Heaven KTV & Cafe, Springleaf Prata Place, Sarpino’s Pizzeria and Keng Eng Kee Seafood as SAFRA Tampines facilities/services."
+        }
+      ]
+    },
+    {
+      "ordinal_in_source_list": 15,
+      "sfa_licence": "S88236N000",
+      "sfa_name": "KENG ENG KEE SEAFOOD",
+      "sfa_address": "Address: 1A TAMPINES STREET 92 #01-K2,SAFRA CLUBHOUSE (TAMPINES),Singapore 528882",
+      "crosswalk": "SAFRA Tampines #01-K2; official tenant page says #01-K2/K3",
+      "conclusion": "unresolved",
+      "reason": "Current official material confirms the tenant/outlet existence or operating details, but no current official source establishes an independent public entrance or confirms that a nonmember can reach it without member accompaniment. The general SAFRA rule is conditional and insufficient to prove exclusion. Keep pending direct access confirmation; do not remove on this evidence.",
+      "sources": [
+        {
+          "url": "https://www.safra.sg/whats-on/keng-eng-kee-seafood-%28kek%29",
+          "evidence": "Official page identifies KEK at SAFRA Tampines #01-K2/K3 and offers dine-in, with member discount; does not say whether nonmembers may enter independently."
+        },
+        {
+          "url": "https://www.safra.sg/clubs/tampines",
+          "evidence": "Current official directory lists 7th Heaven KTV & Cafe, Springleaf Prata Place, Sarpino’s Pizzeria and Keng Eng Kee Seafood as SAFRA Tampines facilities/services."
+        }
+      ]
+    },
+    {
+      "ordinal_in_source_list": 16,
+      "sfa_licence": "NW12G11V000",
+      "sfa_name": "MCDONALD'S",
+      "sfa_address": "Address: 60 YISHUN AVENUE 4 #01-11,SAFRA YISHUN COUNTRY CLUB,Singapore 769027",
+      "crosswalk": "SAFRA Yishun #01-11",
+      "conclusion": "unresolved",
+      "reason": "Current official material confirms the tenant/outlet existence or operating details, but no current official source establishes an independent public entrance or confirms that a nonmember can reach it without member accompaniment. The general SAFRA rule is conditional and insufficient to prove exclusion. Keep pending direct access confirmation; do not remove on this evidence.",
+      "sources": [
+        {
+          "url": "https://www.safra.sg/amenities-offerings/mcdonalds",
+          "evidence": "Official SAFRA listing gives Yishun branch at #01-11 and 24-hour daily operations; no statement about public independent entrance."
+        },
+        {
+          "url": "https://www.safra.sg/clubs/yishun",
+          "evidence": "Current official directory lists HaveFun Karaoke, Springleaf Prata Place, McDonald’s and Eatzi Gourmet at SAFRA Yishun."
+        }
+      ]
+    },
+    {
+      "ordinal_in_source_list": 17,
+      "sfa_licence": "B00034X000",
+      "sfa_name": "eatzi gourmet",
+      "sfa_address": "Address: 60 YISHUN AVENUE 4 SAFRA YISHUN CLUB HOUSE,Singapore 769027",
+      "crosswalk": "SAFRA Yishun, 60 Yishun Avenue 4; official outlet page omits unit",
+      "conclusion": "unresolved",
+      "reason": "Current official material confirms the tenant/outlet existence or operating details, but no current official source establishes an independent public entrance or confirms that a nonmember can reach it without member accompaniment. The general SAFRA rule is conditional and insufficient to prove exclusion. Keep pending direct access confirmation; do not remove on this evidence.",
+      "sources": [
+        {
+          "url": "https://sfadminpreprod.safra.sg/amenities-offerings/eatzi-gourmet-steakhouse-bistro",
+          "evidence": "Official SAFRA listing describes meals, set meals and private functions at Yishun; address is 60 Yishun Avenue 4, but it omits unit and public entry policy."
+        },
+        {
+          "url": "https://www.safra.sg/clubs/yishun",
+          "evidence": "Current official directory lists HaveFun Karaoke, Springleaf Prata Place, McDonald’s and Eatzi Gourmet at SAFRA Yishun."
+        }
+      ]
+    },
+    {
+      "ordinal_in_source_list": 18,
+      "sfa_licence": "NW20C50V000",
+      "sfa_name": "SPRINGLEAF PRATA PLACE",
+      "sfa_address": "Address: 60 YISHUN AVENUE 4 #01-07,SAFRA COUNTRY CLUB (YISHUN),Singapore 769027",
+      "crosswalk": "SAFRA Yishun #01-07",
+      "conclusion": "unresolved",
+      "reason": "Current official material confirms the tenant/outlet existence or operating details, but no current official source establishes an independent public entrance or confirms that a nonmember can reach it without member accompaniment. The general SAFRA rule is conditional and insufficient to prove exclusion. Keep pending direct access confirmation; do not remove on this evidence.",
+      "sources": [
+        {
+          "url": "https://www.safra.sg/amenities-offerings/springleaf-prata-place",
+          "evidence": "Official outlet listing gives SAFRA Yishun #01-07, SAFRA Tampines #01-K1; lists family/friends marketing language and member benefit, but does not establish entry policy."
+        },
+        {
+          "url": "https://www.safra.sg/clubs/yishun",
+          "evidence": "Current official directory lists HaveFun Karaoke, Springleaf Prata Place, McDonald’s and Eatzi Gourmet at SAFRA Yishun."
+        }
+      ]
+    },
+    {
+      "ordinal_in_source_list": 19,
+      "sfa_licence": "NW20D44C000",
+      "sfa_name": "HAVE FUN YISHUN",
+      "sfa_address": "Address: 60 YISHUN AVENUE 4 #01-05,#01-06,SAFRA COUNTRY CLUB (YISHUN),Singapore 769027",
+      "crosswalk": "SAFRA Yishun #01-05/#01-06; official page #01-04/05/06",
+      "conclusion": "unresolved",
+      "reason": "Current official material confirms the tenant/outlet existence or operating details, but no current official source establishes an independent public entrance or confirms that a nonmember can reach it without member accompaniment. The general SAFRA rule is conditional and insufficient to prove exclusion. Keep pending direct access confirmation; do not remove on this evidence.",
+      "sources": [
+        {
+          "url": "https://www.safra.sg/whats-on/havefun-karaoke",
+          "evidence": "Official page identifies HaveFun Karaoke at Yishun #01-04/05/06, gives daily hours and public-facing entertainment copy; no express entry eligibility."
+        },
+        {
+          "url": "https://www.safra.sg/clubs/yishun",
+          "evidence": "Current official directory lists HaveFun Karaoke, Springleaf Prata Place, McDonald’s and Eatzi Gourmet at SAFRA Yishun."
+        }
+      ]
+    },
+    {
+      "ordinal_in_source_list": 20,
+      "sfa_licence": "SW23625P000",
+      "sfa_name": "BURGER KING",
+      "sfa_address": "Address: 28 CHOA CHU KANG DRIVE #01-01,SAFRA,Singapore 689964",
+      "crosswalk": "SAFRA Choa Chu Kang #01-01; matches official locator",
+      "conclusion": "public",
+      "reason": "An official 24/7 drive-through is tied to the exact licensed outlet, providing direct service without establishing a need to enter the clubhouse.",
+      "sources": [
+        {
+          "url": "https://www.burgerking.com.sg/Locator/Details/89",
+          "evidence": "Official Burger King locator maps SAFRA Choa Chu Kang branch to 28 Choa Chu Kang Drive, #01-01 and lists 24-hour opening."
+        },
+        {
+          "url": "https://www.safra.sg/whats-on/saf-collection-bins",
+          "evidence": "SAFRA says its 24/7 collection bin at Choa Chu Kang is at Level 1 next to the service lift, at the end of the Burger King drive-through. This establishes a drive-through serving the exact Burger King outlet outside the ordinary clubhouse dining route."
+        },
+        {
+          "url": "https://www.safra.sg/clubs/choa-chu-kang",
+          "evidence": "Current official directory lists Burger King and Food Paradise at SAFRA Choa Chu Kang."
+        }
+      ]
+    },
+    {
+      "ordinal_in_source_list": 21,
+      "sfa_licence": "SW23549E000",
+      "sfa_name": "Food Paradise Enterprise Holding Pte Ltd",
+      "sfa_address": "Address: 28 CHOA CHU KANG DRIVE #01-02,SAFRA,Singapore 689964",
+      "crosswalk": "SAFRA Choa Chu Kang #01-02; official club directory lists Food Paradise but no unit/operator crosswalk",
+      "conclusion": "unresolved",
+      "reason": "Current official material confirms the tenant/outlet existence or operating details, but no current official source establishes an independent public entrance or confirms that a nonmember can reach it without member accompaniment. The general SAFRA rule is conditional and insufficient to prove exclusion. Keep pending direct access confirmation; do not remove on this evidence.",
+      "sources": [
+        {
+          "url": "https://www.safra.sg/clubs/choa-chu-kang",
+          "evidence": "Current official directory lists Burger King and Food Paradise at SAFRA Choa Chu Kang."
+        }
+      ]
+    },
+    {
+      "ordinal_in_source_list": 22,
+      "sfa_licence": "SW09359J000",
+      "sfa_name": "Jewel Music Box",
+      "sfa_address": "Address: 333 BOON LAY WAY #3A-01,SAFRA CLUBHOUSE (JURONG),Singapore 649848",
+      "crosswalk": "SAFRA Jurong #3A-01; current SAFRA vendor list supports tenant presence, no unit/public entry",
+      "conclusion": "unresolved",
+      "reason": "Current official material confirms the tenant/outlet existence or operating details, but no current official source establishes an independent public entrance or confirms that a nonmember can reach it without member accompaniment. The general SAFRA rule is conditional and insufficient to prove exclusion. Keep pending direct access confirmation; do not remove on this evidence.",
+      "sources": [
+        {
+          "url": "https://www.safra.sg/promotions/happy-birthday-from-safra",
+          "evidence": "Current SAFRA vendor listing includes Jewel Music Box under SAFRA Jurong. Exact unit/public entry not shown."
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "public": 1,
+    "exclude": 0,
+    "unresolved": 10
+  },
+  "decision_rule": "Exclude only when current official evidence establishes that ordinary public access is unavailable; public only when official evidence shows customers can reach the exact outlet without relying on a member to sign them in/accompany them. Tenant listings, hours, member discounts, historical vendor lists, or SFA licensing do not alone prove access.",
+  "limitations": [
+    "SAFRA By-Laws §6.4 is conditional (“where applicable”), not a blanket statement that all clubhouses or F&B tenants are members-only.",
+    "For 10 of 11 records, current official sources found confirm the tenant or outlet data but do not expressly settle nonmember route/access. These remain unresolved rather than being removed.",
+    "Burger King is classified public because official SAFRA documentation locates a 24/7 drive-through at the end of the exact outlet; official Burger King locator ties the outlet to #01-01 and 24-hour opening."
+  ]
+}

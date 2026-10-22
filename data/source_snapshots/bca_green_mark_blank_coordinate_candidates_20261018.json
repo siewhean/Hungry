@@ -1,0 +1,2847 @@
+{
+  "snapshot_type": "read_only_blank_coordinate_candidate_crosswalk",
+  "created_at_sgt": "2026-10-18",
+  "workbook_path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "8f5a4bd2805b3842da9c169762badce6aed8a47d0f5560de5868454cd1f4b30f",
+  "source": {
+    "agency": "Building and Construction Authority (BCA)",
+    "dataset": "Green Mark Buildings (GEOJSON)",
+    "dataset_id": "d_da116ef216e3fb501846e1c9faf7e683",
+    "source_page": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+    "download_method": "data.gov.sg public poll-download API",
+    "downloaded_file_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+    "licence": "Singapore Open Data Licence; data.gov.sg marks free for personal and commercial use",
+    "published_dataset_last_updated": "2026-04-18",
+    "downloaded_at_sgt": "2026-10-18",
+    "feature_count": 2919,
+    "caveat": "BCA dataset is for Green Mark buildings, not restaurants. Coordinates are building/address-level and cannot identify the outlet unit. Exact postal match is necessary but not sufficient for public access or location identity."
+  },
+  "match_method": "Exact six-digit postal code match between a blank-latitude/longitude workbook row and BCA ADDRESSPOSTALCODE; candidate coordinates are GeoJSON [longitude, latitude]. No fuzzy name/address joins.",
+  "summary": {
+    "workbook_blank_coordinate_rows": 2546,
+    "candidate_rows_exact_postal_match": 79,
+    "unique_postal_codes": 13,
+    "provisional_public_venue_candidates": 10,
+    "excluded_or_held_for_access_review": 69,
+    "workbook_modified": false
+  },
+  "candidates": [
+    {
+      "sfa_licence": "SW09816A000",
+      "fnb_name": "15F",
+      "business_type": "Food Cart (Take Away)",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: SENTOSA GATEWAY #01-K221,USS,Singapore 098269 SCI-FI PLANET YEN",
+      "postal_code": "098269",
+      "candidate_latitude": 1.2562898155044109,
+      "candidate_longitude": 103.81993474428393,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Resorts World Sentosa Beach Villas",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 10264
+        },
+        {
+          "name": "Resorts World Sentosa",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 10555
+        },
+        {
+          "name": "Resorts World Sentosa - Hotel Michael",
+          "award": "GoldPlus",
+          "description": "2020",
+          "objectid": 10766
+        },
+        {
+          "name": "Resorts World Sentosa - Maritime Experiential Museum",
+          "award": "Platinum",
+          "description": "2016",
+          "objectid": 10767
+        },
+        {
+          "name": "Resorts World Sentosa - Hard Rock Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 10951
+        },
+        {
+          "name": "Resort World Sentosa - Equarius Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 11289
+        },
+        {
+          "name": "Resorts World Convention Centre",
+          "award": "Platinum",
+          "description": "2017",
+          "objectid": 11677
+        },
+        {
+          "name": "Resorts World Sentosa - Festive Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 11894
+        },
+        {
+          "name": "Resorts World Sentosa ESPA",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 12211
+        },
+        {
+          "name": "Resorts World Sentosa Hotel Michael",
+          "award": "GoldPlus",
+          "description": "2014",
+          "objectid": 12265
+        },
+        {
+          "name": "Resort World Sentosa - Marine Life Park",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 12280
+        }
+      ],
+      "disposition": "provisional_public_venue_candidate",
+      "access_note": "Universal Studios Singapore / Resorts World Sentosa; ticketed public venue. Exact postal match; point is complex-level, not unit-level."
+    },
+    {
+      "sfa_licence": "SW09812J000",
+      "fnb_name": "18F",
+      "business_type": "Food Cart (Take Away)",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: SENTOSA GATEWAY USS,Singapore 098269",
+      "postal_code": "098269",
+      "candidate_latitude": 1.2562898155044109,
+      "candidate_longitude": 103.81993474428393,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Resorts World Sentosa Beach Villas",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 10264
+        },
+        {
+          "name": "Resorts World Sentosa",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 10555
+        },
+        {
+          "name": "Resorts World Sentosa - Hotel Michael",
+          "award": "GoldPlus",
+          "description": "2020",
+          "objectid": 10766
+        },
+        {
+          "name": "Resorts World Sentosa - Maritime Experiential Museum",
+          "award": "Platinum",
+          "description": "2016",
+          "objectid": 10767
+        },
+        {
+          "name": "Resorts World Sentosa - Hard Rock Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 10951
+        },
+        {
+          "name": "Resort World Sentosa - Equarius Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 11289
+        },
+        {
+          "name": "Resorts World Convention Centre",
+          "award": "Platinum",
+          "description": "2017",
+          "objectid": 11677
+        },
+        {
+          "name": "Resorts World Sentosa - Festive Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 11894
+        },
+        {
+          "name": "Resorts World Sentosa ESPA",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 12211
+        },
+        {
+          "name": "Resorts World Sentosa Hotel Michael",
+          "award": "GoldPlus",
+          "description": "2014",
+          "objectid": 12265
+        },
+        {
+          "name": "Resort World Sentosa - Marine Life Park",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 12280
+        }
+      ],
+      "disposition": "provisional_public_venue_candidate",
+      "access_note": "Universal Studios Singapore / Resorts World Sentosa; ticketed public venue. Exact postal match; point is complex-level, not unit-level."
+    },
+    {
+      "sfa_licence": "CE07024N000",
+      "fnb_name": "7-Eleven",
+      "business_type": "Takeaway",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 10/1 BUANGKOK VIEW INSTITUTE OF MENTAL HEALTH,Singapore 539747 Level 1 Unit 11-130",
+      "postal_code": "539747",
+      "candidate_latitude": 1.3815895497997452,
+      "candidate_longitude": 103.88334880331543,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Institute of Mental Health New Administration Building",
+          "award": "Gold",
+          "description": "2014",
+          "objectid": 10303
+        },
+        {
+          "name": "Institute of Mental Health IMH Block 3 and 6",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 12033
+        }
+      ],
+      "disposition": "hold_access_review",
+      "access_note": "Institute of Mental Health; public-access and outlet access restrictions need review."
+    },
+    {
+      "sfa_licence": "CE18808N006",
+      "fnb_name": "ASAM TREE NASI PADANG",
+      "business_type": "Foodcourt",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 1 ANCHORVALE STREET #01-21,SENGKANG GENERAL HOSPITAL,Singapore 544835",
+      "postal_code": "544835",
+      "candidate_latitude": 1.3960223803739464,
+      "candidate_longitude": 103.89183405437679,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Sengkang General and Community Hospitals",
+          "award": "Platinum",
+          "description": "2014",
+          "objectid": 11946
+        }
+      ],
+      "disposition": "hold_access_review",
+      "access_note": "Sengkang General / Community Hospital; public-access and canteen status require review."
+    },
+    {
+      "sfa_licence": "CE18808N007",
+      "fnb_name": "AYAM PENYET",
+      "business_type": "Foodcourt",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 1 ANCHORVALE STREET #01-21,SENGKANG GENERAL HOSPITAL,Singapore 544835",
+      "postal_code": "544835",
+      "candidate_latitude": 1.3960223803739464,
+      "candidate_longitude": 103.89183405437679,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Sengkang General and Community Hospitals",
+          "award": "Platinum",
+          "description": "2014",
+          "objectid": 11946
+        }
+      ],
+      "disposition": "hold_access_review",
+      "access_note": "Sengkang General / Community Hospital; public-access and canteen status require review."
+    },
+    {
+      "sfa_licence": "CE18808N009",
+      "fnb_name": "BAN MIAN & FISH SOUP",
+      "business_type": "Foodcourt",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 1 ANCHORVALE STREET #01-21,SENGKANG COMMUNITY HOSPITAL,Singapore 544835",
+      "postal_code": "544835",
+      "candidate_latitude": 1.3960223803739464,
+      "candidate_longitude": 103.89183405437679,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Sengkang General and Community Hospitals",
+          "award": "Platinum",
+          "description": "2014",
+          "objectid": 11946
+        }
+      ],
+      "disposition": "hold_access_review",
+      "access_note": "Sengkang General / Community Hospital; public-access and canteen status require review."
+    },
+    {
+      "sfa_licence": "C81041N007",
+      "fnb_name": "Ba Wei Ban Mian",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 21 LOWER KENT RIDGE ROAD Faculty of Arts and Social Sciences,Singapore 119077 The Deck Canteen",
+      "postal_code": "119077",
+      "candidate_latitude": 1.3013273095479683,
+      "candidate_longitude": 103.77427725965474,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "University Hall, National University of Singapore",
+          "award": "GoldPlus",
+          "description": "2012",
+          "objectid": 9673
+        },
+        {
+          "name": "University Hall",
+          "award": "Platinum",
+          "description": "2021",
+          "objectid": 10079
+        },
+        {
+          "name": "University Hall, National University of Singapore (1st Recertification)",
+          "award": "GoldPlus",
+          "description": "2016",
+          "objectid": 10920
+        },
+        {
+          "name": "School of Computing Block COM3 at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 11738
+        },
+        {
+          "name": "National University of Singapore University Town",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 11602
+        }
+      ],
+      "disposition": "exclude_institutional_canteen",
+      "access_note": "NUS campus / The Deck canteen; excluded under user public-access rule."
+    },
+    {
+      "sfa_licence": "SW09823B000",
+      "fnb_name": "cairo market",
+      "business_type": "Food Cart (Take Away)",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: SENTOSA GATEWAY #01-K202,USS,Singapore 098269 EGYPT CAIRO MARKET",
+      "postal_code": "098269",
+      "candidate_latitude": 1.2562898155044109,
+      "candidate_longitude": 103.81993474428393,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Resorts World Sentosa Beach Villas",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 10264
+        },
+        {
+          "name": "Resorts World Sentosa",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 10555
+        },
+        {
+          "name": "Resorts World Sentosa - Hotel Michael",
+          "award": "GoldPlus",
+          "description": "2020",
+          "objectid": 10766
+        },
+        {
+          "name": "Resorts World Sentosa - Maritime Experiential Museum",
+          "award": "Platinum",
+          "description": "2016",
+          "objectid": 10767
+        },
+        {
+          "name": "Resorts World Sentosa - Hard Rock Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 10951
+        },
+        {
+          "name": "Resort World Sentosa - Equarius Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 11289
+        },
+        {
+          "name": "Resorts World Convention Centre",
+          "award": "Platinum",
+          "description": "2017",
+          "objectid": 11677
+        },
+        {
+          "name": "Resorts World Sentosa - Festive Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 11894
+        },
+        {
+          "name": "Resorts World Sentosa ESPA",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 12211
+        },
+        {
+          "name": "Resorts World Sentosa Hotel Michael",
+          "award": "GoldPlus",
+          "description": "2014",
+          "objectid": 12265
+        },
+        {
+          "name": "Resort World Sentosa - Marine Life Park",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 12280
+        }
+      ],
+      "disposition": "provisional_public_venue_candidate",
+      "access_note": "Universal Studios Singapore / Resorts World Sentosa; ticketed public venue. Exact postal match; point is complex-level, not unit-level."
+    },
+    {
+      "sfa_licence": "C97162E006",
+      "fnb_name": "CCT ENTERPRISE PTE LTD",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 33 HARBOUR DRIVE PASIR PANJANG TERMINAL BUILDING,Singapore 117606",
+      "postal_code": "117606",
+      "candidate_latitude": 1.2757582120112176,
+      "candidate_longitude": 103.7690968144275,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Pasir Panjang Terminal Building",
+          "award": "Gold",
+          "description": "2012",
+          "objectid": 10141
+        },
+        {
+          "name": "Pasir Panjang Terminal Building",
+          "award": "Gold",
+          "description": "2019",
+          "objectid": 10531
+        }
+      ],
+      "disposition": "exclude_restricted_or_industrial",
+      "access_note": "Pasir Panjang terminal facility; public-access eligibility not established."
+    },
+    {
+      "sfa_licence": "C97162E005",
+      "fnb_name": "CCT ENTERPRISE PTE LTD",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 33 HARBOUR DRIVE PASIR PANJANG TERMINAL BUILDING,Singapore 117606 BUILDING 1",
+      "postal_code": "117606",
+      "candidate_latitude": 1.2757582120112176,
+      "candidate_longitude": 103.7690968144275,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Pasir Panjang Terminal Building",
+          "award": "Gold",
+          "description": "2012",
+          "objectid": 10141
+        },
+        {
+          "name": "Pasir Panjang Terminal Building",
+          "award": "Gold",
+          "description": "2019",
+          "objectid": 10531
+        }
+      ],
+      "disposition": "exclude_restricted_or_industrial",
+      "access_note": "Pasir Panjang terminal facility; public-access eligibility not established."
+    },
+    {
+      "sfa_licence": "C97162E001",
+      "fnb_name": "CHAMBER FINE FOOD PTE LTD",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 33 HARBOUR DRIVE PASIR PANJANG TERMINAL BUILDING 1,Singapore 117606",
+      "postal_code": "117606",
+      "candidate_latitude": 1.2757582120112176,
+      "candidate_longitude": 103.7690968144275,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Pasir Panjang Terminal Building",
+          "award": "Gold",
+          "description": "2012",
+          "objectid": 10141
+        },
+        {
+          "name": "Pasir Panjang Terminal Building",
+          "award": "Gold",
+          "description": "2019",
+          "objectid": 10531
+        }
+      ],
+      "disposition": "exclude_restricted_or_industrial",
+      "access_note": "Pasir Panjang terminal facility; public-access eligibility not established."
+    },
+    {
+      "sfa_licence": "CE18J56V000",
+      "fnb_name": "CHEERS",
+      "business_type": "Takeaway",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 1 ANCHORVALE STREET #01-23,SENGKANG COMMUNITY HOSPITAL,Singapore 544835 SENGKANG COMMUNITY HOSPITAL",
+      "postal_code": "544835",
+      "candidate_latitude": 1.3960223803739464,
+      "candidate_longitude": 103.89183405437679,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Sengkang General and Community Hospitals",
+          "award": "Platinum",
+          "description": "2014",
+          "objectid": 11946
+        }
+      ],
+      "disposition": "hold_access_review",
+      "access_note": "Sengkang General / Community Hospital; public-access and canteen status require review."
+    },
+    {
+      "sfa_licence": "SW16921N000",
+      "fnb_name": "CHENNAI TRADING & SUPERMARKET",
+      "business_type": "Supermarket (Large) - Sale area more than 200 sq metres",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 1 JALAN PAPAN #01-35,#01-36,Singapore 619392",
+      "postal_code": "619392",
+      "candidate_latitude": 1.320484248168483,
+      "candidate_longitude": 103.72672284196923,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Jalan Terusan Recreation Centre",
+          "award": "Certified",
+          "description": "2016",
+          "objectid": 10481
+        }
+      ],
+      "disposition": "hold_access_review",
+      "access_note": "JTC Jalan Terusan Recreation Centre; public-access eligibility not established."
+    },
+    {
+      "sfa_licence": "CE18808N004",
+      "fnb_name": "Cinta Hainanese Chicken Rice",
+      "business_type": "Foodcourt",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 1 ANCHORVALE STREET #01-21,SENGKANG COMMUNITY HOSPITAL,Singapore 544835",
+      "postal_code": "544835",
+      "candidate_latitude": 1.3960223803739464,
+      "candidate_longitude": 103.89183405437679,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Sengkang General and Community Hospitals",
+          "award": "Platinum",
+          "description": "2014",
+          "objectid": 11946
+        }
+      ],
+      "disposition": "hold_access_review",
+      "access_note": "Sengkang General / Community Hospital; public-access and canteen status require review."
+    },
+    {
+      "sfa_licence": "SW05182K006",
+      "fnb_name": "DRINKS STALL",
+      "business_type": "Foodcourt",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 501 OLD CHOA CHU KANG ROAD Singapore 698928",
+      "postal_code": "698928",
+      "candidate_latitude": 1.3736261702753347,
+      "candidate_longitude": 103.72002272726745,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Home Team Academy",
+          "award": "Platinum Super Low E",
+          "description": "2019",
+          "objectid": 11907
+        }
+      ],
+      "disposition": "exclude_restricted_organisation",
+      "access_note": "Home Team Academy; restricted organisation facility."
+    },
+    {
+      "sfa_licence": "C81041N005",
+      "fnb_name": "E2 KITCHEN PTE. LTD.",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 21 LOWER KENT RIDGE ROAD Singapore 119077",
+      "postal_code": "119077",
+      "candidate_latitude": 1.3013273095479683,
+      "candidate_longitude": 103.77427725965474,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "University Hall, National University of Singapore",
+          "award": "GoldPlus",
+          "description": "2012",
+          "objectid": 9673
+        },
+        {
+          "name": "University Hall",
+          "award": "Platinum",
+          "description": "2021",
+          "objectid": 10079
+        },
+        {
+          "name": "University Hall, National University of Singapore (1st Recertification)",
+          "award": "GoldPlus",
+          "description": "2016",
+          "objectid": 10920
+        },
+        {
+          "name": "School of Computing Block COM3 at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 11738
+        },
+        {
+          "name": "National University of Singapore University Town",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 11602
+        }
+      ],
+      "disposition": "exclude_institutional_canteen",
+      "access_note": "NUS campus / The Deck canteen; excluded under user public-access rule."
+    },
+    {
+      "sfa_licence": "C81041N012",
+      "fnb_name": "fresh fruits & juices",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 21 LOWER KENT RIDGE ROAD THE DECK, FACULTY OF ART & SOCIAL SCIENCES,Singapore 119077",
+      "postal_code": "119077",
+      "candidate_latitude": 1.3013273095479683,
+      "candidate_longitude": 103.77427725965474,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "University Hall, National University of Singapore",
+          "award": "GoldPlus",
+          "description": "2012",
+          "objectid": 9673
+        },
+        {
+          "name": "University Hall",
+          "award": "Platinum",
+          "description": "2021",
+          "objectid": 10079
+        },
+        {
+          "name": "University Hall, National University of Singapore (1st Recertification)",
+          "award": "GoldPlus",
+          "description": "2016",
+          "objectid": 10920
+        },
+        {
+          "name": "School of Computing Block COM3 at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 11738
+        },
+        {
+          "name": "National University of Singapore University Town",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 11602
+        }
+      ],
+      "disposition": "exclude_institutional_canteen",
+      "access_note": "NUS campus / The Deck canteen; excluded under user public-access rule."
+    },
+    {
+      "sfa_licence": "SW09814C000",
+      "fnb_name": "frozen fuel",
+      "business_type": "Food Cart (Take Away)",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: SENTOSA GATEWAY #01-K212,USS,Singapore 098269 SCI-FI FROZEN FUEL",
+      "postal_code": "098269",
+      "candidate_latitude": 1.2562898155044109,
+      "candidate_longitude": 103.81993474428393,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Resorts World Sentosa Beach Villas",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 10264
+        },
+        {
+          "name": "Resorts World Sentosa",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 10555
+        },
+        {
+          "name": "Resorts World Sentosa - Hotel Michael",
+          "award": "GoldPlus",
+          "description": "2020",
+          "objectid": 10766
+        },
+        {
+          "name": "Resorts World Sentosa - Maritime Experiential Museum",
+          "award": "Platinum",
+          "description": "2016",
+          "objectid": 10767
+        },
+        {
+          "name": "Resorts World Sentosa - Hard Rock Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 10951
+        },
+        {
+          "name": "Resort World Sentosa - Equarius Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 11289
+        },
+        {
+          "name": "Resorts World Convention Centre",
+          "award": "Platinum",
+          "description": "2017",
+          "objectid": 11677
+        },
+        {
+          "name": "Resorts World Sentosa - Festive Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 11894
+        },
+        {
+          "name": "Resorts World Sentosa ESPA",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 12211
+        },
+        {
+          "name": "Resorts World Sentosa Hotel Michael",
+          "award": "GoldPlus",
+          "description": "2014",
+          "objectid": 12265
+        },
+        {
+          "name": "Resort World Sentosa - Marine Life Park",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 12280
+        }
+      ],
+      "disposition": "provisional_public_venue_candidate",
+      "access_note": "Universal Studios Singapore / Resorts World Sentosa; ticketed public venue. Exact postal match; point is complex-level, not unit-level."
+    },
+    {
+      "sfa_licence": "C81041N013",
+      "fnb_name": "GC FOOD (GIDEON 300) PTE LTD",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 21 LOWER KENT RIDGE ROAD THE DECK FACULTY OF ART & SOCIAL SCIENCES,Singapore 119077",
+      "postal_code": "119077",
+      "candidate_latitude": 1.3013273095479683,
+      "candidate_longitude": 103.77427725965474,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "University Hall, National University of Singapore",
+          "award": "GoldPlus",
+          "description": "2012",
+          "objectid": 9673
+        },
+        {
+          "name": "University Hall",
+          "award": "Platinum",
+          "description": "2021",
+          "objectid": 10079
+        },
+        {
+          "name": "University Hall, National University of Singapore (1st Recertification)",
+          "award": "GoldPlus",
+          "description": "2016",
+          "objectid": 10920
+        },
+        {
+          "name": "School of Computing Block COM3 at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 11738
+        },
+        {
+          "name": "National University of Singapore University Town",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 11602
+        }
+      ],
+      "disposition": "exclude_institutional_canteen",
+      "access_note": "NUS campus / The Deck canteen; excluded under user public-access rule."
+    },
+    {
+      "sfa_licence": "SW09820J000",
+      "fnb_name": "GOLDILOCKS FC",
+      "business_type": "Restaurant",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 30 SENTOSA GATEWAY #01-332,USS,Singapore 098269 SHREK (FFA) GOLDILOCKS F.C.",
+      "postal_code": "098269",
+      "candidate_latitude": 1.2562898155044109,
+      "candidate_longitude": 103.81993474428393,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Resorts World Sentosa Beach Villas",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 10264
+        },
+        {
+          "name": "Resorts World Sentosa",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 10555
+        },
+        {
+          "name": "Resorts World Sentosa - Hotel Michael",
+          "award": "GoldPlus",
+          "description": "2020",
+          "objectid": 10766
+        },
+        {
+          "name": "Resorts World Sentosa - Maritime Experiential Museum",
+          "award": "Platinum",
+          "description": "2016",
+          "objectid": 10767
+        },
+        {
+          "name": "Resorts World Sentosa - Hard Rock Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 10951
+        },
+        {
+          "name": "Resort World Sentosa - Equarius Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 11289
+        },
+        {
+          "name": "Resorts World Convention Centre",
+          "award": "Platinum",
+          "description": "2017",
+          "objectid": 11677
+        },
+        {
+          "name": "Resorts World Sentosa - Festive Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 11894
+        },
+        {
+          "name": "Resorts World Sentosa ESPA",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 12211
+        },
+        {
+          "name": "Resorts World Sentosa Hotel Michael",
+          "award": "GoldPlus",
+          "description": "2014",
+          "objectid": 12265
+        },
+        {
+          "name": "Resort World Sentosa - Marine Life Park",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 12280
+        }
+      ],
+      "disposition": "provisional_public_venue_candidate",
+      "access_note": "Universal Studios Singapore / Resorts World Sentosa; ticketed public venue. Exact postal match; point is complex-level, not unit-level."
+    },
+    {
+      "sfa_licence": "SW23B93L000",
+      "fnb_name": "Good Day Cafe",
+      "business_type": "Takeaway",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 11 LOWER KENT RIDGE ROAD #01-02,Singapore 119083",
+      "postal_code": "119083",
+      "candidate_latitude": 1.2969283581654976,
+      "candidate_longitude": 103.781790504575,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Medicine-Science Knowledge Hub at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 9952
+        }
+      ],
+      "disposition": "exclude_institutional_canteen",
+      "access_note": "NUS campus facility; excluded under user public-access rule."
+    },
+    {
+      "sfa_licence": "CE18808N005",
+      "fnb_name": "HAUS SPINACH & NOODLES",
+      "business_type": "Foodcourt",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 1 ANCHORVALE STREET #01-21,SENGKANG COMMUNITY HOSPITAL,Singapore 544835",
+      "postal_code": "544835",
+      "candidate_latitude": 1.3960223803739464,
+      "candidate_longitude": 103.89183405437679,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Sengkang General and Community Hospitals",
+          "award": "Platinum",
+          "description": "2014",
+          "objectid": 11946
+        }
+      ],
+      "disposition": "hold_access_review",
+      "access_note": "Sengkang General / Community Hospital; public-access and canteen status require review."
+    },
+    {
+      "sfa_licence": "CE20Q42A000",
+      "fnb_name": "Herbal Soup",
+      "business_type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 1 ANCHORVALE STREET #01-21,SENGKANG COMMUNITY HOSPITAL,Singapore 544835 MR1",
+      "postal_code": "544835",
+      "candidate_latitude": 1.3960223803739464,
+      "candidate_longitude": 103.89183405437679,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Sengkang General and Community Hospitals",
+          "award": "Platinum",
+          "description": "2014",
+          "objectid": 11946
+        }
+      ],
+      "disposition": "hold_access_review",
+      "access_note": "Sengkang General / Community Hospital; public-access and canteen status require review."
+    },
+    {
+      "sfa_licence": "CE25K13N000",
+      "fnb_name": "Hey Apple",
+      "business_type": "Food Vending Machines",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 501 STIRLING ROAD Singapore 148951",
+      "postal_code": "148951",
+      "candidate_latitude": 1.297388363536522,
+      "candidate_longitude": 103.80072903736477,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "MDIS Block A",
+          "award": "GoldPlus",
+          "description": "2013",
+          "objectid": 10158
+        },
+        {
+          "name": "MDIS Block A",
+          "award": "GoldPlus",
+          "description": "2013",
+          "objectid": 10504
+        },
+        {
+          "name": "MDIS Residences @ Stirling",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 12354
+        }
+      ],
+      "disposition": "exclude_institutional_canteen",
+      "access_note": "MDIS campus / residence; public-access eligibility not established and likely institutional."
+    },
+    {
+      "sfa_licence": "CE18808N012",
+      "fnb_name": "JIA JIA LE CUISINE F&B PTE LTD",
+      "business_type": "Foodcourt",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 1 ANCHORVALE STREET #01-21,Singapore 544835",
+      "postal_code": "544835",
+      "candidate_latitude": 1.3960223803739464,
+      "candidate_longitude": 103.89183405437679,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Sengkang General and Community Hospitals",
+          "award": "Platinum",
+          "description": "2014",
+          "objectid": 11946
+        }
+      ],
+      "disposition": "hold_access_review",
+      "access_note": "Sengkang General / Community Hospital; public-access and canteen status require review."
+    },
+    {
+      "sfa_licence": "C81041N010",
+      "fnb_name": "Jito's Dhaba",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 21 LOWER KENT RIDGE ROAD The Deck Canteen, Faculty of Arts and Social Sciences,Singapore 119077",
+      "postal_code": "119077",
+      "candidate_latitude": 1.3013273095479683,
+      "candidate_longitude": 103.77427725965474,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "University Hall, National University of Singapore",
+          "award": "GoldPlus",
+          "description": "2012",
+          "objectid": 9673
+        },
+        {
+          "name": "University Hall",
+          "award": "Platinum",
+          "description": "2021",
+          "objectid": 10079
+        },
+        {
+          "name": "University Hall, National University of Singapore (1st Recertification)",
+          "award": "GoldPlus",
+          "description": "2016",
+          "objectid": 10920
+        },
+        {
+          "name": "School of Computing Block COM3 at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 11738
+        },
+        {
+          "name": "National University of Singapore University Town",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 11602
+        }
+      ],
+      "disposition": "exclude_institutional_canteen",
+      "access_note": "NUS campus / The Deck canteen; excluded under user public-access rule."
+    },
+    {
+      "sfa_licence": "SW15E12P001",
+      "fnb_name": "JJ BAZAAR",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 1 JALAN PAPAN #01-02,TERUSAN RECREATION CENTRE,Singapore 619392",
+      "postal_code": "619392",
+      "candidate_latitude": 1.320484248168483,
+      "candidate_longitude": 103.72672284196923,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Jalan Terusan Recreation Centre",
+          "award": "Certified",
+          "description": "2016",
+          "objectid": 10481
+        }
+      ],
+      "disposition": "hold_access_review",
+      "access_note": "JTC Jalan Terusan Recreation Centre; public-access eligibility not established."
+    },
+    {
+      "sfa_licence": "SW15E12P004",
+      "fnb_name": "JTC PREMISES AT 1 JALAN PAPAN #01-05",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 1 JALAN PAPAN TERUSAN RECREATION CENTRE,Singapore 619392",
+      "postal_code": "619392",
+      "candidate_latitude": 1.320484248168483,
+      "candidate_longitude": 103.72672284196923,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Jalan Terusan Recreation Centre",
+          "award": "Certified",
+          "description": "2016",
+          "objectid": 10481
+        }
+      ],
+      "disposition": "hold_access_review",
+      "access_note": "JTC Jalan Terusan Recreation Centre; public-access eligibility not established."
+    },
+    {
+      "sfa_licence": "CE14A48X000",
+      "fnb_name": "KAFEI & CHA",
+      "business_type": "Takeaway",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 501 STIRLING ROAD MDIS,Singapore 148951 (BLK B , LEVEL 1)",
+      "postal_code": "148951",
+      "candidate_latitude": 1.297388363536522,
+      "candidate_longitude": 103.80072903736477,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "MDIS Block A",
+          "award": "GoldPlus",
+          "description": "2013",
+          "objectid": 10158
+        },
+        {
+          "name": "MDIS Block A",
+          "award": "GoldPlus",
+          "description": "2013",
+          "objectid": 10504
+        },
+        {
+          "name": "MDIS Residences @ Stirling",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 12354
+        }
+      ],
+      "disposition": "exclude_institutional_canteen",
+      "access_note": "MDIS campus / residence; public-access eligibility not established and likely institutional."
+    },
+    {
+      "sfa_licence": "C81041N003",
+      "fnb_name": "KANEDA JAPANESE CUISINE",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 21 LOWER KENT RIDGE ROAD THE DECK, FACULTY OF ART & SOCIAL SCIENCES,Singapore 119077",
+      "postal_code": "119077",
+      "candidate_latitude": 1.3013273095479683,
+      "candidate_longitude": 103.77427725965474,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "University Hall, National University of Singapore",
+          "award": "GoldPlus",
+          "description": "2012",
+          "objectid": 9673
+        },
+        {
+          "name": "University Hall",
+          "award": "Platinum",
+          "description": "2021",
+          "objectid": 10079
+        },
+        {
+          "name": "University Hall, National University of Singapore (1st Recertification)",
+          "award": "GoldPlus",
+          "description": "2016",
+          "objectid": 10920
+        },
+        {
+          "name": "School of Computing Block COM3 at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 11738
+        },
+        {
+          "name": "National University of Singapore University Town",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 11602
+        }
+      ],
+      "disposition": "exclude_institutional_canteen",
+      "access_note": "NUS campus / The Deck canteen; excluded under user public-access rule."
+    },
+    {
+      "sfa_licence": "CE22G64K000",
+      "fnb_name": "KOI",
+      "business_type": "Takeaway",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 1 ANCHORVALE STREET #01-24,SENGKANG COMMUNITY HOSPITAL,Singapore 544835",
+      "postal_code": "544835",
+      "candidate_latitude": 1.3960223803739464,
+      "candidate_longitude": 103.89183405437679,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Sengkang General and Community Hospitals",
+          "award": "Platinum",
+          "description": "2014",
+          "objectid": 11946
+        }
+      ],
+      "disposition": "hold_access_review",
+      "access_note": "Sengkang General / Community Hospital; public-access and canteen status require review."
+    },
+    {
+      "sfa_licence": "CE18808N016",
+      "fnb_name": "KOUFU PTD LTD",
+      "business_type": "Foodcourt",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 1 ANCHORVALE STREET #01-21,Singapore 544835",
+      "postal_code": "544835",
+      "candidate_latitude": 1.3960223803739464,
+      "candidate_longitude": 103.89183405437679,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Sengkang General and Community Hospitals",
+          "award": "Platinum",
+          "description": "2014",
+          "objectid": 11946
+        }
+      ],
+      "disposition": "hold_access_review",
+      "access_note": "Sengkang General / Community Hospital; public-access and canteen status require review."
+    },
+    {
+      "sfa_licence": "CE18808N000",
+      "fnb_name": "KOUFU PTE LTD",
+      "business_type": "Food Court",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 1 ANCHORVALE STREET #01-21,Singapore 544835",
+      "postal_code": "544835",
+      "candidate_latitude": 1.3960223803739464,
+      "candidate_longitude": 103.89183405437679,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Sengkang General and Community Hospitals",
+          "award": "Platinum",
+          "description": "2014",
+          "objectid": 11946
+        }
+      ],
+      "disposition": "hold_access_review",
+      "access_note": "Sengkang General / Community Hospital; public-access and canteen status require review."
+    },
+    {
+      "sfa_licence": "SW09813E000",
+      "fnb_name": "kt's grill",
+      "business_type": "Restaurant",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: SENTOSA GATEWAY #01-304,USS,Singapore 098269 NEW YORK - KT'S GRILL (L1 & L2)",
+      "postal_code": "098269",
+      "candidate_latitude": 1.2562898155044109,
+      "candidate_longitude": 103.81993474428393,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Resorts World Sentosa Beach Villas",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 10264
+        },
+        {
+          "name": "Resorts World Sentosa",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 10555
+        },
+        {
+          "name": "Resorts World Sentosa - Hotel Michael",
+          "award": "GoldPlus",
+          "description": "2020",
+          "objectid": 10766
+        },
+        {
+          "name": "Resorts World Sentosa - Maritime Experiential Museum",
+          "award": "Platinum",
+          "description": "2016",
+          "objectid": 10767
+        },
+        {
+          "name": "Resorts World Sentosa - Hard Rock Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 10951
+        },
+        {
+          "name": "Resort World Sentosa - Equarius Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 11289
+        },
+        {
+          "name": "Resorts World Convention Centre",
+          "award": "Platinum",
+          "description": "2017",
+          "objectid": 11677
+        },
+        {
+          "name": "Resorts World Sentosa - Festive Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 11894
+        },
+        {
+          "name": "Resorts World Sentosa ESPA",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 12211
+        },
+        {
+          "name": "Resorts World Sentosa Hotel Michael",
+          "award": "GoldPlus",
+          "description": "2014",
+          "objectid": 12265
+        },
+        {
+          "name": "Resort World Sentosa - Marine Life Park",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 12280
+        }
+      ],
+      "disposition": "provisional_public_venue_candidate",
+      "access_note": "Universal Studios Singapore / Resorts World Sentosa; ticketed public venue. Exact postal match; point is complex-level, not unit-level."
+    },
+    {
+      "sfa_licence": "SW19Z33C000",
+      "fnb_name": "Liang Ban Kung Fu",
+      "business_type": "Takeaway",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 21 LOWER KENT RIDGE ROAD The Deck Level 2 (Kiosk 1),Singapore 119077",
+      "postal_code": "119077",
+      "candidate_latitude": 1.3013273095479683,
+      "candidate_longitude": 103.77427725965474,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "University Hall, National University of Singapore",
+          "award": "GoldPlus",
+          "description": "2012",
+          "objectid": 9673
+        },
+        {
+          "name": "University Hall",
+          "award": "Platinum",
+          "description": "2021",
+          "objectid": 10079
+        },
+        {
+          "name": "University Hall, National University of Singapore (1st Recertification)",
+          "award": "GoldPlus",
+          "description": "2016",
+          "objectid": 10920
+        },
+        {
+          "name": "School of Computing Block COM3 at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 11738
+        },
+        {
+          "name": "National University of Singapore University Town",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 11602
+        }
+      ],
+      "disposition": "exclude_institutional_canteen",
+      "access_note": "NUS campus / The Deck canteen; excluded under user public-access rule."
+    },
+    {
+      "sfa_licence": "SW16953V000",
+      "fnb_name": "LI JI COFFEE HOUSE",
+      "business_type": "Takeaway",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 21 LOWER KENT RIDGE ROAD FRONTIER (PHASE 1), FACULTY OF SCIENCE (KIOSK 3),Singapore 119077",
+      "postal_code": "119077",
+      "candidate_latitude": 1.3013273095479683,
+      "candidate_longitude": 103.77427725965474,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "University Hall, National University of Singapore",
+          "award": "GoldPlus",
+          "description": "2012",
+          "objectid": 9673
+        },
+        {
+          "name": "University Hall",
+          "award": "Platinum",
+          "description": "2021",
+          "objectid": 10079
+        },
+        {
+          "name": "University Hall, National University of Singapore (1st Recertification)",
+          "award": "GoldPlus",
+          "description": "2016",
+          "objectid": 10920
+        },
+        {
+          "name": "School of Computing Block COM3 at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 11738
+        },
+        {
+          "name": "National University of Singapore University Town",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 11602
+        }
+      ],
+      "disposition": "exclude_institutional_canteen",
+      "access_note": "NUS campus / The Deck canteen; excluded under user public-access rule."
+    },
+    {
+      "sfa_licence": "CE18808N011",
+      "fnb_name": "Li Xing FoodStuff",
+      "business_type": "Foodcourt",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 1 ANCHORVALE STREET #01-21,SENGKANG COMMUNITY HOSPITAL,Singapore 544835",
+      "postal_code": "544835",
+      "candidate_latitude": 1.3960223803739464,
+      "candidate_longitude": 103.89183405437679,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Sengkang General and Community Hospitals",
+          "award": "Platinum",
+          "description": "2014",
+          "objectid": 11946
+        }
+      ],
+      "disposition": "hold_access_review",
+      "access_note": "Sengkang General / Community Hospital; public-access and canteen status require review."
+    },
+    {
+      "sfa_licence": "CE25I69L000",
+      "fnb_name": "luckin coffee",
+      "business_type": "Takeaway",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 10/1 BUANGKOK VIEW INSTITUTE OF MENTAL HEALTH,Singapore 539747 Level 1 Main Lobby",
+      "postal_code": "539747",
+      "candidate_latitude": 1.3815895497997452,
+      "candidate_longitude": 103.88334880331543,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Institute of Mental Health New Administration Building",
+          "award": "Gold",
+          "description": "2014",
+          "objectid": 10303
+        },
+        {
+          "name": "Institute of Mental Health IMH Block 3 and 6",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 12033
+        }
+      ],
+      "disposition": "hold_access_review",
+      "access_note": "Institute of Mental Health; public-access and outlet access restrictions need review."
+    },
+    {
+      "sfa_licence": "SW09807B000",
+      "fnb_name": "MEL'S DRIVE-IN",
+      "business_type": "Restaurant",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: SENTOSA GATEWAY #01-303,USS,Singapore 098269 HOLLYWOOD - MEL'S DRIVE-IN",
+      "postal_code": "098269",
+      "candidate_latitude": 1.2562898155044109,
+      "candidate_longitude": 103.81993474428393,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Resorts World Sentosa Beach Villas",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 10264
+        },
+        {
+          "name": "Resorts World Sentosa",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 10555
+        },
+        {
+          "name": "Resorts World Sentosa - Hotel Michael",
+          "award": "GoldPlus",
+          "description": "2020",
+          "objectid": 10766
+        },
+        {
+          "name": "Resorts World Sentosa - Maritime Experiential Museum",
+          "award": "Platinum",
+          "description": "2016",
+          "objectid": 10767
+        },
+        {
+          "name": "Resorts World Sentosa - Hard Rock Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 10951
+        },
+        {
+          "name": "Resort World Sentosa - Equarius Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 11289
+        },
+        {
+          "name": "Resorts World Convention Centre",
+          "award": "Platinum",
+          "description": "2017",
+          "objectid": 11677
+        },
+        {
+          "name": "Resorts World Sentosa - Festive Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 11894
+        },
+        {
+          "name": "Resorts World Sentosa ESPA",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 12211
+        },
+        {
+          "name": "Resorts World Sentosa Hotel Michael",
+          "award": "GoldPlus",
+          "description": "2014",
+          "objectid": 12265
+        },
+        {
+          "name": "Resort World Sentosa - Marine Life Park",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 12280
+        }
+      ],
+      "disposition": "provisional_public_venue_candidate",
+      "access_note": "Universal Studios Singapore / Resorts World Sentosa; ticketed public venue. Exact postal match; point is complex-level, not unit-level."
+    },
+    {
+      "sfa_licence": "C97162E003",
+      "fnb_name": "MIX VEGITABLE RICE",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 33 HARBOUR DRIVE PASIR PANJANG TERMINAL BUILDING 1,Singapore 117606",
+      "postal_code": "117606",
+      "candidate_latitude": 1.2757582120112176,
+      "candidate_longitude": 103.7690968144275,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Pasir Panjang Terminal Building",
+          "award": "Gold",
+          "description": "2012",
+          "objectid": 10141
+        },
+        {
+          "name": "Pasir Panjang Terminal Building",
+          "award": "Gold",
+          "description": "2019",
+          "objectid": 10531
+        }
+      ],
+      "disposition": "exclude_restricted_or_industrial",
+      "access_note": "Pasir Panjang terminal facility; public-access eligibility not established."
+    },
+    {
+      "sfa_licence": "SW08381V004",
+      "fnb_name": "Nasi Padang",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 33 HARBOUR DRIVE PASIR PANJANG TERMINAL BUILDING,Singapore 117606",
+      "postal_code": "117606",
+      "candidate_latitude": 1.2757582120112176,
+      "candidate_longitude": 103.7690968144275,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Pasir Panjang Terminal Building",
+          "award": "Gold",
+          "description": "2012",
+          "objectid": 10141
+        },
+        {
+          "name": "Pasir Panjang Terminal Building",
+          "award": "Gold",
+          "description": "2019",
+          "objectid": 10531
+        }
+      ],
+      "disposition": "exclude_restricted_or_industrial",
+      "access_note": "Pasir Panjang terminal facility; public-access eligibility not established."
+    },
+    {
+      "sfa_licence": "SW16735N000",
+      "fnb_name": "NIL",
+      "business_type": "Supermarket (Small) - Sale area 200 sq metres or less",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 1 JALAN PAPAN #01-32,#01-31,Singapore 619392",
+      "postal_code": "619392",
+      "candidate_latitude": 1.320484248168483,
+      "candidate_longitude": 103.72672284196923,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Jalan Terusan Recreation Centre",
+          "award": "Certified",
+          "description": "2016",
+          "objectid": 10481
+        }
+      ],
+      "disposition": "hold_access_review",
+      "access_note": "JTC Jalan Terusan Recreation Centre; public-access eligibility not established."
+    },
+    {
+      "sfa_licence": "SW16954X000",
+      "fnb_name": "Pasta Express",
+      "business_type": "Takeaway",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 21 LOWER KENT RIDGE ROAD FACULTY OF SCIENCE,Singapore 119077 FRONTIER (PHASE 1)",
+      "postal_code": "119077",
+      "candidate_latitude": 1.3013273095479683,
+      "candidate_longitude": 103.77427725965474,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "University Hall, National University of Singapore",
+          "award": "GoldPlus",
+          "description": "2012",
+          "objectid": 9673
+        },
+        {
+          "name": "University Hall",
+          "award": "Platinum",
+          "description": "2021",
+          "objectid": 10079
+        },
+        {
+          "name": "University Hall, National University of Singapore (1st Recertification)",
+          "award": "GoldPlus",
+          "description": "2016",
+          "objectid": 10920
+        },
+        {
+          "name": "School of Computing Block COM3 at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 11738
+        },
+        {
+          "name": "National University of Singapore University Town",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 11602
+        }
+      ],
+      "disposition": "exclude_institutional_canteen",
+      "access_note": "NUS campus / The Deck canteen; excluded under user public-access rule."
+    },
+    {
+      "sfa_licence": "SW15E12P002",
+      "fnb_name": "Pavithra Vilas",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 1 JALAN PAPAN #01-03,TERUSAN RECREATION CENTRE,Singapore 619392",
+      "postal_code": "619392",
+      "candidate_latitude": 1.320484248168483,
+      "candidate_longitude": 103.72672284196923,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Jalan Terusan Recreation Centre",
+          "award": "Certified",
+          "description": "2016",
+          "objectid": 10481
+        }
+      ],
+      "disposition": "hold_access_review",
+      "access_note": "JTC Jalan Terusan Recreation Centre; public-access eligibility not established."
+    },
+    {
+      "sfa_licence": "CE11371V001",
+      "fnb_name": "Perky Penguin Coffee",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 501 STIRLING ROAD MDIS,Singapore 148951",
+      "postal_code": "148951",
+      "candidate_latitude": 1.297388363536522,
+      "candidate_longitude": 103.80072903736477,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "MDIS Block A",
+          "award": "GoldPlus",
+          "description": "2013",
+          "objectid": 10158
+        },
+        {
+          "name": "MDIS Block A",
+          "award": "GoldPlus",
+          "description": "2013",
+          "objectid": 10504
+        },
+        {
+          "name": "MDIS Residences @ Stirling",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 12354
+        }
+      ],
+      "disposition": "exclude_institutional_canteen",
+      "access_note": "MDIS campus / residence; public-access eligibility not established and likely institutional."
+    },
+    {
+      "sfa_licence": "SW09821E000",
+      "fnb_name": "pharoh's",
+      "business_type": "Food Cart (Take Away)",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: SENTOSA GATEWAY #01-K203,USS,Singapore 098269 EGYPT PHARAOH'S-DESSERT OASIS",
+      "postal_code": "098269",
+      "candidate_latitude": 1.2562898155044109,
+      "candidate_longitude": 103.81993474428393,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Resorts World Sentosa Beach Villas",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 10264
+        },
+        {
+          "name": "Resorts World Sentosa",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 10555
+        },
+        {
+          "name": "Resorts World Sentosa - Hotel Michael",
+          "award": "GoldPlus",
+          "description": "2020",
+          "objectid": 10766
+        },
+        {
+          "name": "Resorts World Sentosa - Maritime Experiential Museum",
+          "award": "Platinum",
+          "description": "2016",
+          "objectid": 10767
+        },
+        {
+          "name": "Resorts World Sentosa - Hard Rock Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 10951
+        },
+        {
+          "name": "Resort World Sentosa - Equarius Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 11289
+        },
+        {
+          "name": "Resorts World Convention Centre",
+          "award": "Platinum",
+          "description": "2017",
+          "objectid": 11677
+        },
+        {
+          "name": "Resorts World Sentosa - Festive Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 11894
+        },
+        {
+          "name": "Resorts World Sentosa ESPA",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 12211
+        },
+        {
+          "name": "Resorts World Sentosa Hotel Michael",
+          "award": "GoldPlus",
+          "description": "2014",
+          "objectid": 12265
+        },
+        {
+          "name": "Resort World Sentosa - Marine Life Park",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 12280
+        }
+      ],
+      "disposition": "provisional_public_venue_candidate",
+      "access_note": "Universal Studios Singapore / Resorts World Sentosa; ticketed public venue. Exact postal match; point is complex-level, not unit-level."
+    },
+    {
+      "sfa_licence": "W98295E000",
+      "fnb_name": "POLAR CAFE",
+      "business_type": "Snack Counter",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 7 OUTRAM ROAD #01-01,SINGAPORE GENERAL HOSPITAL,Singapore 169608",
+      "postal_code": "169608",
+      "candidate_latitude": 1.2799396824700044,
+      "candidate_longitude": 103.8307217776313,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Singapore General Hospital (Bowyer Block A,B & C)",
+          "award": "Gold",
+          "description": "2007",
+          "objectid": 10562
+        },
+        {
+          "name": "National Cancer Center Singapore",
+          "award": "Platinum",
+          "description": "2019",
+          "objectid": 11583
+        },
+        {
+          "name": "Outram Community Hospital",
+          "award": "Platinum",
+          "description": "2018",
+          "objectid": 12212
+        }
+      ],
+      "disposition": "hold_access_review",
+      "access_note": "Singapore General Hospital location; public-access and canteen status require review."
+    },
+    {
+      "sfa_licence": "CE05181E000",
+      "fnb_name": "#RAVE",
+      "business_type": "within Pubs/Bars/Nightclubs/Disco",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: RAFFLES BOULEVARD #01-213,MARINA SQUARE,Singapore 039594",
+      "postal_code": "039594",
+      "candidate_latitude": 1.2914552590652084,
+      "candidate_longitude": 103.85700734100752,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Marina Square",
+          "award": "Certified",
+          "description": "2020",
+          "objectid": 9620
+        },
+        {
+          "name": "Parkroyal Collection Marina Bay, Singapore",
+          "award": "Gold",
+          "description": "2020",
+          "objectid": 10931
+        },
+        {
+          "name": "DP Architects Pte Ltd",
+          "award": "Gold",
+          "description": "2017",
+          "objectid": 12326
+        },
+        {
+          "name": "Marina Mandarin Singapore",
+          "award": "Gold",
+          "description": "2015",
+          "objectid": 12428
+        }
+      ],
+      "disposition": "provisional_public_venue_candidate",
+      "access_note": "Marina Square; public shopping mall. Exact postal match; BCA labels include Marina Square."
+    },
+    {
+      "sfa_licence": "CE21L84L000",
+      "fnb_name": "Roasted Delights",
+      "business_type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 1 ANCHORVALE STREET #01-21,SENGKANG COMMUNITY HOSPITAL,Singapore 544835 (MR3)",
+      "postal_code": "544835",
+      "candidate_latitude": 1.3960223803739464,
+      "candidate_longitude": 103.89183405437679,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Sengkang General and Community Hospitals",
+          "award": "Platinum",
+          "description": "2014",
+          "objectid": 11946
+        }
+      ],
+      "disposition": "hold_access_review",
+      "access_note": "Sengkang General / Community Hospital; public-access and canteen status require review."
+    },
+    {
+      "sfa_licence": "SW15E12P006",
+      "fnb_name": "sai foods",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 1 JALAN PAPAN TERUSAN RECREATION CENTRE,Singapore 619392",
+      "postal_code": "619392",
+      "candidate_latitude": 1.320484248168483,
+      "candidate_longitude": 103.72672284196923,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Jalan Terusan Recreation Centre",
+          "award": "Certified",
+          "description": "2016",
+          "objectid": 10481
+        }
+      ],
+      "disposition": "hold_access_review",
+      "access_note": "JTC Jalan Terusan Recreation Centre; public-access eligibility not established."
+    },
+    {
+      "sfa_licence": "SW15E12P003",
+      "fnb_name": "Samy's Kitchen",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 1 JALAN PAPAN Singapore 619392 #01-04",
+      "postal_code": "619392",
+      "candidate_latitude": 1.320484248168483,
+      "candidate_longitude": 103.72672284196923,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Jalan Terusan Recreation Centre",
+          "award": "Certified",
+          "description": "2016",
+          "objectid": 10481
+        }
+      ],
+      "disposition": "hold_access_review",
+      "access_note": "JTC Jalan Terusan Recreation Centre; public-access eligibility not established."
+    },
+    {
+      "sfa_licence": "C81041N002",
+      "fnb_name": "Scholar Delights Pte. Ltd.",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 21 LOWER KENT RIDGE ROAD Singapore 119077",
+      "postal_code": "119077",
+      "candidate_latitude": 1.3013273095479683,
+      "candidate_longitude": 103.77427725965474,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "University Hall, National University of Singapore",
+          "award": "GoldPlus",
+          "description": "2012",
+          "objectid": 9673
+        },
+        {
+          "name": "University Hall",
+          "award": "Platinum",
+          "description": "2021",
+          "objectid": 10079
+        },
+        {
+          "name": "University Hall, National University of Singapore (1st Recertification)",
+          "award": "GoldPlus",
+          "description": "2016",
+          "objectid": 10920
+        },
+        {
+          "name": "School of Computing Block COM3 at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 11738
+        },
+        {
+          "name": "National University of Singapore University Town",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 11602
+        }
+      ],
+      "disposition": "exclude_institutional_canteen",
+      "access_note": "NUS campus / The Deck canteen; excluded under user public-access rule."
+    },
+    {
+      "sfa_licence": "CE21917J000",
+      "fnb_name": "SEABAY WOK DELIGHT",
+      "business_type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 1 ANCHORVALE STREET #01-21,SENGKANG COMMUNITY HOSPITAL,Singapore 544835 MR 2",
+      "postal_code": "544835",
+      "candidate_latitude": 1.3960223803739464,
+      "candidate_longitude": 103.89183405437679,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Sengkang General and Community Hospitals",
+          "award": "Platinum",
+          "description": "2014",
+          "objectid": 11946
+        }
+      ],
+      "disposition": "hold_access_review",
+      "access_note": "Sengkang General / Community Hospital; public-access and canteen status require review."
+    },
+    {
+      "sfa_licence": "CE18808N002",
+      "fnb_name": "Sheng Tang F&B Management",
+      "business_type": "Foodcourt",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 1 ANCHORVALE STREET #01-21,SENGKANG COMMUNITY HOSPITAL,Singapore 544835",
+      "postal_code": "544835",
+      "candidate_latitude": 1.3960223803739464,
+      "candidate_longitude": 103.89183405437679,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Sengkang General and Community Hospitals",
+          "award": "Platinum",
+          "description": "2014",
+          "objectid": 11946
+        }
+      ],
+      "disposition": "hold_access_review",
+      "access_note": "Sengkang General / Community Hospital; public-access and canteen status require review."
+    },
+    {
+      "sfa_licence": "C81041N008",
+      "fnb_name": "Sin Kee Chicken Rice",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 21 LOWER KENT RIDGE ROAD Singapore 119077 THE DECK",
+      "postal_code": "119077",
+      "candidate_latitude": 1.3013273095479683,
+      "candidate_longitude": 103.77427725965474,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "University Hall, National University of Singapore",
+          "award": "GoldPlus",
+          "description": "2012",
+          "objectid": 9673
+        },
+        {
+          "name": "University Hall",
+          "award": "Platinum",
+          "description": "2021",
+          "objectid": 10079
+        },
+        {
+          "name": "University Hall, National University of Singapore (1st Recertification)",
+          "award": "GoldPlus",
+          "description": "2016",
+          "objectid": 10920
+        },
+        {
+          "name": "School of Computing Block COM3 at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 11738
+        },
+        {
+          "name": "National University of Singapore University Town",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 11602
+        }
+      ],
+      "disposition": "exclude_institutional_canteen",
+      "access_note": "NUS campus / The Deck canteen; excluded under user public-access rule."
+    },
+    {
+      "sfa_licence": "C81041N004",
+      "fnb_name": "snacks and fried kway te0w",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 21 LOWER KENT RIDGE ROAD THE DECK, FACULTY OF ART & SOCIAL SCIENCES,Singapore 119077",
+      "postal_code": "119077",
+      "candidate_latitude": 1.3013273095479683,
+      "candidate_longitude": 103.77427725965474,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "University Hall, National University of Singapore",
+          "award": "GoldPlus",
+          "description": "2012",
+          "objectid": 9673
+        },
+        {
+          "name": "University Hall",
+          "award": "Platinum",
+          "description": "2021",
+          "objectid": 10079
+        },
+        {
+          "name": "University Hall, National University of Singapore (1st Recertification)",
+          "award": "GoldPlus",
+          "description": "2016",
+          "objectid": 10920
+        },
+        {
+          "name": "School of Computing Block COM3 at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 11738
+        },
+        {
+          "name": "National University of Singapore University Town",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 11602
+        }
+      ],
+      "disposition": "exclude_institutional_canteen",
+      "access_note": "NUS campus / The Deck canteen; excluded under user public-access rule."
+    },
+    {
+      "sfa_licence": "SW15E12P005",
+      "fnb_name": "SRI MARAVS KAMPONG FOODS PTE. LTD.",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 1 JALAN PAPAN #01-03,TERUSAN RECREATION CENTRE,Singapore 619392 (#01-06)",
+      "postal_code": "619392",
+      "candidate_latitude": 1.320484248168483,
+      "candidate_longitude": 103.72672284196923,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Jalan Terusan Recreation Centre",
+          "award": "Certified",
+          "description": "2016",
+          "objectid": 10481
+        }
+      ],
+      "disposition": "hold_access_review",
+      "access_note": "JTC Jalan Terusan Recreation Centre; public-access eligibility not established."
+    },
+    {
+      "sfa_licence": "SW09805E000",
+      "fnb_name": "STARBUCKS COFFEE",
+      "business_type": "Snack Counter",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: SENTOSA GATEWAY #01-309,UNIVERSAL STUDIO SINGAPORE, RESORTS WORLD SENTOSA,Singapore 098269",
+      "postal_code": "098269",
+      "candidate_latitude": 1.2562898155044109,
+      "candidate_longitude": 103.81993474428393,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Resorts World Sentosa Beach Villas",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 10264
+        },
+        {
+          "name": "Resorts World Sentosa",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 10555
+        },
+        {
+          "name": "Resorts World Sentosa - Hotel Michael",
+          "award": "GoldPlus",
+          "description": "2020",
+          "objectid": 10766
+        },
+        {
+          "name": "Resorts World Sentosa - Maritime Experiential Museum",
+          "award": "Platinum",
+          "description": "2016",
+          "objectid": 10767
+        },
+        {
+          "name": "Resorts World Sentosa - Hard Rock Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 10951
+        },
+        {
+          "name": "Resort World Sentosa - Equarius Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 11289
+        },
+        {
+          "name": "Resorts World Convention Centre",
+          "award": "Platinum",
+          "description": "2017",
+          "objectid": 11677
+        },
+        {
+          "name": "Resorts World Sentosa - Festive Hotel",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 11894
+        },
+        {
+          "name": "Resorts World Sentosa ESPA",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 12211
+        },
+        {
+          "name": "Resorts World Sentosa Hotel Michael",
+          "award": "GoldPlus",
+          "description": "2014",
+          "objectid": 12265
+        },
+        {
+          "name": "Resort World Sentosa - Marine Life Park",
+          "award": "GoldPlus",
+          "description": "2015",
+          "objectid": 12280
+        }
+      ],
+      "disposition": "provisional_public_venue_candidate",
+      "access_note": "Universal Studios Singapore / Resorts World Sentosa; ticketed public venue. Exact postal match; point is complex-level, not unit-level."
+    },
+    {
+      "sfa_licence": "SW16956N000",
+      "fnb_name": "TAIWAN ICHIBAN",
+      "business_type": "Takeaway",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 21 LOWER KENT RIDGE ROAD FRONTIER (PHASE 1), FACULTY OF SCIENCE (KIOSK 1),Singapore 119077",
+      "postal_code": "119077",
+      "candidate_latitude": 1.3013273095479683,
+      "candidate_longitude": 103.77427725965474,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "University Hall, National University of Singapore",
+          "award": "GoldPlus",
+          "description": "2012",
+          "objectid": 9673
+        },
+        {
+          "name": "University Hall",
+          "award": "Platinum",
+          "description": "2021",
+          "objectid": 10079
+        },
+        {
+          "name": "University Hall, National University of Singapore (1st Recertification)",
+          "award": "GoldPlus",
+          "description": "2016",
+          "objectid": 10920
+        },
+        {
+          "name": "School of Computing Block COM3 at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 11738
+        },
+        {
+          "name": "National University of Singapore University Town",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 11602
+        }
+      ],
+      "disposition": "exclude_institutional_canteen",
+      "access_note": "NUS campus / The Deck canteen; excluded under user public-access rule."
+    },
+    {
+      "sfa_licence": "SW23P22V000",
+      "fnb_name": "The Crowded Bowl",
+      "business_type": "Takeaway",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 91 NANYANG AVENUE #01-13A,Singapore 639956 ABS",
+      "postal_code": "639956",
+      "candidate_latitude": 1.3415466540712597,
+      "candidate_longitude": 103.68250275542648,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "NTU Academic Building South",
+          "award": "Platinum Zero Energy",
+          "description": "2021",
+          "objectid": 11608
+        }
+      ],
+      "disposition": "exclude_institutional_canteen",
+      "access_note": "NTU campus / academic building; excluded under user public-access rule."
+    },
+    {
+      "sfa_licence": "C81041N000",
+      "fnb_name": "the deck",
+      "business_type": "Coffeeshop/Eating House",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 21 LOWER KENT RIDGE ROAD FACULTY OF ART & SOCIAL SCIENCES,Singapore 119077 THE DECK",
+      "postal_code": "119077",
+      "candidate_latitude": 1.3013273095479683,
+      "candidate_longitude": 103.77427725965474,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "University Hall, National University of Singapore",
+          "award": "GoldPlus",
+          "description": "2012",
+          "objectid": 9673
+        },
+        {
+          "name": "University Hall",
+          "award": "Platinum",
+          "description": "2021",
+          "objectid": 10079
+        },
+        {
+          "name": "University Hall, National University of Singapore (1st Recertification)",
+          "award": "GoldPlus",
+          "description": "2016",
+          "objectid": 10920
+        },
+        {
+          "name": "School of Computing Block COM3 at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 11738
+        },
+        {
+          "name": "National University of Singapore University Town",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 11602
+        }
+      ],
+      "disposition": "exclude_institutional_canteen",
+      "access_note": "NUS campus / The Deck canteen; excluded under user public-access rule."
+    },
+    {
+      "sfa_licence": "C81041N011",
+      "fnb_name": "UFS FOOD INDUSTRIES PTE LTD",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 21 LOWER KENT RIDGE ROAD THE DECK,Singapore 119077",
+      "postal_code": "119077",
+      "candidate_latitude": 1.3013273095479683,
+      "candidate_longitude": 103.77427725965474,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "University Hall, National University of Singapore",
+          "award": "GoldPlus",
+          "description": "2012",
+          "objectid": 9673
+        },
+        {
+          "name": "University Hall",
+          "award": "Platinum",
+          "description": "2021",
+          "objectid": 10079
+        },
+        {
+          "name": "University Hall, National University of Singapore (1st Recertification)",
+          "award": "GoldPlus",
+          "description": "2016",
+          "objectid": 10920
+        },
+        {
+          "name": "School of Computing Block COM3 at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 11738
+        },
+        {
+          "name": "National University of Singapore University Town",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 11602
+        }
+      ],
+      "disposition": "exclude_institutional_canteen",
+      "access_note": "NUS campus / The Deck canteen; excluded under user public-access rule."
+    },
+    {
+      "sfa_licence": "SW16902V000",
+      "fnb_name": "UNCLE PENYET",
+      "business_type": "Takeaway",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 21 LOWER KENT RIDGE ROAD FACULTY OF SCIENCE (PHASE 1),Singapore 119077",
+      "postal_code": "119077",
+      "candidate_latitude": 1.3013273095479683,
+      "candidate_longitude": 103.77427725965474,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "University Hall, National University of Singapore",
+          "award": "GoldPlus",
+          "description": "2012",
+          "objectid": 9673
+        },
+        {
+          "name": "University Hall",
+          "award": "Platinum",
+          "description": "2021",
+          "objectid": 10079
+        },
+        {
+          "name": "University Hall, National University of Singapore (1st Recertification)",
+          "award": "GoldPlus",
+          "description": "2016",
+          "objectid": 10920
+        },
+        {
+          "name": "School of Computing Block COM3 at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 11738
+        },
+        {
+          "name": "National University of Singapore University Town",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 11602
+        }
+      ],
+      "disposition": "exclude_institutional_canteen",
+      "access_note": "NUS campus / The Deck canteen; excluded under user public-access rule."
+    },
+    {
+      "sfa_licence": "CE18808N015",
+      "fnb_name": "Vegetarian",
+      "business_type": "Foodcourt",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 1 ANCHORVALE STREET #01-21,SENGKANG COMMUNITY HOSPITAL,Singapore 544835",
+      "postal_code": "544835",
+      "candidate_latitude": 1.3960223803739464,
+      "candidate_longitude": 103.89183405437679,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Sengkang General and Community Hospitals",
+          "award": "Platinum",
+          "description": "2014",
+          "objectid": 11946
+        }
+      ],
+      "disposition": "hold_access_review",
+      "access_note": "Sengkang General / Community Hospital; public-access and canteen status require review."
+    },
+    {
+      "sfa_licence": "C81041N009",
+      "fnb_name": "vegetarian stall",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 21 LOWER KENT RIDGE ROAD Singapore 119077",
+      "postal_code": "119077",
+      "candidate_latitude": 1.3013273095479683,
+      "candidate_longitude": 103.77427725965474,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "University Hall, National University of Singapore",
+          "award": "GoldPlus",
+          "description": "2012",
+          "objectid": 9673
+        },
+        {
+          "name": "University Hall",
+          "award": "Platinum",
+          "description": "2021",
+          "objectid": 10079
+        },
+        {
+          "name": "University Hall, National University of Singapore (1st Recertification)",
+          "award": "GoldPlus",
+          "description": "2016",
+          "objectid": 10920
+        },
+        {
+          "name": "School of Computing Block COM3 at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 11738
+        },
+        {
+          "name": "National University of Singapore University Town",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 11602
+        }
+      ],
+      "disposition": "exclude_institutional_canteen",
+      "access_note": "NUS campus / The Deck canteen; excluded under user public-access rule."
+    },
+    {
+      "sfa_licence": "SW23M57C000",
+      "fnb_name": "Venture Drive Coffee",
+      "business_type": "Takeaway",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 91 NANYANG AVENUE #01-13B,GAIA,Singapore 639956",
+      "postal_code": "639956",
+      "candidate_latitude": 1.3415466540712597,
+      "candidate_longitude": 103.68250275542648,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "NTU Academic Building South",
+          "award": "Platinum Zero Energy",
+          "description": "2021",
+          "objectid": 11608
+        }
+      ],
+      "disposition": "exclude_institutional_canteen",
+      "access_note": "NTU campus / academic building; excluded under user public-access rule."
+    },
+    {
+      "sfa_licence": "SW16814X000",
+      "fnb_name": "VINAYAK TRADERS PTE LTD",
+      "business_type": "Supermarket (Large) - Sale area more than 200 sq metres",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 1 JALAN PAPAN #01-33,#01-34,Singapore 619392",
+      "postal_code": "619392",
+      "candidate_latitude": 1.320484248168483,
+      "candidate_longitude": 103.72672284196923,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Jalan Terusan Recreation Centre",
+          "award": "Certified",
+          "description": "2016",
+          "objectid": 10481
+        }
+      ],
+      "disposition": "hold_access_review",
+      "access_note": "JTC Jalan Terusan Recreation Centre; public-access eligibility not established."
+    },
+    {
+      "sfa_licence": "CE18808N014",
+      "fnb_name": "Wanton mee",
+      "business_type": "Foodcourt",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 1 ANCHORVALE STREET #01-21,SENGKANG COMMUNITY HOSPITAL,Singapore 544835",
+      "postal_code": "544835",
+      "candidate_latitude": 1.3960223803739464,
+      "candidate_longitude": 103.89183405437679,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Sengkang General and Community Hospitals",
+          "award": "Platinum",
+          "description": "2014",
+          "objectid": 11946
+        }
+      ],
+      "disposition": "hold_access_review",
+      "access_note": "Sengkang General / Community Hospital; public-access and canteen status require review."
+    },
+    {
+      "sfa_licence": "C81041N006",
+      "fnb_name": "Western Crave",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 21 LOWER KENT RIDGE ROAD The Deck,Singapore 119077",
+      "postal_code": "119077",
+      "candidate_latitude": 1.3013273095479683,
+      "candidate_longitude": 103.77427725965474,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "University Hall, National University of Singapore",
+          "award": "GoldPlus",
+          "description": "2012",
+          "objectid": 9673
+        },
+        {
+          "name": "University Hall",
+          "award": "Platinum",
+          "description": "2021",
+          "objectid": 10079
+        },
+        {
+          "name": "University Hall, National University of Singapore (1st Recertification)",
+          "award": "GoldPlus",
+          "description": "2016",
+          "objectid": 10920
+        },
+        {
+          "name": "School of Computing Block COM3 at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 11738
+        },
+        {
+          "name": "National University of Singapore University Town",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 11602
+        }
+      ],
+      "disposition": "exclude_institutional_canteen",
+      "access_note": "NUS campus / The Deck canteen; excluded under user public-access rule."
+    },
+    {
+      "sfa_licence": "CE22D25J000",
+      "fnb_name": "XR Western",
+      "business_type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 1 ANCHORVALE STREET #01-21,SENGKANG COMMUNITY HOSPITAL,Singapore 544835 (MR4)",
+      "postal_code": "544835",
+      "candidate_latitude": 1.3960223803739464,
+      "candidate_longitude": 103.89183405437679,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Sengkang General and Community Hospitals",
+          "award": "Platinum",
+          "description": "2014",
+          "objectid": 11946
+        }
+      ],
+      "disposition": "hold_access_review",
+      "access_note": "Sengkang General / Community Hospital; public-access and canteen status require review."
+    },
+    {
+      "sfa_licence": "CE18808N001",
+      "fnb_name": "Yong Tau Foo",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 1 ANCHORVALE STREET #01-21,SENGKANG COMMUNITY HOSPITAL,Singapore 544835",
+      "postal_code": "544835",
+      "candidate_latitude": 1.3960223803739464,
+      "candidate_longitude": 103.89183405437679,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Sengkang General and Community Hospitals",
+          "award": "Platinum",
+          "description": "2014",
+          "objectid": 11946
+        }
+      ],
+      "disposition": "hold_access_review",
+      "access_note": "Sengkang General / Community Hospital; public-access and canteen status require review."
+    },
+    {
+      "sfa_licence": "SW16856V000",
+      "fnb_name": null,
+      "business_type": "Supermarket (Small) - Sale area 200 sq metres or less",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 1 JALAN PAPAN #01-29,#01-30,TERUSAN RECREATION CENTRE,Singapore 619392",
+      "postal_code": "619392",
+      "candidate_latitude": 1.320484248168483,
+      "candidate_longitude": 103.72672284196923,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Jalan Terusan Recreation Centre",
+          "award": "Certified",
+          "description": "2016",
+          "objectid": 10481
+        }
+      ],
+      "disposition": "hold_access_review",
+      "access_note": "JTC Jalan Terusan Recreation Centre; public-access eligibility not established."
+    },
+    {
+      "sfa_licence": "SW15E12P000",
+      "fnb_name": null,
+      "business_type": "Coffeeshop/Eating House",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 1 JALAN PAPAN TERUSAN RECREATION CENTRE,Singapore 619392",
+      "postal_code": "619392",
+      "candidate_latitude": 1.320484248168483,
+      "candidate_longitude": 103.72672284196923,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Jalan Terusan Recreation Centre",
+          "award": "Certified",
+          "description": "2016",
+          "objectid": 10481
+        }
+      ],
+      "disposition": "hold_access_review",
+      "access_note": "JTC Jalan Terusan Recreation Centre; public-access eligibility not established."
+    },
+    {
+      "sfa_licence": "W01078L000",
+      "fnb_name": null,
+      "business_type": "within Pubs/Bars/Nightclubs/Disco",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 1 SHERWOOD ROAD MINISTRY OF FOREIGN AFFAIRS,Singapore 248163",
+      "postal_code": "248163",
+      "candidate_latitude": 1.3040331400799805,
+      "candidate_longitude": 103.81738755676676,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Ministry of Foreign Affairs",
+          "award": "GoldPlus",
+          "description": "2021",
+          "objectid": 10159
+        },
+        {
+          "name": "Ministry of Foreign Affairs Headquarters",
+          "award": "Gold",
+          "description": "2018",
+          "objectid": 10827
+        },
+        {
+          "name": "MFA Standalone Building",
+          "award": "GoldPlus",
+          "description": "2018",
+          "objectid": 11405
+        },
+        {
+          "name": "Ministry of Foreign Affairs Headquarters",
+          "award": "Gold",
+          "description": "2015",
+          "objectid": 12182
+        }
+      ],
+      "disposition": "exclude_restricted_organisation",
+      "access_note": "Ministry of Foreign Affairs facility; not a general public-access venue."
+    },
+    {
+      "sfa_licence": "SW19X66V000",
+      "fnb_name": null,
+      "business_type": "Takeaway",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 21 LOWER KENT RIDGE ROAD Singapore 119077 (KIOSK 2)",
+      "postal_code": "119077",
+      "candidate_latitude": 1.3013273095479683,
+      "candidate_longitude": 103.77427725965474,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "University Hall, National University of Singapore",
+          "award": "GoldPlus",
+          "description": "2012",
+          "objectid": 9673
+        },
+        {
+          "name": "University Hall",
+          "award": "Platinum",
+          "description": "2021",
+          "objectid": 10079
+        },
+        {
+          "name": "University Hall, National University of Singapore (1st Recertification)",
+          "award": "GoldPlus",
+          "description": "2016",
+          "objectid": 10920
+        },
+        {
+          "name": "School of Computing Block COM3 at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 11738
+        },
+        {
+          "name": "National University of Singapore University Town",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 11602
+        }
+      ],
+      "disposition": "exclude_institutional_canteen",
+      "access_note": "NUS campus / The Deck canteen; excluded under user public-access rule."
+    },
+    {
+      "sfa_licence": "C81041N001",
+      "fnb_name": null,
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 21 LOWER KENT RIDGE ROAD THE DECK, FACULTY OF ART & SOCIAL SCIENCES,Singapore 119077",
+      "postal_code": "119077",
+      "candidate_latitude": 1.3013273095479683,
+      "candidate_longitude": 103.77427725965474,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "University Hall, National University of Singapore",
+          "award": "GoldPlus",
+          "description": "2012",
+          "objectid": 9673
+        },
+        {
+          "name": "University Hall",
+          "award": "Platinum",
+          "description": "2021",
+          "objectid": 10079
+        },
+        {
+          "name": "University Hall, National University of Singapore (1st Recertification)",
+          "award": "GoldPlus",
+          "description": "2016",
+          "objectid": 10920
+        },
+        {
+          "name": "School of Computing Block COM3 at National University of Singapore",
+          "award": "Platinum Super Low E",
+          "description": "2020",
+          "objectid": 11738
+        },
+        {
+          "name": "National University of Singapore University Town",
+          "award": "GoldPlus",
+          "description": "2010",
+          "objectid": 11602
+        }
+      ],
+      "disposition": "exclude_institutional_canteen",
+      "access_note": "NUS campus / The Deck canteen; excluded under user public-access rule."
+    },
+    {
+      "sfa_licence": "C97162E000",
+      "fnb_name": null,
+      "business_type": "Coffeeshop/Eating House",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 33 HARBOUR DRIVE PASIR PANJANG TERMINAL BUILDING 1,Singapore 117606",
+      "postal_code": "117606",
+      "candidate_latitude": 1.2757582120112176,
+      "candidate_longitude": 103.7690968144275,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Pasir Panjang Terminal Building",
+          "award": "Gold",
+          "description": "2012",
+          "objectid": 10141
+        },
+        {
+          "name": "Pasir Panjang Terminal Building",
+          "award": "Gold",
+          "description": "2019",
+          "objectid": 10531
+        }
+      ],
+      "disposition": "exclude_restricted_or_industrial",
+      "access_note": "Pasir Panjang terminal facility; public-access eligibility not established."
+    },
+    {
+      "sfa_licence": "C97162E004",
+      "fnb_name": null,
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 33 HARBOUR DRIVE PASIR PANJANG TERMINAL BUILDING 1,Singapore 117606",
+      "postal_code": "117606",
+      "candidate_latitude": 1.2757582120112176,
+      "candidate_longitude": 103.7690968144275,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Pasir Panjang Terminal Building",
+          "award": "Gold",
+          "description": "2012",
+          "objectid": 10141
+        },
+        {
+          "name": "Pasir Panjang Terminal Building",
+          "award": "Gold",
+          "description": "2019",
+          "objectid": 10531
+        }
+      ],
+      "disposition": "exclude_restricted_or_industrial",
+      "access_note": "Pasir Panjang terminal facility; public-access eligibility not established."
+    },
+    {
+      "sfa_licence": "SW05182K001",
+      "fnb_name": null,
+      "business_type": "Foodcourt",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "full_address": "Address: 501 OLD CHOA CHU KANG ROAD Singapore 698928",
+      "postal_code": "698928",
+      "candidate_latitude": 1.3736261702753347,
+      "candidate_longitude": 103.72002272726745,
+      "coordinate_precision": "BCA building/address point from Green Mark Buildings GEOJSON; facility-level only; not outlet unit-level",
+      "matched_source_features": [
+        {
+          "name": "Home Team Academy",
+          "award": "Platinum Super Low E",
+          "description": "2019",
+          "objectid": 11907
+        }
+      ],
+      "disposition": "exclude_restricted_organisation",
+      "access_note": "Home Team Academy; restricted organisation facility."
+    }
+  ]
+}

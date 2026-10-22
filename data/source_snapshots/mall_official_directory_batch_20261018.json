@@ -1,0 +1,1858 @@
+{
+  "snapshot_id": "mall_official_directory_batch_20261018",
+  "observed_date": "2026-10-18",
+  "workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "986a2656c3243d55c1a3914a3c5fbbdf2052e0423a69705785cbba0b7fee154e",
+  "workbook_edited": false,
+  "publisher": "Frasers Experience",
+  "scope": "Official outlet-specific mall directories for Tiong Bahru Plaza and Causeway Point; exact existing SFA records with blank contact/site/hours only. No delivery platforms, paid API calls, Mapbox Search Box results, images, or nonofficial sources.",
+  "method": "Current official F&B tenant feed records were joined to unique SFA rows by normalized exact tenant name, exact mall, exact postcode, and overlapping unit token. Proposed only blank fields. Direct official tenant detail pages had to return HTTP 200 and contain exact tenant name and unit. No stale values overwritten. Mall feed phone values explicitly marked unavailable were withheld.",
+  "mall_sources": {
+    "Tiong Bahru Plaza": {
+      "feed_records": 28,
+      "feed_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+      "proposals": 17
+    },
+    "Causeway Point": {
+      "feed_records": 26,
+      "feed_sha256": "c351c8e4d74b5e7a7e9d0c283270c6130008210f550945e82bd89dddcdb14a21",
+      "proposals": 11
+    }
+  },
+  "summary": {
+    "proposals": 28,
+    "distinct_sfa_licences": 28,
+    "fields_proposed": 56,
+    "ambiguous_or_held": 1,
+    "field_counts": {
+      "Contact Details": 16,
+      "Website": 14,
+      "Opening Hours / Closed Days": 26
+    }
+  },
+  "proposals": [
+    {
+      "sfa_licence": "CE16A30A000",
+      "existing_name": "4FINGERS CRISPY CHICKEN",
+      "registered_business_name": "4FINGERS CRISPY CHICKEN",
+      "existing_address": "302 TIONG BAHRU ROAD #01-105,TIONG BAHRU PLAZA,Singapore 168732 TIONG BAHRU PLAZA",
+      "postal_code": "168732",
+      "official_mall": "Tiong Bahru Plaza",
+      "official_tenant_name": "4FINGERS Crispy Chicken",
+      "official_unit": "#01-105",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact normalized tenant name, mall, postal code, and overlapping unit token."
+      },
+      "field_proposals": {
+        "Opening Hours / Closed Days": "Sunday to Thursday and Public Holiday | 11am to 10pm | Friday, Saturday and Eve of Public Holiday | 11am to 11pm"
+      },
+      "field_evidence": {
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/tbp/4fingers-crispy-chicken",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence CE16A30A000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+          "detail_response_sha256": "2f9114b2735d8c80630c18895317926037241b744d920f99d6843827cac717f8"
+        }
+      },
+      "before_values": {
+        "Contact Details": "Contact: +6562648098",
+        "Website": "https://www.4fingers.com.sg/",
+        "Opening Hours / Closed Days": null
+      },
+      "source_record_values": {
+        "website": "https://www.4fingers.com.sg/",
+        "phone1": "6264 8098",
+        "opening_hours_text": "Sunday to Thursday and Public Holiday | 11am to 10pm | Friday, Saturday and Eve of Public Holiday | 11am to 11pm",
+        "unitNo": "#01-105",
+        "storeName": "4FINGERS Crispy Chicken"
+      },
+      "detail_url": "https://www.frasersexperience.com/stores/tbp/4fingers-crispy-chicken",
+      "detail_http_status": 200,
+      "detail_response_sha256": "2f9114b2735d8c80630c18895317926037241b744d920f99d6843827cac717f8",
+      "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+      "directory_feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+      "observed_date": "2026-10-18",
+      "withheld_notes": []
+    },
+    {
+      "sfa_licence": "CE16122K000",
+      "existing_name": "AONE SIGNATURE",
+      "registered_business_name": "AONE SIGNATURE",
+      "existing_address": "Address: 302 TIONG BAHRU ROAD #02-134,TIONG BAHRU PLAZA,Singapore 168732",
+      "postal_code": "168732",
+      "official_mall": "Tiong Bahru Plaza",
+      "official_tenant_name": "A-One Signature",
+      "official_unit": "#02-134",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact normalized tenant name, mall, postal code, and overlapping unit token."
+      },
+      "field_proposals": {
+        "Contact Details": "6250 7668",
+        "Website": "https://www.aonegroup.sg",
+        "Opening Hours / Closed Days": "Monday to Sunday | 10.30am to 10pm"
+      },
+      "field_evidence": {
+        "Contact Details": {
+          "source_url": "https://www.frasersexperience.com/stores/tbp/a-one-signature",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence CE16122K000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+          "detail_response_sha256": "85117ce2f612653373d3a0c3e58a4c4d18854d537e8aeb5bfd2bc90dc819a404"
+        },
+        "Website": {
+          "source_url": "https://www.frasersexperience.com/stores/tbp/a-one-signature",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence CE16122K000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+          "detail_response_sha256": "85117ce2f612653373d3a0c3e58a4c4d18854d537e8aeb5bfd2bc90dc819a404"
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/tbp/a-one-signature",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence CE16122K000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+          "detail_response_sha256": "85117ce2f612653373d3a0c3e58a4c4d18854d537e8aeb5bfd2bc90dc819a404"
+        }
+      },
+      "before_values": {
+        "Contact Details": null,
+        "Website": null,
+        "Opening Hours / Closed Days": null
+      },
+      "source_record_values": {
+        "website": "https://www.aonegroup.sg",
+        "phone1": "6250 7668",
+        "opening_hours_text": "Monday to Sunday | 10.30am to 10pm",
+        "unitNo": "#02-134",
+        "storeName": "A-One Signature"
+      },
+      "detail_url": "https://www.frasersexperience.com/stores/tbp/a-one-signature",
+      "detail_http_status": 200,
+      "detail_response_sha256": "85117ce2f612653373d3a0c3e58a4c4d18854d537e8aeb5bfd2bc90dc819a404",
+      "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+      "directory_feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+      "observed_date": "2026-10-18",
+      "withheld_notes": [
+        "Menu URL withheld; mall directory does not publish an outlet menu URL."
+      ]
+    },
+    {
+      "sfa_licence": "CE16659V000",
+      "existing_name": "Du Du Dumplings",
+      "registered_business_name": "Du Du Dumplings",
+      "existing_address": "Address: 302 TIONG BAHRU ROAD #02-111,TIONG BAHRU PLAZA,Singapore 168732",
+      "postal_code": "168732",
+      "official_mall": "Tiong Bahru Plaza",
+      "official_tenant_name": "Du Du Dumplings",
+      "official_unit": "#02-111",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact normalized tenant name, mall, postal code, and overlapping unit token."
+      },
+      "field_proposals": {
+        "Opening Hours / Closed Days": "Monday to Sunday | 10am to 10pm"
+      },
+      "field_evidence": {
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/tbp/du-du-dumplings",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence CE16659V000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+          "detail_response_sha256": "44f6ae731b28e03e04055083ac19528bb37955ae7f3904b1535c85583c88f7e1"
+        }
+      },
+      "before_values": {
+        "Contact Details": null,
+        "Website": null,
+        "Opening Hours / Closed Days": null
+      },
+      "source_record_values": {
+        "website": null,
+        "phone1": null,
+        "opening_hours_text": "Monday to Sunday | 10am to 10pm",
+        "unitNo": "#02-111",
+        "storeName": "Du Du Dumplings"
+      },
+      "detail_url": "https://www.frasersexperience.com/stores/tbp/du-du-dumplings",
+      "detail_http_status": 200,
+      "detail_response_sha256": "44f6ae731b28e03e04055083ac19528bb37955ae7f3904b1535c85583c88f7e1",
+      "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+      "directory_feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+      "observed_date": "2026-10-18",
+      "withheld_notes": [
+        "Contact Details withheld; mall directory has no independently supplied phone.",
+        "Menu URL withheld; mall directory does not publish an outlet menu URL."
+      ]
+    },
+    {
+      "sfa_licence": "CE16A15V000",
+      "existing_name": "Fore Coffee",
+      "registered_business_name": "Fore Coffee",
+      "existing_address": "Address: 302 TIONG BAHRU ROAD #01-111,TIONG BAHRU PLAZA,Singapore 168732",
+      "postal_code": "168732",
+      "official_mall": "Tiong Bahru Plaza",
+      "official_tenant_name": "Fore Coffee",
+      "official_unit": "#01-111",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact normalized tenant name, mall, postal code, and overlapping unit token."
+      },
+      "field_proposals": {
+        "Website": "https://fore.coffee/",
+        "Opening Hours / Closed Days": "7.30am to 10pm"
+      },
+      "field_evidence": {
+        "Website": {
+          "source_url": "https://www.frasersexperience.com/stores/tbp/fore-coffee",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence CE16A15V000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+          "detail_response_sha256": "d1c2a7948011778c8d11cd616bb483791f199808d018f54de44f3134772e3c4a"
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/tbp/fore-coffee",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence CE16A15V000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+          "detail_response_sha256": "d1c2a7948011778c8d11cd616bb483791f199808d018f54de44f3134772e3c4a"
+        }
+      },
+      "before_values": {
+        "Contact Details": null,
+        "Website": null,
+        "Opening Hours / Closed Days": null
+      },
+      "source_record_values": {
+        "website": "https://fore.coffee/",
+        "phone1": null,
+        "opening_hours_text": "7.30am to 10pm",
+        "unitNo": "#01-111",
+        "storeName": "Fore Coffee"
+      },
+      "detail_url": "https://www.frasersexperience.com/stores/tbp/fore-coffee",
+      "detail_http_status": 200,
+      "detail_response_sha256": "d1c2a7948011778c8d11cd616bb483791f199808d018f54de44f3134772e3c4a",
+      "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+      "directory_feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+      "observed_date": "2026-10-18",
+      "withheld_notes": [
+        "Contact Details withheld; mall directory has no independently supplied phone.",
+        "Menu URL withheld; mall directory does not publish an outlet menu URL."
+      ]
+    },
+    {
+      "sfa_licence": "CE16424K000",
+      "existing_name": "GONG YUAN MA LA TANG",
+      "registered_business_name": "GONG YUAN MA LA TANG",
+      "existing_address": "Address: 302 TIONG BAHRU ROAD #02-113,TIONG BAHRU PLAZA,Singapore 168732",
+      "postal_code": "168732",
+      "official_mall": "Tiong Bahru Plaza",
+      "official_tenant_name": "Gong Yuan Ma La Tang ",
+      "official_unit": "#02-113",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact normalized tenant name, mall, postal code, and overlapping unit token."
+      },
+      "field_proposals": {
+        "Contact Details": "6568 8235",
+        "Website": "https://royaltgroup.com/our-brands/gong-yuan-ma-la-tang.html",
+        "Opening Hours / Closed Days": "Monday to Sunday | 11am to 9.30pm"
+      },
+      "field_evidence": {
+        "Contact Details": {
+          "source_url": "https://www.frasersexperience.com/stores/tbp/gong-yuan-ma-la-tang",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence CE16424K000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+          "detail_response_sha256": "a8c41122720c3c0b782fea12e3d6c5985e179c8a998f04d18f5a19c8d6ddabe2"
+        },
+        "Website": {
+          "source_url": "https://www.frasersexperience.com/stores/tbp/gong-yuan-ma-la-tang",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence CE16424K000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+          "detail_response_sha256": "a8c41122720c3c0b782fea12e3d6c5985e179c8a998f04d18f5a19c8d6ddabe2"
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/tbp/gong-yuan-ma-la-tang",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence CE16424K000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+          "detail_response_sha256": "a8c41122720c3c0b782fea12e3d6c5985e179c8a998f04d18f5a19c8d6ddabe2"
+        }
+      },
+      "before_values": {
+        "Contact Details": null,
+        "Website": null,
+        "Opening Hours / Closed Days": null
+      },
+      "source_record_values": {
+        "website": "https://royaltgroup.com/our-brands/gong-yuan-ma-la-tang.html",
+        "phone1": "6568 8235",
+        "opening_hours_text": "Monday to Sunday | 11am to 9.30pm",
+        "unitNo": "#02-113",
+        "storeName": "Gong Yuan Ma La Tang "
+      },
+      "detail_url": "https://www.frasersexperience.com/stores/tbp/gong-yuan-ma-la-tang",
+      "detail_http_status": 200,
+      "detail_response_sha256": "a8c41122720c3c0b782fea12e3d6c5985e179c8a998f04d18f5a19c8d6ddabe2",
+      "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+      "directory_feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+      "observed_date": "2026-10-18",
+      "withheld_notes": [
+        "Menu URL withheld; mall directory does not publish an outlet menu URL."
+      ]
+    },
+    {
+      "sfa_licence": "CE16474L000",
+      "existing_name": "Long John Silver's",
+      "registered_business_name": "Long John Silver's",
+      "existing_address": "Address: 302 TIONG BAHRU ROAD #01-160,TIONG BAHRU PLAZA,Singapore 168732",
+      "postal_code": "168732",
+      "official_mall": "Tiong Bahru Plaza",
+      "official_tenant_name": "Long John Silver's",
+      "official_unit": "#01-160",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact normalized tenant name, mall, postal code, and overlapping unit token."
+      },
+      "field_proposals": {
+        "Website": "https://www.longjohnsilvers.com.sg",
+        "Opening Hours / Closed Days": "Monday to Sunday | 7.30am to 10pm"
+      },
+      "field_evidence": {
+        "Website": {
+          "source_url": "https://www.frasersexperience.com/stores/tbp/long-john-silvers",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence CE16474L000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+          "detail_response_sha256": "287d722082a254c45e2b94ba7efb7abfa15186a8c5eaa05c4cb3add425f7ccd1"
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/tbp/long-john-silvers",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence CE16474L000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+          "detail_response_sha256": "287d722082a254c45e2b94ba7efb7abfa15186a8c5eaa05c4cb3add425f7ccd1"
+        }
+      },
+      "before_values": {
+        "Contact Details": null,
+        "Website": null,
+        "Opening Hours / Closed Days": null
+      },
+      "source_record_values": {
+        "website": "https://www.longjohnsilvers.com.sg",
+        "phone1": null,
+        "opening_hours_text": "Monday to Sunday | 7.30am to 10pm",
+        "unitNo": "#01-160",
+        "storeName": "Long John Silver's"
+      },
+      "detail_url": "https://www.frasersexperience.com/stores/tbp/long-john-silvers",
+      "detail_http_status": 200,
+      "detail_response_sha256": "287d722082a254c45e2b94ba7efb7abfa15186a8c5eaa05c4cb3add425f7ccd1",
+      "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+      "directory_feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+      "observed_date": "2026-10-18",
+      "withheld_notes": [
+        "Contact Details withheld; mall directory has no independently supplied phone.",
+        "Menu URL withheld; mall directory does not publish an outlet menu URL."
+      ]
+    },
+    {
+      "sfa_licence": "CE16296L000",
+      "existing_name": "MCDONALD'S",
+      "registered_business_name": "MCDONALD'S",
+      "existing_address": "Address: 302 TIONG BAHRU ROAD #01-146,#01-145,#01-147,TIONG BAHRU PLAZA,Singapore 168732",
+      "postal_code": "168732",
+      "official_mall": "Tiong Bahru Plaza",
+      "official_tenant_name": "McDonald's",
+      "official_unit": "#01-145/146/147",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact normalized tenant name, mall, postal code, and overlapping unit token."
+      },
+      "field_proposals": {
+        "Contact Details": "6276 2123",
+        "Opening Hours / Closed Days": "6am to 11.30pm"
+      },
+      "field_evidence": {
+        "Contact Details": {
+          "source_url": "https://www.frasersexperience.com/stores/tbp/mcdonalds",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence CE16296L000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+          "detail_response_sha256": "73ee1b7537ff4c07fbd1e3bb9b73c1c1082b2c6559a77efd013b5292af9861dc"
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/tbp/mcdonalds",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence CE16296L000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+          "detail_response_sha256": "73ee1b7537ff4c07fbd1e3bb9b73c1c1082b2c6559a77efd013b5292af9861dc"
+        }
+      },
+      "before_values": {
+        "Contact Details": null,
+        "Website": "https://www.mcdonalds.com.sg/",
+        "Opening Hours / Closed Days": null
+      },
+      "source_record_values": {
+        "website": "https://www.mcdonalds.com.sg/",
+        "phone1": "6276 2123",
+        "opening_hours_text": "6am to 11.30pm",
+        "unitNo": "#01-145/146/147",
+        "storeName": "McDonald's"
+      },
+      "detail_url": "https://www.frasersexperience.com/stores/tbp/mcdonalds",
+      "detail_http_status": 200,
+      "detail_response_sha256": "73ee1b7537ff4c07fbd1e3bb9b73c1c1082b2c6559a77efd013b5292af9861dc",
+      "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+      "directory_feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+      "observed_date": "2026-10-18",
+      "withheld_notes": []
+    },
+    {
+      "sfa_licence": "CE25G18N000",
+      "existing_name": "Nan Yang Dao",
+      "registered_business_name": "Nan Yang Dao",
+      "existing_address": "Address: 302 TIONG BAHRU ROAD #02-115,TIONG BAHRU PLAZA,Singapore 168732",
+      "postal_code": "168732",
+      "official_mall": "Tiong Bahru Plaza",
+      "official_tenant_name": "Nan Yang Dao",
+      "official_unit": "#02-115",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact normalized tenant name, mall, postal code, and overlapping unit token."
+      },
+      "field_proposals": {
+        "Website": "http://www.nanyangdao.com",
+        "Opening Hours / Closed Days": "9am to 10pm"
+      },
+      "field_evidence": {
+        "Website": {
+          "source_url": "https://www.frasersexperience.com/stores/tbp/nan-yang-dao",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence CE25G18N000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+          "detail_response_sha256": "2a2f39350e95f9251cf9d6e5e58631ebde6ba178115914d97ef2f92bb7ba6e1f"
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/tbp/nan-yang-dao",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence CE25G18N000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+          "detail_response_sha256": "2a2f39350e95f9251cf9d6e5e58631ebde6ba178115914d97ef2f92bb7ba6e1f"
+        }
+      },
+      "before_values": {
+        "Contact Details": null,
+        "Website": null,
+        "Opening Hours / Closed Days": null
+      },
+      "source_record_values": {
+        "website": "http://www.nanyangdao.com",
+        "phone1": null,
+        "opening_hours_text": "9am to 10pm",
+        "unitNo": "#02-115",
+        "storeName": "Nan Yang Dao"
+      },
+      "detail_url": "https://www.frasersexperience.com/stores/tbp/nan-yang-dao",
+      "detail_http_status": 200,
+      "detail_response_sha256": "2a2f39350e95f9251cf9d6e5e58631ebde6ba178115914d97ef2f92bb7ba6e1f",
+      "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+      "directory_feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+      "observed_date": "2026-10-18",
+      "withheld_notes": [
+        "Contact Details withheld; mall directory has no independently supplied phone.",
+        "Menu URL withheld; mall directory does not publish an outlet menu URL."
+      ]
+    },
+    {
+      "sfa_licence": "CE25900P000",
+      "existing_name": "Pu Tien Mama",
+      "registered_business_name": "Pu Tien Mama",
+      "existing_address": "Address: 302 TIONG BAHRU ROAD #02-114,TIONG BAHRU PLAZA,Singapore 168732",
+      "postal_code": "168732",
+      "official_mall": "Tiong Bahru Plaza",
+      "official_tenant_name": "PUTIEN MAMA",
+      "official_unit": "#02-114",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact normalized tenant name, mall, postal code, and overlapping unit token."
+      },
+      "field_proposals": {
+        "Contact Details": "69088300",
+        "Opening Hours / Closed Days": "10am to 10pm | Last order 9.30pm"
+      },
+      "field_evidence": {
+        "Contact Details": {
+          "source_url": "https://www.frasersexperience.com/stores/tbp/putien-mama",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence CE25900P000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+          "detail_response_sha256": "961a41462be4840179a2532bbac8cf2db711648ac29a9ace020f955ae4991a9c"
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/tbp/putien-mama",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence CE25900P000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+          "detail_response_sha256": "961a41462be4840179a2532bbac8cf2db711648ac29a9ace020f955ae4991a9c"
+        }
+      },
+      "before_values": {
+        "Contact Details": null,
+        "Website": null,
+        "Opening Hours / Closed Days": null
+      },
+      "source_record_values": {
+        "website": null,
+        "phone1": "69088300",
+        "opening_hours_text": "10am to 10pm | Last order 9.30pm",
+        "unitNo": "#02-114",
+        "storeName": "PUTIEN MAMA"
+      },
+      "detail_url": "https://www.frasersexperience.com/stores/tbp/putien-mama",
+      "detail_http_status": 200,
+      "detail_response_sha256": "961a41462be4840179a2532bbac8cf2db711648ac29a9ace020f955ae4991a9c",
+      "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+      "directory_feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+      "observed_date": "2026-10-18",
+      "withheld_notes": [
+        "Menu URL withheld; mall directory does not publish an outlet menu URL."
+      ]
+    },
+    {
+      "sfa_licence": "CE19V87P000",
+      "existing_name": "Pizza Hut",
+      "registered_business_name": "Pizza Hut",
+      "existing_address": "Address: 302 TIONG BAHRU ROAD #02-119,TIONG BAHRU PLAZA,Singapore 168732 TIONG BAHRU PLAZA",
+      "postal_code": "168732",
+      "official_mall": "Tiong Bahru Plaza",
+      "official_tenant_name": "Pizza Hut",
+      "official_unit": "#02-119",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact normalized tenant name, mall, postal code, and overlapping unit token."
+      },
+      "field_proposals": {
+        "Opening Hours / Closed Days": "Monday to Sunday | 11am to 10pm"
+      },
+      "field_evidence": {
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/tbp/pizza-hut",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence CE19V87P000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+          "detail_response_sha256": "35412c3358e04518fc11d26d0b0b2b13dd0d725ab6fc0d74c7f6fd1a502a04e5"
+        }
+      },
+      "before_values": {
+        "Contact Details": "Contact: +6562353535",
+        "Website": "http://www.pizzahut.com.sg/?y_source=1_MjAzNDUzNDYtNTU5LWxvY2F0aW9uLndlYnNpdGU%3D",
+        "Opening Hours / Closed Days": null
+      },
+      "source_record_values": {
+        "website": "https://www.pizzahut.com.sg/home",
+        "phone1": "6261 5626",
+        "opening_hours_text": "Monday to Sunday | 11am to 10pm",
+        "unitNo": "#02-119",
+        "storeName": "Pizza Hut"
+      },
+      "detail_url": "https://www.frasersexperience.com/stores/tbp/pizza-hut",
+      "detail_http_status": 200,
+      "detail_response_sha256": "35412c3358e04518fc11d26d0b0b2b13dd0d725ab6fc0d74c7f6fd1a502a04e5",
+      "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+      "directory_feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+      "observed_date": "2026-10-18",
+      "withheld_notes": []
+    },
+    {
+      "sfa_licence": "CE16531E000",
+      "existing_name": "Shiok Burger",
+      "registered_business_name": "Shiok Burger",
+      "existing_address": "Address: 302 TIONG BAHRU ROAD #01-159,TIONG BAHRU PLAZA,Singapore 168732",
+      "postal_code": "168732",
+      "official_mall": "Tiong Bahru Plaza",
+      "official_tenant_name": "Shiok Burger",
+      "official_unit": "#01-159",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact normalized tenant name, mall, postal code, and overlapping unit token."
+      },
+      "field_proposals": {
+        "Contact Details": "6980 7220",
+        "Opening Hours / Closed Days": "Monday to Sunday | 10.30am to 9.30pm"
+      },
+      "field_evidence": {
+        "Contact Details": {
+          "source_url": "https://www.frasersexperience.com/stores/tbp/shiok-burger",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence CE16531E000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+          "detail_response_sha256": "2e7c00f324b5b91fd0d390ed482a0bbf113856ab02afae8a89d8cdd2c2e271af"
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/tbp/shiok-burger",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence CE16531E000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+          "detail_response_sha256": "2e7c00f324b5b91fd0d390ed482a0bbf113856ab02afae8a89d8cdd2c2e271af"
+        }
+      },
+      "before_values": {
+        "Contact Details": null,
+        "Website": null,
+        "Opening Hours / Closed Days": null
+      },
+      "source_record_values": {
+        "website": null,
+        "phone1": "6980 7220",
+        "opening_hours_text": "Monday to Sunday | 10.30am to 9.30pm",
+        "unitNo": "#01-159",
+        "storeName": "Shiok Burger"
+      },
+      "detail_url": "https://www.frasersexperience.com/stores/tbp/shiok-burger",
+      "detail_http_status": 200,
+      "detail_response_sha256": "2e7c00f324b5b91fd0d390ed482a0bbf113856ab02afae8a89d8cdd2c2e271af",
+      "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+      "directory_feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+      "observed_date": "2026-10-18",
+      "withheld_notes": [
+        "Menu URL withheld; mall directory does not publish an outlet menu URL."
+      ]
+    },
+    {
+      "sfa_licence": "CE16710C000",
+      "existing_name": "STEAK 99",
+      "registered_business_name": "STEAK 99",
+      "existing_address": "Address: 302 TIONG BAHRU ROAD #02-109,#02-110,TIONG BAHRU PLAZA,Singapore 168732",
+      "postal_code": "168732",
+      "official_mall": "Tiong Bahru Plaza",
+      "official_tenant_name": "Steak 99",
+      "official_unit": "#02-109",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact normalized tenant name, mall, postal code, and overlapping unit token."
+      },
+      "field_proposals": {
+        "Contact Details": "6250 2153",
+        "Opening Hours / Closed Days": "11.30am to 10pm"
+      },
+      "field_evidence": {
+        "Contact Details": {
+          "source_url": "https://www.frasersexperience.com/stores/tbp/steak-99",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence CE16710C000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+          "detail_response_sha256": "eb3a491e6c736a5d6bb5709fdfde148b96b0ad74228f18d57854780b283b6c7b"
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/tbp/steak-99",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence CE16710C000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+          "detail_response_sha256": "eb3a491e6c736a5d6bb5709fdfde148b96b0ad74228f18d57854780b283b6c7b"
+        }
+      },
+      "before_values": {
+        "Contact Details": null,
+        "Website": null,
+        "Opening Hours / Closed Days": null
+      },
+      "source_record_values": {
+        "website": null,
+        "phone1": "6250 2153",
+        "opening_hours_text": "11.30am to 10pm",
+        "unitNo": "#02-109",
+        "storeName": "Steak 99"
+      },
+      "detail_url": "https://www.frasersexperience.com/stores/tbp/steak-99",
+      "detail_http_status": 200,
+      "detail_response_sha256": "eb3a491e6c736a5d6bb5709fdfde148b96b0ad74228f18d57854780b283b6c7b",
+      "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+      "directory_feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+      "observed_date": "2026-10-18",
+      "withheld_notes": [
+        "Menu URL withheld; mall directory does not publish an outlet menu URL."
+      ]
+    },
+    {
+      "sfa_licence": "CE16683V000",
+      "existing_name": "SUBWAY",
+      "registered_business_name": "SUBWAY",
+      "existing_address": "Address: 302 TIONG BAHRU ROAD #01-103,TIONG BAHRU PLAZA,Singapore 168732",
+      "postal_code": "168732",
+      "official_mall": "Tiong Bahru Plaza",
+      "official_tenant_name": "Subway",
+      "official_unit": "#01-103",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact normalized tenant name, mall, postal code, and overlapping unit token."
+      },
+      "field_proposals": {
+        "Website": "https://subwayisfresh.com.sg/",
+        "Opening Hours / Closed Days": "Monday to Sunday | 8.30am to 10pm"
+      },
+      "field_evidence": {
+        "Website": {
+          "source_url": "https://www.frasersexperience.com/stores/tbp/subway",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence CE16683V000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+          "detail_response_sha256": "634d5e17565725d47954529d501b27941f0d378a3946bc65dba05088ae0d9ce6"
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/tbp/subway",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence CE16683V000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+          "detail_response_sha256": "634d5e17565725d47954529d501b27941f0d378a3946bc65dba05088ae0d9ce6"
+        }
+      },
+      "before_values": {
+        "Contact Details": "Contact: +65 6352 9058",
+        "Website": null,
+        "Opening Hours / Closed Days": null
+      },
+      "source_record_values": {
+        "website": "https://subwayisfresh.com.sg/",
+        "phone1": "6352 9058",
+        "opening_hours_text": "Monday to Sunday | 8.30am to 10pm",
+        "unitNo": "#01-103",
+        "storeName": "Subway"
+      },
+      "detail_url": "https://www.frasersexperience.com/stores/tbp/subway",
+      "detail_http_status": 200,
+      "detail_response_sha256": "634d5e17565725d47954529d501b27941f0d378a3946bc65dba05088ae0d9ce6",
+      "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+      "directory_feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+      "observed_date": "2026-10-18",
+      "withheld_notes": []
+    },
+    {
+      "sfa_licence": "CE19K02L000",
+      "existing_name": "SUSHIRO",
+      "registered_business_name": "SUSHIRO",
+      "existing_address": "302 TIONG BAHRU ROAD #02-118,TIONG BAHRU PLAZA,Singapore 168732",
+      "postal_code": "168732",
+      "official_mall": "Tiong Bahru Plaza",
+      "official_tenant_name": "Sushiro",
+      "official_unit": "#02-118",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact normalized tenant name, mall, postal code, and overlapping unit token."
+      },
+      "field_proposals": {
+        "Contact Details": "6970 2293"
+      },
+      "field_evidence": {
+        "Contact Details": {
+          "source_url": "https://www.frasersexperience.com/stores/tbp/sushiro",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence CE19K02L000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+          "detail_response_sha256": "bcb7b8d404acfbe55925191567ccd5c988e6de2fb47feba499a3919a0e96a0cd"
+        }
+      },
+      "before_values": {
+        "Contact Details": null,
+        "Website": "https://www.sushiro.com.sg/",
+        "Opening Hours / Closed Days": "Hours: 11:00AM – 10:00PM"
+      },
+      "source_record_values": {
+        "website": "https://www.akindo-sushiro.biz/en/",
+        "phone1": "6970 2293",
+        "opening_hours_text": "Monday to Sunday | 11am to 10pm | Last order 9.30pm",
+        "unitNo": "#02-118",
+        "storeName": "Sushiro"
+      },
+      "detail_url": "https://www.frasersexperience.com/stores/tbp/sushiro",
+      "detail_http_status": 200,
+      "detail_response_sha256": "bcb7b8d404acfbe55925191567ccd5c988e6de2fb47feba499a3919a0e96a0cd",
+      "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+      "directory_feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+      "observed_date": "2026-10-18",
+      "withheld_notes": []
+    },
+    {
+      "sfa_licence": "CE16860A000",
+      "existing_name": "The Soup Spoon",
+      "registered_business_name": "The Soup Spoon",
+      "existing_address": "Address: 302 TIONG BAHRU ROAD #01-104,TIONG BAHRU PLAZA,Singapore 168732 TIONG BAHRU PLAZA",
+      "postal_code": "168732",
+      "official_mall": "Tiong Bahru Plaza",
+      "official_tenant_name": "The Soup Spoon",
+      "official_unit": "#01-104",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact normalized tenant name, mall, postal code, and overlapping unit token."
+      },
+      "field_proposals": {
+        "Opening Hours / Closed Days": "Monday to Sunday | 10.30am to 10pm"
+      },
+      "field_evidence": {
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/tbp/the-soup-spoon",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence CE16860A000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+          "detail_response_sha256": "c7c6d5be0bbac520e76a3d5cc8503f6381cfb570ca223a16e3aab5e9979c7723"
+        }
+      },
+      "before_values": {
+        "Contact Details": "Contact: +6563584127",
+        "Website": "http://www.thesoupspoon.com",
+        "Opening Hours / Closed Days": null
+      },
+      "source_record_values": {
+        "website": "https://www.thesoupspoon.com/",
+        "phone1": null,
+        "opening_hours_text": "Monday to Sunday | 10.30am to 10pm",
+        "unitNo": "#01-104",
+        "storeName": "The Soup Spoon"
+      },
+      "detail_url": "https://www.frasersexperience.com/stores/tbp/the-soup-spoon",
+      "detail_http_status": 200,
+      "detail_response_sha256": "c7c6d5be0bbac520e76a3d5cc8503f6381cfb570ca223a16e3aab5e9979c7723",
+      "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+      "directory_feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+      "observed_date": "2026-10-18",
+      "withheld_notes": [
+        "Contact Details withheld; mall directory has no independently supplied phone.",
+        "Menu URL withheld; mall directory does not publish an outlet menu URL."
+      ]
+    },
+    {
+      "sfa_licence": "CE16152V000",
+      "existing_name": "Yaki Zakana 99",
+      "registered_business_name": "Yaki Zakana 99",
+      "existing_address": "Address: 302 TIONG BAHRU ROAD #02-133,TIONG BAHRU PLAZA,Singapore 168732",
+      "postal_code": "168732",
+      "official_mall": "Tiong Bahru Plaza",
+      "official_tenant_name": "Yaki Zakana 99",
+      "official_unit": "#02-133",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact normalized tenant name, mall, postal code, and overlapping unit token."
+      },
+      "field_proposals": {
+        "Contact Details": "6760 1282",
+        "Website": "https://www.jfh.com.sg/html/index.php",
+        "Opening Hours / Closed Days": "Monday to Sunday | 11.30am to 10pm"
+      },
+      "field_evidence": {
+        "Contact Details": {
+          "source_url": "https://www.frasersexperience.com/stores/tbp/yaki-zakana-99",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence CE16152V000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+          "detail_response_sha256": "c6344ced5e19c732350a0854dc37d621a7747309b1aecd29e2c2d6a78d69756a"
+        },
+        "Website": {
+          "source_url": "https://www.frasersexperience.com/stores/tbp/yaki-zakana-99",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence CE16152V000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+          "detail_response_sha256": "c6344ced5e19c732350a0854dc37d621a7747309b1aecd29e2c2d6a78d69756a"
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/tbp/yaki-zakana-99",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence CE16152V000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+          "detail_response_sha256": "c6344ced5e19c732350a0854dc37d621a7747309b1aecd29e2c2d6a78d69756a"
+        }
+      },
+      "before_values": {
+        "Contact Details": null,
+        "Website": null,
+        "Opening Hours / Closed Days": null
+      },
+      "source_record_values": {
+        "website": "https://www.jfh.com.sg/html/index.php",
+        "phone1": "6760 1282",
+        "opening_hours_text": "Monday to Sunday | 11.30am to 10pm",
+        "unitNo": "#02-133",
+        "storeName": "Yaki Zakana 99"
+      },
+      "detail_url": "https://www.frasersexperience.com/stores/tbp/yaki-zakana-99",
+      "detail_http_status": 200,
+      "detail_response_sha256": "c6344ced5e19c732350a0854dc37d621a7747309b1aecd29e2c2d6a78d69756a",
+      "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+      "directory_feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+      "observed_date": "2026-10-18",
+      "withheld_notes": [
+        "Menu URL withheld; mall directory does not publish an outlet menu URL."
+      ]
+    },
+    {
+      "sfa_licence": "CE16529P000",
+      "existing_name": "ZUYA VEGETARIAN",
+      "registered_business_name": "ZUYA VEGETARIAN",
+      "existing_address": "Address: 302 TIONG BAHRU ROAD #02-111A,TIONG BAHRU PLAZA,Singapore 168732",
+      "postal_code": "168732",
+      "official_mall": "Tiong Bahru Plaza",
+      "official_tenant_name": "Zuya Vegetarian",
+      "official_unit": "#02-111A",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact normalized tenant name, mall, postal code, and overlapping unit token."
+      },
+      "field_proposals": {
+        "Website": "https://www.kazuyasg.com/",
+        "Opening Hours / Closed Days": "Monday to Sunday | 11am to 9pm | Last order 8.30pm"
+      },
+      "field_evidence": {
+        "Website": {
+          "source_url": "https://www.frasersexperience.com/stores/tbp/zuya-vegetarian",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence CE16529P000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+          "detail_response_sha256": "2ff366ac9e774534475a8a7989bb0a3447fbc9b2192573d3e64fded3c54dd295"
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/tbp/zuya-vegetarian",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence CE16529P000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+          "detail_response_sha256": "2ff366ac9e774534475a8a7989bb0a3447fbc9b2192573d3e64fded3c54dd295"
+        }
+      },
+      "before_values": {
+        "Contact Details": "Contact: +6588776098",
+        "Website": null,
+        "Opening Hours / Closed Days": null
+      },
+      "source_record_values": {
+        "website": "https://www.kazuyasg.com/",
+        "phone1": "6547 0221",
+        "opening_hours_text": "Monday to Sunday | 11am to 9pm | Last order 8.30pm",
+        "unitNo": "#02-111A",
+        "storeName": "Zuya Vegetarian"
+      },
+      "detail_url": "https://www.frasersexperience.com/stores/tbp/zuya-vegetarian",
+      "detail_http_status": 200,
+      "detail_response_sha256": "2ff366ac9e774534475a8a7989bb0a3447fbc9b2192573d3e64fded3c54dd295",
+      "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+      "directory_feed_response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+      "observed_date": "2026-10-18",
+      "withheld_notes": [
+        "Menu URL withheld; mall directory does not publish an outlet menu URL."
+      ]
+    },
+    {
+      "sfa_licence": "B98114V000",
+      "existing_name": "4FINGERS CRISPY CHICKEN",
+      "registered_business_name": "4FINGERS CRISPY CHICKEN",
+      "existing_address": "1 WOODLANDS SQUARE #01-38/39,CAUSEWAY POINT,Singapore 738099",
+      "postal_code": "738099",
+      "official_mall": "Causeway Point",
+      "official_tenant_name": "4FINGERS Crispy Chicken",
+      "official_unit": "#01-38/39",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact normalized tenant name, mall, postal code, and overlapping unit token."
+      },
+      "field_proposals": {
+        "Opening Hours / Closed Days": "Monday to Sunday | 10am to 10pm"
+      },
+      "field_evidence": {
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/cwp/4fingers-crispy-chicken",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fcwp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence B98114V000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c351c8e4d74b5e7a7e9d0c283270c6130008210f550945e82bd89dddcdb14a21",
+          "detail_response_sha256": "1fef9ba659c584f61cdad1537a2fa2a6bd1506793f0f80d72d20276c7f54f4f3"
+        }
+      },
+      "before_values": {
+        "Contact Details": "Contact: +6567602084",
+        "Website": "https://www.4fingers.com",
+        "Opening Hours / Closed Days": null
+      },
+      "source_record_values": {
+        "website": "https://www.4fingers.com.sg/",
+        "phone1": "6760 2084",
+        "opening_hours_text": "Monday to Sunday | 10am to 10pm",
+        "unitNo": "#01-38/39",
+        "storeName": "4FINGERS Crispy Chicken"
+      },
+      "detail_url": "https://www.frasersexperience.com/stores/cwp/4fingers-crispy-chicken",
+      "detail_http_status": 200,
+      "detail_response_sha256": "1fef9ba659c584f61cdad1537a2fa2a6bd1506793f0f80d72d20276c7f54f4f3",
+      "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fcwp%2Fen%2Fstores&isdialog=true",
+      "directory_feed_response_sha256": "c351c8e4d74b5e7a7e9d0c283270c6130008210f550945e82bd89dddcdb14a21",
+      "observed_date": "2026-10-18",
+      "withheld_notes": []
+    },
+    {
+      "sfa_licence": "NW25K98L000",
+      "existing_name": "CHAGEE",
+      "registered_business_name": "CHAGEE",
+      "existing_address": "Address: 1 WOODLANDS SQUARE #01-01,CAUSEWAY POINT,Singapore 738099",
+      "postal_code": "738099",
+      "official_mall": "Causeway Point",
+      "official_tenant_name": "CHAGEE",
+      "official_unit": "#01-01",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact normalized tenant name, mall, postal code, and overlapping unit token."
+      },
+      "field_proposals": {
+        "Contact Details": "89383786",
+        "Website": "https://chagee.com.sg/en",
+        "Opening Hours / Closed Days": "Sunday to Thursday | 10am to 10pm Friday and Saturday | 10am to 10.30pm"
+      },
+      "field_evidence": {
+        "Contact Details": {
+          "source_url": "https://www.frasersexperience.com/stores/cwp/chagee",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fcwp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence NW25K98L000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c351c8e4d74b5e7a7e9d0c283270c6130008210f550945e82bd89dddcdb14a21",
+          "detail_response_sha256": "e8c9261c4b67062d0305db8d36ffb0210a61a864508529c9a406af045e204063"
+        },
+        "Website": {
+          "source_url": "https://www.frasersexperience.com/stores/cwp/chagee",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fcwp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence NW25K98L000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c351c8e4d74b5e7a7e9d0c283270c6130008210f550945e82bd89dddcdb14a21",
+          "detail_response_sha256": "e8c9261c4b67062d0305db8d36ffb0210a61a864508529c9a406af045e204063"
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/cwp/chagee",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fcwp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence NW25K98L000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c351c8e4d74b5e7a7e9d0c283270c6130008210f550945e82bd89dddcdb14a21",
+          "detail_response_sha256": "e8c9261c4b67062d0305db8d36ffb0210a61a864508529c9a406af045e204063"
+        }
+      },
+      "before_values": {
+        "Contact Details": null,
+        "Website": null,
+        "Opening Hours / Closed Days": null
+      },
+      "source_record_values": {
+        "website": "https://chagee.com.sg/en",
+        "phone1": "89383786",
+        "opening_hours_text": "Sunday to Thursday | 10am to 10pm Friday and Saturday | 10am to 10.30pm",
+        "unitNo": "#01-01",
+        "storeName": "CHAGEE"
+      },
+      "detail_url": "https://www.frasersexperience.com/stores/cwp/chagee",
+      "detail_http_status": 200,
+      "detail_response_sha256": "e8c9261c4b67062d0305db8d36ffb0210a61a864508529c9a406af045e204063",
+      "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fcwp%2Fen%2Fstores&isdialog=true",
+      "directory_feed_response_sha256": "c351c8e4d74b5e7a7e9d0c283270c6130008210f550945e82bd89dddcdb14a21",
+      "observed_date": "2026-10-18",
+      "withheld_notes": []
+    },
+    {
+      "sfa_licence": "NW11247A000",
+      "existing_name": "Fish & Co.",
+      "registered_business_name": "Fish & Co.",
+      "existing_address": "Address: 1 WOODLANDS SQUARE #02-34,#02-K01,CAUSEWAY POINT,Singapore 738099",
+      "postal_code": "738099",
+      "official_mall": "Causeway Point",
+      "official_tenant_name": "Fish & Co.",
+      "official_unit": "#02-34/K01",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact normalized tenant name, mall, postal code, and overlapping unit token."
+      },
+      "field_proposals": {
+        "Contact Details": "6235 2156",
+        "Website": "https://www.fish-co.com/",
+        "Opening Hours / Closed Days": "Monday to Sunday | 11am to 9.30pm"
+      },
+      "field_evidence": {
+        "Contact Details": {
+          "source_url": "https://www.frasersexperience.com/stores/cwp/fish-and-co",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fcwp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence NW11247A000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c351c8e4d74b5e7a7e9d0c283270c6130008210f550945e82bd89dddcdb14a21",
+          "detail_response_sha256": "88494a18c43142fee25e85808b0654aad1c37856b2aca7d15045992cc78ada1e"
+        },
+        "Website": {
+          "source_url": "https://www.frasersexperience.com/stores/cwp/fish-and-co",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fcwp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence NW11247A000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c351c8e4d74b5e7a7e9d0c283270c6130008210f550945e82bd89dddcdb14a21",
+          "detail_response_sha256": "88494a18c43142fee25e85808b0654aad1c37856b2aca7d15045992cc78ada1e"
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/cwp/fish-and-co",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fcwp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence NW11247A000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c351c8e4d74b5e7a7e9d0c283270c6130008210f550945e82bd89dddcdb14a21",
+          "detail_response_sha256": "88494a18c43142fee25e85808b0654aad1c37856b2aca7d15045992cc78ada1e"
+        }
+      },
+      "before_values": {
+        "Contact Details": null,
+        "Website": null,
+        "Opening Hours / Closed Days": null
+      },
+      "source_record_values": {
+        "website": "https://www.fish-co.com/",
+        "phone1": "6235 2156",
+        "opening_hours_text": "Monday to Sunday | 11am to 9.30pm",
+        "unitNo": "#02-34/K01",
+        "storeName": "Fish & Co."
+      },
+      "detail_url": "https://www.frasersexperience.com/stores/cwp/fish-and-co",
+      "detail_http_status": 200,
+      "detail_response_sha256": "88494a18c43142fee25e85808b0654aad1c37856b2aca7d15045992cc78ada1e",
+      "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fcwp%2Fen%2Fstores&isdialog=true",
+      "directory_feed_response_sha256": "c351c8e4d74b5e7a7e9d0c283270c6130008210f550945e82bd89dddcdb14a21",
+      "observed_date": "2026-10-18",
+      "withheld_notes": [
+        "Menu URL withheld; mall directory does not publish an outlet menu URL."
+      ]
+    },
+    {
+      "sfa_licence": "NW12G24K000",
+      "existing_name": "ICHIBAN BOSHI",
+      "registered_business_name": "ICHIBAN BOSHI",
+      "existing_address": "Address: 1 WOODLANDS SQUARE #05-06/07,CAUSEWAY POINT,Singapore 738099",
+      "postal_code": "738099",
+      "official_mall": "Causeway Point",
+      "official_tenant_name": "Ichiban Boshi",
+      "official_unit": "#05-06/07",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact normalized tenant name, mall, postal code, and overlapping unit token."
+      },
+      "field_proposals": {
+        "Contact Details": "6016 3904",
+        "Website": "https://www.ichibanboshi.com.sg/en/",
+        "Opening Hours / Closed Days": "Monday to Friday | 11.30am to 10pm | Saturday, Sunday & PH | 11am to 10pm"
+      },
+      "field_evidence": {
+        "Contact Details": {
+          "source_url": "https://www.frasersexperience.com/stores/cwp/ichiban-boshi",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fcwp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence NW12G24K000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c351c8e4d74b5e7a7e9d0c283270c6130008210f550945e82bd89dddcdb14a21",
+          "detail_response_sha256": "f302a092b0a3e5381584f0051ba0c8e57c00fbe15e81c6501d66d3331fcfef08"
+        },
+        "Website": {
+          "source_url": "https://www.frasersexperience.com/stores/cwp/ichiban-boshi",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fcwp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence NW12G24K000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c351c8e4d74b5e7a7e9d0c283270c6130008210f550945e82bd89dddcdb14a21",
+          "detail_response_sha256": "f302a092b0a3e5381584f0051ba0c8e57c00fbe15e81c6501d66d3331fcfef08"
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/cwp/ichiban-boshi",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fcwp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence NW12G24K000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c351c8e4d74b5e7a7e9d0c283270c6130008210f550945e82bd89dddcdb14a21",
+          "detail_response_sha256": "f302a092b0a3e5381584f0051ba0c8e57c00fbe15e81c6501d66d3331fcfef08"
+        }
+      },
+      "before_values": {
+        "Contact Details": null,
+        "Website": null,
+        "Opening Hours / Closed Days": null
+      },
+      "source_record_values": {
+        "website": "https://www.ichibanboshi.com.sg/en/",
+        "phone1": "6016 3904",
+        "opening_hours_text": "Monday to Friday | 11.30am to 10pm | Saturday, Sunday & PH | 11am to 10pm",
+        "unitNo": "#05-06/07",
+        "storeName": "Ichiban Boshi"
+      },
+      "detail_url": "https://www.frasersexperience.com/stores/cwp/ichiban-boshi",
+      "detail_http_status": 200,
+      "detail_response_sha256": "f302a092b0a3e5381584f0051ba0c8e57c00fbe15e81c6501d66d3331fcfef08",
+      "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fcwp%2Fen%2Fstores&isdialog=true",
+      "directory_feed_response_sha256": "c351c8e4d74b5e7a7e9d0c283270c6130008210f550945e82bd89dddcdb14a21",
+      "observed_date": "2026-10-18",
+      "withheld_notes": [
+        "Menu URL withheld; mall directory does not publish an outlet menu URL."
+      ]
+    },
+    {
+      "sfa_licence": "NW19470N000",
+      "existing_name": "LUCKIN COFFEE",
+      "registered_business_name": "LUCKIN COFFEE",
+      "existing_address": "Address: 1 WOODLANDS SQUARE #02-K10,CAUSEWAY POINT,Singapore 738099",
+      "postal_code": "738099",
+      "official_mall": "Causeway Point",
+      "official_tenant_name": "Luckin Coffee",
+      "official_unit": "#02-K10",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact normalized tenant name, mall, postal code, and overlapping unit token."
+      },
+      "field_proposals": {
+        "Contact Details": "80661708",
+        "Website": "https://www.luckincoffee.com/",
+        "Opening Hours / Closed Days": "Sunday to Thursday & Public Holidays | 10am to 10pm Friday to Saturday & Eve of Public Holidays | 10am to 11pm"
+      },
+      "field_evidence": {
+        "Contact Details": {
+          "source_url": "https://www.frasersexperience.com/stores/cwp/luckin-coffee",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fcwp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence NW19470N000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c351c8e4d74b5e7a7e9d0c283270c6130008210f550945e82bd89dddcdb14a21",
+          "detail_response_sha256": "10d0f4cf4e9942aeea6947eec4d4f74ea5569204831cfd509b3381503f0ca8e8"
+        },
+        "Website": {
+          "source_url": "https://www.frasersexperience.com/stores/cwp/luckin-coffee",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fcwp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence NW19470N000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c351c8e4d74b5e7a7e9d0c283270c6130008210f550945e82bd89dddcdb14a21",
+          "detail_response_sha256": "10d0f4cf4e9942aeea6947eec4d4f74ea5569204831cfd509b3381503f0ca8e8"
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/cwp/luckin-coffee",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fcwp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence NW19470N000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c351c8e4d74b5e7a7e9d0c283270c6130008210f550945e82bd89dddcdb14a21",
+          "detail_response_sha256": "10d0f4cf4e9942aeea6947eec4d4f74ea5569204831cfd509b3381503f0ca8e8"
+        }
+      },
+      "before_values": {
+        "Contact Details": null,
+        "Website": null,
+        "Opening Hours / Closed Days": null
+      },
+      "source_record_values": {
+        "website": "https://www.luckincoffee.com/",
+        "phone1": "80661708",
+        "opening_hours_text": "Sunday to Thursday & Public Holidays | 10am to 10pm Friday to Saturday & Eve of Public Holidays | 10am to 11pm",
+        "unitNo": "#02-K10",
+        "storeName": "Luckin Coffee"
+      },
+      "detail_url": "https://www.frasersexperience.com/stores/cwp/luckin-coffee",
+      "detail_http_status": 200,
+      "detail_response_sha256": "10d0f4cf4e9942aeea6947eec4d4f74ea5569204831cfd509b3381503f0ca8e8",
+      "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fcwp%2Fen%2Fstores&isdialog=true",
+      "directory_feed_response_sha256": "c351c8e4d74b5e7a7e9d0c283270c6130008210f550945e82bd89dddcdb14a21",
+      "observed_date": "2026-10-18",
+      "withheld_notes": [
+        "Menu URL withheld; mall directory does not publish an outlet menu URL."
+      ]
+    },
+    {
+      "sfa_licence": "NW11117X000",
+      "existing_name": "MCDONALD'S",
+      "registered_business_name": "MCDONALD'S",
+      "existing_address": "Address: 1 WOODLANDS SQUARE (UNITS 01-35,36 &37) #01-35-37,CAUSEWAY POINT,Singapore 738099",
+      "postal_code": "738099",
+      "official_mall": "Causeway Point",
+      "official_tenant_name": "McDonald's",
+      "official_unit": "#01-35/36/37",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact normalized tenant name, mall, postal code, and overlapping unit token."
+      },
+      "field_proposals": {
+        "Opening Hours / Closed Days": "Monday to Sunday | 24 hrs"
+      },
+      "field_evidence": {
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/cwp/mcdonalds",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fcwp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence NW11117X000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c351c8e4d74b5e7a7e9d0c283270c6130008210f550945e82bd89dddcdb14a21",
+          "detail_response_sha256": "9a3abe731abf2a9ac8da67f7e8dfc7c67064065227ec6f189880d1d6a393c101"
+        }
+      },
+      "before_values": {
+        "Contact Details": "Contact: +65 6894 1461",
+        "Website": "https://www.mcdonalds.com.sg/",
+        "Opening Hours / Closed Days": null
+      },
+      "source_record_values": {
+        "website": "https://www.mcdonalds.com.sg/",
+        "phone1": "6894 1461",
+        "opening_hours_text": "Monday to Sunday | 24 hrs",
+        "unitNo": "#01-35/36/37",
+        "storeName": "McDonald's"
+      },
+      "detail_url": "https://www.frasersexperience.com/stores/cwp/mcdonalds",
+      "detail_http_status": 200,
+      "detail_response_sha256": "9a3abe731abf2a9ac8da67f7e8dfc7c67064065227ec6f189880d1d6a393c101",
+      "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fcwp%2Fen%2Fstores&isdialog=true",
+      "directory_feed_response_sha256": "c351c8e4d74b5e7a7e9d0c283270c6130008210f550945e82bd89dddcdb14a21",
+      "observed_date": "2026-10-18",
+      "withheld_notes": []
+    },
+    {
+      "sfa_licence": "NW20A74K000",
+      "existing_name": "Red Ginger",
+      "registered_business_name": "Red Ginger",
+      "existing_address": "Address: 1 WOODLANDS SQUARE #02-05,CAUSEWAY POINT,Singapore 738099",
+      "postal_code": "738099",
+      "official_mall": "Causeway Point",
+      "official_tenant_name": "Red Ginger",
+      "official_unit": "#02-05",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact normalized tenant name, mall, postal code, and overlapping unit token."
+      },
+      "field_proposals": {
+        "Contact Details": "6909 9187",
+        "Website": "https://redginger.com.sg/",
+        "Opening Hours / Closed Days": "Monday to Sunday | 9am to 8.30pm"
+      },
+      "field_evidence": {
+        "Contact Details": {
+          "source_url": "https://www.frasersexperience.com/stores/cwp/red-ginger",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fcwp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence NW20A74K000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c351c8e4d74b5e7a7e9d0c283270c6130008210f550945e82bd89dddcdb14a21",
+          "detail_response_sha256": "69c406a629ca86809be3074567de02ef3a7e5c68e9628d1568dc22df154a8bdf"
+        },
+        "Website": {
+          "source_url": "https://www.frasersexperience.com/stores/cwp/red-ginger",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fcwp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence NW20A74K000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c351c8e4d74b5e7a7e9d0c283270c6130008210f550945e82bd89dddcdb14a21",
+          "detail_response_sha256": "69c406a629ca86809be3074567de02ef3a7e5c68e9628d1568dc22df154a8bdf"
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/cwp/red-ginger",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fcwp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence NW20A74K000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c351c8e4d74b5e7a7e9d0c283270c6130008210f550945e82bd89dddcdb14a21",
+          "detail_response_sha256": "69c406a629ca86809be3074567de02ef3a7e5c68e9628d1568dc22df154a8bdf"
+        }
+      },
+      "before_values": {
+        "Contact Details": null,
+        "Website": null,
+        "Opening Hours / Closed Days": null
+      },
+      "source_record_values": {
+        "website": "https://redginger.com.sg/",
+        "phone1": "6909 9187",
+        "opening_hours_text": "Monday to Sunday | 9am to 8.30pm",
+        "unitNo": "#02-05",
+        "storeName": "Red Ginger"
+      },
+      "detail_url": "https://www.frasersexperience.com/stores/cwp/red-ginger",
+      "detail_http_status": 200,
+      "detail_response_sha256": "69c406a629ca86809be3074567de02ef3a7e5c68e9628d1568dc22df154a8bdf",
+      "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fcwp%2Fen%2Fstores&isdialog=true",
+      "directory_feed_response_sha256": "c351c8e4d74b5e7a7e9d0c283270c6130008210f550945e82bd89dddcdb14a21",
+      "observed_date": "2026-10-18",
+      "withheld_notes": [
+        "Menu URL withheld; mall directory does not publish an outlet menu URL."
+      ]
+    },
+    {
+      "sfa_licence": "NW20C01K000",
+      "existing_name": "Sushiro",
+      "registered_business_name": "Sushiro",
+      "existing_address": "1 WOODLANDS SQUARE #05-16,#05-17,#05-18,CAUSEWAY POINT,Singapore 738099",
+      "postal_code": "738099",
+      "official_mall": "Causeway Point",
+      "official_tenant_name": "Sushiro",
+      "official_unit": "#05-16/17/18",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact normalized tenant name, mall, postal code, and overlapping unit token."
+      },
+      "field_proposals": {
+        "Contact Details": "6908 5605"
+      },
+      "field_evidence": {
+        "Contact Details": {
+          "source_url": "https://www.frasersexperience.com/stores/cwp/sushiro",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fcwp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence NW20C01K000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c351c8e4d74b5e7a7e9d0c283270c6130008210f550945e82bd89dddcdb14a21",
+          "detail_response_sha256": "2809ce02442fbd83538e555e5effa5d0a06902dd79c3d183b797a43524c3054f"
+        }
+      },
+      "before_values": {
+        "Contact Details": null,
+        "Website": "https://www.sushiro.com.sg/",
+        "Opening Hours / Closed Days": "Hours: 11:00AM – 10:00PM"
+      },
+      "source_record_values": {
+        "website": "https://www.akindo-sushiro.biz/en/",
+        "phone1": "6908 5605",
+        "opening_hours_text": "Monday to Sunday | 11am to 10pm (Last order: 9.30pm)",
+        "unitNo": "#05-16/17/18",
+        "storeName": "Sushiro"
+      },
+      "detail_url": "https://www.frasersexperience.com/stores/cwp/sushiro",
+      "detail_http_status": 200,
+      "detail_response_sha256": "2809ce02442fbd83538e555e5effa5d0a06902dd79c3d183b797a43524c3054f",
+      "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fcwp%2Fen%2Fstores&isdialog=true",
+      "directory_feed_response_sha256": "c351c8e4d74b5e7a7e9d0c283270c6130008210f550945e82bd89dddcdb14a21",
+      "observed_date": "2026-10-18",
+      "withheld_notes": []
+    },
+    {
+      "sfa_licence": "NW11492A000",
+      "existing_name": "SWENSEN'S",
+      "registered_business_name": "SWENSEN'S",
+      "existing_address": "Address: 1 WOODLANDS SQUARE #02-08/09,CAUSEWAY POINT,Singapore 738099",
+      "postal_code": "738099",
+      "official_mall": "Causeway Point",
+      "official_tenant_name": "Swensen's",
+      "official_unit": "#02-08/09/09A",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact normalized tenant name, mall, postal code, and overlapping unit token."
+      },
+      "field_proposals": {
+        "Opening Hours / Closed Days": "Monday to Sunday | 11.30am to 10.30pm"
+      },
+      "field_evidence": {
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/cwp/swensens",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fcwp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence NW11492A000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c351c8e4d74b5e7a7e9d0c283270c6130008210f550945e82bd89dddcdb14a21",
+          "detail_response_sha256": "72cf5b074cc248612b91d18e817a1f16d81b2cba862d594dc523e186f7ff7bf6"
+        }
+      },
+      "before_values": {
+        "Contact Details": "Contact: +6568942086",
+        "Website": "https://www.swensens.com.sg",
+        "Opening Hours / Closed Days": null
+      },
+      "source_record_values": {
+        "website": "https://swensens.com.sg/",
+        "phone1": "6894 2086",
+        "opening_hours_text": "Monday to Sunday | 11.30am to 10.30pm",
+        "unitNo": "#02-08/09/09A",
+        "storeName": "Swensen's"
+      },
+      "detail_url": "https://www.frasersexperience.com/stores/cwp/swensens",
+      "detail_http_status": 200,
+      "detail_response_sha256": "72cf5b074cc248612b91d18e817a1f16d81b2cba862d594dc523e186f7ff7bf6",
+      "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fcwp%2Fen%2Fstores&isdialog=true",
+      "directory_feed_response_sha256": "c351c8e4d74b5e7a7e9d0c283270c6130008210f550945e82bd89dddcdb14a21",
+      "observed_date": "2026-10-18",
+      "withheld_notes": [
+        "Menu URL withheld; mall directory does not publish an outlet menu URL."
+      ]
+    },
+    {
+      "sfa_licence": "NW12G77E000",
+      "existing_name": "XIANG XIANG HUNAN CUISINE",
+      "registered_business_name": "XIANG XIANG HUNAN CUISINE",
+      "existing_address": "Address: 1 WOODLANDS SQUARE #05-09,CAUSEWAY POINT,Singapore 738099",
+      "postal_code": "738099",
+      "official_mall": "Causeway Point",
+      "official_tenant_name": "Xiang Xiang Hunan Cuisine 湘香湖南菜",
+      "official_unit": "#05-09",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact normalized tenant name, mall, postal code, and overlapping unit token."
+      },
+      "field_proposals": {
+        "Contact Details": "6514 8868",
+        "Opening Hours / Closed Days": "Monday to Sunday | 11am to 10pm"
+      },
+      "field_evidence": {
+        "Contact Details": {
+          "source_url": "https://www.frasersexperience.com/stores/cwp/xiang-xiang-hunan-cuisine",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fcwp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence NW12G77E000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c351c8e4d74b5e7a7e9d0c283270c6130008210f550945e82bd89dddcdb14a21",
+          "detail_response_sha256": "1a9d71bd991329558335255dc30b26a8224e0da8cf06a88e8b6ed252c6cc7f40"
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/cwp/xiang-xiang-hunan-cuisine",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fcwp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence NW12G77E000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c351c8e4d74b5e7a7e9d0c283270c6130008210f550945e82bd89dddcdb14a21",
+          "detail_response_sha256": "1a9d71bd991329558335255dc30b26a8224e0da8cf06a88e8b6ed252c6cc7f40"
+        }
+      },
+      "before_values": {
+        "Contact Details": null,
+        "Website": null,
+        "Opening Hours / Closed Days": null
+      },
+      "source_record_values": {
+        "website": null,
+        "phone1": "6514 8868",
+        "opening_hours_text": "Monday to Sunday | 11am to 10pm",
+        "unitNo": "#05-09",
+        "storeName": "Xiang Xiang Hunan Cuisine 湘香湖南菜"
+      },
+      "detail_url": "https://www.frasersexperience.com/stores/cwp/xiang-xiang-hunan-cuisine",
+      "detail_http_status": 200,
+      "detail_response_sha256": "1a9d71bd991329558335255dc30b26a8224e0da8cf06a88e8b6ed252c6cc7f40",
+      "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fcwp%2Fen%2Fstores&isdialog=true",
+      "directory_feed_response_sha256": "c351c8e4d74b5e7a7e9d0c283270c6130008210f550945e82bd89dddcdb14a21",
+      "observed_date": "2026-10-18",
+      "withheld_notes": [
+        "Menu URL withheld; mall directory does not publish an outlet menu URL."
+      ]
+    },
+    {
+      "sfa_licence": "NW11338X000",
+      "existing_name": "YOSHINOYA",
+      "registered_business_name": "YOSHINOYA",
+      "existing_address": "Address: 1 WOODLANDS SQUARE #01-12,CAUSEWAY POINT,Singapore 738099",
+      "postal_code": "738099",
+      "official_mall": "Causeway Point",
+      "official_tenant_name": "Yoshinoya",
+      "official_unit": "#01-12",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact normalized tenant name, mall, postal code, and overlapping unit token."
+      },
+      "field_proposals": {
+        "Contact Details": "6893 6978",
+        "Website": "https://yoshinoya.com.sg/",
+        "Opening Hours / Closed Days": "Monday to Sunday | 11am to 9pm"
+      },
+      "field_evidence": {
+        "Contact Details": {
+          "source_url": "https://www.frasersexperience.com/stores/cwp/yoshinoya",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fcwp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence NW11338X000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c351c8e4d74b5e7a7e9d0c283270c6130008210f550945e82bd89dddcdb14a21",
+          "detail_response_sha256": "195cd3484c110351ccea08fb57cfe93b148688c5a9ade3699c0f74e19a5e0ccf"
+        },
+        "Website": {
+          "source_url": "https://www.frasersexperience.com/stores/cwp/yoshinoya",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fcwp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence NW11338X000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c351c8e4d74b5e7a7e9d0c283270c6130008210f550945e82bd89dddcdb14a21",
+          "detail_response_sha256": "195cd3484c110351ccea08fb57cfe93b148688c5a9ade3699c0f74e19a5e0ccf"
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/cwp/yoshinoya",
+          "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fcwp%2Fen%2Fstores&isdialog=true",
+          "publisher": "Frasers Experience",
+          "source_type": "Official Frasers Experience tenant detail page and current F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Exact normalized tenant name, official mall, exact six-digit postal code, and overlapping exact unit token join uniquely to SFA Licence NW11338X000; field was blank in baseline workbook. Detail page HTTP 200 contains tenant name and unit.",
+          "observed_date": "2026-10-18",
+          "feed_response_sha256": "c351c8e4d74b5e7a7e9d0c283270c6130008210f550945e82bd89dddcdb14a21",
+          "detail_response_sha256": "195cd3484c110351ccea08fb57cfe93b148688c5a9ade3699c0f74e19a5e0ccf"
+        }
+      },
+      "before_values": {
+        "Contact Details": null,
+        "Website": null,
+        "Opening Hours / Closed Days": null
+      },
+      "source_record_values": {
+        "website": "https://yoshinoya.com.sg/",
+        "phone1": "6893 6978",
+        "opening_hours_text": "Monday to Sunday | 11am to 9pm",
+        "unitNo": "#01-12",
+        "storeName": "Yoshinoya"
+      },
+      "detail_url": "https://www.frasersexperience.com/stores/cwp/yoshinoya",
+      "detail_http_status": 200,
+      "detail_response_sha256": "195cd3484c110351ccea08fb57cfe93b148688c5a9ade3699c0f74e19a5e0ccf",
+      "directory_feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fcwp%2Fen%2Fstores&isdialog=true",
+      "directory_feed_response_sha256": "c351c8e4d74b5e7a7e9d0c283270c6130008210f550945e82bd89dddcdb14a21",
+      "observed_date": "2026-10-18",
+      "withheld_notes": [
+        "Menu URL withheld; mall directory does not publish an outlet menu URL."
+      ]
+    }
+  ],
+  "held": [
+    {
+      "mall": "Causeway Point",
+      "tenant": "Teppan-Yaki",
+      "unit": "#02-09D & #02-10",
+      "postal_code": "738099",
+      "sfa_licence": "NW11506A000",
+      "reason": "Official detail page failed identity/unit check; no fields proposed.",
+      "detail_url": "https://www.frasersexperience.com/stores/cwp/teppan-yaki",
+      "http_status": 200,
+      "checks": {
+        "tenant_name_present": true,
+        "unit_present": false
+      }
+    }
+  ]
+}

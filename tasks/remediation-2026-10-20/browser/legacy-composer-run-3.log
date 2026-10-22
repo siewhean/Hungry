@@ -1,0 +1,279 @@
+(node:92517) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+Running 4 tests using 1 worker
+
+[1A[2K(node:92520) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:92520) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+
+[1A[2K(node:92520) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K[1/4] [chromium] › tests/e2e/buttons-interactions.spec.ts:12:7 › supported buttons and composer interactions › launcher buttons open the supported composer
+[1A[2K  1) [chromium] › tests/e2e/buttons-interactions.spec.ts:12:7 › supported buttons and composer interactions › launcher buttons open the supported composer 
+
+    Error: page.reload: net::ERR_CONNECTION_REFUSED
+    Call log:
+    [2m  - waiting for navigation until "domcontentloaded"[22m
+
+
+       at helpers/app.ts:71
+
+      69 |   await page.goto("/", { waitUntil: "domcontentloaded" });
+      70 |   await clearBrowserStorage(page);
+    > 71 |   await page.reload({ waitUntil: "domcontentloaded" });
+         |              ^
+      72 |   await expect(page.getByText("Developer Launcher", { exact: true }).first()).toBeVisible();
+      73 | }
+      74 |
+        at resetAppState (/Users/Siew Hean/Documents/GitHub/Hungry/tests/e2e/helpers/app.ts:71:14)
+        at /Users/Siew Hean/Documents/GitHub/Hungry/tests/e2e/buttons-interactions.spec.ts:13:5
+
+    Error: No critical page errors, console errors, or failed app requests
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoEqual[2m([22m[32mexpected[39m[2m) // deep equality[22m
+
+    [32m- Expected  -  1[39m
+    [31m+ Received  + 20[39m
+
+    [32m- Array [][39m
+    [31m+ Array [[39m
+    [31m+   Object {[39m
+    [31m+     "message": "net::ERR_CONNECTION_REFUSED",[39m
+    [31m+     "type": "requestfailed",[39m
+    [31m+     "url": "http://localhost:8093/index.ts.bundle?platform=web&dev=true&hot=false&lazy=true&transform.engine=hermes&transform.routerRoot=src%2Fapp&unstable_transformProfile=hermes-stable",[39m
+    [31m+   },[39m
+    [31m+   Object {[39m
+    [31m+     "message": "Failed to load resource: net::ERR_CONNECTION_REFUSED",[39m
+    [31m+     "type": "console",[39m
+    [31m+   },[39m
+    [31m+   Object {[39m
+    [31m+     "message": "Failed to load resource: net::ERR_CONNECTION_REFUSED",[39m
+    [31m+     "type": "console",[39m
+    [31m+   },[39m
+    [31m+   Object {[39m
+    [31m+     "message": "net::ERR_CONNECTION_REFUSED",[39m
+    [31m+     "type": "requestfailed",[39m
+    [31m+     "url": "http://localhost:8093/",[39m
+    [31m+   },[39m
+    [31m+ ][39m
+
+       at fixtures.ts:100
+
+       98 |       expect
+       99 |         .soft(criticalIssues, "No critical page errors, console errors, or failed app requests")
+    > 100 |         .toEqual([]);
+          |          ^
+      101 |     },
+      102 |     { auto: true },
+      103 |   ],
+        at Object.exports.test._test.test.extend.pageIssues.auto (/Users/Siew Hean/Documents/GitHub/Hungry/tests/e2e/fixtures.ts:100:10)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tasks/remediation-2026-10-20/browser/legacy-composer-results/buttons-interactions-suppo-2283d-open-the-supported-composer-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tasks/remediation-2026-10-20/browser/legacy-composer-results/buttons-interactions-suppo-2283d-open-the-supported-composer-chromium/error-context.md
+
+
+[1A[2K(node:92742) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:92742) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+
+[1A[2K(node:92742) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K[2/4] [chromium] › tests/e2e/buttons-interactions.spec.ts:24:7 › supported buttons and composer interactions › an account-scoped composer draft survives reload and returning to that account
+[1A[2K  2) [chromium] › tests/e2e/buttons-interactions.spec.ts:24:7 › supported buttons and composer interactions › an account-scoped composer draft survives reload and returning to that account 
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8093/
+    Call log:
+    [2m  - navigating to "http://localhost:8093/", waiting until "domcontentloaded"[22m
+
+
+       at helpers/app.ts:69
+
+      67 |
+      68 | export async function resetAppState(page: Page) {
+    > 69 |   await page.goto("/", { waitUntil: "domcontentloaded" });
+         |              ^
+      70 |   await clearBrowserStorage(page);
+      71 |   await page.reload({ waitUntil: "domcontentloaded" });
+      72 |   await expect(page.getByText("Developer Launcher", { exact: true }).first()).toBeVisible();
+        at resetAppState (/Users/Siew Hean/Documents/GitHub/Hungry/tests/e2e/helpers/app.ts:69:14)
+        at /Users/Siew Hean/Documents/GitHub/Hungry/tests/e2e/buttons-interactions.spec.ts:27:24
+
+    Error: No critical page errors, console errors, or failed app requests
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoEqual[2m([22m[32mexpected[39m[2m) // deep equality[22m
+
+    [32m- Expected  - 1[39m
+    [31m+ Received  + 7[39m
+
+    [32m- Array [][39m
+    [31m+ Array [[39m
+    [31m+   Object {[39m
+    [31m+     "message": "net::ERR_CONNECTION_REFUSED",[39m
+    [31m+     "type": "requestfailed",[39m
+    [31m+     "url": "http://localhost:8093/",[39m
+    [31m+   },[39m
+    [31m+ ][39m
+
+       at fixtures.ts:100
+
+       98 |       expect
+       99 |         .soft(criticalIssues, "No critical page errors, console errors, or failed app requests")
+    > 100 |         .toEqual([]);
+          |          ^
+      101 |     },
+      102 |     { auto: true },
+      103 |   ],
+        at Object.exports.test._test.test.extend.pageIssues.auto (/Users/Siew Hean/Documents/GitHub/Hungry/tests/e2e/fixtures.ts:100:10)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tasks/remediation-2026-10-20/browser/legacy-composer-results/buttons-interactions-suppo-4cc47-d-returning-to-that-account-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tasks/remediation-2026-10-20/browser/legacy-composer-results/buttons-interactions-suppo-4cc47-d-returning-to-that-account-chromium/error-context.md
+
+
+[1A[2K(node:92776) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:92776) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+
+[1A[2K(node:92776) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K[3/4] [chromium] › tests/e2e/buttons-interactions.spec.ts:42:7 › supported buttons and composer interactions › unsupported AI and scheduling controls are absent from the supported composer
+[1A[2K  3) [chromium] › tests/e2e/buttons-interactions.spec.ts:42:7 › supported buttons and composer interactions › unsupported AI and scheduling controls are absent from the supported composer 
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8093/
+    Call log:
+    [2m  - navigating to "http://localhost:8093/", waiting until "domcontentloaded"[22m
+
+
+       at helpers/app.ts:69
+
+      67 |
+      68 | export async function resetAppState(page: Page) {
+    > 69 |   await page.goto("/", { waitUntil: "domcontentloaded" });
+         |              ^
+      70 |   await clearBrowserStorage(page);
+      71 |   await page.reload({ waitUntil: "domcontentloaded" });
+      72 |   await expect(page.getByText("Developer Launcher", { exact: true }).first()).toBeVisible();
+        at resetAppState (/Users/Siew Hean/Documents/GitHub/Hungry/tests/e2e/helpers/app.ts:69:14)
+        at /Users/Siew Hean/Documents/GitHub/Hungry/tests/e2e/buttons-interactions.spec.ts:45:24
+
+    Error: No critical page errors, console errors, or failed app requests
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoEqual[2m([22m[32mexpected[39m[2m) // deep equality[22m
+
+    [32m- Expected  - 1[39m
+    [31m+ Received  + 7[39m
+
+    [32m- Array [][39m
+    [31m+ Array [[39m
+    [31m+   Object {[39m
+    [31m+     "message": "net::ERR_CONNECTION_REFUSED",[39m
+    [31m+     "type": "requestfailed",[39m
+    [31m+     "url": "http://localhost:8093/",[39m
+    [31m+   },[39m
+    [31m+ ][39m
+
+       at fixtures.ts:100
+
+       98 |       expect
+       99 |         .soft(criticalIssues, "No critical page errors, console errors, or failed app requests")
+    > 100 |         .toEqual([]);
+          |          ^
+      101 |     },
+      102 |     { auto: true },
+      103 |   ],
+        at Object.exports.test._test.test.extend.pageIssues.auto (/Users/Siew Hean/Documents/GitHub/Hungry/tests/e2e/fixtures.ts:100:10)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tasks/remediation-2026-10-20/browser/legacy-composer-results/buttons-interactions-suppo-358d5-from-the-supported-composer-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tasks/remediation-2026-10-20/browser/legacy-composer-results/buttons-interactions-suppo-358d5-from-the-supported-composer-chromium/error-context.md
+
+
+[1A[2K(node:92799) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:92799) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+
+[1A[2K(node:92799) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K[4/4] [chromium] › tests/e2e/buttons-interactions.spec.ts:63:7 › supported buttons and composer interactions › missing media keeps publication disabled while preserving the entered draft
+[1A[2K  4) [chromium] › tests/e2e/buttons-interactions.spec.ts:63:7 › supported buttons and composer interactions › missing media keeps publication disabled while preserving the entered draft 
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:8093/
+    Call log:
+    [2m  - navigating to "http://localhost:8093/", waiting until "domcontentloaded"[22m
+
+
+       at helpers/app.ts:69
+
+      67 |
+      68 | export async function resetAppState(page: Page) {
+    > 69 |   await page.goto("/", { waitUntil: "domcontentloaded" });
+         |              ^
+      70 |   await clearBrowserStorage(page);
+      71 |   await page.reload({ waitUntil: "domcontentloaded" });
+      72 |   await expect(page.getByText("Developer Launcher", { exact: true }).first()).toBeVisible();
+        at resetAppState (/Users/Siew Hean/Documents/GitHub/Hungry/tests/e2e/helpers/app.ts:69:14)
+        at /Users/Siew Hean/Documents/GitHub/Hungry/tests/e2e/buttons-interactions.spec.ts:66:24
+
+    Error: No critical page errors, console errors, or failed app requests
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoEqual[2m([22m[32mexpected[39m[2m) // deep equality[22m
+
+    [32m- Expected  - 1[39m
+    [31m+ Received  + 7[39m
+
+    [32m- Array [][39m
+    [31m+ Array [[39m
+    [31m+   Object {[39m
+    [31m+     "message": "net::ERR_CONNECTION_REFUSED",[39m
+    [31m+     "type": "requestfailed",[39m
+    [31m+     "url": "http://localhost:8093/",[39m
+    [31m+   },[39m
+    [31m+ ][39m
+
+       at fixtures.ts:100
+
+       98 |       expect
+       99 |         .soft(criticalIssues, "No critical page errors, console errors, or failed app requests")
+    > 100 |         .toEqual([]);
+          |          ^
+      101 |     },
+      102 |     { auto: true },
+      103 |   ],
+        at Object.exports.test._test.test.extend.pageIssues.auto (/Users/Siew Hean/Documents/GitHub/Hungry/tests/e2e/fixtures.ts:100:10)
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tasks/remediation-2026-10-20/browser/legacy-composer-results/buttons-interactions-suppo-4e26b-reserving-the-entered-draft-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tasks/remediation-2026-10-20/browser/legacy-composer-results/buttons-interactions-suppo-4e26b-reserving-the-entered-draft-chromium/error-context.md
+
+
+[1A[2K  4 failed
+    [chromium] › tests/e2e/buttons-interactions.spec.ts:12:7 › supported buttons and composer interactions › launcher buttons open the supported composer 
+    [chromium] › tests/e2e/buttons-interactions.spec.ts:24:7 › supported buttons and composer interactions › an account-scoped composer draft survives reload and returning to that account 
+    [chromium] › tests/e2e/buttons-interactions.spec.ts:42:7 › supported buttons and composer interactions › unsupported AI and scheduling controls are absent from the supported composer 
+    [chromium] › tests/e2e/buttons-interactions.spec.ts:63:7 › supported buttons and composer interactions › missing media keeps publication disabled while preserving the entered draft 

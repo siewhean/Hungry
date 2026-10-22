@@ -63,3 +63,4 @@ scrape_orchestrator.log
 scripts/temp_main.js
 tasks/Roadmap/Database/excel-source-quality-review-queue-*.csv
 tasks/Roadmap/Database/excel-source-quality-audit-*.json
+.env*.bak*

@@ -1,0 +1,62 @@
+{
+  "snapshot_id": "refresh117_pscafe_kantin_official_source_increment_20261019",
+  "observed_date": "2026-10-19",
+  "canonical_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_sha256": "163a66db016b6f1a93105ea31ce0d84afed7b928ededc8e3d5cf88ab81b755e9",
+  "changes": [
+    {
+      "sfa_licence": "CE05227L000",
+      "outlet": "PS CAFE / PS.Cafe Paragon, #03-41/44, The Paragon, 238859",
+      "fields": {
+        "Website": "https://www.pscafe.com/",
+        "Menu URL": "https://www.pscafe.com/pscafe-paragon-qr-food-menu",
+        "Opening Hours / Closed Days": "Daily: 10:00 AM - 10:00 PM (last order 9:00 PM)"
+      },
+      "sources": [
+        "https://www.pscafe.com/pscafe-at-paragon",
+        "https://www.pscafe.com/pscafe-paragon-qr-food-menu"
+      ],
+      "evidence": "Operator pages identify PS.Cafe Paragon at #03-41/42 in the same building/postal code; outlet page and outlet-specific menu page agree on daily hours and last order. All three workbook target cells were blank. Exact match shares unit #03-41; no nonblank fields were overwritten."
+    },
+    {
+      "sfa_licence": "SE23F69A000",
+      "outlet": "Kantin at Jewel Changi, #05-206/207",
+      "menu_items": [
+        "Rainforest Fried Rice",
+        "Jungle Omelette",
+        "Salmon Island",
+        "Sarawak Laksa",
+        "Headhunter Pansuh Set"
+      ],
+      "source_url": "https://www.jewelchangiairport.com/en/dine/kantin.html",
+      "evidence": "Jewel official tenant listing identifies Kantin as a Southeast Asian restaurant at #05-206/207 and describes these five named dishes/sets. No item prices or complete menu are published on that page; exact licence/address match checked against the workbook. Recorded as descriptive signature items, not a complete menu; current availability beyond this listing is not independently established."
+    },
+    {
+      "sfa_licence": "SE23F69A000",
+      "image_url": "https://top.changiairport.com/content/dam/jca-project/tenant/1920/08_1920x500%20-%20Kantin.jpg",
+      "source_page_url": "https://www.jewelchangiairport.com/en/dine/kantin.html",
+      "evidence": "Jewel official page HTML maps a Kantin-named tenant banner asset to this direct JPEG URL; source scan reported HTTP 200, image/jpeg, 757299 bytes. The direct asset could not be visually inspected in this session. Added as review-only candidate; not approved for display or reuse."
+    }
+  ],
+  "withheld": [
+    "No Kantin contact or menu URL added.",
+    "No PS.Cafe contact proposed; mall concierge number excluded.",
+    "Kantin public-access status unchanged; current row remains candidate/unverified."
+  ],
+  "policy": "No delivery-platform data used; no image rights or visual correctness inferred.",
+  "installed_sha256": "a70390e62c4b5a9605f8041e4136f92024d93275d99c58f8de7ebaf73c8c96b6",
+  "result_counts": {
+    "Public F&B Directory": 38279,
+    "Menu Items": 12964,
+    "Image Candidates": 2575,
+    "Coverage & Sources data rows": 211,
+    "PS.Cafe directory fields filled": 3,
+    "Kantin descriptive menu facts added": 5,
+    "Kantin image candidates added": 1,
+    "Crystal Jade restricted image references added": 5,
+    "approved images": 0
+  },
+  "qa_table_range_correction": "MenuItems A1:L12965 and ImageCandidates A1:I2571 extended to cover appended rows; CoverageSources A1:C210 already covered appended entry.",
+  "final_refresh117_note": "Final Refresh117 artifact also includes five rights-restricted Crystal Jade image references documented in mall_media_delta_refresh117_20261019.json.",
+  "scope_note": "Counts describe the final Refresh117 workbook after integrating the PS.Cafe/Kantin increment, five rights-restricted Crystal Jade image references, and access/menu audit coverage row."
+}

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { View, StyleSheet, Pressable, ScrollView } from "react-native";
 import { X, Check, Sun, Droplet, Wand2, Sparkles } from "lucide-react-native";
-import * as Haptics from "expo-haptics";
+import * as Haptics from "@/lib/haptics";
 import { VideoView, useVideoPlayer } from "expo-video";
 import { AccessibleImage, AppText, IconButton, Badge, Dialog } from "@/components/ui";
 import { useHungryTheme } from "@/theme";

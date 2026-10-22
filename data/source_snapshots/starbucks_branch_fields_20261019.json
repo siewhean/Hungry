@@ -1,0 +1,816 @@
+{
+  "snapshot": "starbucks_branch_fields_20261019",
+  "baseline_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_workbook_sha256": "f5e74668be36886b168981d94100a2e09c2bb8238e7a0ed2f2ca86a5d82925c6",
+  "workbook_edited": false,
+  "observed_at": "2026-10-19 (Asia/Singapore)",
+  "proposal_status": "evidence_only_not_integrated",
+  "scope": "Bounded first 30 exact branch matches from alphabetical directory order, using Starbucks Singapore first-party locator GraphQL data. Proposes only blank opening hours and blank contact fields. No paid source or third-party delivery data used.",
+  "source": {
+    "publisher": "Starbucks Singapore",
+    "locator_url": "https://www.starbucks.com.sg/stores",
+    "data_endpoint": "https://www.starbucks.com.sg/api/graphql",
+    "observed_at": "2026-10-19 (Asia/Singapore)",
+    "observation_method": "Fetched current official locator page and its public GraphQL store dataset; all fields tied to exact store address and unit."
+  },
+  "summary": {
+    "records_screened": 72,
+    "records_proposed": 30,
+    "field_updates": 53,
+    "hours_updates": 30,
+    "contact_updates": 23,
+    "withheld_records": 42
+  },
+  "proposals": [
+    {
+      "directory_row": 26360,
+      "sfa_licence": "CE07727K000",
+      "f_and_b_name": "STARBUCKS",
+      "workbook_address": "Address: 53 ANG MO KIO AVENUE 3 #B1-65,Singapore 569933",
+      "postal_code": "569933",
+      "official_store_name": "Ang Mo Kio Hub",
+      "official_address": "53 Ang Mo Kio Avenue 3 #B1-65, Ang Mo Kio Hub, Singapore 569933",
+      "official_phone_raw": "6910 1152",
+      "fields": [
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "proposed_value": "Hours: Mon-Thu 07:30-22:00; Fri-Sat 07:30-22:30; Sun 07:30-22:00; PH 07:30-22:00; Eve PH 07:30-22:30"
+        },
+        {
+          "field": "Contact Details",
+          "before": null,
+          "proposed_value": "Contact: +6569101152"
+        }
+      ],
+      "source_url": "https://www.starbucks.com.sg/stores",
+      "source_data_url": "https://www.starbucks.com.sg/api/graphql?query=query%20MyQuery%20%7B%20store(orderBy%3A%20%7BdisplayText%3A%20ASC%7D)%20%7B%20address%20%7B%20html%20%7D%20openingHours%20%7B%20contentItems%20%7B%20...%20on%20DataRow%20%7B%20key%20value%20%7D%20%7D%20%7D%20phone%20displayText%20contentItemId%20%7D%20%7D",
+      "source_publish_date": null,
+      "source_expiry_date": null,
+      "match_basis": "Exact six-digit postal code AND exact normalized shop-unit set matched the first-party locator address; unique locator result."
+    },
+    {
+      "directory_row": 26362,
+      "sfa_licence": "CE09985E000",
+      "f_and_b_name": "Starbucks",
+      "workbook_address": "Address: 2 ORCHARD TURN #B3-59,ION ORCHARD,Singapore 238801",
+      "postal_code": "238801",
+      "official_store_name": "ION Orchard",
+      "official_address": "238 Orchard Boulevard #B3-59, ION Orchard, Singapore 238801",
+      "official_phone_raw": "6910 1197",
+      "fields": [
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "proposed_value": "Hours: Mon-Thu 07:30-22:00; Fri-Sat 07:30-22:30; Sun 07:30-22:00; PH 07:30-22:30; Eve PH 07:30-22:30"
+        },
+        {
+          "field": "Contact Details",
+          "before": null,
+          "proposed_value": "Contact: +6569101197"
+        }
+      ],
+      "source_url": "https://www.starbucks.com.sg/stores",
+      "source_data_url": "https://www.starbucks.com.sg/api/graphql?query=query%20MyQuery%20%7B%20store(orderBy%3A%20%7BdisplayText%3A%20ASC%7D)%20%7B%20address%20%7B%20html%20%7D%20openingHours%20%7B%20contentItems%20%7B%20...%20on%20DataRow%20%7B%20key%20value%20%7D%20%7D%20%7D%20phone%20displayText%20contentItemId%20%7D%20%7D",
+      "source_publish_date": null,
+      "source_expiry_date": null,
+      "match_basis": "Exact six-digit postal code AND exact normalized shop-unit set matched the first-party locator address; unique locator result."
+    },
+    {
+      "directory_row": 26363,
+      "sfa_licence": "CE10311J000",
+      "f_and_b_name": "starbucks",
+      "workbook_address": "Address: 150 BEACH ROAD #01-01,GATEWAY WEST,Singapore 189720",
+      "postal_code": "189720",
+      "official_store_name": "Gateway",
+      "official_address": "150 Beach Road #01-01, The Gateway West, Singapore 189720",
+      "official_phone_raw": "6910 1103",
+      "fields": [
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "proposed_value": "Hours: Mon-Fri 07:00-19:00; Sat-Sun Closed; PH Closed; Eve PH Closed"
+        }
+      ],
+      "source_url": "https://www.starbucks.com.sg/stores",
+      "source_data_url": "https://www.starbucks.com.sg/api/graphql?query=query%20MyQuery%20%7B%20store(orderBy%3A%20%7BdisplayText%3A%20ASC%7D)%20%7B%20address%20%7B%20html%20%7D%20openingHours%20%7B%20contentItems%20%7B%20...%20on%20DataRow%20%7B%20key%20value%20%7D%20%7D%20%7D%20phone%20displayText%20contentItemId%20%7D%20%7D",
+      "source_publish_date": null,
+      "source_expiry_date": null,
+      "match_basis": "Exact six-digit postal code AND exact normalized shop-unit set matched the first-party locator address; unique locator result."
+    },
+    {
+      "directory_row": 26366,
+      "sfa_licence": "CE12025V000",
+      "f_and_b_name": "STARBUCKS",
+      "workbook_address": "Address: 18 MARINA GARDENS DRIVE #02-03,GARDENS BY THE BAY,Singapore 018953",
+      "postal_code": "018953",
+      "official_store_name": "Gardens by the Bay",
+      "official_address": "18 Marina Gardens Drive #02-03, Gardens by the Bay, Singapore 018953   ",
+      "official_phone_raw": "6993 3677",
+      "fields": [
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "proposed_value": "Hours: Mon-Thu 08:00-22:00; Fri 08:00-22:30; Sat 07:00-23:00; Sun 07:00-22:00; PH 07:00-22:00; Eve PH 07:00-23:00"
+        },
+        {
+          "field": "Contact Details",
+          "before": null,
+          "proposed_value": "Contact: +6569933677"
+        }
+      ],
+      "source_url": "https://www.starbucks.com.sg/stores",
+      "source_data_url": "https://www.starbucks.com.sg/api/graphql?query=query%20MyQuery%20%7B%20store(orderBy%3A%20%7BdisplayText%3A%20ASC%7D)%20%7B%20address%20%7B%20html%20%7D%20openingHours%20%7B%20contentItems%20%7B%20...%20on%20DataRow%20%7B%20key%20value%20%7D%20%7D%20%7D%20phone%20displayText%20contentItemId%20%7D%20%7D",
+      "source_publish_date": null,
+      "source_expiry_date": null,
+      "match_basis": "Exact six-digit postal code AND exact normalized shop-unit set matched the first-party locator address; unique locator result."
+    },
+    {
+      "directory_row": 26367,
+      "sfa_licence": "CE17D68L000",
+      "f_and_b_name": "Starbucks",
+      "workbook_address": "Address: 2 HANDY ROAD #01-01,THE CATHAY,Singapore 229233",
+      "postal_code": "229233",
+      "official_store_name": "The Cathay 2",
+      "official_address": "2 Handy Road #01-01, The Cathay, Singapore 229233",
+      "official_phone_raw": "6910 5455",
+      "fields": [
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "proposed_value": "Hours: Mon-Sun 08:00-22:00; PH 08:00-22:00; Eve PH 08:00-22:00"
+        },
+        {
+          "field": "Contact Details",
+          "before": null,
+          "proposed_value": "Contact: +6569105455"
+        }
+      ],
+      "source_url": "https://www.starbucks.com.sg/stores",
+      "source_data_url": "https://www.starbucks.com.sg/api/graphql?query=query%20MyQuery%20%7B%20store(orderBy%3A%20%7BdisplayText%3A%20ASC%7D)%20%7B%20address%20%7B%20html%20%7D%20openingHours%20%7B%20contentItems%20%7B%20...%20on%20DataRow%20%7B%20key%20value%20%7D%20%7D%20%7D%20phone%20displayText%20contentItemId%20%7D%20%7D",
+      "source_publish_date": null,
+      "source_expiry_date": "2099-12-31T15:59:00Z",
+      "match_basis": "Exact six-digit postal code AND exact normalized shop-unit set matched the first-party locator address; unique locator result."
+    },
+    {
+      "directory_row": 26368,
+      "sfa_licence": "CE18N36C000",
+      "f_and_b_name": "STARBUCKS",
+      "workbook_address": "Address: 182 CECIL STREET #01-05,#01-08,FRASERS TOWER,Singapore 069547",
+      "postal_code": "069547",
+      "official_store_name": "Frasers Tower",
+      "official_address": "182 Cecil Street #01-05/08, Frasers Tower, Singapore 069547",
+      "official_phone_raw": "6041 2695",
+      "fields": [
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "proposed_value": "Hours: Mon-Fri 07:00-21:00; Sat-Sun Closed; PH Closed; Eve PH 07:00-21:00"
+        },
+        {
+          "field": "Contact Details",
+          "before": null,
+          "proposed_value": "Contact: +6560412695"
+        }
+      ],
+      "source_url": "https://www.starbucks.com.sg/stores",
+      "source_data_url": "https://www.starbucks.com.sg/api/graphql?query=query%20MyQuery%20%7B%20store(orderBy%3A%20%7BdisplayText%3A%20ASC%7D)%20%7B%20address%20%7B%20html%20%7D%20openingHours%20%7B%20contentItems%20%7B%20...%20on%20DataRow%20%7B%20key%20value%20%7D%20%7D%20%7D%20phone%20displayText%20contentItemId%20%7D%20%7D",
+      "source_publish_date": null,
+      "source_expiry_date": null,
+      "match_basis": "Exact six-digit postal code AND exact normalized shop-unit set matched the first-party locator address; unique locator result."
+    },
+    {
+      "directory_row": 26369,
+      "sfa_licence": "CE19014N000",
+      "f_and_b_name": "STARBUCKS",
+      "workbook_address": "Address: 51 UPPER SERANGOON ROAD #01-02,THE POIZ CENTRE,Singapore 347697",
+      "postal_code": "347697",
+      "official_store_name": "The Poiz Centre",
+      "official_address": "51 Upper Serangoon Road #01-02, The Poiz Centre, Singapore 347697",
+      "official_phone_raw": "6815 1038",
+      "fields": [
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "proposed_value": "Hours: Mon-Fri 07:00-22:30; Sat-Sun 07:30-22:30; PH 07:30-22:30; Eve PH 07:30-22:30"
+        }
+      ],
+      "source_url": "https://www.starbucks.com.sg/stores",
+      "source_data_url": "https://www.starbucks.com.sg/api/graphql?query=query%20MyQuery%20%7B%20store(orderBy%3A%20%7BdisplayText%3A%20ASC%7D)%20%7B%20address%20%7B%20html%20%7D%20openingHours%20%7B%20contentItems%20%7B%20...%20on%20DataRow%20%7B%20key%20value%20%7D%20%7D%20%7D%20phone%20displayText%20contentItemId%20%7D%20%7D",
+      "source_publish_date": null,
+      "source_expiry_date": null,
+      "match_basis": "Exact six-digit postal code AND exact normalized shop-unit set matched the first-party locator address; unique locator result."
+    },
+    {
+      "directory_row": 26370,
+      "sfa_licence": "CE19P01E000",
+      "f_and_b_name": "STARBUCKS",
+      "workbook_address": "Address: 20 AH HOOD ROAD #01-18A,Singapore 329984",
+      "postal_code": "329984",
+      "official_store_name": "Zhongshan Mall ",
+      "official_address": "20 Ah Hood Road #01-18A, Zhongshan Mall, Singapore 329984",
+      "official_phone_raw": "6816 1615",
+      "fields": [
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "proposed_value": "Hours: Mon-Fri 07:00-21:30; Sat-Sun 07:30-21:30; PH 07:30-21:30; Eve PH 07:30-21:30"
+        },
+        {
+          "field": "Contact Details",
+          "before": null,
+          "proposed_value": "Contact: +6568161615"
+        }
+      ],
+      "source_url": "https://www.starbucks.com.sg/stores",
+      "source_data_url": "https://www.starbucks.com.sg/api/graphql?query=query%20MyQuery%20%7B%20store(orderBy%3A%20%7BdisplayText%3A%20ASC%7D)%20%7B%20address%20%7B%20html%20%7D%20openingHours%20%7B%20contentItems%20%7B%20...%20on%20DataRow%20%7B%20key%20value%20%7D%20%7D%20%7D%20phone%20displayText%20contentItemId%20%7D%20%7D",
+      "source_publish_date": null,
+      "source_expiry_date": null,
+      "match_basis": "Exact six-digit postal code AND exact normalized shop-unit set matched the first-party locator address; unique locator result."
+    },
+    {
+      "directory_row": 26372,
+      "sfa_licence": "CE20C91A000",
+      "f_and_b_name": "STARBUCKS",
+      "workbook_address": "Address: 2 SERANGOON ROAD #01-07,#01-08,#01-29,#01-06,TEKKA PLACE,Singapore 218227",
+      "postal_code": "218227",
+      "official_store_name": "Tekka Place",
+      "official_address": "2 Serangoon Road #01-06/07/08/29, Tekka Place, Singapore 218227",
+      "official_phone_raw": "6974 8079",
+      "fields": [
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "proposed_value": "Hours: Mon-Sun 07:30-22:00; PH 07:30-22:00; Eve PH 07:30-22:00"
+        },
+        {
+          "field": "Contact Details",
+          "before": null,
+          "proposed_value": "Contact: +6569748079"
+        }
+      ],
+      "source_url": "https://www.starbucks.com.sg/stores",
+      "source_data_url": "https://www.starbucks.com.sg/api/graphql?query=query%20MyQuery%20%7B%20store(orderBy%3A%20%7BdisplayText%3A%20ASC%7D)%20%7B%20address%20%7B%20html%20%7D%20openingHours%20%7B%20contentItems%20%7B%20...%20on%20DataRow%20%7B%20key%20value%20%7D%20%7D%20%7D%20phone%20displayText%20contentItemId%20%7D%20%7D",
+      "source_publish_date": null,
+      "source_expiry_date": null,
+      "match_basis": "Exact six-digit postal code AND exact normalized shop-unit set matched the first-party locator address; unique locator result."
+    },
+    {
+      "directory_row": 26373,
+      "sfa_licence": "CE21488J000",
+      "f_and_b_name": "STARBUCKS",
+      "workbook_address": "Address: 301 UPPER THOMSON ROAD #01-111,THOMSON PLAZA,Singapore 574408",
+      "postal_code": "574408",
+      "official_store_name": "Thomson Plaza",
+      "official_address": "301 Upper Thomson Road #01-111, Thomson Plaza, Singapore 574408",
+      "official_phone_raw": "6931 2877",
+      "fields": [
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "proposed_value": "Hours: Mon-Thu 08:00-21:30; Fri-Sat 08:00-22:00; Sun 08:00-21:30; PH 08:00-21:30; Eve PH 08:00-22:00"
+        },
+        {
+          "field": "Contact Details",
+          "before": null,
+          "proposed_value": "Contact: +6569312877"
+        }
+      ],
+      "source_url": "https://www.starbucks.com.sg/stores",
+      "source_data_url": "https://www.starbucks.com.sg/api/graphql?query=query%20MyQuery%20%7B%20store(orderBy%3A%20%7BdisplayText%3A%20ASC%7D)%20%7B%20address%20%7B%20html%20%7D%20openingHours%20%7B%20contentItems%20%7B%20...%20on%20DataRow%20%7B%20key%20value%20%7D%20%7D%20%7D%20phone%20displayText%20contentItemId%20%7D%20%7D",
+      "source_publish_date": "2024-06-18T14:14:00Z",
+      "source_expiry_date": null,
+      "match_basis": "Exact six-digit postal code AND exact normalized shop-unit set matched the first-party locator address; unique locator result."
+    },
+    {
+      "directory_row": 26374,
+      "sfa_licence": "CE22328J000",
+      "f_and_b_name": "STARBUCKS",
+      "workbook_address": "Address: 6 BATTERY ROAD #01-05,Singapore 049909",
+      "postal_code": "049909",
+      "official_store_name": "6 Battery Road",
+      "official_address": "6 Battery Road #01-05, Singapore 049909",
+      "official_phone_raw": "6910 1214",
+      "fields": [
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "proposed_value": "Hours: Mon-Fri 07:00-21:00; Sat-Sun 09:00-18:00; PH 09:00-18:00; Eve PH 09:00-18:00"
+        },
+        {
+          "field": "Contact Details",
+          "before": null,
+          "proposed_value": "Contact: +6569101214"
+        }
+      ],
+      "source_url": "https://www.starbucks.com.sg/stores",
+      "source_data_url": "https://www.starbucks.com.sg/api/graphql?query=query%20MyQuery%20%7B%20store(orderBy%3A%20%7BdisplayText%3A%20ASC%7D)%20%7B%20address%20%7B%20html%20%7D%20openingHours%20%7B%20contentItems%20%7B%20...%20on%20DataRow%20%7B%20key%20value%20%7D%20%7D%20%7D%20phone%20displayText%20contentItemId%20%7D%20%7D",
+      "source_publish_date": null,
+      "source_expiry_date": null,
+      "match_basis": "Exact six-digit postal code AND exact normalized shop-unit set matched the first-party locator address; unique locator result."
+    },
+    {
+      "directory_row": 26375,
+      "sfa_licence": "CE22369L000",
+      "f_and_b_name": "Starbucks",
+      "workbook_address": "Address: 252 NORTH BRIDGE ROAD #02-34,RAFFLES CITY SHOPPING CENTRE,Singapore 179103",
+      "postal_code": "179103",
+      "official_store_name": "Raffles City (Level 2)",
+      "official_address": "252 North Bridge Road #02-34, Raffles City Shopping Centre, Singapore 179103",
+      "official_phone_raw": "6910 1149",
+      "fields": [
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "proposed_value": "Hours: Mon-Sun 07:30-22:00; PH 07:30-22:00; Eve PH 07:30-22:00"
+        },
+        {
+          "field": "Contact Details",
+          "before": null,
+          "proposed_value": "Contact: +6569101149"
+        }
+      ],
+      "source_url": "https://www.starbucks.com.sg/stores",
+      "source_data_url": "https://www.starbucks.com.sg/api/graphql?query=query%20MyQuery%20%7B%20store(orderBy%3A%20%7BdisplayText%3A%20ASC%7D)%20%7B%20address%20%7B%20html%20%7D%20openingHours%20%7B%20contentItems%20%7B%20...%20on%20DataRow%20%7B%20key%20value%20%7D%20%7D%20%7D%20phone%20displayText%20contentItemId%20%7D%20%7D",
+      "source_publish_date": null,
+      "source_expiry_date": null,
+      "match_basis": "Exact six-digit postal code AND exact normalized shop-unit set matched the first-party locator address; unique locator result."
+    },
+    {
+      "directory_row": 26376,
+      "sfa_licence": "CE22384N000",
+      "f_and_b_name": "STARBUCKS",
+      "workbook_address": "Address: 51 BRAS BASAH ROAD #01-06,LAZADA ONE,Singapore 189554",
+      "postal_code": "189554",
+      "official_store_name": "Lazada One",
+      "official_address": "51 Bras Basah Road #01-06, Lazada One, Singapore 189554",
+      "official_phone_raw": "6910 1181",
+      "fields": [
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "proposed_value": "Hours: Mon-Thu 07:00-21:00; Fri 07:00-22:00; Sat 07:30-22:00; Sun 07:30-21:00; PH 07:30-21:00; Eve PH 07:30-22:00"
+        }
+      ],
+      "source_url": "https://www.starbucks.com.sg/stores",
+      "source_data_url": "https://www.starbucks.com.sg/api/graphql?query=query%20MyQuery%20%7B%20store(orderBy%3A%20%7BdisplayText%3A%20ASC%7D)%20%7B%20address%20%7B%20html%20%7D%20openingHours%20%7B%20contentItems%20%7B%20...%20on%20DataRow%20%7B%20key%20value%20%7D%20%7D%20%7D%20phone%20displayText%20contentItemId%20%7D%20%7D",
+      "source_publish_date": null,
+      "source_expiry_date": null,
+      "match_basis": "Exact six-digit postal code AND exact normalized shop-unit set matched the first-party locator address; unique locator result."
+    },
+    {
+      "directory_row": 26377,
+      "sfa_licence": "CE22933A000",
+      "f_and_b_name": "Starbucks",
+      "workbook_address": "Address: 391A ORCHARD ROAD #B1-01,NGEE ANN CITY,Singapore 238873",
+      "postal_code": "238873",
+      "official_store_name": "Takashimaya",
+      "official_address": "391A Orchard Road #B1-01, Takashimaya Shopping Centre, Singapore 238873",
+      "official_phone_raw": "6910 0971",
+      "fields": [
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "proposed_value": "Hours: Mon-Sun 07:30-21:30; PH 07:30-21:30; Eve PH 07:30-21:30"
+        },
+        {
+          "field": "Contact Details",
+          "before": null,
+          "proposed_value": "Contact: +6569100971"
+        }
+      ],
+      "source_url": "https://www.starbucks.com.sg/stores",
+      "source_data_url": "https://www.starbucks.com.sg/api/graphql?query=query%20MyQuery%20%7B%20store(orderBy%3A%20%7BdisplayText%3A%20ASC%7D)%20%7B%20address%20%7B%20html%20%7D%20openingHours%20%7B%20contentItems%20%7B%20...%20on%20DataRow%20%7B%20key%20value%20%7D%20%7D%20%7D%20phone%20displayText%20contentItemId%20%7D%20%7D",
+      "source_publish_date": null,
+      "source_expiry_date": null,
+      "match_basis": "Exact six-digit postal code AND exact normalized shop-unit set matched the first-party locator address; unique locator result."
+    },
+    {
+      "directory_row": 26379,
+      "sfa_licence": "CE23253C000",
+      "f_and_b_name": "STARBUCKS",
+      "workbook_address": "Address: 11 BIDADARI PARK DRIVE #01-01,THE WOODLEIGH MALL,Singapore 367803",
+      "postal_code": "367803",
+      "official_store_name": "The Woodleigh Mall",
+      "official_address": "11 Bidadari Park Drive #01-01, The Woodleigh Mall, Singapore 367803",
+      "official_phone_raw": "6910 1131",
+      "fields": [
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "proposed_value": "Hours: Mon-Fri 06:30-22:00; Sat-Sun 07:00-22:00; PH 07:00-22:00; Eve PH 07:00-22:00"
+        },
+        {
+          "field": "Contact Details",
+          "before": null,
+          "proposed_value": "Contact: +6569101131"
+        }
+      ],
+      "source_url": "https://www.starbucks.com.sg/stores",
+      "source_data_url": "https://www.starbucks.com.sg/api/graphql?query=query%20MyQuery%20%7B%20store(orderBy%3A%20%7BdisplayText%3A%20ASC%7D)%20%7B%20address%20%7B%20html%20%7D%20openingHours%20%7B%20contentItems%20%7B%20...%20on%20DataRow%20%7B%20key%20value%20%7D%20%7D%20%7D%20phone%20displayText%20contentItemId%20%7D%20%7D",
+      "source_publish_date": null,
+      "source_expiry_date": null,
+      "match_basis": "Exact six-digit postal code AND exact normalized shop-unit set matched the first-party locator address; unique locator result."
+    },
+    {
+      "directory_row": 26381,
+      "sfa_licence": "CE23J55N000",
+      "f_and_b_name": "STARBUCKS",
+      "workbook_address": "Address: 7 HOLLAND VILLAGE WAY #01-56,ONE HOLLAND VILLAGE,Singapore 275748",
+      "postal_code": "275748",
+      "official_store_name": "One Holland Village",
+      "official_address": "7 Holland Village Way, #01-56 One Holland Village, Singapore 275748",
+      "official_phone_raw": "6974 0516",
+      "fields": [
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "proposed_value": "Hours: Mon-Thu 07:30-22:00; Fri-Sat 07:30-22:30; Sun 07:30-22:00; PH 07:30-22:00; Eve PH 07:30-22:30"
+        },
+        {
+          "field": "Contact Details",
+          "before": null,
+          "proposed_value": "Contact: +6569740516"
+        }
+      ],
+      "source_url": "https://www.starbucks.com.sg/stores",
+      "source_data_url": "https://www.starbucks.com.sg/api/graphql?query=query%20MyQuery%20%7B%20store(orderBy%3A%20%7BdisplayText%3A%20ASC%7D)%20%7B%20address%20%7B%20html%20%7D%20openingHours%20%7B%20contentItems%20%7B%20...%20on%20DataRow%20%7B%20key%20value%20%7D%20%7D%20%7D%20phone%20displayText%20contentItemId%20%7D%20%7D",
+      "source_publish_date": null,
+      "source_expiry_date": null,
+      "match_basis": "Exact six-digit postal code AND exact normalized shop-unit set matched the first-party locator address; unique locator result."
+    },
+    {
+      "directory_row": 26382,
+      "sfa_licence": "CE24365C000",
+      "f_and_b_name": "STARBUCKS",
+      "workbook_address": "Address: 18 MARINA GARDENS DRIVE #01-01,GARDENS BY THE BAY,Singapore 018953",
+      "postal_code": "018953",
+      "official_store_name": "Active Garden",
+      "official_address": "18 Marina Gardens Drive, #01-01, Singapore 018953",
+      "official_phone_raw": "6910 1311",
+      "fields": [
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "proposed_value": "Hours: Mon-Thu 08:00-22:00; Fri 08:00-22:30; Sat 07:00-23:00; Sun 07:30-22:00; PH 07:30-22:00; Eve PH 07:30-23:00"
+        },
+        {
+          "field": "Contact Details",
+          "before": null,
+          "proposed_value": "Contact: +6569101311"
+        }
+      ],
+      "source_url": "https://www.starbucks.com.sg/stores",
+      "source_data_url": "https://www.starbucks.com.sg/api/graphql?query=query%20MyQuery%20%7B%20store(orderBy%3A%20%7BdisplayText%3A%20ASC%7D)%20%7B%20address%20%7B%20html%20%7D%20openingHours%20%7B%20contentItems%20%7B%20...%20on%20DataRow%20%7B%20key%20value%20%7D%20%7D%20%7D%20phone%20displayText%20contentItemId%20%7D%20%7D",
+      "source_publish_date": null,
+      "source_expiry_date": null,
+      "match_basis": "Exact six-digit postal code AND exact normalized shop-unit set matched the first-party locator address; unique locator result."
+    },
+    {
+      "directory_row": 26384,
+      "sfa_licence": "CE25F02E000",
+      "f_and_b_name": "STARBUCKS",
+      "workbook_address": "Address: 50 RAFFLES PLACE #01-02,SINGAPORE LAND TOWER,Singapore 048623",
+      "postal_code": "048623",
+      "official_store_name": "Singapore Land Tower",
+      "official_address": "50 Raffles Place #01-02 Singapore Land Tower Singapore 048623",
+      "official_phone_raw": "69101160",
+      "fields": [
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "proposed_value": "Hours: Mon-Fri 07:00-21:00; Sat 08:00-17:00; Sun Closed; PH Closed; Eve PH 08:00-17:00"
+        },
+        {
+          "field": "Contact Details",
+          "before": null,
+          "proposed_value": "Contact: +6569101160"
+        }
+      ],
+      "source_url": "https://www.starbucks.com.sg/stores",
+      "source_data_url": "https://www.starbucks.com.sg/api/graphql?query=query%20MyQuery%20%7B%20store(orderBy%3A%20%7BdisplayText%3A%20ASC%7D)%20%7B%20address%20%7B%20html%20%7D%20openingHours%20%7B%20contentItems%20%7B%20...%20on%20DataRow%20%7B%20key%20value%20%7D%20%7D%20%7D%20phone%20displayText%20contentItemId%20%7D%20%7D",
+      "source_publish_date": null,
+      "source_expiry_date": null,
+      "match_basis": "Exact six-digit postal code AND exact normalized shop-unit set matched the first-party locator address; unique locator result."
+    },
+    {
+      "directory_row": 26387,
+      "sfa_licence": "NE24O55A000",
+      "f_and_b_name": "STARBUCKS",
+      "workbook_address": "Address: 88 PUNGGOL WAY #01-122,Singapore 829913",
+      "postal_code": "829913",
+      "official_store_name": "Punggol Coast Mall",
+      "official_address": "88 Punggol Way #01-122, Punggol Coast Mall, Singapore 829913",
+      "official_phone_raw": "6910 1096",
+      "fields": [
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "proposed_value": "Hours: Mon-Thu 07:00-21:00; Fri 07:00-22:00; Sat-Sun 07:30-22:00; PH 07:30-22:00; Eve PH 07:30-22:00"
+        },
+        {
+          "field": "Contact Details",
+          "before": null,
+          "proposed_value": "Contact: +6569101096"
+        }
+      ],
+      "source_url": "https://www.starbucks.com.sg/stores",
+      "source_data_url": "https://www.starbucks.com.sg/api/graphql?query=query%20MyQuery%20%7B%20store(orderBy%3A%20%7BdisplayText%3A%20ASC%7D)%20%7B%20address%20%7B%20html%20%7D%20openingHours%20%7B%20contentItems%20%7B%20...%20on%20DataRow%20%7B%20key%20value%20%7D%20%7D%20%7D%20phone%20displayText%20contentItemId%20%7D%20%7D",
+      "source_publish_date": null,
+      "source_expiry_date": null,
+      "match_basis": "Exact six-digit postal code AND exact normalized shop-unit set matched the first-party locator address; unique locator result."
+    },
+    {
+      "directory_row": 26389,
+      "sfa_licence": "NW20S48P000",
+      "f_and_b_name": "STARBUCKS",
+      "workbook_address": "Address: 133 CANBERRA VIEW #01-06,Canberra Plaza,Singapore 750133",
+      "postal_code": "750133",
+      "official_store_name": "Canberra Plaza",
+      "official_address": "133 Canberra View #01-06, Canberra Plaza, Singapore 750133",
+      "official_phone_raw": "6910 0961 ",
+      "fields": [
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "proposed_value": "Hours: Mon-Thu 07:00-22:00; Fri-Sat 07:00-23:00; Sun 07:00-22:00; PH 07:00-22:00; Eve PH 07:00-23:00"
+        }
+      ],
+      "source_url": "https://www.starbucks.com.sg/stores",
+      "source_data_url": "https://www.starbucks.com.sg/api/graphql?query=query%20MyQuery%20%7B%20store(orderBy%3A%20%7BdisplayText%3A%20ASC%7D)%20%7B%20address%20%7B%20html%20%7D%20openingHours%20%7B%20contentItems%20%7B%20...%20on%20DataRow%20%7B%20key%20value%20%7D%20%7D%20%7D%20phone%20displayText%20contentItemId%20%7D%20%7D",
+      "source_publish_date": null,
+      "source_expiry_date": null,
+      "match_basis": "Exact six-digit postal code AND exact normalized shop-unit set matched the first-party locator address; unique locator result."
+    },
+    {
+      "directory_row": 26391,
+      "sfa_licence": "NW23328X000",
+      "f_and_b_name": "STARBUCKS",
+      "workbook_address": "Address: 20 MANDAI LAKE ROAD #02-05,Singapore 729825",
+      "postal_code": "729825",
+      "official_store_name": "Bird Paradise",
+      "official_address": "20 Mandai Lake Road #02-05, Singapore 729825",
+      "official_phone_raw": "6025 1675",
+      "fields": [
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "proposed_value": "Hours: Mon-Fri 09:00-18:30; Sat-Sun 08:00-19:00; PH 08:00-19:00; Eve PH 08:00-19:00"
+        },
+        {
+          "field": "Contact Details",
+          "before": null,
+          "proposed_value": "Contact: +6560251675"
+        }
+      ],
+      "source_url": "https://www.starbucks.com.sg/stores",
+      "source_data_url": "https://www.starbucks.com.sg/api/graphql?query=query%20MyQuery%20%7B%20store(orderBy%3A%20%7BdisplayText%3A%20ASC%7D)%20%7B%20address%20%7B%20html%20%7D%20openingHours%20%7B%20contentItems%20%7B%20...%20on%20DataRow%20%7B%20key%20value%20%7D%20%7D%20%7D%20phone%20displayText%20contentItemId%20%7D%20%7D",
+      "source_publish_date": null,
+      "source_expiry_date": null,
+      "match_basis": "Exact six-digit postal code AND exact normalized shop-unit set matched the first-party locator address; unique locator result."
+    },
+    {
+      "directory_row": 26394,
+      "sfa_licence": "SE16564V000",
+      "f_and_b_name": "STARBUCKS",
+      "workbook_address": "Address: 86 EAST COAST ROAD #01-02,KATONG SQUARE,Singapore 428788",
+      "postal_code": "428788",
+      "official_store_name": "Katong Square",
+      "official_address": "86 East Coast Road #01-02, Conservation Building Katong Square, Singapore 428788",
+      "official_phone_raw": "6974 7327",
+      "fields": [
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "proposed_value": "Hours: Mon-Sun 07:00-22:00; PH 07:00-22:00; Eve PH 07:00-22:00"
+        }
+      ],
+      "source_url": "https://www.starbucks.com.sg/stores",
+      "source_data_url": "https://www.starbucks.com.sg/api/graphql?query=query%20MyQuery%20%7B%20store(orderBy%3A%20%7BdisplayText%3A%20ASC%7D)%20%7B%20address%20%7B%20html%20%7D%20openingHours%20%7B%20contentItems%20%7B%20...%20on%20DataRow%20%7B%20key%20value%20%7D%20%7D%20%7D%20phone%20displayText%20contentItemId%20%7D%20%7D",
+      "source_publish_date": null,
+      "source_expiry_date": null,
+      "match_basis": "Exact six-digit postal code AND exact normalized shop-unit set matched the first-party locator address; unique locator result."
+    },
+    {
+      "directory_row": 26397,
+      "sfa_licence": "SE19625C000",
+      "f_and_b_name": "STARBUCKS",
+      "workbook_address": "Address: 10 PAYA LEBAR ROAD #01-14,Singapore 409057",
+      "postal_code": "409057",
+      "official_store_name": "Paya Lebar Quarter",
+      "official_address": "10 Paya Lebar Road #01-14, Paya Lebar Quarter, Singapore 409057",
+      "official_phone_raw": "6974 1939",
+      "fields": [
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "proposed_value": "Hours: Mon-Thu 07:30-22:00; Fri-Sat 07:30-22:30; Sun 07:30-22:00; PH 07:30-22:30; Eve PH 07:30-22:30"
+        },
+        {
+          "field": "Contact Details",
+          "before": null,
+          "proposed_value": "Contact: +6569741939"
+        }
+      ],
+      "source_url": "https://www.starbucks.com.sg/stores",
+      "source_data_url": "https://www.starbucks.com.sg/api/graphql?query=query%20MyQuery%20%7B%20store(orderBy%3A%20%7BdisplayText%3A%20ASC%7D)%20%7B%20address%20%7B%20html%20%7D%20openingHours%20%7B%20contentItems%20%7B%20...%20on%20DataRow%20%7B%20key%20value%20%7D%20%7D%20%7D%20phone%20displayText%20contentItemId%20%7D%20%7D",
+      "source_publish_date": null,
+      "source_expiry_date": null,
+      "match_basis": "Exact six-digit postal code AND exact normalized shop-unit set matched the first-party locator address; unique locator result."
+    },
+    {
+      "directory_row": 26401,
+      "sfa_licence": "SW10755K000",
+      "f_and_b_name": "STARBUCKS",
+      "workbook_address": "Address: 3 SILOSO ROAD #01-03,#01-04,Singapore 098977",
+      "postal_code": "098977",
+      "official_store_name": "Starbucks Sentosa Sensoryscape",
+      "official_address": "3 Siloso Road #01-03/04 Singapore 098977",
+      "official_phone_raw": "69741330",
+      "fields": [
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "proposed_value": "Hours: Mon-Thu 08:00-21:00; Fri-Sat 08:00-22:00; Sun 08:00-21:00; PH 08:00-21:00; Eve PH 08:00-22:00"
+        },
+        {
+          "field": "Contact Details",
+          "before": null,
+          "proposed_value": "Contact: +6569741330"
+        }
+      ],
+      "source_url": "https://www.starbucks.com.sg/stores",
+      "source_data_url": "https://www.starbucks.com.sg/api/graphql?query=query%20MyQuery%20%7B%20store(orderBy%3A%20%7BdisplayText%3A%20ASC%7D)%20%7B%20address%20%7B%20html%20%7D%20openingHours%20%7B%20contentItems%20%7B%20...%20on%20DataRow%20%7B%20key%20value%20%7D%20%7D%20%7D%20phone%20displayText%20contentItemId%20%7D%20%7D",
+      "source_publish_date": null,
+      "source_expiry_date": null,
+      "match_basis": "Exact six-digit postal code AND exact normalized shop-unit set matched the first-party locator address; unique locator result."
+    },
+    {
+      "directory_row": 26403,
+      "sfa_licence": "SW14893C000",
+      "f_and_b_name": "STARBUCKS",
+      "workbook_address": "Address: 2 BUKIT BATOK WEST AVENUE 7 HOMETEAM NS,Singapore 659003 #01-01/02/03",
+      "postal_code": "659003",
+      "official_store_name": "HomeTeamNS",
+      "official_address": "2 Bukit Batok West Ave 7 #01-01/02/03, HomeTeamNS Bukit Batok Clubhouse, Singapore 659003",
+      "official_phone_raw": "6816 0961",
+      "fields": [
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "proposed_value": "Hours: Mon-Thu 07:30-21:30; Fri-Sat 07:30-22:00; Sun 07:30-21:30; PH 07:30-21:30; Eve PH 07:30-22:00"
+        }
+      ],
+      "source_url": "https://www.starbucks.com.sg/stores",
+      "source_data_url": "https://www.starbucks.com.sg/api/graphql?query=query%20MyQuery%20%7B%20store(orderBy%3A%20%7BdisplayText%3A%20ASC%7D)%20%7B%20address%20%7B%20html%20%7D%20openingHours%20%7B%20contentItems%20%7B%20...%20on%20DataRow%20%7B%20key%20value%20%7D%20%7D%20%7D%20phone%20displayText%20contentItemId%20%7D%20%7D",
+      "source_publish_date": null,
+      "source_expiry_date": null,
+      "match_basis": "Exact six-digit postal code AND exact normalized shop-unit set matched the first-party locator address; unique locator result."
+    },
+    {
+      "directory_row": 26404,
+      "sfa_licence": "SW18280X000",
+      "f_and_b_name": "STARBUCKS",
+      "workbook_address": "Address: 1 FUSIONOPOLIS WAY #02-14,#01-07,CONNEXIS,Singapore 138632",
+      "postal_code": "138632",
+      "official_store_name": "Fusionopolis (Connexis)",
+      "official_address": "1 Fusionopolis Way #01-07 / #02-14, Singapore 138632",
+      "official_phone_raw": "6910 1215",
+      "fields": [
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "proposed_value": "Hours: Mon-Fri 07:00-21:00; Sat 08:00-17:30; Sun 08:30-17:30; PH 08:30-17:30; Eve PH 08:00-17:30"
+        },
+        {
+          "field": "Contact Details",
+          "before": null,
+          "proposed_value": "Contact: +6569101215"
+        }
+      ],
+      "source_url": "https://www.starbucks.com.sg/stores",
+      "source_data_url": "https://www.starbucks.com.sg/api/graphql?query=query%20MyQuery%20%7B%20store(orderBy%3A%20%7BdisplayText%3A%20ASC%7D)%20%7B%20address%20%7B%20html%20%7D%20openingHours%20%7B%20contentItems%20%7B%20...%20on%20DataRow%20%7B%20key%20value%20%7D%20%7D%20%7D%20phone%20displayText%20contentItemId%20%7D%20%7D",
+      "source_publish_date": null,
+      "source_expiry_date": null,
+      "match_basis": "Exact six-digit postal code AND exact normalized shop-unit set matched the first-party locator address; unique locator result."
+    },
+    {
+      "directory_row": 26405,
+      "sfa_licence": "SW19A68V000",
+      "f_and_b_name": "STARBUCKS",
+      "workbook_address": "Address: 1 HARBOURFRONT WALK #01-43,VIVO CITY,Singapore 098585",
+      "postal_code": "098585",
+      "official_store_name": "VivoCity",
+      "official_address": "1 Harbourfront Walk #01-43, Vivocity, Singapore 098585",
+      "official_phone_raw": "6974 7311 ",
+      "fields": [
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "proposed_value": "Hours: Mon-Thu 07:30-22:00; Fri-Sat 07:30-22:30; Sun 07:30-22:00; PH 07:30-22:00; Eve PH 07:30-22:30"
+        }
+      ],
+      "source_url": "https://www.starbucks.com.sg/stores",
+      "source_data_url": "https://www.starbucks.com.sg/api/graphql?query=query%20MyQuery%20%7B%20store(orderBy%3A%20%7BdisplayText%3A%20ASC%7D)%20%7B%20address%20%7B%20html%20%7D%20openingHours%20%7B%20contentItems%20%7B%20...%20on%20DataRow%20%7B%20key%20value%20%7D%20%7D%20%7D%20phone%20displayText%20contentItemId%20%7D%20%7D",
+      "source_publish_date": null,
+      "source_expiry_date": null,
+      "match_basis": "Exact six-digit postal code AND exact normalized shop-unit set matched the first-party locator address; unique locator result."
+    },
+    {
+      "directory_row": 26408,
+      "sfa_licence": "SW22I58C000",
+      "f_and_b_name": "STARBUCKS",
+      "workbook_address": "Address: 106 YUAN CHING ROAD #01-01,Singapore 619616 (NORTH SHORE PAVILION)",
+      "postal_code": "619616",
+      "official_store_name": "Jurong Lake Gardens (Lakeside House)",
+      "official_address": "106 Yuan Ching Road #01-01, Lakeside House, Jurong Lake Gardens, Singapore 619616",
+      "official_phone_raw": "6910 1219",
+      "fields": [
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "proposed_value": "Hours: Mon-Thu 07:30-22:00; Fri 07:30-23:59; Sat 07:00-23:59; Sun 07:00-22:00; PH 07:00-22:00; Eve PH 07:00-23:59"
+        },
+        {
+          "field": "Contact Details",
+          "before": null,
+          "proposed_value": "Contact: +6569101219"
+        }
+      ],
+      "source_url": "https://www.starbucks.com.sg/stores",
+      "source_data_url": "https://www.starbucks.com.sg/api/graphql?query=query%20MyQuery%20%7B%20store(orderBy%3A%20%7BdisplayText%3A%20ASC%7D)%20%7B%20address%20%7B%20html%20%7D%20openingHours%20%7B%20contentItems%20%7B%20...%20on%20DataRow%20%7B%20key%20value%20%7D%20%7D%20%7D%20phone%20displayText%20contentItemId%20%7D%20%7D",
+      "source_publish_date": null,
+      "source_expiry_date": null,
+      "match_basis": "Exact six-digit postal code AND exact normalized shop-unit set matched the first-party locator address; unique locator result."
+    },
+    {
+      "directory_row": 26409,
+      "sfa_licence": "SW25608B000",
+      "f_and_b_name": "STARBUCKS",
+      "workbook_address": "Address: 1 PASIR PANJANG ROAD #02-05,LABRADOR TOWER,Singapore 118479",
+      "postal_code": "118479",
+      "official_store_name": "Labrador Tower",
+      "official_address": "1 Pasir Panjang Road #02-05, Labrador Tower, Singapore 118479",
+      "official_phone_raw": "69101123",
+      "fields": [
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "proposed_value": "Hours: Mon-Fri 07:30-18:00; Sat-Sun Closed; PH Closed; Eve PH Closed"
+        },
+        {
+          "field": "Contact Details",
+          "before": null,
+          "proposed_value": "Contact: +6569101123"
+        }
+      ],
+      "source_url": "https://www.starbucks.com.sg/stores",
+      "source_data_url": "https://www.starbucks.com.sg/api/graphql?query=query%20MyQuery%20%7B%20store(orderBy%3A%20%7BdisplayText%3A%20ASC%7D)%20%7B%20address%20%7B%20html%20%7D%20openingHours%20%7B%20contentItems%20%7B%20...%20on%20DataRow%20%7B%20key%20value%20%7D%20%7D%20%7D%20phone%20displayText%20contentItemId%20%7D%20%7D",
+      "source_publish_date": null,
+      "source_expiry_date": null,
+      "match_basis": "Exact six-digit postal code AND exact normalized shop-unit set matched the first-party locator address; unique locator result."
+    },
+    {
+      "directory_row": 26410,
+      "sfa_licence": "SW26649V000",
+      "f_and_b_name": "STARBUCKS",
+      "workbook_address": "Address: 30 PASIR PANJANG ROAD #17-31,#17-32,MAPLETREE BUSINESS CITY,Singapore 117440",
+      "postal_code": "117440",
+      "official_store_name": "Samsung Hub",
+      "official_address": "30 Pasir Panjang Road #17-31/32, Samsung Hub @ Mapletree Business City, Singapore 117440",
+      "official_phone_raw": "6910 1121",
+      "fields": [
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "proposed_value": "Hours: Mon-Fri 07:30-16:30; Sat-Sun Closed; PH Closed; Eve PH Closed"
+        },
+        {
+          "field": "Contact Details",
+          "before": null,
+          "proposed_value": "Contact: +6569101121"
+        }
+      ],
+      "source_url": "https://www.starbucks.com.sg/stores",
+      "source_data_url": "https://www.starbucks.com.sg/api/graphql?query=query%20MyQuery%20%7B%20store(orderBy%3A%20%7BdisplayText%3A%20ASC%7D)%20%7B%20address%20%7B%20html%20%7D%20openingHours%20%7B%20contentItems%20%7B%20...%20on%20DataRow%20%7B%20key%20value%20%7D%20%7D%20%7D%20phone%20displayText%20contentItemId%20%7D%20%7D",
+      "source_publish_date": null,
+      "source_expiry_date": null,
+      "match_basis": "Exact six-digit postal code AND exact normalized shop-unit set matched the first-party locator address; unique locator result."
+    }
+  ],
+  "withheld_reason": "Only 30 records included in this bounded batch; further exact branch matches were held for later batch. Records with nonmatching/ambiguous unit sets, missing first-party hours, or already populated hours were excluded.",
+  "qa": {
+    "baseline_hash_recomputed": true,
+    "row_licence_name_address_postal_checked": true,
+    "all_before_values_blank": true,
+    "one_unique_locator_match_per_proposal": true,
+    "exact_postal_and_unit_set_match": true,
+    "proposal_field_values_from_official_api": true,
+    "workbook_written": false,
+    "validated_against_current_workbook_sha256": "51fde2c4bf0308f20e504f7313c0134ee4392ba453f3bf09b332f956df983c1d",
+    "current_hash_differs_from_proposal_baseline": true,
+    "row_identity_and_blank_target_checks_passed": true,
+    "validated_field_count": 53,
+    "notes": "After proposal creation the parent integrated unrelated records; the current workbook hash differs from the original proposal baseline. Every proposed Starbucks row still has the exact recorded SFA licence, name, address, postal code, and all proposed target cells remain blank."
+  }
+}

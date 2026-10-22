@@ -1,0 +1,58 @@
+{
+  "snapshot_type": "refresh131_read_only_coordinate_research_mapbox_temporary",
+  "captured_at_sgt": "2026-10-19",
+  "baseline_workbook": {
+    "path": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "sha256": "80bbef4c8edee234e7ddad4a9b3390a67e9f7572621a8711fbe3c97fb7066212",
+    "workbook_modified": false
+  },
+  "credential_check": {
+    "onemap_api_token_configured_in_this_agent_process": false,
+    "token_value_read_or_printed": false
+  },
+  "mapbox_usage": {
+    "search_box_api_requests_made_by_this_agent": 6,
+    "account_usage_assumption": "User reported 59/50,000 before this task; current account counter is not accessible to this agent.",
+    "queries_or_results_persisted": false,
+    "coordinates_from_mapbox_proposed": false,
+    "coordinates_from_mapbox_written_to_workbook": false
+  },
+  "durable_source_checked": {
+    "publisher": "OpenStreetMap contributors",
+    "service": "Nominatim Search API",
+    "search_endpoint": "https://nominatim.openstreetmap.org/search",
+    "object_url": "https://www.openstreetmap.org/way/439272347",
+    "object_id": "way/439272347",
+    "observed_at_sgt": "2026-10-19",
+    "reuse": "OpenStreetMap data is available under the Open Database License (ODbL); attribution required; derived database obligations must be reviewed before integration.",
+    "license_url": "https://www.openstreetmap.org/copyright",
+    "attribution": "© OpenStreetMap contributors"
+  },
+  "sample": {
+    "missing_coordinate_records_reviewed": 30,
+    "target_addresses_checked_against_independent_source": 6,
+    "usable_new_coordinate_pairs": 0,
+    "notes": "The Mapbox searches were used only as temporary address-discovery checks. Independent OSM checks did not yield six-digit-postal-matching building results for the other targets. One OSM result is the exact street/building number for 78 Horne Road, but OSM labels that building 209075 while the workbook target CE12H36A000 says 209078; the conflicting postal prevents acceptance under the exact identity rule."
+  },
+  "rejected_candidates": [
+    {
+      "sfa_licence": "CE12H36A000",
+      "workbook_address": "78 Horne Road, Singapore 209078",
+      "open_source_coordinates_wgs84": {
+        "latitude": 1.3107372,
+        "longitude": 103.8608077
+      },
+      "source_precision": "OSM building polygon centroid / building point; not outlet-level",
+      "osm_object": "way/439272347",
+      "osm_address": "78 Horne Road, Lavender, Singapore 209075",
+      "decision": "reject_pending_source_reconciliation",
+      "reason": "Building number and street match, but six-digit postal differs (209078 vs OSM 209075). Do not write coordinate pending authoritative postal/building cross-check."
+    }
+  ],
+  "integration_decision": "No coordinate changes recommended from this sample. Next best free action is retry OneMap only after ONEMAP_API_TOKEN is configured in the integration process, or inspect official open datasets that include exact building address/postal plus coordinates.",
+  "limitations": [
+    "Sample covers only 30 missing-coordinate records; not a full audit of 2,538 missing pairs.",
+    "OSM addresses are incomplete for several Singapore addresses; highway/street-segment matches are insufficient for outlet/building coordinates.",
+    "Mapbox Search Box account counter could not be inspected through the connected tool."
+  ]
+}

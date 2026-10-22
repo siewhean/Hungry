@@ -1,0 +1,897 @@
+{
+  "refresh_id": "refresh125_verified_catalogue_increment_20261019",
+  "status": "installed",
+  "canonical_workbook": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "candidate_workbook": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "input_sha256": "fe31f2c8926d09ce592189efa8012987f6a3e878ef2977f50fe466873d567a64",
+  "candidate_sha256": "00a13d50c650e1bcbde0f51f15260e4f8aeecbd9d0372bae284c6c50558e2967",
+  "user_reported_mapbox_search_box_before_refresh": "59/50000",
+  "mapbox_usage_in_workbook": "59/50000 (user-reported dashboard count on 2026-10-19; not independently verified)",
+  "updates": {
+    "names": 3,
+    "summaries": 43,
+    "menuUrls": 20,
+    "hours": 29,
+    "websites": 2,
+    "addresses": 2,
+    "publicAccess": 2,
+    "deliverySummaries": 2,
+    "deliveryMenuUrls": 2,
+    "aburiSummaries": 3,
+    "aburiMenuUrls": 0,
+    "menuRowsAdded": 160,
+    "menuRowsUpdated": 2,
+    "imageRowsAdded": 162
+  },
+  "directory_rows_before": 38278,
+  "directory_alphabetically_sorted_named_first_blank_names_last": true,
+  "menu_item_rows_before": 13176,
+  "menu_item_rows_added": 160,
+  "menu_item_rows_updated": 2,
+  "image_candidate_rows_before": 2580,
+  "image_candidate_rows_added": 162,
+  "coverage_metrics": {
+    "Active public-access directory rows": 38278,
+    "Unique SFA licences": 38278,
+    "Rows with a usable F&B name": 32793,
+    "Rows with no usable F&B name": 5485,
+    "Rows with coordinates": 35734,
+    "Rows with contact details": 2704,
+    "Rows with website": 2812,
+    "Rows with menu URL": 1471,
+    "Rows with menu summary": 520,
+    "Rows with rating/review count": 0,
+    "Rows with approved image URL": 0,
+    "Rows with opening hours": 1474,
+    "Image candidates": 2742,
+    "Official and open-license image candidates": 0
+  },
+  "changes": [
+    {
+      "sfa_licence": "SE19303L000",
+      "field": "F&B Name",
+      "before": null,
+      "after": "The 1872 Clipper Tea Co.",
+      "source": "https://www.jewelchangiairport.com/en/dine/the-1872-clipper-tea-co-.html"
+    },
+    {
+      "sfa_licence": "SE25L15P000",
+      "field": "F&B Name",
+      "before": null,
+      "after": "Tutto by Da Paolo",
+      "source": "https://www.jewelchangiairport.com/en/dine/tutto-by-da-paolo.html"
+    },
+    {
+      "sfa_licence": "SE18181C000",
+      "field": "F&B Name",
+      "before": null,
+      "after": "VE/LA",
+      "source": "https://www.changiairport.com/zh/dine-and-shop/dining-directory/dine-detail.ve-la-1.html"
+    },
+    {
+      "sfa_licence": "CE05182C000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+      "source": "https://www.genkisushi.com.sg/menu/; https://www.genkisushi.com.sg/locate-us/"
+    },
+    {
+      "sfa_licence": "CE05182C000",
+      "field": "Menu URL",
+      "before": null,
+      "after": "https://www.genkisushi.com.sg/menu/",
+      "source": "https://www.genkisushi.com.sg/menu/"
+    },
+    {
+      "sfa_licence": "CE12117N000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+      "source": "https://www.genkisushi.com.sg/menu/; https://www.genkisushi.com.sg/locate-us/"
+    },
+    {
+      "sfa_licence": "CE13627P000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+      "source": "https://www.genkisushi.com.sg/menu/; https://www.genkisushi.com.sg/locate-us/"
+    },
+    {
+      "sfa_licence": "CE13627P000",
+      "field": "Menu URL",
+      "before": null,
+      "after": "https://www.genkisushi.com.sg/menu/",
+      "source": "https://www.genkisushi.com.sg/menu/"
+    },
+    {
+      "sfa_licence": "CE19B21P000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+      "source": "https://www.genkisushi.com.sg/menu/; https://www.genkisushi.com.sg/locate-us/"
+    },
+    {
+      "sfa_licence": "CE19B21P000",
+      "field": "Menu URL",
+      "before": null,
+      "after": "https://www.genkisushi.com.sg/menu/",
+      "source": "https://www.genkisushi.com.sg/menu/"
+    },
+    {
+      "sfa_licence": "CE23057J000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+      "source": "https://www.genkisushi.com.sg/menu/; https://www.genkisushi.com.sg/locate-us/"
+    },
+    {
+      "sfa_licence": "CE23057J000",
+      "field": "Menu URL",
+      "before": null,
+      "after": "https://www.genkisushi.com.sg/menu/",
+      "source": "https://www.genkisushi.com.sg/menu/"
+    },
+    {
+      "sfa_licence": "NE09278K000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+      "source": "https://www.genkisushi.com.sg/menu/; https://www.genkisushi.com.sg/locate-us/"
+    },
+    {
+      "sfa_licence": "NE09278K000",
+      "field": "Menu URL",
+      "before": null,
+      "after": "https://www.genkisushi.com.sg/menu/",
+      "source": "https://www.genkisushi.com.sg/menu/"
+    },
+    {
+      "sfa_licence": "NE16111B000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+      "source": "https://www.genkisushi.com.sg/menu/; https://www.genkisushi.com.sg/locate-us/"
+    },
+    {
+      "sfa_licence": "NE16111B000",
+      "field": "Menu URL",
+      "before": null,
+      "after": "https://www.genkisushi.com.sg/menu/",
+      "source": "https://www.genkisushi.com.sg/menu/"
+    },
+    {
+      "sfa_licence": "NE21J95A000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+      "source": "https://www.genkisushi.com.sg/menu/; https://www.genkisushi.com.sg/locate-us/"
+    },
+    {
+      "sfa_licence": "NE21J95A000",
+      "field": "Menu URL",
+      "before": null,
+      "after": "https://www.genkisushi.com.sg/menu/",
+      "source": "https://www.genkisushi.com.sg/menu/"
+    },
+    {
+      "sfa_licence": "NW13N42A000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+      "source": "https://www.genkisushi.com.sg/menu/; https://www.genkisushi.com.sg/locate-us/"
+    },
+    {
+      "sfa_licence": "NW13N42A000",
+      "field": "Menu URL",
+      "before": null,
+      "after": "https://www.genkisushi.com.sg/menu/",
+      "source": "https://www.genkisushi.com.sg/menu/"
+    },
+    {
+      "sfa_licence": "NW17033V000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+      "source": "https://www.genkisushi.com.sg/menu/; https://www.genkisushi.com.sg/locate-us/"
+    },
+    {
+      "sfa_licence": "NW17033V000",
+      "field": "Menu URL",
+      "before": null,
+      "after": "https://www.genkisushi.com.sg/menu/",
+      "source": "https://www.genkisushi.com.sg/menu/"
+    },
+    {
+      "sfa_licence": "NW17534K000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+      "source": "https://www.genkisushi.com.sg/menu/; https://www.genkisushi.com.sg/locate-us/"
+    },
+    {
+      "sfa_licence": "NW17534K000",
+      "field": "Menu URL",
+      "before": null,
+      "after": "https://www.genkisushi.com.sg/menu/",
+      "source": "https://www.genkisushi.com.sg/menu/"
+    },
+    {
+      "sfa_licence": "SE10635E000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+      "source": "https://www.genkisushi.com.sg/menu/; https://www.genkisushi.com.sg/locate-us/"
+    },
+    {
+      "sfa_licence": "SE10635E000",
+      "field": "Menu URL",
+      "before": null,
+      "after": "https://www.genkisushi.com.sg/menu/",
+      "source": "https://www.genkisushi.com.sg/menu/"
+    },
+    {
+      "sfa_licence": "SE17609V000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+      "source": "https://www.genkisushi.com.sg/menu/; https://www.genkisushi.com.sg/locate-us/"
+    },
+    {
+      "sfa_licence": "SE17609V000",
+      "field": "Menu URL",
+      "before": null,
+      "after": "https://www.genkisushi.com.sg/menu/",
+      "source": "https://www.genkisushi.com.sg/menu/"
+    },
+    {
+      "sfa_licence": "SE22E92V000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+      "source": "https://www.genkisushi.com.sg/menu/; https://www.genkisushi.com.sg/locate-us/"
+    },
+    {
+      "sfa_licence": "SE22E92V000",
+      "field": "Menu URL",
+      "before": null,
+      "after": "https://www.genkisushi.com.sg/menu/",
+      "source": "https://www.genkisushi.com.sg/menu/"
+    },
+    {
+      "sfa_licence": "SW13265L000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+      "source": "https://www.genkisushi.com.sg/menu/; https://www.genkisushi.com.sg/locate-us/"
+    },
+    {
+      "sfa_licence": "SW13265L000",
+      "field": "Menu URL",
+      "before": null,
+      "after": "https://www.genkisushi.com.sg/menu/",
+      "source": "https://www.genkisushi.com.sg/menu/"
+    },
+    {
+      "sfa_licence": "SW21C07J000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+      "source": "https://www.genkisushi.com.sg/menu/; https://www.genkisushi.com.sg/locate-us/"
+    },
+    {
+      "sfa_licence": "SW21C07J000",
+      "field": "Menu URL",
+      "before": null,
+      "after": "https://www.genkisushi.com.sg/menu/",
+      "source": "https://www.genkisushi.com.sg/menu/"
+    },
+    {
+      "sfa_licence": "SW21Q46P000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+      "source": "https://www.genkisushi.com.sg/menu/; https://www.genkisushi.com.sg/locate-us/"
+    },
+    {
+      "sfa_licence": "SW21Q46P000",
+      "field": "Menu URL",
+      "before": null,
+      "after": "https://www.genkisushi.com.sg/menu/",
+      "source": "https://www.genkisushi.com.sg/menu/"
+    },
+    {
+      "sfa_licence": "CE09D84E000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+      "source": "https://www.genkisushi.com.sg/menu/; https://www.genkisushi.com.sg/locate-us/"
+    },
+    {
+      "sfa_licence": "CE09D84E000",
+      "field": "Menu URL",
+      "before": null,
+      "after": "https://www.genkisushi.com.sg/menu/",
+      "source": "https://www.genkisushi.com.sg/menu/"
+    },
+    {
+      "sfa_licence": "CE20Z86L000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+      "source": "https://www.genkisushi.com.sg/menu/; https://www.genkisushi.com.sg/locate-us/"
+    },
+    {
+      "sfa_licence": "CE20Z86L000",
+      "field": "Menu URL",
+      "before": null,
+      "after": "https://www.genkisushi.com.sg/menu/",
+      "source": "https://www.genkisushi.com.sg/menu/"
+    },
+    {
+      "sfa_licence": "CE23J43A000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+      "source": "https://www.genkisushi.com.sg/menu/; https://www.genkisushi.com.sg/locate-us/"
+    },
+    {
+      "sfa_licence": "CE23J43A000",
+      "field": "Menu URL",
+      "before": null,
+      "after": "https://www.genkisushi.com.sg/menu/",
+      "source": "https://www.genkisushi.com.sg/menu/"
+    },
+    {
+      "sfa_licence": "S93082K000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu catalogue lists nigiri, aburi, gunkan, rolls/handrolls, sashimi, rice and noodles, appetisers, sides, desserts, takeaway sushi platters, and Dai Man Zoku. Examples shown include Salmon Sushi, Maguro Sushi, Genki Roll, Salmon Teriyaki Don, Kitsune Udon, and Salmon Sashimi. Branch availability and prices can vary.",
+      "source": "https://www.genkisushi.com.sg/menu/; https://www.genkisushi.com.sg/locate-us/"
+    },
+    {
+      "sfa_licence": "S93082K000",
+      "field": "Menu URL",
+      "before": null,
+      "after": "https://www.genkisushi.com.sg/menu/",
+      "source": "https://www.genkisushi.com.sg/menu/"
+    },
+    {
+      "sfa_licence": "CE04299K000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+      "source": "https://www.sushiro.com.sg/menu/; https://www.sushiro.com.sg/contact-location/; https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+    },
+    {
+      "sfa_licence": "CE04299K000",
+      "field": "Opening Hours / Closed Days",
+      "before": "Hours: 11:00AM – 10:00PM",
+      "after": "Hours: 11:00–22:00; last order 21:30",
+      "source": "https://www.sushiro.com.sg/contact-location/"
+    },
+    {
+      "sfa_licence": "CE13X73X000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+      "source": "https://www.sushiro.com.sg/menu/; https://www.sushiro.com.sg/contact-location/; https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+    },
+    {
+      "sfa_licence": "CE13X73X000",
+      "field": "Opening Hours / Closed Days",
+      "before": "Hours: 11:00AM – 10:00PM",
+      "after": "Hours: 11:00–22:00; last order 21:30",
+      "source": "https://www.sushiro.com.sg/contact-location/"
+    },
+    {
+      "sfa_licence": "CE14G84X000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+      "source": "https://www.sushiro.com.sg/menu/; https://www.sushiro.com.sg/contact-location/; https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+    },
+    {
+      "sfa_licence": "CE14G84X000",
+      "field": "Opening Hours / Closed Days",
+      "before": "Hours: 11:00AM – 10:00PM",
+      "after": "Hours: 11:00–22:00; last order 21:30",
+      "source": "https://www.sushiro.com.sg/contact-location/"
+    },
+    {
+      "sfa_licence": "CE18A59B000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+      "source": "https://www.sushiro.com.sg/menu/; https://www.sushiro.com.sg/contact-location/; https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+    },
+    {
+      "sfa_licence": "CE18A59B000",
+      "field": "Opening Hours / Closed Days",
+      "before": "Hours: 11:00AM – 10:00PM",
+      "after": "Hours: 11:00–22:00; last order 21:30",
+      "source": "https://www.sushiro.com.sg/contact-location/"
+    },
+    {
+      "sfa_licence": "CE19K02L000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+      "source": "https://www.sushiro.com.sg/menu/; https://www.sushiro.com.sg/contact-location/; https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+    },
+    {
+      "sfa_licence": "CE19K02L000",
+      "field": "Opening Hours / Closed Days",
+      "before": "Hours: 11:00AM – 10:00PM",
+      "after": "Hours: 11:00–22:00; last order 21:30",
+      "source": "https://www.sushiro.com.sg/contact-location/"
+    },
+    {
+      "sfa_licence": "CE20A57P000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+      "source": "https://www.sushiro.com.sg/menu/; https://www.sushiro.com.sg/contact-location/; https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+    },
+    {
+      "sfa_licence": "CE20A57P000",
+      "field": "Opening Hours / Closed Days",
+      "before": "Hours: 11:00AM – 10:00PM",
+      "after": "Hours: 11:00–22:00; last order 21:30",
+      "source": "https://www.sushiro.com.sg/contact-location/"
+    },
+    {
+      "sfa_licence": "CE25B01B000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+      "source": "https://www.sushiro.com.sg/menu/; https://www.sushiro.com.sg/contact-location/; https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+    },
+    {
+      "sfa_licence": "CE25B01B000",
+      "field": "Opening Hours / Closed Days",
+      "before": "Hours: 11:00AM – 10:00PM",
+      "after": "Hours: 11:00–22:00; last order 21:30",
+      "source": "https://www.sushiro.com.sg/contact-location/"
+    },
+    {
+      "sfa_licence": "CE25M88L000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+      "source": "https://www.sushiro.com.sg/menu/; https://www.sushiro.com.sg/contact-location/; https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+    },
+    {
+      "sfa_licence": "CE25M88L000",
+      "field": "Opening Hours / Closed Days",
+      "before": "Hours: 11:00AM – 10:00PM",
+      "after": "Hours: 11:00–22:00; last order 21:30",
+      "source": "https://www.sushiro.com.sg/contact-location/"
+    },
+    {
+      "sfa_licence": "CE26163C000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+      "source": "https://www.sushiro.com.sg/menu/; https://www.sushiro.com.sg/contact-location/; https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+    },
+    {
+      "sfa_licence": "CE26163C000",
+      "field": "Opening Hours / Closed Days",
+      "before": "Hours: 11:00AM – 10:00PM",
+      "after": "Hours: 11:00–22:00; last order 21:30",
+      "source": "https://www.sushiro.com.sg/contact-location/"
+    },
+    {
+      "sfa_licence": "CE26311P000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+      "source": "https://www.sushiro.com.sg/menu/; https://www.sushiro.com.sg/contact-location/; https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+    },
+    {
+      "sfa_licence": "CE26311P000",
+      "field": "Opening Hours / Closed Days",
+      "before": "Hours: 11:00AM – 10:00PM",
+      "after": "Hours: 11:00–22:00; last order 21:30",
+      "source": "https://www.sushiro.com.sg/contact-location/"
+    },
+    {
+      "sfa_licence": "CE26C20X000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+      "source": "https://www.sushiro.com.sg/menu/; https://www.sushiro.com.sg/contact-location/; https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+    },
+    {
+      "sfa_licence": "CE26C20X000",
+      "field": "Opening Hours / Closed Days",
+      "before": "Hours: 11:00AM – 10:00PM",
+      "after": "Hours: 11:00–22:00; last order 21:30",
+      "source": "https://www.sushiro.com.sg/contact-location/"
+    },
+    {
+      "sfa_licence": "NE06119X000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+      "source": "https://www.sushiro.com.sg/menu/; https://www.sushiro.com.sg/contact-location/; https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+    },
+    {
+      "sfa_licence": "NE06119X000",
+      "field": "Opening Hours / Closed Days",
+      "before": "Hours: 11:00AM – 10:00PM",
+      "after": "Hours: 11:00–22:00; last order 21:30",
+      "source": "https://www.sushiro.com.sg/contact-location/"
+    },
+    {
+      "sfa_licence": "NE16295A000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+      "source": "https://www.sushiro.com.sg/menu/; https://www.sushiro.com.sg/contact-location/; https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+    },
+    {
+      "sfa_licence": "NE16295A000",
+      "field": "Opening Hours / Closed Days",
+      "before": "Hours: 11:00AM – 10:00PM",
+      "after": "Hours: 11:00–22:00; last order 21:30",
+      "source": "https://www.sushiro.com.sg/contact-location/"
+    },
+    {
+      "sfa_licence": "NE20K92B000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+      "source": "https://www.sushiro.com.sg/menu/; https://www.sushiro.com.sg/contact-location/; https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+    },
+    {
+      "sfa_licence": "NE20K92B000",
+      "field": "Opening Hours / Closed Days",
+      "before": "Hours: 11:00AM – 10:00PM",
+      "after": "Hours: 11:00–22:00; last order 21:30",
+      "source": "https://www.sushiro.com.sg/contact-location/"
+    },
+    {
+      "sfa_licence": "NE22D35L000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+      "source": "https://www.sushiro.com.sg/menu/; https://www.sushiro.com.sg/contact-location/; https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+    },
+    {
+      "sfa_licence": "NE22D35L000",
+      "field": "Opening Hours / Closed Days",
+      "before": "Hours: 11:00AM – 10:00PM",
+      "after": "Hours: 11:00–22:00; last order 21:30",
+      "source": "https://www.sushiro.com.sg/contact-location/"
+    },
+    {
+      "sfa_licence": "NE24998B000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+      "source": "https://www.sushiro.com.sg/menu/; https://www.sushiro.com.sg/contact-location/; https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+    },
+    {
+      "sfa_licence": "NE24998B000",
+      "field": "Opening Hours / Closed Days",
+      "before": "Hours: 11:00AM – 10:00PM",
+      "after": "Hours: 11:00–22:00; last order 21:30",
+      "source": "https://www.sushiro.com.sg/contact-location/"
+    },
+    {
+      "sfa_licence": "NW20C01K000",
+      "field": "Opening Hours / Closed Days",
+      "before": "Hours: 11:00AM – 10:00PM",
+      "after": "Hours: 11:00–22:00; last order 21:30",
+      "source": "https://www.sushiro.com.sg/contact-location/"
+    },
+    {
+      "sfa_licence": "NW25539E000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+      "source": "https://www.sushiro.com.sg/menu/; https://www.sushiro.com.sg/contact-location/; https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+    },
+    {
+      "sfa_licence": "NW25539E000",
+      "field": "Opening Hours / Closed Days",
+      "before": "Hours: 11:00AM – 10:00PM",
+      "after": "Hours: 11:00–22:00; last order 21:30",
+      "source": "https://www.sushiro.com.sg/contact-location/"
+    },
+    {
+      "sfa_licence": "SE13W32J000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+      "source": "https://www.sushiro.com.sg/menu/; https://www.sushiro.com.sg/contact-location/; https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+    },
+    {
+      "sfa_licence": "SE13W32J000",
+      "field": "Opening Hours / Closed Days",
+      "before": "Hours: 11:00AM – 10:00PM",
+      "after": "Hours: 11:00–22:00; last order 21:30",
+      "source": "https://www.sushiro.com.sg/contact-location/"
+    },
+    {
+      "sfa_licence": "SE19084X000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+      "source": "https://www.sushiro.com.sg/menu/; https://www.sushiro.com.sg/contact-location/; https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+    },
+    {
+      "sfa_licence": "SE19084X000",
+      "field": "Opening Hours / Closed Days",
+      "before": "Hours: 10:00AM – 10:00PM",
+      "after": "Hours: 10:00–22:00; last order 21:30",
+      "source": "https://www.sushiro.com.sg/contact-location/"
+    },
+    {
+      "sfa_licence": "SW04035P000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+      "source": "https://www.sushiro.com.sg/menu/; https://www.sushiro.com.sg/contact-location/; https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+    },
+    {
+      "sfa_licence": "SW04035P000",
+      "field": "Opening Hours / Closed Days",
+      "before": "Hours: 11:00AM – 10:00PM",
+      "after": "Hours: 11:00–22:00; last order 21:30",
+      "source": "https://www.sushiro.com.sg/contact-location/"
+    },
+    {
+      "sfa_licence": "SW25086K000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+      "source": "https://www.sushiro.com.sg/menu/; https://www.sushiro.com.sg/contact-location/; https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+    },
+    {
+      "sfa_licence": "SW25086K000",
+      "field": "Opening Hours / Closed Days",
+      "before": "Hours: 11:00AM – 10:00PM",
+      "after": "Hours: 11:00–22:00; last order 21:30",
+      "source": "https://www.sushiro.com.sg/contact-location/"
+    },
+    {
+      "sfa_licence": "SW25536A000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official Singapore menu page links Normal Menu and Digiro Menu. Current menu image examples include tuna, grilled mackerel, ark shell, surf clam, salmon, salmon belly, shrimp, sashimi, gunkan, rolls, and inari. The linked May 2026 image shows price tiers beginning at $2.30++, with additional $2.90++, $3.90++, and $4.90++ sections; availability and prices may change by outlet/date.",
+      "source": "https://www.sushiro.com.sg/menu/; https://www.sushiro.com.sg/contact-location/; https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png"
+    },
+    {
+      "sfa_licence": "SW25536A000",
+      "field": "Opening Hours / Closed Days",
+      "before": "Hours: 11:00AM – 10:00PM",
+      "after": "Hours: 11:00–22:00; last order 21:30",
+      "source": "https://www.sushiro.com.sg/contact-location/"
+    },
+    {
+      "sfa_licence": "CE14O37E000",
+      "field": "Opening Hours / Closed Days",
+      "before": "Hours: Mon: 12:00 AM - 12:00 AM; Tue: 12:00 AM - 12:00 AM; Wed: 12:00 AM - 12:00 AM; Thu: 12:00 AM - 12:00 AM; Fri: 12:00 AM - 12:00 AM; Sat: 12:00 AM - 12:00 AM; Sun: 12:00 AM - 12:00 AM",
+      "after": "Hours: Mon–Sun, Eve of PH, PH: Open 24 hours (00:00–24:00); breakfast daily 05:00–11:00.",
+      "source": "https://www.burgerking.com.sg/Locator/Details/36"
+    },
+    {
+      "sfa_licence": "CE24357C000",
+      "field": "Opening Hours / Closed Days",
+      "before": "Hours: Mon: 12:00 AM - 12:00 AM; Tue: 12:00 AM - 12:00 AM; Wed: 12:00 AM - 12:00 AM; Thu: 12:00 AM - 12:00 AM; Fri: 12:00 AM - 12:00 AM; Sat: 12:00 AM - 12:00 AM; Sun: 12:00 AM - 12:00 AM",
+      "after": "Hours: Mon–Sun, Eve of PH, PH: Open 24 hours (00:00–24:00); breakfast daily 05:00–11:00.",
+      "source": "https://www.burgerking.com.sg/Locator/Details/95"
+    },
+    {
+      "sfa_licence": "NE06117A000",
+      "field": "Opening Hours / Closed Days",
+      "before": "Hours: Mon: 12:00 AM - 12:00 AM; Tue: 12:00 AM - 12:00 AM; Wed: 12:00 AM - 12:00 AM; Thu: 12:00 AM - 12:00 AM; Fri: 12:00 AM - 12:00 AM; Sat: 12:00 AM - 12:00 AM; Sun: 12:00 AM - 12:00 AM",
+      "after": "Hours: Mon–Sun, Eve of PH, PH: Open 24 hours (00:00–24:00); breakfast daily 05:00–11:00.",
+      "source": "https://www.burgerking.com.sg/Locator/Details/103"
+    },
+    {
+      "sfa_licence": "NW09114N000",
+      "field": "Opening Hours / Closed Days",
+      "before": "Hours: Mon: 12:00 AM - 12:00 AM; Tue: 12:00 AM - 12:00 AM; Wed: 12:00 AM - 12:00 AM; Thu: 12:00 AM - 12:00 AM; Fri: 12:00 AM - 12:00 AM; Sat: 12:00 AM - 12:00 AM; Sun: 12:00 AM - 12:00 AM",
+      "after": "Hours: Mon–Sun, Eve of PH, PH: Open 24 hours (00:00–24:00); breakfast daily 05:00–11:00.",
+      "source": "https://www.burgerking.com.sg/Locator/Details/76"
+    },
+    {
+      "sfa_licence": "S01213V000",
+      "field": "Opening Hours / Closed Days",
+      "before": "Hours: Mon: 12:00 AM - 12:00 AM; Tue: 12:00 AM - 12:00 AM; Wed: 12:00 AM - 12:00 AM; Thu: 12:00 AM - 12:00 AM; Fri: 12:00 AM - 12:00 AM; Sat: 12:00 AM - 12:00 AM; Sun: 12:00 AM - 12:00 AM",
+      "after": "Hours: Mon–Sun, Eve of PH, PH: Open 24 hours (00:00–24:00); breakfast daily 05:00–11:00.",
+      "source": "https://www.burgerking.com.sg/Locator/Details/98"
+    },
+    {
+      "sfa_licence": "SE23O34V000",
+      "field": "Opening Hours / Closed Days",
+      "before": "Hours: Mon: 12:00 AM - 12:00 AM; Tue: 12:00 AM - 12:00 AM; Wed: 12:00 AM - 12:00 AM; Thu: 12:00 AM - 12:00 AM; Fri: 12:00 AM - 12:00 AM; Sat: 12:00 AM - 12:00 AM; Sun: 12:00 AM - 12:00 AM",
+      "after": "Hours: Mon–Sun, Eve of PH, PH: Open 24 hours (00:00–24:00); breakfast daily 04:00–11:00.",
+      "source": "https://www.burgerking.com.sg/Locator/Details/105"
+    },
+    {
+      "sfa_licence": "CE14O37E000",
+      "field": "Website",
+      "before": "https://burgerking.com.sg/",
+      "after": "https://www.burgerking.com.sg/Locator/Details/36",
+      "source": "https://www.burgerking.com.sg/Locator/Details/36; https://www.burgerking.com.sg/"
+    },
+    {
+      "sfa_licence": "NE06117A000",
+      "field": "Website",
+      "before": "https://burgerking.com.sg/",
+      "after": "https://www.burgerking.com.sg/Locator/Details/103",
+      "source": "https://www.burgerking.com.sg/Locator/Details/103; https://www.burgerking.com.sg/"
+    },
+    {
+      "sfa_licence": "CE24357C000",
+      "field": "Full Address",
+      "before": "Address: 339 ANCHORVALE ROAD #01-03,Singapore 540339",
+      "after": "Address: 339 ANCHORVALE ROAD #01-03,Singapore 540339, Anchorvale Village",
+      "source": "https://www.burgerking.com.sg/Locator/Details/95"
+    },
+    {
+      "sfa_licence": "S01213V000",
+      "field": "Full Address",
+      "before": "Address: 1 PASIR RIS DRIVE 4 #01-07,Singapore 519457",
+      "after": "Address: 1 PASIR RIS DRIVE 4 #01-07,Singapore 519457, Pasir Ris East Community Club",
+      "source": "https://www.burgerking.com.sg/Locator/Details/98"
+    },
+    {
+      "sfa_licence": "SW23625P000",
+      "field": "Public Access Status",
+      "before": "public_access_candidate_based_on_sfa_type_and_address",
+      "after": "public_access_verified_drive_through",
+      "source": "https://www.burgerking.com.sg/Locator/Details/89; https://www.safra.sg/whats-on/saf-collection-bins"
+    },
+    {
+      "sfa_licence": "SW23625P000",
+      "field": "Coverage Status",
+      "before": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "after": "SFA-listed; Official outlet locator plus SAFRA directions place a 24/7 drive-through at the exact outlet. Verified 2026-10-19.",
+      "source": "https://www.burgerking.com.sg/Locator/Details/89; https://www.safra.sg/whats-on/saf-collection-bins"
+    },
+    {
+      "sfa_licence": "SE18181C000",
+      "field": "Public Access Status",
+      "before": "public_access_candidate_based_on_sfa_type_and_address",
+      "after": "public_access_verified_terminal_public_area",
+      "source": "https://www.changiairport.com/zh/dine-and-shop/dining-directory/dine-detail.ve-la-1.html"
+    },
+    {
+      "sfa_licence": "SE18181C000",
+      "field": "Coverage Status",
+      "before": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "after": "SFA-listed; Official Changi Airport outlet detail identifies this exact unit as T1 Public. Verified 2026-10-19.",
+      "source": "https://www.changiairport.com/zh/dine-and-shop/dining-directory/dine-detail.ve-la-1.html"
+    },
+    {
+      "sfa_licence": "CE15580X000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Foodpanda delivery menu observed 2026-10-19; 6 outlet-scoped items and delivery prices are listed in Menu Items. Prices may differ from dine-in.",
+      "source": "https://www.foodpanda.sg/restaurant/s5kk/toast-box-alexandra"
+    },
+    {
+      "sfa_licence": "CE15580X000",
+      "field": "Menu URL",
+      "before": null,
+      "after": "https://www.foodpanda.sg/restaurant/s5kk/toast-box-alexandra",
+      "source": "https://www.foodpanda.sg/restaurant/s5kk/toast-box-alexandra"
+    },
+    {
+      "sfa_licence": "CE16F16K000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Foodpanda delivery menu observed 2026-10-19; 6 outlet-scoped items and delivery prices are listed in Menu Items. Prices may differ from dine-in.",
+      "source": "https://www.foodpanda.sg/restaurant/y3oi/toast-box-tiong-bahru"
+    },
+    {
+      "sfa_licence": "CE16F16K000",
+      "field": "Menu URL",
+      "before": null,
+      "after": "https://www.foodpanda.sg/restaurant/y3oi/toast-box-tiong-bahru",
+      "source": "https://www.foodpanda.sg/restaurant/y3oi/toast-box-tiong-bahru"
+    },
+    {
+      "sfa_licence": "CE18Q51K000",
+      "field": "Menu Item refresh: Premium Buta Don",
+      "before": [
+        "Premium Buta Don",
+        null,
+        null,
+        "15",
+        "Legacy branch association from prior dataset",
+        "https://data.gov.sg/datasets/d_1f0313499a17075d13aae6ed3e825bc6/view",
+        "2026-07-08",
+        "Historical reference; source data is dated July 2026 or unknown and was not rechecked in this refresh",
+        "spreadsheet",
+        "operator_owned"
+      ],
+      "after": [
+        "Premium Buta Don",
+        "BUTA DON",
+        "Grilled chestnut pork loin, shimeji mushrooms on rice",
+        "S$19.90",
+        "Current official operator online-order catalogue; brand-level menu, outlet availability not separately verified.",
+        "https://order.aburi-en.com/en_SG",
+        "2026-10-19",
+        "Observed in live operator catalogue on 2026-10-19; availability and prices may change.",
+        "Official operator online-order catalogue",
+        "Menu facts sourced from operator catalogue; associated image requires written permission and is not approved."
+      ],
+      "source": "https://order.aburi-en.com/en_SG"
+    },
+    {
+      "sfa_licence": "SW09958X000",
+      "field": "Menu Item refresh: Premium Buta Don",
+      "before": [
+        "Premium Buta Don",
+        null,
+        null,
+        "15",
+        "Legacy branch association from prior dataset",
+        "https://data.gov.sg/datasets/d_1f0313499a17075d13aae6ed3e825bc6/view",
+        "2026-07-08",
+        "Historical reference; source data is dated July 2026 or unknown and was not rechecked in this refresh",
+        "spreadsheet",
+        "operator_owned"
+      ],
+      "after": [
+        "Premium Buta Don",
+        "BUTA DON",
+        "Grilled chestnut pork loin, shimeji mushrooms on rice",
+        "S$19.90",
+        "Current official operator online-order catalogue; brand-level menu, outlet availability not separately verified.",
+        "https://order.aburi-en.com/en_SG",
+        "2026-10-19",
+        "Observed in live operator catalogue on 2026-10-19; availability and prices may change.",
+        "Official operator online-order catalogue",
+        "Menu facts sourced from operator catalogue; associated image requires written permission and is not approved."
+      ],
+      "source": "https://order.aburi-en.com/en_SG"
+    },
+    {
+      "sfa_licence": "CE13L96K000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official operator order catalogue observed 2026-10-19; menu items and published SGD prices are listed in Menu Items. Brand-level menu; branch availability is not verified.",
+      "source": "https://order.aburi-en.com/en_SG"
+    },
+    {
+      "sfa_licence": "CE18Q51K000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official operator order catalogue observed 2026-10-19; menu items and published SGD prices are listed in Menu Items. Brand-level menu; branch availability is not verified.",
+      "source": "https://order.aburi-en.com/en_SG"
+    },
+    {
+      "sfa_licence": "SW09958X000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official operator order catalogue observed 2026-10-19; menu items and published SGD prices are listed in Menu Items. Brand-level menu; branch availability is not verified.",
+      "source": "https://order.aburi-en.com/en_SG"
+    }
+  ],
+  "evidence_files": [
+    "refresh125_official_menu_outlets_20261019.json",
+    "refresh125_blank_names_jewel_changi_20261019.json",
+    "refresh125_directory_field_normalization_audit_20261019.json",
+    "refresh125_foodpanda_menu_proposal_20261019.json",
+    "refresh125_official_menu_image_candidates_20261019.json",
+    "refresh125_sfa_current_delta_20261019.json",
+    "refresh124_safra_access_b_20261019.json",
+    "refresh125_menu_scope_audit_20261019.json"
+  ],
+  "limitations": [
+    "No SFA-confirmed permanent closures in the current official query.",
+    "Ten SAFRA-access and Jewel Music Box candidates remain unresolved; no removal made.",
+    "Official brand-level menus do not prove item availability at each outlet.",
+    "All 162 added image candidate associations remain review-only and unapproved for display or reuse.",
+    "No Mapbox API calls were made during this refresh."
+  ],
+  "installed_workbook_sha256": "00a13d50c650e1bcbde0f51f15260e4f8aeecbd9d0372bae284c6c50558e2967"
+}

@@ -169,7 +169,8 @@ test("native guest and location flows seed the mock session before entering Home
 
 test("native media picker smoke reaches the post composer gallery entry point", () => {
   const flow = read(".maestro/ios-media-picker-permission.yaml");
-  const composer = read("src/app/screens/post/PostComposerScreenV2.tsx");
+  const composer = read("src/app/screens/post/PostComposerScreen.tsx");
+  const developerVariant = read("src/app/screens/post/PostComposerScreenV2.tsx");
   const mediaManager = read("src/features/post/components/MediaManager.tsx");
 
   assert.match(flow, /appId: \$\{APP_ID\}/);
@@ -189,17 +190,22 @@ test("native media picker smoke reaches the post composer gallery entry point", 
   assert.match(flow, /post-composer-add-media/);
   assert.match(flow, /text: "Allow"\n\s+optional: true/);
   assert.match(flow, /Don.t Allow/);
-  assert.match(flow, /Permission Required/);
+  assert.match(flow, /Photo permission is required to publish a post\./);
   const addMediaIndex = flow.indexOf('id: "post-composer-add-media"');
   const allowIndex = flow.indexOf('text: "Allow"');
   const denialIndex = flow.indexOf('text: "Don’t Allow"');
-  const permissionRequiredIndex = flow.indexOf('assertVisible: "Permission Required"');
+  const permissionRequiredIndex = flow.indexOf(
+    'assertVisible: "Photo permission is required to publish a post."',
+  );
   assert.ok(addMediaIndex >= 0);
   assert.ok(allowIndex > addMediaIndex);
   assert.ok(denialIndex > allowIndex);
   assert.ok(permissionRequiredIndex > allowIndex);
 
+  assert.match(developerVariant, /<PostComposerScreen \{\.\.\.props\} \/>/);
   assert.match(composer, /testID="post-composer-screen"/);
+  assert.match(composer, /requestMediaLibraryPermissionsAsync/);
+  assert.match(composer, /launchImageLibraryAsync/);
   assert.match(mediaManager, /import \* as ImagePicker from "expo-image-picker"/);
   assert.match(mediaManager, /requestMediaLibraryPermissionsAsync/);
   assert.match(mediaManager, /launchImageLibraryAsync/);
@@ -236,6 +242,6 @@ test("native source-smoke coverage includes gestures, bottom sheets, media, and 
   assert.match(reviewComments, /<Input/);
   assert.match(reviewComments, /keyboardBehavior="extend"/);
   assert.match(mediaFlow, /post-composer-add-media/);
-  assert.match(mediaFlow, /Permission Required/);
+  assert.match(mediaFlow, /Photo permission is required to publish a post\./);
   assert.match(chatFlow, /id: "activity-tab-updates"/);
 });

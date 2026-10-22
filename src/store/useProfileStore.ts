@@ -1,3 +1,4 @@
+import { getAccountGeneration } from "@/lib/security/accountScope";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -26,7 +27,7 @@ import type {
   UserProfile,
 } from "@/types/domain";
 import { NEUTRAL_TASTE_PROFILE, NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
-import { hungryPersistStorage } from "./persistStorage";
+import { profilePersistStorage } from "./profilePersistStorage";
 import { useUIStore } from "./useUIStore";
 import { getConfiguredDataSource } from "@/lib/services/supabase/client";
 
@@ -110,7 +111,9 @@ interface ProfileState {
   syncProfile: (isAuthenticated: boolean, userId?: string | null) => void;
   toggleFavourite: (dish: DishDetail) => void;
   updateProfile: (next: Partial<Pick<UserProfile, "displayName" | "email" | "avatarUrl">>) => void;
-  setProfileVisibility: (profileVisibility: ProfileVisibility) => void;
+  setProfileVisibility: (profileVisibility: ProfileVisibility) => Promise<void>;
+  setFavourite: (dishId: string, desired: boolean) => Promise<boolean>;
+  setOnboardingCuisineIds: (ids: string[]) => void;
   setTasteVector: (tasteVector: TasteVector) => void;
   setTasteProfile: (tasteProfile: TasteProfile) => void;
   setDietaryPreferences: (dietaryPreferences: DietaryFlag[]) => void;
@@ -157,6 +160,7 @@ const FEEDBACK_CONFIDENCE_DELTAS: Record<ExplicitFeedbackEvent["type"], number> 
   dismissed: 0.01,
 };
 
+let visibilityQueue: Promise<unknown> = Promise.resolve();
 const pendingFavouriteDishToggles = new Set<string>();
 const activatedProfileIds = new Set<string>();
 
@@ -380,9 +384,11 @@ export const useProfileStore = create<ProfileState>()(
         const rehydrateFavouriteDishIds = () => {
           if (!authenticatedUserId) return;
           const targetUserId = authenticatedUserId;
+          const generation = getAccountGeneration();
           void getHungryService()
             .profile.getFavouriteDishIds()
             .then((ids) => {
+              if (generation !== getAccountGeneration()) return;
               const session = getSessionStoreState();
               if (!session.isAuthenticated || session.authenticatedUserId !== targetUserId) {
                 return;
@@ -403,6 +409,7 @@ export const useProfileStore = create<ProfileState>()(
               });
             })
             .catch((error) => {
+              if (generation !== getAccountGeneration()) return;
               console.warn("Failed to rehydrate favourite dish IDs", error);
               set({ favouritesRehydrationFailed: true });
             });
@@ -532,27 +539,57 @@ export const useProfileStore = create<ProfileState>()(
             set({ profile: previousProfile });
           });
       },
-      setProfileVisibility: (profileVisibility) => {
-        const currentVisibility = get().profile.profileVisibility;
-        if (currentVisibility === profileVisibility) return;
-        const previousProfile = get().profile;
+      setFavourite: async (dishId, desired) => {
+        const generation = getAccountGeneration();
+        const subject = get().profile.id;
+        const confirmed = await getHungryService().profile.setFavourite(dishId, desired);
+        if (getAccountGeneration() !== generation || get().profile.id !== subject) return confirmed;
         set((state) => ({
           profile: {
             ...state.profile,
-            profileVisibility,
+            favouriteDishIds: confirmed
+              ? [...new Set([...state.profile.favouriteDishIds, dishId])]
+              : state.profile.favouriteDishIds.filter((id) => id !== dishId),
           },
         }));
-        const optimisticProfile = get().profile;
-        if (!shouldSyncAuthenticatedProfile(optimisticProfile)) {
-          return;
-        }
-        void getHungryService()
-          .profile.updateProfile({ profileVisibility })
-          .catch((error) => {
-            console.error("Failed to update profile visibility", error);
-            if (get().profile !== optimisticProfile) return;
-            set({ profile: previousProfile });
+        return confirmed;
+      },
+      setOnboardingCuisineIds: (ids) => {
+        const previous = get().profile;
+        const generation = getAccountGeneration();
+        set((state) => ({ profile: { ...state.profile, onboardingCuisineIds: ids } }));
+        if (shouldSyncAuthenticatedProfile(get().profile))
+          void getHungryService()
+            .profile.updateProfile({ onboardingCuisineIds: ids })
+            .catch(() => {
+              if (
+                generation === getAccountGeneration() &&
+                get().profile.onboardingCuisineIds === ids
+              )
+                set((state) => ({
+                  profile: {
+                    ...state.profile,
+                    onboardingCuisineIds: previous.onboardingCuisineIds,
+                  },
+                }));
+            });
+      },
+      setProfileVisibility: (profileVisibility) => {
+        const generation = getAccountGeneration();
+        const subject = get().profile.id;
+        const operation = visibilityQueue
+          .catch(() => undefined)
+          .then(async () => {
+            if (generation !== getAccountGeneration() || get().profile.id !== subject)
+              throw new Error("Your account changed.");
+            if (get().profile.profileVisibility === profileVisibility) return;
+            if (shouldSyncAuthenticatedProfile(get().profile))
+              await getHungryService().profile.updateProfile({ profileVisibility });
+            if (generation === getAccountGeneration() && get().profile.id === subject)
+              set((state) => ({ profile: { ...state.profile, profileVisibility } }));
           });
+        visibilityQueue = operation;
+        return operation;
       },
       setTasteVector: (tasteVector) => {
         const previousSnapshot = {
@@ -790,6 +827,8 @@ export const useProfileStore = create<ProfileState>()(
         }
       },
       recordTasteInteraction: (input) => {
+        if (input.type === "search_query" && !useUIStore.getState().allowSearchHistory)
+          return undefined;
         let recordedEvent: TasteInteractionEvent | undefined;
         set((state) => {
           const feedbackType = getInteractionFeedbackType(input);
@@ -876,7 +915,7 @@ export const useProfileStore = create<ProfileState>()(
     }),
     {
       name: "hungry-profile-v1",
-      storage: hungryPersistStorage,
+      storage: profilePersistStorage,
       onRehydrateStorage: () => (state) => {
         if (!state) return;
         if (!state.profile) {

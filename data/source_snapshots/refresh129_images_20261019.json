@@ -1,0 +1,100 @@
+{
+  "schema_version": "hungry-image-rights-proposal-v1",
+  "snapshot_id": "refresh129_images_20261019",
+  "captured_at_sgt": "2026-10-19",
+  "workbook_path": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "51b0eb281d08e735151ccf4ca99de823c3badf811d46c9ea337b4008b3251e0c",
+  "workbook_edited": false,
+  "scope": "Read-only audit of new Commons venue-image candidates; exact joins checked against Refresh128 directory; no image files downloaded and no workbook edits made.",
+  "summary": {
+    "rights_cleared_candidates": 2,
+    "directory_entity_joins": 2,
+    "menu_item_joins": 0,
+    "new_candidates_already_in_workbook": 0,
+    "visually_inspected": 0,
+    "approved_for_current_appearance": 0
+  },
+  "candidates": [
+    {
+      "sfa_licence": "CE19U03X000",
+      "workbook_outlet_name": "JOLLIBEE",
+      "workbook_directory_address": "3 TEMASEK BOULEVARD #B1-123,#B1-124,SUNTEC CITY MALL,Singapore 038983",
+      "workbook_coordinates": {
+        "latitude": 1.2945568,
+        "longitude": 103.8583587,
+        "precision": "building-level coordinate in workbook"
+      },
+      "item_or_image_type": "Venue photograph — Suntec City Jollibee branch",
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/e/eb/Suntec_Singapore_Branch_of_Jollibee.jpg",
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:Suntec_Singapore_Branch_of_Jollibee.jpg",
+      "observed_at": "2026-10-19",
+      "photograph_date": "2022-10-01",
+      "creator": "Exec8",
+      "license": "CC BY-SA 4.0",
+      "rights_basis": "Commons file page identifies this as the creator’s own work and licenses it under CC BY-SA 4.0. Reuse is permitted with attribution, license link, change notice, and share-alike for adaptations.",
+      "reuse_conditions": "Credit Exec8; link source page and https://creativecommons.org/licenses/by-sa/4.0/; state if modified; distribute adaptations under the same or a compatible license.",
+      "visual_inspection": "No pixel-level inspection; Commons file metadata and page title/caption inspected.",
+      "exact_match_evidence": "Commons caption and file title identify “Suntec Singapore Branch of Jollibee”; photo point 1.294575, 103.857839 is about 58 m from workbook coordinate, consistent with the same large mall venue. Current SFA directory row CE19U03X000 identifies JOLLIBEE at Suntec City Mall, 3 Temasek Boulevard #B1-123/#B1-124.",
+      "currentness_and_scope": "Genuine branch photograph from 2022; identifies the exact mall branch, but present-day storefront appearance and continued photo accuracy are not established. Venue photo only; no menu-item association or menu-row match.",
+      "candidate_status": "review_only_CC_BY_SA_4.0_not_approved_for_current_appearance",
+      "already_in_workbook_exact_url": false,
+      "evidence_urls": [
+        "https://commons.wikimedia.org/wiki/File:Suntec_Singapore_Branch_of_Jollibee.jpg",
+        "https://commons.wikimedia.org/wiki/Category:Suntec_City_Mall"
+      ],
+      "workbook_exact_menu_row_count": 0
+    },
+    {
+      "sfa_licence": "CE16053B000",
+      "workbook_outlet_name": "Sushi Masa by Kisetsu",
+      "workbook_directory_address": "5 KOEK ROAD #06-03,CUPPAGE PLAZA,Singapore 228796",
+      "workbook_coordinates": {
+        "latitude": 1.301986474891759,
+        "longitude": 103.8407266298263,
+        "precision": "building-level coordinate in workbook"
+      },
+      "item_or_image_type": "Venue photograph — Sushi Masa entrance",
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/c/cc/Sushi_Masa_by_Ki-setsu_Singapore_Omakase_Entrance.jpg",
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:Sushi_Masa_by_Ki-setsu_Singapore_Omakase_Entrance.jpg",
+      "observed_at": "2026-10-19",
+      "photograph_date": "2024-09-13",
+      "creator": "Bobby.Creations",
+      "license": "CC BY 4.0",
+      "rights_basis": "Commons file page identifies uploader’s own work and an explicit CC BY 4.0 license, permitting reuse with attribution.",
+      "reuse_conditions": "Credit Bobby.Creations; link source page and https://creativecommons.org/licenses/by/4.0/; state if modified.",
+      "visual_inspection": "No pixel-level inspection; Commons file caption, metadata, and page inspected.",
+      "exact_match_evidence": "Commons caption says the image is the entrance of Sushi Masa by Ki-setsu, a Singapore omakase restaurant at Cuppage Plaza Level 6. Current SFA directory row CE16053B000 lists Sushi Masa by Kisetsu at 5 Koek Road #06-03, Cuppage Plaza. This is an exact venue/building/floor match.",
+      "currentness_and_scope": "Genuine venue photo captured in 2024; exact Cuppage Plaza Level 6 location is supported. Present-day storefront appearance is not established. Venue photo only; no menu-item association or menu-row match.",
+      "candidate_status": "review_only_CC_BY_4.0_not_approved_for_current_appearance",
+      "already_in_workbook_exact_url": false,
+      "evidence_urls": [
+        "https://commons.wikimedia.org/wiki/File:Sushi_Masa_by_Ki-setsu_Singapore_Omakase_Entrance.jpg"
+      ],
+      "workbook_exact_menu_row_count": 0
+    }
+  ],
+  "excluded_or_not_reproposed": [
+    {
+      "candidate": "328 Katong Laksa at Queensway (2025)",
+      "reason": "A matching licensed image is already in the Image Candidates sheet under W03141P000; avoid duplicate candidate row."
+    },
+    {
+      "candidate": "Janggut Laksa at Queensway (2025)",
+      "reason": "A matching licensed outlet image is already in the Image Candidates sheet under CE08A64X000; avoid duplicate candidate row."
+    },
+    {
+      "candidate": "Ya Kun at Raffles City (2016)",
+      "reason": "Existing licensed menu-image candidate rows already cover W96054J000; avoid duplicate candidate row."
+    },
+    {
+      "candidate": "Hawker Chan at Chinatown Complex (2023)",
+      "reason": "Existing Commons image candidates already cover SM102126004; avoid duplicate candidate row."
+    },
+    {
+      "candidate": "Eggslut at Suntec City",
+      "reason": "Commons has an exact Suntec image, but no exact Eggslut record was found in the Refresh128 Public F&B Directory; do not create an unmatched row."
+    }
+  ],
+  "recommendation": "The two new images are genuine, explicitly reusable Commons photographs and can be added to Image Candidates with full attribution/license details. Keep both out of Approved Image URL until someone visually checks the image pixels and confirms it remains a suitable representation of the current outlet. Neither image supports a menu item or menu row.",
+  "integration_status": "proposal_only_not_integrated"
+}

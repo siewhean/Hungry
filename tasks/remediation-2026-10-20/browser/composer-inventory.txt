@@ -1,0 +1,12 @@
+Create post
+Share a photo or video of what you ate.
+Photo or video
+Chicken Rice
+Tian Tian Chicken Rice
+Add media
+Caption
+Fragrant
+Comforting
+Juicy
+Publish post
+Mock session → Fully authenticated

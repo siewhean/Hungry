@@ -1,0 +1,11 @@
+
+> hungry-mobile@0.1.0 typecheck
+> tsc --noEmit
+
+src/app/screens/home/ChatDetailScreen.tsx(87,38): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/store/useChatDraftStore.ts(13,14): error TS7022: 'useChatDraftStore' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.
+src/store/useChatDraftStore.ts(36,3): error TS7023: 'setAccountScope' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one of its return expressions.
+src/store/useChatDraftStore.ts(44,7): error TS7022: 'changeChatDraftAccount' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.
+src/store/useChatDraftStore.ts(47,31): error TS2339: Property 'drafts' does not exist on type 'object'.
+src/store/useProfileStore.ts(1,9): error TS2300: Duplicate identifier 'useUIStore'.
+src/store/useProfileStore.ts(32,10): error TS2300: Duplicate identifier 'useUIStore'.

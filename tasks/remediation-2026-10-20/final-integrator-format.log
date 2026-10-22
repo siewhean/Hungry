@@ -1,0 +1,6 @@
+src/features/auth/authOperationState.ts 31ms
+src/features/auth/useAuthOperation.ts 7ms
+src/app/navigation/RootNavigator.tsx 79ms
+src/features/auth/applySignedInProfile.ts 14ms
+src/store/useSessionStore.ts 27ms
+src/lib/services/supabase/supabaseService.ts 318ms

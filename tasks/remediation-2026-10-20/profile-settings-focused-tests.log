@@ -1,0 +1,100 @@
+(node:75483) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ full project audit P0: production feature flags and floorplan gating match launch posture (3.483834ms)
+✔ full project audit P0: social safety, public profiles, and chat sends are backend-gated (9.447708ms)
+✔ full project audit P1: repo hygiene and passport asset caps are guarded (6.574625ms)
+✔ full project audit P1: numeric trust surfaces disclose live or preview data source (4.51375ms)
+✔ full project audit P1: user-facing data trust copy avoids live-result overclaims (0.605167ms)
+(node:75484) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ onboarding typed routes are registered and flow through cuisine, taste, and dietary setup (3.887666ms)
+✔ root and nested route targets avoid stale or unregistered screens (0.502375ms)
+✔ synthetic create tab targets root routes without registering a fake tab route (0.73375ms)
+✔ going offline shows a banner instead of taking over navigation (0.200917ms)
+✔ wheel party mode is gated and /join links explain group spins are coming (2.352916ms)
+(node:75485) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ root navigation keeps heavy routes lazy-loaded (1.970167ms)
+✔ startup does not block indefinitely on fonts or analytics (1.21825ms)
+✔ startup defers profile, mock data, and native analytics module loading (2.784584ms)
+✔ home, discover, and quick bites avoid duplicate render-time data work (1.374792ms)
+✔ prefetch layer warms images, data, and route modules without blocking navigation (24.409833ms)
+✔ remaining high-traffic profile, developer, and merchant links prefetch on intent (3.052542ms)
+✔ developer and merchant surfaces defer non-selected work (0.9725ms)
+(node:75486) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ onboarding food visuals use generated local food assets (5.538209ms)
+(node:75487) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ profile home contract: quick access lives behind the header menu (0.713709ms)
+✔ profile home contract: profile stats use dynamic profile and social store values (0.946875ms)
+✔ profile home contract: Taste Fingerprint shows all six dimensions and Saved naming (0.266417ms)
+✔ profile home contract: a preloaded Profile tab never bounces guests to Login (0.133166ms)
+(node:75488) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ profile social grid opens posts in a detail route (9.082584ms)
+✔ profile social post detail shows a continuous feed of the selected collection (0.412875ms)
+✔ profile social grid removes side padding for edge-to-edge tiles (1.047625ms)
+✔ profile social post detail shows only stored social counts (0.504292ms)
+(node:75489) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Sprint 9 screen contract: Login screen uses service auth + error boundary (4.864541ms)
+✔ Sprint 9 screen contract: Review screen submits via service and triggers success UI (0.252833ms)
+✔ Sprint 9 screen contract: onboarding icon controls and location rows are labelled (3.285416ms)
+✔ Sprint 9 screen contract: stall menu cards expose dish actions (0.363125ms)
+✔ Sprint 9 screen contract: Search cards expose actionable semantics (0.398875ms)
+✔ Sprint 9 screen contract: Home feed interactions are wired for like/save/comment/share (5.481833ms)
+✔ Sprint 9 screen contract: Home feed double tap likes with heart animation (0.958625ms)
+✔ Sprint 9 screen contract: Home feed supports pull-to-refresh without hiding ready content (0.231375ms)
+✔ Sprint 9 screen contract: feed videos pause on tap and fast-forward only from edge holds (0.880666ms)
+✔ Sprint 9 screen contract: Home feed header follows app header scale (0.670416ms)
+✔ Taste recommendation contract: core surfaces use shared ranking and explicit signals (0.906625ms)
+✔ Sprint 9 screen contract: routed dish detail uses gallery-backed share flow (0.246709ms)
+✔ Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and data-backed (4.377834ms)
+✔ search home shows debounced inline results and keeps a see-all action (0.237208ms)
+(node:75490) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Profile exposes the add-stall contribution section and route (3.463166ms)
+✔ AddStall form requires stall name and image while preserving optional detail fields (0.797458ms)
+✔ Stall submission service and gamification contracts are shared (1.874208ms)
+(node:75491) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ user auth and onboarding flows cover account, taste, dietary, and location state (1.546417ms)
+✔ home feed post cards cover carousel media, captions, comments, reactions, and refresh (1.021334ms)
+✔ discover and search keep user mode map-free while browse grids open matching dish details (3.47825ms)
+✔ dish and stall details expose correct detail surfaces without user-mode map/cart regressions (1.659958ms)
+✔ review tab covers loading state, review cards, and bite card icon/sheet boundaries (0.907875ms)
+✔ post composer supports deliberate dish selection, durable drafts, media and confirmed publication (1.030167ms)
+✔ profile surfaces keep own and other-user layouts linked while hiding taste fingerprint for others (1.661541ms)
+✔ coverage plan surfaces have direct source, Playwright, and native smoke entry points (0.188583ms)
+(node:75492) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ AccessibleImage requires every image to be meaningful or decorative (1.246333ms)
+✔ app and component images go through AccessibleImage instead of raw expo-image (529.844167ms)
+✔ production surfaces do not import raw React Native Image (36.772ms)
+✔ animated brand imagery keeps explicit image semantics (0.183166ms)
+✔ Skia media editor image previews are labelled or hidden through wrappers (0.129667ms)
+✔ zoomable social media exposes actionable media and video controls to assistive tech (0.435334ms)
+(node:75493) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ shared standardization primitives are exported from the UI barrel (5.010584ms)
+✔ primary user filter surfaces use shared chip primitives (3.085042ms)
+✔ merchant filter and status surfaces use shared primitives (0.700583ms)
+✔ merchant forms use shared user-mode input, select, chip, and toggle primitives (0.870541ms)
+✔ merchant settings and bottom tabs use shared user-mode primitives (0.35425ms)
+(node:75499) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ data export explicitly records a failed section while preserving readable sections (0.973375ms)
+✔ export aborts if account identity cannot be read (0.283167ms)
+(node:75500) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ mission cache separates account IDs and Singapore Monday boundaries (0.65325ms)
+✔ reset rejects a late mission response from the previous account (0.265625ms)
+ℹ tests 66
+ℹ suites 0
+ℹ pass 66
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1169.419875

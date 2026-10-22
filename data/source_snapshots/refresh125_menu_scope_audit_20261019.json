@@ -1,0 +1,1037 @@
+{
+  "snapshot_id": "refresh125_menu_scope_audit_20261019",
+  "observed_date": "2026-10-19",
+  "workbook": {
+    "path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "sha256": "fe31f2c8926d09ce592189efa8012987f6a3e878ef2977f50fe466873d567a64",
+    "workbook_edited": false
+  },
+  "method": "Read-only field screen of 100 existing nonblank menu summaries explicitly marked brand/chain-level or saying branch availability is unconfirmed; exact menu candidate follow-up checked against current directory and current Menu Items records. Chain-only menu items are not proposed for branch attribution.",
+  "counts": {
+    "menu_rows_screened": 100,
+    "explicitly_unscoped_chain_rows": 100,
+    "current_menu_rows_with_exact_branch_sources_already_populated": 7,
+    "new_exact_branch_item_or_price_proposals": 0,
+    "held_rows": 100
+  },
+  "unscoped_sample_rows": [
+    {
+      "sfa_licence": "NW10303C000",
+      "name": "#87 JUST THAI",
+      "registered_business_name": "#87 JUST THAI",
+      "address": "34B LORONG MAMBONG HOLLAND VILLAGE,Singapore 277691 (1st storey)",
+      "current_menu_summary": "Verified menu: Official brand menu lists 115 brand-level item candidates. Exact branch availability is not stated; displayed '$' prices have no explicit currency code and are not asserted as SGD. See Official Operator Menu for source-linked items.",
+      "current_menu_url": "https://87justthai.com/menu/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "SE25F72A000",
+      "name": "#87 JUST THAI",
+      "registered_business_name": "#87 JUST THAI",
+      "address": "98 PUNGGOL WAY #01-213,Singapore 829857",
+      "current_menu_summary": "Verified menu: Official brand menu lists 115 brand-level item candidates. Exact branch availability is not stated; displayed '$' prices have no explicit currency code and are not asserted as SGD. See Official Operator Menu for source-linked items.",
+      "current_menu_url": "https://87justthai.com/menu/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "W02041J000",
+      "name": "#87 JUST THAI",
+      "registered_business_name": "#87 JUST THAI",
+      "address": "57 KILLINEY ROAD #01-01,Singapore 239520",
+      "current_menu_summary": "Verified menu: Official brand menu lists 115 brand-level item candidates. Exact branch availability is not stated; displayed '$' prices have no explicit currency code and are not asserted as SGD. See Official Operator Menu for source-linked items.",
+      "current_menu_url": "https://87justthai.com/menu/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "E83107V000",
+      "name": "328 KATONG LAKSA",
+      "registered_business_name": "328 KATONG LAKSA",
+      "address": "Address: 51 EAST COAST ROAD Singapore 428770",
+      "current_menu_summary": "Brand-level operator menu observed 2026-10-18; outlet availability/pricing not stated: Laksa 叻沙 $5.50 (Small); Large shows a $2 increment, final Large price not stated. See Menu Items.",
+      "current_menu_url": "https://www.328katonglaksa.sg/menu",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "E87097P000",
+      "name": "328 Katong Laksa",
+      "registered_business_name": "328 Katong Laksa",
+      "address": "Address: 216 EAST COAST ROAD Singapore 428914 (1st storey)",
+      "current_menu_summary": "Brand-level operator menu observed 2026-10-18; outlet availability/pricing not stated: Laksa 叻沙 $5.50 (Small); Large shows a $2 increment, final Large price not stated. See Menu Items.",
+      "current_menu_url": "https://www.328katonglaksa.sg/menu",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "SW13340B000",
+      "name": "328 KATONG LAKSA",
+      "registered_business_name": "328 KATONG LAKSA",
+      "address": "Address: 3 GATEWAY DRIVE #B2-06,WESTGATE,Singapore 608532 WESTGATE",
+      "current_menu_summary": "Brand-level operator menu observed 2026-10-18; outlet availability/pricing not stated: Laksa 叻沙 $5.50 (Small); Large shows a $2 increment, final Large price not stated. See Menu Items.",
+      "current_menu_url": "https://www.328katonglaksa.sg/menu",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "W03097L000",
+      "name": "328 Katong Laksa",
+      "registered_business_name": "328 Katong Laksa",
+      "address": "Address: 101 THOMSON ROAD #01-K1,UNITED SQUARE,Singapore 307591",
+      "current_menu_summary": "Brand-level operator menu observed 2026-10-18; outlet availability/pricing not stated: Laksa 叻沙 $5.50 (Small); Large shows a $2 increment, final Large price not stated. See Menu Items.",
+      "current_menu_url": "https://www.328katonglaksa.sg/menu",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "W03141P000",
+      "name": "328 KATONG LAKSA",
+      "registered_business_name": "328 KATONG LAKSA",
+      "address": "Address: 1 QUEENSWAY #01-K60,Singapore 149053",
+      "current_menu_summary": "Brand-level operator menu observed 2026-10-18; outlet availability/pricing not stated: Laksa 叻沙 $5.50 (Small); Large shows a $2 increment, final Large price not stated. See Menu Items.",
+      "current_menu_url": "https://www.328katonglaksa.sg/menu",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "CE14K08X000",
+      "name": "5themoments Cafe",
+      "registered_business_name": "5themoments Cafe",
+      "address": "Address: 73 TANJONG PAGAR ROAD Singapore 088494",
+      "current_menu_summary": "Official outlet menu dated 2026-10-01; 69 listed item/variant price facts. Menu listing only; stock availability unconfirmed.",
+      "current_menu_url": "https://www.5themoments.com.sg/menu",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "SE19261V000",
+      "name": "A&W RESTAURANTS",
+      "registered_business_name": "A&W RESTAURANTS",
+      "address": "78 AIRPORT BOULEVARD #B2-209,Singapore 819666",
+      "current_menu_summary": "Verified menu: Official Singapore brand menu has 47 item records. Includes Chicken Coney Dog with Beef Sauce, Black Pepper Grilled Chicken Sandwich, and Whole Chicken Leg with Black Pepper Dip. These names are operator-confirmed at brand level; Jewel branch assortment, prices and stock are unconfirmed.",
+      "current_menu_url": "https://awrestaurants.com.sg/menu",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "CE09411E000",
+      "name": "AN ACAI AFFAIR",
+      "registered_business_name": "AN ACAI AFFAIR",
+      "address": "7 RODYK STREET #01-33,WATERMARK ROBERTSON QUAY,Singapore 238215",
+      "current_menu_summary": "Verified menu: 28 current brand-level named menu items/choices; displayed dollar prices retained as published; currency not stated and outlet-specific availability not confirmed.",
+      "current_menu_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "CE09O43B000",
+      "name": "An Acai Affair",
+      "registered_business_name": "An Acai Affair",
+      "address": "313 ORCHARD ROAD #B3-48,313 @ SOMERSET,Singapore 238895",
+      "current_menu_summary": "Verified menu: 28 current brand-level named menu items/choices; displayed dollar prices retained as published; currency not stated and outlet-specific availability not confirmed.",
+      "current_menu_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "CE17693J000",
+      "name": "An Acai Affair",
+      "registered_business_name": "An Acai Affair",
+      "address": "44 HAJI LANE Singapore 189237",
+      "current_menu_summary": "Verified menu: 28 current brand-level named menu items/choices; displayed dollar prices retained as published; currency not stated and outlet-specific availability not confirmed.",
+      "current_menu_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "NE09053X000",
+      "name": "An Acai Affair",
+      "registered_business_name": "An Acai Affair",
+      "address": "10 TAMPINES CENTRAL 1 #B1-15,TAMPINES ONE,Singapore 529536",
+      "current_menu_summary": "Verified menu: 28 current brand-level named menu items/choices; displayed dollar prices retained as published; currency not stated and outlet-specific availability not confirmed.",
+      "current_menu_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "NE23175E000",
+      "name": "An Acai Affair",
+      "registered_business_name": "An Acai Affair",
+      "address": "70 COMPASSVALE BOW #B1-01,SENGKANG GRAND MALL,Singapore 544692",
+      "current_menu_summary": "Verified menu: 28 current brand-level named menu items/choices; displayed dollar prices retained as published; currency not stated and outlet-specific availability not confirmed.",
+      "current_menu_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "NE25B51B000",
+      "name": "An Acai Affair",
+      "registered_business_name": "An Acai Affair",
+      "address": "83 PUNGGOL CENTRAL #02-36B,WATERWAY POINT,Singapore 828761",
+      "current_menu_summary": "Verified menu: 28 current brand-level named menu items/choices; displayed dollar prices retained as published; currency not stated and outlet-specific availability not confirmed.",
+      "current_menu_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "NW10097A000",
+      "name": "An Acai Affair",
+      "registered_business_name": "An Acai Affair",
+      "address": "617 BUKIT TIMAH ROAD Singapore 269718",
+      "current_menu_summary": "Verified menu: 28 current brand-level named menu items/choices; displayed dollar prices retained as published; currency not stated and outlet-specific availability not confirmed.",
+      "current_menu_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "NW17934J000",
+      "name": "An Acai Affair",
+      "registered_business_name": "An Acai Affair",
+      "address": "1 NORTHPOINT DRIVE #B2-149,NORTHPOINT CITY,Singapore 768019",
+      "current_menu_summary": "Verified menu: 28 current brand-level named menu items/choices; displayed dollar prices retained as published; currency not stated and outlet-specific availability not confirmed.",
+      "current_menu_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "NW21047B000",
+      "name": "An Acai Affair",
+      "registered_business_name": "An Acai Affair",
+      "address": "6 WOODLANDS SQUARE #01-06,WOODS SQUARE,Singapore 737737",
+      "current_menu_summary": "Verified menu: 28 current brand-level named menu items/choices; displayed dollar prices retained as published; currency not stated and outlet-specific availability not confirmed.",
+      "current_menu_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "NW21A50E000",
+      "name": "An Acai Affair",
+      "registered_business_name": "An Acai Affair",
+      "address": "17 PETIR ROAD #B2-46A,HILLION MALL,Singapore 678278",
+      "current_menu_summary": "Verified menu: 28 current brand-level named menu items/choices; displayed dollar prices retained as published; currency not stated and outlet-specific availability not confirmed.",
+      "current_menu_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "SE16840X000",
+      "name": "An Acai Affair",
+      "registered_business_name": "An Acai Affair",
+      "address": "101 EAST COAST ROAD Singapore 428796",
+      "current_menu_summary": "Verified menu: 28 current brand-level named menu items/choices; displayed dollar prices retained as published; currency not stated and outlet-specific availability not confirmed.",
+      "current_menu_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "SE19236A000",
+      "name": "An Acai Affair",
+      "registered_business_name": "An Acai Affair",
+      "address": "78 AIRPORT BOULEVARD #B2-262,JEWEL CHANGI AIRPORT,Singapore 819666",
+      "current_menu_summary": "Verified menu: 28 current brand-level named menu items/choices; displayed dollar prices retained as published; currency not stated and outlet-specific availability not confirmed.",
+      "current_menu_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "SE20O76B000",
+      "name": "An Acai Affair",
+      "registered_business_name": "An Acai Affair",
+      "address": "136 BEDOK NORTH AVENUE 3 #01-160,Singapore 460136",
+      "current_menu_summary": "Verified menu: 28 current brand-level named menu items/choices; displayed dollar prices retained as published; currency not stated and outlet-specific availability not confirmed.",
+      "current_menu_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "SE22G72V000",
+      "name": "An Acai Affair",
+      "registered_business_name": "An Acai Affair",
+      "address": "23 SERANGOON CENTRAL #B2-53,NEX,Singapore 556083",
+      "current_menu_summary": "Verified menu: 28 current brand-level named menu items/choices; displayed dollar prices retained as published; currency not stated and outlet-specific availability not confirmed.",
+      "current_menu_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "SW12M61X000",
+      "name": "An Acai Affair",
+      "registered_business_name": "An Acai Affair",
+      "address": "1 VISTA EXCHANGE GREEN #02-28,THE STAR VISTA,Singapore 138617",
+      "current_menu_summary": "Verified menu: 28 current brand-level named menu items/choices; displayed dollar prices retained as published; currency not stated and outlet-specific availability not confirmed.",
+      "current_menu_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "SW17758N000",
+      "name": "An Acai Affair",
+      "registered_business_name": "An Acai Affair",
+      "address": "3 GATEWAY DRIVE #B1-30,WESTGATE,Singapore 608532",
+      "current_menu_summary": "Verified menu: 28 current brand-level named menu items/choices; displayed dollar prices retained as published; currency not stated and outlet-specific availability not confirmed.",
+      "current_menu_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "C00127C000",
+      "name": "BURGER KING",
+      "registered_business_name": "BURGER KING",
+      "address": "Address: 2 JURONG EAST STREET 21 #01-51,IMM BUILDING,Singapore 609601",
+      "current_menu_summary": "Verified menu: BRAND-LEVEL SINGAPORE MENU; exact outlet availability unconfirmed. Item names only (no prices): WHOPPER®; Western WHOPPER®; WHOPPER® with Cheese; Whopper Jr.®; Single Mushroom Swiss; Cheeseburger; Hamburger; Ultimate Angus Classic BBQ™; Ultimate Angus Mushroom Swiss™; Ultimate Chicken King; Hashbrowns; French Fries; Onion Rings; Cheesy Fries; Mexican Drumlets; Vanilla Cone; Chocolate Sundae; Taro Turnover; HERSHEY'S® Sundae Pie",
+      "current_menu_url": "https://www.burgerking.com.sg/menu?pid=delivery",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "CE07Q62A000",
+      "name": "Burger King",
+      "registered_business_name": "Burger King",
+      "address": "Address: 68 ORCHARD ROAD #B1-11,PLAZA SINGAPURA,Singapore 238839",
+      "current_menu_summary": "Verified menu: BRAND-LEVEL SINGAPORE MENU; exact outlet availability unconfirmed. Item names only (no prices): WHOPPER®; Western WHOPPER®; WHOPPER® with Cheese; Whopper Jr.®; Single Mushroom Swiss; Cheeseburger; Hamburger; Ultimate Angus Classic BBQ™; Ultimate Angus Mushroom Swiss™; Ultimate Chicken King; Hashbrowns; French Fries; Onion Rings; Cheesy Fries; Mexican Drumlets; Vanilla Cone; Chocolate Sundae; Taro Turnover; HERSHEY'S® Sundae Pie",
+      "current_menu_url": "https://www.burgerking.com.sg/menu?pid=delivery",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "CE20L04V000",
+      "name": "BURGER KING",
+      "registered_business_name": "BURGER KING",
+      "address": "Address: 12 ALEXANDRA VIEW #01-05,#01-06,#01-07,ARTRA,Singapore 158736 ARTRA",
+      "current_menu_summary": "Verified menu: BRAND-LEVEL SINGAPORE MENU; exact outlet availability unconfirmed. Item names only (no prices): WHOPPER®; Western WHOPPER®; WHOPPER® with Cheese; Whopper Jr.®; Single Mushroom Swiss; Cheeseburger; Hamburger; Ultimate Angus Classic BBQ™; Ultimate Angus Mushroom Swiss™; Ultimate Chicken King; Hashbrowns; French Fries; Onion Rings; Cheesy Fries; Mexican Drumlets; Vanilla Cone; Chocolate Sundae; Taro Turnover; HERSHEY'S® Sundae Pie",
+      "current_menu_url": "https://www.burgerking.com.sg/menu?pid=delivery",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "NE24L60X000",
+      "name": "BURGER KING",
+      "registered_business_name": "BURGER KING",
+      "address": "Address: 13 TAMPINES STREET 11 #01-04,TAMPINES CHANGKAT COMMUNITY CLUB,Singapore 529453",
+      "current_menu_summary": "Verified menu: BRAND-LEVEL SINGAPORE MENU; exact outlet availability unconfirmed. Item names only (no prices): WHOPPER®; Western WHOPPER®; WHOPPER® with Cheese; Whopper Jr.®; Single Mushroom Swiss; Cheeseburger; Hamburger; Ultimate Angus Classic BBQ™; Ultimate Angus Mushroom Swiss™; Ultimate Chicken King; Hashbrowns; French Fries; Onion Rings; Cheesy Fries; Mexican Drumlets; Vanilla Cone; Chocolate Sundae; Taro Turnover; HERSHEY'S® Sundae Pie",
+      "current_menu_url": "https://www.burgerking.com.sg/menu?pid=delivery",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "NE25111A000",
+      "name": "BURGER KING",
+      "registered_business_name": "BURGER KING",
+      "address": "Address: 88 PUNGGOL WAY #02-119,Singapore 829913",
+      "current_menu_summary": "Verified menu: BRAND-LEVEL SINGAPORE MENU; exact outlet availability unconfirmed. Item names only (no prices): WHOPPER®; Western WHOPPER®; WHOPPER® with Cheese; Whopper Jr.®; Single Mushroom Swiss; Cheeseburger; Hamburger; Ultimate Angus Classic BBQ™; Ultimate Angus Mushroom Swiss™; Ultimate Chicken King; Hashbrowns; French Fries; Onion Rings; Cheesy Fries; Mexican Drumlets; Vanilla Cone; Chocolate Sundae; Taro Turnover; HERSHEY'S® Sundae Pie",
+      "current_menu_url": "https://www.burgerking.com.sg/menu?pid=delivery",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "CE22F27X000",
+      "name": "DRIPS",
+      "registered_business_name": "DRIPS",
+      "address": "Address: 1 RAFFLES PLACE #01-08,ONE RAFFLES PLACE,Singapore 048616",
+      "current_menu_summary": "Brand-level dine-in menu; 116 facts on Menu Items tab; outlet availability is not item-specific",
+      "current_menu_url": "https://www.drips.com.sg/pages/dine-in-menu",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "CE23L42A000",
+      "name": "DRIPS BAKERY STUDIO",
+      "registered_business_name": "DRIPS BAKERY STUDIO",
+      "address": "Address: 71 SENG POH ROAD #01-37,TIONG BAHRU ESTATE,Singapore 160071",
+      "current_menu_summary": "Brand-level dine-in menu; 116 facts on Menu Items tab; outlet availability is not item-specific",
+      "current_menu_url": "https://www.drips.com.sg/pages/dine-in-menu",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "CE07Q51E000",
+      "name": "each a cup",
+      "registered_business_name": "each a cup",
+      "address": "Address: 53 ANG MO KIO AVENUE 3 #B2-32,AMK HUB,Singapore 569933",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "CE12I49E000",
+      "name": "Each a cup",
+      "registered_business_name": "Each a cup",
+      "address": "Address: 2 ORCHARD TURN #B4-69,ION ORCHARD,Singapore 238801",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "CE18J77K000",
+      "name": "EACH A CUP",
+      "registered_business_name": "EACH A CUP",
+      "address": "Address: 5 SIMS AVENUE #01-05,KALLANG MRT STATION,Singapore 387405",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "CE19F89X000",
+      "name": "Each a cup",
+      "registered_business_name": "Each a cup",
+      "address": "Address: 9 RAFFLES PLACE #B1-12,REPUBLIC PLAZA,Singapore 048619",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "CE20V31V000",
+      "name": "Each a cup",
+      "registered_business_name": "Each a cup",
+      "address": "Address: 177 TOA PAYOH CENTRAL #01-154,Singapore 310177 part of -left",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "CE21H12P000",
+      "name": "Each A Cup",
+      "registered_business_name": "Each A Cup",
+      "address": "Address: 308 ANCHORVALE ROAD #01-06,ANCHORVALE PLACE,Singapore 540308 (RIGHT PART)",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "CE21K61N000",
+      "name": "each a cup",
+      "registered_business_name": "each a cup",
+      "address": "Address: 116 BUKIT MERAH VIEW #01-245,Singapore 151116 Right Side Of",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "CE21Q44N000",
+      "name": "Each A Cup",
+      "registered_business_name": "Each A Cup",
+      "address": "Address: 85 DAWSON ROAD #01-03,SKYVILLE @ DAWSON,Singapore 141085 (PART OF - LEFT)",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "CE22448P000",
+      "name": "each a cup",
+      "registered_business_name": "each a cup",
+      "address": "Address: 2 RIVERVALE CLOSE #01-K1,Singapore 544583",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "CE23I14N000",
+      "name": "each a cup",
+      "registered_business_name": "each a cup",
+      "address": "Address: 100 BUKIT TIMAH ROAD #01-02,KK WOMEN'S AND CHILDREN'S HOSPITAL,Singapore 229899",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "CE24541J000",
+      "name": "Each A Cup",
+      "registered_business_name": "Each A Cup",
+      "address": "Address: 88 TANGLIN HALT ROAD #01-05,COMMONWEALTH VIEW,Singapore 141088 Part Left",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "CE24B91J000",
+      "name": "each a cup",
+      "registered_business_name": "each a cup",
+      "address": "Address: 338 ANG MO KIO AVENUE 1 #01-1611,TECK GHEE COURT,Singapore 560338",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "CE25G92A000",
+      "name": "EACH A CUP",
+      "registered_business_name": "EACH A CUP",
+      "address": "Address: 338 ANCHORVALE CRESCENT #01-06,Singapore 540338 (PART LEFT)",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "E93204A000",
+      "name": "Each A Cup",
+      "registered_business_name": "Each A Cup",
+      "address": "Address: 306 UBI AVENUE 1 #01-195,Singapore 400306",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "NE06068E000",
+      "name": "Each A Cup",
+      "registered_business_name": "Each A Cup",
+      "address": "Address: 477 TAMPINES STREET 43 #01-174,Singapore 520477 (RIGHT PART OF)",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "NE13153E000",
+      "name": "Each A Cup",
+      "registered_business_name": "Each A Cup",
+      "address": "Address: 106 HOUGANG AVENUE 1 #01-1229,Singapore 530106 PART OF - RIGHT",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "NE17062A000",
+      "name": "EACH A CUP",
+      "registered_business_name": "EACH A CUP",
+      "address": "Address: 11 RIVERVALE CRESCENT #01-22,RIVERVALE MALL,Singapore 545082 RIVERVALE MALL",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "NE17657B000",
+      "name": "EACH A CUP",
+      "registered_business_name": "EACH A CUP",
+      "address": "Address: 802 TAMPINES AVENUE 4 #01-19,TAMPINES POLYVIEW,Singapore 520802 (PART OF - UNIT B)",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "NE19497C000",
+      "name": "Each a cup",
+      "registered_business_name": "Each a cup",
+      "address": "Address: 201E TAMPINES STREET 23 #01-102,Singapore 527201 (RIGHT PART OF)",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "NE19706B000",
+      "name": "Each A Cup",
+      "registered_business_name": "Each A Cup",
+      "address": "Address: 70 PUNGGOL CENTRAL #01-04,PUNGGOL MRT STATION,Singapore 828868",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "NE20V59C000",
+      "name": "EACH A CUP",
+      "registered_business_name": "EACH A CUP",
+      "address": "Address: 632 BEDOK RESERVOIR ROAD #01-874,EUNOS GROVE,Singapore 470632 Left Part",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "NE22291J000",
+      "name": "Each A Cup",
+      "registered_business_name": "Each A Cup",
+      "address": "Address: 746 BEDOK RESERVOIR ROAD #01-3011,Singapore 470746 (Left part of)",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "NE22609C000",
+      "name": "each a cup",
+      "registered_business_name": "each a cup",
+      "address": "Address: 443 PASIR RIS DRIVE 6 #01-04,Singapore 510443",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "NE22M52J000",
+      "name": "EACH A CUP",
+      "registered_business_name": "EACH A CUP",
+      "address": "Address: 217A SUMANG WALK #01-07,MATILDA PORTICO,Singapore 821217 (Right Part of)",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "NE23F94B000",
+      "name": "Each A Cup",
+      "registered_business_name": "Each A Cup",
+      "address": "Address: 153 SERANGOON NORTH AVENUE 1 #01-482,Singapore 550153 PART LEFT",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "NE25K25N000",
+      "name": "each a cup",
+      "registered_business_name": "each a cup",
+      "address": "Address: 610 TAMPINES NORTH DRIVE 1 #01-10,Singapore 520610 (PART LEFT)",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "NW06180X000",
+      "name": "EACH A CUP",
+      "registered_business_name": "EACH A CUP",
+      "address": "Address: 132 MARSILING RISE #01-214,Singapore 730132 (LEFT PART OF)",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "NW10454V000",
+      "name": "each a cup",
+      "registered_business_name": "each a cup",
+      "address": "Address: 101 BUKIT PANJANG ROAD #01-03,Singapore 679910",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "NW11459B000",
+      "name": "each a cup",
+      "registered_business_name": "each a cup",
+      "address": "Address: 1 WOODLANDS SQUARE #B1-K19,CAUSEWAY POINT,Singapore 738099",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "NW11586L000",
+      "name": "Each A Cup",
+      "registered_business_name": "Each A Cup",
+      "address": "Address: 200 HOLLAND AVENUE #B1-12,Singapore 278995",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "NW17512A000",
+      "name": "EACH A CUP",
+      "registered_business_name": "EACH A CUP",
+      "address": "Address: 15 PETIR ROAD #01-61,Singapore 678270",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "NW17607K000",
+      "name": "Each A Cup",
+      "registered_business_name": "Each A Cup",
+      "address": "Address: 417 YISHUN AVENUE 11 #01-347,Singapore 760417",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "NW21K01A000",
+      "name": "each a cup",
+      "registered_business_name": "each a cup",
+      "address": "Address: 30 WOODLANDS DRIVE 17 #B1-02,WOODLANDS SOUTH MRT STATION,Singapore 737741",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "NW21O12A000",
+      "name": "each a cup",
+      "registered_business_name": "each a cup",
+      "address": "Address: 846 YISHUN RING ROAD #01-3631,KHATIB CENTRAL,Singapore 760846 (Right Part Of)",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "NW24C36J000",
+      "name": "Each a Cup",
+      "registered_business_name": "Each a Cup",
+      "address": "Address: 91 ANG MO KIO AVENUE 4 #B2-05,MAYFLOWER MRT STATION,Singapore 569900",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "NW24G73K000",
+      "name": "Each A Cup",
+      "registered_business_name": "Each A Cup",
+      "address": "Address: 960 WOODLANDS ROAD #01-11,KRANJI MRT STATION,Singapore 738702",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "NW25081K000",
+      "name": "EACH A CUP",
+      "registered_business_name": "EACH A CUP",
+      "address": "Address: 293 YISHUN STREET 22 #01-259,Singapore 760293 MIDDLE PART OF",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "NW26542J000",
+      "name": "each a cup",
+      "registered_business_name": "each a cup",
+      "address": "Address: 361 SEMBAWANG CRESCENT #01-04,SUN NATURA,Singapore 750361 (PART LEFT)",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "S01294J000",
+      "name": "EACH A CUP",
+      "registered_business_name": "EACH A CUP",
+      "address": "Address: 448 ANG MO KIO AVENUE 10 #01-1707,CHONG BOON CENTRE,Singapore 560448 (LEFT PART OF)",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "SE19722C000",
+      "name": "EACH A CUP",
+      "registered_business_name": "EACH A CUP",
+      "address": "Address: 208 NEW UPPER CHANGI ROAD #01-697,(RIGHT PART OF),Singapore 460208",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "SE19U87K000",
+      "name": "Each A Cup",
+      "registered_business_name": "Each A Cup",
+      "address": "Address: 89 BEDOK NORTH STREET 4 #01-81,Singapore 460089",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "SE21573C000",
+      "name": "EACH A CUP",
+      "registered_business_name": "EACH A CUP",
+      "address": "Address: 59 NEW UPPER CHANGI ROAD #01-1254,Singapore 461059 (LEFT PART OF)",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "SE23M64K000",
+      "name": "each a cup",
+      "registered_business_name": "each a cup",
+      "address": "Address: 1 CHANGI VILLAGE ROAD #01-2048,Singapore 500001 (RIGHT PART OF)",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "SW08491K000",
+      "name": "EACH A CUP",
+      "registered_business_name": "EACH A CUP",
+      "address": "Address: 200 COMMONWEALTH AVENUE WEST #02-02,DOVER MRT STATION,Singapore 138677",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "SW15B64K000",
+      "name": "Each A Cup",
+      "registered_business_name": "Each A Cup",
+      "address": "Address: 1 JURONG EAST STREET 21 #02-27,Singapore 609606",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "SW17050E000",
+      "name": "each a cup",
+      "registered_business_name": "each a cup",
+      "address": "Address: 78A TELOK BLANGAH STREET 32 #01-10,Singapore 101078",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "SW23B61L000",
+      "name": "Each A Cup",
+      "registered_business_name": "Each A Cup",
+      "address": "Address: 345 JURONG EAST STREET 31 #01-15,YUHUA PLACE,Singapore 600345 Part of",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "SW24F98A000",
+      "name": "EACH A CUP",
+      "registered_business_name": "EACH A CUP",
+      "address": "Address: 4 BUKIT BATOK STREET 41 #01-68,LE QUEST,Singapore 657991",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "SW26455N000",
+      "name": "EACH A CUP",
+      "registered_business_name": "EACH A CUP",
+      "address": "Address: 504 JURONG WEST STREET 51 #01-233,HONG KAH COURT,Singapore 640504",
+      "current_menu_summary": "Verified menu: EACH-A-CUP SINGAPORE BRAND CATALOGUE: 73 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.each-a-cup.com/products/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "B00045L000",
+      "name": "KFC",
+      "registered_business_name": "KFC",
+      "address": "Address: 524A JELAPANG ROAD #01-04,GREENRIDGE SHOPPING CENTRE,Singapore 671524",
+      "current_menu_summary": "Verified menu: BRAND-LEVEL KFC SINGAPORE ONLINE-ORDER MENU; branch stock and dine-in/takeaway prices unconfirmed. Chicken | 2 pcs Chicken Meal | S$9.95; Chicken | 3 pcs Chicken Meal | S$12.70; Chicken | O.R. Tenders (3 pcs Meal) | S$8.15; Chicken | Crispy Chicken Bites (6 pcs Meal) | S$7.80; Chicken | Original Recipe Chicken | S$4.50; Chicken | Hot & Crispy Chicken | S$4.50; Burgers/Wraps | Original Recipe Burger | S$7.00; Burgers/Wraps | Original Recipe Burger Meal | S$8.35; Burgers/Wraps | Zin",
+      "current_menu_url": "https://www.kfc.com.sg/menu/burgers-wraps",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "B91053B000",
+      "name": "kfc",
+      "registered_business_name": "kfc",
+      "address": "Address: 701A YISHUN AVENUE 5 (PART OF) #01-06,Singapore 761701",
+      "current_menu_summary": "Verified menu: BRAND-LEVEL KFC SINGAPORE ONLINE-ORDER MENU; branch stock and dine-in/takeaway prices unconfirmed. Chicken | 2 pcs Chicken Meal | S$9.95; Chicken | 3 pcs Chicken Meal | S$12.70; Chicken | O.R. Tenders (3 pcs Meal) | S$8.15; Chicken | Crispy Chicken Bites (6 pcs Meal) | S$7.80; Chicken | Original Recipe Chicken | S$4.50; Chicken | Hot & Crispy Chicken | S$4.50; Burgers/Wraps | Original Recipe Burger | S$7.00; Burgers/Wraps | Original Recipe Burger Meal | S$8.35; Burgers/Wraps | Zin",
+      "current_menu_url": "https://www.kfc.com.sg/menu/burgers-wraps",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "B97083J000",
+      "name": "KFC",
+      "registered_business_name": "KFC",
+      "address": "Address: 888 WOODLANDS DRIVE 50 #01-729,Singapore 730888",
+      "current_menu_summary": "Verified menu: BRAND-LEVEL KFC SINGAPORE ONLINE-ORDER MENU; branch stock and dine-in/takeaway prices unconfirmed. Chicken | 2 pcs Chicken Meal | S$9.95; Chicken | 3 pcs Chicken Meal | S$12.70; Chicken | O.R. Tenders (3 pcs Meal) | S$8.15; Chicken | Crispy Chicken Bites (6 pcs Meal) | S$7.80; Chicken | Original Recipe Chicken | S$4.50; Chicken | Hot & Crispy Chicken | S$4.50; Burgers/Wraps | Original Recipe Burger | S$7.00; Burgers/Wraps | Original Recipe Burger Meal | S$8.35; Burgers/Wraps | Zin",
+      "current_menu_url": "https://www.kfc.com.sg/menu/burgers-wraps",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "B98089K000",
+      "name": "KFC",
+      "registered_business_name": "KFC",
+      "address": "Address: 678A WOODLANDS AVENUE 6 #01-04,ADMIRALTY PLACE,Singapore 731678",
+      "current_menu_summary": "Verified menu: BRAND-LEVEL KFC SINGAPORE ONLINE-ORDER MENU; branch stock and dine-in/takeaway prices unconfirmed. Chicken | 2 pcs Chicken Meal | S$9.95; Chicken | 3 pcs Chicken Meal | S$12.70; Chicken | O.R. Tenders (3 pcs Meal) | S$8.15; Chicken | Crispy Chicken Bites (6 pcs Meal) | S$7.80; Chicken | Original Recipe Chicken | S$4.50; Chicken | Hot & Crispy Chicken | S$4.50; Burgers/Wraps | Original Recipe Burger | S$7.00; Burgers/Wraps | Original Recipe Burger Meal | S$8.35; Burgers/Wraps | Zin",
+      "current_menu_url": "https://www.kfc.com.sg/menu/burgers-wraps",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "C79164J000",
+      "name": "kfc",
+      "registered_business_name": "kfc",
+      "address": "Address: 18 YUNG HO ROAD Singapore 618591",
+      "current_menu_summary": "Verified menu: BRAND-LEVEL KFC SINGAPORE ONLINE-ORDER MENU; branch stock and dine-in/takeaway prices unconfirmed. Chicken | 2 pcs Chicken Meal | S$9.95; Chicken | 3 pcs Chicken Meal | S$12.70; Chicken | O.R. Tenders (3 pcs Meal) | S$8.15; Chicken | Crispy Chicken Bites (6 pcs Meal) | S$7.80; Chicken | Original Recipe Chicken | S$4.50; Chicken | Hot & Crispy Chicken | S$4.50; Burgers/Wraps | Original Recipe Burger | S$7.00; Burgers/Wraps | Original Recipe Burger Meal | S$8.35; Burgers/Wraps | Zin",
+      "current_menu_url": "https://www.kfc.com.sg/menu/burgers-wraps",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "C95243E000",
+      "name": "KFC",
+      "registered_business_name": "KFC",
+      "address": "Address: 1 JURONG WEST CENTRAL 2 #01-30,JURONG POINT SHOPPING CENTRE,Singapore 648886",
+      "current_menu_summary": "Verified menu: BRAND-LEVEL KFC SINGAPORE ONLINE-ORDER MENU; branch stock and dine-in/takeaway prices unconfirmed. Chicken | 2 pcs Chicken Meal | S$9.95; Chicken | 3 pcs Chicken Meal | S$12.70; Chicken | O.R. Tenders (3 pcs Meal) | S$8.15; Chicken | Crispy Chicken Bites (6 pcs Meal) | S$7.80; Chicken | Original Recipe Chicken | S$4.50; Chicken | Hot & Crispy Chicken | S$4.50; Burgers/Wraps | Original Recipe Burger | S$7.00; Burgers/Wraps | Original Recipe Burger Meal | S$8.35; Burgers/Wraps | Zin",
+      "current_menu_url": "https://www.kfc.com.sg/menu/burgers-wraps",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "C98051K000",
+      "name": "KFC",
+      "registered_business_name": "KFC",
+      "address": "Address: 1 BUKIT BATOK CENTRAL LINK #01-25/43,WEST MALL,Singapore 658713",
+      "current_menu_summary": "Verified menu: BRAND-LEVEL KFC SINGAPORE ONLINE-ORDER MENU; branch stock and dine-in/takeaway prices unconfirmed. Chicken | 2 pcs Chicken Meal | S$9.95; Chicken | 3 pcs Chicken Meal | S$12.70; Chicken | O.R. Tenders (3 pcs Meal) | S$8.15; Chicken | Crispy Chicken Bites (6 pcs Meal) | S$7.80; Chicken | Original Recipe Chicken | S$4.50; Chicken | Hot & Crispy Chicken | S$4.50; Burgers/Wraps | Original Recipe Burger | S$7.00; Burgers/Wraps | Original Recipe Burger Meal | S$8.35; Burgers/Wraps | Zin",
+      "current_menu_url": "https://www.kfc.com.sg/menu/burgers-wraps",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "CE07C87A000",
+      "name": "KFC",
+      "registered_business_name": "KFC",
+      "address": "Address: 230 VICTORIA STREET #B1-09,BUGIS JUNCTION,Singapore 188024",
+      "current_menu_summary": "Verified menu: BRAND-LEVEL KFC SINGAPORE ONLINE-ORDER MENU; branch stock and dine-in/takeaway prices unconfirmed. Chicken | 2 pcs Chicken Meal | S$9.95; Chicken | 3 pcs Chicken Meal | S$12.70; Chicken | O.R. Tenders (3 pcs Meal) | S$8.15; Chicken | Crispy Chicken Bites (6 pcs Meal) | S$7.80; Chicken | Original Recipe Chicken | S$4.50; Chicken | Hot & Crispy Chicken | S$4.50; Burgers/Wraps | Original Recipe Burger | S$7.00; Burgers/Wraps | Original Recipe Burger Meal | S$8.35; Burgers/Wraps | Zin",
+      "current_menu_url": "https://www.kfc.com.sg/menu/burgers-wraps",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "CE07D50V000",
+      "name": "KFC",
+      "registered_business_name": "KFC",
+      "address": "Address: 370 ALEXANDRA ROAD #01-15/16,ANCHORPOINT SHOPPING CENTRE,Singapore 159953",
+      "current_menu_summary": "Verified menu: BRAND-LEVEL KFC SINGAPORE ONLINE-ORDER MENU; branch stock and dine-in/takeaway prices unconfirmed. Chicken | 2 pcs Chicken Meal | S$9.95; Chicken | 3 pcs Chicken Meal | S$12.70; Chicken | O.R. Tenders (3 pcs Meal) | S$8.15; Chicken | Crispy Chicken Bites (6 pcs Meal) | S$7.80; Chicken | Original Recipe Chicken | S$4.50; Chicken | Hot & Crispy Chicken | S$4.50; Burgers/Wraps | Original Recipe Burger | S$7.00; Burgers/Wraps | Original Recipe Burger Meal | S$8.35; Burgers/Wraps | Zin",
+      "current_menu_url": "https://www.kfc.com.sg/menu/burgers-wraps",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "CE09E55K000",
+      "name": "KFC",
+      "registered_business_name": "KFC",
+      "address": "Address: 180 KITCHENER ROAD #B1-29/30,CITY SQUARE MALL,Singapore 208539",
+      "current_menu_summary": "Verified menu: BRAND-LEVEL KFC SINGAPORE ONLINE-ORDER MENU; branch stock and dine-in/takeaway prices unconfirmed. Chicken | 2 pcs Chicken Meal | S$9.95; Chicken | 3 pcs Chicken Meal | S$12.70; Chicken | O.R. Tenders (3 pcs Meal) | S$8.15; Chicken | Crispy Chicken Bites (6 pcs Meal) | S$7.80; Chicken | Original Recipe Chicken | S$4.50; Chicken | Hot & Crispy Chicken | S$4.50; Burgers/Wraps | Original Recipe Burger | S$7.00; Burgers/Wraps | Original Recipe Burger Meal | S$8.35; Burgers/Wraps | Zin",
+      "current_menu_url": "https://www.kfc.com.sg/menu/burgers-wraps",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "CE16E88E000",
+      "name": "KFC",
+      "registered_business_name": "KFC",
+      "address": "Address: 302 TIONG BAHRU ROAD #B1-134,#B1-133,TIONG BAHRU PLAZA,Singapore 168732",
+      "current_menu_summary": "Verified menu: BRAND-LEVEL KFC SINGAPORE ONLINE-ORDER MENU; branch stock and dine-in/takeaway prices unconfirmed. Chicken | 2 pcs Chicken Meal | S$9.95; Chicken | 3 pcs Chicken Meal | S$12.70; Chicken | O.R. Tenders (3 pcs Meal) | S$8.15; Chicken | Crispy Chicken Bites (6 pcs Meal) | S$7.80; Chicken | Original Recipe Chicken | S$4.50; Chicken | Hot & Crispy Chicken | S$4.50; Burgers/Wraps | Original Recipe Burger | S$7.00; Burgers/Wraps | Original Recipe Burger Meal | S$8.35; Burgers/Wraps | Zin",
+      "current_menu_url": "https://www.kfc.com.sg/menu/burgers-wraps",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "CE19Z49C000",
+      "name": "KFC",
+      "registered_business_name": "KFC",
+      "address": "Address: 301 UPPER THOMSON ROAD #01-115,THOMSON PLAZA,Singapore 574408",
+      "current_menu_summary": "Verified menu: BRAND-LEVEL KFC SINGAPORE ONLINE-ORDER MENU; branch stock and dine-in/takeaway prices unconfirmed. Chicken | 2 pcs Chicken Meal | S$9.95; Chicken | 3 pcs Chicken Meal | S$12.70; Chicken | O.R. Tenders (3 pcs Meal) | S$8.15; Chicken | Crispy Chicken Bites (6 pcs Meal) | S$7.80; Chicken | Original Recipe Chicken | S$4.50; Chicken | Hot & Crispy Chicken | S$4.50; Burgers/Wraps | Original Recipe Burger | S$7.00; Burgers/Wraps | Original Recipe Burger Meal | S$8.35; Burgers/Wraps | Zin",
+      "current_menu_url": "https://www.kfc.com.sg/menu/burgers-wraps",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "CE12B86P000",
+      "name": "MOS BURGER",
+      "registered_business_name": "MOS BURGER",
+      "address": "Address: 100 TRAS STREET #01-12,100AM,Singapore 079027",
+      "current_menu_summary": "Verified menu: BRAND-LEVEL SINGAPORE MENU; exact outlet availability not confirmed. MOS Burger — S$4.30; Spicy MOS Burger — S$4.55; Teriyaki Chicken Burger — S$4.95; Ebi Katsu — S$4.95; Fish Burger — S$4.30; Teriyaki Beef Burger — S$4.30; Okonomiyaki Rice Burger — S$6.75; Yakitori Chicken Rice Burger — S$4.95; Yakiniku Beef Rice Burger — S$4.95; French Fries (Small) — S$2.80",
+      "current_menu_url": "https://www.mosburger.com.sg/mos-menu/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "CE21C16A000",
+      "name": "MOS Burger",
+      "registered_business_name": "MOS Burger",
+      "address": "Address: 33 SENGKANG WEST AVENUE #01-46,#01-46,#01-46,#01-46,#01-46,#01-46,#01-46,#01-46,#01-47,THE SELETAR MALL,Singapore 797653",
+      "current_menu_summary": "Verified menu: BRAND-LEVEL SINGAPORE MENU; exact outlet availability not confirmed. MOS Burger — S$4.30; Spicy MOS Burger — S$4.55; Teriyaki Chicken Burger — S$4.95; Ebi Katsu — S$4.95; Fish Burger — S$4.30; Teriyaki Beef Burger — S$4.30; Okonomiyaki Rice Burger — S$6.75; Yakitori Chicken Rice Burger — S$4.95; Yakiniku Beef Rice Burger — S$4.95; French Fries (Small) — S$2.80",
+      "current_menu_url": "https://www.mosburger.com.sg/mos-menu/",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "NE16436K000",
+      "name": "Nakhon Kitchen",
+      "registered_business_name": "Nakhon Kitchen",
+      "address": "Address: 1 Sengkang Square #02-30, Compass One, Singapore 545078",
+      "current_menu_summary": "Verified menu: Official brand menu page lists 58 items; prices are not stated and branch availability is unconfirmed.",
+      "current_menu_url": "https://www.nakhonkitchen.com/menu",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "B97086B000",
+      "name": "PIZZA HUT",
+      "registered_business_name": "PIZZA HUT",
+      "address": "Address: 888 WOODLANDS DRIVE 50 #01-729,PIZZA HUT SINGAPORE PTE LTD,Singapore 730888",
+      "current_menu_summary": "Verified menu: PIZZA HUT SINGAPORE BRAND CATALOGUE: 103 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.pizzahut.com.sg/order/pizza",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "C83300E000",
+      "name": "pizza hut",
+      "registered_business_name": "pizza hut",
+      "address": "Address: 3 YUAN CHING ROAD #01-03,JURONG LEISURE COMPLEX,Singapore 618642",
+      "current_menu_summary": "Verified menu: PIZZA HUT SINGAPORE BRAND CATALOGUE: 103 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.pizzahut.com.sg/order/pizza",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    },
+    {
+      "sfa_licence": "C89143E000",
+      "name": "Pizza Hut",
+      "registered_business_name": "Pizza Hut",
+      "address": "Address: 557 BUKIT TIMAH ROAD #01-17/18,CROWN CENTRE,Singapore 269694",
+      "current_menu_summary": "Verified menu: PIZZA HUT SINGAPORE BRAND CATALOGUE: 103 listed items; branch availability and outlet pricing unconfirmed.",
+      "current_menu_url": "https://www.pizzahut.com.sg/order/pizza",
+      "audit_result": "Current value is explicitly brand/chain level or disclaims exact outlet availability; do not treat as branch-confirmed menu items or prices. No branch-level source verified for this sampled row."
+    }
+  ],
+  "exact_branch_source_checks_already_populated": [
+    {
+      "sfa_licence": "CE24907K000",
+      "name": "PUREGEM CHINESE FINE DINING",
+      "address": "Address: 60 ROBINSON ROAD #01-00,#02-00,BEA BUILDING,Singapore 068892",
+      "current_menu_summary": "10 sampled priced items are in Menu Items; 2026 Aug Digital Menu (file linked by official page; URL path 2026/07). Observed 2026-10-19. Menu is an August 2026 menu, observed linked on 2026-10-19; price availability can change.; Dine-in service charge and GST are excluded.; Two crab prices apply per 100g and require advance order.",
+      "current_menu_url": "https://puregem.com.sg/wp-content/uploads/2026/07/2026_Aug_Digital-Menu.pdf",
+      "source_status": "Already populated in current workbook; exact branch source is available and was observed 2026-10-19. No duplicate proposal made."
+    },
+    {
+      "sfa_licence": "CE12C17N000",
+      "name": "The Canteen By Enjoy",
+      "address": "Address: 383 JALAN BESAR KAM LENG HOTEL,Singapore 209001",
+      "current_menu_summary": "10 sampled priced items are in Menu Items; Current page (no version date stated). Observed 2026-10-19. Page has no publication/version date; checked current 2026-10-19.; Prices subject to 10% service charge and prevailing GST.; Caffe Latte variant is explicitly Hot S$4.50 / Iced S$5.50.",
+      "current_menu_url": "https://www.enjoyeating.sg/canteen-menu",
+      "source_status": "Already populated in current workbook; exact branch source is available and was observed 2026-10-19. No duplicate proposal made."
+    },
+    {
+      "sfa_licence": "CE24166N000",
+      "name": "La Table D' Emma",
+      "address": "Address: 8 CLUB STREET #01-04,Singapore 069472",
+      "current_menu_summary": "10 sampled priced items are in Menu Items; Current page copyright 2026; includes items marked New and weekly special section. Observed 2026-10-19. Some dishes are marked New and the menu includes weekly specials; menu may change.; Prices in SGD; 10% service charge and 9% GST are added.",
+      "current_menu_url": "https://www.latabledemma.com/menu/",
+      "source_status": "Already populated in current workbook; exact branch source is available and was observed 2026-10-19. No duplicate proposal made."
+    },
+    {
+      "sfa_licence": "CE18M44K000",
+      "name": "Neon Pigeon",
+      "address": "Address: 36 CARPENTER STREET #01-01,CARPENTER HAUS,Singapore 059915",
+      "current_menu_summary": "10 sampled priced items are in Menu Items; Current linked menu; PDF itself has no date visible in extracted text. Observed 2026-10-19. PDF is currently linked by merchant site but has no publication date in extractable text; record only as current-linked, observed 2026-10-19.; Prices are listed as bare amounts; menu excerpt does not specify tax/service-charge treatment.",
+      "current_menu_url": "https://www.neonpigeonsg.com/_files/ugd/9e8ba5_ad6582dca2784d568758f248400dac59.pdf",
+      "source_status": "Already populated in current workbook; exact branch source is available and was observed 2026-10-19. No duplicate proposal made."
+    },
+    {
+      "sfa_licence": "CE09E77V000",
+      "name": "OTTO RISTORANTE",
+      "address": "Address: 32 MAXWELL ROAD #01-03,#01-02,WHITE HOUSE,Singapore 069115",
+      "current_menu_summary": "10 sampled priced items are in Menu Items; A-la-carte-July-2026-updated.pdf. Observed 2026-10-19. Menu PDF identifies July 2026 update; observed 2026-10-19.; Prices subject to 10% service charge and prevailing taxes.",
+      "current_menu_url": "https://www.ottoristorante.com.sg/www1/wp-content/uploads/2024/02/A-la-carte-July-2026-updated.pdf",
+      "source_status": "Already populated in current workbook; exact branch source is available and was observed 2026-10-19. No duplicate proposal made."
+    },
+    {
+      "sfa_licence": "CE05006L000",
+      "name": "KOMALAS",
+      "address": "Address: 42/42A RACE COURSE ROAD Singapore 218557 (LEVEL 1 & 2)",
+      "current_menu_summary": "Foodpanda delivery listing (observed 2026-10-19; prices may differ in-store): Idly (3PCS) S$ 7.50; V5. Masala Dosai Meal S$ 13; Sambar Idly S$ 7; Masala Dosai S$ 7; 2 Pcs Idly & Vadai S$ 7.50",
+      "current_menu_url": "https://www.komalasrestaurants.com/Order/FusionDining; Foodpanda delivery menu: https://www.foodpanda.sg/restaurant/s5te/komalas-restaurant-little-india",
+      "source_status": "Already populated in current workbook; exact branch source is available and was observed 2026-10-19. No duplicate proposal made."
+    },
+    {
+      "sfa_licence": "SE10629B000",
+      "name": "DIN TAI FUNG",
+      "address": "Address: 23 SERANGOON CENTRAL #B1-10-12,NEX,Singapore 556083",
+      "current_menu_summary": "Foodpanda delivery listing (observed 2026-10-19; prices may differ in-store): 3003. Fried Rice With Pork Chop 排骨蛋饭 S$ 17.44; 3004. Fried Rice With Eggs 蛋炒饭 S$ 11.99; 2501. Steamed Pork Xiao Long Bao 小笼包 (10Pcs) S$ 16.35; 3001. Fried Rice With Shrimps & Eggs 虾仁蛋饭 S$ 17.99; 2502. Steamed Pork Xiao Long Bao 小笼包 (6Pcs) S$ 11.99",
+      "current_menu_url": "https://www.dintaifung.com.sg/menu/; Foodpanda delivery menu: https://www.foodpanda.sg/restaurant/mf2p/din-tai-fung-nex",
+      "source_status": "Already populated in current workbook; exact branch source is available and was observed 2026-10-19. No duplicate proposal made."
+    }
+  ],
+  "exact_sources": [
+    {
+      "sfa_licence": "CE24907K000",
+      "merchant": "Pure Gem Chinese Fine Dining",
+      "source_url": "https://puregem.com.sg/food-menu/",
+      "linked_menu_url": "https://puregem.com.sg/wp-content/uploads/2026/07/2026_Aug_Digital-Menu.pdf",
+      "branch_evidence": "Official menu page gives 60 Robinson Road (BEA Building), #01-00, #02-00, Singapore 068892; matches SFA row exactly. It currently displays images titled 2026_July_update and links the Aug PDF.",
+      "freshness": "Page crawled about 2 weeks before audit; linked August 2026 PDF was observed in existing source record on 2026-10-19. Freshness conflict/ambiguity: page July update image labels vs Aug PDF URL. Hold any item replacements until the linked PDF is checked directly; existing items remain current-linked, not independently refreshed today."
+    },
+    {
+      "sfa_licence": "CE12C17N000",
+      "merchant": "The Canteen by Enjoy",
+      "source_url": "https://www.enjoyeating.sg/canteen-menu",
+      "branch_evidence": "Current page names The Canteen by Enjoy at Kam Leng Hotel, 383 Jalan Besar, Singapore 209001; exact SFA address match.",
+      "freshness": "Page fetched today; no version date. Lists dine-in SGD prices and 10% service charge/prevailing GST. Existing sample items are supported; availability may change."
+    },
+    {
+      "sfa_licence": "CE24166N000",
+      "merchant": "La Table d’Emma",
+      "source_url": "https://www.latabledemma.com/menu/",
+      "branch_evidence": "Current official page menus and direct reservation; SFA match at 8 Club Street #01-04. Official page links full menu image/PDF and delivery via Grab.",
+      "freshness": "Page crawled yesterday and explicitly exposes current menu plus weekly specials. Existing workbook menu observed 2026-10-19; current page has seasonal/weekly changing items. Review items marked New and weekly specials before treating as stable."
+    },
+    {
+      "sfa_licence": "CE18M44K000",
+      "merchant": "Neon Pigeon",
+      "source_url": "https://www.neonpigeonsg.com/",
+      "linked_menu_url": "https://www.neonpigeonsg.com/_files/ugd/9e8ba5_ad6582dca2784d568758f248400dac59.pdf",
+      "branch_evidence": "Merchant-linked menu PDF matched to SFA listing at 36 Carpenter Street #01-01, Carpenter Haus.",
+      "freshness": "Current site was reachable through prior source snapshot; PDF has no visible publication date in extracted text, only observed 2026-10-19. No item changes proposed."
+    },
+    {
+      "sfa_licence": "CE09E77V000",
+      "merchant": "OTTO Ristorante",
+      "source_url": "https://www.ottoristorante.com.sg/menu/",
+      "linked_menu_url": "https://www.ottoristorante.com.sg/www1/wp-content/uploads/2024/02/A-la-carte-July-2026-updated.pdf",
+      "branch_evidence": "Official menu source for Otto Ristorante; exact SFA row at 32 Maxwell Road #01-03/#01-02.",
+      "freshness": "PDF identifies July 2026 update, observed 2026-10-19. No changes proposed."
+    },
+    {
+      "sfa_licence": "CE05006L000",
+      "merchant": "Komala’s (Little India)",
+      "source_url": "https://www.foodpanda.sg/restaurant/s5te/komalas-restaurant-little-india",
+      "branch_evidence": "Public delivery page footer identifies 42 Race Course Road, Unit 42; SFA row is 42/42A Race Course Road, Level 1 & 2, postal 218557. Exact unit-range match.",
+      "freshness": "Page observed 2026-10-19, search index reported crawled 2026-10-17. Existing five item rows already scoped as delivery prices; recheck prices before use."
+    },
+    {
+      "sfa_licence": "SE10629B000",
+      "merchant": "Din Tai Fung (NEX)",
+      "source_url": "https://www.foodpanda.sg/restaurant/mf2p/din-tai-fung-nex",
+      "branch_evidence": "Public delivery page footer identifies 23 Serangoon Central, #B1-10 NEX; SFA row unit range #B1-10-12, postal 556083. Exact match.",
+      "freshness": "Page observed 2026-10-19, search index reported crawled 2026-10-18. Existing five item rows already scoped as delivery prices; recheck prices before use."
+    }
+  ],
+  "proposal_decision": "No new item or price proposal from this audit because the seven exact branch-source records checked were already represented in the workbook, while sampled unscoped chain records lacked exact outlet-specific published evidence. Retain their menu summaries only if clearly labeled as brand-level; otherwise replace with a plain brand-menu link and avoid assigning availability or prices to the SFA outlet.",
+  "platform_notes": "Grab/Foodpanda/Oddle pages are used only when branch identity matches an exact SFA outlet. Prior Grab Genki page is chain-level and direct fetch returned 403; no items/prices proposed. Existing Oddle Rasa Istimewa row was removed from public-access directory in prior refresh; do not re-add.",
+  "limitations": [
+    "The 100-row screen was chosen from rows with explicit unscoped chain language, so it is a targeted risk sample, not a random or representative estimate of all 472 nonblank menu summaries.",
+    "This audit does not certify menu completeness. Exact branch sources were checked on a separate seven-record follow-up; no workbook edits were made."
+  ]
+}

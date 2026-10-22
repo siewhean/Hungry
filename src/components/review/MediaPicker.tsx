@@ -1,13 +1,14 @@
+import { getAccountGeneration } from "@/lib/security/accountScope";
 import { useState } from "react";
 import { Pressable, StyleSheet, View, ScrollView } from "react-native";
-import { Camera, Video, Edit2, X } from "lucide-react-native";
+import { Camera, Video, X } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
 
 import { useHungryTheme } from "@/theme";
 import { componentRadii } from "@/theme/tokens";
 import { useUIStore } from "@/store/useUIStore";
 import { AccessibleImage, AppText, Card } from "../ui";
-import { MediaEditor } from "./MediaEditor";
+
 import { confirmGalleryAccess, isGalleryPermissionGranted } from "@/lib/permissions/gallery";
 
 interface MediaPickerProps {
@@ -25,64 +26,73 @@ interface MediaPickerProps {
 export function MediaPicker({
   photos,
   videoUri,
-  filterId,
   maxPhotos = 5,
   onAddPhoto,
   onRemovePhoto,
   onSetVideo,
-  onSetFilter,
 }: MediaPickerProps) {
   const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const showToast = useUIStore((state) => state.showToast);
-  const [editingUri, setEditingUri] = useState<string | null>(null);
+  const [isPicking, setIsPicking] = useState(false);
 
   const handlePickMedia = async (type: "image" | "video") => {
-    const shouldOpenPicker = await confirmGalleryAccess({
-      title: "Allow gallery access",
-      message:
-        "Hungry needs access to your photo and video library to attach media to your review.",
-      confirmLabel: "Allow",
-      cancelLabel: "Not now",
-    });
+    if (isPicking) return;
+    setIsPicking(true);
+    const generation = getAccountGeneration();
+    try {
+      const shouldOpenPicker = await confirmGalleryAccess({
+        title: "Allow gallery access",
+        message:
+          "Hungry needs access to your photo and video library to attach media to your review.",
+        confirmLabel: "Allow",
+        cancelLabel: "Not now",
+      });
 
-    if (!shouldOpenPicker) {
-      return;
+      if (generation !== getAccountGeneration()) return;
+      if (!shouldOpenPicker) {
+        return;
+      }
+
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (generation !== getAccountGeneration()) return;
+      if (!isGalleryPermissionGranted(permission)) {
+        showToast({ message: "Gallery permission is required.", tone: "warning" });
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes:
+          type === "image"
+            ? ImagePicker.MediaTypeOptions.Images
+            : ImagePicker.MediaTypeOptions.Videos,
+        allowsEditing: true,
+        quality: 0.8,
+        videoMaxDuration: 60,
+      });
+
+      if (generation !== getAccountGeneration()) return;
+      if (result.canceled || !result.assets?.length) return;
+
+      const asset = result.assets[0];
+      if (type === "video") {
+        onSetVideo?.(asset.uri);
+      } else {
+        onAddPhoto(asset.uri);
+      }
+    } catch {
+      if (generation !== getAccountGeneration()) return;
+      showToast({ message: "Could not open the media picker. Try again.", tone: "warning" });
+    } finally {
+      setIsPicking(false);
     }
-
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!isGalleryPermissionGranted(permission)) {
-      showToast({ message: "Gallery permission is required.", tone: "warning" });
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes:
-        type === "image"
-          ? ImagePicker.MediaTypeOptions.Images
-          : ImagePicker.MediaTypeOptions.Videos,
-      allowsEditing: true,
-      quality: 0.8,
-      videoMaxDuration: 60,
-    });
-
-    if (result.canceled || !result.assets?.length) return;
-
-    const asset = result.assets[0];
-    if (type === "video") {
-      onSetVideo?.(asset.uri);
-    } else {
-      onAddPhoto(asset.uri);
-    }
-    // Automatically open editor for the new media
-    setEditingUri(asset.uri);
   };
 
   return (
     <View style={{ gap: spacing[4] }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-        <AppText variant="h3">Photos & Reels</AppText>
+        <AppText variant="h3">Photos</AppText>
         <AppText variant="micro" tone="muted">
-          {photos.length}/5 photos
+          {photos.length}/{maxPhotos} photos
         </AppText>
       </View>
 
@@ -107,12 +117,6 @@ export function MediaPicker({
               <Video size={12} color={palette.white} />
             </View>
             <View style={styles.mediaActions}>
-              <Pressable
-                onPress={() => setEditingUri(videoUri)}
-                style={[styles.actionBtn, { backgroundColor: palette.mediaScrimStrong }]}
-              >
-                <Edit2 size={14} color={palette.white} />
-              </Pressable>
               <Pressable
                 onPress={() => onSetVideo?.(undefined)}
                 style={[styles.actionBtn, { backgroundColor: palette.error }]}
@@ -154,12 +158,8 @@ export function MediaPicker({
             />
             <View style={styles.mediaActions}>
               <Pressable
-                onPress={() => setEditingUri(uri)}
-                style={[styles.actionBtn, { backgroundColor: palette.mediaScrimStrong }]}
-              >
-                <Edit2 size={14} color={palette.white} />
-              </Pressable>
-              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Remove photo ${photos.indexOf(uri) + 1}`}
                 onPress={() => onRemovePhoto(uri)}
                 style={[styles.actionBtn, { backgroundColor: palette.error }]}
               >
@@ -188,20 +188,6 @@ export function MediaPicker({
           </Pressable>
         )}
       </ScrollView>
-
-      {editingUri && (
-        <MediaEditor
-          uri={editingUri}
-          isVisible={!!editingUri}
-          initialFilterId={filterId}
-          onClose={() => setEditingUri(null)}
-          onSave={(fid) => {
-            onSetFilter(fid);
-            setEditingUri(null);
-            showToast({ message: "Filter applied!", tone: "success" });
-          }}
-        />
-      )}
     </View>
   );
 }
@@ -240,8 +226,8 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   actionBtn: {
-    width: 28,
-    height: 28,
+    width: 44,
+    height: 44,
     borderRadius: componentRadii.card,
     alignItems: "center",
     justifyContent: "center",

@@ -31,3 +31,11 @@ test("sortSearchResults sorts by nearest distance", () => {
       .map((dish) => dish.id),
   );
 });
+
+test("best match preserves provider ranking instead of re-sorting a limited slate", () => {
+  const ranked = dishes.slice(0, 4).reverse();
+  assert.deepEqual(
+    sortSearchResults(ranked, "best_match", userProfile.tasteVector).map((dish) => dish.id),
+    ranked.map((dish) => dish.id),
+  );
+});

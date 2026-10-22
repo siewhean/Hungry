@@ -129,7 +129,11 @@ test("dish and stall detail screens expose checklist and portfolio entry points"
   assert.match(supabaseService, /checklist_id: input\.checklistId/);
   assert.match(supabaseService, /item_type: input\.itemType/);
   assert.match(supabaseService, /return mapChecklistItem\(data as Row\)/);
-  assert.match(supabaseService, /return mapPortfolioItem\(row as Row\)/);
+  assert.match(supabaseService, /rpc\("add_portfolio_item_v2"/);
+  assert.match(
+    supabaseService,
+    /return mapPortfolioItem\(\{ \.\.\.row, private_notes: note\?\.private_notes \}\)/,
+  );
 
   assert.match(migration, /function public\.add_portfolio_item_with_passport/);
   assert.match(migration, /set search_path = public/);

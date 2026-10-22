@@ -6,14 +6,14 @@ import { AccessibilityInfo, ScrollView, View } from "react-native";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import * as Haptics from "expo-haptics";
+import * as Haptics from "@/lib/haptics";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { ProfileScreenShell } from "@/app/screens/profile/ProfileScreenShell";
 import { PassportBook } from "@/components/gamification/PassportBook";
 import { PassportPageFlip } from "@/components/gamification/PassportPageFlip";
 import { PassportStampCard } from "@/components/gamification/PassportStampCard";
-import { AppText, EmptyState } from "@/components/ui";
+import { AppText, Button, EmptyState } from "@/components/ui";
 import {
   ALL_PASSPORT_CATEGORIES,
   PASSPORT_BADGE_DEFINITIONS,
@@ -23,6 +23,7 @@ import {
   getNewlyEarnedUncelebratedStamp,
   getNextPassportStamp,
 } from "@/constants/passportConfig";
+import { useUIStore } from "@/store/useUIStore";
 import { usePassportStore } from "@/store/usePassportStore";
 import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 import { useHungryTheme } from "@/theme";
@@ -75,7 +76,12 @@ export function PassportScreen({ navigation: _nav }: Props) {
   const passportStamps = usePassportStore((s) => s.stamps);
   const passportEvents = usePassportStore((s) => s.events);
   const stallInteractions = useStallInteractionStore((state) => state.interactions);
-  const [reduceMotion, setReduceMotion] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const appReducedMotion = useUIStore((state) => state.reducedMotionEnabled);
+  const hapticsEnabled = useUIStore((state) => state.hapticFeedbackEnabled);
+  const [deviceReducedMotion, setReduceMotion] = useState(false);
+  const reduceMotion = appReducedMotion || deviceReducedMotion;
   const [celebratingStampId, setCelebratingStampId] = useState<string | null>(null);
 
   const triedStallIds = useMemo(
@@ -112,20 +118,27 @@ export function PassportScreen({ navigation: _nav }: Props) {
 
   useFocusEffect(
     useCallback(() => {
-      void Promise.all([loadPassportStamps(), loadPassportEvents()]).catch(() => undefined);
-    }, [loadPassportEvents, loadPassportStamps]),
+      let active = true;
+      setLoadFailed(false);
+      void Promise.all([loadPassportStamps(), loadPassportEvents()]).catch(() => {
+        if (active) setLoadFailed(true);
+      });
+      return () => {
+        active = false;
+      };
+    }, [loadPassportEvents, loadPassportStamps, loadAttempt]),
   );
 
   const totalStamps = earnedStamps.length;
 
   useEffect(() => {
-    if (!celebrateMarker?.shouldCelebrate || celebratingStampId === celebrateMarker.stampId) {
+    if (!celebrateMarker?.shouldCelebrate) {
       return;
     }
 
     setCelebratingStampId(celebrateMarker.stampId);
     AccessibilityInfo.announceForAccessibility(`Achievement stamped: ${celebrateMarker.title}`);
-    if (!reduceMotion) {
+    if (!reduceMotion && hapticsEnabled) {
       void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
 
@@ -138,7 +151,7 @@ export function PassportScreen({ navigation: _nav }: Props) {
     );
 
     return () => clearTimeout(timeout);
-  }, [celebrateMarker, celebratingStampId, markStampCelebrated, reduceMotion]);
+  }, [celebrateMarker, markStampCelebrated, reduceMotion, hapticsEnabled]);
 
   const sections = useMemo(
     () =>
@@ -168,6 +181,12 @@ export function PassportScreen({ navigation: _nav }: Props) {
           pageKey={`${totalStamps}-${celebratingStampId ?? "idle"}`}
           reduceMotion={reduceMotion}
         >
+          {loadFailed ? (
+            <Button
+              label="Retry passport sync"
+              onPress={() => setLoadAttempt((value) => value + 1)}
+            />
+          ) : null}
           <PassportBook
             badges={PASSPORT_BADGE_DEFINITIONS}
             earnedStamps={earnedStamps}

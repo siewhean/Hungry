@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { supabaseAuthStorage } from "./authStorage";
+import { createGenerationAuthStorage, retireAuthStorage } from "./authStorage";
 import { installPkceCryptoPolyfill } from "./pkceCryptoPolyfill";
 
 export type HungryDataSource = "mock" | "supabase" | "excel";
@@ -59,7 +59,7 @@ export function getSupabaseClient(): SupabaseClient | null {
       // the default AsyncStorage (plaintext on disk). See `authStorage.ts` for
       // rationale and migration strategy. This is the primary MASVS-STORAGE
       // control for the mobile app.
-      storage: supabaseAuthStorage,
+      storage: createGenerationAuthStorage(),
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: false,
@@ -67,4 +67,30 @@ export function getSupabaseClient(): SupabaseClient | null {
     },
   });
   return cachedClient;
+}
+
+const clientListeners = new Set<() => void>();
+let clientRevision = 0;
+export const subscribeAuthClient = (listener: () => void) => {
+  clientListeners.add(listener);
+  return () => {
+    clientListeners.delete(listener);
+  };
+};
+export const getAuthClientRevision = () => clientRevision;
+export function retireSupabaseClient(): {
+  client: SupabaseClient | null;
+  cleanup: Promise<void>;
+  retiredAccessToken: Promise<string | null>;
+} {
+  const client = cachedClient ?? null;
+  client?.auth.stopAutoRefresh();
+  cachedClient = undefined;
+  const storageKey = isSupabaseConfigured()
+    ? `sb-${new URL(SUPABASE_URL).hostname.split(".")[0]}-auth-token`
+    : "hungry-auth";
+  const { cleanup, retiredAccessToken } = retireAuthStorage(storageKey);
+  clientRevision++;
+  clientListeners.forEach((listener) => listener());
+  return { client, cleanup, retiredAccessToken };
 }

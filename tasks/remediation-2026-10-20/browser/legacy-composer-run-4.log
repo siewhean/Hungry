@@ -1,0 +1,221 @@
+(node:93013) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[1A[2K[2m[WebServer] [22m(node:93022) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 4 tests using 1 worker
+
+[1A[2K(node:93242) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:93242) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+
+[1A[2K(node:93242) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K[1/4] [chromium] › tests/e2e/buttons-interactions.spec.ts:12:7 › supported buttons and composer interactions › launcher buttons open the supported composer
+[1A[2K  1) [chromium] › tests/e2e/buttons-interactions.spec.ts:12:7 › supported buttons and composer interactions › launcher buttons open the supported composer 
+
+    Error: No critical page errors, console errors, or failed app requests
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoEqual[2m([22m[32mexpected[39m[2m) // deep equality[22m
+
+    [32m- Expected  -  1[39m
+    [31m+ Received  + 10[39m
+
+    [32m- Array [][39m
+    [31m+ Array [[39m
+    [31m+   Object {[39m
+    [31m+     "message": "expo-file-system is not supported on web",[39m
+    [31m+     "type": "console",[39m
+    [31m+   },[39m
+    [31m+   Object {[39m
+    [31m+     "message": "expo-file-system is not supported on web",[39m
+    [31m+     "type": "console",[39m
+    [31m+   },[39m
+    [31m+ ][39m
+
+       at fixtures.ts:100
+
+       98 |       expect
+       99 |         .soft(criticalIssues, "No critical page errors, console errors, or failed app requests")
+    > 100 |         .toEqual([]);
+          |          ^
+      101 |     },
+      102 |     { auto: true },
+      103 |   ],
+        at Object.exports.test._test.test.extend.pageIssues.auto (/Users/Siew Hean/Documents/GitHub/Hungry/tests/e2e/fixtures.ts:100:10)
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tasks/remediation-2026-10-20/browser/legacy-composer-results/buttons-interactions-suppo-2283d-open-the-supported-composer-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tasks/remediation-2026-10-20/browser/legacy-composer-results/buttons-interactions-suppo-2283d-open-the-supported-composer-chromium/error-context.md
+
+
+[1A[2K(node:93775) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:93775) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+
+[1A[2K(node:93775) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K[2/4] [chromium] › tests/e2e/buttons-interactions.spec.ts:24:7 › supported buttons and composer interactions › an account-scoped composer draft survives reload and returning to that account
+[1A[2K  2) [chromium] › tests/e2e/buttons-interactions.spec.ts:24:7 › supported buttons and composer interactions › an account-scoped composer draft survives reload and returning to that account 
+
+    Error: No critical page errors, console errors, or failed app requests
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoEqual[2m([22m[32mexpected[39m[2m) // deep equality[22m
+
+    [32m- Expected  -  1[39m
+    [31m+ Received  + 18[39m
+
+    [32m- Array [][39m
+    [31m+ Array [[39m
+    [31m+   Object {[39m
+    [31m+     "message": "expo-file-system is not supported on web",[39m
+    [31m+     "type": "console",[39m
+    [31m+   },[39m
+    [31m+   Object {[39m
+    [31m+     "message": "expo-file-system is not supported on web",[39m
+    [31m+     "type": "console",[39m
+    [31m+   },[39m
+    [31m+   Object {[39m
+    [31m+     "message": "expo-file-system is not supported on web",[39m
+    [31m+     "type": "console",[39m
+    [31m+   },[39m
+    [31m+   Object {[39m
+    [31m+     "message": "expo-file-system is not supported on web",[39m
+    [31m+     "type": "console",[39m
+    [31m+   },[39m
+    [31m+ ][39m
+
+       at fixtures.ts:100
+
+       98 |       expect
+       99 |         .soft(criticalIssues, "No critical page errors, console errors, or failed app requests")
+    > 100 |         .toEqual([]);
+          |          ^
+      101 |     },
+      102 |     { auto: true },
+      103 |   ],
+        at Object.exports.test._test.test.extend.pageIssues.auto (/Users/Siew Hean/Documents/GitHub/Hungry/tests/e2e/fixtures.ts:100:10)
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tasks/remediation-2026-10-20/browser/legacy-composer-results/buttons-interactions-suppo-4cc47-d-returning-to-that-account-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tasks/remediation-2026-10-20/browser/legacy-composer-results/buttons-interactions-suppo-4cc47-d-returning-to-that-account-chromium/error-context.md
+
+
+[1A[2K(node:93817) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:93817) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+
+[1A[2K(node:93817) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K[3/4] [chromium] › tests/e2e/buttons-interactions.spec.ts:42:7 › supported buttons and composer interactions › unsupported AI and scheduling controls are absent from the supported composer
+[1A[2K  3) [chromium] › tests/e2e/buttons-interactions.spec.ts:42:7 › supported buttons and composer interactions › unsupported AI and scheduling controls are absent from the supported composer 
+
+    Error: No critical page errors, console errors, or failed app requests
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoEqual[2m([22m[32mexpected[39m[2m) // deep equality[22m
+
+    [32m- Expected  -  1[39m
+    [31m+ Received  + 10[39m
+
+    [32m- Array [][39m
+    [31m+ Array [[39m
+    [31m+   Object {[39m
+    [31m+     "message": "expo-file-system is not supported on web",[39m
+    [31m+     "type": "console",[39m
+    [31m+   },[39m
+    [31m+   Object {[39m
+    [31m+     "message": "expo-file-system is not supported on web",[39m
+    [31m+     "type": "console",[39m
+    [31m+   },[39m
+    [31m+ ][39m
+
+       at fixtures.ts:100
+
+       98 |       expect
+       99 |         .soft(criticalIssues, "No critical page errors, console errors, or failed app requests")
+    > 100 |         .toEqual([]);
+          |          ^
+      101 |     },
+      102 |     { auto: true },
+      103 |   ],
+        at Object.exports.test._test.test.extend.pageIssues.auto (/Users/Siew Hean/Documents/GitHub/Hungry/tests/e2e/fixtures.ts:100:10)
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tasks/remediation-2026-10-20/browser/legacy-composer-results/buttons-interactions-suppo-358d5-from-the-supported-composer-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tasks/remediation-2026-10-20/browser/legacy-composer-results/buttons-interactions-suppo-358d5-from-the-supported-composer-chromium/error-context.md
+
+
+[1A[2K(node:93857) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:93857) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+
+[1A[2K(node:93857) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K[4/4] [chromium] › tests/e2e/buttons-interactions.spec.ts:63:7 › supported buttons and composer interactions › missing media keeps publication disabled while preserving the entered draft
+[1A[2K  4) [chromium] › tests/e2e/buttons-interactions.spec.ts:63:7 › supported buttons and composer interactions › missing media keeps publication disabled while preserving the entered draft 
+
+    Error: No critical page errors, console errors, or failed app requests
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoEqual[2m([22m[32mexpected[39m[2m) // deep equality[22m
+
+    [32m- Expected  -  1[39m
+    [31m+ Received  + 10[39m
+
+    [32m- Array [][39m
+    [31m+ Array [[39m
+    [31m+   Object {[39m
+    [31m+     "message": "expo-file-system is not supported on web",[39m
+    [31m+     "type": "console",[39m
+    [31m+   },[39m
+    [31m+   Object {[39m
+    [31m+     "message": "expo-file-system is not supported on web",[39m
+    [31m+     "type": "console",[39m
+    [31m+   },[39m
+    [31m+ ][39m
+
+       at fixtures.ts:100
+
+       98 |       expect
+       99 |         .soft(criticalIssues, "No critical page errors, console errors, or failed app requests")
+    > 100 |         .toEqual([]);
+          |          ^
+      101 |     },
+      102 |     { auto: true },
+      103 |   ],
+        at Object.exports.test._test.test.extend.pageIssues.auto (/Users/Siew Hean/Documents/GitHub/Hungry/tests/e2e/fixtures.ts:100:10)
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tasks/remediation-2026-10-20/browser/legacy-composer-results/buttons-interactions-suppo-4e26b-reserving-the-entered-draft-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tasks/remediation-2026-10-20/browser/legacy-composer-results/buttons-interactions-suppo-4e26b-reserving-the-entered-draft-chromium/error-context.md
+
+
+[1A[2K  4 failed
+    [chromium] › tests/e2e/buttons-interactions.spec.ts:12:7 › supported buttons and composer interactions › launcher buttons open the supported composer 
+    [chromium] › tests/e2e/buttons-interactions.spec.ts:24:7 › supported buttons and composer interactions › an account-scoped composer draft survives reload and returning to that account 
+    [chromium] › tests/e2e/buttons-interactions.spec.ts:42:7 › supported buttons and composer interactions › unsupported AI and scheduling controls are absent from the supported composer 
+    [chromium] › tests/e2e/buttons-interactions.spec.ts:63:7 › supported buttons and composer interactions › missing media keeps publication disabled while preserving the entered draft 

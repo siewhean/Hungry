@@ -1,5 +1,6 @@
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ArrowLeft, ShieldCheck, Trash2 } from "lucide-react-native";
 
@@ -12,6 +13,7 @@ import type { PortfolioFlag } from "@/types/domain";
 type Props = NativeStackScreenProps<RootStackParamList, "AdminPortfolioFlags">;
 
 export function AdminPortfolioFlagsScreen({ navigation }: Props) {
+  const insets = useSafeAreaInsets();
   const { palette, spacing } = useHungryTheme();
   const [flags, setFlags] = useState<PortfolioFlag[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -21,14 +23,26 @@ export function AdminPortfolioFlagsScreen({ navigation }: Props) {
     try {
       const nextFlags = await getHungryService().portfolio.getPortfolioFlags({ status: "pending" });
       setFlags(nextFlags);
+    } catch (error) {
+      Alert.alert(
+        "Could not complete action",
+        error instanceof Error ? error.message : "Please retry.",
+      );
     } finally {
       setIsLoading(false);
     }
   }
 
   async function resolve(flagId: string, resolution: "dismissed" | "removed") {
-    await getHungryService().portfolio.resolvePortfolioFlag(flagId, resolution);
-    await loadFlags();
+    try {
+      await getHungryService().portfolio.resolvePortfolioFlag(flagId, resolution);
+      await loadFlags();
+    } catch (error) {
+      Alert.alert(
+        "Could not resolve report",
+        error instanceof Error ? error.message : "Please retry.",
+      );
+    }
   }
 
   useEffect(() => {
@@ -37,7 +51,9 @@ export function AdminPortfolioFlagsScreen({ navigation }: Props) {
 
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: palette.bg }}
+      keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets
+      style={{ flex: 1, backgroundColor: palette.bg, paddingTop: insets.top }}
       contentContainerStyle={[styles.content, { gap: spacing[4], padding: spacing[4] }]}
     >
       <View style={styles.header}>

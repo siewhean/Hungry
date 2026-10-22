@@ -1,0 +1,1584 @@
+{
+  "snapshot_type": "refresh133_exact_sfa_closure_public_access_candidate_review",
+  "observed_local_date": "2026-10-19",
+  "baseline": {
+    "path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "sha256": "b9b4d654cac9131405caf8c84c81194af8d4b856ab8bffbfdc746ae6cfad7463",
+    "sheet": "Public F&B Directory"
+  },
+  "scope": {
+    "exact_sfa_records_reviewed": 100,
+    "maximum_scope": 100,
+    "selection": "100 exact licence records absent from Refresh132 sample, selected from private/conditional club, golf, yacht, and recreation venue address clusters. Targeted access-boundary sample, not exhaustive closure audit.",
+    "records_recommended_for_removal": 0,
+    "confirmed_exact_permanent_closures": 0,
+    "rules": [
+      "Current SFA licence presence is not proof of daily operation.",
+      "A club premises rule does not alone prove a particular tenant denies the public; hold removal until exact outlet admission is confirmed.",
+      "Distinguish members, member-sponsored guests, conditional access, and unrestricted walk-in access.",
+      "Do not infer closure from roster absence."
+    ]
+  },
+  "sources": {
+    "safra_faq": {
+      "url": "https://www.safra.sg/faq/safra-membership-FAQs",
+      "publisher": "SAFRA",
+      "scope": "Official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities; does not establish access policy for each tenant outlet."
+    },
+    "safyc_bylaws": {
+      "url": "https://www.safyc.org.sg/wp-content/uploads/2025/04/SAF-Yacht-Club-By-Laws-220325.pdf",
+      "publisher": "SAF Yacht Club",
+      "scope": "By-laws require guests to be signed in and accompanied by a member in club premises/areas; tenant-specific admission not checked."
+    },
+    "rsyc_guest_policy": {
+      "url": "https://rsyc.org.sg/wp-content/uploads/2023/03/RSYC-Mag-AprMayJun2023-Final-LR-Updated.pdf",
+      "publisher": "Republic of Singapore Yacht Club",
+      "scope": "Official club publication says guests may not enter without member accompaniment and mentions card verification when dining at F&B outlets. Dated 2023; current operator confirmation needed."
+    },
+    "sicc_island_bar_guest_policy": {
+      "url": "https://siccwp-argfbhdpbagmf8b7.southeastasia-01.azurewebsites.net/fb_island-bar/",
+      "publisher": "Singapore Island Country Club",
+      "scope": "Official named Island Bar page has member guest quota/policy. Applies only to named outlet, not other tenants."
+    },
+    "sfa": {
+      "url": "https://www.sfa.gov.sg/food-retail/food-retail-licensing/track-record-of-food-establishments",
+      "publisher": "Singapore Food Agency",
+      "scope": "Exact licence/address identity cross-check from canonical export; not proof of current daily operation."
+    }
+  },
+  "records": [
+    {
+      "excel_row": 2519,
+      "sfa_licence": "NW26328P000",
+      "fnb_name": "Arctic Ice Vending",
+      "registered_business_name": "Arctic Ice Vending",
+      "business_type": "Food Vending Machines",
+      "address": "Address: 43 ADMIRALTY ROAD WEST SAF YACHT CLUB,Singapore 759962",
+      "postal_code": "759962",
+      "site_group": "SAF YACHT CLUB",
+      "access_assessment": "member_sponsored_access_supported",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safyc_bylaws"
+      ],
+      "evidence_note": "SAF Yacht Club by-laws require members to sign in guests, accompany guests in club areas, and remain on premises. Exact tenant is SFA-addressed inside the club; this supports restricted site access, but tenant-specific public events/open access were not independently checked. Do not remove solely on site rule until tenant admission is verified."
+    },
+    {
+      "excel_row": 8563,
+      "sfa_licence": "NW23205P000",
+      "fnb_name": "Eighty Nine Bistro",
+      "registered_business_name": "Eighty Nine Bistro",
+      "business_type": "Restaurant",
+      "address": "Address: 43 ADMIRALTY ROAD WEST #01-14,#01-15,SAF YACHT CLUB,Singapore 759962 (within main unit #01-10)",
+      "postal_code": "759962",
+      "site_group": "SAF YACHT CLUB",
+      "access_assessment": "member_sponsored_access_supported",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safyc_bylaws"
+      ],
+      "evidence_note": "SAF Yacht Club by-laws require members to sign in guests, accompany guests in club areas, and remain on premises. Exact tenant is SFA-addressed inside the club; this supports restricted site access, but tenant-specific public events/open access were not independently checked. Do not remove solely on site rule until tenant admission is verified."
+    },
+    {
+      "excel_row": 10274,
+      "sfa_licence": "NW20I18A000",
+      "fnb_name": "GEM BY THE SEA",
+      "registered_business_name": "GEM BY THE SEA",
+      "business_type": "Restaurant with Catering",
+      "address": "Address: 43 ADMIRALTY ROAD WEST #01-10,SAF YACHT CLUB,Singapore 759962",
+      "postal_code": "759962",
+      "site_group": "SAF YACHT CLUB",
+      "access_assessment": "member_sponsored_access_supported",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safyc_bylaws"
+      ],
+      "evidence_note": "SAF Yacht Club by-laws require members to sign in guests, accompany guests in club areas, and remain on premises. Exact tenant is SFA-addressed inside the club; this supports restricted site access, but tenant-specific public events/open access were not independently checked. Do not remove solely on site rule until tenant admission is verified."
+    },
+    {
+      "excel_row": 15320,
+      "sfa_licence": "NW23B33C000",
+      "fnb_name": "kin kao mai thai bistro",
+      "registered_business_name": "kin kao mai thai bistro",
+      "business_type": "Restaurant",
+      "address": "Address: 43 ADMIRALTY ROAD WEST #02-01,SAF YACHT CLUB,Singapore 759962 (EAST WING)",
+      "postal_code": "759962",
+      "site_group": "SAF YACHT CLUB",
+      "access_assessment": "member_sponsored_access_supported",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safyc_bylaws"
+      ],
+      "evidence_note": "SAF Yacht Club by-laws require members to sign in guests, accompany guests in club areas, and remain on premises. Exact tenant is SFA-addressed inside the club; this supports restricted site access, but tenant-specific public events/open access were not independently checked. Do not remove solely on site rule until tenant admission is verified."
+    },
+    {
+      "excel_row": 16199,
+      "sfa_licence": "NW20K39A000",
+      "fnb_name": "Ku-Kai Izakaya",
+      "registered_business_name": "Ku-Kai Izakaya",
+      "business_type": "Restaurant",
+      "address": "Address: 43 ADMIRALTY ROAD WEST SAF YACHT CLUB,Singapore 759962",
+      "postal_code": "759962",
+      "site_group": "SAF YACHT CLUB",
+      "access_assessment": "member_sponsored_access_supported",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safyc_bylaws"
+      ],
+      "evidence_note": "SAF Yacht Club by-laws require members to sign in guests, accompany guests in club areas, and remain on premises. Exact tenant is SFA-addressed inside the club; this supports restricted site access, but tenant-specific public events/open access were not independently checked. Do not remove solely on site rule until tenant admission is verified."
+    },
+    {
+      "excel_row": 28180,
+      "sfa_licence": "C99181E000",
+      "fnb_name": "The Beacon Restaurant and Bar",
+      "registered_business_name": "The Beacon Restaurant and Bar",
+      "business_type": "Restaurant",
+      "address": "Address: 52 WEST COAST FERRY ROAD #2,REPUBLIC OF SINGAPORE YACHT CLUB,Singapore 126887 LEVEL 2",
+      "postal_code": "126887",
+      "site_group": "REPUBLIC OF SINGAPORE YACHT CLUB",
+      "access_assessment": "member_sponsored_access_supported",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "rsyc_guest_policy"
+      ],
+      "evidence_note": "Official RSYC publication states no guest may enter club premises unless accompanied by a member, and guests must leave with member; it specifically references F&B outlet visits. Exact SFA address is within club. Strong exact-site access barrier; confirm current rule/operator before removal."
+    },
+    {
+      "excel_row": 28582,
+      "sfa_licence": "C99087A000",
+      "fnb_name": "The Mess Bar",
+      "registered_business_name": "The Mess Bar",
+      "business_type": "within Pubs/Bars/Nightclubs/Disco",
+      "address": "Address: 52 WEST COAST FERRY ROAD REPUBLIC OF SINGAPORE YACHT CLUB,Singapore 126887 (LEVEL 2)",
+      "postal_code": "126887",
+      "site_group": "REPUBLIC OF SINGAPORE YACHT CLUB",
+      "access_assessment": "member_sponsored_access_supported",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "rsyc_guest_policy"
+      ],
+      "evidence_note": "Official RSYC publication states no guest may enter club premises unless accompanied by a member, and guests must leave with member; it specifically references F&B outlet visits. Exact SFA address is within club. Strong exact-site access barrier; confirm current rule/operator before removal."
+    },
+    {
+      "excel_row": 4292,
+      "sfa_licence": "CE23937E000",
+      "fnb_name": "Braid Bar",
+      "registered_business_name": "Braid Bar",
+      "business_type": "Snack Counter",
+      "address": "Address: 240 SIME ROAD SINGAPORE ISLAND COUNTRY CLUB,Singapore 288303 (PART OF 3RD STOREY)",
+      "postal_code": "288303",
+      "site_group": "SINGAPORE ISLAND COUNTRY CLUB",
+      "access_assessment": "member_guest_access_supported",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "sicc_island_bar_guest_policy"
+      ],
+      "evidence_note": "Official SICC Island Bar page describes guest quota and member sponsorship. This shows controlled access for that named bar only; it is not sufficient to generalize to every exact tenant at the club. Tenant-specific public access unresolved."
+    },
+    {
+      "excel_row": 4947,
+      "sfa_licence": "W72035K000",
+      "fnb_name": "Canopy",
+      "registered_business_name": "Canopy",
+      "business_type": "Restaurant",
+      "address": "Address: 240 SIME ROAD SINGAPORE ISLAND COUNTRY CLUB,Singapore 288303 2nd Storey",
+      "postal_code": "288303",
+      "site_group": "SINGAPORE ISLAND COUNTRY CLUB",
+      "access_assessment": "member_guest_access_supported",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "sicc_island_bar_guest_policy"
+      ],
+      "evidence_note": "Official SICC Island Bar page describes guest quota and member sponsorship. This shows controlled access for that named bar only; it is not sufficient to generalize to every exact tenant at the club. Tenant-specific public access unresolved."
+    },
+    {
+      "excel_row": 26199,
+      "sfa_licence": "CE22J38B000",
+      "fnb_name": "Sports Bar Restaurant",
+      "registered_business_name": "Sports Bar Restaurant",
+      "business_type": "Restaurant",
+      "address": "Address: 240 SIME ROAD SINGAPORE ISLAND COUNTRY CLUB,Singapore 288303 LEVEL 2",
+      "postal_code": "288303",
+      "site_group": "SINGAPORE ISLAND COUNTRY CLUB",
+      "access_assessment": "member_guest_access_supported",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "sicc_island_bar_guest_policy"
+      ],
+      "evidence_note": "Official SICC Island Bar page describes guest quota and member sponsorship. This shows controlled access for that named bar only; it is not sufficient to generalize to every exact tenant at the club. Tenant-specific public access unresolved."
+    },
+    {
+      "excel_row": 28697,
+      "sfa_licence": "CE24165P000",
+      "fnb_name": "THE SOCIAL",
+      "registered_business_name": "THE SOCIAL",
+      "business_type": "Snack Counter",
+      "address": "Address: 240 SIME ROAD SINGAPORE ISLAND COUNTRY CLUB,Singapore 288303 Part of 3rd Storey",
+      "postal_code": "288303",
+      "site_group": "SINGAPORE ISLAND COUNTRY CLUB",
+      "access_assessment": "member_guest_access_supported",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "sicc_island_bar_guest_policy"
+      ],
+      "evidence_note": "Official SICC Island Bar page describes guest quota and member sponsorship. This shows controlled access for that named bar only; it is not sufficient to generalize to every exact tenant at the club. Tenant-specific public access unresolved."
+    },
+    {
+      "excel_row": 31983,
+      "sfa_licence": "CE23647V000",
+      "fnb_name": "YING",
+      "registered_business_name": "YING",
+      "business_type": "Restaurant with Catering",
+      "address": "Address: 240 SIME ROAD SINGAPORE ISLAND COUNTRY CLUB,Singapore 288303 LEVEL 3",
+      "postal_code": "288303",
+      "site_group": "SINGAPORE ISLAND COUNTRY CLUB",
+      "access_assessment": "member_guest_access_supported",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "sicc_island_bar_guest_policy"
+      ],
+      "evidence_note": "Official SICC Island Bar page describes guest quota and member sponsorship. This shows controlled access for that named bar only; it is not sufficient to generalize to every exact tenant at the club. Tenant-specific public access unresolved."
+    },
+    {
+      "excel_row": 4775,
+      "sfa_licence": "SE13P02X000",
+      "fnb_name": "Cabana",
+      "registered_business_name": "Cabana",
+      "business_type": "Restaurant",
+      "address": "Address: 45 TANJONG RHU ROAD #01-03,SINGAPORE SWIMMING CLUB,Singapore 436899",
+      "postal_code": "436899",
+      "site_group": "SINGAPORE SWIMMING CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    },
+    {
+      "excel_row": 7393,
+      "sfa_licence": "E96170L000",
+      "fnb_name": "DELICATESSEN",
+      "registered_business_name": "DELICATESSEN",
+      "business_type": "Snack Counter",
+      "address": "Address: 45 TANJONG RHU ROAD #01-04,SINGAPORE SWIMMING CLUB,Singapore 436899 DELICATESSEN",
+      "postal_code": "436899",
+      "site_group": "SINGAPORE SWIMMING CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    },
+    {
+      "excel_row": 13614,
+      "sfa_licence": "E99150X000",
+      "fnb_name": "JACKSON MILLER",
+      "registered_business_name": "JACKSON MILLER",
+      "business_type": "Restaurant",
+      "address": "Address: 45 TANJONG RHU ROAD #02-01,SINGAPORE SWIMMING CLUB(JACKSON MILLER),Singapore 436899",
+      "postal_code": "436899",
+      "site_group": "SINGAPORE SWIMMING CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    },
+    {
+      "excel_row": 13622,
+      "sfa_licence": "E00004A000",
+      "fnb_name": "JADE PHOENIX",
+      "registered_business_name": "JADE PHOENIX",
+      "business_type": "Restaurant",
+      "address": "Address: 45 TANJONG RHU ROAD #02-02,SINGAPORE SWIMMING CLUB (LEVEL 2),Singapore 436899",
+      "postal_code": "436899",
+      "site_group": "SINGAPORE SWIMMING CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    },
+    {
+      "excel_row": 25579,
+      "sfa_licence": "E99158B000",
+      "fnb_name": "Singapore Swimming Club",
+      "registered_business_name": "Singapore Swimming Club",
+      "business_type": "within Pubs/Bars/Nightclubs/Disco",
+      "address": "Address: 45 TANJONG RHU ROAD #01-01,SINGAPORE SWIMMING CLUB,Singapore 436899",
+      "postal_code": "436899",
+      "site_group": "SINGAPORE SWIMMING CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    },
+    {
+      "excel_row": 28629,
+      "sfa_licence": "E99157C000",
+      "fnb_name": "THE PALMS",
+      "registered_business_name": "THE PALMS",
+      "business_type": "Restaurant",
+      "address": "Address: 45 TANJONG RHU ROAD #01-05,SINGAPORE SWIMMING CLUB-THE PALMS,Singapore 436899",
+      "postal_code": "436899",
+      "site_group": "SINGAPORE SWIMMING CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    },
+    {
+      "excel_row": 3965,
+      "sfa_licence": "W89206X000",
+      "fnb_name": "Bistro",
+      "registered_business_name": "Bistro",
+      "business_type": "Snack Counter",
+      "address": "Address: 5 STEVENS ROAD TANGLIN CLUB,Singapore 257814",
+      "postal_code": "257814",
+      "site_group": "TANGLIN CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    },
+    {
+      "excel_row": 5965,
+      "sfa_licence": "CE15J05A000",
+      "fnb_name": "CHINESE RESTAURANT",
+      "registered_business_name": "CHINESE RESTAURANT",
+      "business_type": "Restaurant",
+      "address": "Address: 5 STEVENS ROAD (2ND STOREY) TANGLIN CLUB,Singapore 257814",
+      "postal_code": "257814",
+      "site_group": "TANGLIN CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    },
+    {
+      "excel_row": 27585,
+      "sfa_licence": "CE07X39A000",
+      "fnb_name": "TANGLES",
+      "registered_business_name": "TANGLES",
+      "business_type": "Restaurant",
+      "address": "Address: 5 STEVENS ROAD TANGLIN CLUB,Singapore 257814 (SPORTS BAR)",
+      "postal_code": "257814",
+      "site_group": "TANGLIN CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    },
+    {
+      "excel_row": 27758,
+      "sfa_licence": "W97317N000",
+      "fnb_name": "tea room",
+      "registered_business_name": "tea room",
+      "business_type": "Snack Counter",
+      "address": "Address: 5 STEVENS ROAD TANGLIN CLUB,Singapore 257814 (FOYER LOUNGE)",
+      "postal_code": "257814",
+      "site_group": "TANGLIN CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    },
+    {
+      "excel_row": 6751,
+      "sfa_licence": "W85276P000",
+      "fnb_name": "CORIANDER LEAF",
+      "registered_business_name": "CORIANDER LEAF",
+      "business_type": "Restaurant",
+      "address": "Address: 80 MOUNT PLEASANT ROAD SINGAPORE POLO CLUB,Singapore 298334",
+      "postal_code": "298334",
+      "site_group": "SINGAPORE POLO CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    },
+    {
+      "excel_row": 24436,
+      "sfa_licence": "CE20G72C000",
+      "fnb_name": "Seeds Catering",
+      "registered_business_name": "Seeds Catering",
+      "business_type": "Restaurant with Catering",
+      "address": "Address: 80 MOUNT PLEASANT ROAD SINGAPORE POLO CLUB,Singapore 298334",
+      "postal_code": "298334",
+      "site_group": "SINGAPORE POLO CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    },
+    {
+      "excel_row": 1122,
+      "sfa_licence": "SE17044E000",
+      "fnb_name": "7TH HEAVEN KTV & CAFE",
+      "registered_business_name": "7TH HEAVEN KTV & CAFE",
+      "business_type": "Restaurant",
+      "address": "Address: 1 TAMPINES STREET 92 #03-02,SAFRA CLUBHOUSE (TAMPINES),Singapore 528882",
+      "postal_code": "528882",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 3975,
+      "sfa_licence": "E94173K000",
+      "fnb_name": "BISTRO BOWL @ NSRCC",
+      "registered_business_name": "BISTRO BOWL @ NSRCC",
+      "business_type": "Takeaway",
+      "address": "Address: 10 CHANGI COAST WALK SAFRA (SAFRA BOWL),Singapore 499739",
+      "postal_code": "499739",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 4003,
+      "sfa_licence": "NW26722C000",
+      "fnb_name": "BKK BISTRO & BAR",
+      "registered_business_name": "BKK BISTRO & BAR",
+      "business_type": "Restaurant",
+      "address": "Address: 60 YISHUN AVENUE 4 #01-04,SAFRA COUNTRY CLUB (YISHUN),Singapore 769027",
+      "postal_code": "769027",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 4689,
+      "sfa_licence": "SW23625P000",
+      "fnb_name": "BURGER KING",
+      "registered_business_name": "BURGER KING",
+      "business_type": "Restaurant",
+      "address": "Address: 28 CHOA CHU KANG DRIVE #01-01,SAFRA,Singapore 689964",
+      "postal_code": "689964",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 6396,
+      "sfa_licence": "SW22N20X000",
+      "fnb_name": "Clique Billiards",
+      "registered_business_name": "Clique Billiards",
+      "business_type": "within Pubs/Bars/Nightclubs/Disco",
+      "address": "Address: 333 BOON LAY WAY #4A-01,SAFRA CLUBHOUSE (JURONG),Singapore 649848",
+      "postal_code": "649848",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 8446,
+      "sfa_licence": "B00034X000",
+      "fnb_name": "eatzi gourmet",
+      "registered_business_name": "eatzi gourmet",
+      "business_type": "Restaurant",
+      "address": "Address: 60 YISHUN AVENUE 4 SAFRA YISHUN CLUB HOUSE,Singapore 769027",
+      "postal_code": "769027",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 9554,
+      "sfa_licence": "CE19I10B000",
+      "fnb_name": "Food Paradise",
+      "registered_business_name": "Food Paradise",
+      "business_type": "Food Court",
+      "address": "Address: 2 TELOK BLANGAH WAY #01-08,SAFRA CLUBHOUSE (MOUNT FABER),Singapore 098803",
+      "postal_code": "098803",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 9556,
+      "sfa_licence": "SW23549E000",
+      "fnb_name": "Food Paradise Enterprise Holding Pte Ltd",
+      "registered_business_name": "Food Paradise Enterprise Holding Pte Ltd",
+      "business_type": "Food Court",
+      "address": "Address: 28 CHOA CHU KANG DRIVE #01-02,SAFRA,Singapore 689964",
+      "postal_code": "689964",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 9557,
+      "sfa_licence": "CE19L90X000",
+      "fnb_name": "Food Paradise Enterprise Holding Pte. Ltd.",
+      "registered_business_name": "Food Paradise Enterprise Holding Pte. Ltd.",
+      "business_type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+      "address": "Address: 2 TELOK BLANGAH WAY #01-08,SAFRA CLUBHOUSE (MOUNT FABER),Singapore 098803 (MR1)",
+      "postal_code": "098803",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 9558,
+      "sfa_licence": "CE19I10B001",
+      "fnb_name": "Food Paradise Enterprise Pte Ltd",
+      "registered_business_name": "Food Paradise Enterprise Pte Ltd",
+      "business_type": "Foodcourt",
+      "address": "Address: 2 TELOK BLANGAH WAY #01-08,SAFRA CLUBHOUSE (MOUNT FABER),Singapore 098803",
+      "postal_code": "098803",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 9662,
+      "sfa_licence": "CE04627X000",
+      "fnb_name": "FOREST5 DARTS CAFE",
+      "registered_business_name": "FOREST5 DARTS CAFE",
+      "business_type": "within Pubs/Bars/Nightclubs/Disco",
+      "address": "Address: 2 TELOK BLANGAH WAY #01-10,SAFRA MOUNT FABER,Singapore 098803",
+      "postal_code": "098803",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 11612,
+      "sfa_licence": "CE14F60X000",
+      "fnb_name": "Have Fun TPY",
+      "registered_business_name": "Have Fun TPY",
+      "business_type": "Restaurant",
+      "address": "Address: 293 LORONG 6 TOA PAYOH #02-06,SAFRA CLUBHOUSE (TOA PAYOH),Singapore 319387 SAFRA CLUBHOUSE (TOA PAYOH)",
+      "postal_code": "319387",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 11613,
+      "sfa_licence": "NW20D44C000",
+      "fnb_name": "HAVE FUN YISHUN",
+      "registered_business_name": "HAVE FUN YISHUN",
+      "business_type": "within Pubs/Bars/Nightclubs/Disco",
+      "address": "Address: 60 YISHUN AVENUE 4 #01-05,#01-06,SAFRA COUNTRY CLUB (YISHUN),Singapore 769027",
+      "postal_code": "769027",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 13601,
+      "sfa_licence": "SW09358K000",
+      "fnb_name": "JACK\"S PLACE",
+      "registered_business_name": "JACK\"S PLACE",
+      "business_type": "Restaurant",
+      "address": "Address: 333 BOON LAY WAY SAFRA CLUBHOUSE (JURONG),Singapore 649848",
+      "postal_code": "649848",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 13610,
+      "sfa_licence": "NE16179E000",
+      "fnb_name": "JACK'S PLACE PUNGGOL SAFRA",
+      "registered_business_name": "JACK'S PLACE PUNGGOL SAFRA",
+      "business_type": "Restaurant",
+      "address": "Address: 9 SENTUL CRESCENT #01-01,SAFRA PUNGGOL CLUB,Singapore 828654 SAFRA PUNGGOL CLUB",
+      "postal_code": "828654",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 13783,
+      "sfa_licence": "SW09359J000",
+      "fnb_name": "Jewel Music Box",
+      "registered_business_name": "Jewel Music Box",
+      "business_type": "within Pubs/Bars/Nightclubs/Disco",
+      "address": "Address: 333 BOON LAY WAY #3A-01,SAFRA CLUBHOUSE (JURONG),Singapore 649848",
+      "postal_code": "649848",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 14402,
+      "sfa_licence": "CE12B42X000",
+      "fnb_name": "JUBILEE GARDEN RESTAURANT",
+      "registered_business_name": "JUBILEE GARDEN RESTAURANT",
+      "business_type": "Restaurant",
+      "address": "Address: 293 LORONG 6 TOA PAYOH #03-01,SAFRA CLUBHOUSE,Singapore 319387",
+      "postal_code": "319387",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 14921,
+      "sfa_licence": "S88236N000",
+      "fnb_name": "KENG ENG KEE SEAFOOD",
+      "registered_business_name": "KENG ENG KEE SEAFOOD",
+      "business_type": "Restaurant",
+      "address": "Address: 1A TAMPINES STREET 92 #01-K2,SAFRA CLUBHOUSE (TAMPINES),Singapore 528882",
+      "postal_code": "528882",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 15824,
+      "sfa_licence": "NE16284E000",
+      "fnb_name": "Kopi Korner",
+      "registered_business_name": "Kopi Korner",
+      "business_type": "Restaurant",
+      "address": "Address: 9 SENTUL CRESCENT #03-04,SAFRA CLUBHOUSE (PUNGGOL),Singapore 828654",
+      "postal_code": "828654",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 15864,
+      "sfa_licence": "CE19E81X000",
+      "fnb_name": "Kopifellas Cafe",
+      "registered_business_name": "Kopifellas Cafe",
+      "business_type": "Snack Counter",
+      "address": "Address: 2 TELOK BLANGAH WAY #01-05,SAFRA CLUBHOUSE (MOUNT FABER),Singapore 098803",
+      "postal_code": "098803",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 15867,
+      "sfa_licence": "SE16917K000",
+      "fnb_name": "Kopifellas Cafe",
+      "registered_business_name": "Kopifellas Cafe",
+      "business_type": "Snack Counter",
+      "address": "Address: 1A TAMPINES STREET 92 #01-15,SAFRA CLUBHOUSE (TAMPINES),Singapore 528882",
+      "postal_code": "528882",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 16430,
+      "sfa_licence": "S90123P000",
+      "fnb_name": "LAGOON CAFE",
+      "registered_business_name": "LAGOON CAFE",
+      "business_type": "Restaurant",
+      "address": "Address: 1 TAMPINES STREET 92 SAFRA CLUBHOUSE (TAMPINES),Singapore 528882",
+      "postal_code": "528882",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 17053,
+      "sfa_licence": "CE23468A000",
+      "fnb_name": "Lickers ice cream",
+      "registered_business_name": "Lickers ice cream",
+      "business_type": "Takeaway",
+      "address": "Address: 2 TELOK BLANGAH WAY #02-06,SAFRA CLUBHOUSE (MOUNT FABER),Singapore 098803",
+      "postal_code": "098803",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 18466,
+      "sfa_licence": "CE12880B000",
+      "fnb_name": "MCDONALD'S",
+      "registered_business_name": "MCDONALD'S",
+      "business_type": "Restaurant",
+      "address": "Address: 293 LORONG 6 TOA PAYOH #01-02,SAFRA TOA PAYOH CLUB,Singapore 319387",
+      "postal_code": "319387",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 18504,
+      "sfa_licence": "NW12G11V000",
+      "fnb_name": "MCDONALD'S",
+      "registered_business_name": "MCDONALD'S",
+      "business_type": "Restaurant",
+      "address": "Address: 60 YISHUN AVENUE 4 #01-11,SAFRA YISHUN COUNTRY CLUB,Singapore 769027",
+      "postal_code": "769027",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 20572,
+      "sfa_licence": "CE12C23X000",
+      "fnb_name": "NIL",
+      "registered_business_name": "NIL",
+      "business_type": "Snack Counter",
+      "address": "Address: 293 LORONG 6 TOA PAYOH #02-05,SAFRA CLUBHOUSE,Singapore 319387",
+      "postal_code": "319387",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 21910,
+      "sfa_licence": "SW09366K000",
+      "fnb_name": "Pearl Garden Restaurant Pte Ltd",
+      "registered_business_name": "Pearl Garden Restaurant Pte Ltd",
+      "business_type": "Restaurant",
+      "address": "Address: 333 BOON LAY WAY SAFRA JURONG CLUB,Singapore 649848",
+      "postal_code": "649848",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 22172,
+      "sfa_licence": "SE10441A000",
+      "fnb_name": "PINEAPPLE @ AAANNNGG PTE LTD",
+      "registered_business_name": "PINEAPPLE @ AAANNNGG PTE LTD",
+      "business_type": "Restaurant with Catering",
+      "address": "Address: 11 CHANGI COAST WALK SAFRA RESORT SEA SPORTS CENTRE,Singapore 499740",
+      "postal_code": "499740",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 23990,
+      "sfa_licence": "CE19O15A000",
+      "fnb_name": "SAKUNTHALA'S RECIPE",
+      "registered_business_name": "SAKUNTHALA'S RECIPE",
+      "business_type": "Restaurant",
+      "address": "Address: 2 TELOK BLANGAH WAY #01-07,SAFRA CLUBHOUSE (MOUNT FABER),Singapore 098803",
+      "postal_code": "098803",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 24212,
+      "sfa_licence": "SE13U09X000",
+      "fnb_name": "Sarpino's",
+      "registered_business_name": "Sarpino's",
+      "business_type": "Snack Counter",
+      "address": "Address: 1 TAMPINES STREET 92 #01-00B,SAFRA CLUBHOUSE (TAMPINES),Singapore 528882",
+      "postal_code": "528882",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 26215,
+      "sfa_licence": "NW20C50V000",
+      "fnb_name": "SPRINGLEAF PRATA PLACE",
+      "registered_business_name": "SPRINGLEAF PRATA PLACE",
+      "business_type": "Restaurant",
+      "address": "Address: 60 YISHUN AVENUE 4 #01-07,SAFRA COUNTRY CLUB (YISHUN),Singapore 769027",
+      "postal_code": "769027",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 26216,
+      "sfa_licence": "SE19495K000",
+      "fnb_name": "SPRINGLEAF PRATA PLACE",
+      "registered_business_name": "SPRINGLEAF PRATA PLACE",
+      "business_type": "Restaurant",
+      "address": "Address: 1 TAMPINES STREET 92 #01-K1,SAFRA TAMPINES,Singapore 528882",
+      "postal_code": "528882",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 26217,
+      "sfa_licence": "SW09448J000",
+      "fnb_name": "SPRINGLEAF PRATA PLACE",
+      "registered_business_name": "SPRINGLEAF PRATA PLACE",
+      "business_type": "Restaurant",
+      "address": "Address: 333 BOON LAY WAY #2C-01,SAFRA CLUBHOUSE (JURONG),Singapore 649848",
+      "postal_code": "649848",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 26529,
+      "sfa_licence": "E97038K000",
+      "fnb_name": "STELLA SEASIDE LOUNGE",
+      "registered_business_name": "STELLA SEASIDE LOUNGE",
+      "business_type": "Restaurant",
+      "address": "Address: 11 CHANGI COAST WALK SAFRA RESORT SEA SPORTS CENTRE,Singapore 499740 (LEVEL 1 - POOLSIDE)",
+      "postal_code": "499740",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 27262,
+      "sfa_licence": "CE12A95V000",
+      "fnb_name": "Swensens",
+      "registered_business_name": "Swensens",
+      "business_type": "Restaurant",
+      "address": "Address: 293 LORONG 6 TOA PAYOH #01-05,SAFRA CLUBHOUSE (TOA PAYOH),Singapore 319387",
+      "postal_code": "319387",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 27284,
+      "sfa_licence": "CE19I10B002",
+      "fnb_name": "SWK Noodle",
+      "registered_business_name": "SWK Noodle",
+      "business_type": "Foodcourt",
+      "address": "Address: 2 TELOK BLANGAH WAY #01-08,SAFRA CLUBHOUSE (MOUNT FABER),Singapore 098803",
+      "postal_code": "098803",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 27414,
+      "sfa_licence": "SE24G81B000",
+      "fnb_name": "TAIRA PASTRY",
+      "registered_business_name": "TAIRA PASTRY",
+      "business_type": "Snack Counter",
+      "address": "Address: 1A TAMPINES STREET 92 #02-04A,SAFRA CLUBHOUSE (TAMPINES),Singapore 528882",
+      "postal_code": "528882",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 28157,
+      "sfa_licence": "SW21S39E000",
+      "fnb_name": "The Arcade People Pte Ltd",
+      "registered_business_name": "The Arcade People Pte Ltd",
+      "business_type": "Food Vending Machines",
+      "address": "Address: 333 BOON LAY WAY SAFRA CLUBHOUSE (JURONG),Singapore 649848 (LEVEL 2 BESIDE KIDZ AMAZE)",
+      "postal_code": "649848",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 28518,
+      "sfa_licence": "W02388C000",
+      "fnb_name": "The JU",
+      "registered_business_name": "The JU",
+      "business_type": "Restaurant",
+      "address": "Address: 29 CARPENTER STREET SAFRA Club House,Singapore 059923 1st and 2nd Storey",
+      "postal_code": "059923",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 29632,
+      "sfa_licence": "CE14I32J000",
+      "fnb_name": "Treasure paradise",
+      "registered_business_name": "Treasure paradise",
+      "business_type": "Restaurant",
+      "address": "Address: 2 TELOK BLANGAH WAY #01-09,SAFRA CLUBHOUSE (MOUNT FABER),Singapore 098803 SAFRA CLUBHOUSE (MOUNT FABER)",
+      "postal_code": "098803",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 29989,
+      "sfa_licence": "CE12C19K000",
+      "fnb_name": "VAJEHA EMPIRE PTE. LTD.",
+      "registered_business_name": "VAJEHA EMPIRE PTE. LTD.",
+      "business_type": "Restaurant with Catering",
+      "address": "Address: 293 LORONG 6 TOA PAYOH #01-04,SAFRA CLUBHOUSE (TOA PAYOH),Singapore 319387",
+      "postal_code": "319387",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 30822,
+      "sfa_licence": "NE16077P000",
+      "fnb_name": "Wingstop",
+      "registered_business_name": "Wingstop",
+      "business_type": "Restaurant",
+      "address": "Address: 9 SENTUL CRESCENT #02-02,SAFRA PUNGGOL,Singapore 828654",
+      "postal_code": "828654",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 31542,
+      "sfa_licence": "CE12C58X000",
+      "fnb_name": "Ya Kun Kaya Toast",
+      "registered_business_name": "Ya Kun Kaya Toast",
+      "business_type": "Restaurant",
+      "address": "Address: 293 LORONG 6 TOA PAYOH #01-01,SAFRA CLUBHOUSE (TOA PAYOH),Singapore 319387",
+      "postal_code": "319387",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 32654,
+      "sfa_licence": "SE10332J000",
+      "fnb_name": "ZHENG ZICHAR",
+      "registered_business_name": "ZHENG ZICHAR",
+      "business_type": "Restaurant",
+      "address": "Address: 11 CHANGI COAST WALK SAFRA RESORT SEA SPORTS CENTRE,Singapore 499740",
+      "postal_code": "499740",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 33920,
+      "sfa_licence": "CE12D39X000",
+      "fnb_name": null,
+      "registered_business_name": null,
+      "business_type": "Restaurant",
+      "address": "Address: 293 LORONG 6 TOA PAYOH #03-02,SAFRA CLUBHOUSE (TOA PAYOH),Singapore 319387 (PART OF)",
+      "postal_code": "319387",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 34102,
+      "sfa_licence": "CE19I10B003",
+      "fnb_name": null,
+      "registered_business_name": null,
+      "business_type": "Foodcourt",
+      "address": "Address: 2 TELOK BLANGAH WAY #01-08,SAFRA CLUBHOUSE (MOUNT FABER),Singapore 098803",
+      "postal_code": "098803",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 34106,
+      "sfa_licence": "CE19M53A000",
+      "fnb_name": null,
+      "registered_business_name": null,
+      "business_type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+      "address": "Address: 2 TELOK BLANGAH WAY #01-08,SAFRA CLUBHOUSE (MOUNT FABER),Singapore 098803 (MR3)",
+      "postal_code": "098803",
+      "site_group": "SAFRA",
+      "access_assessment": "conditional_access_not_proven_unrestricted",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [
+        "safra_faq"
+      ],
+      "evidence_note": "SAFRA official FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. This establishes a membership-oriented access model but does not prove that this exact outlet excludes walk-in non-members; retain pending outlet-specific admission confirmation."
+    },
+    {
+      "excel_row": 81,
+      "sfa_licence": "C01117A000",
+      "fnb_name": "1030 Bar & Bistro",
+      "registered_business_name": "1030 Bar & Bistro",
+      "business_type": "within Pubs/Bars/Nightclubs/Disco",
+      "address": "Address: 511 UPPER JURONG ROAD #01-03,ARENA COUNTRY CLUB,Singapore 638366",
+      "postal_code": "638366",
+      "site_group": "ARENA COUNTRY CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    },
+    {
+      "excel_row": 586,
+      "sfa_licence": "C01110N010",
+      "fnb_name": "511 fish soup",
+      "registered_business_name": "511 fish soup",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "address": "Address: 511 UPPER JURONG ROAD ARENA COUNTRY CLUB,Singapore 638366",
+      "postal_code": "638366",
+      "site_group": "ARENA COUNTRY CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    },
+    {
+      "excel_row": 6987,
+      "sfa_licence": "C01110N002",
+      "fnb_name": "curry paradise pte ltd",
+      "registered_business_name": "curry paradise pte ltd",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "address": "Address: 511 UPPER JURONG ROAD #01-08/22,ARENA COUNTRY CLUB,Singapore 638366",
+      "postal_code": "638366",
+      "site_group": "ARENA COUNTRY CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    },
+    {
+      "excel_row": 7506,
+      "sfa_licence": "SW24400P000",
+      "fnb_name": "DI ER JIA YUAN",
+      "registered_business_name": "DI ER JIA YUAN",
+      "business_type": "Restaurant",
+      "address": "Address: 511 UPPER JURONG ROAD #01-01,ARENA COUNTRY CLUB,Singapore 638366 Block B",
+      "postal_code": "638366",
+      "site_group": "ARENA COUNTRY CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    },
+    {
+      "excel_row": 7724,
+      "sfa_licence": "SW22288X000",
+      "fnb_name": "DLLM LOK LOK JURONG",
+      "registered_business_name": "DLLM LOK LOK JURONG",
+      "business_type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+      "address": "Address: 511 UPPER JURONG ROAD #01-15,ARENA COUNTRY CLUB,Singapore 638366 (part of) MR8",
+      "postal_code": "638366",
+      "site_group": "ARENA COUNTRY CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    },
+    {
+      "excel_row": 7749,
+      "sfa_licence": "C01080N000",
+      "fnb_name": "DOMINO'S",
+      "registered_business_name": "DOMINO'S",
+      "business_type": "Takeaway",
+      "address": "Address: 511 UPPER JURONG ROAD #01-06,#01-07,ARENA COUNTRY CLUB,Singapore 638366",
+      "postal_code": "638366",
+      "site_group": "ARENA COUNTRY CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    },
+    {
+      "excel_row": 9682,
+      "sfa_licence": "SW08B05X000",
+      "fnb_name": "Forte Billiards Pte Ltd",
+      "registered_business_name": "Forte Billiards Pte Ltd",
+      "business_type": "within Pubs/Bars/Nightclubs/Disco",
+      "address": "Address: 511 UPPER JURONG ROAD #02-01,ARENA COUNTRY CLUB,Singapore 638366",
+      "postal_code": "638366",
+      "site_group": "ARENA COUNTRY CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    },
+    {
+      "excel_row": 10727,
+      "sfa_licence": "C01110N004",
+      "fnb_name": "GRAB N GO",
+      "registered_business_name": "GRAB N GO",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "address": "Address: 511 UPPER JURONG ROAD #01-08/22,ARENA COUNTRY CLUB,Singapore 638366",
+      "postal_code": "638366",
+      "site_group": "ARENA COUNTRY CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    },
+    {
+      "excel_row": 11089,
+      "sfa_licence": "SW21O25L000",
+      "fnb_name": "Hahahotpot",
+      "registered_business_name": "Hahahotpot",
+      "business_type": "Snack Counter",
+      "address": "Address: 511 UPPER JURONG ROAD #B01-09,#B01-10,ARENA COUNTRY CLUB,Singapore 638366",
+      "postal_code": "638366",
+      "site_group": "ARENA COUNTRY CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    },
+    {
+      "excel_row": 11493,
+      "sfa_licence": "SW25G20P000",
+      "fnb_name": "HAPPY FOLKS PRIVATE LIMITED",
+      "registered_business_name": "HAPPY FOLKS PRIVATE LIMITED",
+      "business_type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+      "address": "Address: 511 UPPER JURONG ROAD #01-08/22,ARENA COUNTRY CLUB,Singapore 638366 MR6 (#01-09)",
+      "postal_code": "638366",
+      "site_group": "ARENA COUNTRY CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    },
+    {
+      "excel_row": 13686,
+      "sfa_licence": "SW23J70E000",
+      "fnb_name": "JAPANESE & KOREAN CUISINE",
+      "registered_business_name": "JAPANESE & KOREAN CUISINE",
+      "business_type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+      "address": "Address: 511 UPPER JURONG ROAD #01-08/22,ARENA COUNTRY CLUB,Singapore 638366 MR5",
+      "postal_code": "638366",
+      "site_group": "ARENA COUNTRY CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    },
+    {
+      "excel_row": 18749,
+      "sfa_licence": "C01110N011",
+      "fnb_name": "Meng Heng Minced Pork Noodle",
+      "registered_business_name": "Meng Heng Minced Pork Noodle",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "address": "Address: 511 UPPER JURONG ROAD #01-08/22,ARENA COUNTRY CLUB,Singapore 638366",
+      "postal_code": "638366",
+      "site_group": "ARENA COUNTRY CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    },
+    {
+      "excel_row": 19547,
+      "sfa_licence": "C01118V000",
+      "fnb_name": "MOTHER EARTH",
+      "registered_business_name": "MOTHER EARTH",
+      "business_type": "Restaurant",
+      "address": "Address: 511 UPPER JURONG ROAD #01-04,THE ARENA COUNTRY CLUB,Singapore 638366",
+      "postal_code": "638366",
+      "site_group": "ARENA COUNTRY CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    },
+    {
+      "excel_row": 27307,
+      "sfa_licence": "SW09863J000",
+      "fnb_name": "SZ KITCHEN",
+      "registered_business_name": "SZ KITCHEN",
+      "business_type": "Restaurant",
+      "address": "Address: 511/E UPPER JURONG ROAD #01-02,ARENA COUNTRY CLUB,Singapore 638366",
+      "postal_code": "638366",
+      "site_group": "ARENA COUNTRY CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    },
+    {
+      "excel_row": 27308,
+      "sfa_licence": "SW22397K000",
+      "fnb_name": "SZ KITCHEN",
+      "registered_business_name": "SZ KITCHEN",
+      "business_type": "Restaurant",
+      "address": "Address: 511 UPPER JURONG ROAD #01-05A,#01-05B,#01-07A,#01-08,ARENA COUNTRY CLUB,Singapore 638366",
+      "postal_code": "638366",
+      "site_group": "ARENA COUNTRY CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    },
+    {
+      "excel_row": 27817,
+      "sfa_licence": "SW24G03N000",
+      "fnb_name": "TEHC LEISURE PTE LTD",
+      "registered_business_name": "TEHC LEISURE PTE LTD",
+      "business_type": "Restaurant",
+      "address": "Address: 511 UPPER JURONG ROAD ARENA COUNTRY CLUB,Singapore 638366 Level 1 and 2",
+      "postal_code": "638366",
+      "site_group": "ARENA COUNTRY CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    },
+    {
+      "excel_row": 29719,
+      "sfa_licence": "C01119X000",
+      "fnb_name": "TUNG LOK SEAFOOD / DOURAKU SUSHI",
+      "registered_business_name": "TUNG LOK SEAFOOD / DOURAKU SUSHI",
+      "business_type": "Restaurant with Catering",
+      "address": "Address: 511 UPPER JURONG ROAD #01-01,D'ARENA COUNTRY CLUB,Singapore 638366",
+      "postal_code": "638366",
+      "site_group": "ARENA COUNTRY CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    },
+    {
+      "excel_row": 30269,
+      "sfa_licence": "C01110N008",
+      "fnb_name": "wan hao foodcourt drinkstall",
+      "registered_business_name": "wan hao foodcourt drinkstall",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "address": "Address: 511 UPPER JURONG ROAD #01-08/22,ARENA COUNTRY CLUB,Singapore 638366",
+      "postal_code": "638366",
+      "site_group": "ARENA COUNTRY CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    },
+    {
+      "excel_row": 30270,
+      "sfa_licence": "C01110N000",
+      "fnb_name": "WAN HAO FOODCOURT PTE LTD",
+      "registered_business_name": "WAN HAO FOODCOURT PTE LTD",
+      "business_type": "Coffeeshop/Eating House",
+      "address": "Address: 511 UPPER JURONG ROAD ARENA COUNTRY CLUB,Singapore 638366",
+      "postal_code": "638366",
+      "site_group": "ARENA COUNTRY CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    },
+    {
+      "excel_row": 33488,
+      "sfa_licence": "C01110N006",
+      "fnb_name": null,
+      "registered_business_name": null,
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "address": "Address: 511 UPPER JURONG ROAD #01-08/22,ARENA COUNTRY CLUB,Singapore 638366",
+      "postal_code": "638366",
+      "site_group": "ARENA COUNTRY CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    },
+    {
+      "excel_row": 33489,
+      "sfa_licence": "C01110N012",
+      "fnb_name": null,
+      "registered_business_name": null,
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "address": "Address: 511 UPPER JURONG ROAD ARENA COUNTRY CLUB,Singapore 638366",
+      "postal_code": "638366",
+      "site_group": "ARENA COUNTRY CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    },
+    {
+      "excel_row": 37394,
+      "sfa_licence": "SW21E19N000",
+      "fnb_name": null,
+      "registered_business_name": null,
+      "business_type": "Snack Counter",
+      "address": "Address: 511 UPPER JURONG ROAD #01-06B,ARENA COUNTRY CLUB,Singapore 638366",
+      "postal_code": "638366",
+      "site_group": "ARENA COUNTRY CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    },
+    {
+      "excel_row": 37428,
+      "sfa_licence": "SW23821L000",
+      "fnb_name": null,
+      "registered_business_name": null,
+      "business_type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+      "address": "Address: 511 UPPER JURONG ROAD #01-08/22,ARENA COUNTRY CLUB,Singapore 638366 (MR2)",
+      "postal_code": "638366",
+      "site_group": "ARENA COUNTRY CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    },
+    {
+      "excel_row": 37435,
+      "sfa_licence": "SW23F52V000",
+      "fnb_name": null,
+      "registered_business_name": null,
+      "business_type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+      "address": "Address: 511 UPPER JURONG ROAD #01-08/22,ARENA COUNTRY CLUB,Singapore 638366 MR4",
+      "postal_code": "638366",
+      "site_group": "ARENA COUNTRY CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    },
+    {
+      "excel_row": 1124,
+      "sfa_licence": "B94084J000",
+      "fnb_name": "8 DEGREE @OCC (LEVEL 2 UNIT #02-30)",
+      "registered_business_name": "8 DEGREE @OCC (LEVEL 2 UNIT #02-30)",
+      "business_type": "within Pubs/Bars/Nightclubs/Disco",
+      "address": "Address: 1 ORCHID CLUB ROAD ORCHID COUNTRY CLUB,Singapore 769162",
+      "postal_code": "769162",
+      "site_group": "ORCHID COUNTRY CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    },
+    {
+      "excel_row": 3127,
+      "sfa_licence": "B95011L000",
+      "fnb_name": "BAN HENG",
+      "registered_business_name": "BAN HENG",
+      "business_type": "Restaurant",
+      "address": "Address: 1 ORCHID CLUB ROAD #02-35,ORCHID COUNTRY CLUB,Singapore 769162",
+      "postal_code": "769162",
+      "site_group": "ORCHID COUNTRY CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    },
+    {
+      "excel_row": 6954,
+      "sfa_licence": "NW14479N000",
+      "fnb_name": "Cucu Indo Corner",
+      "registered_business_name": "Cucu Indo Corner",
+      "business_type": "Takeaway",
+      "address": "Address: 1 ORCHID CLUB ROAD #01-23,ORCHID COUNTRY CLUB,Singapore 769162",
+      "postal_code": "769162",
+      "site_group": "ORCHID COUNTRY CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    },
+    {
+      "excel_row": 8919,
+      "sfa_licence": "B93076P000",
+      "fnb_name": "FAIRWAY BISTRO AT VANDA",
+      "registered_business_name": "FAIRWAY BISTRO AT VANDA",
+      "business_type": "Restaurant",
+      "address": "Address: 1 ORCHID CLUB ROAD ORCHID COUNTRY CLUB,Singapore 769162 GOLF CLUB HOUSE",
+      "postal_code": "769162",
+      "site_group": "ORCHID COUNTRY CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    },
+    {
+      "excel_row": 9034,
+      "sfa_licence": "B01042K000",
+      "fnb_name": "FATELICIOUS SNACK HOUSE",
+      "registered_business_name": "FATELICIOUS SNACK HOUSE",
+      "business_type": "Takeaway",
+      "address": "Address: 1 ORCHID CLUB ROAD (DENDRO HALFWAY HOUSE) ORCHID COUNTRY CLUB,Singapore 769162",
+      "postal_code": "769162",
+      "site_group": "ORCHID COUNTRY CLUB",
+      "access_assessment": "access_unresolved",
+      "closure_assessment": "not_individually_researched_in_this_pass; no removal recommendation",
+      "source_ids": [],
+      "evidence_note": "Exact licence and address are present in the canonical SFA-based directory. No sufficiently specific, current public-entry rule or exact-tenant public-access listing was established in this bounded source pass; retain unresolved."
+    }
+  ],
+  "summary": {
+    "records_reviewed": 100,
+    "recommended_removals": 0,
+    "confirmed_permanent_closures": 0,
+    "member_sponsored_or_conditional_site_access": 59,
+    "unresolved_access": 41,
+    "workbook_edited": false,
+    "paid_services_used": false,
+    "mapbox_requests": 0,
+    "limitations": [
+      "No exact-branch permanent closure confirmed in this pass.",
+      "Only cited access rules were checked; many site groups remain unresolved and need property/operator primary-source review.",
+      "A member-controlled site may host an independently public tenant; do not remove until exact branch admission is confirmed."
+    ]
+  }
+}

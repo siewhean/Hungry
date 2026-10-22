@@ -1,0 +1,85 @@
+{
+  "snapshot_type": "read_only_sfa_closure_audit",
+  "captured_at": "2026-10-18",
+  "workbook_path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "3ce9c0b79a9dbc4fb8724061754b0f3adfdbbeff56aa9caca71b8c5353fff9b7",
+  "directory_coverage": {
+    "directory_rows": 38280,
+    "unique_nonblank_sfa_licences": 38280,
+    "rows_with_name": 32746,
+    "rows_with_menu_summary": 460,
+    "rows_with_menu_url": 1317,
+    "rows_with_coordinates": 34385
+  },
+  "sfa_open_data_freshness": [
+    {
+      "source": "SFA Eating Establishments, data.gov.sg collection 1377",
+      "url": "https://data.gov.sg/datasets?resultId=1377",
+      "last_updated": "2024-06-06",
+      "metadata_checked": "2026-10-18",
+      "scope": "Locations of Eating Establishments",
+      "usable_for_current_active_licence_closure_comparison": false,
+      "reason": "Ad-hoc location collection is over two years old and metadata exposes no child datasets/status field in the public collection metadata."
+    },
+    {
+      "source": "SFA Certificate Grading Info of Licensed Eating Establishments, collection 1433",
+      "url": "https://data.gov.sg/datasets?resultId=1433",
+      "last_updated": "2024-06-06",
+      "metadata_checked": "2026-10-18",
+      "scope": "Certificate grading information",
+      "usable_for_current_active_licence_closure_comparison": false,
+      "reason": "Ad-hoc dataset is stale for current closure status."
+    },
+    {
+      "source": "SFA Track Records for Licensed Food Establishments",
+      "url": "https://www.sfa.gov.sg/tools-and-resources/track-records",
+      "checked": "2026-10-18",
+      "scope": "Current public lookup of licensed establishment track records",
+      "bulk_download_or_public_bulk_api_found": false,
+      "reason": "It is a public lookup source; no current downloadable bulk active-licence list was discoverable during this audit."
+    },
+    {
+      "source": "SFA cancellation guidance",
+      "url": "https://www.sfa.gov.sg/food-retail/licence-permit/update-renew-cancel-licence-permit-for-food-retail",
+      "checked": "2026-10-18",
+      "scope": "Official policy",
+      "relevance": "Operators should cancel licences when ceased; licence absence alone does not establish permanent closure, and suspension is not permanent closure."
+    }
+  ],
+  "closure_findings": [
+    {
+      "source_claim": "Official AJi iCHi website says the Changi Airport T4 outlet permanently closed after 2026-02-11.",
+      "source_url": "https://ajiichi.com.sg/",
+      "observed_date": "2026-10-18",
+      "effective_closure_date": "2026-02-11 (notice says after this date)",
+      "candidate_record": {
+        "name": "ASTONS SPECIALITIES / AJI ICHI",
+        "sfa_licence": "SE17716P000",
+        "address": "Address: 10 EUNOS ROAD 8 #01-115,#01-114,SINGAPORE POST CENTRE,Singapore 408600"
+      },
+      "match_strength": "brand-level only; exact outlet mismatch",
+      "assessment": "Do not remove this row: the licensed master record is Singapore Post Centre, 10 Eunos Road 8, postal 408600; closure notice is for Changi Airport T4, 10 Airport Boulevard, postal 819665. No exact SFA licence number is published in the closure notice.",
+      "proposed_removal": false
+    },
+    {
+      "source_claim": "Closure reports surfaced for Itacho Sushi Singapore outlets, Cinnabon ION Orchard, and Five Guys ION Orchard.",
+      "source_url": "https://www.straitstimes.com/singapore/japanese-food-chain-itacho-sushi-shuts-outlets//",
+      "observed_date": "2026-10-18",
+      "candidate_record": {
+        "name": "Five Guys Singapore Pte Ltd",
+        "sfa_licence": "CE19U85C000",
+        "address": "Address: 68 ORCHARD ROAD #01-32,#01-34C,#01-33,#01-35,PLAZA SINGAPURA,Singapore 238839 PLAZA SINGAPURA"
+      },
+      "match_strength": "not established as same outlet; source is secondary and/or outlet-specific identity not supported by a first-party notice in this pass",
+      "assessment": "No removal proposed. Itacho was absent from the current 38,280-row Public F&B Directory scan. Five Guys record is Plaza Singapura, not ION Orchard; Cinnabon outlet exact public-access SFA record was not identified.",
+      "proposed_removal": false
+    }
+  ],
+  "proposed_removals": [],
+  "removal_count": 0,
+  "audit_limitations": [
+    "This pass is not a 38,280-outlet live field verification.",
+    "The latest SFA bulk open-data collections found are stale (last updated 2024-06-06), so they cannot prove current active status.",
+    "Only explicitly permanent closures with exact outlet identity are eligible for removal; temporary suspension, missing licence, brand-level closure, third-party directory status, and exact-outlet mismatch are not removal evidence."
+  ]
+}

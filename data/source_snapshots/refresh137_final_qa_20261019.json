@@ -1,0 +1,265 @@
+{
+  "schema": "hungry.refresh137.final_qa.v1",
+  "qa_date": "2026-10-19",
+  "workbook": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "expected_sha256": "bb74665b20d62a711463850a4d5de0648dc0237c4e1d75e96c9eb5f5a89d2d93",
+  "sha256_before": "bb74665b20d62a711463850a4d5de0648dc0237c4e1d75e96c9eb5f5a89d2d93",
+  "sha256_after": "bb74665b20d62a711463850a4d5de0648dc0237c4e1d75e96c9eb5f5a89d2d93",
+  "size_bytes": 5664883,
+  "status": "PASS_WITH_LIMITATIONS",
+  "failures": [],
+  "zip_stable_valid": true,
+  "checks": {
+    "zip_and_excel_integrity": {
+      "status": "PASS",
+      "crc_test_start": null,
+      "crc_test_end": null,
+      "zip_members_start": 20,
+      "zip_members_end": 20,
+      "external_links": []
+    },
+    "sheets_tables_errors_formulas": {
+      "status": "PASS",
+      "sheets": {
+        "Public F&B Directory": {
+          "max_row": 38274,
+          "max_column": 21,
+          "tables": {
+            "PublicFnbDirectory": "A1:U38274"
+          },
+          "blank_rows": 0,
+          "formula_cells": 0,
+          "error_cells": []
+        },
+        "Menu Items": {
+          "max_row": 14271,
+          "max_column": 12,
+          "tables": {
+            "MenuItems": "A1:L14271"
+          },
+          "blank_rows": 0,
+          "formula_cells": 0,
+          "error_cells": []
+        },
+        "Image Candidates": {
+          "max_row": 2768,
+          "max_column": 9,
+          "tables": {
+            "ImageCandidates": "A1:I2768"
+          },
+          "blank_rows": 0,
+          "formula_cells": 0,
+          "error_cells": []
+        },
+        "Coverage & Sources": {
+          "max_row": 245,
+          "max_column": 3,
+          "tables": {
+            "CoverageSources": "A1:C245"
+          },
+          "blank_rows": 0,
+          "formula_cells": 0,
+          "error_cells": []
+        }
+      },
+      "expected_table_extents": {
+        "Public F&B Directory": {
+          "expected": [
+            38274,
+            21,
+            "A1:U38274"
+          ],
+          "actual": [
+            38274,
+            21,
+            [
+              "A1:U38274"
+            ]
+          ],
+          "pass": true
+        },
+        "Menu Items": {
+          "expected": [
+            14271,
+            12,
+            "A1:L14271"
+          ],
+          "actual": [
+            14271,
+            12,
+            [
+              "A1:L14271"
+            ]
+          ],
+          "pass": true
+        },
+        "Image Candidates": {
+          "expected": [
+            2768,
+            9,
+            "A1:I2768"
+          ],
+          "actual": [
+            2768,
+            9,
+            [
+              "A1:I2768"
+            ]
+          ],
+          "pass": true
+        },
+        "Coverage & Sources": {
+          "expected": [
+            245,
+            3,
+            "A1:C245"
+          ],
+          "actual": [
+            245,
+            3,
+            [
+              "A1:C245"
+            ]
+          ],
+          "pass": true
+        }
+      }
+    },
+    "directory_rows_and_SFA_IDs": {
+      "status": "PASS",
+      "rows": 38273,
+      "unique_SFA_IDs": 38273,
+      "blank_IDs": 0,
+      "named_rows": 32815,
+      "unnamed_rows": 5458,
+      "reconciliation": "32815 + 5458 = 38273"
+    },
+    "KFC_menu_links": {
+      "status": "PASS",
+      "count_expected": 20,
+      "count_snapshot": 20,
+      "links_checked_by_ID": 20,
+      "exact_source_URL": "https://www.kfc.com.sg/menu/burgers-wraps",
+      "branch_availability_claimed": false,
+      "mismatches": [],
+      "total_current_matching_KFC_rows": 52,
+      "newly_integrated_links": 20,
+      "verified_exact_integrated_rows": 20,
+      "prior_total_inferred_from_delta": 32,
+      "count_interpretation": "20 exact new links listed in the integration snapshot; 52 total current KFC-linked rows include pre-existing links."
+    },
+    "Refresh137_name_additions_and_order": {
+      "status": "PASS",
+      "proposals_expected": 14,
+      "proposals_checked": 14,
+      "name_values": [
+        {
+          "licence": "CE19C31E000",
+          "expected": "KE MING 克茗冰室",
+          "actual": "KE MING 克茗冰室"
+        },
+        {
+          "licence": "CE19E06X008",
+          "expected": "Big Appetite",
+          "actual": "Big Appetite"
+        },
+        {
+          "licence": "NW04070A000",
+          "expected": "Ya Kun Kaya Toast",
+          "actual": "Ya Kun Kaya Toast"
+        },
+        {
+          "licence": "CE21657K000",
+          "expected": "Vanda Botanical Desserts",
+          "actual": "Vanda Botanical Desserts"
+        },
+        {
+          "licence": "SE22G19B000",
+          "expected": "Fisher King's Grill",
+          "actual": "Fisher King's Grill"
+        },
+        {
+          "licence": "SE19914N000",
+          "expected": "Kopitime",
+          "actual": "Kopitime"
+        },
+        {
+          "licence": "SE19914N011",
+          "expected": "Kopitime",
+          "actual": "Kopitime"
+        },
+        {
+          "licence": "SE23L62B000",
+          "expected": "ZTP",
+          "actual": "ZTP"
+        },
+        {
+          "licence": "SW13Q69N003",
+          "expected": "Kopitiam Food Hall",
+          "actual": "Kopitiam Food Hall"
+        },
+        {
+          "licence": "SW18I61P000",
+          "expected": "ZTP Ginseng Birdnest",
+          "actual": "ZTP Ginseng Birdnest"
+        },
+        {
+          "licence": "CE14A70A009",
+          "expected": "FOOD ARENA by Yew Kee Group",
+          "actual": "FOOD ARENA by Yew Kee Group"
+        },
+        {
+          "licence": "CE24310L000",
+          "expected": "Onggii",
+          "actual": "Onggii"
+        },
+        {
+          "licence": "SE11925E000",
+          "expected": "7-ELEVEN",
+          "actual": "7-ELEVEN"
+        },
+        {
+          "licence": "SE23370E005",
+          "expected": "FOOD ARENA",
+          "actual": "FOOD ARENA"
+        }
+      ],
+      "mismatches": [],
+      "sort_rule": "F&B Name casefold ascending; blank names last",
+      "casefold_sort_pass": true,
+      "blank_last_pass": true
+    },
+    "previous_40_menu_rows": {
+      "status": "PASS",
+      "source_rows": 40,
+      "current_rows": 40,
+      "exact_keys_prices_urls_timestamps_and_delivery_scope": true,
+      "duplicate_keys": 0,
+      "mismatches": []
+    },
+    "previous_64_directory_fields": {
+      "status": "PASS",
+      "expected": 64,
+      "checked": 64,
+      "breakdown": {
+        "chain_fields": 8,
+        "Starbucks": 53,
+        "McDonalds": 2,
+        "Kallang_Burger_King": 1
+      },
+      "failures": []
+    },
+    "typed_dates": {
+      "status": "PASS",
+      "count": 536
+    },
+    "extra_generated_workbooks": {
+      "status": "PASS",
+      "matches": []
+    },
+    "historical_comparison_limit": {
+      "status": "LIMITATION",
+      "note": "Exact predecessor licence identity-set comparison is unavailable because prior workbook binaries are not present; latest workbook count, uniqueness, additions, and integration value checks were independently verified."
+    }
+  }
+}

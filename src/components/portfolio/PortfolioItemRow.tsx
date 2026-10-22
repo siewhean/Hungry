@@ -10,7 +10,7 @@ import {
   Users,
 } from "lucide-react-native";
 
-import { AppText, Card } from "@/components/ui";
+import { Button, AppText, Card } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import type { PortfolioItem } from "@/types/domain";
 
@@ -20,6 +20,8 @@ interface PortfolioItemRowProps {
   index: number;
   totalCount: number;
   isOwner: boolean;
+  canReadPrivateNotes?: boolean;
+  onEdit?: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
   onDelete: () => void;
@@ -31,6 +33,8 @@ export function PortfolioItemRow({
   index,
   totalCount,
   isOwner,
+  canReadPrivateNotes = isOwner,
+  onEdit,
   onMoveUp,
   onMoveDown,
   onDelete,
@@ -81,7 +85,7 @@ export function PortfolioItemRow({
           </AppText>
         </View>
       ) : null}
-      {item.privateNotes && isOwner ? (
+      {item.privateNotes && canReadPrivateNotes ? (
         <View style={styles.noteRow}>
           <Users color={palette.textMuted} size={15} />
           <AppText variant="bodySmall" tone="secondary" style={styles.copy}>
@@ -89,6 +93,7 @@ export function PortfolioItemRow({
           </AppText>
         </View>
       ) : null}
+      {isOwner && onEdit ? <Button label="Edit item" variant="secondary" onPress={onEdit} /> : null}
       {isOwner ? (
         <View style={styles.actionRow}>
           <View

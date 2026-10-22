@@ -1,0 +1,969 @@
+{
+  "snapshot_date": "2026-10-19",
+  "purpose": "Read-only SAFRA/Jewel exact outlet public-access and closure follow-up; ambiguous entries remain untouched.",
+  "baseline_workbook_sha256": "00a13d50c650e1bcbde0f51f15260e4f8aeecbd9d0372bae284c6c50558e2967",
+  "workbook_path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "method": "Joined all reviewed licence identifiers exactly against the current Public F&B Directory sheet. Reviewed current official SAFRA policies, outlet pages, and operator pages surfaced by web research; facility presence/member benefits/guest terms alone do not prove general public independent entry.",
+  "policy_assessment": [
+    {
+      "url": "https://www.safra.sg/faq/safra-membership-FAQs",
+      "source_type": "official SAFRA FAQ",
+      "finding": "Clubhouses are open to members and family/friends for most SAFRA-managed facilities; tells visitors to check individual facility. Does not state ordinary independent access for F&B outlet customers."
+    },
+    {
+      "url": "https://www.safra.sg/docs/default-source/default-document-library/about/safra-by-laws.pdf?sfvrsn=ef984fd1_2",
+      "source_type": "official SAFRA by-laws",
+      "finding": "§6.1 members may bring guests; §6.4 sign-in/accompaniment only “where applicable.” Not a universal member-only or public-entry rule."
+    },
+    {
+      "url": "https://wcms-admin.safra.sg/whats-on/skillsfuture%40ns-fair",
+      "source_type": "official SAFRA reciprocal-arrangement page",
+      "finding": "A reciprocal-membership arrangement says its guests must be accompanied by a member. Scope is that arrangement; not evidence that all retail/F&B customers need accompaniment."
+    }
+  ],
+  "summary": {
+    "exact_ids_reviewed": 21,
+    "public_access_verified": 1,
+    "unresolved_public_access": 20,
+    "permanent_closures_verified": 0,
+    "records_to_remove": 0,
+    "workbook_edited": false,
+    "all_exact_joins_pass": true
+  },
+  "results": [
+    {
+      "sfa_licence": "CE04627X000",
+      "workbook_exact_join": {
+        "name": "FOREST5 DARTS CAFE",
+        "address": "Address: 2 TELOK BLANGAH WAY #01-10,SAFRA MOUNT FABER,Singapore 098803",
+        "public_access_status_current": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      "conclusion": "unresolved_public_access",
+      "confidence": "high that current reviewed sources do not resolve entry eligibility",
+      "specific_sources": [
+        {
+          "url": "https://www.safra.sg/amenities-offerings/forest5-darts-cafe",
+          "finding": "Official outlet page confirms unit and operations; no explicit entry eligibility."
+        },
+        {
+          "url": "https://www.safra.sg/clubs/mount-faber",
+          "finding": "Previously collected official outlet/club source; access policy still unresolved."
+        },
+        {
+          "url": "https://www.safra.sg/docs/default-source/default-document-library/about/safra-by-laws.pdf?sfvrsn=ef984fd1_2",
+          "finding": "Current SAFRA tenant page matches the SFA unit/address and publishes operating hours, contact details and member benefit; current club directory lists FOREST5. By-Laws §6.4 says members must sign in guests where applicable and guests accompany members; no source states public independent entry for this tenant."
+        },
+        {
+          "url": "https://www.safra.sg/faq/safra-membership-FAQs",
+          "source_type": "official SAFRA FAQ",
+          "finding": "Clubhouses are open to members and family/friends for most SAFRA-managed facilities; tells visitors to check individual facility. Does not state ordinary independent access for F&B outlet customers."
+        },
+        {
+          "url": "https://wcms-admin.safra.sg/whats-on/skillsfuture%40ns-fair",
+          "source_type": "official SAFRA reciprocal-arrangement page",
+          "finding": "A reciprocal-membership arrangement says its guests must be accompanied by a member. Scope is that arrangement; not evidence that all retail/F&B customers need accompaniment."
+        }
+      ],
+      "closure_finding": "No official outlet-level permanent-closure evidence found in the reviewed current SAFRA/operator sources; do not remove.",
+      "action": "retain record; make no access-status change",
+      "qa": {
+        "exact_unique_SFA_licence_match": true,
+        "workbook_row": 9658,
+        "prior_screen_record_found": true
+      }
+    },
+    {
+      "sfa_licence": "CE19O15A000",
+      "workbook_exact_join": {
+        "name": "SAKUNTHALA'S RECIPE",
+        "address": "Address: 2 TELOK BLANGAH WAY #01-07,SAFRA CLUBHOUSE (MOUNT FABER),Singapore 098803",
+        "public_access_status_current": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      "conclusion": "unresolved_public_access",
+      "confidence": "high that current reviewed sources do not resolve entry eligibility",
+      "specific_sources": [
+        {
+          "url": "https://www.safra.sg/amenities-offerings/sakunthalas-restaurant",
+          "finding": "Official outlet page confirms business and member discount; does not establish independent public entry."
+        },
+        {
+          "url": "https://www.safra.sg/amenities-offerings/sakunthala%27s-restaurant",
+          "finding": "Previously collected official outlet/club source; access policy still unresolved."
+        },
+        {
+          "url": "https://www.safra.sg/clubs/mount-faber",
+          "finding": "Previously collected official outlet/club source; access policy still unresolved."
+        },
+        {
+          "url": "https://www.safra.sg/docs/default-source/default-document-library/about/safra-by-laws.pdf?sfvrsn=ef984fd1_2",
+          "finding": "Current SAFRA tenant page matches SFA unit #01-07 at SAFRA Mount Faber; current club directory lists Sakunthala’s Restaurant. Operating hours and member discount are published; no independent public-entry statement. By-Laws §6.4 is qualified by “where applicable”."
+        },
+        {
+          "url": "https://www.safra.sg/faq/safra-membership-FAQs",
+          "source_type": "official SAFRA FAQ",
+          "finding": "Clubhouses are open to members and family/friends for most SAFRA-managed facilities; tells visitors to check individual facility. Does not state ordinary independent access for F&B outlet customers."
+        },
+        {
+          "url": "https://wcms-admin.safra.sg/whats-on/skillsfuture%40ns-fair",
+          "source_type": "official SAFRA reciprocal-arrangement page",
+          "finding": "A reciprocal-membership arrangement says its guests must be accompanied by a member. Scope is that arrangement; not evidence that all retail/F&B customers need accompaniment."
+        }
+      ],
+      "closure_finding": "No official outlet-level permanent-closure evidence found in the reviewed current SAFRA/operator sources; do not remove.",
+      "action": "retain record; make no access-status change",
+      "qa": {
+        "exact_unique_SFA_licence_match": true,
+        "workbook_row": 23987,
+        "prior_screen_record_found": true
+      }
+    },
+    {
+      "sfa_licence": "SW09358K000",
+      "workbook_exact_join": {
+        "name": "JACK\"S PLACE",
+        "address": "Address: 333 BOON LAY WAY SAFRA CLUBHOUSE (JURONG),Singapore 649848",
+        "public_access_status_current": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      "conclusion": "unresolved_public_access",
+      "confidence": "high that current reviewed sources do not resolve entry eligibility",
+      "specific_sources": [
+        {
+          "url": "https://sfadminpreprod.safra.sg/amenities-offerings/jack%27s-place",
+          "finding": "Official SAFRA page lists both locations, exact unit numbers, hours, and discounts off public rates; it does not state clubhouse entry policy."
+        },
+        {
+          "url": "https://www.safra.sg/amenities-offerings/jack%27s-place",
+          "finding": "Previously collected official outlet/club source; access policy still unresolved."
+        },
+        {
+          "url": "https://www.jacksplace.com.sg/",
+          "finding": "Previously collected official outlet/club source; access policy still unresolved."
+        },
+        {
+          "url": "https://www.safra.sg/clubs/jurong",
+          "finding": "Current SAFRA tenant page explicitly lists SAFRA Jurong #2A-01, matching licence location. Hours/contact/member discount establish operation, not independent entry. Clubhouse guest sign-in rule has qualification “where applicable”; no current official tenant-specific public-entry policy found."
+        },
+        {
+          "url": "https://www.safra.sg/docs/default-source/default-document-library/about/safra-by-laws.pdf?sfvrsn=ef984fd1_2",
+          "finding": "Current SAFRA tenant page explicitly lists SAFRA Jurong #2A-01, matching licence location. Hours/contact/member discount establish operation, not independent entry. Clubhouse guest sign-in rule has qualification “where applicable”; no current official tenant-specific public-entry policy found."
+        },
+        {
+          "url": "https://www.safra.sg/faq/safra-membership-FAQs",
+          "source_type": "official SAFRA FAQ",
+          "finding": "Clubhouses are open to members and family/friends for most SAFRA-managed facilities; tells visitors to check individual facility. Does not state ordinary independent access for F&B outlet customers."
+        },
+        {
+          "url": "https://wcms-admin.safra.sg/whats-on/skillsfuture%40ns-fair",
+          "source_type": "official SAFRA reciprocal-arrangement page",
+          "finding": "A reciprocal-membership arrangement says its guests must be accompanied by a member. Scope is that arrangement; not evidence that all retail/F&B customers need accompaniment."
+        }
+      ],
+      "closure_finding": "No official outlet-level permanent-closure evidence found in the reviewed current SAFRA/operator sources; do not remove.",
+      "action": "retain record; make no access-status change",
+      "qa": {
+        "exact_unique_SFA_licence_match": true,
+        "workbook_row": 13596,
+        "prior_screen_record_found": true
+      }
+    },
+    {
+      "sfa_licence": "SW09448J000",
+      "workbook_exact_join": {
+        "name": "SPRINGLEAF PRATA PLACE",
+        "address": "Address: 333 BOON LAY WAY #2C-01,SAFRA CLUBHOUSE (JURONG),Singapore 649848",
+        "public_access_status_current": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      "conclusion": "unresolved_public_access",
+      "confidence": "high that current reviewed sources do not resolve entry eligibility",
+      "specific_sources": [
+        {
+          "url": "https://prd-afd-sitefinity-h0ardtc3d4awdubh.a01.azurefd.net/media-library/docs/default-source/default-document-library/safra_reciprocalarrangement_feb234d16d07679ee47f0a8a9f2ca90e6339b.pdf?sfvrsn=c6f8971d_0",
+          "finding": "Official SAFRA reciprocal arrangement lists these vendors and prevailing guest rates, but is limited to reciprocal-group guests."
+        },
+        {
+          "url": "https://www.safra.sg/clubs/jurong",
+          "finding": "Previously collected official outlet/club source; access policy still unresolved."
+        },
+        {
+          "url": "https://www.safra.sg/whats-on/safra-open-house-2026/safra-jurong",
+          "finding": "Previously collected official outlet/club source; access policy still unresolved."
+        },
+        {
+          "url": "https://www.safra.sg/docs/default-source/default-document-library/about/safra-by-laws.pdf?sfvrsn=ef984fd1_2",
+          "finding": "Current SAFRA Jurong club directory lists Springleaf Prata Place. SAFRA Open House page includes a promotion for it but promotion access is not proof of ordinary public entry. The retrieved official tenant-detail page was Jack’s Place; no exact current tenant page/independent entry evidence found. Unresolved."
+        },
+        {
+          "url": "https://www.safra.sg/faq/safra-membership-FAQs",
+          "source_type": "official SAFRA FAQ",
+          "finding": "Clubhouses are open to members and family/friends for most SAFRA-managed facilities; tells visitors to check individual facility. Does not state ordinary independent access for F&B outlet customers."
+        },
+        {
+          "url": "https://wcms-admin.safra.sg/whats-on/skillsfuture%40ns-fair",
+          "source_type": "official SAFRA reciprocal-arrangement page",
+          "finding": "A reciprocal-membership arrangement says its guests must be accompanied by a member. Scope is that arrangement; not evidence that all retail/F&B customers need accompaniment."
+        }
+      ],
+      "closure_finding": "No official outlet-level permanent-closure evidence found in the reviewed current SAFRA/operator sources; do not remove.",
+      "action": "retain record; make no access-status change",
+      "qa": {
+        "exact_unique_SFA_licence_match": true,
+        "workbook_row": 26214,
+        "prior_screen_record_found": true
+      }
+    },
+    {
+      "sfa_licence": "SW09366K000",
+      "workbook_exact_join": {
+        "name": "Pearl Garden Restaurant Pte Ltd",
+        "address": "Address: 333 BOON LAY WAY SAFRA JURONG CLUB,Singapore 649848",
+        "public_access_status_current": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      "conclusion": "unresolved_public_access",
+      "confidence": "high that current reviewed sources do not resolve entry eligibility",
+      "specific_sources": [
+        {
+          "url": "https://prd-afd-sitefinity-h0ardtc3d4awdubh.a01.azurefd.net/media-library/docs/default-source/default-document-library/safra_reciprocalarrangement_feb234d16d07679ee47f0a8a9f2ca90e6339b.pdf?sfvrsn=c6f8971d_0",
+          "finding": "Official SAFRA reciprocal arrangement lists these vendors and prevailing guest rates, but is limited to reciprocal-group guests."
+        },
+        {
+          "url": "https://www.safra.sg/amenities-offerings/pearl-garden-restaurant",
+          "finding": "Previously collected official outlet/club source; access policy still unresolved."
+        },
+        {
+          "url": "https://www.safra.sg/clubs/jurong",
+          "finding": "Previously collected official outlet/club source; access policy still unresolved."
+        },
+        {
+          "url": "https://www.safra.sg/docs/default-source/default-document-library/about/safra-by-laws.pdf?sfvrsn=ef984fd1_2",
+          "finding": "Current SAFRA page identifies Pearl Garden Restaurant at SAFRA Jurong, hours and member benefit, matching clubhouse but does not list unit number. Independent public entry not stated; banquet service does not by itself establish open walk-in dining access."
+        },
+        {
+          "url": "https://www.safra.sg/faq/safra-membership-FAQs",
+          "source_type": "official SAFRA FAQ",
+          "finding": "Clubhouses are open to members and family/friends for most SAFRA-managed facilities; tells visitors to check individual facility. Does not state ordinary independent access for F&B outlet customers."
+        },
+        {
+          "url": "https://wcms-admin.safra.sg/whats-on/skillsfuture%40ns-fair",
+          "source_type": "official SAFRA reciprocal-arrangement page",
+          "finding": "A reciprocal-membership arrangement says its guests must be accompanied by a member. Scope is that arrangement; not evidence that all retail/F&B customers need accompaniment."
+        }
+      ],
+      "closure_finding": "No official outlet-level permanent-closure evidence found in the reviewed current SAFRA/operator sources; do not remove.",
+      "action": "retain record; make no access-status change",
+      "qa": {
+        "exact_unique_SFA_licence_match": true,
+        "workbook_row": 21907,
+        "prior_screen_record_found": true
+      }
+    },
+    {
+      "sfa_licence": "CE12880B000",
+      "workbook_exact_join": {
+        "name": "MCDONALD'S",
+        "address": "Address: 293 LORONG 6 TOA PAYOH #01-02,SAFRA TOA PAYOH CLUB,Singapore 319387",
+        "public_access_status_current": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      "conclusion": "unresolved_public_access",
+      "confidence": "high that current reviewed sources do not resolve entry eligibility",
+      "specific_sources": [
+        {
+          "url": "https://sfadmin.safra.sg/whats-on/mcdonald-safra-yishun-toa-payoh-punggol",
+          "finding": "Official SAFRA page lists branches, exact unit numbers, current customer-facing offer and operating hours. It does not expressly state nonmember independent clubhouse entry."
+        },
+        {
+          "url": "https://www.mcdonalds.com.sg/our-green-commitment",
+          "finding": "Previously collected official outlet/club source; access policy still unresolved."
+        },
+        {
+          "url": "https://www.safra.sg/amenities-offerings/mcdonalds",
+          "finding": "Previously collected official outlet/club source; access policy still unresolved."
+        },
+        {
+          "url": "https://www.safra.sg/clubs/toapayoh",
+          "finding": "Current SAFRA McDonald’s page lists SAFRA Toa Payoh at #01-02 (exact match), hours and contact. Page markets restaurant to customers and dine-in; that is suggestive of public service but it does not specify whether clubhouse entry is unrestricted or member-accompanied. By-Laws §6.4 remains qualified. Unresolved."
+        },
+        {
+          "url": "https://www.safra.sg/docs/default-source/default-document-library/about/safra-by-laws.pdf?sfvrsn=ef984fd1_2",
+          "finding": "Current SAFRA McDonald’s page lists SAFRA Toa Payoh at #01-02 (exact match), hours and contact. Page markets restaurant to customers and dine-in; that is suggestive of public service but it does not specify whether clubhouse entry is unrestricted or member-accompanied. By-Laws §6.4 remains qualified. Unresolved."
+        },
+        {
+          "url": "https://www.safra.sg/faq/safra-membership-FAQs",
+          "source_type": "official SAFRA FAQ",
+          "finding": "Clubhouses are open to members and family/friends for most SAFRA-managed facilities; tells visitors to check individual facility. Does not state ordinary independent access for F&B outlet customers."
+        },
+        {
+          "url": "https://wcms-admin.safra.sg/whats-on/skillsfuture%40ns-fair",
+          "source_type": "official SAFRA reciprocal-arrangement page",
+          "finding": "A reciprocal-membership arrangement says its guests must be accompanied by a member. Scope is that arrangement; not evidence that all retail/F&B customers need accompaniment."
+        }
+      ],
+      "closure_finding": "No official outlet-level permanent-closure evidence found in the reviewed current SAFRA/operator sources; do not remove.",
+      "action": "retain record; make no access-status change",
+      "qa": {
+        "exact_unique_SFA_licence_match": true,
+        "workbook_row": 18461,
+        "prior_screen_record_found": true
+      }
+    },
+    {
+      "sfa_licence": "CE12C58X000",
+      "workbook_exact_join": {
+        "name": "Ya Kun Kaya Toast",
+        "address": "Address: 293 LORONG 6 TOA PAYOH #01-01,SAFRA CLUBHOUSE (TOA PAYOH),Singapore 319387",
+        "public_access_status_current": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      "conclusion": "unresolved_public_access",
+      "confidence": "high that current reviewed sources do not resolve entry eligibility",
+      "specific_sources": [
+        {
+          "url": "https://www.safra.sg/amenities-offerings/ya-kun-kaya-toast",
+          "finding": "Official outlet page confirms SAFRA outlet and customer-facing commerce, but no public-entry/access policy."
+        },
+        {
+          "url": "https://app.yakun.com/find-us",
+          "finding": "Previously collected official outlet/club source; access policy still unresolved."
+        },
+        {
+          "url": "https://www.safra.sg/clubs/toapayoh",
+          "finding": "Current SAFRA tenant page matches SAFRA Toa Payoh, Level 1 (SFA unit #01-01); published operating hours and member benefit. No independent public-entry statement. Guest rule is qualified and does not resolve access for this unit."
+        },
+        {
+          "url": "https://www.safra.sg/docs/default-source/default-document-library/about/safra-by-laws.pdf?sfvrsn=ef984fd1_2",
+          "finding": "Current SAFRA tenant page matches SAFRA Toa Payoh, Level 1 (SFA unit #01-01); published operating hours and member benefit. No independent public-entry statement. Guest rule is qualified and does not resolve access for this unit."
+        },
+        {
+          "url": "https://www.safra.sg/faq/safra-membership-FAQs",
+          "source_type": "official SAFRA FAQ",
+          "finding": "Clubhouses are open to members and family/friends for most SAFRA-managed facilities; tells visitors to check individual facility. Does not state ordinary independent access for F&B outlet customers."
+        },
+        {
+          "url": "https://wcms-admin.safra.sg/whats-on/skillsfuture%40ns-fair",
+          "source_type": "official SAFRA reciprocal-arrangement page",
+          "finding": "A reciprocal-membership arrangement says its guests must be accompanied by a member. Scope is that arrangement; not evidence that all retail/F&B customers need accompaniment."
+        }
+      ],
+      "closure_finding": "No official outlet-level permanent-closure evidence found in the reviewed current SAFRA/operator sources; do not remove.",
+      "action": "retain record; make no access-status change",
+      "qa": {
+        "exact_unique_SFA_licence_match": true,
+        "workbook_row": 31538,
+        "prior_screen_record_found": true
+      }
+    },
+    {
+      "sfa_licence": "CE12B42X000",
+      "workbook_exact_join": {
+        "name": "JUBILEE GARDEN RESTAURANT",
+        "address": "Address: 293 LORONG 6 TOA PAYOH #03-01,SAFRA CLUBHOUSE,Singapore 319387",
+        "public_access_status_current": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      "conclusion": "unresolved_public_access",
+      "confidence": "high that current reviewed sources do not resolve entry eligibility",
+      "specific_sources": [
+        {
+          "url": "https://www.safra.sg/amenities-offerings/jubilee-garden-restaurant",
+          "finding": "Previously collected official outlet/club source; access policy still unresolved."
+        },
+        {
+          "url": "https://www.safra.sg/clubs/toapayoh",
+          "finding": "Previously collected official outlet/club source; access policy still unresolved."
+        },
+        {
+          "url": "https://www.safra.sg/docs/default-source/default-document-library/about/safra-by-laws.pdf?sfvrsn=ef984fd1_2",
+          "finding": "Current SAFRA tenant page matches #03-01 and publishes hours/contact; member discount or booking/banquet service does not prove general public admission to premises. No tenant-specific access statement found; unresolved."
+        },
+        {
+          "url": "https://www.safra.sg/faq/safra-membership-FAQs",
+          "source_type": "official SAFRA FAQ",
+          "finding": "Clubhouses are open to members and family/friends for most SAFRA-managed facilities; tells visitors to check individual facility. Does not state ordinary independent access for F&B outlet customers."
+        },
+        {
+          "url": "https://wcms-admin.safra.sg/whats-on/skillsfuture%40ns-fair",
+          "source_type": "official SAFRA reciprocal-arrangement page",
+          "finding": "A reciprocal-membership arrangement says its guests must be accompanied by a member. Scope is that arrangement; not evidence that all retail/F&B customers need accompaniment."
+        }
+      ],
+      "closure_finding": "No official outlet-level permanent-closure evidence found in the reviewed current SAFRA/operator sources; do not remove.",
+      "action": "retain record; make no access-status change",
+      "qa": {
+        "exact_unique_SFA_licence_match": true,
+        "workbook_row": 14397,
+        "prior_screen_record_found": true
+      }
+    },
+    {
+      "sfa_licence": "NE16077P000",
+      "workbook_exact_join": {
+        "name": "Wingstop",
+        "address": "Address: 9 SENTUL CRESCENT #02-02,SAFRA PUNGGOL,Singapore 828654",
+        "public_access_status_current": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      "conclusion": "unresolved_public_access",
+      "confidence": "high that current reviewed sources do not resolve entry eligibility",
+      "specific_sources": [
+        {
+          "url": "https://sfadmin.safra.sg/whats-on/mcdonald-safra-yishun-toa-payoh-punggol",
+          "finding": "Official SAFRA page lists branches, exact unit numbers, current customer-facing offer and operating hours. It does not expressly state nonmember independent clubhouse entry."
+        },
+        {
+          "url": "https://www.safra.sg/amenities-offerings/wingstop",
+          "finding": "Previously collected official outlet/club source; access policy still unresolved."
+        },
+        {
+          "url": "https://www.safra.sg/clubs/punggol",
+          "finding": "Previously collected official outlet/club source; access policy still unresolved."
+        },
+        {
+          "url": "https://www.safra.sg/docs/default-source/default-document-library/about/safra-by-laws.pdf?sfvrsn=ef984fd1_2",
+          "finding": "Current SAFRA Wingstop page matches #02-02 and says dine-in and takeaway; exact outlet and ordinary customer transactions are shown. It does not expressly establish unrestricted access to the clubhouse for non-members. SAFRA By-Laws guest rule is qualified. Unresolved."
+        },
+        {
+          "url": "https://www.safra.sg/faq/safra-membership-FAQs",
+          "source_type": "official SAFRA FAQ",
+          "finding": "Clubhouses are open to members and family/friends for most SAFRA-managed facilities; tells visitors to check individual facility. Does not state ordinary independent access for F&B outlet customers."
+        },
+        {
+          "url": "https://wcms-admin.safra.sg/whats-on/skillsfuture%40ns-fair",
+          "source_type": "official SAFRA reciprocal-arrangement page",
+          "finding": "A reciprocal-membership arrangement says its guests must be accompanied by a member. Scope is that arrangement; not evidence that all retail/F&B customers need accompaniment."
+        }
+      ],
+      "closure_finding": "No official outlet-level permanent-closure evidence found in the reviewed current SAFRA/operator sources; do not remove.",
+      "action": "retain record; make no access-status change",
+      "qa": {
+        "exact_unique_SFA_licence_match": true,
+        "workbook_row": 30818,
+        "prior_screen_record_found": true
+      }
+    },
+    {
+      "sfa_licence": "NE16179E000",
+      "workbook_exact_join": {
+        "name": "JACK'S PLACE PUNGGOL SAFRA",
+        "address": "Address: 9 SENTUL CRESCENT #01-01,SAFRA PUNGGOL CLUB,Singapore 828654 SAFRA PUNGGOL CLUB",
+        "public_access_status_current": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      "conclusion": "unresolved_public_access",
+      "confidence": "high that current reviewed sources do not resolve entry eligibility",
+      "specific_sources": [
+        {
+          "url": "https://sfadminpreprod.safra.sg/amenities-offerings/jack%27s-place",
+          "finding": "Official SAFRA page lists both locations, exact unit numbers, hours, and discounts off public rates; it does not state clubhouse entry policy."
+        },
+        {
+          "url": "https://www.safra.sg/amenities-offerings/jack%27s-place",
+          "finding": "Previously collected official outlet/club source; access policy still unresolved."
+        },
+        {
+          "url": "https://www.jacksplace.com.sg/",
+          "finding": "Previously collected official outlet/club source; access policy still unresolved."
+        },
+        {
+          "url": "https://www.safra.sg/clubs/punggol",
+          "finding": "Current SAFRA Jack’s Place page explicitly lists SAFRA Punggol #01-01 (exact match), hours/contact/member discount. No statement on independent public entrance. Current official sources establish tenant operation but not public access."
+        },
+        {
+          "url": "https://www.safra.sg/docs/default-source/default-document-library/about/safra-by-laws.pdf?sfvrsn=ef984fd1_2",
+          "finding": "Current SAFRA Jack’s Place page explicitly lists SAFRA Punggol #01-01 (exact match), hours/contact/member discount. No statement on independent public entrance. Current official sources establish tenant operation but not public access."
+        },
+        {
+          "url": "https://www.safra.sg/faq/safra-membership-FAQs",
+          "source_type": "official SAFRA FAQ",
+          "finding": "Clubhouses are open to members and family/friends for most SAFRA-managed facilities; tells visitors to check individual facility. Does not state ordinary independent access for F&B outlet customers."
+        },
+        {
+          "url": "https://wcms-admin.safra.sg/whats-on/skillsfuture%40ns-fair",
+          "source_type": "official SAFRA reciprocal-arrangement page",
+          "finding": "A reciprocal-membership arrangement says its guests must be accompanied by a member. Scope is that arrangement; not evidence that all retail/F&B customers need accompaniment."
+        }
+      ],
+      "closure_finding": "No official outlet-level permanent-closure evidence found in the reviewed current SAFRA/operator sources; do not remove.",
+      "action": "retain record; make no access-status change",
+      "qa": {
+        "exact_unique_SFA_licence_match": true,
+        "workbook_row": 13605,
+        "prior_screen_record_found": true
+      }
+    },
+    {
+      "sfa_licence": "SE17044E000",
+      "workbook_exact_join": {
+        "name": "7TH HEAVEN KTV & CAFE",
+        "address": "Address: 1 TAMPINES STREET 92 #03-02,SAFRA CLUBHOUSE (TAMPINES),Singapore 528882",
+        "public_access_status_current": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      "conclusion": "unresolved_public_access",
+      "confidence": "high that current reviewed sources do not resolve entry eligibility",
+      "specific_sources": [
+        {
+          "url": "https://www.hometeamns.sg/wp-content/uploads/2024/03/SAFRA_ReciprocalArrangement_HTNS_NSRCC_29Feb24.pdf",
+          "finding": "Official reciprocal arrangement lists 7th Heaven and guest rates; accompanied-guest rule is limited to reciprocal arrangement, not general customer access."
+        },
+        {
+          "url": "https://www.safra.sg/clubs/tampines",
+          "finding": "Current official directory lists 7th Heaven KTV & Cafe, Springleaf Prata Place, Sarpino’s Pizzeria and Keng Eng Kee Seafood as SAFRA Tampines facilities/services."
+        },
+        {
+          "url": "https://www.safra.sg/faq/safra-membership-FAQs",
+          "source_type": "official SAFRA FAQ",
+          "finding": "Clubhouses are open to members and family/friends for most SAFRA-managed facilities; tells visitors to check individual facility. Does not state ordinary independent access for F&B outlet customers."
+        },
+        {
+          "url": "https://www.safra.sg/docs/default-source/default-document-library/about/safra-by-laws.pdf?sfvrsn=ef984fd1_2",
+          "source_type": "official SAFRA by-laws",
+          "finding": "§6.1 members may bring guests; §6.4 sign-in/accompaniment only “where applicable.” Not a universal member-only or public-entry rule."
+        },
+        {
+          "url": "https://wcms-admin.safra.sg/whats-on/skillsfuture%40ns-fair",
+          "source_type": "official SAFRA reciprocal-arrangement page",
+          "finding": "A reciprocal-membership arrangement says its guests must be accompanied by a member. Scope is that arrangement; not evidence that all retail/F&B customers need accompaniment."
+        }
+      ],
+      "closure_finding": "No official outlet-level permanent-closure evidence found in the reviewed current SAFRA/operator sources; do not remove.",
+      "action": "retain record; make no access-status change",
+      "qa": {
+        "exact_unique_SFA_licence_match": true,
+        "workbook_row": 1122,
+        "prior_screen_record_found": true
+      }
+    },
+    {
+      "sfa_licence": "SE13U09X000",
+      "workbook_exact_join": {
+        "name": "Sarpino's",
+        "address": "Address: 1 TAMPINES STREET 92 #01-00B,SAFRA CLUBHOUSE (TAMPINES),Singapore 528882",
+        "public_access_status_current": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      "conclusion": "unresolved_public_access",
+      "confidence": "high that current reviewed sources do not resolve entry eligibility",
+      "specific_sources": [
+        {
+          "url": "https://sfpreprod.safra.sg/amenities-offerings/sarpino%27s-pizzeria",
+          "finding": "Official SAFRA listing identifies Sarpino’s at Tampines and daily hours, but omits unit and public-entry conditions."
+        },
+        {
+          "url": "https://www.safra.sg/clubs/tampines",
+          "finding": "Current official directory lists 7th Heaven KTV & Cafe, Springleaf Prata Place, Sarpino’s Pizzeria and Keng Eng Kee Seafood as SAFRA Tampines facilities/services."
+        },
+        {
+          "url": "https://www.safra.sg/faq/safra-membership-FAQs",
+          "source_type": "official SAFRA FAQ",
+          "finding": "Clubhouses are open to members and family/friends for most SAFRA-managed facilities; tells visitors to check individual facility. Does not state ordinary independent access for F&B outlet customers."
+        },
+        {
+          "url": "https://www.safra.sg/docs/default-source/default-document-library/about/safra-by-laws.pdf?sfvrsn=ef984fd1_2",
+          "source_type": "official SAFRA by-laws",
+          "finding": "§6.1 members may bring guests; §6.4 sign-in/accompaniment only “where applicable.” Not a universal member-only or public-entry rule."
+        },
+        {
+          "url": "https://wcms-admin.safra.sg/whats-on/skillsfuture%40ns-fair",
+          "source_type": "official SAFRA reciprocal-arrangement page",
+          "finding": "A reciprocal-membership arrangement says its guests must be accompanied by a member. Scope is that arrangement; not evidence that all retail/F&B customers need accompaniment."
+        }
+      ],
+      "closure_finding": "No official outlet-level permanent-closure evidence found in the reviewed current SAFRA/operator sources; do not remove.",
+      "action": "retain record; make no access-status change",
+      "qa": {
+        "exact_unique_SFA_licence_match": true,
+        "workbook_row": 24208,
+        "prior_screen_record_found": true
+      }
+    },
+    {
+      "sfa_licence": "SE19495K000",
+      "workbook_exact_join": {
+        "name": "SPRINGLEAF PRATA PLACE",
+        "address": "Address: 1 TAMPINES STREET 92 #01-K1,SAFRA TAMPINES,Singapore 528882",
+        "public_access_status_current": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      "conclusion": "unresolved_public_access",
+      "confidence": "high that current reviewed sources do not resolve entry eligibility",
+      "specific_sources": [
+        {
+          "url": "https://www.hometeamns.sg/wp-content/uploads/2024/03/SAFRA_ReciprocalArrangement_HTNS_NSRCC_29Feb24.pdf",
+          "finding": "Official reciprocal arrangement lists outlet and prevailing guest rates; its accompaniment requirement is scoped to the reciprocal arrangement only."
+        },
+        {
+          "url": "https://www.safra.sg/amenities-offerings/springleaf-prata-place",
+          "finding": "Official outlet listing gives SAFRA Yishun #01-07, SAFRA Tampines #01-K1; lists family/friends marketing language and member benefit, but does not establish entry policy."
+        },
+        {
+          "url": "https://www.safra.sg/clubs/tampines",
+          "finding": "Current official directory lists 7th Heaven KTV & Cafe, Springleaf Prata Place, Sarpino’s Pizzeria and Keng Eng Kee Seafood as SAFRA Tampines facilities/services."
+        },
+        {
+          "url": "https://www.safra.sg/faq/safra-membership-FAQs",
+          "source_type": "official SAFRA FAQ",
+          "finding": "Clubhouses are open to members and family/friends for most SAFRA-managed facilities; tells visitors to check individual facility. Does not state ordinary independent access for F&B outlet customers."
+        },
+        {
+          "url": "https://www.safra.sg/docs/default-source/default-document-library/about/safra-by-laws.pdf?sfvrsn=ef984fd1_2",
+          "source_type": "official SAFRA by-laws",
+          "finding": "§6.1 members may bring guests; §6.4 sign-in/accompaniment only “where applicable.” Not a universal member-only or public-entry rule."
+        },
+        {
+          "url": "https://wcms-admin.safra.sg/whats-on/skillsfuture%40ns-fair",
+          "source_type": "official SAFRA reciprocal-arrangement page",
+          "finding": "A reciprocal-membership arrangement says its guests must be accompanied by a member. Scope is that arrangement; not evidence that all retail/F&B customers need accompaniment."
+        }
+      ],
+      "closure_finding": "No official outlet-level permanent-closure evidence found in the reviewed current SAFRA/operator sources; do not remove.",
+      "action": "retain record; make no access-status change",
+      "qa": {
+        "exact_unique_SFA_licence_match": true,
+        "workbook_row": 26213,
+        "prior_screen_record_found": true
+      }
+    },
+    {
+      "sfa_licence": "S88236N000",
+      "workbook_exact_join": {
+        "name": "KENG ENG KEE SEAFOOD",
+        "address": "Address: 1A TAMPINES STREET 92 #01-K2,SAFRA CLUBHOUSE (TAMPINES),Singapore 528882",
+        "public_access_status_current": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      "conclusion": "unresolved_public_access",
+      "confidence": "high that current reviewed sources do not resolve entry eligibility",
+      "specific_sources": [
+        {
+          "url": "https://www.hometeamns.sg/wp-content/uploads/2024/03/SAFRA_ReciprocalArrangement_HTNS_NSRCC_29Feb24.pdf",
+          "finding": "Official reciprocal arrangement lists outlet and prevailing guest rates; its accompaniment requirement is scoped to the reciprocal arrangement only."
+        },
+        {
+          "url": "https://www.safra.sg/whats-on/keng-eng-kee-seafood-%28kek%29",
+          "finding": "Official page identifies KEK at SAFRA Tampines #01-K2/K3 and offers dine-in, with member discount; does not say whether nonmembers may enter independently."
+        },
+        {
+          "url": "https://www.safra.sg/clubs/tampines",
+          "finding": "Current official directory lists 7th Heaven KTV & Cafe, Springleaf Prata Place, Sarpino’s Pizzeria and Keng Eng Kee Seafood as SAFRA Tampines facilities/services."
+        },
+        {
+          "url": "https://www.safra.sg/faq/safra-membership-FAQs",
+          "source_type": "official SAFRA FAQ",
+          "finding": "Clubhouses are open to members and family/friends for most SAFRA-managed facilities; tells visitors to check individual facility. Does not state ordinary independent access for F&B outlet customers."
+        },
+        {
+          "url": "https://www.safra.sg/docs/default-source/default-document-library/about/safra-by-laws.pdf?sfvrsn=ef984fd1_2",
+          "source_type": "official SAFRA by-laws",
+          "finding": "§6.1 members may bring guests; §6.4 sign-in/accompaniment only “where applicable.” Not a universal member-only or public-entry rule."
+        },
+        {
+          "url": "https://wcms-admin.safra.sg/whats-on/skillsfuture%40ns-fair",
+          "source_type": "official SAFRA reciprocal-arrangement page",
+          "finding": "A reciprocal-membership arrangement says its guests must be accompanied by a member. Scope is that arrangement; not evidence that all retail/F&B customers need accompaniment."
+        }
+      ],
+      "closure_finding": "No official outlet-level permanent-closure evidence found in the reviewed current SAFRA/operator sources; do not remove.",
+      "action": "retain record; make no access-status change",
+      "qa": {
+        "exact_unique_SFA_licence_match": true,
+        "workbook_row": 14916,
+        "prior_screen_record_found": true
+      }
+    },
+    {
+      "sfa_licence": "NW12G11V000",
+      "workbook_exact_join": {
+        "name": "MCDONALD'S",
+        "address": "Address: 60 YISHUN AVENUE 4 #01-11,SAFRA YISHUN COUNTRY CLUB,Singapore 769027",
+        "public_access_status_current": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      "conclusion": "unresolved_public_access",
+      "confidence": "high that current reviewed sources do not resolve entry eligibility",
+      "specific_sources": [
+        {
+          "url": "https://sfadmin.safra.sg/whats-on/mcdonald-safra-yishun-toa-payoh-punggol",
+          "finding": "Official SAFRA page lists branches, exact unit numbers, current customer-facing offer and operating hours. It does not expressly state nonmember independent clubhouse entry."
+        },
+        {
+          "url": "https://www.safra.sg/amenities-offerings/mcdonalds",
+          "finding": "Official SAFRA listing gives Yishun branch at #01-11 and 24-hour daily operations; no statement about public independent entrance."
+        },
+        {
+          "url": "https://www.safra.sg/clubs/yishun",
+          "finding": "Current official directory lists HaveFun Karaoke, Springleaf Prata Place, McDonald’s and Eatzi Gourmet at SAFRA Yishun."
+        },
+        {
+          "url": "https://www.safra.sg/faq/safra-membership-FAQs",
+          "source_type": "official SAFRA FAQ",
+          "finding": "Clubhouses are open to members and family/friends for most SAFRA-managed facilities; tells visitors to check individual facility. Does not state ordinary independent access for F&B outlet customers."
+        },
+        {
+          "url": "https://www.safra.sg/docs/default-source/default-document-library/about/safra-by-laws.pdf?sfvrsn=ef984fd1_2",
+          "source_type": "official SAFRA by-laws",
+          "finding": "§6.1 members may bring guests; §6.4 sign-in/accompaniment only “where applicable.” Not a universal member-only or public-entry rule."
+        },
+        {
+          "url": "https://wcms-admin.safra.sg/whats-on/skillsfuture%40ns-fair",
+          "source_type": "official SAFRA reciprocal-arrangement page",
+          "finding": "A reciprocal-membership arrangement says its guests must be accompanied by a member. Scope is that arrangement; not evidence that all retail/F&B customers need accompaniment."
+        }
+      ],
+      "closure_finding": "No official outlet-level permanent-closure evidence found in the reviewed current SAFRA/operator sources; do not remove.",
+      "action": "retain record; make no access-status change",
+      "qa": {
+        "exact_unique_SFA_licence_match": true,
+        "workbook_row": 18499,
+        "prior_screen_record_found": true
+      }
+    },
+    {
+      "sfa_licence": "B00034X000",
+      "workbook_exact_join": {
+        "name": "eatzi gourmet",
+        "address": "Address: 60 YISHUN AVENUE 4 SAFRA YISHUN CLUB HOUSE,Singapore 769027",
+        "public_access_status_current": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      "conclusion": "unresolved_public_access",
+      "confidence": "high that current reviewed sources do not resolve entry eligibility",
+      "specific_sources": [
+        {
+          "url": "https://sfadminpreprod.safra.sg/amenities-offerings/eatzi-gourmet-steakhouse-bistro",
+          "finding": "Official SAFRA listing describes meals, set meals and private functions at Yishun; address is 60 Yishun Avenue 4, but it omits unit and public entry policy."
+        },
+        {
+          "url": "https://www.safra.sg/clubs/yishun",
+          "finding": "Current official directory lists HaveFun Karaoke, Springleaf Prata Place, McDonald’s and Eatzi Gourmet at SAFRA Yishun."
+        },
+        {
+          "url": "https://www.safra.sg/faq/safra-membership-FAQs",
+          "source_type": "official SAFRA FAQ",
+          "finding": "Clubhouses are open to members and family/friends for most SAFRA-managed facilities; tells visitors to check individual facility. Does not state ordinary independent access for F&B outlet customers."
+        },
+        {
+          "url": "https://www.safra.sg/docs/default-source/default-document-library/about/safra-by-laws.pdf?sfvrsn=ef984fd1_2",
+          "source_type": "official SAFRA by-laws",
+          "finding": "§6.1 members may bring guests; §6.4 sign-in/accompaniment only “where applicable.” Not a universal member-only or public-entry rule."
+        },
+        {
+          "url": "https://wcms-admin.safra.sg/whats-on/skillsfuture%40ns-fair",
+          "source_type": "official SAFRA reciprocal-arrangement page",
+          "finding": "A reciprocal-membership arrangement says its guests must be accompanied by a member. Scope is that arrangement; not evidence that all retail/F&B customers need accompaniment."
+        }
+      ],
+      "closure_finding": "No official outlet-level permanent-closure evidence found in the reviewed current SAFRA/operator sources; do not remove.",
+      "action": "retain record; make no access-status change",
+      "qa": {
+        "exact_unique_SFA_licence_match": true,
+        "workbook_row": 8442,
+        "prior_screen_record_found": true
+      }
+    },
+    {
+      "sfa_licence": "NW20C50V000",
+      "workbook_exact_join": {
+        "name": "SPRINGLEAF PRATA PLACE",
+        "address": "Address: 60 YISHUN AVENUE 4 #01-07,SAFRA COUNTRY CLUB (YISHUN),Singapore 769027",
+        "public_access_status_current": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      "conclusion": "unresolved_public_access",
+      "confidence": "high that current reviewed sources do not resolve entry eligibility",
+      "specific_sources": [
+        {
+          "url": "https://www.safra.sg/amenities-offerings/springleaf-prata-place",
+          "finding": "Official outlet listing gives SAFRA Yishun #01-07, SAFRA Tampines #01-K1; lists family/friends marketing language and member benefit, but does not establish entry policy."
+        },
+        {
+          "url": "https://www.safra.sg/clubs/yishun",
+          "finding": "Current official directory lists HaveFun Karaoke, Springleaf Prata Place, McDonald’s and Eatzi Gourmet at SAFRA Yishun."
+        },
+        {
+          "url": "https://www.safra.sg/faq/safra-membership-FAQs",
+          "source_type": "official SAFRA FAQ",
+          "finding": "Clubhouses are open to members and family/friends for most SAFRA-managed facilities; tells visitors to check individual facility. Does not state ordinary independent access for F&B outlet customers."
+        },
+        {
+          "url": "https://www.safra.sg/docs/default-source/default-document-library/about/safra-by-laws.pdf?sfvrsn=ef984fd1_2",
+          "source_type": "official SAFRA by-laws",
+          "finding": "§6.1 members may bring guests; §6.4 sign-in/accompaniment only “where applicable.” Not a universal member-only or public-entry rule."
+        },
+        {
+          "url": "https://wcms-admin.safra.sg/whats-on/skillsfuture%40ns-fair",
+          "source_type": "official SAFRA reciprocal-arrangement page",
+          "finding": "A reciprocal-membership arrangement says its guests must be accompanied by a member. Scope is that arrangement; not evidence that all retail/F&B customers need accompaniment."
+        }
+      ],
+      "closure_finding": "No official outlet-level permanent-closure evidence found in the reviewed current SAFRA/operator sources; do not remove.",
+      "action": "retain record; make no access-status change",
+      "qa": {
+        "exact_unique_SFA_licence_match": true,
+        "workbook_row": 26212,
+        "prior_screen_record_found": true
+      }
+    },
+    {
+      "sfa_licence": "NW20D44C000",
+      "workbook_exact_join": {
+        "name": "HAVE FUN YISHUN",
+        "address": "Address: 60 YISHUN AVENUE 4 #01-05,#01-06,SAFRA COUNTRY CLUB (YISHUN),Singapore 769027",
+        "public_access_status_current": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      "conclusion": "unresolved_public_access",
+      "confidence": "high that current reviewed sources do not resolve entry eligibility",
+      "specific_sources": [
+        {
+          "url": "https://www.safra.sg/whats-on/havefun-karaoke",
+          "finding": "Official page identifies HaveFun Karaoke at Yishun #01-04/05/06, gives daily hours and public-facing entertainment copy; no express entry eligibility."
+        },
+        {
+          "url": "https://www.safra.sg/clubs/yishun",
+          "finding": "Current official directory lists HaveFun Karaoke, Springleaf Prata Place, McDonald’s and Eatzi Gourmet at SAFRA Yishun."
+        },
+        {
+          "url": "https://www.safra.sg/faq/safra-membership-FAQs",
+          "source_type": "official SAFRA FAQ",
+          "finding": "Clubhouses are open to members and family/friends for most SAFRA-managed facilities; tells visitors to check individual facility. Does not state ordinary independent access for F&B outlet customers."
+        },
+        {
+          "url": "https://www.safra.sg/docs/default-source/default-document-library/about/safra-by-laws.pdf?sfvrsn=ef984fd1_2",
+          "source_type": "official SAFRA by-laws",
+          "finding": "§6.1 members may bring guests; §6.4 sign-in/accompaniment only “where applicable.” Not a universal member-only or public-entry rule."
+        },
+        {
+          "url": "https://wcms-admin.safra.sg/whats-on/skillsfuture%40ns-fair",
+          "source_type": "official SAFRA reciprocal-arrangement page",
+          "finding": "A reciprocal-membership arrangement says its guests must be accompanied by a member. Scope is that arrangement; not evidence that all retail/F&B customers need accompaniment."
+        }
+      ],
+      "closure_finding": "No official outlet-level permanent-closure evidence found in the reviewed current SAFRA/operator sources; do not remove.",
+      "action": "retain record; make no access-status change",
+      "qa": {
+        "exact_unique_SFA_licence_match": true,
+        "workbook_row": 11608,
+        "prior_screen_record_found": true
+      }
+    },
+    {
+      "sfa_licence": "SW23625P000",
+      "workbook_exact_join": {
+        "name": "BURGER KING",
+        "address": "Address: 28 CHOA CHU KANG DRIVE #01-01,SAFRA,Singapore 689964",
+        "public_access_status_current": "public_access_verified_drive_through"
+      },
+      "conclusion": "public_access_verified_for_drive_through",
+      "confidence": "high",
+      "specific_sources": [
+        {
+          "url": "https://www.burgerking.com.sg/Locator/Details/89",
+          "finding": "Official Burger King locator identifies SAFRA Choa Chu Kang branch at exact licensed #01-01 address and indicates 24-hour operation."
+        },
+        {
+          "url": "https://www.safra.sg/whats-on/saf-collection-bins",
+          "finding": "SAFRA identifies the 24/7 collection point next to the service lift at the end of the Burger King drive-through, supporting customer access without clubhouse entry."
+        },
+        {
+          "url": "https://www.safra.sg/clubs/choa-chu-kang",
+          "finding": "Current official directory lists Burger King and Food Paradise at SAFRA Choa Chu Kang."
+        },
+        {
+          "url": "https://www.safra.sg/faq/safra-membership-FAQs",
+          "source_type": "official SAFRA FAQ",
+          "finding": "Clubhouses are open to members and family/friends for most SAFRA-managed facilities; tells visitors to check individual facility. Does not state ordinary independent access for F&B outlet customers."
+        },
+        {
+          "url": "https://www.safra.sg/docs/default-source/default-document-library/about/safra-by-laws.pdf?sfvrsn=ef984fd1_2",
+          "source_type": "official SAFRA by-laws",
+          "finding": "§6.1 members may bring guests; §6.4 sign-in/accompaniment only “where applicable.” Not a universal member-only or public-entry rule."
+        },
+        {
+          "url": "https://wcms-admin.safra.sg/whats-on/skillsfuture%40ns-fair",
+          "source_type": "official SAFRA reciprocal-arrangement page",
+          "finding": "A reciprocal-membership arrangement says its guests must be accompanied by a member. Scope is that arrangement; not evidence that all retail/F&B customers need accompaniment."
+        }
+      ],
+      "closure_finding": "No closure evidence; current operator/SAFRA listing supports an active outlet.",
+      "action": "retain; public drive-through confirmed",
+      "qa": {
+        "exact_unique_SFA_licence_match": true,
+        "workbook_row": 4687,
+        "prior_screen_record_found": false
+      }
+    },
+    {
+      "sfa_licence": "SW23549E000",
+      "workbook_exact_join": {
+        "name": "Food Paradise Enterprise Holding Pte Ltd",
+        "address": "Address: 28 CHOA CHU KANG DRIVE #01-02,SAFRA,Singapore 689964",
+        "public_access_status_current": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      "conclusion": "unresolved_public_access",
+      "confidence": "high that current reviewed sources do not resolve entry eligibility",
+      "specific_sources": [
+        {
+          "url": "https://www.safra.sg/clubs/choa-chu-kang",
+          "finding": "Current official directory lists Burger King and Food Paradise at SAFRA Choa Chu Kang."
+        },
+        {
+          "url": "https://www.safra.sg/faq/safra-membership-FAQs",
+          "source_type": "official SAFRA FAQ",
+          "finding": "Clubhouses are open to members and family/friends for most SAFRA-managed facilities; tells visitors to check individual facility. Does not state ordinary independent access for F&B outlet customers."
+        },
+        {
+          "url": "https://www.safra.sg/docs/default-source/default-document-library/about/safra-by-laws.pdf?sfvrsn=ef984fd1_2",
+          "source_type": "official SAFRA by-laws",
+          "finding": "§6.1 members may bring guests; §6.4 sign-in/accompaniment only “where applicable.” Not a universal member-only or public-entry rule."
+        },
+        {
+          "url": "https://wcms-admin.safra.sg/whats-on/skillsfuture%40ns-fair",
+          "source_type": "official SAFRA reciprocal-arrangement page",
+          "finding": "A reciprocal-membership arrangement says its guests must be accompanied by a member. Scope is that arrangement; not evidence that all retail/F&B customers need accompaniment."
+        }
+      ],
+      "closure_finding": "No official outlet-level permanent-closure evidence found in the reviewed current SAFRA/operator sources; do not remove.",
+      "action": "retain record; make no access-status change",
+      "qa": {
+        "exact_unique_SFA_licence_match": true,
+        "workbook_row": 9552,
+        "prior_screen_record_found": true
+      }
+    },
+    {
+      "sfa_licence": "SW09359J000",
+      "workbook_exact_join": {
+        "name": "Jewel Music Box",
+        "address": "Address: 333 BOON LAY WAY #3A-01,SAFRA CLUBHOUSE (JURONG),Singapore 649848",
+        "public_access_status_current": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      "conclusion": "unresolved_public_access",
+      "confidence": "high that current reviewed sources do not resolve entry eligibility",
+      "specific_sources": [
+        {
+          "url": "https://www.safra.sg/promotions/happy-birthday-from-safra",
+          "finding": "Current official SAFRA vendor listing names Jewel Music Box under SAFRA Jurong. It does not state unit or public/nonmember entry."
+        },
+        {
+          "url": "https://www.safra.sg/clubs/jurong",
+          "finding": "Official club page shows club and vendors; no Jewel Music Box unit/entry rule."
+        },
+        {
+          "url": "https://www.safra.sg/faq/safra-membership-FAQs",
+          "source_type": "official SAFRA FAQ",
+          "finding": "Clubhouses are open to members and family/friends for most SAFRA-managed facilities; tells visitors to check individual facility. Does not state ordinary independent access for F&B outlet customers."
+        },
+        {
+          "url": "https://www.safra.sg/docs/default-source/default-document-library/about/safra-by-laws.pdf?sfvrsn=ef984fd1_2",
+          "source_type": "official SAFRA by-laws",
+          "finding": "§6.1 members may bring guests; §6.4 sign-in/accompaniment only “where applicable.” Not a universal member-only or public-entry rule."
+        },
+        {
+          "url": "https://wcms-admin.safra.sg/whats-on/skillsfuture%40ns-fair",
+          "source_type": "official SAFRA reciprocal-arrangement page",
+          "finding": "A reciprocal-membership arrangement says its guests must be accompanied by a member. Scope is that arrangement; not evidence that all retail/F&B customers need accompaniment."
+        }
+      ],
+      "closure_finding": "No official outlet-level permanent-closure evidence found in the reviewed current SAFRA/operator sources; do not remove.",
+      "action": "retain record; make no access-status change",
+      "qa": {
+        "exact_unique_SFA_licence_match": true,
+        "workbook_row": 13778,
+        "prior_screen_record_found": true
+      }
+    }
+  ],
+  "limitations": [
+    "No current official source found that universally answers independent nonmember entry for all SAFRA food outlets.",
+    "Guest accompaniment language is scoped/conditional; not sufficient to mark every outlet restricted.",
+    "SAFRA vendor presence proves activity at time of listing, not necessarily trading at this exact moment.",
+    "Jewel Music Box unit shown in workbook/SFA address is not independently confirmed by current SAFRA listing."
+  ]
+}

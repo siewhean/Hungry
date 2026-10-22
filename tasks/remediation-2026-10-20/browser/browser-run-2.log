@@ -1,0 +1,59 @@
+(node:79819) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[1A[2K[2m[WebServer] [22m(node:79887) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 3 tests using 1 worker
+
+[1A[2K(node:80701) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:80701) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+
+[1A[2K(node:80701) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K[1/3] [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:19:5 › fresh Welcome reaches existing-account login with real validation
+[1A[2K[2/3] [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:31:5 › onboarding selection and quiz answer resume after a browser reload
+[1A[2K[3/3] [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:38:5 › mock profile Settings exposes supported preferences and readonly auth email
+[1A[2K  1) [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:38:5 › mock profile Settings exposes supported preferences and readonly auth email 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByTestId('dev-button-settings').first()
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 10000ms[22m
+    [2m  - waiting for getByTestId('dev-button-settings').first()[22m
+
+
+       at ../../../tests/e2e/helpers/app.ts:94
+
+      92 |
+      93 |   const button = page.getByTestId(devButtonTestId(label)).first();
+    > 94 |   await expect(button).toBeVisible();
+         |                        ^
+      95 |   await button.scrollIntoViewIfNeeded();
+      96 |   await button.click();
+      97 | }
+        at clickDevButton (/Users/Siew Hean/Documents/GitHub/Hungry/tests/e2e/helpers/app.ts:94:24)
+        at /Users/Siew Hean/Documents/GitHub/Hungry/tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:41:22
+
+    [31mTest timeout of 90000ms exceeded.[39m
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tasks/remediation-2026-10-20/browser/results/remediation.browser-mock-p-f7167-ces-and-readonly-auth-email-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tasks/remediation-2026-10-20/browser/results/remediation.browser-mock-p-f7167-ces-and-readonly-auth-email-chromium/error-context.md
+
+
+[1A[2K  1 failed
+    [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:38:5 › mock profile Settings exposes supported preferences and readonly auth email 
+  2 passed (2.7m)

@@ -36,10 +36,7 @@ export const CircleStoryCarousel = memo(function CircleStoryCarousel({
     >
       {stories.map((story) => {
         const shouldShowUnseenRing =
-          story.hasUnseen ||
-          (!story.isOwn &&
-            (story.id === openingUnseenStoryId ||
-              story.displayName === openingUnseenStoryDisplayName));
+          story.hasUnseen || (!story.isOwn && story.id === openingUnseenStoryId);
 
         return (
           <Pressable

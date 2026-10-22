@@ -38,7 +38,7 @@ import { useHungryTheme } from "@/theme";
 import { useLocationStore } from "@/store/useLocationStore";
 import { getHomeBitesFeed } from "@/features/home/bites";
 import type { Bite } from "@/lib/services/types";
-import { getServiceProvider } from "@/lib/services/serviceProvider";
+import { getDataRepository, getServiceProvider } from "@/lib/services/serviceProvider";
 import { useSearchStore } from "@/store/useSearchStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
@@ -158,7 +158,7 @@ function QuickBiteGridCard({
   const slides = useMemo(() => getQuickBiteCycleSlides(item, allItems), [allItems, item]);
   const cycleFrames = useMemo(() => getQuickBiteCycleFrames(slides), [slides]);
   const [activeIndex, setActiveIndex] = useState(0);
-  const activeSlide = cycleFrames[activeIndex]?.item ?? slides[activeIndex] ?? item;
+  const activeSlide = item;
   const handleActiveIndexChange = useCallback((nextIndex: number) => {
     setActiveIndex(nextIndex);
   }, []);
@@ -184,7 +184,7 @@ function QuickBiteGridCard({
     >
       <QuickBiteImagePlaceholder height={itemWidth * 1.35} />
       <CyclingGridImage
-        images={cycleFrames.map((frame) => frame.imageUrl)}
+        images={[cycleFrames[0]?.imageUrl ?? item.photoUrl]}
         cycleMs={CYCLING_GRID_IMAGE_INTERVAL_MS}
         isAutoCycleActive={isAutoCycleActive}
         startDelayMs={(index % 4) * 350}
@@ -225,12 +225,11 @@ function QuickBiteGridCard({
             </AppText>
           </View>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
-            <Heart size={10} color={palette.white} fill={palette.white} style={{ opacity: 0.8 }} />
             <AppText
               variant="micro"
               style={{ color: palette.white, fontWeight: "700", fontSize: 10 }}
             >
-              {activeSlide.cravingCount}
+              {activeSlide.cravingCount} reviews
             </AppText>
           </View>
         </View>
@@ -255,15 +254,15 @@ export const COLLECTION_COPY: Record<
     emptyBody: "Try changing your filters or search query.",
   },
   trending: {
-    title: "Trending",
-    placeholder: "Find trending dishes...",
-    emptyTitle: "No trending dishes found nearby",
+    title: "Most reviewed",
+    placeholder: "Find reviewed dishes...",
+    emptyTitle: "No reviewed dishes found nearby",
     emptyBody: "Try another filter or search for a dish.",
   },
   editorChoice: {
-    title: "Editor's Choice",
-    placeholder: "Find curated dishes...",
-    emptyTitle: "No editor's picks found nearby",
+    title: "Highly rated",
+    placeholder: "Find highly rated dishes...",
+    emptyTitle: "No highly rated dishes found nearby",
     emptyBody: "Try another filter or search for a dish.",
   },
   budget: {
@@ -273,9 +272,9 @@ export const COLLECTION_COPY: Record<
     emptyBody: "Try another filter or search for a dish.",
   },
   lateNight: {
-    title: "Late Night Makan",
-    placeholder: "Find late night food...",
-    emptyTitle: "No late night dishes found nearby",
+    title: "Dishes",
+    placeholder: "Find dishes...",
+    emptyTitle: "No dishes found nearby",
     emptyBody: "Try another filter or search for a dish.",
   },
 };
@@ -288,16 +287,17 @@ export function QuickBitesScreen() {
   const currentLocation = useLocationStore((state) => state.currentLocation);
   const tasteVector = useProfileStore((state) => state.profile.tasteVector);
   const dietaryPreferences = useProfileStore((state) => state.profile.dietaryPreferences);
+  const maxDishBudget = useProfileStore((state) => state.profile.maxDishBudget);
   const collection: DiscoverCollection = route.params?.collection ?? "quickBites";
   const collectionCopy = COLLECTION_COPY[collection];
   const fallbackBites = useMemo(() => getDiscoverBites(), []);
 
   const [selectedCuisine, setSelectedCuisine] = useState("All");
-  const cuisineFilterOptions = useMemo(
-    () => DISCOVER_CUISINE_FILTERS.map((cuisine) => ({ id: cuisine, label: cuisine })),
-    [],
-  );
-  const [bites, setBites] = useState<Bite[]>(fallbackBites);
+  const cuisineFilterOptions = useMemo(() => [{ id: "All", label: "All" }], []);
+  const [bites, setBites] = useState<Bite[]>([]);
+  const [feedLoading, setFeedLoading] = useState(true);
+  const [feedError, setFeedError] = useState(false);
+  const [feedRetry, setFeedRetry] = useState(0);
   const [fullyVisibleBiteIds, setFullyVisibleBiteIds] = useState<Set<string>>(() => new Set());
   const searchQuery = useSearchStore((state) => state.filters.query);
   const updateSearchQuery = useSearchStore((state) => state.updateQuery);
@@ -352,6 +352,9 @@ export function QuickBitesScreen() {
   });
 
   useEffect(() => {
+    let active = true;
+    setFeedLoading(true);
+    setFeedError(false);
     // Sync with location and real feed if available
     const loadBites = async () => {
       const isSupabaseDataSource = getServiceProvider().mode === "supabase";
@@ -363,28 +366,52 @@ export function QuickBitesScreen() {
             radiusMeters: 3000,
             tasteVector,
             dietaryFlags: dietaryPreferences,
+            maxPrice: maxDishBudget,
           });
-          setBites(liveBites);
+          if (active) setBites(liveBites);
           return;
         }
 
         const feed = await getHomeBitesFeed(currentLocation.latitude, currentLocation.longitude);
         if (feed && feed.length > 0) {
           const feedIds = new Set(feed.map((bite) => bite.id));
-          setBites([...feed, ...fallbackBites.filter((bite) => !feedIds.has(bite.id))]);
+          if (active) setBites([...feed, ...fallbackBites.filter((bite) => !feedIds.has(bite.id))]);
         } else {
-          setBites(fallbackBites);
+          if (active) setBites(fallbackBites);
         }
       } catch {
-        setBites(isSupabaseDataSource ? [] : fallbackBites);
+        if (active) setFeedError(true);
+      } finally {
+        if (active) setFeedLoading(false);
       }
     };
     void loadBites();
-  }, [collection, currentLocation, dietaryPreferences, fallbackBites, tasteVector]);
+    return () => {
+      active = false;
+    };
+  }, [
+    collection,
+    currentLocation,
+    dietaryPreferences,
+    fallbackBites,
+    tasteVector,
+    feedRetry,
+    maxDishBudget,
+  ]);
 
   const collectionBites = useMemo(() => {
-    return getDiscoverBiteCollection(collection, bites);
-  }, [bites, collection]);
+    const eligible =
+      getServiceProvider().mode === "supabase"
+        ? bites
+        : bites.filter((bite) => {
+            const dish = getDataRepository().getDishById(bite.dishId);
+            return (
+              dietaryPreferences.every((flag) => dish?.dietaryFlags.includes(flag)) &&
+              (maxDishBudget === undefined || (dish !== undefined && dish.price <= maxDishBudget))
+            );
+          });
+    return getDiscoverBiteCollection(collection, eligible);
+  }, [bites, collection, dietaryPreferences, maxDishBudget]);
 
   const filteredBites = useMemo(() => {
     const list = collectionBites
@@ -588,15 +615,28 @@ export function QuickBitesScreen() {
                 width: "100%",
               }}
             >
-              <AppText style={styles.emptyStateIcon}>🥣</AppText>
+              {feedError ? (
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => setFeedRetry((value) => value + 1)}
+                >
+                  <AppText>Retry</AppText>
+                </Pressable>
+              ) : null}
               <View
                 style={{ alignItems: "center", gap: spacing[1], paddingHorizontal: spacing[8] }}
               >
                 <AppText variant="h3" style={{ textAlign: "center" }}>
-                  {collectionCopy.emptyTitle}
+                  {feedLoading
+                    ? "Loading dishes…"
+                    : feedError
+                      ? "Dishes unavailable"
+                      : collectionCopy.emptyTitle}
                 </AppText>
                 <AppText tone="muted" style={{ textAlign: "center" }}>
-                  {collectionCopy.emptyBody}
+                  {feedError
+                    ? "Your dishes could not be loaded. Please retry."
+                    : collectionCopy.emptyBody}
                 </AppText>
               </View>
             </View>

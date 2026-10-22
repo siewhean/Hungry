@@ -1,0 +1,36 @@
+{
+  "proposal_type": "read_only_coordinate_application_proposal",
+  "created_at_sgt": "2026-10-18",
+  "workbook_path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "8463f68eef5d04ec42339496ff07b22fe6c251ac23ccd42d30e90a6cbfb205d8",
+  "candidate_snapshot_path": "data/source_snapshots/bca_green_mark_blank_coordinate_candidates_20261018.json",
+  "candidate_snapshot_sha256": "c75de2ebf8d19aebc10dab46cde5879aff70a1979a6732d248a70334189ed5ca",
+  "source_dataset": "BCA Green Mark Buildings (GEOJSON)",
+  "source_dataset_page": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+  "source_dataset_last_updated": "2026-04-18",
+  "source_licence": "Singapore Open Data Licence; data.gov.sg marks free for personal and commercial use",
+  "source_candidate_download_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+  "application_count": 1,
+  "proposals": [
+    {
+      "sfa_licence": "CE05181E000",
+      "fnb_name": "#RAVE",
+      "postal_code": "039594",
+      "exact_address": "Address: RAFFLES BOULEVARD #01-213,MARINA SQUARE,Singapore 039594",
+      "latitude": 1.2914552590652084,
+      "longitude": 103.85700734100752,
+      "precision": "Building/address point for Marina Square; does not locate the #01-213 unit or entrance. Store only with facility-level precision label.",
+      "access_basis": "Outlet is listed at Marina Square, a public shopping mall; excludes institutional canteens and restricted facilities.",
+      "source_feature": {
+        "name": "Marina Square",
+        "award": "Certified",
+        "description": "2020",
+        "objectid": 9620
+      },
+      "current_workbook_check": "Exact SFA licence and six-digit postal code found; latitude and longitude are blank in workbook at current SHA.",
+      "recommendation": "eligible_building_level_coordinate_candidate"
+    }
+  ],
+  "excluded_from_proposal": "All remaining BCA candidate rows: institutional or organization-controlled/canteen locations, public access not established, or shared postal code spanning several facilities (including Resorts World Sentosa/USS), making a single building point ambiguous.",
+  "workbook_modified": false
+}

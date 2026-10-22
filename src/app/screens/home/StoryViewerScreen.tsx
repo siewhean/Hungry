@@ -1,3 +1,11 @@
+import {
+  promptContentSafetyActions,
+  useCommunitySafetyRevision,
+  isContentHiddenForSession,
+} from "@/lib/security/communitySafety";
+import { storyAuthorKey } from "@/features/home/socialState";
+import { getHungryService, getServiceProvider } from "@/lib/services/serviceProvider";
+import { ZoomableVideo } from "@/components/social/ZoomableVideo";
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import {
   View,
@@ -45,6 +53,7 @@ const StoryMedia = React.memo(function StoryMedia({
   storyId,
   uri,
   authorName,
+  mediaType,
   opacity,
   rotateY,
   onReady,
@@ -52,6 +61,7 @@ const StoryMedia = React.memo(function StoryMedia({
   storyId: string;
   uri: string;
   authorName: string;
+  mediaType: "image" | "video";
   opacity: RNAnimated.Value;
   rotateY: RNAnimated.Value;
   onReady: (storyId: string) => void;
@@ -80,13 +90,21 @@ const StoryMedia = React.memo(function StoryMedia({
         },
       ]}
     >
-      <AccessibleImage
-        source={{ uri }}
-        style={StyleSheet.absoluteFill}
-        contentFit="cover"
-        accessibilityLabel={`Story by ${authorName}`}
-        onLoadEnd={() => onReady(storyId)}
-      />
+      {mediaType === "video" ? (
+        <ZoomableVideo
+          uri={uri}
+          style={StyleSheet.absoluteFill}
+          accessibilityLabel={`Video story by ${authorName}`}
+        />
+      ) : (
+        <AccessibleImage
+          source={{ uri }}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          accessibilityLabel={`Story by ${authorName}`}
+          onLoadEnd={() => onReady(storyId)}
+        />
+      )}
     </RNAnimated.View>
   );
 });
@@ -104,7 +122,21 @@ export function StoryViewerScreen() {
   const route = useRoute<RouteProp<RootStackParamList, "StoryViewer">>();
   const initialStoryId = route.params.initialStoryId;
 
-  const { stories, loadStories, likeStory, shareStory, markSeenForDisplayName } = useStoryStore();
+  const safetyRevision = useCommunitySafetyRevision();
+  const {
+    stories: allStories,
+    loadStories,
+    likeStory,
+    shareStory,
+    markSeenForDisplayName,
+  } = useStoryStore();
+  const stories = useMemo(
+    () =>
+      allStories.filter(
+        (story) => !isContentHiddenForSession({ id: story.id, authorId: story.authorId }),
+      ),
+    [allStories, safetyRevision],
+  );
   const showToast = useUIStore((state) => state.showToast);
   const [activeStoryId, setActiveStoryId] = useState(() => initialStoryId);
   const [isPaused, setIsPaused] = useState(false);
@@ -173,7 +205,7 @@ export function StoryViewerScreen() {
   }, [activeStoryId, hasRequestedStories, initialStoryId, loadStories, stories]);
 
   const userStories = currentStory
-    ? stories.filter((s) => s.displayName === currentStory.displayName)
+    ? stories.filter((s) => storyAuthorKey(s) === storyAuthorKey(currentStory))
     : [];
   const subIndex = currentStory ? userStories.findIndex((s) => s.id === currentStory.id) : 0;
 
@@ -193,7 +225,7 @@ export function StoryViewerScreen() {
       cancelAnimation(progressAnim);
       progressAnim.value = clampedValue;
       if (reduceMotion) {
-        progressAnim.value = 1;
+        progressAnim.value = 0;
         return;
       }
       progressAnim.value = withTiming(1, {
@@ -223,6 +255,10 @@ export function StoryViewerScreen() {
   );
 
   const runRotateTransition = (nextId: string, direction: 1 | -1 = 1) => {
+    if (reduceMotion) {
+      setActiveStoryId(nextId);
+      return;
+    }
     if (isStoryTransitioningRef.current) {
       return;
     }
@@ -268,7 +304,7 @@ export function StoryViewerScreen() {
       );
       if (!prev) return;
       // If previous story belongs to the same user, just go back instantly
-      if (prev && prev.displayName === currentStory.displayName) {
+      if (prev && storyAuthorKey(prev) === storyAuthorKey(currentStory)) {
         setActiveStoryId(prev.id);
         return;
       }
@@ -301,7 +337,7 @@ export function StoryViewerScreen() {
       return;
     }
 
-    markSeenForDisplayName(currentStory.displayName);
+    markSeenForDisplayName(storyAuthorKey(currentStory));
   }, [
     canCommitSeen,
     currentStory?.displayName,
@@ -314,7 +350,7 @@ export function StoryViewerScreen() {
 
   const handleCloseStory = useCallback(() => {
     if (currentStory) {
-      commitSeenIfReady(currentStory.displayName);
+      commitSeenIfReady(storyAuthorKey(currentStory));
     }
     closeWithFade();
   }, [closeWithFade, commitSeenIfReady, currentStory]);
@@ -327,12 +363,12 @@ export function StoryViewerScreen() {
       );
       if (!next) return;
       // If next story belongs to the same user, just advance without swipe
-      if (next && next.displayName === currentStory.displayName) {
+      if (next && storyAuthorKey(next) === storyAuthorKey(currentStory)) {
         setActiveStoryId(next.id);
         return;
       }
 
-      commitSeenIfReady(currentStory.displayName);
+      commitSeenIfReady(storyAuthorKey(currentStory));
 
       // Different user — fade stories to indicate a user change
       runRotateTransition(next.id, 1);
@@ -520,7 +556,7 @@ export function StoryViewerScreen() {
     }
   };
 
-  const handleStoryMessage = () => {
+  const handleStoryMessage = async () => {
     if (!currentStory) {
       return;
     }
@@ -530,16 +566,31 @@ export function StoryViewerScreen() {
       return;
     }
 
-    const chatId = `story-${currentStory.displayName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
-    navigation.navigate("ChatDetail", {
-      chatId,
-      name: currentStory.displayName,
-      avatar: currentStory.avatarUrl || currentStory.content.url,
-      isOnline: false,
-    });
+    if (!currentStory.authorId) {
+      showToast({ message: "This story has no messageable author.", tone: "error" });
+      return;
+    }
+    try {
+      const chat = await getHungryService().chat.openConversation({
+        target: {
+          kind: "user",
+          userId: currentStory.authorId,
+          displayName: currentStory.displayName,
+          avatarUrl: currentStory.avatarUrl,
+        },
+      });
+      navigation.navigate("ChatDetail", {
+        chatId: chat.id,
+        name: chat.title,
+        avatar: chat.avatarUrl ?? "",
+        isOnline: chat.isOnline,
+      });
+    } catch {
+      showToast({ message: "Could not open this conversation. Try again.", tone: "error" });
+    }
   };
 
-  if (!currentStory) {
+  if (!currentStory || getServiceProvider().mode !== "mock") {
     return (
       <View
         style={[
@@ -548,7 +599,18 @@ export function StoryViewerScreen() {
           { backgroundColor: palette.storyViewerBackground },
         ]}
       >
-        <ActivityIndicator color={palette.white} />
+        <AppText style={{ color: palette.white }}>
+          {getServiceProvider().mode !== "mock"
+            ? "Stories are local demos only."
+            : "No story is available."}
+        </AppText>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Close story viewer"
+          onPress={() => navigation.goBack()}
+        >
+          <AppText style={{ color: palette.white }}>Go back</AppText>
+        </Pressable>
       </View>
     );
   }
@@ -560,10 +622,35 @@ export function StoryViewerScreen() {
         { backgroundColor: palette.storyViewerBackground, opacity: closeOpacity },
       ]}
     >
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Report or block story author"
+        onPress={() =>
+          promptContentSafetyActions({
+            targetType: "story",
+            targetId: currentStory.id,
+            authorId: currentStory.authorId,
+            authorName: currentStory.displayName,
+            label: "story",
+            onBlocked: () => navigation.goBack(),
+          })
+        }
+        style={{
+          position: "absolute",
+          right: spacing[3],
+          top: spacing[16],
+          zIndex: 10,
+          minHeight: 44,
+          justifyContent: "center",
+        }}
+      >
+        <AppText style={{ color: palette.white }}>Safety</AppText>
+      </Pressable>
       <StoryMedia
         storyId={currentStory.id}
         uri={currentStory.content.url}
         authorName={currentStory.displayName}
+        mediaType={currentStory.content.type}
         opacity={storyOpacity}
         rotateY={rotateY}
         onReady={handleCurrentMediaReady}
@@ -684,7 +771,8 @@ export function StoryViewerScreen() {
                 />
               }
               onPress={onLike}
-              accessibilityLabel="Like story"
+              accessibilityLabel={currentStory.interaction.liked ? "Unlike story" : "Like story"}
+              accessibilityState={{ selected: currentStory.interaction.liked }}
             />
             <AppText style={[styles.actionCountText, { color: palette.white }]}>
               {currentStory.interaction.likeCount > 0 ? currentStory.interaction.likeCount : " "}

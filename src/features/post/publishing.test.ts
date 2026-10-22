@@ -364,6 +364,7 @@ test("composer publish requires an explicit dish and never guesses one from a lo
   let writes = 0;
   service.reviews.submitReview = async () => {
     writes += 1;
+    return { reviewId: "unexpected-write" };
   };
   service.social.postBite = async (...args) => {
     writes += 1;
@@ -462,6 +463,44 @@ test("publish-both retry reuses the client review id so the review is not duplic
     useProfileStore.setState({ profile: userProfile });
     useComposerStore.getState().reset();
     usePublishedPostStore.getState().clearPostsForTest();
+    resetPublishedStallPostsForTest();
+  }
+});
+
+test("late publication receipts cannot populate the next account's local feed", async () => {
+  const { advanceAccountGeneration } = await import("@/lib/security/accountScope");
+  const service = getHungryService();
+  const session = await service.auth.signUp("late-author@example.sg", "password123", "Late author");
+  assert.ok(session);
+  useProfileStore.setState({ profile: session.profile });
+  useComposerStore.getState().reset();
+  useComposerStore.setState({
+    media: [{ id: "late-receipt-media", uri: "https://example.com/late.jpg", type: "image" }],
+    postCaption: "Pending publication",
+  });
+  usePublishedPostStore.getState().clearPostsForTest();
+  const original = service.social.postBite;
+  service.social.postBite = async (...args) => {
+    const result = await original(...args);
+    advanceAccountGeneration();
+    return result;
+  };
+  try {
+    await assert.rejects(
+      () =>
+        publishComposerPost({
+          publishMode: "post",
+          routeDishId: "dish-chicken-rice",
+          routeVenueId: "venue-tian-tian",
+        }),
+      /account changed/,
+    );
+    assert.equal(usePublishedPostStore.getState().posts.length, 0);
+  } finally {
+    service.social.postBite = original;
+    await service.auth.signOut();
+    useComposerStore.getState().reset();
+    useProfileStore.setState({ profile: userProfile });
     resetPublishedStallPostsForTest();
   }
 });

@@ -1,0 +1,1353 @@
+{
+  "snapshot_id": "waterway_point_official_directory_blank_fields_refresh106_20261018",
+  "observed_at_utc": "2026-10-18T09:50:07+00:00",
+  "observed_at_sgt": "2026-10-18T17:50:07+08:00",
+  "source": {
+    "publisher": "Frasers Experience / Waterway Point",
+    "directory_page_url": "https://www.waterwaypoint.com.sg/eat",
+    "feed_url": "https://www.waterwaypoint.com.sg/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fwwp%2Fen%2Fstores&isdialog=true",
+    "http_status": 200,
+    "source_response_sha256": "f872d58a53938a319c3e8e11400cd01bdfdad318b8a9cfb1a6092d23846181f5",
+    "feed_record_count": 42,
+    "detail_url_pattern": "https://www.waterwaypoint.com.sg/stores/{pagePath}",
+    "notes": "Public official tenant feed queried for restaurant, cafe, and fast-food categories. It exposes name, unit, website, phone fields, openingHrs and pagePath. Directory-provided logos excluded as unsuitable stall/menu photographs."
+  },
+  "workbook_reference": {
+    "path": "/tmp/hungry-refresh106-staged.xlsx",
+    "sha256": "fce81938ecec07cbd54555577f98a773e06aa839ad978b60800b5345b900ff96",
+    "sheet": "Public F&B Directory",
+    "read_only": true,
+    "workbook_edit": "none"
+  },
+  "method": {
+    "join_keys": [
+      "postal 828761",
+      "exact floor/unit token overlap",
+      "unique exact normalized name or clear alias"
+    ],
+    "field_policy": "Blank-only proposals for Website, Contact Details, and tenant-specific Opening Hours / Closed Days. Existing data never overwritten. Placeholder phone strings and blank source values excluded. Mall-wide hours not substituted."
+  },
+  "summary": {
+    "feed_records": 42,
+    "unique_exact_sfa_rows_matched": 36,
+    "outlets_with_proposals": 33,
+    "field_proposal_counts": {
+      "Website": 20,
+      "Contact Details": 18,
+      "Opening Hours / Closed Days": 29
+    },
+    "proposed_field_values": 67,
+    "ambiguous_matches_withheld": 0,
+    "menu_url_proposals": 0,
+    "image_proposals": 0,
+    "ajummas_phone_withheld": true
+  },
+  "proposals": [
+    {
+      "sfa_licence": "NE21R64K000",
+      "existing_name": "Ajumma's Korean Restaurant",
+      "registered_business_name": "Ajumma's Korean Restaurant",
+      "existing_address": "Address: 83 PUNGGOL CENTRAL #02-26,WATERWAY POINT,Singapore 828761",
+      "official_tenant_name": "Ajumma's",
+      "official_unit": "West Wing, #02-26",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique staged-workbook SFA row matching postal code 828761, overlapping exact unit token and exact normalized tenant name or clear alias."
+      },
+      "source_detail_url": "https://www.waterwaypoint.com.sg/stores/ajummas",
+      "field_proposals": {
+        "Website": "https://www.ajummassg.com/",
+        "Opening Hours / Closed Days": "Monday to Sunday | 11am to 9.15pm"
+      },
+      "field_evidence": {
+        "Website": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/ajummas",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/ajummas",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        }
+      },
+      "source_record_values": {
+        "website": "https://www.ajummassg.com/",
+        "phone1": "6123 4567",
+        "phone2": null,
+        "phone3": null,
+        "opening_hours_text": "Monday to Sunday | 11am to 9.15pm"
+      },
+      "withheld_notes": [
+        "Ajumma’s mall-feed phone 6123 4567 withheld: not independently corroborated on the operator first-party site reviewed."
+      ]
+    },
+    {
+      "sfa_licence": "NE25864V000",
+      "existing_name": "BYD by 1826",
+      "registered_business_name": "BYD by 1826",
+      "existing_address": "Address: 83 PUNGGOL CENTRAL #01-12,WATERWAY POINT,Singapore 828761",
+      "official_tenant_name": "BYD by 1826",
+      "official_unit": "West Wing, #01-12",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique staged-workbook SFA row matching postal code 828761, overlapping exact unit token and exact normalized tenant name or clear alias."
+      },
+      "source_detail_url": "https://www.waterwaypoint.com.sg/stores/byd-by-1826",
+      "field_proposals": {
+        "Website": "https://byd.1826.sg/",
+        "Contact Details": "8031 3912",
+        "Opening Hours / Closed Days": "Monday to Sunday | 10am to 10pm"
+      },
+      "field_evidence": {
+        "Website": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/byd-by-1826",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        },
+        "Contact Details": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/byd-by-1826",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/byd-by-1826",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        }
+      },
+      "source_record_values": {
+        "website": "https://byd.1826.sg/",
+        "phone1": "8031 3912",
+        "phone2": "",
+        "phone3": "",
+        "opening_hours_text": "Monday to Sunday | 10am to 10pm"
+      },
+      "withheld_notes": []
+    },
+    {
+      "sfa_licence": "NE15773L000",
+      "existing_name": "buddy hoagies",
+      "registered_business_name": "buddy hoagies",
+      "existing_address": "Address: 83 PUNGGOL CENTRAL #02-22,WATERTOWN,Singapore 828761 WATERTOWN",
+      "official_tenant_name": "Buddy Hoagies Café & Grill",
+      "official_unit": "West Wing, #02-22",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique staged-workbook SFA row matching postal code 828761, overlapping exact unit token and exact normalized tenant name or clear alias."
+      },
+      "source_detail_url": "https://www.waterwaypoint.com.sg/stores/buddy-hoagies-cafe-and-grill",
+      "field_proposals": {
+        "Website": "https://www.buddyhoagies.com.sg/",
+        "Contact Details": "6385 8328",
+        "Opening Hours / Closed Days": "Monday to Sunday | 11.30am to 10pm"
+      },
+      "field_evidence": {
+        "Website": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/buddy-hoagies-cafe-and-grill",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        },
+        "Contact Details": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/buddy-hoagies-cafe-and-grill",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/buddy-hoagies-cafe-and-grill",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        }
+      },
+      "source_record_values": {
+        "website": "https://www.buddyhoagies.com.sg/",
+        "phone1": "6385 8328",
+        "phone2": "",
+        "phone3": "",
+        "opening_hours_text": "Monday to Sunday | 11.30am to 10pm"
+      },
+      "withheld_notes": []
+    },
+    {
+      "sfa_licence": "NE15716J000",
+      "existing_name": "BURGER KING",
+      "registered_business_name": "BURGER KING",
+      "existing_address": "Address: 83 PUNGGOL CENTRAL #01-26,WATERWAY POINT,Singapore 828761 WATERWAY POINT",
+      "official_tenant_name": "Burger King",
+      "official_unit": "East Wing, #01-26",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique staged-workbook SFA row matching postal code 828761, overlapping exact unit token and exact normalized tenant name or clear alias."
+      },
+      "source_detail_url": "https://www.waterwaypoint.com.sg/stores/burger-king",
+      "field_proposals": {
+        "Contact Details": "6802 4197"
+      },
+      "field_evidence": {
+        "Contact Details": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/burger-king",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        }
+      },
+      "source_record_values": {
+        "website": "https://www.burgerking.com.sg/",
+        "phone1": "6802 4197",
+        "phone2": null,
+        "phone3": null,
+        "opening_hours_text": "Monday to Sunday | 8am to 2am"
+      },
+      "withheld_notes": []
+    },
+    {
+      "sfa_licence": "NE16195E000",
+      "existing_name": "CHAGEE",
+      "registered_business_name": "CHAGEE",
+      "existing_address": "Address: 83 PUNGGOL CENTRAL #B1-43,#B1-44,WATERWAY POINT,Singapore 828761",
+      "official_tenant_name": "CHAGEE",
+      "official_unit": "West Wing, #B1-43/44",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique staged-workbook SFA row matching postal code 828761, overlapping exact unit token and exact normalized tenant name or clear alias."
+      },
+      "source_detail_url": "https://www.waterwaypoint.com.sg/stores/chagee",
+      "field_proposals": {
+        "Contact Details": "8093 1528",
+        "Opening Hours / Closed Days": "Sunday to Thursday | 10am to 10pm Friday & Saturday | 10am to 10.30pm"
+      },
+      "field_evidence": {
+        "Contact Details": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/chagee",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/chagee",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        }
+      },
+      "source_record_values": {
+        "website": "",
+        "phone1": "8093 1528",
+        "phone2": "",
+        "phone3": "",
+        "opening_hours_text": "Sunday to Thursday | 10am to 10pm Friday & Saturday | 10am to 10.30pm"
+      },
+      "withheld_notes": []
+    },
+    {
+      "sfa_licence": "NE22997V000",
+      "existing_name": "Cedele",
+      "registered_business_name": "Cedele",
+      "existing_address": "Address: 83 PUNGGOL CENTRAL #01-17,WATERWAY POINT,Singapore 828761",
+      "official_tenant_name": "Cedele",
+      "official_unit": "West Wing, #01-17",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique staged-workbook SFA row matching postal code 828761, overlapping exact unit token and exact normalized tenant name or clear alias."
+      },
+      "source_detail_url": "https://www.waterwaypoint.com.sg/stores/cedele",
+      "field_proposals": {
+        "Website": "https://cedele.com/",
+        "Contact Details": "6385 7961",
+        "Opening Hours / Closed Days": "Monday to Sunday | 10am to 9pm"
+      },
+      "field_evidence": {
+        "Website": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/cedele",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        },
+        "Contact Details": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/cedele",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/cedele",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        }
+      },
+      "source_record_values": {
+        "website": "https://cedele.com/",
+        "phone1": "6385 7961",
+        "phone2": "",
+        "phone3": "",
+        "opening_hours_text": "Monday to Sunday | 10am to 9pm"
+      },
+      "withheld_notes": []
+    },
+    {
+      "sfa_licence": "NE15719B000",
+      "existing_name": "Daily Chicken",
+      "registered_business_name": "Daily Chicken",
+      "existing_address": "Address: 83 PUNGGOL CENTRAL #01-66,WATERWAY POINT,Singapore 828761",
+      "official_tenant_name": "Daily Chicken",
+      "official_unit": "West Wing, #01-66",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique staged-workbook SFA row matching postal code 828761, overlapping exact unit token and exact normalized tenant name or clear alias."
+      },
+      "source_detail_url": "https://www.waterwaypoint.com.sg/stores/daily-chicken",
+      "field_proposals": {
+        "Website": "https://dailychicken.com.sg/",
+        "Contact Details": "6585 0868",
+        "Opening Hours / Closed Days": "Monday to Sunday | 11am to 10pm"
+      },
+      "field_evidence": {
+        "Website": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/daily-chicken",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        },
+        "Contact Details": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/daily-chicken",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/daily-chicken",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        }
+      },
+      "source_record_values": {
+        "website": "https://dailychicken.com.sg/",
+        "phone1": "6585 0868",
+        "phone2": "",
+        "phone3": "",
+        "opening_hours_text": "Monday to Sunday | 11am to 10pm"
+      },
+      "withheld_notes": []
+    },
+    {
+      "sfa_licence": "NE15781L000",
+      "existing_name": "Din Tai Fung",
+      "registered_business_name": "Din Tai Fung",
+      "existing_address": "Address: 83 PUNGGOL CENTRAL #01-22,WATERWAY POINT,Singapore 828761 WATERWAY POINT",
+      "official_tenant_name": "Din Tai Fung",
+      "official_unit": "West Wing, #01-22",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique staged-workbook SFA row matching postal code 828761, overlapping exact unit token and exact normalized tenant name or clear alias."
+      },
+      "source_detail_url": "https://www.waterwaypoint.com.sg/stores/din-tai-fung",
+      "field_proposals": {
+        "Website": "https://dintaifung.com.sg/",
+        "Contact Details": "6384 7767",
+        "Opening Hours / Closed Days": "Monday to Sunday | 11am to 9pm"
+      },
+      "field_evidence": {
+        "Website": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/din-tai-fung",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        },
+        "Contact Details": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/din-tai-fung",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/din-tai-fung",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        }
+      },
+      "source_record_values": {
+        "website": "https://dintaifung.com.sg/",
+        "phone1": "6384 7767",
+        "phone2": null,
+        "phone3": null,
+        "opening_hours_text": "Monday to Sunday | 11am to 9pm"
+      },
+      "withheld_notes": []
+    },
+    {
+      "sfa_licence": "NE22B70V000",
+      "existing_name": "DELIFRANCE",
+      "registered_business_name": "DELIFRANCE",
+      "existing_address": "Address: 83 PUNGGOL CENTRAL #01-17A,WATERWAY POINT,Singapore 828761",
+      "official_tenant_name": "Délifrance",
+      "official_unit": "West Wing, #01-17A",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique staged-workbook SFA row matching postal code 828761, overlapping exact unit token and exact normalized tenant name or clear alias."
+      },
+      "source_detail_url": "https://www.waterwaypoint.com.sg/stores/delifrance",
+      "field_proposals": {
+        "Website": "https://www.delifrance.com.sg/",
+        "Opening Hours / Closed Days": "Sunday to Thursday | 8am to 9pm | | Friday & Saturday | 8am to 10pm"
+      },
+      "field_evidence": {
+        "Website": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/delifrance",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/delifrance",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        }
+      },
+      "source_record_values": {
+        "website": "https://www.delifrance.com.sg/",
+        "phone1": "Not available",
+        "phone2": "",
+        "phone3": "",
+        "opening_hours_text": "Sunday to Thursday | 8am to 9pm | | Friday & Saturday | 8am to 10pm"
+      },
+      "withheld_notes": []
+    },
+    {
+      "sfa_licence": "NE15737V000",
+      "existing_name": "FISH & CO",
+      "registered_business_name": "FISH & CO",
+      "existing_address": "Address: 83 PUNGGOL CENTRAL #B1-18,WATERWAY POINT,Singapore 828761 WATERWAY POINT",
+      "official_tenant_name": "Fish & Co.",
+      "official_unit": "East Wing, #B1-18",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique staged-workbook SFA row matching postal code 828761, overlapping exact unit token and exact normalized tenant name or clear alias."
+      },
+      "source_detail_url": "https://www.waterwaypoint.com.sg/stores/fish-and-co",
+      "field_proposals": {
+        "Opening Hours / Closed Days": "Monday to Sunday | 11am to 9.30pm"
+      },
+      "field_evidence": {
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/fish-and-co",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        }
+      },
+      "source_record_values": {
+        "website": "https://www.fish-co.com/",
+        "phone1": "6385 9061",
+        "phone2": null,
+        "phone3": null,
+        "opening_hours_text": "Monday to Sunday | 11am to 9.30pm"
+      },
+      "withheld_notes": []
+    },
+    {
+      "sfa_licence": "NE24510J000",
+      "existing_name": "Gong Yuan Ma La Tang",
+      "registered_business_name": "Gong Yuan Ma La Tang",
+      "existing_address": "Address: 83 PUNGGOL CENTRAL #02-21,WATERWAY POINT,Singapore 828761 Part Right",
+      "official_tenant_name": "Gong Yuan Ma La Tang",
+      "official_unit": "West Wing, #02-21",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique staged-workbook SFA row matching postal code 828761, overlapping exact unit token and exact normalized tenant name or clear alias."
+      },
+      "source_detail_url": "https://www.waterwaypoint.com.sg/stores/gong-yuan-ma-la-tang",
+      "field_proposals": {
+        "Website": "https://royaltgroup.com/our-brands/gong-yuan-ma-la-tang.html",
+        "Contact Details": "6963 2060",
+        "Opening Hours / Closed Days": "Monday to Sunday | 11am to 10pm (9.30pm last order)"
+      },
+      "field_evidence": {
+        "Website": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/gong-yuan-ma-la-tang",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        },
+        "Contact Details": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/gong-yuan-ma-la-tang",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/gong-yuan-ma-la-tang",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        }
+      },
+      "source_record_values": {
+        "website": "https://royaltgroup.com/our-brands/gong-yuan-ma-la-tang.html",
+        "phone1": "6963 2060",
+        "phone2": null,
+        "phone3": null,
+        "opening_hours_text": "Monday to Sunday | 11am to 10pm (9.30pm last order)"
+      },
+      "withheld_notes": []
+    },
+    {
+      "sfa_licence": "NE22308B000",
+      "existing_name": "HENRI CHARPENTIER",
+      "registered_business_name": "HENRI CHARPENTIER",
+      "existing_address": "Address: 83 PUNGGOL CENTRAL #01-K13,#01-K14,WATERWAY POINT,Singapore 828761",
+      "official_tenant_name": "Henri Charpentier",
+      "official_unit": "West Wing, #01-K13/K14",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique staged-workbook SFA row matching postal code 828761, overlapping exact unit token and exact normalized tenant name or clear alias."
+      },
+      "source_detail_url": "https://www.waterwaypoint.com.sg/stores/henri-charpentier",
+      "field_proposals": {
+        "Website": "https://www.henri-charpentier.sg/",
+        "Contact Details": "8919 7383",
+        "Opening Hours / Closed Days": "Monday to Sunday | 10am to 10pm"
+      },
+      "field_evidence": {
+        "Website": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/henri-charpentier",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        },
+        "Contact Details": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/henri-charpentier",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/henri-charpentier",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        }
+      },
+      "source_record_values": {
+        "website": "https://www.henri-charpentier.sg/",
+        "phone1": "8919 7383",
+        "phone2": "8533 0839",
+        "phone3": "",
+        "opening_hours_text": "Monday to Sunday | 10am to 10pm"
+      },
+      "withheld_notes": []
+    },
+    {
+      "sfa_licence": "NE15633L000",
+      "existing_name": "ICHIBAN BOSHI",
+      "registered_business_name": "ICHIBAN BOSHI",
+      "existing_address": "Address: 83 PUNGGOL CENTRAL #B1-19,WATERTOWN,Singapore 828761 WATERTOWN",
+      "official_tenant_name": "Ichiban Boshi",
+      "official_unit": "East Wing, #B1-19",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique staged-workbook SFA row matching postal code 828761, overlapping exact unit token and exact normalized tenant name or clear alias."
+      },
+      "source_detail_url": "https://www.waterwaypoint.com.sg/stores/ichiban-boshi",
+      "field_proposals": {
+        "Opening Hours / Closed Days": "Monday to Friday | 11.30am to 10pm | | Saturday, Sunday & PH | 11am to 10pm"
+      },
+      "field_evidence": {
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/ichiban-boshi",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        }
+      },
+      "source_record_values": {
+        "website": "https://www.ichibanboshi.com.sg",
+        "phone1": "6385 8351",
+        "phone2": null,
+        "phone3": null,
+        "opening_hours_text": "Monday to Friday | 11.30am to 10pm | | Saturday, Sunday & PH | 11am to 10pm"
+      },
+      "withheld_notes": []
+    },
+    {
+      "sfa_licence": "NE15673X000",
+      "existing_name": "KURIYA JAPANESE MARKET / MISTER DONUT",
+      "registered_business_name": "KURIYA JAPANESE MARKET / MISTER DONUT",
+      "existing_address": "Address: 83 PUNGGOL CENTRAL #B1-20,WATERTOWN,Singapore 828761 WATERTOWN",
+      "official_tenant_name": "Kuriya Japanese Market ",
+      "official_unit": "East Wing, #B1-20",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique staged-workbook SFA row matching postal code 828761, overlapping exact unit token and exact normalized tenant name or clear alias."
+      },
+      "source_detail_url": "https://www.waterwaypoint.com.sg/stores/kuriya-japanese-market",
+      "field_proposals": {
+        "Website": "https://www.kuriyajapanesemarket.com.sg",
+        "Contact Details": "6385 8347",
+        "Opening Hours / Closed Days": "Monday to Sunday | 11am to 10pm"
+      },
+      "field_evidence": {
+        "Website": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/kuriya-japanese-market",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        },
+        "Contact Details": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/kuriya-japanese-market",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/kuriya-japanese-market",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        }
+      },
+      "source_record_values": {
+        "website": "https://www.kuriyajapanesemarket.com.sg",
+        "phone1": "6385 8347",
+        "phone2": null,
+        "phone3": null,
+        "opening_hours_text": "Monday to Sunday | 11am to 10pm"
+      },
+      "withheld_notes": []
+    },
+    {
+      "sfa_licence": "NE15738X000",
+      "existing_name": "MCDONALD'S",
+      "registered_business_name": "MCDONALD'S",
+      "existing_address": "Address: 83 PUNGGOL CENTRAL #B2-K4,#B2-07,WATERWAY POINT,Singapore 828761 WATERWAY POINT",
+      "official_tenant_name": "McDonald's",
+      "official_unit": "West Wing, #B2-07/K04",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique staged-workbook SFA row matching postal code 828761, overlapping exact unit token and exact normalized tenant name or clear alias."
+      },
+      "source_detail_url": "https://www.waterwaypoint.com.sg/stores/mcdonalds",
+      "field_proposals": {
+        "Contact Details": "6385 7853"
+      },
+      "field_evidence": {
+        "Contact Details": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/mcdonalds",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        }
+      },
+      "source_record_values": {
+        "website": "https://www.mcdonalds.com.sg/",
+        "phone1": "6385 7853",
+        "phone2": null,
+        "phone3": null,
+        "opening_hours_text": "Monday to Sunday | 6am to 2am"
+      },
+      "withheld_notes": []
+    },
+    {
+      "sfa_licence": "NE15754X000",
+      "existing_name": "MONSTER CURRY",
+      "registered_business_name": "MONSTER CURRY",
+      "existing_address": "Address: 83 PUNGGOL CENTRAL #02-25,WATERTOWN,Singapore 828761 WATERTOWN",
+      "official_tenant_name": "Monster Curry ",
+      "official_unit": "West Wing, #02-25",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique staged-workbook SFA row matching postal code 828761, overlapping exact unit token and exact normalized tenant name or clear alias."
+      },
+      "source_detail_url": "https://www.waterwaypoint.com.sg/stores/monster-curry",
+      "field_proposals": {
+        "Opening Hours / Closed Days": "Monday to Sunday | 11am to 10pm"
+      },
+      "field_evidence": {
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/monster-curry",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        }
+      },
+      "source_record_values": {
+        "website": "https://monstercurry.com.sg",
+        "phone1": "6245 8879",
+        "phone2": null,
+        "phone3": null,
+        "opening_hours_text": "Monday to Sunday | 11am to 10pm"
+      },
+      "withheld_notes": []
+    },
+    {
+      "sfa_licence": "NE15741E000",
+      "existing_name": "MORE YOGURT",
+      "registered_business_name": "MORE YOGURT",
+      "existing_address": "Address: 83 PUNGGOL CENTRAL #01-63,WATERWAY POINT,Singapore 828761",
+      "official_tenant_name": "MoreYogurt",
+      "official_unit": "West Wing, #01-63",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique staged-workbook SFA row matching postal code 828761, overlapping exact unit token and exact normalized tenant name or clear alias."
+      },
+      "source_detail_url": "https://www.waterwaypoint.com.sg/stores/moreyogurt",
+      "field_proposals": {
+        "Opening Hours / Closed Days": "Monday to Sunday | 10.30am to 10pm"
+      },
+      "field_evidence": {
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/moreyogurt",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        }
+      },
+      "source_record_values": {
+        "website": "",
+        "phone1": "-",
+        "phone2": "",
+        "phone3": "",
+        "opening_hours_text": "Monday to Sunday | 10.30am to 10pm"
+      },
+      "withheld_notes": []
+    },
+    {
+      "sfa_licence": "NE15698A000",
+      "existing_name": "O.BBA BBQ & JJAJANG",
+      "registered_business_name": "O.BBA BBQ & JJAJANG",
+      "existing_address": "Address: 83 PUNGGOL CENTRAL #01-33,WATERWAY POINT,Singapore 828761",
+      "official_tenant_name": "O.BBa BBQ & Jjajang",
+      "official_unit": "East Wing, #01-33",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique staged-workbook SFA row matching postal code 828761, overlapping exact unit token and exact normalized tenant name or clear alias."
+      },
+      "source_detail_url": "https://www.waterwaypoint.com.sg/stores/o-bba-bbq---jjajang",
+      "field_proposals": {
+        "Website": "https://obba-sg.com/menu",
+        "Opening Hours / Closed Days": "Monday to Sunday | 10am to 10pm"
+      },
+      "field_evidence": {
+        "Website": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/o-bba-bbq---jjajang",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/o-bba-bbq---jjajang",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        }
+      },
+      "source_record_values": {
+        "website": "https://obba-sg.com/menu",
+        "phone1": "-",
+        "phone2": "",
+        "phone3": "",
+        "opening_hours_text": "Monday to Sunday | 10am to 10pm"
+      },
+      "withheld_notes": []
+    },
+    {
+      "sfa_licence": "NE16004E000",
+      "existing_name": "PUTIEN",
+      "registered_business_name": "PUTIEN",
+      "existing_address": "Address: 83 PUNGGOL CENTRAL #B1-21,WATERWAY POINT,Singapore 828761 | Unit: B1-21 | Postal code: 828761",
+      "official_tenant_name": "PUTIEN",
+      "official_unit": "East Wing, #B1-21",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique staged-workbook SFA row matching postal code 828761, overlapping exact unit token and exact normalized tenant name or clear alias."
+      },
+      "source_detail_url": "https://www.waterwaypoint.com.sg/stores/putien",
+      "field_proposals": {
+        "Contact Details": "6244 6880",
+        "Opening Hours / Closed Days": "Monday to Sunday | 11.30am to 10pm"
+      },
+      "field_evidence": {
+        "Contact Details": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/putien",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/putien",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        }
+      },
+      "source_record_values": {
+        "website": "https://www.putien.com/",
+        "phone1": "6244 6880",
+        "phone2": null,
+        "phone3": null,
+        "opening_hours_text": "Monday to Sunday | 11.30am to 10pm"
+      },
+      "withheld_notes": []
+    },
+    {
+      "sfa_licence": "NE15694J000",
+      "existing_name": "PAIK'S NOODLE",
+      "registered_business_name": "PAIK'S NOODLE",
+      "existing_address": "Address: 83 PUNGGOL CENTRAL #02-21,WATERWAY POINT,Singapore 828761 (PART LEFT)",
+      "official_tenant_name": "Paik's Noodle",
+      "official_unit": "West Wing, #02-21",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique staged-workbook SFA row matching postal code 828761, overlapping exact unit token and exact normalized tenant name or clear alias."
+      },
+      "source_detail_url": "https://www.waterwaypoint.com.sg/stores/paiks-noodle",
+      "field_proposals": {
+        "Contact Details": "6027 5873",
+        "Opening Hours / Closed Days": "Monday to Sunday | 11am to 9pm (8:30pm last order)"
+      },
+      "field_evidence": {
+        "Contact Details": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/paiks-noodle",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/paiks-noodle",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        }
+      },
+      "source_record_values": {
+        "website": "",
+        "phone1": "6027 5873",
+        "phone2": null,
+        "phone3": null,
+        "opening_hours_text": "Monday to Sunday | 11am to 9pm (8:30pm last order)"
+      },
+      "withheld_notes": []
+    },
+    {
+      "sfa_licence": "NE16021C000",
+      "existing_name": "Red Ginger Coffeehouse",
+      "registered_business_name": "Red Ginger Coffeehouse",
+      "existing_address": "Address: 83 PUNGGOL CENTRAL #B1-17,WATERWAY POINT,Singapore 828761",
+      "official_tenant_name": "Red Ginger Coffeehouse",
+      "official_unit": "East Wing, #B1-17",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique staged-workbook SFA row matching postal code 828761, overlapping exact unit token and exact normalized tenant name or clear alias."
+      },
+      "source_detail_url": "https://www.waterwaypoint.com.sg/stores/red-ginger-coffeehouse",
+      "field_proposals": {
+        "Website": "https://redginger.com.sg",
+        "Opening Hours / Closed Days": "Monday to Sunday | 10am to 9pm"
+      },
+      "field_evidence": {
+        "Website": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/red-ginger-coffeehouse",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/red-ginger-coffeehouse",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        }
+      },
+      "source_record_values": {
+        "website": "https://redginger.com.sg",
+        "phone1": "-",
+        "phone2": "",
+        "phone3": "",
+        "opening_hours_text": "Monday to Sunday | 10am to 9pm"
+      },
+      "withheld_notes": []
+    },
+    {
+      "sfa_licence": "NE15705N000",
+      "existing_name": "SUKIYA",
+      "registered_business_name": "SUKIYA",
+      "existing_address": "Address: 83 PUNGGOL CENTRAL #B1-23,WATERWAY POINT,Singapore 828761",
+      "official_tenant_name": "SUKIYA",
+      "official_unit": "East Wing, #B1-23",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique staged-workbook SFA row matching postal code 828761, overlapping exact unit token and exact normalized tenant name or clear alias."
+      },
+      "source_detail_url": "https://www.waterwaypoint.com.sg/stores/sukiya",
+      "field_proposals": {
+        "Website": "https://www.sukiya.com.sg/"
+      },
+      "field_evidence": {
+        "Website": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/sukiya",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        }
+      },
+      "source_record_values": {
+        "website": "https://www.sukiya.com.sg/",
+        "phone1": "Not available",
+        "phone2": "",
+        "phone3": "",
+        "opening_hours_text": "Monday to Sunday | 10am to 10pm"
+      },
+      "withheld_notes": []
+    },
+    {
+      "sfa_licence": "NE15757L000",
+      "existing_name": "Sanook Kitchen",
+      "registered_business_name": "Sanook Kitchen",
+      "existing_address": "Address: 83 PUNGGOL CENTRAL #B1-13,WATERWAY POINT,Singapore 828761",
+      "official_tenant_name": "Sanook Kitchen ",
+      "official_unit": "West Wing, #B1-13",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique staged-workbook SFA row matching postal code 828761, overlapping exact unit token and exact normalized tenant name or clear alias."
+      },
+      "source_detail_url": "https://www.waterwaypoint.com.sg/stores/sanook-kitchen",
+      "field_proposals": {
+        "Website": "https://sanookkitchen.org/",
+        "Contact Details": "6231 1597",
+        "Opening Hours / Closed Days": "Monday to Sunday | 11am to 10pm"
+      },
+      "field_evidence": {
+        "Website": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/sanook-kitchen",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        },
+        "Contact Details": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/sanook-kitchen",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/sanook-kitchen",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        }
+      },
+      "source_record_values": {
+        "website": "https://sanookkitchen.org/",
+        "phone1": "6231 1597",
+        "phone2": null,
+        "phone3": null,
+        "opening_hours_text": "Monday to Sunday | 11am to 10pm"
+      },
+      "withheld_notes": []
+    },
+    {
+      "sfa_licence": "NE16063E000",
+      "existing_name": "SO DO FUN",
+      "registered_business_name": "SO DO FUN",
+      "existing_address": "Address: 83 PUNGGOL CENTRAL #01-23,WATERWAY POINT,Singapore 828761",
+      "official_tenant_name": "So Do Fun",
+      "official_unit": "West Wing, #01-23",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique staged-workbook SFA row matching postal code 828761, overlapping exact unit token and exact normalized tenant name or clear alias."
+      },
+      "source_detail_url": "https://www.waterwaypoint.com.sg/stores/so-do-fun",
+      "field_proposals": {
+        "Contact Details": "6298 3573",
+        "Opening Hours / Closed Days": "Monday to Sunday | 11am to 9.30pm"
+      },
+      "field_evidence": {
+        "Contact Details": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/so-do-fun",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/so-do-fun",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        }
+      },
+      "source_record_values": {
+        "website": "",
+        "phone1": "6298 3573",
+        "phone2": "8850 5693",
+        "phone3": "",
+        "opening_hours_text": "Monday to Sunday | 11am to 9.30pm"
+      },
+      "withheld_notes": []
+    },
+    {
+      "sfa_licence": "NE15758K000",
+      "existing_name": "SO PHO",
+      "registered_business_name": "SO PHO",
+      "existing_address": "Address: 83 PUNGGOL CENTRAL #01-28,WATERTOWN,Singapore 828761 WATERTOWN",
+      "official_tenant_name": "So Pho",
+      "official_unit": "East Wing, #01-28",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique staged-workbook SFA row matching postal code 828761, overlapping exact unit token and exact normalized tenant name or clear alias."
+      },
+      "source_detail_url": "https://www.waterwaypoint.com.sg/stores/so-pho",
+      "field_proposals": {
+        "Opening Hours / Closed Days": "Monday to Sunday | 11am to 10pm"
+      },
+      "field_evidence": {
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/so-pho",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        }
+      },
+      "source_record_values": {
+        "website": "https://www.sopho.com.sg",
+        "phone1": "6385 8378",
+        "phone2": null,
+        "phone3": null,
+        "opening_hours_text": "Monday to Sunday | 11am to 10pm"
+      },
+      "withheld_notes": []
+    },
+    {
+      "sfa_licence": "NE15703X000",
+      "existing_name": "SONG FA BAK KUT TEH FOOD PTE LTD",
+      "registered_business_name": "SONG FA BAK KUT TEH FOOD PTE LTD",
+      "existing_address": "Address: 83 PUNGGOL CENTRAL #01-24,WATERWAY POINT,Singapore 828761 WATERWAY POINT",
+      "official_tenant_name": "Song Fa Bak Kut Teh",
+      "official_unit": "East Wing, #01-24",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique staged-workbook SFA row matching postal code 828761, overlapping exact unit token and exact normalized tenant name or clear alias."
+      },
+      "source_detail_url": "https://www.waterwaypoint.com.sg/stores/song-fa-bak-kut-teh",
+      "field_proposals": {
+        "Website": "https://songfa.com.sg/",
+        "Opening Hours / Closed Days": "Monday to Thursday | 11am to 9pm | | Friday | 11am to 9.30pm | | Saturday | 10.30am to 9.30pm | | Sunday | 10.30am to 9pm | | Public Holiday | Monday to Thursday | 10.30am to 9pm | | Friday to Sunday | 10.30am to 9.30pm"
+      },
+      "field_evidence": {
+        "Website": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/song-fa-bak-kut-teh",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/song-fa-bak-kut-teh",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        }
+      },
+      "source_record_values": {
+        "website": "https://songfa.com.sg/",
+        "phone1": "Not available",
+        "phone2": null,
+        "phone3": null,
+        "opening_hours_text": "Monday to Thursday | 11am to 9pm | | Friday | 11am to 9.30pm | | Saturday | 10.30am to 9.30pm | | Sunday | 10.30am to 9pm | | Public Holiday | Monday to Thursday | 10.30am to 9pm | | Friday to Sunday | 10.30am to 9.30pm"
+      },
+      "withheld_notes": []
+    },
+    {
+      "sfa_licence": "NE15701A000",
+      "existing_name": "Steak 99",
+      "registered_business_name": "Steak 99",
+      "existing_address": "Address: 83 PUNGGOL CENTRAL #01-65,WATERWAY POINT,Singapore 828761",
+      "official_tenant_name": "Steak 99",
+      "official_unit": "West Wing, #01-65",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique staged-workbook SFA row matching postal code 828761, overlapping exact unit token and exact normalized tenant name or clear alias."
+      },
+      "source_detail_url": "https://www.waterwaypoint.com.sg/stores/steak-99",
+      "field_proposals": {
+        "Website": "http://www.jfh.com.sg",
+        "Contact Details": "6385 8795",
+        "Opening Hours / Closed Days": "Monday to Sunday | 11.30am to 10pm"
+      },
+      "field_evidence": {
+        "Website": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/steak-99",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        },
+        "Contact Details": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/steak-99",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/steak-99",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        }
+      },
+      "source_record_values": {
+        "website": "http://www.jfh.com.sg",
+        "phone1": "6385 8795",
+        "phone2": "",
+        "phone3": "",
+        "opening_hours_text": "Monday to Sunday | 11.30am to 10pm"
+      },
+      "withheld_notes": []
+    },
+    {
+      "sfa_licence": "NE16016V000",
+      "existing_name": "SUSHI EXPRESS",
+      "registered_business_name": "SUSHI EXPRESS",
+      "existing_address": "Address: 83 PUNGGOL CENTRAL #01-25,WATERWAY POINT,Singapore 828761 WATERWAY POINT",
+      "official_tenant_name": "Sushi Express ",
+      "official_unit": "East Wing, #01-25",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique staged-workbook SFA row matching postal code 828761, overlapping exact unit token and exact normalized tenant name or clear alias."
+      },
+      "source_detail_url": "https://www.waterwaypoint.com.sg/stores/sushi-express",
+      "field_proposals": {
+        "Website": "https://www.sushiexpress.com.sg/",
+        "Opening Hours / Closed Days": "Monday to Sunday | 11am to 10pm"
+      },
+      "field_evidence": {
+        "Website": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/sushi-express",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/sushi-express",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        }
+      },
+      "source_record_values": {
+        "website": "https://www.sushiexpress.com.sg/",
+        "phone1": "6386 7159",
+        "phone2": null,
+        "phone3": null,
+        "opening_hours_text": "Monday to Sunday | 11am to 10pm"
+      },
+      "withheld_notes": []
+    },
+    {
+      "sfa_licence": "NE16295A000",
+      "existing_name": "Sushiro",
+      "registered_business_name": "Sushiro",
+      "existing_address": "Address: 83 PUNGGOL CENTRAL #01-31,#01-32,WATERWAY POINT,Singapore 828761 WATERWAY POINT | Unit: 01-31 | Postal code: 828761",
+      "official_tenant_name": "Sushiro",
+      "official_unit": "East Wing, #01-31/32",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique staged-workbook SFA row matching postal code 828761, overlapping exact unit token and exact normalized tenant name or clear alias."
+      },
+      "source_detail_url": "https://www.waterwaypoint.com.sg/stores/sushiro",
+      "field_proposals": {
+        "Contact Details": "6970 6885"
+      },
+      "field_evidence": {
+        "Contact Details": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/sushiro",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        }
+      },
+      "source_record_values": {
+        "website": "https://www.akindo-sushiro.biz/en/",
+        "phone1": "6970 6885",
+        "phone2": null,
+        "phone3": null,
+        "opening_hours_text": "Monday to Sunday | 11am to 10.30pm"
+      },
+      "withheld_notes": []
+    },
+    {
+      "sfa_licence": "NE15745V000",
+      "existing_name": "Swensen",
+      "registered_business_name": "Swensen",
+      "existing_address": "Address: 83 PUNGGOL CENTRAL #02-35,WATERTOWN,Singapore 828761 WATERTOWN",
+      "official_tenant_name": "Swensen's",
+      "official_unit": "West Wing, #02-35",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique staged-workbook SFA row matching postal code 828761, overlapping exact unit token and exact normalized tenant name or clear alias."
+      },
+      "source_detail_url": "https://www.waterwaypoint.com.sg/stores/swensens",
+      "field_proposals": {
+        "Website": "https://swensens.com.sg/",
+        "Contact Details": "6385 9096",
+        "Opening Hours / Closed Days": "Monday to Sunday | 11am to 10.30pm"
+      },
+      "field_evidence": {
+        "Website": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/swensens",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        },
+        "Contact Details": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/swensens",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/swensens",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        }
+      },
+      "source_record_values": {
+        "website": "https://swensens.com.sg/",
+        "phone1": "6385 9096",
+        "phone2": null,
+        "phone3": null,
+        "opening_hours_text": "Monday to Sunday | 11am to 10.30pm"
+      },
+      "withheld_notes": []
+    },
+    {
+      "sfa_licence": "NE26D87A000",
+      "existing_name": "TOFU G",
+      "registered_business_name": "TOFU G",
+      "existing_address": "Address: 83 PUNGGOL CENTRAL #01-53,WATERWAY POINT,Singapore 828761",
+      "official_tenant_name": "Tofu G",
+      "official_unit": "East Wing, #01-53",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique staged-workbook SFA row matching postal code 828761, overlapping exact unit token and exact normalized tenant name or clear alias."
+      },
+      "source_detail_url": "https://www.waterwaypoint.com.sg/stores/tofu-g",
+      "field_proposals": {
+        "Website": "https://www.tofug.sg/",
+        "Opening Hours / Closed Days": "Monday to Sunday | 11am to 10pm"
+      },
+      "field_evidence": {
+        "Website": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/tofu-g",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/tofu-g",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        }
+      },
+      "source_record_values": {
+        "website": "https://www.tofug.sg/",
+        "phone1": "-",
+        "phone2": "",
+        "phone3": "",
+        "opening_hours_text": "Monday to Sunday | 11am to 10pm"
+      },
+      "withheld_notes": []
+    },
+    {
+      "sfa_licence": "NE15742C000",
+      "existing_name": "WEN ZHANG LAO MIAN",
+      "registered_business_name": "WEN ZHANG LAO MIAN",
+      "existing_address": "Address: 83 PUNGGOL CENTRAL #B2-04,WATERWAY POINT,Singapore 828761",
+      "official_tenant_name": "Wen Zhang Lao Mian",
+      "official_unit": "East Wing, #B2-04",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique staged-workbook SFA row matching postal code 828761, overlapping exact unit token and exact normalized tenant name or clear alias."
+      },
+      "source_detail_url": "https://www.waterwaypoint.com.sg/stores/wen-zhang-lao-mian",
+      "field_proposals": {
+        "Opening Hours / Closed Days": "Monday to Sunday | 11am to 10pm"
+      },
+      "field_evidence": {
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/wen-zhang-lao-mian",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        }
+      },
+      "source_record_values": {
+        "website": "",
+        "phone1": "Not available",
+        "phone2": null,
+        "phone3": null,
+        "opening_hours_text": "Monday to Sunday | 11am to 10pm"
+      },
+      "withheld_notes": []
+    },
+    {
+      "sfa_licence": "NE15723K000",
+      "existing_name": "white restaurant",
+      "registered_business_name": "white restaurant",
+      "existing_address": "Address: 83 PUNGGOL CENTRAL #B1-12,WATERWAY POINT,Singapore 828761 WATERWAY POINT",
+      "official_tenant_name": "White Restaurant",
+      "official_unit": "West Wing, #B1-12",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique staged-workbook SFA row matching postal code 828761, overlapping exact unit token and exact normalized tenant name or clear alias."
+      },
+      "source_detail_url": "https://www.waterwaypoint.com.sg/stores/white-restaurant",
+      "field_proposals": {
+        "Website": "https://whiterestaurant.com.sg/",
+        "Opening Hours / Closed Days": "Monday to Sunday | 11am to 10pm"
+      },
+      "field_evidence": {
+        "Website": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/white-restaurant",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.waterwaypoint.com.sg/stores/white-restaurant",
+          "confidence": "high",
+          "basis": "Official Waterway Point tenant record; exact postal code, exact floor/unit token, and unique SFA name/alias match. Field is blank in staged workbook.",
+          "freshness": "Live feed observed 2026-10-18; tenant-specific field published by mall directory."
+        }
+      },
+      "source_record_values": {
+        "website": "https://whiterestaurant.com.sg/",
+        "phone1": "8073 6693",
+        "phone2": "",
+        "phone3": "",
+        "opening_hours_text": "Monday to Sunday | 11am to 10pm"
+      },
+      "withheld_notes": []
+    }
+  ],
+  "excluded_ambiguous": [],
+  "withheld_data": [
+    {
+      "tenant": "Ajumma’s",
+      "field": "Contact Details",
+      "value": "6123 4567",
+      "reason": "Not found/corroborated on first-party operator website reviewed; omitted per instruction.",
+      "first_party_source_checked": "https://www.ajummassg.com/"
+    }
+  ]
+}

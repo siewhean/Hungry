@@ -1,0 +1,142 @@
+{
+  "date": "2026-10-20",
+  "base_head": "50b2223e3ee058618bc23db48a97fb9fafac41ee",
+  "scope": "Current dirty mobile working tree; all screen-area TSX including supporting shells/modals; no app implementation changes authorized.",
+  "groups": {
+    "auth": [
+      "src/app/screens/SplashScreen.tsx",
+      "src/app/screens/auth/AuthProviderButton.tsx",
+      "src/app/screens/auth/AuthScreenShell.tsx",
+      "src/app/screens/auth/AuthStack.tsx",
+      "src/app/screens/auth/ChangePasswordScreen.tsx",
+      "src/app/screens/auth/EmailVerificationScreen.tsx",
+      "src/app/screens/auth/ForgotPasswordScreen.tsx",
+      "src/app/screens/auth/LoginScreen.tsx",
+      "src/app/screens/auth/ResetPasswordScreen.tsx",
+      "src/app/screens/auth/ResetPasswordSuccessScreen.tsx",
+      "src/app/screens/auth/SignUpScreen.tsx"
+    ],
+    "onboarding": [
+      "src/app/screens/onboarding/CuisineSelectionScreen.tsx",
+      "src/app/screens/onboarding/LocationPermissionScreen.tsx",
+      "src/app/screens/onboarding/ManualLocationPickerScreen.tsx",
+      "src/app/screens/onboarding/OnboardingAuthScreen.tsx",
+      "src/app/screens/onboarding/OnboardingIntro1Screen.tsx",
+      "src/app/screens/onboarding/OnboardingIntroTemplate.tsx",
+      "src/app/screens/onboarding/OnboardingScreenShell.tsx",
+      "src/app/screens/onboarding/OnboardingStack.tsx",
+      "src/app/screens/onboarding/TasteProfileResultScreen.tsx",
+      "src/app/screens/onboarding/TasteQuizScreen.tsx",
+      "src/app/screens/onboarding/WelcomeScreen.tsx"
+    ],
+    "discover-search": [
+      "src/app/screens/discover/CraveScreen.tsx",
+      "src/app/screens/discover/DecideForMeResultScreen.tsx",
+      "src/app/screens/discover/DiscoverHomeScreen.tsx",
+      "src/app/screens/discover/QuickBitesScreen.tsx",
+      "src/app/screens/search/DishSearchScreen.tsx",
+      "src/app/screens/search/SearchResultsScreen.tsx",
+      "src/app/screens/search/TasteFilterScreen.tsx"
+    ],
+    "maps-detail": [
+      "src/app/screens/catalog/CatalogRawDetailScreen.tsx",
+      "src/app/screens/detail/DishDetailScreenV2.tsx",
+      "src/app/screens/detail/MerchantClaimExplainerScreen.tsx",
+      "src/app/screens/detail/NotFoundScreen.tsx",
+      "src/app/screens/detail/OfflineStateScreen.tsx",
+      "src/app/screens/detail/StallDetailScreen.tsx",
+      "src/app/screens/discover/HomeMapScreen.tsx",
+      "src/app/screens/discover/MapZoomedInScreen.tsx"
+    ],
+    "home-social": [
+      "src/app/screens/home/ActivityInboxScreen.tsx",
+      "src/app/screens/home/ActivityPostDetailScreen.tsx",
+      "src/app/screens/home/AddStoryScreen.tsx",
+      "src/app/screens/home/ChatDetailScreen.tsx",
+      "src/app/screens/home/DirectMessagesScreen.tsx",
+      "src/app/screens/home/HomeFeedScreen.tsx",
+      "src/app/screens/home/StoryViewerScreen.tsx"
+    ],
+    "merchant": [
+      "src/app/screens/merchant/AIAssistantScreen.tsx",
+      "src/app/screens/merchant/BusinessProfileEditorScreen.tsx",
+      "src/app/screens/merchant/CustomerInboxScreen.tsx",
+      "src/app/screens/merchant/DishEditorScreen.tsx",
+      "src/app/screens/merchant/FeaturedVisitorsScreen.tsx",
+      "src/app/screens/merchant/HomeBasedVerificationScreen.tsx",
+      "src/app/screens/merchant/MerchantAnalyticsScreen.tsx",
+      "src/app/screens/merchant/MerchantDashboardScreen.tsx",
+      "src/app/screens/merchant/MerchantMenuScreen.tsx",
+      "src/app/screens/merchant/MerchantProfileScreen.tsx",
+      "src/app/screens/merchant/MerchantSettingsScreen.tsx",
+      "src/app/screens/merchant/OCRDraftScreen.tsx",
+      "src/app/screens/merchant/OrdersComingSoonScreen.tsx",
+      "src/app/screens/merchant/PromotionBuilderScreen.tsx",
+      "src/app/screens/merchant/PromotionListScreen.tsx",
+      "src/app/screens/merchant/VerificationCentreScreen.tsx"
+    ],
+    "profile": [
+      "src/app/screens/profile/AddStallScreen.tsx",
+      "src/app/screens/profile/EditProfileScreen.tsx",
+      "src/app/screens/profile/FavouritesScreen.tsx",
+      "src/app/screens/profile/FollowedStallsScreen.tsx",
+      "src/app/screens/profile/MissionsScreen.tsx",
+      "src/app/screens/profile/PassportScreen.tsx",
+      "src/app/screens/profile/ProfileConnectionsScreen.tsx",
+      "src/app/screens/profile/ProfileHomeScreen.tsx",
+      "src/app/screens/profile/ProfileScreenShell.tsx",
+      "src/app/screens/profile/ProfileStack.tsx",
+      "src/app/screens/profile/ReviewHistoryScreen.tsx",
+      "src/app/screens/profile/SocialGridScreen.tsx",
+      "src/app/screens/profile/SocialPostDetailScreen.tsx",
+      "src/app/screens/profile/UserProfileContent.tsx",
+      "src/app/screens/profile/UserProfileScreen.tsx",
+      "src/app/screens/profile/VisitedStallsScreen.tsx"
+    ],
+    "settings": [
+      "src/app/screens/profile/SettingsScreen.tsx"
+    ],
+    "reviews-post": [
+      "src/app/screens/post/PostComposerScreen.tsx",
+      "src/app/screens/post/PostComposerScreenV2.tsx",
+      "src/app/screens/review/MusicSelectionScreen.tsx",
+      "src/app/screens/review/QuickReviewModal.tsx",
+      "src/app/screens/review/QuickReviewSheet.tsx",
+      "src/app/screens/review/ReviewFeedScreen.tsx",
+      "src/app/screens/review/ReviewScreen.tsx",
+      "src/app/screens/review/ReviewScreenShell.tsx",
+      "src/app/screens/review/ReviewShareSheet.tsx",
+      "src/app/screens/review/ReviewStack.tsx",
+      "src/app/screens/review/ReviewStars.tsx",
+      "src/app/screens/review/ReviewSuccessModal.tsx"
+    ],
+    "saved-tools": [
+      "src/app/screens/checklist/ChecklistDetailScreen.tsx",
+      "src/app/screens/checklist/ChecklistItemPickerScreen.tsx",
+      "src/app/screens/checklist/ChecklistsHomeScreen.tsx",
+      "src/app/screens/discover/CollectionDetailScreen.tsx",
+      "src/app/screens/discover/CollectionListScreen.tsx",
+      "src/app/screens/portfolio/AdminPortfolioFlagsScreen.tsx",
+      "src/app/screens/portfolio/PortfolioCollaboratorsScreen.tsx",
+      "src/app/screens/portfolio/PortfolioCreateScreen.tsx",
+      "src/app/screens/portfolio/PortfolioDetailScreen.tsx",
+      "src/app/screens/portfolio/PortfolioEditScreen.tsx",
+      "src/app/screens/portfolio/PortfolioItemPickerScreen.tsx",
+      "src/app/screens/portfolio/PortfolioPublicViewScreen.tsx",
+      "src/app/screens/portfolio/PortfolioSearchScreen.tsx",
+      "src/app/screens/portfolio/PortfoliosHomeScreen.tsx",
+      "src/app/screens/wheel/WheelEntryAddSheet.tsx",
+      "src/app/screens/wheel/WheelHomeScreen.tsx",
+      "src/app/screens/wheel/WheelLobbyScreen.tsx",
+      "src/app/screens/wheel/WheelResultModal.tsx",
+      "src/app/screens/wheel/WheelSpinScreen.tsx",
+      "src/app/screens/wheel/WheelStack.tsx"
+    ],
+    "reads-dev": [
+      "src/app/screens/dev/DesignGalleryScreen.tsx",
+      "src/app/screens/dev/DeveloperLauncherScreen.tsx",
+      "src/app/screens/reads/BlogPostWebViewScreen.tsx",
+      "src/app/screens/reads/ReadsFeedScreen.tsx"
+    ]
+  }
+}

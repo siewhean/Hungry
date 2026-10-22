@@ -1,0 +1,43 @@
+{
+  "snapshot_id": "kuroki_paragon_menu_access_audit_20261019",
+  "observed_date": "2026-10-19",
+  "baseline_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_workbook_sha256": "1da3fa30b03df12c559bb29e1137775aa3f6f61a88eef65a23e81b7b048a6292",
+  "target": {
+    "sfa_licence": "CE21966L000",
+    "outlet": "KUROKI",
+    "address": "290 Orchard Road #05-03, The Paragon, Singapore 238859"
+  },
+  "method": "Read official Kuroki landing page, fetched the linked October 2026 PDF URL directly, and checked the newest older official PDF linked by search indexing. Menu rows compared by exact licence and normalized item+licence against baseline Menu Items sheet.",
+  "current_official_page": {
+    "url": "https://kuroki.com.sg/",
+    "http_status": 200,
+    "http_last_modified": "2026-10-15T05:33:44Z",
+    "capture_path": "/tmp/kuroki_site.html",
+    "capture_sha256": "36f098adc5bcb99417e636047c069344c5212d145d0a87cac474ebe9df698a7a",
+    "menu_link": "https://sushitei.com/wp-content/uploads/2026/10/Kuroki-Website-Menu.pdf"
+  },
+  "october_pdf": {
+    "url": "https://sushitei.com/wp-content/uploads/2026/10/Kuroki-Website-Menu.pdf",
+    "retrievable": false,
+    "http_status": 403,
+    "content_type": "text/html; charset=UTF-8",
+    "response_sha256": "9b817b1640f332aff0adfd105bff379accd3a8bee1cd2673fcd1b7eada4a17de",
+    "response_note": "Cloudflare 'Just a moment' security verification HTML, not a PDF. No challenge was solved or bypassed."
+  },
+  "newest_older_first_party_pdf": {
+    "url": "https://sushitei.com/wp-content/uploads/2026/03/April_Kuroki-Website-Menu.pdf",
+    "source": "Official Sushitei WordPress PDF URL returned in web search index; path indicates March 2026 upload and filename says April menu; about 6-7 months old as of 2026-10-19.",
+    "direct_http_status": 403,
+    "direct_response_content_type": "text/html; charset=UTF-8",
+    "direct_response_sha256": "6508a51169b3ba75017a93df43ca7830756a1022d437bda3745082db409f4559",
+    "indexed_text_available": true,
+    "indexed_text_note": "Search index exposed portions of PDF text and prices, but the original PDF bytes could not be fetched or visually rendered. No rows transcribed from index-only text."
+  },
+  "existing_exact_licence_menu_rows": 0,
+  "proposal_count": 0,
+  "proposals": [],
+  "reason_no_proposals": "The request requires manually verified item names/categories/prices on rendered PDF pages. Both the current October PDF and newest older official March/April PDF returned Cloudflare verification HTML on direct fetch, and the indexed older PDF could not be rendered for visual confirmation. Do not use unverified search snippets as transcription evidence.",
+  "image_urls": [],
+  "capture_limitations": "SHA256 values for the two blocked .pdf requests identify HTML challenge responses, not source PDFs. The actual PDF file hashes are unavailable."
+}

@@ -1,0 +1,76 @@
+{
+  "snapshot_id": "astons_marina_square_exact_contact_hours_20261018",
+  "captured_at": "2026-10-18",
+  "baseline_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_workbook_sha256": "986a2656c3243d55c1a3914a3c5fbbdf2052e0423a69705785cbba0b7fee154e",
+  "workbook_edited": false,
+  "scope": "One exact SFA outlet at Marina Square; fill only blank contact, website, and opening hours from the official operator location listing. Other Marina Square rows were not inferred from the mall-wide footer.",
+  "method": "Current directory row joined by exact SFA licence, outlet address, mall, postal code, and unit. Checked that no prior source snapshot proposed these contact/site/hours values for this SFA licence.",
+  "source_evidence": [
+    {
+      "url": "https://www.astons.com.sg/our-brands/",
+      "publisher": "ASTONS official operator outlet locator",
+      "http_status": 200,
+      "captured_at": "2026-10-18",
+      "content_sha256": "82747d5628f53df30f768aced543c102cb3b1ccf53436a2a74b295d16d0bd5b5",
+      "evidence_excerpt": "Marina Square; #03-145/146, 6 Raffles Boulevard, Singapore 039594; Tel: 6336 0311; Mondays to Thursdays: 11:30AM - 3:00PM, 5:00PM - 10:00PM; Fridays to Sundays & PHs: 11:30AM - 10:00PM.",
+      "evidence_locator": "Captured HTML contains exact location JSON entry with title Marina Square, address, contact and hours.",
+      "transport_note": "Raw HTML captured using curl -k because Python TLS verification failed locally; certificate validation was disabled for capture. Official primary page was also surfaced by web search."
+    }
+  ],
+  "proposals": [
+    {
+      "sfa_licence": "CE15D43B000",
+      "directory_row": 2602,
+      "f_and_b_name": "ASTONS STEAK & SALAD",
+      "business_type": "Restaurant",
+      "postal_code": "039594",
+      "workbook_address": "Address: 6 RAFFLES BOULEVARD #03-146,MARINA SQUARE,Singapore 039594",
+      "source_outlet_address": "#03-145/146, 6 Raffles Boulevard, Singapore 039594",
+      "exact_match_basis": "Same Marina Square outlet and postal code; operator source unit range #03-145/146 includes the SFA-licensed unit #03-146.",
+      "before": {
+        "contact_details": null,
+        "website": null,
+        "opening_hours_closed_days": null
+      },
+      "changes": [
+        {
+          "field": "Contact Details",
+          "before": null,
+          "after": "Contact: +65 6336 0311",
+          "confidence": "high",
+          "source_url": "https://www.astons.com.sg/our-brands/",
+          "source_sha256": "82747d5628f53df30f768aced543c102cb3b1ccf53436a2a74b295d16d0bd5b5"
+        },
+        {
+          "field": "Website",
+          "before": null,
+          "after": "https://www.astons.com.sg/our-brands/",
+          "confidence": "high",
+          "source_url": "https://www.astons.com.sg/our-brands/",
+          "source_sha256": "82747d5628f53df30f768aced543c102cb3b1ccf53436a2a74b295d16d0bd5b5",
+          "reason": "Official ASTONS operator outlet locator and brand site."
+        },
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "after": "Hours: Mon–Thu: 11:30am–3:00pm, 5:00pm–10:00pm; Fri–Sun & PH: 11:30am–10:00pm",
+          "confidence": "high",
+          "source_url": "https://www.astons.com.sg/our-brands/",
+          "source_sha256": "82747d5628f53df30f768aced543c102cb3b1ccf53436a2a74b295d16d0bd5b5"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "exact_outlets_checked": 1,
+    "blank_field_proposals": 3,
+    "nonblank_overwrites": 0,
+    "workbook_edits": 0
+  },
+  "limitations": [
+    "The outlet is listed by the operator as a paired unit #03-145/146; the SFA record is unit #03-146.",
+    "Website field proposal uses the operator location page because it is the exact page providing the outlet details.",
+    "One row is a bounded sample, not a full Marina Square directory audit."
+  ]
+}

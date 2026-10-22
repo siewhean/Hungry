@@ -86,7 +86,10 @@ export function applyVerificationSubmission(
 ): MerchantVerification {
   const nowIso = new Date().toISOString();
   const nextStatus = transitionVerificationStatus(verification.status, "submit");
-  const evidence = buildVerificationEvidence(evidenceInput.method, evidenceInput.fileUrl);
+  const evidence = {
+    ...buildVerificationEvidence(evidenceInput.method, evidenceInput.fileUrl),
+    reviewNote: evidenceInput.reviewNote,
+  };
 
   return {
     ...verification,
@@ -94,7 +97,5 @@ export function applyVerificationSubmission(
     method: evidenceInput.method,
     evidence: [...verification.evidence, evidence],
     submittedAt: nowIso,
-    rejectionReason: undefined,
-    rejectedAt: undefined,
   };
 }

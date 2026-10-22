@@ -1,0 +1,113 @@
+{
+  "snapshot_id": "far_east_malls_official_exact_blank_fields_refresh108_20261018",
+  "captured_date": "2026-10-18",
+  "workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "69c17622f7e7dd965b09955a7383465eae54fd1b06cc09db97c1dbe4cf088548",
+  "publisher": "Far East Organization / Far East Malls",
+  "method": "Read-only review of live official mall directories and tenant detail pages; proposed only facts matching exact SFA name, postal code, and unit in the master. No workbook changes made.",
+  "mall_directory_sources": [
+    {
+      "mall": "Orchard Central",
+      "url": "https://www.fareastmalls.com.sg/en/orchard-central/shops",
+      "official_directory_fact": "Directory lists 3 LITTLE GIRLS at #04-29 as Food & Beverage.",
+      "detail_page": "https://www.fareastmalls.com.sg/en/orchard-central/shops/shop?shopName=3+LITTLE+GIRLS"
+    },
+    {
+      "mall": "One Holland Village",
+      "url": "https://www.fareastmalls.com.sg/en/one-holland-village/shops",
+      "official_directory_fact": "Directory lists AWFULLY CHOCOLATE at #01-06 as Food & Beverage.",
+      "detail_page": "https://www.fareastmalls.com.sg/en/one-holland-village/shops/shop?shopName=AWFULLY+CHOCOLATE"
+    },
+    {
+      "mall": "Square 2",
+      "url": "https://www.fareastmalls.com.sg/en/square-2/shops",
+      "official_directory_fact": "Directory lists ALCHEMIST at #01-172 as Food & Beverage.",
+      "detail_page": "https://www.fareastmalls.com.sg/en/square-2/shops/shop?shopName=ALCHEMIST"
+    },
+    {
+      "mall": "West Coast Plaza",
+      "url": "https://www.fareastmalls.com.sg/en/west-coast-plaza/shops",
+      "official_directory_fact": "Directory lists AU CROISSANT at #B1-49 as Food & Beverage.",
+      "detail_page": "https://www.fareastmalls.com.sg/en/west-coast-plaza/shops/shop?shopName=AU+CROISSANT"
+    }
+  ],
+  "proposed_updates": [
+    {
+      "sfa_licence": "CE21P70N000",
+      "f_and_b_name": "3 Little Girls",
+      "postal_code": "238896",
+      "unit": "#04-29",
+      "join_basis": "Exact SFA name, postal code 238896, and unit #04-29 match between workbook and official Orchard Central detail page.",
+      "current_blank_fields": ["Contact Details", "Opening Hours / Closed Days"],
+      "proposed_values": {
+        "Contact Details": "Contact: +6588651257",
+        "Opening Hours / Closed Days": "11am to 10pm"
+      },
+      "source_url": "https://www.fareastmalls.com.sg/en/orchard-central/shops/shop?shopName=3+LITTLE+GIRLS",
+      "evidence": "Official detail page displayed unit #04-29, telephone 8865 1257, and opening hours 11am to 10pm.",
+      "source_observed_date": "2026-10-18",
+      "confidence": "high"
+    },
+    {
+      "sfa_licence": "CE24322C000",
+      "f_and_b_name": "AWFULLY CHOCOLATE",
+      "postal_code": "275748",
+      "unit": "#01-06",
+      "join_basis": "Exact SFA brand, postal code 275748, and unit #01-06 match between workbook and official One Holland Village detail page.",
+      "current_blank_fields": ["Contact Details", "Opening Hours / Closed Days"],
+      "proposed_values": {
+        "Contact Details": "Contact: +6569040113",
+        "Opening Hours / Closed Days": "Monday - Sunday: 10am - 10pm"
+      },
+      "source_url": "https://www.fareastmalls.com.sg/en/one-holland-village/shops/shop?shopName=AWFULLY+CHOCOLATE",
+      "evidence": "Official detail page displayed unit #01-06, telephone 6904 0113, and Monday-Sunday hours 10am-10pm.",
+      "source_observed_date": "2026-10-18",
+      "confidence": "high"
+    },
+    {
+      "sfa_licence": "CE10620K000",
+      "f_and_b_name": "ALCHEMIST",
+      "postal_code": "307506",
+      "unit": "#01-172",
+      "join_basis": "Exact SFA brand, postal code 307506, and unit #01-172 match between workbook and official Square 2 detail page.",
+      "current_blank_fields": ["Website", "Opening Hours / Closed Days"],
+      "proposed_values": {
+        "Website": "https://alchemist.global/",
+        "Opening Hours / Closed Days": "8am to 8pm daily"
+      },
+      "source_url": "https://www.fareastmalls.com.sg/en/square-2/shops/shop?shopName=ALCHEMIST",
+      "evidence": "Official detail page displayed unit #01-172, Visit Website link to alchemist.global, and opening hours 8am to 8pm daily.",
+      "source_observed_date": "2026-10-18",
+      "confidence": "high"
+    },
+    {
+      "sfa_licence": "SW09692K000",
+      "f_and_b_name": "Au Croissant",
+      "postal_code": "127371",
+      "unit": "#B1-49",
+      "join_basis": "Exact SFA name, postal code 127371, and unit #B1-49 match between workbook and official West Coast Plaza detail page.",
+      "current_blank_fields": ["Opening Hours / Closed Days"],
+      "proposed_values": {
+        "Opening Hours / Closed Days": "8:30am – 9:30pm"
+      },
+      "source_url": "https://www.fareastmalls.com.sg/en/west-coast-plaza/shops/shop?shopName=AU+CROISSANT",
+      "evidence": "Official detail page displayed unit #B1-49 and opening hours 8:30am-9:30pm. Days were not specified and are not inferred.",
+      "source_observed_date": "2026-10-18",
+      "confidence": "high"
+    }
+  ],
+  "candidate_counts": {
+    "malls_reviewed": 4,
+    "exact_sfa_row_matches": 4,
+    "blank_only_field_values": 7,
+    "menu_urls": 0,
+    "official_menu_images": 0,
+    "closures_removed": 0
+  },
+  "image_note": "Mall detail pages expose generic page imagery but this review did not establish exact menu/stall image asset URLs and reuse rights. No image candidate proposed.",
+  "limitations": [
+    "No Last-Modified date was exposed for these tenant detail facts; captured as displayed on 2026-10-18.",
+    "These are mall operator-listed contacts and hours, not independently confirmed by direct calls or visits.",
+    "This source batch does not constitute islandwide venue verification."
+  ]
+}

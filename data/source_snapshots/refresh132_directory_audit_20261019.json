@@ -1,0 +1,87 @@
+{
+  "snapshot": "refresh132_directory_audit_20261019",
+  "baseline_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_workbook_sha256": "66d0b6438982c0b74715bd83db5636392399f40b279ad615ee8e27afd7869611",
+  "scope": "Read-only exact-branch audit of populated contact, website, and opening-hour values prioritized for possible staleness. No value was cleared solely because a source omitted it. Only first-party operator or mall sources considered. No workbook edits, paid sources, or Mapbox calls.",
+  "observed_at": "2026-10-19",
+  "sources_checked": [
+    {
+      "url": "https://www.328katonglaksa.sg/",
+      "source_type": "first-party operator branch directory",
+      "retrieved": "2026-10-19",
+      "evidence": "The operator page lists the 216 East Coast Road outlet at postal code 428914 with daily hours 9:30am–10:00pm, and United Square at 101 Thomson Road #01-K1, postal code 307591, with daily hours 9:00am–7:30pm."
+    },
+    {
+      "url": "https://www.causewaypoint.com.sg/content/frasersexperience/cwp/en/whats-on/events/2026-lunar-new-year-store-operating-hours0.html",
+      "source_type": "first-party mall tenant/store operating-hours listing",
+      "retrieved": "2026-10-19",
+      "source_updated": "2026 Lunar New Year listing; page does not establish an evergreen schedule",
+      "evidence": "The Causeway Point #01-38/39 4FINGERS listing states 10:00am–10:00pm across the listed day columns. It matches the catalogue hours, but its dated/event context limits its value for confirming the current evergreen schedule."
+    }
+  ],
+  "field_deltas": [],
+  "reviewed_values": [
+    {
+      "sfa_licence": "E87097P000",
+      "f_and_b_name": "328 Katong Laksa",
+      "postal_code": "428914",
+      "address_match": "SFA: 216 EAST COAST ROAD, Singapore 428914; operator: 216 East Coast Road, Singapore 428914",
+      "field": "Opening Hours / Closed Days",
+      "old_value": "Daily 9:30am–10:00pm",
+      "verified_value": "Daily 9:30am–10:00pm",
+      "proposed_value": null,
+      "source_url": "https://www.328katonglaksa.sg/",
+      "observed_at": "2026-10-19",
+      "confidence": "high",
+      "disposition": "retain_no_change",
+      "reason": "Exact street and postal-code match to the current first-party operator page; catalogue value agrees exactly."
+    },
+    {
+      "sfa_licence": "W03097L000",
+      "f_and_b_name": "328 Katong Laksa",
+      "postal_code": "307591",
+      "address_match": "SFA: 101 THOMSON ROAD #01-K1, UNITED SQUARE, Singapore 307591; operator: United Square Shopping Mall, 101 Thomson Road, #01-K1, Singapore 307591",
+      "field": "Opening Hours / Closed Days",
+      "old_value": "Hours: Daily 09:00–19:30",
+      "verified_value": "Daily 9:00am–7:30pm",
+      "proposed_value": null,
+      "source_url": "https://www.328katonglaksa.sg/",
+      "observed_at": "2026-10-19",
+      "confidence": "high",
+      "disposition": "retain_no_change",
+      "reason": "Exact mall, street, unit and postal-code match to the operator's current branch listing; hours agree exactly."
+    },
+    {
+      "sfa_licence": "B98114V000",
+      "f_and_b_name": "4FINGERS CRISPY CHICKEN",
+      "postal_code": "738099",
+      "address_match": "SFA: 1 Woodlands Square #01-38/39, Causeway Point, Singapore 738099; mall source: Causeway Point #01-38/39 4FINGERS",
+      "field": "Opening Hours / Closed Days",
+      "old_value": "Monday to Sunday | 10am to 10pm",
+      "verified_value": "10:00am–10:00pm for all day columns in the cited listing",
+      "proposed_value": null,
+      "source_url": "https://www.causewaypoint.com.sg/content/frasersexperience/cwp/en/whats-on/events/2026-lunar-new-year-store-operating-hours0.html",
+      "observed_at": "2026-10-19",
+      "confidence": "medium",
+      "disposition": "retain_no_change",
+      "reason": "Exact unit match and hours agreement, but the official mall evidence is a dated Lunar New Year schedule, not an evergreen current-hours page; it does not justify overwriting or clearing the existing value."
+    }
+  ],
+  "summary": {
+    "exact_branch_field_values_reviewed": 3,
+    "contact_values_reviewed": 0,
+    "website_values_reviewed": 0,
+    "opening_hour_values_reviewed": 3,
+    "corrections_proposed": 0,
+    "values_cleared": 0,
+    "values_retained_after_first_party_check": 3,
+    "workbook_edited": false,
+    "paid_services_used": false,
+    "mapbox_requests": 0
+  },
+  "limitations": [
+    "This bounded audit reviewed three exact-branch opening-hour values; it does not establish directory-wide freshness of the 2,708 contacts, 2,819 websites, or 1,488 hours.",
+    "No phone or website was changed because the retrieved exact-branch official sources did not establish that an existing value was false or invalid. Source omission alone is not evidence of invalidity.",
+    "The Causeway Point source is event-dated and is weak evidence for an evergreen schedule; the existing hours were left unchanged pending a current exact-branch source."
+  ]
+}

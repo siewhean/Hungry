@@ -1,0 +1,84 @@
+env: load .env.local .env.development
+env: export EXPO_PUBLIC_APP_ENV EXPO_PUBLIC_HUNGRY_DATA_SOURCE EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN EXPO_PUBLIC_POSTHOG_API_KEY EXPO_PUBLIC_POSTHOG_HOST EXPO_PUBLIC_SENTRY_DSN EXPO_PUBLIC_SUPABASE_ANON_KEY EXPO_PUBLIC_SUPABASE_URL EXPO_TOKEN MAPBOX_SECRET_TOKEN SENTRY_AUTH_TOKEN SENTRY_ORG SENTRY_PROJECT SUPABASE_SERVICE_ROLE_KEY EXPO_PUBLIC_AUTH_REDIRECT_URL EXPO_PUBLIC_OAUTH_PROVIDERS_ENABLED EXPO_PUBLIC_SUPABASE_KEY HF_TOKEN HUNGRY_ALLOW_SERVICE_ROLE_IMPORT HUNGRY_ALLOW_SERVICE_ROLE_SMOKE HUNGRY_CONSOLE_PASSWORD HUNGRY_CONSOLE_USERNAME HUNGRY_DATA_SOURCE HUNGRY_ENRICHMENT_PAUSE HUNGRY_SUPABASE_IMPORT_PROJECT_REF HUNGRY_SUPABASE_IMPORT_SERVICE_ROLE_KEY HUNGRY_SUPABASE_IMPORT_URL HUNGRY_SUPABASE_SMOKE_ANON_KEY HUNGRY_SUPABASE_SMOKE_PROJECT_REF HUNGRY_SUPABASE_SMOKE_REQUIRED HUNGRY_SUPABASE_SMOKE_SERVICE_ROLE_KEY HUNGRY_SUPABASE_SMOKE_URL HUNGRY_SYNC_PAUSE NEXT_PUBLIC_SITE_URL SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD
+› Installing 2 SDK 55.0.0 compatible native modules using npm
+> npm install
+
+> hungry-mobile@0.1.0 postinstall
+> patch-package && node ./scripts/repair-expo-autolinking-ruby.cjs && node ./scripts/repair-expo-build-jsx.cjs
+
+patch-package 8.0.1
+Applying patches...
+expo-constants@55.0.17 ✔
+react-native@0.83.6 ✔
+react-native-tab-view@4.3.0 ✔
+
+Warning: patch-package detected a patch file version mismatch
+
+  Don't worry! This is probably fine. The patch was still applied
+  successfully. Here's the deets:
+
+  Patch file created for
+
+    react-native@0.83.6
+
+  applied to
+
+    react-native@0.83.10
+  
+  At path
+  
+    node_modules/react-native
+
+  This warning is just to give you a heads-up. There is a small chance of
+  breakage even though the patch was applied successfully. Make sure the package
+  still behaves like you expect (you wrote tests, right?) and then run
+
+    patch-package react-native
+
+  to update the version in the patch file name and make this warning go away.
+
+---
+patch-package finished with 1 warning(s).
+repair-expo-autolinking-ruby: already patched
+repair-expo-build-jsx: transpiled 0 file(s)
+
+> hungry-mobile@0.1.0 prepare
+> husky
+
+
+added 1 package, removed 1 package, and audited 1395 packages in 9s
+
+273 packages are looking for funding
+  run `npm fund` for details
+
+72 high severity vulnerabilities
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues possible (including breaking changes), run:
+  npm audit fix --force
+
+Some issues need review, and may require choosing
+a different dependency.
+
+Run `npm audit` for details.
+npm warn install-scripts 6 packages have install scripts not yet covered by allowScripts:
+npm warn install-scripts   @sentry/cli@2.58.4 (postinstall: node ./scripts/install.js)
+npm warn install-scripts   @shopify/react-native-skia@2.4.18 (postinstall: node ./scripts/install-skia.mjs)
+npm warn install-scripts   esbuild@0.28.1 (postinstall: node install.js)
+npm warn install-scripts   fsevents@2.3.3 (install: (install scripts present))
+npm warn install-scripts   fsevents@2.3.2 (install: (install scripts present))
+npm warn install-scripts   unrs-resolver@1.11.1 (postinstall: napi-postinstall unrs-resolver 1.11.1 check)
+npm warn install-scripts
+npm warn install-scripts Run `npm install-scripts ls` to review, or `npm install-scripts approve <pkg>` to allow.
+
+Cannot automatically write to dynamic config at: app.config.js
+Add the following to your Expo config
+
+{
+  "plugins": [
+    "expo-sharing"
+  ]
+}
+

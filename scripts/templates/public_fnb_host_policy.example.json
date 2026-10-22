@@ -1,0 +1,13 @@
+{
+  "hosts": {
+    "merchant.example.com": {
+      "collection_permitted": true,
+      "source_class": "official_website",
+      "no_request_fee": true,
+      "no_cost_basis": "Public official HTML pages; no per-request fee or paid API is used.",
+      "terms_or_license_url": "https://merchant.example.com/terms",
+      "permission_basis": "Replace with a source-specific statement confirming this collection and retention are permitted.",
+      "reviewed_at": "2026-10-19"
+    }
+  }
+}

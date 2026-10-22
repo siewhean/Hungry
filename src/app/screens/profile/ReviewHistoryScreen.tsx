@@ -1,133 +1,91 @@
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { useEffect, useMemo, useState } from "react";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useEffect, useState } from "react";
 import { View } from "react-native";
-
 import { AppText, Button, Card, EmptyState } from "@/components/ui";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
-import {
-  getDataRepository,
-  getHungryService,
-  getServiceProvider,
-} from "@/lib/services/serviceProvider";
+import { getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
-import type { Review } from "@/types/domain";
-import { isDishDetail } from "./profileGuards";
+import { useResolvedProfileEntities } from "@/features/profile/useResolvedProfileEntities";
+import { useHungryTheme } from "@/theme";
+import type { DishDetail, Review } from "@/types/domain";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 import type { ProfileStackParamList } from "./ProfileStack";
-
 type Props = NativeStackScreenProps<ProfileStackParamList, "ReviewHistory">;
-
 export function ReviewHistoryScreen({ navigation }: Props) {
-  const profile = useProfileStore((state) => state.profile);
-  const reviewEntries = useProfileStore((state) => state.reviewEntries);
-  const repository = getDataRepository();
-  const serviceProviderMode = getServiceProvider().mode;
-  const [remoteReviews, setRemoteReviews] = useState<Review[]>([]);
-  const [remoteLoadFailed, setRemoteLoadFailed] = useState(false);
-  const mockHistory = useMemo(
-    () =>
-      profile.reviewedDishIds.map((dishId) => repository.getDishById(dishId)).filter(isDishDetail),
-    [profile.reviewedDishIds, repository],
-  );
-  const remoteHistory = useMemo(
-    () =>
-      remoteReviews.map((review) => ({
-        review,
-        dish: review.dishId ? repository.getDishById(review.dishId) : undefined,
-      })),
-    [remoteReviews, repository],
-  );
-
+  const userId = useProfileStore((state) => state.profile.id);
+  const { spacing } = useHungryTheme();
+  const root = getRootNavigation(navigation);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     let active = true;
-    setRemoteLoadFailed(false);
-
-    if (serviceProviderMode === "mock") {
-      setRemoteReviews([]);
-      return () => {
-        active = false;
-      };
-    }
-
-    if (!profile.id || profile.id === "guest-user") {
-      setRemoteReviews([]);
-      return () => {
-        active = false;
-      };
-    }
-
+    setLoading(true);
+    setError(false);
+    setReviews([]);
     void getHungryService()
-      .reviews.getUserReviews(profile.id)
-      .then((reviews) => {
-        if (active) setRemoteReviews(reviews);
+      .reviews.getUserReviews(userId)
+      .then((value) => {
+        if (active) setReviews(value);
       })
       .catch(() => {
-        if (!active) return;
-        setRemoteReviews([]);
-        setRemoteLoadFailed(true);
+        if (active) setError(true);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
       });
-
     return () => {
       active = false;
     };
-  }, [profile.id, serviceProviderMode]);
-
-  const historyItems =
-    serviceProviderMode === "supabase"
-      ? remoteHistory
-      : remoteHistory.length > 0
-        ? remoteHistory
-        : mockHistory.map((dish) => ({
-            dish,
-            review: undefined,
-          }));
-  const hasHistory = historyItems.length > 0;
-
-  const openReviewFlow = () => {
-    const rootNavigation = getRootNavigation(navigation as any);
-    rootNavigation.navigate("ReviewStack", { screen: "ReviewMain" });
-  };
-
+  }, [userId, attempt]);
+  const catalog = useResolvedProfileEntities(
+    reviews.flatMap((review) => (review.dishId ? [review.dishId] : [])),
+    "dish",
+  );
+  const dishes = new Map((catalog.items as DishDetail[]).map((dish) => [dish.id, dish]));
   return (
-    <ProfileScreenShell
-      title="Review history"
-      subtitle="Submitted reviews stay visible in your profile."
-    >
-      {hasHistory ? (
-        historyItems.map(({ review, dish }) => {
-          const entry = dish ? reviewEntries[dish.id] : undefined;
-          const tags = review?.tags ?? entry?.tags ?? [];
-          const tagSummary = tags.length ? tags.join(" · ") : "";
-          const rating = review?.rating ?? entry?.rating ?? dish?.rating ?? 0;
-          const reviewText =
-            review?.text || entry?.text || "You submitted a quick review for this dish.";
-
+    <ProfileScreenShell title="Review history" subtitle="Your submitted ratings and notes.">
+      {loading ? (
+        <AppText>Loading your reviews…</AppText>
+      ) : error ? (
+        <Button label="Retry loading reviews" onPress={() => setAttempt((v) => v + 1)} />
+      ) : reviews.length ? (
+        reviews.map((review) => {
+          const dish = review.dishId ? dishes.get(review.dishId) : undefined;
           return (
-            <Card key={review?.id ?? dish?.id ?? "review-history-entry"}>
-              <View style={{ gap: 12 }}>
+            <Card key={review.id}>
+              <View style={{ gap: spacing[3] }}>
                 <AppText variant="h3">{dish?.name ?? "Reviewed dish"}</AppText>
-                <AppText tone="secondary">{reviewText}</AppText>
-                <AppText variant="bodySmall" tone="secondary">
-                  Rated {rating}/5
-                  {tagSummary ? ` · ${tagSummary}` : ""}
+                <AppText>{review.text || "Rating only"}</AppText>
+                <AppText tone="muted">
+                  Your rating: {review.rating}/5 · {new Date(review.createdAt).toLocaleDateString()}
                 </AppText>
-                <Button label="Write another review" variant="secondary" onPress={openReviewFlow} />
+                {review.tags.length ? (
+                  <AppText tone="muted">{review.tags.join(" · ")}</AppText>
+                ) : null}
+                {review.dishId ? (
+                  <Button
+                    label="View dish"
+                    variant="secondary"
+                    onPress={() => root.navigate("DishDetail", { dishId: review.dishId })}
+                  />
+                ) : null}
               </View>
             </Card>
           );
         })
       ) : (
         <EmptyState
-          title={remoteLoadFailed ? "Review history unavailable" : "No reviews yet"}
-          body={
-            remoteLoadFailed
-              ? "We could not load your submitted reviews. Please try again shortly."
-              : "Dishes you review will appear here with your own rating and notes."
-          }
-          ctaLabel={remoteLoadFailed ? undefined : "Write a review"}
-          onPress={remoteLoadFailed ? undefined : openReviewFlow}
+          title="No reviews yet"
+          body="Your reviews appear here with your own rating and notes."
+          ctaLabel="Write a review"
+          onPress={() => root.navigate("ReviewStack", { screen: "ReviewMain" })}
         />
       )}
+      {catalog.failed ? (
+        <Button variant="secondary" label="Retry loading dish names" onPress={catalog.retry} />
+      ) : null}
     </ProfileScreenShell>
   );
 }

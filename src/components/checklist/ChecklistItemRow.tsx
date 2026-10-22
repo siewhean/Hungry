@@ -18,6 +18,7 @@ interface ChecklistItemRowProps {
   label: string;
   index: number;
   totalCount: number;
+  onEdit?: () => void;
   onMarkTried: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
@@ -60,7 +61,7 @@ function getScheduleLabel(item: ChecklistItem): string {
     parts.push(`Planned ${formatDateOnly(item.plannedVisitDate)}`);
   }
   if (item.reminderAt) {
-    parts.push(`Reminder ${formatReminder(item.reminderAt)}`);
+    parts.push(`Planned time ${formatReminder(item.reminderAt)}`);
   }
   return parts.join(" · ");
 }
@@ -71,6 +72,7 @@ export function ChecklistItemRow({
   index,
   totalCount,
   onMarkTried,
+  onEdit,
   onMoveUp,
   onMoveDown,
   onDelete,
@@ -116,6 +118,7 @@ export function ChecklistItemRow({
           </AppText>
         </View>
       ) : null}
+      {onEdit ? <Button label="Edit planned time" variant="secondary" onPress={onEdit} /> : null}
       <View style={styles.actionRow}>
         <View
           {...dragPanResponder.panHandlers}
@@ -140,11 +143,10 @@ export function ChecklistItemRow({
           <GripVertical color={palette.textMuted} size={18} />
         </View>
         <Button
-          label={item.triedAt ? "Tried" : "Mark tried"}
+          label={item.triedAt ? "Undo tried" : "Mark tried"}
           size="sm"
           fullWidth={false}
           variant={item.triedAt ? "secondary" : "primary"}
-          disabled={Boolean(item.triedAt)}
           onPress={onMarkTried}
         />
         <Pressable

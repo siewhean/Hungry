@@ -32,7 +32,12 @@ import {
   FilterChipRail,
   Skeleton,
 } from "@/components/ui";
-import { promptBlockReviewAuthor, promptReportReview } from "@/lib/security/communitySafety";
+import {
+  promptBlockReviewAuthor,
+  promptReportReview,
+  isContentHiddenForSession,
+  useCommunitySafetyRevision,
+} from "@/lib/security/communitySafety";
 import {
   getDataRepository,
   getHungryService,
@@ -45,11 +50,7 @@ import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { ReviewShareSheet, type ReviewShareTarget } from "./ReviewShareSheet";
-import {
-  listReviewFeedItems,
-  makeReviewInteractionId,
-  type ReviewFeedItem,
-} from "@/features/review/reviewFeed";
+import { makeReviewInteractionId, type ReviewFeedItem } from "@/features/review/reviewFeed";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { webShareUrl } from "@/constants/links";
 
@@ -60,15 +61,13 @@ type RootNavigation = CompositeNavigationProp<
   NativeStackNavigationProp<RootStackParamList>
 >;
 
-type FilterMode = "recent" | "top_rated" | "dish" | "location";
+type FilterMode = "recent" | "top_rated";
 
 const REVIEW_FEED_PAGE_SIZE = 50;
 
 const FILTER_OPTIONS: { id: FilterMode; label: string }[] = [
   { id: "recent", label: "Most Recent" },
   { id: "top_rated", label: "Top Rated" },
-  { id: "dish", label: "By Dish" },
-  { id: "location", label: "By Location" },
 ];
 
 // ─── StarRow ─────────────────────────────────────────────────────────────────
@@ -368,6 +367,7 @@ function ReviewCard({
                 promptReportReview({
                   reviewId: item.review.id,
                   authorName: item.review.authorName,
+                  authorId: item.review.authorId,
                 })
               }
             >
@@ -382,6 +382,7 @@ function ReviewCard({
                 promptBlockReviewAuthor({
                   reviewId: item.review.id,
                   authorName: item.review.authorName,
+                  authorId: item.review.authorId,
                 })
               }
             >
@@ -402,7 +403,7 @@ function ReviewCard({
             >
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Share review"
+                accessibilityLabel="Share dish"
                 onPress={() => onSharePress(item)}
                 style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}
               >
@@ -486,7 +487,6 @@ export function ReviewFeedScreen() {
   const initializeInteractions = useSocialStore((state) => state.initializeInteractions);
   const toggleLike = useSocialStore((state) => state.toggleLike);
   const toggleSave = useSocialStore((state) => state.toggleSave);
-  const incrementShare = useSocialStore((state) => state.incrementShare);
   const favouriteDishIds = useProfileStore((state) => state.profile.favouriteDishIds);
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
@@ -519,7 +519,6 @@ export function ReviewFeedScreen() {
       commentSheet.snapToIndex(0);
     });
   }, []);
-  const stallPosts = useMemo(() => repository.listStallPosts(), [repository]);
   const searchBarWidth = screenWidth - spacing[8];
   const setTabSwipeLocked = useCallback(
     (isLocked: boolean) => {
@@ -533,8 +532,7 @@ export function ReviewFeedScreen() {
     [navigation],
   );
   const headerActionSize = spacing[8] + spacing[2.5];
-  const isServiceFeedLoading =
-    serviceProviderMode !== "mock" && serviceReviewItems === null && !serviceLoadFailed;
+  const isServiceFeedLoading = serviceReviewItems === null && !serviceLoadFailed;
   const showInitialSkeleton = useDelayedLoadingSkeleton(
     isInitialLoading || isServiceFeedLoading,
     0,
@@ -575,12 +573,17 @@ export function ReviewFeedScreen() {
 
   // One paginated query for the newest reviews instead of one request per catalog dish.
   const loadServiceReviews = useCallback(
-    async (mode: "replace" | "append", before?: string) => {
+    async (
+      mode: "replace" | "append",
+      cursor?: { createdAt: string; id: string; rating?: number },
+    ) => {
       const loadId = ++serviceLoadIdRef.current;
       try {
         const entries = await getHungryService().reviews.listRecentReviews({
           limit: REVIEW_FEED_PAGE_SIZE,
-          before,
+          cursor,
+          query: searchQuery.trim(),
+          sort: filterMode,
         });
         if (loadId !== serviceLoadIdRef.current) return;
         const items = entries.map(toServiceFeedItem);
@@ -598,14 +601,10 @@ export function ReviewFeedScreen() {
         setServiceLoadFailed(true);
       }
     },
-    [showToast, toServiceFeedItem],
+    [showToast, toServiceFeedItem, searchQuery, filterMode],
   );
 
   useEffect(() => {
-    if (serviceProviderMode === "mock") {
-      setServiceReviewItems(null);
-      return;
-    }
     void loadServiceReviews("replace");
     return () => {
       serviceLoadIdRef.current += 1;
@@ -613,7 +612,6 @@ export function ReviewFeedScreen() {
   }, [loadServiceReviews, serviceProviderMode]);
 
   const handleRefresh = useCallback(async () => {
-    if (serviceProviderMode === "mock") return;
     setIsRefreshing(true);
     try {
       await loadServiceReviews("replace");
@@ -629,12 +627,16 @@ export function ReviewFeedScreen() {
   }, [loadServiceReviews]);
 
   const handleLoadMore = useCallback(async () => {
-    if (serviceProviderMode === "mock" || !hasMoreServiceReviews || isLoadingMore) return;
-    const oldest = serviceReviewItems?.[serviceReviewItems.length - 1]?.review.createdAt;
+    if (!hasMoreServiceReviews || isLoadingMore) return;
+    const oldest = serviceReviewItems?.[serviceReviewItems.length - 1]?.review;
     if (!oldest) return;
     setIsLoadingMore(true);
     try {
-      await loadServiceReviews("append", oldest);
+      await loadServiceReviews("append", {
+        createdAt: oldest.createdAt,
+        id: oldest.id,
+        rating: oldest.rating,
+      });
     } finally {
       setIsLoadingMore(false);
     }
@@ -652,19 +654,13 @@ export function ReviewFeedScreen() {
 
   // Gather reviews from all dishes
   const allReviews = useMemo<ReviewFeedItem[]>(() => {
-    const reviews =
-      serviceProviderMode === "mock" ? listReviewFeedItems(repository) : (serviceReviewItems ?? []);
+    const reviews = serviceReviewItems ?? [];
 
     // Sort
     if (filterMode === "top_rated") {
       return [...reviews].sort((a, b) => b.review.rating - a.review.rating);
     }
-    if (filterMode === "dish") {
-      return [...reviews].sort((a, b) => a.dishName.localeCompare(b.dishName));
-    }
-    if (filterMode === "location") {
-      return [...reviews].sort((a, b) => a.venueName.localeCompare(b.venueName));
-    }
+
     // Default: most recent
     return [...reviews].sort(
       (a, b) => new Date(b.review.createdAt).getTime() - new Date(a.review.createdAt).getTime(),
@@ -682,17 +678,21 @@ export function ReviewFeedScreen() {
     );
   }, [allReviews, initializeInteractions]);
 
+  const safetyRevision = useCommunitySafetyRevision();
   const filteredReviews = useMemo(() => {
-    if (!searchQuery.trim()) return allReviews;
+    const visible = allReviews.filter(
+      (item) => !isContentHiddenForSession({ id: item.review.id, authorId: item.review.authorId }),
+    );
+    if (!searchQuery.trim()) return visible;
     const q = searchQuery.toLowerCase();
-    return allReviews.filter(
+    return visible.filter(
       (item) =>
         item.dishName.toLowerCase().includes(q) ||
         item.venueName.toLowerCase().includes(q) ||
         item.review.text.toLowerCase().includes(q) ||
         item.review.tags.some((t) => t.toLowerCase().includes(q)),
     );
-  }, [allReviews, searchQuery]);
+  }, [allReviews, searchQuery, safetyRevision, serviceProviderMode]);
 
   const openReviewComments = useCallback(
     (item: ReviewFeedItem) => {
@@ -713,16 +713,12 @@ export function ReviewFeedScreen() {
 
   const openShareReview = useCallback(
     (item: ReviewFeedItem) => {
-      const linkedPost =
-        stallPosts.find((post) => post.dishIds.includes(item.dishId)) ??
-        stallPosts.find((post) => post.venueId === item.venueId);
       const linkedDish = item.dish?.imageUrl ? item.dish : repository.getDishById(item.dishId);
       setActiveShareReview({
         reviewId: item.review.id,
-        postId: linkedPost?.id ?? "",
         title: item.dishName,
         subtitle: `${item.venueName} · ${item.review.authorName}`,
-        imageUrl: item.review.photos[0] ?? linkedDish?.imageUrl ?? linkedPost?.mediaUrl ?? "",
+        imageUrl: item.review.photos[0] ?? linkedDish?.imageUrl ?? "",
         authorName: item.review.authorName,
         message: `${item.review.authorName} reviewed ${item.dishName} at ${item.venueName} on Hungry: ${item.review.text}`,
         link: webShareUrl("dish", item.dishId),
@@ -731,7 +727,7 @@ export function ReviewFeedScreen() {
         shareSheetRef.current?.present();
       });
     },
-    [repository, stallPosts],
+    [repository],
   );
 
   const handleSavePress = useCallback(
@@ -907,13 +903,11 @@ export function ReviewFeedScreen() {
             paddingBottom: spacing[20],
           }}
           refreshControl={
-            serviceProviderMode === "mock" ? undefined : (
-              <RefreshControl
-                refreshing={isRefreshing}
-                onRefresh={() => void handleRefresh()}
-                tintColor={palette.orange}
-              />
-            )
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={() => void handleRefresh()}
+              tintColor={palette.orange}
+            />
           }
           onEndReached={() => void handleLoadMore()}
           onEndReachedThreshold={0.5}
@@ -951,7 +945,6 @@ export function ReviewFeedScreen() {
         bottomInset={insets.bottom}
         innerRef={shareSheetRef}
         onDismiss={() => setActiveShareReview(null)}
-        onShared={incrementShare}
       />
     </SafeAreaView>
   );

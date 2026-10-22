@@ -1,0 +1,84 @@
+{
+  "snapshot_id": "refresh121_integration_20261019",
+  "observed_local_date": "2026-10-19",
+  "canonical_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_sha256": "6fca59ec8c51d62bfa8cf2ec556397fdb8b0eb780f0fc1bb8e39cc46e228c8dc",
+  "installed_sha256": "e75b32a39d9840532afbff2f5b497cc7a3a12870097418716f7d0b92f503f84f",
+  "qa_status": "PASS",
+  "applied_changes": {
+    "exact_official_mall_name_fills": 7,
+    "official_mall_name_held_partial_unit": 1,
+    "foodpanda_branch_menu_urls": 5,
+    "foodpanda_directory_delivery_price_summaries": 5,
+    "foodpanda_menu_item_additions": 24,
+    "foodpanda_existing_menu_price_refreshes": 1,
+    "directory_field_changes": 17,
+    "new_coordinates": 0,
+    "ratings_or_reviews": 0,
+    "image_candidates": 0,
+    "approved_images": 0,
+    "hours_changes": 0,
+    "closure_removals": 0,
+    "public_access_status_changes": 0,
+    "directory_sort_inversions": 0
+  },
+  "preserved_old_menu_value": {
+    "sfa_licence": "SW13S03P000",
+    "menu_item": "Pork Ribs Soup",
+    "previous_price": "6",
+    "previous_source": "https://data.gov.sg/datasets/d_1f0313499a17075d13aae6ed3e825bc6/view",
+    "previous_observed": "2026-07-08",
+    "previous_scope": "Legacy branch association from prior dataset",
+    "new_price_scope": "Foodpanda delivery listing; may differ from in-store price."
+  },
+  "result_counts": {
+    "Public F&B Directory": 38279,
+    "Menu Items": 13116,
+    "Image Candidates": 2578,
+    "Coverage & Sources": 215
+  },
+  "field_coverage": {
+    "named": 32775,
+    "unnamed": 5504,
+    "coordinates": 35735,
+    "contacts": 2692,
+    "websites": 2799,
+    "menu_urls": 1444,
+    "hours": 1460,
+    "ratings": 0,
+    "approved_images": 0,
+    "menu_summaries": 465,
+    "unique_sfa": 38279
+  },
+  "delivery_menu_caveats": [
+    "Foodpanda prices are delivery listings and may differ from in-store prices.",
+    "The 24 additions are a small sampled subset, not complete menus.",
+    "No Foodpanda images, marks, or descriptive copy were reused. Platform data licensing terms were not assessed.",
+    "No hours, permanent closure, or dine-in availability claims inferred."
+  ],
+  "withheld": [
+    "NE23269X000 DUMPLING JI 吉吉饺子: official mall page confirms #01-65 only; SFA address spans #01-65 and #01-66.",
+    "Mapbox Search Box results were temporary-use only; 24 requests were made for research but no response/query/coordinate data retained or written to workbook."
+  ],
+  "mapbox_usage": {
+    "user_reported_before": 59,
+    "requests_this_batch": 24,
+    "estimated_after": 83,
+    "free_tier_cap_user_reported": 50000,
+    "dashboard_verified": false,
+    "usage_evidence": "data/source_snapshots/refresh121_mapbox_coordinates_20261019.json"
+  },
+  "source_snapshot_paths": {
+    "refresh121_blank_name_batch_20261019.json": "data/source_snapshots/refresh121_blank_name_batch_20261019.json",
+    "refresh121_delivery_menu_audit_20261019.json": "data/source_snapshots/refresh121_delivery_menu_audit_20261019.json",
+    "refresh121_mapbox_coordinates_20261019.json": "data/source_snapshots/refresh121_mapbox_coordinates_20261019.json"
+  },
+  "source_snapshot_sha256s": {
+    "refresh121_blank_name_batch_20261019.json": "43d348600e03f6ae868d5ebfc9c5c0b614988f9736ffa534662572f0efdd4b02",
+    "refresh121_delivery_menu_audit_20261019.json": "10f92738bcefdb91025cca9c3818f97ad0f4660412675f4227565c529e7e812c",
+    "refresh121_mapbox_coordinates_20261019.json": "a34e1f552143ee83f72d1cf1853df44fd9769e8bb2fe21a9e629a0343663bc9e"
+  },
+  "status": "Refresh121 installed and independently QA-passed; nationwide verification remains active.",
+  "qa_snapshot_path": "data/source_snapshots/refresh121_final_qa_20261019.json",
+  "qa_snapshot_sha256": "90696e3fd4d6d4930abc860a97369bdfaa0f3b4444dc10e9d9b1fd158e4c9fc4"
+}

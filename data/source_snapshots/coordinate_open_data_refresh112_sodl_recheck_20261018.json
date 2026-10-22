@@ -1,0 +1,99 @@
+{
+  "snapshot_type": "read_only_open_data_coordinate_candidate_proposal",
+  "captured_at_sgt": "2026-10-18",
+  "baseline_workbook": {
+    "path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "sha256": "ba519451ef5fa46aafcac14d67a1563365e6a15601c1ddc778d71ac20a960ef1",
+    "sheet": "Public F&B Directory",
+    "record_count": 38279,
+    "missing_coordinate_rows": 2544,
+    "missing_coordinate_rows_with_public_status_and_exact_six_digit_postal": 2442,
+    "distinct_postal_codes_in_missing_public_targets": 1557
+  },
+  "eligibility_method": "Only rows with at least one blank coordinate and public-access status were screened. Proposed candidates require exact six-digit postal and exact source address/building identity; facility coordinates must be labelled facility-level. Postal-only overlaps, ambiguous identities, non-public locations, and records with coordinates already populated are excluded.",
+  "sources": [
+    {
+      "publisher": "National Environment Agency (NEA), Singapore",
+      "dataset": "NEA Market and Food Centre (2025)",
+      "dataset_id": "d_a57a245b3cf3ec76ad36d55393a16e97",
+      "source_page": "https://data.gov.sg/datasets/d_a57a245b3cf3ec76ad36d55393a16e97/view",
+      "download_api": "https://api-open.data.gov.sg/v1/public/api/datasets/d_a57a245b3cf3ec76ad36d55393a16e97/poll-download",
+      "format": "GeoJSON",
+      "downloaded_at_sgt": "2026-10-18",
+      "source_vintage": "Data from Dec 2014; data.gov.sg page last updated 2025-12-07",
+      "feature_count": 110,
+      "source_dataset_sha256": "8483e841e0b799b2ed06b3f7846a29692915e86c5f2e34c12b624fd5b3fe172c",
+      "license": "Singapore Open Data Licence v1.0; free for personal or commercial use with attribution",
+      "license_url": "https://data.gov.sg/open-data-licence",
+      "required_attribution": "National Environment Agency (NEA), Singapore; NEA Market and Food Centre dataset via data.gov.sg",
+      "screening_result": {
+        "exact_six_digit_postal_plus_block_and_street_candidates": 0
+      },
+      "coordinate_semantics": "Market or food-centre facility point, not tenant outlet, shop unit, or stall-front coordinate."
+    },
+    {
+      "publisher": "Housing & Development Board (HDB), Singapore",
+      "dataset": "HDB Existing Building",
+      "dataset_id": "d_16b157c52ed637edd6ba1232e026258d",
+      "source_page": "https://data.gov.sg/datasets/d_16b157c52ed637edd6ba1232e026258d/view",
+      "download_api": "https://api-open.data.gov.sg/v1/public/api/datasets/d_16b157c52ed637edd6ba1232e026258d/poll-download",
+      "format": "GeoJSON",
+      "downloaded_at_sgt": "2026-10-18",
+      "feature_count": 13436,
+      "source_dataset_sha256": "7c987511548de3a82da403cabca02702031e02ade8703a9e401417883dfeb702",
+      "license": "Singapore Open Data Licence v1.0; free for personal or commercial use with attribution",
+      "license_url": "https://data.gov.sg/open-data-licence",
+      "required_attribution": "Housing & Development Board (HDB), Singapore; HDB Existing Building dataset via data.gov.sg",
+      "screening_result": {
+        "exact_six_digit_postal_overlap_with_blank_public_targets": 0,
+        "candidate_rows": 0
+      },
+      "coordinate_semantics": "HDB building polygons. No exact postal overlap found among current blank public-access targets."
+    },
+    {
+      "publisher": "Building and Construction Authority (BCA), Singapore",
+      "dataset": "Green Mark Buildings (GEOJSON)",
+      "dataset_id": "d_da116ef216e3fb501846e1c9faf7e683",
+      "source_page": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_api": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "format": "GeoJSON",
+      "downloaded_at_sgt": "2026-10-18",
+      "source_vintage": "Last updated 2026-04-18",
+      "feature_count": 2919,
+      "source_dataset_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "license": "Singapore Open Data Licence v1.0; free for personal or commercial use with attribution",
+      "license_url": "https://data.gov.sg/open-data-licence",
+      "required_attribution": "Building and Construction Authority (BCA), Singapore; Green Mark Buildings dataset via data.gov.sg",
+      "screening_result": {
+        "exact_six_digit_postal_overlap_with_blank_public_targets": 0,
+        "candidate_rows": 0
+      },
+      "coordinate_semantics": "Green Mark building points. No exact postal overlap found among current blank public-access targets."
+    },
+    {
+      "publisher": "Ministry of Health (MOH), Singapore",
+      "dataset": "Dementia Friendly Go-To-Points (GTPs)",
+      "dataset_id": "d_e2d10e591bc8560b8946a0da24790fa5",
+      "source_page": "https://data.gov.sg/datasets/d_e2d10e591bc8560b8946a0da24790fa5/view",
+      "download_api": "https://api-open.data.gov.sg/v1/public/api/datasets/d_e2d10e591bc8560b8946a0da24790fa5/poll-download",
+      "format": "GeoJSON",
+      "downloaded_at_sgt": "2026-10-18",
+      "source_vintage": "Data from Oct 2025; last updated 2026-08-20",
+      "feature_count": 831,
+      "source_dataset_sha256": "8ece10b8c30fc3586919611e525e61ab19597f464eec4d7b848def96d78636f2",
+      "license": "Singapore Open Data Licence v1.0; free for personal or commercial use with attribution",
+      "license_url": "https://data.gov.sg/open-data-licence",
+      "required_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points dataset via data.gov.sg",
+      "screening_result": {
+        "previous_exact_six_digit_postal_and_address_candidates_rechecked": 41,
+        "already_have_coordinates_in_current_workbook": 41,
+        "new_candidate_rows": 0
+      },
+      "coordinate_semantics": "Named public facility or address point. Previous exact matches all already have coordinates in current workbook."
+    }
+  ],
+  "proposed_coordinate_updates": [],
+  "result": "No new exact building/facility coordinate candidates remain for baseline Refresh112. The screened NEA dataset returned zero exact postal + block + street matches; the screened HDB and BCA Green Mark datasets returned zero exact postal overlaps; all 41 previously matched MOH facility/address records already have coordinates in this workbook.",
+  "mapbox": "No Mapbox calls or Search Box results used. No credentials read, printed, or written.",
+  "workbook_modified": false
+}

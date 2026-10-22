@@ -1,0 +1,24 @@
+{
+  "snapshot_id": "mr_bean_kovan_hours_format_correction_20261018",
+  "observed_date": "2026-10-18",
+  "baseline_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_workbook_sha256": "ba519451ef5fa46aafcac14d67a1563365e6a15601c1ddc778d71ac20a960ef1",
+  "workbook_edited": false,
+  "source": {
+    "publisher": "Mr Bean Singapore",
+    "url": "https://www.mrbean.com.sg/store-locator",
+    "access": "Official store-locator page opened through web reader; page reported crawled today, 2026-10-18. No raw HTML capture/hash available in this evidence record.",
+    "page_excerpt": "KOVAN HEARTLAND MALL; Blk 205 Hougang Street 21; #01-07; Singapore 530205; Mon - Sun / PH: 0730 - 2130. Source lines 361-370."
+  },
+  "proposal": {
+    "sfa_licence": "NE16396N000",
+    "f_and_b_name": "Mr Bean",
+    "full_address": "Address: 205 HOUGANG STREET 21 #01-07,HEARTLAND MALL- KOVAN,Singapore 530205 HEARTLAND MALL- KOVAN",
+    "postal_code": "530205",
+    "field": "Opening Hours / Closed Days",
+    "before": "Hours: Mon - Sun / PH: : 0730 - 2130",
+    "after": "Hours: Mon - Sun / PH: 0730 - 2130",
+    "evidence": "Exact branch name, unit and postal code match the official locator; only the duplicated colon was removed. Hours are unchanged."
+  },
+  "limitations": "This correction normalizes a malformed field; it does not independently re-confirm same-day trading status. It leaves all actual hours unchanged."
+}

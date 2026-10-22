@@ -1,0 +1,14 @@
+{
+  "generated_at_utc": "2026-10-19T05:24:56.332682+00:00",
+  "workbook": "Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "e2b0a7e63ab806176f9476b6c79e00c9f9233d1918f023f39c1aa59031fa4583",
+  "source": "Mapbox Search Box API via connected Mapbox search_and_geocode_tool",
+  "scope": "Coordinate lookup candidates for missing-coordinate public-directory records grouped by exact six-digit postal code.",
+  "attempted_requests": 100,
+  "response_capture_status": "FAILED: tool calls completed but response objects were not persisted; serialization failed before the result payload could be written.",
+  "matched_postal_codes": null,
+  "matched_record_count": null,
+  "coordinate_candidates": [],
+  "workbook_modified": false,
+  "note": "No coordinates are asserted or proposed from this run. Do not replay without renewed authorization because the delegated cap of 100 Search Box requests was reached."
+}

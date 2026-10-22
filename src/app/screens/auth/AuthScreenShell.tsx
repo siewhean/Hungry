@@ -1,5 +1,5 @@
 import type { PropsWithChildren, ReactNode } from "react";
-import { View } from "react-native";
+import { KeyboardAvoidingView, Platform, View } from "react-native";
 
 import { Screen, AppText, HungryLogo } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
@@ -22,7 +22,7 @@ export function AuthScreenShell({
   footer,
   wordmarkColor,
   compact = false,
-  scroll = true,
+  scroll: _scroll = true,
   contentOffsetTop = 0,
 }: PropsWithChildren<AuthScreenShellProps>) {
   const { palette, spacing } = useHungryTheme();
@@ -34,26 +34,37 @@ export function AuthScreenShell({
   const effectiveWordmarkColor = wordmarkColor ?? palette.navy;
 
   return (
-    <Screen scroll={scroll}>
-      <View style={{ gap, paddingVertical: spacing[3], marginTop: spacing[3] + contentOffsetTop }}>
-        <View style={{ alignItems: "center", gap: titleGap, marginBottom: innerGap }}>
-          <HungryLogo size={logoSize} showWordmark wordmarkColor={effectiveWordmarkColor} />
-          <View style={{ alignItems: "center", gap: spacing[1] }}>
-            {title.trim().length > 0 ? (
-              <AppText variant="h1" style={{ textAlign: "center", fontSize: 24 }}>
-                {title}
-              </AppText>
-            ) : null}
-            {subtitle?.trim().length ? (
-              <AppText variant="body" tone="secondary" style={{ textAlign: "center" }}>
-                {subtitle}
-              </AppText>
-            ) : null}
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <Screen scroll>
+        <View
+          style={{
+            gap,
+            paddingVertical: spacing[3],
+            marginTop: spacing[3] + Math.min(contentOffsetTop, spacing[6]),
+          }}
+        >
+          <View style={{ alignItems: "center", gap: titleGap, marginBottom: innerGap }}>
+            <HungryLogo size={logoSize} showWordmark wordmarkColor={effectiveWordmarkColor} />
+            <View style={{ alignItems: "center", gap: spacing[1] }}>
+              {title.trim().length > 0 ? (
+                <AppText variant="h1" style={{ textAlign: "center", fontSize: 24 }}>
+                  {title}
+                </AppText>
+              ) : null}
+              {subtitle?.trim().length ? (
+                <AppText variant="body" tone="secondary" style={{ textAlign: "center" }}>
+                  {subtitle}
+                </AppText>
+              ) : null}
+            </View>
           </View>
+          <View style={{ gap: innerGap }}>{children}</View>
+          {footer ? <View style={{ gap: footerTopGap }}>{footer}</View> : null}
         </View>
-        <View style={{ gap: innerGap }}>{children}</View>
-        {footer ? <View style={{ gap: footerTopGap }}>{footer}</View> : null}
-      </View>
-    </Screen>
+      </Screen>
+    </KeyboardAvoidingView>
   );
 }

@@ -1,0 +1,314 @@
+{
+  "batch_id": "hours_contact_verify_batch_20261019",
+  "observed_date": "2026-10-19",
+  "canonical_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "canonical_workbook_sha256": "1f32e2fe53ca6e82bffab65f1f39e21d197c8d1ea040018933e1b8cb26638081",
+  "scope": "Evidence-only audit of existing nonblank opening-hours, contact and website fields against first-party merchant pages. No workbook edits made.",
+  "records": [
+    {
+      "sfa_licence": "NW10303C000",
+      "name": "#87 JUST THAI",
+      "address": "34B Lorong Mambong, Singapore 277691",
+      "source_url": "https://87justthai.com/contact-us/",
+      "source_type": "merchant_first_party",
+      "fields": {
+        "opening_hours": {
+          "workbook_value": "Tue–Thu 11:45–14:30, 17:30–22:00; Fri–Sat 11:45–14:30, 17:30–22:30; Sun 11:45–14:30, 17:00–22:00; Mon closed",
+          "source_value": "Tue–Thu 11:45am–2:30pm, 5:30–10pm; Fri–Sat 11:45am–2:30pm, 5:30–10:30pm; Sun 11:45am–2:30pm, 5–10pm; Monday closed",
+          "result": "confirmed_match"
+        },
+        "contact": {
+          "workbook_value": "+65 9764 0669",
+          "source_value": "+65 9764 0669",
+          "result": "confirmed_match"
+        },
+        "website": {
+          "workbook_value": "https://87justthai.com/",
+          "source_value": "https://87justthai.com/contact-us/",
+          "result": "confirmed_official_domain_and_outlet_listing"
+        }
+      },
+      "notes": "The official contact page has this address, phone and schedule. Another older first-party products page displays a different Holland Village phone; this audit used the current contact page for the field-level confirmation."
+    },
+    {
+      "sfa_licence": "SE25F72A000",
+      "name": "#87 JUST THAI",
+      "address": "98 Punggol Way #01-213, Singapore 829857",
+      "source_url": "https://87justthai.com/contact-us/",
+      "source_type": "merchant_first_party",
+      "fields": {
+        "opening_hours": {
+          "workbook_value": "Tue–Sun 11:30–14:30, 17:00–21:30; Mon closed",
+          "source_value": "Tue–Sun 11:30am–2:30pm, 5pm–9:30pm; Monday closed",
+          "result": "confirmed_match"
+        },
+        "contact": {
+          "workbook_value": "+65 8877 3167",
+          "source_value": "+65 8877 3167",
+          "result": "confirmed_match"
+        },
+        "website": {
+          "workbook_value": "https://87justthai.com/",
+          "source_value": "https://87justthai.com/contact-us/",
+          "result": "confirmed_official_domain_and_outlet_listing"
+        }
+      }
+    },
+    {
+      "sfa_licence": "W02041J000",
+      "name": "#87 JUST THAI",
+      "address": "57 Killiney Road #01-01, Singapore 239520",
+      "source_url": "https://87justthai.com/contact-us/",
+      "source_type": "merchant_first_party",
+      "fields": {
+        "opening_hours": {
+          "workbook_value": "Tue–Thu 11:45am–2:30pm, 5:30pm–10:00pm; Fri–Sat 11:45am–2:30pm, 5:30pm–10:30pm; Sun 11:45am–2:30pm, 5:00pm–10:00pm; Mon closed",
+          "source_value": "Thu–Tue 11:30am–2:30pm, 5:30–9:30pm; Wednesday closed",
+          "result": "conflict_current_first_party_source_supports_correction"
+        },
+        "contact": {
+          "workbook_value": "+65 8195 0087",
+          "source_value": "+65 8195 0087",
+          "result": "confirmed_match"
+        },
+        "website": {
+          "workbook_value": "https://87justthai.com/",
+          "source_value": "https://87justthai.com/contact-us/",
+          "result": "confirmed_official_domain_and_outlet_listing"
+        }
+      },
+      "recommended_hours_value": "Thu–Tue 11:30–14:30, 17:30–21:30; Wed closed"
+    },
+    {
+      "sfa_licence": "CE24K23X000",
+      "name": "#thebackyardbakers",
+      "address": "9 Raffles Place #01-07, Republic Plaza, Singapore 048619",
+      "source_url": "https://thebackyardbakers.com.sg/",
+      "source_type": "merchant_first_party",
+      "fields": {
+        "opening_hours": {
+          "workbook_value": "Mon–Fri 08:00–17:00; weekends and public holidays closed",
+          "source_value": "Mon–Fri 8am–5pm; weekends and public holidays closed",
+          "result": "confirmed_match"
+        },
+        "contact": {
+          "workbook_value": "WhatsApp +65 8944 1604",
+          "source_value": null,
+          "result": "not_verifiable_from_reviewed_first_party_page_no_change_recommended"
+        },
+        "website": {
+          "workbook_value": "https://www.thebackyardbakers.com.sg/",
+          "source_value": "https://thebackyardbakers.com.sg/",
+          "result": "official_site_and_exact_outlet_listing_confirmed"
+        }
+      },
+      "notes": "Official Store Locations section lists Republic Plaza at 9 Raffles Place #01-07 with matching weekday hours."
+    },
+    {
+      "sfa_licence": "SE22I83E000",
+      "name": "#thebackyardbakers",
+      "address": "78 Airport Boulevard #01-234, Jewel Changi Airport, Singapore 819666",
+      "source_url": "https://thebackyardbakers.com.sg/",
+      "source_type": "merchant_first_party",
+      "fields": {
+        "opening_hours": {
+          "workbook_value": "Daily 10:00 AM–10:00 PM",
+          "source_value": "Daily 10am–9:30pm",
+          "result": "conflict_current_first_party_source_supports_correction"
+        },
+        "contact": {
+          "workbook_value": null,
+          "source_value": null,
+          "result": "not_applicable_blank"
+        },
+        "website": {
+          "workbook_value": "https://www.thebackyardbakers.com.sg/",
+          "source_value": "https://thebackyardbakers.com.sg/",
+          "result": "official_site_and_exact_outlet_listing_confirmed"
+        }
+      },
+      "recommended_hours_value": "Daily 10:00–21:30"
+    },
+    {
+      "sfa_licence": "CE22558E000",
+      "name": "3 Meals A Day",
+      "address": "90 Horne Road, Singapore 209084",
+      "source_url": "https://3mealsaday.sg/en/outlets/",
+      "source_type": "merchant_first_party",
+      "fields": {
+        "opening_hours": {
+          "workbook_value": "10:00–22:00",
+          "source_value": "Daily 10:00–22:00",
+          "result": "confirmed_match"
+        },
+        "contact": {
+          "workbook_value": "+65 9783 0816",
+          "source_value": "+65 9783 0816",
+          "result": "confirmed_match"
+        },
+        "website": {
+          "workbook_value": "https://3mealsaday.sg/en/",
+          "source_value": "https://3mealsaday.sg/en/outlets/",
+          "result": "confirmed_official_domain_and_outlet_listing"
+        }
+      }
+    },
+    {
+      "sfa_licence": "NE12K75V000",
+      "name": "3 MEALS A DAY",
+      "address": "121 Hougang Avenue 1 #01-1346, Singapore 530121",
+      "source_url": "https://3mealsaday.sg/en/outlets/",
+      "source_type": "merchant_first_party",
+      "fields": {
+        "opening_hours": {
+          "workbook_value": "Daily 10:00–15:30, 16:30–22:00",
+          "source_value": "Daily 10:00–15:30, 16:30–22:00",
+          "result": "confirmed_match"
+        },
+        "contact": {
+          "workbook_value": "+65 9653 3146",
+          "source_value": "+65 9653 3146",
+          "result": "confirmed_match"
+        },
+        "website": {
+          "workbook_value": "https://3mealsaday.sg/en/",
+          "source_value": "https://3mealsaday.sg/en/outlets/",
+          "result": "confirmed_official_domain_and_outlet_listing"
+        }
+      }
+    },
+    {
+      "sfa_licence": "S83177C000",
+      "name": "3 meals a day",
+      "address": "139 Tampines Street 11 #01-08, Singapore 521139",
+      "source_url": "https://3mealsaday.sg/en/outlets/",
+      "source_type": "merchant_first_party",
+      "fields": {
+        "opening_hours": {
+          "workbook_value": "Daily 11:00–15:00, 16:00–22:00",
+          "source_value": "Daily 11:00–15:00, 16:00–22:00",
+          "result": "confirmed_match"
+        },
+        "contact": {
+          "workbook_value": "+65 8226 1711",
+          "source_value": "+65 8226 1711",
+          "result": "confirmed_match"
+        },
+        "website": {
+          "workbook_value": "https://3mealsaday.sg/en/",
+          "source_value": "https://3mealsaday.sg/en/outlets/",
+          "result": "confirmed_official_domain_and_outlet_listing"
+        }
+      }
+    },
+    {
+      "sfa_licence": "W01047C000",
+      "name": "3 Meals a day",
+      "address": "1 Rochor Canal Road #02-01, Sim Lim Square, Singapore 188504",
+      "source_url": "https://3mealsaday.sg/en/outlets/",
+      "source_type": "merchant_first_party",
+      "fields": {
+        "opening_hours": {
+          "workbook_value": "Daily 09:00–19:45",
+          "source_value": "Daily 09:00–19:45",
+          "result": "confirmed_match"
+        },
+        "contact": {
+          "workbook_value": "+65 9670 6520",
+          "source_value": "+65 9670 6520",
+          "result": "confirmed_match"
+        },
+        "website": {
+          "workbook_value": "https://3mealsaday.sg/en/",
+          "source_value": "https://3mealsaday.sg/en/outlets/",
+          "result": "confirmed_official_domain_and_outlet_listing"
+        }
+      }
+    },
+    {
+      "sfa_licence": "E87097P000",
+      "name": "328 Katong Laksa",
+      "address": "216 East Coast Road, Singapore 428914",
+      "source_url": "https://www.328katonglaksa.sg/",
+      "source_type": "merchant_first_party",
+      "fields": {
+        "opening_hours": {
+          "workbook_value": "Daily 09:30–22:00",
+          "source_value": "Daily 09:30–22:00",
+          "result": "confirmed_match"
+        },
+        "contact": {
+          "workbook_value": null,
+          "source_value": null,
+          "result": "not_applicable_blank"
+        },
+        "website": {
+          "workbook_value": "https://www.328katonglaksa.sg/",
+          "source_value": "https://www.328katonglaksa.sg/",
+          "result": "confirmed_match"
+        }
+      }
+    },
+    {
+      "sfa_licence": "W03097L000",
+      "name": "328 Katong Laksa",
+      "address": "101 Thomson Road #01-K1, United Square, Singapore 307591",
+      "source_url": "https://www.328katonglaksa.sg/",
+      "source_type": "merchant_first_party",
+      "fields": {
+        "opening_hours": {
+          "workbook_value": "09:00–20:00; last order 19:30; days not specified by source",
+          "source_value": "Daily 09:00–19:30",
+          "result": "conflict_current_first_party_source_supports_correction"
+        },
+        "contact": {
+          "workbook_value": "+65 6707 5001",
+          "source_value": null,
+          "result": "not_verifiable_from_reviewed_first_party_page_no_change_recommended"
+        },
+        "website": {
+          "workbook_value": "https://www.328katonglaksa.sg/",
+          "source_value": "https://www.328katonglaksa.sg/",
+          "result": "confirmed_match"
+        }
+      },
+      "recommended_hours_value": "Daily 09:00–19:30"
+    },
+    {
+      "sfa_licence": "NW07112L000",
+      "name": "2am: dessertbar",
+      "address": "21A Lorong Liput, Singapore 277733",
+      "source_url": "https://2amdessertbar.com/pages/store-locator",
+      "source_type": "merchant_first_party",
+      "fields": {
+        "opening_hours": {
+          "workbook_value": "Tuesday–Sunday 18:00–02:00; last orders vary by category",
+          "source_value": null,
+          "result": "not_verifiable_from_reviewed_first_party_page_no_change_recommended"
+        },
+        "contact": {
+          "workbook_value": "+65 6291 9727",
+          "source_value": "+65 6291 9727",
+          "result": "confirmed_match"
+        },
+        "website": {
+          "workbook_value": "https://2amdessertbar.com/",
+          "source_value": "https://2amdessertbar.com/pages/store-locator",
+          "result": "official_site_and_exact_outlet_listing_confirmed"
+        }
+      },
+      "notes": "Store locator confirms the Singapore address and phone, but publishes no hours."
+    }
+  ],
+  "summary": {
+    "records_reviewed": 12,
+    "first_party_exact_outlet_matches": 12,
+    "confirmed_field_matches": 28,
+    "supported_field_corrections": 3,
+    "fields_not_verifiable_no_change_recommended": 3,
+    "workbook_edits": 0,
+    "mapbox_requests": 0,
+    "paid_services_used": 0
+  },
+  "integration_status": "three_supported_hours_corrections_applied; other audited values retained"
+}

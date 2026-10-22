@@ -1,0 +1,496 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.0.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :gradle-plugin:settings-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-gradle-plugin:expo-autolinking-plugin-shared:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-plugin:shared:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-gradle-plugin:expo-autolinking-settings-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-gradle-plugin:expo-autolinking-settings-plugin:pluginDescriptors UP-TO-DATE
+> Task :expo-gradle-plugin:expo-autolinking-settings-plugin:processResources UP-TO-DATE
+> Task :gradle-plugin:settings-plugin:pluginDescriptors UP-TO-DATE
+> Task :gradle-plugin:settings-plugin:processResources UP-TO-DATE
+> Task :expo-gradle-plugin:expo-autolinking-plugin-shared:compileKotlin UP-TO-DATE
+> Task :gradle-plugin:shared:compileKotlin UP-TO-DATE
+> Task :expo-gradle-plugin:expo-autolinking-plugin-shared:compileJava NO-SOURCE
+> Task :expo-gradle-plugin:expo-autolinking-plugin-shared:processResources NO-SOURCE
+> Task :gradle-plugin:shared:compileJava NO-SOURCE
+> Task :expo-gradle-plugin:expo-autolinking-plugin-shared:classes UP-TO-DATE
+> Task :gradle-plugin:shared:processResources NO-SOURCE
+> Task :gradle-plugin:shared:classes UP-TO-DATE
+> Task :gradle-plugin:shared:jar UP-TO-DATE
+> Task :expo-gradle-plugin:expo-autolinking-plugin-shared:jar UP-TO-DATE
+> Task :expo-gradle-plugin:expo-autolinking-settings-plugin:compileKotlin UP-TO-DATE
+> Task :gradle-plugin:settings-plugin:compileKotlin UP-TO-DATE
+> Task :expo-gradle-plugin:expo-autolinking-settings-plugin:compileJava NO-SOURCE
+> Task :gradle-plugin:settings-plugin:compileJava NO-SOURCE
+> Task :expo-gradle-plugin:expo-autolinking-settings-plugin:classes UP-TO-DATE
+> Task :gradle-plugin:settings-plugin:classes UP-TO-DATE
+> Task :gradle-plugin:settings-plugin:jar UP-TO-DATE
+> Task :expo-gradle-plugin:expo-autolinking-settings-plugin:jar UP-TO-DATE
+> Task :expo-gradle-plugin:expo-autolinking-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-gradle-plugin:expo-max-sdk-override-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-gradle-plugin:expo-autolinking-plugin:compileKotlin UP-TO-DATE
+> Task :expo-gradle-plugin:expo-max-sdk-override-plugin:compileKotlin UP-TO-DATE
+> Task :expo-gradle-plugin:expo-autolinking-plugin:compileJava NO-SOURCE
+> Task :expo-gradle-plugin:expo-max-sdk-override-plugin:compileJava NO-SOURCE
+> Task :expo-gradle-plugin:expo-max-sdk-override-plugin:pluginDescriptors UP-TO-DATE
+> Task :expo-gradle-plugin:expo-autolinking-plugin:pluginDescriptors UP-TO-DATE
+> Task :expo-gradle-plugin:expo-max-sdk-override-plugin:processResources UP-TO-DATE
+> Task :expo-gradle-plugin:expo-autolinking-plugin:processResources UP-TO-DATE
+> Task :expo-gradle-plugin:expo-autolinking-plugin:classes UP-TO-DATE
+> Task :expo-gradle-plugin:expo-max-sdk-override-plugin:classes UP-TO-DATE
+> Task :expo-gradle-plugin:expo-autolinking-plugin:jar UP-TO-DATE
+> Task :expo-gradle-plugin:expo-max-sdk-override-plugin:jar UP-TO-DATE
+> Task :expo-module-gradle-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-updates-gradle-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-updates-gradle-plugin:pluginDescriptors UP-TO-DATE
+> Task :expo-module-gradle-plugin:pluginDescriptors UP-TO-DATE
+> Task :expo-updates-gradle-plugin:processResources UP-TO-DATE
+> Task :expo-module-gradle-plugin:processResources UP-TO-DATE
+> Task :gradle-plugin:react-native-gradle-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-dev-launcher-gradle-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-dev-launcher-gradle-plugin:pluginDescriptors UP-TO-DATE
+> Task :expo-dev-launcher-gradle-plugin:processResources UP-TO-DATE
+> Task :gradle-plugin:react-native-gradle-plugin:compileKotlin UP-TO-DATE
+> Task :gradle-plugin:react-native-gradle-plugin:compileJava NO-SOURCE
+> Task :gradle-plugin:react-native-gradle-plugin:pluginDescriptors UP-TO-DATE
+> Task :gradle-plugin:react-native-gradle-plugin:processResources UP-TO-DATE
+> Task :gradle-plugin:react-native-gradle-plugin:classes UP-TO-DATE
+> Task :gradle-plugin:react-native-gradle-plugin:jar UP-TO-DATE
+> Task :expo-dev-launcher-gradle-plugin:compileKotlin UP-TO-DATE
+> Task :expo-dev-launcher-gradle-plugin:compileJava NO-SOURCE
+> Task :expo-dev-launcher-gradle-plugin:classes UP-TO-DATE
+> Task :expo-dev-launcher-gradle-plugin:jar UP-TO-DATE
+> Task :expo-module-gradle-plugin:compileKotlin UP-TO-DATE
+> Task :expo-module-gradle-plugin:compileJava NO-SOURCE
+> Task :expo-module-gradle-plugin:classes UP-TO-DATE
+> Task :expo-module-gradle-plugin:jar UP-TO-DATE
+> Task :expo-updates-gradle-plugin:compileKotlin UP-TO-DATE
+> Task :expo-updates-gradle-plugin:compileJava NO-SOURCE
+> Task :expo-updates-gradle-plugin:classes UP-TO-DATE
+> Task :expo-updates-gradle-plugin:jar UP-TO-DATE
+
+> Configure project :
+[32m[ExpoRootProject][0m Using the following versions:
+  - buildTools:  [32m36.0.0[0m
+  - minSdk:      [32m24[0m
+  - compileSdk:  [32m36[0m
+  - targetSdk:   [32m36[0m
+  - ndk:         [32m27.1.12297006[0m
+  - kotlin:      [32m2.1.20[0m
+  - ksp:         [32m2.1.20-2.0.1[0m
+
+> Configure project :app
+ ℹ️  [33mApplying gradle plugin[0m '[32mexpo-max-sdk-override-plugin[0m'
+  [expo-max-sdk-override-plugin] This plugin will find all permissions declared with `android:maxSdkVersion`. If there exists a declaration with the `android:maxSdkVersion` annotation and another one without, the plugin will remove the annotation from the final merged manifest. In order to see a log with the changes run a clean build of the app.
+ ℹ️  [33mApplying gradle plugin[0m '[32mexpo-dev-launcher-gradle-plugin[0m'
+ ℹ️  [33mApplying gradle plugin[0m '[32mexpo-updates-gradle-plugin[0m'
+
+> Configure project :expo
+
+Using expo modules
+  - [32mexpo-log-box[0m (55.0.13)
+  - [32mexpo-constants[0m (55.0.17)
+  - [32mexpo-dev-client[0m (55.0.40)
+  - [32mexpo-dev-launcher[0m (55.0.41)
+  - [32mexpo-dev-menu[0m (55.0.34)
+  - [32mexpo-dev-menu-interface[0m (55.0.2)
+  - [32mexpo-eas-client[0m (55.0.5)
+  - [32mexpo-json-utils[0m (55.0.2)
+  - [32mexpo-manifests[0m (55.0.21)
+
+> Configure project :expo-modules-core
+Linking react-native-worklets native libs into expo-modules-core build tasks
+task ':react-native-worklets:mergeDebugNativeLibs'
+task ':react-native-worklets:mergeReleaseNativeLibs'
+
+> Configure project :expo
+  - [32mexpo-modules-core[0m (55.0.26)
+  - [32mexpo-structured-headers[0m (55.0.2)
+  - [32mexpo-updates[0m (55.0.33)
+  - [32mexpo-updates-interface[0m (55.1.6)
+  - [33m[📦][0m [32mexpo-dom-webview[0m (55.0.6)
+  - [33m[📦][0m [32mexpo-application[0m (55.0.19)
+  - [33m[📦][0m [32mexpo-asset[0m (55.0.20)
+  - [33m[📦][0m [32mexpo-audio[0m (55.0.18)
+  - [33m[📦][0m [32mexpo-crypto[0m (55.0.19)
+  - [33m[📦][0m [32mexpo-device[0m (55.0.21)
+  - [33m[📦][0m [32mexpo-file-system[0m (55.0.26)
+  - [33m[📦][0m [32mexpo-font[0m (55.0.8)
+  - [33m[📦][0m [32mexpo-haptics[0m (55.0.18)
+  - [33m[📦][0m [32mexpo-image[0m (55.0.11)
+  - [33m[📦][0m [32mexpo-image-loader[0m (55.0.1)
+  - [33m[📦][0m [32mexpo-image-manipulator[0m (55.0.21)
+  - [33m[📦][0m [32mexpo-image-picker[0m (55.0.24)
+  - [33m[📦][0m [32mexpo-keep-awake[0m (55.0.8)
+  - [33m[📦][0m [32mexpo-linear-gradient[0m (55.0.18)
+  - [33m[📦][0m [32mexpo-linking[0m (55.0.17)
+  - [33m[📦][0m [32mexpo-location[0m (55.1.14)
+  - [33m[📦][0m [32mexpo-notifications[0m (55.0.27)
+  - [33m[📦][0m [32mexpo-secure-store[0m (55.0.18)
+  - [33m[📦][0m [32mexpo-sharing[0m (55.0.24)
+  - [33m[📦][0m [32mexpo-video[0m (55.0.21)
+  - [33m[📦][0m [32mexpo-web-browser[0m (55.0.20)
+
+
+> Configure project :shopify_react-native-skia
+react-native-skia: node_modules/ found at: /Users/Siew Hean/Documents/GitHub/Hungry/node_modules
+react-native-skia: RN Version: 83 / 0.83.10
+react-native-skia: isSourceBuild: false
+react-native-skia: PrebuiltDir: /Users/Siew Hean/Documents/GitHub/Hungry/node_modules/@shopify/react-native-skia/android/build/react-native-0*/jni
+react-native-skia: buildType: release
+react-native-skia: buildDir: /Users/Siew Hean/Documents/GitHub/Hungry/node_modules/@shopify/react-native-skia/android/build
+react-native-skia: node_modules: /Users/Siew Hean/Documents/GitHub/Hungry/node_modules
+react-native-skia: Enable Prefab: true
+react-native-skia: aar state post 70, do nothing
+Warning: SDK processing. This version only understands SDK XML versions up to 3 but an SDK XML file of version 4 was encountered. This can happen if you use versions of Android Studio and the command-line tools that were released at different times.
+Checking the license for package Android SDK Build-Tools 35 in /Users/Siew Hean/Library/Android/sdk/licenses
+License for package Android SDK Build-Tools 35 accepted.
+Preparing "Install Android SDK Build-Tools 35 v.35.0.0".
+"Install Android SDK Build-Tools 35 v.35.0.0" ready.
+Installing Android SDK Build-Tools 35 in /Users/Siew Hean/Library/Android/sdk/build-tools/35.0.0
+"Install Android SDK Build-Tools 35 v.35.0.0" complete.
+"Install Android SDK Build-Tools 35 v.35.0.0" finished.
+
+> Task :expo:generatePackagesList
+> Task :expo:preBuild
+> Task :app:generateAutolinkingNewArchitectureFiles
+> Task :app:generateAutolinkingPackageList
+> Task :app:generateCodegenSchemaFromJavaScript SKIPPED
+> Task :app:generateCodegenArtifactsFromSchema SKIPPED
+> Task :app:generateReactNativeEntryPoint
+> Task :expo-dev-client:preBuild UP-TO-DATE
+> Task :expo-dev-launcher:preBuild UP-TO-DATE
+> Task :expo-dev-menu:preBuild UP-TO-DATE
+> Task :expo-dev-menu-interface:preBuild UP-TO-DATE
+> Task :expo-eas-client:preBuild UP-TO-DATE
+> Task :expo-json-utils:preBuild UP-TO-DATE
+> Task :expo-log-box:preBuild UP-TO-DATE
+> Task :expo-manifests:preBuild UP-TO-DATE
+> Task :expo-modules-core:preBuild UP-TO-DATE
+> Task :expo-structured-headers:preBuild UP-TO-DATE
+> Task :expo-updates:preBuild UP-TO-DATE
+> Task :expo-updates-interface:preBuild UP-TO-DATE
+> Task :react-native-async-storage_async-storage:generateCodegenSchemaFromJavaScript
+
+> Task :expo-constants:createExpoConfig
+The NODE_ENV environment variable is required but was not specified. Ensure the project is bundled with Expo CLI or NODE_ENV is set. Using only .env.local and .env
+env: load .env.local
+env: export EXPO_PUBLIC_AUTH_REDIRECT_URL EXPO_PUBLIC_HUNGRY_DATA_SOURCE EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN EXPO_PUBLIC_OAUTH_PROVIDERS_ENABLED EXPO_PUBLIC_POSTHOG_API_KEY EXPO_PUBLIC_POSTHOG_HOST EXPO_PUBLIC_SENTRY_DSN EXPO_PUBLIC_SUPABASE_ANON_KEY EXPO_PUBLIC_SUPABASE_KEY EXPO_PUBLIC_SUPABASE_URL EXPO_TOKEN HF_TOKEN HUNGRY_ALLOW_SERVICE_ROLE_IMPORT HUNGRY_ALLOW_SERVICE_ROLE_SMOKE HUNGRY_CONSOLE_PASSWORD HUNGRY_CONSOLE_USERNAME HUNGRY_DATA_SOURCE HUNGRY_ENRICHMENT_PAUSE HUNGRY_SUPABASE_IMPORT_PROJECT_REF HUNGRY_SUPABASE_IMPORT_SERVICE_ROLE_KEY HUNGRY_SUPABASE_IMPORT_URL HUNGRY_SUPABASE_SMOKE_ANON_KEY HUNGRY_SUPABASE_SMOKE_PROJECT_REF HUNGRY_SUPABASE_SMOKE_REQUIRED HUNGRY_SUPABASE_SMOKE_SERVICE_ROLE_KEY HUNGRY_SUPABASE_SMOKE_URL HUNGRY_SYNC_PAUSE NEXT_PUBLIC_SITE_URL SENTRY_AUTH_TOKEN SENTRY_ORG SENTRY_PROJECT SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD SUPABASE_SERVICE_ROLE_KEY
+
+> Task :expo-constants:preBuild
+> Task :react-native-async-storage_async-storage:generateCodegenArtifactsFromSchema
+> Task :react-native-async-storage_async-storage:preBuild
+> Task :react-native-community_datetimepicker:generateCodegenSchemaFromJavaScript
+> Task :react-native-community_netinfo:generateCodegenSchemaFromJavaScript
+> Task :react-native-community_datetimepicker:generateCodegenArtifactsFromSchema
+> Task :react-native-community_datetimepicker:preBuild
+> Task :react-native-community_netinfo:generateCodegenArtifactsFromSchema
+> Task :react-native-community_netinfo:preBuild
+> Task :react-native-community_slider:generateCodegenSchemaFromJavaScript
+> Task :react-native-gesture-handler:generateCodegenSchemaFromJavaScript
+> Task :react-native-community_slider:generateCodegenArtifactsFromSchema
+> Task :react-native-community_slider:preBuild
+> Task :react-native-gesture-handler:generateCodegenArtifactsFromSchema
+> Task :react-native-gesture-handler:preBuild
+> Task :react-native-pager-view:generateCodegenSchemaFromJavaScript
+> Task :react-native-reanimated:assertMinimalReactNativeVersionTask
+> Task :react-native-reanimated:assertNewArchitectureEnabledTask SKIPPED
+> Task :react-native-pager-view:generateCodegenArtifactsFromSchema
+> Task :react-native-pager-view:preBuild
+> Task :react-native-reanimated:assertWorkletsVersionTask
+> Task :react-native-safe-area-context:generateCodegenSchemaFromJavaScript
+> Task :react-native-reanimated:generateCodegenSchemaFromJavaScript
+> Task :react-native-safe-area-context:generateCodegenArtifactsFromSchema
+> Task :react-native-safe-area-context:preBuild
+> Task :react-native-reanimated:generateCodegenArtifactsFromSchema
+> Task :react-native-reanimated:prepareReanimatedHeadersForPrefabs
+> Task :react-native-reanimated:preBuild
+> Task :react-native-screens:generateCodegenSchemaFromJavaScript
+> Task :react-native-svg:generateCodegenSchemaFromJavaScript
+> Task :react-native-screens:generateCodegenArtifactsFromSchema
+> Task :react-native-screens:preBuild
+> Task :react-native-worklets:assertMinimalReactNativeVersionTask
+> Task :react-native-worklets:assertNewArchitectureEnabledTask SKIPPED
+> Task :react-native-svg:generateCodegenArtifactsFromSchema
+> Task :react-native-svg:preBuild
+> Task :react-native-worklets:generateCodegenSchemaFromJavaScript
+> Task :rnmapbox_maps:generateCodegenSchemaFromJavaScript
+> Task :react-native-worklets:generateCodegenArtifactsFromSchema
+> Task :react-native-worklets:prepareWorkletsHeadersForPrefabs
+> Task :react-native-worklets:preBuild
+> Task :rnmapbox_maps:generateCodegenArtifactsFromSchema
+> Task :rnmapbox_maps:preBuild
+> Task :sentry_react-native:generateCodegenSchemaFromJavaScript
+> Task :shopify_react-native-skia:generateCodegenSchemaFromJavaScript
+> Task :sentry_react-native:generateCodegenArtifactsFromSchema
+> Task :sentry_react-native:preBuild
+> Task :react-native-reanimated:preReleaseBuild
+> Task :react-native-worklets:preReleaseBuild
+> Task :shopify_react-native-skia:generateCodegenArtifactsFromSchema
+> Task :shopify_react-native-skia:prepareHeaders
+> Task :shopify_react-native-skia:preBuild
+> Task :app:preBuild
+> Task :app:preReleaseBuild
+> Task :shopify_react-native-skia:extractAARHeaders
+> Task :shopify_react-native-skia:extractJNIFiles
+> Task :shopify_react-native-skia:preReleaseBuild
+> Task :react-native-worklets:configureCMakeRelWithDebInfo[arm64-v8a]
+> Task :shopify_react-native-skia:configureCMakeRelWithDebInfo[arm64-v8a]
+C/C++: -- SK_GRAPHITE detection: no marker file, assuming OFF
+C/C++: -- SK_GRAPHITE: OFF
+C/C++: -- ABI     : arm64-v8a
+C/C++: -- PREBUILT: /Users/Siew Hean/Documents/GitHub/Hungry/node_modules/@shopify/react-native-skia/android/build/react-native-0*/jni
+C/C++: -- BUILD   : /Users/Siew Hean/Documents/GitHub/Hungry/node_modules/@shopify/react-native-skia/android/build
+C/C++: -- LIBRN   : 
+C/C++: -- LOG     : /Users/Siew Hean/Library/Android/sdk/ndk/27.1.12297006/toolchains/llvm/prebuilt/darwin-x86_64/sysroot/usr/lib/aarch64-linux-android/24/liblog.so
+C/C++: -- JSI     : ReactAndroid::jsi
+C/C++: -- REACT   : ReactAndroid::reactnative
+C/C++: -- FBJNI   : fbjni::fbjni
+C/C++: -- REACTNATIVEJNI   : 
+C/C++: -- RUNTIMEEXECUTOR   : 
+C/C++: -- TURBO   : 
+
+> Task :shopify_react-native-skia:generateJsonModelRelease
+> Task :shopify_react-native-skia:prefabReleaseConfigurePackage
+> Task :react-native-worklets:buildCMakeRelWithDebInfo[arm64-v8a][worklets]
+> Task :react-native-worklets:externalNativeBuildRelease
+> Task :react-native-worklets:generateJsonModelRelease
+> Task :react-native-worklets:prefabReleaseConfigurePackage
+> Task :react-native-reanimated:configureCMakeRelWithDebInfo[arm64-v8a]
+> Task :react-native-reanimated:generateJsonModelRelease
+> Task :react-native-reanimated:prefabReleaseConfigurePackage
+> Task :shopify_react-native-skia:buildCMakeRelWithDebInfo[arm64-v8a]
+> Task :react-native-worklets:prefabReleasePackage
+> Task :app:configureCMakeRelWithDebInfo[arm64-v8a]
+> Task :react-native-worklets:mergeReleaseJniLibFolders
+> Task :react-native-worklets:mergeReleaseNativeLibs
+> Task :react-native-worklets:copyReleaseJniLibsProjectOnly
+> Task :shopify_react-native-skia:externalNativeBuildRelease
+> Task :shopify_react-native-skia:prefabReleasePackage
+> Task :app:mergeReleaseJniLibFolders
+> Task :expo:preReleaseBuild
+> Task :expo:mergeReleaseJniLibFolders
+> Task :expo:mergeReleaseNativeLibs NO-SOURCE
+> Task :expo:copyReleaseJniLibsProjectOnly
+> Task :expo-constants:preReleaseBuild
+> Task :expo-constants:mergeReleaseJniLibFolders
+> Task :expo-constants:mergeReleaseNativeLibs NO-SOURCE
+> Task :expo-constants:copyReleaseJniLibsProjectOnly
+> Task :expo-dev-client:preReleaseBuild UP-TO-DATE
+> Task :expo-dev-client:mergeReleaseJniLibFolders
+> Task :expo-dev-client:mergeReleaseNativeLibs NO-SOURCE
+> Task :expo-dev-client:copyReleaseJniLibsProjectOnly
+> Task :expo-dev-launcher:preReleaseBuild UP-TO-DATE
+> Task :expo-dev-launcher:mergeReleaseJniLibFolders
+> Task :expo-dev-launcher:mergeReleaseNativeLibs NO-SOURCE
+> Task :expo-dev-launcher:copyReleaseJniLibsProjectOnly
+> Task :expo-dev-menu:preReleaseBuild UP-TO-DATE
+> Task :expo-dev-menu:mergeReleaseJniLibFolders
+> Task :expo-dev-menu:mergeReleaseNativeLibs NO-SOURCE
+> Task :expo-dev-menu:copyReleaseJniLibsProjectOnly
+> Task :expo-dev-menu-interface:preReleaseBuild UP-TO-DATE
+> Task :expo-dev-menu-interface:mergeReleaseJniLibFolders
+> Task :expo-dev-menu-interface:mergeReleaseNativeLibs NO-SOURCE
+> Task :expo-dev-menu-interface:copyReleaseJniLibsProjectOnly
+> Task :expo-eas-client:preReleaseBuild UP-TO-DATE
+> Task :expo-eas-client:mergeReleaseJniLibFolders
+> Task :expo-eas-client:mergeReleaseNativeLibs NO-SOURCE
+> Task :expo-eas-client:copyReleaseJniLibsProjectOnly
+> Task :expo-json-utils:preReleaseBuild UP-TO-DATE
+> Task :expo-json-utils:mergeReleaseJniLibFolders
+> Task :expo-json-utils:mergeReleaseNativeLibs NO-SOURCE
+> Task :expo-json-utils:copyReleaseJniLibsProjectOnly
+> Task :expo-log-box:preReleaseBuild UP-TO-DATE
+> Task :expo-log-box:mergeReleaseJniLibFolders
+> Task :expo-log-box:mergeReleaseNativeLibs NO-SOURCE
+> Task :expo-log-box:copyReleaseJniLibsProjectOnly
+> Task :expo-manifests:preReleaseBuild UP-TO-DATE
+> Task :expo-manifests:mergeReleaseJniLibFolders
+> Task :expo-manifests:mergeReleaseNativeLibs NO-SOURCE
+> Task :expo-manifests:copyReleaseJniLibsProjectOnly
+> Task :expo-modules-core:preReleaseBuild UP-TO-DATE
+> Task :expo-modules-core:configureCMakeRelWithDebInfo[arm64-v8a]
+> Task :react-native-reanimated:buildCMakeRelWithDebInfo[arm64-v8a][reanimated]
+> Task :expo-modules-core:buildCMakeRelWithDebInfo[arm64-v8a]
+> Task :expo-modules-core:mergeReleaseJniLibFolders
+> Task :expo-modules-core:mergeReleaseNativeLibs
+> Task :expo-modules-core:copyReleaseJniLibsProjectOnly
+> Task :expo-structured-headers:preReleaseBuild UP-TO-DATE
+> Task :expo-structured-headers:mergeReleaseJniLibFolders
+> Task :expo-structured-headers:mergeReleaseNativeLibs NO-SOURCE
+> Task :expo-structured-headers:copyReleaseJniLibsProjectOnly
+> Task :expo-updates:preReleaseBuild UP-TO-DATE
+> Task :expo-updates:configureCMakeRelWithDebInfo[arm64-v8a]
+> Task :expo-updates:buildCMakeRelWithDebInfo[arm64-v8a]
+> Task :expo-updates:configureCMakeRelWithDebInfo[armeabi-v7a]
+> Task :expo-updates:buildCMakeRelWithDebInfo[armeabi-v7a]
+> Task :expo-updates:configureCMakeRelWithDebInfo[x86]
+> Task :expo-updates:buildCMakeRelWithDebInfo[x86]
+> Task :expo-updates:configureCMakeRelWithDebInfo[x86_64]
+> Task :expo-updates:buildCMakeRelWithDebInfo[x86_64]
+> Task :expo-updates:mergeReleaseJniLibFolders
+> Task :expo-updates:mergeReleaseNativeLibs
+> Task :expo-updates:copyReleaseJniLibsProjectOnly
+> Task :expo-updates-interface:preReleaseBuild UP-TO-DATE
+> Task :expo-updates-interface:mergeReleaseJniLibFolders
+> Task :expo-updates-interface:mergeReleaseNativeLibs NO-SOURCE
+> Task :expo-updates-interface:copyReleaseJniLibsProjectOnly
+> Task :react-native-async-storage_async-storage:preReleaseBuild
+> Task :react-native-async-storage_async-storage:mergeReleaseJniLibFolders
+> Task :react-native-async-storage_async-storage:mergeReleaseNativeLibs NO-SOURCE
+> Task :react-native-async-storage_async-storage:copyReleaseJniLibsProjectOnly
+> Task :react-native-community_datetimepicker:preReleaseBuild
+> Task :react-native-community_datetimepicker:mergeReleaseJniLibFolders
+> Task :react-native-community_datetimepicker:mergeReleaseNativeLibs NO-SOURCE
+> Task :react-native-community_datetimepicker:copyReleaseJniLibsProjectOnly
+> Task :react-native-community_netinfo:preReleaseBuild
+> Task :react-native-community_netinfo:mergeReleaseJniLibFolders
+> Task :react-native-community_netinfo:mergeReleaseNativeLibs NO-SOURCE
+> Task :react-native-community_netinfo:copyReleaseJniLibsProjectOnly
+> Task :react-native-community_slider:preReleaseBuild
+> Task :react-native-community_slider:mergeReleaseJniLibFolders
+> Task :react-native-community_slider:mergeReleaseNativeLibs NO-SOURCE
+> Task :react-native-community_slider:copyReleaseJniLibsProjectOnly
+> Task :react-native-gesture-handler:preReleaseBuild
+> Task :react-native-gesture-handler:configureCMakeRelWithDebInfo[arm64-v8a]
+> Task :react-native-gesture-handler:mergeReleaseJniLibFolders
+> Task :react-native-pager-view:preReleaseBuild
+> Task :react-native-pager-view:mergeReleaseJniLibFolders
+> Task :react-native-pager-view:mergeReleaseNativeLibs NO-SOURCE
+> Task :react-native-pager-view:copyReleaseJniLibsProjectOnly
+> Task :react-native-safe-area-context:preReleaseBuild
+> Task :react-native-safe-area-context:mergeReleaseJniLibFolders
+> Task :react-native-safe-area-context:mergeReleaseNativeLibs NO-SOURCE
+> Task :react-native-safe-area-context:copyReleaseJniLibsProjectOnly
+> Task :react-native-screens:preReleaseBuild
+> Task :react-native-screens:configureCMakeRelWithDebInfo[arm64-v8a]
+> Task :react-native-reanimated:externalNativeBuildRelease
+> Task :react-native-reanimated:prefabReleasePackage
+> Task :react-native-screens:buildCMakeRelWithDebInfo[arm64-v8a]
+> Task :react-native-gesture-handler:buildCMakeRelWithDebInfo[arm64-v8a]
+> Task :react-native-gesture-handler:mergeReleaseNativeLibs
+> Task :react-native-gesture-handler:copyReleaseJniLibsProjectOnly
+> Task :react-native-reanimated:mergeReleaseJniLibFolders
+> Task :react-native-reanimated:mergeReleaseNativeLibs
+> Task :app:buildCMakeRelWithDebInfo[arm64-v8a]
+> Task :react-native-reanimated:copyReleaseJniLibsProjectOnly
+> Task :react-native-screens:mergeReleaseJniLibFolders
+> Task :react-native-screens:mergeReleaseNativeLibs
+> Task :react-native-screens:copyReleaseJniLibsProjectOnly
+> Task :react-native-svg:preReleaseBuild
+> Task :react-native-svg:mergeReleaseJniLibFolders
+> Task :react-native-svg:mergeReleaseNativeLibs NO-SOURCE
+> Task :react-native-svg:copyReleaseJniLibsProjectOnly
+> Task :rnmapbox_maps:preReleaseBuild
+> Task :rnmapbox_maps:mergeReleaseJniLibFolders
+> Task :rnmapbox_maps:mergeReleaseNativeLibs NO-SOURCE
+> Task :rnmapbox_maps:copyReleaseJniLibsProjectOnly
+> Task :sentry_react-native:preReleaseBuild
+> Task :sentry_react-native:mergeReleaseJniLibFolders FAILED
+> Task :app:buildCMakeRelWithDebInfo[arm64-v8a] FAILED
+
+[Incubating] Problems report is available at: file:///Users/Siew%20Hean/Documents/GitHub/Hungry/android/build/reports/problems/problems-report.html
+
+FAILURE: Build completed with 2 failures.
+
+1: Task failed with an exception.
+-----------
+* What went wrong:
+Execution failed for task ':sentry_react-native:mergeReleaseJniLibFolders'.
+> Failed to create parent directory '/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/@sentry/react-native/android/build/intermediates/merged_jni_libs/release' when creating directory '/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/@sentry/react-native/android/build/intermediates/merged_jni_libs/release/mergeReleaseJniLibFolders/out'
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to generate a Build Scan (Powered by Develocity).
+> Get more help at https://help.gradle.org.
+==============================================================================
+
+2: Task failed with an exception.
+-----------
+* What went wrong:
+Execution failed for task ':app:buildCMakeRelWithDebInfo[arm64-v8a]'.
+> com.android.ide.common.process.ProcessException: ninja: Entering directory `/Users/Siew Hean/Documents/GitHub/Hungry/android/app/.cxx/RelWithDebInfo/q1r1j491/arm64-v8a'
+  [0/2] Re-checking globbed directories...
+  [1/114] Building CXX object rnasyncstorage_autolinked_build/CMakeFiles/react_codegen_rnasyncstorage.dir/react/renderer/components/rnasyncstorage/States.cpp.o
+  [2/114] Building CXX object rnasyncstorage_autolinked_build/CMakeFiles/react_codegen_rnasyncstorage.dir/react/renderer/components/rnasyncstorage/EventEmitters.cpp.o
+  [3/114] Building CXX object RNDateTimePickerCGen_autolinked_build/CMakeFiles/react_codegen_RNDateTimePickerCGen.dir/react/renderer/components/RNDateTimePickerCGen/States.cpp.o
+  [4/114] Building CXX object rnasyncstorage_autolinked_build/CMakeFiles/react_codegen_rnasyncstorage.dir/react/renderer/components/rnasyncstorage/ShadowNodes.cpp.o
+  [5/114] Building CXX object RNDateTimePickerCGen_autolinked_build/CMakeFiles/react_codegen_RNDateTimePickerCGen.dir/react/renderer/components/RNDateTimePickerCGen/ShadowNodes.cpp.o
+  [6/114] Building CXX object RNDateTimePickerCGen_autolinked_build/CMakeFiles/react_codegen_RNDateTimePickerCGen.dir/react/renderer/components/RNDateTimePickerCGen/ComponentDescriptors.cpp.o
+  [7/114] Building CXX object rnasyncstorage_autolinked_build/CMakeFiles/react_codegen_rnasyncstorage.dir/react/renderer/components/rnasyncstorage/ComponentDescriptors.cpp.o
+  [8/114] Building CXX object RNDateTimePickerCGen_autolinked_build/CMakeFiles/react_codegen_RNDateTimePickerCGen.dir/react/renderer/components/RNDateTimePickerCGen/EventEmitters.cpp.o
+  [9/114] Building CXX object rnasyncstorage_autolinked_build/CMakeFiles/react_codegen_rnasyncstorage.dir/rnasyncstorage-generated.cpp.o
+  [10/114] Building CXX object rnasyncstorage_autolinked_build/CMakeFiles/react_codegen_rnasyncstorage.dir/react/renderer/components/rnasyncstorage/Props.cpp.o
+  [11/114] Building CXX object RNDateTimePickerCGen_autolinked_build/CMakeFiles/react_codegen_RNDateTimePickerCGen.dir/RNDateTimePickerCGen-generated.cpp.o
+  [12/114] Building CXX object CMakeFiles/appmodules.dir/OnLoad.cpp.o
+  [13/114] Building CXX object RNDateTimePickerCGen_autolinked_build/CMakeFiles/react_codegen_RNDateTimePickerCGen.dir/react/renderer/components/RNDateTimePickerCGen/Props.cpp.o
+  [14/114] Building CXX object RNCNetInfoSpec_autolinked_build/CMakeFiles/react_codegen_RNCNetInfoSpec.dir/react/renderer/components/RNCNetInfoSpec/States.cpp.o
+  [15/114] Building CXX object RNCNetInfoSpec_autolinked_build/CMakeFiles/react_codegen_RNCNetInfoSpec.dir/react/renderer/components/RNCNetInfoSpec/EventEmitters.cpp.o
+  [16/114] Building CXX object 'RNCSlider_autolinked_build/CMakeFiles/react_codegen_RNCSlider.dir/Users/Siew_Hean/Documents/GitHub/Hungry/node_modules/@react-native-community/slider/android/build/generated/source/codegen/jni/RNCSlider-generated.cpp.o'
+  [17/114] Building CXX object 'RNCSlider_autolinked_build/CMakeFiles/react_codegen_RNCSlider.dir/Users/Siew_Hean/Documents/GitHub/Hungry/node_modules/@react-native-community/slider/android/build/generated/source/codegen/jni/react/renderer/components/RNCSlider/EventEmitters.cpp.o'
+  [18/114] Building CXX object 'RNCSlider_autolinked_build/CMakeFiles/react_codegen_RNCSlider.dir/Users/Siew_Hean/Documents/GitHub/Hungry/node_modules/@react-native-community/slider/common/cpp/react/renderer/components/RNCSlider/RNCSliderMeasurementsManager.cpp.o'
+  [19/114] Building CXX object RNCNetInfoSpec_autolinked_build/CMakeFiles/react_codegen_RNCNetInfoSpec.dir/react/renderer/components/RNCNetInfoSpec/ShadowNodes.cpp.o
+  [20/114] Building CXX object RNCNetInfoSpec_autolinked_build/CMakeFiles/react_codegen_RNCNetInfoSpec.dir/react/renderer/components/RNCNetInfoSpec/ComponentDescriptors.cpp.o
+  [21/114] Building CXX object RNCNetInfoSpec_autolinked_build/CMakeFiles/react_codegen_RNCNetInfoSpec.dir/RNCNetInfoSpec-generated.cpp.o
+  [22/114] Building CXX object RNCNetInfoSpec_autolinked_build/CMakeFiles/react_codegen_RNCNetInfoSpec.dir/react/renderer/components/RNCNetInfoSpec/Props.cpp.o
+  [23/114] Building CXX object 'RNCSlider_autolinked_build/CMakeFiles/react_codegen_RNCSlider.dir/Users/Siew_Hean/Documents/GitHub/Hungry/node_modules/@react-native-community/slider/android/build/generated/source/codegen/jni/react/renderer/components/RNCSlider/ShadowNodes.cpp.o'
+  [24/114] Building CXX object 'RNCSlider_autolinked_build/CMakeFiles/react_codegen_RNCSlider.dir/Users/Siew_Hean/Documents/GitHub/Hungry/node_modules/@react-native-community/slider/android/build/generated/source/codegen/jni/react/renderer/components/RNCSlider/ComponentDescriptors.cpp.o'
+  [25/114] Building CXX object 'RNCSlider_autolinked_build/CMakeFiles/react_codegen_RNCSlider.dir/Users/Siew_Hean/Documents/GitHub/Hungry/node_modules/@react-native-community/slider/android/build/generated/source/codegen/jni/react/renderer/components/RNCSlider/States.cpp.o'
+  [26/114] Building CXX object 'RNCSlider_autolinked_build/CMakeFiles/react_codegen_RNCSlider.dir/Users/Siew_Hean/Documents/GitHub/Hungry/node_modules/@react-native-community/slider/common/cpp/react/renderer/components/RNCSlider/RNCSliderShadowNode.cpp.o'
+  [27/114] Building CXX object rnmapbox_maps_specs_autolinked_build/CMakeFiles/react_codegen_rnmapbox_maps_specs.dir/react/renderer/components/rnmapbox_maps_specs/ShadowNodes.cpp.o
+  [28/114] Building CXX object rnmapbox_maps_specs_autolinked_build/CMakeFiles/react_codegen_rnmapbox_maps_specs.dir/react/renderer/components/rnmapbox_maps_specs/States.cpp.o
+  [29/114] Building CXX object RNSentrySpec_autolinked_build/CMakeFiles/react_codegen_RNSentrySpec.dir/react/renderer/components/RNSentrySpec/States.cpp.o
+  [30/114] Building CXX object RNSentrySpec_autolinked_build/CMakeFiles/react_codegen_RNSentrySpec.dir/react/renderer/components/RNSentrySpec/EventEmitters.cpp.o
+  [31/114] Building CXX object RNSentrySpec_autolinked_build/CMakeFiles/react_codegen_RNSentrySpec.dir/RNSentrySpec-generated.cpp.o
+  [32/114] Building CXX object rnmapbox_maps_specs_autolinked_build/CMakeFiles/react_codegen_rnmapbox_maps_specs.dir/react/renderer/components/rnmapbox_maps_specs/EventEmitters.cpp.o
+  [33/114] Building CXX object RNSentrySpec_autolinked_build/CMakeFiles/react_codegen_RNSentrySpec.dir/react/renderer/components/RNSentrySpec/ShadowNodes.cpp.o
+  [34/114] Building CXX object RNSentrySpec_autolinked_build/CMakeFiles/react_codegen_RNSentrySpec.dir/react/renderer/components/RNSentrySpec/Props.cpp.o
+  FAILED: RNSentrySpec_autolinked_build/CMakeFiles/react_codegen_RNSentrySpec.dir/react/renderer/components/RNSentrySpec/Props.cpp.o 
+  "/Users/Siew Hean/Library/Android/sdk/ndk/27.1.12297006/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang++" --target=aarch64-none-linux-android24 --sysroot="/Users/Siew Hean/Library/Android/sdk/ndk/27.1.12297006/toolchains/llvm/prebuilt/darwin-x86_64/sysroot" -DRN_SERIALIZABLE_STATE -I"/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/@sentry/react-native/android/build/generated/source/codegen/jni/." -I"/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/@sentry/react-native/android/build/generated/source/codegen/jni/react/renderer/components/RNSentrySpec" -isystem "/Users/Siew Hean/.gradle/caches/9.0.0/transforms/731a7e224712c35c7d826e968cabb64c/transformed/fbjni-0.7.0/prefab/modules/fbjni/include" -isystem "/Users/Siew Hean/.gradle/caches/9.0.0/transforms/77597d35253bfb415c9103b7c6e78f92/transformed/react-android-0.83.10-release/prefab/modules/jsi/include" -isystem "/Users/Siew Hean/.gradle/caches/9.0.0/transforms/77597d35253bfb415c9103b7c6e78f92/transformed/react-android-0.83.10-release/prefab/modules/reactnative/include" -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D__BIONIC_NO_PAGE_SIZE_MACRO -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -O2 -g -DNDEBUG -fPIC -Wall -Werror -fexceptions -frtti -std=c++20 -DFOLLY_NO_CONFIG=1 -DLOG_TAG=\"ReactNative\" -DFOLLY_HAVE_CLOCK_GETTIME=1 -DFOLLY_USE_LIBCPP=1 -DFOLLY_CFG_NO_COROUTINES=1 -DFOLLY_MOBILE=1 -DFOLLY_HAVE_RECVMMSG=1 -DFOLLY_HAVE_PTHREAD=1 -DFOLLY_HAVE_XSI_STRERROR_R=1 -MD -MT RNSentrySpec_autolinked_build/CMakeFiles/react_codegen_RNSentrySpec.dir/react/renderer/components/RNSentrySpec/Props.cpp.o -MF RNSentrySpec_autolinked_build/CMakeFiles/react_codegen_RNSentrySpec.dir/react/renderer/components/RNSentrySpec/Props.cpp.o.d -o RNSentrySpec_autolinked_build/CMakeFiles/react_codegen_RNSentrySpec.dir/react/renderer/components/RNSentrySpec/Props.cpp.o -c '/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/@sentry/react-native/android/build/generated/source/codegen/jni/react/renderer/components/RNSentrySpec/Props.cpp'
+  fatal error: error in backend: IO failure on output stream: No space left on device
+  PLEASE submit a bug report to https://github.com/android-ndk/ndk/issues and include the crash backtrace, preprocessed source, and associated run script.
+  Stack dump:
+  0.	Program arguments: "/Users/Siew Hean/Library/Android/sdk/ndk/27.1.12297006/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang++" --target=aarch64-none-linux-android24 "--sysroot=/Users/Siew Hean/Library/Android/sdk/ndk/27.1.12297006/toolchains/llvm/prebuilt/darwin-x86_64/sysroot" -DRN_SERIALIZABLE_STATE "-I/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/@sentry/react-native/android/build/generated/source/codegen/jni/." "-I/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/@sentry/react-native/android/build/generated/source/codegen/jni/react/renderer/components/RNSentrySpec" -isystem "/Users/Siew Hean/.gradle/caches/9.0.0/transforms/731a7e224712c35c7d826e968cabb64c/transformed/fbjni-0.7.0/prefab/modules/fbjni/include" -isystem "/Users/Siew Hean/.gradle/caches/9.0.0/transforms/77597d35253bfb415c9103b7c6e78f92/transformed/react-android-0.83.10-release/prefab/modules/jsi/include" -isystem "/Users/Siew Hean/.gradle/caches/9.0.0/transforms/77597d35253bfb415c9103b7c6e78f92/transformed/react-android-0.83.10-release/prefab/modules/reactnative/include" -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D__BIONIC_NO_PAGE_SIZE_MACRO -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security -O2 -g -DNDEBUG -fPIC -Wall -Werror -fexceptions -frtti -std=c++20 -DFOLLY_NO_CONFIG=1 -DLOG_TAG=\"ReactNative\" -DFOLLY_HAVE_CLOCK_GETTIME=1 -DFOLLY_USE_LIBCPP=1 -DFOLLY_CFG_NO_COROUTINES=1 -DFOLLY_MOBILE=1 -DFOLLY_HAVE_RECVMMSG=1 -DFOLLY_HAVE_PTHREAD=1 -DFOLLY_HAVE_XSI_STRERROR_R=1 -MD -MT RNSentrySpec_autolinked_build/CMakeFiles/react_codegen_RNSentrySpec.dir/react/renderer/components/RNSentrySpec/Props.cpp.o -MF RNSentrySpec_autolinked_build/CMakeFiles/react_codegen_RNSentrySpec.dir/react/renderer/components/RNSentrySpec/Props.cpp.o.d -o RNSentrySpec_autolinked_build/CMakeFiles/react_codegen_RNSentrySpec.dir/react/renderer/components/RNSentrySpec/Props.cpp.o -c "/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/@sentry/react-native/android/build/generated/source/codegen/jni/react/renderer/components/RNSentrySpec/Props.cpp"
+  1.	<eof> parser at end of file
+  [35/114] Building CXX object rnskia_autolinked_build/CMakeFiles/react_codegen_rnskia.dir/react/renderer/components/rnskia/States.cpp.o
+  [36/114] Building CXX object RNSentrySpec_autolinked_build/CMakeFiles/react_codegen_RNSentrySpec.dir/react/renderer/components/RNSentrySpec/ComponentDescriptors.cpp.o
+  [37/114] Building CXX object rnskia_autolinked_build/CMakeFiles/react_codegen_rnskia.dir/react/renderer/components/rnskia/EventEmitters.cpp.o
+  [38/114] Building CXX object rnmapbox_maps_specs_autolinked_build/CMakeFiles/react_codegen_rnmapbox_maps_specs.dir/rnmapbox_maps_specs-generated.cpp.o
+  [39/114] Building CXX object 'RNCSlider_autolinked_build/CMakeFiles/react_codegen_RNCSlider.dir/Users/Siew_Hean/Documents/GitHub/Hungry/node_modules/@react-native-community/slider/android/build/generated/source/codegen/jni/react/renderer/components/RNCSlider/Props.cpp.o'
+  [40/114] Building CXX object rnskia_autolinked_build/CMakeFiles/react_codegen_rnskia.dir/rnskia-generated.cpp.o
+  [41/114] Building CXX object rnskia_autolinked_build/CMakeFiles/react_codegen_rnskia.dir/react/renderer/components/rnskia/ShadowNodes.cpp.o
+  [42/114] Building CXX object rnmapbox_maps_specs_autolinked_build/CMakeFiles/react_codegen_rnmapbox_maps_specs.dir/react/renderer/components/rnmapbox_maps_specs/Props.cpp.o
+  [43/114] Building CXX object rnskia_autolinked_build/CMakeFiles/react_codegen_rnskia.dir/react/renderer/components/rnskia/Props.cpp.o
+  [44/114] Building CXX object rnskia_autolinked_build/CMakeFiles/react_codegen_rnskia.dir/react/renderer/components/rnskia/ComponentDescriptors.cpp.o
+  [45/114] Building CXX object rngesturehandler_codegen_autolinked_build/CMakeFiles/react_codegen_rngesturehandler_codegen.dir/react/renderer/components/rngesturehandler_codegen/ComponentDescriptors.cpp.o
+  [46/114] Building CXX object rnmapbox_maps_specs_autolinked_build/CMakeFiles/react_codegen_rnmapbox_maps_specs.dir/react/renderer/components/rnmapbox_maps_specs/ComponentDescriptors.cpp.o
+  [47/114] Building CXX object CMakeFiles/appmodules.dir/Users/Siew_Hean/Documents/GitHub/Hungry/android/app/build/generated/autolinking/src/main/jni/autolinking.cpp.o
+  ninja: build stopped: subcommand failed.
+  
+  C++ build system [build] failed while executing:
+      "/Users/Siew Hean/Library/Android/sdk/cmake/3.22.1/bin/ninja" \
+        -C \
+        "/Users/Siew Hean/Documents/GitHub/Hungry/android/app/.cxx/RelWithDebInfo/q1r1j491/arm64-v8a" \
+        appmodules \
+        react_codegen_RNCSlider \
+        react_codegen_rnscreens \
+        react_codegen_rnsvg \
+        react_codegen_safeareacontext
+    from /Users/Siew Hean/Documents/GitHub/Hungry/android/app
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to generate a Build Scan (Powered by Develocity).
+> Get more help at https://help.gradle.org.
+==============================================================================
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.0.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 9m 22s
+168 actionable tasks: 132 executed, 36 up-to-date

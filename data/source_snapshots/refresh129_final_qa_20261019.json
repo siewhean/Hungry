@@ -1,0 +1,122 @@
+{
+  "qa_id": "refresh129_final_qa_20261019",
+  "workbook_path": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "expected_sha256": "b76b2a41688b67767fe1dfe7a63690100c6868dd949415b14bd5b224973131bb",
+  "installed_sha256": "b76b2a41688b67767fe1dfe7a63690100c6868dd949415b14bd5b224973131bb",
+  "status": "PASS",
+  "checks": {
+    "installed_sha_matches_expected": true,
+    "candidate_qa_pass": true,
+    "zip_integrity": true,
+    "sheets_exact": true,
+    "dimensions_exact": true,
+    "table_extents_exact": true,
+    "no_full_blank_rows": true,
+    "no_formulas": true,
+    "no_errors": true,
+    "directory_rows_38273": true,
+    "unique_sfa_ids": true,
+    "alphabetical_blank_last": true,
+    "exact_excluded_ids_removed": true,
+    "linked_menu_rows_removed": true,
+    "menu_source_proposals_count": true,
+    "menu_exact_new_keys": true,
+    "menu_join_source_fields": true,
+    "menu_join_mismatch_count": 0,
+    "menu_name_matches_directory": true,
+    "sgt_timestamps_all_28_preserved": true,
+    "14_field_fills_match_sources": true,
+    "two_image_candidates_rights_caveats": true,
+    "coverage_metrics_sync_receipt": true,
+    "mapbox_usage_note_present": true,
+    "docs_reference_refresh129": true,
+    "docs_show_installed_qa_pending": true,
+    "git_diff_check": true
+  },
+  "details": {
+    "dimensions": {
+      "Public F&B Directory": [
+        38274,
+        21
+      ],
+      "Menu Items": [
+        13557,
+        12
+      ],
+      "Image Candidates": [
+        2762,
+        9
+      ],
+      "Coverage & Sources": [
+        224,
+        3
+      ]
+    },
+    "table_refs": {
+      "Public F&B Directory": [
+        "A1:U38274"
+      ],
+      "Menu Items": [
+        "A1:L13557"
+      ],
+      "Image Candidates": [
+        "A1:I2762"
+      ],
+      "Coverage & Sources": [
+        "A1:C224"
+      ]
+    },
+    "blank_rows_by_sheet": {
+      "Public F&B Directory": 0,
+      "Menu Items": 0,
+      "Image Candidates": 0,
+      "Coverage & Sources": 0
+    },
+    "formula_count": 0,
+    "error_count": 0,
+    "directory_row_count": 38273,
+    "unique_sfa_id_count": 38273,
+    "excluded_sfa_ids": [
+      "C99141A000",
+      "SW16012C000",
+      "SW16012C004",
+      "SW16012C007",
+      "SW17C61P000"
+    ],
+    "baseline_removed_sfa_ids": [
+      "C99141A000",
+      "SW16012C000",
+      "SW16012C004",
+      "SW16012C007",
+      "SW17C61P000"
+    ],
+    "menu_new_row_count": 149,
+    "menu_proposal_count": 149,
+    "menu_mismatch_samples": [],
+    "timestamp_count": 28,
+    "timestamp_failures": 0,
+    "field_fill_count": 14,
+    "field_fill_mismatches": [],
+    "image_candidate_count": 2,
+    "image_checks": [
+      true,
+      true
+    ],
+    "coverage_row_count": 223,
+    "mapbox_note": [
+      "Mapbox Search Box usage estimate",
+      "User-reported Search Box usage was 59/50,000 before Refresh127; Refresh127 used 20 Search Box calls. This refresh used one connected Mapbox app Search Box lookup, but the connector does not expose account attribution or billing. Approximate 79–80/50,000 only if calls are on the same account; not dashboard-verified.",
+      "Account-level usage cannot be read through the connected Mapbox tools. Estimate is conditional and not dashboard-verified; Search Box response was not persisted."
+    ],
+    "docs_pending_status": false,
+    "git_diff_check": "pass"
+  },
+  "remaining_gaps": {
+    "unnamed_directory_rows": 5482,
+    "missing_coordinates": 2538,
+    "ratings_reviews": 0,
+    "approved_images": 0,
+    "permanent_closures_confirmed": 0,
+    "scope_note": "No workbook values were modified during QA; no paid services used."
+  }
+}

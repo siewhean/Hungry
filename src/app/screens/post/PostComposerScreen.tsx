@@ -1,8 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { CommonActions } from "@react-navigation/native";
+import { useDraftExitGuard } from "@/features/post/useDraftExitGuard";
 import { Pressable, ScrollView, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Camera, Plus, Video } from "lucide-react-native";
 
+import { getAccountGeneration } from "@/lib/security/accountScope";
+import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
+import type { DishDetail } from "@/types/domain";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import {
   AccessibleImage,
@@ -19,13 +24,13 @@ import { publishComposerPost } from "@/features/post/publishing";
 import { useComposerStore, type MediaItem } from "@/features/post/useComposerStore";
 import { confirmGalleryAccess, isGalleryPermissionGranted } from "@/lib/permissions/gallery";
 import { POST_CAPTION_MAX_LENGTH, sanitizeFreeText } from "@/lib/security/inputSanitization";
-import { getDataRepository } from "@/lib/services/serviceProvider";
+import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useMerchantStore } from "@/store/useMerchantStore";
 import { useHungryTheme } from "@/theme";
 
-type Props = NativeStackScreenProps<RootStackParamList, "Post">;
+type Props = NativeStackScreenProps<RootStackParamList, "Post" | "PostComposerV2">;
 
 function loadImagePickerModule() {
   try {
@@ -64,35 +69,73 @@ function PostComposerScreenInner({ navigation, route }: Props) {
   const isUserMode = !isMerchantMode && !isDeveloperMode;
   const shouldShowComposerBusinessFeatures = !isUserMode;
   const repository = getDataRepository();
-  const [caption, setCaption] = useState("");
-  const [selectedMedia, setSelectedMedia] = useState<MediaItem[]>([]);
-  const [selectedDishId, setSelectedDishId] = useState<string | null>(route.params?.dishId ?? null);
-  const [selectedVenueId, setSelectedVenueId] = useState<string | null>(
-    route.params?.venueId ?? null,
-  );
+  const caption = useComposerStore((state) => state.postCaption);
+  const selectedMedia = useComposerStore((state) => state.media);
+  const selectedDishId = useComposerStore((state) => state.selectedDishId);
+  const selectedVenueId = useComposerStore((state) => state.selectedVenueId);
+  const setCaption = (postCaption: string) => useComposerStore.setState({ postCaption });
+  const setSelectedMedia = (media: MediaItem[]) => useComposerStore.setState({ media });
+  const setSelectedDishId = (selectedDishId: string | null) =>
+    useComposerStore.setState({ selectedDishId });
+  const setSelectedVenueId = (selectedVenueId: string | null) =>
+    useComposerStore.setState({ selectedVenueId });
   const [dishSearchQuery, setDishSearchQuery] = useState("");
   const [isPublishing, setIsPublishing] = useState(false);
-  const allDishes = useMemo(
-    () =>
-      repository
-        .listBuildings()
-        .flatMap((building) => repository.listVenuesByBuilding(building.id))
-        .flatMap((item) => repository.listDishesByVenue(item.id)),
-    [repository],
-  );
-  const filteredDishes = useMemo(() => {
-    const query = dishSearchQuery.trim().toLowerCase();
-    const dishes = allDishes.filter((item) => {
-      if (!query) return true;
-      return (
-        item.name.toLowerCase().includes(query) ||
-        item.venueName.toLowerCase().includes(query) ||
-        item.tasteTags.some((tag) => tag.toLowerCase().includes(query)) ||
-        item.dietaryFlags.some((flag) => flag.toLowerCase().includes(query))
-      );
-    });
-    return dishes.slice(0, 12);
-  }, [allDishes, dishSearchQuery]);
+  const publishingRef = useRef(false);
+  const proceedToExit = useDraftExitGuard({
+    dirty: Boolean(caption.trim() || selectedMedia.length),
+    title: "Leave this post?",
+    discard: () => useComposerStore.getState().reset(),
+    dispatch: navigation.dispatch,
+  });
+  const [filteredDishes, setFilteredDishes] = useState<DishDetail[]>([]);
+  const [searchState, setSearchState] = useState<"loading" | "ready" | "error">("loading");
+  const [retry, setRetry] = useState(0);
+  const [remoteDish, setRemoteDish] = useState<DishDetail | null>(null);
+  useEffect(() => {
+    let current = true;
+    setSearchState("loading");
+    const timer = setTimeout(() => {
+      void getHungryService()
+        .discovery.searchDishes(
+          {
+            query: dishSearchQuery,
+            categories: [],
+            dietaryFlags: [],
+            tasteValues: NEUTRAL_TASTE_VECTOR,
+            radius: 5000,
+          },
+          NEUTRAL_TASTE_VECTOR,
+        )
+        .then((results) => {
+          if (current) {
+            setFilteredDishes(results.map((result) => result.dish));
+            setSearchState("ready");
+          }
+        })
+        .catch(() => {
+          if (current) setSearchState("error");
+        });
+    }, 200);
+    return () => {
+      current = false;
+      clearTimeout(timer);
+    };
+  }, [dishSearchQuery, retry]);
+  useEffect(() => {
+    let current = true;
+    setRemoteDish(null);
+    if (selectedDishId)
+      void getHungryService()
+        .discovery.getDish(selectedDishId)
+        .then((value) => {
+          if (current) setRemoteDish(value ?? null);
+        })
+        .catch(() => {});
+    return () => {
+      current = false;
+    };
+  }, [selectedDishId]);
 
   useEffect(() => {
     if (route.params?.dishId) {
@@ -105,13 +148,14 @@ function PostComposerScreenInner({ navigation, route }: Props) {
 
   const dish = useMemo(() => {
     if (selectedDishId) {
-      return repository.getDishById(selectedDishId) ?? null;
-    }
-    if (selectedVenueId) {
-      return repository.listDishesByVenue(selectedVenueId)[0] ?? null;
+      return (
+        (remoteDish?.id === selectedDishId ? remoteDish : null) ??
+        repository.getDishById(selectedDishId) ??
+        null
+      );
     }
     return null;
-  }, [repository, selectedDishId, selectedVenueId]);
+  }, [repository, selectedDishId, selectedVenueId, remoteDish]);
   const venue = useMemo(() => {
     if (!dish) {
       return selectedVenueId ? repository.getVenueById(selectedVenueId) : undefined;
@@ -122,64 +166,79 @@ function PostComposerScreenInner({ navigation, route }: Props) {
     return repository.getVenueById(dish.venueId);
   }, [dish, repository, selectedVenueId]);
 
+  const pickingRef = useRef(false);
   const handlePickMedia = async () => {
-    const shouldRequestPermission = await confirmGalleryAccess({
-      title: "Allow gallery access",
-      message: "Hungry needs access to your photo library to add media to your post.",
-      confirmLabel: "Allow",
-      cancelLabel: "Not now",
-    });
-
-    if (!shouldRequestPermission) {
-      return;
-    }
-
-    const imagePicker = loadImagePickerModule();
-    if (!imagePicker) {
-      showToast({
-        message: "Media picker unavailable right now.",
-        tone: "warning",
+    if (pickingRef.current) return;
+    pickingRef.current = true;
+    const generation = getAccountGeneration();
+    try {
+      const shouldRequestPermission = await confirmGalleryAccess({
+        title: "Allow gallery access",
+        message: "Hungry needs access to your photo library to add media to your post.",
+        confirmLabel: "Allow",
+        cancelLabel: "Not now",
       });
-      return;
-    }
 
-    const permission = await imagePicker.requestMediaLibraryPermissionsAsync();
-    if (!isGalleryPermissionGranted(permission)) {
-      showToast({
-        message: "Photo permission is required to publish a post.",
-        tone: "warning",
+      if (generation !== getAccountGeneration()) return;
+      if (!shouldRequestPermission) {
+        return;
+      }
+
+      const imagePicker = loadImagePickerModule();
+      if (!imagePicker) {
+        showToast({
+          message: "Media picker unavailable right now.",
+          tone: "warning",
+        });
+        return;
+      }
+
+      const permission = await imagePicker.requestMediaLibraryPermissionsAsync();
+      if (generation !== getAccountGeneration()) return;
+      if (!isGalleryPermissionGranted(permission)) {
+        showToast({
+          message: "Photo permission is required to publish a post.",
+          tone: "warning",
+        });
+        return;
+      }
+
+      const result = await imagePicker.launchImageLibraryAsync({
+        mediaTypes: imagePicker.MediaTypeOptions.All,
+        allowsMultipleSelection: true,
+        quality: 0.92,
+        selectionLimit: 5,
+        videoMaxDuration: 60,
       });
-      return;
+
+      if (generation !== getAccountGeneration()) return;
+      if (result.canceled || !result.assets?.length) {
+        return;
+      }
+
+      const media = result.assets.map((asset, index) => ({
+        id: asset.assetId ?? `${asset.uri}-${index}`,
+        uri: asset.uri,
+        type: asset.type === "video" ? ("video" as const) : ("image" as const),
+        width: asset.width,
+        height: asset.height,
+      }));
+      setSelectedMedia(media);
+      showToast({ message: "Media attached.", tone: "success" });
+    } catch {
+      if (generation === getAccountGeneration())
+        showToast({ message: "Could not open your gallery. Try again.", tone: "warning" });
+    } finally {
+      pickingRef.current = false;
     }
-
-    const result = await imagePicker.launchImageLibraryAsync({
-      mediaTypes: imagePicker.MediaTypeOptions.All,
-      allowsMultipleSelection: true,
-      quality: 0.92,
-      selectionLimit: 5,
-      videoMaxDuration: 60,
-    });
-
-    if (result.canceled || !result.assets?.length) {
-      return;
-    }
-
-    const media = result.assets.map((asset, index) => ({
-      id: asset.assetId ?? `${asset.uri}-${index}`,
-      uri: asset.uri,
-      type: asset.type === "video" ? ("video" as const) : ("image" as const),
-      width: asset.width,
-      height: asset.height,
-    }));
-    setSelectedMedia(media);
-    showToast({ message: "Media attached.", tone: "success" });
   };
 
   const handleRemoveMedia = (id: string) => {
-    setSelectedMedia((current) => current.filter((item) => item.id !== id));
+    setSelectedMedia(selectedMedia.filter((item) => item.id !== id));
   };
 
   const handlePublish = () => {
+    if (publishingRef.current) return;
     if (!isAuthenticated) {
       setReturnRoute(
         dish
@@ -200,31 +259,41 @@ function PostComposerScreenInner({ navigation, route }: Props) {
       return;
     }
 
+    const generation = getAccountGeneration();
+    const accountId = useSessionStore.getState().authenticatedUserId;
+    publishingRef.current = true;
     void (async () => {
       setIsPublishing(true);
       try {
         const composer = useComposerStore.getState();
-        composer.reset();
+        // Keep retry identity and the durable draft until publication is confirmed.
         composer.setActiveTab("post");
         composer.setCaption(caption.trim() || targetDish.name);
-        composer.addMedia(selectedMedia);
+        useComposerStore.setState({ media: selectedMedia });
         await publishComposerPost({
           publishMode: "post",
           routeDishId: targetDish.id,
           routeVenueId: targetVenue?.id ?? targetDish.venueId,
         });
+        if (
+          getAccountGeneration() !== generation ||
+          useSessionStore.getState().authenticatedUserId !== accountId
+        )
+          return;
         showToast({
           message: "Post published successfully.",
           tone: "success",
         });
         useComposerStore.getState().reset();
-        navigation.navigate("MainTabs", { screen: "Home" });
+        proceedToExit(CommonActions.navigate("MainTabs", { screen: "Home" }));
       } catch (error) {
+        if (getAccountGeneration() !== generation) return;
         showToast({
           message: error instanceof Error ? error.message : "Could not publish post right now.",
           tone: "warning",
         });
       } finally {
+        publishingRef.current = false;
         setIsPublishing(false);
       }
     })();
@@ -285,6 +354,10 @@ function PostComposerScreenInner({ navigation, route }: Props) {
                 </Card>
               );
             })
+          ) : searchState === "loading" ? (
+            <AppText>Loading dishes…</AppText>
+          ) : searchState === "error" ? (
+            <Button label="Retry dish search" onPress={() => setRetry((value) => value + 1)} />
           ) : (
             <EmptyState title="No dishes found" body="Try a dish name or stall name." />
           )}
@@ -340,6 +413,7 @@ function PostComposerScreenInner({ navigation, route }: Props) {
             ))}
             <Pressable
               accessibilityRole="button"
+              testID="post-composer-add-media"
               accessibilityLabel={selectedMedia.length ? "Replace post media" : "Add post media"}
               onPress={() => {
                 void handlePickMedia();
@@ -396,12 +470,14 @@ function PostComposerScreenInner({ navigation, route }: Props) {
 
 export function PostComposerScreen(props: Props) {
   return (
-    <FeedErrorBoundary
-      title="Post composer failed"
-      body="We hit a snag loading the post composer. Please try again."
-      screenName="PostComposerScreen"
-    >
-      <PostComposerScreenInner {...props} />
-    </FeedErrorBoundary>
+    <View testID="post-composer-screen" style={{ flex: 1 }}>
+      <FeedErrorBoundary
+        title="Post composer failed"
+        body="We hit a snag loading the post composer. Please try again."
+        screenName="PostComposerScreen"
+      >
+        <PostComposerScreenInner {...props} />
+      </FeedErrorBoundary>
+    </View>
   );
 }

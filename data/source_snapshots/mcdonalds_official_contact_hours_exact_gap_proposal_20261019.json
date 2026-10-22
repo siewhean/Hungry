@@ -1,0 +1,97 @@
+{
+  "snapshot_type": "official_chain_directory_exact_blank_field_proposal",
+  "observed_date": "2026-10-19",
+  "workbook_path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "e2b0a7e63ab806176f9476b6c79e00c9f9233d1918f023f39c1aa59031fa4583",
+  "research_scope": "One official Singapore chain directory (McDonald's) checked for exact-join contact and opening-hours gaps; no workbook edits; no XLSX created; no paid services; no Mapbox request.",
+  "source_pages": [
+    {
+      "publisher": "McDonald's Singapore Help Center",
+      "title": "McDonald's Store Addresses and Contact Details",
+      "url": "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+      "api_url": "https://mcdsg.zendesk.com/api/v2/help_center/en-us/articles/11875954072857.json",
+      "source_last_updated": "2026-10-06T01:32:28Z",
+      "source_rows_parsed": 156,
+      "retrieval": "Official Zendesk Help Center public article JSON API; table parsed as rendered HTML.",
+      "retrieved_content_sha256": "c7bd773cb72c0545a43ed881895bcecc72fe938f0be38ee7c11be3a793d40cee"
+    },
+    {
+      "publisher": "McDonald's Singapore",
+      "title": "Our Green Commitment — Green Restaurants",
+      "url": "https://www.mcdonalds.com.sg/our-green-commitment",
+      "source_last_updated": "Not exposed in retrieved page metadata",
+      "retrieval": "Official Singapore website HTML retrieved on 2026-10-19; 23 restaurant rows parsed.",
+      "retrieved_content_sha256": "c82b2c565bfdef21d04c9d91ebb1ae68ba133d2daad1048b80a180dccb8dd7cf"
+    }
+  ],
+  "proposals": [
+    {
+      "sfa_licence": "SE10595K000",
+      "field": "Contact Details",
+      "current_value": null,
+      "proposed_value": "Contact: +65 6634 4921",
+      "branch": "McDonald's NEX",
+      "source_row_number": 67,
+      "source_branch_name": "McDonald's NEX",
+      "source_address": "23 Serangoon Central #B2-05/06/07/08 NEX. Singapore 556083",
+      "source_postal_code": "556083",
+      "workbook_address": "Address: 23 SERANGOON CENTRAL #B2-06,#B2-07,#B2-08,#B2-05,NEX,Singapore 556083",
+      "match_method": "Exact six-digit postal code + exact street/building + equivalent full unit set; official directory branch name agrees with venue.",
+      "evidence": "Official McDonald's Singapore help-centre directory row 67 gives NEX at postal 556083 and phone 66344921. Workbook has same postal, street/building and unit set reordered; Contact Details is blank.",
+      "confidence": "high",
+      "status": "proposed_exact_match"
+    },
+    {
+      "sfa_licence": "NW12G11V000",
+      "field": "Opening Hours / Closed Days",
+      "current_value": null,
+      "proposed_value": "Daily: 24 Hours",
+      "branch": "McDonald's Yishun Safra",
+      "source_branch_name": "McDonald’s Yishun Safra (YSS)",
+      "source_address": "60 Yishun Avenue 4 #01-11 SAFRA Yishun Country Club, Singapore 769027",
+      "source_postal_code": "769027",
+      "workbook_address": "Address: 60 YISHUN AVENUE 4 #01-11,SAFRA YISHUN COUNTRY CLUB,Singapore 769027",
+      "match_method": "Exact six-digit postal code + street/building + unit + SAFRA venue; official branch name agrees.",
+      "evidence": "Official McDonald's Singapore Green Restaurants page lists Yishun Safra at the same postal/address/unit and states Daily: 24 Hours. Workbook hours are blank.",
+      "confidence": "high",
+      "status": "proposed_exact_match"
+    }
+  ],
+  "proposals_by_field": {
+    "Contact Details": 1,
+    "Opening Hours / Closed Days": 1
+  },
+  "withheld_rows": [
+    {
+      "sfa_licence": "C90161L000",
+      "branch": "McDonald's Bukit Batok",
+      "postal_code": "650632",
+      "workbook_address": "Address: 632 BUKIT BATOK CENTRAL #01-138,Singapore 650632",
+      "source_address": "Blk 632 Bukit Batok Central #01-38, #01-140 & #01-142. Singapore 650632",
+      "source_contact": "+65 6563 2441",
+      "reason": "Same postal/building, but the licensed workbook unit #01-138 does not match the three units listed by the official directory; do not copy contact without confirming the physical branch mapping."
+    },
+    {
+      "sfa_licence": "SW08019E000",
+      "branch": "McDonald's Choa Chu Kang 4",
+      "postal_code": "689812",
+      "workbook_address": "Address: 21 CHOA CHU KANG AVENUE 4 #01-21A,Singapore 689812",
+      "source_address": "21 Choa Chu Kang Avenue 4 #01-20 Lot One Shoppers' Mall. Singapore 689812",
+      "source_contact": "+65 6763 5908",
+      "reason": "Same postal/street but unit differs (#01-21A vs #01-20); not an exact branch-unit match."
+    }
+  ],
+  "summary": {
+    "official_contact_directory_rows": 156,
+    "green_restaurant_rows": 23,
+    "exact_blank_field_proposals": 2,
+    "withheld_same_postal_but_unit_mismatch": 2,
+    "data_source_only_no_edits": true
+  },
+  "limitations": [
+    "This is a targeted exact-match harvest, not a complete audit of all restaurant chains.",
+    "McDonald's outlet-level hours are available only for the 23 stores listed as Green Restaurants; no hours were inferred for other branches.",
+    "Contact values are proposed only for exact branch address/unit joins; the article's full list is not applied blindly.",
+    "Do not treat source listing as confirmation of branch-level menu availability, current rating, or image reuse rights."
+  ]
+}

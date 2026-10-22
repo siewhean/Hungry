@@ -1,0 +1,65 @@
+{
+  "schema": "hungry.menu_gap_proposal.v1",
+  "audit_date": "2026-10-19",
+  "status": "PROPOSAL_ONLY",
+  "workbook": {
+    "path": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "sha256": "bb74665b20d62a711463850a4d5de0648dc0237c4e1d75e96c9eb5f5a89d2d93",
+    "canonical_refresh_at_audit": "Refresh137"
+  },
+  "candidate": {
+    "brand": "Fun Toast",
+    "outlet": "Junction 8",
+    "sfa_licence": "CE05204C000",
+    "sfa_status": "listed_in_current_sfa_export; suspended licences excluded",
+    "sfa_name": "FUN TOAST",
+    "sfa_address": "9 Bishan Place #03-09, Junction 8 Shopping Centre, Singapore 579837",
+    "sfa_postal_code": "579837",
+    "exact_join_basis": "Foodpanda outlet page states 9 Bishan Place #03-09 Junction 8; exact match to SFA address, unit and postal code.",
+    "current_directory_gap": {
+      "menu_price_summary": "blank",
+      "menu_url": "https://funtoast.com.sg/menu/ (already populated in workbook; live fetch was inaccessible during this audit)",
+      "website": "https://funtoast.com.sg/ (already populated in workbook)",
+      "existing_menu_item_rows_for_exact_licence": 0
+    }
+  },
+  "source": {
+    "type": "Foodpanda public outlet delivery listing",
+    "url": "https://www.foodpanda.sg/restaurant/g5zq/fun-toast-junction-8",
+    "observed_at": "2026-10-19",
+    "source_page_last_crawled_as_shown": "5 days before observation",
+    "exact_location_text": "9 Bishan Place #03-09 Junction 8",
+    "page_evidence": "Direct public page; categories list approx. 100 category entries before featured/popular and promo overlap. No account, ordering, payment, API, or Mapbox data used.",
+    "scope": "DELIVERY_ONLY",
+    "rights_status": "proposal only; public platform menu and prices are not confirmed for reuse or for dine-in publication"
+  },
+  "menu_item_candidates": [
+    {"section": "Popular", "item": "Kaya Butter Toast Set", "price_as_displayed": "S$ 6.50"},
+    {"section": "Popular", "item": "Kaya Butter Toast", "price_as_displayed": "S$ 3.50"},
+    {"section": "Popular", "item": "Curry Chicken With Rice", "price_as_displayed": "S$ 8.50"},
+    {"section": "Popular", "item": "Shredded Chicken Soup", "price_as_displayed": "S$ 7.20"},
+    {"section": "Popular", "item": "Chee Cheong Fun", "price_as_displayed": "S$ 3.70"},
+    {"section": "Popular", "item": "Honey Butter French Toast", "price_as_displayed": "S$ 4.70"},
+    {"section": "Bundle Deals & Seasonal Menu", "item": "Double Toast Bundle Set", "price_as_displayed": "from S$ 11.90"},
+    {"section": "Fun Meal", "item": "Soya Sauce Chicken With Rice", "price_as_displayed": "S$ 8.40"},
+    {"section": "Fun Meal", "item": "Curry Chicken With Soft Bun", "price_as_displayed": "S$ 8.50"},
+    {"section": "Fun Meal", "item": "Rendang Chicken Rice", "price_as_displayed": "S$ 9.90"},
+    {"section": "Fun Meal", "item": "Yong Tau Foo Dry/Soup", "price_as_displayed": "S$ 8.70"},
+    {"section": "Fun Meal", "item": "Laksa with Prawn", "price_as_displayed": "S$ 8.90"},
+    {"section": "Fun Meal", "item": "Mee Siam with Shredded Chicken", "price_as_displayed": "S$ 6.70"},
+    {"section": "Fun Meal", "item": "Chee Cheong Fun & 2pcs Siew Mai", "price_as_displayed": "S$ 6.40"},
+    {"section": "Fun Meal", "item": "Loh Mai Kai & 2pcs Siew Mai", "price_as_displayed": "S$ 6.70"},
+    {"section": "Traditional Coffee", "item": "Coffee O (Large)", "price_as_displayed": "from S$ 2.60"},
+    {"section": "Specialty Tea", "item": "Grass Jelly Tea", "price_as_displayed": "from S$ 3.30"},
+    {"section": "Refreshing Beverages", "item": "Honey Lime Sour Plum", "price_as_displayed": "from S$ 3.30"},
+    {"section": "Nutritional Beverages", "item": "Almond Cereal Milk", "price_as_displayed": "from S$ 3.80"}
+  ],
+  "caveats": [
+    "These are Foodpanda delivery-listing prices, not verified in-store or dine-in prices.",
+    "Prices shown with 'from' depend on selectable variants or options and must retain that qualifier.",
+    "The delivery listing includes catalogue categories and delivery availability; items can vary or disappear without notice.",
+    "The existing official Fun Toast menu URL is already populated but was not fetchable in this audit, so no official URL change is proposed.",
+    "Do not use this proposal to populate dine-in Menu / Price fields or fan the items out to other Fun Toast SFA licences.",
+    "No workbook cells were edited. No Mapbox response data was used or retained."
+  ]
+}

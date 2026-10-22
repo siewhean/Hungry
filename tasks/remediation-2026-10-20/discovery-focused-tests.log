@@ -1,0 +1,45 @@
+(node:77994) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ getDiscoverCardImage uses approved dish candidate priority before stall fallbacks (0.979459ms)
+✔ getDiscoverCardImage uses stall card priority and de-duplicates candidates (0.114417ms)
+✔ Discover image helper rejects demo providers, logo placeholders, malformed URLs, and blanks (0.984417ms)
+✔ Discover food collections keep image-less live bites visible with local fallback state (1.361833ms)
+✔ Discover food collections prioritise real Supabase images before local fallbacks (0.15625ms)
+✔ Discover source does not hardcode demo image URL fallbacks (0.568125ms)
+✔ dish names and dinner metadata never claim verified late-night hours (36.250958ms)
+(node:77995) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ dietary eligibility requires every selected canonical flag (0.579833ms)
+✔ unknown dietary data cannot satisfy a requirement (0.080125ms)
+✔ zero eligible results remains empty instead of restoring the original list (0.09625ms)
+(node:77996) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ recommendation budget and reviewed exclusions apply before a one-item limit (1.817292ms)
+✔ mock search price and dietary constraints are hard requirements (0.196459ms)
+✔ a slate started before an account transition cannot resolve into the new account (2.131833ms)
+✔ an explicit empty slate filter does not bypass profile dietary requirements (0.219666ms)
+(node:77997) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ sortSearchResults sorts by price ascending (0.926708ms)
+✔ sortSearchResults sorts by rating descending (0.159084ms)
+✔ sortSearchResults sorts by nearest distance (0.109709ms)
+✔ best match preserves provider ranking instead of re-sorting a limited slate (0.069125ms)
+(node:77998) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ catalog sources require an exact approved HTTPS publisher (0.488208ms)
+(node:77999) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ taste recommendation migration adds vector metadata, interaction tables, and indexes (1.740667ms)
+✔ taste recommendation migration adds RLS policies and live recommendation RPCs (0.774375ms)
+✔ supabase recommendation failures remain errors instead of cached success (0.803333ms)
+✔ supabase service records explicit feedback through RPC and preserves fallback update (1.464334ms)
+✔ implicit feedback remains no-op until the explicit learning loop is stable (0.73275ms)
+✔ taste recommendation smoke SQL checks functions, indexes, policies, and compile path (0.445417ms)
+ℹ tests 25
+ℹ suites 0
+ℹ pass 25
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 410.165042

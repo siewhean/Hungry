@@ -1,0 +1,106 @@
+{
+  "snapshot_type": "refresh135_current_official_directory_missing_candidate_audit",
+  "observed_at_local": "2026-10-19 Asia/Singapore",
+  "baseline": {
+    "path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "sha256": "bf28dd39739f1ab1ecf6137b4f6028305c1c26ed0541dd463e369d48c8b0e795",
+    "worksheet": "Public F&B Directory",
+    "data_rows": 38273
+  },
+  "scope": {
+    "method": "Bounded cross-check of current public mall directory evidence against exact SFA licence/name/location records in the baseline. Only propose missing outlets where the tenant and specific outlet location are corroborated. Existing same-brand records at another unit/location are not treated as a match.",
+    "directories_reviewed": 5,
+    "directories": [
+      "VivoCity Dining Guide",
+      "313@somerset Food & Beverages",
+      "Suntec City Dining",
+      "Parkway Parade Store Directory",
+      "Link REIT Jurong Point Stores"
+    ],
+    "mapbox_calls": 0,
+    "spending": 0,
+    "workbook_edits": 0
+  },
+  "findings": [
+    {
+      "venue": "VivoCity",
+      "official_source": "https://www.vivocity.com.sg/shopping-guide/dining-guide",
+      "source_observation": "Current official dining guide reports 150 dining results; results include branch/unit locations.",
+      "baseline_crosscheck": "234 directory records use exact six-digit postal code 098585. The workbook contains extensive matching active SFA licence rows for this mall; no distinct missing outlet established in this bounded pass.",
+      "unresolved": "Large food-court and tenant listings cannot be exhaustively paired by tenant name from the rendered listing alone."
+    },
+    {
+      "venue": "313@somerset",
+      "official_source": "https://www.313somerset.com.sg/store-directory/food-restaurants2/",
+      "source_observation": "Current official Food & Beverages directory reports 54 stores; initial page view is paginated.",
+      "baseline_crosscheck": "89 directory records use postal code 238895. No distinct missing outlet established from the visible official listing in this pass.",
+      "unresolved": "Not every dynamically loaded store was independently joined."
+    },
+    {
+      "venue": "Suntec City",
+      "official_source": "https://sunteccity.com.sg/store_categories/dining?subCategoryID=5",
+      "source_observation": "Current official Dining directory contains F&B tenant listings with units; mall address is 3 Temasek Boulevard, Singapore 038983.",
+      "baseline_crosscheck": "203 directory records use postal code 038983. No distinct missing outlet established from the listing cross-check in this pass.",
+      "unresolved": "Some listed entries are food halls or branded concessions where a mall-level match does not establish individual stall coverage."
+    },
+    {
+      "venue": "Parkway Parade",
+      "official_source": "https://www.parkwayparade.com.sg/store-directory/",
+      "source_observation": "Current official directory lists Food & Beverages tenants and advises checking tenant sources for updated hours.",
+      "baseline_crosscheck": "103 directory records use postal code 449269. No distinct missing outlet established from the visible listing in this pass.",
+      "unresolved": "The listing is dynamically paginated; not all directory tenants were independently joined."
+    },
+    {
+      "venue": "Jurong Point",
+      "official_source": "https://sg.linkreit.com/malls/jurong-point/stores/?cat=foodandbeverage",
+      "source_observation": "Current Link REIT directory lists Food & Beverage tenants across JP1 and JP2. Exact EAT. outlet page gives JP1 #JP201-76/77/78.",
+      "baseline_crosscheck": "206 catalogue records mention Jurong Point in Full Address. No record at 1 Jurong West Central 2 #01-76/77/78 was found. A separate SFA record named EAT exists at 63 Jurong West Central 3, so a same-brand record exists at a different address and is not treated as this outlet.",
+      "unresolved": "No SFA licence for the JP1 #01-76/77/78 outlet is present in the baseline."
+    }
+  ],
+  "candidates": [
+    {
+      "name": "EAT. (Jurong Point JP1)",
+      "candidate_status": "evidence-backed public tenant; SFA licence confirmation required before catalogue insertion",
+      "address": "1 Jurong West Central 2, #01-76/77/78, Singapore 648886",
+      "public_access": "Public-access mall tenant, listed in Link REIT’s live Jurong Point tenant directory.",
+      "evidence": [
+        {
+          "source": "Link REIT current official tenant page",
+          "url": "https://sg.linkreit.com/malls/jurong-point/stores/eat/",
+          "supports": "EAT. is a current Food & Beverage tenant at Jurong Point, JP1 #JP201-76/77/78; observed page crawled 6 days before this audit."
+        },
+        {
+          "source": "Singapore government food-establishment dataset, Food Establishments with Healthier Oil",
+          "url": "https://syn-p-001.sitecorecontenthub.cloud/api/public/content/b610b48d38254bfdb1d2fee127650d3e?v=0425defd",
+          "supports": "Lists EAT BUSINESS PTE LTD (JURONG POINT 2), 1 Jurong West Central 2 #01-76, Singapore 648886, category Restaurant; source is not an SFA licence registry and its exact capture date is not clear."
+        },
+        {
+          "source": "Foodpanda current outlet page",
+          "url": "https://www.foodpanda.sg/restaurant/y7no/eat-jurong-point",
+          "supports": "Separate current outlet page names EAT. (Jurong Point); used only as corroboration of operation/menu presence, not as SFA licence evidence."
+        }
+      ],
+      "catalogue_match": {
+        "exact_location_sfa_rows": 0,
+        "same_brand_other_location": [
+          {
+            "sfa_licence": "SW08985V000",
+            "fnb_name": "EAT",
+            "address": "63 JURONG WEST CENTRAL 3 JURONG POINT, Singapore 648331"
+          }
+        ]
+      },
+      "risk": "The official mall locator and government dataset identify a distinct JP1 address, while the workbook has a same-brand SFA record at a separate JP2 address. Confirm a current outlet-specific SFA licence or exact licence source before adding; do not duplicate the JP2 record.",
+      "recommended_action": "Resolve SFA licence identity for JP1 #01-76/77/78. If confirmed licensed and still open, add as a separate outlet using its actual SFA licence; otherwise retain as an unresolved public-directory gap."
+    }
+  ],
+  "summary": {
+    "official_directories_reviewed": 5,
+    "exact_missing_candidates": 1,
+    "sfa_licence_confirmed_candidates": 0,
+    "candidates_requiring_sfa_resolution": 1,
+    "confirmed_removals": 0,
+    "workbook_edits": 0
+  }
+}

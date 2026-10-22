@@ -1,3 +1,9 @@
+import { useStallInteractionStore } from "@/store/useStallInteractionStore";
+import {
+  isContentHiddenForSession,
+  promptReportReview,
+  useCommunitySafetyRevision,
+} from "@/lib/security/communitySafety";
 import {
   Pressable,
   ScrollView,
@@ -196,7 +202,7 @@ function StallMenuDishCard({
   const { componentRadii, palette, spacing } = useHungryTheme();
   const slides = useMemo(() => getStallDishCycleSlides(dish, dishes), [dish, dishes]);
   const [activeIndex, setActiveIndex] = useState(0);
-  const activeDish = slides[activeIndex] ?? dish;
+  const activeDish = dish;
   const handleActiveIndexChange = useCallback((nextIndex: number) => {
     setActiveIndex(nextIndex);
   }, []);
@@ -217,7 +223,7 @@ function StallMenuDishCard({
     >
       <View style={{ gap: spacing[2] }}>
         <CyclingGridImage
-          images={slides.map((slide) => slide.imageUrl)}
+          images={[dish.imageUrl]}
           cycleMs={CYCLING_GRID_IMAGE_INTERVAL_MS}
           startDelayMs={(index % 4) * 350}
           onActiveIndexChange={handleActiveIndexChange}
@@ -241,22 +247,21 @@ function StallMenuDishCard({
 }
 
 export function StallDetailScreen({ navigation, route }: Props) {
+  useCommunitySafetyRevision();
   const venueId = route.params?.venueId ?? route.params?.id ?? "";
   const repository = getDataRepository();
   const serviceProviderMode = getServiceProvider().mode;
-  const [isLoading, setIsLoading] = useState(true);
+  const isLoading = false;
+  const [detailError, setDetailError] = useState(false);
+  const [detailRetry, setDetailRetry] = useState(0);
   const cachedVenue = repository.getVenueById(venueId);
   const [hydratedVenue, setHydratedVenue] = useState<typeof cachedVenue>();
   const [hasLoadedVenueDetail, setHasLoadedVenueDetail] = useState(Boolean(cachedVenue));
   const venue = hydratedVenue ?? cachedVenue;
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 800);
-    return () => clearTimeout(timer);
-  }, [venueId]);
-
-  useEffect(() => {
     let active = true;
+    setDetailError(false);
     setHydratedVenue(undefined);
     setHasLoadedVenueDetail(Boolean(cachedVenue));
     if (!venueId || cachedVenue) {
@@ -273,19 +278,23 @@ export function StallDetailScreen({ navigation, route }: Props) {
         setHasLoadedVenueDetail(true);
       })
       .catch(() => {
-        if (active) setHasLoadedVenueDetail(true);
+        if (active) {
+          setHasLoadedVenueDetail(true);
+          setDetailError(true);
+        }
       });
 
     return () => {
       active = false;
     };
-  }, [cachedVenue, venueId]);
+  }, [cachedVenue, venueId, detailRetry]);
 
   const building = venue ? getBuildingById(venue.buildingId) : undefined;
   const cachedDishes = useMemo(
     () => (venue ? repository.listDishesByVenue(venue.id) : []),
     [repository, venue],
   );
+  const menuVenueId = useRef(venueId);
   const [hydratedDishes, setHydratedDishes] = useState<DishDetail[] | undefined>();
   const dishes =
     hydratedDishes ?? (serviceProviderMode === "supabase" ? EMPTY_DISHES : cachedDishes);
@@ -293,7 +302,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const leadDish = dishes[0];
 
   const profile = useProfileStore((state) => state.profile);
-  const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
+  const savedInteraction = useStallInteractionStore((state) => state.interactions[venueId]);
+  const [isSavingStall, setIsSavingStall] = useState(false);
+  const toggleVenueSaved = useStallInteractionStore((state) => state.toggleSaved);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const showToast = useUIStore((state) => state.showToast);
@@ -313,6 +324,11 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const [isClaimPending, setIsClaimPending] = useState(() => hasPendingClaimForProfile(profile.id));
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
   const [reviewsByDishId, setReviewsByDishId] = useState<Record<string, DishDetail["reviews"]>>({});
+  const [menuError, setMenuError] = useState(false);
+  const [menuLoading, setMenuLoading] = useState(false);
+  const [promotionError, setPromotionError] = useState(false);
+  const [reviewError, setReviewError] = useState(false);
+  const [reviewLoading, setReviewLoading] = useState(false);
   const [activePromotions, setActivePromotions] = useState<MerchantPromotion[]>([]);
   const [activeMenuCategory, setActiveMenuCategory] = useState(ALL_MENU_CATEGORY);
   const [visibleMenuItemCount, setVisibleMenuItemCount] = useState(INITIAL_MENU_ITEM_COUNT);
@@ -340,7 +356,6 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const shareReviewTarget = useMemo<ReviewShareTarget>(() => {
     return {
       reviewId: `stall-${venue?.id ?? ""}`,
-      postId: "",
       title: venue?.name ?? "Stall",
       subtitle: `${buildingLocation.name ?? "Hungry"} · ${venue?.unitNumber ?? ""}`.trim(),
       imageUrl: leadDish?.imageUrl ?? "",
@@ -359,7 +374,12 @@ export function StallDetailScreen({ navigation, route }: Props) {
 
   useEffect(() => {
     let active = true;
-    setHydratedDishes(undefined);
+    if (menuVenueId.current !== venueId) {
+      setHydratedDishes(undefined);
+      menuVenueId.current = venueId;
+    }
+    setMenuLoading(true);
+    setMenuError(false);
     if (!venue?.id) {
       return () => {
         active = false;
@@ -367,6 +387,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
     }
 
     if (cachedDishes.length > 0 && serviceProviderMode !== "supabase") {
+      setMenuLoading(false);
       return () => {
         active = false;
       };
@@ -375,16 +396,22 @@ export function StallDetailScreen({ navigation, route }: Props) {
     void getHungryService()
       .discovery.listDishesByVenue(venue.id)
       .then((nextDishes) => {
-        if (active) setHydratedDishes(nextDishes);
+        if (active) {
+          setHydratedDishes(nextDishes);
+          setMenuLoading(false);
+        }
       })
       .catch(() => {
-        if (active) setHydratedDishes([]);
+        if (active) {
+          setMenuError(true);
+          setMenuLoading(false);
+        }
       });
 
     return () => {
       active = false;
     };
-  }, [cachedDishes.length, serviceProviderMode, venue?.id]);
+  }, [cachedDishes.length, serviceProviderMode, venue?.id, detailRetry]);
 
   useEffect(() => {
     setIsClaimPending(hasPendingClaimForProfile(profile.id));
@@ -409,19 +436,20 @@ export function StallDetailScreen({ navigation, route }: Props) {
       };
     }
 
+    setPromotionError(false);
     void getHungryService()
       .discovery.listActivePromotionsForTarget({ venueId: venue.id })
       .then((promotions) => {
         if (active) setActivePromotions(promotions);
       })
       .catch(() => {
-        if (active) setActivePromotions([]);
+        if (active) setPromotionError(true);
       });
 
     return () => {
       active = false;
     };
-  }, [venue]);
+  }, [venue, detailRetry]);
 
   useEffect(() => {
     if (!venue || activePromotions.length === 0) return;
@@ -449,30 +477,38 @@ export function StallDetailScreen({ navigation, route }: Props) {
   useEffect(() => {
     let active = true;
     if (!dishes.length) {
+      setReviewLoading(false);
+      setReviewError(false);
       setReviewsByDishId({});
       return () => {
         active = false;
       };
     }
 
-    void Promise.all(
-      dishes.map(async (dish) => {
-        try {
-          const reviews = await getHungryService().reviews.getReviewsForDish(dish.id);
-          return [dish.id, reviews] as const;
-        } catch {
-          return [dish.id, serviceProviderMode === "mock" ? dish.reviews : []] as const;
+    setReviewLoading(true);
+    setReviewError(false);
+    void getHungryService()
+      .reviews.getReviewsForVenue(venueId, { limit: 100 })
+      .then((reviews) => {
+        if (!active) return;
+        setReviewLoading(false);
+        setReviewsByDishId(
+          Object.fromEntries(
+            dishes.map((dish) => [dish.id, reviews.filter((review) => review.dishId === dish.id)]),
+          ),
+        );
+      })
+      .catch(() => {
+        if (active) {
+          setReviewError(true);
+          setReviewLoading(false);
         }
-      }),
-    ).then((entries) => {
-      if (!active) return;
-      setReviewsByDishId(Object.fromEntries(entries));
-    });
+      });
 
     return () => {
       active = false;
     };
-  }, [dishIdsKey, dishes, serviceProviderMode]);
+  }, [dishIdsKey, dishes, serviceProviderMode, detailRetry]);
 
   const reviewHydratedDishes = useMemo(
     () =>
@@ -535,6 +571,18 @@ export function StallDetailScreen({ navigation, route }: Props) {
     return false;
   };
 
+  if (detailError && !venue)
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }}>
+        <EmptyState
+          title="Stall unavailable"
+          body="Could not load this stall. Check your connection and retry."
+          ctaLabel="Retry"
+          onPress={() => setDetailRetry((value) => value + 1)}
+        />
+      </SafeAreaView>
+    );
+
   if (isLoading || (Boolean(venueId) && !venue && !hasLoadedVenueDetail)) {
     return <StallDetailSkeleton />;
   }
@@ -574,7 +622,11 @@ export function StallDetailScreen({ navigation, route }: Props) {
       : `${leadDish.distanceMeters}m away`
     : null;
   const isVenueOpen = isVenueOpenFromHours(venue.operatingHours, venue.isOpen);
-  const operatingStatusLabel = isVenueOpen ? "Open now" : (venue.closureNotice ?? "Closed now");
+  const operatingStatusLabel = !venue.operatingHours.trim()
+    ? "Opening hours unknown"
+    : isVenueOpen
+      ? "Listed open"
+      : (venue.closureNotice ?? "Listed closed");
   const weeklyOperatingHours = formatWeeklyOperatingHours(venue.operatingHours);
 
   const reviewedDishIds = profile.reviewedDishIds;
@@ -792,35 +844,43 @@ export function StallDetailScreen({ navigation, route }: Props) {
               <IconButton
                 variant="floating"
                 accessibilityLabel={
-                  profile.favouriteDishIds.includes(leadDish?.id ?? "")
+                  Boolean(savedInteraction?.isSaved)
                     ? "Remove from favourites"
                     : "Save to favourites"
                 }
+                disabled={isSavingStall}
                 onPress={() => {
                   if (!requireAuthForProtectedAction("Sign in to save this stall.")) {
                     return;
                   }
-                  if (leadDish) {
-                    const wasSaved = profile.favouriteDishIds.includes(leadDish.id);
-                    toggleFavourite(leadDish);
-                    if (!wasSaved) {
-                      void getHungryService().discovery.recordMerchantActionEvent({
-                        eventType: "save",
-                        venueId: venue.id,
-                        dishId: leadDish.id,
-                        userId: profile.id,
-                      });
-                    }
-                  }
+                  if (isSavingStall) return;
+                  const wasSaved =
+                    useStallInteractionStore.getState().interactions[venue.id]?.isSaved ?? false;
+                  setIsSavingStall(true);
+                  void toggleVenueSaved(profile.id, venue.id)
+                    .then(() => {
+                      const confirmed = useStallInteractionStore.getState().interactions[venue.id];
+                      if (!wasSaved && confirmed?.userId === profile.id && confirmed.isSaved)
+                        void getHungryService()
+                          .discovery.recordMerchantActionEvent({
+                            eventType: "save",
+                            venueId: venue.id,
+                            userId: profile.id,
+                          })
+                          .catch(() => undefined);
+                    })
+                    .catch(() =>
+                      showToast({
+                        message: "Could not save this stall. Please retry.",
+                        tone: "warning",
+                      }),
+                    )
+                    .finally(() => setIsSavingStall(false));
                 }}
                 icon={
                   <Heart
                     color={palette.text}
-                    fill={
-                      profile.favouriteDishIds.includes(leadDish?.id ?? "")
-                        ? palette.text
-                        : "transparent"
-                    }
+                    fill={Boolean(savedInteraction?.isSaved) ? palette.text : "transparent"}
                     size={20}
                   />
                 }
@@ -913,7 +973,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                 <FollowStallButton stallId={venue.id} stallName={venue.name} />
               ) : null}
 
-              {FEATURE_FLAGS.collectionsEnabled ? (
+              {
                 <DetailSaveActionsCard
                   title="Save this stall"
                   body="Add this stall to your trying list or keep it in a private Hungry Portfolio."
@@ -922,7 +982,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   isAddingToChecklist={detailSaveActions.isAddingToChecklist}
                   isAddingToPortfolio={detailSaveActions.isAddingToPortfolio}
                 />
-              ) : null}
+              }
 
               {/* Attributes */}
               <View
@@ -1005,13 +1065,31 @@ export function StallDetailScreen({ navigation, route }: Props) {
               <View onLayout={handleMenuSectionLayout} style={{ gap: spacing[4] }}>
                 <View style={{ gap: spacing[1] }}>
                   <AppText variant="h2">Menu</AppText>
+                  {menuLoading ? <AppText>Loading menu…</AppText> : null}
+                  {menuError ? (
+                    <EmptyState
+                      title="Menu unavailable"
+                      body="Could not refresh the menu. Previously loaded dishes are retained."
+                      ctaLabel="Retry"
+                      onPress={() => setDetailRetry((value) => value + 1)}
+                    />
+                  ) : null}
+                  {promotionError ? (
+                    <EmptyState
+                      title="Promotions unavailable"
+                      body="Could not check current promotions."
+                      ctaLabel="Retry"
+                      onPress={() => setDetailRetry((value) => value + 1)}
+                    />
+                  ) : null}
                   {filteredMenuDishes.length > 0 ? (
                     <AppText variant="bodySmall" tone="secondary">
                       Showing {visibleMenuDishes.length} of {filteredMenuDishes.length} items
                     </AppText>
                   ) : null}
                 </View>
-                {dishes.length > 0 ? (
+                {menuLoading && !dishes.length ? null : menuError &&
+                  !dishes.length ? null : dishes.length > 0 ? (
                   <View style={{ gap: spacing[4] }}>
                     {menuCategories.length > 2 ? (
                       <ScrollView
@@ -1085,154 +1163,182 @@ export function StallDetailScreen({ navigation, route }: Props) {
               {/* Community Reviews */}
               <View style={{ gap: spacing[4] }}>
                 <AppText variant="h2">Recent Reviews</AppText>
-                {communityReviews.length > 0 ? (
-                  communityReviews.map((review) => (
-                    <View
-                      key={review.id}
-                      style={{
-                        paddingVertical: spacing[3],
-                        borderBottomWidth: 1,
-                        borderBottomColor: palette.border,
-                      }}
-                    >
+                {reviewLoading ? <AppText>Loading reviews…</AppText> : null}
+                {reviewError ? (
+                  <EmptyState
+                    title="Reviews unavailable"
+                    body="Could not refresh reviews."
+                    ctaLabel="Retry"
+                    onPress={() => setDetailRetry((value) => value + 1)}
+                  />
+                ) : null}
+                {(reviewLoading || reviewError) &&
+                !communityReviews.length ? null : communityReviews.length > 0 ? (
+                  communityReviews
+                    .filter((review) => !isContentHiddenForSession(review))
+                    .map((review) => (
                       <View
+                        key={review.id}
                         style={{
-                          alignItems: "center",
-                          flexDirection: "row",
-                          gap: spacing[3],
+                          paddingVertical: spacing[3],
+                          borderBottomWidth: 1,
+                          borderBottomColor: palette.border,
                         }}
                       >
-                        <AccessibleImage
-                          source={{ uri: review.avatarUrl }}
+                        <View
                           style={{
-                            borderRadius: radii.pill,
-                            height: 40,
-                            width: 40,
+                            alignItems: "center",
+                            flexDirection: "row",
+                            gap: spacing[3],
                           }}
-                          accessibilityLabel={`Avatar of ${review.authorName}`}
-                        />
-                        <View style={{ flex: 1 }}>
-                          <AppText style={{ fontWeight: "700" }}>{review.authorName}</AppText>
+                        >
+                          <AccessibleImage
+                            source={{ uri: review.avatarUrl }}
+                            style={{
+                              borderRadius: radii.pill,
+                              height: 40,
+                              width: 40,
+                            }}
+                            accessibilityLabel={`Avatar of ${review.authorName}`}
+                          />
+                          <View style={{ flex: 1 }}>
+                            <AppText style={{ fontWeight: "700" }}>{review.authorName}</AppText>
+                            <Pressable
+                              accessibilityRole="button"
+                              accessibilityLabel={`Report or block ${review.authorName}`}
+                              onPress={() =>
+                                promptReportReview({
+                                  reviewId: review.id,
+                                  authorName: review.authorName,
+                                  authorId: review.authorId,
+                                })
+                              }
+                              style={{ minHeight: 44, justifyContent: "center" }}
+                            >
+                              <AppText variant="micro">Review options</AppText>
+                            </Pressable>
+                            <View
+                              style={{
+                                flexDirection: "row",
+                                gap: spacing[0.5],
+                              }}
+                            >
+                              {Array.from({ length: 5 }).map((_, i) => (
+                                <Star
+                                  key={i}
+                                  size={12}
+                                  color={i < review.rating ? palette.amber : palette.border}
+                                  fill={i < review.rating ? palette.amber : "transparent"}
+                                />
+                              ))}
+                            </View>
+                          </View>
+                          <AppText variant="micro" tone="muted">
+                            {formatTimeAgo(review.createdAt)}
+                          </AppText>
+                        </View>
+                        <AppText
+                          variant="bodySmall"
+                          tone="secondary"
+                          style={{ marginTop: spacing[2] }}
+                        >
+                          {review.text}
+                        </AppText>
+
+                        {reviewRepliesEnabled ? (
                           <View
                             style={{
                               flexDirection: "row",
-                              gap: spacing[0.5],
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              marginTop: spacing[2],
                             }}
                           >
-                            {Array.from({ length: 5 }).map((_, i) => (
-                              <Star
-                                key={i}
-                                size={12}
-                                color={i < review.rating ? palette.amber : palette.border}
-                                fill={i < review.rating ? palette.amber : "transparent"}
-                              />
-                            ))}
+                            <Pressable
+                              accessibilityRole="button"
+                              accessibilityLabel={`Reply to review by ${review.authorName}`}
+                              onPress={() =>
+                                setActiveReplyReviewId((current) =>
+                                  current === review.id ? null : review.id,
+                                )
+                              }
+                            >
+                              <AppText variant="micro" tone="accent">
+                                Reply
+                              </AppText>
+                            </Pressable>
+                            {(localRepliesByReviewId[review.id]?.length ?? 0) > 0 ? (
+                              <AppText variant="micro" tone="muted">
+                                {localRepliesByReviewId[review.id]?.length} repl
+                                {(localRepliesByReviewId[review.id]?.length ?? 0) === 1
+                                  ? "y"
+                                  : "ies"}
+                              </AppText>
+                            ) : null}
                           </View>
-                        </View>
-                        <AppText variant="micro" tone="muted">
-                          {formatTimeAgo(review.createdAt)}
-                        </AppText>
-                      </View>
-                      <AppText
-                        variant="bodySmall"
-                        tone="secondary"
-                        style={{ marginTop: spacing[2] }}
-                      >
-                        {review.text}
-                      </AppText>
+                        ) : null}
 
-                      {reviewRepliesEnabled ? (
-                        <View
-                          style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            marginTop: spacing[2],
-                          }}
-                        >
-                          <Pressable
-                            accessibilityRole="button"
-                            accessibilityLabel={`Reply to review by ${review.authorName}`}
-                            onPress={() =>
-                              setActiveReplyReviewId((current) =>
-                                current === review.id ? null : review.id,
-                              )
-                            }
+                        {(localRepliesByReviewId[review.id] ?? []).length > 0 ? (
+                          <View
+                            style={{
+                              gap: spacing[2],
+                              marginTop: spacing[2],
+                              paddingLeft: spacing[3],
+                              borderLeftWidth: 1,
+                              borderLeftColor: palette.border,
+                            }}
                           >
-                            <AppText variant="micro" tone="accent">
-                              Reply
-                            </AppText>
-                          </Pressable>
-                          {(localRepliesByReviewId[review.id]?.length ?? 0) > 0 ? (
-                            <AppText variant="micro" tone="muted">
-                              {localRepliesByReviewId[review.id]?.length} repl
-                              {(localRepliesByReviewId[review.id]?.length ?? 0) === 1 ? "y" : "ies"}
-                            </AppText>
-                          ) : null}
-                        </View>
-                      ) : null}
-
-                      {(localRepliesByReviewId[review.id] ?? []).length > 0 ? (
-                        <View
-                          style={{
-                            gap: spacing[2],
-                            marginTop: spacing[2],
-                            paddingLeft: spacing[3],
-                            borderLeftWidth: 1,
-                            borderLeftColor: palette.border,
-                          }}
-                        >
-                          {(localRepliesByReviewId[review.id] ?? []).map((reply) => (
-                            <View key={reply.id} style={{ gap: 2 }}>
-                              <View
-                                style={{
-                                  flexDirection: "row",
-                                  justifyContent: "space-between",
-                                  alignItems: "center",
-                                }}
-                              >
-                                <AppText variant="micro">{reply.authorName}</AppText>
-                                <AppText variant="micro" tone="muted">
-                                  {formatTimeAgo(reply.createdAt)}
+                            {(localRepliesByReviewId[review.id] ?? []).map((reply) => (
+                              <View key={reply.id} style={{ gap: 2 }}>
+                                <View
+                                  style={{
+                                    flexDirection: "row",
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
+                                  }}
+                                >
+                                  <AppText variant="micro">{reply.authorName}</AppText>
+                                  <AppText variant="micro" tone="muted">
+                                    {formatTimeAgo(reply.createdAt)}
+                                  </AppText>
+                                </View>
+                                <AppText variant="bodySmall" tone="secondary">
+                                  {reply.text}
                                 </AppText>
                               </View>
-                              <AppText variant="bodySmall" tone="secondary">
-                                {reply.text}
-                              </AppText>
-                            </View>
-                          ))}
-                        </View>
-                      ) : null}
+                            ))}
+                          </View>
+                        ) : null}
 
-                      {reviewRepliesEnabled && activeReplyReviewId === review.id ? (
-                        <View
-                          style={{
-                            gap: spacing[2],
-                            marginTop: spacing[2],
-                            paddingLeft: spacing[3],
-                          }}
-                        >
-                          <Input
-                            placeholder={`Reply to ${review.authorName}`}
-                            value={replyDraftByReviewId[review.id] ?? ""}
-                            onChangeText={(text) => {
-                              setReplyDraftByReviewId((prev) => ({
-                                ...prev,
-                                [review.id]: text,
-                              }));
+                        {reviewRepliesEnabled && activeReplyReviewId === review.id ? (
+                          <View
+                            style={{
+                              gap: spacing[2],
+                              marginTop: spacing[2],
+                              paddingLeft: spacing[3],
                             }}
-                            multiline
-                          />
-                          <Button
-                            label="Post reply"
-                            variant="secondary"
-                            onPress={() => submitReviewReply(review.id)}
-                            disabled={!(replyDraftByReviewId[review.id] ?? "").trim().length}
-                          />
-                        </View>
-                      ) : null}
-                    </View>
-                  ))
+                          >
+                            <Input
+                              placeholder={`Reply to ${review.authorName}`}
+                              value={replyDraftByReviewId[review.id] ?? ""}
+                              onChangeText={(text) => {
+                                setReplyDraftByReviewId((prev) => ({
+                                  ...prev,
+                                  [review.id]: text,
+                                }));
+                              }}
+                              multiline
+                            />
+                            <Button
+                              label="Post reply"
+                              variant="secondary"
+                              onPress={() => submitReviewReply(review.id)}
+                              disabled={!(replyDraftByReviewId[review.id] ?? "").trim().length}
+                            />
+                          </View>
+                        ) : null}
+                      </View>
+                    ))
                 ) : (
                   <EmptyState
                     title="No community reviews yet"
@@ -1279,14 +1385,12 @@ export function StallDetailScreen({ navigation, route }: Props) {
           </ScrollView>
 
           <ReviewShareSheet
+            subjectLabel="stall"
             activeReview={activeShareReview}
             innerRef={shareSheetRef}
             bottomInset={insets.bottom}
             onDismiss={() => {
               setActiveShareReview(null);
-            }}
-            onShared={(postId, channel) => {
-              incrementShare(postId, channel);
             }}
           />
         </View>

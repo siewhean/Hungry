@@ -1,0 +1,229 @@
+{
+  "snapshot_type": "read_only_exact_outlet_closure_delta_audit",
+  "observed_at": "2026-10-18",
+  "workbook_path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "69c17622f7e7dd965b09955a7383465eae54fd1b06cc09db97c1dbe4cf088548",
+  "scope": "Recheck likely stale closure leads and discover current official first-party notices; exact row identity/address only.",
+  "new_first_party_notice": {
+    "venue": "Satay by the Bay",
+    "operator_or_site_authority": "Gardens by the Bay",
+    "official_notice": "Satay by the Bay will close from 1 October 2026 to make way for a refreshed waterfront dining experience as part of the Wetlands by the Bay development.",
+    "closure_effective_date": "2026-10-01",
+    "permanence_wording_in_first_party_notice": false,
+    "exact_match_basis": "Workbook lists SATAY BY THE BAY at 18 Marina Gardens Drive #01-19, Gardens by the Bay, postal 018953, matching venue, address, unit, and postal in the closure notice context; notice does not publish SFA licence identifiers.",
+    "candidate_exact_named_rows": [
+      {
+        "F&B Name": "SATAY BY THE BAY",
+        "SFA Licence": "CE12H48N000",
+        "Business Type": "Coffeeshop/Eating House",
+        "Full Address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953 | Unit: 01-19 | Postal code: 018953",
+        "Postal Code": "018953",
+        "Website": null
+      },
+      {
+        "F&B Name": "SATAY BY THE BAY",
+        "SFA Licence": "CE12H48N025",
+        "Business Type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+        "Full Address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953 | Unit: 01-19 | Postal code: 018953",
+        "Postal Code": "018953",
+        "Website": null
+      }
+    ],
+    "related_same_unit_rows": [
+      {
+        "F&B Name": "BBQ SEAFOOD &SATAY",
+        "SFA Licence": "CE12H48N005",
+        "Business Type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+        "Full Address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+        "Postal Code": "018953",
+        "Website": null
+      },
+      {
+        "F&B Name": "CLAYPOT NOODLE",
+        "SFA Licence": "CE12H48N023",
+        "Business Type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+        "Full Address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+        "Postal Code": "018953",
+        "Website": null
+      },
+      {
+        "F&B Name": "DumPrince Dumpling House",
+        "SFA Licence": "CE12H48N003",
+        "Business Type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+        "Full Address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+        "Postal Code": "018953",
+        "Website": null
+      },
+      {
+        "F&B Name": "DumPrince Dumpling House Stall 4",
+        "SFA Licence": "CE12H48N004",
+        "Business Type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+        "Full Address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+        "Postal Code": "018953",
+        "Website": null
+      },
+      {
+        "F&B Name": "GEYLANG LOR 29 HOKKIEN MEE",
+        "SFA Licence": "CE12H48N022",
+        "Business Type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+        "Full Address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+        "Postal Code": "018953",
+        "Website": null
+      },
+      {
+        "F&B Name": "Gopals The Holy Basil",
+        "SFA Licence": "CE12H48N020",
+        "Business Type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+        "Full Address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+        "Postal Code": "018953",
+        "Website": null
+      },
+      {
+        "F&B Name": "HUAT HUAT BBQ CHICKEN WING",
+        "SFA Licence": "CE12H48N018",
+        "Business Type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+        "Full Address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+        "Postal Code": "018953",
+        "Website": null
+      },
+      {
+        "F&B Name": "Huat Huat BBQ Chicken Wings",
+        "SFA Licence": "CE12H48N019",
+        "Business Type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+        "Full Address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+        "Postal Code": "018953",
+        "Website": null
+      },
+      {
+        "F&B Name": "JOLLY BAR",
+        "SFA Licence": "CE15E21J000",
+        "Business Type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+        "Full Address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953 Shop 3",
+        "Postal Code": "018953",
+        "Website": null
+      },
+      {
+        "F&B Name": "LIVE SEAFOOD & STEAMBOAT",
+        "SFA Licence": "CE12K69J000",
+        "Business Type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+        "Full Address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953 (Hawker Centr -part off)",
+        "Postal Code": "018953",
+        "Website": null
+      },
+      {
+        "F&B Name": "Makan By the Bay (Shop 4)",
+        "SFA Licence": "CE16501X000",
+        "Business Type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+        "Full Address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+        "Postal Code": "018953",
+        "Website": null
+      },
+      {
+        "F&B Name": "MARINA LIVE SEAFOOD & STEAMBOAT",
+        "SFA Licence": "CE12H48N024",
+        "Business Type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+        "Full Address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+        "Postal Code": "018953",
+        "Website": null
+      },
+      {
+        "F&B Name": "MIXED VEGETABLE RICE",
+        "SFA Licence": "CE12H48N002",
+        "Business Type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+        "Full Address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+        "Postal Code": "018953",
+        "Website": null
+      },
+      {
+        "F&B Name": "SATAY BY THE BAY",
+        "SFA Licence": "CE12H48N000",
+        "Business Type": "Coffeeshop/Eating House",
+        "Full Address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953 | Unit: 01-19 | Postal code: 018953",
+        "Postal Code": "018953",
+        "Website": null
+      },
+      {
+        "F&B Name": "SATAY BY THE BAY",
+        "SFA Licence": "CE12H48N025",
+        "Business Type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+        "Full Address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953 | Unit: 01-19 | Postal code: 018953",
+        "Postal Code": "018953",
+        "Website": null
+      },
+      {
+        "F&B Name": "THAI FOOD",
+        "SFA Licence": "CE12H48N006",
+        "Business Type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+        "Full Address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+        "Postal Code": "018953",
+        "Website": null
+      },
+      {
+        "F&B Name": "THAI FOOD",
+        "SFA Licence": "CE12H48N007",
+        "Business Type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+        "Full Address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+        "Postal Code": "018953",
+        "Website": null
+      },
+      {
+        "F&B Name": "TURKISH & INDIAN",
+        "SFA Licence": "CE12H48N008",
+        "Business Type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+        "Full Address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+        "Postal Code": "018953",
+        "Website": null
+      }
+    ],
+    "directory_rows_at_exact_unit_count": 18,
+    "assessment": "The public operator confirms the food-court closure from 1 Oct 2026, so this entire unit #01-19 cluster is potentially stale for a current-open directory. However, its official notice does not explicitly say permanent and does not name individual stall licence numbers. Under strict permanent-closure deletion criteria, recommend status review rather than automatic deletion. Do not remove nearby F&B at other units within postal 018953.",
+    "proposed_removal": false,
+    "recommended_next_step": "Check current SFA Track Records for all exact licence IDs and obtain any first-party notice from the individual licensees before permanent-closure removal. If directory inclusion requires currently accessible locations rather than only permanently closed outlets, mark all exact-unit cluster records inactive pending redevelopment."
+  },
+  "previous_leads_rechecked": [
+    {
+      "lead": "AJi iCHi Changi Airport T4",
+      "result": "Do not remove Singapore Post Centre row SE17716P000: official closure notice is T4, not the workbook address/postal; exact outlet mismatch."
+    },
+    {
+      "lead": "Five Guys ION Orchard",
+      "result": "Do not remove workbook row CE19U85C000: its location is Plaza Singapura, not ION Orchard."
+    },
+    {
+      "lead": "JUMBO Seafood East Coast Seafood Centre",
+      "result": "No closure evidence in current first-party locator; it currently lists the outlet, exact address and phone. Do not remove on secondary reports."
+    },
+    {
+      "lead": "Itacho Sushi all outlets",
+      "result": "Prior sweep found Itacho absent from current workbook; no row to remove."
+    }
+  ],
+  "official_sources": [
+    {
+      "url": "https://www.gardensbythebay.com.sg/en.html",
+      "http_status": 200,
+      "sha256": "0843a2a282ddb6829ace39a21b7d912ce013dab2a61ac037d0e516d284e58dd8",
+      "bytes": 129150
+    },
+    {
+      "url": "https://www.gardensbythebay.com.sg/en/shop/canopy-gift-shop.html",
+      "http_status": 200,
+      "sha256": "7cd0ccf0a5d9ccf1471ad2c42e0ad862e4ede0d6ee035efd2cf4e95d1fdb509e",
+      "bytes": 90231
+    },
+    {
+      "url": "https://www.sfa.gov.sg/food-retail/licence-permit/update-renew-cancel-licence-permit-for-food-retail",
+      "http_status": 200,
+      "sha256": "0e3f1a0bbf9050a0ec38f810012bc878c7fe600c7f3e5adab9a7251a5dcd743a",
+      "bytes": 136766
+    }
+  ],
+  "prior_snapshot_sha256": "c5ee33907e4812a15e84261acc7f661f35e4696b6c82e28831770b832c6a47e0",
+  "removal_count": 0,
+  "limitations": [
+    "SFA list in workbook is not equivalent to direct current confirmation of each licence status.",
+    "The SFA public track-record lookup is interactive; no current bulk active licence export found.",
+    "First-party closure notice establishes venue cessation date but not permanent wording or individual license identifiers.",
+    "This targeted sweep does not verify all 38,280 records."
+  ]
+}

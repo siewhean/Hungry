@@ -1,0 +1,79 @@
+{
+  "snapshot_id": "dian_xiao_er_marina_square_opening_hours_20261018",
+  "captured_at": "2026-10-18",
+  "baseline_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_workbook_sha256": "ba519451ef5fa46aafcac14d67a1563365e6a15601c1ddc778d71ac20a960ef1",
+  "workbook_edited": false,
+  "scope": "One exact Marina Square F&B row with a blank opening-hours field. Existing nonblank contact and website were compared with the official outlet listing and left unchanged. Menu URL remains blank because the official menu/order pages found were brand-wide and did not confirm outlet-specific applicability.",
+  "source_evidence": [
+    {
+      "url": "https://www.dianxiaoer.com.sg/outlets",
+      "publisher": "Dian Xiao Er official Singapore outlet listing",
+      "http_status": 200,
+      "captured_at": "2026-10-18",
+      "content_sha256": "480f9821709bd94b5d68333c032c424aad309644ced590704a88998842ea9776",
+      "evidence_excerpt": "Marina Square; 6 Raffles Blvd #02-200 Marina Square Singapore 039594; Mon-Thu 11:00am-9:30pm (last order 9pm); Fri, Sat, Sun & PH 11:00am-10pm (last order 9:30pm); Tel: 6337 1928.",
+      "exact_match_fields": ["outlet_name", "unit", "postal_code", "contact", "opening_hours"],
+      "transport_note": "Raw HTML captured with curl -k because local Python TLS verification failed. The page was also surfaced by web search as the official operator outlet listing."
+    }
+  ],
+  "proposals": [
+    {
+      "sfa_licence": "CE12E19V000",
+      "directory_row": 7476,
+      "f_and_b_name": "Dian Xiao Er",
+      "business_type": "Restaurant",
+      "workbook_address": "Address: 6 RAFFLES BOULEVARD #02-200,MARINA SQUARE,Singapore 039594",
+      "postal_code": "039594",
+      "unit": "#02-200",
+      "before": {
+        "opening_hours_closed_days": null,
+        "contact_details": "Contact: +6563371928",
+        "website": "http://www.dianxiaoer.com.sg/",
+        "menu_url": null
+      },
+      "changes": [
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "after": "Hours: Mon–Thu: 11:00am–9:30pm (last order 9:00pm); Fri–Sun & PH: 11:00am–10:00pm (last order 9:30pm).",
+          "confidence": "high",
+          "reason": "Current official operator listing gives hours for the exact Marina Square outlet and unit.",
+          "source_url": "https://www.dianxiaoer.com.sg/outlets",
+          "source_sha256": "480f9821709bd94b5d68333c032c424aad309644ced590704a88998842ea9776"
+        }
+      ],
+      "unchanged_nonblank_fields": [
+        {
+          "field": "Contact Details",
+          "value": "Contact: +6563371928",
+          "source_observation": "Official exact-outlet listing gives Tel: 6337 1928."
+        },
+        {
+          "field": "Website",
+          "value": "http://www.dianxiaoer.com.sg/",
+          "source_observation": "Official operator outlet listing is hosted on the same dianxiaoer.com.sg domain; no domain conflict found."
+        }
+      ],
+      "unresolved_fields": [
+        {
+          "field": "Menu URL",
+          "before": null,
+          "reason": "The operator has brand-wide menu/set-menu and online-order pages, but the checked official outlet record does not identify a Marina Square-specific menu link or confirm that a general order catalog applies to this outlet."
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "exact_outlets_checked": 1,
+    "blank_field_proposals": 1,
+    "nonblank_overwrites": 0,
+    "existing_contact_values_corroborated": 1,
+    "menu_url_unresolved": 1,
+    "workbook_edits": 0
+  },
+  "limitations": [
+    "This is a one-outlet audit, not a full Marina Square review.",
+    "The source does not expose an outlet-specific menu URL."
+  ]
+}

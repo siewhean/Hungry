@@ -39,7 +39,7 @@ test("onboarding typed routes are registered and flow through cuisine, taste, an
   assert.match(introTemplate, /navigation\.navigate\("LocationPermission"\)/);
   assert.doesNotMatch(introTemplate, /next step: \$\{nextScreen\}/);
   assert.match(introTemplate, /paddingTop: insets\.top/);
-  assert.match(cuisines, /setOnboardingSelectedDishIds\(/);
+  assert.match(cuisines, /useOnboardingDraftStore\.getState\(\)\.update\(\{[\s\S]*selectedDishIds/);
   assert.match(cuisines, /navigation\.navigate\("TasteQuiz"\)/);
   assert.match(
     quiz,
@@ -66,10 +66,10 @@ test("root and nested route targets avoid stale or unregistered screens", () => 
   assert.doesNotMatch(types, /DishDetailStandard/);
   assert.doesNotMatch(rootNavigator, /"SettingsV2"/);
   assert.match(favourites, /rootNavigation\.navigate\("MainTabs", \{ screen: "Discover" \}\)/);
-  assert.match(
-    settings,
-    /rootNavigation\.navigate\("OnboardingStack", \{ screen: "ManualLocationPicker" \}\)/,
-  );
+  assert.match(settings, /useLocationStore\.getState\(\)\.grantLocation\(\)/);
+  assert.match(settings, /label="Selected area"[\s\S]*type="value"/);
+  assert.doesNotMatch(settings, /navigate\("ManualLocationPicker"/);
+  assert.match(types, /ManualLocationPicker: undefined/);
   assert.match(merchantSettings, /CommonActions\.reset/);
   assert.match(
     merchantSettings,

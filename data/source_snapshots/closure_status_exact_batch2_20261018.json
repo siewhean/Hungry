@@ -1,0 +1,460 @@
+{
+  "snapshot_type": "closure_status_exact_batch2",
+  "observed_at_utc": "2026-10-18T13:30:39Z",
+  "workbook_path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "986a2656c3243d55c1a3914a3c5fbbdf2052e0423a69705785cbba0b7fee154e",
+  "directory_rows_scanned": 38280,
+  "scope": "Current exact-licence/address review of previously identified permanent closure, temporary/redevelopment closure, mall-listing, and reopening leads. Official regulator/operator/mall sources only.",
+  "method": "Read current workbook Public F&B Directory; match outlet plus full address/unit/postal and exact SFA licence where present. Query SFA Track Records by exact licence for all 18 #01-19 records. Direct official source captures were SHA-256 hashed. No workbook or Excel edits.",
+  "sources": [
+    {
+      "id": "gardens_home",
+      "url": "https://www.gardensbythebay.com.sg/en.html",
+      "type": "official venue operator notice",
+      "http_status": 200,
+      "bytes": 129150,
+      "sha256": "fff15110fc1a77ea9df2ddd9d3b31ce46e960b4ceb3269c27cccb4620ec2fc44",
+      "observed_date": "2026-10-18",
+      "claim": "Satay by the Bay closes from 1 October 2026 for a refreshed waterfront dining experience as part of Wetlands by the Bay; no explicit permanent-closure wording."
+    },
+    {
+      "id": "gardens_dine_directory",
+      "url": "https://www.gardensbythebay.com.sg/en/shop/canopy-gift-shop.html",
+      "type": "official venue dining directory",
+      "http_status": 200,
+      "bytes": 90362,
+      "sha256": "2efd58bb812caae4eb13962b2643c7337fdd7b591b230756bfd7cde6735bfa9e",
+      "observed_date": "2026-10-18",
+      "claim": "Repeats Satay by the Bay closure notice from 1 October 2026; no permanence claim."
+    },
+    {
+      "id": "sfa_track_records",
+      "url": "https://www.sfa.gov.sg/tools-and-resources/track-records",
+      "type": "official regulator track-record interface",
+      "http_status": 200,
+      "bytes": 110872,
+      "sha256": "b8ef78b20459f67a71197e73d322ec9a6dc35fb4ac6660f003738d9272a784d3",
+      "observed_date": "2026-10-18",
+      "claim": "Public track-record search; not a bulk cancelled/current-licence status source."
+    },
+    {
+      "id": "sfa_track_records_script",
+      "url": "https://www.sfa.gov.sg/Mvc/Scripts/TrackRecord/track-record.js?v=1810202615&package=ResourceSFA",
+      "type": "official regulator interface client script",
+      "http_status": 200,
+      "bytes": 25805,
+      "sha256": "a188228ba32f43da9baabe08b46086d2341ef0144f97bb7ddf9b3e02e3f46ea6",
+      "observed_date": "2026-10-18",
+      "claim": "Documents exact licence-number queries and suspended-record filter; response fields do not expose cancellation/permanent-closure status."
+    },
+    {
+      "id": "chicaboo_home",
+      "url": "https://chicaboo.com.sg/",
+      "type": "official operator site and closure notice",
+      "http_status": 200,
+      "bytes": 307274,
+      "sha256": "0145404f7ec92ec376b7e6edcf406560b3411b7edaf6a6b8b55f068b0348bddc",
+      "observed_date": "2026-10-18",
+      "claim": "Operator states Woods Square outlet permanently closed 24 September 2026, last operating day 23 September; location list identifies Marina Square and Sembawang branches."
+    },
+    {
+      "id": "secret_recipe_notice",
+      "url": "https://secretrecipe.com.sg/blogs/secret-recipe-blog/a-new-chapter-for-secret-recipe-singapore-thank-you-plaza-singapura",
+      "type": "official operator outlet farewell notice",
+      "http_status": 200,
+      "bytes": 101975,
+      "sha256": "e97b5b661b573f7b7e04b1329a018d00862a3e1bfeca365fc36ef51cd9458078",
+      "observed_date": "2026-10-18",
+      "claim": "Dated 28 July 2026, states Plaza Singapura outlet officially closed; does not say permanent; directs guests to Toa Payoh HDB Hub."
+    },
+    {
+      "id": "aji_ichi_home",
+      "url": "https://ajiichi.com.sg/",
+      "type": "official operator outlet closure notice",
+      "http_status": 200,
+      "bytes": 261598,
+      "sha256": "2893d50157ba7a63f3fdd753c75951e21aea0eba77314f546e2d7c86ca773af8",
+      "observed_date": "2026-10-18",
+      "claim": "States Changi Airport T4 outlet permanently closed after 11 February 2026; exact address #02-201, 10 Airport Boulevard, postal 819665."
+    },
+    {
+      "id": "hoshino_home",
+      "url": "https://www.hoshinocoffee.sg/",
+      "type": "official operator reopening promotion",
+      "http_status": 200,
+      "bytes": 276381,
+      "sha256": "7029f3ad1e342c01fa20e4435e01b7a4ab79d2f1b412dd8253e0b4a2a0465272",
+      "observed_date": "2026-10-18",
+      "claim": "Advertises Plaza Singapura Reopening Celebration for 12–18 October 2026."
+    },
+    {
+      "id": "hoshino_locator",
+      "url": "https://www.hoshinocoffee.sg/?page_id=188",
+      "type": "official operator location locator",
+      "http_status": 200,
+      "bytes": 165645,
+      "sha256": "49b721a400db7e1e34cd806c717f9878fdffa25aa6257fb0b7441338c7e73245",
+      "observed_date": "2026-10-18",
+      "claim": "Lists Plaza Singapura #03-84, Chinatown Point, and United Square; no individual closure status field."
+    },
+    {
+      "id": "kallang_active_promotion",
+      "url": "https://www.thekallang.com.sg/en/mall-and-offers/deals-and-promotions/fast-track-to-rewards.html",
+      "type": "official mall promotion/tenant list",
+      "http_status": 200,
+      "bytes": 284778,
+      "sha256": "5fad70b4e4a821153201c373e6f6fea27ffd4939b62b9d36de5c37e9043174d4",
+      "observed_date": "2026-10-18",
+      "claim": "Promotion period 21 September–8 November 2026 lists Oldtown White Coffee at Kallang Wave Mall #01-18/19 as a participating F&B tenant."
+    },
+    {
+      "id": "kallang_oldtown_directory",
+      "url": "https://www.thekallang.com.sg/en/mall-and-offers/directory/old-town-white-coffee.html",
+      "type": "official mall tenant directory (unavailable at capture)",
+      "http_status": 404,
+      "bytes": 140074,
+      "sha256": "dd99b5a347d14d5d5875fa4f35123a281506fbc9cf24ce7be8ccda4add3c7c9a",
+      "observed_date": "2026-10-18",
+      "claim": "Specific tenant page returned 404; not evidence of closure by itself."
+    },
+    {
+      "id": "jumbo_outlets",
+      "url": "https://www.jumboseafood.com.sg/en/our-outlets",
+      "type": "official operator outlet locator",
+      "http_status": 200,
+      "bytes": 36285,
+      "sha256": "8d1904c473a61537985ea42ea8364b91b42e16f0de4528605d44eead1139cbb2",
+      "observed_date": "2026-10-18",
+      "claim": "Current outlet locator lists East Coast Seafood Centre."
+    },
+    {
+      "id": "jumbo_east_coast",
+      "url": "https://www.jumboseafood.com.sg/en/east-coast-seafood-centre",
+      "type": "official operator outlet page",
+      "http_status": 200,
+      "bytes": 37185,
+      "sha256": "e91d693ceb8b98e7370fc07663253e7ab3806696b8420f47fce0c4a301ed0124",
+      "observed_date": "2026-10-18",
+      "claim": "Identifies East Coast Seafood Centre, Block 1206 East Coast Parkway #01-07/08, postal 449883, contact, and operating hours."
+    }
+  ],
+  "sfa_track_record_batch": {
+    "endpoint": "https://www.sfa.gov.sg/api/TrackRecord/GetTrackRecord",
+    "query_fields": "licenceNumber=<exact ID>, isShowLicenceSuspended=false (also queried true); other fields blank",
+    "normal_view_exact_result_count": 18,
+    "suspended_filter_true_result_count": 0,
+    "per_licence_response_hashes": {
+      "CE12H48N005": "2c231e5a99a99094defcb27a3407e8d1a3b7c586a0c24665ad58bc971d0c06ad",
+      "CE12H48N023": "24ff9becf3c6d0c0638ccc348cb2bcaf76ae6f34bda316b3581957e1131f4b06",
+      "CE12H48N003": "aa14cc3806fcff4fdc91210d212d20f61033c06e5f4be97a5aa017d3b2bb4960",
+      "CE12H48N004": "9487faea860f5b3ab0bf108396194ae9df4d075a79f5914846ddc0eea13f3646",
+      "CE12H48N022": "a43975b1ef47436b607fe67cde5a32e6f5cb3ffb8523ec9907bf729600706f0f",
+      "CE12H48N020": "f94202e56059434d3e8484afab41dc51ffd1496b0e6a241da5174dd16e79401d",
+      "CE12H48N018": "f999936a14035948c364b60004b8d07183bfe15fe97f6d93443209805e15b0e5",
+      "CE12H48N019": "f9094104920a549aa8cb05e44a201d977795d1e0c275e0ee8fabcbdc50c4df2e",
+      "CE15E21J000": "76193b355bfb69e63c9529b606f39d1a4a548ec00dad79dca12c57a726fd0107",
+      "CE12K69J000": "923994e7eb8a471a2eae0cfb6d7f7735a26c5b9e58c733ae8afeb96290b3df19",
+      "CE16501X000": "4f77f88308ae27d83dae1d314fe84861d801615990aa290bb8ab843be50106c7",
+      "CE12H48N024": "a7f642750b4869fc4d6b30e76977ea8a35a07c2226f54d4a715efb7c4efeeb16",
+      "CE12H48N002": "8ea73f5655e93f1722ff75af97d47b9b90e54faadb27775ed1e9634268701cfa",
+      "CE12H48N000": "922ccab3d39acebb48a1b43442db8666c290e75671dd68c634107cffce80f06f",
+      "CE12H48N025": "f3a2334cdfadfa83698c876e945a94dc9a0f00600973cdb5ce7c557bb96577b1",
+      "CE12H48N006": "901f4f78caf394003d3efd46b18748e0438e8dfb436ca6a1a0702ae10e0fa9a0",
+      "CE12H48N007": "e94f1b582977a05c1b3977ec98ae89af60d06f5bb3299718de432788c691a96b",
+      "CE12H48N008": "993d7f71ad2b9f9d4814bf8749a8dd8b64f5b83dca06780ec96ea117fe0bda4d"
+    },
+    "response_sha256_for_empty_true_filter": "8fe32e407a1038ee38753b70e5374b3a46d6ae9d5f16cd5b73c53abaca8f5ed0",
+    "limitations": "Endpoint is a food safety track-record lookup and returns fields such as licence number, address, business/licensee name, business type, and grade; it does not expose current licence cancellation or permanent-closure status. An empty result in one filter is not interpreted as closure."
+  },
+  "findings": [
+    {
+      "candidate": "Satay by the Bay, 18 Marina Gardens Drive #01-19, postal 018953",
+      "class": "official redevelopment closure; permanent status unresolved",
+      "exact_workbook_row_count": 18,
+      "exact_workbook_rows": [
+        {
+          "fnb_name": "BBQ SEAFOOD &SATAY",
+          "sfa_licence": "CE12H48N005",
+          "address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+          "postal_code": "018953",
+          "sfa_regular_view_result_count": 1,
+          "sfa_regular_view_response_sha256": "2c231e5a99a99094defcb27a3407e8d1a3b7c586a0c24665ad58bc971d0c06ad",
+          "sfa_suspended_filter_true_result_count": 0
+        },
+        {
+          "fnb_name": "CLAYPOT NOODLE",
+          "sfa_licence": "CE12H48N023",
+          "address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+          "postal_code": "018953",
+          "sfa_regular_view_result_count": 1,
+          "sfa_regular_view_response_sha256": "24ff9becf3c6d0c0638ccc348cb2bcaf76ae6f34bda316b3581957e1131f4b06",
+          "sfa_suspended_filter_true_result_count": 0
+        },
+        {
+          "fnb_name": "DumPrince Dumpling House",
+          "sfa_licence": "CE12H48N003",
+          "address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+          "postal_code": "018953",
+          "sfa_regular_view_result_count": 1,
+          "sfa_regular_view_response_sha256": "aa14cc3806fcff4fdc91210d212d20f61033c06e5f4be97a5aa017d3b2bb4960",
+          "sfa_suspended_filter_true_result_count": 0
+        },
+        {
+          "fnb_name": "DumPrince Dumpling House Stall 4",
+          "sfa_licence": "CE12H48N004",
+          "address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+          "postal_code": "018953",
+          "sfa_regular_view_result_count": 1,
+          "sfa_regular_view_response_sha256": "9487faea860f5b3ab0bf108396194ae9df4d075a79f5914846ddc0eea13f3646",
+          "sfa_suspended_filter_true_result_count": 0
+        },
+        {
+          "fnb_name": "GEYLANG LOR 29 HOKKIEN MEE",
+          "sfa_licence": "CE12H48N022",
+          "address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+          "postal_code": "018953",
+          "sfa_regular_view_result_count": 1,
+          "sfa_regular_view_response_sha256": "a43975b1ef47436b607fe67cde5a32e6f5cb3ffb8523ec9907bf729600706f0f",
+          "sfa_suspended_filter_true_result_count": 0
+        },
+        {
+          "fnb_name": "Gopals The Holy Basil",
+          "sfa_licence": "CE12H48N020",
+          "address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+          "postal_code": "018953",
+          "sfa_regular_view_result_count": 1,
+          "sfa_regular_view_response_sha256": "f94202e56059434d3e8484afab41dc51ffd1496b0e6a241da5174dd16e79401d",
+          "sfa_suspended_filter_true_result_count": 0
+        },
+        {
+          "fnb_name": "HUAT HUAT BBQ CHICKEN WING",
+          "sfa_licence": "CE12H48N018",
+          "address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+          "postal_code": "018953",
+          "sfa_regular_view_result_count": 1,
+          "sfa_regular_view_response_sha256": "f999936a14035948c364b60004b8d07183bfe15fe97f6d93443209805e15b0e5",
+          "sfa_suspended_filter_true_result_count": 0
+        },
+        {
+          "fnb_name": "Huat Huat BBQ Chicken Wings",
+          "sfa_licence": "CE12H48N019",
+          "address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+          "postal_code": "018953",
+          "sfa_regular_view_result_count": 1,
+          "sfa_regular_view_response_sha256": "f9094104920a549aa8cb05e44a201d977795d1e0c275e0ee8fabcbdc50c4df2e",
+          "sfa_suspended_filter_true_result_count": 0
+        },
+        {
+          "fnb_name": "JOLLY BAR",
+          "sfa_licence": "CE15E21J000",
+          "address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953 Shop 3",
+          "postal_code": "018953",
+          "sfa_regular_view_result_count": 1,
+          "sfa_regular_view_response_sha256": "76193b355bfb69e63c9529b606f39d1a4a548ec00dad79dca12c57a726fd0107",
+          "sfa_suspended_filter_true_result_count": 0
+        },
+        {
+          "fnb_name": "LIVE SEAFOOD & STEAMBOAT",
+          "sfa_licence": "CE12K69J000",
+          "address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953 (Hawker Centr -part off)",
+          "postal_code": "018953",
+          "sfa_regular_view_result_count": 1,
+          "sfa_regular_view_response_sha256": "923994e7eb8a471a2eae0cfb6d7f7735a26c5b9e58c733ae8afeb96290b3df19",
+          "sfa_suspended_filter_true_result_count": 0
+        },
+        {
+          "fnb_name": "Makan By the Bay (Shop 4)",
+          "sfa_licence": "CE16501X000",
+          "address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+          "postal_code": "018953",
+          "sfa_regular_view_result_count": 1,
+          "sfa_regular_view_response_sha256": "4f77f88308ae27d83dae1d314fe84861d801615990aa290bb8ab843be50106c7",
+          "sfa_suspended_filter_true_result_count": 0
+        },
+        {
+          "fnb_name": "MARINA LIVE SEAFOOD & STEAMBOAT",
+          "sfa_licence": "CE12H48N024",
+          "address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+          "postal_code": "018953",
+          "sfa_regular_view_result_count": 1,
+          "sfa_regular_view_response_sha256": "a7f642750b4869fc4d6b30e76977ea8a35a07c2226f54d4a715efb7c4efeeb16",
+          "sfa_suspended_filter_true_result_count": 0
+        },
+        {
+          "fnb_name": "MIXED VEGETABLE RICE",
+          "sfa_licence": "CE12H48N002",
+          "address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+          "postal_code": "018953",
+          "sfa_regular_view_result_count": 1,
+          "sfa_regular_view_response_sha256": "8ea73f5655e93f1722ff75af97d47b9b90e54faadb27775ed1e9634268701cfa",
+          "sfa_suspended_filter_true_result_count": 0
+        },
+        {
+          "fnb_name": "SATAY BY THE BAY",
+          "sfa_licence": "CE12H48N000",
+          "address": "18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+          "postal_code": "018953",
+          "sfa_regular_view_result_count": 1,
+          "sfa_regular_view_response_sha256": "922ccab3d39acebb48a1b43442db8666c290e75671dd68c634107cffce80f06f",
+          "sfa_suspended_filter_true_result_count": 0
+        },
+        {
+          "fnb_name": "SATAY BY THE BAY",
+          "sfa_licence": "CE12H48N025",
+          "address": "18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+          "postal_code": "018953",
+          "sfa_regular_view_result_count": 1,
+          "sfa_regular_view_response_sha256": "f3a2334cdfadfa83698c876e945a94dc9a0f00600973cdb5ce7c557bb96577b1",
+          "sfa_suspended_filter_true_result_count": 0
+        },
+        {
+          "fnb_name": "THAI FOOD",
+          "sfa_licence": "CE12H48N006",
+          "address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+          "postal_code": "018953",
+          "sfa_regular_view_result_count": 1,
+          "sfa_regular_view_response_sha256": "901f4f78caf394003d3efd46b18748e0438e8dfb436ca6a1a0702ae10e0fa9a0",
+          "sfa_suspended_filter_true_result_count": 0
+        },
+        {
+          "fnb_name": "THAI FOOD",
+          "sfa_licence": "CE12H48N007",
+          "address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+          "postal_code": "018953",
+          "sfa_regular_view_result_count": 1,
+          "sfa_regular_view_response_sha256": "e94f1b582977a05c1b3977ec98ae89af60d06f5bb3299718de432788c691a96b",
+          "sfa_suspended_filter_true_result_count": 0
+        },
+        {
+          "fnb_name": "TURKISH & INDIAN",
+          "sfa_licence": "CE12H48N008",
+          "address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+          "postal_code": "018953",
+          "sfa_regular_view_result_count": 1,
+          "sfa_regular_view_response_sha256": "993d7f71ad2b9f9d4814bf8749a8dd8b64f5b83dca06780ec96ea117fe0bda4d",
+          "sfa_suspended_filter_true_result_count": 0
+        }
+      ],
+      "decision": "Do not permanently delete. Treat venue as closed from 2026-10-01 pending redevelopment; no official reopening/permanence statement or licence cancellations were found. Because the user requested permanent-closure removals, keep records for now with closure status clearly unresolved.",
+      "source_ids": [
+        "gardens_home",
+        "gardens_dine",
+        "sfa_track_records",
+        "sfa_track_records_script"
+      ],
+      "sfa_query_interpretation": "Each of the 18 exact licence IDs returned one record in the official normal Track Records query (isShowLicenceSuspended=false); the parallel true-filter query returned zero for each. Returned fields are track-record attributes and contain no licence cancellation or permanent-closure status. Do not treat presence/absence in this interface as proof that the premises currently operate."
+    },
+    {
+      "candidate": "CHIC-A-BOO, Woods Square",
+      "class": "explicit permanent closure; no exact workbook outlet row",
+      "exact_workbook_rows_at_closing_address": [],
+      "closing_address": "Woods Square outlet; operator closure notice names this location and effective date 2026-09-24",
+      "same_brand_nonmatching_rows": [
+        {
+          "sfa_licence": "NW08504B000",
+          "address": "604 Sembawang Road #01-02, Sembawang Shopping Centre, Singapore 758459"
+        },
+        {
+          "sfa_licence": "CE15F80B000",
+          "address": "6 Raffles Boulevard #03-147/148, Marina Square, Singapore 039594"
+        }
+      ],
+      "decision": "No workbook deletion; the exact Woods Square branch is absent. Preserve the two different branches.",
+      "source_ids": [
+        "chicaboo_home"
+      ]
+    },
+    {
+      "candidate": "Secret Recipe, Plaza Singapura",
+      "class": "official branch closure; permanence not stated; no exact workbook row",
+      "exact_workbook_rows_at_closing_address": [],
+      "same_brand_nonmatching_rows": [
+        {
+          "sfa_licence": "CE15D18C000",
+          "address": "470 Lorong 6 Toa Payoh #01-71, HDB Hub, Singapore 310470"
+        }
+      ],
+      "decision": "No workbook deletion; only current workbook Secret Recipe record is HDB Hub, not Plaza Singapura. Do not label permanent based on the farewell wording.",
+      "source_ids": [
+        "secret_recipe_notice"
+      ]
+    },
+    {
+      "candidate": "AJi iCHi Sushi Bar, Changi Airport Terminal 4",
+      "class": "explicit permanent closure; workbook has only a different same-brand location",
+      "exact_workbook_rows_at_closing_address": [],
+      "closed_address": "10 Airport Boulevard #02-201, Changi Airport T4, Singapore 819665",
+      "same_brand_nonmatching_rows": [
+        {
+          "sfa_licence": "SE17716P000",
+          "address": "10 Eunos Road 8 #01-115/#01-114, Singapore Post Centre, Singapore 408600"
+        }
+      ],
+      "decision": "No workbook deletion; the only matched brand record is Singapore Post Centre, a different outlet and postal code.",
+      "source_ids": [
+        "aji_ichi_home"
+      ]
+    },
+    {
+      "candidate": "Hoshino Coffee, Plaza Singapura",
+      "class": "official reopening promotion; exact current workbook match",
+      "exact_workbook_rows": [
+        {
+          "sfa_licence": "CE12E78V000",
+          "address": "68 Orchard Road #03-84, Plaza Singapura, Singapore 238839"
+        }
+      ],
+      "decision": "Retain. Operator advertised a Plaza Singapura reopening celebration during 12–18 October 2026, after the earlier reported temporary closure/renovation.",
+      "source_ids": [
+        "hoshino_home",
+        "hoshino_locator"
+      ]
+    },
+    {
+      "candidate": "Hoshino Coffee, Chinatown Point and United Square",
+      "class": "official locator mentions branches; no exact workbook rows",
+      "exact_workbook_rows_at_named_addresses": [],
+      "decision": "No deletion because no exact rows exist and the current locator provides no closure status. Treat the locator listing as a lead, not proof of current operating hours/open status.",
+      "source_ids": [
+        "hoshino_locator"
+      ]
+    },
+    {
+      "candidate": "Oldtown White Coffee, Kallang Wave Mall #01-18/19",
+      "class": "current official mall tenant evidence; no exact workbook row",
+      "exact_workbook_rows_at_named_unit": [],
+      "decision": "No deletion. The current Kallang promotion lists it as a participating tenant during 21 September–8 November 2026. Specific tenant page currently returns HTTP 404, which alone is not a closure signal. Exact SFA licence row was not found in this workbook; consider this a directory completeness lead.",
+      "source_ids": [
+        "kallang_active_promotion",
+        "kallang_oldtown_directory"
+      ]
+    },
+    {
+      "candidate": "JUMBO Seafood, East Coast Seafood Centre",
+      "class": "current official operator outlet evidence; no exact workbook row",
+      "exact_workbook_rows_at_named_address": [],
+      "operator_address": "Block 1206 East Coast Parkway #01-07/08, East Coast Seafood Centre, Singapore 449883",
+      "decision": "No deletion. Operator locator and outlet page currently list this branch, but no exact workbook record was found; this is a completeness lead.",
+      "source_ids": [
+        "jumbo_outlets",
+        "jumbo_east_coast"
+      ]
+    }
+  ],
+  "summary": {
+    "exact_workbook_outlets_reviewed": 8,
+    "exact_workbook_rows_at_satay_unit": 18,
+    "confirmed_permanent_closure_rows_to_delete": 0,
+    "redevelopment_closed_pending_status_rows": 18,
+    "exact_reopenings_supported": 1,
+    "officially_listed_current_branches_missing_exact_workbook_match": 2,
+    "branch_mismatch_rows_protected_from_deletion": 4,
+    "no_deletions_recommended": true
+  },
+  "limitations": [
+    "This is a bounded audit of known high-risk leads, not a live operating-status verification of all 38,280 directory entries.",
+    "SFA Track Records does not provide a public bulk current/cancelled licence status in the queried interface.",
+    "Mall/operator locator inclusion confirms listing, not necessarily same-day physical operation.",
+    "Permanent-closure recommendations require explicit source language plus exact outlet/address/licence identity."
+  ]
+}

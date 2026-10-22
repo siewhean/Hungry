@@ -1,0 +1,520 @@
+{
+  "qa_id": "refresh129_candidate_qa_20261019",
+  "candidate_path": "/tmp/hungry-refresh129/Refresh129.xlsx",
+  "candidate_sha256": "b76b2a41688b67767fe1dfe7a63690100c6868dd949415b14bd5b224973131bb",
+  "baseline_path": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_sha256": "51b0eb281d08e735151ccf4ca99de823c3badf811d46c9ea337b4008b3251e0c",
+  "status": "PASS",
+  "checks": {
+    "baseline_sha_matches_receipt": true,
+    "candidate_sha_matches_receipt": true,
+    "zip_integrity": true,
+    "sheet_names_exact": true,
+    "sheet_table_ranges": {
+      "Public F&B Directory": {
+        "actual": "A1:U38274",
+        "expected": "A1:U38274",
+        "max_row": 38274,
+        "pass": true
+      },
+      "Menu Items": {
+        "actual": "A1:L13557",
+        "expected": "A1:L13557",
+        "max_row": 13557,
+        "pass": true
+      },
+      "Image Candidates": {
+        "actual": "A1:I2762",
+        "expected": "A1:I2762",
+        "max_row": 2762,
+        "pass": true
+      },
+      "Coverage & Sources": {
+        "actual": "A1:C224",
+        "expected": "A1:C224",
+        "max_row": 224,
+        "pass": true
+      }
+    },
+    "directory_counts_unique_and_sorted": {
+      "baseline": 38278,
+      "candidate": 38273,
+      "unique_ids": true,
+      "pass": true
+    },
+    "exact_public_access_exclusions_removed": {
+      "removed": [
+        "C99141A000",
+        "SW16012C000",
+        "SW16012C004",
+        "SW16012C007",
+        "SW17C61P000"
+      ],
+      "expected": [
+        "C99141A000",
+        "SW16012C000",
+        "SW16012C004",
+        "SW16012C007",
+        "SW17C61P000"
+      ],
+      "pass": true
+    },
+    "alphabetical_order_blank_last": true,
+    "menu_row_delta": {
+      "baseline": 13408,
+      "candidate": 13556,
+      "key_added": 149,
+      "key_removed": 1,
+      "receipt_expected_add": 149,
+      "receipt_expected_remove": 1
+    },
+    "all_149_menu_rows_match_sources": {
+      "proposal_count": 149,
+      "unique_proposal_keys": 149,
+      "added_key_count": 149,
+      "missing_proposal_keys": 0,
+      "unproposed_new_keys": 0,
+      "pass": true
+    },
+    "restricted_linked_menu_rows_removed": {
+      "baseline_matches": 1,
+      "candidate_matches": 0,
+      "receipt_removed": 1,
+      "pass": true
+    },
+    "menu_source_field_integrity": {
+      "matched_proposal_rows": 149,
+      "proposal_rows": 149,
+      "mismatch_counts": [],
+      "mismatch_samples": [],
+      "accepted_directory_name_variance_count": 53,
+      "accepted_variance": "menu F&B name equals exact directory F&B Name while menu scope names operator brand",
+      "foodpanda_sgt_timestamps_preserved": 28,
+      "expected_sgt_timestamps": 28,
+      "pass": true,
+      "timestamp_evidence": [
+        {
+          "sfa_licence": "W80052C000",
+          "menu_item": "Hawaiian Paradise Pizza",
+          "source_timestamp": "2026-10-19T04:08:43+08:00",
+          "workbook_timestamp": "Observed 2026-10-19 04:08:43 SGT (UTC+08:00)",
+          "pass": true
+        },
+        {
+          "sfa_licence": "W80052C000",
+          "menu_item": "Classified Chicken Pizza",
+          "source_timestamp": "2026-10-19T04:08:43+08:00",
+          "workbook_timestamp": "Observed 2026-10-19 04:08:43 SGT (UTC+08:00)",
+          "pass": true
+        },
+        {
+          "sfa_licence": "W80052C000",
+          "menu_item": "Classic Pepperoni Pizza",
+          "source_timestamp": "2026-10-19T04:08:43+08:00",
+          "workbook_timestamp": "Observed 2026-10-19 04:08:43 SGT (UTC+08:00)",
+          "pass": true
+        },
+        {
+          "sfa_licence": "W80052C000",
+          "menu_item": "Chicken Pepperoni Pizza",
+          "source_timestamp": "2026-10-19T04:08:43+08:00",
+          "workbook_timestamp": "Observed 2026-10-19 04:08:43 SGT (UTC+08:00)",
+          "pass": true
+        },
+        {
+          "sfa_licence": "W80052C000",
+          "menu_item": "Classy Chic Pizza",
+          "source_timestamp": "2026-10-19T04:08:43+08:00",
+          "workbook_timestamp": "Observed 2026-10-19 04:08:43 SGT (UTC+08:00)",
+          "pass": true
+        },
+        {
+          "sfa_licence": "W80052C000",
+          "menu_item": "Very Veggie Pizza",
+          "source_timestamp": "2026-10-19T04:08:43+08:00",
+          "workbook_timestamp": "Observed 2026-10-19 04:08:43 SGT (UTC+08:00)",
+          "pass": true
+        },
+        {
+          "sfa_licence": "W80052C000",
+          "menu_item": "Simply Cheese Pizza",
+          "source_timestamp": "2026-10-19T04:08:43+08:00",
+          "workbook_timestamp": "Observed 2026-10-19 04:08:43 SGT (UTC+08:00)",
+          "pass": true
+        },
+        {
+          "sfa_licence": "W80052C000",
+          "menu_item": "The Big BBQ Pizza",
+          "source_timestamp": "2026-10-19T04:08:43+08:00",
+          "workbook_timestamp": "Observed 2026-10-19 04:08:43 SGT (UTC+08:00)",
+          "pass": true
+        },
+        {
+          "sfa_licence": "W80052C000",
+          "menu_item": "Smoky Pepperoni & Mushrooms Pizza",
+          "source_timestamp": "2026-10-19T04:08:43+08:00",
+          "workbook_timestamp": "Observed 2026-10-19 04:08:43 SGT (UTC+08:00)",
+          "pass": true
+        },
+        {
+          "sfa_licence": "W80052C000",
+          "menu_item": "Romano Margherita Pizza",
+          "source_timestamp": "2026-10-19T04:08:43+08:00",
+          "workbook_timestamp": "Observed 2026-10-19 04:08:43 SGT (UTC+08:00)",
+          "pass": true
+        },
+        {
+          "sfa_licence": "W80052C000",
+          "menu_item": "Chicken Temptation Pizza",
+          "source_timestamp": "2026-10-19T04:08:43+08:00",
+          "workbook_timestamp": "Observed 2026-10-19 04:08:43 SGT (UTC+08:00)",
+          "pass": true
+        },
+        {
+          "sfa_licence": "SW11864P000",
+          "menu_item": "Hawaiian Paradise Pizza",
+          "source_timestamp": "2026-10-19T04:08:43+08:00",
+          "workbook_timestamp": "Observed 2026-10-19 04:08:43 SGT (UTC+08:00)",
+          "pass": true
+        },
+        {
+          "sfa_licence": "SW11864P000",
+          "menu_item": "Classified Chicken Pizza",
+          "source_timestamp": "2026-10-19T04:08:43+08:00",
+          "workbook_timestamp": "Observed 2026-10-19 04:08:43 SGT (UTC+08:00)",
+          "pass": true
+        },
+        {
+          "sfa_licence": "SW11864P000",
+          "menu_item": "Classic Pepperoni Pizza",
+          "source_timestamp": "2026-10-19T04:08:43+08:00",
+          "workbook_timestamp": "Observed 2026-10-19 04:08:43 SGT (UTC+08:00)",
+          "pass": true
+        },
+        {
+          "sfa_licence": "SW11864P000",
+          "menu_item": "Chicken Pepperoni Pizza",
+          "source_timestamp": "2026-10-19T04:08:43+08:00",
+          "workbook_timestamp": "Observed 2026-10-19 04:08:43 SGT (UTC+08:00)",
+          "pass": true
+        },
+        {
+          "sfa_licence": "SW11864P000",
+          "menu_item": "Classy Chic Pizza",
+          "source_timestamp": "2026-10-19T04:08:43+08:00",
+          "workbook_timestamp": "Observed 2026-10-19 04:08:43 SGT (UTC+08:00)",
+          "pass": true
+        },
+        {
+          "sfa_licence": "SW11864P000",
+          "menu_item": "Very Veggie Pizza",
+          "source_timestamp": "2026-10-19T04:08:43+08:00",
+          "workbook_timestamp": "Observed 2026-10-19 04:08:43 SGT (UTC+08:00)",
+          "pass": true
+        },
+        {
+          "sfa_licence": "SW11864P000",
+          "menu_item": "Simply Cheese Pizza",
+          "source_timestamp": "2026-10-19T04:08:43+08:00",
+          "workbook_timestamp": "Observed 2026-10-19 04:08:43 SGT (UTC+08:00)",
+          "pass": true
+        },
+        {
+          "sfa_licence": "SW11864P000",
+          "menu_item": "The Big BBQ Pizza",
+          "source_timestamp": "2026-10-19T04:08:43+08:00",
+          "workbook_timestamp": "Observed 2026-10-19 04:08:43 SGT (UTC+08:00)",
+          "pass": true
+        },
+        {
+          "sfa_licence": "SW11864P000",
+          "menu_item": "Smoky Pepperoni & Mushrooms Pizza",
+          "source_timestamp": "2026-10-19T04:08:43+08:00",
+          "workbook_timestamp": "Observed 2026-10-19 04:08:43 SGT (UTC+08:00)",
+          "pass": true
+        },
+        {
+          "sfa_licence": "SW11864P000",
+          "menu_item": "Romano Margherita Pizza",
+          "source_timestamp": "2026-10-19T04:08:43+08:00",
+          "workbook_timestamp": "Observed 2026-10-19 04:08:43 SGT (UTC+08:00)",
+          "pass": true
+        },
+        {
+          "sfa_licence": "SW11864P000",
+          "menu_item": "Chicken Temptation Pizza",
+          "source_timestamp": "2026-10-19T04:08:43+08:00",
+          "workbook_timestamp": "Observed 2026-10-19 04:08:43 SGT (UTC+08:00)",
+          "pass": true
+        },
+        {
+          "sfa_licence": "SW11864P000",
+          "menu_item": "Regular Sambalicious Ikan Bilis Pizza (9-inch, 6 slices)",
+          "source_timestamp": "2026-10-19T04:08:43+08:00",
+          "workbook_timestamp": "Observed 2026-10-19 04:08:43 SGT (UTC+08:00)",
+          "pass": true
+        },
+        {
+          "sfa_licence": "SW11864P000",
+          "menu_item": "Large Sambalicious Ikan Bilis Pizza (12-inch, 8 slices)",
+          "source_timestamp": "2026-10-19T04:08:43+08:00",
+          "workbook_timestamp": "Observed 2026-10-19 04:08:43 SGT (UTC+08:00)",
+          "pass": true
+        },
+        {
+          "sfa_licence": "SW11864P000",
+          "menu_item": "Regular Sambalicious Chicken Pizza (9-inch, 6 slices)",
+          "source_timestamp": "2026-10-19T04:08:43+08:00",
+          "workbook_timestamp": "Observed 2026-10-19 04:08:43 SGT (UTC+08:00)",
+          "pass": true
+        },
+        {
+          "sfa_licence": "SW11864P000",
+          "menu_item": "Large Sambalicious Chicken Pizza (12-inch, 8 slices)",
+          "source_timestamp": "2026-10-19T04:08:43+08:00",
+          "workbook_timestamp": "Observed 2026-10-19 04:08:43 SGT (UTC+08:00)",
+          "pass": true
+        },
+        {
+          "sfa_licence": "SW11864P000",
+          "menu_item": "Regular Sambalicious Prawn Pizza (9-inch, 6 slices)",
+          "source_timestamp": "2026-10-19T04:08:43+08:00",
+          "workbook_timestamp": "Observed 2026-10-19 04:08:43 SGT (UTC+08:00)",
+          "pass": true
+        },
+        {
+          "sfa_licence": "SW11864P000",
+          "menu_item": "Large Sambalicious Prawn Pizza (12-inch, 8 slices)",
+          "source_timestamp": "2026-10-19T04:08:43+08:00",
+          "workbook_timestamp": "Observed 2026-10-19 04:08:43 SGT (UTC+08:00)",
+          "pass": true
+        }
+      ]
+    },
+    "14_directory_field_fills": {
+      "count": 14,
+      "pass": true,
+      "details": [
+        {
+          "sfa_licence": "NE18023E000",
+          "field": "Opening Hours / Closed Days",
+          "expected": "Hours: Daily 00:00–24:00; breakfast daily 05:00–11:00",
+          "actual": "Hours: Daily 00:00–24:00; breakfast daily 05:00–11:00",
+          "pass": true
+        },
+        {
+          "sfa_licence": "SE07306K000",
+          "field": "Opening Hours / Closed Days",
+          "expected": "Hours: Daily 00:00–24:00",
+          "actual": "Hours: Daily 00:00–24:00",
+          "pass": true
+        },
+        {
+          "sfa_licence": "SE10343B000",
+          "field": "Opening Hours / Closed Days",
+          "expected": "Hours: Mon–Thu 08:00–00:00; Fri–Sat 08:00–02:00; Sun 08:00–00:00; eve of PH 08:00–02:00; PH 08:00–00:00; breakfast daily 08:00–11:00",
+          "actual": "Hours: Mon–Thu 08:00–00:00; Fri–Sat 08:00–02:00; Sun 08:00–00:00; eve of PH 08:00–02:00; PH 08:00–00:00; breakfast daily 08:00–11:00",
+          "pass": true
+        },
+        {
+          "sfa_licence": "SE11495J000",
+          "field": "Website",
+          "expected": "https://www.burgerking.com.sg/Locator/Details/54",
+          "actual": "https://www.burgerking.com.sg/Locator/Details/54",
+          "pass": true
+        },
+        {
+          "sfa_licence": "SE11495J000",
+          "field": "Opening Hours / Closed Days",
+          "expected": "Hours: Daily 00:00–24:00; breakfast daily 04:00–11:00",
+          "actual": "Hours: Daily 00:00–24:00; breakfast daily 04:00–11:00",
+          "pass": true
+        },
+        {
+          "sfa_licence": "SE16815V000",
+          "field": "Website",
+          "expected": "https://www.burgerking.com.sg/Locator/Details/41",
+          "actual": "https://www.burgerking.com.sg/Locator/Details/41",
+          "pass": true
+        },
+        {
+          "sfa_licence": "SE16815V000",
+          "field": "Opening Hours / Closed Days",
+          "expected": "Hours: Daily 08:00–02:00; breakfast daily 08:00–11:00",
+          "actual": "Hours: Daily 08:00–02:00; breakfast daily 08:00–11:00",
+          "pass": true
+        },
+        {
+          "sfa_licence": "SW09178N000",
+          "field": "Opening Hours / Closed Days",
+          "expected": "Hours: Daily 08:00–22:00; breakfast daily 08:00–11:00",
+          "actual": "Hours: Daily 08:00–22:00; breakfast daily 08:00–11:00",
+          "pass": true
+        },
+        {
+          "sfa_licence": "SW23625P000",
+          "field": "Website",
+          "expected": "https://www.burgerking.com.sg/Locator/Details/89",
+          "actual": "https://www.burgerking.com.sg/Locator/Details/89",
+          "pass": true
+        },
+        {
+          "sfa_licence": "SW23625P000",
+          "field": "Opening Hours / Closed Days",
+          "expected": "Hours: Daily 00:00–24:00; breakfast daily 05:00–11:00",
+          "actual": "Hours: Daily 00:00–24:00; breakfast daily 05:00–11:00",
+          "pass": true
+        },
+        {
+          "sfa_licence": "SW14714X000",
+          "field": "Opening Hours / Closed Days",
+          "expected": "Hours: Mon–Thu 08:00–00:00; Fri–Sat 08:00–02:00; Sun 08:00–00:00; eve of PH 08:00–02:00; PH 08:00–00:00; breakfast daily 08:00–11:00",
+          "actual": "Hours: Mon–Thu 08:00–00:00; Fri–Sat 08:00–02:00; Sun 08:00–00:00; eve of PH 08:00–02:00; PH 08:00–00:00; breakfast daily 08:00–11:00",
+          "pass": true
+        },
+        {
+          "sfa_licence": "CE07U83K000",
+          "field": "Opening Hours / Closed Days",
+          "expected": "Hours: Mon–Thu and Sun 08:00–00:00; Fri–Sat and eve of PH 08:00–02:00; PH 08:00–00:00; breakfast daily 08:00–11:00",
+          "actual": "Hours: Mon–Thu and Sun 08:00–00:00; Fri–Sat and eve of PH 08:00–02:00; PH 08:00–00:00; breakfast daily 08:00–11:00",
+          "pass": true
+        },
+        {
+          "sfa_licence": "CE22L73K000",
+          "field": "Website",
+          "expected": "https://app.yakun.com/find-us",
+          "actual": "https://app.yakun.com/find-us",
+          "pass": true
+        },
+        {
+          "sfa_licence": "CE22L73K000",
+          "field": "Opening Hours / Closed Days",
+          "expected": "Hours: Mon–Sun 07:30–21:30 (last order 30 minutes before closing)",
+          "actual": "Hours: Mon–Sun 07:30–21:30 (last order 30 minutes before closing)",
+          "pass": true
+        }
+      ]
+    },
+    "licensed_images_review_only": {
+      "count": 2,
+      "pass": true,
+      "details": [
+        {
+          "id": "CE19U03X000",
+          "matches": 1,
+          "license": "CC BY-SA 4.0",
+          "status": "CC BY-SA 4.0; Credit Exec8; link source page and https://creativecommons.org/licenses/by-sa/4.0/; state if modified; distribute adaptations under the same or a compatible license. Review-only; not approved for app display.",
+          "pass": true
+        },
+        {
+          "id": "CE16053B000",
+          "matches": 1,
+          "license": "CC BY 4.0",
+          "status": "CC BY 4.0; Credit Bobby.Creations; link source page and https://creativecommons.org/licenses/by/4.0/; state if modified. Review-only; not approved for app display.",
+          "pass": true
+        }
+      ]
+    },
+    "coverage_metrics": {
+      "pass": true,
+      "metrics": {
+        "Active public-access directory rows": {
+          "actual": 38273,
+          "expected": 38273,
+          "pass": true
+        },
+        "Unique SFA licences": {
+          "actual": 38273,
+          "expected": 38273,
+          "pass": true
+        },
+        "Rows with a usable F&B name": {
+          "actual": 32791,
+          "expected": 32791,
+          "pass": true
+        },
+        "Rows with no usable F&B name": {
+          "actual": 5482,
+          "expected": 5482,
+          "pass": true
+        },
+        "Rows with coordinates": {
+          "actual": 35735,
+          "expected": 35735,
+          "pass": true
+        },
+        "Rows with contact details": {
+          "actual": 2704,
+          "expected": 2704,
+          "pass": true
+        },
+        "Rows with website": {
+          "actual": 2819,
+          "expected": 2819,
+          "pass": true
+        },
+        "Rows with menu URL": {
+          "actual": 1478,
+          "expected": 1478,
+          "pass": true
+        },
+        "Rows with menu summary": {
+          "actual": 531,
+          "expected": 531,
+          "pass": true
+        },
+        "Rows with rating/review count": {
+          "actual": 0,
+          "expected": 0,
+          "pass": true
+        },
+        "Rows with approved image URL": {
+          "actual": 0,
+          "expected": 0,
+          "pass": true
+        },
+        "Rows with opening hours": {
+          "actual": 1486,
+          "expected": 1486,
+          "pass": true
+        },
+        "Menu item rows": {
+          "actual": 13556,
+          "expected": 13556,
+          "pass": true
+        },
+        "Image candidates": {
+          "actual": 2761,
+          "expected": 2761,
+          "pass": true
+        },
+        "Official and open-license image candidates": {
+          "actual": 3,
+          "expected": 3,
+          "pass": true
+        }
+      }
+    },
+    "mapbox_usage_note": {
+      "count": 1,
+      "latest": [
+        "Mapbox Search Box usage estimate",
+        "User-reported Search Box usage was 59/50,000 before Refresh127; Refresh127 used 20 Search Box calls. This refresh used one connected Mapbox app Search Box lookup, but the connector does not expose account attribution or billing. Approximate 79–80/50,000 only if calls are on the same account; not dashboard-verified.",
+        "Account-level usage cannot be read through the connected Mapbox tools. Estimate is conditional and not dashboard-verified; Search Box response was not persisted."
+      ],
+      "conditional": true,
+      "nonpersisted": true,
+      "receipt_verified_false": true,
+      "result_not_persisted": true,
+      "pass": true
+    },
+    "no_blank_rows_errors_formulas": {
+      "blank_rows": 0,
+      "errors": 0,
+      "formulas": 0,
+      "pass": true
+    }
+  },
+  "corrections_required": [],
+  "updated_at_local": "2026-10-19"
+}

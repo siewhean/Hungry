@@ -53,6 +53,7 @@ export function MerchantProfileScreen() {
 
   const ProfileItem = ({ icon: Icon, label, value, onPress }: ProfileItemProps) => (
     <Pressable
+      accessibilityRole="button"
       onPress={onPress}
       style={[
         styles.item,

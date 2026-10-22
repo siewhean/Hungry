@@ -1,0 +1,336 @@
+{
+  "schema_version": 1,
+  "snapshot_id": "refresh130_final_qa_20261019",
+  "created_at_sgt": "2026-10-19",
+  "installed_path": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "installed_sha256": "80bbef4c8edee234e7ddad4a9b3390a67e9f7572621a8711fbe3c97fb7066212",
+  "expected_sha256": "80bbef4c8edee234e7ddad4a9b3390a67e9f7572621a8711fbe3c97fb7066212",
+  "zip_crc": {
+    "result": "PASS",
+    "bad_member": null,
+    "members": 38273
+  },
+  "sheet_details": {
+    "Public F&B Directory": {
+      "dimensions": [
+        38274,
+        21
+      ],
+      "table_refs": [
+        "A1:U38274"
+      ],
+      "blank_data_rows": 0,
+      "formulas_or_errors": 0
+    },
+    "Menu Items": {
+      "dimensions": [
+        13596,
+        12
+      ],
+      "table_refs": [
+        "A1:L13596"
+      ],
+      "blank_data_rows": 0,
+      "formulas_or_errors": 0
+    },
+    "Image Candidates": {
+      "dimensions": [
+        2763,
+        9
+      ],
+      "table_refs": [
+        "A1:I2763"
+      ],
+      "blank_data_rows": 0,
+      "formulas_or_errors": 0
+    },
+    "Coverage & Sources": {
+      "dimensions": [
+        225,
+        3
+      ],
+      "table_refs": [
+        "A1:C225"
+      ],
+      "blank_data_rows": 0,
+      "formulas_or_errors": 0
+    }
+  },
+  "check_count": 22,
+  "pass_count": 22,
+  "fail_count": 0,
+  "overall": "PASS",
+  "checks": [
+    {
+      "check": "installed_sha256",
+      "result": "PASS",
+      "detail": {
+        "expected": "80bbef4c8edee234e7ddad4a9b3390a67e9f7572621a8711fbe3c97fb7066212",
+        "actual": "80bbef4c8edee234e7ddad4a9b3390a67e9f7572621a8711fbe3c97fb7066212"
+      }
+    },
+    {
+      "check": "zip_crc",
+      "result": "PASS",
+      "detail": {
+        "testzip_bad_member": null,
+        "members": 19
+      }
+    },
+    {
+      "check": "extent_Public F&B Directory",
+      "result": "PASS",
+      "detail": {
+        "dimensions": [
+          38274,
+          21
+        ],
+        "table_refs": [
+          "A1:U38274"
+        ],
+        "blank_data_rows": 0,
+        "formulas_or_errors": 0
+      }
+    },
+    {
+      "check": "extent_Menu Items",
+      "result": "PASS",
+      "detail": {
+        "dimensions": [
+          13596,
+          12
+        ],
+        "table_refs": [
+          "A1:L13596"
+        ],
+        "blank_data_rows": 0,
+        "formulas_or_errors": 0
+      }
+    },
+    {
+      "check": "extent_Image Candidates",
+      "result": "PASS",
+      "detail": {
+        "dimensions": [
+          2763,
+          9
+        ],
+        "table_refs": [
+          "A1:I2763"
+        ],
+        "blank_data_rows": 0,
+        "formulas_or_errors": 0
+      }
+    },
+    {
+      "check": "extent_Coverage & Sources",
+      "result": "PASS",
+      "detail": {
+        "dimensions": [
+          225,
+          3
+        ],
+        "table_refs": [
+          "A1:C225"
+        ],
+        "blank_data_rows": 0,
+        "formulas_or_errors": 0
+      }
+    },
+    {
+      "check": "no_blank_formula_error_rows_cells",
+      "result": "PASS",
+      "detail": {
+        "blank_rows": [],
+        "formula_or_error": []
+      }
+    },
+    {
+      "check": "directory_ids_unique_and_count",
+      "result": "PASS",
+      "detail": {
+        "rows": 38273,
+        "unique_ids": 38273,
+        "missing_ids": 0
+      }
+    },
+    {
+      "check": "directory_alphabetical_blank_last",
+      "result": "PASS",
+      "detail": {
+        "named": 32791,
+        "blank_names": 5482
+      }
+    },
+    {
+      "check": "directory_ids_preserved_vs_refresh129",
+      "result": "PASS",
+      "detail": {
+        "baseline": 38273,
+        "installed": 38273,
+        "missing": 0,
+        "extra": 0
+      }
+    },
+    {
+      "check": "exact_menu_addition_count_and_outlets",
+      "result": "PASS",
+      "detail": {
+        "added": 39,
+        "by_licence": {
+          "C00127C000": 19,
+          "SW18617J000": 20
+        }
+      }
+    },
+    {
+      "check": "menu_proposal_exact_field_matches",
+      "result": "PASS",
+      "detail": {
+        "proposal_rows": 39,
+        "installed_additions": 39,
+        "field_join": true
+      }
+    },
+    {
+      "check": "exact_outlet_joins_delivery_scope_time",
+      "result": "PASS",
+      "detail": {
+        "licenses": {
+          "C00127C000": 19,
+          "SW18617J000": 20
+        },
+        "all_delivery_scope": true,
+        "all_observed_time": true
+      }
+    },
+    {
+      "check": "menu_outlet_directory_join",
+      "result": "PASS",
+      "detail": {
+        "outlet_ids": [
+          "C00127C000",
+          "SW18617J000"
+        ],
+        "matched": true
+      }
+    },
+    {
+      "check": "only_two_documented_summary_appends",
+      "result": "PASS",
+      "detail": {
+        "changed": [
+          {
+            "licence": "C00127C000",
+            "new_value": "Verified menu: BRAND-LEVEL SINGAPORE MENU; exact outlet availability unconfirmed. Item names only (no prices): WHOPPER®; Western WHOPPER®; WHOPPER® with Cheese; Whopper Jr.®; Single Mushroom Swiss; Cheeseburger; Hamburger; Ultimate Angus Classic BBQ™; Ultimate Angus Mushroom Swiss™; Ultimate Chicken King; Hashbrowns; French Fries; Onion Rings; Cheesy Fries; Mexican Drumlets; Vanilla Cone; Chocolate Sundae; Taro Turnover; HERSHEY'S® Sundae Pie Supplemental Foodpanda delivery menu observed 2026-10-19: 19 listed items and displayed delivery prices in Menu Items; prices and availability are time-sensitive and may differ from in-store."
+          },
+          {
+            "licence": "SW18617J000",
+            "new_value": "Verified menu: MOS BURGER SINGAPORE BRAND CATALOGUE: 54 listed items; branch stock/channel price unconfirmed; outlet-exclusive items restricted by operator notice. Supplemental Foodpanda delivery menu observed 2026-10-19: 20 listed items and displayed delivery prices in Menu Items; prices and availability are time-sensitive and may differ from in-store."
+          }
+        ]
+      }
+    },
+    {
+      "check": "one_songfa_image_exact_url_attribution_review_only",
+      "result": "PASS",
+      "detail": {
+        "matches": 1,
+        "image_row": [
+          "W01217C000",
+          "SONGFA BAK KUT TEH",
+          "Dish / food photograph associated with the outlet; not a storefront image",
+          "https://upload.wikimedia.org/wikipedia/commons/5/57/Song_Fa_Bak_Kut_Teh%2C_New_Bridge_Rd%2C_Singapore_%282023%29_02.jpg",
+          "https://commons.wikimedia.org/wiki/File:Song_Fa_Bak_Kut_Teh,_New_Bridge_Rd,_Singapore_(2023)_02.jpg",
+          "2026-10-19",
+          "Inspected the 960x1280 Commons thumbnail. It depicts a plated food item beside Song Fa branded packaging/plate; it is a genuine food photo and not stock, generated, or a placeholder. The dish cannot be identified confidently from the image, so it is not joined to any menu item. Photograph date 2023-06-03; current appearance not established.",
+          "Commons title identifies Song Fa Bak Kut Teh, New Bridge Road; the Commons geotag is 1.289211, 103.847664, approximately 22 m from workbook outlet coordinate 1.2890187, 103.8477137. The workbook exact address is 11 New Bridge Road #01-01. The image source is precise enough for an outlet-level historical association, not current operating status. Photographed 2023-06-03; current menu availability and current outlet appearance are not established. Historical food image only. Historical dish photo; menu-item identity unverified.",
+          "Creative Commons Attribution 4.0 International (CC BY 4.0); Chainwit., ‘Song Fa Bak Kut Teh, New Bridge Rd, Singapore (2023) 02.jpg’, via Wikimedia Commons, CC BY 4.0, https://creativecommons.org/licenses/by/4.0/; no changes made. Review-only; not approved for display."
+        ]
+      }
+    },
+    {
+      "check": "image_not_menu_join_and_zero_approved_urls",
+      "result": "PASS",
+      "detail": {
+        "image_sheet_columns": [
+          "SFA Licence",
+          "F&B Name",
+          "Item / Image Type",
+          "Image URL",
+          "Source Page URL",
+          "Observed",
+          "Visual Check",
+          "Image Scope",
+          "Display / Reuse Status"
+        ],
+        "approved_image_urls": 0,
+        "image_display_status": "Creative Commons Attribution 4.0 International (CC BY 4.0); Chainwit., ‘Song Fa Bak Kut Teh, New Bridge Rd, Singapore (2023) 02.jpg’, via Wikimedia Commons, CC BY 4.0, https://creativecommons.org/licenses/by/4.0/; no changes made. Review-only; not approved for display."
+      }
+    },
+    {
+      "check": "coverage_counts",
+      "result": "PASS",
+      "detail": {
+        "mismatches": {},
+        "expected": {
+          "Active public-access directory rows": 38273,
+          "Unique SFA licences": 38273,
+          "Rows with a usable F&B name": 32791,
+          "Rows with no usable F&B name": 5482,
+          "Rows with coordinates": 35735,
+          "Rows with contact details": 2704,
+          "Rows with website": 2819,
+          "Rows with menu URL": 1478,
+          "Rows with menu summary": 531,
+          "Rows with rating/review count": 0,
+          "Rows with approved image URL": 0,
+          "Rows with opening hours": 1486,
+          "Menu item rows": 13595,
+          "Image candidates": 2762,
+          "Official and open-license image candidates": 4
+        }
+      }
+    },
+    {
+      "check": "proposal_receipts_same_baseline",
+      "result": "PASS",
+      "detail": {
+        "refresh130_images_20261019.json": true,
+        "refresh130_access_closures_20261019.json": true,
+        "refresh130_ratings_20261019.json": true,
+        "refresh130_coordinates_20261019.json": true,
+        "refresh130_official_menus_20261019.json": true,
+        "refresh130_directory_fields_20261019.json": true,
+        "refresh130_delivery_menus_20261019.json": true
+      }
+    },
+    {
+      "check": "no_paid_usage_or_mapbox_calls",
+      "result": "PASS",
+      "detail": {
+        "request_count_this_refresh": 0,
+        "account_usage_verified": false,
+        "user_reported_search_box_usage": "59/50,000, as stated by user on 2026-10-19",
+        "reason": "Connected Mapbox tools do not expose account usage statistics; no Search Box requests used."
+      }
+    },
+    {
+      "check": "no_refresh130_excel_copy_or_backup_in_data",
+      "result": "PASS",
+      "detail": {
+        "matches": []
+      }
+    },
+    {
+      "check": "git_diff_check",
+      "result": "PASS",
+      "detail": {
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    }
+  ],
+  "scope_note": "Independent installed workbook QA; spreadsheet-only, simulator/app tests not applicable."
+}

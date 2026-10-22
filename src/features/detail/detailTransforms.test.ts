@@ -26,7 +26,14 @@ test("deriveStallCommunityReviews flattens dish reviews with deterministic metad
   const reviews = deriveStallCommunityReviews(dishes.slice(0, 2));
 
   assert.ok(reviews.length > 0);
-  assert.ok(reviews.every((entry) => entry.avatarUrl.startsWith("https://images.unsplash.com/")));
+  for (const entry of reviews) {
+    const source = dishes.flatMap((d) => d.reviews).find((review) => entry.id === review.id);
+    assert.ok(source, "Derived review keeps the canonical report target ID");
+    assert.equal(entry.id, source.id);
+    assert.equal(entry.avatarUrl, source?.authorAvatarUrl ?? "");
+    assert.equal(entry.authorId, source?.authorId);
+    assert.equal(entry.role, "Hungry member");
+  }
   assert.ok(reviews.every((entry) => entry.role.length > 0));
   assert.ok(reviews.every((entry) => entry.dishName.length > 0));
 });

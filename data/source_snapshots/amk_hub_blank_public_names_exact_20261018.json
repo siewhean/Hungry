@@ -1,0 +1,101 @@
+{
+  "snapshot_type": "exact_public_fnb_name_official_operator_directory_proposals",
+  "observed_at_local": "2026-10-18 Asia/Singapore",
+  "master_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "master_sha256": "986a2656c3243d55c1a3914a3c5fbbdf2052e0423a69705785cbba0b7fee154e",
+  "worksheet": "Public F&B Directory",
+  "scope": "Bounded read-only AMK Hub blank-name review, a different mall/operator from the prior VivoCity batch; no workbook edits. Existing name snapshots were inspected before research.",
+  "source_set": [
+    {
+      "source": "Link REIT AMK Hub official store pages",
+      "operator": "Link REIT",
+      "observed_date": "2026-10-18",
+      "page_urls": [
+        "https://sg.linkreit.com/malls/amk-hub/stores/yuen-kee-dumpling/",
+        "https://sg.linkreit.com/malls/amk-hub/stores/ztp/"
+      ],
+      "capture_method": "Store pages fetched over HTTPS and response body SHA-256 recorded.",
+      "reuse_note": "Only factual trading name and exact outlet unit proposed; no descriptive copy or images transferred."
+    }
+  ],
+  "summary": {
+    "blank_records_reviewed": 8,
+    "exact_public_fnb_name_proposals": 2,
+    "held_for_venue_or_duplicate_ambiguity": 6,
+    "other_name_snapshot_proposals_for_this_slice": 0
+  },
+  "proposals": [
+    {
+      "excel_row": 36634,
+      "sfa_licence": "CE24M26C000",
+      "before_fnb_name": "",
+      "existing_address": "Address: 53 ANG MO KIO AVENUE 3 #01-23,#01-24,AMK HUB,Singapore 569933",
+      "postal_code": "569933",
+      "business_type": "Restaurant",
+      "proposed_public_fnb_name": "Yuen Kee Dumpling",
+      "source_type": "official_mall_operator_store_page",
+      "source_url": "https://sg.linkreit.com/malls/amk-hub/stores/yuen-kee-dumpling/",
+      "source_page_sha256": "1834d4dc095a6f3da533ca7e2744a826eece4c9f434c8047b314709a568ab709",
+      "observed_date": "2026-10-18",
+      "evidence": "Current official Link REIT / AMK Hub store page identifies Yuen Kee Dumpling as Food & Beverage at AMK Hub #01-23/24.",
+      "matching_rule": "Exact postal code 569933 and exact unit; official current operator directory identifies the outlet at that location.",
+      "confidence": "high",
+      "limitations": "Only public-facing name and unit association are proposed; apply after exact current cell before-value check. ZTP is SFA-licensed for herbal tea but categorized by operator as Beauty & Wellness."
+    },
+    {
+      "excel_row": 36638,
+      "sfa_licence": "CE13L71E000",
+      "before_fnb_name": "",
+      "existing_address": "Address: 53 ANG MO KIO AVENUE 3 #B2-07,AMK HUB,Singapore 569933",
+      "postal_code": "569933",
+      "business_type": "Sales of Herbal Tea",
+      "proposed_public_fnb_name": "ZTP",
+      "source_type": "official_mall_operator_store_page",
+      "source_url": "https://sg.linkreit.com/malls/amk-hub/stores/ztp/",
+      "source_page_sha256": "c41901bd999d73bd044b6ba9334262983b7ddf6a21c930a4092f051ace282df6",
+      "observed_date": "2026-10-18",
+      "evidence": "Current official Link REIT / AMK Hub store page identifies ZTP at #B2-07. The workbook SFA type is Sales of Herbal Tea; Link REIT classifies the retailer Beauty & Wellness and describes TCM health products, so F&B inclusion merits review.",
+      "matching_rule": "Exact postal code 569933 and exact unit; official current operator directory identifies the outlet at that location.",
+      "confidence": "high",
+      "limitations": "Only public-facing name and unit association are proposed; apply after exact current cell before-value check. ZTP is SFA-licensed for herbal tea but categorized by operator as Beauty & Wellness."
+    }
+  ],
+  "held_rows": [
+    {
+      "excel_row": 36635,
+      "sfa_licence": "CE23L43N000",
+      "reason": "The official Link REIT directory identifies Kopitiam at #03-12, but this record is a within-foodcourt permit tagged MR5 and does not identify an individual stall. The SFA address is shared by numerous named stall records."
+    },
+    {
+      "excel_row": 36636,
+      "sfa_licence": "CE25G96N000",
+      "reason": "The official Link REIT directory identifies Kopitiam at #03-12, but this record is a within-foodcourt permit tagged MR7 and does not identify an individual stall. The SFA address is shared by numerous named stall records."
+    },
+    {
+      "excel_row": 36637,
+      "sfa_licence": "CE21N20V000",
+      "reason": "Address gives only basement-level vending-machine location; no exact machine or individual brand can be matched."
+    },
+    {
+      "excel_row": 36639,
+      "sfa_licence": "CE18Q50L001",
+      "reason": "The operator directory identifies Malaysia Boleh! at #B2-41/42, but multiple permits and named individual tenant records share the same unit; this licence does not identify a unique stall or venue brand."
+    },
+    {
+      "excel_row": 36640,
+      "sfa_licence": "CE18Q50L003",
+      "reason": "Same multi-permit Malaysia Boleh! food-court address; no unique individual stall match."
+    },
+    {
+      "excel_row": 36641,
+      "sfa_licence": "CE18Q50L004",
+      "reason": "Same multi-permit Malaysia Boleh! food-court address; no unique individual stall match."
+    }
+  ],
+  "review_notes": [
+    "Row 36634 is a current exact match for Yuen Kee Dumpling. An older official AMK Hub promotional page mentioned Fong Sheng Hao at that unit in 2025, but the current official Link REIT store profile now identifies Yuen Kee Dumpling; current profile used.",
+    "Row 36638 is a clear exact name/unit match for ZTP but the operator category is Beauty & Wellness; parent should decide whether an SFA-licensed herbal-tea retailer belongs in the F&B directory.",
+    "Prior blank-name crosswalks proposed no public-facing fills. Broad SFA legal-name candidates were not used.",
+    "No workbook edits made."
+  ]
+}

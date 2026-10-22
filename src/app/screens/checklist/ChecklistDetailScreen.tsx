@@ -30,6 +30,7 @@ export function ChecklistDetailScreen({ navigation, route }: Props) {
     loadChecklists,
     loadChecklistItems,
     updateChecklist,
+    updateItem,
     markItemTried,
     deleteItem,
     reorderItems,
@@ -37,14 +38,33 @@ export function ChecklistDetailScreen({ navigation, route }: Props) {
   const checklist = checklists.find((entry) => entry.id === checklistId);
   const checklistItems = items[checklistId] ?? [];
   const [draftName, setDraftName] = useState(checklist?.name ?? "");
+  const [editingItem, setEditingItem] = useState<ChecklistItem | null>(null);
+  const [plannedTime, setPlannedTime] = useState("");
+  const [savingTime, setSavingTime] = useState(false);
+  const [loadState, setLoadState] = useState<"loading" | "ready" | "failed">("loading");
+  const [loadError, setLoadError] = useState("");
+  const [retry, setRetry] = useState(0);
   const [labels, setLabels] = useState<Record<string, string>>({});
   const insets = useSafeAreaInsets();
   const topSpacing = Math.max(insets.top, spacing[4]);
 
   useEffect(() => {
-    void loadChecklists();
-    void loadChecklistItems(checklistId);
-  }, [checklistId, loadChecklistItems, loadChecklists]);
+    let active = true;
+    setLoadState("loading");
+    void Promise.all([loadChecklists(), loadChecklistItems(checklistId)])
+      .then(() => {
+        if (active) setLoadState("ready");
+      })
+      .catch((error: unknown) => {
+        if (active) {
+          setLoadState("failed");
+          setLoadError(error instanceof Error ? error.message : "Please retry.");
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [checklistId, loadChecklistItems, loadChecklists, retry]);
 
   useEffect(() => {
     setDraftName(checklist?.name ?? "");
@@ -71,7 +91,13 @@ export function ChecklistDetailScreen({ navigation, route }: Props) {
       if (mounted) setLabels(nextLabels);
     }
 
-    void hydrateLabels();
+    void hydrateLabels().catch((error: unknown) => {
+      if (mounted)
+        Alert.alert(
+          "Could not load item details",
+          error instanceof Error ? error.message : "Please retry.",
+        );
+    });
     return () => {
       mounted = false;
     };
@@ -114,7 +140,19 @@ export function ChecklistDetailScreen({ navigation, route }: Props) {
           },
         ]}
       >
-        <AppText variant="h2">Checklist not found</AppText>
+        <AppText variant="h2">
+          {loadState === "loading"
+            ? "Loading checklist…"
+            : loadState === "failed"
+              ? "Could not load checklist"
+              : "Checklist not found"}
+        </AppText>
+        {loadState === "failed" ? (
+          <>
+            <AppText>{loadError}</AppText>
+            <Button label="Retry" onPress={() => setRetry((value) => value + 1)} />
+          </>
+        ) : null}
         <Button
           label="Go back"
           onPress={() => navigation.goBack()}
@@ -126,9 +164,17 @@ export function ChecklistDetailScreen({ navigation, route }: Props) {
 
   return (
     <ScrollView
+      keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets
       style={{ flex: 1, backgroundColor: palette.bg, paddingTop: topSpacing }}
       contentContainerStyle={[styles.content, { gap: spacing[4], padding: spacing[4] }]}
     >
+      {loadState === "failed" ? (
+        <Card>
+          <AppText>{loadError}</AppText>
+          <Button label="Retry loading" onPress={() => setRetry((value) => value + 1)} />
+        </Card>
+      ) : null}
       <View style={styles.header}>
         <Pressable
           accessibilityRole="button"
@@ -152,7 +198,14 @@ export function ChecklistDetailScreen({ navigation, route }: Props) {
           label="Checklist name"
           value={draftName}
           onChangeText={setDraftName}
-          onBlur={saveName}
+          onBlur={() => {
+            void saveName().catch((error: unknown) =>
+              Alert.alert(
+                "Could not save name",
+                error instanceof Error ? error.message : "Please retry.",
+              ),
+            );
+          }}
         />
         <View style={styles.actionRow}>
           <Button
@@ -185,6 +238,49 @@ export function ChecklistDetailScreen({ navigation, route }: Props) {
         </View>
       </Card>
 
+      {editingItem ? (
+        <Card>
+          <Input
+            label="Planned time (YYYY-MM-DD HH:mm, Singapore)"
+            value={plannedTime}
+            onChangeText={setPlannedTime}
+            placeholder="Leave blank to clear"
+          />
+          <Button
+            label="Save planned time"
+            loading={savingTime}
+            disabled={savingTime}
+            onPress={() => {
+              const value = plannedTime.trim();
+              const date = value ? new Date(value.replace(" ", "T") + ":00+08:00") : null;
+              if (
+                value &&
+                (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(value) ||
+                  !date ||
+                  Number.isNaN(date.getTime()))
+              ) {
+                Alert.alert("Invalid planned time", "Use YYYY-MM-DD HH:mm in Singapore time.");
+                return;
+              }
+              setSavingTime(true);
+              void updateItem(editingItem.id, {
+                reminderAt: date?.toISOString() ?? null,
+                plannedVisitDate: value ? value.slice(0, 10) : null,
+              })
+                .then(() => setEditingItem(null))
+                .catch((error: unknown) =>
+                  Alert.alert(
+                    "Could not save planned time",
+                    error instanceof Error ? error.message : "Please retry.",
+                  ),
+                )
+                .finally(() => setSavingTime(false));
+            }}
+          />
+          <Button label="Cancel" variant="secondary" onPress={() => setEditingItem(null)} />
+        </Card>
+      ) : null}
+
       {checklistItems.length === 0 ? (
         <Card>
           <AppText variant="h3">Nothing here yet</AppText>
@@ -200,7 +296,24 @@ export function ChecklistDetailScreen({ navigation, route }: Props) {
             label={formatChecklistItemLabel(item, labels)}
             index={index}
             totalCount={checklistItems.length}
-            onMarkTried={() => markItemTried(item.id)}
+            onEdit={() => {
+              setEditingItem(item);
+              const date = item.reminderAt
+                ? new Date(new Date(item.reminderAt).getTime() + 8 * 60 * 60 * 1000)
+                    .toISOString()
+                    .slice(0, 16)
+                    .replace("T", " ")
+                : "";
+              setPlannedTime(date);
+            }}
+            onMarkTried={() => {
+              void markItemTried(item.id, !item.triedAt).catch((error: unknown) =>
+                Alert.alert(
+                  "Could not update item",
+                  error instanceof Error ? error.message : "Please retry.",
+                ),
+              );
+            }}
             onMoveUp={() => moveItem(item.id, -1)}
             onMoveDown={() => moveItem(item.id, 1)}
             onDelete={() => {

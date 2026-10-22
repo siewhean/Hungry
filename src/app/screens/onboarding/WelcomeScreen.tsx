@@ -1,9 +1,9 @@
+import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { useEffect, useRef } from "react";
-import { View, Animated, Pressable, Dimensions } from "react-native";
+import { View, Animated, Pressable, ScrollView, useWindowDimensions } from "react-native";
 import type { NavigationProp } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import * as Haptics from "expo-haptics";
 
 import { AppText, Button } from "@/components/ui";
 import { HUNGRY_LOGO_ICON, HUNGRY_LOGO_STANDARD_SIZE } from "@/constants/brandAssets";
@@ -14,8 +14,6 @@ import type { OnboardingStackParamList } from "./OnboardingStack";
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, "OnboardingWelcome">;
 
-const { height: SCREEN_H } = Dimensions.get("window");
-
 const VALUE_PROPS = [
   { emoji: "🍜", text: "Discover dishes, not just restaurants" },
   { emoji: "📍", text: "Find the best hawker stalls near you" },
@@ -23,6 +21,8 @@ const VALUE_PROPS = [
 ];
 
 export function WelcomeScreen({ navigation }: Props) {
+  const { height } = useWindowDimensions();
+  const reduceMotion = useReduceMotion();
   const { palette } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
@@ -33,6 +33,13 @@ export function WelcomeScreen({ navigation }: Props) {
   const ctaAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    if (reduceMotion) {
+      [logoAnim, headlineAnim, ...pillsAnim, ctaAnim].forEach((value) => {
+        value.stopAnimation();
+        value.setValue(1);
+      });
+      return;
+    }
     Animated.sequence([
       Animated.timing(logoAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
       Animated.timing(headlineAnim, { toValue: 1, duration: 320, useNativeDriver: true }),
@@ -44,10 +51,9 @@ export function WelcomeScreen({ navigation }: Props) {
       ),
       Animated.timing(ctaAnim, { toValue: 1, duration: 240, useNativeDriver: true }),
     ]).start();
-  }, [ctaAnim, headlineAnim, logoAnim, pillsAnim]);
+  }, [ctaAnim, headlineAnim, logoAnim, pillsAnim, reduceMotion]);
 
   const handleStart = () => {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     navigation.navigate("CuisineSelection");
   };
 
@@ -58,9 +64,10 @@ export function WelcomeScreen({ navigation }: Props) {
   };
 
   return (
-    <View
-      style={{
-        flex: 1,
+    <ScrollView
+      style={{ backgroundColor: palette.bg }}
+      contentContainerStyle={{
+        flexGrow: 1,
         backgroundColor: palette.bg,
         paddingTop: insets.top + 24,
         paddingBottom: insets.bottom + 24,
@@ -71,7 +78,7 @@ export function WelcomeScreen({ navigation }: Props) {
       <Animated.View
         style={{
           alignItems: "center",
-          marginTop: SCREEN_H * 0.06,
+          marginTop: height * 0.06,
           opacity: logoAnim,
           transform: [
             {
@@ -120,7 +127,7 @@ export function WelcomeScreen({ navigation }: Props) {
       {/* Headline */}
       <Animated.View
         style={{
-          marginTop: SCREEN_H * 0.07,
+          marginTop: height * 0.07,
           opacity: headlineAnim,
           transform: [
             {
@@ -231,6 +238,6 @@ export function WelcomeScreen({ navigation }: Props) {
           </Pressable>
         )}
       </Animated.View>
-    </View>
+    </ScrollView>
   );
 }

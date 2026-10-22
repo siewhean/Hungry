@@ -1,0 +1,62 @@
+{
+  "schema_version": "1.0",
+  "snapshot_id": "chicha_official_image_review_20261018",
+  "observed_at_sgt": "2026-10-18",
+  "workbook_path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "ba519451ef5fa46aafcac14d67a1563365e6a15601c1ddc778d71ac20a960ef1",
+  "workbook_edited": false,
+  "source_scope": "Read-only visual inspection of current operator-owned CHICHA San Chen Singapore homepage image media; comparison against current Public F&B Directory and all workbook sheets for exact image URL duplication. No Mapbox calls.",
+  "candidate_count": 1,
+  "candidates": [
+    {
+      "sfa_licence": "CE18M80B000",
+      "f_and_b_name": "CHICHA SAN CHEN",
+      "workbook_record": {
+        "registered_business_name": "CHICHA SAN CHEN",
+        "full_address": "53 ANG MO KIO AVENUE 3 #B1-65A/B, AMK HUB, Singapore 569933",
+        "postal_code": "569933",
+        "approved_image_url": null
+      },
+      "item_or_image_type": "Official brand-level menu assortment photograph (five branded beverage cups; drinks not individually identified)",
+      "image_url": "https://static.wixstatic.com/media/91d707_d14bc0b6ab1d499a8a64c541fd0689cb~mv2_d_2362_1772_s_2.jpg",
+      "source_page_url": "https://www.chichasanchen.com.sg/",
+      "source_page_capture_sha256": "b46a295cef6c032337c153df71fe6d7a2eeac4091e2079c8c50f360b912a77aa",
+      "image_file_sha256": "2a6add4e009ebfcbfd379c464126f646096a614c109933428a656da3a118c275",
+      "capture_date": "not stated; retrieved 2026-10-18",
+      "creator": "CHICHA San Chen / website publisher; individual photographer not credited on inspected page",
+      "license": "No explicit reuse license located on the operator-owned website during this pass.",
+      "attribution": "No attribution text supplied; creator credit/permission needs confirmation.",
+      "match_evidence": "Operator-owned Singapore homepage labels the pictured assortment as CHICHA San Chen popular menu bubble tea items. Workbook row is an active SFA-listed CHICHA SAN CHEN record, but the image is brand-level and cannot verify this AMK Hub outlet or a particular named beverage.",
+      "visual_check": "Inspected the full 2362×1772 source JPEG. Genuine still-life photograph of five CHICHA-branded drink cups; not an illustration, stock/placeholder, or generated image. Not a stall-front photo; no individual item names visible.",
+      "reuse_status": "Review-only; do not import into Approved Image URL until permission and attribution requirements are cleared.",
+      "rights_status": "operator_owned_reuse_permission_not_cleared",
+      "candidate_status": "reviewed_candidate",
+      "freshness_and_limits": "Page and image retrieved 2026-10-18; photo has no disclosed capture date. Brand-level only; no specific outlet or menu-item identity.",
+      "display_scope": "If permission is granted, brand-level image only; avoid attaching it as a verified outlet-front or exact named-menu-item image."
+    }
+  ],
+  "held_candidates": [
+    {
+      "sfa_licence": "CE18M80B000",
+      "f_and_b_name": "CHICHA SAN CHEN",
+      "image_urls": [
+        "https://assets.shopy.page/amkhub/fmtq.jpg",
+        "https://assets.shopy.page/amkhub/3yiu.jpg"
+      ],
+      "source_page_url": "https://amk-hub.com/shop/chicha-san-chen-amk-hub",
+      "reason": "Visually inspected genuine AMK Hub CHICHA storefront and menu-board photos, but source identifies itself as an Ang Mo Kio Hub fan site and is not an operator-owned/verified official outlet page. Rights and image authorship are not stated. Held; not a usable republication candidate absent authorization."
+    }
+  ],
+  "dedupe": {
+    "exact_image_url_matches_across_workbook_sheets": 0,
+    "matches": [],
+    "scope": "Exact original image URL checked across all four workbook sheets."
+  },
+  "limitations": [
+    "Operator page is current but does not disclose image creator, capture date, or reuse license.",
+    "No image bytes saved to repository; temporary /tmp downloads were used only for visual inspection.",
+    "Candidate is brand-level and not proof of current outlet operation or exact item identity.",
+    "AMK Hub fan-site photos are held, not candidates. No Google or third-party platform material proposed for republication."
+  ],
+  "next_integration_step": "Obtain explicit permission and creator/attribution details before any database use; retain rights metadata separately from the existing URL-only image field."
+}

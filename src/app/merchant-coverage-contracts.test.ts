@@ -170,12 +170,21 @@ test("merchant menu and OCR flows cover catalog writes that become consumer-visi
       /price/,
       /dietaryFlags/,
       /tasteVector/,
-      /merchant\.generateDishDescription\(/,
-      /merchant\.suggestIngredients\(/,
-      /merchant\.suggestAllergens\(/,
-      /merchant\.suggestTags\(/,
+      /parseMerchantPrice/,
+      /updateMerchantAvailability/,
+      /launchImageLibraryAsync/,
+      /Taste tags/,
     ],
     "DishEditorScreen",
+  );
+  assertSourceExcludes(
+    dishEditor,
+    [
+      /merchant\.suggestAllergens/,
+      /merchant\.generateDishDescription/,
+      /merchant\.suggestIngredients/,
+    ],
+    "removed unsupported merchant generators",
   );
   assertSourceIncludes(
     ocr,
@@ -197,7 +206,7 @@ test("merchant menu and OCR flows cover catalog writes that become consumer-visi
       /syncMerchantDishToUserCatalog/,
       /syncMerchantOutletToUserCatalog/,
       /deleteDish\(outletId, dishId\)/,
-      /acceptOCRDraft\(draftId\)/,
+      /acceptOCRDraft\(draftId, corrections\)/,
     ],
     "mock merchant catalog propagation",
   );
@@ -238,7 +247,9 @@ test("merchant inbox, promotions, AI assistant, and settings use service-backed 
       /merchant\.getInbox\(/,
       /merchant\.replyToInteraction\(/,
       /merchant\.reportInteraction\(/,
-      /merchant\.generateAIReply\(/,
+      /sourceDishId/,
+      /scopeMerchantReplyDrafts/,
+      /usePreventRemove/,
       /onViewOriginal/,
       /accessibilityLabel="Close reply composer"/,
     ],
@@ -286,7 +297,7 @@ test("merchant inbox, promotions, AI assistant, and settings use service-backed 
     assistant,
     [
       /merchant\.getAIInsights\(/,
-      /merchant\.getWeeklySummary\(/,
+      /data\.find\(.*weekly_summary/,
       /navigation\.navigate\("PromotionBuilder"\)/,
       /navigation\.navigate\("Menu"\)/,
       /navigation\.navigate\("BusinessProfileEditor"\)/,

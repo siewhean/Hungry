@@ -1,3 +1,4 @@
+import { useSearchStore } from "@/store/useSearchStore";
 import { useMemo, useState } from "react";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { View, useWindowDimensions } from "react-native";
@@ -18,15 +19,15 @@ export function NotFoundScreen({ navigation, route }: Props) {
   const title = route.params?.title ?? "The kitchen is currently quiet.";
   const body =
     route.params?.body ??
-    "We couldn't find the recipe or page you're looking for. It might have been taken off the menu.";
+    "We couldn't find the dish or page you're looking for. It might have been taken off the menu.";
   const searchBarWidth = useMemo(
     () => Math.max(screenWidth - spacing[4] * 2, 240),
     [screenWidth, spacing],
   );
 
   const submitSearch = () => {
-    navigation.navigate("SearchHome");
-    setSearchQuery("");
+    useSearchStore.getState().updateQuery(searchQuery.trim());
+    navigation.navigate("SearchResults");
   };
 
   return (
@@ -75,7 +76,7 @@ export function NotFoundScreen({ navigation, route }: Props) {
             onQueryChange={setSearchQuery}
             onSubmit={submitSearch}
             onClear={() => setSearchQuery("")}
-            placeholder="Search for recipes"
+            placeholder="Search for dishes"
             expandedWidth={searchBarWidth}
             barHeight={44}
             iconAlignment="left"

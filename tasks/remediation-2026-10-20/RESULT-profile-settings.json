@@ -1,0 +1,767 @@
+{
+  "area": "profile-settings",
+  "design": "tasks/remediation-2026-10-20/DESIGN-profile-settings.md",
+  "observations": [
+    {
+      "id": "PROFILE-01",
+      "status": "shared",
+      "files": [
+        "src/app/screens/profile/UserProfileContent.tsx"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/missionCacheRemediation.test.ts src/features/profile/exportMyData.test.ts src/app/screens/profile-home-contracts.test.ts src/app/screens/profile-social-post-detail-contracts.test.ts src/app/screens/stall-submission-contracts.test.ts",
+          "result": "15 tests passed; 0 failed. Node module.register deprecation warning only."
+        },
+        {
+          "command": "npx eslint src/app/screens/profile src/features/profile src/components/settings src/store/useMissionStore.ts src/store/missionCacheRemediation.test.ts --format json",
+          "result": "0 errors, 0 warnings"
+        },
+        {
+          "command": "TypeScript transpileModule syntax inspection of profile/screens, features/profile and settings components",
+          "result": "0 syntax diagnostics; semantic project typecheck belongs to integrator"
+        }
+      ],
+      "reason": "Canonical followUser/getFollowState results drive Follow/Requested/Following; pending cancellation and failures surfaced. No name-based follow fallback.",
+      "remaining": [
+        "Root atomic follow authorization/migration tests and native follow smoke required."
+      ],
+      "sharedOwner": "root"
+    },
+    {
+      "id": "PROFILE-02",
+      "status": "shared",
+      "files": [
+        "src/app/screens/profile/EditProfileScreen.tsx",
+        "src/app/screens/profile/SettingsScreen.tsx"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/missionCacheRemediation.test.ts src/features/profile/exportMyData.test.ts src/app/screens/profile-home-contracts.test.ts src/app/screens/profile-social-post-detail-contracts.test.ts src/app/screens/stall-submission-contracts.test.ts",
+          "result": "15 tests passed; 0 failed. Node module.register deprecation warning only."
+        },
+        {
+          "command": "npx eslint src/app/screens/profile src/features/profile src/components/settings src/store/useMissionStore.ts src/store/missionCacheRemediation.test.ts --format json",
+          "result": "0 errors, 0 warnings"
+        },
+        {
+          "command": "TypeScript transpileModule syntax inspection of profile/screens, features/profile and settings components",
+          "result": "0 syntax diagnostics; semantic project typecheck belongs to integrator"
+        }
+      ],
+      "reason": "Authentication email is read-only and omitted from profile updates.",
+      "remaining": [
+        "Root authoritative Auth email projection verification."
+      ],
+      "sharedOwner": "root"
+    },
+    {
+      "id": "PROFILE-03",
+      "status": "implemented",
+      "files": [
+        "src/app/screens/profile/ProfileConnectionsScreen.tsx",
+        "src/app/screens/profile/ProfileHomeScreen.tsx",
+        "src/app/screens/profile/UserProfileContent.tsx"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/missionCacheRemediation.test.ts src/features/profile/exportMyData.test.ts src/app/screens/profile-home-contracts.test.ts src/app/screens/profile-social-post-detail-contracts.test.ts src/app/screens/stall-submission-contracts.test.ts",
+          "result": "15 tests passed; 0 failed. Node module.register deprecation warning only."
+        },
+        {
+          "command": "npx eslint src/app/screens/profile src/features/profile src/components/settings src/store/useMissionStore.ts src/store/missionCacheRemediation.test.ts --format json",
+          "result": "0 errors, 0 warnings"
+        },
+        {
+          "command": "TypeScript transpileModule syntax inspection of profile/screens, features/profile and settings components",
+          "result": "0 syntax diagnostics; semantic project typecheck belongs to integrator"
+        }
+      ],
+      "reason": "Relationships/counts use service account IDs only; removed community/chat/name unions and fabricated counts.",
+      "remaining": []
+    },
+    {
+      "id": "PROFILE-04",
+      "status": "implemented",
+      "files": [
+        "src/app/screens/profile/ProfileHomeScreen.tsx",
+        "src/app/screens/profile/UserProfileContent.tsx",
+        "src/app/screens/profile/VisitedStallsScreen.tsx"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/missionCacheRemediation.test.ts src/features/profile/exportMyData.test.ts src/app/screens/profile-home-contracts.test.ts src/app/screens/profile-social-post-detail-contracts.test.ts src/app/screens/stall-submission-contracts.test.ts",
+          "result": "15 tests passed; 0 failed. Node module.register deprecation warning only."
+        },
+        {
+          "command": "npx eslint src/app/screens/profile src/features/profile src/components/settings src/store/useMissionStore.ts src/store/missionCacheRemediation.test.ts --format json",
+          "result": "0 errors, 0 warnings"
+        },
+        {
+          "command": "TypeScript transpileModule syntax inspection of profile/screens, features/profile and settings components",
+          "result": "0 syntax diagnostics; semantic project typecheck belongs to integrator"
+        }
+      ],
+      "reason": "Self posts require canonical identity. Public reviews are actual getUserReviews results with canonical author IDs; removed viewer-stall redirect. Venue visit list derives actual venue interactions.",
+      "remaining": []
+    },
+    {
+      "id": "PROFILE-05",
+      "status": "implemented",
+      "files": [
+        "src/app/screens/profile/AddStallScreen.tsx"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/missionCacheRemediation.test.ts src/features/profile/exportMyData.test.ts src/app/screens/profile-home-contracts.test.ts src/app/screens/profile-social-post-detail-contracts.test.ts src/app/screens/stall-submission-contracts.test.ts",
+          "result": "15 tests passed; 0 failed. Node module.register deprecation warning only."
+        },
+        {
+          "command": "npx eslint src/app/screens/profile src/features/profile src/components/settings src/store/useMissionStore.ts src/store/missionCacheRemediation.test.ts --format json",
+          "result": "0 errors, 0 warnings"
+        },
+        {
+          "command": "TypeScript transpileModule syntax inspection of profile/screens, features/profile and settings components",
+          "result": "0 syntax diagnostics; semantic project typecheck belongs to integrator"
+        }
+      ],
+      "reason": "Opening hours start unknown/empty, every set can be removed and every selected weekday deselected. No untouched Monday schedule is submitted.",
+      "remaining": []
+    },
+    {
+      "id": "PROFILE-06",
+      "status": "external_pending",
+      "files": [
+        "src/app/screens/profile/AddStallScreen.tsx",
+        "src/app/screens/profile/EditProfileScreen.tsx",
+        "src/features/profile/useProfileFormDraft.ts"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/missionCacheRemediation.test.ts src/features/profile/exportMyData.test.ts src/app/screens/profile-home-contracts.test.ts src/app/screens/profile-social-post-detail-contracts.test.ts src/app/screens/stall-submission-contracts.test.ts",
+          "result": "15 tests passed; 0 failed. Node module.register deprecation warning only."
+        },
+        {
+          "command": "npx eslint src/app/screens/profile src/features/profile src/components/settings src/store/useMissionStore.ts src/store/missionCacheRemediation.test.ts --format json",
+          "result": "0 errors, 0 warnings"
+        },
+        {
+          "command": "TypeScript transpileModule syntax inspection of profile/screens, features/profile and settings components",
+          "result": "0 syntax diagnostics; semantic project typecheck belongs to integrator"
+        }
+      ],
+      "reason": "Account-scoped persisted forms, actual route-removal guards, explicit discard/keep draft options, delayed avatar-save feedback.",
+      "remaining": [
+        "Native interactive back/swipe/process-restart verification and draft-storage failure/device proof remain."
+      ]
+    },
+    {
+      "id": "PROFILE-07",
+      "status": "implemented",
+      "files": [
+        "src/app/screens/profile/FavouritesScreen.tsx",
+        "src/app/screens/profile/FollowedStallsScreen.tsx",
+        "src/app/screens/profile/VisitedStallsScreen.tsx",
+        "src/features/profile/useResolvedProfileEntities.ts"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/missionCacheRemediation.test.ts src/features/profile/exportMyData.test.ts src/app/screens/profile-home-contracts.test.ts src/app/screens/profile-social-post-detail-contracts.test.ts src/app/screens/stall-submission-contracts.test.ts",
+          "result": "15 tests passed; 0 failed. Node module.register deprecation warning only."
+        },
+        {
+          "command": "npx eslint src/app/screens/profile src/features/profile src/components/settings src/store/useMissionStore.ts src/store/missionCacheRemediation.test.ts --format json",
+          "result": "0 errors, 0 warnings"
+        },
+        {
+          "command": "TypeScript transpileModule syntax inspection of profile/screens, features/profile and settings components",
+          "result": "0 syntax diagnostics; semantic project typecheck belongs to integrator"
+        }
+      ],
+      "reason": "Exact asynchronous service hydration with stale-response rejection, loading, missing counts and retry; no silent cold-cache loss.",
+      "remaining": []
+    },
+    {
+      "id": "PROFILE-08",
+      "status": "implemented",
+      "files": [
+        "src/app/screens/profile/ProfileConnectionsScreen.tsx",
+        "src/app/screens/profile/ReviewHistoryScreen.tsx",
+        "src/app/screens/profile/UserProfileContent.tsx",
+        "src/app/screens/profile/MissionsScreen.tsx",
+        "src/app/screens/profile/ProfileHomeScreen.tsx"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/missionCacheRemediation.test.ts src/features/profile/exportMyData.test.ts src/app/screens/profile-home-contracts.test.ts src/app/screens/profile-social-post-detail-contracts.test.ts src/app/screens/stall-submission-contracts.test.ts",
+          "result": "15 tests passed; 0 failed. Node module.register deprecation warning only."
+        },
+        {
+          "command": "npx eslint src/app/screens/profile src/features/profile src/components/settings src/store/useMissionStore.ts src/store/missionCacheRemediation.test.ts --format json",
+          "result": "0 errors, 0 warnings"
+        },
+        {
+          "command": "TypeScript transpileModule syntax inspection of profile/screens, features/profile and settings components",
+          "result": "0 syntax diagnostics; semantic project typecheck belongs to integrator"
+        }
+      ],
+      "reason": "Truthful loading and retry states; rejected submission loads handled and profile refresh failures preserve usable posts.",
+      "remaining": [
+        "Native visual loading/empty/error review remains."
+      ]
+    },
+    {
+      "id": "PROFILE-09",
+      "status": "implemented",
+      "files": [
+        "src/app/screens/profile/ProfileHomeScreen.tsx"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/missionCacheRemediation.test.ts src/features/profile/exportMyData.test.ts src/app/screens/profile-home-contracts.test.ts src/app/screens/profile-social-post-detail-contracts.test.ts src/app/screens/stall-submission-contracts.test.ts",
+          "result": "15 tests passed; 0 failed. Node module.register deprecation warning only."
+        },
+        {
+          "command": "npx eslint src/app/screens/profile src/features/profile src/components/settings src/store/useMissionStore.ts src/store/missionCacheRemediation.test.ts --format json",
+          "result": "0 errors, 0 warnings"
+        },
+        {
+          "command": "TypeScript transpileModule syntax inspection of profile/screens, features/profile and settings components",
+          "result": "0 syntax diagnostics; semantic project typecheck belongs to integrator"
+        }
+      ],
+      "reason": "Copy action is labeled Copy taste summary, matching its actual content.",
+      "remaining": []
+    },
+    {
+      "id": "PROFILE-10",
+      "status": "external_pending",
+      "files": [
+        "src/app/screens/profile/AddStallScreen.tsx",
+        "src/app/screens/profile/EditProfileScreen.tsx",
+        "src/app/screens/profile/UserProfileContent.tsx",
+        "src/app/screens/profile/ProfileConnectionsScreen.tsx"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/missionCacheRemediation.test.ts src/features/profile/exportMyData.test.ts src/app/screens/profile-home-contracts.test.ts src/app/screens/profile-social-post-detail-contracts.test.ts src/app/screens/stall-submission-contracts.test.ts",
+          "result": "15 tests passed; 0 failed. Node module.register deprecation warning only."
+        },
+        {
+          "command": "npx eslint src/app/screens/profile src/features/profile src/components/settings src/store/useMissionStore.ts src/store/missionCacheRemediation.test.ts --format json",
+          "result": "0 errors, 0 warnings"
+        },
+        {
+          "command": "TypeScript transpileModule syntax inspection of profile/screens, features/profile and settings components",
+          "result": "0 syntax diagnostics; semantic project typecheck belongs to integrator"
+        }
+      ],
+      "reason": "Added explicit profile-photo labels, tab selected states, connection actions,44+ targets and non-drag earlier/later photo controls.",
+      "remaining": [
+        "Actual VoiceOver/TalkBack, font-scale, contrast and focus/native visual comparison remain unverified."
+      ]
+    },
+    {
+      "id": "PROFILE-11",
+      "status": "implemented",
+      "files": [
+        "src/app/screens/profile/PassportScreen.tsx"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/missionCacheRemediation.test.ts src/features/profile/exportMyData.test.ts src/app/screens/profile-home-contracts.test.ts src/app/screens/profile-social-post-detail-contracts.test.ts src/app/screens/stall-submission-contracts.test.ts",
+          "result": "15 tests passed; 0 failed. Node module.register deprecation warning only."
+        },
+        {
+          "command": "npx eslint src/app/screens/profile src/features/profile src/components/settings src/store/useMissionStore.ts src/store/missionCacheRemediation.test.ts --format json",
+          "result": "0 errors, 0 warnings"
+        },
+        {
+          "command": "TypeScript transpileModule syntax inspection of profile/screens, features/profile and settings components",
+          "result": "0 syntax diagnostics; semantic project typecheck belongs to integrator"
+        }
+      ],
+      "reason": "Celebration timeout no longer cancels itself when setting celebration state. Honors OS/app reduced motion and haptic preference.",
+      "remaining": []
+    },
+    {
+      "id": "PROFILE-12",
+      "status": "implemented",
+      "files": [
+        "src/store/useMissionStore.ts",
+        "src/app/screens/profile/MissionsScreen.tsx",
+        "src/app/screens/profile/PassportScreen.tsx",
+        "src/store/missionCacheRemediation.test.ts"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/missionCacheRemediation.test.ts src/features/profile/exportMyData.test.ts src/app/screens/profile-home-contracts.test.ts src/app/screens/profile-social-post-detail-contracts.test.ts src/app/screens/stall-submission-contracts.test.ts",
+          "result": "15 tests passed; 0 failed. Node module.register deprecation warning only."
+        },
+        {
+          "command": "npx eslint src/app/screens/profile src/features/profile src/components/settings src/store/useMissionStore.ts src/store/missionCacheRemediation.test.ts --format json",
+          "result": "0 errors, 0 warnings"
+        },
+        {
+          "command": "TypeScript transpileModule syntax inspection of profile/screens, features/profile and settings components",
+          "result": "0 syntax diagnostics; semantic project typecheck belongs to integrator"
+        }
+      ],
+      "reason": "Mission cache keyed by account/Singapore week, late loads rejected across reset; mission/passport errors expose retry. Behavior regressions cover week/account boundary and late response.",
+      "remaining": []
+    },
+    {
+      "id": "PROFILE-13",
+      "status": "implemented",
+      "files": [
+        "src/app/screens/profile/SocialGridScreen.tsx",
+        "src/app/screens/profile/SocialPostDetailScreen.tsx",
+        "src/features/profile/ProfilePostMedia.tsx"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/missionCacheRemediation.test.ts src/features/profile/exportMyData.test.ts src/app/screens/profile-home-contracts.test.ts src/app/screens/profile-social-post-detail-contracts.test.ts src/app/screens/stall-submission-contracts.test.ts",
+          "result": "15 tests passed; 0 failed. Node module.register deprecation warning only."
+        },
+        {
+          "command": "npx eslint src/app/screens/profile src/features/profile src/components/settings src/store/useMissionStore.ts src/store/missionCacheRemediation.test.ts --format json",
+          "result": "0 errors, 0 warnings"
+        },
+        {
+          "command": "TypeScript transpileModule syntax inspection of profile/screens, features/profile and settings components",
+          "result": "0 syntax diagnostics; semantic project typecheck belongs to integrator"
+        }
+      ],
+      "reason": "Exact post identity cannot substitute first item. Media supports explicit previous/next controls and live index. Grid responds to width changes; single virtualized scroll owner for grid/details.",
+      "remaining": []
+    },
+    {
+      "id": "PROFILE-14",
+      "status": "shared",
+      "files": [
+        "src/app/screens/profile/AddStallScreen.tsx",
+        "src/app/screens/profile/ProfileHomeScreen.tsx"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/missionCacheRemediation.test.ts src/features/profile/exportMyData.test.ts src/app/screens/profile-home-contracts.test.ts src/app/screens/profile-social-post-detail-contracts.test.ts src/app/screens/stall-submission-contracts.test.ts",
+          "result": "15 tests passed; 0 failed. Node module.register deprecation warning only."
+        },
+        {
+          "command": "npx eslint src/app/screens/profile src/features/profile src/components/settings src/store/useMissionStore.ts src/store/missionCacheRemediation.test.ts --format json",
+          "result": "0 errors, 0 warnings"
+        },
+        {
+          "command": "TypeScript transpileModule syntax inspection of profile/screens, features/profile and settings components",
+          "result": "0 syntax diagnostics; semantic project typecheck belongs to integrator"
+        }
+      ],
+      "reason": "Optional source URL submitted; internal migration instructions removed; recent stall submissions show real status/date; counts labeled Submitted/With menu.",
+      "remaining": [
+        "Root sourceUrl RPC compatibility/migration smoke and production contribution persistence proof."
+      ],
+      "sharedOwner": "root"
+    },
+    {
+      "id": "PROFILE-15",
+      "status": "implemented",
+      "files": [
+        "src/app/screens/profile/EditProfileScreen.tsx",
+        "src/app/screens/profile/ReviewHistoryScreen.tsx"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/missionCacheRemediation.test.ts src/features/profile/exportMyData.test.ts src/app/screens/profile-home-contracts.test.ts src/app/screens/profile-social-post-detail-contracts.test.ts src/app/screens/stall-submission-contracts.test.ts",
+          "result": "15 tests passed; 0 failed. Node module.register deprecation warning only."
+        },
+        {
+          "command": "npx eslint src/app/screens/profile src/features/profile src/components/settings src/store/useMissionStore.ts src/store/missionCacheRemediation.test.ts --format json",
+          "result": "0 errors, 0 warnings"
+        },
+        {
+          "command": "TypeScript transpileModule syntax inspection of profile/screens, features/profile and settings components",
+          "result": "0 syntax diagnostics; semantic project typecheck belongs to integrator"
+        }
+      ],
+      "reason": "Save enabled only for nonempty changed display name/photo; trimmed name. History uses actual personal review text/rating/date/tags and real dish link, without aggregate-rating substitution.",
+      "remaining": []
+    },
+    {
+      "id": "SET-01",
+      "status": "shared",
+      "files": [
+        "src/app/screens/profile/SettingsScreen.tsx"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/missionCacheRemediation.test.ts src/features/profile/exportMyData.test.ts src/app/screens/profile-home-contracts.test.ts src/app/screens/profile-social-post-detail-contracts.test.ts src/app/screens/stall-submission-contracts.test.ts",
+          "result": "15 tests passed; 0 failed. Node module.register deprecation warning only."
+        },
+        {
+          "command": "npx eslint src/app/screens/profile src/features/profile src/components/settings src/store/useMissionStore.ts src/store/missionCacheRemediation.test.ts --format json",
+          "result": "0 errors, 0 warnings"
+        },
+        {
+          "command": "TypeScript transpileModule syntax inspection of profile/screens, features/profile and settings components",
+          "result": "0 syntax diagnostics; semantic project typecheck belongs to integrator"
+        }
+      ],
+      "reason": "Hide reviewed dishes explicitly filters personal recommendations; public visibility unchanged in copy.",
+      "remaining": [
+        "Root recommendation consumer regression evidence."
+      ],
+      "sharedOwner": "root"
+    },
+    {
+      "id": "SET-02",
+      "status": "removed",
+      "files": [
+        "src/app/screens/profile/SettingsScreen.tsx"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/missionCacheRemediation.test.ts src/features/profile/exportMyData.test.ts src/app/screens/profile-home-contracts.test.ts src/app/screens/profile-social-post-detail-contracts.test.ts src/app/screens/stall-submission-contracts.test.ts",
+          "result": "15 tests passed; 0 failed. Node module.register deprecation warning only."
+        },
+        {
+          "command": "npx eslint src/app/screens/profile src/features/profile src/components/settings src/store/useMissionStore.ts src/store/missionCacheRemediation.test.ts --format json",
+          "result": "0 errors, 0 warnings"
+        },
+        {
+          "command": "TypeScript transpileModule syntax inspection of profile/screens, features/profile and settings components",
+          "result": "0 syntax diagnostics; semantic project typecheck belongs to integrator"
+        }
+      ],
+      "reason": "Removed unsupported visibility/feed/badge/external-app/notification preferences; supported theme/reduce-motion/haptics/history/hide-reviewed/real stall-alert controls remain.",
+      "remaining": []
+    },
+    {
+      "id": "SET-03",
+      "status": "shared",
+      "files": [
+        "src/app/screens/profile/SettingsScreen.tsx"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/missionCacheRemediation.test.ts src/features/profile/exportMyData.test.ts src/app/screens/profile-home-contracts.test.ts src/app/screens/profile-social-post-detail-contracts.test.ts src/app/screens/stall-submission-contracts.test.ts",
+          "result": "15 tests passed; 0 failed. Node module.register deprecation warning only."
+        },
+        {
+          "command": "npx eslint src/app/screens/profile src/features/profile src/components/settings src/store/useMissionStore.ts src/store/missionCacheRemediation.test.ts --format json",
+          "result": "0 errors, 0 warnings"
+        },
+        {
+          "command": "TypeScript transpileModule syntax inspection of profile/screens, features/profile and settings components",
+          "result": "0 syntax diagnostics; semantic project typecheck belongs to integrator"
+        }
+      ],
+      "reason": "Visibility request awaited with busy/disabled state and failure recovery; server-confirmed store state displayed.",
+      "remaining": [
+        "Root confirmed-state privacy setter and race regressions."
+      ],
+      "sharedOwner": "root"
+    },
+    {
+      "id": "SET-04",
+      "status": "shared",
+      "files": [
+        "src/app/screens/profile/SettingsScreen.tsx"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/missionCacheRemediation.test.ts src/features/profile/exportMyData.test.ts src/app/screens/profile-home-contracts.test.ts src/app/screens/profile-social-post-detail-contracts.test.ts src/app/screens/stall-submission-contracts.test.ts",
+          "result": "15 tests passed; 0 failed. Node module.register deprecation warning only."
+        },
+        {
+          "command": "npx eslint src/app/screens/profile src/features/profile src/components/settings src/store/useMissionStore.ts src/store/missionCacheRemediation.test.ts --format json",
+          "result": "0 errors, 0 warnings"
+        },
+        {
+          "command": "TypeScript transpileModule syntax inspection of profile/screens, features/profile and settings components",
+          "result": "0 syntax diagnostics; semantic project typecheck belongs to integrator"
+        }
+      ],
+      "reason": "Sign-out delegates to centralized awaited session transition rather than selectively clearing screen stores.",
+      "remaining": [
+        "Root complete private-store/account persistence transition tests."
+      ],
+      "sharedOwner": "root"
+    },
+    {
+      "id": "SET-05",
+      "status": "shared",
+      "files": [
+        "src/app/screens/profile/SettingsScreen.tsx"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/missionCacheRemediation.test.ts src/features/profile/exportMyData.test.ts src/app/screens/profile-home-contracts.test.ts src/app/screens/profile-social-post-detail-contracts.test.ts src/app/screens/stall-submission-contracts.test.ts",
+          "result": "15 tests passed; 0 failed. Node module.register deprecation warning only."
+        },
+        {
+          "command": "npx eslint src/app/screens/profile src/features/profile src/components/settings src/store/useMissionStore.ts src/store/missionCacheRemediation.test.ts --format json",
+          "result": "0 errors, 0 warnings"
+        },
+        {
+          "command": "TypeScript transpileModule syntax inspection of profile/screens, features/profile and settings components",
+          "result": "0 syntax diagnostics; semantic project typecheck belongs to integrator"
+        }
+      ],
+      "reason": "Removed broad per-screen credential purge; deterministic signout owned centrally.",
+      "remaining": [
+        "Root secure deletion/readback, captured-session revocation and failed signout regressions."
+      ],
+      "sharedOwner": "root"
+    },
+    {
+      "id": "SET-06",
+      "status": "shared",
+      "files": [
+        "src/app/screens/profile/SettingsScreen.tsx"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/missionCacheRemediation.test.ts src/features/profile/exportMyData.test.ts src/app/screens/profile-home-contracts.test.ts src/app/screens/profile-social-post-detail-contracts.test.ts src/app/screens/stall-submission-contracts.test.ts",
+          "result": "15 tests passed; 0 failed. Node module.register deprecation warning only."
+        },
+        {
+          "command": "npx eslint src/app/screens/profile src/features/profile src/components/settings src/store/useMissionStore.ts src/store/missionCacheRemediation.test.ts --format json",
+          "result": "0 errors, 0 warnings"
+        },
+        {
+          "command": "TypeScript transpileModule syntax inspection of profile/screens, features/profile and settings components",
+          "result": "0 syntax diagnostics; semantic project typecheck belongs to integrator"
+        }
+      ],
+      "reason": "Persistent deletion status lookup with retry; Keep my account succeeds only for confirmed true cancellation. Lookup errors never imply no deletion.",
+      "remaining": [
+        "Root deletion grace hook uses same explicit confirmed cancellation contract."
+      ],
+      "sharedOwner": "root"
+    },
+    {
+      "id": "SET-07",
+      "status": "removed",
+      "files": [
+        "src/app/screens/profile/SettingsScreen.tsx"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/missionCacheRemediation.test.ts src/features/profile/exportMyData.test.ts src/app/screens/profile-home-contracts.test.ts src/app/screens/profile-social-post-detail-contracts.test.ts src/app/screens/stall-submission-contracts.test.ts",
+          "result": "15 tests passed; 0 failed. Node module.register deprecation warning only."
+        },
+        {
+          "command": "npx eslint src/app/screens/profile src/features/profile src/components/settings src/store/useMissionStore.ts src/store/missionCacheRemediation.test.ts --format json",
+          "result": "0 errors, 0 warnings"
+        },
+        {
+          "command": "TypeScript transpileModule syntax inspection of profile/screens, features/profile and settings components",
+          "result": "0 syntax diagnostics; semantic project typecheck belongs to integrator"
+        }
+      ],
+      "reason": "Removed unsafe generic clear-cache purge. Precise Clear search history action explicitly preserves account/profile/location/drafts.",
+      "remaining": []
+    },
+    {
+      "id": "SET-08",
+      "status": "external_pending",
+      "files": [
+        "src/components/settings/SettingsRow.tsx",
+        "src/components/settings/SettingsSection.tsx",
+        "src/app/screens/profile/SettingsScreen.tsx"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/missionCacheRemediation.test.ts src/features/profile/exportMyData.test.ts src/app/screens/profile-home-contracts.test.ts src/app/screens/profile-social-post-detail-contracts.test.ts src/app/screens/stall-submission-contracts.test.ts",
+          "result": "15 tests passed; 0 failed. Node module.register deprecation warning only."
+        },
+        {
+          "command": "npx eslint src/app/screens/profile src/features/profile src/components/settings src/store/useMissionStore.ts src/store/missionCacheRemediation.test.ts --format json",
+          "result": "0 errors, 0 warnings"
+        },
+        {
+          "command": "TypeScript transpileModule syntax inspection of profile/screens, features/profile and settings components",
+          "result": "0 syntax diagnostics; semantic project typecheck belongs to integrator"
+        }
+      ],
+      "reason": "Single labeled accessible switch/button target, selected/checked/busy/disabled states, wrapping row text, section heading roles and minimum target sizes.",
+      "remaining": [
+        "VoiceOver/TalkBack hierarchy, large text, safe area and contrast checks on candidate remain."
+      ]
+    },
+    {
+      "id": "SET-09",
+      "status": "shared",
+      "files": [
+        "src/app/screens/profile/SettingsScreen.tsx",
+        "src/app/screens/profile/PassportScreen.tsx"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/missionCacheRemediation.test.ts src/features/profile/exportMyData.test.ts src/app/screens/profile-home-contracts.test.ts src/app/screens/profile-social-post-detail-contracts.test.ts src/app/screens/stall-submission-contracts.test.ts",
+          "result": "15 tests passed; 0 failed. Node module.register deprecation warning only."
+        },
+        {
+          "command": "npx eslint src/app/screens/profile src/features/profile src/components/settings src/store/useMissionStore.ts src/store/missionCacheRemediation.test.ts --format json",
+          "result": "0 errors, 0 warnings"
+        },
+        {
+          "command": "TypeScript transpileModule syntax inspection of profile/screens, features/profile and settings components",
+          "result": "0 syntax diagnostics; semantic project typecheck belongs to integrator"
+        }
+      ],
+      "reason": "Retained haptic preference and Passport consumer respects it.",
+      "remaining": [
+        "Root shared haptic wrapper/remaining consumers regression."
+      ],
+      "sharedOwner": "root"
+    },
+    {
+      "id": "SET-10",
+      "status": "implemented",
+      "files": [
+        "src/components/settings/StallAlertsSettings.tsx",
+        "src/app/screens/profile/SettingsScreen.tsx"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/missionCacheRemediation.test.ts src/features/profile/exportMyData.test.ts src/app/screens/profile-home-contracts.test.ts src/app/screens/profile-social-post-detail-contracts.test.ts src/app/screens/stall-submission-contracts.test.ts",
+          "result": "15 tests passed; 0 failed. Node module.register deprecation warning only."
+        },
+        {
+          "command": "npx eslint src/app/screens/profile src/features/profile src/components/settings src/store/useMissionStore.ts src/store/missionCacheRemediation.test.ts --format json",
+          "result": "0 errors, 0 warnings"
+        },
+        {
+          "command": "TypeScript transpileModule syntax inspection of profile/screens, features/profile and settings components",
+          "result": "0 syntax diagnostics; semantic project typecheck belongs to integrator"
+        }
+      ],
+      "reason": "Independent stallAlertsEnabled gate retained. Initial preferences load/error/retry, account generation guards, disabled saves and OS-settings recovery; no default false state masquerades as server preference.",
+      "remaining": []
+    },
+    {
+      "id": "SET-11",
+      "status": "external_pending",
+      "files": [
+        "src/app/screens/profile/SettingsScreen.tsx",
+        "src/features/profile/shareMyDataExport.ts",
+        "src/features/profile/exportMyData.test.ts"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/missionCacheRemediation.test.ts src/features/profile/exportMyData.test.ts src/app/screens/profile-home-contracts.test.ts src/app/screens/profile-social-post-detail-contracts.test.ts src/app/screens/stall-submission-contracts.test.ts",
+          "result": "15 tests passed; 0 failed. Node module.register deprecation warning only."
+        },
+        {
+          "command": "npx eslint src/app/screens/profile src/features/profile src/components/settings src/store/useMissionStore.ts src/store/missionCacheRemediation.test.ts --format json",
+          "result": "0 errors, 0 warnings"
+        },
+        {
+          "command": "TypeScript transpileModule syntax inspection of profile/screens, features/profile and settings components",
+          "result": "0 syntax diagnostics; semantic project typecheck belongs to integrator"
+        }
+      ],
+      "reason": "Writes actual JSON attachment with incomplete-section disclosure and explicit incomplete-file choice; immutable opaque temp path cleaned after share/cancel/expiry and centralized account cleanup hook available.",
+      "remaining": [
+        "Root integrates cleanupMyDataExports on account transition; native file-sharing/cancel and expiry cleanup device proof required."
+      ]
+    },
+    {
+      "id": "SET-12",
+      "status": "implemented",
+      "files": [
+        "src/app/screens/profile/SettingsScreen.tsx"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/missionCacheRemediation.test.ts src/features/profile/exportMyData.test.ts src/app/screens/profile-home-contracts.test.ts src/app/screens/profile-social-post-detail-contracts.test.ts src/app/screens/stall-submission-contracts.test.ts",
+          "result": "15 tests passed; 0 failed. Node module.register deprecation warning only."
+        },
+        {
+          "command": "npx eslint src/app/screens/profile src/features/profile src/components/settings src/store/useMissionStore.ts src/store/missionCacheRemediation.test.ts --format json",
+          "result": "0 errors, 0 warnings"
+        },
+        {
+          "command": "TypeScript transpileModule syntax inspection of profile/screens, features/profile and settings components",
+          "result": "0 syntax diagnostics; semantic project typecheck belongs to integrator"
+        }
+      ],
+      "reason": "Clear selected area action requests fresh device location, reports false result honestly and provides discovery/manual/OS settings recovery without claiming default coordinates are GPS.",
+      "remaining": []
+    },
+    {
+      "id": "SET-13",
+      "status": "shared",
+      "files": [
+        "src/app/screens/profile/SettingsScreen.tsx",
+        "marketing/web/app/privacy/page.tsx",
+        "marketing/web/app/account/delete/page.tsx",
+        "marketing/website/web-v2/src/app/privacy/page.tsx",
+        "marketing/website/web-v2/src/app/account/delete/page.tsx"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/missionCacheRemediation.test.ts src/features/profile/exportMyData.test.ts src/app/screens/profile-home-contracts.test.ts src/app/screens/profile-social-post-detail-contracts.test.ts src/app/screens/stall-submission-contracts.test.ts",
+          "result": "15 tests passed; 0 failed. Node module.register deprecation warning only."
+        },
+        {
+          "command": "npx eslint src/app/screens/profile src/features/profile src/components/settings src/store/useMissionStore.ts src/store/missionCacheRemediation.test.ts --format json",
+          "result": "0 errors, 0 warnings"
+        },
+        {
+          "command": "TypeScript transpileModule syntax inspection of profile/screens, features/profile and settings components",
+          "result": "0 syntax diagnostics; semantic project typecheck belongs to integrator"
+        }
+      ],
+      "reason": "Deletion request commit separated from local signout errors; signin copy consistently requires explicit confirmed Keep my account, including both local marketing workspaces.",
+      "remaining": [
+        "Root request persistence/recovery/status contract regression and separately authorized website deployment remain."
+      ],
+      "sharedOwner": "root"
+    },
+    {
+      "id": "SET-14",
+      "status": "implemented",
+      "files": [
+        "src/app/screens/profile/SettingsScreen.tsx"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/store/missionCacheRemediation.test.ts src/features/profile/exportMyData.test.ts src/app/screens/profile-home-contracts.test.ts src/app/screens/profile-social-post-detail-contracts.test.ts src/app/screens/stall-submission-contracts.test.ts",
+          "result": "15 tests passed; 0 failed. Node module.register deprecation warning only."
+        },
+        {
+          "command": "npx eslint src/app/screens/profile src/features/profile src/components/settings src/store/useMissionStore.ts src/store/missionCacheRemediation.test.ts --format json",
+          "result": "0 errors, 0 warnings"
+        },
+        {
+          "command": "TypeScript transpileModule syntax inspection of profile/screens, features/profile and settings components",
+          "result": "0 syntax diagnostics; semantic project typecheck belongs to integrator"
+        }
+      ],
+      "reason": "Removed duplicate display-name/UUID rows, explicit device/light/dark choices, correctly labeled Contact support and Account deletion information; supported controls grouped in five sections.",
+      "remaining": []
+    }
+  ],
+  "verificationBoundary": "Source/focused local tests only; no native, hosted, staging, database role or production evidence claimed.",
+  "additionalVerification": [
+    {
+      "command": "Combined focused profile/settings + eight assigned source-contract suites",
+      "result": "66 passed, 0 failed, 0 skipped; profile-settings-focused-tests.log"
+    },
+    {
+      "command": "Scoped ESLint on screens/features/settings and assigned contracts",
+      "result": "0 errors, 0 warnings; profile-settings-eslint.json"
+    },
+    {
+      "command": "Independent database QA local fixture only",
+      "result": "Both authorization/publication smokes + custom anon negative pass; QA-database.md and database-independent-fixture.log. Full-history/real Supabase/PostGIS/Storage/native proof remains open."
+    }
+  ],
+  "integrationNotes": [
+    "Export captures monotonic account generation before build and rechecks after preparation/confirmation/availability and before file write/share.",
+    "Clear search history uses clearHistory, preserving active query/filter intent.",
+    "Social profile details retain real dish navigation/prefetch alongside accessible previous/next media controls."
+  ]
+}

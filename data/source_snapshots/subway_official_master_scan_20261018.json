@@ -1,0 +1,1674 @@
+{
+  "dataset": "Subway Singapore official locator, menu, and media scan against canonical master",
+  "captured_at": "2026-10-18T18:04:15+08:00",
+  "canonical_master": {
+    "path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "sha256": "3ce9c0b79a9dbc4fb8724061754b0f3adfdbbeff56aa9caca71b8c5353fff9b7"
+  },
+  "exact_branch_join_method": "Locator record joins a unique SFA licence row only when normalized postal code, street number, and unit all match. No name-only/postal-only/fuzzy joins; duplicates and ambiguous matches are excluded.",
+  "source_capture": {
+    "locator_page": {
+      "url": "https://subwayisfresh.com.sg/where-to-eat/",
+      "status": 200,
+      "observed_at": "2026-10-18T18:03:51+08:00",
+      "http_date": "Sun, 18 Oct 2026 10:03:51 GMT",
+      "sha256": "51c02ac753a6cdb8ac7e861d6c82936a808695954b1b6162eed2ff2ab57a7f61",
+      "bytes": 137194
+    },
+    "locator_data": {
+      "endpoint": "https://subwayisfresh.com.sg/wp-admin/admin-ajax.php",
+      "parameters": {
+        "action": "asl_load_stores",
+        "load_all": "1",
+        "layout": "0",
+        "nonce": "fresh public page nonce; not retained"
+      },
+      "status": 200,
+      "observed_at": "2026-10-18T18:03:53+08:00",
+      "http_date": "Sun, 18 Oct 2026 10:03:53 GMT",
+      "sha256": "8b532f1bf7bbd60008ae76195eb508f2a0f948b09966567900bcc567c3b332b4",
+      "bytes": 111424,
+      "records": 152
+    },
+    "menu_pages": [
+      {
+        "page": "overview",
+        "url": "https://www.subway.com/en-sg/menunutrition/menu",
+        "http_status": 200,
+        "date_header": "Sun, 18 Oct 2026 10:04:08 GMT",
+        "last_modified": "Thu, 11 Jun 2026 04:34:55 GMT",
+        "etag": "\"4adfaba17c25bd7b00dc85fb9a3ca3e3:1781152495.800752\"",
+        "sha256": "330528d28ee67f8fd37ec4956a7128bd9d3bc0b463fd7eaeb6d501fdd677e643",
+        "bytes": 264637,
+        "title": "Menu | SUBWAY.com - Singapore (English)",
+        "product_card_count": 0
+      },
+      {
+        "page": "Sandwiches",
+        "url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+        "http_status": 200,
+        "date_header": "Sun, 18 Oct 2026 10:04:08 GMT",
+        "last_modified": "Thu, 11 Jun 2026 04:35:08 GMT",
+        "etag": "\"975aac0fb98c96382b17b6668ea078ce:1781152508.582762\"",
+        "sha256": "58947b50cf3162482c82593f0fce42b2480de7c3f93e07b6a9f8fcebe200d054",
+        "bytes": 254213,
+        "title": "Menu - Sandwiches | SUBWAY.com - Singapore (English)",
+        "product_card_count": 16
+      },
+      {
+        "page": "Breakfast",
+        "url": "https://www.subway.com/en-sg/menunutrition/menu/breakfast",
+        "http_status": 200,
+        "date_header": "Sun, 18 Oct 2026 10:04:08 GMT",
+        "last_modified": "Thu, 11 Jun 2026 04:34:55 GMT",
+        "etag": "\"99cb853984a39b014531409dfa287101:1781152495.425688\"",
+        "sha256": "e4cd047b708f7c24003e56a8c8cdac56106213ffeca302b36b2793327da0db18",
+        "bytes": 243468,
+        "title": "Menu - Breakfast | SUBWAY.com - Singapore (English)",
+        "product_card_count": 5
+      },
+      {
+        "page": "Sides & Drinks",
+        "url": "https://www.subway.com/en-sg/menunutrition/menu/sidesdrinksextras",
+        "http_status": 200,
+        "date_header": "Sun, 18 Oct 2026 10:04:08 GMT",
+        "last_modified": "Thu, 11 Jun 2026 04:35:08 GMT",
+        "etag": "\"98d0534b2c922136de834aa54e9c4b14:1781152508.958726\"",
+        "sha256": "30d0e2779088a8c3b42ff16ca4653b84d197135c1fb43dd84509ce8fa75e83f2",
+        "bytes": 251155,
+        "title": "Menu - Drinks | SUBWAY.com - Singapore (English)",
+        "product_card_count": 9
+      },
+      {
+        "page": "Salads",
+        "url": "https://www.subway.com/en-SG/MenuNutrition/Menu/Salads",
+        "http_status": 200,
+        "date_header": "Sun, 18 Oct 2026 10:04:08 GMT",
+        "last_modified": "Thu, 11 Jun 2026 04:35:08 GMT",
+        "etag": "\"124d03fcd2a7751ae88bda762f8e46fd:1781152508.495764\"",
+        "sha256": "3cc24697ebf1d90a383f1e7dac94c13cd12487d0eb827ea5a4a2852ecaa9e3f0",
+        "bytes": 183715,
+        "title": "Error | www.subway.com",
+        "product_card_count": 0
+      },
+      {
+        "page": "Breads & Toppings",
+        "url": "https://www.subway.com/en-sg/menunutrition/menu/breadsandtoppings",
+        "http_status": 200,
+        "date_header": "Sun, 18 Oct 2026 10:04:09 GMT",
+        "last_modified": "Thu, 11 Jun 2026 04:34:55 GMT",
+        "etag": "\"543467e0ca10f6721386c5d01b4d6530:1781152495.278532\"",
+        "sha256": "c4fadc6c7081141cf2fca40da6c0a35d925ec1f5b11a3868b85f03446e95f981",
+        "bytes": 245840,
+        "title": "Breads, Toppings & Extras",
+        "product_card_count": 0
+      }
+    ],
+    "image_head_checks": {
+      "method": "HTTP HEAD, no body downloaded",
+      "candidate_count": 30,
+      "unique_url_count": 30,
+      "status_200_count": 30
+    }
+  },
+  "directory_findings": {
+    "subway_directory_rows": 138,
+    "locator_records": 152,
+    "strict_locator_rows": 92,
+    "strict_sfa_licences": 91,
+    "duplicate_groups_excluded": [
+      {
+        "sfa_licence": "NE18187L000",
+        "locator_ids": [
+          "152",
+          "135"
+        ],
+        "titles": [
+          "Oasis Terraces",
+          "Punggol Oasis"
+        ]
+      }
+    ],
+    "unique_strict_matches": 90,
+    "non_exact_records_excluded_count": 60,
+    "ambiguous_matches_excluded": [],
+    "contact_status": {
+      "matches": 85,
+      "conflicts": 5
+    },
+    "new_blank_contact_candidates": [],
+    "conflicting_contacts_not_overwritten": [
+      {
+        "sfa_licence": "CE24E86E000",
+        "locator_id": "38",
+        "current_contact": "Contact: +6587748013",
+        "locator_contact": "Contact: +65 6509 6354",
+        "action": "No overwrite."
+      },
+      {
+        "sfa_licence": "S96191A000",
+        "locator_id": "12",
+        "current_contact": "Contact: +6587748917",
+        "locator_contact": "Contact: +65 6358 2686",
+        "action": "No overwrite."
+      },
+      {
+        "sfa_licence": "NE16790B000",
+        "locator_id": "5",
+        "current_contact": "Contact: +6569084353",
+        "locator_contact": "Contact: +65 6246 2860",
+        "action": "No overwrite."
+      },
+      {
+        "sfa_licence": "NE24628C000",
+        "locator_id": "36",
+        "current_contact": "Contact: +6588041869",
+        "locator_contact": "Contact: +65 6587 3771",
+        "action": "No overwrite."
+      },
+      {
+        "sfa_licence": "NW20H92J000",
+        "locator_id": "78",
+        "current_contact": "Contact: +6596285851",
+        "locator_contact": "Contact: +65 6970 8102",
+        "action": "No overwrite."
+      }
+    ],
+    "previous_42_contacts_revalidated": {
+      "count": 42,
+      "passes": 42,
+      "failures": [],
+      "records": [
+        {
+          "sfa_licence": "C76094A000",
+          "locator_id": "147",
+          "current_workbook_contact": "Contact: +65 8902 3037",
+          "current_locator_phone": "Contact: +65 8902 3037",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "CE08G83V000",
+          "locator_id": "145",
+          "current_workbook_contact": "Contact: +65 8878 8878",
+          "current_locator_phone": "Contact: +65 8878 8878",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "CE08I61V000",
+          "locator_id": "131",
+          "current_workbook_contact": "Contact: +65 6592 4553",
+          "current_locator_phone": "Contact: +65 6592 4553",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "CE10K37X000",
+          "locator_id": "136",
+          "current_workbook_contact": "Contact: +65 9663 8276",
+          "current_locator_phone": "Contact: +65 9663 8276",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "CE13U87B000",
+          "locator_id": "90",
+          "current_workbook_contact": "Contact: +65 6684 0228",
+          "current_locator_phone": "Contact: +65 6684 0228",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "CE14I34C000",
+          "locator_id": "64",
+          "current_workbook_contact": "Contact: +65 6844 9240",
+          "current_locator_phone": "Contact: +65 6844 9240",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "CE15285C000",
+          "locator_id": "134",
+          "current_workbook_contact": "Contact: +65 6902 0294",
+          "current_locator_phone": "Contact: +65 6902 0294",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "CE15F97E000",
+          "locator_id": "43",
+          "current_workbook_contact": "Contact: +65 6385 3368",
+          "current_locator_phone": "Contact: +65 6385 3368",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "CE16470V000",
+          "locator_id": "50",
+          "current_workbook_contact": "Contact: +65 6734 8108",
+          "current_locator_phone": "Contact: +65 6734 8108",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "CE16683V000",
+          "locator_id": "11",
+          "current_workbook_contact": "Contact: +65 6352 9058",
+          "current_locator_phone": "Contact: +65 6352 9058",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "CE20E35C000",
+          "locator_id": "141",
+          "current_workbook_contact": "Contact: +65 6592 0113",
+          "current_locator_phone": "Contact: +65 6592 0113",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "CE20L39V000",
+          "locator_id": "117",
+          "current_workbook_contact": "Contact: +65 6208 3472",
+          "current_locator_phone": "Contact: +65 6208 3472",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "CE21R98C000",
+          "locator_id": "150",
+          "current_workbook_contact": "Contact: +65 9026 4923",
+          "current_locator_phone": "Contact: +65 9026 4923",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "CE22512L000",
+          "locator_id": "27",
+          "current_workbook_contact": "Contact: +65 6459 9880",
+          "current_locator_phone": "Contact: +65 6459 9880",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "CE23187L000",
+          "locator_id": "124",
+          "current_workbook_contact": "Contact: +65 6517 9729",
+          "current_locator_phone": "Contact: +65 6517 9729",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "CE24317V000",
+          "locator_id": "143",
+          "current_workbook_contact": "Contact: +65 8082 0028",
+          "current_locator_phone": "Contact: +65 8082 0028",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "CE24601X000",
+          "locator_id": "138",
+          "current_workbook_contact": "Contact: +65 9384 6887",
+          "current_locator_phone": "Contact: +65 9384 6887",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "CE24C57B000",
+          "locator_id": "55",
+          "current_workbook_contact": "Contact: +65 6022 0602",
+          "current_locator_phone": "Contact: +65 6022 0602",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "CE24G64P000",
+          "locator_id": "107",
+          "current_workbook_contact": "Contact: +65 6808 2728",
+          "current_locator_phone": "Contact: +65 6808 2728",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "E01197K000",
+          "locator_id": "130",
+          "current_workbook_contact": "Contact: +65 9695 5771",
+          "current_locator_phone": "Contact: +65 9695 5771",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "E95224E000",
+          "locator_id": "8",
+          "current_workbook_contact": "Contact: +65 9337 8701",
+          "current_locator_phone": "Contact: +65 9337 8701",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "J01011L000",
+          "locator_id": "115",
+          "current_workbook_contact": "Contact: +65 6908 7025",
+          "current_locator_phone": "Contact: +65 6908 7025",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "NE08194B000",
+          "locator_id": "121",
+          "current_workbook_contact": "Contact: +65 6966 3509",
+          "current_locator_phone": "Contact: +65 6966 3509",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "NE10309C000",
+          "locator_id": "47",
+          "current_workbook_contact": "Contact: +65 6312 0289",
+          "current_locator_phone": "Contact: +65 6312 0289",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "NE14021V000",
+          "locator_id": "96",
+          "current_workbook_contact": "Contact: +65 6544 1108",
+          "current_locator_phone": "Contact: +65 6544 1108",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "NE21M52P000",
+          "locator_id": "118",
+          "current_workbook_contact": "Contact: +65 6908 5700",
+          "current_locator_phone": "Contact: +65 6908 5700",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "NE22M51K000",
+          "locator_id": "66",
+          "current_workbook_contact": "Contact: +65 9833 1353",
+          "current_locator_phone": "Contact: +65 9833 1353",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "NE23Q53C000",
+          "locator_id": "139",
+          "current_workbook_contact": "Contact: +65 6994 9441",
+          "current_locator_phone": "Contact: +65 6994 9441",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "NE24231P000",
+          "locator_id": "74",
+          "current_workbook_contact": "Contact: +65 6338 3886",
+          "current_locator_phone": "Contact: +65 6338 3886",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "NW11157B000",
+          "locator_id": "100",
+          "current_workbook_contact": "Contact: +65 6917 9054",
+          "current_locator_phone": "Contact: +65 6917 9054",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "NW17456C000",
+          "locator_id": "132",
+          "current_workbook_contact": "Contact: +65 6530 3271",
+          "current_locator_phone": "Contact: +65 6530 3271",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "NW17605N000",
+          "locator_id": "62",
+          "current_workbook_contact": "Contact: +65 6760 5833",
+          "current_locator_phone": "Contact: +65 6760 5833",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "NW19U97N000",
+          "locator_id": "79",
+          "current_workbook_contact": "Contact: +65 6610 9571",
+          "current_locator_phone": "Contact: +65 6610 9571",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "NW22J92J000",
+          "locator_id": "129",
+          "current_workbook_contact": "Contact: +65 6015 0593",
+          "current_locator_phone": "Contact: +65 6015 0593",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "NW23002L000",
+          "locator_id": "123",
+          "current_workbook_contact": "Contact: +65 6219 5868",
+          "current_locator_phone": "Contact: +65 6219 5868",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "SE14599N000",
+          "locator_id": "45",
+          "current_workbook_contact": "Contact: +65 6844 9938",
+          "current_locator_phone": "Contact: +65 6844 9938",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "SE15348X000",
+          "locator_id": "76",
+          "current_workbook_contact": "Contact: +65 9088 8801",
+          "current_locator_phone": "Contact: +65 9088 8801",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "SE16591N005",
+          "locator_id": "75",
+          "current_workbook_contact": "Contact: +65 8894 2897",
+          "current_locator_phone": "Contact: +65 8894 2897",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "SE23Q44J000",
+          "locator_id": "144",
+          "current_workbook_contact": "Contact: +65 6447 0797",
+          "current_locator_phone": "Contact: +65 6447 0797",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "SW12I21N000",
+          "locator_id": "86",
+          "current_workbook_contact": "Contact: +65 6777 8234",
+          "current_locator_phone": "Contact: +65 6777 8234",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "SW24B43B000",
+          "locator_id": "125",
+          "current_workbook_contact": "Contact: +65 6022 0803",
+          "current_locator_phone": "Contact: +65 6022 0803",
+          "status": "pass"
+        },
+        {
+          "sfa_licence": "SW24G80A000",
+          "locator_id": "148",
+          "current_workbook_contact": "Contact: +65 6041 1955",
+          "current_locator_phone": "Contact: +65 6041 1955",
+          "status": "pass"
+        }
+      ]
+    },
+    "new_exact_coordinate_candidates": [
+      {
+        "sfa_licence": "J01011L000",
+        "locator_id": "115",
+        "locator_name": "Choa Chu Kang Sports Centre",
+        "locator_address": "1 Choa Chu Kang Street 53, #02-04",
+        "postal_code": "689236",
+        "proposed_latitude": 1.3909804,
+        "proposed_longitude": 103.7484672,
+        "current_latitude": null,
+        "current_longitude": null,
+        "precision": "Official Subway locator map marker; exact street/unit/postal match, not surveyed stall-front precision.",
+        "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+        "observed_at": "2026-10-18T18:03:53+08:00"
+      },
+      {
+        "sfa_licence": "NW19U97N000",
+        "locator_id": "79",
+        "locator_name": "Hillion Mall",
+        "locator_address": "17 Petir Road #02-21, Hillion Mall",
+        "postal_code": "678278",
+        "proposed_latitude": 1.3782124,
+        "proposed_longitude": 103.7530343,
+        "current_latitude": null,
+        "current_longitude": null,
+        "precision": "Official Subway locator map marker; exact street/unit/postal match, not surveyed stall-front precision.",
+        "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+        "observed_at": "2026-10-18T18:03:53+08:00"
+      },
+      {
+        "sfa_licence": "CE24317V000",
+        "locator_id": "143",
+        "locator_name": "Tan Tock Seng Hospital",
+        "locator_address": "11 Jalan Tan Tock Seng #01-18 ",
+        "postal_code": "308433",
+        "proposed_latitude": 1.3210969,
+        "proposed_longitude": 103.8250401,
+        "current_latitude": null,
+        "current_longitude": null,
+        "precision": "Official Subway locator map marker; exact street/unit/postal match, not surveyed stall-front precision.",
+        "source_url": "https://subwayisfresh.com.sg/where-to-eat/",
+        "observed_at": "2026-10-18T18:03:53+08:00"
+      }
+    ],
+    "other_locator_fields": {
+      "website": "blank on locator records",
+      "hours": "all 152 records show the same Mon-Sun 09:30-18:30; treated as generic/suspicious and not proposed",
+      "ratings": "not provided",
+      "venue_photos": "only generic brand logo; no branch-specific photos proposed"
+    }
+  },
+  "menu_findings": {
+    "menu_card_count": 30,
+    "existing_brand_menu_items": 5,
+    "new_brand_menu_item_candidates": 25,
+    "new_menu_items": [
+      {
+        "item_id": "4115",
+        "name": "Chicken Teriyaki",
+        "section": "Sandwiches",
+        "source_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+        "price": null,
+        "branch_availability": "not confirmed"
+      },
+      {
+        "item_id": "4233",
+        "name": "Chicken Bacon Ranch",
+        "section": "Sandwiches",
+        "source_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+        "price": null,
+        "branch_availability": "not confirmed"
+      },
+      {
+        "item_id": "4231",
+        "name": "Cold Cut Trio",
+        "section": "Sandwiches",
+        "source_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+        "price": null,
+        "branch_availability": "not confirmed"
+      },
+      {
+        "item_id": "4112",
+        "name": "Italian B.M.T.™",
+        "section": "Sandwiches",
+        "source_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+        "price": null,
+        "branch_availability": "not confirmed"
+      },
+      {
+        "item_id": "4160",
+        "name": "Egg Mayo",
+        "section": "Sandwiches",
+        "source_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+        "price": null,
+        "branch_availability": "not confirmed"
+      },
+      {
+        "item_id": "4159",
+        "name": "Meatball Marinara Melt",
+        "section": "Sandwiches",
+        "source_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+        "price": null,
+        "branch_availability": "not confirmed"
+      },
+      {
+        "item_id": "4120",
+        "name": "Roast Beef",
+        "section": "Sandwiches",
+        "source_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+        "price": null,
+        "branch_availability": "not confirmed"
+      },
+      {
+        "item_id": "4118",
+        "name": "Roasted Chicken Breast",
+        "section": "Sandwiches",
+        "source_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+        "price": null,
+        "branch_availability": "not confirmed"
+      },
+      {
+        "item_id": "4114",
+        "name": "Steak & Cheese",
+        "section": "Sandwiches",
+        "source_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+        "price": null,
+        "branch_availability": "not confirmed"
+      },
+      {
+        "item_id": "4113",
+        "name": "Subway Club™",
+        "section": "Sandwiches",
+        "source_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+        "price": null,
+        "branch_availability": "not confirmed"
+      },
+      {
+        "item_id": "4116",
+        "name": "Subway Melt™",
+        "section": "Sandwiches",
+        "source_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+        "price": null,
+        "branch_availability": "not confirmed"
+      },
+      {
+        "item_id": "4119",
+        "name": "Chicken Ham",
+        "section": "Sandwiches",
+        "source_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+        "price": null,
+        "branch_availability": "not confirmed"
+      },
+      {
+        "item_id": "4117",
+        "name": "Tuna",
+        "section": "Sandwiches",
+        "source_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+        "price": null,
+        "branch_availability": "not confirmed"
+      },
+      {
+        "item_id": "4234",
+        "name": "Turkey",
+        "section": "Sandwiches",
+        "source_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+        "price": null,
+        "branch_availability": "not confirmed"
+      },
+      {
+        "item_id": "4122",
+        "name": "Veggie Delite™",
+        "section": "Sandwiches",
+        "source_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+        "price": null,
+        "branch_availability": "not confirmed"
+      },
+      {
+        "item_id": "4230",
+        "name": "Veggie Patty",
+        "section": "Sandwiches",
+        "source_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+        "price": null,
+        "branch_availability": "not confirmed"
+      },
+      {
+        "item_id": "4134",
+        "name": "Chips",
+        "section": "Sides & Drinks",
+        "source_url": "https://www.subway.com/en-sg/menunutrition/menu/sidesdrinksextras",
+        "price": null,
+        "branch_availability": "not confirmed"
+      },
+      {
+        "item_id": "4245",
+        "name": "Energy Bar & Fruit Crisps",
+        "section": "Sides & Drinks",
+        "source_url": "https://www.subway.com/en-sg/menunutrition/menu/sidesdrinksextras",
+        "price": null,
+        "branch_availability": "not confirmed"
+      },
+      {
+        "item_id": "4246",
+        "name": "Yogurt",
+        "section": "Sides & Drinks",
+        "source_url": "https://www.subway.com/en-sg/menunutrition/menu/sidesdrinksextras",
+        "price": null,
+        "branch_availability": "not confirmed"
+      },
+      {
+        "item_id": "4135",
+        "name": "Cookies",
+        "section": "Sides & Drinks",
+        "source_url": "https://www.subway.com/en-sg/menunutrition/menu/sidesdrinksextras",
+        "price": null,
+        "branch_availability": "not confirmed"
+      },
+      {
+        "item_id": "4241",
+        "name": "Bottled Dasani Mineral Water",
+        "section": "Sides & Drinks",
+        "source_url": "https://www.subway.com/en-sg/menunutrition/menu/sidesdrinksextras",
+        "price": null,
+        "branch_availability": "not confirmed"
+      },
+      {
+        "item_id": "4242",
+        "name": "Minute Maid® Pulpy Orange Juice",
+        "section": "Sides & Drinks",
+        "source_url": "https://www.subway.com/en-sg/menunutrition/menu/sidesdrinksextras",
+        "price": null,
+        "branch_availability": "not confirmed"
+      },
+      {
+        "item_id": "4240",
+        "name": "Fountain Drinks",
+        "section": "Sides & Drinks",
+        "source_url": "https://www.subway.com/en-sg/menunutrition/menu/sidesdrinksextras",
+        "price": null,
+        "branch_availability": "not confirmed"
+      },
+      {
+        "item_id": "4244",
+        "name": "Ayataka™ Japanese Green Tea",
+        "section": "Sides & Drinks",
+        "source_url": "https://www.subway.com/en-sg/menunutrition/menu/sidesdrinksextras",
+        "price": null,
+        "branch_availability": "not confirmed"
+      },
+      {
+        "item_id": "4153",
+        "name": "Coffee/Tea",
+        "section": "Sides & Drinks",
+        "source_url": "https://www.subway.com/en-sg/menunutrition/menu/sidesdrinksextras",
+        "price": null,
+        "branch_availability": "not confirmed"
+      }
+    ],
+    "category_items": [
+      {
+        "item_id": "4115",
+        "menu_item": "Chicken Teriyaki",
+        "section": "Sandwiches",
+        "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+        "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-all-sandwiches-chicken-teriyaki-PH-308x140.jpg",
+        "menu_item_already_present_for_brand": false,
+        "published_price": null,
+        "branch_availability": "not confirmed; Singapore brand-level menu listing",
+        "menu_rights_status": "permission_required",
+        "image_candidate_status": "unapproved; permission required",
+        "visual_check": "not downloaded/visually checked",
+        "observed_at": "2026-10-18T18:04:08+08:00",
+        "image_http_head_status": 200
+      },
+      {
+        "item_id": "4233",
+        "menu_item": "Chicken Bacon Ranch",
+        "section": "Sandwiches",
+        "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+        "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-all-sandwiches-chicken-bacon-ranch-SG-308x140.jpg",
+        "menu_item_already_present_for_brand": false,
+        "published_price": null,
+        "branch_availability": "not confirmed; Singapore brand-level menu listing",
+        "menu_rights_status": "permission_required",
+        "image_candidate_status": "unapproved; permission required",
+        "visual_check": "not downloaded/visually checked",
+        "observed_at": "2026-10-18T18:04:08+08:00",
+        "image_http_head_status": 200
+      },
+      {
+        "item_id": "4231",
+        "menu_item": "Cold Cut Trio",
+        "section": "Sandwiches",
+        "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+        "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-sandwich-coldcuttrio_SG.jpg",
+        "menu_item_already_present_for_brand": false,
+        "published_price": null,
+        "branch_availability": "not confirmed; Singapore brand-level menu listing",
+        "menu_rights_status": "permission_required",
+        "image_candidate_status": "unapproved; permission required",
+        "visual_check": "not downloaded/visually checked",
+        "observed_at": "2026-10-18T18:04:08+08:00",
+        "image_http_head_status": 200
+      },
+      {
+        "item_id": "4112",
+        "menu_item": "Italian B.M.T.™",
+        "section": "Sandwiches",
+        "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+        "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-all-sandwiches-italian-bmt-PH-308x140.jpg",
+        "menu_item_already_present_for_brand": false,
+        "published_price": null,
+        "branch_availability": "not confirmed; Singapore brand-level menu listing",
+        "menu_rights_status": "permission_required",
+        "image_candidate_status": "unapproved; permission required",
+        "visual_check": "not downloaded/visually checked",
+        "observed_at": "2026-10-18T18:04:08+08:00",
+        "image_http_head_status": 200
+      },
+      {
+        "item_id": "4160",
+        "menu_item": "Egg Mayo",
+        "section": "Sandwiches",
+        "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+        "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-sandwich-egg_w_mayo_SG.jpg",
+        "menu_item_already_present_for_brand": false,
+        "published_price": null,
+        "branch_availability": "not confirmed; Singapore brand-level menu listing",
+        "menu_rights_status": "permission_required",
+        "image_candidate_status": "unapproved; permission required",
+        "visual_check": "not downloaded/visually checked",
+        "observed_at": "2026-10-18T18:04:08+08:00",
+        "image_http_head_status": 200
+      },
+      {
+        "item_id": "4159",
+        "menu_item": "Meatball Marinara Melt",
+        "section": "Sandwiches",
+        "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+        "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-all-sandwiches-meatball-marinara-PH-308x140.jpg",
+        "menu_item_already_present_for_brand": false,
+        "published_price": null,
+        "branch_availability": "not confirmed; Singapore brand-level menu listing",
+        "menu_rights_status": "permission_required",
+        "image_candidate_status": "unapproved; permission required",
+        "visual_check": "not downloaded/visually checked",
+        "observed_at": "2026-10-18T18:04:08+08:00",
+        "image_http_head_status": 200
+      },
+      {
+        "item_id": "4120",
+        "menu_item": "Roast Beef",
+        "section": "Sandwiches",
+        "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+        "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-all-sandwiches-roast-beef-PH-308x140.jpg",
+        "menu_item_already_present_for_brand": false,
+        "published_price": null,
+        "branch_availability": "not confirmed; Singapore brand-level menu listing",
+        "menu_rights_status": "permission_required",
+        "image_candidate_status": "unapproved; permission required",
+        "visual_check": "not downloaded/visually checked",
+        "observed_at": "2026-10-18T18:04:08+08:00",
+        "image_http_head_status": 200
+      },
+      {
+        "item_id": "4118",
+        "menu_item": "Roasted Chicken Breast",
+        "section": "Sandwiches",
+        "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+        "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-all-sandwiches-roasted-chicken-PH-308x140.jpg",
+        "menu_item_already_present_for_brand": false,
+        "published_price": null,
+        "branch_availability": "not confirmed; Singapore brand-level menu listing",
+        "menu_rights_status": "permission_required",
+        "image_candidate_status": "unapproved; permission required",
+        "visual_check": "not downloaded/visually checked",
+        "observed_at": "2026-10-18T18:04:08+08:00",
+        "image_http_head_status": 200
+      },
+      {
+        "item_id": "4114",
+        "menu_item": "Steak & Cheese",
+        "section": "Sandwiches",
+        "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+        "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-all-sandwiches-steak-cheese-SG-234x140.jpg",
+        "menu_item_already_present_for_brand": false,
+        "published_price": null,
+        "branch_availability": "not confirmed; Singapore brand-level menu listing",
+        "menu_rights_status": "permission_required",
+        "image_candidate_status": "unapproved; permission required",
+        "visual_check": "not downloaded/visually checked",
+        "observed_at": "2026-10-18T18:04:08+08:00",
+        "image_http_head_status": 200
+      },
+      {
+        "item_id": "4113",
+        "menu_item": "Subway Club™",
+        "section": "Sandwiches",
+        "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+        "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-all-sandwiches-subway-club-PH-308x140.jpg",
+        "menu_item_already_present_for_brand": false,
+        "published_price": null,
+        "branch_availability": "not confirmed; Singapore brand-level menu listing",
+        "menu_rights_status": "permission_required",
+        "image_candidate_status": "unapproved; permission required",
+        "visual_check": "not downloaded/visually checked",
+        "observed_at": "2026-10-18T18:04:08+08:00",
+        "image_http_head_status": 200
+      },
+      {
+        "item_id": "4116",
+        "menu_item": "Subway Melt™",
+        "section": "Sandwiches",
+        "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+        "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-all-sandwiches-subway-melt-PH-308x140.jpg",
+        "menu_item_already_present_for_brand": false,
+        "published_price": null,
+        "branch_availability": "not confirmed; Singapore brand-level menu listing",
+        "menu_rights_status": "permission_required",
+        "image_candidate_status": "unapproved; permission required",
+        "visual_check": "not downloaded/visually checked",
+        "observed_at": "2026-10-18T18:04:08+08:00",
+        "image_http_head_status": 200
+      },
+      {
+        "item_id": "4119",
+        "menu_item": "Chicken Ham",
+        "section": "Sandwiches",
+        "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+        "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-all-sandwiches-ham-PH-308x140.jpg",
+        "menu_item_already_present_for_brand": false,
+        "published_price": null,
+        "branch_availability": "not confirmed; Singapore brand-level menu listing",
+        "menu_rights_status": "permission_required",
+        "image_candidate_status": "unapproved; permission required",
+        "visual_check": "not downloaded/visually checked",
+        "observed_at": "2026-10-18T18:04:08+08:00",
+        "image_http_head_status": 200
+      },
+      {
+        "item_id": "4117",
+        "menu_item": "Tuna",
+        "section": "Sandwiches",
+        "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+        "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-all-sandwiches-tuna-PH-308x140.jpg",
+        "menu_item_already_present_for_brand": false,
+        "published_price": null,
+        "branch_availability": "not confirmed; Singapore brand-level menu listing",
+        "menu_rights_status": "permission_required",
+        "image_candidate_status": "unapproved; permission required",
+        "visual_check": "not downloaded/visually checked",
+        "observed_at": "2026-10-18T18:04:08+08:00",
+        "image_http_head_status": 200
+      },
+      {
+        "item_id": "4234",
+        "menu_item": "Turkey",
+        "section": "Sandwiches",
+        "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+        "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-all-sandwiches-turkey-SG-308x140.jpg",
+        "menu_item_already_present_for_brand": false,
+        "published_price": null,
+        "branch_availability": "not confirmed; Singapore brand-level menu listing",
+        "menu_rights_status": "permission_required",
+        "image_candidate_status": "unapproved; permission required",
+        "visual_check": "not downloaded/visually checked",
+        "observed_at": "2026-10-18T18:04:08+08:00",
+        "image_http_head_status": 200
+      },
+      {
+        "item_id": "4122",
+        "menu_item": "Veggie Delite™",
+        "section": "Sandwiches",
+        "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+        "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-all-sandwiches-veggie-delite-PH-308x140.jpg",
+        "menu_item_already_present_for_brand": false,
+        "published_price": null,
+        "branch_availability": "not confirmed; Singapore brand-level menu listing",
+        "menu_rights_status": "permission_required",
+        "image_candidate_status": "unapproved; permission required",
+        "visual_check": "not downloaded/visually checked",
+        "observed_at": "2026-10-18T18:04:08+08:00",
+        "image_http_head_status": 200
+      },
+      {
+        "item_id": "4230",
+        "menu_item": "Veggie Patty",
+        "section": "Sandwiches",
+        "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+        "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-sandwich-veggiepatty_SG.jpg",
+        "menu_item_already_present_for_brand": false,
+        "published_price": null,
+        "branch_availability": "not confirmed; Singapore brand-level menu listing",
+        "menu_rights_status": "permission_required",
+        "image_candidate_status": "unapproved; permission required",
+        "visual_check": "not downloaded/visually checked",
+        "observed_at": "2026-10-18T18:04:08+08:00",
+        "image_http_head_status": 200
+      },
+      {
+        "item_id": "4164",
+        "menu_item": "Chicken Sausage, Egg & Cheese Flatbread",
+        "section": "Breakfast",
+        "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/breakfast",
+        "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/chicken-sausage-234x140.jpg",
+        "menu_item_already_present_for_brand": true,
+        "published_price": null,
+        "branch_availability": "not confirmed; Singapore brand-level menu listing",
+        "menu_rights_status": "permission_required",
+        "image_candidate_status": "unapproved; permission required",
+        "visual_check": "not downloaded/visually checked",
+        "observed_at": "2026-10-18T18:04:08+08:00",
+        "image_http_head_status": 200
+      },
+      {
+        "item_id": "4731",
+        "menu_item": "Chicken Ham, Egg & Cheese Flatbread",
+        "section": "Breakfast",
+        "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/breakfast",
+        "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-breakfast-ham-egg-cheese-SG-308x140.jpg",
+        "menu_item_already_present_for_brand": true,
+        "published_price": null,
+        "branch_availability": "not confirmed; Singapore brand-level menu listing",
+        "menu_rights_status": "permission_required",
+        "image_candidate_status": "unapproved; permission required",
+        "visual_check": "not downloaded/visually checked",
+        "observed_at": "2026-10-18T18:04:08+08:00",
+        "image_http_head_status": 200
+      },
+      {
+        "item_id": "4730",
+        "menu_item": "Chicken Bacon, Egg & Cheese Flatbread",
+        "section": "Breakfast",
+        "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/breakfast",
+        "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-breakfast-bacon-egg-cheese-SG-308x140.jpg",
+        "menu_item_already_present_for_brand": true,
+        "published_price": null,
+        "branch_availability": "not confirmed; Singapore brand-level menu listing",
+        "menu_rights_status": "permission_required",
+        "image_candidate_status": "unapproved; permission required",
+        "visual_check": "not downloaded/visually checked",
+        "observed_at": "2026-10-18T18:04:08+08:00",
+        "image_http_head_status": 200
+      },
+      {
+        "item_id": "4141",
+        "menu_item": "Egg & Cheese Flatbread",
+        "section": "Breakfast",
+        "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/breakfast",
+        "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/egg-cheese-234x140.jpg",
+        "menu_item_already_present_for_brand": true,
+        "published_price": null,
+        "branch_availability": "not confirmed; Singapore brand-level menu listing",
+        "menu_rights_status": "permission_required",
+        "image_candidate_status": "unapproved; permission required",
+        "visual_check": "not downloaded/visually checked",
+        "observed_at": "2026-10-18T18:04:08+08:00",
+        "image_http_head_status": 200
+      },
+      {
+        "item_id": "4170",
+        "menu_item": "Hashbrowns",
+        "section": "Breakfast",
+        "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/breakfast",
+        "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-breakfast-hashbrowns-SG-308x140.jpg",
+        "menu_item_already_present_for_brand": true,
+        "published_price": null,
+        "branch_availability": "not confirmed; Singapore brand-level menu listing",
+        "menu_rights_status": "permission_required",
+        "image_candidate_status": "unapproved; permission required",
+        "visual_check": "not downloaded/visually checked",
+        "observed_at": "2026-10-18T18:04:08+08:00",
+        "image_http_head_status": 200
+      },
+      {
+        "item_id": "4134",
+        "menu_item": "Chips",
+        "section": "Sides & Drinks",
+        "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sidesdrinksextras",
+        "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-sides-drinks-extras-chips-SG-308x140.jpg",
+        "menu_item_already_present_for_brand": false,
+        "published_price": null,
+        "branch_availability": "not confirmed; Singapore brand-level menu listing",
+        "menu_rights_status": "permission_required",
+        "image_candidate_status": "unapproved; permission required",
+        "visual_check": "not downloaded/visually checked",
+        "observed_at": "2026-10-18T18:04:08+08:00",
+        "image_http_head_status": 200
+      },
+      {
+        "item_id": "4245",
+        "menu_item": "Energy Bar & Fruit Crisps",
+        "section": "Sides & Drinks",
+        "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sidesdrinksextras",
+        "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-sides-drinks-extras-applecrisps-SG-308x140.jpg",
+        "menu_item_already_present_for_brand": false,
+        "published_price": null,
+        "branch_availability": "not confirmed; Singapore brand-level menu listing",
+        "menu_rights_status": "permission_required",
+        "image_candidate_status": "unapproved; permission required",
+        "visual_check": "not downloaded/visually checked",
+        "observed_at": "2026-10-18T18:04:08+08:00",
+        "image_http_head_status": 200
+      },
+      {
+        "item_id": "4246",
+        "menu_item": "Yogurt",
+        "section": "Sides & Drinks",
+        "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sidesdrinksextras",
+        "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-sides-drinks-extras-meijiyogurt-SG-308x140.jpg",
+        "menu_item_already_present_for_brand": false,
+        "published_price": null,
+        "branch_availability": "not confirmed; Singapore brand-level menu listing",
+        "menu_rights_status": "permission_required",
+        "image_candidate_status": "unapproved; permission required",
+        "visual_check": "not downloaded/visually checked",
+        "observed_at": "2026-10-18T18:04:08+08:00",
+        "image_http_head_status": 200
+      },
+      {
+        "item_id": "4135",
+        "menu_item": "Cookies",
+        "section": "Sides & Drinks",
+        "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sidesdrinksextras",
+        "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-sides-drinks-cookies-SG-308x140.jpg",
+        "menu_item_already_present_for_brand": false,
+        "published_price": null,
+        "branch_availability": "not confirmed; Singapore brand-level menu listing",
+        "menu_rights_status": "permission_required",
+        "image_candidate_status": "unapproved; permission required",
+        "visual_check": "not downloaded/visually checked",
+        "observed_at": "2026-10-18T18:04:08+08:00",
+        "image_http_head_status": 200
+      },
+      {
+        "item_id": "4241",
+        "menu_item": "Bottled Dasani Mineral Water",
+        "section": "Sides & Drinks",
+        "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sidesdrinksextras",
+        "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-sides-drinks-extras-minwater-SG-308x140.jpg",
+        "menu_item_already_present_for_brand": false,
+        "published_price": null,
+        "branch_availability": "not confirmed; Singapore brand-level menu listing",
+        "menu_rights_status": "permission_required",
+        "image_candidate_status": "unapproved; permission required",
+        "visual_check": "not downloaded/visually checked",
+        "observed_at": "2026-10-18T18:04:08+08:00",
+        "image_http_head_status": 200
+      },
+      {
+        "item_id": "4242",
+        "menu_item": "Minute Maid® Pulpy Orange Juice",
+        "section": "Sides & Drinks",
+        "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sidesdrinksextras",
+        "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-sides-drinks-extras-mmOJ-SG-308x140.jpg",
+        "menu_item_already_present_for_brand": false,
+        "published_price": null,
+        "branch_availability": "not confirmed; Singapore brand-level menu listing",
+        "menu_rights_status": "permission_required",
+        "image_candidate_status": "unapproved; permission required",
+        "visual_check": "not downloaded/visually checked",
+        "observed_at": "2026-10-18T18:04:08+08:00",
+        "image_http_head_status": 200
+      },
+      {
+        "item_id": "4240",
+        "menu_item": "Fountain Drinks",
+        "section": "Sides & Drinks",
+        "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sidesdrinksextras",
+        "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-sides-drinks-extras-fountainsodas-SG-308x140.jpg",
+        "menu_item_already_present_for_brand": false,
+        "published_price": null,
+        "branch_availability": "not confirmed; Singapore brand-level menu listing",
+        "menu_rights_status": "permission_required",
+        "image_candidate_status": "unapproved; permission required",
+        "visual_check": "not downloaded/visually checked",
+        "observed_at": "2026-10-18T18:04:08+08:00",
+        "image_http_head_status": 200
+      },
+      {
+        "item_id": "4244",
+        "menu_item": "Ayataka™ Japanese Green Tea",
+        "section": "Sides & Drinks",
+        "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sidesdrinksextras",
+        "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-sides-drinks-extras-Ayataka-SG-308x140.jpg",
+        "menu_item_already_present_for_brand": false,
+        "published_price": null,
+        "branch_availability": "not confirmed; Singapore brand-level menu listing",
+        "menu_rights_status": "permission_required",
+        "image_candidate_status": "unapproved; permission required",
+        "visual_check": "not downloaded/visually checked",
+        "observed_at": "2026-10-18T18:04:08+08:00",
+        "image_http_head_status": 200
+      },
+      {
+        "item_id": "4153",
+        "menu_item": "Coffee/Tea",
+        "section": "Sides & Drinks",
+        "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sidesdrinksextras",
+        "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-sides-drinks-extras-coffee-SG-308x140.jpg",
+        "menu_item_already_present_for_brand": false,
+        "published_price": null,
+        "branch_availability": "not confirmed; Singapore brand-level menu listing",
+        "menu_rights_status": "permission_required",
+        "image_candidate_status": "unapproved; permission required",
+        "visual_check": "not downloaded/visually checked",
+        "observed_at": "2026-10-18T18:04:08+08:00",
+        "image_http_head_status": 200
+      }
+    ],
+    "price_available": false,
+    "currency_note": "Captured official pages have Last-Modified 11 Jun 2026 and no per-item effective dates; page presence is current at capture, but recent change is not proven.",
+    "category_exceptions": [
+      {
+        "page": "Salads",
+        "url": "https://www.subway.com/en-SG/MenuNutrition/Menu/Salads",
+        "http_status": 200,
+        "date_header": "Sun, 18 Oct 2026 10:04:08 GMT",
+        "last_modified": "Thu, 11 Jun 2026 04:35:08 GMT",
+        "etag": "\"124d03fcd2a7751ae88bda762f8e46fd:1781152508.495764\"",
+        "sha256": "3cc24697ebf1d90a383f1e7dac94c13cd12487d0eb827ea5a4a2852ecaa9e3f0",
+        "bytes": 183715,
+        "title": "Error | www.subway.com",
+        "product_card_count": 0
+      },
+      {
+        "page": "Breads & Toppings",
+        "url": "https://www.subway.com/en-sg/menunutrition/menu/breadsandtoppings",
+        "http_status": 200,
+        "date_header": "Sun, 18 Oct 2026 10:04:09 GMT",
+        "last_modified": "Thu, 11 Jun 2026 04:34:55 GMT",
+        "etag": "\"543467e0ca10f6721386c5d01b4d6530:1781152495.278532\"",
+        "sha256": "c4fadc6c7081141cf2fca40da6c0a35d925ec1f5b11a3868b85f03446e95f981",
+        "bytes": 245840,
+        "title": "Breads, Toppings & Extras",
+        "product_card_count": 0
+      }
+    ]
+  },
+  "new_official_image_candidates_absent_from_master": [
+    {
+      "item_id": "4115",
+      "menu_item": "Chicken Teriyaki",
+      "section": "Sandwiches",
+      "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+      "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-all-sandwiches-chicken-teriyaki-PH-308x140.jpg",
+      "menu_item_already_present_for_brand": false,
+      "published_price": null,
+      "branch_availability": "not confirmed; Singapore brand-level menu listing",
+      "menu_rights_status": "permission_required",
+      "image_candidate_status": "unapproved; permission required",
+      "visual_check": "not downloaded/visually checked",
+      "observed_at": "2026-10-18T18:04:08+08:00",
+      "image_http_head_status": 200
+    },
+    {
+      "item_id": "4233",
+      "menu_item": "Chicken Bacon Ranch",
+      "section": "Sandwiches",
+      "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+      "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-all-sandwiches-chicken-bacon-ranch-SG-308x140.jpg",
+      "menu_item_already_present_for_brand": false,
+      "published_price": null,
+      "branch_availability": "not confirmed; Singapore brand-level menu listing",
+      "menu_rights_status": "permission_required",
+      "image_candidate_status": "unapproved; permission required",
+      "visual_check": "not downloaded/visually checked",
+      "observed_at": "2026-10-18T18:04:08+08:00",
+      "image_http_head_status": 200
+    },
+    {
+      "item_id": "4231",
+      "menu_item": "Cold Cut Trio",
+      "section": "Sandwiches",
+      "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+      "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-sandwich-coldcuttrio_SG.jpg",
+      "menu_item_already_present_for_brand": false,
+      "published_price": null,
+      "branch_availability": "not confirmed; Singapore brand-level menu listing",
+      "menu_rights_status": "permission_required",
+      "image_candidate_status": "unapproved; permission required",
+      "visual_check": "not downloaded/visually checked",
+      "observed_at": "2026-10-18T18:04:08+08:00",
+      "image_http_head_status": 200
+    },
+    {
+      "item_id": "4112",
+      "menu_item": "Italian B.M.T.™",
+      "section": "Sandwiches",
+      "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+      "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-all-sandwiches-italian-bmt-PH-308x140.jpg",
+      "menu_item_already_present_for_brand": false,
+      "published_price": null,
+      "branch_availability": "not confirmed; Singapore brand-level menu listing",
+      "menu_rights_status": "permission_required",
+      "image_candidate_status": "unapproved; permission required",
+      "visual_check": "not downloaded/visually checked",
+      "observed_at": "2026-10-18T18:04:08+08:00",
+      "image_http_head_status": 200
+    },
+    {
+      "item_id": "4160",
+      "menu_item": "Egg Mayo",
+      "section": "Sandwiches",
+      "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+      "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-sandwich-egg_w_mayo_SG.jpg",
+      "menu_item_already_present_for_brand": false,
+      "published_price": null,
+      "branch_availability": "not confirmed; Singapore brand-level menu listing",
+      "menu_rights_status": "permission_required",
+      "image_candidate_status": "unapproved; permission required",
+      "visual_check": "not downloaded/visually checked",
+      "observed_at": "2026-10-18T18:04:08+08:00",
+      "image_http_head_status": 200
+    },
+    {
+      "item_id": "4159",
+      "menu_item": "Meatball Marinara Melt",
+      "section": "Sandwiches",
+      "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+      "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-all-sandwiches-meatball-marinara-PH-308x140.jpg",
+      "menu_item_already_present_for_brand": false,
+      "published_price": null,
+      "branch_availability": "not confirmed; Singapore brand-level menu listing",
+      "menu_rights_status": "permission_required",
+      "image_candidate_status": "unapproved; permission required",
+      "visual_check": "not downloaded/visually checked",
+      "observed_at": "2026-10-18T18:04:08+08:00",
+      "image_http_head_status": 200
+    },
+    {
+      "item_id": "4120",
+      "menu_item": "Roast Beef",
+      "section": "Sandwiches",
+      "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+      "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-all-sandwiches-roast-beef-PH-308x140.jpg",
+      "menu_item_already_present_for_brand": false,
+      "published_price": null,
+      "branch_availability": "not confirmed; Singapore brand-level menu listing",
+      "menu_rights_status": "permission_required",
+      "image_candidate_status": "unapproved; permission required",
+      "visual_check": "not downloaded/visually checked",
+      "observed_at": "2026-10-18T18:04:08+08:00",
+      "image_http_head_status": 200
+    },
+    {
+      "item_id": "4118",
+      "menu_item": "Roasted Chicken Breast",
+      "section": "Sandwiches",
+      "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+      "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-all-sandwiches-roasted-chicken-PH-308x140.jpg",
+      "menu_item_already_present_for_brand": false,
+      "published_price": null,
+      "branch_availability": "not confirmed; Singapore brand-level menu listing",
+      "menu_rights_status": "permission_required",
+      "image_candidate_status": "unapproved; permission required",
+      "visual_check": "not downloaded/visually checked",
+      "observed_at": "2026-10-18T18:04:08+08:00",
+      "image_http_head_status": 200
+    },
+    {
+      "item_id": "4114",
+      "menu_item": "Steak & Cheese",
+      "section": "Sandwiches",
+      "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+      "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-all-sandwiches-steak-cheese-SG-234x140.jpg",
+      "menu_item_already_present_for_brand": false,
+      "published_price": null,
+      "branch_availability": "not confirmed; Singapore brand-level menu listing",
+      "menu_rights_status": "permission_required",
+      "image_candidate_status": "unapproved; permission required",
+      "visual_check": "not downloaded/visually checked",
+      "observed_at": "2026-10-18T18:04:08+08:00",
+      "image_http_head_status": 200
+    },
+    {
+      "item_id": "4113",
+      "menu_item": "Subway Club™",
+      "section": "Sandwiches",
+      "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+      "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-all-sandwiches-subway-club-PH-308x140.jpg",
+      "menu_item_already_present_for_brand": false,
+      "published_price": null,
+      "branch_availability": "not confirmed; Singapore brand-level menu listing",
+      "menu_rights_status": "permission_required",
+      "image_candidate_status": "unapproved; permission required",
+      "visual_check": "not downloaded/visually checked",
+      "observed_at": "2026-10-18T18:04:08+08:00",
+      "image_http_head_status": 200
+    },
+    {
+      "item_id": "4116",
+      "menu_item": "Subway Melt™",
+      "section": "Sandwiches",
+      "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+      "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-all-sandwiches-subway-melt-PH-308x140.jpg",
+      "menu_item_already_present_for_brand": false,
+      "published_price": null,
+      "branch_availability": "not confirmed; Singapore brand-level menu listing",
+      "menu_rights_status": "permission_required",
+      "image_candidate_status": "unapproved; permission required",
+      "visual_check": "not downloaded/visually checked",
+      "observed_at": "2026-10-18T18:04:08+08:00",
+      "image_http_head_status": 200
+    },
+    {
+      "item_id": "4119",
+      "menu_item": "Chicken Ham",
+      "section": "Sandwiches",
+      "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+      "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-all-sandwiches-ham-PH-308x140.jpg",
+      "menu_item_already_present_for_brand": false,
+      "published_price": null,
+      "branch_availability": "not confirmed; Singapore brand-level menu listing",
+      "menu_rights_status": "permission_required",
+      "image_candidate_status": "unapproved; permission required",
+      "visual_check": "not downloaded/visually checked",
+      "observed_at": "2026-10-18T18:04:08+08:00",
+      "image_http_head_status": 200
+    },
+    {
+      "item_id": "4117",
+      "menu_item": "Tuna",
+      "section": "Sandwiches",
+      "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+      "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-all-sandwiches-tuna-PH-308x140.jpg",
+      "menu_item_already_present_for_brand": false,
+      "published_price": null,
+      "branch_availability": "not confirmed; Singapore brand-level menu listing",
+      "menu_rights_status": "permission_required",
+      "image_candidate_status": "unapproved; permission required",
+      "visual_check": "not downloaded/visually checked",
+      "observed_at": "2026-10-18T18:04:08+08:00",
+      "image_http_head_status": 200
+    },
+    {
+      "item_id": "4234",
+      "menu_item": "Turkey",
+      "section": "Sandwiches",
+      "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+      "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-all-sandwiches-turkey-SG-308x140.jpg",
+      "menu_item_already_present_for_brand": false,
+      "published_price": null,
+      "branch_availability": "not confirmed; Singapore brand-level menu listing",
+      "menu_rights_status": "permission_required",
+      "image_candidate_status": "unapproved; permission required",
+      "visual_check": "not downloaded/visually checked",
+      "observed_at": "2026-10-18T18:04:08+08:00",
+      "image_http_head_status": 200
+    },
+    {
+      "item_id": "4122",
+      "menu_item": "Veggie Delite™",
+      "section": "Sandwiches",
+      "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+      "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-all-sandwiches-veggie-delite-PH-308x140.jpg",
+      "menu_item_already_present_for_brand": false,
+      "published_price": null,
+      "branch_availability": "not confirmed; Singapore brand-level menu listing",
+      "menu_rights_status": "permission_required",
+      "image_candidate_status": "unapproved; permission required",
+      "visual_check": "not downloaded/visually checked",
+      "observed_at": "2026-10-18T18:04:08+08:00",
+      "image_http_head_status": 200
+    },
+    {
+      "item_id": "4230",
+      "menu_item": "Veggie Patty",
+      "section": "Sandwiches",
+      "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sandwiches",
+      "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-sandwich-veggiepatty_SG.jpg",
+      "menu_item_already_present_for_brand": false,
+      "published_price": null,
+      "branch_availability": "not confirmed; Singapore brand-level menu listing",
+      "menu_rights_status": "permission_required",
+      "image_candidate_status": "unapproved; permission required",
+      "visual_check": "not downloaded/visually checked",
+      "observed_at": "2026-10-18T18:04:08+08:00",
+      "image_http_head_status": 200
+    },
+    {
+      "item_id": "4164",
+      "menu_item": "Chicken Sausage, Egg & Cheese Flatbread",
+      "section": "Breakfast",
+      "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/breakfast",
+      "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/chicken-sausage-234x140.jpg",
+      "menu_item_already_present_for_brand": true,
+      "published_price": null,
+      "branch_availability": "not confirmed; Singapore brand-level menu listing",
+      "menu_rights_status": "permission_required",
+      "image_candidate_status": "unapproved; permission required",
+      "visual_check": "not downloaded/visually checked",
+      "observed_at": "2026-10-18T18:04:08+08:00",
+      "image_http_head_status": 200
+    },
+    {
+      "item_id": "4731",
+      "menu_item": "Chicken Ham, Egg & Cheese Flatbread",
+      "section": "Breakfast",
+      "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/breakfast",
+      "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-breakfast-ham-egg-cheese-SG-308x140.jpg",
+      "menu_item_already_present_for_brand": true,
+      "published_price": null,
+      "branch_availability": "not confirmed; Singapore brand-level menu listing",
+      "menu_rights_status": "permission_required",
+      "image_candidate_status": "unapproved; permission required",
+      "visual_check": "not downloaded/visually checked",
+      "observed_at": "2026-10-18T18:04:08+08:00",
+      "image_http_head_status": 200
+    },
+    {
+      "item_id": "4730",
+      "menu_item": "Chicken Bacon, Egg & Cheese Flatbread",
+      "section": "Breakfast",
+      "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/breakfast",
+      "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-breakfast-bacon-egg-cheese-SG-308x140.jpg",
+      "menu_item_already_present_for_brand": true,
+      "published_price": null,
+      "branch_availability": "not confirmed; Singapore brand-level menu listing",
+      "menu_rights_status": "permission_required",
+      "image_candidate_status": "unapproved; permission required",
+      "visual_check": "not downloaded/visually checked",
+      "observed_at": "2026-10-18T18:04:08+08:00",
+      "image_http_head_status": 200
+    },
+    {
+      "item_id": "4141",
+      "menu_item": "Egg & Cheese Flatbread",
+      "section": "Breakfast",
+      "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/breakfast",
+      "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/egg-cheese-234x140.jpg",
+      "menu_item_already_present_for_brand": true,
+      "published_price": null,
+      "branch_availability": "not confirmed; Singapore brand-level menu listing",
+      "menu_rights_status": "permission_required",
+      "image_candidate_status": "unapproved; permission required",
+      "visual_check": "not downloaded/visually checked",
+      "observed_at": "2026-10-18T18:04:08+08:00",
+      "image_http_head_status": 200
+    },
+    {
+      "item_id": "4170",
+      "menu_item": "Hashbrowns",
+      "section": "Breakfast",
+      "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/breakfast",
+      "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-breakfast-hashbrowns-SG-308x140.jpg",
+      "menu_item_already_present_for_brand": true,
+      "published_price": null,
+      "branch_availability": "not confirmed; Singapore brand-level menu listing",
+      "menu_rights_status": "permission_required",
+      "image_candidate_status": "unapproved; permission required",
+      "visual_check": "not downloaded/visually checked",
+      "observed_at": "2026-10-18T18:04:08+08:00",
+      "image_http_head_status": 200
+    },
+    {
+      "item_id": "4134",
+      "menu_item": "Chips",
+      "section": "Sides & Drinks",
+      "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sidesdrinksextras",
+      "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-sides-drinks-extras-chips-SG-308x140.jpg",
+      "menu_item_already_present_for_brand": false,
+      "published_price": null,
+      "branch_availability": "not confirmed; Singapore brand-level menu listing",
+      "menu_rights_status": "permission_required",
+      "image_candidate_status": "unapproved; permission required",
+      "visual_check": "not downloaded/visually checked",
+      "observed_at": "2026-10-18T18:04:08+08:00",
+      "image_http_head_status": 200
+    },
+    {
+      "item_id": "4245",
+      "menu_item": "Energy Bar & Fruit Crisps",
+      "section": "Sides & Drinks",
+      "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sidesdrinksextras",
+      "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-sides-drinks-extras-applecrisps-SG-308x140.jpg",
+      "menu_item_already_present_for_brand": false,
+      "published_price": null,
+      "branch_availability": "not confirmed; Singapore brand-level menu listing",
+      "menu_rights_status": "permission_required",
+      "image_candidate_status": "unapproved; permission required",
+      "visual_check": "not downloaded/visually checked",
+      "observed_at": "2026-10-18T18:04:08+08:00",
+      "image_http_head_status": 200
+    },
+    {
+      "item_id": "4246",
+      "menu_item": "Yogurt",
+      "section": "Sides & Drinks",
+      "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sidesdrinksextras",
+      "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-sides-drinks-extras-meijiyogurt-SG-308x140.jpg",
+      "menu_item_already_present_for_brand": false,
+      "published_price": null,
+      "branch_availability": "not confirmed; Singapore brand-level menu listing",
+      "menu_rights_status": "permission_required",
+      "image_candidate_status": "unapproved; permission required",
+      "visual_check": "not downloaded/visually checked",
+      "observed_at": "2026-10-18T18:04:08+08:00",
+      "image_http_head_status": 200
+    },
+    {
+      "item_id": "4135",
+      "menu_item": "Cookies",
+      "section": "Sides & Drinks",
+      "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sidesdrinksextras",
+      "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-sides-drinks-cookies-SG-308x140.jpg",
+      "menu_item_already_present_for_brand": false,
+      "published_price": null,
+      "branch_availability": "not confirmed; Singapore brand-level menu listing",
+      "menu_rights_status": "permission_required",
+      "image_candidate_status": "unapproved; permission required",
+      "visual_check": "not downloaded/visually checked",
+      "observed_at": "2026-10-18T18:04:08+08:00",
+      "image_http_head_status": 200
+    },
+    {
+      "item_id": "4241",
+      "menu_item": "Bottled Dasani Mineral Water",
+      "section": "Sides & Drinks",
+      "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sidesdrinksextras",
+      "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-sides-drinks-extras-minwater-SG-308x140.jpg",
+      "menu_item_already_present_for_brand": false,
+      "published_price": null,
+      "branch_availability": "not confirmed; Singapore brand-level menu listing",
+      "menu_rights_status": "permission_required",
+      "image_candidate_status": "unapproved; permission required",
+      "visual_check": "not downloaded/visually checked",
+      "observed_at": "2026-10-18T18:04:08+08:00",
+      "image_http_head_status": 200
+    },
+    {
+      "item_id": "4242",
+      "menu_item": "Minute Maid® Pulpy Orange Juice",
+      "section": "Sides & Drinks",
+      "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sidesdrinksextras",
+      "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-sides-drinks-extras-mmOJ-SG-308x140.jpg",
+      "menu_item_already_present_for_brand": false,
+      "published_price": null,
+      "branch_availability": "not confirmed; Singapore brand-level menu listing",
+      "menu_rights_status": "permission_required",
+      "image_candidate_status": "unapproved; permission required",
+      "visual_check": "not downloaded/visually checked",
+      "observed_at": "2026-10-18T18:04:08+08:00",
+      "image_http_head_status": 200
+    },
+    {
+      "item_id": "4240",
+      "menu_item": "Fountain Drinks",
+      "section": "Sides & Drinks",
+      "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sidesdrinksextras",
+      "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-sides-drinks-extras-fountainsodas-SG-308x140.jpg",
+      "menu_item_already_present_for_brand": false,
+      "published_price": null,
+      "branch_availability": "not confirmed; Singapore brand-level menu listing",
+      "menu_rights_status": "permission_required",
+      "image_candidate_status": "unapproved; permission required",
+      "visual_check": "not downloaded/visually checked",
+      "observed_at": "2026-10-18T18:04:08+08:00",
+      "image_http_head_status": 200
+    },
+    {
+      "item_id": "4244",
+      "menu_item": "Ayataka™ Japanese Green Tea",
+      "section": "Sides & Drinks",
+      "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sidesdrinksextras",
+      "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-sides-drinks-extras-Ayataka-SG-308x140.jpg",
+      "menu_item_already_present_for_brand": false,
+      "published_price": null,
+      "branch_availability": "not confirmed; Singapore brand-level menu listing",
+      "menu_rights_status": "permission_required",
+      "image_candidate_status": "unapproved; permission required",
+      "visual_check": "not downloaded/visually checked",
+      "observed_at": "2026-10-18T18:04:08+08:00",
+      "image_http_head_status": 200
+    },
+    {
+      "item_id": "4153",
+      "menu_item": "Coffee/Tea",
+      "section": "Sides & Drinks",
+      "category_page_url": "https://www.subway.com/en-sg/menunutrition/menu/sidesdrinksextras",
+      "image_url": "https://www.subway.com/en-sg/ns/images/menu/SIN/ENG/menu-category-sides-drinks-extras-coffee-SG-308x140.jpg",
+      "menu_item_already_present_for_brand": false,
+      "published_price": null,
+      "branch_availability": "not confirmed; Singapore brand-level menu listing",
+      "menu_rights_status": "permission_required",
+      "image_candidate_status": "unapproved; permission required",
+      "visual_check": "not downloaded/visually checked",
+      "observed_at": "2026-10-18T18:04:08+08:00",
+      "image_http_head_status": 200
+    }
+  ],
+  "caveats": [
+    "All image URLs come from official current Singapore menu cards and returned HTTP 200 to HEAD; no image data downloaded or visually inspected.",
+    "Images are brand-level menu media, not outlet storefront images; no approval or rehosting/display permission established.",
+    "No SFA licence assignment for brand-level menu items because per-outlet availability is not established."
+  ],
+  "integration_recommendation": "No new phone additions: prior 42 are present and match current locator/master. Consider three blank exact-match locator coordinates with precision caveat, 25 brand-level menu items absent from Menu Items, and 30 unapproved image references absent from Image Candidates; keep price, branch availability, reuse rights and approval unconfirmed."
+}

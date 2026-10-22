@@ -1,0 +1,90 @@
+{
+  "refresh": "Refresh119 official menus supplemental proposal",
+  "observed_on": "2026-10-19",
+  "workbook_path": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "028e757cf68c3fd6be935a2908484a98ba1865c4318975cfde543d1175bf5475",
+  "method": "Read-only proposal based on exact SFA licence IDs in workbook and current official operator pages. No workbook edits. No paid APIs or third-party food-delivery platform content used.",
+  "proposals": [
+    {
+      "field": "Menu URL",
+      "value": "https://www.dintaifung.com.sg/menu/",
+      "sfa_licences": [
+        "CE04553V000",
+        "CE06B75A000",
+        "CE10I56B000",
+        "CE12069X000",
+        "CE13M19J000",
+        "CE13W73B000",
+        "CE14I30L000",
+        "CE16687L000",
+        "CE16D72E000",
+        "CE19472N000",
+        "CE23O13J000",
+        "CE26E34V000",
+        "NE15781L000",
+        "NE16440X000",
+        "NE25708V000",
+        "NW17993J000",
+        "S96213L000",
+        "SE10629B000",
+        "SE19262X000",
+        "SW06841A000",
+        "SW08939K000",
+        "SW13T88L000",
+        "SW24O07X000",
+        "SW25A52X000",
+        "SW25F83L000",
+        "W03362P000",
+        "W90083B000"
+      ],
+      "match_confidence": "high for official DTF brand menu relationship; branch-specific applicability/pricing not guaranteed",
+      "evidence": [
+        "Official menu page https://www.dintaifung.com.sg/menu/ crawled 2026-10-19; lists menu categories and dish names. Page explicitly says menu, pricing and serving size may vary across restaurants and advises diners to check with preferred restaurant.",
+        "Official outlet listing https://www.dintaifung.com.sg/contact-us/ crawled 2026-10-19; contains the listed Singapore DTF locations and exact addresses/postal codes used to match workbook records. It flags the JEM outlet as temporarily closed for renovation; JEM SFA licence SW13T88L000 is deliberately excluded."
+      ],
+      "freshness": "live official web page observed on 2026-10-19; page crawl current, underlying menu asset chronology not established",
+      "scope": "brand-level URL for 27 exact name/outlet postal matches; do not copy brand-wide item availability or prices to individual branches.",
+      "menu_items": "No new menu rows proposed: 108 already exist under official DTF menu URL (brand-level / no branch mapping); official page publishes menu names but no prices in parsed page.",
+      "source_hash": null,
+      "source_hash_note": "Direct urllib fetch was blocked by local TLS certificate verification; no certificate bypass used. The browsing source is direct operator page, observed/crawled 2026-10-19."
+    },
+    {
+      "field": "Menu URL",
+      "value": "https://www.order.collins.sg/",
+      "sfa_licences": [
+        "SW13231K000",
+        "NE23140E000",
+        "SE10602B000",
+        "SE19670P000",
+        "NE09054P000",
+        "NW23952C000",
+        "SW23L58E000"
+      ],
+      "match_confidence": "high for exact currently listed operator outlet and active operator ordering menu",
+      "evidence": [
+        "Official COLLINS operator-hosted ordering/menu page https://www.order.collins.sg/ observed 2026-10-19; page exposes current product categories and SGD prices, and current outlet selector lists the matching outlet names, street/unit addresses and postal codes.",
+        "Seven exact outlet postal/name matches were cross-checked against workbook. Similar COLLINS concepts with differing names (Common Grill, Collins & Daily Green, Elfuego) were excluded."
+      ],
+      "freshness": "official ordering page crawled 2026-10-19; includes outlet selector and live menu catalogue; item/price availability may vary by outlet/order mode",
+      "scope": "URL leads to official menu/order interface, with outlet selection; menu item prices should only be added when clearly present in operator page and mapped to exact outlet.",
+      "menu_items": "No new menu rows proposed: 19 existing COLLINS item rows already cite official order.collins.sg category URLs; avoid duplicates.",
+      "source_hash": null,
+      "source_hash_note": "Direct urllib fetch was blocked by local TLS certificate verification; no certificate bypass used. The browsing source is direct operator page, observed/crawled 2026-10-19."
+    }
+  ],
+  "exclusions": [
+    "DTF JEM SFA SW13T88L000 excluded because operator calls it temporarily closed for renovation.",
+    "No individual prices/items extrapolated from brand menus to outlets.",
+    "No Grab/Foodpanda/Oddle content used.",
+    "No image URLs discovered in this bounded menu-only pass; no image candidates proposed."
+  ],
+  "existing_menu_item_counts": {
+    "DIN TAI FUNG": 117,
+    "COLLIN'S": 17
+  },
+  "source_references": [
+    "https://www.dintaifung.com.sg/menu/",
+    "https://www.dintaifung.com.sg/contact-us/",
+    "https://www.order.collins.sg/"
+  ]
+}

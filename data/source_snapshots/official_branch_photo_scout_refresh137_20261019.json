@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.0",
+  "snapshot_id": "official_branch_photo_scout_refresh137_20261019",
+  "observed_at_sgt": "2026-10-19",
+  "workbook_path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "f5e74668be36886b168981d94100a2e09c2bb8238e7a0ed2f2ca86a5d82925c6",
+  "workbook_edited": false,
+  "scope": "Read-only scout of two exact Jollibee branch records plus KKH Koufu exact listing, checking first-party venue/menu pages for new direct image candidates. No image pixels downloaded, no paid service, no Mapbox calls.",
+  "summary": {
+    "exact_branch_records_checked": 2,
+    "new_integrable_image_candidates": 0,
+    "new_review_only_image_candidates": 0,
+    "workbook_changes": 0,
+    "reason": "Official Jollibee menu imagery is brand-level and existing candidate rows already hold the source URLs; Jollibee terms prohibit unauthorized reproduction/distribution. KKH directory confirms Koufu at #01-28 but its page exposes no corresponding stall/photo asset. No licensing grant identified."
+  },
+  "branch_records": [
+    {
+      "sfa_licence": "CE07R64L000",
+      "name": "JOLLIBEE",
+      "address": "Address: 10 SINARAN DRIVE #01-7to12,#01-160,#01-165,#01-167,#01-166,#01-161,#01-163,#01-164,SQUARE 2,Singapore 307506",
+      "postal_code": "307506",
+      "approved_image_url": null
+    },
+    {
+      "sfa_licence": "CE15H95V000",
+      "name": "JOLLIBEE",
+      "address": "Address: 180 KITCHENER ROAD #B1-07,CITY SQUARE MALL,Singapore 208539",
+      "postal_code": "208539",
+      "approved_image_url": null
+    }
+  ],
+  "sources_checked": [
+    {
+      "source_page_url": "https://jollibee.com.sg/our-menu",
+      "source_type": "first-party Singapore menu",
+      "evidence": "Current menu page displays item names and prices with image-labelled menu entries. It supports brand-level item association, not availability at a specific branch. Existing Image Candidates already contain menu image URL candidates for this page; no new direct URL proposed."
+    },
+    {
+      "source_page_url": "https://jollibee.com.sg/tnc",
+      "source_type": "first-party terms",
+      "evidence": "Terms state site images/content belong to Jollibee Foods Corporation and unauthorized use, reproduction, or distribution is prohibited. No open license or permission for reuse identified."
+    },
+    {
+      "source_page_url": "https://www.kkh.com.sg/patient-services/visitor-info/amenities-facilities/shops-eats",
+      "source_type": "first-party KKH shops and eats directory",
+      "evidence": "Current page lists Koufu food court at #01-28 and KKH address 100 Bukit Timah Road, but the directory text does not provide an image attached to the tenant. No exact-tenant photo candidate located on the page."
+    }
+  ],
+  "existing_official_menu_image_examples": [
+    {
+      "item_label": "Official menu item candidate: 10pcs Original Chicken Nuggets",
+      "image_url": "https://assets.limetray.com/assets/image_manager/uploads/21765/10pcsSpicyChickenNuggets.jpg",
+      "source_page_url": "https://jollibee.com.sg/our-menu",
+      "existing_disposition": "Review only; rights/reuse permission unconfirmed; do not publish until authorized."
+    },
+    {
+      "item_label": "Official menu item candidate: Burger Steak with Rice",
+      "image_url": "https://assets.limetray.com/assets/image_manager/uploads/21765/1pcBurgerSteakwithRice.png",
+      "source_page_url": "https://jollibee.com.sg/our-menu",
+      "existing_disposition": "Review only; rights/reuse permission unconfirmed; do not publish until authorized."
+    }
+  ],
+  "limitations": [
+    "No claim that Jollibee menu items are available at each branch was made.",
+    "Menu images are not approved for display or reuse without permission.",
+    "No image was approved or incorporated.",
+    "This is a bounded audit, not a nationwide photo crawl."
+  ],
+  "next_integration_step": "Seek an explicit image-use permission or openly licensed direct venue/menu photos with exact branch and recency evidence; otherwise preserve only source references in review-only candidate inventory."
+}

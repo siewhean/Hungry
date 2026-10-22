@@ -1,0 +1,106 @@
+{
+  "refresh_id": "refresh130_increment_20261019",
+  "status": "installed_pass_independent_qa",
+  "canonical_workbook": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "candidate_workbook": "/tmp/hungry-refresh130/Refresh130.xlsx",
+  "input_sha256": "b76b2a41688b67767fe1dfe7a63690100c6868dd949415b14bd5b224973131bb",
+  "candidate_sha256": "80bbef4c8edee234e7ddad4a9b3390a67e9f7572621a8711fbe3c97fb7066212",
+  "updates": {
+    "directory_fields": 0,
+    "menu_items": 39,
+    "image_candidates_added": 1,
+    "coordinates": 0,
+    "ratings": 0,
+    "records_removed": 0,
+    "menu_summaries": 2,
+    "directory_sorted_alphabetically": true
+  },
+  "directory_rows": 38273,
+  "directory_sorted_alphabetically": true,
+  "menu_item_rows_before": 13556,
+  "menu_item_rows_added": 39,
+  "menu_item_rows": 13595,
+  "image_candidate_rows_before": 2761,
+  "image_candidate_rows_after": 2762,
+  "coverage_metrics": {
+    "Active public-access directory rows": 38273,
+    "Unique SFA licences": 38273,
+    "Rows with a usable F&B name": 32791,
+    "Rows with no usable F&B name": 5482,
+    "Rows with coordinates": 35735,
+    "Rows with contact details": 2704,
+    "Rows with website": 2819,
+    "Rows with menu URL": 1478,
+    "Rows with menu summary": 531,
+    "Rows with rating/review count": 0,
+    "Rows with approved image URL": 0,
+    "Rows with opening hours": 1486,
+    "Menu item rows": 13595,
+    "Image candidates": 2762,
+    "Official and open-license image candidates": 4
+  },
+  "integrated_image": {
+    "sfa_licence": "W01217C000",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/5/57/Song_Fa_Bak_Kut_Teh%2C_New_Bridge_Rd%2C_Singapore_%282023%29_02.jpg",
+    "source_page_url": "https://commons.wikimedia.org/wiki/File:Song_Fa_Bak_Kut_Teh,_New_Bridge_Rd,_Singapore_(2023)_02.jpg",
+    "license": "Creative Commons Attribution 4.0 International (CC BY 4.0)",
+    "attribution": "Chainwit., ‘Song Fa Bak Kut Teh, New Bridge Rd, Singapore (2023) 02.jpg’, via Wikimedia Commons, CC BY 4.0, https://creativecommons.org/licenses/by/4.0/; no changes made.",
+    "menu_item_join": null,
+    "display_status": "review_only_not_approved",
+    "photograph_date": "2023-06-03"
+  },
+  "audit_dispositions": {
+    "directory_field_candidates": {
+      "candidate_field_fills": 1,
+      "verified_field_fills": 0,
+      "medium_confidence_unconfirmed_candidates": 1,
+      "mall_level_hours_rejected_as_outlet_hours": 2,
+      "confirmed_permanent_closures": 0,
+      "closure_warnings": 0,
+      "workbook_edited": false
+    },
+    "closures_and_access": {
+      "records_reviewed": 23,
+      "removals_recommended": 0,
+      "permanent_closures_confirmed": 0,
+      "retained_with_positive_public_access_evidence": 15,
+      "access_unresolved_no_removal": 8,
+      "reason": "15 exact records have institution/operator evidence supporting visitor/public-area access. Eight exact records remain unresolved because exact unrestricted access is not established; none has sufficiently strong access or exact tenant-closure evidence to recommend removal."
+    },
+    "ratings": {
+      "sampled_blank_records": 20,
+      "exact_outlet_numeric_candidates_observed": 3,
+      "rows_recommended_for_integration_now": 0,
+      "reason": "No open license/clear external reuse grant was found, source snapshots may be stale, and the only observed rating metric is platform-specific delivery feedback rather than a general outlet rating."
+    },
+    "coordinates": "No new coordinate proposals qualify for current Refresh130 baseline. NEA Hawker Centres was freshly downloaded and exactly rejoined; prior public open-data candidate snapshots were re-bound to current missing-coordinate rows and yielded no remaining blank candidates. OneMap remains unavailable in this process because ONEMAP_API_TOKEN is not configured.",
+    "official_menu_candidates": {
+      "proposed_rows": 96,
+      "integrated_rows": 0,
+      "integrated_exact_outlet_delivery_rows": 39,
+      "unintegrated_brand_wide_rows": 96,
+      "reason": "Exact outlet delivery menus integrated with delivery-only scope; brand-wide catalogue has no branch availability evidence."
+    }
+  },
+  "mapbox": {
+    "request_count_this_refresh": 0,
+    "account_usage_verified": false,
+    "user_reported_search_box_usage": "59/50,000, as stated by user on 2026-10-19",
+    "reason": "Connected Mapbox tools do not expose account usage statistics; no Search Box requests used."
+  },
+  "no_spending": true,
+  "closures_removed": 0,
+  "evidence_files": [
+    "refresh130_images_20261019.json",
+    "refresh130_access_closures_20261019.json",
+    "refresh130_ratings_20261019.json",
+    "refresh130_coordinates_20261019.json",
+    "refresh130_official_menus_20261019.json",
+    "refresh130_directory_fields_20261019.json",
+    "refresh130_delivery_menus_20261019.json"
+  ],
+  "directory_sort_method": "Case-insensitive F&B name; blank names last; SFA licence tie-breaker",
+  "installed_sha256": "80bbef4c8edee234e7ddad4a9b3390a67e9f7572621a8711fbe3c97fb7066212",
+  "independent_installed_qa": "refresh130_final_qa_20261019.json",
+  "installed_qa_result": "PASS"
+}

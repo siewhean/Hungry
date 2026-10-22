@@ -1,0 +1,55 @@
+{
+  "snapshot_id": "jumbo_rws_dim_sum_partial_20261019",
+  "captured_utc_date": "2026-10-19",
+  "baseline_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_workbook_sha256": "b99b56a466a9116223f7f1c2d2f1ad2f0140bfcca78440af0b488729e2f1c247",
+  "read_only": true,
+  "method": "Fetched live official JUMBO menus page and current cache-busted PDF; extracted locally with PDFKit/Vision CPU OCR, then manually checked each proposed row against rendered PDF. Exact licence match and existing Menu Items duplicate check performed. No workbook edits.",
+  "landing_page": {
+    "url": "https://www.jumboseafood.com.sg/en/menus",
+    "observed": "2026-10-19",
+    "sha256": "f8ffe5487f16e711d43f26e322757937cfa84d19dd64251429d714127ad71462"
+  },
+  "source_pdf": {
+    "url": "https://www.jumboseafood.com.sg/pdf/JS-RWS-DSMenu.pdf?misc=20261019_000641",
+    "sha256": "b060dff858eeae32ff9fa2605359fbd262702229569034f419f16c1fbd692e6a",
+    "bytes": 3247239,
+    "local_capture": "/tmp/jumbo_current_pdf_pass/00.pdf",
+    "ocr_capture": "/tmp/jumbo_current_pdf_pass/00.ocr.txt"
+  },
+  "pdfs_ocr_processed": 17,
+  "current_menu_pdf_urls_in_original_scout": 17,
+  "proposal_count": 2,
+  "proposals": [
+    {
+      "licence": "SW17E51J000",
+      "outlet": "XING YUE XUAN @ RESORT WORLD SENTOSA, JUMBO PREMIUM @ RESORT WORLD SENTOSA",
+      "item": "Red Ruby Dumplings with Fresh Mushrooms and Black Truffle Sauce",
+      "section": "Steamed Dim Sum",
+      "price": "$6.80 / 3 pieces",
+      "page": 2,
+      "scope": "RWS current dim sum menu; source menu footer/outlet document is JS-RWS-DSMenu",
+      "source_url": "https://www.jumboseafood.com.sg/pdf/JS-RWS-DSMenu.pdf?misc=20261019_000641",
+      "observed": "2026-10-19",
+      "confidence": "high; item, price and quantity manually verified against rendered official PDF page"
+    },
+    {
+      "licence": "SW17E51J000",
+      "outlet": "XING YUE XUAN @ RESORT WORLD SENTOSA, JUMBO PREMIUM @ RESORT WORLD SENTOSA",
+      "item": "Pan-fried JUMBO Chilli Crab Buns",
+      "section": "Baked Dim Sum",
+      "price": "$10.80 / 3 pieces",
+      "page": 4,
+      "scope": "RWS current dim sum menu; source menu footer/outlet document is JS-RWS-DSMenu",
+      "source_url": "https://www.jumboseafood.com.sg/pdf/JS-RWS-DSMenu.pdf?misc=20261019_000641",
+      "observed": "2026-10-19",
+      "confidence": "high; item, price and quantity manually verified against rendered official PDF page"
+    }
+  ],
+  "excluded": {
+    "promotions": "Promotional page content excluded.",
+    "duplicates": "No exact-name, exact-licence duplicates found for these two rows in baseline Menu Items sheet.",
+    "scope": "No brand-wide or outlet-uncertain rows included."
+  },
+  "limitations": "Partial high-confidence result only. Other menu PDFs were OCR-processed but not yet individually transcribed and exact-deduplicated for proposals; do not treat 17 OCR captures as 17 menu documents fully audited."
+}

@@ -1,0 +1,848 @@
+{
+  "schema": "hungry.first_party_menu_image_scout.v1",
+  "snapshot_id": "an_acai_affair_official_menu_image_scout_20261018",
+  "observed_at_local": "2026-10-18T23:43:45+08:00",
+  "workbook_baseline": {
+    "path": "/tmp/Hungry-FB-Refresh113-staged.xlsx",
+    "sha256": "fcabdd53fa61846a32474e0b06d87fa5a4fbd87e6ae8347e1b74c8f7a9b47fa8",
+    "sheet": "Refresh113 staged workbook",
+    "workbook_edited": false
+  },
+  "target_selection": {
+    "brand": "An Acai Affair",
+    "rationale": "16 exact brand-name directory rows (case-insensitive exact match) in the Refresh113 stage and no exact brand-matched menu items; high-priority blank menu coverage."
+  },
+  "source_capture": {
+    "url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+    "source_type": "official Singapore brand website",
+    "http_status": 200,
+    "content_type": "text/html",
+    "captured_at_local": "2026-10-18T23:43:45+08:00",
+    "capture_sha256": "90d53faf84be48c61d038bb59b5e748b8afecbd59e0861bb48187346d38fb638",
+    "capture_bytes": 1079977,
+    "capture_file": "data/source_snapshots/an_acai_affair_official_menu_20261018.html",
+    "source_excerpt": "Menu content captured via browser extraction. Lines referenced below. Footer says © 2026 an acai affair.",
+    "source_lines": {
+      "products_and_prices": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair; lines 22-196, 259-271, 314-416",
+      "additional_products": "same page lines 162-196, 317-337, 390-416"
+    },
+    "image_urls_extracted_from_same_official_html": true
+  },
+  "current_workbook_state": {
+    "matched_public_access_outlet_count": 16,
+    "outlets": [
+      {
+        "name": "AN ACAI AFFAIR",
+        "licence": "CE09411E000",
+        "public_access_status": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      {
+        "name": "An Acai Affair",
+        "licence": "CE09O43B000",
+        "public_access_status": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      {
+        "name": "An Acai Affair",
+        "licence": "CE17693J000",
+        "public_access_status": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      {
+        "name": "An Acai Affair",
+        "licence": "NE09053X000",
+        "public_access_status": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      {
+        "name": "An Acai Affair",
+        "licence": "NE23175E000",
+        "public_access_status": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      {
+        "name": "An Acai Affair",
+        "licence": "NE25B51B000",
+        "public_access_status": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      {
+        "name": "An Acai Affair",
+        "licence": "NW10097A000",
+        "public_access_status": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      {
+        "name": "An Acai Affair",
+        "licence": "NW17934J000",
+        "public_access_status": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      {
+        "name": "An Acai Affair",
+        "licence": "NW21047B000",
+        "public_access_status": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      {
+        "name": "An Acai Affair",
+        "licence": "NW21A50E000",
+        "public_access_status": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      {
+        "name": "An Acai Affair",
+        "licence": "SE16840X000",
+        "public_access_status": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      {
+        "name": "An Acai Affair",
+        "licence": "SE19236A000",
+        "public_access_status": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      {
+        "name": "An Acai Affair",
+        "licence": "SE20O76B000",
+        "public_access_status": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      {
+        "name": "An Acai Affair",
+        "licence": "SE22G72V000",
+        "public_access_status": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      {
+        "name": "An Acai Affair",
+        "licence": "SW12M61X000",
+        "public_access_status": "public_access_candidate_based_on_sfa_type_and_address"
+      },
+      {
+        "name": "An Acai Affair",
+        "licence": "SW17758N000",
+        "public_access_status": "public_access_candidate_based_on_sfa_type_and_address"
+      }
+    ],
+    "existing_brand_menu_rows": [],
+    "exact_brand_item_dedupe": "No menu row whose F&B Name is exactly An Acai Affair (case-insensitive). An unrelated RANDY INDULGENCE ACAI BAR menu row and any cross-brand combined outlet are excluded.",
+    "related_non_exact_name_rows": [
+      {
+        "name": "Kopi & Tarts x The Jelly Hearts x An Acai Affair",
+        "licence": "SE24F57A000",
+        "public_access_status": "public_access_candidate_based_on_sfa_type_and_address"
+      }
+    ]
+  },
+  "menu_item_proposals": [
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Triple A",
+      "section": "Signature Açaí Bowls",
+      "variant_notes": "small",
+      "price_as_published": "S$7.00",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "49-51",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Triple A",
+      "section": "Signature Açaí Bowls",
+      "variant_notes": "medium",
+      "price_as_published": "S$10.20",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "49-51",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Triple A",
+      "section": "Signature Açaí Bowls",
+      "variant_notes": "large",
+      "price_as_published": "S$15.80",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "49-51",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Nutty Party",
+      "section": "Signature Açaí Bowls",
+      "variant_notes": "small",
+      "price_as_published": "S$7.00",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "53-55",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Nutty Party",
+      "section": "Signature Açaí Bowls",
+      "variant_notes": "medium",
+      "price_as_published": "S$10.20",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "53-55",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Nutty Party",
+      "section": "Signature Açaí Bowls",
+      "variant_notes": "large",
+      "price_as_published": "S$15.80",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "53-55",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Greek Physique",
+      "section": "Signature Açaí Bowls",
+      "variant_notes": "small",
+      "price_as_published": "S$7.00",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "57-59",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Greek Physique",
+      "section": "Signature Açaí Bowls",
+      "variant_notes": "medium",
+      "price_as_published": "S$10.20",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "57-59",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Greek Physique",
+      "section": "Signature Açaí Bowls",
+      "variant_notes": "large",
+      "price_as_published": "S$15.80",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "57-59",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Ch-Ch-Ch-Chia",
+      "section": "Signature Açaí Bowls",
+      "variant_notes": "small",
+      "price_as_published": "S$7.00",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "65-67",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Ch-Ch-Ch-Chia",
+      "section": "Signature Açaí Bowls",
+      "variant_notes": "medium",
+      "price_as_published": "S$10.20",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "65-67",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Ch-Ch-Ch-Chia",
+      "section": "Signature Açaí Bowls",
+      "variant_notes": "large",
+      "price_as_published": "S$15.80",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "65-67",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Coco Glow",
+      "section": "Signature Açaí Bowls",
+      "variant_notes": "small",
+      "price_as_published": "S$7.90",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "90-92",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Coco Glow",
+      "section": "Signature Açaí Bowls",
+      "variant_notes": "medium",
+      "price_as_published": "S$11.10",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "90-92",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Coco Glow",
+      "section": "Signature Açaí Bowls",
+      "variant_notes": "large",
+      "price_as_published": "S$16.70",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "90-92",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Mango Tango",
+      "section": "Signature Açaí Bowls",
+      "variant_notes": "small",
+      "price_as_published": "S$7.90",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "98-100",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Mango Tango",
+      "section": "Signature Açaí Bowls",
+      "variant_notes": "medium",
+      "price_as_published": "S$11.10",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "98-100",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Mango Tango",
+      "section": "Signature Açaí Bowls",
+      "variant_notes": "large",
+      "price_as_published": "S$16.70",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "98-100",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Love Me Lychee",
+      "section": "Signature Açaí Bowls",
+      "variant_notes": "small",
+      "price_as_published": "S$7.90",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "129-131",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Love Me Lychee",
+      "section": "Signature Açaí Bowls",
+      "variant_notes": "medium",
+      "price_as_published": "S$11.10",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "129-131",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Love Me Lychee",
+      "section": "Signature Açaí Bowls",
+      "variant_notes": "large",
+      "price_as_published": "S$16.70",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "129-131",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Berried Alive",
+      "section": "Signature Açaí Bowls",
+      "variant_notes": "small",
+      "price_as_published": "S$7.90",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "149-150",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Berried Alive",
+      "section": "Signature Açaí Bowls",
+      "variant_notes": "medium",
+      "price_as_published": "S$11.10",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "149-150",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Berried Alive",
+      "section": "Signature Açaí Bowls",
+      "variant_notes": "large",
+      "price_as_published": "S$16.70",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "149-150",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Lemon Squeezy",
+      "section": "Signature Açaí Bowls",
+      "variant_notes": "small",
+      "price_as_published": "S$7.90",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "162-164",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Lemon Squeezy",
+      "section": "Signature Açaí Bowls",
+      "variant_notes": "medium",
+      "price_as_published": "S$11.10",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "162-164",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Lemon Squeezy",
+      "section": "Signature Açaí Bowls",
+      "variant_notes": "large",
+      "price_as_published": "S$16.70",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "162-164",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Feeling Grape",
+      "section": "Signature Açaí Bowls",
+      "variant_notes": "small",
+      "price_as_published": "S$7.90",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "176-177",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Feeling Grape",
+      "section": "Signature Açaí Bowls",
+      "variant_notes": "medium",
+      "price_as_published": "S$11.10",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "176-177",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Feeling Grape",
+      "section": "Signature Açaí Bowls",
+      "variant_notes": "large",
+      "price_as_published": "S$16.70",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "176-177",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Drivin' Me Nuts",
+      "section": "Signature Açaí Bowls",
+      "variant_notes": "small",
+      "price_as_published": "S$7.90",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "183-185",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Drivin' Me Nuts",
+      "section": "Signature Açaí Bowls",
+      "variant_notes": "medium",
+      "price_as_published": "S$11.10",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "183-185",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Drivin' Me Nuts",
+      "section": "Signature Açaí Bowls",
+      "variant_notes": "large",
+      "price_as_published": "S$16.70",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "183-185",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Berry Me Bliss",
+      "section": "Signature Açaí Bowls",
+      "variant_notes": "small",
+      "price_as_published": "S$7.90",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "191-193",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Berry Me Bliss",
+      "section": "Signature Açaí Bowls",
+      "variant_notes": "medium",
+      "price_as_published": "S$11.10",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "191-193",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Berry Me Bliss",
+      "section": "Signature Açaí Bowls",
+      "variant_notes": "large",
+      "price_as_published": "S$16.70",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "191-193",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Aloha Açaí",
+      "section": "Açaí Smoothies",
+      "variant_notes": "medium",
+      "price_as_published": "S$9.90",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "317-319, 259-262, 271",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Aloha Açaí",
+      "section": "Açaí Smoothies",
+      "variant_notes": "large",
+      "price_as_published": "S$11.90",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "317-319, 259-262, 271",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Here's My Abs",
+      "section": "Açaí Smoothies",
+      "variant_notes": "medium",
+      "price_as_published": "S$9.90",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "275-292, 259-262",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Here's My Abs",
+      "section": "Açaí Smoothies",
+      "variant_notes": "large",
+      "price_as_published": "S$11.90",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "275-292, 259-262",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Yo-Go Girl",
+      "section": "Açaí Smoothies",
+      "variant_notes": "medium",
+      "price_as_published": "S$9.90",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "325-327, 259-262, 271",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Yo-Go Girl",
+      "section": "Açaí Smoothies",
+      "variant_notes": "large",
+      "price_as_published": "S$11.90",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "325-327, 259-262, 271",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Mango Magic",
+      "section": "Açaí Smoothies",
+      "variant_notes": "medium",
+      "price_as_published": "S$9.90",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "335-337, 259-262, 271",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Mango Magic",
+      "section": "Açaí Smoothies",
+      "variant_notes": "large",
+      "price_as_published": "S$11.90",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "335-337, 259-262, 271",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Berry Crunchy",
+      "section": "Signature Toasts",
+      "variant_notes": null,
+      "price_as_published": "S$8.90",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "402-408",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "You Butter Believe",
+      "section": "Signature Toasts",
+      "variant_notes": null,
+      "price_as_published": "S$8.90",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "414-416, 289-299",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Bravocado",
+      "section": "Signature Toasts",
+      "variant_notes": null,
+      "price_as_published": "S$9.90",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "301-310",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    },
+    {
+      "brand": "An Acai Affair",
+      "menu_item": "Nutty or Nice",
+      "section": "Signature Toasts",
+      "variant_notes": null,
+      "price_as_published": "S$9.90",
+      "menu_scope": "brand-level; outlet-specific availability not verified",
+      "source_url": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair",
+      "source_lines": "390-396, 312-322",
+      "source_evidence": "Visible current Singapore official menu page; dollar sign shown without ISO currency, interpreted as SGD from Singapore brand site.",
+      "existing_exact_match": false,
+      "confidence": "high"
+    }
+  ],
+  "image_url_candidates": [
+    {
+      "asset_label": "Untitled design (1).png",
+      "url": "https://static.wixstatic.com/media/9c0e5a_2001c495c76a415098b7fab39d72722f~mv2.png/v1/fill/w_196,h_244,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Untitled%20design%20(1).png",
+      "visible_alt": "Untitled design (1).png",
+      "candidate_item_match": "not independently established",
+      "status": "review_only",
+      "rights_reuse": "Not cleared; retain as candidate only"
+    },
+    {
+      "asset_label": "1_edited.png",
+      "url": "https://static.wixstatic.com/media/9c0e5a_0c29e94a54f54e44a71e0ee5712aeed2~mv2.png/v1/fill/w_202,h_242,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/1_edited.png",
+      "visible_alt": "1_edited.png",
+      "candidate_item_match": "not independently established",
+      "status": "review_only",
+      "rights_reuse": "Not cleared; retain as candidate only"
+    },
+    {
+      "asset_label": "Product Images (BG Removed).png",
+      "url": "https://static.wixstatic.com/media/9c0e5a_e734d5579607468690cdca2cc2207cc2~mv2.png/v1/fill/w_190,h_233,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Product%20Images%20(BG%20Removed).png",
+      "visible_alt": "Product Images (BG Removed).png",
+      "candidate_item_match": "not independently established",
+      "status": "review_only",
+      "rights_reuse": "Not cleared; retain as candidate only"
+    },
+    {
+      "asset_label": "Product Images (BG Removed) (3).png",
+      "url": "https://static.wixstatic.com/media/9c0e5a_332141a5aa874c7aab678a76ae80f210~mv2.png/v1/fill/w_210,h_258,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Product%20Images%20(BG%20Removed)%20(3).png",
+      "visible_alt": "Product Images (BG Removed) (3).png",
+      "candidate_item_match": "not independently established",
+      "status": "review_only",
+      "rights_reuse": "Not cleared; retain as candidate only"
+    },
+    {
+      "asset_label": "Product Images (BG Removed) (2).png",
+      "url": "https://static.wixstatic.com/media/9c0e5a_94e5c312abbb4188b84e12cebb68d10a~mv2.png/v1/fill/w_193,h_242,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/9c0e5a_94e5c312abbb4188b84e12cebb68d10a~mv2.png",
+      "visible_alt": "Product Images (BG Removed) (2).png",
+      "candidate_item_match": "not independently established",
+      "status": "review_only",
+      "rights_reuse": "Not cleared; retain as candidate only"
+    },
+    {
+      "asset_label": "2_edited.png",
+      "url": "https://static.wixstatic.com/media/9c0e5a_1e696973f8854379b345a9da992a5f7a~mv2.png/v1/fill/w_211,h_271,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/2_edited.png",
+      "visible_alt": "2_edited.png",
+      "candidate_item_match": "not independently established",
+      "status": "review_only",
+      "rights_reuse": "Not cleared; retain as candidate only"
+    },
+    {
+      "asset_label": "Product Images (BG Removed) (4).png",
+      "url": "https://static.wixstatic.com/media/9c0e5a_8ceaf1856e2c419799eb88386e636a75~mv2.png/v1/crop/x_0,y_1378,w_3375,h_1609/fill/w_600,h_286,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Product%20Images%20(BG%20Removed)%20(4).png",
+      "visible_alt": "Product Images (BG Removed) (4).png",
+      "candidate_item_match": "signature toast section image; exact item unverified",
+      "status": "review_only",
+      "rights_reuse": "Not cleared; retain as candidate only"
+    },
+    {
+      "asset_label": "9c0e5a_c685d36099f440c8ba1afb17541ebea9~mv2.png",
+      "url": "https://static.wixstatic.com/media/9c0e5a_c685d36099f440c8ba1afb17541ebea9~mv2.png/v1/fill/w_209,h_262,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/9c0e5a_c685d36099f440c8ba1afb17541ebea9~mv2.png",
+      "visible_alt": "",
+      "candidate_item_match": "not independently established",
+      "status": "review_only",
+      "rights_reuse": "Not cleared; retain as candidate only"
+    }
+  ],
+  "limitations": [
+    "Page is brand-level; outlet-level availability is not asserted.",
+    "Official page uses $ without an ISO currency marker; interpreted as SGD because it is the Singapore brand website.",
+    "Images are official website assets and not stock/generated placeholders, but individual asset-to-item mapping is not fully established from alt labels, so do not attach to a specific product without visual verification.",
+    "Image URL access does not grant storage or redistribution rights; all remain review-only.",
+    "Make-your-own configurable combinations and add-ons omitted as they do not represent standalone menu items.",
+    "Some descriptions / published prices occur in a category heading and apply to the section; the cited lines make this association visible.",
+    "The official online product page for Triple A shows S$7.50 without a size, while the menu page lists S$7.00 small / S$10.20 medium / S$15.80 large; scope is unresolved and flagged above."
+  ],
+  "dedupe": {
+    "proposed_menu_rows": 48,
+    "duplicate_candidates_within_proposals": [],
+    "exact_duplicate_existing_records": [],
+    "price_conflicts_found": [
+      {
+        "item": "Triple A",
+        "menu_price": "Small S$7.00; medium S$10.20; large S$15.80",
+        "official_online_store_listing": "S$7.50 (single displayed price; no size context in listing excerpt)",
+        "source": "https://www.anacaiaffair.com/acai-bowl-menu-an-acai-affair (lines 49-51); https://www.anacaiaffair.com/product-page/triple-a",
+        "resolution": "Keep the explicitly size-scoped menu prices as main proposal; retain this discrepancy for review because product-page size scope is not stated."
+      }
+    ]
+  },
+  "excluded_sources": [
+    "Grab",
+    "foodpanda",
+    "Oddle",
+    "paid APIs",
+    "Mapbox"
+  ],
+  "no_cost": true
+}

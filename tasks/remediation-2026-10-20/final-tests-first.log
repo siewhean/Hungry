@@ -1,0 +1,1456 @@
+
+> hungry-mobile@0.1.0 test
+> HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test $(find src -name '*.test.ts' -print)
+
+(node:79905) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ prelaunch report bundle exists and keeps store submission no-go until proof lands (4.864084ms)
+✔ production Expo config strips development-only and unjustified native capabilities (10.335292ms)
+✔ development Expo config keeps dev-client support for local simulator work (0.349333ms)
+✔ native smoke runner exposes iOS and Android prelaunch flows (1.3765ms)
+✔ service-role environment names stay out of client app source (158.057042ms)
+(node:79906) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ catalog read v2 uses RPC pages instead of the BrowseIndex in its active branch (1.525375ms)
+✔ raw catalog service is authenticated, cursor-paged, and non-persistent (28.450041ms)
+✔ raw catalog migration preserves a separate authenticated release lane (1.871584ms)
+✔ V2 discovery entry points do not warm the legacy browse index and map passes viewport filters (2.350541ms)
+✔ catalog release publisher fails when count validation does not activate a release (0.709708ms)
+(node:79907) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Playwright starts Expo Web through the deterministic E2E wrapper path (2.578916ms)
+(node:79908) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ full project audit P0: production feature flags and floorplan gating match launch posture (1.926542ms)
+✔ full project audit P0: social safety, public profiles, and chat sends are backend-gated (6.096333ms)
+✔ full project audit P1: repo hygiene and passport asset caps are guarded (2.67825ms)
+✔ full project audit P1: numeric trust surfaces disclose live or preview data source (1.886375ms)
+✔ full project audit P1: user-facing data trust copy avoids live-result overclaims (1.722209ms)
+(node:79909) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ marketing hero keeps decorative atmosphere image hidden from assistive tech (3.190709ms)
+✔ marketing hero food card images use descriptive content alt text (2.900792ms)
+(node:79910) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ merchant access, dashboard, and tab routes cover primary merchant entry points (2.686833ms)
+✔ merchant profile edits validate fields and propagate to user-side venue reads (1.894125ms)
+✔ merchant menu and OCR flows cover catalog writes that become consumer-visible dishes (1.35275ms)
+✔ merchant inbox, promotions, AI assistant, and settings use service-backed state (1.591709ms)
+✔ merchant Playwright and native smoke coverage entry points stay registered (0.677291ms)
+(node:79911) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ native Maestro smoke scripts are skip-safe and target the Hungry app id (43.860459ms)
+✔ native interaction smoke covers discovery search, chips, and browse search controls (1.763084ms)
+✔ native activity smoke exposes the audited direct-message tab (2.511209ms)
+✔ native guest and location flows seed the mock session before entering Home (3.346709ms)
+✔ native media picker smoke reaches the post composer gallery entry point (3.178083ms)
+✔ native source-smoke coverage includes gestures, bottom sheets, media, and keyboard-sensitive entry points (4.353458ms)
+(node:79912) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ root linking config exposes public dish, venue, and order entry points (2.51175ms)
+✔ weekly picks /home link opens the Home tab (0.613833ms)
+✔ order deep link parses venueId query parameter (0.770375ms)
+✔ deep link state rejects unsafe params and redirects protected links after auth is ready (1.658542ms)
+✔ usehungry.com share links open the matching app screen (7.90675ms)
+✔ auth deep links pop to an existing auth screen instead of stacking a new one (0.309125ms)
+✔ email confirm, password reset, and OAuth callbacks use separate paths (0.35525ms)
+(node:79913) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ root route type inventory matches registered root routes except documented nested-only routes (3.530333ms)
+✔ launch-visible root routes have explicit release classification (1.827167ms)
+(node:79914) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ bottom navigation puts create post in the center and review fourth (3.130209ms)
+✔ home bell opens activity inbox and gates messages by feature flag (129.193542ms)
+✔ activity messages and update posts are functional routes, not static mockups (25.282916ms)
+(node:79915) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ onboarding typed routes are registered and flow through cuisine, taste, and dietary setup (3.10225ms)
+✔ root and nested route targets avoid stale or unregistered screens (0.908125ms)
+✔ synthetic create tab targets root routes without registering a fake tab route (0.510209ms)
+✔ going offline shows a banner instead of taking over navigation (0.343125ms)
+✔ wheel party mode is gated and /join links explain group spins are coming (1.485833ms)
+(node:79917) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ production route gates keep advanced surfaces behind MVP-safe flags (2.321459ms)
+✔ floorplan screens are removed while floorplans stay hard-off (2.327042ms)
+✔ signed-out app entry opens the app as a guest while public routes stay unprotected (2.055125ms)
+✔ protected actions preserve return routes before auth (0.3905ms)
+(node:79922) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Supabase auth bootstrap gates protected-route redirects until session restore completes (1.053917ms)
+✔ Supabase auth responses hydrate the app profile store (1.023917ms)
+✔ Supabase auth bootstrap preserves restored sessions across transient startup failures (0.320958ms)
+✔ restored mock sessions keep the mock provider instead of being rejected as Supabase sessions (0.170167ms)
+✔ explicit mock data source keeps user-mode bootstrap on mock services for dev and E2E (0.210583ms)
+✔ Supabase null-session bootstrap keeps a restored session only on a network failure (0.352917ms)
+(node:79924) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ root navigation keeps heavy routes lazy-loaded (2.231958ms)
+✔ startup does not block indefinitely on fonts or analytics (0.601ms)
+✔ startup defers profile, mock data, and native analytics module loading (0.777583ms)
+✔ home, discover, and quick bites avoid duplicate render-time data work (3.422125ms)
+✔ prefetch layer warms images, data, and route modules without blocking navigation (8.820458ms)
+✔ remaining high-traffic profile, developer, and merchant links prefetch on intent (3.050459ms)
+✔ developer and merchant surfaces defer non-selected work (1.213875ms)
+(node:79925) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ web-v2 keeps public shell server-rendered with a tiny client route gate (9.780667ms)
+✔ web-v2 animation libraries are not top-level imports on first paint (7.05525ms)
+✔ web-v2 has an explicit post-build bundle budget gate (1.855792ms)
+(node:79929) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ public-launch readiness report bundle exists and keeps a no-go verdict until external proof lands (1.8305ms)
+✔ production feature flags keep public-launch P0 experimental surfaces disabled (0.528542ms)
+✔ root navigation keeps production-disabled routes behind feature flags (15.361583ms)
+✔ deep links expose only public discovery routes and redirect protected actions when signed out (6.297125ms)
+✔ auth/session storage and logout cleanup keep credentials out of plaintext persisted state (2.952541ms)
+(node:79933) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ release evidence template, script, and final checklist keep public launch blocked until proof exists (7.545208ms)
+(node:79934) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ scaling readiness deliverables exist and keep production-touch blockers explicit (9.718042ms)
+✔ production feature flags remain MVP-safe and documented in the release matrix (6.3045ms)
+✔ root navigation and linking do not expose advanced production routes without flags (0.782625ms)
+✔ Supabase source of truth and bounded service read paths are covered by reports and code (9.061333ms)
+✔ public website scaling gates target web-v2 and legacy web stays documented (3.095125ms)
+✔ merchant and admin scaling reports require server-side auth, RBAC, and CSRF (4.509625ms)
+✔ load scripts and package commands are present with fail-closed mutation safety (13.233375ms)
+✔ CI uses static scaling and website quality gates, not real load tests (0.712459ms)
+✔ observability and background job plans define thresholds, sanitization, queues, and blockers (6.107ms)
+(node:79935) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ activity inbox hides message surfaces when direct messages are disabled (1.264834ms)
+✔ activity updates avoid per-row repository scans and token leaks (0.205292ms)
+(node:79936) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ checklist and portfolio Phase 3 screens are registered in profile navigation (16.471416ms)
+✔ checklist and portfolio screens use reusable Phase 4 UI components (3.892625ms)
+✔ dish and stall detail screens expose checklist and portfolio entry points (2.171834ms)
+(node:79937) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Phase 5 checklist and portfolio stores centralize analytics and edge guards (2.285ms)
+✔ Phase 5 screens handle deleted references and invalid portfolio scores (0.587416ms)
+✔ Phase 5 migration matches the live schema and hardens RPCs (5.71775ms)
+✔ Phase 5 Supabase service scopes portfolio follow status to the signed-in user (1.3415ms)
+✔ Phase 5 has a Supabase smoke check for checklist portfolio passport controls (0.80575ms)
+✔ Phase 5 documentation covers user, admin, and service usage (3.46925ms)
+(node:79938) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Decide For Me shows distance, Directions and Save, and respects the budget softly (1.283625ms)
+✔ Decide For Me has no fake cart, routes back to Discover, and tracks its funnel (1.161042ms)
+✖ taste quiz asks for a usual budget and saves it with dietary preferences (6.2045ms)
+✔ setMaxDishBudget stores the budget locally and logs it (0.89ms)
+(node:79939) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ detail screens show full food-centre location, weekly hours, and maps action (0.855167ms)
+✔ detail save buttons use compact standardized labels that stay inside the buttons (0.268ms)
+(node:79940) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ detail screens hydrate specific Supabase records before showing not-found states (1.330333ms)
+(node:79941) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ stall detail uses real venue hours and popular visitors (8.215208ms)
+✔ dish detail V2 avoids invented wait times and fake hours (0.645917ms)
+✔ dish detail V2 action dock is labelled, stateful and meets 44px targets (0.910875ms)
+(node:79943) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Discover map keeps left-edge swipe back enabled (3.173375ms)
+(node:79946) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Quick Bites grid header uses a top-right search icon instead of an inline search bar (1.063459ms)
+(node:79951) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Merchant screen contract: every merchant route is typed, registered, and backed by a screen (3.614042ms)
+✔ Merchant screen contract: verified-only routes are guarded by merchant access status (1.313292ms)
+✔ Merchant screen contract: extended merchant sections stay hidden from the tab bar (0.885ms)
+✔ Merchant screen contract: merchant navigation buttons are accessible and hidden sections are reachable (0.452166ms)
+✔ Merchant screen contract: merchant route params match editable sub-screen needs (0.179292ms)
+✔ Merchant screen contract: menu management screens are wired to merchant services (0.606708ms)
+✔ Merchant screen contract: profile, menu, and analytics use production-ready controls (2.378458ms)
+✔ Merchant screen contract: dish details record merchant dish views once per screen (0.155208ms)
+✔ Merchant screen contract: inbox, promotions, assistant, and settings screens use merchant services (0.51875ms)
+✔ Merchant screen contract: merchant screens resolve services through provider (1.216042ms)
+(node:79952) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ onboarding food visuals use generated local food assets (3.916167ms)
+(node:79954) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ stall detail surfaces merchant-pinned popular visitors from services (1.391125ms)
+✔ merchant FeaturedVisitors screen manages review-backed pins through service methods (55.142916ms)
+(node:79958) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ both composer routes share the supported editor and protect real route removal (2.017375ms)
+✔ finishing a saved draft preserves its content (0.903458ms)
+(node:79966) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ profile home contract: quick access lives behind the header menu (1.219834ms)
+✔ profile home contract: profile stats use dynamic profile and social store values (25.647375ms)
+✔ profile home contract: Taste Fingerprint shows all six dimensions and Saved naming (0.507459ms)
+✔ profile home contract: a preloaded Profile tab never bounces guests to Login (0.789958ms)
+(node:80022) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ profile social grid opens posts in a detail route (1.441458ms)
+✔ profile social post detail shows a continuous feed of the selected collection (0.681083ms)
+✔ profile social grid removes side padding for edge-to-edge tiles (0.405666ms)
+✔ profile social post detail shows only stored social counts (28.133167ms)
+(node:80023) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ stall alerts only fire for verified merchant changes and respect user limits (10.927458ms)
+✔ push alerts are opt-in and tapped alerts open through deep link rules (0.717917ms)
+✔ follow a stall is tracked and listed in Profile (220.483083ms)
+✔ public lists ship in production with real share actions (0.659416ms)
+✔ weekly picks push is a separate opt-out that reuses the outbox, cap and quiet hours (5.813541ms)
+(node:80024) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ shared links carry a source tag that is credited on signup (6.037333ms)
+✔ dishes show when they were last updated and never a stock photo (1.208708ms)
+✔ Decide For Me offers backup picks and a Not for me swap (29.661541ms)
+✔ dish pages can add to a list in production (25.568417ms)
+(node:80025) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ shared list RPC returns approved photos and a map query (8.541875ms)
+✔ web share pages show the dish photo in previews, map links and pass the share tag (22.773ms)
+✔ signed-out friends can open a public list and are asked to sign in only to save it (208.731875ms)
+(node:80026) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Review feed cards do not render bottom bites sections (18.057666ms)
+(node:80027) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ review editor subscribes with selectors and never picks a dish for the user (1.253334ms)
+✔ review submit sends the recommend choice and a retry-stable client review id (1.210667ms)
+✔ prototype-only review features stay out of production (0.632791ms)
+✔ review tab loads one paginated page with refresh, error and empty states (0.687417ms)
+(node:80030) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Browse Stalls uses the active repository before showing empty state (10.246208ms)
+✔ Browse image-grid cards use the same dish image and destination as dish detail (0.568583ms)
+✔ image grids retain one dish identity through image failures and gestures (1.065917ms)
+(node:80031) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Sprint 10 contract: StallDetail claim CTA is staging-gated and wired (0.920834ms)
+✔ Sprint 10 contract: StallDetail menu remains curated from dishes (0.326125ms)
+✔ Sprint 10 contract: claim RPC null result maps to already_exists (0.6935ms)
+(node:80032) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Sprint 6: required screens are wrapped by FeedErrorBoundary (173.792ms)
+✔ Sprint 6: dead files are removed (0.407584ms)
+✔ Sprint 6: environment template exists (0.223709ms)
+✔ Sprint 6: detail fallback copy matches expected content (21.38925ms)
+(node:80033) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Sprint 9 screen contract: Login screen uses service auth + error boundary (15.092625ms)
+✔ Sprint 9 screen contract: Review screen submits via service and triggers success UI (0.251292ms)
+✔ Sprint 9 screen contract: onboarding icon controls and location rows are labelled (0.759ms)
+✔ Sprint 9 screen contract: stall menu cards expose dish actions (0.388458ms)
+✔ Sprint 9 screen contract: Search cards expose actionable semantics (0.34075ms)
+✔ Sprint 9 screen contract: Home feed interactions are wired for like/save/comment/share (5.323209ms)
+✔ Sprint 9 screen contract: Home feed double tap likes with heart animation (0.958042ms)
+✔ Sprint 9 screen contract: Home feed supports pull-to-refresh without hiding ready content (0.475667ms)
+✔ Sprint 9 screen contract: feed videos pause on tap and fast-forward only from edge holds (0.459458ms)
+✔ Sprint 9 screen contract: Home feed header follows app header scale (0.399083ms)
+✔ Taste recommendation contract: core surfaces use shared ranking and explicit signals (0.749ms)
+✔ Sprint 9 screen contract: routed dish detail uses gallery-backed share flow (0.218167ms)
+✔ Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and data-backed (1.310584ms)
+✔ search home shows debounced inline results and keeps a see-all action (0.325125ms)
+(node:80034) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Profile exposes the add-stall contribution section and route (4.255667ms)
+✔ AddStall form requires stall name and image while preserving optional detail fields (1.269291ms)
+✔ Stall submission service and gamification contracts are shared (37.277917ms)
+(node:80035) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Story viewer contract: gestures map taps and swipes to the expected story navigation (25.498541ms)
+✔ Story viewer contract: progress pauses without resetting the current story (5.826958ms)
+✔ Story viewer contract: progress bar is a smooth linear UI-thread animation (0.941583ms)
+✔ Story viewer contract: story seen state is deferred until the viewer is open (1.640041ms)
+✔ Story viewer contract: cross-user transitions and footer actions are standardized (0.775666ms)
+✔ Story viewer contract: swipe-out fades before closing (1.206708ms)
+✔ Story viewer contract: dark overlay colors come from semantic story tokens (1.599541ms)
+✔ Story viewer contract: unseen and replayed stories play through a stable in-viewer queue (0.6695ms)
+✔ Story viewer contract: cross-user transition is a visible rotating block (0.660958ms)
+✔ Home feed contract: story carousel opens existing own story and separates create (2.631584ms)
+✔ Story demo contract: viewed memory state expires after 24 hours and never fakes live publication (2.475458ms)
+(node:80036) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ V2 detail screens do not ship fabricated trust claims (22.085292ms)
+✔ V2 screens bind trust surfaces to venue and dish data (1.120292ms)
+(node:80037) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ selected stale-branch fixes preserve FDO visuals while restoring behavior (1.534083ms)
+✔ animated FDO surfaces share the system and app reduced-motion preference (1.218917ms)
+(node:80039) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ production UI and stores do not bypass the Hungry service provider with mock or Supabase internals (42.6465ms)
+(node:80041) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✖ user auth and onboarding flows cover account, taste, dietary, and location state (43.674666ms)
+✔ home feed post cards cover carousel media, captions, comments, reactions, and refresh (2.198583ms)
+✔ discover and search keep user mode map-free while browse grids open matching dish details (2.52025ms)
+✔ dish and stall details expose correct detail surfaces without user-mode map/cart regressions (3.0445ms)
+✔ review tab covers loading state, review cards, and bite card icon/sheet boundaries (1.079416ms)
+✔ post composer supports deliberate dish selection, durable drafts, media and confirmed publication (0.984833ms)
+✔ profile surfaces keep own and other-user layouts linked while hiding taste fingerprint for others (5.409125ms)
+✔ coverage plan surfaces have direct source, Playwright, and native smoke entry points (0.374ms)
+(node:80042) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ DishCard joins only non-empty location parts and labels the save toggle Save/Saved (1.406834ms)
+✔ Weekly picks rail falls back to NoDishPhoto and drops the Sparkles icon (0.414083ms)
+(node:80043) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ passport visuals use orange Hungry theme and cached image assets (1.493084ms)
+✔ passport generated image files exist in the project asset folder (20.810584ms)
+✔ passport art is generated as bitmap assets, not SVG placeholders (0.518ms)
+✔ passport screen announces and marks one-time stamp celebrations (0.242709ms)
+✔ passport screen surfaces portfolio contribution stats (0.520083ms)
+✔ supabase passport service maps database rows to app-domain shape (0.702875ms)
+(node:80044) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ StallLogoMark retries logo candidates and falls back to text identity (8.360333ms)
+(node:80045) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Button exposes disabled and busy accessibility state without dropping caller state (1.287959ms)
+✔ AppText bounds OS font scaling so fixed-format mobile UI does not clip (0.667167ms)
+✔ Input has a stable label fallback and moving placeholders are opt-in only (0.477166ms)
+✔ Dialog and BottomSheet expose native modal semantics and labelled dismiss targets (0.92625ms)
+✔ production bottom sheet surfaces expose contextual modal labels (3.867834ms)
+✔ profile controls discovered in runtime hierarchy expose labels and selected state (1.408541ms)
+✔ shared BottomSheet callers provide contextual labels instead of generic fallback (0.972667ms)
+✔ bottom sheet nested controls expose roles, labels, and selected state where needed (0.928292ms)
+✔ Avatar and Card avoid duplicate or unsupported announcements (0.316375ms)
+✔ accessibility implementation guide documents source contracts and runtime smoke gaps (2.011583ms)
+(node:80046) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ AccessibleImage requires every image to be meaningful or decorative (0.606625ms)
+✔ app and component images go through AccessibleImage instead of raw expo-image (239.523917ms)
+✔ production surfaces do not import raw React Native Image (82.336583ms)
+✔ animated brand imagery keeps explicit image semantics (0.353541ms)
+✔ Skia media editor image previews are labelled or hidden through wrappers (0.2755ms)
+✔ zoomable social media exposes actionable media and video controls to assistive tech (0.813334ms)
+(node:80047) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ native loading and idle animations stop during teardown (17.219958ms)
+(node:80048) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ orange tone is distinct from neutral tone (1.68925ms)
+✔ neutral tone stays tied to neutral surface tokens (0.141917ms)
+(node:80049) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ shared standardization primitives are exported from the UI barrel (0.781708ms)
+✔ primary user filter surfaces use shared chip primitives (1.286791ms)
+✔ merchant filter and status surfaces use shared primitives (0.703375ms)
+✔ merchant forms use shared user-mode input, select, chip, and toggle primitives (0.828833ms)
+✔ merchant settings and bottom tabs use shared user-mode primitives (0.372125ms)
+(node:80050) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ App always mounts the root error boundary, with or without a Sentry DSN (3.24925ms)
+✔ root error boundary reports through reportError and offers a restart (0.311958ms)
+✔ EmptyState hides raw error text and the Send error action in production (0.218292ms)
+(node:80051) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ UI radius contract: shared cards, buttons, inputs, chips, and search use componentRadii (5.343083ms)
+✔ UI radius contract: high-traffic app surfaces consume componentRadii (27.914625ms)
+(node:80052) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Screen edge padding contract: app-level surfaces use the shared screenEdge token (0.942042ms)
+(node:80053) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Screen header contract: shared app headers use one fixed title treatment (1.901333ms)
+✔ Screen header contract: live Discover, Review, and New Post headers use AppHeader (2.904208ms)
+✔ Discover V1 contract: situation intents live in their matching sections (165.020459ms)
+✔ Discover V1 contract: browse cards open the image-feed browse mode (7.117ms)
+✔ Quick Bites contract: empty-state icon is not clipped (1.983125ms)
+✔ Discover collapses empty rails and offers pull-to-refresh plus one error state (1.910083ms)
+(node:80054) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ merchantClaimCtaEnabled is true in staging (1.222334ms)
+✔ merchantClaimCtaEnabled is false in production (0.177083ms)
+✔ merchantClaimCtaEnabled is available only outside production (0.155667ms)
+✔ merchantCentreEnabled is available only outside production (0.170125ms)
+✔ prototypeRoutesEnabled is available outside production only (0.130583ms)
+✔ advanced social and gamification surfaces are disabled in production (0.113584ms)
+✔ audited social and gamification surfaces are available in explicit non-production environments (0.124042ms)
+✔ unknown or missing environments fail closed outside local development (0.238916ms)
+✔ indoor floorplans stay disabled in every environment until launch gates pass (0.167ms)
+✔ wheel parties and Crave stay out of production (0.218708ms)
+(node:80055) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ passport stamp definitions are derived centrally from category thresholds (1.195667ms)
+✔ passport selectors expose earned, next, and celebration-ready stamps (0.304167ms)
+✔ passport badge unlocks require an explicit earned stamp source (3.049625ms)
+(node:80056) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ A-to-B-to-A invalidates earlier sign-in's delayed profile-ready continuation (3.880708ms)
+(node:80057) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ mock login failure detects invalid credentials and offline markers (0.818917ms)
+✔ mock sign-up failure detects existing and offline emails (0.198166ms)
+(node:80058) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ actual RHF adapters ignore form values and enforce required label and minimum length (1.145541ms)
+✔ same-turn repeated keyboard/tap submits invoke one operation and failure unlocks retry (1.26425ms)
+✔ verification requires exactly eight digits and cooldown catches up after background time (0.282959ms)
+✔ recovery retries reuse exchanged code after update failure and retire with generation (5.182625ms)
+✔ failed recovery exchange is retryable and a retired in-flight exchange rejects (0.60725ms)
+✔ deletion outcomes distinguish unknown, processing, absent and confirmed cancellation (5.454583ms)
+(node:80059) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ validateRequired rejects blank input (0.834292ms)
+✔ validateEmail enforces required and format checks (0.336584ms)
+✔ validatePassword enforces minimum length (0.288375ms)
+✔ validateConfirmPassword requires matching values (0.131ms)
+(node:80060) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ buildDishGallery keeps hero first and removes duplicate URLs (0.825333ms)
+✔ deriveStallCommunityReviews flattens dish reviews with deterministic metadata (0.200709ms)
+(node:80061) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ getDiscoverCardImage uses approved dish candidate priority before stall fallbacks (5.451ms)
+✔ getDiscoverCardImage uses stall card priority and de-duplicates candidates (0.24875ms)
+✔ Discover image helper rejects demo providers, logo placeholders, malformed URLs, and blanks (0.371084ms)
+✔ Discover food collections keep image-less live bites visible with local fallback state (5.719958ms)
+✔ Discover food collections prioritise real Supabase images before local fallbacks (0.356417ms)
+✔ Discover source does not hardcode demo image URL fallbacks (2.548125ms)
+✔ dish names and dinner metadata never claim verified late-night hours (90.808042ms)
+(node:80089) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ uses operating hours when available (0.449875ms)
+✔ uses facility fallback label when no operating hours (0.074333ms)
+(node:80090) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ getHomeBitesFeed returns canonical service bites sorted by recency (153.545917ms)
+(node:80091) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ mock chat service returns one authoritative delivery for repeated send nonce (24.336709ms)
+✔ clearing account demos removes private story media and prior chat mutations (7.760666ms)
+(node:80092) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Home social feed uses the active repository instead of hidden mock fallbacks (28.458458ms)
+✔ Home social feed treats relative fixture timestamps as recent posts (0.586583ms)
+✔ Home social feed ranks followed authors before unfollowed authors (0.728708ms)
+✔ Home social feed refresh seed changes order without duplicating posts (5.317583ms)
+✔ Home social feed refresh keeps followed posts above non-followed posts (0.879458ms)
+✔ Home propagates a failed feed source instead of reporting an empty successful slate (23.971417ms)
+(node:80093) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ history snapshots preserve a concurrent realtime message and read acknowledgement (1.458291ms)
+✔ message retries reconcile by stable nonce without duplicating a delivery (0.230916ms)
+✔ conversation search is normalized and searches message text (1.142667ms)
+✔ recipient filtering and unread badge use the same visible events (0.304ms)
+✔ same-name story authors stay distinct and unknown author uses story identity (0.265583ms)
+(node:80094) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ weekly picks lead with photo dishes when scores are close but keep photo-less ones (2.116167ms)
+✔ weekly picks only claim taste when there is a taste signal (0.181084ms)
+✔ weekly key follows Singapore Mondays (0.113625ms)
+✔ weekly picks are one per stall, skip tried dishes and are stable within a week (0.341ms)
+✔ weekly picks return fewer dishes instead of padding when the pool is small (0.13825ms)
+(node:80095) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ isCustomerVisiblePromotion only allows available active-window promotions (1.392792ms)
+✔ filterCustomerVisiblePromotions keeps outlet-level and matching dish offers only (0.506542ms)
+(node:80130) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ late merchant settlements are invalid after account/outlet switch away and back (0.874834ms)
+✔ batch stops issuing remaining writes after outlet changes mid-first mutation (0.98325ms)
+(node:80131) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ validateMerchantProfileUpdates trims and normalizes string fields (51.857583ms)
+✔ validateMerchantProfileUpdates rejects invalid contact fields (1.761875ms)
+✔ validateMerchantProfileUpdates rejects exact privacy for home-based businesses (0.149542ms)
+(node:80150) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ validateMerchantPromotionInput normalizes a valid existing-item promotion (2.136666ms)
+✔ validateMerchantPromotionInput accepts timezone-qualified datetimes only (0.6335ms)
+✔ validateMerchantPromotionInput rejects invalid promotion rules (0.687917ms)
+(node:80151) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ merchant reply drafts restore per account, survive composer close and reject delayed former-account writes (3.410542ms)
+(node:80152) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ transitionVerificationStatus allows expected transitions (0.510625ms)
+✔ transitionVerificationStatus blocks invalid transitions (0.253125ms)
+✔ applyVerificationSubmission appends evidence and preserves rejection history (7.02225ms)
+(node:80155) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ merchant price rejects missing/malformed inputs instead of turning them into free (0.664125ms)
+✔ availability edits preserve unknown flags (0.556125ms)
+✔ promotion calendar dates use Singapore midnight (153.828167ms)
+✔ batch result retains failed canonical fixture items (0.285958ms)
+✔ OCR acceptance applies corrections before publication and repeated acceptance returns same dish (227.982917ms)
+(node:80157) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ submitClaimFromStall tracks telemetry and returns needs_auth for signed-out users (3.211834ms)
+✔ submitClaimFromStall submits merchant claim and returns created (0.166833ms)
+✔ submitClaimFromStall falls back in __DEV__ for non-auth backend errors (0.196208ms)
+✔ submitClaimFromStall blocks claiming a second different stall for the same profile (0.126625ms)
+✔ submitClaimFromStall maps backend auth-session errors to needs_auth (0.101333ms)
+(node:80158) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ failed Finish preserves previous profile and leaves staged retake retryable (0.93075ms)
+✔ confirmed Finish writes all preferences once and applies only the server response (0.397334ms)
+✔ account transition while Finish awaits cannot apply or commit its late response (0.195375ms)
+✔ guest Finish merges the staged fields locally without a service write (0.128125ms)
+(node:80160) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ taste and dietary routes share one resumable draft; cancellation leaves real profile unchanged (2.3125ms)
+✔ draft explicitly adopts guest at sign-in, survives same-account resume, and clears on account switch (0.614625ms)
+✔ guest snapshot survives SIGNED_IN replacement before signIn promise resolves (37.568ms)
+✔ all dietary requirements apply before limit and zero matches never restore unrestricted dishes (6.66975ms)
+✔ queued Save is an idempotent desired state and retained after failure (45.757084ms)
+✔ pending saves are account-generation scoped and a retired completion cannot clear renewed intent (7.540916ms)
+✔ retired sign-in profile application returns false so screens cannot complete stale onboarding (79.385333ms)
+(node:80161) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ drafts stay scoped to the owner and restore after switching back (0.733709ms)
+✔ late hydration cannot replace another account or newly edited work (0.173334ms)
+(node:80162) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ post composer controls the bottom-left food context overlay (2.274625ms)
+(node:80165) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ composer publish writes a shared post visible in feed and profile sources (104.536708ms)
+✔ composer publish uses the authenticated profile when profile hydration is still guest (93.650584ms)
+✔ review-only composer publish validates rating and records review state without creating a post (155.529ms)
+✔ publish-both records a review and still publishes a cross-user home feed post (35.733334ms)
+✔ publish-both validates post media before writing review state (17.834291ms)
+✔ publish-both keeps local review state unchanged when post write fails (6.388917ms)
+✔ composer publish requires an explicit dish and never guesses one from a location (0.311958ms)
+✔ publish-both retry reuses the client review id so the review is not duplicated (5.830458ms)
+✔ late publication receipts cannot populate the next account's local feed (6.91525ms)
+(node:80166) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ data export explicitly records a failed section while preserving readable sections (0.997667ms)
+✔ export aborts if account identity cannot be read (0.280541ms)
+(node:80167) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ article inspector never substitutes a different cached article (1.252708ms)
+✔ article lookup failures propagate for the retry state (0.381125ms)
+(node:80168) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ initial review draft defaults to not recommended (1.113583ms)
+✔ initial review draft factory returns a fresh object (0.295541ms)
+✔ client review ids are RFC 4122 v4 uuids and unique (1.857959ms)
+✔ selecting the same dish keeps the draft; a different dish resets it (5.081ms)
+(node:80197) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ review filtering precedes limiting and searches dish, stall and tags (2.157667ms)
+✔ same-time review cursor pages use IDs and top-rated uses rating first (0.480125ms)
+✔ cursor keeps microsecond precision and rejects incomplete rating boundaries (0.5785ms)
+(node:80198) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ lost upload acknowledgement recovers immutable object, preserving order and retry identity (1.971042ms)
+✔ partial failure reports exact photo and preserves completed assets (0.609792ms)
+✔ account transition prevents publishing a recovered upload (0.253375ms)
+(node:80227) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ immutable attempts change when bytes change at the same local URI (0.548625ms)
+(node:80229) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ popular food tag matching falls back to dish search text (30.206666ms)
+(node:80250) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ failed gallery images retain the source index of the surviving image (1.499958ms)
+✔ a failed gallery never substitutes unrelated media (0.194917ms)
+(node:80352) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ dietary eligibility requires every selected canonical flag (0.900292ms)
+✔ unknown dietary data cannot satisfy a requirement (0.14075ms)
+✔ zero eligible results remains empty instead of restoring the original list (0.175167ms)
+(node:80353) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ recommendation budget and reviewed exclusions apply before a one-item limit (4.190625ms)
+✔ mock search price and dietary constraints are hard requirements (0.291292ms)
+✔ a slate started before an account transition cannot resolve into the new account (134.764542ms)
+✔ an explicit empty slate filter does not bypass profile dietary requirements (15.033459ms)
+(node:80354) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ sortSearchResults sorts by price ascending (5.369125ms)
+✔ sortSearchResults sorts by rating descending (0.436166ms)
+✔ sortSearchResults sorts by nearest distance (0.70575ms)
+✔ best match preserves provider ranking instead of re-sorting a limited slate (0.173166ms)
+(node:80355) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ moving search placeholder uses a step state machine instead of elapsed-time frames (0.893125ms)
+✔ moving search placeholder reveals exactly one letter per step (0.171917ms)
+✔ moving search placeholder slides left by removing from the front on refresh (0.129625ms)
+✔ moving search placeholder enforces readable pacing even when callers pass fast timings (0.119917ms)
+✔ moving search placeholder disables animation for screen reader and reduced motion users (0.1305ms)
+(node:80356) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ getVenueChainKey groups Clearbit logos by represented domain (1.092833ms)
+✔ dedupeNearestVenueCandidates keeps nearest branch for duplicate chain stalls (2.0615ms)
+✔ dedupeNearestVenueCandidates groups exact normalized stall names without logos (0.215041ms)
+(node:80357) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ getVenueLogoDomain reads represented domains from Clearbit logo URLs (0.5315ms)
+✔ getVenueLogoCandidates retries non-food favicon logo sources (0.500583ms)
+✔ getVenueLogoCandidates rejects malformed comma-joined URLs (0.062833ms)
+✔ getVenueLogoInitials builds a non-food stall identity fallback (0.314375ms)
+(node:80358) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ failed messaging handoffs and dismissed sheets never report success (0.877333ms)
+✔ system failures propagate to the recoverable caller without success (0.8585ms)
+(node:80359) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ asset audit script covers mobile, onboarding, passport, and marketing asset buckets (1.730208ms)
+(node:80360) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Sprint 6: required screens are wrapped by FeedErrorBoundary (1.862292ms)
+✔ Sprint 6: dead files are removed (0.360875ms)
+✔ Sprint 6: environment template exists (0.136334ms)
+✔ Sprint 6: detail fallback copy matches expected content (0.520209ms)
+(node:80361) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ app bootstrap derives offline state from NetInfo and cleans up its subscription (0.519625ms)
+✔ offline recovery retries NetInfo instead of pretending the connection returned (0.095875ms)
+✔ Supabase legacy cache warm-up is opt-in and never blocks app-shell readiness (0.233667ms)
+(node:80362) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ mood search only runs for a sentence that matched no dish names (0.993958ms)
+✔ parseMoodIntent clamps shifts and drops malformed fields (0.928042ms)
+✔ applyMoodIntent shifts taste within 0-10 and merges budget and dietary needs (0.23325ms)
+✔ rankMoodResults keeps taste order, lifts keyword matches and drops dishes over budget (0.181625ms)
+✔ mood-search Edge Function caches answers and caps fresh calls per user per day (1.218625ms)
+(node:80404) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ a dish with no tasteConfidence scores the same as a fully trusted one (55.36325ms)
+✔ low confidence shrinks the pull of a strong taste match (0.396375ms)
+✔ low confidence leans on rating when the taste match is weak (0.253292ms)
+(node:80427) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ processExplicitFeedback pushes taste away on negative rating signals (2.043583ms)
+✔ processExplicitFeedback decays older feedback impact (0.266208ms)
+✔ explicit search and click feedback use bounded relative weights (0.196125ms)
+✔ runRecommendationPipeline enforces venue and dominant-axis diversity caps (9.53075ms)
+✔ processExplicitFeedback ignores untagged neutral or zero-confidence dishes (1.646042ms)
+(node:80506) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ tasteEngine: vector primitives return deterministic math results (11.644542ms)
+✔ tasteEngine: cosine similarity handles identical and zero vectors (0.288625ms)
+✔ tasteEngine: blended score prefers close dishes (0.166166ms)
+✔ tasteEngine: rankDishes sorts descending and decideForMe respects threshold (0.61875ms)
+✔ tasteEngine: calibration and quiz builder clamp values into 0-10 (3.577542ms)
+(node:80523) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ tag affinity is normalised and case-insensitive, including food type (138.798375ms)
+✔ without liked dishes, identical vectors score the same (43.359875ms)
+✔ liked dishes' tags separate dishes with identical vectors (1.258458ms)
+✔ liked ids missing from the pool leave scores unchanged (0.370208ms)
+(node:80539) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ time to first dish is reported once per app session (1.068292ms)
+(node:80542) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ trackAnalyticsEvent stores mock-safe event records (2.088291ms)
+✔ trackAnalyticsEvent does not throw when sink fails (0.964792ms)
+(node:80544) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ adaptFloorPlanSourceToFloorPlan maps canonical source fields to FloorPlan (1.010375ms)
+✔ getFloorPlan prefers canonical source for direct key (0.471791ms)
+✔ getFloorPlan resolves canonical source through alias (0.193125ms)
+✔ getFloorPlan falls back to generated plan for unknown building/floor (0.249958ms)
+(node:80545) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ getNearestSingaporeArea returns town labels for Singapore coordinates (2.932ms)
+(node:80552) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ connectivity treats confirmed transport or internet loss as offline (0.837917ms)
+✔ connectivity waits for an unknown reachability probe before declaring offline (0.200708ms)
+(node:80556) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ a gallery or upload callback from before a subject transition cannot apply private state (22.994458ms)
+(node:80584) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ catalog sources require an exact approved HTTPS publisher (1.18375ms)
+(node:80585) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ GitHub Actions are SHA-pinned and least-privilege (2.832458ms)
+✔ release secrets are scoped to EAS steps, not install or workflow scope (0.5455ms)
+✔ main CI uses the pinned Node runtime and fails closed for required release proof (0.324542ms)
+✔ EAS build gate skips with a visible notice when EXPO_TOKEN is absent, and runs otherwise (0.30275ms)
+✔ security workflow keeps dependency, gitleaks, and trufflehog gates (1.053417ms)
+✔ release checklist includes the Supabase Advisor regression guard (1.865709ms)
+✔ service-role smoke scripts require explicit opt-in and smoke env names (0.689791ms)
+(node:80587) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ expo-constants iOS app-config script quotes PROJECT_DIR (1.963167ms)
+(node:80588) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ web Merchant Portal cookie mutations require CSRF and same-origin protection (2.10575ms)
+✔ web Merchant Portal login rejects cross-site and non-JSON cookie-setting requests (0.335625ms)
+✔ web Merchant Portal sign-up and forgot-password are safe public auth routes (1.776084ms)
+✔ web Merchant Portal mutation callers attach the CSRF header helper (2.406708ms)
+(node:80589) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ committed Android manifest strips every permission app.json blocks (1.259125ms)
+✔ committed iOS Info.plist does not request background audio (0.431208ms)
+✔ committed iOS Info.plist does not ask for Always location or the microphone (0.311542ms)
+✔ OTA runtime version uses the fingerprint policy in app.json and both native projects (1.20625ms)
+(node:80590) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ analytics privacy scrubber redacts PII and rounds coordinates (2.309292ms)
+✔ PostHog identity properties do not include precise coordinates (0.525167ms)
+✔ analytics tracking sanitizes before buffering or sink dispatch (3.608458ms)
+✔ Sentry event and breadcrumb sanitizers scrub exception, request, and breadcrumb payloads (0.308625ms)
+✔ auth token storage allows plaintext fallback only behind explicit guard (0.110208ms)
+✔ media upload validation rejects unsafe MIME and signed URL failure (307.308792ms)
+✔ media upload validation rejects MIME spoofing before signed upload (1.824416ms)
+✔ safe linking routes delivery and article opens through allowlisted helpers (1.029041ms)
+✔ ingest-menu-photo requires auth and verifies submission ownership (0.387458ms)
+✔ guest session function rate-limits by device and client IP with generic server errors (0.195667ms)
+✔ security audit migration privatizes review media and adds owner-scoped policies (0.307292ms)
+✔ review photo writes persist storage paths and reads resolve signed URLs (0.973084ms)
+✔ marketing website ships a content security policy header (0.334208ms)
+✔ app security hardening migration restricts ops RPCs and verification evidence metadata (1.221833ms)
+✔ security advisor migration replaces public_profiles view with RLS table (0.368917ms)
+✔ advisor warning hardening pins app-owned functions and removes anon RPC execution (2.771ms)
+✔ OAuth flow validates callback URL and rejects implicit token fragments (0.554ms)
+✔ store policy controls cover account deletion, UGC moderation, and location disclosure (2.727125ms)
+✔ password reset uses redirect URL and supports recovery code exchange (0.72675ms)
+✔ UGC surfaces expose report, hide, and block safety actions (1.063875ms)
+✔ shared post reads apply session hide and block filters before rendering (0.563041ms)
+✔ merchant portal RLS hardening protects merchant-only surfaces (0.947458ms)
+✔ trusted external links stay on usehungry.com and allow only the support inbox (0.44625ms)
+(node:80594) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ timingSafeEqual matches only identical secrets (0.493417ms)
+✔ edge function worker and API key checks use the constant-time compare (1.289334ms)
+(node:80605) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ catalog request keys separate cursor pages and filter states (0.441ms)
+(node:80606) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ production Metro bundles stub out mock and Excel data sources (1450.767334ms)
+✔ non-production Metro bundles keep the real mock and Excel modules (4.661542ms)
+(node:80607) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Excel repository exposes workbook-scale local venues and dishes (12.440542ms)
+✔ Excel repository exposes only rights-authorized workbook images to app dishes (12.588042ms)
+✔ Excel repository searches parsed workbook menu items (305.276708ms)
+✔ Excel discovery feed returns local rows with prioritized image-backed dishes (290.020792ms)
+(node:80608) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ mock follows, blocks, deletion and push preferences isolate A/B and survive A returning (1.618792ms)
+(node:80645) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Salmon Don has its own photo, not the fish soup photo (1.259916ms)
+(node:80698) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ getDecideForMe respects dietary restrictions (74.797208ms)
+✔ getDecideForMe excludes already shown dishes (0.410458ms)
+(node:80699) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ repositories: getProfile returns authenticated and guest identities correctly (0.549833ms)
+✔ repositories: building alias resolution returns same venue set for canonical and alias ids (12.353375ms)
+✔ repositories: searchDishes enforces dietary + radius filters and keeps deterministic ordering (1.693167ms)
+✔ repositories: searchDishes honors explicit filter tasteValues over profile fallback (0.647375ms)
+✔ repositories: listPopularNearby returns 4 nearest dishes sorted by distance (0.179083ms)
+✔ repositories: getDecideForMe respects excludeDishIds (0.458625ms)
+(node:80720) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ mock review publication is visible, canonical, retry-stable and ownership protected (5.464417ms)
+(node:80723) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ discovery.getBuildingDetail returns enriched building metadata (1.532084ms)
+✔ discovery.getFloorPlan returns a floor plan with polygon geometry (0.416041ms)
+✔ discovery.searchDishes maps repository results into scored search contracts (1.645416ms)
+✔ reviews.submitReview persists reviewed dish id in profile state (145.644209ms)
+✔ reviews.listRecentReviews pages newest-first reviews across dishes (83.829625ms)
+✔ discovery.decideForMe respects profile dietary preferences (0.693ms)
+✔ recommendations.getSlate returns shared recommendation shape with hard dietary filters (9.097917ms)
+✔ recommendations.recordExplicitFeedback applies food-specific click signals (1.272666ms)
+✔ checklist mock service persists items, tried state, and reorder (1.513334ms)
+✔ portfolio mock service persists publish, item, follow, flag, and search state (1.3915ms)
+✔ portfolio mock service rejects stale optimistic mutation versions (7.47625ms)
+✔ portfolio mock service records passport contribution progress (0.267791ms)
+✔ ai.processImplicitFeedback is no-op while explicit learning stabilizes (0.085583ms)
+✔ auth.requestAccountDeletion clears mock session (0.169875ms)
+✔ account deletion stays cancellable during the grace period (0.249292ms)
+✔ data export collects the signed-in user's profile and activity (10.852625ms)
+✔ profile.updateProfile persists mock profile visibility (0.210042ms)
+✔ merchant menu methods persist CRUD and status toggles in mock state (1.81975ms)
+✔ merchant seeded menu edits do not overwrite original mock catalog fixtures (0.236ms)
+✔ merchant seeded menu is immediately visible from mock user catalog (0.193292ms)
+✔ merchant profile updates are visible from mock user venue reads (1.14275ms)
+✔ merchant OCR draft methods filter drafts and publish accepted dishes (1.018292ms)
+✔ merchant AI dish tool methods return canned suggestions without publishing (0.548041ms)
+✔ merchant inbox filters interactions by outlet, type, and unreplied status (0.728208ms)
+✔ merchant inbox reply and report methods validate input and persist replies (0.471042ms)
+✔ merchant AI reply generation follows interaction sentiment and question context (0.475125ms)
+✔ merchant promotion methods filter by outlet and status (0.383541ms)
+✔ merchant promotion create and update persist mock state (1.450375ms)
+✔ merchant promotion analytics returns analytics and rejects missing promotion (76.0345ms)
+✔ customer active promotions only expose active in-window offers for the current dish (0.6095ms)
+✔ merchant popular visitor pins stay review-backed, capped, reorderable, and venue-filtered (8.04625ms)
+✔ merchant analytics records dish views without duplicate session increments (1.348125ms)
+✔ merchant analytics records explicit customer action events (7.525084ms)
+✔ merchant notifications sync low ratings and weekly summaries with dedupe (99.008833ms)
+✔ merchant AI assistant returns insight slices and weekly summary (5.974542ms)
+✔ merchant AI assistant rejects unknown outlet (3.892416ms)
+✔ merchant settings team methods persist members and role changes (0.682417ms)
+✔ merchant settings team methods validate duplicates and protected owner role (0.6025ms)
+✔ merchant settings notification preferences persist partial updates (1.210917ms)
+(node:80727) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ validateFixtureBundle passes for default fixtures (1.398084ms)
+✔ stall post fixtures include tagged carousel posts with longer captions (0.338458ms)
+✔ validateFixtureBundle catches broken venue references (0.436334ms)
+✔ validateFixtureBundle catches taste-vector range violations (0.323292ms)
+✔ validateFixtureBundle can enforce strict top-dish references (0.1265ms)
+(node:80728) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+﹣ service provider resolves supabase mode from HUNGRY_DATA_SOURCE (0.76775ms) # SKIP
+﹣ service provider resolves supabase mode from EXPO_PUBLIC_HUNGRY_DATA_SOURCE (0.121875ms) # SKIP
+✔ service provider can be forced into mock mode for developer shortcuts (235.648625ms)
+✔ released builds reject forced mock and Excel provider switches (0.260333ms)
+✔ service provider can be forced into supabase mode for user mode (0.266584ms)
+✔ service provider can be forced into Excel mode without eagerly loading the catalog (0.207959ms)
+(node:80732) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ retired auth adapters cannot read, overwrite or erase a subsequent login (2.564583ms)
+✔ retirement captures only the old immutable token before a new login writes (0.779792ms)
+✔ malformed retired session cannot invent a revocation token or prevent purge (7.876084ms)
+✔ strict secure deletion rejects read-back residue and blocks new writes until successful retry (85.3825ms)
+✔ an in-flight secure write settles before capture and purge, then queued new login runs once (3.656125ms)
+✔ a persisted retirement marker prevents cold-start-equivalent stale credential restoration (7.167625ms)
+(node:80758) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ 0043 aligns staging_food_businesses to the canonical CSV header (40.2625ms)
+✔ 0043 adds validation and dedupe indexes without promoting canonical data (3.61225ms)
+✔ canonical food business staging smoke covers schema, policy, and source controls (1.500792ms)
+✔ canonical CSV staging importer generates a staging-only SQL load (733.800167ms)
+✔ canonical CSV staging importer is guarded and exposes package scripts (0.589459ms)
+✔ canonical CSV staging importer can split SQL for remote CLI limits (455.257709ms)
+(node:80759) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ catalog display migration adds explicit media and menu approval metadata (2.812916ms)
+✔ app-facing read RPCs filter menus and sanitize images through provenance helpers (0.70625ms)
+✔ database smoke exercises representative app-facing RPC output (0.705833ms)
+✔ Excel source audit has a production display gate for unsafe menus and images (0.107875ms)
+(node:80760) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ merchant catalog guards preserve provenance trust fields (1.1915ms)
+✔ public direct catalog reads use displayability policies (0.255042ms)
+✔ menu item promotion creates canonical dishes without display approval bypass (0.461875ms)
+✔ importer can promote parsed menu items after staging apply (0.082375ms)
+✔ frontend Supabase menu reads prefer display-safe service data (0.51625ms)
+(node:80762) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ HungryService exposes participant chat methods (1.253375ms)
+✔ Supabase chat service uses shared conversation tables and realtime (1.862709ms)
+✔ Mock service keeps chat in the service layer, not UI-only state (0.953416ms)
+✔ Supabase chat smoke script is explicit, cleanup-safe, and service-role gated (0.839417ms)
+✔ Supabase chat opens conversations through checked RPC and Realtime-safe receipts (2.6685ms)
+(node:80765) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ getConfiguredDataSource prefers HUNGRY_DATA_SOURCE when set (1.6575ms)
+✔ getConfiguredDataSource falls back to EXPO_PUBLIC_HUNGRY_DATA_SOURCE when private var blank (0.139917ms)
+✔ getConfiguredDataSource lets E2E public source override local dotenv defaults (0.075541ms)
+✔ released builds stay on Supabase even when a mock or Excel override is injected (0.13225ms)
+✔ missing Supabase credentials do not silently select mock data (0.087875ms)
+✔ Supabase client persists auth sessions through secure storage with PKCE enabled (0.366666ms)
+✔ Supabase auth storage mirrors tokens to AsyncStorage only in dev/test fallback mode (0.217208ms)
+✔ PKCE SHA-256 fallback produces the standard digest (0.28225ms)
+(node:80766) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ database Excel foundation migration extends catalog and staging tables safely (22.196833ms)
+✔ new public read tables use RLS and restricted writes (1.543167ms)
+✔ location RPCs support named areas and live discovery feed without definer privileges (26.560916ms)
+✔ Excel scripts are staging-only, schema-aware, and service-role guarded (1.18625ms)
+✔ repo wiring exposes validation, import, smoke checks, and app discovery RPCs (1.40625ms)
+✔ location stall search exposes logo URLs for BrowseStalls (0.433708ms)
+✔ database Excel smoke SQL checks the live contract (0.330042ms)
+✔ database Excel promotion migration implements staging promotion and fallback logic (0.837041ms)
+(node:80767) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ 0028 creates only the Phase 0-1 additive foundation tables (2.012667ms)
+✔ 0028 keeps canonical app-facing IDs unchanged and referenced as text (1.069208ms)
+✔ 0028 enables RLS and keeps raw import data service-role only (42.102958ms)
+✔ 0028 includes queue, source, place, reference, and trigram indexes (11.96575ms)
+✔ 0028 does not implement deferred server-side app features (1.386458ms)
+✔ database foundation smoke SQL covers tables, RLS, policies, indexes, seeds, and user-policy guards (15.358958ms)
+(node:80768) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ tagging functions run only as the service role (0.605292ms)
+✔ applying a suggestion never writes dietary flags (0.1105ms)
+✔ tag-dishes auto-applies only at confidence 0.7 or higher and never suggests halal (0.131958ms)
+✔ tag-dishes keeps the Anthropic key server-side behind a worker token (0.06325ms)
+(node:80769) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Full Audit V1 social safety adds checked report and moderation surfaces (2.022791ms)
+✔ Full Audit V1 chat sends are RPC-gated by participants, blocks, and rate limits (1.175417ms)
+✔ Full Audit V1 gamification persists Food Cred, stall interactions, and missions (65.543125ms)
+✔ mobile services use the Full Audit V1 gamification persistence hooks (0.577417ms)
+✔ Full Audit V1 smoke checks the applied social and gamification controls (0.402541ms)
+✔ PostGIS relocation prep keeps app-owned geo RPCs schema-ready (0.371458ms)
+✔ Full Audit V1 smoke command is skip-safe for local network gaps (0.25225ms)
+✔ Full Audit V1 live behavior smoke covers social safety and gamification (0.1965ms)
+✔ Supabase Security Advisor classifier fails new app-owned findings only (0.348ms)
+✔ legacy payment/order Advisor blocker has an owner-approved cleanup runbook (2.44375ms)
+✔ Supabase Security Advisor support snapshot captures owner-blocker evidence (0.298417ms)
+(node:80775) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ 0030 adds a bounded Home social feed RPC (1.389083ms)
+✔ 0030 keeps feed reads invoker-safe and visibility-gated (1.030542ms)
+✔ 0030 adds feed indexes without implementing deferred social infrastructure (0.917ms)
+✔ Supabase social feed uses RPC-first reads with legacy fallback (1.815167ms)
+✔ home social feed smoke SQL checks function, grants, indexes, guard, and samples (0.339167ms)
+(node:80777) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ integration migration adds privacy and post publication primitives (3.525541ms)
+✔ integration migration adds participant-based chat and read receipt primitives (1.208167ms)
+✔ integration migration adds media buckets for posts and merchant images (0.611666ms)
+✔ integration readiness smoke SQL checks schema, policies, buckets, and realtime (0.5165ms)
+(node:80794) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ live discovery smoke migration prefilters venues before top-dish lookup (1.905084ms)
+✔ live search smoke migration treats area-name queries as bounded location searches (0.88325ms)
+✔ live search smoke migration enriches only the limited result page (0.760791ms)
+✔ live search smoke migration bounds candidate IDs before scoring (0.72525ms)
+✔ live search smoke migration applies app filters before candidate limits (0.762666ms)
+✔ live search smoke migration keeps common unfiltered text search on a fast path (0.473584ms)
+✔ live search smoke migration restores fast bounded candidates with invalid-area guard (0.083958ms)
+(node:80797) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ 0031 adds bounded location directory read RPCs (0.950334ms)
+✔ 0031 keeps location reads invoker-safe and guest-browseable (1.188666ms)
+✔ 0031 adds location indexes without deferred data models (0.860375ms)
+✔ Supabase discovery service uses location RPCs with cache fallback (0.663917ms)
+✔ location directory smoke SQL checks functions, grants, indexes, and samples (0.3545ms)
+(node:80825) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ image uploads are re-encoded to strip EXIF/GPS after validating the original (4.540917ms)
+✔ post media re-encodes photos but leaves videos untouched (2.827625ms)
+✔ HEIC photos re-encoded to JPEG are stored under a .jpg path (14.446084ms)
+(node:80847) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Discovery feed prioritises stalls with approved priced menu coverage (1.857167ms)
+✔ Discovery feed prioritises image-backed dishes and rows when approved images exist (1.864333ms)
+✔ Discovery feed exposes venue logo separately from food imagery (0.811667ms)
+✔ Search remains menu-backed instead of surfacing unapproved menu rows (0.646167ms)
+(node:80848) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ 0036 adds an additive merchant change request queue only (1.863875ms)
+✔ 0036 preserves canonical text IDs and does not apply canonical mutations (0.967834ms)
+✔ 0036 enables RLS with service-role management and RPC-gated merchant writes (2.543541ms)
+✔ 0036/0037 add queue indexes and hardened security-definer RPCs (3.473625ms)
+✔ merchant change request smoke SQL covers schema, grants, behavior, and platform review (1.365416ms)
+(node:80849) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Supabase merchant service is wired to linked consumer venue and dish tables (1.263375ms)
+✔ Supabase merchant dish writes persist user-visible metadata and media (0.736ms)
+✔ Supabase repository reads dish metadata from normalized catalog tables (0.79925ms)
+✔ Supabase migration links merchant writes to non-merchant read surfaces (0.47675ms)
+✔ Supabase merchant RLS hardening limits review replies and settings writes (0.580209ms)
+✔ Supabase merchant catalog metadata RLS covers images and dietary links (0.394208ms)
+✔ Supabase merchant portal readiness covers views, notifications, and promo pricing (53.363083ms)
+✔ Supabase merchant analytics foundation uses RPC-backed dynamic events and rollups (3.020375ms)
+✔ Supabase popular visitor pins are review-backed, merchant-managed, and public-active readable (1.215291ms)
+(node:80850) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ 0035 creates only the merchant organization compatibility foundation (2.286166ms)
+✔ 0035 preserves legacy merchant surfaces and canonical text IDs (1.167792ms)
+✔ 0035 backfills compatibility from legacy accounts, roles, and outlets (1.10125ms)
+✔ 0035 enables RLS with service-role and bounded merchant policies (2.470959ms)
+✔ 0035 adds expanded role model, indexes, and recursion-safe helper functions (3.669125ms)
+✔ merchant organization smoke SQL covers schema, RLS, grants, backfill, behavior, and legacy guards (0.816ms)
+(node:80851) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ consumer Supabase reads never query OCR draft dishes (5.033ms)
+✔ OCR draft table access is confined to supply, merchant, and ops-admin paths (1.245375ms)
+(node:80853) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ phase7 dietary flag migration seeds the canonical six flags (1.45025ms)
+✔ phase7 venue category migration seeds expected category slugs (0.335542ms)
+✔ phase7 dish rating trigger migration defines trigger and function (0.5045ms)
+✔ phase7 auth scaffold migration includes guest session, orders, and chat policy surfaces (0.969666ms)
+✔ guest sessions edge function scaffold exposes POST handler semantics (0.91625ms)
+✔ phase7 smoke SQL scripts exist for PostGIS and pgvector checks (0.733209ms)
+✔ generated seed SQL is non-destructive and deterministic (0.916125ms)
+(node:80854) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Supabase social publish writes posts and post_media instead of legacy bites (2.293167ms)
+✔ composer cache uses returned post media URLs after upload (0.574333ms)
+✔ Supabase social feed reads published posts and post_media (81.660041ms)
+✔ Supabase social reactions use post engagement tables (1.077083ms)
+✔ post engagement migration keeps denormalized counts in sync (0.685291ms)
+✔ Supabase repository exposes published posts to shared Home/Profile reads (0.481333ms)
+✔ post-media storage policy follows post visibility instead of author-only reads (0.479333ms)
+(node:80855) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ supabase saves taste quiz answers to quiz_responses for signed-in users only (1.642833ms)
+✔ taste quiz finish waits for one confirmed preference commit (0.595083ms)
+(node:80856) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ impressions table is owner-only under RLS (0.628167ms)
+✔ weekly tap rate is service-role only (0.173792ms)
+✔ Decide For Me logs each pick it shows (2.410042ms)
+(node:80857) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ release advisor cleanup fixes catalog helper search paths (1.262375ms)
+✔ customer promotion reads are RLS-backed invoker calls (0.909ms)
+✔ activity functions keep trigger behavior without direct app-role execution (0.83675ms)
+✔ user stall submissions are inserted through authenticated RLS (0.899375ms)
+(node:80861) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ 0029 adds bounded server-side discovery read RPCs (1.773583ms)
+✔ 0029 keeps discovery RPCs invoker-safe and executable by app clients (1.466916ms)
+✔ 0029 adds query indexes without mutating canonical IDs or deferred models (0.953875ms)
+✔ Supabase discovery service uses RPC-first read paths with cache fallback (1.9365ms)
+✔ venue detail reads expose logo URLs for Stall Detail hero identity (6.816541ms)
+✔ Discover area count uses exact RPC before location-scoped building fallback (7.4215ms)
+✔ Discover feed ratings are sourced from the same dish aggregates as details (6.487875ms)
+✔ server-side discovery smoke SQL checks functions, grants, indexes, and sample calls (1.820625ms)
+(node:80862) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ social governance migrations create only additive tables (2.703166ms)
+✔ social governance migrations enable RLS with service-role and bounded user policies (3.839292ms)
+✔ social governance migrations add indexes without mutating canonical app-facing IDs (2.141916ms)
+✔ social governance migrations gate reads through moderation, hidden-post state, and feed read model (1.349083ms)
+✔ social governance migrations expose safe RPCs with correct grants (2.792458ms)
+✔ Supabase service uses v2 feed first and routes post safety actions to RPCs (1.701417ms)
+✔ social governance smoke SQL covers schema, RLS, grants, guards, and samples (90.071833ms)
+(node:80863) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Supabase mode never creates an authenticated placeholder profile id (2.577917ms)
+✔ session/profile stores bind temporary Supabase auth profiles to the real session UUID (1.335333ms)
+(node:80864) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ supabase repository does not fall back to mock dataset before hydration (2.428125ms)
+✔ supabase repository returns undefined for detail reads before hydration (6.679625ms)
+(node:80865) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ server ranking keeps the RPC signature and search path (1.0755ms)
+✔ server ranking weights AI vectors by confidence like the on-device engine (0.223042ms)
+✔ server ranking blends 20% tag overlap from the caller's own favourites (0.35225ms)
+(node:80867) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ taste recommendation migration adds vector metadata, interaction tables, and indexes (1.60625ms)
+✔ taste recommendation migration adds RLS policies and live recommendation RPCs (0.68275ms)
+✔ supabase recommendation failures remain errors instead of cached success (0.767291ms)
+✔ supabase service records explicit feedback through RPC and preserves fallback update (1.365542ms)
+✔ implicit feedback remains no-op until the explicit learning loop is stable (0.917083ms)
+✔ taste recommendation smoke SQL checks functions, indexes, policies, and compile path (0.460958ms)
+(node:80868) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ user stall submissions migration adds a private reviewed submission queue (1.589083ms)
+✔ user stall submissions migration exposes only the checked RPC write path (0.535875ms)
+✔ user stall submissions migration extends Food Cred, missions, and passport progress (0.834042ms)
+✔ Supabase service uploads stall images and maps user submissions (0.413209ms)
+✔ user stall submissions support ordered photo galleries (0.700125ms)
+(node:80870) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ account reset rejects delayed follow list and late optimistic rollback (1.290375ms)
+✔ submission, passport, and Food Cred loads cannot repopulate cleared account state (0.3275ms)
+✔ discovery reset invalidates queued popular response and account recommendation cache (0.288666ms)
+(node:80871) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ private cache partitions enforce subject metadata and retire global legacy state (1.178583ms)
+(node:80872) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ checklist store tracks creation/add/tried and rejects duplicate or partial reorder (4.171125ms)
+✔ portfolio store tracks create/add/publish and validates scores and duplicates (2.495375ms)
+✔ portfolio store blocks stale edits and refreshes the latest portfolio (0.940708ms)
+(node:80873) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ mission cache separates account IDs and Singapore Monday boundaries (1.195583ms)
+✔ reset rejects a late mission response from the previous account (0.478541ms)
+(node:80882) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ profile store treats Supabase writes as source of truth with guarded rollback (6.828458ms)
+✔ MVP profile identity uses Supabase storage and public profile sync (3.43475ms)
+✔ MVP settings split keeps device-only preferences in local UI storage (4.229417ms)
+✔ EAS release profiles set explicit MVP feature-flag environments (1.161792ms)
+✔ production Post route publishes through the canonical composer service path (1.341459ms)
+✔ signed-in onboarding merges guest taste and dietary choices into the Supabase profile (2.061125ms)
+✔ favourite hydration reads the user_favourite_dishes join table (0.94925ms)
+✔ Supabase review reads hydrate review_photos and public profile names and avatars (3.432375ms)
+✔ Supabase review feed does not send review ids through post reaction writes (1.34625ms)
+✔ advanced liked-content social collection is gated out of MVP production (0.780667ms)
+✔ Search results route hydrates through the service before trusting repository cache (0.415917ms)
+✔ Supabase app readiness keeps the legacy cache opt-in and bounded away from public routes (0.41625ms)
+✔ Supabase social feed/profile history do not treat persisted local posts as canonical (0.102709ms)
+✔ MVP browse surfaces do not show obvious fake trust claims (1.213375ms)
+✔ social store rolls back failed production reactions instead of persisting local-only truth (0.199666ms)
+✔ profile/public-profile post history can read posts through the social service contract (1.737667ms)
+(node:80883) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ history opt-out blocks recent searches and raw-query taste event retention (1.908208ms)
+✔ clearHistory removes retained search history while preserving current query and filters (0.758542ms)
+✔ syncProfile rehydrates favourite dish IDs for an already loaded Supabase profile (1.422333ms)
+✔ syncProfile keeps the current profile when favourite rehydration fails (0.303167ms)
+✔ syncProfile clears the rehydration error flag after a successful load (0.202125ms)
+✔ toggleFavourite rolls back and shows an error toast when sync fails (64.186667ms)
+(node:80890) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ profile/session persistence hydrates without circular wait and isolates account partitions (4.799833ms)
+✔ a late profile storage read is discarded after subject generation changes (1.112ms)
+(node:80892) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ solo wheel chooses an integer winner including zero, rejects duplicate venues and resolves once (1.19675ms)
+✔ clearing a mock channel rejects queued events (75.613917ms)
+✔ reset rejects a late private checklist load instead of repopulating the next account (1.736792ms)
+✔ portfolio rejects arbitrary precision rather than silently rounding (2.31125ms)
+✔ portfolio nullable patches clear notes and score while omitted fields stay unchanged (1.633459ms)
+✔ checklist tried state supports explicit undo and planned time clearing (1.190959ms)
+✔ moderation removal excludes a portfolio from ordinary, search and shared reads (11.436792ms)
+✔ collection save persists through store reset and authoritative reload (1.136333ms)
+✔ a delayed collection load reloads after a confirmed save and cannot overwrite it (0.474625ms)
+✔ newer simultaneous collection load wins and failed saves never create confirmed state (0.548666ms)
+(node:80893) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ events tracked before the PostHog sink attaches are replayed to it (8.172875ms)
+✔ sign-out retires local credentials and revokes only a captured session (1.521458ms)
+✔ sign_in_completed is logged once per sign-in and identity flags are accurate (0.232459ms)
+✔ account deletion reports success once queued, and the grace prompt can't be dismissed (0.696166ms)
+✔ share attribution survives a relaunch for seven days (0.73475ms)
+✔ share attribution is cleared once a signup is credited to it (12.319666ms)
+✔ GPS refreshes on foreground and first follow asks for push inline (3.312416ms)
+(node:80894) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ drafts survive composer remount, preserve retry identity, and isolate account keys (1.16775ms)
+✔ account-scoped chat drafts restore after logout and reject another account's draft (0.50225ms)
+(node:80895) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ grantLocation tracks denied analytics when location module is unavailable (61.393042ms)
+✔ manual location selection sends only coarse coordinates to analytics (1.117959ms)
+✔ refreshLocation never prompts and skips when permission is not granted (1.560666ms)
+✔ a delayed GPS fix is discarded after manual selection and account reset (4.018292ms)
+(node:80896) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ passport store exposes stamp selector and celebration marker contract (1.394583ms)
+(node:80897) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ toggleFavourite updates taste vector and recommendation signals (3.65375ms)
+✔ recordReviewEntry applies rating feedback and increments confidence signals (0.805292ms)
+✔ recordTasteInteraction applies search and result-click signals (2.627041ms)
+✔ recordTasteInteraction caps repeated low-value clicks (0.772917ms)
+✔ signed-out Supabase onboarding taste and dietary choices stay local until auth (0.86425ms)
+(node:80899) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ review submission helpers persist reviewed dish and entry payload (21.957375ms)
+(node:80909) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ session store persists app auth state through the durable app storage adapter (1.856917ms)
+✔ durable app storage migrates legacy SecureStore session metadata (0.657042ms)
+✔ guest onboarding survives first sign-in but is not inherited by a different account (114.549917ms)
+✔ completeAuth records the Supabase user and data source for reload restoration (0.502667ms)
+✔ invalid Supabase auth restoration is rejected instead of persisting a mock id (5.893625ms)
+✔ Supabase auth restoration preserves a service-hydrated profile with the same user id (1.095166ms)
+✔ explicit auth sign-out clears the restored app session (4.319042ms)
+✔ manual signOut clears auth state but keeps returning users on login (4.349875ms)
+✔ manual signOut clears account-scoped optimistic caches (3.702083ms)
+✔ visible sign-out actions reset to login instead of onboarding (0.962292ms)
+(node:80910) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ social store contract: post interactions persist in account-partitioned storage (2.655083ms)
+✔ social store contract: UUID follows sync to service while local-name fallback is dev/mock only (2.776666ms)
+✔ social store contract: like and save toggles roll back failed Supabase sync (0.579333ms)
+✔ social store contract: real post shares sync to Supabase and unsupported ids no-op (5.092542ms)
+✔ profile grid contract: liked and saved posts read from the persisted social store (0.618084ms)
+✔ public profile post history has a service-backed user post path (3.436292ms)
+✔ public profile does not expose the current user's saved card (2.355042ms)
+✔ social store contract: comments and replies update visible post counters (5.631417ms)
+(node:80911) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ documented Hungry theme text pairs meet WCAG AA contrast (0.575375ms)
+✔ theme exposes computed contrast ratios for audit traceability (1.153458ms)
+✔ bottom tab active label and create icon meet contrast targets (0.283791ms)
+ℹ tests 790
+ℹ suites 0
+ℹ pass 786
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 2
+ℹ todo 0
+ℹ duration_ms 17013.232333
+
+✖ failing tests:
+
+test at src/app/screens/decide-for-me-phase1-contracts.test.ts:2:3113
+✖ taste quiz asks for a usual budget and saves it with dietary preferences (6.2045ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /setMaxDishBudget\(maxDishBudget\)/. Input:
+  
+  'import {\n' +
+    '  closestTasteOptionIndex,\n' +
+    '  useOnboardingDraftStore,\n' +
+    '} from "@/features/onboarding/useOnboardingDraftStore";\n' +
+    'import { usePreventRemove } from "@react-navigation/native";\n' +
+    'import { commitQuizProfile } from "@/features/onboarding/commitQuizProfile";\n' +
+    'import { assertAccountGeneration, getAccountGeneration } from "@/lib/security/accountScope";\n' +
+    'import { useReduceMotion } from "@/hooks/useReduceMotion";\n' +
+    'import { NativeStackScreenProps } from "@react-navigation/native-stack";\n' +
+    'import { useEffect, useMemo, useRef, useState } from "react";\n' +
+    'import {\n' +
+    '  Animated,\n' +
+    '  KeyboardAvoidingView,\n' +
+    '  Platform,\n' +
+    '  FlatList,\n' +
+    '  Pressable,\n' +
+    '  ScrollView,\n' +
+    '  StyleSheet,\n' +
+    '  View,\n' +
+    '  useWindowDimensions,\n' +
+    '  Easing,\n' +
+    '  type ListRenderItemInfo,\n' +
+    '  type NativeScrollEvent,\n' +
+    '  type NativeSyntheticEvent,\n' +
+    '} from "react-native";\n' +
+    'import { SafeAreaView } from "react-native-safe-area-context";\n' +
+    'import { Check, ChevronRight, Search } from "lucide-react-native";\n' +
+    '\n' +
+    'import { AccessibleImage, Button, AppText, Card, Chip, EmptyState, Input } from "@/components/ui";\n' +
+    'import { TASTE_DIMENSIONS } from "@/constants/taste";\n' +
+    'import { getHungryService } from "@/lib/services/serviceProvider";\n' +
+    'import { useProfileStore } from "@/store/useProfileStore";\n' +
+    'import { useSessionStore } from "@/store/useSessionStore";\n' +
+    'import { useUIStore } from "@/store/useUIStore";\n' +
+    'import { useHungryTheme } from "@/theme";\n' +
+    'import type { DietaryFlag, TasteVector } from "@/types/domain";\n' +
+    'import type { OnboardingStackParamList } from "./OnboardingStack";\n' +
+    'import {\n' +
+    '  ONBOARDING_ACTIONS_BOTTOM_PADDING,\n' +
+    '  ONBOARDING_ACTIONS_GAP,\n' +
+    '  ONBOARDING_ACTIONS_HORIZONTAL_PADDING,\n' +
+    '} from "./layoutConstants";\n' +
+    'import { TASTE_QUESTION_FOODS } from "./onboardingFoodImages";\n' +
+    '\n' +
+    'type Props = NativeStackScreenProps<OnboardingStackParamList, "TasteQuiz" | "DietaryPreferences">;\n' +
+    '\n' +
+    'const QUESTIONS = {\n' +
+    '  sweet: "Pick your sweetness mood",\n' +
+    '  spicy: "How spicy tonight?",\n' +
+    '  sour: "How much tang do you want?",\n' +
+    '  salty: "Salt profile for this meal",\n' +
+    '  rich: "How rich should it feel?",\n' +
+    '  aromatic: "How fragrant should it be?",\n' +
+    '} as const;\n' +
+    '\n' +
+    'const STEPS = TASTE_DIMENSIONS.map((d) => d.key);\n' +
+    '\n' +
+    'const OPTIONS = [2, 5, 8] as const;\n' +
+    'const BACK_BUTTON_WIDTH = "30%" as const;\n' +
+    'const PRIMARY_BUTTON_WIDTH = "54%" as const;\n' +
+    'const OPTIONS_VERTICAL_GAP_UNITS = 6;\n' +
+    '\n' +
+    'const LABELS = {\n' +
+    '  sweet: ["Light", "Balanced", "Sweet-forward"],\n' +
+    '  spicy: ["Mild", "Medium", "Fiery"],\n' +
+    '  sour: ["Subtle", "Balanced", "Punchy"],\n' +
+    '  salty: ["Light", "Balanced", "Bold"],\n' +
+    '  rich: ["Light", "Balanced", "Rich"],\n' +
+    '  aromatic: ["Subtle", "Balanced", "Intense"],\n' +
+    '} as const;\n' +
+    '\n' +
+    'const DIETARY_OPTIONS: {\n' +
+    '  value: DietaryFlag;\n' +
+    '  label: string;\n' +
+    '  keywords: string[];\n' +
+    '}[] = [\n' +
+    '  { value: "vegetarian", label: "Vegetarian", keywords: ["veg"] },\n' +
+    '  { value: "vegan", label: "Vegan", keywords: ["plant"] },\n' +
+    '  { value: "halal", label: "Halal", keywords: ["muslim", "halal"] },\n' +
+    '  { value: "gluten_free", label: "Gluten Free", keywords: ["gluten", "wheat"] },\n' +
+    '  { value: "dairy_free", label: "Dairy Free", keywords: ["milk", "lactose"] },\n' +
+    '  { value: "egg_free", label: "Egg Free", keywords: ["egg"] },\n' +
+    '  {\n' +
+    '    value: "nut_free",\n' +
+    '    label: "Nut Free",\n' +
+    '    keywords: ["nut", "peanut", "almond"],\n' +
+    '  },\n' +
+    '  { value: "peanut_free", label: "Peanut Free", keywords: ["peanut"] },\n' +
+    '  {\n' +
+    '    value: "shellfish_free",\n' +
+    '    label: "Shellfish Free",\n' +
+    '    keywords: ["shrimp", "prawn", "shellfish"],\n' +
+    '  },\n' +
+    '  { value: "soy_free", label: "Soy Free", keywords: ["soy", "tofu"] },\n' +
+    '  { value: "sesame_free", label: "Sesame Free", keywords: ["sesame"] },\n' +
+    '  { value: "pork_free", label: "Pork Free", keywords: ["pork"] },\n' +
+    '  { value: "pescatarian", label: "Pescatarian", keywords: ["fish"] },\n' +
+    '  { value: "kosher", label: "Kosher", keywords: ["jewish", "kosher"] },\n' +
+    '  { value: "keto", label: "Keto", keywords: ["keto", "ketogenic"] },\n' +
+    '  { value: "paleo", label: "Paleo", keywords: ["paleo"] },\n' +
+    '  { value: "low_carb", label: "Low Carb", keywords: ["carb"] },\n' +
+    '  { value: "low_sodium", label: "Low Sodium", keywords: ["salt", "sodium"] },\n' +
+    '  { value: "low_sugar", label: "Low Sugar", keywords: ["sugar"] },\n' +
+    '  {\n' +
+    '    value: "diabetic_friendly",\n' +
+    '    label: "Diabetic Friendly",\n' +
+    '    keywords: ["diabetic", "diabetes", "glycemic"],\n' +
+    '  },\n' +
+    '  {\n' +
+    '    value: "fodmap_friendly",\n' +
+    '    label: "FODMAP Friendly",\n' +
+    '    keywords: ["fodmap", "ibs"],\n' +
+    '  },\n' +
+    '  { value: "beef_free", label: "Beef Free", keywords: ["beef"] },\n' +
+    '  {\n' +
+    '    value: "allium_free",\n' +
+    '    label: "Allium Free",\n' +
+    '    keywords: ["onion", "garlic", "allium"],\n' +
+    '  },\n' +
+    '  { value: "fish_free", label: "Fish Free", keywords: ["fish"] },\n' +
+    '  {\n' +
+    '    value: "mollusc_free",\n' +
+    '    label: "Mollusc Free",\n' +
+    '    keywords: ["mollusc", "clam", "oyster", "mussel"],\n' +
+    '  },\n' +
+    '  { value: "celery_free", label: "Celery Free", keywords: ["celery"] },\n' +
+    '  { value: "mustard_free", label: "Mustard Free", keywords: ["mustard"] },\n' +
+    '  { value: "lupin_free", label: "Lupin Free", keywords: ["lupin"] },\n' +
+    '  {\n' +
+    '    value: "sulphite_free",\n' +
+    '    label: "Sulphite Free",\n' +
+    '    keywords: ["sulphite", "sulfite"],\n' +
+    '  },\n' +
+    '];\n' +
+    '\n' +
+    'const BUDGET_OPTIONS: { label: string; value: number | undefined }[] = [\n' +
+    '  { label: "Under $6", value: 6 },\n' +
+    '  { label: "Under $12", value: 12 },\n' +
+    '  { label: "Any price", value: undefined },\n' +
+    '];\n' +
+    '\n' +
+    'export function TasteQuizScreen({ navigation, route }: Props) {\n' +
+    '  const { componentRadii, motion, palette, radii, spacing } = useHungryTheme();\n' +
+    '  const { fontScale, width } = useWindowDimensions();\n' +
+    '  const profile = useProfileStore((state) => state.profile);\n' +
+    '  const setSkippedTasteQuiz = useSessionStore((state) => state.setSkippedTasteQuiz);\n' +
+    '  const showToast = useUIStore((state) => state.showToast);\n' +
+    '  const flowMode = route.params?.mode ?? "onboarding";\n' +
+    '  const isDietaryRoute = route.name === "DietaryPreferences";\n' +
+    '  const initialPhase = isDietaryRoute ? "dietary" : (route.params?.initialPhase ?? "taste");\n' +
+    '  const reduceMotion = useReduceMotion();\n' +
+    '  const [initialDraft] = useState(() =>\n' +
+    '    useOnboardingDraftStore.getState().prepare(profile, flowMode),\n' +
+    '  );\n' +
+    '  const finishLocked = useRef(false);\n' +
+    '  const [isFinishing, setIsFinishing] = useState(false);\n' +
+    '  const [finishSucceeded, setFinishSucceeded] = useState(false);\n' +
+    '  usePreventRemove(isFinishing, () =>\n' +
+    '    showToast({ message: "Your preferences are still saving. Please wait.", tone: "warning" }),\n' +
+    '  );\n' +
+    '  useEffect(() => {\n' +
+    '    if (!finishSucceeded || isFinishing) return;\n' +
+    '    if (flowMode === "profile") navigation.goBack();\n' +
+    '    else navigation.navigate("TasteProfileResult");\n' +
+    '  }, [finishSucceeded, isFinishing, flowMode, navigation]);\n' +
+    '  const [values, setValues] = useState<TasteVector>(initialDraft.values);\n' +
+    '  const [dietaryPreferences, setDietaryPreferencesState] = useState<DietaryFlag[]>(\n' +
+    '    initialDraft.dietaryPreferences,\n' +
+    '  );\n' +
+    '  const [maxDishBudget, setMaxDishBudgetState] = useState(initialDraft.maxDishBudget);\n' +
+    '  const [dietaryQuery, setDietaryQuery] = useState("");\n' +
+    '  const [step, setStep] = useState(initialDraft.step);\n' +
+    '  const [phase, setPhase] = useState<"taste" | "dietary">(initialPhase);\n' +
+    '  const [answeredKeys, setAnsweredKeys] = useState<Record<string, boolean>>(\n' +
+    '    initialDraft.answeredKeys,\n' +
+    '  );\n' +
+    '  const [snappedIndex, setSnappedIndex] = useState(\n' +
+    '    closestTasteOptionIndex(initialDraft.values[STEPS[initialDraft.step]]),\n' +
+    '  );\n' +
+    '  const [isTransitioning, setIsTransitioning] = useState(false);\n' +
+    '  const optionsSlideAnim = useRef(new Animated.Value(0)).current;\n' +
+    '  const progressAnim = useRef(new Animated.Value(1)).current;\n' +
+    '  const quizScrollX = useRef(new Animated.Value(0)).current;\n' +
+    '  const carouselRef = useRef<FlatList<number> | null>(null);\n' +
+    '\n' +
+    '  const currentKey = STEPS[step];\n' +
+    '  const labels = LABELS[currentKey];\n' +
+    '  const choiceFoods = TASTE_QUESTION_FOODS[currentKey];\n' +
+    '  const totalSteps = STEPS.length + 1;\n' +
+    '\n' +
+    '  const CARD_WIDTH = 220;\n' +
+    '  const CARD_HEIGHT = 298;\n' +
+    '  const CARD_GAP = spacing[8];\n' +
+    '  const SNAP_INTERVAL = CARD_WIDTH + CARD_GAP;\n' +
+    '  const horizontalPadding = Math.max(0, (width - CARD_WIDTH) / 2);\n' +
+    '  const snapOffsets = useMemo(() => [0, SNAP_INTERVAL, SNAP_INTERVAL * 2], [SNAP_INTERVAL]);\n' +
+    '  const accessibilityFooterReserve = Math.ceil(Math.max(fontScale - 1, 0) * 96);\n' +
+    '  const actionFooterBottomPadding = ONBOARDING_ACTIONS_BOTTOM_PADDING + spacing[2];\n' +
+    '\n' +
+    '  useEffect(() => {\n' +
+    '    const index = closestTasteOptionIndex(values[STEPS[step]]);\n' +
+    '    setSnappedIndex(index);\n' +
+    '    const offset = SNAP_INTERVAL * index;\n' +
+    '    requestAnimationFrame(() => {\n' +
+    '      carouselRef.current?.scrollToOffset({ animated: false, offset });\n' +
+    '      quizScrollX.setValue(offset);\n' +
+    '    });\n' +
+    '    const id = setTimeout(() => {\n' +
+    '      carouselRef.current?.scrollToOffset({ animated: false, offset });\n' +
+    '      quizScrollX.setValue(offset);\n' +
+    '    }, 60);\n' +
+    '    return () => clearTimeout(id);\n' +
+    '  }, [SNAP_INTERVAL, step, width, quizScrollX]);\n' +
+    '\n' +
+    '  useEffect(() => {\n' +
+    '    useOnboardingDraftStore\n' +
+    '      .getState()\n' +
+    '      .update({ values, dietaryPreferences, maxDishBudget, step, answeredKeys });\n' +
+    '  }, [values, dietaryPreferences, maxDishBudget, step, answeredKeys]);\n' +
+    '\n' +
+    '  const animateStep = (nextStep: number, direction: "forward" | "backward") => {\n' +
+    '    if (isTransitioning) {\n' +
+    '      return;\n' +
+    '    }\n' +
+    '    if (reduceMotion) {\n' +
+    '      setStep(nextStep);\n' +
+    '      setSnappedIndex(closestTasteOptionIndex(values[STEPS[nextStep]]));\n' +
+    '      return;\n' +
+    '    }\n' +
+    '    const offscreenDistance = width + CARD_WIDTH + CARD_GAP;\n' +
+    '    const exitTo = direction === "forward" ? -offscreenDistance : offscreenDistance;\n' +
+    '    const enterFrom = direction === "forward" ? offscreenDistance : -offscreenDistance;\n' +
+    '    setIsTransitioning(true);\n' +
+    '    optionsSlideAnim.setValue(0);\n' +
+    '    Animated.timing(optionsSlideAnim, {\n' +
+    '      toValue: exitTo,\n' +
+    '      duration: reduceMotion ? 0 : motion.onboardingStep,\n' +
+    '      easing: Easing.linear,\n' +
+    '      useNativeDriver: true,\n' +
+    '    }).start(() => {\n' +
+    '      setStep(nextStep);\n' +
+    '      setSnappedIndex(closestTasteOptionIndex(values[STEPS[nextStep]]));\n' +
+    '      optionsSlideAnim.setValue(enterFrom);\n' +
+    '      setTimeout(() => {\n' +
+    '        requestAnimationFrame(() => {\n' +
+    '          carouselRef.current?.scrollToOffset({\n' +
+    '            animated: false,\n' +
+    '            offset: SNAP_INTERVAL * closestTasteOptionIndex(values[STEPS[nextStep]]),\n' +
+    '        '... 23868 more characters
+  
+      at TestContext.<anonymous> (/Users/Siew Hean/Documents/GitHub/Hungry/src/app/screens/decide-for-me-phase1-contracts.test.ts:53:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'import {\n  closestTasteOptionIndex,\n  useOnboardingDraftStore,\n} from "@/features/onboarding/useOnboardingDraftStore";\nimport { usePreventRemove } from "@react-navigation/native";\nimport { commitQuizProfile } from "@/features/onboarding/commitQuizProfile";\nimport { assertAccountGeneration, getAccountGeneration } from "@/lib/security/accountScope";\nimport { useReduceMotion } from "@/hooks/useReduceMotion";\nimport { NativeStackScreenProps } from "@react-navigation/native-stack";\nimport { useEffect, useMemo, useRef, useState } from "react";\nimport {\n  Animated,\n  KeyboardAvoidingView,\n  Platform,\n  FlatList,\n  Pressable,\n  ScrollView,\n  StyleSheet,\n  View,\n  useWindowDimensions,\n  Easing,\n  type ListRenderItemInfo,\n  type NativeScrollEvent,\n  type NativeSyntheticEvent,\n} from "react-native";\nimport { SafeAreaView } from "react-native-safe-area-context";\nimport { Check, ChevronRight, Search } from "lucide-react-native";\n\nimport { AccessibleImage, Button, AppText, Card, Chip, EmptyState, Input } from "@/components/ui";\nimport { TASTE_DIMENSIONS } from "@/constants/taste";\nimport { getHungryService } from "@/lib/services/serviceProvider";\nimport { useProfileStore } from "@/store/useProfileStore";\nimport { useSessionStore } from "@/store/useSessionStore";\nimport { useUIStore } from "@/store/useUIStore";\nimport { useHungryTheme } from "@/theme";\nimport type { DietaryFlag, TasteVector } from "@/types/domain";\nimport type { OnboardingStackParamList } from "./OnboardingStack";\nimport {\n  ONBOARDING_ACTIONS_BOTTOM_PADDING,\n  ONBOARDING_ACTIONS_GAP,\n  ONBOARDING_ACTIONS_HORIZONTAL_PADDING,\n} from "./layoutConstants";\nimport { TASTE_QUESTION_FOODS } from "./onboardingFoodImages";\n\ntype Props = NativeStackScreenProps<OnboardingStackParamList, "TasteQuiz" | "DietaryPreferences">;\n\nconst QUESTIONS = {\n  sweet: "Pick your sweetness mood",\n  spicy: "How spicy tonight?",\n  sour: "How much tang do you want?",\n  salty: "Salt profile for this meal",\n  rich: "How rich should it feel?",\n  aromatic: "How fragrant should it be?",\n} as const;\n\nconst STEPS = TASTE_DIMENSIONS.map((d) => d.key);\n\nconst OPTIONS = [2, 5, 8] as const;\nconst BACK_BUTTON_WIDTH = "30%" as const;\nconst PRIMARY_BUTTON_WIDTH = "54%" as const;\nconst OPTIONS_VERTICAL_GAP_UNITS = 6;\n\nconst LABELS = {\n  sweet: ["Light", "Balanced", "Sweet-forward"],\n  spicy: ["Mild", "Medium", "Fiery"],\n  sour: ["Subtle", "Balanced", "Punchy"],\n  salty: ["Light", "Balanced", "Bold"],\n  rich: ["Light", "Balanced", "Rich"],\n  aromatic: ["Subtle", "Balanced", "Intense"],\n} as const;\n\nconst DIETARY_OPTIONS: {\n  value: DietaryFlag;\n  label: string;\n  keywords: string[];\n}[] = [\n  { value: "vegetarian", label: "Vegetarian", keywords: ["veg"] },\n  { value: "vegan", label: "Vegan", keywords: ["plant"] },\n  { value: "halal", label: "Halal", keywords: ["muslim", "halal"] },\n  { value: "gluten_free", label: "Gluten Free", keywords: ["gluten", "wheat"] },\n  { value: "dairy_free", label: "Dairy Free", keywords: ["milk", "lactose"] },\n  { value: "egg_free", label: "Egg Free", keywords: ["egg"] },\n  {\n    value: "nut_free",\n    label: "Nut Free",\n    keywords: ["nut", "peanut", "almond"],\n  },\n  { value: "peanut_free", label: "Peanut Free", keywords: ["peanut"] },\n  {\n    value: "shellfish_free",\n    label: "Shellfish Free",\n    keywords: ["shrimp", "prawn", "shellfish"],\n  },\n  { value: "soy_free", label: "Soy Free", keywords: ["soy", "tofu"] },\n  { value: "sesame_free", label: "Sesame Free", keywords: ["sesame"] },\n  { value: "pork_free", label: "Pork Free", keywords: ["pork"] },\n  { value: "pescatarian", label: "Pescatarian", keywords: ["fish"] },\n  { value: "kosher", label: "Kosher", keywords: ["jewish", "kosher"] },\n  { value: "keto", label: "Keto", keywords: ["keto", "ketogenic"] },\n  { value: "paleo", label: "Paleo", keywords: ["paleo"] },\n  { value: "low_carb", label: "Low Carb", keywords: ["carb"] },\n  { value: "low_sodium", label: "Low Sodium", keywords: ["salt", "sodium"] },\n  { value: "low_sugar", label: "Low Sugar", keywords: ["sugar"] },\n  {\n    value: "diabetic_friendly",\n    label: "Diabetic Friendly",\n    keywords: ["diabetic", "diabetes", "glycemic"],\n  },\n  {\n    value: "fodmap_friendly",\n    label: "FODMAP Friendly",\n    keywords: ["fodmap", "ibs"],\n  },\n  { value: "beef_free", label: "Beef Free", keywords: ["beef"] },\n  {\n    value: "allium_free",\n    label: "Allium Free",\n    keywords: ["onion", "garlic", "allium"],\n  },\n  { value: "fish_free", label: "Fish Free", keywords: ["fish"] },\n  {\n    value: "mollusc_free",\n    label: "Mollusc Free",\n    keywords: ["mollusc", "clam", "oyster", "mussel"],\n  },\n  { value: "celery_free", label: "Celery Free", keywords: ["celery"] },\n  { value: "mustard_free", label: "Mustard Free", keywords: ["mustard"] },\n  { value: "lupin_free", label: "Lupin Free", keywords: ["lupin"] },\n  {\n    value: "sulphite_free",\n    label: "Sulphite Free",\n    keywords: ["sulphite", "sulfite"],\n  },\n];\n\nconst BUDGET_OPTIONS: { label: string; value: number | undefined }[] = [\n  { label: "Under $6", value: 6 },\n  { label: "Under $12", value: 12 },\n  { label: "Any price", value: undefined },\n];\n\nexport function TasteQuizScreen({ navigation, route }: Props) {\n  const { componentRadii, motion, palette, radii, spacing } = useHungryTheme();\n  const { fontScale, width } = useWindowDimensions();\n  const profile = useProfileStore((state) => state.profile);\n  const setSkippedTasteQuiz = useSessionStore((state) => state.setSkippedTasteQuiz);\n  const showToast = useUIStore((state) => state.showToast);\n  const flowMode = route.params?.mode ?? "onboarding";\n  const isDietaryRoute = route.name === "DietaryPreferences";\n  const initialPhase = isDietaryRoute ? "dietary" : (route.params?.initialPhase ?? "taste");\n  const reduceMotion = useReduceMotion();\n  const [initialDraft] = useState(() =>\n    useOnboardingDraftStore.getState().prepare(profile, flowMode),\n  );\n  const finishLocked = useRef(false);\n  const [isFinishing, setIsFinishing] = useState(false);\n  const [finishSucceeded, setFinishSucceeded] = useState(false);\n  usePreventRemove(isFinishing, () =>\n    showToast({ message: "Your preferences are still saving. Please wait.", tone: "warning" }),\n  );\n  useEffect(() => {\n    if (!finishSucceeded || isFinishing) return;\n    if (flowMode === "profile") navigation.goBack();\n    else navigation.navigate("TasteProfileResult");\n  }, [finishSucceeded, isFinishing, flowMode, navigation]);\n  const [values, setValues] = useState<TasteVector>(initialDraft.values);\n  const [dietaryPreferences, setDietaryPreferencesState] = useState<DietaryFlag[]>(\n    initialDraft.dietaryPreferences,\n  );\n  const [maxDishBudget, setMaxDishBudgetState] = useState(initialDraft.maxDishBudget);\n  const [dietaryQuery, setDietaryQuery] = useState("");\n  const [step, setStep] = useState(initialDraft.step);\n  const [phase, setPhase] = useState<"taste" | "dietary">(initialPhase);\n  const [answeredKeys, setAnsweredKeys] = useState<Record<string, boolean>>(\n    initialDraft.answeredKeys,\n  );\n  const [snappedIndex, setSnappedIndex] = useState(\n    closestTasteOptionIndex(initialDraft.values[STEPS[initialDraft.step]]),\n  );\n  const [isTransitioning, setIsTransitioning] = useState(false);\n  const optionsSlideAnim = useRef(new Animated.Value(0)).current;\n  const progressAnim = useRef(new Animated.Value(1)).current;\n  const quizScrollX = useRef(new Animated.Value(0)).current;\n  const carouselRef = useRef<FlatList<number> | null>(null);\n\n  const currentKey = STEPS[step];\n  const labels = LABELS[currentKey];\n  const choiceFoods = TASTE_QUESTION_FOODS[currentKey];\n  const totalSteps = STEPS.length + 1;\n\n  const CARD_WIDTH = 220;\n  const CARD_HEIGHT = 298;\n  const CARD_GAP = spacing[8];\n  const SNAP_INTERVAL = CARD_WIDTH + CARD_GAP;\n  const horizontalPadding = Math.max(0, (width - CARD_WIDTH) / 2);\n  const snapOffsets = useMemo(() => [0, SNAP_INTERVAL, SNAP_INTERVAL * 2], [SNAP_INTERVAL]);\n  const accessibilityFooterReserve = Math.ceil(Math.max(fontScale - 1, 0) * 96);\n  const actionFooterBottomPadding = ONBOARDING_ACTIONS_BOTTOM_PADDING + spacing[2];\n\n  useEffect(() => {\n    const index = closestTasteOptionIndex(values[STEPS[step]]);\n    setSnappedIndex(index);\n    const offset = SNAP_INTERVAL * index;\n    requestAnimationFrame(() => {\n      carouselRef.current?.scrollToOffset({ animated: false, offset });\n      quizScrollX.setValue(offset);\n    });\n    const id = setTimeout(() => {\n      carouselRef.current?.scrollToOffset({ animated: false, offset });\n      quizScrollX.setValue(offset);\n    }, 60);\n    return () => clearTimeout(id);\n  }, [SNAP_INTERVAL, step, width, quizScrollX]);\n\n  useEffect(() => {\n    useOnboardingDraftStore\n      .getState()\n      .update({ values, dietaryPreferences, maxDishBudget, step, answeredKeys });\n  }, [values, dietaryPreferences, maxDishBudget, step, answeredKeys]);\n\n  const animateStep = (nextStep: number, direction: "forward" | "backward") => {\n    if (isTransitioning) {\n      return;\n    }\n    if (reduceMotion) {\n      setStep(nextStep);\n      setSnappedIndex(closestTasteOptionIndex(values[STEPS[nextStep]]));\n      return;\n    }\n    const offscreenDistance = width + CARD_WIDTH + CARD_GAP;\n    const exitTo = direction === "forward" ? -offscreenDistance : offscreenDistance;\n    const enterFrom = direction === "forward" ? offscreenDistance : -offscreenDistance;\n    setIsTransitioning(true);\n    optionsSlideAnim.setValue(0);\n    Animated.timing(optionsSlideAnim, {\n      toValue: exitTo,\n      duration: reduceMotion ? 0 : motion.onboardingStep,\n      easing: Easing.linear,\n      useNativeDriver: true,\n    }).start(() => {\n      setStep(nextStep);\n      setSnappedIndex(closestTasteOptionIndex(values[STEPS[nextStep]]));\n      optionsSlideAnim.setValue(enterFrom);\n      setTimeout(() => {\n        requestAnimationFrame(() => {\n          carouselRef.current?.scrollToOffset({\n            animated: false,\n            offset: SNAP_INTERVAL * closestTasteOptionIndex(values[STEPS[nextStep]]),\n        '... 23868 more characters,
+    expected: /setMaxDishBudget\(maxDishBudget\)/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at src/app/user-mode-coverage-contracts.test.ts:2:959
+✖ user auth and onboarding flows cover account, taste, dietary, and location state (43.674666ms)
+  AssertionError [ERR_ASSERTION]: navigation auth/onboarding types should include /EmailVerification: \{ email: string; completedOnboarding\?: boolean; resumeOnboarding\?: boolean \} \| undefined/
+      at assertSourceIncludes (/Users/Siew Hean/Documents/GitHub/Hungry/src/test/sourceContracts.ts:21:12)
+      at TestContext.<anonymous> (/Users/Siew Hean/Documents/GitHub/Hungry/src/app/user-mode-coverage-contracts.test.ts:25:3)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'import type { NavigatorScreenParams } from "@react-navigation/native";\n\nexport type AuthStackParamList = {\n  Login: undefined;\n  SignUp: undefined;\n  EmailVerification:\n    | { email: string; completedOnboarding?: boolean; resumeOnboarding?: boolean }\n    | undefined;\n  ForgotPassword: undefined;\n  ResetPassword: { email?: string; code?: string } | undefined;\n  ResetPasswordSuccess: undefined;\n  ChangePassword: undefined;\n};\n\nexport type OnboardingStackParamList = {\n  OnboardingWelcome: undefined;\n  OnboardingIntro1: undefined;\n  CuisineSelection: undefined;\n  TasteQuiz: { mode?: "onboarding" | "profile"; initialPhase?: "taste" | "dietary" } | undefined;\n  DietaryPreferences:\n    | { mode?: "onboarding" | "profile"; initialPhase?: "taste" | "dietary" }\n    | undefined;\n  TasteProfileResult: undefined;\n  LocationPermission: undefined;\n  ManualLocationPicker: undefined;\n  OnboardingAuth: undefined;\n};\nexport type ProfileStackParamList = {\n  ProfileHome: undefined;\n  ProfilePremium: undefined;\n  Favourites: undefined;\n  ReviewHistory: undefined;\n  Followers: { userId?: string; userDisplayName?: string } | undefined;\n  Following: { userId?: string; userDisplayName?: string } | undefined;\n  VisitedStalls: undefined;\n  FollowedStalls: undefined;\n  Settings: undefined;\n  SocialGrid: { type: "liked" | "saved" };\n  SocialPostDetail: { postId: string; type: "liked" | "saved" };\n  EditProfile: undefined;\n  AddStall: undefined;\n  ReviewFlow: undefined;\n  ChecklistsHome: undefined;\n  ChecklistDetail: { checklistId: string };\n  ChecklistItemPicker: { checklistId: string; mode: "dish" | "stall" | "custom" };\n  PortfoliosHome: undefined;\n  PortfolioDetail: { portfolioId: string };\n  PortfolioCreate: undefined;\n  PortfolioEdit: { portfolioId: string };\n  PortfolioItemPicker: { portfolioId: string; mode: "dish" | "stall" };\n  PortfolioCollaborators: { portfolioId: string };\n  PortfolioSearch: undefined;\n};\n\nexport type ReviewStackParamList = {\n  ReviewMain: { venueId?: string; dishId?: string } | undefined;\n};\n\nexport type WheelStackParamList = {\n  WheelHome: { code?: string } | undefined;\n  WheelLobby: { partyId: string };\n  WheelSpin: { partyId: string };\n  WheelResult: { partyId: string; winnerEntryId: string };\n};\n\nexport type MainTabParamList = {\n  Home: undefined;\n  Discover: undefined;\n  Review: undefined;\n  Profile: NavigatorScreenParams<ProfileStackParamList>;\n};\n\nexport type MerchantTabParamList = {\n  // Section landing pages\n  Dashboard: undefined;\n  Menu: undefined;\n  Analytics: undefined;\n  Profile: undefined;\n  // Extended sections\n  VerificationCentre: undefined;\n  HomeBasedVerification: undefined;\n  BusinessProfileEditor: undefined;\n  DishEditor: { dishId?: string } | undefined;\n  OCRDrafts: undefined;\n  CustomerInbox: undefined;\n  FeaturedVisitors: undefined;\n  PromotionBuilder: { promotionId?: string } | undefined;\n  PromotionList: undefined;\n  AIAssistant: undefined;\n  OrdersComingSoon: undefined;\n  MerchantSettings: undefined;\n};\n\nexport type RootStackParamList = {\n  Splash: undefined;\n  AuthStack: NavigatorScreenParams<AuthStackParamList>;\n  OnboardingStack: NavigatorScreenParams<OnboardingStackParamList>;\n  MainTabs: NavigatorScreenParams<MainTabParamList>;\n  MerchantTabs: NavigatorScreenParams<MerchantTabParamList>;\n  StallDetail: { venueId?: string; id?: string };\n  MerchantClaimExplainer: undefined;\n  DishDetail: { dishId?: string; id?: string };\n  CatalogRawDetail: { kind: "dish" | "venue"; id: string; releaseId?: string };\n  SearchHome: undefined;\n  SearchResults:\n    | {\n        browseMode?: "dishes" | "stalls";\n        initialQuery?: string;\n        foodTypeTag?: string;\n        initialFilter?:\n          | "All"\n          | "Local"\n          | "Halal"\n          | "Japanese"\n          | "Western"\n          | "Noodles"\n          | "Rice"\n          | "Spicy";\n      }\n    | undefined;\n  BrowseDishes: undefined;\n  BrowseStalls: undefined;\n  TasteFilter: undefined;\n  DiscoverMap: undefined;\n  DecideForMeResult: { surface?: "home" | "discover" } | undefined;\n  MapZoomedIn: { buildingId: string };\n  BlogPost: { postId: string };\n  ReviewStack: NavigatorScreenParams<ReviewStackParamList>;\n  WheelStack: NavigatorScreenParams<WheelStackParamList>;\n  ActivityInbox: { initialTab?: "messages" | "updates" } | undefined;\n  ActivityPostDetail: { postId: string; updateId?: string };\n  DirectMessages: undefined;\n  ChatDetail: { chatId: string; name: string; avatar: string; isOnline?: boolean };\n  Crave: undefined;\n  MusicSelection: undefined;\n  UserProfile: {\n    authorName: string;\n    authorAvatarUrl?: string;\n    authorLocation?: string;\n    reviewSignalLabel?: string;\n    authorId?: string;\n  };\n  Offline: undefined;\n  NotFound: { title?: string; body?: string } | undefined;\n  Post: { venueId?: string; dishId?: string } | undefined;\n  QuickBites:\n    | { collection?: "quickBites" | "trending" | "editorChoice" | "budget" | "lateNight" }\n    | undefined;\n  DeveloperLauncher: undefined;\n  Favourites: undefined;\n  ReviewHistory: undefined;\n  Settings: undefined;\n  EditProfile: undefined;\n  DesignGallery: undefined;\n  // V2 Prototypes\n  PostComposerV2: { venueId?: string; dishId?: string } | undefined;\n  StoryViewer: { initialStoryId: string };\n  AddStory: undefined;\n  // Gamification\n  PassportScreen: undefined;\n  MissionsScreen: undefined;\n  CollectionList: undefined;\n  CollectionDetail: { collectionId: string };\n  // Checklist & Portfolio (root-level access)\n  ChecklistDetail: { checklistId: string };\n  PortfolioDetail: { portfolioId: string };\n  PortfolioPublicView: { portfolioId: string };\n  AdminPortfolioFlags: undefined;\n};\n',
+    expected: /EmailVerification: \{ email: string; completedOnboarding\?: boolean; resumeOnboarding\?: boolean \} \| undefined/,
+    operator: 'match',
+    diff: 'simple'
+  }

@@ -25,7 +25,13 @@ export function StarRating({
       style={[styles.row, fullWidth && { justifyContent: "space-between" }]}
       accessibilityLabel={editable ? "Rating out of 5 stars" : `${value} out of ${max} stars`}
       accessibilityRole={editable ? "adjustable" : "none"}
-      accessibilityValue={{ min: 1, max, now: value }}
+      accessibilityValue={{ min: 0, max, now: value }}
+      accessibilityActions={editable ? [{ name: "increment" }, { name: "decrement" }] : undefined}
+      onAccessibilityAction={(event) => {
+        if (!editable) return;
+        if (event.nativeEvent.actionName === "increment") onChange?.(Math.min(max, value + 1));
+        if (event.nativeEvent.actionName === "decrement") onChange?.(Math.max(1, value - 1));
+      }}
     >
       {Array.from({ length: max }, (_, index) => {
         const starValue = index + 1;
@@ -48,6 +54,7 @@ export function StarRating({
             key={starValue}
             accessibilityRole="button"
             accessibilityLabel={`${starValue} star`}
+            accessibilityState={{ selected: value === starValue }}
             onPress={() => onChange?.(starValue)}
             hitSlop={8}
             style={styles.hitArea}

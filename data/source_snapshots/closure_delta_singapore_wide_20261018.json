@@ -1,0 +1,768 @@
+{
+  "snapshot_type": "fresh_singapore_wide_public_access_closure_delta_sweep",
+  "observed_at": "2026-10-18",
+  "workbook_path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "2118208143ab9c29af5bd98bf2872f34ca32bf6e08f077925b227e1c6bdbc5cb",
+  "workbook_rows_scanned": 38280,
+  "scope": "Public-access directory; fresh query-led Singapore-wide sweep of official operator, mall, and government pages for likely stale closure leads. Read-only; no changes to workbook. Not a live manual closure check of every row.",
+  "criteria": {
+    "eligible_permanent_removal": "First-party operator/mall/government evidence must explicitly establish permanent closure for the exact outlet, and the workbook row must match name/brand, street address, postal code, and unit; SFA licence identifies the exact workbook row.",
+    "temporary_renovation": "Keep outlet; verify reopening before removal.",
+    "redevelopment_or_venue_closure": "Separate from permanent unless the first-party notice explicitly establishes permanent cessation; exact affected-unit rows are reported for review.",
+    "branch_mismatch": "Never transfer closure from a different branch or brand concept.",
+    "sfa_identifier": "Closure notices in this source set generally did not disclose SFA licence numbers; SFA IDs are taken only from exact workbook rows and used to identify which row would be affected."
+  },
+  "findings": [
+    {
+      "lead": "CHIC-A-BOO, Woods Square",
+      "class": "explicit permanent closure; no exact workbook outlet row",
+      "closure_date": "2026-09-24",
+      "last_open_day": "2026-09-23",
+      "notice_source": {
+        "url": "https://chicaboo.com.sg/",
+        "http_status": 200,
+        "sha256": "c0b605fe4205c21a09882366a9fd665b2cdc6716f05918befc087d18a831b7bc",
+        "bytes": 307273,
+        "observed": "2026-10-18",
+        "claim": "CHIC A Boo Woods Square outlet will permanently close on 24 Sep 2026; last operating day 23 Sep 2026."
+      },
+      "exact_match_rows": [],
+      "same_brand_other_workbook_rows": [
+        {
+          "F&B Name": "CHIC A BOO",
+          "Registered Business Name": "CHIC A BOO",
+          "SFA Licence": "CE15F80B000",
+          "Full Address": "Address: 6 RAFFLES BOULEVARD #03-147,#03-148,MARINA SQUARE,Singapore 039594",
+          "Postal Code": "039594"
+        },
+        {
+          "F&B Name": "CHIC A BOO",
+          "Registered Business Name": "CHIC A BOO",
+          "SFA Licence": "NW08504B000",
+          "Full Address": "Address: 604 SEMBAWANG ROAD #01-02,SEMBAWANG SHOPPING CENTRE,Singapore 758459",
+          "Postal Code": "758459"
+        }
+      ],
+      "exact_address_match": false,
+      "confidence": "high that Woods Square branch closed; zero match confidence to current workbook rows",
+      "removal_recommendation": "none; outlet not represented at matching address. Same-brand rows are Marina Square and Sembawang Shopping Centre and must not be removed."
+    },
+    {
+      "lead": "Secret Recipe, Plaza Singapura",
+      "class": "first-party outlet closure; permanent wording not stated",
+      "notice_date": "2026-07-28",
+      "notice_source": {
+        "url": "https://secretrecipe.com.sg/blogs/secret-recipe-blog/a-new-chapter-for-secret-recipe-singapore-thank-you-plaza-singapura",
+        "http_status": 200,
+        "sha256": "94f7fab5295a9396e2b01daaf3d2ab3a256165022c78e0be05390ca72a606a63",
+        "bytes": 101975,
+        "observed": "2026-10-18",
+        "claim": "Official outlet farewell post dated 28 Jul 2026 states Plaza Singapura outlet officially closed; no permanent wording."
+      },
+      "exact_match_rows": [],
+      "all_brand_rows": [
+        {
+          "F&B Name": "SECRET RECIPE",
+          "Registered Business Name": "SECRET RECIPE",
+          "SFA Licence": "CE15D18C000",
+          "Business Type": "Restaurant",
+          "Full Address": "Address: 470 LORONG 6 TOA PAYOH #01-71,HDB HUB,Singapore 310470",
+          "Postal Code": "310470"
+        }
+      ],
+      "exact_address_match": false,
+      "confidence": "high that named outlet officially closed; zero exact outlet match in workbook",
+      "removal_recommendation": "none; the only matching brand row is HDB Hub, postal 310470, a different open outlet."
+    },
+    {
+      "lead": "Satay by the Bay, unit #01-19",
+      "class": "first-party redevelopment / venue closure; permanence ambiguous",
+      "effective_date": "2026-10-01",
+      "notice_source": {
+        "url": "https://www.gardensbythebay.com.sg/en.html",
+        "http_status": 200,
+        "sha256": "0843a2a282ddb6829ace39a21b7d912ce013dab2a61ac037d0e516d284e58dd8",
+        "bytes": 129150,
+        "observed": "2026-10-18",
+        "claim": "Satay by the Bay will close from 1 Oct 2026 to make way for a refreshed waterfront dining experience for Wetlands by the Bay."
+      },
+      "named_exact_rows": [
+        {
+          "F&B Name": "SATAY BY THE BAY",
+          "Registered Business Name": "SATAY BY THE BAY",
+          "SFA Licence": "CE12H48N000",
+          "Business Type": "Coffeeshop/Eating House",
+          "Full Address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953 | Unit: 01-19 | Postal code: 018953",
+          "Postal Code": "018953"
+        },
+        {
+          "F&B Name": "SATAY BY THE BAY",
+          "Registered Business Name": "SATAY BY THE BAY",
+          "SFA Licence": "CE12H48N025",
+          "Business Type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+          "Full Address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953 | Unit: 01-19 | Postal code: 018953",
+          "Postal Code": "018953"
+        }
+      ],
+      "same_unit_exact_address_rows": [
+        {
+          "F&B Name": "BBQ SEAFOOD &SATAY",
+          "Registered Business Name": "BBQ SEAFOOD &SATAY",
+          "SFA Licence": "CE12H48N005",
+          "Business Type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+          "Full Address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+          "Postal Code": "018953"
+        },
+        {
+          "F&B Name": "CLAYPOT NOODLE",
+          "Registered Business Name": "CLAYPOT NOODLE",
+          "SFA Licence": "CE12H48N023",
+          "Business Type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+          "Full Address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+          "Postal Code": "018953"
+        },
+        {
+          "F&B Name": "DumPrince Dumpling House",
+          "Registered Business Name": "DumPrince Dumpling House",
+          "SFA Licence": "CE12H48N003",
+          "Business Type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+          "Full Address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+          "Postal Code": "018953"
+        },
+        {
+          "F&B Name": "DumPrince Dumpling House Stall 4",
+          "Registered Business Name": "DumPrince Dumpling House Stall 4",
+          "SFA Licence": "CE12H48N004",
+          "Business Type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+          "Full Address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+          "Postal Code": "018953"
+        },
+        {
+          "F&B Name": "GEYLANG LOR 29 HOKKIEN MEE",
+          "Registered Business Name": "GEYLANG LOR 29 HOKKIEN MEE",
+          "SFA Licence": "CE12H48N022",
+          "Business Type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+          "Full Address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+          "Postal Code": "018953"
+        },
+        {
+          "F&B Name": "Gopals The Holy Basil",
+          "Registered Business Name": "Gopals The Holy Basil",
+          "SFA Licence": "CE12H48N020",
+          "Business Type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+          "Full Address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+          "Postal Code": "018953"
+        },
+        {
+          "F&B Name": "HUAT HUAT BBQ CHICKEN WING",
+          "Registered Business Name": "HUAT HUAT BBQ CHICKEN WING",
+          "SFA Licence": "CE12H48N018",
+          "Business Type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+          "Full Address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+          "Postal Code": "018953"
+        },
+        {
+          "F&B Name": "Huat Huat BBQ Chicken Wings",
+          "Registered Business Name": "Huat Huat BBQ Chicken Wings",
+          "SFA Licence": "CE12H48N019",
+          "Business Type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+          "Full Address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+          "Postal Code": "018953"
+        },
+        {
+          "F&B Name": "JOLLY BAR",
+          "Registered Business Name": "JOLLY BAR",
+          "SFA Licence": "CE15E21J000",
+          "Business Type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+          "Full Address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953 Shop 3",
+          "Postal Code": "018953"
+        },
+        {
+          "F&B Name": "LIVE SEAFOOD & STEAMBOAT",
+          "Registered Business Name": "LIVE SEAFOOD & STEAMBOAT",
+          "SFA Licence": "CE12K69J000",
+          "Business Type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+          "Full Address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953 (Hawker Centr -part off)",
+          "Postal Code": "018953"
+        },
+        {
+          "F&B Name": "Makan By the Bay (Shop 4)",
+          "Registered Business Name": "Makan By the Bay (Shop 4)",
+          "SFA Licence": "CE16501X000",
+          "Business Type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+          "Full Address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+          "Postal Code": "018953"
+        },
+        {
+          "F&B Name": "MARINA LIVE SEAFOOD & STEAMBOAT",
+          "Registered Business Name": "MARINA LIVE SEAFOOD & STEAMBOAT",
+          "SFA Licence": "CE12H48N024",
+          "Business Type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+          "Full Address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+          "Postal Code": "018953"
+        },
+        {
+          "F&B Name": "MIXED VEGETABLE RICE",
+          "Registered Business Name": "MIXED VEGETABLE RICE",
+          "SFA Licence": "CE12H48N002",
+          "Business Type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+          "Full Address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+          "Postal Code": "018953"
+        },
+        {
+          "F&B Name": "SATAY BY THE BAY",
+          "Registered Business Name": "SATAY BY THE BAY",
+          "SFA Licence": "CE12H48N000",
+          "Business Type": "Coffeeshop/Eating House",
+          "Full Address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953 | Unit: 01-19 | Postal code: 018953",
+          "Postal Code": "018953"
+        },
+        {
+          "F&B Name": "SATAY BY THE BAY",
+          "Registered Business Name": "SATAY BY THE BAY",
+          "SFA Licence": "CE12H48N025",
+          "Business Type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+          "Full Address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953 | Unit: 01-19 | Postal code: 018953",
+          "Postal Code": "018953"
+        },
+        {
+          "F&B Name": "THAI FOOD",
+          "Registered Business Name": "THAI FOOD",
+          "SFA Licence": "CE12H48N006",
+          "Business Type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+          "Full Address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+          "Postal Code": "018953"
+        },
+        {
+          "F&B Name": "THAI FOOD",
+          "Registered Business Name": "THAI FOOD",
+          "SFA Licence": "CE12H48N007",
+          "Business Type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+          "Full Address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+          "Postal Code": "018953"
+        },
+        {
+          "F&B Name": "TURKISH & INDIAN",
+          "Registered Business Name": "TURKISH & INDIAN",
+          "SFA Licence": "CE12H48N008",
+          "Business Type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+          "Full Address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+          "Postal Code": "018953"
+        }
+      ],
+      "matched_licence_ids": [
+        "CE12H48N005",
+        "CE12H48N023",
+        "CE12H48N003",
+        "CE12H48N004",
+        "CE12H48N022",
+        "CE12H48N020",
+        "CE12H48N018",
+        "CE12H48N019",
+        "CE15E21J000",
+        "CE12K69J000",
+        "CE16501X000",
+        "CE12H48N024",
+        "CE12H48N002",
+        "CE12H48N000",
+        "CE12H48N025",
+        "CE12H48N006",
+        "CE12H48N007",
+        "CE12H48N008"
+      ],
+      "exact_match_basis": "Venue name, 18 Marina Gardens Drive, #01-19, Gardens by the Bay, postal 018953; workbook carries SFA ids per row but official notice does not name them. The closure scope names the whole venue, not individual licences.",
+      "confidence": "high that current #01-19 venue is closed from 1 Oct; medium that every same-unit SFA licensee is inactive; low that the closure is permanent because official wording describes a refreshed future dining experience",
+      "removal_recommendation": "none under permanent-only deletion rule; flag 18 exact-unit rows for current-access status review. Do not affect any other unit at postal 018953."
+    },
+    {
+      "lead": "Hoshino Coffee, Plaza Singapura",
+      "class": "first-party reopening evidence; historical closure details not independently verified from first-party source in this pass",
+      "official_reopening_promotion_period": "2026-10-12 to 2026-10-18",
+      "source_current_locator": {
+        "url": "https://www.hoshinocoffee.sg/?page_id=188",
+        "http_status": 200,
+        "sha256": "49b721a400db7e1e34cd806c717f9878fdffa25aa6257fb0b7441338c7e73245",
+        "bytes": 165645,
+        "observed": "2026-10-18",
+        "claim": "Official locator lists exact Plaza Singapura #03-84 and, despite media closure reports, also lists Chinatown Point and United Square; operator locator may be stale for those listings."
+      },
+      "source_reopening": {
+        "url": "https://www.hoshinocoffee.sg/",
+        "http_status": 200,
+        "sha256": "7029f3ad1e342c01fa20e4435e01b7a4ab79d2f1b412dd8253e0b4a2a0465272",
+        "bytes": 276381,
+        "observed": "2026-10-18",
+        "claim": "Official Hoshino page advertises Plaza Singapura reopening celebration for week 12-18 Oct 2026; supports re-opened status after temporary renovation."
+      },
+      "exact_match_rows": [
+        {
+          "F&B Name": "HOSHINO COFFEE",
+          "Registered Business Name": "HOSHINO COFFEE",
+          "SFA Licence": "CE12E78V000",
+          "Business Type": "Restaurant",
+          "Full Address": "Address: 68 ORCHARD ROAD #03-84,PLAZA SINGAPURA,Singapore 238839",
+          "Postal Code": "238839"
+        }
+      ],
+      "confidence": "high that exact workbook row CE12E78V000 is the same outlet and the official site advertised a Plaza Singapura reopening celebration for 12-18 Oct 2026",
+      "removal_recommendation": "do not remove; official reopening promotion supports resumed outlet operation."
+    },
+    {
+      "lead": "Hoshino Coffee, Chinatown Point and United Square",
+      "class": "unresolved first-party evidence; excluded from removal",
+      "operator_locator_source": {
+        "url": "https://www.hoshinocoffee.sg/?page_id=188",
+        "http_status": 200,
+        "sha256": "49b721a400db7e1e34cd806c717f9878fdffa25aa6257fb0b7441338c7e73245",
+        "bytes": 165645,
+        "observed": "2026-10-18",
+        "claim": "Official locator lists exact Plaza Singapura #03-84 and, despite media closure reports, also lists Chinatown Point and United Square; operator locator may be stale for those listings."
+      },
+      "exact_chinatown_rows": [],
+      "exact_united_square_rows": [],
+      "confidence": "high that no exact current workbook row matched either named address in the scan; operator locator still lists both and may be stale",
+      "removal_recommendation": "none; no exact row exists and no current first-party closure notice was retrieved in this sweep."
+    },
+    {
+      "lead": "AJi iCHi Sushi Bar, Changi Airport T4",
+      "class": "explicit permanent closure; workbook row is a different outlet",
+      "closure_date": "after 2026-02-11",
+      "notice_source": {
+        "url": "https://ajiichi.com.sg/",
+        "http_status": 200,
+        "sha256": "2893d50157ba7a63f3fdd753c75951e21aea0eba77314f546e2d7c86ca773af8",
+        "bytes": 261598,
+        "observed": "2026-10-18",
+        "claim": "Official notice says permanently close Changi Airport T4 after 11 Feb 2026; official outlet location is 10 Airport Boulevard, #02-201, Singapore 819665."
+      },
+      "closure_address": "10 Airport Boulevard #02-201, Changi Airport T4, Singapore 819665",
+      "exact_t4_rows": [],
+      "mismatched_same_brand_rows": [
+        {
+          "F&B Name": "ASTONS SPECIALITIES / AJI ICHI",
+          "Registered Business Name": "ASTONS SPECIALITIES / AJI ICHI",
+          "SFA Licence": "SE17716P000",
+          "Business Type": "Restaurant",
+          "Full Address": "Address: 10 EUNOS ROAD 8 #01-115,#01-114,SINGAPORE POST CENTRE,Singapore 408600",
+          "Postal Code": "408600"
+        }
+      ],
+      "confidence": "high that T4 outlet closed; high that workbook ASTONS SPECIALITIES / AJI ICHI row is a mismatch at Singapore Post Centre 408600",
+      "removal_recommendation": "do not remove Singapore Post Centre row."
+    },
+    {
+      "lead": "OldTown White Coffee, Kallang Wave Mall",
+      "class": "lead not eligible: first-party closure notice not retrieved in this pass",
+      "searched_operator_notice": "Media reports quote an official social post but are not first-party artifacts; exclude from evidence set under the assigned source restriction.",
+      "official_mall_directory_url": "https://www.thekallang.com.sg/en/mall-and-offers/directory/old-town-white-coffee.html",
+      "official_mall_page_fetch": "HTTP 404 on 2026-10-18; search index still displayed stale store listing; no notice content usable.",
+      "brand_named_rows": [],
+      "same_address_licence_rows": [
+        {
+          "F&B Name": "A-ONE PORRIDGE HOUSE PTE. LTD.",
+          "Registered Business Name": "A-ONE PORRIDGE HOUSE PTE. LTD.",
+          "SFA Licence": "SE14419J000",
+          "Business Type": "Restaurant",
+          "Full Address": "Address: 1 STADIUM PLACE #01-33/34,SPORTS HUB,Singapore 397628",
+          "Postal Code": "397628"
+        },
+        {
+          "F&B Name": "AL CAPONE'S SPORTS BAR + DINING",
+          "Registered Business Name": "AL CAPONE'S SPORTS BAR + DINING",
+          "SFA Licence": "SE14445C000",
+          "Business Type": "Restaurant",
+          "Full Address": "Address: 1 STADIUM PLACE #01-15/K7,Singapore 397628",
+          "Postal Code": "397628"
+        },
+        {
+          "F&B Name": "ASTONS SPECIALTIES",
+          "Registered Business Name": "ASTONS SPECIALTIES",
+          "SFA Licence": "SE14555P000",
+          "Business Type": "Restaurant",
+          "Full Address": "Address: 1 STADIUM PLACE #02-04,SPORTS HUB RETAIL MALL,Singapore 397628",
+          "Postal Code": "397628"
+        },
+        {
+          "F&B Name": "BAR SOCCER",
+          "Registered Business Name": "BAR SOCCER",
+          "SFA Licence": "SE14340V000",
+          "Business Type": "within Pubs/Bars/Nightclubs/Disco",
+          "Full Address": "Address: 1 STADIUM PLACE #01-13/K5,KALLANG WAVE,Singapore 397628",
+          "Postal Code": "397628"
+        },
+        {
+          "F&B Name": "Blue Fern Grill & Sake",
+          "Registered Business Name": "Blue Fern Grill & Sake",
+          "SFA Licence": "SE14797E000",
+          "Business Type": "Restaurant",
+          "Full Address": "Address: 1 STADIUM PLACE #01-20/K9,Singapore 397628",
+          "Postal Code": "397628"
+        },
+        {
+          "F&B Name": "Boost Juice Bars",
+          "Registered Business Name": "Boost Juice Bars",
+          "SFA Licence": "SE19961A000",
+          "Business Type": "Takeaway",
+          "Full Address": "Address: 1 STADIUM PLACE #02-13,Singapore 397628",
+          "Postal Code": "397628"
+        },
+        {
+          "F&B Name": "CHEERS HOLDINGS (2004) PTE. LTD.",
+          "Registered Business Name": "CHEERS HOLDINGS (2004) PTE. LTD.",
+          "SFA Licence": "SE14489B000",
+          "Business Type": "Takeaway",
+          "Full Address": "Address: 1 STADIUM PLACE #01-03,Singapore 397628",
+          "Postal Code": "397628"
+        },
+        {
+          "F&B Name": "CHICHA San Chen",
+          "Registered Business Name": "CHICHA San Chen",
+          "SFA Licence": "SE21J78C000",
+          "Business Type": "Snack Counter",
+          "Full Address": "Address: 1 STADIUM PLACE #01-52,Singapore 397628",
+          "Postal Code": "397628"
+        },
+        {
+          "F&B Name": "Chocolate Origin",
+          "Registered Business Name": "Chocolate Origin",
+          "SFA Licence": "SE14503X000",
+          "Business Type": "Snack Counter",
+          "Full Address": "Address: 1 STADIUM PLACE #01-31,Singapore 397628",
+          "Postal Code": "397628"
+        },
+        {
+          "F&B Name": "DRINKS STALL",
+          "Registered Business Name": "DRINKS STALL",
+          "SFA Licence": "SE14399C010",
+          "Business Type": "Foodcourt",
+          "Full Address": "Address: 1 STADIUM PLACE #02-16/K6,SPORTS HUB RETAIL MALL,Singapore 397628",
+          "Postal Code": "397628"
+        },
+        {
+          "F&B Name": "Encik Tan @ Sports Hub",
+          "Registered Business Name": "Encik Tan @ Sports Hub",
+          "SFA Licence": "SE14436E000",
+          "Business Type": "Restaurant",
+          "Full Address": "Address: 1 STADIUM PLACE #01-32,Singapore 397628 Sports Hub",
+          "Postal Code": "397628"
+        },
+        {
+          "F&B Name": "FISH SOUP & BAN MIAN",
+          "Registered Business Name": "FISH SOUP & BAN MIAN",
+          "SFA Licence": "SE14399C003",
+          "Business Type": "Foodcourt",
+          "Full Address": "Address: 1 STADIUM PLACE #02-16/K6,Singapore 397628",
+          "Postal Code": "397628"
+        },
+        {
+          "F&B Name": "FUN TOAST @ SPORTS HUB PTE. LTD.",
+          "Registered Business Name": "FUN TOAST @ SPORTS HUB PTE. LTD.",
+          "SFA Licence": "SE14387L000",
+          "Business Type": "Snack Counter",
+          "Full Address": "Address: 1 STADIUM PLACE #01-39,Singapore 397628",
+          "Postal Code": "397628"
+        },
+        {
+          "F&B Name": "Good Cheer 2",
+          "Registered Business Name": "Good Cheer 2",
+          "SFA Licence": "SE14396K000",
+          "Business Type": "Snack Counter",
+          "Full Address": "Address: 1 STADIUM PLACE #01-14,#01-K6,Singapore 397628",
+          "Postal Code": "397628"
+        },
+        {
+          "F&B Name": "GOURMET PIZZA TO GO",
+          "Registered Business Name": "GOURMET PIZZA TO GO",
+          "SFA Licence": "SE14512P000",
+          "Business Type": "Restaurant",
+          "Full Address": "Address: 1 STADIUM PLACE #01-43,Singapore 397628",
+          "Postal Code": "397628"
+        },
+        {
+          "F&B Name": "HAPPY RICE",
+          "Registered Business Name": "HAPPY RICE",
+          "SFA Licence": "SE16193L000",
+          "Business Type": "Restaurant",
+          "Full Address": "Address: 1 STADIUM PLACE #02-17,#02-18,Singapore 397628",
+          "Postal Code": "397628"
+        },
+        {
+          "F&B Name": "JI XIAN",
+          "Registered Business Name": "JI XIAN",
+          "SFA Licence": "SE18814E000",
+          "Business Type": "Restaurant",
+          "Full Address": "Address: 1 STADIUM PLACE #02-15,#02-16A,Singapore 397628",
+          "Postal Code": "397628"
+        },
+        {
+          "F&B Name": "Joe & Dough",
+          "Registered Business Name": "Joe & Dough",
+          "SFA Licence": "SE21A96J000",
+          "Business Type": "Snack Counter",
+          "Full Address": "Address: 1 STADIUM PLACE #01-42,KALLANG WAVE MALL,Singapore 397628",
+          "Postal Code": "397628"
+        },
+        {
+          "F&B Name": "KEI KAISENDON",
+          "Registered Business Name": "KEI KAISENDON",
+          "SFA Licence": "SE14567J000",
+          "Business Type": "Restaurant",
+          "Full Address": "Address: 1 STADIUM PLACE #01-46,KALLANG WAVE MALL,Singapore 397628",
+          "Postal Code": "397628"
+        },
+        {
+          "F&B Name": "LEVURE NATUERELLE",
+          "Registered Business Name": "LEVURE NATUERELLE",
+          "SFA Licence": "SE14559J000",
+          "Business Type": "Bakery",
+          "Full Address": "Address: 1 STADIUM PLACE #01-30,Singapore 397628",
+          "Postal Code": "397628"
+        },
+        {
+          "F&B Name": "Lickers",
+          "Registered Business Name": "Lickers",
+          "SFA Licence": "SE14A68V000",
+          "Business Type": "Snack Counter",
+          "Full Address": "Address: 1 STADIUM PLACE #01-10,KALLANG WAVE MALL,Singapore 397628",
+          "Postal Code": "397628"
+        },
+        {
+          "F&B Name": "Malaysian Food",
+          "Registered Business Name": "Malaysian Food",
+          "SFA Licence": "SE21R53X000",
+          "Business Type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+          "Full Address": "Address: 1 STADIUM PLACE #02-16/K6,Singapore 397628 (MR3)",
+          "Postal Code": "397628"
+        },
+        {
+          "F&B Name": "Malaysian Street Food",
+          "Registered Business Name": "Malaysian Street Food",
+          "SFA Licence": "SE18948B000",
+          "Business Type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+          "Full Address": "Address: 1 STADIUM PLACE #02-16/K6,Singapore 397628 MR1",
+          "Postal Code": "397628"
+        },
+        {
+          "F&B Name": "MUNCHI PANCAKES",
+          "Registered Business Name": "MUNCHI PANCAKES",
+          "SFA Licence": "SE25H47P000",
+          "Business Type": "Snack Counter",
+          "Full Address": "Address: 1 STADIUM PLACE #01-38,Singapore 397628",
+          "Postal Code": "397628"
+        },
+        {
+          "F&B Name": "OLD STREET BAK KUT TEH (SH) PTE LTD",
+          "Registered Business Name": "OLD STREET BAK KUT TEH (SH) PTE LTD",
+          "SFA Licence": "SE14535B000",
+          "Business Type": "Restaurant",
+          "Full Address": "Address: 1 STADIUM PLACE #01-22,#01-K11,THE SINGAPORE SPORTS HUB,Singapore 397628",
+          "Postal Code": "397628"
+        },
+        {
+          "F&B Name": "OMOOMO AWESOMELY GOOD KOREAN FUSION",
+          "Registered Business Name": "OMOOMO AWESOMELY GOOD KOREAN FUSION",
+          "SFA Licence": "SE14497B000",
+          "Business Type": "Snack Counter",
+          "Full Address": "Address: 1 STADIUM PLACE #01-40,SPORTS HUB RETAIL MALL,Singapore 397628",
+          "Postal Code": "397628"
+        },
+        {
+          "F&B Name": "PastaMania",
+          "Registered Business Name": "PastaMania",
+          "SFA Licence": "SE17587V000",
+          "Business Type": "Restaurant",
+          "Full Address": "Address: 1 STADIUM PLACE #01-21,KALLANG WAVE MALL,Singapore 397628",
+          "Postal Code": "397628"
+        },
+        {
+          "F&B Name": "Popeyes @ Kallang Wave",
+          "Registered Business Name": "Popeyes @ Kallang Wave",
+          "SFA Licence": "SE14459N000",
+          "Business Type": "Restaurant",
+          "Full Address": "Address: 1 STADIUM PLACE #02-02,Singapore 397628",
+          "Postal Code": "397628"
+        },
+        {
+          "F&B Name": "POULET",
+          "Registered Business Name": "POULET",
+          "SFA Licence": "SE14444E000",
+          "Business Type": "Restaurant",
+          "Full Address": "Address: 1 STADIUM PLACE #01-17,Singapore 397628",
+          "Postal Code": "397628"
+        },
+        {
+          "F&B Name": "ROCKING RICKSHAW",
+          "Registered Business Name": "ROCKING RICKSHAW",
+          "SFA Licence": "SE18652E000",
+          "Business Type": "Restaurant",
+          "Full Address": "Address: 1 STADIUM PLACE #01-12,Singapore 397628",
+          "Postal Code": "397628"
+        },
+        {
+          "F&B Name": "SANOOK KITCHEN",
+          "Registered Business Name": "SANOOK KITCHEN",
+          "SFA Licence": "SE14446B000",
+          "Business Type": "Restaurant",
+          "Full Address": "Address: 1 STADIUM PLACE #01-16/K8,Singapore 397628",
+          "Postal Code": "397628"
+        },
+        {
+          "F&B Name": "Seoul Yummy Chego",
+          "Registered Business Name": "Seoul Yummy Chego",
+          "SFA Licence": "SE16469P000",
+          "Business Type": "Restaurant",
+          "Full Address": "Address: 1 STADIUM PLACE #01-47,Kallang Wave Mall,Singapore 397628 | Unit: 01-47 | Postal code: 397628",
+          "Postal Code": "397628"
+        },
+        {
+          "F&B Name": "SHI XIANGGE",
+          "Registered Business Name": "SHI XIANGGE",
+          "SFA Licence": "SE14399C011",
+          "Business Type": "Foodcourt",
+          "Full Address": "Address: 1 STADIUM PLACE #02-16/K6,KALLANG WAVE MALL,Singapore 397628",
+          "Postal Code": "397628"
+        },
+        {
+          "F&B Name": "STARBUCKS COFFEE SINGAPORE PTE. LTD.",
+          "Registered Business Name": "STARBUCKS COFFEE SINGAPORE PTE. LTD.",
+          "SFA Licence": "SE14416N000",
+          "Business Type": "Snack Counter",
+          "Full Address": "Address: 1 STADIUM PLACE #01-56,SPORT HUB RETAIL MALL,Singapore 397628",
+          "Postal Code": "397628"
+        },
+        {
+          "F&B Name": "SUBWAY",
+          "Registered Business Name": "SUBWAY",
+          "SFA Licence": "SE14599N000",
+          "Business Type": "Snack Counter",
+          "Full Address": "Address: 1 STADIUM PLACE #01-55,KALLANG WAVE MALL,Singapore 397628",
+          "Postal Code": "397628"
+        },
+        {
+          "F&B Name": "Supergreen",
+          "Registered Business Name": "Supergreen",
+          "SFA Licence": "SE26037B000",
+          "Business Type": "Snack Counter",
+          "Full Address": "Address: 1 STADIUM PLACE #01-37,KALLANG WAVE MALL,Singapore 397628",
+          "Postal Code": "397628"
+        },
+        {
+          "F&B Name": "THE COFFEE BEAN & TEA LEAF (SINGAPORE) PTE LTD",
+          "Registered Business Name": "THE COFFEE BEAN & TEA LEAF (SINGAPORE) PTE LTD",
+          "SFA Licence": "SE14594B000",
+          "Business Type": "Snack Counter",
+          "Full Address": "Address: 1 STADIUM PLACE #01-44/45,KALLANG WAVE,Singapore 397628",
+          "Postal Code": "397628"
+        },
+        {
+          "F&B Name": "The Soup Spoon Union",
+          "Registered Business Name": "The Soup Spoon Union",
+          "SFA Licence": "SE17088C000",
+          "Business Type": "Restaurant",
+          "Full Address": "Address: 1 STADIUM PLACE #01-41,Kallang Wave,Singapore 397628 #01 - 41",
+          "Postal Code": "397628"
+        },
+        {
+          "F&B Name": "TIBERIAS INTERNATIONAL FOOD PTE. LTD.",
+          "Registered Business Name": "TIBERIAS INTERNATIONAL FOOD PTE. LTD.",
+          "SFA Licence": "SE15377J000",
+          "Business Type": "Restaurant",
+          "Full Address": "Address: 1 STADIUM PLACE #01-23,Singapore 397628",
+          "Postal Code": "397628"
+        },
+        {
+          "F&B Name": "YEW KEE DUCK RICE",
+          "Registered Business Name": "YEW KEE DUCK RICE",
+          "SFA Licence": "SE15170L000",
+          "Business Type": "Restaurant",
+          "Full Address": "Address: 1 STADIUM PLACE #02-12,Singapore 397628",
+          "Postal Code": "397628"
+        },
+        {
+          "F&B Name": null,
+          "Registered Business Name": null,
+          "SFA Licence": "SE14399C002",
+          "Business Type": "Foodcourt",
+          "Full Address": "Address: 1 STADIUM PLACE #02-16/K6,Singapore 397628",
+          "Postal Code": "397628"
+        }
+      ],
+      "confidence": "low for closure proof from first-party source; exact OldTown record absent from workbook by brand/address",
+      "removal_recommendation": "none; no exact OldTown row and no direct first-party notice captured."
+    }
+  ],
+  "summary": {
+    "explicit_permanent_closure_leads_reviewed": 2,
+    "explicit_permanent_closure_with_exact_workbook_match": 0,
+    "permanent_removals_recommended": 0,
+    "redevelopment_or_temporary_not_removal_leads": 2,
+    "confirmed_reopened_exact_outlets": 1,
+    "branch_or_address_mismatches": 2,
+    "no_exact_row_candidates": 3,
+    "number_of_exact_same_unit_satay_records": 18
+  },
+  "sources": [
+    {
+      "url": "https://chicaboo.com.sg/",
+      "http_status": 200,
+      "sha256": "c0b605fe4205c21a09882366a9fd665b2cdc6716f05918befc087d18a831b7bc",
+      "bytes": 307273,
+      "observed": "2026-10-18",
+      "claim": "CHIC A Boo Woods Square outlet will permanently close on 24 Sep 2026; last operating day 23 Sep 2026."
+    },
+    {
+      "url": "https://secretrecipe.com.sg/blogs/secret-recipe-blog/a-new-chapter-for-secret-recipe-singapore-thank-you-plaza-singapura",
+      "http_status": 200,
+      "sha256": "94f7fab5295a9396e2b01daaf3d2ab3a256165022c78e0be05390ca72a606a63",
+      "bytes": 101975,
+      "observed": "2026-10-18",
+      "claim": "Official outlet farewell post dated 28 Jul 2026 states Plaza Singapura outlet officially closed; no permanent wording."
+    },
+    {
+      "url": "https://www.gardensbythebay.com.sg/en.html",
+      "http_status": 200,
+      "sha256": "0843a2a282ddb6829ace39a21b7d912ce013dab2a61ac037d0e516d284e58dd8",
+      "bytes": 129150,
+      "observed": "2026-10-18",
+      "claim": "Satay by the Bay will close from 1 Oct 2026 to make way for a refreshed waterfront dining experience for Wetlands by the Bay."
+    },
+    {
+      "url": "https://www.hoshinocoffee.sg/?page_id=188",
+      "http_status": 200,
+      "sha256": "49b721a400db7e1e34cd806c717f9878fdffa25aa6257fb0b7441338c7e73245",
+      "bytes": 165645,
+      "observed": "2026-10-18",
+      "claim": "Official locator lists exact Plaza Singapura #03-84 and, despite media closure reports, also lists Chinatown Point and United Square; operator locator may be stale for those listings."
+    },
+    {
+      "url": "https://www.hoshinocoffee.sg/",
+      "http_status": 200,
+      "sha256": "7029f3ad1e342c01fa20e4435e01b7a4ab79d2f1b412dd8253e0b4a2a0465272",
+      "bytes": 276381,
+      "observed": "2026-10-18",
+      "claim": "Official Hoshino page advertises Plaza Singapura reopening celebration for week 12-18 Oct 2026; supports re-opened status after temporary renovation."
+    },
+    {
+      "url": "https://ajiichi.com.sg/",
+      "http_status": 200,
+      "sha256": "2893d50157ba7a63f3fdd753c75951e21aea0eba77314f546e2d7c86ca773af8",
+      "bytes": 261598,
+      "observed": "2026-10-18",
+      "claim": "Official notice says permanently close Changi Airport T4 after 11 Feb 2026; official outlet location is 10 Airport Boulevard, #02-201, Singapore 819665."
+    },
+    {
+      "url": "https://www.sfa.gov.sg/food-retail/licence-permit/update-renew-cancel-licence-permit-for-food-retail",
+      "http_status": 200,
+      "sha256": "0e3f1a0bbf9050a0ec38f810012bc878c7fe600c7f3e5adab9a7251a5dcd743a",
+      "bytes": 136766,
+      "observed": "2026-10-18",
+      "claim": "SFA says licence should be cancelled when no longer operating; licence continuation/absence alone does not establish current physical outlet operations."
+    }
+  ],
+  "limitations": [
+    "Search and source coverage is query-led, not 38,280 individual live confirmations.",
+    "Official SFA Track Records is interactive; no current downloadable bulk active-licence feed was found in this pass.",
+    "Where notices omit SFA IDs, the row match uses workbook SFA identifier plus exact name, unit, address and postal code; this does not prove SFA has cancelled that licence.",
+    "No row was removed or workbook edited."
+  ]
+}

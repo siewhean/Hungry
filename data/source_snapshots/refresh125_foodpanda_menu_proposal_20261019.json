@@ -1,0 +1,82 @@
+{
+  "refresh_id": "refresh125_foodpanda_menu_proposal_20261019",
+  "created_at_local": "2026-10-19",
+  "baseline_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_sha256": "fe31f2c8926d09ce592189efa8012987f6a3e878ef2977f50fe466873d567a64",
+  "mode": "read_only_proposal",
+  "source_set": [
+    {
+      "provider": "Foodpanda Singapore",
+      "url": "https://www.foodpanda.sg/restaurant/s5kk/toast-box-alexandra",
+      "outlet_title": "Toast Box (Alexandra)",
+      "crawl_freshness_reported_by_search": "2 days ago",
+      "identity_evidence": "Page names outlet Toast Box (Alexandra), identifies Alexandra Central at page end, and its selected menu is outlet-scoped. Exact workbook match is Toast Box at Alexandra Central, 321 Alexandra Road #01-17, SFA CE15580X000.",
+      "identity_confidence": "high; unique Toast Box at Alexandra Central in baseline"
+    },
+    {
+      "provider": "Foodpanda Singapore",
+      "url": "https://www.foodpanda.sg/restaurant/y3oi/toast-box-tiong-bahru",
+      "outlet_title": "Toast Box (Tiong Bahru)",
+      "crawl_freshness_reported_by_search": "today",
+      "identity_evidence": "Page end states 302 Tiong Bahru Road #01-110, Tiong Bahru Plaza S168732; exact workbook match is Toast Box at the same address, SFA CE16F16K000.",
+      "identity_confidence": "exact address and postal code"
+    }
+  ],
+  "outlets": [
+    {
+      "sfa_licence": "CE15580X000",
+      "f_and_b_name": "TOAST BOX",
+      "source_outlet_name": "Toast Box (Alexandra)",
+      "address": "321 ALEXANDRA ROAD #01-17, ALEXANDRA CENTRAL, Singapore 159971",
+      "existing_menu_rows_for_sfa_licence": 0,
+      "proposed_menu_rows": 6,
+      "source_url": "https://www.foodpanda.sg/restaurant/s5kk/toast-box-alexandra",
+      "source_freshness": "Foodpanda page crawl reported 2 days ago; observed in this research on 2026-10-19",
+      "menu_scope": "Outlet-scoped Foodpanda delivery catalogue. Prices are delivery-platform prices and may differ from dine-in; not a dine-in price claim.",
+      "items": [
+        {"item": "Curry Chicken with Rice", "section": "Popular", "price_sgd": "9.60", "image_url": "https://images.deliveryhero.io/image/fd-sg/Products/4319486.jpg?height=220&width=220"},
+        {"item": "Teh C (Large)", "section": "Popular", "price_sgd": "4.40", "image_url": "https://images.deliveryhero.io/image/fd-sg/Products/4319498.jpg?height=220&width=220"},
+        {"item": "Kopi C (Large)", "section": "Popular", "price_sgd": "4.40", "image_url": "https://images.deliveryhero.io/image/fd-sg/Products/4319485.jpg?height=220&width=220"},
+        {"item": "Ham & Cheese Sandwich Set", "section": "Popular", "price_sgd": "11.00", "image_url": "https://images.deliveryhero.io/image/fd-sg/Products/22034670.jpg?height=220&width=220"},
+        {"item": "Milo (Large)", "section": "Popular", "price_sgd": "4.70", "image_url": "https://images.deliveryhero.io/image/fd-sg/Products/4319489.jpg?height=220&width=220"},
+        {"item": "Curry Chicken with Rice Set", "section": "Popular", "price_sgd": "16.40", "image_url": "https://images.deliveryhero.io/image/fd-sg/Products/2799787.jpg?height=220&width=220"}
+      ]
+    },
+    {
+      "sfa_licence": "CE16F16K000",
+      "f_and_b_name": "TOAST BOX",
+      "source_outlet_name": "Toast Box (Tiong Bahru)",
+      "address": "302 TIONG BAHRU ROAD #01-110, TIONG BAHRU PLAZA, Singapore 168732",
+      "existing_menu_rows_for_sfa_licence": 0,
+      "proposed_menu_rows": 6,
+      "source_url": "https://www.foodpanda.sg/restaurant/y3oi/toast-box-tiong-bahru",
+      "source_freshness": "Foodpanda page crawl reported today; observed in this research on 2026-10-19",
+      "menu_scope": "Outlet-scoped Foodpanda delivery catalogue. Prices are delivery-platform prices and may differ from dine-in; not a dine-in price claim.",
+      "items": [
+        {"item": "Ham & Cheese Sandwich Set", "section": "Popular", "price_sgd": "11.00", "image_url": "https://foodpanda.dhmedia.io/image/fd-sg/Products/2799787.jpg?height=220&width=220"},
+        {"item": "Ham & Cheese Sandwich", "section": "Popular", "price_sgd": "4.60", "image_url": "https://foodpanda.dhmedia.io/image/fd-sg/Products/4319488.jpg?height=220&width=220"},
+        {"item": "Curry Chicken with Rice", "section": "Popular", "price_sgd": "9.60", "image_url": "https://foodpanda.dhmedia.io/image/fd-sg/Products/4319485.jpg?height=220&width=220"},
+        {"item": "Kopi (Large)", "section": "Popular", "price_sgd": "4.40", "image_url": "https://foodpanda.dhmedia.io/image/fd-sg/Products/4319448.jpg?height=220&width=220"},
+        {"item": "Iced Kopi (Large)", "section": "Popular", "price_sgd": "4.50", "image_url": "https://foodpanda.dhmedia.io/image/fd-sg/Products/4319491.jpg?height=220&width=220"},
+        {"item": "Teh (Large)", "section": "Popular", "price_sgd": "4.40", "image_url": "https://foodpanda.dhmedia.io/image/fd-sg/products/4319440.jpg?height=220&width=220"}
+      ]
+    }
+  ],
+  "image_notes": {
+    "image_count": 12,
+    "rights_status": "Foodpanda/Delivery Hero hosted item images. These are real source-linked images, but not verified first-party outlet media and no reuse/display license was established. Keep as internal review references only; do not mark approved image URLs.",
+    "stall_images": "None collected; no authentic stall-front image was verified in this bounded pass."
+  },
+  "excluded_candidate": {
+    "outlet": "Toast Box (Paragon)",
+    "sfa_licence": "W03439J000",
+    "reason": "Exact address and zero menu rows matched, but Foodpanda page freshness was reported as crawled last month. Excluded to avoid proposing stale prices/menu as current.",
+    "source_url": "https://www.foodpanda.sg/restaurant/y7zq/toast-box-paragon"
+  },
+  "limits": [
+    "This is a two-outlet proposal, not a workbook edit; the task is restricted to read-only research.",
+    "Foodpanda's page states that listing prices may differ from store prices. Treat every proposed amount as delivery-channel pricing.",
+    "The directory marks these as public-access candidates from SFA type/address rather than a live physical inspection; active outlet-scoped delivery listings support current online ordering, not definitive dine-in operation status.",
+    "No official Toast Box first-party outlet menu was cross-checked in this pass."
+  ]
+}

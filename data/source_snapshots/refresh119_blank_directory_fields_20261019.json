@@ -1,0 +1,90 @@
+{
+  "snapshot_id": "refresh119_blank_directory_fields_20261019",
+  "observed_at_utc": "2026-10-18T17:42:41+00:00",
+  "workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "028e757cf68c3fd6be935a2908484a98ba1865c4318975cfde543d1175bf5475",
+  "workbook_edited": false,
+  "scope": {
+    "target": "Blank Directory contact, website, opening-hours, or menu URL fields on exact SFA rows in a bounded sample of official mall/merchant sources",
+    "mall": "NEX / Serangoon",
+    "record_count_reviewed": 1,
+    "field_policy": "Propose only values directly supported by current first-party merchant or official mall directory pages; no mall-level hours or shared contact details."
+  },
+  "sources": [
+    {
+      "url": "https://www.nex.com.sg/Directory/ShopName/s",
+      "publisher": "NEX official store directory",
+      "observed": "Observed 2026-10-19 local date; page current in search index",
+      "facts": "SEORAE JIB listed at #B1-73/74, Restaurant, Cafe & Fast Food; directory address 23 Serangoon Central Singapore 556083.",
+      "role": "Exact tenant and NEX unit corroboration."
+    },
+    {
+      "url": "https://www.seoraejib.com.sg/locations",
+      "publisher": "SEORAE JIB official website",
+      "observed": "Fetched 2026-10-19 local date",
+      "facts": "Lists Serangoon NEX outlet at 21 Serangoon Central, #B1-73/74; Mon-Fri 11:30am-10:00pm, Sat/Sun/PH 11:00am-10:00pm; last order Sun-Thu 9pm, Fri/Sat/eve PH 9:30pm. Contact page contains a form but no published phone/email.",
+      "role": "Outlet unit, operating hours, and operator website."
+    },
+    {
+      "url": "https://www.seoraejib.com.sg/seorae-menu",
+      "publisher": "SEORAE JIB official website",
+      "observed": "Fetched 2026-10-19 local date",
+      "facts": "Branded dine-in menu page with linked menu assets.",
+      "role": "Official menu URL."
+    }
+  ],
+  "proposals": [
+    {
+      "excel_row": 24558,
+      "sfa_licence": "SE10616L000",
+      "existing_name": "SEORAE JIB",
+      "existing_address": "Address: 23 SERANGOON CENTRAL #B1-73/74,NEX,Singapore 556083",
+      "before": {
+        "Contact Details": null,
+        "Website": null,
+        "Opening Hours / Closed Days": null,
+        "Menu URL": null
+      },
+      "updates": [
+        {
+          "field": "Website",
+          "value": "https://www.seoraejib.com.sg/",
+          "source_url": "https://www.seoraejib.com.sg/locations",
+          "evidence": "Merchant-owned domain and locations page list Serangoon NEX at exact unit #B1-73/74.",
+          "confidence": "high"
+        },
+        {
+          "field": "Opening Hours / Closed Days",
+          "value": "Mon-Fri 11:30am-10:00pm; Sat, Sun & PH 11:00am-10:00pm. Last order: Sun-Thu 9:00pm; Fri, Sat & PH eve 9:30pm.",
+          "source_url": "https://www.seoraejib.com.sg/locations",
+          "evidence": "Published on operator locations page adjacent to its Serangoon NEX outlet listing at exact unit #B1-73/74.",
+          "confidence": "high"
+        },
+        {
+          "field": "Menu URL",
+          "value": "https://www.seoraejib.com.sg/seorae-menu",
+          "source_url": "https://www.seoraejib.com.sg/seorae-menu",
+          "evidence": "Operator current dine-in menu page with linked menu assets.",
+          "confidence": "high"
+        }
+      ],
+      "withheld": [
+        {
+          "field": "Contact Details",
+          "reason": "Operator location/contact page provides a form only; no phone or email for this outlet was published."
+        }
+      ],
+      "match_basis": "Exact brand and unit (#B1-73/74) match between workbook and current NEX official directory plus merchant location page. Merchant page uses street number 21 while NEX/workbook use 23; unit and named Serangoon NEX outlet agree, but retain existing workbook address and do not overwrite it.",
+      "limitations": [
+        "Hours are merchant-published on its locations page adjacent to the outlet list, but not repeated separately per branch.",
+        "No contact value proposed.",
+        "No menu-item records or images added in this bounded pass."
+      ]
+    }
+  ],
+  "limitations": [
+    "Read-only research pass; canonical workbook not modified.",
+    "One outlet reviewed from official mall/merchant source sample; no broader coverage claim.",
+    "No Mapbox or third-party delivery marketplace data used."
+  ]
+}

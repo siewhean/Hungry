@@ -20,6 +20,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import {
   AccessibleImage,
+  AppHeader,
   AppText,
   Avatar,
   EmptyState,
@@ -131,7 +132,7 @@ function BrowseGridCard({
 }) {
   const { palette } = useHungryTheme();
   const [activeIndex, setActiveIndex] = useState(0);
-  const activeSlide = slides[activeIndex] ?? item;
+  const activeSlide = item;
   const handleActiveIndexChange = useCallback((nextIndex: number) => {
     setActiveIndex(nextIndex);
   }, []);
@@ -159,7 +160,7 @@ function BrowseGridCard({
       }}
     >
       <CyclingGridImage
-        images={slides.map((slide) => slide.imageUrl)}
+        images={[item.imageUrl]}
         cycleMs={CYCLING_GRID_IMAGE_INTERVAL_MS}
         isAutoCycleActive={isAutoCycleActive}
         startDelayMs={(index % 4) * 350}
@@ -265,16 +266,19 @@ function rawCatalogRequest(
   selectedFilter: string,
   coordinate: { latitude: number; longitude: number },
   cursor?: string,
+  dietaryFlags: CatalogPageRequest["dietaryFlags"] = [],
 ): CatalogPageRequest {
   const filter = selectedFilter.toLowerCase();
   return {
     query: query.trim() || undefined,
     coordinate,
-    radiusMeters: query.trim() ? undefined : 3_000,
+    radiusMeters: 3_000,
     cursor,
     limit: 24,
     sort: query.trim() ? "relevance" : "nearby",
-    dietaryFlags: filter === "halal" ? ["halal"] : [],
+    dietaryFlags: Array.from(
+      new Set([...(dietaryFlags ?? []), ...(filter === "halal" ? ["halal" as const] : [])]),
+    ),
     cuisineTags: ["japanese", "western", "noodles", "rice"].includes(filter) ? [filter] : [],
     openOnly: mode === "stalls" && filter === "local",
   };
@@ -403,6 +407,8 @@ function RawCatalogBrowseGrid({
   const [error, setError] = useState<string | null>(null);
   const requestVersion = useRef(0);
   const releaseIdRef = useRef<string | undefined>(undefined);
+  const dietaryPreferences = useProfileStore((state) => state.profile.dietaryPreferences);
+  const maxDishBudget = useProfileStore((state) => state.profile.maxDishBudget);
   const service = getCatalogRawService();
   const itemWidth = width / 2;
 
@@ -420,7 +426,9 @@ function RawCatalogBrowseGrid({
           selectedFilter,
           currentLocation,
           cursor,
+          dietaryPreferences,
         );
+        request.maxPrice = maxDishBudget;
         request.releaseId = cursor ? releaseIdRef.current : undefined;
         const page =
           mode === "dishes" ? await service.listDishes(request) : await service.listVenues(request);
@@ -441,20 +449,34 @@ function RawCatalogBrowseGrid({
         }
       }
     },
-    [currentLocation, isAuthenticated, mode, searchQuery, selectedFilter, service],
+    [
+      currentLocation,
+      isAuthenticated,
+      mode,
+      searchQuery,
+      selectedFilter,
+      service,
+      dietaryPreferences,
+      maxDishBudget,
+    ],
   );
 
   useEffect(() => {
     requestVersion.current += 1;
     releaseIdRef.current = undefined;
     setReleaseId(undefined);
+    setItems([]);
+    setNextCursor(undefined);
     const timer = setTimeout(
       () => {
         void loadPage();
       },
       searchQuery.trim() ? 250 : 0,
     );
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      requestVersion.current += 1;
+    };
   }, [loadPage]);
 
   if (!isAuthenticated) {
@@ -516,7 +538,8 @@ function RawCatalogBrowseGrid({
           keyExtractor={(item) => item.id}
           numColumns={2}
           onEndReached={() => {
-            if (nextCursor && !isLoadingMore && !isLoading) void loadPage(nextCursor, true);
+            if (nextCursor && !error && !isLoadingMore && !isLoading)
+              void loadPage(nextCursor, true);
           }}
           onEndReachedThreshold={0.6}
           renderItem={({ item }) => (
@@ -548,7 +571,14 @@ function RawCatalogBrowseGrid({
             )
           }
           ListFooterComponent={
-            isLoadingMore ? (
+            error && items.length ? (
+              <EmptyState
+                title="More results unavailable"
+                body={error}
+                ctaLabel="Retry"
+                onPress={() => void loadPage(nextCursor, true)}
+              />
+            ) : isLoadingMore ? (
               <View style={{ paddingVertical: spacing[4] }}>
                 <ActivityIndicator color={palette.orange} />
               </View>
@@ -864,11 +894,15 @@ function LegacyBrowseGridScreen({
         (filter === "local" && searchText.includes("singapore")) ||
         (filter === "spicy" && item.dish.tasteVector.spicy >= 6);
 
-      return matchesSearch && matchesFilter;
+      return (
+        profile.dietaryPreferences.every((flag) => item.dish.dietaryFlags.includes(flag)) &&
+        matchesSearch &&
+        (filter === "halal" ? item.dish.dietaryFlags.includes("halal") : matchesFilter)
+      );
     });
 
-    return filtered.length || query ? filtered : feedItems;
-  }, [feedItems, isBrowseDataReady, searchQuery, selectedFilter]);
+    return filtered;
+  }, [feedItems, isBrowseDataReady, searchQuery, selectedFilter, profile.dietaryPreferences]);
   const fullTileViewabilityConfig = useRef({ itemVisiblePercentThreshold: 100 }).current;
   const handleFullyVisibleFeedItemsChanged = useRef(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
@@ -1288,10 +1322,13 @@ function LegacySearchResultsScreen() {
   const browseMode = route.params?.browseMode;
   const initialQuery = route.params?.initialQuery ?? "";
   const foodTypeTag = route.params?.foodTypeTag;
+  const [searchError, setSearchError] = useState(false);
+  const [searchRetry, setSearchRetry] = useState(0);
   const [serviceResults, setServiceResults] = useState<DishDetail[] | null>(null);
   useEffect(() => {
     let active = true;
     setServiceResults(null);
+    setSearchError(false);
     if (browseMode) {
       return () => {
         active = false;
@@ -1303,15 +1340,18 @@ function LegacySearchResultsScreen() {
         if (active) setServiceResults(results);
       })
       .catch(() => {
-        if (active) setServiceResults(null);
+        if (active) {
+          setServiceResults([]);
+          setSearchError(true);
+        }
       });
 
     return () => {
       active = false;
     };
-  }, [browseMode, filters, profile.tasteVector]);
+  }, [browseMode, filters, profile.tasteVector, searchRetry]);
   const rawResults = useMemo(
-    () => serviceResults ?? getSearchResults(filters, profile.tasteVector),
+    () => serviceResults ?? [],
     [filters, profile.tasteVector, serviceResults],
   );
   const nameMatchedResults = useMemo(
@@ -1394,7 +1434,19 @@ function LegacySearchResultsScreen() {
 
   return (
     <Screen scroll={false}>
+      <AppHeader
+        title={filters.query.trim() ? `Results for "${filters.query.trim()}"` : "Search results"}
+      />
+      {searchError ? (
+        <EmptyState
+          title="Search unavailable"
+          body="Your search could not be loaded."
+          ctaLabel="Retry"
+          onPress={() => setSearchRetry((value) => value + 1)}
+        />
+      ) : null}
       <SearchResultsView
+        isLoading={serviceResults === null}
         query={filters.query}
         onQueryChange={updateQuery}
         onClear={() => updateQuery("")}

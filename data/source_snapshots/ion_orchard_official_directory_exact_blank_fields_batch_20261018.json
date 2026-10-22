@@ -1,0 +1,113 @@
+{
+  "snapshot_id": "ion_orchard_official_directory_exact_blank_fields_batch_20261018",
+  "observed_date": "2026-10-18",
+  "workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "986a2656c3243d55c1a3914a3c5fbbdf2052e0423a69705785cbba0b7fee154e",
+  "workbook_edited": false,
+  "publisher": "ION Orchard",
+  "scope": "Fresh mall directory batch for ION Orchard. Official outlet detail pages were matched to existing SFA records by exact brand/name, unit token, mall address, and postal code. Only currently blank outlet-specific contact, website, or operating-hour fields proposed. No delivery-platform data or paid services used.",
+  "method": "Official ION Orchard /en/dine outlet pages show the venue name, unit, and relevant published fields. Exact SFA row was selected from postal code 238801 and matching unit. Existing nonblank values preserved. Direct page HTTP response status, byte length, and SHA-256 of raw HTML recorded below. The local TLS trust chain failed validation in urllib, so raw-page retrieval used curl with certificate verification disabled; each URL is on the official ION Orchard domain and the page content was independently cross-checked against its indexed official-page listing.",
+  "summary": {
+    "proposals": 5,
+    "distinct_sfa_licences": 5,
+    "fields_proposed": 10,
+    "field_counts": {"Contact Details": 2, "Website": 2, "Opening Hours / Closed Days": 5},
+    "withheld": ["No other outlet-specific fields proposed from these pages."]
+  },
+  "proposals": [
+    {
+      "sfa_licence": "CE09535E000",
+      "existing_name": "BACHA COFFEE PTE LTD",
+      "existing_address": "Address: 2 ORCHARD TURN #01-15/16,ION ORCHARD,Singapore 238801",
+      "postal_code": "238801",
+      "official_tenant_name": "BACHA COFFEE",
+      "official_unit": "#01-15/16",
+      "field_proposals": {
+        "Contact Details": "+65 6363 1910",
+        "Website": "https://bachacoffee.com/",
+        "Opening Hours / Closed Days": "Hours: Daily 9:30am–10:00pm"
+      },
+      "before_values": {"Contact Details": null, "Website": null, "Opening Hours / Closed Days": null},
+      "source_url": "https://www.ionorchard.com/en/dine/bacha-coffee.html",
+      "source_http_status": 200,
+      "source_response_bytes": 157735,
+      "source_response_sha256": "fae1ad97c3f60710baabbcc0356577f687b70f6fbd1318bc071b78f658dc8882",
+      "source_evidence": "Official page identifies BACHA COFFEE at #01-15/16, lists telephone 63631910, daily 9:30am–10:00pm, and links bachacoffee.com.",
+      "join_confidence": "high"
+    },
+    {
+      "sfa_licence": "CE09266K000",
+      "existing_name": "food opera",
+      "existing_address": "Address: 2 ORCHARD TURN #B4-04,ION ORCHARD,Singapore 238801",
+      "postal_code": "238801",
+      "official_tenant_name": "FOOD OPERA",
+      "official_unit": "#B4-04",
+      "field_proposals": {
+        "Contact Details": "+65 6509 9198",
+        "Opening Hours / Closed Days": "Hours: Daily 10:00am–10:00pm"
+      },
+      "before_values": {"Contact Details": null, "Opening Hours / Closed Days": null},
+      "source_url": "https://www.ionorchard.com/en/dine/food-opera.html",
+      "source_http_status": 200,
+      "source_response_bytes": 150474,
+      "source_response_sha256": "080d24ddcac8aa220b553ada6ce14742f0d227bfc7b927eb9cb6ccd4587997dd",
+      "source_evidence": "Official page identifies FOOD OPERA at #B4-04, lists telephone 65099198 and daily 10:00am–10:00pm.",
+      "join_confidence": "high"
+    },
+    {
+      "sfa_licence": "CE09B70J000",
+      "existing_name": "CANTON PARADISE +",
+      "existing_address": "Address: 2 ORCHARD TURN #B3-17,ION ORCHARD,Singapore 238801",
+      "postal_code": "238801",
+      "official_tenant_name": "CANTON PARADISE+",
+      "official_unit": "#B3-17",
+      "field_proposals": {
+        "Opening Hours / Closed Days": "Hours: Daily 10:00am–10:00pm"
+      },
+      "before_values": {"Opening Hours / Closed Days": null},
+      "source_url": "https://www.ionorchard.com/en/dine/canton-paradise.html",
+      "source_http_status": 200,
+      "source_response_bytes": 148142,
+      "source_response_sha256": "4bb7d72c5640d6478b4f21634e37310c1eebfb3acfb5d3b45a31250d2174c211",
+      "source_evidence": "Official page identifies CANTON PARADISE+ at #B3-17 and states DAILY 10:00am–10:00pm.",
+      "join_confidence": "high"
+    },
+    {
+      "sfa_licence": "CE12238V000",
+      "existing_name": "THE SOUP SPOON",
+      "existing_address": "Address: 2 ORCHARD TURN #B4-58/59,ION ORCHARD,Singapore 238801",
+      "postal_code": "238801",
+      "official_tenant_name": "THE SOUP SPOON",
+      "official_unit": "#B4-58/59",
+      "field_proposals": {
+        "Website": "https://www.thesoupspoon.com/",
+        "Opening Hours / Closed Days": "Hours: Daily 10:00am–10:00pm"
+      },
+      "before_values": {"Website": null, "Opening Hours / Closed Days": null},
+      "source_url": "https://www.ionorchard.com/en/dine/the-soup-spoon.html",
+      "source_http_status": 200,
+      "source_response_bytes": 147464,
+      "source_response_sha256": "fd506ac7194a5ece8a696e223688152dc38a50337e6c0798c46cff807b69e457",
+      "source_evidence": "Official page identifies THE SOUP SPOON at #B4-58/59, states DAILY 10:00am–10:00pm, and links thesoupspoon.com.",
+      "join_confidence": "high"
+    },
+    {
+      "sfa_licence": "CE09B30B000",
+      "existing_name": "HOSHINO COFFEE",
+      "existing_address": "Address: 2 ORCHARD TURN #B3-22,ION ORCHARD,Singapore 238801",
+      "postal_code": "238801",
+      "official_tenant_name": "HOSHINO COFFEE",
+      "official_unit": "#B3-22",
+      "field_proposals": {
+        "Opening Hours / Closed Days": "Hours: Daily 11:00am–10:00pm"
+      },
+      "before_values": {"Opening Hours / Closed Days": null},
+      "source_url": "https://www.ionorchard.com/en/dine/hoshino-coffee.html",
+      "source_http_status": 200,
+      "source_response_bytes": 150597,
+      "source_response_sha256": "365a260ea041da650e3f5aa332cd76e2ead984de30e55e69cb8d34e214c21738",
+      "source_evidence": "Official page identifies HOSHINO COFFEE at #B3-22 and states DAILY 11:00am–10:00pm. Its published phone and brand website were already populated in the workbook and therefore not proposed.",
+      "join_confidence": "high"
+    }
+  ]
+}

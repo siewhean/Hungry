@@ -1,0 +1,90 @@
+{
+  "snapshot_type": "exact_blank_public_name_research",
+  "snapshot_id": "refresh123_blank_names_20261019",
+  "observed_at_local": "2026-10-19",
+  "master_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "master_sha256": "2674213d695cbe29ef25cab0ca9535a1dbca6dbf81b5b1ea983561632994e233",
+  "worksheet": "Public F&B Directory",
+  "workbook_edited": false,
+  "scope": "Read-only scan of currently blank F&B Name rows; match only exact active SFA licence/address/postal/unit crosswalks to current primary-source public-facing names. Exclude proposals already present in Refresh120, Refresh121, and Refresh122 snapshots.",
+  "source_set": [
+    {
+      "publisher": "Singapore Health Promotion Board",
+      "url": "https://help.hpb.gov.sg/ssp/en/identifying-participating-outlets-partners?id=kb_article_view_ssp&sysparm_article=KB0013641&topic_id=eeb3a4f1fd56aa504a47112c1e77596f",
+      "observed_date": "2026-10-19",
+      "source_page_update": "Updated as of 21 August 2026",
+      "evidence": "The public directory row for 7-Eleven lists 1 Woodlands Square, Causeway Point, #01-K09, postal 738099."
+    },
+    {
+      "publisher": "Causeway Point official mall site (Frasers Property)",
+      "url": "https://www.causewaypoint.com.sg/content/frasersexperience/cwp/en/whats-on/events/2026-lunar-new-year-store-operating-hours0.html",
+      "observed_date": "2026-10-19",
+      "source_page_date": "Posted 11 February 2026; schedule for 15-19 February 2026",
+      "evidence": "Official mall schedule lists 7-ELEVEN at unit #01-K09. This corroborates the exact mall and unit; it is not treated as proof of October operating hours."
+    }
+  ],
+  "summary": {
+    "proposals": 1,
+    "held_records": 3,
+    "proposal_fields": [
+      "F&B Name"
+    ],
+    "applied": false
+  },
+  "proposals": [
+    {
+      "sfa_licence": "NW11142P000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "7-Eleven",
+      "business_type": "Takeaway",
+      "existing_address": "Address: 1 WOODLANDS SQUARE #01-K09,CAUSEWAY POINT,Singapore 738099",
+      "postal_code": "738099",
+      "official_mall": "Causeway Point",
+      "exact_unit_match": "#01-K09",
+      "source_type": "government_public_outlet_registry_with_official_mall_crosscheck",
+      "source_urls": [
+        "https://help.hpb.gov.sg/ssp/en/identifying-participating-outlets-partners?id=kb_article_view_ssp&sysparm_article=KB0013641&topic_id=eeb3a4f1fd56aa504a47112c1e77596f",
+        "https://www.causewaypoint.com.sg/content/frasersexperience/cwp/en/whats-on/events/2026-lunar-new-year-store-operating-hours0.html"
+      ],
+      "observed_date": "2026-10-19",
+      "evidence": "The current HPB participating-outlet page, updated 21 August 2026, explicitly lists 7-Eleven at 1 Woodlands Square, Causeway Point, #01-K09, Singapore 738099. Causeway Point's official 2026 mall schedule independently lists 7-Eleven at #01-K09. The workbook's blank-name SFA record has matching address, postal code, and exact unit. The SFA licence is NW11142P000 and is present in the current workbook as a Takeaway record.",
+      "matching_rule": "Exact SFA licence-to-workbook row crosswalk; matching postal code, mall, and full licensed unit confirmed by a current official public-outlet listing and corroborated by official mall material.",
+      "confidence": "high for public-facing name and exact outlet crosswalk; current mall schedule is dated February, while HPB data is updated August 2026.",
+      "proposed_fields": [
+        "F&B Name"
+      ],
+      "limitations": "Name-only proposal. Does not establish current October opening status, individual hours, website, contact, menu, imagery, rating, or image reuse rights. Existing public-access status remains candidate-only and was not changed."
+    }
+  ],
+  "held_records": [
+    {
+      "sfa_licence": "SW14236N000",
+      "existing_address": "Address: 3 GATEWAY DRIVE #03-07,WESTGATE,Singapore 608532",
+      "candidate_name": "Yun Nans",
+      "reason": "The merchant first-party store locator gives the exact name and unit, but this pass's target evidence requirement was an official mall/landlord directory. No qualifying official mall directory evidence was retrieved; held from proposals rather than changing the name.",
+      "source_url": "https://yunnans.sg/contact/",
+      "action": "hold_no_name_proposal"
+    },
+    {
+      "sfa_licence": "W83263J000",
+      "existing_address": "Address: 14 SCOTTS ROAD #02-23,FAR EAST PLAZA,Singapore 228213",
+      "candidate_name": "Good Morning Nanyang Cafe",
+      "reason": "A search surfaced third-party and historical government references for this exact unit, but no sufficiently current official Far East Plaza directory confirmation. Held.",
+      "source_url": "https://www.fareastmalls.com.sg/en/",
+      "action": "hold_no_name_proposal"
+    },
+    {
+      "sfa_licence": "NW19171J000",
+      "existing_address": "Address: 1 WOODLANDS SQUARE #B1-35,CAUSEWAY POINT,Singapore 738099",
+      "candidate_name": null,
+      "reason": "No current primary-source tenant name was verified for the exact unit; category is Sales of Herbal Tea, so nearby tenants or directory category hints cannot resolve the licensee.",
+      "source_url": "https://www.causewaypoint.com.sg/map",
+      "action": "hold_no_name_proposal"
+    }
+  ],
+  "limitations": [
+    "Only one new high-confidence exact name proposal was supported in this bounded pass; other candidates remained ambiguous or lacked current qualifying official directory evidence.",
+    "No access status, closure status, hours, or other field was inferred or changed.",
+    "No paid sources or APIs were used; the workbook was not edited."
+  ]
+}

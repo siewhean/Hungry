@@ -1,0 +1,127 @@
+{
+  "snapshot": "First-party Starbucks 37Smith Street image candidate increment",
+  "captured_date": "2026-10-18",
+  "baseline_workbook": "Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_workbook_sha256": "ba519451ef5fa46aafcac14d67a1563365e6a15601c1ddc778d71ac20a960ef1",
+  "directory_match": {
+    "sfa_licence": "CE22G07P000",
+    "f_and_b_name": "Starbucks",
+    "address": "Address: 37 SMITH STREET Singapore 058950 1st and 2nd Storey",
+    "postal_code": "058950",
+    "match_basis": "Exact outlet page name (37Smith Street) and exact SFA directory address/postal row."
+  },
+  "source_page": "https://www.starbucks.com.sg/starbucks-37smith-street",
+  "source_evidence": {
+    "page_title": "Starbucks 37Smith Street",
+    "page_excerpt": "Official page identifies this as the Starbucks 37Smith Street outlet and lists the named food/drink items under Exclusive Food/Exclusive Drinks.",
+    "source_page_sha256": "452fd7d04abad1954b305a4cdf8abdf0f05ca6b8e715de4c8dbca7215658a386",
+    "evidence_capture": "HTML fetched 2026-10-18; direct official image URLs HEAD-checked without downloading image bodies."
+  },
+  "candidate_count_new": 8,
+  "candidates": [
+    {
+      "type": "Outlet photo candidate",
+      "item_or_image_type": "37Smith Street outlet banner (exact image subject not visually checked)",
+      "image_url": "https://www.starbucks.com.sg/media/2025/spring/37S%20home%20banner.png",
+      "source_page_url": "https://www.starbucks.com.sg/starbucks-37smith-street",
+      "source_linkage": "Asset named 37S home banner and embedded directly in Starbucks 37Smith Street page.",
+      "http_status": 200,
+      "content_type": "image/png",
+      "visual_check": "Not visually inspected; branch linkage is from filename and first-party page markup.",
+      "already_in_workbook": false,
+      "rights_reuse_status": "Review only; Starbucks retains copyright; no redistribution/display permission established; not approved for display."
+    },
+    {
+      "type": "Outlet photo candidate",
+      "item_or_image_type": "37Smith Street outlet main banner (exact image subject not visually checked)",
+      "image_url": "https://www.starbucks.com.sg/media/2025/spring/37S%20main%20banner%20750x750.png",
+      "source_page_url": "https://www.starbucks.com.sg/starbucks-37smith-street",
+      "source_linkage": "Asset named 37S main banner and embedded directly in Starbucks 37Smith Street page.",
+      "http_status": 200,
+      "content_type": "image/png",
+      "visual_check": "Not visually inspected; branch linkage is from filename and first-party page markup.",
+      "already_in_workbook": false,
+      "rights_reuse_status": "Review only; Starbucks retains copyright; no redistribution/display permission established; not approved for display."
+    },
+    {
+      "type": "Menu item image candidate",
+      "item_or_image_type": "Black Sesame Oatmilk Coffee Frappuccino® with Soy Pudding",
+      "image_url": "https://www.starbucks.com.sg/media/2026/SummerOne/F%26B/Drinks/Black-Sesame-%20Oatmilk-Coffee-OnGreen_750x750.png",
+      "source_page_url": "https://www.starbucks.com.sg/menu/beverages/seasonal/black-sesame-oatmilk-coffee-frappuccino-with-soy-pudding",
+      "source_linkage": "Named product and image asset are paired in first-party outlet page markup; outlet page names it among Starbucks 37Smith Street exclusive food.",
+      "http_status": 200,
+      "content_type": "image/png",
+      "visual_check": "Not visually inspected; exact asset association is evidenced in current first-party HTML markup.",
+      "already_in_workbook": false,
+      "rights_reuse_status": "Review only; Starbucks retains copyright; no redistribution/display permission established; not approved for display."
+    },
+    {
+      "type": "Menu item image candidate",
+      "item_or_image_type": "Starbucks® Coffee Crust Polo Bun (Served with chilled butter)",
+      "image_url": "https://www.starbucks.com.sg/media/2025/spring/Beverage%20%26%20Food/4.png",
+      "source_page_url": "https://www.starbucks.com.sg/menu/food/desserts/starbucks-coffee-crust-polo-bun-served-with-chilled-butter",
+      "source_linkage": "Named product and image asset are paired in first-party outlet page markup; outlet page names it among Starbucks 37Smith Street exclusive food.",
+      "http_status": 200,
+      "content_type": "image/png",
+      "visual_check": "Not visually inspected; exact asset association is evidenced in current first-party HTML markup.",
+      "already_in_workbook": false,
+      "rights_reuse_status": "Review only; Starbucks retains copyright; no redistribution/display permission established; not approved for display."
+    },
+    {
+      "type": "Menu item image candidate",
+      "item_or_image_type": "Lychee Swiss Roll",
+      "image_url": "https://www.starbucks.com.sg/media/2025/spring/Beverage%20%26%20Food/9.png",
+      "source_page_url": "https://www.starbucks.com.sg/menu/food/desserts/lychee-swiss-roll",
+      "source_linkage": "Named product and image asset are paired in first-party outlet page markup; outlet page names it among Starbucks 37Smith Street exclusive food.",
+      "http_status": 200,
+      "content_type": "image/png",
+      "visual_check": "Not visually inspected; exact asset association is evidenced in current first-party HTML markup.",
+      "already_in_workbook": false,
+      "rights_reuse_status": "Review only; Starbucks retains copyright; no redistribution/display permission established; not approved for display."
+    },
+    {
+      "type": "Menu item image candidate",
+      "item_or_image_type": "Pandan Chiffon Cake",
+      "image_url": "https://www.starbucks.com.sg/media/2025/spring/Beverage%20%26%20Food/7.png",
+      "source_page_url": "https://www.starbucks.com.sg/menu/food/desserts/pandan-chiffon-cake",
+      "source_linkage": "Named product and image asset are paired in first-party outlet page markup; outlet page names it among Starbucks 37Smith Street exclusive food.",
+      "http_status": 200,
+      "content_type": "image/png",
+      "visual_check": "Not visually inspected; exact asset association is evidenced in current first-party HTML markup.",
+      "already_in_workbook": false,
+      "rights_reuse_status": "Review only; Starbucks retains copyright; no redistribution/display permission established; not approved for display."
+    },
+    {
+      "type": "Menu item image candidate",
+      "item_or_image_type": "Starbucks® Gem Icing Cookie",
+      "image_url": "https://www.starbucks.com.sg/media/2025/spring/Beverage%20%26%20Food/11.png",
+      "source_page_url": "https://www.starbucks.com.sg/menu/food/desserts/starbucks-gem-icing-cookie",
+      "source_linkage": "Named product and image asset are paired in first-party outlet page markup; outlet page names it among Starbucks 37Smith Street exclusive food.",
+      "http_status": 200,
+      "content_type": "image/png",
+      "visual_check": "Not visually inspected; exact asset association is evidenced in current first-party HTML markup.",
+      "already_in_workbook": false,
+      "rights_reuse_status": "Review only; Starbucks retains copyright; no redistribution/display permission established; not approved for display."
+    },
+    {
+      "type": "Menu item image candidate",
+      "item_or_image_type": "Laksa Mac & Cheese Pie",
+      "image_url": "https://www.starbucks.com.sg/media/2025/spring/Beverage%20%26%20Food/2.png",
+      "source_page_url": "https://www.starbucks.com.sg/menu/food/pie-quiches/laksa-mac-cheese-pie-0",
+      "source_linkage": "Named product and image asset are paired in first-party outlet page markup; outlet page names it among Starbucks 37Smith Street exclusive food.",
+      "http_status": 200,
+      "content_type": "image/png",
+      "visual_check": "Not visually inspected; exact asset association is evidenced in current first-party HTML markup.",
+      "already_in_workbook": false,
+      "rights_reuse_status": "Review only; Starbucks retains copyright; no redistribution/display permission established; not approved for display."
+    }
+  ],
+  "excluded_existing_image_urls": [
+    {
+      "item": "Yuan Yang Coffee Frappuccino®",
+      "image_url": "https://www.starbucks.com.sg/media/2025/Summer%203/Drinks/Yuan-Yang-Frappuccino-OnGreen_540x540.png",
+      "reason": "Exact URL already exists in Image Candidates sheet; not duplicated."
+    }
+  ],
+  "integration_policy": "Evidence-only; no workbook edits. If integrated, append to Image Candidates as review-only candidates. Leave Approved Image URL blank pending visual review and permission."
+}

@@ -1,3 +1,5 @@
+import { useMerchantOperationScope } from "@/features/merchant/useMerchantOperationScope";
+import { useRef as useMerchantRequestRef } from "react";
 import React, { useState, useEffect, useCallback } from "react";
 import { View, StyleSheet, Alert } from "react-native";
 import { Check, Edit2, RefreshCw, X } from "lucide-react-native";
@@ -10,6 +12,7 @@ import {
   Button,
   ChipGroup,
   EmptyState,
+  Input,
   Screen,
   StatusChip,
 } from "@/components/ui";
@@ -19,9 +22,13 @@ import { getHungryService } from "@/lib/services/serviceProvider";
 import type { OCRDishDraft } from "@/types/domain";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 
+import { parseMerchantPrice, runMerchantBatch } from "@/features/merchant/workflowSafety";
+
 type NavigationProp = NativeStackNavigationProp<MerchantTabParamList, "OCRDrafts">;
 
 export function OCRDraftScreen() {
+  const captureOperation = useMerchantOperationScope();
+
   const { componentRadii, palette, spacing } = useHungryTheme();
   const navigation = useNavigation<NavigationProp>();
   const activeOutlet = useMerchantStore(getActiveOutlet);
@@ -30,7 +37,29 @@ export function OCRDraftScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    setBusy(false);
+    setEditing(null);
+  }, [activeOutlet?.id]);
+  const [editing, setEditing] = useState<{
+    id: string;
+    name: string;
+    price: string;
+    description: string;
+  } | null>(null);
+
+  const requestGeneration = useMerchantRequestRef(0);
+  const currentOutlet = useMerchantRequestRef(activeOutlet?.id);
+  currentOutlet.current = activeOutlet?.id;
   const loadDrafts = useCallback(async () => {
+    const isOperationCurrent = captureOperation();
+    if (!isOperationCurrent()) return;
+
+    const request = ++requestGeneration.current;
+    const outletId = activeOutlet?.id;
+    const isCurrent = () =>
+      request === requestGeneration.current && outletId === currentOutlet.current;
     setError(null);
     setIsLoading(true);
 
@@ -43,12 +72,20 @@ export function OCRDraftScreen() {
 
     try {
       const data = await getHungryService().merchant.getOCRDrafts(activeOutlet.id);
+      if (!isOperationCurrent()) return;
+
+      if (!isCurrent()) return;
       setDrafts(data.filter((draft) => draft.status === "pending"));
     } catch (e) {
+      if (!isOperationCurrent()) return;
+
+      if (!isCurrent()) return;
       console.error(e);
       setError(e instanceof Error ? e.message : "Failed to load OCR drafts.");
     } finally {
-      setIsLoading(false);
+      if (isOperationCurrent()) {
+        if (isCurrent()) setIsLoading(false);
+      }
     }
   }, [activeOutlet]);
 
@@ -72,50 +109,114 @@ export function OCRDraftScreen() {
     );
   }
 
-  const handleAccept = async (draftId: string, options: { silent?: boolean } = {}) => {
+  const accept = async (draftId: string) => {
+    const isOperationCurrent = captureOperation();
+    if (!isOperationCurrent()) return;
+
+    const corrections =
+      editing?.id === draftId
+        ? {
+            name: editing.name.trim(),
+            price: parseMerchantPrice(editing.price),
+            description: editing.description.trim(),
+          }
+        : undefined;
+    if (corrections && !corrections.name) throw new Error("Dish name is required.");
+    await getHungryService().merchant.acceptOCRDraft(draftId, corrections);
+    if (!isOperationCurrent()) return;
+
+    setDrafts((previous) => previous.filter((draft) => draft.id !== draftId));
+    setEditing(null);
+  };
+  const handleAccept = async (draftId: string) => {
+    const isOperationCurrent = captureOperation();
+    if (!isOperationCurrent()) return;
+
+    if (busy) return;
+    setBusy(true);
     try {
-      await getHungryService().merchant.acceptOCRDraft(draftId);
-      setDrafts((prev) => prev.filter((d) => d.id !== draftId));
-      if (!options.silent) {
-        Alert.alert("Success", "Dish added to your menu.");
+      await accept(draftId);
+      if (!isOperationCurrent()) return;
+
+      Alert.alert("Dish added", "Your reviewed dish is now in the menu.");
+    } catch (error) {
+      if (!isOperationCurrent()) return;
+
+      Alert.alert(
+        "Could not add dish",
+        error instanceof Error ? error.message : "Retry this draft.",
+      );
+    } finally {
+      if (isOperationCurrent()) {
+        setBusy(false);
       }
-    } catch (e) {
-      Alert.alert("Error", "Failed to accept draft.");
     }
   };
-
-  const handleEditDraft = async (draftId: string) => {
-    try {
-      const dish = await getHungryService().merchant.acceptOCRDraft(draftId);
-      setDrafts((prev) => prev.filter((draft) => draft.id !== draftId));
-      navigation.navigate("DishEditor", { dishId: dish.id });
-    } catch (e) {
-      Alert.alert("Error", "Failed to open OCR draft for editing.");
-    }
+  const handleEditDraft = (draftId: string) => {
+    const draft = drafts.find((item) => item.id === draftId);
+    if (draft)
+      setEditing({
+        id: draft.id,
+        name: draft.name,
+        price: draft.price?.toString() ?? "",
+        description: draft.suggestedDescription ?? "",
+      });
   };
-
   const handleReject = async (draftId: string) => {
+    const isOperationCurrent = captureOperation();
+    if (!isOperationCurrent()) return;
+
+    if (busy) return;
+    setBusy(true);
     try {
       await getHungryService().merchant.rejectOCRDraft(draftId);
-      setDrafts((prev) => prev.filter((d) => d.id !== draftId));
-    } catch (e) {
-      Alert.alert("Error", "Failed to reject draft.");
+      if (!isOperationCurrent()) return;
+
+      setDrafts((previous) => previous.filter((draft) => draft.id !== draftId));
+    } catch (error) {
+      if (!isOperationCurrent()) return;
+
+      Alert.alert(
+        "Could not reject draft",
+        error instanceof Error ? error.message : "Please retry.",
+      );
+    } finally {
+      if (isOperationCurrent()) {
+        setBusy(false);
+      }
     }
   };
-
-  const handleBatchAccept = async () => {
+  const handleBatchAccept = () => {
+    if (busy) return;
     Alert.alert(
-      "Accept All",
-      `Are you sure you want to add ${drafts.length} dishes to your menu?`,
+      "Accept reviewed drafts?",
+      `Add ${drafts.length} dishes? Review names and prices first.`,
       [
         { text: "Cancel", style: "cancel" },
         {
           text: "Accept All",
           onPress: async () => {
-            for (const draft of drafts) {
-              await handleAccept(draft.id, { silent: true });
+            const isOperationCurrent = captureOperation();
+            if (!isOperationCurrent()) return;
+
+            setBusy(true);
+            try {
+              const result = await runMerchantBatch(
+                drafts,
+                (draft) => accept(draft.id),
+                isOperationCurrent,
+              );
+              if (!isOperationCurrent()) return;
+
+              Alert.alert(
+                "Menu scan results",
+                `${result.succeeded.length} added. ${result.failed.length} could not be added and remain available to retry.`,
+              );
+            } finally {
+              if (isOperationCurrent()) {
+                setBusy(false);
+              }
             }
-            Alert.alert("Success", "OCR drafts added to your menu.");
           },
         },
       ],
@@ -160,6 +261,7 @@ export function OCRDraftScreen() {
 
         {drafts.length > 0 && (
           <Button
+            disabled={busy}
             label={`Accept All (${drafts.length})`}
             variant="secondary"
             onPress={handleBatchAccept}
@@ -199,7 +301,7 @@ export function OCRDraftScreen() {
               >
                 <View>
                   <AppText variant="bodyBold">{draft.name}</AppText>
-                  {draft.price && (
+                  {draft.price !== undefined && (
                     <AppText variant="body" style={{ color: palette.orange }}>
                       ${draft.price.toFixed(2)}
                     </AppText>
@@ -247,7 +349,31 @@ export function OCRDraftScreen() {
                 />
               )}
 
+              {editing?.id === draft.id ? (
+                <View style={{ gap: spacing[2], marginBottom: spacing[3] }}>
+                  <Input
+                    label="Dish name"
+                    value={editing.name}
+                    onChangeText={(name) => setEditing({ ...editing, name })}
+                  />
+                  <Input
+                    label="Price (SGD)"
+                    value={editing.price}
+                    keyboardType="decimal-pad"
+                    onChangeText={(price) => setEditing({ ...editing, price })}
+                  />
+                  <Input
+                    label="Description"
+                    value={editing.description}
+                    onChangeText={(description) => setEditing({ ...editing, description })}
+                  />
+                  <AppText variant="bodySmall" tone="muted">
+                    Changes stay in this draft until you accept.
+                  </AppText>
+                </View>
+              ) : null}
               <Button
+                disabled={busy}
                 label="Edit before adding"
                 variant="secondary"
                 fullWidth
@@ -258,6 +384,7 @@ export function OCRDraftScreen() {
 
               <View style={{ flexDirection: "row", gap: spacing[2] }}>
                 <Button
+                  disabled={busy}
                   label="Reject"
                   variant="secondary"
                   style={{ flex: 1 }}
@@ -265,6 +392,7 @@ export function OCRDraftScreen() {
                   leftIcon={<X size={16} color={palette.textSecondary} />}
                 />
                 <Button
+                  disabled={busy}
                   label="Accept"
                   variant="primary"
                   style={{ flex: 1 }}

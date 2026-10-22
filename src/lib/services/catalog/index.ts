@@ -1,3 +1,4 @@
+import { getAccountGeneration } from "@/lib/security/accountScope";
 import { getSupabaseClient } from "@/lib/services/supabase/client";
 
 export type CatalogVerificationStatus = "raw" | "verified" | "approved";
@@ -139,6 +140,14 @@ type CacheEntry<T> = { expiresAt: number; value: T };
 const PAGE_TTL_MS = 60_000;
 const DETAIL_TTL_MS = 5 * 60_000;
 const MAX_CACHE_ENTRIES = 40;
+let catalogGeneration = getAccountGeneration();
+function ensureCatalogScope() {
+  if (catalogGeneration !== getAccountGeneration()) {
+    pageCache.clear();
+    detailCache.clear();
+    catalogGeneration = getAccountGeneration();
+  }
+}
 const pageCache = new Map<string, CacheEntry<unknown>>();
 const detailCache = new Map<string, CacheEntry<unknown>>();
 
@@ -283,6 +292,7 @@ export function catalogRequestKey(prefix: string, value: Record<string, unknown>
 }
 
 function readCache<T>(cache: Map<string, CacheEntry<unknown>>, key: string): T | null {
+  ensureCatalogScope();
   const entry = cache.get(key) as CacheEntry<T> | undefined;
   if (!entry) return null;
   if (entry.expiresAt <= Date.now()) {
@@ -300,6 +310,7 @@ function writeCache<T>(
   value: T,
   ttl: number,
 ) {
+  ensureCatalogScope();
   cache.delete(key);
   cache.set(key, { value, expiresAt: Date.now() + ttl });
   while (cache.size > MAX_CACHE_ENTRIES) cache.delete(cache.keys().next().value as string);
@@ -346,7 +357,7 @@ export const catalogRawService = {
 
   async listDishes(request: CatalogPageRequest): Promise<CatalogPage<CatalogRawDishCard>> {
     const args = normaliseRequest(request);
-    const key = catalogRequestKey("dishes", args);
+    const key = `${getAccountGeneration()}:` + catalogRequestKey("dishes", args);
     const cached = readCache<CatalogPage<CatalogRawDishCard>>(pageCache, key);
     if (cached) return cached;
     const page = mapPage(await callRawRpc("catalog_raw_dishes_page", args), mapDishCard);
@@ -355,7 +366,7 @@ export const catalogRawService = {
 
   async listVenues(request: CatalogPageRequest): Promise<CatalogPage<CatalogRawVenueCard>> {
     const args = normaliseRequest(request);
-    const key = catalogRequestKey("venues", args);
+    const key = `${getAccountGeneration()}:` + catalogRequestKey("venues", args);
     const cached = readCache<CatalogPage<CatalogRawVenueCard>>(pageCache, key);
     if (cached) return cached;
     const page = mapPage(await callRawRpc("catalog_raw_venues_page", args), mapVenueCard);
@@ -363,7 +374,7 @@ export const catalogRawService = {
   },
 
   async getDish(id: string, releaseId?: string): Promise<CatalogRawDishDetail> {
-    const key = `dish:${releaseId ?? "active"}:${id}`;
+    const key = `${getAccountGeneration()}:dish:${releaseId ?? "active"}:${id}`;
     const cached = readCache<CatalogRawDishDetail>(detailCache, key);
     if (cached) return cached;
     const row = asRecord(
@@ -380,7 +391,7 @@ export const catalogRawService = {
   },
 
   async getVenue(id: string, releaseId?: string): Promise<CatalogRawVenueDetail> {
-    const key = `venue:${releaseId ?? "active"}:${id}`;
+    const key = `${getAccountGeneration()}:venue:${releaseId ?? "active"}:${id}`;
     const cached = readCache<CatalogRawVenueDetail>(detailCache, key);
     if (cached) return cached;
     const row = asRecord(
@@ -403,7 +414,7 @@ export const catalogRawService = {
     request: Omit<CatalogPageRequest, "query"> = {},
   ): Promise<CatalogPage<CatalogRawDishCard>> {
     const args = { ...normaliseRequest(request), p_venue_id: venueId };
-    const key = catalogRequestKey("venue-menu", args);
+    const key = `${getAccountGeneration()}:` + catalogRequestKey("venue-menu", args);
     const cached = readCache<CatalogPage<CatalogRawDishCard>>(pageCache, key);
     if (cached) return cached;
     const page = mapPage(await callRawRpc("catalog_raw_venue_menu_page", args), mapDishCard);
@@ -428,7 +439,7 @@ export const catalogRawService = {
       p_open_only: request.openOnly ?? false,
       p_min_rating: request.minRating ?? null,
     };
-    const key = catalogRequestKey("map", args);
+    const key = `${getAccountGeneration()}:` + catalogRequestKey("map", args);
     const cached = readCache<{ releaseId: string; items: CatalogMapItem[] }>(pageCache, key);
     if (cached) return cached;
     const row = asRecord(await callRawRpc("catalog_raw_map_view", args));

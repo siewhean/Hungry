@@ -1,0 +1,67 @@
+{
+  "schema_version": "hungry-menu-image-discovery-v1",
+  "snapshot_id": "refresh132_menu_images_20261019",
+  "observed_at_sgt": "2026-10-19",
+  "workbook_path": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "66d0b6438982c0b74715bd83db5636392399f40b279ad615ee8e27afd7869611",
+  "workbook_edited": false,
+  "scope": "Read-only screen for real menu-item photos with exact current outlet/menu evidence and explicit display/reuse permission. No image assets downloaded or retained, no workbook changes, no spend, no Mapbox calls.",
+  "summary": {
+    "menu_rows_screened": 3,
+    "existing_image_candidates_reviewed": 5,
+    "new_approved_menu_item_image_urls": 0,
+    "new_review_only_candidates": 1,
+    "workbook_changes": 0
+  },
+  "candidate_reviews": [
+    {
+      "outlet_or_brand": "328 Katong Laksa",
+      "menu_item": "Laksa 叻沙",
+      "menu_row_scope": "Singapore operator brand-level; no SFA licence association; observed 2026-10-18",
+      "menu_source": "https://www.328katonglaksa.sg/menu",
+      "finding": "Official menu page exposes a labelled laksa photo hosted on the operator domain, but no explicit image reuse/display permission was found. Existing Image Candidates row already records it as review-only. The menu row is brand-level and the image does not establish an exact current outlet join.",
+      "image_url": "https://static.wixstatic.com/media/1ecbbb_2be539a26b2746bdb8592b0f565a3e03~mv2_d_5456_3632_s_4_2.jpg",
+      "decision": "Do not approve or repropose; preserve as review-only pending permission and exact branch association."
+    },
+    {
+      "outlet_or_brand": "328 Katong Laksa, Queensway Shopping Centre outlet",
+      "sfa_licence_candidate": "W03141P000",
+      "menu_item": "Katong Laksa (pictured in Set A with Otah)",
+      "menu_row_scope": "Current workbook menu row is Singapore operator brand-level with no licence; exact outlet availability in 2026 is not stated.",
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/8/8c/328_Katong_Laksa%27s_set_A_with_Otah_at_Queensway_Alexandra_%282025%29_-_img_01.jpg",
+      "source_page": "https://commons.wikimedia.org/wiki/File:328_Katong_Laksa%27s_set_A_with_Otah_at_Queensway_Alexandra_(2025)_-_img_01.jpg",
+      "source_evidence": "Wikimedia Commons description identifies “Set A” with Katong Laksa, Otah and canned tea at a 328 Katong Laksa restaurant in Queensway Shopping Centre; photograph date 2025-03-19; coordinates 1.287592, 103.803672. The workbook has a 328 Katong Laksa SFA record at Queensway Shopping Centre, licence W03141P000, postal 149053, coordinates 1.2875951894, 103.8033973; approx 31m coordinate separation.",
+      "license": "CC BY 4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "attribution": "Chainwit., “328 Katong Laksa’s set A with Otah at Queensway Alexandra (2025) - img 01.jpg,” Wikimedia Commons, CC BY 4.0.",
+      "rights_status": "Explicit reuse permission from creator under CC BY 4.0; credit, license link, and change indication required; no endorsement implied.",
+      "freshness_limit": "Photograph is from 2025-03-19. It verifies this dish was served at this branch then, but does not prove current 2026 menu availability. Current official brand menu page observed 2026-10-18 lists Laksa but does not state outlet-specific availability.",
+      "decision": "Potentially usable as an exact branch/item photo candidate with attribution, but keep review-only and do not mark as current/approved display until current Queensway item availability is reconfirmed. This URL is distinct from existing review-only img_03 candidate."
+    },
+    {
+      "outlet_or_brand": "328 Katong Laksa, Queensway Shopping Centre outlet",
+      "menu_item": "Set A with Otah / laksa dish photo",
+      "menu_row_scope": "Existing workbook image-candidate association: SFA W03141P000; current operator menu is not associated to this licence",
+      "source_page": "https://commons.wikimedia.org/wiki/File:328_Katong_Laksa%27s_set_A_with_Otah_at_Queensway_Alexandra_(2025)_-_img_01.jpg",
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/4/4e/328_Katong_Laksa%27s_set_A_with_Otah_at_Queensway_Alexandra_%282025%29_-_img_01.jpg",
+      "finding": "Commons search result identifies the 2025 photo as 328 Katong Laksa set A with otah at Queensway Alexandra. The workbook already has related Queensway menu-photo candidates flagged review-only. Commons file is under an explicit Creative Commons license, but the existing exact branch/menu data does not prove this item is currently offered at the licensed outlet.",
+      "decision": "Do not promote; current menu-item-to-licence join is unverified, and this image is already represented as a review-only candidate."
+    },
+    {
+      "outlet_or_brand": "Tian Tian Hainanese Chicken Rice",
+      "menu_item": "Hainanese Chicken Rice",
+      "menu_row_scope": "No current branch-exact menu item row confirmed in this screen",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Tiantian_chixrice.JPG",
+      "finding": "Existing Wikimedia photo shows the Tian Tian stall but is historical (2008); the workbook already records it as a historical stall image with CC BY-SA 3.0. Separate Commons Hainanese chicken-rice photos are dish-level but not exact current outlet/menu item evidence. No candidate meets both current exact menu join and explicit rights for this specific association.",
+      "decision": "Do not promote to a menu item image."
+    }
+  ],
+  "reuse_policy": "Public visibility or a direct image URL is not evidence of reuse permission. Operator-hosted assets remain excluded absent explicit terms/license. Commons licenses grant reuse of the photograph subject to license conditions, but do not establish that a menu item is currently offered by a specific SFA-licensed outlet.",
+  "limitations": [
+    "This targeted review found no newly eligible image URL; it does not prove that no qualifying image exists anywhere.",
+    "No image was downloaded or pixel-inspected in this read-only pass.",
+    "Previously recorded image candidates were not duplicated.",
+    "The 328 Queensway image is exact to branch and dish as photographed in March 2025, but current outlet-level availability could not be established from the brand-level menu page."
+  ],
+  "integration_recommendation": "One new exact dish/branch photo URL with explicit CC BY 4.0 rights was found for 328 Katong Laksa Queensway. It is review-only for currentness; propose adding it to Image Candidates with attribution and a 2025 capture date, but do not set Approved Image URL or claim it depicts the current menu without a 2026 outlet-level check."
+}

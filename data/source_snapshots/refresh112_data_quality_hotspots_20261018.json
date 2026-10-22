@@ -1,0 +1,206 @@
+{
+  "audit_id": "refresh112_data_quality_hotspots_20261018",
+  "observed_date": "2026-10-18",
+  "baseline_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_sha256": "ba519451ef5fa46aafcac14d67a1563365e6a15601c1ddc778d71ac20a960ef1",
+  "workbook_modified": false,
+  "sensitive_values_excluded": true,
+  "scope": "Read-only quality profiling of directory, menu, image, and coverage sheets. Sample identifiers are SFA licence IDs and worksheet row numbers; no phone numbers, emails, or full contact values are retained.",
+  "method": "Counted actual workbook cells. Exact duplicate menu rows and obvious format anomalies are deterministic candidates. HTTP URLs, old menu facts, contact-format outliers, and unreviewed images are flagged for source verification only; none are asserted false without evidence.",
+  "summary": {
+    "directory_rows": 38279,
+    "menu_rows": 12577,
+    "image_candidate_rows": 2499,
+    "exact_duplicate_menu_rows_excess": 2,
+    "obvious_malformed_hours_rows": 1,
+    "menu_rows_marked_historical_not_rechecked": 7871,
+    "menu_rows_without_source_url": 4679,
+    "website_http_records": 688,
+    "website_unique_http_urls": 482,
+    "social_profile_urls_in_website_field": 70,
+    "sitebuilder_host_rows_for_manual_check": 2,
+    "contact_email_rows": 22,
+    "contact_nonphone_digit_length_outliers": 9,
+    "image_url_duplicate_groups": 6,
+    "image_url_duplicate_rows_excess": 6,
+    "image_rows_not_visually_checked": 2043,
+    "coordinate_pairs_present": 35735,
+    "coordinate_pairs_missing": 2544,
+    "coordinates_outside_singapore_bbox": 0,
+    "postal_code_address_text_mismatches": 0,
+    "public_access_candidate_rows": 38267,
+    "public_access_verified_operator_source_rows": 12,
+    "ratings_present": 0,
+    "approved_image_urls_present": 0
+  },
+  "prioritized_findings": [
+    {
+      "priority": "P1 deterministic dedup review",
+      "finding": "Two exact full-row duplicates exist in Menu Items. Each pair is byte-for-byte equal across all columns and can be reduced to one row after confirming no table-level row references depend on the duplicate.",
+      "proposed_rows_to_remove_one_copy": [
+        {
+          "sheet": "Menu Items",
+          "rows": [
+            9666,
+            9667
+          ],
+          "sfa_licence": "CE25J67L000",
+          "action": "Retain one exact row; remove the duplicate copy only."
+        },
+        {
+          "sheet": "Menu Items",
+          "rows": [
+            9796,
+            9797
+          ],
+          "sfa_licence": "SW12J16B000",
+          "action": "Retain one exact row; remove the duplicate copy only."
+        }
+      ],
+      "confidence": "high; exact full-row equality",
+      "caveat": "Do not collapse the other 172 repeated licence-brand-item keys automatically; they are not exact full-row duplicates and may encode scope or variants."
+    },
+    {
+      "priority": "P1 source-verify one malformed value",
+      "finding": "One opening-hours value contains a doubled colon in the time expression.",
+      "sample_sfa_licences": [
+        "NE16396N000"
+      ],
+      "action": "Check the current operator listing and replace only with exact current hours; do not infer a correction from the malformed text.",
+      "confidence": "high that formatting is malformed; replacement value unverified"
+    },
+    {
+      "priority": "P2 refresh stale menu facts",
+      "finding": "7,871 menu rows carry the explicit “Historical reference; source data is dated July 2026 or unknown and was not rechecked” status; these cover 1,660 brand labels and 2,612 nonblank outlet/licence scopes. Another 4,679 menu rows have no source URL.",
+      "date_counts": {
+        "2026-07-08": 2709,
+        "2026-07-03": 2319,
+        "2026-07-14": 2252,
+        "2026-07-09": 418,
+        "2026-07-04": 100,
+        "2026-07-11": 70,
+        "2026-07-13": 2,
+        "2026-07-15": 1
+      },
+      "sample_sfa_licences": [
+        "B00016A000",
+        "B02066J000",
+        "B02079V000",
+        "B03004E000",
+        "B03070J000",
+        "B03073B000",
+        "B03097J000",
+        "B64025A000",
+        "B75011K000",
+        "B76058N000"
+      ],
+      "action": "Refresh in bounded brand/operator batches from current first-party menus and preserve outlet or brand scope; keep historical rows marked until exact current evidence is found."
+    },
+    {
+      "priority": "P2 verify contact-field shape",
+      "finding": "22 contact fields contain email addresses; 9 other contact fields have 13–20 digits after punctuation removal. These are anomaly candidates, not confirmed false values; some are explicitly labeled as brand-level email, while long digit sequences may contain multiple numbers or extensions.",
+      "email_contact_sample_sfa_licences": [
+        "CE10L88L000",
+        "CE09411E000",
+        "CE09O43B000",
+        "CE17693J000",
+        "NE09053X000",
+        "NE23175E000",
+        "NE25B51B000",
+        "NW10097A000"
+      ],
+      "digit_length_outlier_sfa_licences": [
+        "B94122A000",
+        "B80089A000",
+        "CE14975X000",
+        "CE09703K000",
+        "CE06H95A000",
+        "E90120A002",
+        "CE16O28N000",
+        "CE23N96B000",
+        "W92057L000"
+      ],
+      "action": "Compare with exact operator outlet pages; retain verified shared brand contacts with clear scope labels and remove only values disproved by source evidence."
+    },
+    {
+      "priority": "P2 website refresh queue",
+      "finding": "688 directory website cells use http:// across 482 unique URLs; 70 website cells point to social-profile/link-in-bio domains; two use the sitebuilder host sitelift.site. These patterns do not by themselves prove a URL is false.",
+      "sitebuilder_host_sample_sfa_licences": [
+        "SW17751E000",
+        "W80038A000"
+      ],
+      "social_profile_sample_sfa_licences": [
+        "CI10111004",
+        "E85160C000",
+        "CE21L69K000",
+        "CE15L38N000",
+        "AM90112003",
+        "CE22I78L000"
+      ],
+      "action": "Check redirects and official operator ownership in batches; promote HTTPS only after a verified redirect/current site match, and label social profiles as such if retained."
+    },
+    {
+      "priority": "P2 image-candidate normalization",
+      "finding": "Six exact image URLs appear more than once; five duplicates pair a brand-level Yoshinoya candidate with an outlet-associated candidate, while one exact image URL is shared across two distinct outlet licences. 2,043 of 2,499 candidates are not visually checked. These are review/association issues, not automatic deletions.",
+      "duplicate_url_rows": [
+        {
+          "sheet_rows": [
+            215,
+            523
+          ],
+          "sample_sfa_licence": "SE13126N000"
+        },
+        {
+          "sheet_rows": [
+            216,
+            524
+          ],
+          "sample_sfa_licence": "SE13126N000"
+        },
+        {
+          "sheet_rows": [
+            217,
+            525
+          ],
+          "sample_sfa_licence": "SE13126N000"
+        },
+        {
+          "sheet_rows": [
+            218,
+            526
+          ],
+          "sample_sfa_licence": "SE13126N000"
+        },
+        {
+          "sheet_rows": [
+            219,
+            527
+          ],
+          "sample_sfa_licence": "SE13126N000"
+        },
+        {
+          "sheet_rows": [
+            519,
+            520
+          ],
+          "sample_sfa_licences": [
+            "CE24K23X000",
+            "SE22I83E000"
+          ]
+        }
+      ],
+      "action": "Deduplicate exact URL associations only after preserving all valid outlet joins; prioritize image visual review before any Approved Image URL promotion."
+    },
+    {
+      "priority": "P3 coordinate/access completeness",
+      "finding": "2,544 records lack coordinate pairs. Existing coordinate pairs all fall inside the broad Singapore bounding box and postal-code text agrees with six-digit postal values when present. 38,267 rows remain labeled candidate-based public access; 12 are verified from operator sources.",
+      "action": "Continue exact-postal open-data geocoding for missing pairs and direct facility/operator checks for public-access claims; do not promote building-level coordinates to stall precision."
+    }
+  ],
+  "limitations": [
+    "A format anomaly is not proof that contact, URL, menu, or hours are false.",
+    "HTTP availability, live status, redirect behavior, and ownership were not tested in this profiling pass.",
+    "The broad coordinate bounds and address-text check are internal consistency checks, not external geospatial verification.",
+    "No workbook cells were edited."
+  ]
+}

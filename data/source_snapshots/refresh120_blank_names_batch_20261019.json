@@ -1,0 +1,294 @@
+{
+  "snapshot_type": "refresh120_exact_blank_public_names_official_mall_batch",
+  "observed_at_local": "2026-10-19 Asia/Singapore",
+  "master_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "master_sha256": "0e3f6c7cc1594ba701f6fa4de6d11c6db1db9643060907f7292fb8a634d6eb6f",
+  "worksheet": "Public F&B Directory",
+  "scope": "Read-only exact public-facing name review of blank-name SFA rows at selected public shopping malls. No workbook edits, platform data, paid calls, or fabricated fields.",
+  "source_set": [
+    {
+      "publisher": "CapitaLand Malls",
+      "url": "https://www.capitaland.com/sg/en/shop/malls/discover/curated-for-you/participating-stores.html",
+      "observed_date": "2026-10-19",
+      "capture_method": "Official page opened through web search and fetched directly via curl for SHA-256; page states F&B brands and mall unit numbers.",
+      "source_page_sha256": "5b0cb78230b4538b270049d8a63f70d6b9623e5f7a5dddcc59b134f7d5bf7da1",
+      "limitations": "Participating F&B outlet listing, not a full tenant directory; only named exact-unit matches proposed."
+    },
+    {
+      "publisher": "Tiong Bahru Plaza / Frasers Experience",
+      "url": "https://www.tiongbahruplaza.com.sg/whats-on/offers/frx50---shi-li-fang-hot-pot---one-pot",
+      "observed_date": "2026-10-19",
+      "capture_method": "Official current offer page opened through web search and fetched directly via curl for SHA-256.",
+      "source_page_sha256": "8b09ed7822849af2ae03b70214f18db8f099fb7395851506e703c7785abf7d84",
+      "limitations": "Offer runs through 31 Dec 2026 and explicitly names the operator and mall unit; used for name only."
+    }
+  ],
+  "summary": {
+    "blank_records_reviewed_in_selected_exact_match_slice": 16,
+    "exact_public_name_proposals": 11,
+    "held_for_license_or_recency_ambiguity": 5,
+    "workbook_edits": 0,
+    "proposal_fields": 11,
+    "selection_note": "A 20+ yield was not supported by exact current public-directory evidence in the bounded mall slice; ambiguous foodcourt/private-stall records were deliberately withheld."
+  },
+  "proposals": [
+    {
+      "sfa_licence": "CE05733J000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "SPICY NOODLE",
+      "business_type": "Restaurant",
+      "existing_address": "Address: 252 NORTH BRIDGE ROAD #B1-38,RAFFLES CITY SHOPPING CENTRE,Singapore 179103",
+      "postal_code": "179103",
+      "official_mall": "Raffles City",
+      "exact_unit_match": "B1-38",
+      "source_type": "official_mall_directory_or_operator_page",
+      "source_url": "https://www.capitaland.com/sg/en/shop/malls/discover/curated-for-you/participating-stores.html",
+      "source_page_sha256": "5b0cb78230b4538b270049d8a63f70d6b9623e5f7a5dddcc59b134f7d5bf7da1",
+      "observed_date": "2026-10-19",
+      "evidence": "CapitaLand’s current F&B participating-stores listing has SPICY NOODLE at Raffles City B1-38.",
+      "matching_rule": "Exact SFA licence crosswalk to the current workbook row; exact postal code, public mall, and overlapping unit match the official page.",
+      "confidence": "high",
+      "proposed_fields": [
+        "F&B Name"
+      ],
+      "limitations": "Name-only proposal. It does not establish other blank fields, live opening status beyond current directory/offer listing, or menu details; apply only after matching SFA Licence and confirming this workbook snapshot."
+    },
+    {
+      "sfa_licence": "CE08K01K000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "ALICE BOULANGERIE & RESTAURANT",
+      "business_type": "Restaurant",
+      "existing_address": "Address: 252 NORTH BRIDGE ROAD #01-22A,RAFFLES CITY SHOPPING CENTRE,Singapore 179103",
+      "postal_code": "179103",
+      "official_mall": "Raffles City",
+      "exact_unit_match": "01-22A",
+      "source_type": "official_mall_directory_or_operator_page",
+      "source_url": "https://www.capitaland.com/sg/en/shop/malls/discover/curated-for-you/participating-stores.html",
+      "source_page_sha256": "5b0cb78230b4538b270049d8a63f70d6b9623e5f7a5dddcc59b134f7d5bf7da1",
+      "observed_date": "2026-10-19",
+      "evidence": "CapitaLand’s current F&B participating-stores listing has ALICE BOULANGERIE & RESTAURANT at Raffles City 01-22A.",
+      "matching_rule": "Exact SFA licence crosswalk to the current workbook row; exact postal code, public mall, and overlapping unit match the official page.",
+      "confidence": "high",
+      "proposed_fields": [
+        "F&B Name"
+      ],
+      "limitations": "Name-only proposal. It does not establish other blank fields, live opening status beyond current directory/offer listing, or menu details; apply only after matching SFA Licence and confirming this workbook snapshot."
+    },
+    {
+      "sfa_licence": "CE22369L000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "Starbucks",
+      "business_type": "Snack Counter",
+      "existing_address": "Address: 252 NORTH BRIDGE ROAD #02-34,RAFFLES CITY SHOPPING CENTRE,Singapore 179103",
+      "postal_code": "179103",
+      "official_mall": "Raffles City",
+      "exact_unit_match": "02-34",
+      "source_type": "official_mall_directory_or_operator_page",
+      "source_url": "https://www.capitaland.com/sg/en/shop/malls/discover/curated-for-you/participating-stores.html",
+      "source_page_sha256": "5b0cb78230b4538b270049d8a63f70d6b9623e5f7a5dddcc59b134f7d5bf7da1",
+      "observed_date": "2026-10-19",
+      "evidence": "CapitaLand’s current F&B participating-stores listing has Starbucks at Raffles City 02-34.",
+      "matching_rule": "Exact SFA licence crosswalk to the current workbook row; exact postal code, public mall, and overlapping unit match the official page.",
+      "confidence": "high",
+      "proposed_fields": [
+        "F&B Name"
+      ],
+      "limitations": "Name-only proposal. It does not establish other blank fields, live opening status beyond current directory/offer listing, or menu details; apply only after matching SFA Licence and confirming this workbook snapshot."
+    },
+    {
+      "sfa_licence": "CE22845V000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "KAIOHDON",
+      "business_type": "Restaurant",
+      "existing_address": "Address: 200 VICTORIA STREET #03-30B,BUGIS JUNCTION,Singapore 188021",
+      "postal_code": "188021",
+      "official_mall": "Bugis Junction",
+      "exact_unit_match": "03-30B",
+      "source_type": "official_mall_directory_or_operator_page",
+      "source_url": "https://www.capitaland.com/sg/en/shop/malls/discover/curated-for-you/participating-stores.html",
+      "source_page_sha256": "5b0cb78230b4538b270049d8a63f70d6b9623e5f7a5dddcc59b134f7d5bf7da1",
+      "observed_date": "2026-10-19",
+      "evidence": "CapitaLand’s current listing has KAIOHDON at Bugis Junction 03-30B; the current store detail page describes the brand as Kaioh Dining.",
+      "matching_rule": "Exact SFA licence crosswalk to the current workbook row; exact postal code, public mall, and overlapping unit match the official page.",
+      "confidence": "high",
+      "proposed_fields": [
+        "F&B Name"
+      ],
+      "limitations": "Name-only proposal. It does not establish other blank fields, live opening status beyond current directory/offer listing, or menu details; apply only after matching SFA Licence and confirming this workbook snapshot."
+    },
+    {
+      "sfa_licence": "CE26704L000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "YANG'S DUMPLINGS",
+      "business_type": "Restaurant",
+      "existing_address": "Address: 200 VICTORIA STREET #B1-05,BUGIS JUNCTION,Singapore 188021",
+      "postal_code": "188021",
+      "official_mall": "Bugis Junction",
+      "exact_unit_match": "B1-05",
+      "source_type": "official_mall_directory_or_operator_page",
+      "source_url": "https://www.capitaland.com/sg/en/shop/malls/discover/curated-for-you/participating-stores.html",
+      "source_page_sha256": "5b0cb78230b4538b270049d8a63f70d6b9623e5f7a5dddcc59b134f7d5bf7da1",
+      "observed_date": "2026-10-19",
+      "evidence": "CapitaLand’s current F&B listing and store detail page identify Yang’s Dumplings at Bugis Junction B1-05.",
+      "matching_rule": "Exact SFA licence crosswalk to the current workbook row; exact postal code, public mall, and overlapping unit match the official page.",
+      "confidence": "high",
+      "proposed_fields": [
+        "F&B Name"
+      ],
+      "limitations": "Name-only proposal. It does not establish other blank fields, live opening status beyond current directory/offer listing, or menu details; apply only after matching SFA Licence and confirming this workbook snapshot."
+    },
+    {
+      "sfa_licence": "SW13182P000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "Xiang Xiang Hunan Cuisine",
+      "business_type": "Restaurant",
+      "existing_address": "Address: 3 GATEWAY DRIVE #04-42,#04-K5,WESTGATE,Singapore 608532",
+      "postal_code": "608532",
+      "official_mall": "Westgate",
+      "exact_unit_match": "04-42 / 04-K5",
+      "source_type": "official_mall_directory_or_operator_page",
+      "source_url": "https://www.capitaland.com/sg/en/shop/malls/discover/curated-for-you/participating-stores.html",
+      "source_page_sha256": "5b0cb78230b4538b270049d8a63f70d6b9623e5f7a5dddcc59b134f7d5bf7da1",
+      "observed_date": "2026-10-19",
+      "evidence": "CapitaLand’s current F&B participating-stores listing has Xiang Xiang Hunan Cuisine at Westgate 04-42 & K5; both match the record’s stated units.",
+      "matching_rule": "Exact SFA licence crosswalk to the current workbook row; exact postal code, public mall, and overlapping unit match the official page.",
+      "confidence": "high",
+      "proposed_fields": [
+        "F&B Name"
+      ],
+      "limitations": "Name-only proposal. It does not establish other blank fields, live opening status beyond current directory/offer listing, or menu details; apply only after matching SFA Licence and confirming this workbook snapshot."
+    },
+    {
+      "sfa_licence": "SW13274K000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "SHOO LOONG KAN",
+      "business_type": "Restaurant",
+      "existing_address": "Address: 3 GATEWAY DRIVE #03-04,WESTGATE,Singapore 608532",
+      "postal_code": "608532",
+      "official_mall": "Westgate",
+      "exact_unit_match": "03-04",
+      "source_type": "official_mall_directory_or_operator_page",
+      "source_url": "https://www.capitaland.com/sg/en/shop/malls/discover/curated-for-you/participating-stores.html",
+      "source_page_sha256": "5b0cb78230b4538b270049d8a63f70d6b9623e5f7a5dddcc59b134f7d5bf7da1",
+      "observed_date": "2026-10-19",
+      "evidence": "CapitaLand’s current F&B participating-stores listing has SHOO LOONG KAN at Westgate 03-04.",
+      "matching_rule": "Exact SFA licence crosswalk to the current workbook row; exact postal code, public mall, and overlapping unit match the official page.",
+      "confidence": "high",
+      "proposed_fields": [
+        "F&B Name"
+      ],
+      "limitations": "Name-only proposal. It does not establish other blank fields, live opening status beyond current directory/offer listing, or menu details; apply only after matching SFA Licence and confirming this workbook snapshot."
+    },
+    {
+      "sfa_licence": "SW13303L000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "Sushi Zushi (Charcoal Grill & Sushiya)",
+      "business_type": "Restaurant",
+      "existing_address": "Address: 3 GATEWAY DRIVE #03-01,WESTGATE,Singapore 608532",
+      "postal_code": "608532",
+      "official_mall": "Westgate",
+      "exact_unit_match": "03-01",
+      "source_type": "official_mall_directory_or_operator_page",
+      "source_url": "https://www.capitaland.com/sg/en/shop/malls/discover/curated-for-you/participating-stores.html",
+      "source_page_sha256": "5b0cb78230b4538b270049d8a63f70d6b9623e5f7a5dddcc59b134f7d5bf7da1",
+      "observed_date": "2026-10-19",
+      "evidence": "CapitaLand’s current F&B participating-stores listing has Sushi Zushi (Charcoal Grill & Sushiya) at Westgate 03-01.",
+      "matching_rule": "Exact SFA licence crosswalk to the current workbook row; exact postal code, public mall, and overlapping unit match the official page.",
+      "confidence": "high",
+      "proposed_fields": [
+        "F&B Name"
+      ],
+      "limitations": "Name-only proposal. It does not establish other blank fields, live opening status beyond current directory/offer listing, or menu details; apply only after matching SFA Licence and confirming this workbook snapshot."
+    },
+    {
+      "sfa_licence": "SW23J98V000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "luckin coffee",
+      "business_type": "Takeaway",
+      "existing_address": "Address: 3 GATEWAY DRIVE #B1-22A,WESTGATE,Singapore 608532",
+      "postal_code": "608532",
+      "official_mall": "Westgate",
+      "exact_unit_match": "B1-22A",
+      "source_type": "official_mall_directory_or_operator_page",
+      "source_url": "https://www.capitaland.com/sg/en/shop/malls/discover/curated-for-you/participating-stores.html",
+      "source_page_sha256": "5b0cb78230b4538b270049d8a63f70d6b9623e5f7a5dddcc59b134f7d5bf7da1",
+      "observed_date": "2026-10-19",
+      "evidence": "CapitaLand’s current F&B participating-stores listing has luckin coffee at Westgate B1-22A.",
+      "matching_rule": "Exact SFA licence crosswalk to the current workbook row; exact postal code, public mall, and overlapping unit match the official page.",
+      "confidence": "high",
+      "proposed_fields": [
+        "F&B Name"
+      ],
+      "limitations": "Name-only proposal. It does not establish other blank fields, live opening status beyond current directory/offer listing, or menu details; apply only after matching SFA Licence and confirming this workbook snapshot."
+    },
+    {
+      "sfa_licence": "CE16251P000",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "Shi Li Fang Hot Pot",
+      "business_type": "Restaurant",
+      "existing_address": "Address: 302 TIONG BAHRU ROAD #02-112,TIONG BAHRU PLAZA,Singapore 168732",
+      "postal_code": "168732",
+      "official_mall": "Tiong Bahru Plaza",
+      "exact_unit_match": "02-112",
+      "source_type": "official_mall_directory_or_operator_page",
+      "source_url": "https://www.tiongbahruplaza.com.sg/whats-on/offers/frx50---shi-li-fang-hot-pot---one-pot",
+      "source_page_sha256": "8b09ed7822849af2ae03b70214f18db8f099fb7395851506e703c7785abf7d84",
+      "observed_date": "2026-10-19",
+      "evidence": "Tiong Bahru Plaza official offer page states the Shi Li Fang Hot Pot Tiong Bahru outlet is at #02-112; it identifies the location as Tiong Bahru Plaza and remains valid through 31 Dec 2026.",
+      "matching_rule": "Exact SFA licence crosswalk to the current workbook row; exact postal code, public mall, and overlapping unit match the official page.",
+      "confidence": "high",
+      "proposed_fields": [
+        "F&B Name"
+      ],
+      "limitations": "Name-only proposal. It does not establish other blank fields, live opening status beyond current directory/offer listing, or menu details; apply only after matching SFA Licence and confirming this workbook snapshot."
+    },
+    {
+      "sfa_licence": "W98413J006",
+      "before_fnb_name": "",
+      "proposed_public_fnb_name": "Kopitiam",
+      "business_type": "Foodcourt",
+      "existing_address": "Address: 68 ORCHARD ROAD #06-15,PLAZA SINGAPURA,Singapore 238839",
+      "postal_code": "238839",
+      "official_mall": "Plaza Singapura",
+      "exact_unit_match": "06-15",
+      "source_type": "official_mall_directory_or_operator_page",
+      "source_url": "https://www.capitaland.com/sg/en/shop/malls/discover/curated-for-you/participating-stores.html",
+      "source_page_sha256": "5b0cb78230b4538b270049d8a63f70d6b9623e5f7a5dddcc59b134f7d5bf7da1",
+      "observed_date": "2026-10-19",
+      "evidence": "CapitaLand’s current F&B listing has Kopitiam at Plaza Singapura 06-15 to 17; official store detail gives the same location.",
+      "matching_rule": "Exact SFA licence crosswalk to the current workbook row; exact postal code, public mall, and overlapping unit match the official page.",
+      "confidence": "high",
+      "proposed_fields": [
+        "F&B Name"
+      ],
+      "limitations": "Name-only proposal. It does not establish other blank fields, live opening status beyond current directory/offer listing, or menu details; apply only after matching SFA Licence and confirming this workbook snapshot."
+    }
+  ],
+  "held_records": [
+    {
+      "sfa_licence": "CE07437B002",
+      "existing_address": "Address: 200 VICTORIA STREET #03-30,BUGIS JUNCTION,Singapore 188021",
+      "reason": "Foodcourt licence at Bugis Junction #03-30; the mall page identifies the public foodcourt as Food Junction but does not identify an individual stall or the exact licensee trading name. Held to avoid labeling multiple records or vendors as the foodcourt."
+    },
+    {
+      "sfa_licence": "CE07437B004",
+      "existing_address": "Address: 200 VICTORIA STREET #03-30,BUGIS JUNCTION,Singapore 188021",
+      "reason": "Duplicate-unit foodcourt licence at the same Bugis Junction #03-30 address; no individual stall identification. Held."
+    },
+    {
+      "sfa_licence": "CE21713E000",
+      "existing_address": "Address: 68 ORCHARD ROAD #06-15,#06-16,#06-17,PLAZA SINGAPURA,Singapore 238839 (MR3)",
+      "reason": "SFA type is within coffeeshop/canteen/foodcourt; the official directory supports the public venue Kopitiam at #06-15 to 17 but no separate outlet identity for this license. Held to avoid assigning the venue name to a private stall license."
+    },
+    {
+      "sfa_licence": "CE25763V000",
+      "existing_address": "Address: 302 TIONG BAHRU ROAD #02-117,TIONG BAHRU PLAZA,Singapore 168732",
+      "reason": "Official Tiong Bahru Plaza evidence located is a 2025 promotion naming Lead General Hot Pot at #02-117; no current 2026 outlet listing was found in this pass. Not proposed pending fresher evidence."
+    },
+    {
+      "sfa_licence": "NW19171J000",
+      "existing_address": "Address: 1 WOODLANDS SQUARE #B1-35,CAUSEWAY POINT,Singapore 738099",
+      "reason": "Causeway Point official 2026 Lunar New Year hours page listed Wing Joo Loong at #B1-35, but this holiday schedule is not a current general tenant listing; held pending fresher current confirmation."
+    }
+  ]
+}

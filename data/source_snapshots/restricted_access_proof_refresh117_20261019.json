@@ -1,0 +1,498 @@
+{
+  "snapshot_type": "read_only_public_access_first_party_review",
+  "observed_date": "2026-10-19",
+  "workbook_path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "15cfa1d42b1dc818d19afa77839b8cd16ba8ed88909ad49d7a50a14f51f10c0f",
+  "scope": "Bounded exact SFA licence batch: Changi T1 upper-basement/Orchis canteen, NTU Canteen 2, NUS The Deck and Yusof Ishak House indicators. First-party access review only; no workbook mutation.",
+  "records_reviewed": 24,
+  "summary": {
+    "Changi_T1_public_area_access": 18,
+    "NTU_public_campus_evidence": 3,
+    "NUS_access_unresolved": 3,
+    "deletion_recommendations": 0
+  },
+  "records": [
+    {
+      "sfa_licence": "E81132C001",
+      "fnb_name": "AL - KHAANAA",
+      "business_type": "Foodcourt",
+      "full_address": "Address: 80 AIRPORT BOULEVARD CHANGI AIRPORT TERMINAL 1,Singapore 819642 (UPPER BASEMENT CANTEEN)",
+      "group": "t1",
+      "source_evidence": {
+        "url": "https://nowboarding.changiairport.com/discover-changi/affordable-authentic-food-court-fare-at-changi-airport.html",
+        "publisher": "Changi Airport official Now Boarding",
+        "facts": [
+          "Article dated 12 Apr 2023 identifies Terminal 1 staff canteen / Orchis Food Court.",
+          "It places it in Terminal 1 Basement 1, Public Area, gives directions from Check-In Row 13 in the public area, and lists daily 6am–9pm opening.",
+          "First-party evidence means the staff-canteen label alone does not establish private access. Recheck current public access before future removal."
+        ],
+        "confidence": "high public-area access; medium freshness",
+        "action": "retain_as_public_access_candidate"
+      },
+      "proposed_action": "retain_as_public_access_candidate",
+      "closure_assessment": "Not assessed; access-only review."
+    },
+    {
+      "sfa_licence": "C81041N007",
+      "fnb_name": "Ba Wei Ban Mian",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "full_address": "Address: 21 LOWER KENT RIDGE ROAD Faculty of Arts and Social Sciences,Singapore 119077 The Deck Canteen",
+      "group": "deck",
+      "source_evidence": {
+        "url": "https://fass.nus.edu.sg/methods-school/accommodation/campus/",
+        "publisher": "NUS official FASS site",
+        "facts": [
+          "For its 2026 Methods School programme, NUS says participants have access to campus cafes and identifies The Deck as an FASS canteen.",
+          "This proves programme-participant access, not unrestricted general-public entry. FASS calls it its student canteen: https://fass.nus.edu.sg/fass-student-hotspots-2/ ."
+        ],
+        "confidence": "medium; general-public admission unresolved",
+        "action": "keep_candidate_pending_access_check"
+      },
+      "proposed_action": "keep_candidate_pending_access_check",
+      "closure_assessment": "Not assessed; access-only review."
+    },
+    {
+      "sfa_licence": "E81132C015",
+      "fnb_name": "CHANG JG FOOD",
+      "business_type": "Foodcourt",
+      "full_address": "Address: 80 AIRPORT BOULEVARD CHANGI AIRPORT TERMINAL 1,Singapore 819642 (UPPER BASEMENT CANTEEN)",
+      "group": "t1",
+      "source_evidence": {
+        "url": "https://nowboarding.changiairport.com/discover-changi/affordable-authentic-food-court-fare-at-changi-airport.html",
+        "publisher": "Changi Airport official Now Boarding",
+        "facts": [
+          "Article dated 12 Apr 2023 identifies Terminal 1 staff canteen / Orchis Food Court.",
+          "It places it in Terminal 1 Basement 1, Public Area, gives directions from Check-In Row 13 in the public area, and lists daily 6am–9pm opening.",
+          "First-party evidence means the staff-canteen label alone does not establish private access. Recheck current public access before future removal."
+        ],
+        "confidence": "high public-area access; medium freshness",
+        "action": "retain_as_public_access_candidate"
+      },
+      "proposed_action": "retain_as_public_access_candidate",
+      "closure_assessment": "Not assessed; access-only review."
+    },
+    {
+      "sfa_licence": "E81132C007",
+      "fnb_name": "CHICKEN RICE",
+      "business_type": "Foodcourt",
+      "full_address": "Address: 80 AIRPORT BOULEVARD CHANGI AIRPORT T1 (UPPER BASEMENT CANTEEN),Singapore 819642 CHANGI AIRPORT T1",
+      "group": "t1",
+      "source_evidence": {
+        "url": "https://nowboarding.changiairport.com/discover-changi/affordable-authentic-food-court-fare-at-changi-airport.html",
+        "publisher": "Changi Airport official Now Boarding",
+        "facts": [
+          "Article dated 12 Apr 2023 identifies Terminal 1 staff canteen / Orchis Food Court.",
+          "It places it in Terminal 1 Basement 1, Public Area, gives directions from Check-In Row 13 in the public area, and lists daily 6am–9pm opening.",
+          "First-party evidence means the staff-canteen label alone does not establish private access. Recheck current public access before future removal."
+        ],
+        "confidence": "high public-area access; medium freshness",
+        "action": "retain_as_public_access_candidate"
+      },
+      "proposed_action": "retain_as_public_access_candidate",
+      "closure_assessment": "Not assessed; access-only review."
+    },
+    {
+      "sfa_licence": "E81132C025",
+      "fnb_name": "CHOICE FOOD HOLDINGS PTE. LTD.",
+      "business_type": "Foodcourt",
+      "full_address": "Address: 80 AIRPORT BOULEVARD CHANGI AIRPORT T1 (UPPER BASEMENT CANTEEN),Singapore 819642 CHANGI AIRPORT T1",
+      "group": "t1",
+      "source_evidence": {
+        "url": "https://nowboarding.changiairport.com/discover-changi/affordable-authentic-food-court-fare-at-changi-airport.html",
+        "publisher": "Changi Airport official Now Boarding",
+        "facts": [
+          "Article dated 12 Apr 2023 identifies Terminal 1 staff canteen / Orchis Food Court.",
+          "It places it in Terminal 1 Basement 1, Public Area, gives directions from Check-In Row 13 in the public area, and lists daily 6am–9pm opening.",
+          "First-party evidence means the staff-canteen label alone does not establish private access. Recheck current public access before future removal."
+        ],
+        "confidence": "high public-area access; medium freshness",
+        "action": "retain_as_public_access_candidate"
+      },
+      "proposed_action": "retain_as_public_access_candidate",
+      "closure_assessment": "Not assessed; access-only review."
+    },
+    {
+      "sfa_licence": "E81132C019",
+      "fnb_name": "Claypot And Soup",
+      "business_type": "Foodcourt",
+      "full_address": "Address: 80 AIRPORT BOULEVARD CHANGI AIRPORT T1 (UPPER BASEMENT CANTEEN),Singapore 819642",
+      "group": "t1",
+      "source_evidence": {
+        "url": "https://nowboarding.changiairport.com/discover-changi/affordable-authentic-food-court-fare-at-changi-airport.html",
+        "publisher": "Changi Airport official Now Boarding",
+        "facts": [
+          "Article dated 12 Apr 2023 identifies Terminal 1 staff canteen / Orchis Food Court.",
+          "It places it in Terminal 1 Basement 1, Public Area, gives directions from Check-In Row 13 in the public area, and lists daily 6am–9pm opening.",
+          "First-party evidence means the staff-canteen label alone does not establish private access. Recheck current public access before future removal."
+        ],
+        "confidence": "high public-area access; medium freshness",
+        "action": "retain_as_public_access_candidate"
+      },
+      "proposed_action": "retain_as_public_access_candidate",
+      "closure_assessment": "Not assessed; access-only review."
+    },
+    {
+      "sfa_licence": "E81132C004",
+      "fnb_name": "DRINKS STALL",
+      "business_type": "Foodcourt",
+      "full_address": "Address: 80 AIRPORT BOULEVARD CHANGI AIRPORT T1 (UPPER BASEMENT CANTEEN),Singapore 819642 CHANGI AIRPORT T1",
+      "group": "t1",
+      "source_evidence": {
+        "url": "https://nowboarding.changiairport.com/discover-changi/affordable-authentic-food-court-fare-at-changi-airport.html",
+        "publisher": "Changi Airport official Now Boarding",
+        "facts": [
+          "Article dated 12 Apr 2023 identifies Terminal 1 staff canteen / Orchis Food Court.",
+          "It places it in Terminal 1 Basement 1, Public Area, gives directions from Check-In Row 13 in the public area, and lists daily 6am–9pm opening.",
+          "First-party evidence means the staff-canteen label alone does not establish private access. Recheck current public access before future removal."
+        ],
+        "confidence": "high public-area access; medium freshness",
+        "action": "retain_as_public_access_candidate"
+      },
+      "proposed_action": "retain_as_public_access_candidate",
+      "closure_assessment": "Not assessed; access-only review."
+    },
+    {
+      "sfa_licence": "SW20B70E000",
+      "fnb_name": "Helen's Korean and Japanese",
+      "business_type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+      "full_address": "Address: 35 STUDENTS WALK CANTEEN 2,Singapore 639548 MR4",
+      "group": "ntu",
+      "source_evidence": {
+        "url": "https://www.ntu.edu.sg/life-at-ntu/health-and-safety/campus-security",
+        "publisher": "NTU official campus security policy",
+        "facts": [
+          "Policy states NTU is an open and porous campus accessible to the public, with roads openly accessible and public buses entering campus.",
+          "Current NTU student-affiliated source identifies Canteen 2 stalls: https://blogs.ntu.edu.sg/sao-earthlinkntu/2026/03/29/canteen-goes-vegan/ .",
+          "This confirms campus access, but not all indoor venues; no restricted-building evidence found for these address-matched records."
+        ],
+        "confidence": "high campus access; medium exact outlet access",
+        "action": "retain_as_public_access_candidate"
+      },
+      "proposed_action": "retain_as_public_access_candidate",
+      "closure_assessment": "Not assessed; access-only review."
+    },
+    {
+      "sfa_licence": "SW20A92P000",
+      "fnb_name": "HELEN'S MINI WOK",
+      "business_type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+      "full_address": "Address: 35 STUDENTS WALK Singapore 639548 NTU CANTEEN 2 (MR3)",
+      "group": "ntu",
+      "source_evidence": {
+        "url": "https://www.ntu.edu.sg/life-at-ntu/health-and-safety/campus-security",
+        "publisher": "NTU official campus security policy",
+        "facts": [
+          "Policy states NTU is an open and porous campus accessible to the public, with roads openly accessible and public buses entering campus.",
+          "Current NTU student-affiliated source identifies Canteen 2 stalls: https://blogs.ntu.edu.sg/sao-earthlinkntu/2026/03/29/canteen-goes-vegan/ .",
+          "This confirms campus access, but not all indoor venues; no restricted-building evidence found for these address-matched records."
+        ],
+        "confidence": "high campus access; medium exact outlet access",
+        "action": "retain_as_public_access_candidate"
+      },
+      "proposed_action": "retain_as_public_access_candidate",
+      "closure_assessment": "Not assessed; access-only review."
+    },
+    {
+      "sfa_licence": "E81132C013",
+      "fnb_name": "HUAN WEN XIANG",
+      "business_type": "Foodcourt",
+      "full_address": "Address: 80 AIRPORT BOULEVARD CHANGI AIRPORT T1 (UPPER BASEMENT CANTEEN),Singapore 819642",
+      "group": "t1",
+      "source_evidence": {
+        "url": "https://nowboarding.changiairport.com/discover-changi/affordable-authentic-food-court-fare-at-changi-airport.html",
+        "publisher": "Changi Airport official Now Boarding",
+        "facts": [
+          "Article dated 12 Apr 2023 identifies Terminal 1 staff canteen / Orchis Food Court.",
+          "It places it in Terminal 1 Basement 1, Public Area, gives directions from Check-In Row 13 in the public area, and lists daily 6am–9pm opening.",
+          "First-party evidence means the staff-canteen label alone does not establish private access. Recheck current public access before future removal."
+        ],
+        "confidence": "high public-area access; medium freshness",
+        "action": "retain_as_public_access_candidate"
+      },
+      "proposed_action": "retain_as_public_access_candidate",
+      "closure_assessment": "Not assessed; access-only review."
+    },
+    {
+      "sfa_licence": "SW25199P003",
+      "fnb_name": "Indian Veg",
+      "business_type": "Foodcourt",
+      "full_address": "Address: 31 LOWER KENT RIDGE ROAD Yusof Ishak House Canteen,Singapore 119078",
+      "group": "yih",
+      "source_evidence": {
+        "url": "https://www.nus.edu.sg/",
+        "publisher": "NUS official site",
+        "facts": [
+          "No exact first-party source confirming unrestricted public admission to this canteen located in this bounded audit."
+        ],
+        "confidence": "low; unresolved",
+        "action": "keep_candidate_pending_access_check"
+      },
+      "proposed_action": "keep_candidate_pending_access_check",
+      "closure_assessment": "Not assessed; access-only review."
+    },
+    {
+      "sfa_licence": "C81041N010",
+      "fnb_name": "Jito's Dhaba",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "full_address": "Address: 21 LOWER KENT RIDGE ROAD The Deck Canteen, Faculty of Arts and Social Sciences,Singapore 119077",
+      "group": "deck",
+      "source_evidence": {
+        "url": "https://fass.nus.edu.sg/methods-school/accommodation/campus/",
+        "publisher": "NUS official FASS site",
+        "facts": [
+          "For its 2026 Methods School programme, NUS says participants have access to campus cafes and identifies The Deck as an FASS canteen.",
+          "This proves programme-participant access, not unrestricted general-public entry. FASS calls it its student canteen: https://fass.nus.edu.sg/fass-student-hotspots-2/ ."
+        ],
+        "confidence": "medium; general-public admission unresolved",
+        "action": "keep_candidate_pending_access_check"
+      },
+      "proposed_action": "keep_candidate_pending_access_check",
+      "closure_assessment": "Not assessed; access-only review."
+    },
+    {
+      "sfa_licence": "E81132C011",
+      "fnb_name": "Kong's Sarawak Delights",
+      "business_type": "Foodcourt",
+      "full_address": "Address: 80 AIRPORT BOULEVARD CHANGI AIRPORT TERMINAL 1,Singapore 819642 (UPPER BASEMENT CANTEEN)",
+      "group": "t1",
+      "source_evidence": {
+        "url": "https://nowboarding.changiairport.com/discover-changi/affordable-authentic-food-court-fare-at-changi-airport.html",
+        "publisher": "Changi Airport official Now Boarding",
+        "facts": [
+          "Article dated 12 Apr 2023 identifies Terminal 1 staff canteen / Orchis Food Court.",
+          "It places it in Terminal 1 Basement 1, Public Area, gives directions from Check-In Row 13 in the public area, and lists daily 6am–9pm opening.",
+          "First-party evidence means the staff-canteen label alone does not establish private access. Recheck current public access before future removal."
+        ],
+        "confidence": "high public-area access; medium freshness",
+        "action": "retain_as_public_access_candidate"
+      },
+      "proposed_action": "retain_as_public_access_candidate",
+      "closure_assessment": "Not assessed; access-only review."
+    },
+    {
+      "sfa_licence": "E81132C022",
+      "fnb_name": "MALAYSIA NASI KANDAR",
+      "business_type": "Foodcourt",
+      "full_address": "Address: 80 AIRPORT BOULEVARD #B1-22,CHANGI AIRPORT TERMINAL 1,Singapore 819642 UPPER BASEMENT CANTEEN",
+      "group": "t1",
+      "source_evidence": {
+        "url": "https://nowboarding.changiairport.com/discover-changi/affordable-authentic-food-court-fare-at-changi-airport.html",
+        "publisher": "Changi Airport official Now Boarding",
+        "facts": [
+          "Article dated 12 Apr 2023 identifies Terminal 1 staff canteen / Orchis Food Court.",
+          "It places it in Terminal 1 Basement 1, Public Area, gives directions from Check-In Row 13 in the public area, and lists daily 6am–9pm opening.",
+          "First-party evidence means the staff-canteen label alone does not establish private access. Recheck current public access before future removal."
+        ],
+        "confidence": "high public-area access; medium freshness",
+        "action": "retain_as_public_access_candidate"
+      },
+      "proposed_action": "retain_as_public_access_candidate",
+      "closure_assessment": "Not assessed; access-only review."
+    },
+    {
+      "sfa_licence": "E81132C016",
+      "fnb_name": "MICHAEL TAN WANTON NOODLE PTE. LTD.",
+      "business_type": "Foodcourt",
+      "full_address": "Address: 80 AIRPORT BOULEVARD CHANGI AIRPORT TERMINAL 1,Singapore 819642 (UPPER BASEMENT CANTEEN)",
+      "group": "t1",
+      "source_evidence": {
+        "url": "https://nowboarding.changiairport.com/discover-changi/affordable-authentic-food-court-fare-at-changi-airport.html",
+        "publisher": "Changi Airport official Now Boarding",
+        "facts": [
+          "Article dated 12 Apr 2023 identifies Terminal 1 staff canteen / Orchis Food Court.",
+          "It places it in Terminal 1 Basement 1, Public Area, gives directions from Check-In Row 13 in the public area, and lists daily 6am–9pm opening.",
+          "First-party evidence means the staff-canteen label alone does not establish private access. Recheck current public access before future removal."
+        ],
+        "confidence": "high public-area access; medium freshness",
+        "action": "retain_as_public_access_candidate"
+      },
+      "proposed_action": "retain_as_public_access_candidate",
+      "closure_assessment": "Not assessed; access-only review."
+    },
+    {
+      "sfa_licence": "E81132C000",
+      "fnb_name": "select",
+      "business_type": "Food Court",
+      "full_address": "Address: 80 AIRPORT BOULEVARD CHANGI AIRPORT T1 (UPPER BASEMENT CANTEEN),Singapore 819642",
+      "group": "t1",
+      "source_evidence": {
+        "url": "https://nowboarding.changiairport.com/discover-changi/affordable-authentic-food-court-fare-at-changi-airport.html",
+        "publisher": "Changi Airport official Now Boarding",
+        "facts": [
+          "Article dated 12 Apr 2023 identifies Terminal 1 staff canteen / Orchis Food Court.",
+          "It places it in Terminal 1 Basement 1, Public Area, gives directions from Check-In Row 13 in the public area, and lists daily 6am–9pm opening.",
+          "First-party evidence means the staff-canteen label alone does not establish private access. Recheck current public access before future removal."
+        ],
+        "confidence": "high public-area access; medium freshness",
+        "action": "retain_as_public_access_candidate"
+      },
+      "proposed_action": "retain_as_public_access_candidate",
+      "closure_assessment": "Not assessed; access-only review."
+    },
+    {
+      "sfa_licence": "E81132C020",
+      "fnb_name": "SELECT GROUP LIMITED",
+      "business_type": "Foodcourt",
+      "full_address": "Address: 80 AIRPORT BOULEVARD CHANGI AIRPORT T1 (UPPER BASEMENT CANTEEN),Singapore 819642",
+      "group": "t1",
+      "source_evidence": {
+        "url": "https://nowboarding.changiairport.com/discover-changi/affordable-authentic-food-court-fare-at-changi-airport.html",
+        "publisher": "Changi Airport official Now Boarding",
+        "facts": [
+          "Article dated 12 Apr 2023 identifies Terminal 1 staff canteen / Orchis Food Court.",
+          "It places it in Terminal 1 Basement 1, Public Area, gives directions from Check-In Row 13 in the public area, and lists daily 6am–9pm opening.",
+          "First-party evidence means the staff-canteen label alone does not establish private access. Recheck current public access before future removal."
+        ],
+        "confidence": "high public-area access; medium freshness",
+        "action": "retain_as_public_access_candidate"
+      },
+      "proposed_action": "retain_as_public_access_candidate",
+      "closure_assessment": "Not assessed; access-only review."
+    },
+    {
+      "sfa_licence": "E81132C003",
+      "fnb_name": null,
+      "business_type": "Foodcourt",
+      "full_address": "Address: 80 AIRPORT BOULEVARD CHANGI AIRPORT T1 (UPPER BASEMENT CANTEEN),Singapore 819642 CHANGI AIRPORT T1",
+      "group": "t1",
+      "source_evidence": {
+        "url": "https://nowboarding.changiairport.com/discover-changi/affordable-authentic-food-court-fare-at-changi-airport.html",
+        "publisher": "Changi Airport official Now Boarding",
+        "facts": [
+          "Article dated 12 Apr 2023 identifies Terminal 1 staff canteen / Orchis Food Court.",
+          "It places it in Terminal 1 Basement 1, Public Area, gives directions from Check-In Row 13 in the public area, and lists daily 6am–9pm opening.",
+          "First-party evidence means the staff-canteen label alone does not establish private access. Recheck current public access before future removal."
+        ],
+        "confidence": "high public-area access; medium freshness",
+        "action": "retain_as_public_access_candidate"
+      },
+      "proposed_action": "retain_as_public_access_candidate",
+      "closure_assessment": "Not assessed; access-only review."
+    },
+    {
+      "sfa_licence": "E81132C012",
+      "fnb_name": null,
+      "business_type": "Foodcourt",
+      "full_address": "Address: 80 AIRPORT BOULEVARD CHANGI AIRPORT T1 (UPPER BASEMENT CANTEEN),Singapore 819642 CHANGI AIRPORT T1",
+      "group": "t1",
+      "source_evidence": {
+        "url": "https://nowboarding.changiairport.com/discover-changi/affordable-authentic-food-court-fare-at-changi-airport.html",
+        "publisher": "Changi Airport official Now Boarding",
+        "facts": [
+          "Article dated 12 Apr 2023 identifies Terminal 1 staff canteen / Orchis Food Court.",
+          "It places it in Terminal 1 Basement 1, Public Area, gives directions from Check-In Row 13 in the public area, and lists daily 6am–9pm opening.",
+          "First-party evidence means the staff-canteen label alone does not establish private access. Recheck current public access before future removal."
+        ],
+        "confidence": "high public-area access; medium freshness",
+        "action": "retain_as_public_access_candidate"
+      },
+      "proposed_action": "retain_as_public_access_candidate",
+      "closure_assessment": "Not assessed; access-only review."
+    },
+    {
+      "sfa_licence": "E81132C014",
+      "fnb_name": null,
+      "business_type": "Foodcourt",
+      "full_address": "Address: 80 AIRPORT BOULEVARD CHANGI AIRPORT TERMINAL 1,Singapore 819642 (UPPER BASEMENT CANTEEN)",
+      "group": "t1",
+      "source_evidence": {
+        "url": "https://nowboarding.changiairport.com/discover-changi/affordable-authentic-food-court-fare-at-changi-airport.html",
+        "publisher": "Changi Airport official Now Boarding",
+        "facts": [
+          "Article dated 12 Apr 2023 identifies Terminal 1 staff canteen / Orchis Food Court.",
+          "It places it in Terminal 1 Basement 1, Public Area, gives directions from Check-In Row 13 in the public area, and lists daily 6am–9pm opening.",
+          "First-party evidence means the staff-canteen label alone does not establish private access. Recheck current public access before future removal."
+        ],
+        "confidence": "high public-area access; medium freshness",
+        "action": "retain_as_public_access_candidate"
+      },
+      "proposed_action": "retain_as_public_access_candidate",
+      "closure_assessment": "Not assessed; access-only review."
+    },
+    {
+      "sfa_licence": "E81132C018",
+      "fnb_name": null,
+      "business_type": "Foodcourt",
+      "full_address": "Address: 80 AIRPORT BOULEVARD CHANGI AIRPORT T1 (UPPER BASEMENT CANTEEN),Singapore 819642 CHANGI AIRPORT T1",
+      "group": "t1",
+      "source_evidence": {
+        "url": "https://nowboarding.changiairport.com/discover-changi/affordable-authentic-food-court-fare-at-changi-airport.html",
+        "publisher": "Changi Airport official Now Boarding",
+        "facts": [
+          "Article dated 12 Apr 2023 identifies Terminal 1 staff canteen / Orchis Food Court.",
+          "It places it in Terminal 1 Basement 1, Public Area, gives directions from Check-In Row 13 in the public area, and lists daily 6am–9pm opening.",
+          "First-party evidence means the staff-canteen label alone does not establish private access. Recheck current public access before future removal."
+        ],
+        "confidence": "high public-area access; medium freshness",
+        "action": "retain_as_public_access_candidate"
+      },
+      "proposed_action": "retain_as_public_access_candidate",
+      "closure_assessment": "Not assessed; access-only review."
+    },
+    {
+      "sfa_licence": "E81132C021",
+      "fnb_name": null,
+      "business_type": "Foodcourt",
+      "full_address": "Address: 80 AIRPORT BOULEVARD CHANGI AIRPORT TERMINAL 1,Singapore 819642 (UPPER BASEMENT CANTEEN)",
+      "group": "t1",
+      "source_evidence": {
+        "url": "https://nowboarding.changiairport.com/discover-changi/affordable-authentic-food-court-fare-at-changi-airport.html",
+        "publisher": "Changi Airport official Now Boarding",
+        "facts": [
+          "Article dated 12 Apr 2023 identifies Terminal 1 staff canteen / Orchis Food Court.",
+          "It places it in Terminal 1 Basement 1, Public Area, gives directions from Check-In Row 13 in the public area, and lists daily 6am–9pm opening.",
+          "First-party evidence means the staff-canteen label alone does not establish private access. Recheck current public access before future removal."
+        ],
+        "confidence": "high public-area access; medium freshness",
+        "action": "retain_as_public_access_candidate"
+      },
+      "proposed_action": "retain_as_public_access_candidate",
+      "closure_assessment": "Not assessed; access-only review."
+    },
+    {
+      "sfa_licence": "E81132C023",
+      "fnb_name": null,
+      "business_type": "Foodcourt",
+      "full_address": "Address: 80 AIRPORT BOULEVARD CHANGI AIRPORT TERMINAL 1,Singapore 819642 (UPPER BASEMENT CANTEEN)",
+      "group": "t1",
+      "source_evidence": {
+        "url": "https://nowboarding.changiairport.com/discover-changi/affordable-authentic-food-court-fare-at-changi-airport.html",
+        "publisher": "Changi Airport official Now Boarding",
+        "facts": [
+          "Article dated 12 Apr 2023 identifies Terminal 1 staff canteen / Orchis Food Court.",
+          "It places it in Terminal 1 Basement 1, Public Area, gives directions from Check-In Row 13 in the public area, and lists daily 6am–9pm opening.",
+          "First-party evidence means the staff-canteen label alone does not establish private access. Recheck current public access before future removal."
+        ],
+        "confidence": "high public-area access; medium freshness",
+        "action": "retain_as_public_access_candidate"
+      },
+      "proposed_action": "retain_as_public_access_candidate",
+      "closure_assessment": "Not assessed; access-only review."
+    },
+    {
+      "sfa_licence": "SW26422K000",
+      "fnb_name": null,
+      "business_type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+      "full_address": "Address: 35 STUDENTS WALK Singapore 639548 NTU CANTEEN 2 (MR6)",
+      "group": "ntu",
+      "source_evidence": {
+        "url": "https://www.ntu.edu.sg/life-at-ntu/health-and-safety/campus-security",
+        "publisher": "NTU official campus security policy",
+        "facts": [
+          "Policy states NTU is an open and porous campus accessible to the public, with roads openly accessible and public buses entering campus.",
+          "Current NTU student-affiliated source identifies Canteen 2 stalls: https://blogs.ntu.edu.sg/sao-earthlinkntu/2026/03/29/canteen-goes-vegan/ .",
+          "This confirms campus access, but not all indoor venues; no restricted-building evidence found for these address-matched records."
+        ],
+        "confidence": "high campus access; medium exact outlet access",
+        "action": "retain_as_public_access_candidate"
+      },
+      "proposed_action": "retain_as_public_access_candidate",
+      "closure_assessment": "Not assessed; access-only review."
+    }
+  ],
+  "limitations": [
+    "Changi article dated 2023; recheck current venue access before future removal.",
+    "NTU campus-level public access does not prove access to every building/outlet.",
+    "NUS source proves programme-participant access, not unrestricted general-public access.",
+    "No access or closure decision inferred from SFA type wording alone."
+  ]
+}

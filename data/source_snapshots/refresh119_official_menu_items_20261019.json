@@ -1,0 +1,45 @@
+{
+  "snapshot_id": "refresh119_official_menu_items_20261019",
+  "snapshot_type": "read_only_current_official_menu_research",
+  "workbook_path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256_at_audit": "028e757cf68c3fd6be935a2908484a98ba1865c4318975cfde543d1175bf5475",
+  "observed_date": "2026-10-19",
+  "source_set": [
+    {
+      "url": "https://www.jumboseafood.com.sg/en/menus",
+      "operator": "JUMBO Seafood / JUMBO Group",
+      "evidence": "Official menu index has a separate ION ORCHARD outlet section with A La Carte Menu, Set Menu, vegetarian, drinks and outlet-exclusive dim sum/high tea links. Browser page observed 2026-10-19."
+    }
+  ],
+  "candidate_updates": [
+    {
+      "sfa_licence": "CE09A67C000",
+      "directory_name": "JUMBO PREMIUM SEAFOOD",
+      "directory_address": "Address: 2 ORCHARD TURN #04-09/10,ION ORCHARD,Singapore 238801",
+      "directory_menu_url_current": null,
+      "menu_item_rows_current_for_exact_licence": 58,
+      "recommended_directory_field": "Menu URL",
+      "candidate_value": "https://jumbogroup.sg/eMenus/JS/IO_ALCMenu.pdf",
+      "official_outlet_section": "ION ORCHARD",
+      "exact_outlet_evidence": "Official JUMBO menu page labels this A La Carte PDF under ION ORCHARD. Existing SFA record CE09A67C000 is JUMBO PREMIUM SEAFOOD, 2 Orchard Turn #04-09/10, ION Orchard, Singapore 238801; exact outlet match.",
+      "content_freshness": "Direct HTTP response observed 2026-10-19. Last-Modified: 2026-09-18 06:09:57 GMT. PDF metadata creation 2026-03-05 and modification 2026-09-18. Prices/items may change without notice; link to current operator file.",
+      "dedupe_check": "No Menu Items rows proposed. Exact licence already has 58 rows, including ION-specific official A La Carte items and an operator menu PDF source. No new menu item/image data is needed from this file in this pass.",
+      "access_note": "Official PDF direct fetch is 11,807,451 bytes (Content-Length), above the web extraction service 10 MiB limit; local text extraction utility is unavailable. Do not infer missing menu contents from search snippets. URL proposal is based on live official menu index link only."
+    }
+  ],
+  "items_delta": {
+    "new_rows_proposed": 0,
+    "reason": "Exact outlet already has 58 outlet-specific menu item rows; no non-duplicate menu content verified for addition in this read-only pass."
+  },
+  "image_delta": {
+    "new_image_urls_proposed": 0,
+    "reason": "No separable, rights-cleared item/stall image source verified; the PDF is a large menu document and operator menu artwork/image reuse rights are not granted by availability."
+  },
+  "pdf_retrieval_limits": {
+    "direct_head_request": "HTTP 200, application/pdf, 11,807,451 bytes, Accept-Ranges: bytes, Last-Modified 2026-09-18 06:09:57 GMT",
+    "web_extractor": "Could not fetch: response exceeds 10,485,760-byte limit.",
+    "local_extraction": "Download succeeded for a temporary audit, but pdftotext and Python PDF parsing libraries are unavailable; no full menu transcription attempted. Temp file removed."
+  },
+  "rights_note": "Use only as a link to the operator-hosted menu. No menu artwork or embedded PDF assets copied; linking does not assert permission to reproduce.",
+  "confidence": "High for exact outlet and official menu URL. No independent current item/price transcription performed in this pass."
+}

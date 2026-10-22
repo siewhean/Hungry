@@ -1,0 +1,626 @@
+{
+  "area": "database",
+  "source_head": "50b2223e3ee058618bc23db48a97fb9fafac41ee",
+  "scope": "Source implementation and isolated schema fixture SQL behavior only; no production/staging apply or release certification.",
+  "design": "tasks/remediation-2026-10-20/DESIGN-db.md",
+  "entries": [
+    {
+      "id": "MER-02",
+      "status": "implemented",
+      "files": [
+        "supabase/migrations/20261020132428_remediation_review_publication.sql",
+        "supabase/migrations/20261020132429_remediation_search.sql",
+        "supabase/migrations/20261020132427_remediation_merchant_privacy.sql",
+        "supabase/migrations/20261020132426_remediation_identity_portfolio.sql",
+        "supabase/smoke/remediation_authorization.sql",
+        "supabase/smoke/remediation_publication.sql"
+      ],
+      "checks": [
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -c \"set role postgres\" -f supabase/smoke/remediation_fixture_bootstrap.sql -f <four forward migrations>",
+          "result": "PASS: all current migrations compile in newly-created isolated PostgreSQL18 fixture with schema-faithful affected columns; PostGIS is explicitly stubbed, vector not installed. Not full migration-history replay."
+        },
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -f supabase/smoke/remediation_authorization.sql -f supabase/smoke/remediation_publication.sql",
+          "result": "PASS: assertions complete and ROLLBACK. Authenticated owner/viewer/stranger, anonymous reads, protected notes, scalar precision, typed deletion/replay/processing, follow decisions/graphs, private saves, moderation, verified capabilities/provenance, home base/raw/owner locations and explicit clears, all dietary before limit beyond800 candidates, taste/budget/cuisine ranking, full publication transaction+nonce replay+author/target/missing-media rejection+direct mutation denial, OCR idempotency, verification resubmit, tied rating cursor/literal query/attempt metadata denial."
+        }
+      ],
+      "reason": "Atomic corrected draft acceptance now writes canonical dish and final draft state together.",
+      "remaining": [
+        "Full Supabase historical clean replay and upgrade replay with real PostGIS/vector and original RLS/trigger graph.",
+        "Hosted direct PostgREST/storage signed-read/upload negative role matrix, worker scheduling/deletion races, external release and native candidate proof. No hosted or production changes performed."
+      ]
+    },
+    {
+      "id": "MER-03",
+      "status": "implemented",
+      "files": [
+        "supabase/migrations/20261020132428_remediation_review_publication.sql",
+        "supabase/migrations/20261020132429_remediation_search.sql",
+        "supabase/migrations/20261020132427_remediation_merchant_privacy.sql",
+        "supabase/migrations/20261020132426_remediation_identity_portfolio.sql",
+        "supabase/smoke/remediation_authorization.sql",
+        "supabase/smoke/remediation_publication.sql"
+      ],
+      "checks": [
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -c \"set role postgres\" -f supabase/smoke/remediation_fixture_bootstrap.sql -f <four forward migrations>",
+          "result": "PASS: all current migrations compile in newly-created isolated PostgreSQL18 fixture with schema-faithful affected columns; PostGIS is explicitly stubbed, vector not installed. Not full migration-history replay."
+        },
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -f supabase/smoke/remediation_authorization.sql -f supabase/smoke/remediation_publication.sql",
+          "result": "PASS: assertions complete and ROLLBACK. Authenticated owner/viewer/stranger, anonymous reads, protected notes, scalar precision, typed deletion/replay/processing, follow decisions/graphs, private saves, moderation, verified capabilities/provenance, home base/raw/owner locations and explicit clears, all dietary before limit beyond800 candidates, taste/budget/cuisine ranking, full publication transaction+nonce replay+author/target/missing-media rejection+direct mutation denial, OCR idempotency, verification resubmit, tied rating cursor/literal query/attempt metadata denial."
+        }
+      ],
+      "reason": "Resubmission preserves prior decision fields and immutable history; uploaded evidence validated.",
+      "remaining": [
+        "Full Supabase historical clean replay and upgrade replay with real PostGIS/vector and original RLS/trigger graph.",
+        "Hosted direct PostgREST/storage signed-read/upload negative role matrix, worker scheduling/deletion races, external release and native candidate proof. No hosted or production changes performed."
+      ]
+    },
+    {
+      "id": "MER-04",
+      "status": "implemented",
+      "files": [
+        "supabase/migrations/20261020132428_remediation_review_publication.sql",
+        "supabase/migrations/20261020132429_remediation_search.sql",
+        "supabase/migrations/20261020132427_remediation_merchant_privacy.sql",
+        "supabase/migrations/20261020132426_remediation_identity_portfolio.sql",
+        "supabase/smoke/remediation_authorization.sql",
+        "supabase/smoke/remediation_publication.sql"
+      ],
+      "checks": [
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -c \"set role postgres\" -f supabase/smoke/remediation_fixture_bootstrap.sql -f <four forward migrations>",
+          "result": "PASS: all current migrations compile in newly-created isolated PostgreSQL18 fixture with schema-faithful affected columns; PostGIS is explicitly stubbed, vector not installed. Not full migration-history replay."
+        },
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -f supabase/smoke/remediation_authorization.sql -f supabase/smoke/remediation_publication.sql",
+          "result": "PASS: assertions complete and ROLLBACK. Authenticated owner/viewer/stranger, anonymous reads, protected notes, scalar precision, typed deletion/replay/processing, follow decisions/graphs, private saves, moderation, verified capabilities/provenance, home base/raw/owner locations and explicit clears, all dietary before limit beyond800 candidates, taste/budget/cuisine ranking, full publication transaction+nonce replay+author/target/missing-media rejection+direct mutation denial, OCR idempotency, verification resubmit, tied rating cursor/literal query/attempt metadata denial."
+        }
+      ],
+      "reason": "Scoped merchant draft-read/accept/reject RPCs replace inaccessible service-only direct mutations.",
+      "remaining": [
+        "Full Supabase historical clean replay and upgrade replay with real PostGIS/vector and original RLS/trigger graph.",
+        "Hosted direct PostgREST/storage signed-read/upload negative role matrix, worker scheduling/deletion races, external release and native candidate proof. No hosted or production changes performed."
+      ]
+    },
+    {
+      "id": "MER-05",
+      "status": "implemented",
+      "files": [
+        "supabase/migrations/20261020132428_remediation_review_publication.sql",
+        "supabase/migrations/20261020132429_remediation_search.sql",
+        "supabase/migrations/20261020132427_remediation_merchant_privacy.sql",
+        "supabase/migrations/20261020132426_remediation_identity_portfolio.sql",
+        "supabase/smoke/remediation_authorization.sql",
+        "supabase/smoke/remediation_publication.sql"
+      ],
+      "checks": [
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -c \"set role postgres\" -f supabase/smoke/remediation_fixture_bootstrap.sql -f <four forward migrations>",
+          "result": "PASS: all current migrations compile in newly-created isolated PostgreSQL18 fixture with schema-faithful affected columns; PostGIS is explicitly stubbed, vector not installed. Not full migration-history replay."
+        },
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -f supabase/smoke/remediation_authorization.sql -f supabase/smoke/remediation_publication.sql",
+          "result": "PASS: assertions complete and ROLLBACK. Authenticated owner/viewer/stranger, anonymous reads, protected notes, scalar precision, typed deletion/replay/processing, follow decisions/graphs, private saves, moderation, verified capabilities/provenance, home base/raw/owner locations and explicit clears, all dietary before limit beyond800 candidates, taste/budget/cuisine ranking, full publication transaction+nonce replay+author/target/missing-media rejection+direct mutation denial, OCR idempotency, verification resubmit, tied rating cursor/literal query/attempt metadata denial."
+        }
+      ],
+      "reason": "Protected exact location storage; deterministic grid projection and hidden snapshot omission; base,raw,map/share boundaries.",
+      "remaining": [
+        "Full Supabase historical clean replay and upgrade replay with real PostGIS/vector and original RLS/trigger graph.",
+        "Hosted direct PostgREST/storage signed-read/upload negative role matrix, worker scheduling/deletion races, external release and native candidate proof. No hosted or production changes performed."
+      ]
+    },
+    {
+      "id": "MD-PRIV-01",
+      "status": "implemented",
+      "files": [
+        "supabase/migrations/20261020132428_remediation_review_publication.sql",
+        "supabase/migrations/20261020132429_remediation_search.sql",
+        "supabase/migrations/20261020132427_remediation_merchant_privacy.sql",
+        "supabase/migrations/20261020132426_remediation_identity_portfolio.sql",
+        "supabase/smoke/remediation_authorization.sql",
+        "supabase/smoke/remediation_publication.sql"
+      ],
+      "checks": [
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -c \"set role postgres\" -f supabase/smoke/remediation_fixture_bootstrap.sql -f <four forward migrations>",
+          "result": "PASS: all current migrations compile in newly-created isolated PostgreSQL18 fixture with schema-faithful affected columns; PostGIS is explicitly stubbed, vector not installed. Not full migration-history replay."
+        },
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -f supabase/smoke/remediation_authorization.sql -f supabase/smoke/remediation_publication.sql",
+          "result": "PASS: assertions complete and ROLLBACK. Authenticated owner/viewer/stranger, anonymous reads, protected notes, scalar precision, typed deletion/replay/processing, follow decisions/graphs, private saves, moderation, verified capabilities/provenance, home base/raw/owner locations and explicit clears, all dietary before limit beyond800 candidates, taste/budget/cuisine ranking, full publication transaction+nonce replay+author/target/missing-media rejection+direct mutation denial, OCR idempotency, verification resubmit, tied rating cursor/literal query/attempt metadata denial."
+        }
+      ],
+      "reason": "Shared cause MER-05.",
+      "remaining": [
+        "Full Supabase historical clean replay and upgrade replay with real PostGIS/vector and original RLS/trigger graph.",
+        "Hosted direct PostgREST/storage signed-read/upload negative role matrix, worker scheduling/deletion races, external release and native candidate proof. No hosted or production changes performed."
+      ]
+    },
+    {
+      "id": "MER-06",
+      "status": "implemented",
+      "files": [
+        "supabase/migrations/20261020132428_remediation_review_publication.sql",
+        "supabase/migrations/20261020132429_remediation_search.sql",
+        "supabase/migrations/20261020132427_remediation_merchant_privacy.sql",
+        "supabase/migrations/20261020132426_remediation_identity_portfolio.sql",
+        "supabase/smoke/remediation_authorization.sql",
+        "supabase/smoke/remediation_publication.sql"
+      ],
+      "checks": [
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -c \"set role postgres\" -f supabase/smoke/remediation_fixture_bootstrap.sql -f <four forward migrations>",
+          "result": "PASS: all current migrations compile in newly-created isolated PostgreSQL18 fixture with schema-faithful affected columns; PostGIS is explicitly stubbed, vector not installed. Not full migration-history replay."
+        },
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -f supabase/smoke/remediation_authorization.sql -f supabase/smoke/remediation_publication.sql",
+          "result": "PASS: assertions complete and ROLLBACK. Authenticated owner/viewer/stranger, anonymous reads, protected notes, scalar precision, typed deletion/replay/processing, follow decisions/graphs, private saves, moderation, verified capabilities/provenance, home base/raw/owner locations and explicit clears, all dietary before limit beyond800 candidates, taste/budget/cuisine ranking, full publication transaction+nonce replay+author/target/missing-media rejection+direct mutation denial, OCR idempotency, verification resubmit, tied rating cursor/literal query/attempt metadata denial."
+        }
+      ],
+      "reason": "Durable cuisine/gallery/dietary/taste/social/delivery outlet columns.",
+      "remaining": [
+        "Full Supabase historical clean replay and upgrade replay with real PostGIS/vector and original RLS/trigger graph.",
+        "Hosted direct PostgREST/storage signed-read/upload negative role matrix, worker scheduling/deletion races, external release and native candidate proof. No hosted or production changes performed."
+      ]
+    },
+    {
+      "id": "MER-27",
+      "status": "implemented",
+      "files": [
+        "supabase/migrations/20261020132428_remediation_review_publication.sql",
+        "supabase/migrations/20261020132429_remediation_search.sql",
+        "supabase/migrations/20261020132427_remediation_merchant_privacy.sql",
+        "supabase/migrations/20261020132426_remediation_identity_portfolio.sql",
+        "supabase/smoke/remediation_authorization.sql",
+        "supabase/smoke/remediation_publication.sql"
+      ],
+      "checks": [
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -c \"set role postgres\" -f supabase/smoke/remediation_fixture_bootstrap.sql -f <four forward migrations>",
+          "result": "PASS: all current migrations compile in newly-created isolated PostgreSQL18 fixture with schema-faithful affected columns; PostGIS is explicitly stubbed, vector not installed. Not full migration-history replay."
+        },
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -f supabase/smoke/remediation_authorization.sql -f supabase/smoke/remediation_publication.sql",
+          "result": "PASS: assertions complete and ROLLBACK. Authenticated owner/viewer/stranger, anonymous reads, protected notes, scalar precision, typed deletion/replay/processing, follow decisions/graphs, private saves, moderation, verified capabilities/provenance, home base/raw/owner locations and explicit clears, all dietary before limit beyond800 candidates, taste/budget/cuisine ranking, full publication transaction+nonce replay+author/target/missing-media rejection+direct mutation denial, OCR idempotency, verification resubmit, tied rating cursor/literal query/attempt metadata denial."
+        }
+      ],
+      "reason": "Locked idempotent OCR transaction supports per-item accurate service results.",
+      "remaining": [
+        "Full Supabase historical clean replay and upgrade replay with real PostGIS/vector and original RLS/trigger graph.",
+        "Hosted direct PostgREST/storage signed-read/upload negative role matrix, worker scheduling/deletion races, external release and native candidate proof. No hosted or production changes performed."
+      ]
+    },
+    {
+      "id": "MER-28",
+      "status": "implemented",
+      "files": [
+        "supabase/migrations/20261020132428_remediation_review_publication.sql",
+        "supabase/migrations/20261020132429_remediation_search.sql",
+        "supabase/migrations/20261020132427_remediation_merchant_privacy.sql",
+        "supabase/migrations/20261020132426_remediation_identity_portfolio.sql",
+        "supabase/smoke/remediation_authorization.sql",
+        "supabase/smoke/remediation_publication.sql"
+      ],
+      "checks": [
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -c \"set role postgres\" -f supabase/smoke/remediation_fixture_bootstrap.sql -f <four forward migrations>",
+          "result": "PASS: all current migrations compile in newly-created isolated PostgreSQL18 fixture with schema-faithful affected columns; PostGIS is explicitly stubbed, vector not installed. Not full migration-history replay."
+        },
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -f supabase/smoke/remediation_authorization.sql -f supabase/smoke/remediation_publication.sql",
+          "result": "PASS: assertions complete and ROLLBACK. Authenticated owner/viewer/stranger, anonymous reads, protected notes, scalar precision, typed deletion/replay/processing, follow decisions/graphs, private saves, moderation, verified capabilities/provenance, home base/raw/owner locations and explicit clears, all dietary before limit beyond800 candidates, taste/budget/cuisine ranking, full publication transaction+nonce replay+author/target/missing-media rejection+direct mutation denial, OCR idempotency, verification resubmit, tied rating cursor/literal query/attempt metadata denial."
+        }
+      ],
+      "reason": "Verified unexpired owner/manager canonical capability; live/promotions guarded; restricted onboarding remains.",
+      "remaining": [
+        "Full Supabase historical clean replay and upgrade replay with real PostGIS/vector and original RLS/trigger graph.",
+        "Hosted direct PostgREST/storage signed-read/upload negative role matrix, worker scheduling/deletion races, external release and native candidate proof. No hosted or production changes performed."
+      ]
+    },
+    {
+      "id": "MER-29",
+      "status": "implemented",
+      "files": [
+        "supabase/migrations/20261020132428_remediation_review_publication.sql",
+        "supabase/migrations/20261020132429_remediation_search.sql",
+        "supabase/migrations/20261020132427_remediation_merchant_privacy.sql",
+        "supabase/migrations/20261020132426_remediation_identity_portfolio.sql",
+        "supabase/smoke/remediation_authorization.sql",
+        "supabase/smoke/remediation_publication.sql"
+      ],
+      "checks": [
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -c \"set role postgres\" -f supabase/smoke/remediation_fixture_bootstrap.sql -f <four forward migrations>",
+          "result": "PASS: all current migrations compile in newly-created isolated PostgreSQL18 fixture with schema-faithful affected columns; PostGIS is explicitly stubbed, vector not installed. Not full migration-history replay."
+        },
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -f supabase/smoke/remediation_authorization.sql -f supabase/smoke/remediation_publication.sql",
+          "result": "PASS: assertions complete and ROLLBACK. Authenticated owner/viewer/stranger, anonymous reads, protected notes, scalar precision, typed deletion/replay/processing, follow decisions/graphs, private saves, moderation, verified capabilities/provenance, home base/raw/owner locations and explicit clears, all dietary before limit beyond800 candidates, taste/budget/cuisine ranking, full publication transaction+nonce replay+author/target/missing-media rejection+direct mutation denial, OCR idempotency, verification resubmit, tied rating cursor/literal query/attempt metadata denial."
+        }
+      ],
+      "reason": "Latest venue/dish/image provenance guards restored with narrow trusted-role bypass.",
+      "remaining": [
+        "Full Supabase historical clean replay and upgrade replay with real PostGIS/vector and original RLS/trigger graph.",
+        "Hosted direct PostgREST/storage signed-read/upload negative role matrix, worker scheduling/deletion races, external release and native candidate proof. No hosted or production changes performed."
+      ]
+    },
+    {
+      "id": "ST-01",
+      "status": "implemented",
+      "files": [
+        "supabase/migrations/20261020132428_remediation_review_publication.sql",
+        "supabase/migrations/20261020132429_remediation_search.sql",
+        "supabase/migrations/20261020132427_remediation_merchant_privacy.sql",
+        "supabase/migrations/20261020132426_remediation_identity_portfolio.sql",
+        "supabase/smoke/remediation_authorization.sql",
+        "supabase/smoke/remediation_publication.sql",
+        "supabase/smoke/remediation_role_matrix.sql"
+      ],
+      "checks": [
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -c \"set role postgres\" -f supabase/smoke/remediation_fixture_bootstrap.sql -f <four forward migrations>",
+          "result": "PASS: all current migrations compile in newly-created isolated PostgreSQL18 fixture with schema-faithful affected columns; PostGIS is explicitly stubbed, vector not installed. Not full migration-history replay."
+        },
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -f supabase/smoke/remediation_authorization.sql -f supabase/smoke/remediation_publication.sql",
+          "result": "PASS: assertions complete and ROLLBACK. Authenticated owner/viewer/stranger, anonymous reads, protected notes, scalar precision, typed deletion/replay/processing, follow decisions/graphs, private saves, moderation, verified capabilities/provenance, home base/raw/owner locations and explicit clears, all dietary before limit beyond800 candidates, taste/budget/cuisine ranking, full publication transaction+nonce replay+author/target/missing-media rejection+direct mutation denial, OCR idempotency, verification resubmit, tied rating cursor/literal query/attempt metadata denial."
+        },
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -f supabase/smoke/remediation_role_matrix.sql",
+          "result": "PASS: real editor note/score/public-clear mutation, viewer read/write denial, owner update/nullclear, approved follower audience and protected-note denial, stranger/private, blocked follower and anonymous safe projection. Transaction rolled back; log database-role-matrix.log. Local affected-schema fixture only."
+        }
+      ],
+      "reason": "Nonrecursive audience helpers plus protected private notes; legacy column always null and guarded against repopulation.",
+      "remaining": [
+        "Full Supabase historical clean replay and upgrade replay with real PostGIS/vector and original RLS/trigger graph.",
+        "Hosted direct PostgREST/storage signed-read/upload negative role matrix, worker scheduling/deletion races, external release and native candidate proof. No hosted or production changes performed."
+      ]
+    },
+    {
+      "id": "ST-11",
+      "status": "implemented",
+      "files": [
+        "supabase/migrations/20261020132428_remediation_review_publication.sql",
+        "supabase/migrations/20261020132429_remediation_search.sql",
+        "supabase/migrations/20261020132427_remediation_merchant_privacy.sql",
+        "supabase/migrations/20261020132426_remediation_identity_portfolio.sql",
+        "supabase/smoke/remediation_authorization.sql",
+        "supabase/smoke/remediation_publication.sql",
+        "supabase/smoke/remediation_role_matrix.sql"
+      ],
+      "checks": [
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -c \"set role postgres\" -f supabase/smoke/remediation_fixture_bootstrap.sql -f <four forward migrations>",
+          "result": "PASS: all current migrations compile in newly-created isolated PostgreSQL18 fixture with schema-faithful affected columns; PostGIS is explicitly stubbed, vector not installed. Not full migration-history replay."
+        },
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -f supabase/smoke/remediation_authorization.sql -f supabase/smoke/remediation_publication.sql",
+          "result": "PASS: assertions complete and ROLLBACK. Authenticated owner/viewer/stranger, anonymous reads, protected notes, scalar precision, typed deletion/replay/processing, follow decisions/graphs, private saves, moderation, verified capabilities/provenance, home base/raw/owner locations and explicit clears, all dietary before limit beyond800 candidates, taste/budget/cuisine ranking, full publication transaction+nonce replay+author/target/missing-media rejection+direct mutation denial, OCR idempotency, verification resubmit, tied rating cursor/literal query/attempt metadata denial."
+        },
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -f supabase/smoke/remediation_role_matrix.sql",
+          "result": "PASS: real editor note/score/public-clear mutation, viewer read/write denial, owner update/nullclear, approved follower audience and protected-note denial, stranger/private, blocked follower and anonymous safe projection. Transaction rolled back; log database-role-matrix.log. Local affected-schema fixture only."
+        }
+      ],
+      "reason": "Removed portfolios excluded from ordinary reads/search/public sharing including old private RPC paths.",
+      "remaining": [
+        "Full Supabase historical clean replay and upgrade replay with real PostGIS/vector and original RLS/trigger graph.",
+        "Hosted direct PostgREST/storage signed-read/upload negative role matrix, worker scheduling/deletion races, external release and native candidate proof. No hosted or production changes performed."
+      ]
+    },
+    {
+      "id": "ST-12",
+      "status": "implemented",
+      "files": [
+        "supabase/migrations/20261020132428_remediation_review_publication.sql",
+        "supabase/migrations/20261020132429_remediation_search.sql",
+        "supabase/migrations/20261020132427_remediation_merchant_privacy.sql",
+        "supabase/migrations/20261020132426_remediation_identity_portfolio.sql",
+        "supabase/smoke/remediation_authorization.sql",
+        "supabase/smoke/remediation_publication.sql",
+        "supabase/smoke/remediation_role_matrix.sql"
+      ],
+      "checks": [
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -c \"set role postgres\" -f supabase/smoke/remediation_fixture_bootstrap.sql -f <four forward migrations>",
+          "result": "PASS: all current migrations compile in newly-created isolated PostgreSQL18 fixture with schema-faithful affected columns; PostGIS is explicitly stubbed, vector not installed. Not full migration-history replay."
+        },
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -f supabase/smoke/remediation_authorization.sql -f supabase/smoke/remediation_publication.sql",
+          "result": "PASS: assertions complete and ROLLBACK. Authenticated owner/viewer/stranger, anonymous reads, protected notes, scalar precision, typed deletion/replay/processing, follow decisions/graphs, private saves, moderation, verified capabilities/provenance, home base/raw/owner locations and explicit clears, all dietary before limit beyond800 candidates, taste/budget/cuisine ranking, full publication transaction+nonce replay+author/target/missing-media rejection+direct mutation denial, OCR idempotency, verification resubmit, tied rating cursor/literal query/attempt metadata denial."
+        },
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -f supabase/smoke/remediation_role_matrix.sql",
+          "result": "PASS: real editor note/score/public-clear mutation, viewer read/write denial, owner update/nullclear, approved follower audience and protected-note denial, stranger/private, blocked follower and anonymous safe projection. Transaction rolled back; log database-role-matrix.log. Local affected-schema fixture only."
+        }
+      ],
+      "reason": "Scores numeric1..10 max one decimal; versioned mutation RPCs support explicit clear.",
+      "remaining": [
+        "Full Supabase historical clean replay and upgrade replay with real PostGIS/vector and original RLS/trigger graph.",
+        "Hosted direct PostgREST/storage signed-read/upload negative role matrix, worker scheduling/deletion races, external release and native candidate proof. No hosted or production changes performed."
+      ]
+    },
+    {
+      "id": "ST-15",
+      "status": "implemented",
+      "files": [
+        "supabase/migrations/20261020132428_remediation_review_publication.sql",
+        "supabase/migrations/20261020132429_remediation_search.sql",
+        "supabase/migrations/20261020132427_remediation_merchant_privacy.sql",
+        "supabase/migrations/20261020132426_remediation_identity_portfolio.sql",
+        "supabase/smoke/remediation_authorization.sql",
+        "supabase/smoke/remediation_publication.sql"
+      ],
+      "checks": [
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -c \"set role postgres\" -f supabase/smoke/remediation_fixture_bootstrap.sql -f <four forward migrations>",
+          "result": "PASS: all current migrations compile in newly-created isolated PostgreSQL18 fixture with schema-faithful affected columns; PostGIS is explicitly stubbed, vector not installed. Not full migration-history replay."
+        },
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -f supabase/smoke/remediation_authorization.sql -f supabase/smoke/remediation_publication.sql",
+          "result": "PASS: assertions complete and ROLLBACK. Authenticated owner/viewer/stranger, anonymous reads, protected notes, scalar precision, typed deletion/replay/processing, follow decisions/graphs, private saves, moderation, verified capabilities/provenance, home base/raw/owner locations and explicit clears, all dietary before limit beyond800 candidates, taste/budget/cuisine ranking, full publication transaction+nonce replay+author/target/missing-media rejection+direct mutation denial, OCR idempotency, verification resubmit, tied rating cursor/literal query/attempt metadata denial."
+        }
+      ],
+      "reason": "Owner-scoped durable collection saves.",
+      "remaining": [
+        "Full Supabase historical clean replay and upgrade replay with real PostGIS/vector and original RLS/trigger graph.",
+        "Hosted direct PostgREST/storage signed-read/upload negative role matrix, worker scheduling/deletion races, external release and native candidate proof. No hosted or production changes performed."
+      ]
+    },
+    {
+      "id": "PROFILE-01",
+      "status": "implemented",
+      "files": [
+        "supabase/migrations/20261020132428_remediation_review_publication.sql",
+        "supabase/migrations/20261020132429_remediation_search.sql",
+        "supabase/migrations/20261020132427_remediation_merchant_privacy.sql",
+        "supabase/migrations/20261020132426_remediation_identity_portfolio.sql",
+        "supabase/smoke/remediation_authorization.sql",
+        "supabase/smoke/remediation_publication.sql"
+      ],
+      "checks": [
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -c \"set role postgres\" -f supabase/smoke/remediation_fixture_bootstrap.sql -f <four forward migrations>",
+          "result": "PASS: all current migrations compile in newly-created isolated PostgreSQL18 fixture with schema-faithful affected columns; PostGIS is explicitly stubbed, vector not installed. Not full migration-history replay."
+        },
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -f supabase/smoke/remediation_authorization.sql -f supabase/smoke/remediation_publication.sql",
+          "result": "PASS: assertions complete and ROLLBACK. Authenticated owner/viewer/stranger, anonymous reads, protected notes, scalar precision, typed deletion/replay/processing, follow decisions/graphs, private saves, moderation, verified capabilities/provenance, home base/raw/owner locations and explicit clears, all dietary before limit beyond800 candidates, taste/budget/cuisine ranking, full publication transaction+nonce replay+author/target/missing-media rejection+direct mutation denial, OCR idempotency, verification resubmit, tied rating cursor/literal query/attempt metadata denial."
+        }
+      ],
+      "reason": "Locked public-approved/private-pending follow request/recipient decisions.",
+      "remaining": [
+        "Full Supabase historical clean replay and upgrade replay with real PostGIS/vector and original RLS/trigger graph.",
+        "Hosted direct PostgREST/storage signed-read/upload negative role matrix, worker scheduling/deletion races, external release and native candidate proof. No hosted or production changes performed."
+      ]
+    },
+    {
+      "id": "PROFILE-03",
+      "status": "implemented",
+      "files": [
+        "supabase/migrations/20261020132428_remediation_review_publication.sql",
+        "supabase/migrations/20261020132429_remediation_search.sql",
+        "supabase/migrations/20261020132427_remediation_merchant_privacy.sql",
+        "supabase/migrations/20261020132426_remediation_identity_portfolio.sql",
+        "supabase/smoke/remediation_authorization.sql",
+        "supabase/smoke/remediation_publication.sql"
+      ],
+      "checks": [
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -c \"set role postgres\" -f supabase/smoke/remediation_fixture_bootstrap.sql -f <four forward migrations>",
+          "result": "PASS: all current migrations compile in newly-created isolated PostgreSQL18 fixture with schema-faithful affected columns; PostGIS is explicitly stubbed, vector not installed. Not full migration-history replay."
+        },
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -f supabase/smoke/remediation_authorization.sql -f supabase/smoke/remediation_publication.sql",
+          "result": "PASS: assertions complete and ROLLBACK. Authenticated owner/viewer/stranger, anonymous reads, protected notes, scalar precision, typed deletion/replay/processing, follow decisions/graphs, private saves, moderation, verified capabilities/provenance, home base/raw/owner locations and explicit clears, all dietary before limit beyond800 candidates, taste/budget/cuisine ranking, full publication transaction+nonce replay+author/target/missing-media rejection+direct mutation denial, OCR idempotency, verification resubmit, tied rating cursor/literal query/attempt metadata denial."
+        }
+      ],
+      "reason": "Safe relationship RPC returns selected user approved graph within audience; no email.",
+      "remaining": [
+        "Full Supabase historical clean replay and upgrade replay with real PostGIS/vector and original RLS/trigger graph.",
+        "Hosted direct PostgREST/storage signed-read/upload negative role matrix, worker scheduling/deletion races, external release and native candidate proof. No hosted or production changes performed."
+      ]
+    },
+    {
+      "id": "SET-06",
+      "status": "implemented",
+      "files": [
+        "supabase/migrations/20261020132428_remediation_review_publication.sql",
+        "supabase/migrations/20261020132429_remediation_search.sql",
+        "supabase/migrations/20261020132427_remediation_merchant_privacy.sql",
+        "supabase/migrations/20261020132426_remediation_identity_portfolio.sql",
+        "supabase/smoke/remediation_authorization.sql",
+        "supabase/smoke/remediation_publication.sql"
+      ],
+      "checks": [
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -c \"set role postgres\" -f supabase/smoke/remediation_fixture_bootstrap.sql -f <four forward migrations>",
+          "result": "PASS: all current migrations compile in newly-created isolated PostgreSQL18 fixture with schema-faithful affected columns; PostGIS is explicitly stubbed, vector not installed. Not full migration-history replay."
+        },
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -f supabase/smoke/remediation_authorization.sql -f supabase/smoke/remediation_publication.sql",
+          "result": "PASS: assertions complete and ROLLBACK. Authenticated owner/viewer/stranger, anonymous reads, protected notes, scalar precision, typed deletion/replay/processing, follow decisions/graphs, private saves, moderation, verified capabilities/provenance, home base/raw/owner locations and explicit clears, all dietary before limit beyond800 candidates, taste/budget/cuisine ranking, full publication transaction+nonce replay+author/target/missing-media rejection+direct mutation denial, OCR idempotency, verification resubmit, tied rating cursor/literal query/attempt metadata denial."
+        }
+      ],
+      "reason": "Typed idempotent request/status and locked cancellation distinguish cancelled/not_pending/processing.",
+      "remaining": [
+        "Full Supabase historical clean replay and upgrade replay with real PostGIS/vector and original RLS/trigger graph.",
+        "Hosted direct PostgREST/storage signed-read/upload negative role matrix, worker scheduling/deletion races, external release and native candidate proof. No hosted or production changes performed."
+      ]
+    },
+    {
+      "id": "DS-01",
+      "status": "implemented",
+      "files": [
+        "supabase/migrations/20261020132428_remediation_review_publication.sql",
+        "supabase/migrations/20261020132429_remediation_search.sql",
+        "supabase/migrations/20261020132427_remediation_merchant_privacy.sql",
+        "supabase/migrations/20261020132426_remediation_identity_portfolio.sql",
+        "supabase/smoke/remediation_authorization.sql",
+        "supabase/smoke/remediation_publication.sql"
+      ],
+      "checks": [
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -c \"set role postgres\" -f supabase/smoke/remediation_fixture_bootstrap.sql -f <four forward migrations>",
+          "result": "PASS: all current migrations compile in newly-created isolated PostgreSQL18 fixture with schema-faithful affected columns; PostGIS is explicitly stubbed, vector not installed. Not full migration-history replay."
+        },
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -f supabase/smoke/remediation_authorization.sql -f supabase/smoke/remediation_publication.sql",
+          "result": "PASS: assertions complete and ROLLBACK. Authenticated owner/viewer/stranger, anonymous reads, protected notes, scalar precision, typed deletion/replay/processing, follow decisions/graphs, private saves, moderation, verified capabilities/provenance, home base/raw/owner locations and explicit clears, all dietary before limit beyond800 candidates, taste/budget/cuisine ranking, full publication transaction+nonce replay+author/target/missing-media rejection+direct mutation denial, OCR idempotency, verification resubmit, tied rating cursor/literal query/attempt metadata denial."
+        }
+      ],
+      "reason": "All selected requirements enforced before ranking/limit across search and taste recommendations.",
+      "remaining": [
+        "Full Supabase historical clean replay and upgrade replay with real PostGIS/vector and original RLS/trigger graph.",
+        "Hosted direct PostgREST/storage signed-read/upload negative role matrix, worker scheduling/deletion races, external release and native candidate proof. No hosted or production changes performed."
+      ]
+    },
+    {
+      "id": "DS-02",
+      "status": "implemented",
+      "files": [
+        "supabase/migrations/20261020132428_remediation_review_publication.sql",
+        "supabase/migrations/20261020132429_remediation_search.sql",
+        "supabase/migrations/20261020132427_remediation_merchant_privacy.sql",
+        "supabase/migrations/20261020132426_remediation_identity_portfolio.sql",
+        "supabase/smoke/remediation_authorization.sql",
+        "supabase/smoke/remediation_publication.sql"
+      ],
+      "checks": [
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -c \"set role postgres\" -f supabase/smoke/remediation_fixture_bootstrap.sql -f <four forward migrations>",
+          "result": "PASS: all current migrations compile in newly-created isolated PostgreSQL18 fixture with schema-faithful affected columns; PostGIS is explicitly stubbed, vector not installed. Not full migration-history replay."
+        },
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -f supabase/smoke/remediation_authorization.sql -f supabase/smoke/remediation_publication.sql",
+          "result": "PASS: assertions complete and ROLLBACK. Authenticated owner/viewer/stranger, anonymous reads, protected notes, scalar precision, typed deletion/replay/processing, follow decisions/graphs, private saves, moderation, verified capabilities/provenance, home base/raw/owner locations and explicit clears, all dietary before limit beyond800 candidates, taste/budget/cuisine ranking, full publication transaction+nonce replay+author/target/missing-media rejection+direct mutation denial, OCR idempotency, verification resubmit, tied rating cursor/literal query/attempt metadata denial."
+        }
+      ],
+      "reason": "No unrestricted fallback for zero dietary matches.",
+      "remaining": [
+        "Full Supabase historical clean replay and upgrade replay with real PostGIS/vector and original RLS/trigger graph.",
+        "Hosted direct PostgREST/storage signed-read/upload negative role matrix, worker scheduling/deletion races, external release and native candidate proof. No hosted or production changes performed."
+      ]
+    },
+    {
+      "id": "DS-03",
+      "status": "implemented",
+      "files": [
+        "supabase/migrations/20261020132428_remediation_review_publication.sql",
+        "supabase/migrations/20261020132429_remediation_search.sql",
+        "supabase/migrations/20261020132427_remediation_merchant_privacy.sql",
+        "supabase/migrations/20261020132426_remediation_identity_portfolio.sql",
+        "supabase/smoke/remediation_authorization.sql",
+        "supabase/smoke/remediation_publication.sql"
+      ],
+      "checks": [
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -c \"set role postgres\" -f supabase/smoke/remediation_fixture_bootstrap.sql -f <four forward migrations>",
+          "result": "PASS: all current migrations compile in newly-created isolated PostgreSQL18 fixture with schema-faithful affected columns; PostGIS is explicitly stubbed, vector not installed. Not full migration-history replay."
+        },
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -f supabase/smoke/remediation_authorization.sql -f supabase/smoke/remediation_publication.sql",
+          "result": "PASS: assertions complete and ROLLBACK. Authenticated owner/viewer/stranger, anonymous reads, protected notes, scalar precision, typed deletion/replay/processing, follow decisions/graphs, private saves, moderation, verified capabilities/provenance, home base/raw/owner locations and explicit clears, all dietary before limit beyond800 candidates, taste/budget/cuisine ranking, full publication transaction+nonce replay+author/target/missing-media rejection+direct mutation denial, OCR idempotency, verification resubmit, tied rating cursor/literal query/attempt metadata denial."
+        }
+      ],
+      "reason": "Consistent dietary/ranking contracts; taste,budget,canonical soft cuisine applied before limits.",
+      "remaining": [
+        "Full Supabase historical clean replay and upgrade replay with real PostGIS/vector and original RLS/trigger graph.",
+        "Hosted direct PostgREST/storage signed-read/upload negative role matrix, worker scheduling/deletion races, external release and native candidate proof. No hosted or production changes performed."
+      ]
+    },
+    {
+      "id": "RP-07",
+      "status": "implemented",
+      "files": [
+        "supabase/migrations/20261020132428_remediation_review_publication.sql",
+        "supabase/migrations/20261020132429_remediation_search.sql",
+        "supabase/migrations/20261020132427_remediation_merchant_privacy.sql",
+        "supabase/migrations/20261020132426_remediation_identity_portfolio.sql",
+        "supabase/smoke/remediation_authorization.sql",
+        "supabase/smoke/remediation_publication.sql"
+      ],
+      "checks": [
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -c \"set role postgres\" -f supabase/smoke/remediation_fixture_bootstrap.sql -f <four forward migrations>",
+          "result": "PASS: all current migrations compile in newly-created isolated PostgreSQL18 fixture with schema-faithful affected columns; PostGIS is explicitly stubbed, vector not installed. Not full migration-history replay."
+        },
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -f supabase/smoke/remediation_authorization.sql -f supabase/smoke/remediation_publication.sql",
+          "result": "PASS: assertions complete and ROLLBACK. Authenticated owner/viewer/stranger, anonymous reads, protected notes, scalar precision, typed deletion/replay/processing, follow decisions/graphs, private saves, moderation, verified capabilities/provenance, home base/raw/owner locations and explicit clears, all dietary before limit beyond800 candidates, taste/budget/cuisine ranking, full publication transaction+nonce replay+author/target/missing-media rejection+direct mutation denial, OCR idempotency, verification resubmit, tied rating cursor/literal query/attempt metadata denial."
+        }
+      ],
+      "reason": "Private immutable versions publish complete validated ordered manifest atomically; retries return confirmed receipt, previous objects retained.",
+      "remaining": [
+        "Full Supabase historical clean replay and upgrade replay with real PostGIS/vector and original RLS/trigger graph.",
+        "Hosted direct PostgREST/storage signed-read/upload negative role matrix, worker scheduling/deletion races, external release and native candidate proof. No hosted or production changes performed."
+      ]
+    },
+    {
+      "id": "RP-10",
+      "status": "implemented",
+      "files": [
+        "supabase/migrations/20261020132428_remediation_review_publication.sql",
+        "supabase/migrations/20261020132429_remediation_search.sql",
+        "supabase/migrations/20261020132427_remediation_merchant_privacy.sql",
+        "supabase/migrations/20261020132426_remediation_identity_portfolio.sql",
+        "supabase/smoke/remediation_authorization.sql",
+        "supabase/smoke/remediation_publication.sql"
+      ],
+      "checks": [
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -c \"set role postgres\" -f supabase/smoke/remediation_fixture_bootstrap.sql -f <four forward migrations>",
+          "result": "PASS: all current migrations compile in newly-created isolated PostgreSQL18 fixture with schema-faithful affected columns; PostGIS is explicitly stubbed, vector not installed. Not full migration-history replay."
+        },
+        {
+          "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -f supabase/smoke/remediation_authorization.sql -f supabase/smoke/remediation_publication.sql",
+          "result": "PASS: assertions complete and ROLLBACK. Authenticated owner/viewer/stranger, anonymous reads, protected notes, scalar precision, typed deletion/replay/processing, follow decisions/graphs, private saves, moderation, verified capabilities/provenance, home base/raw/owner locations and explicit clears, all dietary before limit beyond800 candidates, taste/budget/cuisine ranking, full publication transaction+nonce replay+author/target/missing-media rejection+direct mutation denial, OCR idempotency, verification resubmit, tied rating cursor/literal query/attempt metadata denial."
+        }
+      ],
+      "reason": "Service review search/sorting and composite timestamp/rating+UUID pagination.",
+      "remaining": [
+        "Full Supabase historical clean replay and upgrade replay with real PostGIS/vector and original RLS/trigger graph.",
+        "Hosted direct PostgREST/storage signed-read/upload negative role matrix, worker scheduling/deletion races, external release and native candidate proof. No hosted or production changes performed."
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -c \"set role postgres\" -f supabase/smoke/remediation_fixture_bootstrap.sql -f <four forward migrations>",
+      "result": "PASS: all current migrations compile in newly-created isolated PostgreSQL18 fixture with schema-faithful affected columns; PostGIS is explicitly stubbed, vector not installed. Not full migration-history replay."
+    },
+    {
+      "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -f supabase/smoke/remediation_authorization.sql -f supabase/smoke/remediation_publication.sql",
+      "result": "PASS: assertions complete and ROLLBACK. Authenticated owner/viewer/stranger, anonymous reads, protected notes, scalar precision, typed deletion/replay/processing, follow decisions/graphs, private saves, moderation, verified capabilities/provenance, home base/raw/owner locations and explicit clears, all dietary before limit beyond800 candidates, taste/budget/cuisine ranking, full publication transaction+nonce replay+author/target/missing-media rejection+direct mutation denial, OCR idempotency, verification resubmit, tied rating cursor/literal query/attempt metadata denial."
+    },
+    {
+      "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/lib/security/security-hardening.test.ts",
+      "result": "PASS23/23; active architecture assertions updated, historical migration assertions retained."
+    },
+    {
+      "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 <additive private profile preferences upgrade> -f supabase/smoke/remediation_authorization.sql -f supabase/smoke/remediation_publication.sql",
+      "result": "PASS: persisted budget/selected-dish IDs, safe projection excludes private preference columns; both SQL suites roll back successfully."
+    },
+    {
+      "command": "psql -d hungry_remediation_20261020_finalqa -v ON_ERROR_STOP=1 -f supabase/smoke/remediation_role_matrix.sql",
+      "result": "PASS: real editor note/score/public-clear mutation, viewer read/write denial, owner update/nullclear, approved follower audience and protected-note denial, stranger/private, blocked follower and anonymous safe projection. Transaction rolled back; log database-role-matrix.log. Local affected-schema fixture only."
+    }
+  ],
+  "security_test_file": "src/lib/security/security-hardening.test.ts",
+  "verification_logs": [
+    "/tmp/hungry_db_finalqa_bootstrap.log",
+    "/tmp/hungry_db_finalqa_behavior.log",
+    "/tmp/hungry_security_final.log",
+    "tasks/remediation-2026-10-20/database-independent-fixture.log",
+    "/tmp/hungry_db_finalqa_profile.log",
+    "tasks/remediation-2026-10-20/database-role-matrix.log"
+  ],
+  "independent_qa": "PASS: fix_profile_settings independently inspected current source and reran both finalqa SQL smokes plus custom anonymous negative read, exit0. See QA-database.md and database-independent-fixture.log. Real-stack historical replay and concurrency proof remain external.",
+  "remaining": [
+    "Full Supabase historical clean replay and upgrade replay with real PostGIS/vector and original RLS/trigger graph.",
+    "Hosted direct PostgREST/storage signed-read/upload negative role matrix, worker scheduling/deletion races, external release and native candidate proof. No hosted or production changes performed."
+  ]
+}

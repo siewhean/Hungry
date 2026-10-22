@@ -19,7 +19,7 @@ export function SettingsSection({
   return (
     <View style={{ marginBottom: spacing[6] }}>
       {title ? (
-        <AppText variant="micro" tone="secondary" style={styles.title}>
+        <AppText accessibilityRole="header" variant="micro" tone="secondary" style={styles.title}>
           {title.toUpperCase()}
         </AppText>
       ) : null}

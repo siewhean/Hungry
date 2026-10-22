@@ -1,0 +1,53 @@
+{
+  "snapshot_type": "sfa_track_records_blank_name_exact_licence_crosswalk_proposal",
+  "retrieved_at_utc": "2026-10-18T12:58:09Z",
+  "source_url": "https://www.sfa.gov.sg/tools-and-resources/track-records",
+  "source_api": "https://www.sfa.gov.sg/api/TrackRecord/GetTrackRecord",
+  "source_page_last_updated": "2026-10-18",
+  "source_description": "SFA Track Records page-linked API queried with all filters empty and the licence-suspension-in-past-year toggle false. Page returns official Business Name, establishment address, licence number, SAFE grade, and type of food business. Page notes renewal status may take up to 3 working days after expiry to reflect.",
+  "source_reuse": "SFA Terms of Use grants royalty-free reuse under Singapore Open Data Licence v1.0 with conspicuous attribution and licence link; it excludes personal data and third-party rights and prohibits implying SFA endorsement. This proposal omits Licensee Name.",
+  "source_terms_url": "https://www.sfa.gov.sg/terms-of-use",
+  "source_response_sha256": "3e707eea42d8f694a2c887b5021697df4a83bb40650601313475c0bbecc56766",
+  "source_record_count": 52529,
+  "source_unique_licence_count": 52526,
+  "workbook_file": "Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_blank_fnb_name_rows": 5534,
+  "exact_licence_matches_in_current_sfa_results": 5524,
+  "matching_records_with_placeholder_business_name": 5521,
+  "matching_records_with_nonplaceholder_business_name": 3,
+  "no_exact_current_sfa_record": 10,
+  "candidate_postal_disagreements": 0,
+  "matching_rule": "Exact full SFA Licence string. Candidate names are current SFA Business Name values; these are licensed-name candidates, not independently confirmed public-facing trading names. Manual/first-party corroboration is required before populating public F&B Name.",
+  "candidates": [
+    {
+      "sfa_licence": "NE24C65K000",
+      "existing_address": "Address: 205D COMPASSVALE LANE #01-02,Singapore 544205 (MR3)",
+      "existing_postal_code": "544205",
+      "existing_business_type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+      "sfa_business_name_candidate": "CHINADAMANI 3 STAR",
+      "sfa_address": "205D COMPASSVALE LANE #01-02,MULTI STOREY CAR PARK,Singapore 544205 (MR3)",
+      "sfa_type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+      "sfa_grade": "NA"
+    },
+    {
+      "sfa_licence": "CE17962C000",
+      "existing_address": "Address: 150 ORCHARD ROAD #01-20,ORCHARD PLAZA,Singapore 238841",
+      "existing_postal_code": "238841",
+      "existing_business_type": "Restaurant",
+      "sfa_business_name_candidate": "JIANGHU HAOKE RESTAURANT",
+      "sfa_address": "150 ORCHARD ROAD #01-19,#01-20,ORCHARD PLAZA,Singapore 238841",
+      "sfa_type": "Restaurant",
+      "sfa_grade": "NA"
+    },
+    {
+      "sfa_licence": "J86113N001",
+      "existing_address": "Address: 376 BUKIT BATOK STREET 31 #01-126,Singapore 650376 (PART OF)",
+      "existing_postal_code": "650376",
+      "existing_business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "sfa_business_name_candidate": "Shun Shui Noodles House",
+      "sfa_address": "376 BUKIT BATOK STREET 31 #01-126,Singapore 650376 PART OF",
+      "sfa_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "sfa_grade": "NA"
+    }
+  ]
+}

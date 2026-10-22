@@ -102,7 +102,10 @@ test("missing Supabase credentials do not silently select mock data", () => {
 test("Supabase client persists auth sessions through secure storage with PKCE enabled", () => {
   const source = read("src/lib/services/supabase/client.ts");
 
-  assert.match(source, /import \{ supabaseAuthStorage \} from "\.\/authStorage"/);
+  assert.match(
+    source,
+    /import \{ createGenerationAuthStorage, retireAuthStorage \} from "\.\/authStorage"/,
+  );
   assert.match(source, /import \{ installPkceCryptoPolyfill \} from "\.\/pkceCryptoPolyfill"/);
   assert.match(source, /installPkceCryptoPolyfill\(\);\s*if \(cachedClient !== undefined\)/);
   assert.ok(
@@ -110,7 +113,7 @@ test("Supabase client persists auth sessions through secure storage with PKCE en
       source.indexOf('require("@supabase/supabase-js")'),
     "PKCE/WebCrypto polyfill must install before supabase-js is loaded",
   );
-  assert.match(source, /storage: supabaseAuthStorage/);
+  assert.match(source, /storage: createGenerationAuthStorage\(\)/);
   assert.match(source, /persistSession: true/);
   assert.match(source, /autoRefreshToken: true/);
   assert.match(source, /detectSessionInUrl: false/);

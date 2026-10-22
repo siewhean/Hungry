@@ -1,0 +1,3128 @@
+{
+  "snapshot_id": "restaurant_group_official_menu_image_scout_20261018",
+  "observed_utc": "2026-10-18",
+  "workbook_path": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "69c17622f7e7dd965b09955a7383465eae54fd1b06cc09db97c1dbe4cf088548",
+  "method": "Read-only review. Names normalized and compared across existing chain-labelled Menu Items; image URLs deduplicated by URL. No workbook edits, API spend, or third-party delivery scrape.",
+  "brands_present_in_workbook": {
+    "dtf": {
+      "matched_menu_rows": 9,
+      "existing_unique_item_names": 4
+    },
+    "jumbo": {
+      "matched_menu_rows": 50,
+      "existing_unique_item_names": 50
+    },
+    "soup": {
+      "matched_menu_rows": 3,
+      "existing_unique_item_names": 2
+    },
+    "crystal_jade": {
+      "matched_menu_rows": 11,
+      "existing_unique_item_names": 10
+    }
+  },
+  "first_party_sources": [
+    {
+      "brand": "Din Tai Fung",
+      "url": "https://www.dintaifung.com.sg/menu/",
+      "capture_path": "/tmp/dtf_menu.html",
+      "http_status": 200,
+      "observed_utc": "2026-10-18",
+      "freshness": "live official page observed; underlying asset timestamps are mostly 2021 and page provides no prices, so item/menu availability is unconfirmed",
+      "evidence": "English menu cards with paired first-party image URLs; prices absent"
+    },
+    {
+      "brand": "JUMBO Seafood",
+      "url": "https://www.jumboseafood.com.sg/en/menus",
+      "capture_path": "/tmp/jumbo_menus.html",
+      "http_status": 200,
+      "observed_utc": "2026-10-18",
+      "freshness": "live official menu landing page; live PDF cache-busting version stamp 20261018_183232",
+      "evidence": "Outlet-specific menu documents linked; source page says items and prices may change without notice",
+      "pdf_count": 17
+    },
+    {
+      "brand": "Soup Restaurant",
+      "url": "https://www.souprestaurant.com.sg/menu",
+      "http_status": 200,
+      "observed_utc": "2026-10-18",
+      "freshness": "official menu page crawled last month; highlights named menus and branch-specific menu groupings; no full item/price extract in page text",
+      "evidence": "Current first-party menu sections; do not infer item coverage from hero images"
+    },
+    {
+      "brand": "Crystal Jade",
+      "url": "https://www.crystaljade.com/brands/",
+      "http_status": 200,
+      "observed_utc": "2026-10-18",
+      "freshness": "official brand directory crawled today; outlet/brand taxonomy confirmed, menu pages available by sub-brand",
+      "evidence": "Crystal Jade Palace, Golden Palace, Pavilion, Hong Kong Kitchen, La Mian Xiao Long Bao and GO listed"
+    }
+  ],
+  "menu_findings": {
+    "Din Tai Fung": {
+      "source_url": "https://www.dintaifung.com.sg/menu/",
+      "published_item_cards_deduplicated": 109,
+      "existing_unique_normalized_names": 4,
+      "missing_unique_item_names": 108,
+      "new_menu_item_candidates": [
+        {
+          "item": "Earl Grey Lemon Tea (cold)",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Lemongrass Juice (cold)",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Roselle Drink (cold)",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Brewed Barley with Lemon Juice (Cold)",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Oriental Salad in Special Vinegar Dressing",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Red Dates with Glutinous Rice",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Fragrant Pork with Crushed Garlic",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Century Eggs with Diced Ginger",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Original Shanghainese Drunken Chicken",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Crunchy Mini Cucumber in Spicy Sauce",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Sliced Duck in Crispy Spring Onion Pastry",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Green Chillies Stuffed with Marinated Minced Meat",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Stewed Beancurd Cubes with Honey Sauce",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Honey & Vinegar Short Ribs",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Cucumber Dressed with Garlic & Chili Oil",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Steamed Pork Xiao Long Bao",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Steamed Chicken Xiao Long Bao",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Steamed Crab Meat & Pork Xiao Long Bao",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Steamed Truffle & Pork Xiao Long Bao",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Steamed Shrimp & Pork Dumplings",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Steamed Vegetable & Pork Dumplings",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Steamed Shrimp & Pork Shao-Mai",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Steamed Vegetarian Dumplings",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Steamed Angled Gourd & Shrimp Xiao Long Bao",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Mixed Greens & Mushroom Xiao Long Bao",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Vegetable & Pork Wantons Tossed in Well-Seasoned Chicken Sauce (Dry)",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Shrimp & Pork Wantons Tossed in Well-Seasoned Chicken Sauce (Dry)",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Oriental Wantons with Black Vinegar & Chilli Oil",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Deep-fried Special Marinated Pork Chop",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Crispy Golden Prawn Pancake",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Deep Fried Vegetable & Pork Wantons",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Deep Fried Shrimp & Pork Wantons",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Crispy Chicken Wings Marinated in Shrimp Paste",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Pan-fried Shrimp & Pork Gyoza",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Handmade Pork & Cabbage Dumpling with Spicy Sesame Sauce",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Shrimp & Pork Wantons in Peanut Sesame Sauce",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Vegetable & Pork Wantons in Peanut Sesame Sauce",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Steamed Pork Rib Soup",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Steamed Truffle Chicken Soup",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Original / Spicy Hot & Sour Soup",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Shrimp & Pork Wantons Served in Superior Chicken Broth",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Vegetable & Pork Wantons Served in Superior Chicken Broth",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Special Braised Beef Soup",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Special Braised Beef Noodle Soup with Beef",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Noodle Soup with Fried Pork Chop",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Special Braised Beef Noodle Soup without Beef",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Noodle Soup with Shrimp & Pork Wantons",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Noodle Soup with Vegetable & Pork Wantons",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Noodle Soup with Shrimps, Bamboo Shoots & Vegetables",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Vermicelli Soup with Deep-fried Beancurd & Minced Meat Rolls",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Noodle with Minced Pork in Bean Sauce",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Noodle in Fragrant Mushroom & Minced Pork Sauce",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Dry Noodle Tossed in Special Sauce",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Dan Dan Noodle",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Noodle with Spicy Sauce",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Yang Chun Noodle",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Steamed Chicken Soup with Noodle",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Steamed Pork Rib Soup with Noodle",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Dry Noodle Tossed in Special Sauce with Fried Pork Chop",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Premium Lobster Dry Noodle in Chef's Seafood Sauce",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Dry Noodle Tossed in Scallion Sauce with Shredded Pork",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Dry Noodle Tossed in Scallion Oil",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Stir-fried Hong Kong Kailan with Special Sauce",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Stir-fried Spinach with Garlic",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Stir-fried Nai Bai with Garlic",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Stir-fried Dou Miao with Shredded Pork",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Stir-fried Dou Miao with Garlic",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Stir-fried Dou Miao with Shrimps",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Stir-Fried Spinach with Beancurd & Ginger Strips",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Fried Rice with Shrimps & Eggs",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Fried Rice with Eggs",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Fried Rice with Shredded Pork & Eggs",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Fried Rice with Pork Chop & Eggs",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Truffle Fried Rice with Eggs",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Steamed Chilli Crab & Pork Buns",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Steamed Pork Buns",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Steamed Vegetable & Pork Buns",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Steamed Sesame Buns",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Steamed Yam Buns",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Steamed Red Bean Buns",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Steamed Custard Buns",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Steamed Vegetarian Buns",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Steamed Kaya Buns",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Steamed Beef Tenderloin Buns",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Honey Chocolate Buns",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Steamed Yam Xiao Long Bao",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Steamed Finely Mashed Red Bean Xiao Long Bao",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Steamed Red Bean Xiao Long Bao with Chocolate Lava",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Black Sesame Mochi Xiao Long Bao",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Steamed Chinese Style Layered Cakes",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Steamed Osmanthus Longan Cakes",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Red Bean Rice Dumpling",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Steamed Strawberry Mochi Xiao Long Bao",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Mama Mochi Chocolate Xiao Long Bao",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Coconut Pudding",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Yuzu Jelly",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Mango Pudding",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Chilled Grass Jelly Topped with Sweet Black Glutinous Rice",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Double-boiled Papaya & Snow Fungus with Rock Sugar",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Stir-Fried Spinach",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Stir-Fried Dou Miao",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Stir-Fried Nai Bai",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Fried Rice with Vegetables",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Sweet & Sour Pork",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Deep Fried Handmade Tofu with Lotus Roots & Mushrooms",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Steamed Cod Fillet with Superior Soy Sauce",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Fried Cod Bites",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        },
+        {
+          "item": "Wok-Seared Sliced Beef with Spring Onion & Ginger",
+          "section": "as shown on official menu page; section not parsed",
+          "price": null,
+          "menu_scope": "brand-level; Singapore official menu page does not indicate individual outlet availability",
+          "official_source_url": "https://www.dintaifung.com.sg/menu/",
+          "freshness": "observed live 2026-10-18; underlying menu asset/page chronology not established; price not published",
+          "rights_reuse_status": "names/facts only; source attribution retained"
+        }
+      ],
+      "image_candidates": [
+        {
+          "brand": "Din Tai Fung",
+          "item": "Earl Grey Lemon Tea (cold)",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/Earl-Grey-Lemon-Tea.jpg",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Lemongrass Juice (cold)",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/Lemongrass-Juice.jpg",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Roselle Drink (cold)",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/Roselle-Drink-1.jpg",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Brewed Barley with Lemon Juice (Cold)",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/Barley-with-Lemon-Juice.jpg",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Oriental Salad in Special Vinegar Dressing",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/09/Category-Test1-Appetiser-8.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Red Dates with Glutinous Rice",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Red-Dates-with-Glutinous-Rice.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Fragrant Pork with Crushed Garlic",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/FragrantPorkwithCrushedGarlic.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Century Eggs with Diced Ginger",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Century-Eggs-with-Diced-Ginger.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Original Shanghainese Drunken Chicken",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Original-Shanghainese-Drunken-Chicken.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Crunchy Mini Cucumber in Spicy Sauce",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Crunchy-Mini-Cucumber-in-Spicy-Sauce.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Sliced Duck in Crispy Spring Onion Pastry",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Sliced-Duck-in-Crispy-Spring-Onion-Pastry.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Green Chillies Stuffed with Marinated Minced Meat",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Green-Chillies-Stuffed-with-Marinated-Minced-Meat.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Stewed Beancurd Cubes with Honey Sauce",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2022/04/kaofu-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Honey & Vinegar Short Ribs",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/RWS-Web-Pdts-06.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Cucumber Dressed with Garlic & Chili Oil",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/Cucumber-dressed-with-Garlic-and-Chili.jpg",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Steamed Pork Xiao Long Bao",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Pork-Dumplings-10pcs-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Steamed Chicken Xiao Long Bao",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/12/Steamed-Chicken-Dumplings-with-dough-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Steamed Crab Meat & Pork Xiao Long Bao",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Crabmeat-Pork-Dumplings-with-dough-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Steamed Truffle & Pork Xiao Long Bao",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/12/Steamed-Truffles-Pork-Dumplings-10pcs-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Steamed Shrimp & Pork Dumplings",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Shrimp-Pork-Dumplings-10pcs-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Steamed Vegetable & Pork Dumplings",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/12/Steamed-Veg-Pork-Dumplings-10pcs-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Steamed Shrimp & Pork Shao-Mai",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Shrimp-Pork-Shao-Mai10pcs-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Steamed Vegetarian Dumplings",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Vegetarian-Dumplings-10pcs-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Steamed Angled Gourd & Shrimp Xiao Long Bao",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2024/04/Steamed-Angled-Gourd-Shrimp-Dumplingsv2.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Mixed Greens & Mushroom Xiao Long Bao",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2026/01/VXLB-test.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Vegetable & Pork Wantons Tossed in Well-Seasoned Chicken Sauce (Dry)",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Vegetable-Pork-Wantons-tossed-in-Well-Seasoned-Chicken-Broth-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Shrimp & Pork Wantons Tossed in Well-Seasoned Chicken Sauce (Dry)",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Shrimp-Pork-Wantons-Tossed-in-Well-seasoned-Chicken-Broth-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Oriental Wantons with Black Vinegar & Chilli Oil",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Oriental-Wanton-with-Black-Vinegar-and-Chilli-Oil-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Deep-fried Special Marinated Pork Chop",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Deep-fried-Special-Marinated-Pork-Chop-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Crispy Golden Prawn Pancake",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Crispy-Golden-Prawn-Pancakes-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Deep Fried Vegetable & Pork Wantons",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Deep-fried-Vegetable-Pork-Wanton-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Deep Fried Shrimp & Pork Wantons",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Deep-fried-Shrimp-and-Pork-Wanton-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Crispy Chicken Wings Marinated in Shrimp Paste",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2024/04/Crispy-Chicken-Wings-Marinated-in-Shrimp-Paste-6pc-no-coriander.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Pan-fried Shrimp & Pork Gyoza",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/RWS-Web-Pdts-10.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Handmade Pork & Cabbage Dumpling with Spicy Sesame Sauce",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/12/Handmade-Pork-Cabbage-Dumplings-with-Spicy-Sesame-Sauce-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Shrimp & Pork Wantons in Peanut Sesame Sauce",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/10/Shrimp-Pork-Wantons-In-Peanut-Sesame-Sauce.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Vegetable & Pork Wantons in Peanut Sesame Sauce",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/10/Vegetable-Pork-Wantons-in-Peanut-Sesame-Sauce.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Steamed Pork Rib Soup",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Pork-Rib-Soup-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Steamed Truffle Chicken Soup",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Truffle-Chicken-Soup-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Original / Spicy Hot & Sour Soup",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Hot-and-Sour-Soup-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Shrimp & Pork Wantons Served in Superior Chicken Broth",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Shrimp-and-Pork-Wantons-Served-in-Superior-Chicken-Broth-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Vegetable & Pork Wantons Served in Superior Chicken Broth",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Vegetable-Pork-Wantons-Served-in-Superior-Chicken-Broth-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Special Braised Beef Soup",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Special-Braised-Beef-Soup-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Special Braised Beef Noodle Soup with Beef",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Special-Braised-Beef-Noodle-Soup-with-Beef-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Noodle Soup with Fried Pork Chop",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Noodle-Soup-with-Fried-Pork-Chop-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Special Braised Beef Noodle Soup without Beef",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Special-Braised-Beef-Noodle-SoupServed-without-Beef-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Noodle Soup with Shrimp & Pork Wantons",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Noodle-Soup-with-Shrimp-Pork-Wanton-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Noodle Soup with Vegetable & Pork Wantons",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Noodle-Soup-with-Vegetable-Pork-Wanton-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Noodle Soup with Shrimps, Bamboo Shoots & Vegetables",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Noodle-Soup-with-Shrimps-Bamboo-Shoot-Vegetable-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Vermicelli Soup with Deep-fried Beancurd & Minced Meat Rolls",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Vermicelli-Soup-with-Deep-fried-Beancurd-Minced-Meat-Roll-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Noodle with Minced Pork in Bean Sauce",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Noodle-with-Minced-Pork-in-Bean-Sauce-1.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Noodle in Fragrant Mushroom & Minced Pork Sauce",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Noodle-in-fragrant-Mushroom-Minced-Pork-Sauce-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Dry Noodle Tossed in Special Sauce",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Dry-noodle-tossed-in-Special-Sauce-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Dan Dan Noodle",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Dan-Dan-Noodle-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Noodle with Spicy Sauce",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Noodle-with-Spicy-Sauce-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Yang Chun Noodle",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Yangchun-noodle-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Steamed Chicken Soup with Noodle",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Chicken-Soup-with-Noodle-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Steamed Pork Rib Soup with Noodle",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Pork-Rib-Soup-with-Noodle-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Dry Noodle Tossed in Special Sauce with Fried Pork Chop",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2024/04/noodle.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Premium Lobster Dry Noodle in Chef's Seafood Sauce",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/RWS-Web-Pdts-08.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Dry Noodle Tossed in Scallion Sauce with Shredded Pork",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2026/02/Scallion-Noodles-for-web_pork.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Dry Noodle Tossed in Scallion Oil",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2026/02/Scallion-Noodles-for-web.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Stir-fried Hong Kong Kailan with Special Sauce",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Stir-fried-Hong-Kong-Kailan-with-Special-Sauce-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Stir-fried Spinach with Garlic",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Stir-fried-Spinach-with-Garlic-cropped-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Stir-fried Nai Bai with Garlic",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2022/07/Vegetarian-Stir-fried-Nai-Bai-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Stir-fried Dou Miao with Shredded Pork",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Stir-fried-Dou-Miao-with-Pork-Strips-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Stir-fried Dou Miao with Garlic",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Stir-fried-dou-miao-with-garlic-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Stir-fried Dou Miao with Shrimps",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Stir-fried-Dou-Miao-with-Shrimps-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Stir-Fried Spinach with Beancurd & Ginger Strips",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2024/08/Web-Menu_Spinach-1.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Fried Rice with Shrimps & Eggs",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/09/rice.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Fried Rice with Eggs",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Fried-Rice-with-Eggs.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Fried Rice with Shredded Pork & Eggs",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Fried-Rice-with-Shredded-Pork-Eggs.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Fried Rice with Pork Chop & Eggs",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Fried-Rice-with-Pork-Chop-Eggs.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Truffle Fried Rice with Eggs",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2026/03/Web_Truffle-Fried-Rice-with-Eggs-1.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Steamed Chilli Crab & Pork Buns",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Chilli-Crab-Pork-Buns3pcs-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Steamed Pork Buns",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Pork-Buns3pcs-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Steamed Vegetable & Pork Buns",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Veg-Pork-Buns3pcs-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Steamed Sesame Buns",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Sesame-Buns3pcs-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Steamed Yam Buns",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Yam-Buns3pcs-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Steamed Red Bean Buns",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Red-Bean-Buns3pcs-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Steamed Custard Buns",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Custard-Buns3pcs-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Steamed Vegetarian Buns",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/12/Steamed-Vegetarian-Buns3pcs-old-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Steamed Kaya Buns",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/RWS-Web-Pdts-04.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Steamed Beef Tenderloin Buns",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/RWS-Web-Pdts-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Honey Chocolate Buns",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/RWS-Web-Pdts-02.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Steamed Yam Xiao Long Bao",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Yam-Paste-Dumplings10pcs-with-ingredient.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Steamed Finely Mashed Red Bean Xiao Long Bao",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Finely-Mashed-Red-Bean-Dumplings10pcs-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Steamed Red Bean Xiao Long Bao with Chocolate Lava",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Red-Bean-Dumplings-with-Chocolate-Lava-with-ingredients-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Black Sesame Mochi Xiao Long Bao",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/11/279x279.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Steamed Chinese Style Layered Cakes",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Chinese-Style-Layered-Cakes-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Steamed Osmanthus Longan Cakes",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/RWS-Web-Pdts-03.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Red Bean Rice Dumpling",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Red-Bean-Rice-Dumpling-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Steamed Strawberry Mochi Xiao Long Bao",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2026/02/SMXLB-for-web.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Mama Mochi Chocolate Xiao Long Bao",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2026/03/Web_ChocMochiXLB-1.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Coconut Pudding",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2024/04/coconut_279.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Yuzu Jelly",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2024/04/yuzu-279_3.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Mango Pudding",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/5504-Mango-Pudding-cold.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Chilled Grass Jelly Topped with Sweet Black Glutinous Rice",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Chilled-Grass-Jelly-w-Sweet-Black-Glutinous-Rice.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Double-boiled Papaya & Snow Fungus with Rock Sugar",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Double-boiled-Papaya-Snow-Fungus-with-Rock-Sugar-hotcold.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Stir-Fried Spinach",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2022/03/Vegetarian-Stir-fried-Spinach-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Stir-Fried Dou Miao",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2022/03/Vegetarian-Stir-fried-Dou-Miao-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Stir-Fried Nai Bai",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2022/03/Vegetarian-Stir-fried-Nai-Bai-01.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Fried Rice with Vegetables",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2022/02/Vegetarian-Fried-Rice.jpg",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Sweet & Sour Pork",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2024/04/SSP-upsized.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Deep Fried Handmade Tofu with Lotus Roots & Mushrooms",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2024/04/tofu_upsized.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Steamed Cod Fillet with Superior Soy Sauce",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2024/04/cod_upsized.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Fried Cod Bites",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/RWS-Web-Pdts-07.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        },
+        {
+          "brand": "Din Tai Fung",
+          "item": "Wok-Seared Sliced Beef with Spring Onion & Ginger",
+          "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/RWS-Web-Pdts-09.png",
+          "source_page": "https://www.dintaifung.com.sg/menu/",
+          "image_scope": "brand menu card",
+          "visual_check": "not visually reviewed",
+          "display_reuse_status": "review only; permission/rights not cleared"
+        }
+      ]
+    },
+    "JUMBO Seafood": {
+      "source_url": "https://www.jumboseafood.com.sg/en/menus",
+      "outlet_specific_current_menu_pdf_urls": [
+        "https://www.jumboseafood.com.sg/pdf/JS-RWS-DSMenu.pdf?misc=20261018_183232",
+        "https://www.jumboseafood.com.sg/pdf/JS-RWS-ALCMenu.pdf?misc=20261018_183232",
+        "https://www.jumboseafood.com.sg/pdf/JS-RWS-Vegetarian-Menu.pdf?misc=20261018_183232",
+        "https://www.jumboseafood.com.sg/pdf/JS-RWS-AlcoholBevMenu.pdf?misc=20261018_183232",
+        "https://jumbogroup.sg/eMenus/JS/GA_ALCMenu.pdf?misc=20261018_183232",
+        "https://www.jumboseafood.com.sg/pdf/JS-Set-Menu.pdf?misc=20261018_183232",
+        "https://www.jumboseafood.com.sg/pdf/JS-Vegetarian-Menu.pdf?misc=20261018_183232",
+        "https://jumbogroup.sg/eMenus/JS/GA_AlcoholBevMenu.pdf?misc=20261018_183232",
+        "https://jumbogroup.sg/eMenus/JS/JE_ALCMenu.pdf?misc=20261018_183232",
+        "https://www.jumboseafood.com.sg/pdf/JSJE-Vegetarian-Menu.pdf?misc=20261018_183232",
+        "https://jumbogroup.sg/eMenus/JS/JE_AlcoholBevMenu.pdf?misc=20261018_183232",
+        "https://www.jumbogroup.sg/eMenus/JS/IO_DSWeekdayTeaNew.pdf?misc=20261018_183232",
+        "https://www.jumboseafood.com.sg/pdf/IO_DSMenu.pdf?misc=20261018_183232",
+        "https://jumbogroup.sg/eMenus/JS/IO_ALCMenu.pdf?misc=20261018_183232",
+        "https://jumbogroup.sg/eMenus/JS/AlcoholBevMenu.pdf?misc=20261018_183232",
+        "https://jumbogroup.sg/eMenus/JS/DM_ALCMenu.pdf?misc=20261018_183232",
+        "https://jumbogroup.sg/eMenus/JS/JR_ALCMenu.pdf?misc=20261018_183232"
+      ],
+      "workbook_menu_rows": 50,
+      "finding": "Official menus landing page observed 2026-10-18. Links expose outlet-specific a-la-carte, vegetarian, dim sum, set menus; current PDFs are timestamped in query strings 20261018_183232. Official Set Menu PDF was opened and read; its live menu packages identify the dishes below. Individual dishes are included in package menus and do not carry standalone prices. Menu prices shown are subject to service charge/GST and may change without notice.",
+      "set_menu_source_url": "https://www.jumboseafood.com.sg/pdf/JS-Set-Menu.pdf?misc=20261018_182815",
+      "set_menu_item_candidates": [
+        {
+          "item": "Lobster tossed with Cheese and Truffle Sauce",
+          "section": "Set menu inclusion",
+          "price": null,
+          "variant_notes": "Included in one or more current published set menus; no individual item price published. Set packages and serving sizes/prices vary by selection.",
+          "menu_scope": "JUMBO Seafood Singapore group menu; verify outlet/package before publishing",
+          "official_source_url": "https://www.jumboseafood.com.sg/pdf/JS-Set-Menu.pdf?misc=20261018_182815",
+          "freshness": "official set menu PDF fetched via live menus page 2026-10-18; the page warns prices/items may change",
+          "source_type": "official first-party menu PDF"
+        },
+        {
+          "item": "Award-Winning Chilli Crab with Man Tou",
+          "section": "Set menu inclusion",
+          "price": null,
+          "variant_notes": "Included in one or more current published set menus; no individual item price published. Set packages and serving sizes/prices vary by selection.",
+          "menu_scope": "JUMBO Seafood Singapore group menu; verify outlet/package before publishing",
+          "official_source_url": "https://www.jumboseafood.com.sg/pdf/JS-Set-Menu.pdf?misc=20261018_182815",
+          "freshness": "official set menu PDF fetched via live menus page 2026-10-18; the page warns prices/items may change",
+          "source_type": "official first-party menu PDF"
+        },
+        {
+          "item": "Chilled Mango Sago Pomelo",
+          "section": "Set menu inclusion",
+          "price": null,
+          "variant_notes": "Included in one or more current published set menus; no individual item price published. Set packages and serving sizes/prices vary by selection.",
+          "menu_scope": "JUMBO Seafood Singapore group menu; verify outlet/package before publishing",
+          "official_source_url": "https://www.jumboseafood.com.sg/pdf/JS-Set-Menu.pdf?misc=20261018_182815",
+          "freshness": "official set menu PDF fetched via live menus page 2026-10-18; the page warns prices/items may change",
+          "source_type": "official first-party menu PDF"
+        },
+        {
+          "item": "King Prawns Stir-fried with Chinchalok Sauce",
+          "section": "Set menu inclusion",
+          "price": null,
+          "variant_notes": "Included in one or more current published set menus; no individual item price published. Set packages and serving sizes/prices vary by selection.",
+          "menu_scope": "JUMBO Seafood Singapore group menu; verify outlet/package before publishing",
+          "official_source_url": "https://www.jumboseafood.com.sg/pdf/JS-Set-Menu.pdf?misc=20261018_182815",
+          "freshness": "official set menu PDF fetched via live menus page 2026-10-18; the page warns prices/items may change",
+          "source_type": "official first-party menu PDF"
+        },
+        {
+          "item": "Chilled Cheng Teng with Peach Gum",
+          "section": "Set menu inclusion",
+          "price": null,
+          "variant_notes": "Included in one or more current published set menus; no individual item price published. Set packages and serving sizes/prices vary by selection.",
+          "menu_scope": "JUMBO Seafood Singapore group menu; verify outlet/package before publishing",
+          "official_source_url": "https://www.jumboseafood.com.sg/pdf/JS-Set-Menu.pdf?misc=20261018_182815",
+          "freshness": "official set menu PDF fetched via live menus page 2026-10-18; the page warns prices/items may change",
+          "source_type": "official first-party menu PDF"
+        },
+        {
+          "item": "Thai-Style Chilled Prawns and Pomelo Salad",
+          "section": "Set menu inclusion",
+          "price": null,
+          "variant_notes": "Included in one or more current published set menus; no individual item price published. Set packages and serving sizes/prices vary by selection.",
+          "menu_scope": "JUMBO Seafood Singapore group menu; verify outlet/package before publishing",
+          "official_source_url": "https://www.jumboseafood.com.sg/pdf/JS-Set-Menu.pdf?misc=20261018_182815",
+          "freshness": "official set menu PDF fetched via live menus page 2026-10-18; the page warns prices/items may change",
+          "source_type": "official first-party menu PDF"
+        },
+        {
+          "item": "Braised Fish Maw Soup with Conpoy and Crab Meat",
+          "section": "Set menu inclusion",
+          "price": null,
+          "variant_notes": "Included in one or more current published set menus; no individual item price published. Set packages and serving sizes/prices vary by selection.",
+          "menu_scope": "JUMBO Seafood Singapore group menu; verify outlet/package before publishing",
+          "official_source_url": "https://www.jumboseafood.com.sg/pdf/JS-Set-Menu.pdf?misc=20261018_182815",
+          "freshness": "official set menu PDF fetched via live menus page 2026-10-18; the page warns prices/items may change",
+          "source_type": "official first-party menu PDF"
+        },
+        {
+          "item": "Asparagus Sautéed with Black Truffle Sauce and Scallops",
+          "section": "Set menu inclusion",
+          "price": null,
+          "variant_notes": "Included in one or more current published set menus; no individual item price published. Set packages and serving sizes/prices vary by selection.",
+          "menu_scope": "JUMBO Seafood Singapore group menu; verify outlet/package before publishing",
+          "official_source_url": "https://www.jumboseafood.com.sg/pdf/JS-Set-Menu.pdf?misc=20261018_182815",
+          "freshness": "official set menu PDF fetched via live menus page 2026-10-18; the page warns prices/items may change",
+          "source_type": "official first-party menu PDF"
+        },
+        {
+          "item": "Whole 5-head Abalone Braised with Fish Maw and Broccoli",
+          "section": "Set menu inclusion",
+          "price": null,
+          "variant_notes": "Included in one or more current published set menus; no individual item price published. Set packages and serving sizes/prices vary by selection.",
+          "menu_scope": "JUMBO Seafood Singapore group menu; verify outlet/package before publishing",
+          "official_source_url": "https://www.jumboseafood.com.sg/pdf/JS-Set-Menu.pdf?misc=20261018_182815",
+          "freshness": "official set menu PDF fetched via live menus page 2026-10-18; the page warns prices/items may change",
+          "source_type": "official first-party menu PDF"
+        },
+        {
+          "item": "Boston Lobster Braised with Glass Vermicelli and Sha Cha Sauce",
+          "section": "Set menu inclusion",
+          "price": null,
+          "variant_notes": "Included in one or more current published set menus; no individual item price published. Set packages and serving sizes/prices vary by selection.",
+          "menu_scope": "JUMBO Seafood Singapore group menu; verify outlet/package before publishing",
+          "official_source_url": "https://www.jumboseafood.com.sg/pdf/JS-Set-Menu.pdf?misc=20261018_182815",
+          "freshness": "official set menu PDF fetched via live menus page 2026-10-18; the page warns prices/items may change",
+          "source_type": "official first-party menu PDF"
+        },
+        {
+          "item": "Whole 10-head Abalone Braised with Fish Maw, Shiitake Mushroom and Broccoli",
+          "section": "Set menu inclusion",
+          "price": null,
+          "variant_notes": "Included in one or more current published set menus; no individual item price published. Set packages and serving sizes/prices vary by selection.",
+          "menu_scope": "JUMBO Seafood Singapore group menu; verify outlet/package before publishing",
+          "official_source_url": "https://www.jumboseafood.com.sg/pdf/JS-Set-Menu.pdf?misc=20261018_182815",
+          "freshness": "official set menu PDF fetched via live menus page 2026-10-18; the page warns prices/items may change",
+          "source_type": "official first-party menu PDF"
+        },
+        {
+          "item": "Soon Hock (Marble Goby) Steamed with Soya Sauce",
+          "section": "Set menu inclusion",
+          "price": null,
+          "variant_notes": "Included in one or more current published set menus; no individual item price published. Set packages and serving sizes/prices vary by selection.",
+          "menu_scope": "JUMBO Seafood Singapore group menu; verify outlet/package before publishing",
+          "official_source_url": "https://www.jumboseafood.com.sg/pdf/JS-Set-Menu.pdf?misc=20261018_182815",
+          "freshness": "official set menu PDF fetched via live menus page 2026-10-18; the page warns prices/items may change",
+          "source_type": "official first-party menu PDF"
+        },
+        {
+          "item": "Long Hu Garoupa Steamed with Preserved Radish",
+          "section": "Set menu inclusion",
+          "price": null,
+          "variant_notes": "Included in one or more current published set menus; no individual item price published. Set packages and serving sizes/prices vary by selection.",
+          "menu_scope": "JUMBO Seafood Singapore group menu; verify outlet/package before publishing",
+          "official_source_url": "https://www.jumboseafood.com.sg/pdf/JS-Set-Menu.pdf?misc=20261018_182815",
+          "freshness": "official set menu PDF fetched via live menus page 2026-10-18; the page warns prices/items may change",
+          "source_type": "official first-party menu PDF"
+        }
+      ],
+      "current_set_menu_price_facts": [
+        {
+          "set_menu": "Set Menu A2",
+          "price": "$198",
+          "serves": "2 pax"
+        },
+        {
+          "set_menu": "Set Menu B2",
+          "price": "$248",
+          "serves": "2 pax"
+        },
+        {
+          "set_menu": "Set Menu A4",
+          "price": "$358",
+          "serves": "4 pax"
+        },
+        {
+          "set_menu": "Set Menu B4",
+          "price": "$438",
+          "serves": "4 pax"
+        },
+        {
+          "set_menu": "Set Menu A6",
+          "price": "$538",
+          "serves": "6 pax"
+        },
+        {
+          "set_menu": "Set Menu B6",
+          "price": "$698",
+          "serves": "6 pax"
+        },
+        {
+          "set_menu": "Set Menu A8|A10",
+          "price": "$968 for 8 pax; $1,188 for 10 pax",
+          "serves": "8 or 10 pax"
+        },
+        {
+          "set_menu": "Set Menu B8|B10",
+          "price": "$788 for 8 pax; $968 for 10 pax",
+          "serves": "8 or 10 pax"
+        }
+      ]
+    },
+    "Soup Restaurant": {
+      "source_url": "https://www.souprestaurant.com.sg/menu",
+      "existing_unique_items": 2,
+      "finding": "Official menu page names Samsui Ginger Chicken and classic menu groups; no verified additional unique item/price candidates extracted beyond existing workbook records."
+    },
+    "Crystal Jade": {
+      "source_url": "https://www.crystaljade.com/brands/",
+      "finding": "Brand menu taxonomy verified. Search result set menus include dated/old PDF materials; do not use old menu prices or expired promotional menu information as current facts."
+    }
+  },
+  "image_policy": "Din Tai Fung URLs are direct first-party image assets paired in the official menu markup with named menu cards. Only URLs absent from the workbook Image Candidates sheet are included. They are candidate references only, not approved; visual review and permission to redistribute/use remain outstanding.",
+  "deduplicated_image_candidate_count": 108,
+  "closure_removals": 0,
+  "limitations": [
+    "No closure evidence from this brand-menu-only scope.",
+    "No ratings/review-count data from first-party menus.",
+    "JUMBO PDFs are live, but detailed extraction and reconciliation against its 50 workbook menu rows are still needed.",
+    "No Crystal Jade or Soup Restaurant product image URL candidates added because a confident current named item-to-image match was not established."
+  ],
+  "sampled_image_url_live_checks": {
+    "method": "curl -L response status check on first five deduplicated DTF image candidate URLs",
+    "checked": 5,
+    "http_200": 5,
+    "representative_urls": [
+      "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/Earl-Grey-Lemon-Tea.jpg",
+      "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/Lemongrass-Juice.jpg",
+      "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/Roselle-Drink-1.jpg",
+      "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/Barley-with-Lemon-Juice.jpg",
+      "https://www.dintaifung.com.sg/wp-content/uploads/2021/09/Category-Test1-Appetiser-8.png"
+    ],
+    "checked_utc": "2026-10-18"
+  },
+  "image_url_status_audit": {
+    "method": "curl HEAD (-I) with redirects enabled; max concurrency 8; max time 30s per URL",
+    "checked_utc": "2026-10-18",
+    "candidate_urls": 108,
+    "unique_urls": 108,
+    "results": [
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/Earl-Grey-Lemon-Tea.jpg",
+        "http_status": "200",
+        "content_type": "image/jpeg",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/Earl-Grey-Lemon-Tea.jpg",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/Lemongrass-Juice.jpg",
+        "http_status": "200",
+        "content_type": "image/jpeg",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/Lemongrass-Juice.jpg",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/Roselle-Drink-1.jpg",
+        "http_status": "200",
+        "content_type": "image/jpeg",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/Roselle-Drink-1.jpg",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/Barley-with-Lemon-Juice.jpg",
+        "http_status": "200",
+        "content_type": "image/jpeg",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/Barley-with-Lemon-Juice.jpg",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/09/Category-Test1-Appetiser-8.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/09/Category-Test1-Appetiser-8.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Red-Dates-with-Glutinous-Rice.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Red-Dates-with-Glutinous-Rice.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/FragrantPorkwithCrushedGarlic.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/FragrantPorkwithCrushedGarlic.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Century-Eggs-with-Diced-Ginger.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Century-Eggs-with-Diced-Ginger.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Original-Shanghainese-Drunken-Chicken.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Original-Shanghainese-Drunken-Chicken.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Crunchy-Mini-Cucumber-in-Spicy-Sauce.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Crunchy-Mini-Cucumber-in-Spicy-Sauce.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Sliced-Duck-in-Crispy-Spring-Onion-Pastry.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Sliced-Duck-in-Crispy-Spring-Onion-Pastry.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Green-Chillies-Stuffed-with-Marinated-Minced-Meat.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Green-Chillies-Stuffed-with-Marinated-Minced-Meat.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2022/04/kaofu-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2022/04/kaofu-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/RWS-Web-Pdts-06.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/RWS-Web-Pdts-06.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/Cucumber-dressed-with-Garlic-and-Chili.jpg",
+        "http_status": "200",
+        "content_type": "image/jpeg",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/Cucumber-dressed-with-Garlic-and-Chili.jpg",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Pork-Dumplings-10pcs-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Pork-Dumplings-10pcs-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/12/Steamed-Chicken-Dumplings-with-dough-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/12/Steamed-Chicken-Dumplings-with-dough-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Crabmeat-Pork-Dumplings-with-dough-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Crabmeat-Pork-Dumplings-with-dough-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/12/Steamed-Truffles-Pork-Dumplings-10pcs-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/12/Steamed-Truffles-Pork-Dumplings-10pcs-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Shrimp-Pork-Dumplings-10pcs-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Shrimp-Pork-Dumplings-10pcs-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/12/Steamed-Veg-Pork-Dumplings-10pcs-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/12/Steamed-Veg-Pork-Dumplings-10pcs-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Shrimp-Pork-Shao-Mai10pcs-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Shrimp-Pork-Shao-Mai10pcs-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Vegetarian-Dumplings-10pcs-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Vegetarian-Dumplings-10pcs-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2024/04/Steamed-Angled-Gourd-Shrimp-Dumplingsv2.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2024/04/Steamed-Angled-Gourd-Shrimp-Dumplingsv2.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2026/01/VXLB-test.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2026/01/VXLB-test.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Vegetable-Pork-Wantons-tossed-in-Well-Seasoned-Chicken-Broth-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Vegetable-Pork-Wantons-tossed-in-Well-Seasoned-Chicken-Broth-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Shrimp-Pork-Wantons-Tossed-in-Well-seasoned-Chicken-Broth-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Shrimp-Pork-Wantons-Tossed-in-Well-seasoned-Chicken-Broth-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Oriental-Wanton-with-Black-Vinegar-and-Chilli-Oil-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Oriental-Wanton-with-Black-Vinegar-and-Chilli-Oil-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Deep-fried-Special-Marinated-Pork-Chop-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Deep-fried-Special-Marinated-Pork-Chop-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Crispy-Golden-Prawn-Pancakes-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Crispy-Golden-Prawn-Pancakes-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Deep-fried-Vegetable-Pork-Wanton-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Deep-fried-Vegetable-Pork-Wanton-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Deep-fried-Shrimp-and-Pork-Wanton-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Deep-fried-Shrimp-and-Pork-Wanton-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2024/04/Crispy-Chicken-Wings-Marinated-in-Shrimp-Paste-6pc-no-coriander.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2024/04/Crispy-Chicken-Wings-Marinated-in-Shrimp-Paste-6pc-no-coriander.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/RWS-Web-Pdts-10.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/RWS-Web-Pdts-10.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/12/Handmade-Pork-Cabbage-Dumplings-with-Spicy-Sesame-Sauce-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/12/Handmade-Pork-Cabbage-Dumplings-with-Spicy-Sesame-Sauce-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/10/Shrimp-Pork-Wantons-In-Peanut-Sesame-Sauce.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/10/Shrimp-Pork-Wantons-In-Peanut-Sesame-Sauce.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/10/Vegetable-Pork-Wantons-in-Peanut-Sesame-Sauce.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/10/Vegetable-Pork-Wantons-in-Peanut-Sesame-Sauce.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Pork-Rib-Soup-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Pork-Rib-Soup-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Truffle-Chicken-Soup-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Truffle-Chicken-Soup-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Hot-and-Sour-Soup-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Hot-and-Sour-Soup-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Shrimp-and-Pork-Wantons-Served-in-Superior-Chicken-Broth-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Shrimp-and-Pork-Wantons-Served-in-Superior-Chicken-Broth-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Vegetable-Pork-Wantons-Served-in-Superior-Chicken-Broth-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Vegetable-Pork-Wantons-Served-in-Superior-Chicken-Broth-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Special-Braised-Beef-Soup-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Special-Braised-Beef-Soup-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Special-Braised-Beef-Noodle-Soup-with-Beef-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Special-Braised-Beef-Noodle-Soup-with-Beef-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Noodle-Soup-with-Fried-Pork-Chop-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Noodle-Soup-with-Fried-Pork-Chop-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Special-Braised-Beef-Noodle-SoupServed-without-Beef-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Special-Braised-Beef-Noodle-SoupServed-without-Beef-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Noodle-Soup-with-Shrimp-Pork-Wanton-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Noodle-Soup-with-Shrimp-Pork-Wanton-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Noodle-Soup-with-Vegetable-Pork-Wanton-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Noodle-Soup-with-Vegetable-Pork-Wanton-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Noodle-Soup-with-Shrimps-Bamboo-Shoot-Vegetable-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Noodle-Soup-with-Shrimps-Bamboo-Shoot-Vegetable-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Vermicelli-Soup-with-Deep-fried-Beancurd-Minced-Meat-Roll-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Vermicelli-Soup-with-Deep-fried-Beancurd-Minced-Meat-Roll-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Noodle-with-Minced-Pork-in-Bean-Sauce-1.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Noodle-with-Minced-Pork-in-Bean-Sauce-1.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Noodle-in-fragrant-Mushroom-Minced-Pork-Sauce-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Noodle-in-fragrant-Mushroom-Minced-Pork-Sauce-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Dry-noodle-tossed-in-Special-Sauce-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Dry-noodle-tossed-in-Special-Sauce-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Dan-Dan-Noodle-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Dan-Dan-Noodle-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Noodle-with-Spicy-Sauce-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Noodle-with-Spicy-Sauce-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Yangchun-noodle-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Yangchun-noodle-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Chicken-Soup-with-Noodle-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Chicken-Soup-with-Noodle-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Pork-Rib-Soup-with-Noodle-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Pork-Rib-Soup-with-Noodle-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2024/04/noodle.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2024/04/noodle.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/RWS-Web-Pdts-08.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/RWS-Web-Pdts-08.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2026/02/Scallion-Noodles-for-web_pork.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2026/02/Scallion-Noodles-for-web_pork.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2026/02/Scallion-Noodles-for-web.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2026/02/Scallion-Noodles-for-web.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Stir-fried-Hong-Kong-Kailan-with-Special-Sauce-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Stir-fried-Hong-Kong-Kailan-with-Special-Sauce-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Stir-fried-Spinach-with-Garlic-cropped-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Stir-fried-Spinach-with-Garlic-cropped-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2022/07/Vegetarian-Stir-fried-Nai-Bai-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2022/07/Vegetarian-Stir-fried-Nai-Bai-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Stir-fried-Dou-Miao-with-Pork-Strips-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Stir-fried-Dou-Miao-with-Pork-Strips-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Stir-fried-dou-miao-with-garlic-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Stir-fried-dou-miao-with-garlic-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Stir-fried-Dou-Miao-with-Shrimps-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Stir-fried-Dou-Miao-with-Shrimps-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2024/08/Web-Menu_Spinach-1.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2024/08/Web-Menu_Spinach-1.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/09/rice.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/09/rice.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Fried-Rice-with-Eggs.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Fried-Rice-with-Eggs.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Fried-Rice-with-Shredded-Pork-Eggs.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Fried-Rice-with-Shredded-Pork-Eggs.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Fried-Rice-with-Pork-Chop-Eggs.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Fried-Rice-with-Pork-Chop-Eggs.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2026/03/Web_Truffle-Fried-Rice-with-Eggs-1.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2026/03/Web_Truffle-Fried-Rice-with-Eggs-1.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Chilli-Crab-Pork-Buns3pcs-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Chilli-Crab-Pork-Buns3pcs-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Pork-Buns3pcs-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Pork-Buns3pcs-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Veg-Pork-Buns3pcs-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Veg-Pork-Buns3pcs-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Sesame-Buns3pcs-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Sesame-Buns3pcs-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Yam-Buns3pcs-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Yam-Buns3pcs-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Red-Bean-Buns3pcs-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Red-Bean-Buns3pcs-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Custard-Buns3pcs-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Custard-Buns3pcs-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/12/Steamed-Vegetarian-Buns3pcs-old-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/12/Steamed-Vegetarian-Buns3pcs-old-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/RWS-Web-Pdts-04.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/RWS-Web-Pdts-04.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/RWS-Web-Pdts-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/RWS-Web-Pdts-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/RWS-Web-Pdts-02.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/RWS-Web-Pdts-02.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Yam-Paste-Dumplings10pcs-with-ingredient.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Yam-Paste-Dumplings10pcs-with-ingredient.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Finely-Mashed-Red-Bean-Dumplings10pcs-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Finely-Mashed-Red-Bean-Dumplings10pcs-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Red-Bean-Dumplings-with-Chocolate-Lava-with-ingredients-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Red-Bean-Dumplings-with-Chocolate-Lava-with-ingredients-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/11/279x279.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/11/279x279.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Chinese-Style-Layered-Cakes-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Steamed-Chinese-Style-Layered-Cakes-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/RWS-Web-Pdts-03.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/RWS-Web-Pdts-03.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Red-Bean-Rice-Dumpling-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Red-Bean-Rice-Dumpling-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2026/02/SMXLB-for-web.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2026/02/SMXLB-for-web.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2026/03/Web_ChocMochiXLB-1.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2026/03/Web_ChocMochiXLB-1.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2024/04/coconut_279.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2024/04/coconut_279.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2024/04/yuzu-279_3.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2024/04/yuzu-279_3.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/5504-Mango-Pudding-cold.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/5504-Mango-Pudding-cold.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Chilled-Grass-Jelly-w-Sweet-Black-Glutinous-Rice.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Chilled-Grass-Jelly-w-Sweet-Black-Glutinous-Rice.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Double-boiled-Papaya-Snow-Fungus-with-Rock-Sugar-hotcold.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2021/10/Double-boiled-Papaya-Snow-Fungus-with-Rock-Sugar-hotcold.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2022/03/Vegetarian-Stir-fried-Spinach-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2022/03/Vegetarian-Stir-fried-Spinach-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2022/03/Vegetarian-Stir-fried-Dou-Miao-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2022/03/Vegetarian-Stir-fried-Dou-Miao-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2022/03/Vegetarian-Stir-fried-Nai-Bai-01.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2022/03/Vegetarian-Stir-fried-Nai-Bai-01.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2022/02/Vegetarian-Fried-Rice.jpg",
+        "http_status": "200",
+        "content_type": "image/jpeg",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2022/02/Vegetarian-Fried-Rice.jpg",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2024/04/SSP-upsized.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2024/04/SSP-upsized.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2024/04/tofu_upsized.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2024/04/tofu_upsized.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2024/04/cod_upsized.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2024/04/cod_upsized.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/RWS-Web-Pdts-07.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/RWS-Web-Pdts-07.png",
+        "curl_exit_code": 0,
+        "error": ""
+      },
+      {
+        "official_image_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/RWS-Web-Pdts-09.png",
+        "http_status": "200",
+        "content_type": "image/png",
+        "effective_url": "https://www.dintaifung.com.sg/wp-content/uploads/2025/07/RWS-Web-Pdts-09.png",
+        "curl_exit_code": 0,
+        "error": ""
+      }
+    ],
+    "counts_by_http_status": {
+      "200": 108
+    },
+    "counts_by_content_type": {
+      "image/jpeg": 6,
+      "image/png": 102
+    },
+    "scope_note": "HTTP reachability and response content type only; does not establish correct image content, freshness, outlet availability, rights, or approval. All candidates remain review-only."
+  }
+}

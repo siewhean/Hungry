@@ -1,0 +1,146 @@
+{
+  "snapshot": "refresh124_safra_access_a_20261019",
+  "created_at_local": "2026-10-19",
+  "scope": "First 10 records of high_confidence_exclusions after excluding SW11408L000 (record already removed); exact SFA IDs and outlet/unit crosswalk.",
+  "workbook_sha256_baseline": "fe31f2c8926d09ce592189efa8012987f6a3e878ef2977f50fe466873d567a64",
+  "source_screen_path": "data/source_snapshots/refresh123_restricted_access_screen_20261019.json",
+  "method": "Checked current official SAFRA outlet pages and club directories for exact outlet/unit/address; compared against current SAFRA guest policy. No access conclusion was inferred from SFA listing or member-discount/operating-hours evidence alone.",
+  "global_policy": {
+    "conclusion": "not sufficient by itself to label every club tenant public or restricted",
+    "evidence": "SAFRA By-Laws §6.1 permits members to bring guests; §6.4 says, “Where applicable,” members sign guests in and guests should be accompanied by member at all times. SAFRA FAQ says clubs are open to members and family/friends for most SAFRA-managed facilities. Neither states an all-premises public-entry rule nor a blanket restriction applying to each independent tenant.",
+    "sources": [
+      "https://www.safra.sg/docs/default-source/default-document-library/about/safra-by-laws.pdf?sfvrsn=ef984fd1_2",
+      "https://www.safra.sg/faq/safra-membership-FAQs"
+    ]
+  },
+  "records": [
+    {
+      "sfa_licence": "CE04627X000",
+      "name": "FOREST5 DARTS CAFE",
+      "exact_unit_address": "#01-10 SAFRA Mount Faber",
+      "conclusion": "unresolved",
+      "sources": [
+        "https://www.safra.sg/amenities-offerings/forest5-darts-cafe",
+        "https://www.safra.sg/clubs/mount-faber",
+        "https://www.safra.sg/docs/default-source/default-document-library/about/safra-by-laws.pdf?sfvrsn=ef984fd1_2"
+      ],
+      "evidence": "Current SAFRA tenant page matches the SFA unit/address and publishes operating hours, contact details and member benefit; current club directory lists FOREST5. By-Laws §6.4 says members must sign in guests where applicable and guests accompany members; no source states public independent entry for this tenant."
+    },
+    {
+      "sfa_licence": "CE19O15A000",
+      "name": "SAKUNTHALA'S RECIPE",
+      "exact_unit_address": "#01-07 SAFRA Mount Faber",
+      "conclusion": "unresolved",
+      "sources": [
+        "https://www.safra.sg/amenities-offerings/sakunthala%27s-restaurant",
+        "https://www.safra.sg/clubs/mount-faber",
+        "https://www.safra.sg/docs/default-source/default-document-library/about/safra-by-laws.pdf?sfvrsn=ef984fd1_2"
+      ],
+      "evidence": "Current SAFRA tenant page matches SFA unit #01-07 at SAFRA Mount Faber; current club directory lists Sakunthala’s Restaurant. Operating hours and member discount are published; no independent public-entry statement. By-Laws §6.4 is qualified by “where applicable”."
+    },
+    {
+      "sfa_licence": "SW09358K000",
+      "name": "JACK\"S PLACE",
+      "exact_unit_address": "#2A-01 SAFRA Jurong",
+      "conclusion": "unresolved",
+      "sources": [
+        "https://www.safra.sg/amenities-offerings/jack%27s-place",
+        "https://www.safra.sg/clubs/jurong",
+        "https://www.safra.sg/docs/default-source/default-document-library/about/safra-by-laws.pdf?sfvrsn=ef984fd1_2"
+      ],
+      "evidence": "Current SAFRA tenant page explicitly lists SAFRA Jurong #2A-01, matching licence location. Hours/contact/member discount establish operation, not independent entry. Clubhouse guest sign-in rule has qualification “where applicable”; no current official tenant-specific public-entry policy found."
+    },
+    {
+      "sfa_licence": "SW09448J000",
+      "name": "SPRINGLEAF PRATA PLACE",
+      "exact_unit_address": "#2C-01 SAFRA Jurong",
+      "conclusion": "unresolved",
+      "sources": [
+        "https://www.safra.sg/clubs/jurong",
+        "https://www.safra.sg/whats-on/safra-open-house-2026/safra-jurong",
+        "https://www.safra.sg/docs/default-source/default-document-library/about/safra-by-laws.pdf?sfvrsn=ef984fd1_2"
+      ],
+      "evidence": "Current SAFRA Jurong club directory lists Springleaf Prata Place. SAFRA Open House page includes a promotion for it but promotion access is not proof of ordinary public entry. The retrieved official tenant-detail page was Jack’s Place; no exact current tenant page/independent entry evidence found. Unresolved."
+    },
+    {
+      "sfa_licence": "SW09366K000",
+      "name": "Pearl Garden Restaurant Pte Ltd",
+      "exact_unit_address": "SAFRA Jurong (SFA address lacks unit)",
+      "conclusion": "unresolved",
+      "sources": [
+        "https://www.safra.sg/amenities-offerings/pearl-garden-restaurant",
+        "https://www.safra.sg/clubs/jurong",
+        "https://www.safra.sg/docs/default-source/default-document-library/about/safra-by-laws.pdf?sfvrsn=ef984fd1_2"
+      ],
+      "evidence": "Current SAFRA page identifies Pearl Garden Restaurant at SAFRA Jurong, hours and member benefit, matching clubhouse but does not list unit number. Independent public entry not stated; banquet service does not by itself establish open walk-in dining access."
+    },
+    {
+      "sfa_licence": "CE12880B000",
+      "name": "MCDONALD'S",
+      "exact_unit_address": "#01-02 SAFRA Toa Payoh",
+      "conclusion": "unresolved",
+      "sources": [
+        "https://www.safra.sg/amenities-offerings/mcdonalds",
+        "https://www.safra.sg/clubs/toapayoh",
+        "https://www.safra.sg/docs/default-source/default-document-library/about/safra-by-laws.pdf?sfvrsn=ef984fd1_2"
+      ],
+      "evidence": "Current SAFRA McDonald’s page lists SAFRA Toa Payoh at #01-02 (exact match), hours and contact. Page markets restaurant to customers and dine-in; that is suggestive of public service but it does not specify whether clubhouse entry is unrestricted or member-accompanied. By-Laws §6.4 remains qualified. Unresolved."
+    },
+    {
+      "sfa_licence": "CE12C58X000",
+      "name": "Ya Kun Kaya Toast",
+      "exact_unit_address": "#01-01 SAFRA Toa Payoh",
+      "conclusion": "unresolved",
+      "sources": [
+        "https://www.safra.sg/amenities-offerings/ya-kun-kaya-toast",
+        "https://www.safra.sg/clubs/toapayoh",
+        "https://www.safra.sg/docs/default-source/default-document-library/about/safra-by-laws.pdf?sfvrsn=ef984fd1_2"
+      ],
+      "evidence": "Current SAFRA tenant page matches SAFRA Toa Payoh, Level 1 (SFA unit #01-01); published operating hours and member benefit. No independent public-entry statement. Guest rule is qualified and does not resolve access for this unit."
+    },
+    {
+      "sfa_licence": "CE12B42X000",
+      "name": "JUBILEE GARDEN RESTAURANT",
+      "exact_unit_address": "#03-01 SAFRA Toa Payoh",
+      "conclusion": "unresolved",
+      "sources": [
+        "https://www.safra.sg/amenities-offerings/jubilee-garden-restaurant",
+        "https://www.safra.sg/clubs/toapayoh",
+        "https://www.safra.sg/docs/default-source/default-document-library/about/safra-by-laws.pdf?sfvrsn=ef984fd1_2"
+      ],
+      "evidence": "Current SAFRA tenant page matches #03-01 and publishes hours/contact; member discount or booking/banquet service does not prove general public admission to premises. No tenant-specific access statement found; unresolved."
+    },
+    {
+      "sfa_licence": "NE16077P000",
+      "name": "Wingstop",
+      "exact_unit_address": "#02-02 SAFRA Punggol",
+      "conclusion": "unresolved",
+      "sources": [
+        "https://www.safra.sg/amenities-offerings/wingstop",
+        "https://www.safra.sg/clubs/punggol",
+        "https://www.safra.sg/docs/default-source/default-document-library/about/safra-by-laws.pdf?sfvrsn=ef984fd1_2"
+      ],
+      "evidence": "Current SAFRA Wingstop page matches #02-02 and says dine-in and takeaway; exact outlet and ordinary customer transactions are shown. It does not expressly establish unrestricted access to the clubhouse for non-members. SAFRA By-Laws guest rule is qualified. Unresolved."
+    },
+    {
+      "sfa_licence": "NE16179E000",
+      "name": "JACK'S PLACE PUNGGOL SAFRA",
+      "exact_unit_address": "#01-01 SAFRA Punggol",
+      "conclusion": "unresolved",
+      "sources": [
+        "https://www.safra.sg/amenities-offerings/jack%27s-place",
+        "https://www.safra.sg/clubs/punggol",
+        "https://www.safra.sg/docs/default-source/default-document-library/about/safra-by-laws.pdf?sfvrsn=ef984fd1_2"
+      ],
+      "evidence": "Current SAFRA Jack’s Place page explicitly lists SAFRA Punggol #01-01 (exact match), hours/contact/member discount. No statement on independent public entrance. Current official sources establish tenant operation but not public access."
+    }
+  ],
+  "summary": {
+    "records_reviewed": 10,
+    "exclude": 0,
+    "public": 0,
+    "unresolved": 10,
+    "workbook_changed": false
+  },
+  "limitation": "Official sources confirm all 10 businesses/locations are currently represented as SAFRA tenants, but do not clearly specify whether an unaffiliated member of the public may independently enter the clubhouse to dine at these particular tenants. Preserve as unresolved pending direct confirmation from SAFRA or operator."
+}

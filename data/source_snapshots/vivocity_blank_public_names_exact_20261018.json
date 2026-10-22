@@ -1,0 +1,110 @@
+{
+  "snapshot_type": "exact_public_fnb_name_official_mall_directory_proposals",
+  "observed_at_local": "2026-10-18 Asia/Singapore",
+  "master_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "master_sha256": "986a2656c3243d55c1a3914a3c5fbbdf2052e0423a69705785cbba0b7fee154e",
+  "worksheet": "Public F&B Directory",
+  "scope": "Bounded read-only batch: exact name research for blank-name public-access candidates at VivoCity; no workbook edits.",
+  "source_set": [
+    {
+      "source": "VivoCity official store directory",
+      "url": "https://www.vivocity.com.sg/shopping-guide/dining-guide",
+      "observed_date": "2026-10-18",
+      "capture_method": "Official store detail pages fetched over HTTPS; response bodies hashed.",
+      "reuse_note": "Only factual public-facing brand names and exact unit associations are proposed; no page text or images copied."
+    }
+  ],
+  "summary": {
+    "blank_records_in_vivocity_slice_reviewed": 8,
+    "exact_public_fnb_name_proposals": 3,
+    "unresolved_or_held": 5,
+    "duplicate_foodcourt_brand_records_withheld": 2,
+    "excluded_food-hall-records_without_individual-stall-match": 3
+  },
+  "proposals": [
+    {
+      "excel_row": 33895,
+      "sfa_licence": "SW22K81C000",
+      "before_fnb_name": "",
+      "existing_address": "Address: 1 HARBOURFRONT WALK #02-121,#02-122,VIVO CITY,Singapore 098585",
+      "postal_code": "098585",
+      "business_type": "Restaurant",
+      "proposed_public_fnb_name": "WHITE 三巴旺白米粉",
+      "source_type": "official_mall_store_directory",
+      "source_url": "https://www.vivocity.com.sg/stores/white-2/",
+      "source_page_sha256": "24e07b2bd91dc616a43ab1974b646d4f993515e3c47ce0aa599fbfd71aed5562",
+      "observed_date": "2026-10-18",
+      "evidence": "Official VivoCity store directory labels the outlet WHITE 三巴旺白米粉, category Restaurants, store location #02-121, 1 HarbourFront Walk, Singapore 098585.",
+      "matching_rule": "Exact six-digit postal code plus exact outlet unit/address; official VivoCity directory returns the same brand name and unit.",
+      "confidence": "high",
+      "limitations": "This verifies the current public-facing name and mall-unit association; it does not establish other missing fields. F&B Name should be populated only after a live-cell before-value check against this workbook SHA."
+    },
+    {
+      "excel_row": 33897,
+      "sfa_licence": "SW13153C000",
+      "before_fnb_name": "",
+      "existing_address": "Address: 1 HARBOURFRONT WALK #02-K1,VIVO CITY,Singapore 098585",
+      "postal_code": "098585",
+      "business_type": "Snack Counter",
+      "proposed_public_fnb_name": "Ben & Jerry’s",
+      "source_type": "official_mall_store_directory",
+      "source_url": "https://www.vivocity.com.sg/stores/ben-jerrys-2/",
+      "source_page_sha256": "1a2323c56c6e961b3d97a0b8ba80414e66ccefc3a4dbd044351ea480651cddd7",
+      "observed_date": "2026-10-18",
+      "evidence": "Official VivoCity store directory labels the outlet Ben & Jerry’s, store location #02-K1, 1 HarbourFront Walk, Singapore 098585; the description identifies its ice cream shop.",
+      "matching_rule": "Exact six-digit postal code plus exact outlet unit/address; official VivoCity directory returns the same brand name and unit.",
+      "confidence": "high",
+      "limitations": "This verifies the current public-facing name and mall-unit association; it does not establish other missing fields. F&B Name should be populated only after a live-cell before-value check against this workbook SHA."
+    },
+    {
+      "excel_row": 33900,
+      "sfa_licence": "SW18I60X000",
+      "before_fnb_name": "",
+      "existing_address": "Address: 1 HARBOURFRONT WALK #B2-12,VIVO CITY,Singapore 098585",
+      "postal_code": "098585",
+      "business_type": "Sales of Herbal Tea",
+      "proposed_public_fnb_name": "Z T P Ginseng Birdnest",
+      "source_type": "official_mall_store_directory",
+      "source_url": "https://www.vivocity.com.sg/stores/z-t-p-ginseng-birdnest/",
+      "source_page_sha256": "da4e82794fa9edd8cf2f592717723833c5607b1392b2e8378629baa23e3c2cd1",
+      "observed_date": "2026-10-18",
+      "evidence": "Official VivoCity store directory labels the outlet Z T P Ginseng Birdnest, store location #B2-12, 1 HarbourFront Walk, Singapore 098585; description lists food products including bird’s nest and herbal products.",
+      "matching_rule": "Exact six-digit postal code plus exact outlet unit/address; official VivoCity directory returns the same brand name and unit.",
+      "confidence": "high",
+      "limitations": "This verifies the current public-facing name and mall-unit association; it does not establish other missing fields. F&B Name should be populated only after a live-cell before-value check against this workbook SHA."
+    }
+  ],
+  "held_rows": [
+    {
+      "excel_row": 33898,
+      "sfa_licence": "SW06558A007",
+      "reason": "Food Republic already exists in the workbook for the same #03-01 outlet under two other SFA licences; official directory confirms the venue, but this would create a duplicate-name record for a current blank licence without explaining the multiple permits."
+    },
+    {
+      "excel_row": 33899,
+      "sfa_licence": "SW06558A025",
+      "reason": "Same #03-01 Food Republic venue and duplicate permit ambiguity; do not add another name row."
+    },
+    {
+      "excel_row": 33901,
+      "sfa_licence": "SW25G94B010",
+      "reason": "This is one of multiple licences at Kopitiam Food Hall #B2-40; the official page identifies the hall, but not which individual stall corresponds to this licence."
+    },
+    {
+      "excel_row": 33902,
+      "sfa_licence": "SW25G94B012",
+      "reason": "This is one of multiple licences at Kopitiam Food Hall #B2-40; the official page identifies the hall, but not which individual stall corresponds to this licence."
+    },
+    {
+      "excel_row": 33903,
+      "sfa_licence": "SW25G94B013",
+      "reason": "This is one of multiple licences at Kopitiam Food Hall #B2-40; the official page identifies the hall, but not which individual stall corresponds to this licence."
+    }
+  ],
+  "limitations": [
+    "Prior crosswalks proposed no public-facing name fills.",
+    "Outlet names are limited to current entries in VivoCity’s official directory.",
+    "No names were inferred from SFA legal entity or licensee names.",
+    "No workbook edits made."
+  ]
+}

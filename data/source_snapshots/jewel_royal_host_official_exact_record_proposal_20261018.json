@@ -1,0 +1,96 @@
+{
+  "snapshot_id": "jewel_royal_host_official_exact_record_proposal_20261018",
+  "observed_at_utc": "2026-10-18T13:08:24+00:00",
+  "scope": "Read-only official-source enrichment proposal; no workbook edits, no paid requests, no delivery-platform data.",
+  "workbook_reference": {
+    "path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "sha256": "8463f68eef5d04ec42339496ff07b22fe6c251ac23ccd42d30e90a6cbfb205d8"
+  },
+  "mall_coverage_check": {
+    "mall": "Jewel Changi Airport",
+    "recent_directory_snapshots_checked": [
+      "far_east_malls_official_exact_blank_fields_refresh108_20261018.json",
+      "nex_official_directory_exact_blank_fields_refresh109_20261018.json",
+      "northpoint_city_official_directory_exact_blank_fields_refresh106_20261018.json",
+      "plq_official_directory_exact_blank_fields_refresh106_20261018.json",
+      "century_square_official_directory_exact_blank_fields_refresh106_20261018.json",
+      "waterway_point_official_directory_blank_fields_refresh106_20261018.json"
+    ],
+    "result": "No Jewel directory snapshot found in the checked recent mall snapshots."
+  },
+  "sources": [
+    {
+      "publisher": "Jewel Changi Airport",
+      "url": "https://www.jewelchangiairport.com/en/promotion/exclusively-for-jewel-attractions-ticket-holders.html",
+      "captured_file_sha256": "08facf2026fa46cb2fc4901a7812e369b6827c50ba79f085d267ea904dfa1dcb",
+      "captured_note": "Official Jewel page lists Royal Host at #03-219; promotion is advertised through 31 Oct 2026."
+    },
+    {
+      "publisher": "Royal Host Singapore",
+      "url": "https://royalhost.com.sg/",
+      "captured_file_sha256": "cc28cd45100ac4aada776e7d6138c652c14d64e1fc7e1e7f7ebf3e7ed5c3d8c1",
+      "captured_note": "Official outlet page identifies ROYAL HOST JEWEL, 78 Airport Boulevard, Jewel Changi Airport #03-219; Tel +65 6908 5591; Monday-Sunday 10am-10pm."
+    },
+    {
+      "publisher": "Royal Host Singapore",
+      "url": "https://royalhost.com.sg/jewel-menu/",
+      "captured_file_sha256": "a6de2773299df9464f88397a5b53197e0294d7f36b61324ba2171fa38994fbdc",
+      "captured_note": "Official Jewel-specific menu page; page shows 2026 seasonal menu/offer material and menu images. Use URL as current outlet menu link."
+    }
+  ],
+  "proposal": {
+    "sfa_licence": "SE19106X000",
+    "existing_name": "ROYAL HOST",
+    "postal_code": "819666",
+    "exact_unit": "#03-219",
+    "exact_match_basis": "Workbook record matches SFA licence, postal 819666, and sole unit #03-219; Jewel and outlet first-party page independently list same unit.",
+    "field_updates": {
+      "Contact Details": {
+        "before": null,
+        "proposed": "Contact: +65 6908 5591",
+        "source": "https://royalhost.com.sg/"
+      },
+      "Website": {
+        "before": null,
+        "proposed": "https://royalhost.com.sg/",
+        "source": "https://royalhost.com.sg/"
+      },
+      "Menu URL": {
+        "before": null,
+        "proposed": "https://royalhost.com.sg/jewel-menu/",
+        "source": "https://royalhost.com.sg/jewel-menu/"
+      },
+      "Opening Hours / Closed Days": {
+        "before": "Hours: (Monday, Tuesday, Wednesday, Thursday, Sunday): 10:00 AM - 10:00 PM; (Friday, Saturday): 10:00 AM - 11:00 PM",
+        "proposed": "Monday-Sunday: 10:00 AM - 10:00 PM",
+        "source": "https://royalhost.com.sg/",
+        "note": "Official current outlet-specific page conflicts with existing Fri/Sat 11 PM value; replace only after source review."
+      }
+    },
+    "name_confidence": "high",
+    "unit_postal_confidence": "high",
+    "hours_confidence": "high",
+    "menu_url_confidence": "high"
+  },
+  "other_exact_pairs_withheld": [
+    {
+      "brand": "Cafe Kitsune",
+      "sfa_licence": "SE20U09K000",
+      "postal_code": "819666",
+      "unit": "#01-K209",
+      "reason": "Jewel source confirms tenant/unit, but no outlet-first-party contact/site/menu/hours extraction was completed in this bounded pass."
+    },
+    {
+      "brand": "Elfuego by COLLIN'S",
+      "sfa_licence": "SE19455C000",
+      "postal_code": "819666",
+      "unit": "#05-203",
+      "reason": "Jewel source confirms tenant/unit, but no outlet-first-party contact/site/menu/hours extraction was completed in this bounded pass."
+    }
+  ],
+  "limitations": [
+    "Jewel directory and brand page confirm current public outlet identity and location, not regulatory open/closed status.",
+    "No rating, reviews, image candidate, or menu item rows are proposed from this mall pass.",
+    "Do not add mall-wide hours as outlet hours."
+  ]
+}

@@ -381,4 +381,160 @@ export const __internal = {
   chunkKey,
   metaKey,
   canUsePlaintextTokenFallback,
+  /** Deterministic adapter injection for Node failure tests; never called by app code. */
+  setStorageAdaptersForTests(secure: SecureStoreLike | null, legacy: AsyncStorageLike | null) {
+    cachedSecureStore = secure;
+    cachedAsyncStorage = legacy;
+  },
 };
+
+// Each client owns one generation. Retired clients cannot resurrect or erase a
+// subsequent login, including a refresh already awaiting network/storage work.
+let authGeneration = 0;
+let storageQueue: Promise<unknown> = Promise.resolve();
+const knownAuthKeys = new Set<string>();
+let blockedUntilPurge = false;
+export function getAuthStorageGeneration(): number {
+  return authGeneration;
+}
+function serializeAuthStorage<T>(operation: () => Promise<T>): Promise<T> {
+  const result = storageQueue.then(operation, operation);
+  storageQueue = result.catch(() => undefined);
+  return result;
+}
+const AUTH_RETIREMENT_MARKER = "hungry-auth-retirement-v1";
+async function writeRetirementMarker(keys: string[]): Promise<void> {
+  const value = JSON.stringify(keys);
+  const secure = getSecureStore();
+  const legacy = getAsyncStorage();
+  let durable = false;
+  if (secure)
+    try {
+      await secure.setItemAsync(AUTH_RETIREMENT_MARKER, value);
+      durable = (await secure.getItemAsync(AUTH_RETIREMENT_MARKER)) === value;
+    } catch {
+      /* Try independent durable app storage. */
+    }
+  if (legacy)
+    try {
+      await legacy.setItem(AUTH_RETIREMENT_MARKER, value);
+      durable = (await legacy.getItem(AUTH_RETIREMENT_MARKER)) === value || durable;
+    } catch {
+      /* Secure marker may already be durable. */
+    }
+  if ((secure || legacy) && !durable)
+    throw new Error("Could not persist secure sign-out state. Retry sign out.");
+}
+async function readRetirementMarker(): Promise<string[] | null> {
+  const secure = getSecureStore();
+  const legacy = getAsyncStorage();
+  const value =
+    (secure ? await secure.getItemAsync(AUTH_RETIREMENT_MARKER) : null) ??
+    (legacy ? await legacy.getItem(AUTH_RETIREMENT_MARKER) : null);
+  if (value === null) return null;
+  try {
+    const keys: unknown = JSON.parse(value);
+    if (Array.isArray(keys) && keys.every((key) => typeof key === "string")) return keys;
+  } catch {
+    /* Corrupt marker must still fail closed. */
+  }
+  throw new Error("Secure sign-out recovery is required.");
+}
+async function purgeRetiredKeys(keys: string[]): Promise<void> {
+  for (const key of keys) await strictRemoveAuthEntry(key);
+  await strictRemoveAuthEntry(AUTH_RETIREMENT_MARKER);
+  blockedUntilPurge = false;
+}
+async function recoverRetiredStorage(): Promise<boolean> {
+  const keys = await readRetirementMarker();
+  if (!keys) return false;
+  blockedUntilPurge = true;
+  await purgeRetiredKeys(keys);
+  return true;
+}
+export function createGenerationAuthStorage(generation = authGeneration) {
+  return {
+    getItem(name: string) {
+      knownAuthKeys.add(name);
+      return serializeAuthStorage(async () => {
+        if (generation !== authGeneration) return null;
+        if (await recoverRetiredStorage()) return null;
+        if (blockedUntilPurge) return null;
+        const value = await supabaseAuthStorage.getItem(name);
+        return generation === authGeneration && !blockedUntilPurge ? value : null;
+      });
+    },
+    setItem(name: string, value: string) {
+      knownAuthKeys.add(name);
+      return serializeAuthStorage(async () => {
+        if (generation !== authGeneration) return;
+        await recoverRetiredStorage();
+        if (blockedUntilPurge)
+          throw new Error("Secure sign-out cleanup must be retried before signing in.");
+        await supabaseAuthStorage.setItem(name, value);
+      });
+    },
+    removeItem(name: string) {
+      knownAuthKeys.add(name);
+      return serializeAuthStorage(async () => {
+        if (generation !== authGeneration) return;
+        await strictRemoveAuthEntry(name);
+      });
+    },
+  };
+}
+async function strictRemoveAuthEntry(name: string): Promise<void> {
+  const secure = getSecureStore();
+  if (secure) {
+    const meta = parseMeta(await secure.getItemAsync(metaKey(name)));
+    const keys = [
+      name,
+      metaKey(name),
+      ...Array.from({ length: Math.max(meta?.chunks ?? 0, 8) }, (_, i) => chunkKey(name, i)),
+    ];
+    for (const key of keys) {
+      await secure.deleteItemAsync(key);
+      if ((await secure.getItemAsync(key)) !== null)
+        throw new Error("Secure credentials could not be removed.");
+    }
+  }
+  const legacy = getAsyncStorage();
+  if (legacy) {
+    await legacy.removeItem(name);
+    if ((await legacy.getItem(name)) !== null)
+      throw new Error("Legacy credentials could not be removed.");
+  }
+  memoryStore.delete(name);
+}
+export function retireAuthStorage(storageKey: string): {
+  cleanup: Promise<void>;
+  retiredAccessToken: Promise<string | null>;
+} {
+  authGeneration++;
+  blockedUntilPurge = true;
+  knownAuthKeys.add(storageKey);
+  knownAuthKeys.add(`${storageKey}-code-verifier`);
+  let resolveToken!: (token: string | null) => void;
+  const retiredAccessToken = new Promise<string | null>((resolve) => {
+    resolveToken = resolve;
+  });
+  const cleanup = serializeAuthStorage(async () => {
+    try {
+      await writeRetirementMarker([...knownAuthKeys]);
+    } catch (error) {
+      resolveToken(null);
+      throw error;
+    }
+    // This read is serialized before purge/new-client writes. It cannot observe
+    // a later account and does not use the now-retired client's SDK getSession.
+    try {
+      const serialized = await supabaseAuthStorage.getItem(storageKey);
+      const session = serialized ? (JSON.parse(serialized) as { access_token?: unknown }) : null;
+      resolveToken(typeof session?.access_token === "string" ? session.access_token : null);
+    } catch {
+      resolveToken(null);
+    }
+    await purgeRetiredKeys([...knownAuthKeys]);
+  });
+  return { cleanup, retiredAccessToken };
+}

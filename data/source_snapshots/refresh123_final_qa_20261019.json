@@ -1,0 +1,56 @@
+{
+  "snapshot_id": "refresh123_final_qa_20261019",
+  "qa_type": "independent_workbook_quality_check",
+  "observed_date_local_singapore": "2026-10-19",
+  "status": "PASS",
+  "canonical_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "fe31f2c8926d09ce592189efa8012987f6a3e878ef2977f50fe466873d567a64",
+  "workbook_integrity": {
+    "zip_crc_test": "PASS",
+    "formula_cells": 0,
+    "excel_error_cells": 0,
+    "fully_blank_data_rows": 0,
+    "table_ranges_match_populated_rows": true,
+    "sheets": {
+      "Public F&B Directory": {"range": "A1:U38279", "data_rows": 38278},
+      "Menu Items": {"range": "A1:L13177", "data_rows": 13176},
+      "Image Candidates": {"range": "A1:I2581", "data_rows": 2580},
+      "Coverage & Sources": {"range": "A1:C218", "data_rows": 217}
+    }
+  },
+  "content_checks": {
+    "unique_sfa_records": {"status": "PASS", "records": 38278, "unique_ids": 38278, "duplicate_ids": 0},
+    "alphabetical_order": {"status": "PASS", "named_records": 32790, "inversions_among_named_records": 0, "blank_names_at_end": 5488},
+    "coverage_recount": {
+      "status": "PASS",
+      "named": 32790,
+      "coordinates": 35734,
+      "contacts": 2704,
+      "websites": 2812,
+      "menu_urls": 1449,
+      "hours": 1474,
+      "menu_summaries": 472,
+      "approved_images": 0,
+      "unique_sfa": 38278,
+      "matches_integration_receipt": true
+    },
+    "official_genki_contact_hours_website": {"status": "PASS", "proposed_field_changes": 56, "mismatches": 0},
+    "seven_eleven_name": {"status": "PASS", "sfa_licence": "NW11142P000", "expected": "7-Eleven", "actual": "7-Eleven"},
+    "official_menu_items": {"status": "PASS", "source_proposals": 5, "outlets": 5, "item_price_rows": 50, "mismatches": 0, "source_urls_dates_and_published_prices_match": true},
+    "foodpanda_menu_items": {"status": "PASS", "item_price_rows": 10, "outlets": 2, "mismatches": 0, "delivery_price_scope_and_freshness_present": true},
+    "official_menu_image_references": {"status": "PASS", "source_image_urls": 7, "present_in_image_candidates": 7, "all_review_only": true, "approved_image_urls": 0},
+    "public_access_exclusion": {"status": "PASS", "sfa_licence": "SW11408L000", "record_present": false, "reason": "Source access classification excludes Rasa Istimewa SAFRA Jurong because visitors require member accompaniment."},
+    "access_classification_snapshot": {"status": "PASS", "snapshot": "refresh123_public_access_20261019.json", "records_reviewed": 6, "exclusion_applied": 1}
+  },
+  "integration_receipt": {
+    "path": "data/source_snapshots/refresh123_integration_20261019.json",
+    "installed_sha256_matches": true,
+    "source_snapshots_verified": 6,
+    "source_snapshot_hash_mismatches": 0
+  },
+  "limitations": [
+    "The prior Refresh121 baseline workbook is unavailable locally, so unchanged cells outside the requested Refresh123 scope could not be bytewise compared against that baseline. This QA verifies the current workbook against the Refresh123 proposal snapshots, integration receipt, table dimensions, and independently recounted workbook contents.",
+    "The alphabetical check covers named records; 5,488 records without a public-facing name remain at the end of the list and are not assigned invented names.",
+    "Menu completeness is not implied: 50 official dine-in items and 10 Foodpanda delivery items are sampled menu rows, and Foodpanda prices can differ from dine-in prices."
+  ]
+}

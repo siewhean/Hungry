@@ -1,0 +1,42 @@
+{
+  "checked_at": "2026-10-19",
+  "onemap_api_token_available_in_process_env": false,
+  "canonical_workbook_found": true,
+  "canonical_sha256": "00a13d50c650e1bcbde0f51f15260e4f8aeecbd9d0372bae284c6c50558e2967",
+  "expected_sha256": "00a13d50c650e1bcbde0f51f15260e4f8aeecbd9d0372bae284c6c50558e2967",
+  "canonical_sha_matches_expected": true,
+  "checkpoint_cache_snapshot_files": [
+    {
+      "path": "data/source_snapshots/bca_friendly_buildings_exact_postal_coordinate_candidates_20261018.json",
+      "size": 918968,
+      "mtime": 1792319590
+    },
+    {
+      "path": "data/source_snapshots/hdb_existing_building_exact_postal_coordinate_candidates_20261018.json",
+      "size": 16307,
+      "mtime": 1792318389
+    },
+    {
+      "path": "data/source_snapshots/public_aed_exact_postal_coordinate_crosscheck_20261018.json",
+      "size": 198328,
+      "mtime": 1792318455
+    },
+    {
+      "path": "data/source_snapshots/refresh122_geocode_options_20261019.json",
+      "size": 4672,
+      "mtime": 1792349223
+    }
+  ],
+  "status": "blocked_missing_environment_credential",
+  "blocker": "ONEMAP_API_TOKEN is not present in this agent process environment. Per instruction, no token value was read or printed and no OneMap requests were made.",
+  "prior_snapshot_context": {
+    "refresh122_blank_coordinate_pairs": 2544,
+    "refresh122_blank_coordinates_with_six_digit_postal": 2442,
+    "refresh122_blank_coordinates_without_usable_six_digit_postal": 102,
+    "prior_snapshot_workbook_sha256": "e75b32a39d9840532afbff2f5b497cc7a3a12870097418716f7d0b92f503f84f",
+    "note": "Prior Refresh122 snapshot describes an earlier workbook SHA; current canonical SHA was independently matched to requested 00a13d50...e2967. Do not use the prior postal counts as confirmed current counts."
+  },
+  "next_path": "Configure a currently valid OneMap token in the shell/process that will run the geocoder (avoid sending it in chat). Then recompute the exact missing coordinate postal set against the canonical SHA, reuse cached exact-postal matches, check token validity/expiry with a minimal request, and only then proceed with rate-limited cached batch lookup.",
+  "no_workbook_edits": true,
+  "no_geocoding_requests_made": true
+}

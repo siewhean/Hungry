@@ -1,0 +1,20 @@
+(node:69607) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Merchant screen contract: every merchant route is typed, registered, and backed by a screen (2.987583ms)
+✔ Merchant screen contract: verified-only routes are guarded by merchant access status (1.20925ms)
+✔ Merchant screen contract: extended merchant sections stay hidden from the tab bar (1.17175ms)
+✔ Merchant screen contract: merchant navigation buttons are accessible and hidden sections are reachable (0.355625ms)
+✔ Merchant screen contract: merchant route params match editable sub-screen needs (0.159167ms)
+✔ Merchant screen contract: menu management screens are wired to merchant services (0.356584ms)
+✔ Merchant screen contract: profile, menu, and analytics use production-ready controls (2.276ms)
+✔ Merchant screen contract: dish details record merchant dish views once per screen (0.211209ms)
+✔ Merchant screen contract: inbox, promotions, assistant, and settings screens use merchant services (0.6305ms)
+✔ Merchant screen contract: merchant screens resolve services through provider (1.307542ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1140.302125

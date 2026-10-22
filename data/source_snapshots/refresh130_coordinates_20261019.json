@@ -1,0 +1,119 @@
+{
+  "snapshot_type": "refresh130_read_only_open_coordinate_research",
+  "captured_at_sgt": "2026-10-19 04:30",
+  "baseline_workbook": {
+    "path": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "sha256": "b76b2a41688b67767fe1dfe7a63690100c6868dd949415b14bd5b224973131bb",
+    "worksheet": "Public F&B Directory",
+    "records": 38273,
+    "missing_coordinate_pairs": 2538,
+    "missing_pairs_with_public_access_status": 2538,
+    "public_missing_rows_with_exact_six_digit_postal": 2436,
+    "distinct_six_digit_postals_among_public_missing": 1553,
+    "workbook_modified": false
+  },
+  "credential_check": {
+    "onemap_api_token_configured_in_this_agent_process": false,
+    "token_value_read_or_printed": false,
+    "onemap_api_calls_made": false
+  },
+  "coordinate_policy": "Only exact target building/facility identity with six-digit postal and matching block/street, from an openly licensed source. Coordinates must be labeled at source precision and may not be described as outlet or stall-front coordinates when source represents a facility/building point. Postal-only overlaps are not enough.",
+  "new_current_source_checked": {
+    "publisher": "National Environment Agency (NEA), Singapore",
+    "dataset": "Hawker Centres (GEOJSON) (2026)",
+    "source_url": "https://data.gov.sg/datasets/d_4a086da0a5553be1d89383cd90d07ecd/view",
+    "download_api": "https://api-open.data.gov.sg/v1/public/api/datasets/d_4a086da0a5553be1d89383cd90d07ecd/poll-download",
+    "license": "Singapore Open Data Licence; data.gov.sg states free forever for personal or commercial use. Attribution is required; dataset licence provides worldwide, perpetual, royalty-free, non-exclusive rights to use, copy, distribute, modify and adapt, subject to terms.",
+    "license_url": "https://data.gov.sg/open-data-licence",
+    "required_attribution_example": "Contains information from Hawker Centres (GEOJSON) accessed 2026-10-19 from NEA via data.gov.sg under Singapore Open Data Licence v1.0.",
+    "dataset_page_state": "Official data.gov.sg page reports source period Nov 2025 and last updated 3 hours ago at capture; dataset metadata includes exact address, six-digit postal, building name and GeoJSON point.",
+    "downloaded_capture_sha256": "722ffdb3e68627c1724bc47f72889e09e790904ff23a1fa630595d76265f7451",
+    "feature_count": 129,
+    "match_method": "Exact six-digit postal code plus exact source block-number and street-name tokens both appearing in target Full Address; target row must have public_access status and blank coordinate pair.",
+    "exact_block_street_postal_matches_to_current_missing_public_rows": 0,
+    "proposed_coordinate_updates": [],
+    "disposition": "No exact qualifying target rows remain. The NEA dataset identifies facility locations rather than individual outlet/stall points; even an exact match would require facility-level precision label."
+  },
+  "existing_open_official_source_rechecks": [
+    {
+      "source": "BCA Friendly Buildings 2026",
+      "source_url": "https://data.gov.sg/datasets/d_f19704cb6ce76309f3ec0c3a513bdeab/view",
+      "license": "Singapore Open Data Licence; attribution required",
+      "result": "Earlier exact-address candidate snapshot re-bound by SFA licence to this current workbook: 0 of 977 historical candidate rows remain missing coordinates. No new proposals."
+    },
+    {
+      "source": "MOH Dementia Friendly Go-To-Points",
+      "source_url": "https://data.gov.sg/datasets/d_e2d10e591bc8560b8946a0da24790fa5/view",
+      "license": "Singapore Open Data Licence; attribution required",
+      "result": "Earlier exact-address candidate snapshot re-bound by SFA licence to this current workbook: 0 of 41 historical candidate rows remain missing coordinates. No new proposals."
+    },
+    {
+      "source": "HPB Healthier Eateries",
+      "source_url": "https://data.gov.sg/datasets/d_2925c2ccf75d1c135c2d469e0de3cee6/view",
+      "license": "Singapore Open Data Licence; attribution required",
+      "result": "Earlier exact-postal/address candidate snapshot re-bound by SFA licence to this current workbook: 0 of 328 historical candidate rows remain missing coordinates. No new proposals; source points are facility/address-level and units often differ."
+    },
+    {
+      "source": "NEA Market and Food Centre; HDB Existing Buildings; BCA Green Mark; SportSG; public AEDs; URA Master Plan building footprints",
+      "source_urls": [
+        "https://data.gov.sg/datasets/d_a57a245b3cf3ec76ad36d55393a16e97/view",
+        "https://data.gov.sg/datasets/d_16b157c52ed637edd6ba1232e026258d/view",
+        "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+        "https://data.gov.sg/datasets/d_2cfb0867cdeb2b7303068995699dc33b/view",
+        "https://data.gov.sg/datasets/d_bb92615f43de22933e4479558b1f6c36/view",
+        "https://data.gov.sg/datasets/d_e8e3249d4433845bdd8034ae44329d9e/view"
+      ],
+      "license": "Singapore Open Data Licence where published through data.gov.sg; attribution required.",
+      "result": "Existing 2026-10-18/19 source audits found no application-ready exact building/facility joins for current missing targets: NEA facility points had no exact postal/block/street overlap among blanks; HDB had no exact postal overlap; BCA Green Mark postal-only candidates were held for building identity mismatch; SportSG coordinate points were too coarse (3 decimal degrees); AED points identify AED locations, not premises; URA layer is polygonal indicative footprints, not a verified outlet address point. Historical snapshots are evidence of earlier source review, not live refreshes."
+    }
+  ],
+  "onemap_assessment": {
+    "publisher": "Singapore Land Authority",
+    "api_docs": "https://www.onemap.gov.sg/apidocs/search",
+    "api_terms": "https://www.onemap.gov.sg/legal/apitermsofservice.html",
+    "open_data_licence": "https://www.onemap.gov.sg/legal/opendatalicence.html",
+    "official_api_requirement": "Current Search API documentation requires token-based Authorization header; API terms say dataset use is governed by Singapore Open Data Licence, while API usage is subject to API terms and any endpoint-specific conditions.",
+    "token_configured_in_current_agent_process": false,
+    "decision": "No OneMap requests made because no token is configured in this agent process. A valid configured token is the most promising remaining free official address/postal geocoder; returned coordinates must be labeled building/address point, not unit/stall point."
+  },
+  "mapbox": "Not used; Search Box results are not retained because its temporary-use terms do not support persistent catalogue storage. No paid geocoder or bulk Nominatim used.",
+  "candidate_rows_reviewed_limit": 50,
+  "candidate_rows_proposed": 0,
+  "result": "No new coordinate proposals qualify for current Refresh130 baseline. NEA Hawker Centres was freshly downloaded and exactly rejoined; prior public open-data candidate snapshots were re-bound to current missing-coordinate rows and yielded no remaining blank candidates. OneMap remains unavailable in this process because ONEMAP_API_TOKEN is not configured.",
+  "prior_candidate_snapshot_rebind": [
+    {
+      "snapshot": "data/source_snapshots/bca_friendly_buildings_strict_address_coordinate_candidates_20261018.json",
+      "candidate_rows_in_snapshot": 977,
+      "candidate_rows_still_missing_coordinate_in_current_workbook": 0,
+      "note": "Historical source capture only; not treated as current proof of a source result. Exact source/target candidates from these snapshots are no longer missing coordinates in this workbook."
+    },
+    {
+      "snapshot": "data/source_snapshots/moh_dementia_gtp_exact_address_coordinate_candidates_20261018.json",
+      "candidate_rows_in_snapshot": 41,
+      "candidate_rows_still_missing_coordinate_in_current_workbook": 0,
+      "note": "Historical source capture only; not treated as current proof of a source result. Exact source/target candidates from these snapshots are no longer missing coordinates in this workbook."
+    },
+    {
+      "snapshot": "data/source_snapshots/hpb_healthier_eateries_exact_address_coordinate_candidates_20261018.json",
+      "candidate_rows_in_snapshot": 328,
+      "candidate_rows_still_missing_coordinate_in_current_workbook": 0,
+      "note": "Historical source capture only; not treated as current proof of a source result. Exact source/target candidates from these snapshots are no longer missing coordinates in this workbook."
+    }
+  ],
+  "source_urls": {
+    "nea_hawker_centres": "https://data.gov.sg/datasets/d_4a086da0a5553be1d89383cd90d07ecd/view",
+    "open_data_licence": "https://data.gov.sg/open-data-licence",
+    "onemap_search_api": "https://www.onemap.gov.sg/apidocs/search",
+    "onemap_api_terms": "https://www.onemap.gov.sg/legal/apitermsofservice.html",
+    "onemap_licence": "https://www.onemap.gov.sg/legal/opendatalicence.html",
+    "bca_friendly_buildings": "https://data.gov.sg/datasets/d_f19704cb6ce76309f3ec0c3a513bdeab/view",
+    "bca_green_mark": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+    "hdb_existing_buildings": "https://data.gov.sg/datasets/d_16b157c52ed637edd6ba1232e026258d/view",
+    "nea_market_food_centre": "https://data.gov.sg/datasets/d_a57a245b3cf3ec76ad36d55393a16e97/view",
+    "moh_dementia_gtp": "https://data.gov.sg/datasets/d_e2d10e591bc8560b8946a0da24790fa5/view",
+    "hpb_healthier_eateries": "https://data.gov.sg/datasets/d_2925c2ccf75d1c135c2d469e0de3cee6/view",
+    "sportsg_facilities": "https://data.gov.sg/datasets/d_2cfb0867cdeb2b7303068995699dc33b/view",
+    "public_aeds": "https://data.gov.sg/datasets/d_bb92615f43de22933e4479558b1f6c36/view",
+    "ura_building_layer": "https://data.gov.sg/datasets/d_e8e3249d4433845bdd8034ae44329d9e/view"
+  }
+}

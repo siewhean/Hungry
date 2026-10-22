@@ -1,0 +1,324 @@
+(node:5891) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[1A[2K[2m[WebServer] [22m(node:5982) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 9 tests using 2 workers
+
+[1A[2K(node:6273) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:6274) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:6273) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+
+[1A[2K(node:6273) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:6274) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+
+[1A[2K(node:6274) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K[1/9] [chromium] › tests/e2e/routes.spec.ts:29:9 › routes › loads Home from the Developer Launcher
+[1A[2K[2/9] [chromium] › tests/e2e/guest-browsing.spec.ts:14:7 › signed-out entry › signed-out normal app flow starts at login while explicit public details remain openable
+[1A[2K  1) [chromium] › tests/e2e/routes.spec.ts:29:9 › routes › loads Home from the Developer Launcher ──
+
+    Error: browserType.launch: Executable doesn't exist at /Users/Siew Hean/Library/Caches/ms-playwright/chromium_headless_shell-1217/chrome-headless-shell-mac-arm64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: docs/audit/page-review-2026-10-20/playwright-results/routes-routes-loads-Home-from-the-Developer-Launcher-chromium/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    docs/audit/page-review-2026-10-20/playwright-results/routes-routes-loads-Home-from-the-Developer-Launcher-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace docs/audit/page-review-2026-10-20/playwright-results/routes-routes-loads-Home-from-the-Developer-Launcher-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  2) [chromium] › tests/e2e/guest-browsing.spec.ts:14:7 › signed-out entry › signed-out normal app flow starts at login while explicit public details remain openable 
+
+    Error: browserType.launch: Executable doesn't exist at /Users/Siew Hean/Library/Caches/ms-playwright/chromium_headless_shell-1217/chrome-headless-shell-mac-arm64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: docs/audit/page-review-2026-10-20/playwright-results/guest-browsing-signed-out--e5d84-lic-details-remain-openable-chromium/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    docs/audit/page-review-2026-10-20/playwright-results/guest-browsing-signed-out--e5d84-lic-details-remain-openable-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace docs/audit/page-review-2026-10-20/playwright-results/guest-browsing-signed-out--e5d84-lic-details-remain-openable-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K(node:6281) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:6280) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:6280) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+
+[1A[2K(node:6281) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+
+[1A[2K(node:6280) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:6281) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K[3/9] [chromium] › tests/e2e/routes.spec.ts:29:9 › routes › loads Discover from the Developer Launcher
+[1A[2K[4/9] [chromium] › tests/e2e/guest-browsing.spec.ts:32:7 › signed-out entry › protected create action redirects guests to login
+[1A[2K  3) [chromium] › tests/e2e/routes.spec.ts:29:9 › routes › loads Discover from the Developer Launcher 
+
+    Error: browserType.launch: Executable doesn't exist at /Users/Siew Hean/Library/Caches/ms-playwright/chromium_headless_shell-1217/chrome-headless-shell-mac-arm64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: docs/audit/page-review-2026-10-20/playwright-results/routes-routes-loads-Discover-from-the-Developer-Launcher-chromium/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    docs/audit/page-review-2026-10-20/playwright-results/routes-routes-loads-Discover-from-the-Developer-Launcher-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace docs/audit/page-review-2026-10-20/playwright-results/routes-routes-loads-Discover-from-the-Developer-Launcher-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  4) [chromium] › tests/e2e/guest-browsing.spec.ts:32:7 › signed-out entry › protected create action redirects guests to login 
+
+    Error: browserType.launch: Executable doesn't exist at /Users/Siew Hean/Library/Caches/ms-playwright/chromium_headless_shell-1217/chrome-headless-shell-mac-arm64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: docs/audit/page-review-2026-10-20/playwright-results/guest-browsing-signed-out--3de3b-n-redirects-guests-to-login-chromium/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    docs/audit/page-review-2026-10-20/playwright-results/guest-browsing-signed-out--3de3b-n-redirects-guests-to-login-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace docs/audit/page-review-2026-10-20/playwright-results/guest-browsing-signed-out--3de3b-n-redirects-guests-to-login-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K(node:6293) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:6293) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+
+[1A[2K(node:6293) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K[5/9] [chromium] › tests/e2e/routes.spec.ts:29:9 › routes › loads Search from the Developer Launcher
+[1A[2K  5) [chromium] › tests/e2e/routes.spec.ts:29:9 › routes › loads Search from the Developer Launcher 
+
+    Error: browserType.launch: Executable doesn't exist at /Users/Siew Hean/Library/Caches/ms-playwright/chromium_headless_shell-1217/chrome-headless-shell-mac-arm64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: docs/audit/page-review-2026-10-20/playwright-results/routes-routes-loads-Search-from-the-Developer-Launcher-chromium/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    docs/audit/page-review-2026-10-20/playwright-results/routes-routes-loads-Search-from-the-Developer-Launcher-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace docs/audit/page-review-2026-10-20/playwright-results/routes-routes-loads-Search-from-the-Developer-Launcher-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K(node:6297) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:6297) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+
+[1A[2K(node:6297) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K[6/9] [chromium] › tests/e2e/routes.spec.ts:29:9 › routes › loads Dish from the Developer Launcher
+[1A[2K  6) [chromium] › tests/e2e/routes.spec.ts:29:9 › routes › loads Dish from the Developer Launcher ──
+
+    Error: browserType.launch: Executable doesn't exist at /Users/Siew Hean/Library/Caches/ms-playwright/chromium_headless_shell-1217/chrome-headless-shell-mac-arm64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: docs/audit/page-review-2026-10-20/playwright-results/routes-routes-loads-Dish-from-the-Developer-Launcher-chromium/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    docs/audit/page-review-2026-10-20/playwright-results/routes-routes-loads-Dish-from-the-Developer-Launcher-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace docs/audit/page-review-2026-10-20/playwright-results/routes-routes-loads-Dish-from-the-Developer-Launcher-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K(node:6311) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:6311) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+
+[1A[2K(node:6311) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K[7/9] [chromium] › tests/e2e/routes.spec.ts:29:9 › routes › loads Stall from the Developer Launcher
+[1A[2K  7) [chromium] › tests/e2e/routes.spec.ts:29:9 › routes › loads Stall from the Developer Launcher ─
+
+    Error: browserType.launch: Executable doesn't exist at /Users/Siew Hean/Library/Caches/ms-playwright/chromium_headless_shell-1217/chrome-headless-shell-mac-arm64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: docs/audit/page-review-2026-10-20/playwright-results/routes-routes-loads-Stall-from-the-Developer-Launcher-chromium/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    docs/audit/page-review-2026-10-20/playwright-results/routes-routes-loads-Stall-from-the-Developer-Launcher-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace docs/audit/page-review-2026-10-20/playwright-results/routes-routes-loads-Stall-from-the-Developer-Launcher-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K(node:6319) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:6319) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+
+[1A[2K(node:6319) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K[8/9] [chromium] › tests/e2e/routes.spec.ts:29:9 › routes › loads Review from the Developer Launcher
+[1A[2K  8) [chromium] › tests/e2e/routes.spec.ts:29:9 › routes › loads Review from the Developer Launcher 
+
+    Error: browserType.launch: Executable doesn't exist at /Users/Siew Hean/Library/Caches/ms-playwright/chromium_headless_shell-1217/chrome-headless-shell-mac-arm64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: docs/audit/page-review-2026-10-20/playwright-results/routes-routes-loads-Review-from-the-Developer-Launcher-chromium/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    docs/audit/page-review-2026-10-20/playwright-results/routes-routes-loads-Review-from-the-Developer-Launcher-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace docs/audit/page-review-2026-10-20/playwright-results/routes-routes-loads-Review-from-the-Developer-Launcher-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K(node:6324) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:6324) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+
+[1A[2K(node:6324) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K[9/9] [chromium] › tests/e2e/routes.spec.ts:46:7 › routes › documents Mapbox-backed routes as environment-dependent on web
+[1A[2K  9) [chromium] › tests/e2e/routes.spec.ts:46:7 › routes › documents Mapbox-backed routes as environment-dependent on web 
+
+    Error: browserType.launch: Executable doesn't exist at /Users/Siew Hean/Library/Caches/ms-playwright/chromium_headless_shell-1217/chrome-headless-shell-mac-arm64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: docs/audit/page-review-2026-10-20/playwright-results/routes-routes-documents-Ma-62f95-nvironment-dependent-on-web-chromium/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    docs/audit/page-review-2026-10-20/playwright-results/routes-routes-documents-Ma-62f95-nvironment-dependent-on-web-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace docs/audit/page-review-2026-10-20/playwright-results/routes-routes-documents-Ma-62f95-nvironment-dependent-on-web-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  9 failed
+    [chromium] › tests/e2e/guest-browsing.spec.ts:14:7 › signed-out entry › signed-out normal app flow starts at login while explicit public details remain openable 
+    [chromium] › tests/e2e/guest-browsing.spec.ts:32:7 › signed-out entry › protected create action redirects guests to login 
+    [chromium] › tests/e2e/routes.spec.ts:29:9 › routes › loads Home from the Developer Launcher ───
+    [chromium] › tests/e2e/routes.spec.ts:29:9 › routes › loads Discover from the Developer Launcher 
+    [chromium] › tests/e2e/routes.spec.ts:29:9 › routes › loads Search from the Developer Launcher ─
+    [chromium] › tests/e2e/routes.spec.ts:29:9 › routes › loads Dish from the Developer Launcher ───
+    [chromium] › tests/e2e/routes.spec.ts:29:9 › routes › loads Stall from the Developer Launcher ──
+    [chromium] › tests/e2e/routes.spec.ts:29:9 › routes › loads Review from the Developer Launcher ─
+    [chromium] › tests/e2e/routes.spec.ts:46:7 › routes › documents Mapbox-backed routes as environment-dependent on web 

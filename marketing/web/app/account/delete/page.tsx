@@ -13,7 +13,7 @@ const sections = [
     body: (
       <p>
         Open Hungry, go to Profile, Settings, Delete account, and confirm the request. Hungry will
-        queue deletion of your account and associated personal data, then sign the app out.
+        schedule deletion of your account and associated personal data after 30 days, then sign the app out. Signing back in does not cancel deletion. Before the deadline, choose Keep my account in the app and wait for successful cancellation confirmation.
       </p>
     ),
   },
@@ -39,8 +39,7 @@ const sections = [
     title: "Expected timeline",
     body: (
       <p>
-        Hungry aims to process verified deletion requests within 30 days unless a legal, safety, or
-        abuse-prevention exception applies.
+        Deletion is scheduled 30 days after a confirmed request. After that, account-associated personal data is deleted or anonymized. Required legal, safety, or abuse-prevention records may be retained.
       </p>
     ),
   },

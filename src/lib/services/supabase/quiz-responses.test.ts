@@ -17,8 +17,10 @@ test("supabase saves taste quiz answers to quiz_responses for signed-in users on
   );
 });
 
-test("taste quiz finish records its answers without blocking navigation", () => {
+test("taste quiz finish waits for one confirmed preference commit", () => {
   const screen = read("src/app/screens/onboarding/TasteQuizScreen.tsx");
-  assert.match(screen, /void getHungryService\(\)\s*\.profile\.recordQuizResponse\(/);
-  assert.match(screen, /\.catch\(\(\) => undefined\)/);
+  const commit = read("src/features/onboarding/commitQuizProfile.ts");
+  assert.match(screen, /await commitQuizProfile/);
+  assert.doesNotMatch(screen, /void getHungryService\(\)\s*\.profile\.recordQuizResponse/);
+  assert.match(commit, /await dependencies\.save\(updates\)/);
 });

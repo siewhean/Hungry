@@ -1,0 +1,191 @@
+{
+  "snapshot_type": "official_sfa_closure_status_delta_refresh119",
+  "observed_local_date": "2026-10-19",
+  "retrieved_at_utc": "2026-10-18T17:42:03Z",
+  "canonical_workbook": {
+    "path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "sha256": "028e757cf68c3fd6be935a2908484a98ba1865c4318975cfde543d1175bf5475",
+    "directory_rows": 38279,
+    "unique_nonblank_sfa_licences": 38279
+  },
+  "sources": [
+    {
+      "name": "SFA Track Records standard current-result query",
+      "url": "https://www.sfa.gov.sg/tools-and-resources/track-records",
+      "api": "https://www.sfa.gov.sg/api/TrackRecord/GetTrackRecord?postalCode=&establishmentAddress=&licenceNumber=&businessName=&licenseeName=&typeOfFoodBussiness=&grades=&isShowLicenceSuspended=false",
+      "retrieved_at_utc": "2026-10-18T17:42:03Z",
+      "http_status": 200,
+      "records": 52529,
+      "unique_licences": 52526,
+      "response_sha256": "3e707eea42d8f694a2c887b5021697df4a83bb40650601313475c0bbecc56766",
+      "previous_response_sha256": "3e707eea42d8f694a2c887b5021697df4a83bb40650601313475c0bbecc56766",
+      "delta": "Byte-identical to Refresh118 SFA snapshot; no current-result-set delta.",
+      "fields": [
+        "licenceNumber",
+        "establishmentAddress",
+        "businessName",
+        "licenseeName",
+        "typeOfFoodBussiness",
+        "grades"
+      ],
+      "status_limit": "Track Records is not a current active/cancelled/expiry/closure register."
+    },
+    {
+      "name": "SFA Track Records past-year licence suspension filter",
+      "url": "https://www.sfa.gov.sg/tools-and-resources/track-records",
+      "api": "https://www.sfa.gov.sg/api/TrackRecord/GetTrackRecord?postalCode=&establishmentAddress=&licenceNumber=&businessName=&licenseeName=&typeOfFoodBussiness=&grades=&isShowLicenceSuspended=true",
+      "retrieved_at_utc": "2026-10-18T17:42:15Z",
+      "http_status": 200,
+      "records": 61,
+      "response_sha256": "c9814ebd1bd82d5223038ba5dc5f4185d243b49ee7f43639d797e5dd21507bcc",
+      "previous_response_sha256": "c9814ebd1bd82d5223038ba5dc5f4185d243b49ee7f43639d797e5dd21507bcc",
+      "delta": "Byte-identical to Refresh118; 61 records all remain historical suspension-filter matches, not active closure evidence."
+    },
+    {
+      "name": "Gardens by the Bay live Dine & Shop and Opening Hours & Closures pages",
+      "url": "https://www.gardensbythebay.com.sg/en/things-to-do/dine-and-shop.html",
+      "additional_url": "https://www.gardensbythebay.com.sg/en/plan-your-visit/opening-hours.html",
+      "retrieved_at_utc": "2026-10-18T17:43:51Z",
+      "http_status": 200,
+      "response_sha256": "efd8cee77f167ac3ddc29d0a92ef3a98b4df2f93122c8f18a3a65b25507939d1",
+      "direct_page_observation": "Current web-rendered directory has no Satay by the Bay entry; opening-hours page lists other dining outlets but not Satay by the Bay. This establishes current listing omission only.",
+      "prior_official_notice": "Gardens by the Bay official pages/search-index capture in Refresh118 stated Satay by the Bay would close from 2026-10-01 to make way for a refreshed waterfront dining experience as part of Wetlands by the Bay. The wording did not explicitly state permanent cessation or whether individual stall tenants relocate."
+    }
+  ],
+  "exact_licence_rechecks": [
+    {
+      "sfa_licence": "CE12H48N000",
+      "workbook_row": {
+        "F&B Name": "SATAY BY THE BAY",
+        "Registered Business Name": "SATAY BY THE BAY",
+        "SFA Licence": "CE12H48N000",
+        "Business Type": "Coffeeshop/Eating House",
+        "Full Address": "18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+        "Postal Code": "018953",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: Not Under SAFE"
+      },
+      "current_sfa_track_record": {
+        "refNo": "CE12H48N000",
+        "applType": "EHFE",
+        "establishmentAddress": "18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+        "licenceNumber": "CE12H48N000",
+        "businessName": "SATAY BY THE BAY",
+        "licenseeName": "SATAY BY THE BAY PTE. LTD.",
+        "typeOfFoodBussiness": "Coffeeshop/Eating House",
+        "grades": "Not Under SAFE"
+      }
+    },
+    {
+      "sfa_licence": "CE12H48N025",
+      "workbook_row": {
+        "F&B Name": "SATAY BY THE BAY",
+        "Registered Business Name": "SATAY BY THE BAY",
+        "SFA Licence": "CE12H48N025",
+        "Business Type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+        "Full Address": "18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+        "Postal Code": "018953",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: A"
+      },
+      "current_sfa_track_record": {
+        "refNo": "CE12H48N025",
+        "applType": "EHFE",
+        "establishmentAddress": "18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+        "licenceNumber": "CE12H48N025",
+        "businessName": "SATAY BY THE BAY",
+        "licenseeName": "SATAY BY THE BAY PTE. LTD.",
+        "typeOfFoodBussiness": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+        "grades": "A"
+      }
+    },
+    {
+      "sfa_licence": "BSF037003",
+      "workbook_row": {
+        "F&B Name": "Lao Liang",
+        "Registered Business Name": "Lao Liang",
+        "SFA Licence": "BSF037003",
+        "Business Type": "NEA Managed Foodstall",
+        "Full Address": "Address: 166 JALAN BESAR 037,BERSEH FOOD CENTRE,Singapore 208877",
+        "Postal Code": "208877",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: A"
+      },
+      "current_sfa_track_record": {
+        "refNo": "BSF037003",
+        "applType": "EHFE",
+        "establishmentAddress": "166 JALAN BESAR 037,BERSEH FOOD CENTRE,Singapore 208877",
+        "licenceNumber": "BSF037003",
+        "businessName": "Lao Liang",
+        "licenseeName": "TAN AH NIE",
+        "typeOfFoodBussiness": "NEA Managed Foodstall",
+        "grades": "A"
+      }
+    },
+    {
+      "sfa_licence": "CE26I73L000",
+      "workbook_row": {
+        "F&B Name": null,
+        "Registered Business Name": null,
+        "SFA Licence": "CE26I73L000",
+        "Business Type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+        "Full Address": "Address: 50 SERANGOON NORTH AVENUE 4 #01-30,FIRST CENTRE,Singapore 555856 (MR1)",
+        "Postal Code": "555856",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: New"
+      },
+      "current_sfa_track_record": {
+        "refNo": "CE26I73L000",
+        "applType": "EHFE",
+        "establishmentAddress": "50 SERANGOON NORTH AVENUE 4 #01-30,FIRST CENTRE,Singapore 555856 (MR1)",
+        "licenceNumber": "CE26I73L000",
+        "businessName": "NA",
+        "licenseeName": "CHOO'S WOK 2",
+        "typeOfFoodBussiness": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+        "grades": "New"
+      }
+    }
+  ],
+  "closure_findings": [
+    {
+      "subject": "Satay by the Bay, Gardens by the Bay #01-19",
+      "exact_workbook_licences": [
+        "CE12H48N000",
+        "CE12H48N025"
+      ],
+      "official_effective_date": "2026-10-01",
+      "current_source_delta": "Official notice previously captured says venue closes from Oct 1 for a refreshed waterfront dining experience; current official dine-and-shop directory no longer lists Satay by the Bay. Current SFA Track Records still returns both exact licence IDs and address, but has no active-status field.",
+      "classification": "venue closed / successor concept planned; permanent cessation of named licensed establishment and status of the individual stall tenants are not explicitly resolved by the current sources.",
+      "removal_recommendation": "none; do not delete exact rows until permanent cessation of each establishment is explicit or exact tenant-to-row closure is confirmed."
+    },
+    {
+      "subject": "Lao Liang, Berseh Food Centre",
+      "exact_workbook_licence": "BSF037003",
+      "match_basis": "Exact business name Lao Liang and official SFA address 166 Jalan Besar stall 037; matches Berseh Food Centre #02-37 in published closure reporting.",
+      "status": "reported final service 2026-10-31; date is in the future as of 2026-10-19. Current SFA record still returns same name/address but provides no current-operating-status field.",
+      "source_quality": "recent reporting attributes the closure to direct owner interview, but no first-party operator or official mall/landlord closure notice located in this pass.",
+      "removal_recommendation": "none before effective date; recheck after 2026-10-31 against direct/official evidence."
+    },
+    {
+      "subject": "London Grill Japanese & Western, First Centre",
+      "exact_workbook_match": false,
+      "review": "recent reporting identifies an upcoming 2026-10-31 closure at First Centre, but no exact London Grill row. The one blank-name First Centre row at #01-30 is CE26I73L000; SFA identifies its licensee as CHOO'S WOK 2 and businessName NA, so it cannot be mapped to London Grill. Do not remove."
+    },
+    {
+      "subject": "OldTown White Coffee, Kallang Wave Mall",
+      "exact_workbook_match": false,
+      "review": "recent reports say last Singapore outlet closed 2026-10-11; no OldTown name or Kallang Wave address row matching this outlet was found in the workbook. No removal candidate."
+    },
+    {
+      "subject": "Hoshino Coffee, United Square / Chinatown Point",
+      "exact_workbook_match": false,
+      "review": "current Hoshino official location page lists both outlet addresses while recent closure reporting says they closed in Aug 2026; workbook contains no Hoshino row at either address. Conflicting source status and no exact row: no deletion."
+    }
+  ],
+  "delta_counts": {
+    "new_sfa_current_records": 0,
+    "sfa_current_response_changed": false,
+    "past_year_suspension_records": 61,
+    "confirmed_exact_permanent_closures": 0,
+    "exact_workbook_removals_recommended": 0,
+    "unresolved_closed_or_upcoming_closure_leads": 5
+  },
+  "decision": "No workbook edits. No exact permanent closure is established by current authoritative evidence at the row/licence level. Keep rows pending stronger evidence; SFA Track Records response presence and past-year suspension are not licence-currentness or closure proof.",
+  "transport_note": "Official pages/API fetched read-only; local curl needed -k because Python/system certificate store failed validation. Domains and payloads verified against prior official-source snapshots where available; this transport caveat is recorded."
+}

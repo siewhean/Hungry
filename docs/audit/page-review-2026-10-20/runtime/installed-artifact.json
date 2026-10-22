@@ -1,0 +1,9 @@
+{
+  "CFBundleIdentifier": "app.hungry.mobile",
+  "CFBundleShortVersionString": "0.1.0",
+  "CFBundleVersion": "1",
+  "DTXcode": "2700",
+  "DTSDKName": "iphonesimulator27.0",
+  "binary_sha256": "ab0575735f23f5634f8694670abcfc8d0d9bb6a8e454c7e4b50bff9c2b22fba9",
+  "source_equivalence": "Unverified; pre-existing installed binary, no current build/install performed."
+}

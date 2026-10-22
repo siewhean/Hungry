@@ -1,0 +1,89 @@
+{
+  "snapshot": "refresh136_mcdonalds_contacts_integration_20261019",
+  "baseline_sha256": "f5e74668be36886b168981d94100a2e09c2bb8238e7a0ed2f2ca86a5d82925c6",
+  "workbook_sha256_after": "51fde2c4bf0308f20e504f7313c0134ee4392ba453f3bf09b332f956df983c1d",
+  "integrated_fields": 2,
+  "integrated_proposals": [
+    {
+      "row_number": 18458,
+      "sfa_licence": "C84333E000",
+      "sfa_name": "MCDONALD'S",
+      "sfa_address": "Address: YUAN CHING ROAD Singapore 618640",
+      "sfa_postal_code": "618640",
+      "official_branch_name": "Jurong Bowl",
+      "official_branch_address": "1A Yuan Ching Road, SuperBowl Complex, Singapore 618640",
+      "field": "Contact Details",
+      "before": null,
+      "after": "Contact: +65 6265 9104",
+      "source_url": "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+      "source_type": "first_party_operator_contact_directory",
+      "evidence": "The first-party directory lists McDonald’s Jurong Bowl at 1A Yuan Ching Road, SuperBowl Complex, Singapore 618640, telephone 62659104 (article lines 90-91).",
+      "identity_check": "Canonical SFA row licence C84333E000 is MCDONALD’S at Yuan Ching Road, Singapore 618640; exact brand plus postal code, unique McDonald’s record at that postal. Workbook contact field is blank.",
+      "observed_date": "2026-10-19",
+      "confidence": "high",
+      "caveats": []
+    },
+    {
+      "row_number": 18587,
+      "sfa_licence": "SW09279E000",
+      "sfa_name": "MCDONALDS",
+      "sfa_address": "Address: 624 CHOA CHU KANG STREET 62 #01-264,YEW TEE SHOPPING CENTRE,Singapore 680624",
+      "sfa_postal_code": "680624",
+      "official_branch_name": "Choa Chu Kang 62",
+      "official_branch_address": "624 Choa Chu Kang Street 62 #01-262/264, Singapore 680624",
+      "field": "Contact Details",
+      "before": null,
+      "after": "Contact: +65 6762 8779",
+      "source_url": "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details",
+      "source_type": "first_party_operator_contact_directory",
+      "evidence": "The first-party directory lists McDonald’s Choa Chu Kang 62 at Blk 624 Choa Chu Kang Street 62 #01-262/264, Singapore 680624, telephone 67628779 (article lines 145).",
+      "identity_check": "Canonical SFA row licence SW09279E000 is MCDONALDS at 624 Choa Chu Kang Street 62 #01-264, Yew Tee Shopping Centre, Singapore 680624; street, postal, and listed unit range match. Workbook contact field is blank.",
+      "observed_date": "2026-10-19",
+      "confidence": "high",
+      "caveats": []
+    }
+  ],
+  "withheld": [
+    {
+      "row_number": 18568,
+      "sfa_licence": "SE07287C000",
+      "sfa_name": "MCDONALD'S LEVEL 1 - SE07287C000",
+      "sfa_address": "Address: 95 AIRPORT BOULEVARD #L1-LF3,Singapore 819648",
+      "sfa_postal_code": "819648",
+      "field": "Contact Details",
+      "reason": "Official directory lists Changi Airport Terminal 2 Arrival Meeting Hall South, Level 1 #01-08, postal 819643 (line 275), while the SFA record is 95 Airport Boulevard #L1-LF3, postal 819648. Terminal, unit, and postal do not match; do not transfer phone.",
+      "source_url": "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details"
+    },
+    {
+      "row_number": 18573,
+      "sfa_licence": "C90161L000",
+      "sfa_name": "MCDONALDS",
+      "sfa_address": "Address: 632 BUKIT BATOK CENTRAL #01-138,Singapore 650632",
+      "sfa_postal_code": "650632",
+      "field": "Contact Details",
+      "reason": "Official directory lists McDonald’s Bukit Batok at Blk 632 Bukit Batok Central #01-38, #01-140, #01-142, postal 650632 (line 106); SFA row is #01-138. Unit differs; do not transfer phone.",
+      "source_url": "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details"
+    },
+    {
+      "row_number": 18581,
+      "sfa_licence": "NW10072X000",
+      "sfa_name": "MCDONALDS",
+      "sfa_address": "Address: 18 BOON LAY WAY #01-173,TRADEHUB 21,Singapore 609966",
+      "sfa_postal_code": "609966",
+      "field": "Contact Details",
+      "reason": "Official directory lists Trade Hub 21 at 28 Boon Lay Way #01-173/174, postal 609971 (lines 172-173); SFA row is 18 Boon Lay Way #01-173, postal 609966. Street number and postal differ; do not transfer phone.",
+      "source_url": "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details"
+    },
+    {
+      "row_number": 18586,
+      "sfa_licence": "SW08019E000",
+      "sfa_name": "MCDONALDS",
+      "sfa_address": "Address: 21 CHOA CHU KANG AVENUE 4 #01-21A,Singapore 689812",
+      "sfa_postal_code": "689812",
+      "field": "Contact Details",
+      "reason": "Official directory lists Choa Chu Kang 4 at 21 Choa Chu Kang Avenue 4 #01-20, Lot One Shoppers’ Mall, postal 689812 (line 146); SFA row is unit #01-21A. Unit differs; do not transfer phone.",
+      "source_url": "https://custcare.mcdonalds.com.sg/hc/en-us/articles/11875954072857-McDonald-s-Store-Addresses-and-Contact-Details"
+    }
+  ],
+  "observed_date": "2026-10-19"
+}

@@ -1,0 +1,128 @@
+{
+  "dataset": "Refresh122 Oddle menu batch",
+  "observed_date": "2026-10-19",
+  "workbook": {
+    "path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "sha256": "e75b32a39d9840532afbff2f5b497cc7a3a12870097418716f7d0b92f503f84f"
+  },
+  "method": "Read-only research on publicly visible merchant-operated Oddle direct-order pages. No account login, order placement, paid API, or image copying. Workbook not edited.",
+  "proposals": {
+    "exact_outlet_matches": 1,
+    "menu_item_rows": 3,
+    "directory_menu_url_updates": [
+      {
+        "sfa_licence": "SW11408L000",
+        "fnb_name": "RASA ISTIMEWA RESTAURANT",
+        "menu_url": "https://rasaistimewarestaurantjurong.oddle.me/en_SG?productId=8a818d807a1d4a72017a1dfe875653cc",
+        "reason": "Direct merchant ordering page identifies Rasa Istimewa at SAFRA Jurong; SFA full address is 333 Boon Lay Way #2B-01, SAFRA Jurong Club, Singapore 649848."
+      }
+    ],
+    "menu_items": [
+      {
+        "sfa_licence": "SW11408L000",
+        "fnb_name": "RASA ISTIMEWA RESTAURANT",
+        "menu_item": "SIGNATURE WHITE SEAFOOD HOKKIEN MEE",
+        "section": "NOODLES",
+        "variant_notes": null,
+        "price_as_published": "From S$11.80+",
+        "menu_scope": "Oddle delivery/pickup ordering price; price may change",
+        "official_source_url": "https://rasaistimewarestaurantjurong.oddle.me/en_SG?productId=8a818d807a1d4a72017a1dfe875653cc",
+        "observed_updated": "2026-10-19",
+        "freshness_status": "Observed on public Oddle merchant ordering page 2026-10-19; recheck before use",
+        "source_type": "Merchant ordering page (Oddle)",
+        "rights_reuse_status": "Factual item name and displayed ordering price only; no descriptive prose/images copied"
+      },
+      {
+        "sfa_licence": "SW11408L000",
+        "fnb_name": "RASA ISTIMEWA RESTAURANT",
+        "menu_item": "NANYANG CURRY KING PRAWN",
+        "section": "PRAWN",
+        "variant_notes": null,
+        "price_as_published": "From S$39.80+",
+        "menu_scope": "Oddle delivery/pickup ordering price; price may change",
+        "official_source_url": "https://rasaistimewarestaurantjurong.oddle.me/en_SG?productId=8a818d807a1d4a72017a1dfe875653cc",
+        "observed_updated": "2026-10-19",
+        "freshness_status": "Observed on public Oddle merchant ordering page 2026-10-19; recheck before use",
+        "source_type": "Merchant ordering page (Oddle)",
+        "rights_reuse_status": "Factual item name and displayed ordering price only; no descriptive prose/images copied"
+      },
+      {
+        "sfa_licence": "SW11408L000",
+        "fnb_name": "RASA ISTIMEWA RESTAURANT",
+        "menu_item": "Set Menu 2 (4-6 pax)",
+        "section": "SET MENU",
+        "variant_notes": "5-course set including steamed rice",
+        "price_as_published": "S$128.80",
+        "menu_scope": "Oddle delivery/pickup ordering price; price may change",
+        "official_source_url": "https://rasaistimewarestaurantjurong.oddle.me/en_SG?productId=8a818d807a1d4a72017a1dfe875653cc",
+        "observed_updated": "2026-10-19",
+        "freshness_status": "Observed on public Oddle merchant ordering page 2026-10-19; recheck before use",
+        "source_type": "Merchant ordering page (Oddle)",
+        "rights_reuse_status": "Factual item name, set composition and displayed ordering price only; no descriptive prose/images copied"
+      }
+    ]
+  },
+  "held": [
+    {
+      "brand": "Uncle Leong Signatures (Joo Koon)",
+      "sfa_candidates": [
+        "SW14736E000"
+      ],
+      "reason": "Public direct Oddle page identifies Joo Koon, and its reservation page matches 1 Joo Koon Circle #03-26; direct-order page rendered categories but exposed no current item prices. A 2022 Oddle editorial contained historical prices and was excluded as stale."
+    },
+    {
+      "brand": "Dumpling Darlings",
+      "sfa_candidates": [
+        "CE12466A000",
+        "CE26468V000",
+        "W96066A000"
+      ],
+      "reason": "Direct Oddle page exposes dishes and prices but does not resolve them to a specific listed outlet/unit; held to avoid spreading chain-level ordering data across branches."
+    },
+    {
+      "brand": "White Restaurant",
+      "sfa_candidates": [
+        "CE13053C000",
+        "NE15723K000",
+        "NE16467X000",
+        "NW15633A000",
+        "SE19234C000",
+        "SW15D58P000"
+      ],
+      "reason": "Direct Oddle page is chain-level and does not establish the exact SFA branch applicability of the displayed menu; held."
+    }
+  ],
+  "caveats": [
+    "Prices shown are ordering prices (some marked +, so additional charges may apply); delivery/pickup pricing may differ from dine-in.",
+    "Menu availability and prices can change; recheck the source before operational use.",
+    "No opening hours, closure, public access status, or image claims are inferred."
+  ],
+  "sources": [
+    {
+      "url": "https://rasaistimewarestaurantjurong.oddle.me/en_SG?productId=8a818d807a1d4a72017a1dfe875653cc",
+      "source_name": "Rasa Istimewa Restaurant at SAFRA Jurong direct Oddle ordering page",
+      "accessed": "2026-10-19",
+      "evidence": "Page title identifies the SAFRA Jurong merchant, lists menu categories, exposes Set Menu 2 at S$128.80, Nanyang Curry King Prawn from S$39.80+, and Signature White Seafood Hokkien Mee from S$11.80+."
+    },
+    {
+      "url": "https://reserve.oddle.me/rasaistimewasafrajurong",
+      "source_name": "Rasa Istimewa SAFRA Jurong Oddle reservation link",
+      "accessed": "2026-10-19",
+      "evidence": "Linked from the direct-order page; branch name cross-check only."
+    },
+    {
+      "url": "https://reserve.oddle.me/en_SG/uncleleong-signatures?outletId=2865",
+      "source_name": "Uncle Leong Signatures Joo Koon Oddle reservation listing",
+      "accessed": "2026-10-19",
+      "evidence": "Displays 1 Joo Koon Circle #03-26, matching workbook candidate address; menu prices not used."
+    }
+  ],
+  "counts": {
+    "exact_matches": 1,
+    "menu_items_proposed": 3,
+    "directory_menu_urls_proposed": 1,
+    "held_brand_groups": 3,
+    "images_proposed": 0,
+    "workbook_rows_changed": 0
+  }
+}

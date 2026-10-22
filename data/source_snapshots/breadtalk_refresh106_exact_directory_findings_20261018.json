@@ -1,0 +1,280 @@
+{
+  "schema_version": 1,
+  "batch": "BreadTalk Refresh106 official locator exact directory join revalidation",
+  "captured_at_local": "2026-10-18T17:50:27+08:00",
+  "workbook_compared": "/tmp/hungry-refresh106-staged.xlsx",
+  "workbook_sha256": "fce81938ecec07cbd54555577f98a773e06aa839ad978b60800b5345b900ff96",
+  "workbook_edit_performed": false,
+  "source_urls": [
+    {
+      "url": "https://www.breadtalk.com.sg/locations/",
+      "source_kind": "official Singapore outlet directory page",
+      "http_status": 200
+    },
+    {
+      "url": "https://www.breadtalk.com.sg/wp-admin/admin-ajax.php?action=store_search&lat=1.352083&lng=103.819836&autoload=1&maxResults=1000&radius=100",
+      "source_kind": "public JSON endpoint backing official outlet locator",
+      "http_status": 200,
+      "server_http_date": "2026-10-18T09:49:30Z",
+      "records_returned": 47
+    },
+    {
+      "url": "https://www.breadtalk.com.sg/",
+      "source_kind": "official Singapore brand homepage",
+      "http_status": 200
+    },
+    {
+      "url": "https://www.breadtalk.com.sg/shop/",
+      "source_kind": "official Singapore shop/menu page",
+      "http_status": 200
+    }
+  ],
+  "locator_outlet_record_count": 47,
+  "exact_sfa_rows_revalidated": 4,
+  "blank_only_directory_field_proposals": 15,
+  "match_rule": "Exact six-digit postal code, SFA F&B name identifies BreadTalk, and complete normalized unit sets are equal after shorthand expansion. Official mall/outlet name is retained as context; its presence in the SFA address is not required. Partial-unit, postal-only, or fuzzy joins are rejected.",
+  "exact_join_proposals": [
+    {
+      "official_store_id": 2527,
+      "official_directory_name": "Geneo",
+      "official_postal_code": "119315",
+      "official_address": "1B Science Park Drive #B2-37/38 Geneo",
+      "official_unit_raw": "B2-37/38",
+      "official_unit_normalized": [
+        "B2-37",
+        "B2-38"
+      ],
+      "sfa_licence": "SW25204L000",
+      "sfa_business_name": "BREADTALK",
+      "sfa_address": "Address: 1B SCIENCE PARK DRIVE #B2-37,#B2-38,GENEO,Singapore 119315",
+      "sfa_postal_code": "119315",
+      "sfa_unit_raw": "B2-37/B2-38",
+      "sfa_unit_normalized": [
+        "B2-37",
+        "B2-38"
+      ],
+      "match_evidence": {
+        "exact_postal_match": true,
+        "breadtalk_business_name_match": true,
+        "sfa_address_mentions_mall_name": true,
+        "normalized_unit_sets_exactly_equal": true,
+        "match_method": "BreadTalk SFA business name + exact postal + exact normalized unit set; shorthand ranges expanded only"
+      },
+      "current_blank_only_field_proposals": [
+        {
+          "directory_column": "Opening Hours / Closed Days",
+          "proposed_workbook_value": "Hours: Weekday: 07:30am – 9:30pm Weekend & PH: 09:30am – 8:30pm",
+          "source_value": "Weekday: 07:30am – 9:30pm Weekend & PH: 09:30am – 8:30pm"
+        },
+        {
+          "directory_column": "Contact Details",
+          "proposed_workbook_value": "Contact: 63484434",
+          "source_value": "63484434"
+        },
+        {
+          "directory_column": "Website",
+          "proposed_workbook_value": "https://www.breadtalk.com.sg/",
+          "source_value": "https://www.breadtalk.com.sg/"
+        },
+        {
+          "directory_column": "Menu URL",
+          "proposed_workbook_value": "https://www.breadtalk.com.sg/shop/",
+          "source_value": "https://www.breadtalk.com.sg/shop/"
+        }
+      ],
+      "coordinate_status": {
+        "latitude_already_populated": true,
+        "longitude_already_populated": true,
+        "official_locator_latitude": "1.291915",
+        "official_locator_longitude": "103.784962",
+        "coordinate_overwrite_proposed": false
+      },
+      "current_official_hours_text": "Weekday: 07:30am – 9:30pm Weekend & PH: 09:30am – 8:30pm",
+      "current_official_phone": "63484434",
+      "current_listing_status": null,
+      "branch_operation_independently_observed": false
+    },
+    {
+      "official_store_id": 2825,
+      "official_directory_name": "Hougang Mall",
+      "official_postal_code": "538766",
+      "official_address": "90 Hougang Ave 10 #01-13B/13C Hougang Mall",
+      "official_unit_raw": "01-13B/13C",
+      "official_unit_normalized": [
+        "01-13B",
+        "01-13C"
+      ],
+      "sfa_licence": "NE25M04C000",
+      "sfa_business_name": "BreadTalk",
+      "sfa_address": "Address: 90 HOUGANG AVENUE 10 #01-13B,#01-13C,HOUGANG MALL,Singapore 538766",
+      "sfa_postal_code": "538766",
+      "sfa_unit_raw": "01-13B/01-13C",
+      "sfa_unit_normalized": [
+        "01-13B",
+        "01-13C"
+      ],
+      "match_evidence": {
+        "exact_postal_match": true,
+        "breadtalk_business_name_match": true,
+        "sfa_address_mentions_mall_name": true,
+        "normalized_unit_sets_exactly_equal": true,
+        "match_method": "BreadTalk SFA business name + exact postal + exact normalized unit set; shorthand ranges expanded only"
+      },
+      "current_blank_only_field_proposals": [
+        {
+          "directory_column": "Opening Hours / Closed Days",
+          "proposed_workbook_value": "Hours: Weekdays: 08:00am - 10:00pm Weekends: 08:00am - 10:00pm PH eve/PH: 08:00am - 10:00pm",
+          "source_value": "Weekdays: 08:00am - 10:00pm Weekends: 08:00am - 10:00pm PH eve/PH: 08:00am - 10:00pm"
+        },
+        {
+          "directory_column": "Website",
+          "proposed_workbook_value": "https://www.breadtalk.com.sg/",
+          "source_value": "https://www.breadtalk.com.sg/"
+        },
+        {
+          "directory_column": "Menu URL",
+          "proposed_workbook_value": "https://www.breadtalk.com.sg/shop/",
+          "source_value": "https://www.breadtalk.com.sg/shop/"
+        }
+      ],
+      "coordinate_status": {
+        "latitude_already_populated": true,
+        "longitude_already_populated": true,
+        "official_locator_latitude": "1.372525",
+        "official_locator_longitude": "103.893817",
+        "coordinate_overwrite_proposed": false
+      },
+      "current_official_hours_text": "Weekdays: 08:00am - 10:00pm Weekends: 08:00am - 10:00pm PH eve/PH: 08:00am - 10:00pm",
+      "current_official_phone": null,
+      "current_listing_status": null,
+      "branch_operation_independently_observed": false
+    },
+    {
+      "official_store_id": 2549,
+      "official_directory_name": "West Mall",
+      "official_postal_code": "658713",
+      "official_address": "1 Bukit Batok #01-45/46 Central Link",
+      "official_unit_raw": "01-45/46",
+      "official_unit_normalized": [
+        "01-45",
+        "01-46"
+      ],
+      "sfa_licence": "SW25838A000",
+      "sfa_business_name": "BREADTALK",
+      "sfa_address": "Address: 1 BUKIT BATOK CENTRAL LINK #01-45,#01-46,WEST MALL,Singapore 658713 (PART OF RIGHT)",
+      "sfa_postal_code": "658713",
+      "sfa_unit_raw": "01-45/01-46",
+      "sfa_unit_normalized": [
+        "01-45",
+        "01-46"
+      ],
+      "match_evidence": {
+        "exact_postal_match": true,
+        "breadtalk_business_name_match": true,
+        "sfa_address_mentions_mall_name": true,
+        "normalized_unit_sets_exactly_equal": true,
+        "match_method": "BreadTalk SFA business name + exact postal + exact normalized unit set; shorthand ranges expanded only"
+      },
+      "current_blank_only_field_proposals": [
+        {
+          "directory_column": "Opening Hours / Closed Days",
+          "proposed_workbook_value": "Hours: Daily: 8:00 AM to 10:00 PM",
+          "source_value": "Daily: 8:00 AM to 10:00 PM"
+        },
+        {
+          "directory_column": "Contact Details",
+          "proposed_workbook_value": "Contact: 68344434",
+          "source_value": "68344434"
+        },
+        {
+          "directory_column": "Website",
+          "proposed_workbook_value": "https://www.breadtalk.com.sg/",
+          "source_value": "https://www.breadtalk.com.sg/"
+        },
+        {
+          "directory_column": "Menu URL",
+          "proposed_workbook_value": "https://www.breadtalk.com.sg/shop/",
+          "source_value": "https://www.breadtalk.com.sg/shop/"
+        }
+      ],
+      "coordinate_status": {
+        "latitude_already_populated": true,
+        "longitude_already_populated": true,
+        "official_locator_latitude": "1.350233",
+        "official_locator_longitude": "103.749534",
+        "coordinate_overwrite_proposed": false
+      },
+      "current_official_hours_text": "Daily: 8:00 AM to 10:00 PM",
+      "current_official_phone": "68344434",
+      "current_listing_status": null,
+      "branch_operation_independently_observed": false
+    },
+    {
+      "official_store_id": 1207,
+      "official_directory_name": "Zhongshan Mall",
+      "official_postal_code": "329984",
+      "official_address": "20 Ah Hood Road #01-10/13, Zhongshan Mall",
+      "official_unit_raw": "01-10/13",
+      "official_unit_normalized": [
+        "01-10",
+        "01-13"
+      ],
+      "sfa_licence": "CE13V41B000",
+      "sfa_business_name": "BREADTALK",
+      "sfa_address": "Address: 20 AH HOOD ROAD #01-10&13,Singapore 329984",
+      "sfa_postal_code": "329984",
+      "sfa_unit_raw": "01-10&13",
+      "sfa_unit_normalized": [
+        "01-10",
+        "01-13"
+      ],
+      "match_evidence": {
+        "exact_postal_match": true,
+        "breadtalk_business_name_match": true,
+        "sfa_address_mentions_mall_name": false,
+        "normalized_unit_sets_exactly_equal": true,
+        "match_method": "BreadTalk SFA business name + exact postal + exact normalized unit set; shorthand ranges expanded only"
+      },
+      "current_blank_only_field_proposals": [
+        {
+          "directory_column": "Opening Hours / Closed Days",
+          "proposed_workbook_value": "Hours: Weekday: 09:00am - 09:00pm Weekend: 09:00am - 09:00pm PH eve/ PH: 08:00am - 09:00pm",
+          "source_value": "Weekday: 09:00am - 09:00pm Weekend: 09:00am - 09:00pm PH eve/ PH: 08:00am - 09:00pm"
+        },
+        {
+          "directory_column": "Contact Details",
+          "proposed_workbook_value": "Contact: 6684 4434",
+          "source_value": "6684 4434"
+        },
+        {
+          "directory_column": "Website",
+          "proposed_workbook_value": "https://www.breadtalk.com.sg/",
+          "source_value": "https://www.breadtalk.com.sg/"
+        },
+        {
+          "directory_column": "Menu URL",
+          "proposed_workbook_value": "https://www.breadtalk.com.sg/shop/",
+          "source_value": "https://www.breadtalk.com.sg/shop/"
+        }
+      ],
+      "coordinate_status": {
+        "latitude_already_populated": true,
+        "longitude_already_populated": true,
+        "official_locator_latitude": "1.326742",
+        "official_locator_longitude": "103.846693",
+        "coordinate_overwrite_proposed": false
+      },
+      "current_official_hours_text": "Weekday: 09:00am - 09:00pm Weekend: 09:00am - 09:00pm PH eve/ PH: 08:00am - 09:00pm",
+      "current_official_phone": "6684 4434",
+      "current_listing_status": null,
+      "branch_operation_independently_observed": false
+    }
+  ],
+  "limitations": [
+    "Official locator presence is not proof the outlet was physically observed operating.",
+    "No ratings or review counts were found in the official locator response.",
+    "Existing coordinates were retained; no coordinate overwrites are proposed.",
+    "The staged workbook omits the 219 directory writes described by the parent task; this snapshot compares the unchanged directory rows only."
+  ],
+  "no_paid_sources_or_services_used": true
+}

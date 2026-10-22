@@ -12,7 +12,14 @@ import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 export function mergeStallPosts(...postLists: StallPost[][]): StallPost[] {
   const seen = new Set<string>();
   return postLists.flat().filter((post) => {
-    if (isContentHiddenForSession({ id: post.id, authorName: post.authorName })) return false;
+    if (
+      isContentHiddenForSession({
+        id: post.id,
+        authorName: post.authorName,
+        authorId: post.authorId,
+      })
+    )
+      return false;
     if (seen.has(post.id)) return false;
     seen.add(post.id);
     return true;
@@ -28,22 +35,13 @@ export function listSharedStallPostsSync(repository: DataRepository = getDataRep
 
 export async function listSharedStallPosts(repository: DataRepository = getDataRepository()) {
   const service = getHungryService();
-  let servicePosts: StallPost[] = [];
-  let bitePosts: StallPost[] = [];
-
-  try {
-    servicePosts = await service.content.listStallPosts();
-  } catch {
-    servicePosts = [];
-  }
-
-  try {
-    bitePosts = (await service.social.getBitesFeed()).map((bite) =>
-      biteToStallPost(bite, { authorAvatarUrl: bite.authorAvatar }),
-    );
-  } catch {
-    bitePosts = [];
-  }
+  const [servicePosts, bites] = await Promise.all([
+    service.content.listStallPosts(),
+    service.social.getBitesFeed(),
+  ]);
+  const bitePosts = bites.map((bite) =>
+    biteToStallPost(bite, { authorAvatarUrl: bite.authorAvatar }),
+  );
 
   if (getServiceProvider().mode === "supabase") {
     return mergeStallPosts(bitePosts, servicePosts, repository.listStallPosts());

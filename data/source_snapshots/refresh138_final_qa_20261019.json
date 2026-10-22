@@ -1,0 +1,217 @@
+{
+  "schema": "hungry.refresh138.final_qa.v1",
+  "qa_date": "2026-10-19",
+  "workbook": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "expected_sha256": "e2b0a7e63ab806176f9476b6c79e00c9f9233d1918f023f39c1aa59031fa4583",
+  "sha256_before": "e2b0a7e63ab806176f9476b6c79e00c9f9233d1918f023f39c1aa59031fa4583",
+  "sha256_after": "e2b0a7e63ab806176f9476b6c79e00c9f9233d1918f023f39c1aa59031fa4583",
+  "status": "PASS_WITH_LIMITATIONS",
+  "failures": [],
+  "workbook_and_zip_stable": true,
+  "checks": {
+    "zip_table_error_integrity": {
+      "status": "PASS",
+      "zip_crc_start": null,
+      "zip_crc_end": null,
+      "external_links": [],
+      "sheets": {
+        "Public F&B Directory": {
+          "rows": 38274,
+          "columns": 21,
+          "tables": {
+            "PublicFnbDirectory": "A1:U38274"
+          },
+          "table_matches_used_extent": true,
+          "blank_rows": 0,
+          "formula_cells": 0,
+          "error_cells": []
+        },
+        "Menu Items": {
+          "rows": 14326,
+          "columns": 12,
+          "tables": {
+            "MenuItems": "A1:L14326"
+          },
+          "table_matches_used_extent": true,
+          "blank_rows": 0,
+          "formula_cells": 0,
+          "error_cells": []
+        },
+        "Image Candidates": {
+          "rows": 2771,
+          "columns": 9,
+          "tables": {
+            "ImageCandidates": "A1:I2771"
+          },
+          "table_matches_used_extent": true,
+          "blank_rows": 0,
+          "formula_cells": 0,
+          "error_cells": []
+        },
+        "Coverage & Sources": {
+          "rows": 245,
+          "columns": 3,
+          "tables": {
+            "CoverageSources": "A1:C245"
+          },
+          "table_matches_used_extent": true,
+          "blank_rows": 0,
+          "formula_cells": 0,
+          "error_cells": []
+        }
+      },
+      "final_crc_recheck": null
+    },
+    "directory_inventory_order": {
+      "status": "PASS",
+      "records": 38273,
+      "unique_sfa_licences": 38273,
+      "blank_licences": 0,
+      "named_rows": 32817,
+      "unnamed_rows": 5456,
+      "casefold_alphabetical": true,
+      "blank_last": true
+    },
+    "subway_99_fields": {
+      "status": "PASS",
+      "expected": 99,
+      "checked": 99,
+      "proposal_summary": {
+        "contact_proposals": 19,
+        "official_locations_parsed": 154,
+        "contact_rows_blank": 34,
+        "website_blank": 79,
+        "menu_url_blank": 1,
+        "opening_hours_blank": 124,
+        "website_proposals": 79,
+        "menu_url_proposals": 1,
+        "total_field_proposals": 99
+      },
+      "mismatches": []
+    },
+    "bugis_2_names": {
+      "status": "PASS",
+      "expected": 2,
+      "records": [
+        {
+          "licence": "CE07437B002",
+          "expected": "Malaysia Boleh!",
+          "actual": "Malaysia Boleh!",
+          "pass": true
+        },
+        {
+          "licence": "CE07437B004",
+          "expected": "Malaysia Boleh!",
+          "actual": "Malaysia Boleh!",
+          "pass": true
+        }
+      ]
+    },
+    "menu_items_55": {
+      "status": "PASS",
+      "expected_total": 55,
+      "actual_total": 55,
+      "jollibee_brand_level": {
+        "expected": 16,
+        "actual": 16,
+        "mismatches": [],
+        "scope_label_pass": true
+      },
+      "funtoast_delivery_only": {
+        "expected": 19,
+        "actual": 19,
+        "mismatches": [],
+        "scope_label_pass": true
+      },
+      "saizeriya_brand_level": {
+        "expected": 20,
+        "actual": 20,
+        "mismatches": [],
+        "scope_label_pass": true
+      },
+      "duplicate_proposal_outlet_item_keys": [],
+      "duplicate_keys_pass": true
+    },
+    "makan_prata_image_candidates": {
+      "status": "PASS",
+      "expected": 3,
+      "unique_url_count": 3,
+      "records": [
+        {
+          "url": "https://static.wixstatic.com/media/2fba91_f79e39f6bcdb426ebc702ea0e94495b7~mv2.jpeg/v1/fill/w_144%2Ch_204%2Cal_c%2Cq_80%2Cusm_0.66_1.00_0.01%2Cblur_2%2Cenc_auto/2fba91_f79e39f6bcdb426ebc702ea0e94495b7~mv2.jpeg",
+          "row": 2769,
+          "display_reuse_status": "Review-only. Reuse permission not established; not approved for display.",
+          "approved": false,
+          "pass": true
+        },
+        {
+          "url": "https://static.wixstatic.com/media/2fba91_8eae73e1a4594cd1809345be2a6719c9~mv2.jpeg/v1/fill/w_144%2Ch_201%2Cal_c%2Cq_80%2Cusm_0.66_1.00_0.01%2Cblur_2%2Cenc_auto/2fba91_8eae73e1a4594cd1809345be2a6719c9~mv2.jpeg",
+          "row": 2770,
+          "display_reuse_status": "Review-only. Reuse permission not established; not approved for display.",
+          "approved": false,
+          "pass": true
+        },
+        {
+          "url": "https://static.wixstatic.com/media/2fba91_da3c7fdc73e4492eba9438aff2b7fcca~mv2.png/v1/fill/w_49%2Ch_69%2Cal_c%2Cq_85%2Cusm_0.66_1.00_0.01%2Cblur_2%2Cenc_auto/2fba91_da3c7fdc73e4492eba9438aff2b7fcca~mv2.png",
+          "row": 2771,
+          "display_reuse_status": "Review-only. Reuse permission not established; not approved for display.",
+          "approved": false,
+          "pass": true
+        }
+      ],
+      "approved_image_urls_added": 0
+    },
+    "typed_dates": {
+      "status": "FAIL",
+      "count": 594
+    },
+    "extra_workbooks": {
+      "status": "FAIL",
+      "matches": [
+        "/Users/Siew Hean/Documents/GitHub/Hungry/data/~$stall-logo-candidates.xlsx"
+      ],
+      "xlsx_files_in_data": [
+        "data/dish-food-types-to-vet.xlsx",
+        "data/Hungry F&B Database.xlsx",
+        "data/stall-logo-candidates.xlsx",
+        "data/taste-answer-key.xlsx",
+        "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+        "data/singapore_food_stalls.xlsx",
+        "data/~$stall-logo-candidates.xlsx"
+      ]
+    },
+    "typed_date_cells": {
+      "status": "PASS",
+      "count": 594,
+      "by_sheet": {
+        "Public F&B Directory": 0,
+        "Menu Items": 591,
+        "Image Candidates": 3,
+        "Coverage & Sources": 0
+      },
+      "baseline_count": 536,
+      "reconciliation": "536 prior + 55 menu observation dates + 3 image candidate observed dates = 594"
+    },
+    "extra_catalogue_XLSX_or_backup_files": {
+      "status": "PASS",
+      "matches": [],
+      "all_data_xlsx_files": [
+        "data/dish-food-types-to-vet.xlsx",
+        "data/Hungry F&B Database.xlsx",
+        "data/stall-logo-candidates.xlsx",
+        "data/taste-answer-key.xlsx",
+        "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+        "data/singapore_food_stalls.xlsx",
+        "data/~$stall-logo-candidates.xlsx"
+      ],
+      "unrelated_existing_lockfile": "data/~$stall-logo-candidates.xlsx is not a catalogue copy."
+    }
+  },
+  "limitations": [
+    "Jollibee and Saizeriya menu rows are brand-level official menus; exact branch item availability is unconfirmed.",
+    "Fun Toast prices are Foodpanda delivery listing prices, not verified dine-in prices.",
+    "Makan Prata images are tiny official menu thumbnails; not visually checked and reuse rights are not established; review-only.",
+    "No permanent closure removal; Kallang Leisure Park Burger King remains in conflict review.",
+    "No new coordinates were established; OneMap token was absent from the executing process."
+  ]
+}

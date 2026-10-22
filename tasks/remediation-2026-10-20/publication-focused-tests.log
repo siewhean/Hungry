@@ -1,0 +1,82 @@
+(node:72414) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ review editor subscribes with selectors and never picks a dish for the user (1.861417ms)
+✔ review submit sends the recommend choice and a retry-stable client review id (41.190375ms)
+✔ prototype-only review features stay out of production (3.204208ms)
+✔ review tab loads one paginated page with refresh, error and empty states (1.214708ms)
+(node:72415) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ composer publish writes a shared post visible in feed and profile sources (40.199291ms)
+✔ composer publish uses the authenticated profile when profile hydration is still guest (75.501708ms)
+✔ review-only composer publish validates rating and records review state without creating a post (5.463ms)
+✔ publish-both records a review and still publishes a cross-user home feed post (3.824542ms)
+✔ publish-both validates post media before writing review state (3.31925ms)
+✔ publish-both keeps local review state unchanged when post write fails (3.791875ms)
+✔ composer publish requires an explicit dish and never guesses one from a location (0.740417ms)
+✔ publish-both retry reuses the client review id so the review is not duplicated (7.412375ms)
+✔ late publication receipts cannot populate the next account's local feed (3.276834ms)
+(node:72416) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ review filtering precedes limiting and searches dish, stall and tags (1.394458ms)
+✔ same-time review cursor pages use IDs and top-rated uses rating first (0.230625ms)
+✔ cursor keeps microsecond precision and rejects incomplete rating boundaries (0.323375ms)
+(node:72417) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ lost upload acknowledgement recovers immutable object, preserving order and retry identity (3.243459ms)
+✔ partial failure reports exact photo and preserves completed assets (0.521541ms)
+✔ account transition prevents publishing a recovered upload (0.142208ms)
+(node:72418) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ immutable attempts change when bytes change at the same local URI (1.391625ms)
+(node:72419) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ mock review publication is visible, canonical, retry-stable and ownership protected (3.632584ms)
+(node:72420) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ discovery.getBuildingDetail returns enriched building metadata (1.782708ms)
+✔ discovery.getFloorPlan returns a floor plan with polygon geometry (0.285ms)
+✔ discovery.searchDishes maps repository results into scored search contracts (6.311417ms)
+✔ reviews.submitReview persists reviewed dish id in profile state (5.086709ms)
+✔ reviews.listRecentReviews pages newest-first reviews across dishes (1.599458ms)
+✔ discovery.decideForMe respects profile dietary preferences (0.345375ms)
+✔ recommendations.getSlate returns shared recommendation shape with hard dietary filters (0.299667ms)
+✔ recommendations.recordExplicitFeedback applies food-specific click signals (0.625667ms)
+✔ checklist mock service persists items, tried state, and reorder (1.16025ms)
+✔ portfolio mock service persists publish, item, follow, flag, and search state (0.820042ms)
+✔ portfolio mock service rejects stale optimistic mutation versions (75.339334ms)
+✔ portfolio mock service records passport contribution progress (0.36275ms)
+✔ ai.processImplicitFeedback is no-op while explicit learning stabilizes (0.224417ms)
+✔ auth.requestAccountDeletion clears mock session (0.114291ms)
+✔ account deletion stays cancellable during the grace period (0.256ms)
+✔ data export collects the signed-in user's profile and activity (5.808167ms)
+✔ profile.updateProfile persists mock profile visibility (0.414ms)
+✔ merchant menu methods persist CRUD and status toggles in mock state (3.145834ms)
+✔ merchant seeded menu edits do not overwrite original mock catalog fixtures (0.459083ms)
+✔ merchant seeded menu is immediately visible from mock user catalog (0.137416ms)
+✔ merchant profile updates are visible from mock user venue reads (0.737292ms)
+✔ merchant OCR draft methods filter drafts and publish accepted dishes (1.033ms)
+✔ merchant AI dish tool methods return canned suggestions without publishing (0.493708ms)
+✔ merchant inbox filters interactions by outlet, type, and unreplied status (0.983916ms)
+✔ merchant inbox reply and report methods validate input and persist replies (1.118791ms)
+✔ merchant AI reply generation follows interaction sentiment and question context (0.78475ms)
+✔ merchant promotion methods filter by outlet and status (0.35875ms)
+✔ merchant promotion create and update persist mock state (3.414083ms)
+✔ merchant promotion analytics returns analytics and rejects missing promotion (0.4805ms)
+✔ customer active promotions only expose active in-window offers for the current dish (0.562083ms)
+✔ merchant popular visitor pins stay review-backed, capped, reorderable, and venue-filtered (3.254542ms)
+✔ merchant analytics records dish views without duplicate session increments (0.989416ms)
+✔ merchant analytics records explicit customer action events (0.62175ms)
+✔ merchant notifications sync low ratings and weekly summaries with dedupe (40.616458ms)
+✔ merchant AI assistant returns insight slices and weekly summary (0.321334ms)
+✔ merchant AI assistant rejects unknown outlet (0.129291ms)
+✔ merchant settings team methods persist members and role changes (0.302708ms)
+✔ merchant settings team methods validate duplicates and protected owner role (0.149042ms)
+✔ merchant settings notification preferences persist partial updates (0.111417ms)
+ℹ tests 60
+ℹ suites 0
+ℹ pass 60
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 889.645375

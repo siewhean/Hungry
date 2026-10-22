@@ -1,0 +1,94 @@
+(node:85703) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[1A[2K[2m[WebServer] [22m(node:85725) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 5 tests using 1 worker
+
+[1A[2K(node:85946) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:85946) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+
+[1A[2K(node:85946) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K[1/5] [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:47:5 › fresh Welcome reaches existing-account login with real validation
+[1A[2K[2/5] [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:59:5 › onboarding selection and quiz answer resume after a browser reload
+[1A[2K  1) [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:59:5 › onboarding selection and quiz answer resume after a browser reload 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeLessThan[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: < [32m20[39m
+    Received:   [31m512[39m
+
+    Call Log:
+    - Timeout 10000ms exceeded while waiting on the predicate
+
+       95 |   await expect(page.getByText("Pick your sweetness mood", { exact: true })).toBeVisible();
+       96 |   await capture("after-back");
+    >  97 |   await expect
+          |   ^
+       98 |     .poll(async () => {
+       99 |       const box = await page
+      100 |         .getByRole("button", { name: "Sweet-forward Pick your sweetness mood", exact: true })
+        at /Users/Siew Hean/Documents/GitHub/Hungry/tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:97:3
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tasks/remediation-2026-10-20/browser/results/remediation.browser-onboar-98c9d-sume-after-a-browser-reload-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tasks/remediation-2026-10-20/browser/results/remediation.browser-onboar-98c9d-sume-after-a-browser-reload-chromium/error-context.md
+
+
+[1A[2K(node:86275) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:86275) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+
+[1A[2K(node:86275) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K[3/5] [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:106:5 › mock profile Settings exposes supported preferences and readonly auth email
+[1A[2K[4/5] [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:132:5 › Discover cards keep their dish identity across the former cycle interval
+[1A[2K[5/5] [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:155:5 › supported composer opens a deliberate dish and preserves entered draft
+[1A[2K  2) [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:155:5 › supported composer opens a deliberate dish and preserves entered draft 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByText('Create post', { exact: true })
+    Expected: visible
+    Error: strict mode violation: getByText('Create post', { exact: true }) resolved to 2 elements:
+        1) <div dir="auto" class="css-text-146c3p1 r-maxWidth-dnmrzs r-overflow-1udh08x r-textOverflow-1udbk01 r-whiteSpace-3s2u2q r-wordWrap-1iln25a r-fontFamily-1ax1qk6 r-fontSize-zz5t5d r-lineHeight-2agvir">Create post</div> aka getByText('Create post').first()
+        2) <div dir="auto" class="css-text-146c3p1 r-maxWidth-dnmrzs r-overflow-1udh08x r-textOverflow-1udbk01 r-whiteSpace-3s2u2q r-wordWrap-1iln25a r-fontFamily-1ax1qk6 r-fontSize-zz5t5d r-lineHeight-2agvir">Create post</div> aka getByText('Create post').nth(1)
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 10000ms[22m
+    [2m  - waiting for getByText('Create post', { exact: true })[22m
+
+
+      157 |   await startOnboardedMockSession(page);
+      158 |   await clickDevButton(page, "Launch V2 Composer", "Post Composer V2 Settings");
+    > 159 |   await expect(page.getByText("Create post", { exact: true })).toBeVisible();
+          |                                                                ^
+      160 |   const caption = "Bounded browser durable draft.";
+      161 |   await page.getByPlaceholder("What makes this worth the queue?").fill(caption);
+      162 |   await page.reload({ waitUntil: "domcontentloaded" });
+        at /Users/Siew Hean/Documents/GitHub/Hungry/tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:159:64
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tasks/remediation-2026-10-20/browser/results/remediation.browser-suppor-bf292-and-preserves-entered-draft-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tasks/remediation-2026-10-20/browser/results/remediation.browser-suppor-bf292-and-preserves-entered-draft-chromium/error-context.md
+
+
+[1A[2K  2 failed
+    [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:59:5 › onboarding selection and quiz answer resume after a browser reload 
+    [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:155:5 › supported composer opens a deliberate dish and preserves entered draft 
+  3 passed (1.7m)

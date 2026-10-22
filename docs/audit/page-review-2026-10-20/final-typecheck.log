@@ -1,0 +1,17 @@
+
+> hungry-mobile@0.1.0 typecheck
+> tsc --noEmit
+
+src/app/screens/auth/ChangePasswordScreen.tsx(88,22): error TS2322: Type '(value: string, label: string) => string | true' is not assignable to type 'Validate<string, FormValues> | Record<string, Validate<string, FormValues>> | undefined'.
+  Type '(value: string, label: string) => string | true' is not assignable to type 'Validate<string, FormValues>'.
+    Types of parameters 'label' and 'formValues' are incompatible.
+      Type 'FormValues' is not assignable to type 'string'.
+src/app/screens/auth/ChangePasswordScreen.tsx(123,22): error TS2322: Type '(value: string, minLength?: number) => string | true' is not assignable to type 'Validate<string, FormValues> | Record<string, Validate<string, FormValues>> | undefined'.
+  Type '(value: string, minLength?: number) => string | true' is not assignable to type 'Validate<string, FormValues>'.
+    Types of parameters 'minLength' and 'formValues' are incompatible.
+      Type 'FormValues' is not assignable to type 'number'.
+supabase/functions/send-email/index.ts(1,25): error TS2307: Cannot find module 'npm:standardwebhooks@^1' or its corresponding type declarations.
+supabase/functions/send-email/index.ts(42,17): error TS2304: Cannot find name 'Deno'.
+supabase/functions/send-email/index.ts(136,1): error TS2304: Cannot find name 'Deno'.
+supabase/functions/send-email/index.ts(136,19): error TS7006: Parameter 'request' implicitly has an 'any' type.
+supabase/functions/send-email/index.ts(224,7): error TS2322: Type '{}' is not assignable to type 'string'.

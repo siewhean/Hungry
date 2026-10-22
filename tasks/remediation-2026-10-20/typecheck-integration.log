@@ -1,0 +1,151 @@
+
+> hungry-mobile@0.1.0 typecheck
+> tsc --noEmit
+
+src/app/screens/checklist/ChecklistItemPickerScreen.tsx(109,65): error TS2552: Cannot find name 'Alert'. Did you mean 'alert'?
+src/app/screens/detail/DishDetailScreenV2.tsx(229,64): error TS2339: Property 'setVisited' does not exist on type 'StallInteractionState'.
+src/app/screens/dev/DeveloperLauncherScreen.tsx(288,35): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/app/screens/dev/DeveloperLauncherScreen.tsx(289,38): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/app/screens/dev/DeveloperLauncherScreen.tsx(290,44): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/app/screens/dev/DeveloperLauncherScreen.tsx(291,47): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/app/screens/dev/DeveloperLauncherScreen.tsx(929,21): error TS2367: This comparison appears to be unintentional because the types '"offline"' and '"slow"' have no overlap.
+src/app/screens/dev/DeveloperLauncherScreen.tsx(932,47): error TS2339: Property 'id' does not exist on type 'never'.
+src/app/screens/discover/QuickBitesScreen.tsx(187,51): error TS2339: Property 'imageUrl' does not exist on type 'QuickBiteGridItem'.
+src/app/screens/merchant/HomeBasedVerificationScreen.tsx(118,76): error TS2345: Argument of type '{ method: "home_based_declaration"; fileUrl: string; reviewNote: string; }[]' is not assignable to parameter of type 'Omit<VerificationEvidence, "id" | "uploadedAt">'.
+  Type '{ method: "home_based_declaration"; fileUrl: string; reviewNote: string; }[]' is missing the following properties from type 'Omit<VerificationEvidence, "id" | "uploadedAt">': method, fileUrl
+src/app/screens/post/PostComposerScreen.tsx(70,37): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/app/screens/post/PostComposerScreen.tsx(71,43): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/app/screens/post/PostComposerScreen.tsx(72,44): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/app/screens/post/PostComposerScreen.tsx(73,45): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/app/screens/post/PostComposerScreen.tsx(191,44): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/app/screens/post/PostComposerScreen.tsx(328,33): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/app/screens/profile/ProfileHomeScreen.tsx(251,9): error TS2304: Cannot find name 'useUIStore'.
+src/app/screens/profile/ProfileHomeScreen.tsx(365,13): error TS2304: Cannot find name 'useUIStore'.
+src/app/screens/profile/SocialGridScreen.tsx(233,51): error TS7053: Element implicitly has an 'any' type because expression of type '10' can't be used to index type '{ readonly "0.5": 2; readonly "1": 4; readonly "1.5": 6; readonly "2": 8; readonly "2.5": 10; readonly "3": 12; readonly "4": 16; readonly "5": 20; readonly "6": 24; readonly "8": 32; readonly "12": 48; readonly "16": 64; readonly "20": 80; ... 7 more ...; readonly xxxl: 32; }'.
+  Property '10' does not exist on type '{ readonly "0.5": 2; readonly "1": 4; readonly "1.5": 6; readonly "2": 8; readonly "2.5": 10; readonly "3": 12; readonly "4": 16; readonly "5": 20; readonly "6": 24; readonly "8": 32; readonly "12": 48; readonly "16": 64; readonly "20": 80; ... 7 more ...; readonly xxxl: 32; }'.
+src/app/screens/profile/UserProfileContent.tsx(188,55): error TS7053: Element implicitly has an 'any' type because expression of type '40' can't be used to index type '{ readonly "0.5": 2; readonly "1": 4; readonly "1.5": 6; readonly "2": 8; readonly "2.5": 10; readonly "3": 12; readonly "4": 16; readonly "5": 20; readonly "6": 24; readonly "8": 32; readonly "12": 48; readonly "16": 64; readonly "20": 80; ... 7 more ...; readonly xxxl: 32; }'.
+  Property '40' does not exist on type '{ readonly "0.5": 2; readonly "1": 4; readonly "1.5": 6; readonly "2": 8; readonly "2.5": 10; readonly "3": 12; readonly "4": 16; readonly "5": 20; readonly "6": 24; readonly "8": 32; readonly "12": 48; readonly "16": 64; readonly "20": 80; ... 7 more ...; readonly xxxl: 32; }'.
+src/app/screens/review/ReviewScreen.tsx(50,38): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/app/screens/review/ReviewScreen.tsx(51,45): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/app/screens/review/ReviewScreen.tsx(52,43): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/app/screens/review/ReviewScreen.tsx(53,42): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/app/screens/review/ReviewScreen.tsx(54,42): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/app/screens/review/ReviewScreen.tsx(55,45): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/app/screens/review/ReviewScreen.tsx(56,40): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/app/screens/review/ReviewScreen.tsx(57,41): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/app/screens/review/ReviewScreen.tsx(58,44): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/app/screens/review/ReviewScreen.tsx(59,44): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/app/screens/review/ReviewScreen.tsx(60,44): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/app/screens/review/ReviewScreen.tsx(61,46): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/app/screens/review/ReviewScreen.tsx(62,43): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/app/screens/review/ReviewScreen.tsx(63,54): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/components/settings/SettingsRow.tsx(55,20): error TS7053: Element implicitly has an 'any' type because expression of type '14' can't be used to index type '{ readonly "0.5": 2; readonly "1": 4; readonly "1.5": 6; readonly "2": 8; readonly "2.5": 10; readonly "3": 12; readonly "4": 16; readonly "5": 20; readonly "6": 24; readonly "8": 32; readonly "12": 48; readonly "16": 64; readonly "20": 80; ... 7 more ...; readonly xxxl: 32; }'.
+  Property '14' does not exist on type '{ readonly "0.5": 2; readonly "1": 4; readonly "1.5": 6; readonly "2": 8; readonly "2.5": 10; readonly "3": 12; readonly "4": 16; readonly "5": 20; readonly "6": 24; readonly "8": 32; readonly "12": 48; readonly "16": 64; readonly "20": 80; ... 7 more ...; readonly xxxl: 32; }'.
+src/features/post/components/CollaboratorModal.tsx(21,43): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/CollaboratorModal.tsx(22,48): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/ComposerBottomBar.tsx(28,45): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/ComposerBottomBar.tsx(29,48): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/ComposerBottomBar.tsx(30,48): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/ComposerBottomBar.tsx(31,51): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/ComposerBottomBar.tsx(32,43): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/ComposerBottomBar.tsx(33,46): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/ComposerBottomBar.tsx(34,35): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/LivePreviewSheet.tsx(15,41): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/LivePreviewSheet.tsx(16,44): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/LivePreviewSheet.tsx(17,45): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/LivePreviewSheet.tsx(18,48): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/LivePreviewSheet.tsx(20,41): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/LivePreviewSheet.tsx(21,43): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/LivePreviewSheet.tsx(22,35): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/LivePreviewSheet.tsx(23,38): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/LivePreviewSheet.tsx(24,38): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/LivePreviewSheet.tsx(25,39): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/LivePreviewSheet.tsx(26,36): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/LivePreviewSheet.tsx(27,52): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/LivePreviewSheet.tsx(158,33): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/features/post/components/LivePreviewSheet.tsx(158,39): error TS7006: Parameter 'index' implicitly has an 'any' type.
+src/features/post/components/LivePreviewSheet.tsx(245,37): error TS7006: Parameter 'tag' implicitly has an 'any' type.
+src/features/post/components/LivePreviewSheet.tsx(278,33): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/features/post/components/LivePreviewSheet.tsx(278,39): error TS7006: Parameter 'index' implicitly has an 'any' type.
+src/features/post/components/LivePreviewSheet.tsx(317,38): error TS7006: Parameter 'tag' implicitly has an 'any' type.
+src/features/post/components/LocationSearchModal.tsx(86,45): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/LocationSearchModal.tsx(87,41): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/MediaEditor.tsx(41,35): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/MediaEditor.tsx(41,63): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/features/post/components/MediaEditor.tsx(42,51): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/MediaManager.tsx(55,35): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/MediaManager.tsx(56,38): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/MediaManager.tsx(57,41): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/MediaManager.tsx(58,47): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/MediaManager.tsx(133,21): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/features/post/components/MusicSearchModal.tsx(88,44): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/MusicSearchModal.tsx(89,38): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/PostTab.tsx(24,41): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/PostTab.tsx(25,43): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/PostTab.tsx(26,40): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/PostTab.tsx(27,44): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/PostTab.tsx(28,47): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/PostTab.tsx(29,52): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/PostTab.tsx(30,55): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/PostTab.tsx(31,37): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/PostTab.tsx(32,47): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/PostTab.tsx(33,49): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/PostTab.tsx(34,41): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/PostTab.tsx(35,44): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/PostTab.tsx(36,44): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/PostTab.tsx(37,44): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/PostTab.tsx(38,39): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/PostTab.tsx(39,36): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/ReviewTab.tsx(25,43): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/ReviewTab.tsx(26,41): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/ReviewTab.tsx(31,40): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/ReviewTab.tsx(32,36): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/ReviewTab.tsx(33,39): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/ReviewTab.tsx(34,44): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/ReviewTab.tsx(35,47): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/SharedMetadata.tsx(18,38): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/SharedMetadata.tsx(19,43): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/SharedMetadata.tsx(20,38): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/SharedMetadata.tsx(21,39): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/SharedMetadata.tsx(22,39): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/StatusOverlay.tsx(18,45): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/StatusOverlay.tsx(19,45): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/StatusOverlay.tsx(20,48): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/StatusOverlay.tsx(21,48): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/StatusOverlay.tsx(22,48): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/StatusOverlay.tsx(23,35): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/TabSwitcher.tsx(11,39): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/components/TabSwitcher.tsx(12,42): error TS7006: Parameter 'state' implicitly has an 'any' type.
+src/features/post/publishing.test.ts(365,3): error TS2322: Type '() => Promise<void>' is not assignable to type '(draft: SubmitReviewInput) => Promise<ReviewPublicationReceipt>'.
+  Type 'Promise<void>' is not assignable to type 'Promise<ReviewPublicationReceipt>'.
+    Type 'void' is not assignable to type 'ReviewPublicationReceipt'.
+src/features/post/publishing.ts(118,35): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/features/post/publishing.ts(118,72): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/features/post/useComposerStore.ts(119,14): error TS7022: 'useComposerStore' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.
+src/features/post/useComposerStore.ts(121,3): error TS7023: 'setAccountScope' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one of its return expressions.
+src/features/post/useComposerStore.ts(314,7): error TS7022: 'changeComposerAccount' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.
+src/features/profile/useProfileFormDraft.ts(26,46): error TS2345: Argument of type 'StorageValue<unknown>' is not assignable to parameter of type 'string'.
+src/features/profile/useProfileFormDraft.ts(45,54): error TS2345: Argument of type 'string' is not assignable to parameter of type 'StorageValue<unknown>'.
+src/lib/services/mock/mockService.ts(3140,7): error TS2322: Type '(ChecklistItem | { customText: string | undefined; updatedAt: string; checklistId: string; itemType: ChecklistItemType; dishId?: string | undefined; ... 6 more ...; createdAt: string; })[]' is not assignable to type 'ChecklistItem[]'.
+  Type 'ChecklistItem | { customText: string | undefined; updatedAt: string; checklistId: string; itemType: ChecklistItemType; dishId?: string | undefined; ... 6 more ...; createdAt: string; }' is not assignable to type 'ChecklistItem'.
+    Type '{ customText: string | undefined; updatedAt: string; checklistId: string; itemType: ChecklistItemType; dishId?: string; stallId?: string; reminderAt?: string | ... 1 more ... | undefined; ... 4 more ...; createdAt: string; }' is not assignable to type 'ChecklistItem'.
+      Types of property 'reminderAt' are incompatible.
+        Type 'string | null | undefined' is not assignable to type 'string | undefined'.
+          Type 'null' is not assignable to type 'string | undefined'.
+src/store/useChecklistStore.ts(179,13): error TS2322: Type '{ checklistId: string; itemType: ChecklistItemType; dishId?: string | undefined; stallId?: string | undefined; customText?: string | undefined; reminderAt?: string | null | undefined; ... 5 more ...; updatedAt: string; }[]' is not assignable to type 'ChecklistItem[]'.
+  Type '{ checklistId: string; itemType: ChecklistItemType; dishId?: string; stallId?: string; customText?: string; reminderAt?: string | null | undefined; ... 5 more ...; updatedAt: string; }' is not assignable to type 'ChecklistItem'.
+    Types of property 'reminderAt' are incompatible.
+      Type 'string | null | undefined' is not assignable to type 'string | undefined'.
+        Type 'null' is not assignable to type 'string | undefined'.
+src/store/useReviewDraftStore.ts(36,14): error TS7022: 'useReviewDraftStore' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.
+src/store/useReviewDraftStore.ts(38,7): error TS7023: 'setAccountScope' implicitly has return type 'any' because it does not have a return type annotation and is referenced directly or indirectly in one of its return expressions.
+src/store/useReviewDraftStore.ts(148,7): error TS7022: 'changeReviewAccount' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.
+src/store/useReviewDraftStore.ts(149,6): error TS2339: Property 'draft' does not exist on type '{}'.
+src/store/useReviewDraftStore.ts(149,13): error TS2339: Property 'failedPhotoUris' does not exist on type '{}'.
+src/store/useReviewDraftStore.ts(149,30): error TS2339: Property 'pendingReviewId' does not exist on type '{}'.
+src/store/useSessionStore.ts(142,91): error TS18048: 'hungryPersistStorage' is possibly 'undefined'.
+supabase/functions/send-email/index.ts(1,25): error TS2307: Cannot find module 'npm:standardwebhooks@^1' or its corresponding type declarations.
+supabase/functions/send-email/index.ts(42,17): error TS2304: Cannot find name 'Deno'.
+supabase/functions/send-email/index.ts(136,1): error TS2304: Cannot find name 'Deno'.
+supabase/functions/send-email/index.ts(136,19): error TS7006: Parameter 'request' implicitly has an 'any' type.
+supabase/functions/send-email/index.ts(224,7): error TS2322: Type '{}' is not assignable to type 'string'.

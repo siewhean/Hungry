@@ -1,3 +1,5 @@
+import { useSyncExternalStore } from "react";
+import { communitySafetyState } from "./communitySafetyState";
 import { Alert } from "react-native";
 
 import { trackAnalyticsEvent } from "@/lib/analytics";
@@ -8,6 +10,7 @@ type ContentSafetyTarget = {
   targetType: ContentReportTargetType;
   targetId: string;
   authorName: string;
+  authorId?: string;
   postId?: string;
   label?: string;
   onHidden?: (postId: string) => void;
@@ -17,10 +20,30 @@ type ContentSafetyTarget = {
 type ReviewSafetyTarget = {
   reviewId: string;
   authorName: string;
+  authorId?: string;
 };
 
-const hiddenPostIds = new Set<string>();
-const blockedAuthorKeys = new Set<string>();
+const hiddenPostIds = communitySafetyState.hiddenIds;
+const blockedAuthorKeys = communitySafetyState.blockedIds;
+
+export function useCommunitySafetyRevision(): number {
+  return useSyncExternalStore(
+    communitySafetyState.subscribe,
+    communitySafetyState.getRevision,
+    communitySafetyState.getRevision,
+  );
+}
+export function clearCommunitySafetyState(): void {
+  communitySafetyState.reset();
+}
+export async function hydrateCommunitySafetyState(): Promise<void> {
+  const generation = communitySafetyState.getGeneration();
+  const users = await getHungryService().communitySafety.getBlockedUsers();
+  communitySafetyState.hydrate(
+    users.map((user) => user.blockedUserKey),
+    generation,
+  );
+}
 
 export function targetAuthorKey(authorName: string): string {
   return authorName.trim().toLowerCase().replace(/\s+/g, "-").slice(0, 80);
@@ -37,16 +60,17 @@ export function getBlockedAuthorKeysForSession(): ReadonlySet<string> {
 export function isContentHiddenForSession(target: {
   id: string;
   authorName?: string | null;
+  authorId?: string | null;
 }): boolean {
   if (hiddenPostIds.has(target.id)) {
     return true;
   }
 
-  if (!target.authorName) {
+  if (!target.authorId) {
     return false;
   }
 
-  return blockedAuthorKeys.has(targetAuthorKey(target.authorName));
+  return blockedAuthorKeys.has(target.authorId);
 }
 
 function reportContent(target: ContentSafetyTarget): void {
@@ -54,7 +78,7 @@ function reportContent(target: ContentSafetyTarget): void {
     .communitySafety.reportContent({
       targetType: target.targetType,
       targetId: target.targetId,
-      targetAuthorKey: targetAuthorKey(target.authorName),
+      targetAuthorKey: target.authorId,
       reason: `user_reported_${target.targetType}`,
     })
     .then(() => {
@@ -70,16 +94,25 @@ function reportContent(target: ContentSafetyTarget): void {
 }
 
 function blockAuthor(
-  target: Pick<ContentSafetyTarget, "authorName" | "targetType" | "targetId" | "onBlocked">,
+  target: Pick<
+    ContentSafetyTarget,
+    "authorName" | "authorId" | "targetType" | "targetId" | "onBlocked"
+  >,
 ): void {
-  const blockedAuthorKey = targetAuthorKey(target.authorName);
+  const blockedAuthorKey = target.authorId;
+  if (!blockedAuthorKey) {
+    Alert.alert("Cannot identify this author", "You can still report this content for review.");
+    return;
+  }
+  const generation = communitySafetyState.getGeneration();
   void getHungryService()
     .communitySafety.blockUser({
       blockedUserKey: blockedAuthorKey,
       reason: `user_blocked_${target.targetType}_author`,
     })
     .then(() => {
-      blockedAuthorKeys.add(blockedAuthorKey);
+      if (generation !== communitySafetyState.getGeneration()) return;
+      communitySafetyState.block(blockedAuthorKey);
       target.onBlocked?.(blockedAuthorKey);
       trackAnalyticsEvent("user_blocked", {
         targetType: `${target.targetType}_author`,
@@ -96,10 +129,12 @@ function hidePost(target: ContentSafetyTarget): void {
   const postId = target.postId ?? (target.targetType === "post" ? target.targetId : undefined);
   if (!postId) return;
 
+  const generation = communitySafetyState.getGeneration();
   void getHungryService()
     .communitySafety.hidePost(postId, "hidden_from_content_safety_menu")
     .then(() => {
-      hiddenPostIds.add(postId);
+      if (generation !== communitySafetyState.getGeneration()) return;
+      communitySafetyState.hide(postId);
       target.onHidden?.(postId);
       trackAnalyticsEvent("post_hidden", {
         targetType: target.targetType,
@@ -131,6 +166,8 @@ export function promptContentSafetyActions(target: ContentSafetyTarget): void {
     },
   ];
 
+  if (!target.authorId) actions.splice(1, 1);
+
   if (canHidePost) {
     actions.splice(1, 0, {
       text: "Hide post",
@@ -145,6 +182,7 @@ export function promptContentSafetyActions(target: ContentSafetyTarget): void {
 export function promptPostSafetyActions(target: {
   postId: string;
   authorName: string;
+  authorId?: string;
   label?: string;
   onHidden?: (postId: string) => void;
   onBlocked?: (blockedAuthorKey: string) => void;
@@ -153,6 +191,7 @@ export function promptPostSafetyActions(target: {
     targetType: "post",
     targetId: target.postId,
     authorName: target.authorName,
+    authorId: target.authorId,
     label: target.label ?? "post",
     onHidden: target.onHidden,
     onBlocked: target.onBlocked,
@@ -162,6 +201,7 @@ export function promptPostSafetyActions(target: {
 export function promptCommentSafetyActions(target: {
   commentId: string;
   authorName: string;
+  authorId?: string;
   postId?: string;
   label?: string;
   onHidden?: (postId: string) => void;
@@ -171,6 +211,7 @@ export function promptCommentSafetyActions(target: {
     targetType: "reply",
     targetId: target.commentId,
     authorName: target.authorName,
+    authorId: target.authorId,
     postId: target.postId,
     label: target.label ?? "comment",
     onHidden: target.onHidden,
@@ -179,66 +220,32 @@ export function promptCommentSafetyActions(target: {
 }
 
 export function promptReportReview(target: ReviewSafetyTarget): void {
-  Alert.alert(
-    "Report review",
-    `Report ${target.authorName}'s review for abusive, unsafe, or policy-violating content?`,
-    [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Report",
-        style: "destructive",
-        onPress: () => {
-          void getHungryService()
-            .communitySafety.reportContent({
-              targetType: "review",
-              targetId: target.reviewId,
-              targetAuthorKey: targetAuthorKey(target.authorName),
-              reason: "user_reported_objectionable_content",
-            })
-            .then(() => {
-              trackAnalyticsEvent("content_report_submitted", {
-                targetType: "review",
-                targetId: target.reviewId,
-              });
-              Alert.alert("Report sent", "Hungry will review this content.");
-            })
-            .catch(() => {
-              Alert.alert("Could not send report", "Please try again later.");
-            });
-        },
-      },
-    ],
-  );
+  promptContentSafetyActions({
+    targetType: "review",
+    targetId: target.reviewId,
+    authorName: target.authorName,
+    authorId: target.authorId,
+    label: "review",
+  });
 }
 
 export function promptBlockReviewAuthor(target: ReviewSafetyTarget): void {
-  Alert.alert(
-    "Block user",
-    `Block ${target.authorName}? You will see less content from this user.`,
-    [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Block",
-        style: "destructive",
-        onPress: () => {
-          void getHungryService()
-            .communitySafety.blockUser({
-              blockedUserKey: targetAuthorKey(target.authorName),
-              reason: "user_blocked_from_review",
-            })
-            .then(() => {
-              blockedAuthorKeys.add(targetAuthorKey(target.authorName));
-              trackAnalyticsEvent("user_blocked", {
-                targetType: "review_author",
-                targetId: target.reviewId,
-              });
-              Alert.alert("User blocked", "Thanks. We will reduce content from this user.");
-            })
-            .catch(() => {
-              Alert.alert("Could not block user", "Please try again later.");
-            });
-        },
-      },
-    ],
-  );
+  if (!target.authorId) {
+    Alert.alert("Cannot identify this author", "Report the review instead.");
+    return;
+  }
+  Alert.alert("Block author", `Block ${target.authorName}?`, [
+    { text: "Cancel", style: "cancel" },
+    {
+      text: "Block",
+      style: "destructive",
+      onPress: () =>
+        blockAuthor({
+          targetType: "review",
+          targetId: target.reviewId,
+          authorName: target.authorName,
+          authorId: target.authorId,
+        }),
+    },
+  ]);
 }

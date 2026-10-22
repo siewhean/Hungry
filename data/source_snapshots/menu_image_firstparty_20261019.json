@@ -1,0 +1,105 @@
+{
+  "proposal_id": "menu_image_firstparty_20261019",
+  "observed_date": "2026-10-19",
+  "scope": "One chain: Burger King Singapore; outlet-specific menu crosswalk to Yishun Northpoint SFA outlet NW18130L000.",
+  "canonical_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "method": "Read-only research. Compared exact outlet SFA directory record and exact item names in existing Menu Items sheet to official Burger King Singapore product tiles; checked official image asset response headers and the brand terms page. No paid service/API used; no images downloaded or visually inspected.",
+  "candidate_count": 4,
+  "approved_for_workbook_count": 0,
+  "rights_cleared": false,
+  "items": [
+    {
+      "menu_item": "Whopper",
+      "official_label": "WHOPPER®",
+      "image_url": "https://www.burgerking.com.sg/upload/image/Product/2/0-WHOPPER%20(1).png",
+      "http_status": 200,
+      "content_type": "image/png",
+      "content_length_bytes": 104118,
+      "last_modified": "2024-10-02T08:39:35Z",
+      "sfa_licence": "NW18130L000",
+      "outlet_name": "BURGER KING",
+      "outlet_address": "3 NORTHPOINT DRIVE #01-03, Singapore 768020",
+      "outlet_coordinates": [
+        1.426260433285914,
+        103.8362614414943
+      ],
+      "outlet_record_source": "Current workbook Public F&B Directory row, exact SFA licence and outlet address",
+      "outlet_menu_match": "Exact menu item record in Menu Items sheet, source is Foodpanda outlet listing https://www.foodpanda.sg/restaurant/v5dv/burger-king-r-yishun (outlet-specific menu, observed 2026-10-19); image match is brand-level only, not evidence of Yishun branch availability or exact plated item.",
+      "image_source_page": "https://www.burgerking.com.sg/Menu/Category/1",
+      "source_page_evidence": "Official Burger King Singapore category page HTML directly pairs the listed product label with this image src under the same product tile. Observed 2026-10-19; HTTP 200 for page; asset HEAD HTTP 200.",
+      "asset_visual_check": "Not visually inspected; do not claim image depiction verified.",
+      "rights_status": "DO_NOT_INGEST_OR_REPUBLISH: Burger King Singapore terms at https://www.burgerking.com.sg/Legal/Index/ state BKS Content is owned by BKS and/or licensors and, unless expressly permitted in writing or by law, prohibit copying, reproducing, distributing, publishing, entering into a database, displaying, modifying, linking to/connect to or otherwise using BKS Content; page also says photos are illustrative and may differ from actual products.",
+      "integration_recommendation": "Keep out of workbook Image Candidates and Approved Image URL until explicit written permission/licence is documented. URL listed here solely as a research lead, not cleared asset."
+    },
+    {
+      "menu_item": "Western Whopper",
+      "official_label": "Western WHOPPER®",
+      "image_url": "https://www.burgerking.com.sg/upload/image/Product/5/Western%20WHOPPER%20300x270.png",
+      "http_status": 200,
+      "content_type": "image/png",
+      "content_length_bytes": 105030,
+      "last_modified": "2024-10-02T09:02:48Z",
+      "sfa_licence": "NW18130L000",
+      "outlet_name": "BURGER KING",
+      "outlet_address": "3 NORTHPOINT DRIVE #01-03, Singapore 768020",
+      "outlet_coordinates": [
+        1.426260433285914,
+        103.8362614414943
+      ],
+      "outlet_record_source": "Current workbook Public F&B Directory row, exact SFA licence and outlet address",
+      "outlet_menu_match": "Exact menu item record in Menu Items sheet, source is Foodpanda outlet listing https://www.foodpanda.sg/restaurant/v5dv/burger-king-r-yishun (outlet-specific menu, observed 2026-10-19); image match is brand-level only, not evidence of Yishun branch availability or exact plated item.",
+      "image_source_page": "https://www.burgerking.com.sg/Menu/Category/1",
+      "source_page_evidence": "Official Burger King Singapore category page HTML directly pairs the listed product label with this image src under the same product tile. Observed 2026-10-19; HTTP 200 for page; asset HEAD HTTP 200.",
+      "asset_visual_check": "Not visually inspected; do not claim image depiction verified.",
+      "rights_status": "DO_NOT_INGEST_OR_REPUBLISH: Burger King Singapore terms at https://www.burgerking.com.sg/Legal/Index/ state BKS Content is owned by BKS and/or licensors and, unless expressly permitted in writing or by law, prohibit copying, reproducing, distributing, publishing, entering into a database, displaying, modifying, linking to/connect to or otherwise using BKS Content; page also says photos are illustrative and may differ from actual products.",
+      "integration_recommendation": "Keep out of workbook Image Candidates and Approved Image URL until explicit written permission/licence is documented. URL listed here solely as a research lead, not cleared asset."
+    },
+    {
+      "menu_item": "Whopper with Cheese",
+      "official_label": "WHOPPER® with Cheese",
+      "image_url": "https://www.burgerking.com.sg/upload/image/Product/97/BK%2725_Website-Images_Product-Images_300x270px-3.png",
+      "http_status": 200,
+      "content_type": "image/png",
+      "content_length_bytes": 119737,
+      "last_modified": "2025-10-07T04:52:40Z",
+      "sfa_licence": "NW18130L000",
+      "outlet_name": "BURGER KING",
+      "outlet_address": "3 NORTHPOINT DRIVE #01-03, Singapore 768020",
+      "outlet_coordinates": [
+        1.426260433285914,
+        103.8362614414943
+      ],
+      "outlet_record_source": "Current workbook Public F&B Directory row, exact SFA licence and outlet address",
+      "outlet_menu_match": "Exact menu item record in Menu Items sheet, source is Foodpanda outlet listing https://www.foodpanda.sg/restaurant/v5dv/burger-king-r-yishun (outlet-specific menu, observed 2026-10-19); image match is brand-level only, not evidence of Yishun branch availability or exact plated item.",
+      "image_source_page": "https://www.burgerking.com.sg/Menu/Category/1",
+      "source_page_evidence": "Official Burger King Singapore category page HTML directly pairs the listed product label with this image src under the same product tile. Observed 2026-10-19; HTTP 200 for page; asset HEAD HTTP 200.",
+      "asset_visual_check": "Not visually inspected; do not claim image depiction verified.",
+      "rights_status": "DO_NOT_INGEST_OR_REPUBLISH: Burger King Singapore terms at https://www.burgerking.com.sg/Legal/Index/ state BKS Content is owned by BKS and/or licensors and, unless expressly permitted in writing or by law, prohibit copying, reproducing, distributing, publishing, entering into a database, displaying, modifying, linking to/connect to or otherwise using BKS Content; page also says photos are illustrative and may differ from actual products.",
+      "integration_recommendation": "Keep out of workbook Image Candidates and Approved Image URL until explicit written permission/licence is documented. URL listed here solely as a research lead, not cleared asset."
+    },
+    {
+      "menu_item": "Whopper Jr",
+      "official_label": "Whopper Jr.®",
+      "image_url": "https://www.burgerking.com.sg/upload/image/Product/4/WHOPPER%20Jr%20300x270.png",
+      "http_status": 200,
+      "content_type": "image/png",
+      "content_length_bytes": 113250,
+      "last_modified": "2024-10-02T09:10:50Z",
+      "sfa_licence": "NW18130L000",
+      "outlet_name": "BURGER KING",
+      "outlet_address": "3 NORTHPOINT DRIVE #01-03, Singapore 768020",
+      "outlet_coordinates": [
+        1.426260433285914,
+        103.8362614414943
+      ],
+      "outlet_record_source": "Current workbook Public F&B Directory row, exact SFA licence and outlet address",
+      "outlet_menu_match": "Exact menu item record in Menu Items sheet, source is Foodpanda outlet listing https://www.foodpanda.sg/restaurant/v5dv/burger-king-r-yishun (outlet-specific menu, observed 2026-10-19); image match is brand-level only, not evidence of Yishun branch availability or exact plated item.",
+      "image_source_page": "https://www.burgerking.com.sg/Menu/Category/1",
+      "source_page_evidence": "Official Burger King Singapore category page HTML directly pairs the listed product label with this image src under the same product tile. Observed 2026-10-19; HTTP 200 for page; asset HEAD HTTP 200.",
+      "asset_visual_check": "Not visually inspected; do not claim image depiction verified.",
+      "rights_status": "DO_NOT_INGEST_OR_REPUBLISH: Burger King Singapore terms at https://www.burgerking.com.sg/Legal/Index/ state BKS Content is owned by BKS and/or licensors and, unless expressly permitted in writing or by law, prohibit copying, reproducing, distributing, publishing, entering into a database, displaying, modifying, linking to/connect to or otherwise using BKS Content; page also says photos are illustrative and may differ from actual products.",
+      "integration_recommendation": "Keep out of workbook Image Candidates and Approved Image URL until explicit written permission/licence is documented. URL listed here solely as a research lead, not cleared asset."
+    }
+  ],
+  "decision": "No eligible first-party image URLs for ingestion were found in this bounded chain because official terms explicitly restrict database insertion and image reuse absent express written permission. Preserve exact source URL evidence outside the workbook until clearance. Product art is brand-level and illustrative, not proof of outlet availability or the actual dish served."
+}

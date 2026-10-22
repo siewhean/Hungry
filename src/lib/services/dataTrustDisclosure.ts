@@ -7,12 +7,12 @@ type DataTrustSurface =
   | "mapStatus"
   | "waitEstimate";
 
-const LIVE_LABELS: Record<DataTrustSurface, string> = {
-  merchantAnalytics: "Live analytics",
-  missions: "Live mission progress",
-  foodCred: "Live score",
-  mapStatus: "Live map status",
-  waitEstimate: "Live wait estimate",
+const SOURCED_LABELS: Record<DataTrustSurface, string> = {
+  merchantAnalytics: "Recorded analytics",
+  missions: "Recorded mission progress",
+  foodCred: "Recorded score",
+  mapStatus: "Listed map information",
+  waitEstimate: "Wait estimate unavailable",
 };
 
 const PREVIEW_LABELS: Record<DataTrustSurface, string> = {
@@ -24,5 +24,7 @@ const PREVIEW_LABELS: Record<DataTrustSurface, string> = {
 };
 
 export function getDataTrustDisclosure(surface: DataTrustSurface): string {
-  return getServiceProvider().mode === "supabase" ? LIVE_LABELS[surface] : PREVIEW_LABELS[surface];
+  return getServiceProvider().mode === "supabase"
+    ? SOURCED_LABELS[surface]
+    : PREVIEW_LABELS[surface];
 }

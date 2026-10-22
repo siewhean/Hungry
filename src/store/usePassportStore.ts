@@ -1,3 +1,4 @@
+import { getAccountGeneration } from "@/lib/security/accountScope";
 /**
  * usePassportStore — Hungry Passport progress per user
  *
@@ -35,6 +36,9 @@ import type {
 } from "@/types/domain";
 
 // ─── State Interface ──────────────────────────────────────────────────────────
+
+let storeEpoch = 0;
+const accountStamp = () => `${getAccountGeneration()}:${storeEpoch}`;
 
 interface PassportState {
   /** Map of categoryId → computed progress */
@@ -222,28 +226,33 @@ export const usePassportStore = create<PassportState>()((set, get) => ({
     })),
 
   loadStamps: async () => {
+    const stamp = accountStamp();
     const service = getHungryService();
     const stamps = await service.passport.getPassportStamps();
-    set({ stamps, isLoaded: true });
+    if (stamp === accountStamp()) set({ stamps, isLoaded: true });
   },
 
   loadEvents: async (categoryId?: string) => {
+    const stamp = accountStamp();
     const service = getHungryService();
     const events = await service.passport.getPassportProgressEvents(categoryId);
-    set({ events });
+    if (stamp === accountStamp()) set({ events });
   },
 
   recordContribution: async (_userId, eventType, referenceId) => {
+    const stamp = accountStamp();
     const service = getHungryService();
     await service.passport.recordProgress("contributor", eventType, referenceId);
+    if (stamp !== accountStamp()) return;
     const [stamps, events] = await Promise.all([
       service.passport.getPassportStamps(),
       service.passport.getPassportProgressEvents("contributor"),
     ]);
-    set({ stamps, events, isLoaded: true });
+    if (stamp === accountStamp()) set({ stamps, events, isLoaded: true });
   },
 
-  _reset: () =>
+  _reset: () => {
+    storeEpoch++;
     set({
       progressMap: {},
       celebratedStampIds: {},
@@ -251,7 +260,8 @@ export const usePassportStore = create<PassportState>()((set, get) => ({
       stamps: [],
       events: [],
       isLoaded: false,
-    }),
+    });
+  },
 }));
 
 /** All passport category configs — for display in the Passport screen */

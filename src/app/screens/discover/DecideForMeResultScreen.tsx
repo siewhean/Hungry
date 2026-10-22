@@ -1,3 +1,4 @@
+import { useLocationStore } from "@/store/useLocationStore";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
@@ -11,7 +12,7 @@ import {
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { ChevronLeft, Shuffle, MapPin, Star, Heart, Navigation, Share2 } from "lucide-react-native";
-import * as Haptics from "expo-haptics";
+import * as Haptics from "@/lib/haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 
@@ -253,23 +254,58 @@ export function DecideForMeResultScreen() {
 
   const scrollY = useRef(new Animated.Value(0)).current;
 
-  const candidates = useMemo(
-    () =>
-      getCandidates(
-        repository,
-        profile.tasteVector,
-        profile.dietaryPreferences,
-        searchRadius,
-        profile.maxDishBudget,
-      ),
-    [
-      profile.dietaryPreferences,
-      profile.maxDishBudget,
-      profile.tasteVector,
-      repository,
-      searchRadius,
-    ],
-  );
+  const location = useLocationStore((state) => state.currentLocation);
+  const [candidates, setCandidates] = useState<DishDetail[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string>();
+  const [retryVersion, setRetryVersion] = useState(0);
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setLoadError(undefined);
+    setCandidates([]);
+    void getHungryService()
+      .recommendations.getSlate({
+        surface: "decide",
+        tasteProfile: profile.tasteVector,
+        dietaryFlags: profile.dietaryPreferences,
+        latitude: location.latitude,
+        longitude: location.longitude,
+        radiusMeters: searchRadius,
+        limit: 30,
+        neophiliaIndex: profile.tasteProfile?.neophiliaIndex ?? 5,
+      })
+      .then((slate) => {
+        if (!active) return;
+        setCandidates(
+          slate.items
+            .map((item) => item.dish)
+            .filter(
+              (dish) =>
+                profile.dietaryPreferences.every((flag) => dish.dietaryFlags.includes(flag)) &&
+                (profile.maxDishBudget === undefined || dish.price <= profile.maxDishBudget),
+            ),
+        );
+      })
+      .catch(() => {
+        if (active) setLoadError("Could not load recommendations. Please retry.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [
+    location.latitude,
+    location.longitude,
+    profile.tasteVector,
+    profile.dietaryPreferences,
+    profile.maxDishBudget,
+    profile.tasteProfile?.neophiliaIndex,
+    searchRadius,
+    retryVersion,
+  ]);
 
   useEffect(() => {
     if (!candidates.length) {
@@ -295,7 +331,7 @@ export function DecideForMeResultScreen() {
     }
   }, [candidates, resultIndex, selectedDish, setDecideForMe]);
 
-  const dish = candidates[resultIndex] ?? selectedDish;
+  const dish = candidates[resultIndex];
 
   useEffect(() => {
     if (!dish) return;
@@ -395,6 +431,20 @@ export function DecideForMeResultScreen() {
     setDecideForMe(nextDish);
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
   };
+
+  if (loading || loadError) {
+    return (
+      <Screen title="Decide for me">
+        <EmptyState
+          title={loading ? "Finding matching dishes…" : "Recommendations unavailable"}
+          body={loadError ?? "Checking your dietary requirements and nearby options."}
+        />
+        {loadError ? (
+          <Button label="Retry" onPress={() => setRetryVersion((value) => value + 1)} />
+        ) : null}
+      </Screen>
+    );
+  }
 
   if (!dish) {
     const upcomingRadius = nextRadius(searchRadius);

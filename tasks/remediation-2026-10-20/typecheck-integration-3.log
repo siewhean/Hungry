@@ -1,0 +1,6 @@
+
+> hungry-mobile@0.1.0 typecheck
+> tsc --noEmit
+
+src/store/useStallSubmissionStore.ts(56,1): error TS1109: Expression expected.
+src/store/useStallSubmissionStore.ts(56,2): error TS1005: ',' expected.

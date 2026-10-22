@@ -1,0 +1,75 @@
+{
+  "snapshot_id": "refresh131_candidate_qa_20261019",
+  "status": "PASS",
+  "candidate": "/tmp/hungry-refresh131/Refresh131.xlsx",
+  "candidate_sha256": "66d0b6438982c0b74715bd83db5636392399f40b279ad615ee8e27afd7869611",
+  "baseline_installed": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_installed_sha256": "faee8c823436098b4c72c6a595b50c40a0799453e48cf4cc3db5d6d58e3a4402",
+  "checks": {
+    "base_sha_expected": true,
+    "candidate_sha_expected": true,
+    "base_zip_integrity": true,
+    "candidate_zip_integrity": true,
+    "same_sheets": true,
+    "only_requested_cells_changed": true,
+    "summary_clarifies_delivery_brandwide": true,
+    "coverage_note_present": true,
+    "expected_table_refs": true,
+    "directory_rows_and_unique_licences": true,
+    "alphabetical_blank_last": true,
+    "menu_item_rows_13662": true,
+    "all_menu_joins_exact": true,
+    "image_candidates_2763": true,
+    "actual_image_source_metadata": true,
+    "summary_count_actual_534": true,
+    "previous_installed_final_qa_pass_same_base": true,
+    "no_formulas": true,
+    "no_excel_errors": true,
+    "no_external_content": true,
+    "PASS": true
+  },
+  "details": {
+    "cell_differences": [
+      {
+        "sheet": "Public F&B Directory",
+        "cell": "H26677",
+        "before": "Verified menu: SUBWAY SINGAPORE BRAND MENU: 16 listed sandwiches; branch availability and prices unconfirmed.",
+        "after": "Verified menu: SUBWAY SINGAPORE BRAND MENU: 16 listed sandwiches; branch availability and prices are not confirmed by this brand-wide source. Foodpanda delivery snapshot: 20 branch-listed items, observed 2026-10-19; delivery prices and availability may differ in-store; see Menu Items tab."
+      },
+      {
+        "sheet": "Coverage & Sources",
+        "cell": "B226",
+        "before": "2026-10-19: Added 6 first-party directory fields (4 McDonald’s contacts, 2 McDonald’s hours); resolved 2 exact public outlet names; added 67 current menu listing rows (7 Carl’s Jr. first-party pickup items and 60 Foodpanda exact-branch delivery listings, all time-sensitive and labeled delivery-only where applicable); added one CC0 Waffle Up storefront photo, visually verified and approved for display. No permanent closures or exact new coordinates were verified; no ratings added due lack of durable reusable source. Six Mapbox Search Box requests were made for a bounded coordinate review; no Mapbox results persisted. No paid services used.",
+        "after": "2026-10-19: Added 6 first-party directory fields (4 McDonald’s contacts, 2 McDonald’s hours); resolved 2 exact public outlet names; added 67 current menu listing rows (7 Carl’s Jr. first-party pickup items and 60 Foodpanda exact-branch delivery listings, all time-sensitive and labeled delivery-only where applicable); added one CC0 Waffle Up storefront photo, visually verified and approved for display. No permanent closures or exact new coordinates were verified; no ratings added due lack of durable reusable source. Six Mapbox Search Box requests were made for a bounded coordinate review; no Mapbox results persisted. No paid services used. Updated the existing Subway Tampines 1 summary to separate its brand-wide catalogue from the fresh branch-specific delivery snapshot."
+      }
+    ],
+    "cell_difference_count": 2,
+    "expected_allowed_cells": [
+      [
+        "Coverage & Sources",
+        "B226"
+      ],
+      [
+        "Public F&B Directory",
+        "H26677"
+      ]
+    ],
+    "revised_menu_summary": "Verified menu: SUBWAY SINGAPORE BRAND MENU: 16 listed sandwiches; branch availability and prices are not confirmed by this brand-wide source. Foodpanda delivery snapshot: 20 branch-listed items, observed 2026-10-19; delivery prices and availability may differ in-store; see Menu Items tab.",
+    "revised_refresh131_coverage_note": "2026-10-19: Added 6 first-party directory fields (4 McDonald’s contacts, 2 McDonald’s hours); resolved 2 exact public outlet names; added 67 current menu listing rows (7 Carl’s Jr. first-party pickup items and 60 Foodpanda exact-branch delivery listings, all time-sensitive and labeled delivery-only where applicable); added one CC0 Waffle Up storefront photo, visually verified and approved for display. No permanent closures or exact new coordinates were verified; no ratings added due lack of durable reusable source. Six Mapbox Search Box requests were made for a bounded coordinate review; no Mapbox results persisted. No paid services used. Updated the existing Subway Tampines 1 summary to separate its brand-wide catalogue from the fresh branch-specific delivery snapshot.",
+    "table_refs": {
+      "('Public F&B Directory', 'PublicFnbDirectory')": "A1:U38274",
+      "('Menu Items', 'MenuItems')": "A1:L13663",
+      "('Image Candidates', 'ImageCandidates')": "A1:I2764",
+      "('Coverage & Sources', 'CoverageSources')": "A1:C226"
+    },
+    "bad_menu_joins": [],
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/7/75/Waffle_Up_Outlet.jpg",
+    "image_source_url": "https://commons.wikimedia.org/wiki/File:Waffle_Up_Outlet.jpg",
+    "summary_actual": 534,
+    "summary_reported": 534,
+    "formulas": [],
+    "errors": [],
+    "external_content": []
+  },
+  "reviewed_at_local": "2026-10-19"
+}

@@ -1,7 +1,8 @@
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { useEffect } from "react";
 import { Modal, Pressable, View } from "react-native";
-import { CheckCircle2, Sparkles, X } from "lucide-react-native";
-import * as Haptics from "expo-haptics";
+import { CheckCircle2, X } from "lucide-react-native";
+import * as Haptics from "@/lib/haptics";
 
 import { AppText, Badge, Button, Card } from "@/components/ui";
 import { useUIStore } from "@/store/useUIStore";
@@ -14,6 +15,7 @@ interface ReviewSuccessModalProps {
 
 export function ReviewSuccessModal({ onOpenHistory }: ReviewSuccessModalProps) {
   const { componentRadii, palette, radii, spacing } = useHungryTheme();
+  const hapticsEnabled = useUIStore((state) => state.hapticFeedbackEnabled);
   const payload = useUIStore((state) => state.reviewSuccess);
   const hideReviewSuccess = useUIStore((state) => state.hideReviewSuccess);
   const isMerchantMode = useMerchantStore((state) => Boolean(state.account));
@@ -21,10 +23,10 @@ export function ReviewSuccessModal({ onOpenHistory }: ReviewSuccessModalProps) {
   const shouldShowComposerTags = isMerchantMode || isDeveloperMode;
 
   useEffect(() => {
-    if (payload) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    if (payload && hapticsEnabled) {
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     }
-  }, [payload]);
+  }, [payload, hapticsEnabled]);
 
   return (
     <Modal
@@ -89,11 +91,12 @@ export function ReviewSuccessModal({ onOpenHistory }: ReviewSuccessModalProps) {
             {shouldShowComposerTags && (
               <Badge label={`${payload?.tagCount ?? 0} taste tags`} tone="amber" />
             )}
-            <Badge label={`+${payload?.pointsEarned ?? 0} points`} tone="success" />
+            {FEATURE_FLAGS.gamificationEnabled && (payload?.pointsEarned ?? 0) > 0 ? (
+              <Badge label={`+${payload?.pointsEarned} points`} tone="success" />
+            ) : null}
           </View>
 
           <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
-            <Sparkles color={palette.orange} size={16} />
             <AppText variant="bodySmall" tone="secondary">
               Profile updated. Your review has been added to your history.
             </AppText>

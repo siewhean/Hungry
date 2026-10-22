@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+import { useMerchantOperationScope } from "@/features/merchant/useMerchantOperationScope";
+import { useFocusEffect } from "@react-navigation/native";
+import React, { useState, useCallback } from "react";
 import { View, ScrollView, Pressable, ActivityIndicator } from "react-native";
 import {
   ShieldAlert,
@@ -40,12 +42,37 @@ function loadImagePickerModule(): ImagePickerModule | null {
 }
 
 export function VerificationCentreScreen({ navigation }: Props) {
+  const captureOperation = useMerchantOperationScope();
+
   const { componentRadii, palette, spacing, radii } = useHungryTheme();
   const setAccount = useMerchantStore((state) => state.setAccount);
   const activeOutlet = useMerchantStore(getActiveOutlet);
 
   const [isUploadingEvidence, setIsUploadingEvidence] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      let current = true;
+      const isOperationCurrent = captureOperation();
+      void getHungryService()
+        .merchant.getMerchantAccount()
+        .then((account) => {
+          if (current && isOperationCurrent() && account) setAccount(account);
+        })
+        .catch((error) => {
+          if (current && isOperationCurrent())
+            setUploadError(
+              error instanceof Error
+                ? error.message
+                : "Cannot refresh verification status. Retry by returning to this screen.",
+            );
+        });
+      return () => {
+        current = false;
+      };
+    }, [setAccount]),
+  );
 
   if (!activeOutlet) {
     return (
@@ -64,6 +91,9 @@ export function VerificationCentreScreen({ navigation }: Props) {
   const status = activeOutlet.verification.status;
 
   const pickVerificationEvidence = async (kind: EvidenceMediaKind): Promise<string | null> => {
+    const isOperationCurrent = captureOperation();
+    if (!isOperationCurrent()) return null;
+
     const imagePicker = loadImagePickerModule();
     if (!imagePicker) {
       throw new Error("Media picker is unavailable in this app build.");
@@ -76,12 +106,15 @@ export function VerificationCentreScreen({ navigation }: Props) {
       confirmLabel: "Allow",
       cancelLabel: "Not now",
     });
+    if (!isOperationCurrent()) return null;
 
     if (!shouldRequestPermission) {
       return null;
     }
 
     const permission = await imagePicker.requestMediaLibraryPermissionsAsync();
+    if (!isOperationCurrent()) return null;
+
     if (!isGalleryPermissionGranted(permission)) {
       throw new Error("Photos permission is required to attach verification evidence.");
     }
@@ -95,6 +128,7 @@ export function VerificationCentreScreen({ navigation }: Props) {
       quality: 0.82,
       selectionLimit: 1,
     });
+    if (!isOperationCurrent()) return null;
 
     if (result.canceled || !result.assets?.length) {
       return null;
@@ -107,10 +141,15 @@ export function VerificationCentreScreen({ navigation }: Props) {
     method: "video_walkaround" | "licence_upload" | "singpass_myinfo",
     kind: EvidenceMediaKind,
   ) => {
+    const isOperationCurrent = captureOperation();
+    if (!isOperationCurrent()) return;
+
     setUploadError(null);
     setIsUploadingEvidence(true);
     try {
       const fileUrl = await pickVerificationEvidence(kind);
+      if (!isOperationCurrent()) return;
+
       if (!fileUrl) {
         return;
       }
@@ -119,13 +158,21 @@ export function VerificationCentreScreen({ navigation }: Props) {
         method,
         fileUrl,
       });
+      if (!isOperationCurrent()) return;
+
       const updatedAccount = await getHungryService().merchant.getMerchantAccount();
+      if (!isOperationCurrent()) return;
+
       if (updatedAccount) setAccount(updatedAccount);
     } catch (e) {
+      if (!isOperationCurrent()) return;
+
       console.error(e);
       setUploadError(e instanceof Error ? e.message : "Unable to upload verification evidence.");
     } finally {
-      setIsUploadingEvidence(false);
+      if (isOperationCurrent()) {
+        setIsUploadingEvidence(false);
+      }
     }
   };
 
@@ -166,6 +213,7 @@ export function VerificationCentreScreen({ navigation }: Props) {
             </AppText>
           </View>
         );
+      case "more_info_needed":
       case "rejected":
         return (
           <View
@@ -176,10 +224,11 @@ export function VerificationCentreScreen({ navigation }: Props) {
           >
             <AlertCircle size={32} color={palette.error} />
             <AppText variant="h3" style={{ color: palette.error, marginTop: spacing[2] }}>
-              Verification Rejected
+              {status === "more_info_needed" ? "More information needed" : "Verification Rejected"}
             </AppText>
             <AppText style={{ color: palette.text, marginTop: spacing[1], textAlign: "center" }}>
-              We could not verify your business with the provided information. Please try again.
+              {activeOutlet.verification.rejectionReason ||
+                "We could not verify your business with the provided information. Please submit clearer evidence."}
             </AppText>
           </View>
         );
@@ -275,6 +324,7 @@ function MethodCard({
   const { componentRadii, palette, spacing, radii } = useHungryTheme();
   return (
     <Pressable
+      accessibilityRole="button"
       onPress={onPress}
       disabled={isLoading}
       style={[

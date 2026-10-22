@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { hungryPersistStorage } from "./persistStorage";
+import { createAccountPersistStorage } from "./accountPersistStorage";
 import { getHungryService, getServiceProvider } from "@/lib/services/serviceProvider";
 import { useActivityStore } from "./useActivityStore";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -28,7 +28,7 @@ export interface SocialReply extends SocialComment {
   parentCommentId: string;
 }
 
-type HapticsModule = typeof import("expo-haptics");
+type HapticsModule = typeof import("@/lib/haptics");
 
 let hapticsModule: HapticsModule | null | undefined;
 
@@ -39,7 +39,7 @@ async function triggerLightImpact() {
       return;
     }
     if (hapticsModule === undefined) {
-      hapticsModule = await import("expo-haptics");
+      hapticsModule = await import("@/lib/haptics");
     }
     await hapticsModule?.impactAsync(hapticsModule.ImpactFeedbackStyle.Light);
   } catch {
@@ -55,7 +55,7 @@ function isUuidPostId(postId: string) {
 }
 
 function canUseLocalAuthorFollowFallback() {
-  return getServiceProvider().mode === "mock" || (typeof __DEV__ !== "undefined" && __DEV__);
+  return getServiceProvider().mode === "mock";
 }
 
 function interactionStatesMatch(left: InteractionState | undefined, right: InteractionState) {
@@ -71,7 +71,10 @@ function interactionStatesMatch(left: InteractionState | undefined, right: Inter
   );
 }
 
+let socialGeneration = 0;
+
 interface SocialState {
+  pendingUserIds: Record<string, boolean>;
   interactions: Record<string, InteractionState>;
   followedAuthors: Record<string, boolean>;
   followedUserIds: Record<string, boolean>;
@@ -109,20 +112,24 @@ function toSocialComment(row: ServiceComment, fallbackName: string, fallbackAvat
 export const useSocialStore = create<SocialState>()(
   persist(
     (set, get) => ({
+      pendingUserIds: {},
       interactions: {},
       followedAuthors: {},
       followedUserIds: {},
       commentsByPostId: {},
       repliesByCommentId: {},
 
-      clearAccountScopedState: () =>
+      clearAccountScopedState: () => {
+        socialGeneration++;
         set({
+          pendingUserIds: {},
           interactions: {},
           followedAuthors: {},
           followedUserIds: {},
           commentsByPostId: {},
           repliesByCommentId: {},
-        }),
+        });
+      },
 
       initializeInteractions: (items) => {
         const { commentsByPostId, repliesByCommentId, interactions } = get();
@@ -174,6 +181,7 @@ export const useSocialStore = create<SocialState>()(
       },
 
       toggleLike: (postId) => {
+        const generation = socialGeneration;
         void triggerLightImpact();
         const { interactions } = get();
         const current = interactions[postId] ?? {
@@ -192,21 +200,6 @@ export const useSocialStore = create<SocialState>()(
           likeCount: isLiked ? current.likeCount + 1 : Math.max(0, current.likeCount - 1),
         };
 
-        if (isLiked) {
-          requestAnimationFrame(() => {
-            const { addActivityUpdate } = useActivityStore.getState();
-            const actorName = useProfileStore.getState().profile.displayName || "You";
-            addActivityUpdate({
-              kind: "like",
-              postId,
-              actorName,
-              text: "liked your post",
-              target: postId,
-              time: "now",
-            });
-          });
-        }
-
         set((prev) => ({
           interactions: {
             ...prev.interactions,
@@ -219,6 +212,7 @@ export const useSocialStore = create<SocialState>()(
             try {
               await getHungryService().social.reactToBite(postId, "craving");
             } catch (e) {
+              if (generation !== socialGeneration) return;
               console.error("Failed to sync liked post reaction; rolled back optimistic state.", e);
               set((prev) => {
                 if (!interactionStatesMatch(prev.interactions[postId], nextState)) return prev;
@@ -235,6 +229,7 @@ export const useSocialStore = create<SocialState>()(
       },
 
       toggleSave: (postId) => {
+        const generation = socialGeneration;
         void triggerLightImpact();
         const { interactions } = get();
         const now = new Date().toISOString();
@@ -268,6 +263,7 @@ export const useSocialStore = create<SocialState>()(
             try {
               await getHungryService().social.reactToBite(postId, "save");
             } catch (e) {
+              if (generation !== socialGeneration) return;
               console.error("Failed to sync saved post reaction; rolled back optimistic state.", e);
               set((prev) => {
                 if (!interactionStatesMatch(prev.interactions[postId], nextState)) return prev;
@@ -297,7 +293,8 @@ export const useSocialStore = create<SocialState>()(
       },
 
       toggleFollow: (userId: string) => {
-        const isFollowing = get().followedUserIds[userId] ?? false;
+        const generation = socialGeneration;
+        const isFollowing = Boolean(get().followedUserIds[userId] || get().pendingUserIds[userId]);
         set((prev) => ({
           followedUserIds: {
             ...prev.followedUserIds,
@@ -308,20 +305,32 @@ export const useSocialStore = create<SocialState>()(
           const service = getHungryService();
           void (
             isFollowing ? service.social.unfollowUser(userId) : service.social.followUser(userId)
-          ).catch((error) => {
-            console.error("Failed to sync follow state", error);
-            set((prev) => ({
-              followedUserIds: { ...prev.followedUserIds, [userId]: isFollowing },
-            }));
-          });
+          )
+            .then(async () => {
+              const state = await service.social.getFollowState(userId);
+              if (generation !== socialGeneration) return;
+              set((previous) => ({
+                followedUserIds: { ...previous.followedUserIds, [userId]: state === "approved" },
+                pendingUserIds: { ...previous.pendingUserIds, [userId]: state === "pending" },
+              }));
+            })
+            .catch((error) => {
+              if (generation !== socialGeneration) return;
+              console.error("Failed to sync follow state", error);
+              set((prev) => ({
+                followedUserIds: { ...prev.followedUserIds, [userId]: isFollowing },
+              }));
+            });
         }
       },
 
       loadCommentsForPost: async (postId) => {
+        const generation = socialGeneration;
         if (getServiceProvider().mode === "mock") return;
 
         const profile = useProfileStore.getState().profile;
         const loadedComments = await getHungryService().social.listCommentsForPost(postId);
+        if (generation !== socialGeneration) return;
         const nextComments: SocialComment[] = [];
         const nextRepliesByCommentId: Record<string, SocialReply[]> = {};
 
@@ -376,6 +385,7 @@ export const useSocialStore = create<SocialState>()(
       },
 
       incrementShare: (postId, channel = "in_app") => {
+        const generation = socialGeneration;
         if (getServiceProvider().mode !== "mock" && !isUuidPostId(postId)) {
           console.warn("Post share ignored because this post is not backed by Supabase.");
           return;
@@ -407,6 +417,7 @@ export const useSocialStore = create<SocialState>()(
             try {
               await getHungryService().social.shareBite(postId, { channel });
             } catch (e) {
+              if (generation !== socialGeneration) return;
               console.error("Failed to sync shared post; rolled back optimistic state.", e);
               set((prev) => {
                 if (!interactionStatesMatch(prev.interactions[postId], nextState)) return prev;
@@ -423,6 +434,7 @@ export const useSocialStore = create<SocialState>()(
       },
 
       addComment: (postId, comment) => {
+        const generation = socialGeneration;
         const { interactions } = get();
         const { addActivityUpdate } = useActivityStore.getState();
         const current = interactions[postId] ?? {
@@ -459,6 +471,7 @@ export const useSocialStore = create<SocialState>()(
           void getHungryService()
             .social.createComment(postId, comment.text)
             .then((syncedComment) => {
+              if (generation !== socialGeneration) return;
               const profile = useProfileStore.getState().profile;
               const normalized = toSocialComment(
                 syncedComment,
@@ -481,12 +494,14 @@ export const useSocialStore = create<SocialState>()(
               });
             })
             .catch((error) => {
+              if (generation !== socialGeneration) return;
               console.error("Failed to sync comment to backend", error);
             });
         }
       },
 
       addReply: (postId, reply) => {
+        const generation = socialGeneration;
         const { interactions } = get();
         const { addActivityUpdate } = useActivityStore.getState();
         const current = interactions[postId] ?? {
@@ -526,6 +541,7 @@ export const useSocialStore = create<SocialState>()(
           void getHungryService()
             .social.createComment(postId, reply.text, reply.parentCommentId)
             .then((syncedReply) => {
+              if (generation !== socialGeneration) return;
               const profile = useProfileStore.getState().profile;
               const normalized = toSocialComment(
                 syncedReply,
@@ -550,6 +566,7 @@ export const useSocialStore = create<SocialState>()(
               });
             })
             .catch((error) => {
+              if (generation !== socialGeneration) return;
               console.error("Failed to sync reply to backend", error);
             });
         }
@@ -557,7 +574,7 @@ export const useSocialStore = create<SocialState>()(
     }),
     {
       name: "hungry-social-v1",
-      storage: hungryPersistStorage,
+      storage: createAccountPersistStorage("hungry-social-v1"),
     },
   ),
 );

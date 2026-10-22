@@ -1,5 +1,6 @@
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ArrowLeft, Search } from "lucide-react-native";
 
@@ -12,6 +13,7 @@ import type { Portfolio } from "@/types/domain";
 type Props = NativeStackScreenProps<ProfileStackParamList, "PortfolioSearch">;
 
 export function PortfolioSearchScreen({ navigation }: Props) {
+  const insets = useSafeAreaInsets();
   const { palette, spacing } = useHungryTheme();
   const searchPortfolios = usePortfolioStore((state) => state.searchPortfolios);
   const [query, setQuery] = useState("");
@@ -25,6 +27,11 @@ export function PortfolioSearchScreen({ navigation }: Props) {
       const nextResults = await searchPortfolios(query);
       setResults(nextResults);
       setHasSearched(true);
+    } catch (error) {
+      Alert.alert(
+        "Could not complete action",
+        error instanceof Error ? error.message : "Please retry.",
+      );
     } finally {
       setIsSearching(false);
     }
@@ -32,7 +39,9 @@ export function PortfolioSearchScreen({ navigation }: Props) {
 
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: palette.bg }}
+      keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets
+      style={{ flex: 1, backgroundColor: palette.bg, paddingTop: insets.top }}
       contentContainerStyle={[styles.content, { gap: spacing[4], padding: spacing[4] }]}
     >
       <View style={styles.header}>

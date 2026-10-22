@@ -1,0 +1,24 @@
+{
+  "refresh_id": "refresh126_increment_20261019",
+  "status": "PASS",
+  "qa_agent": "refresh125_final_qa",
+  "input_sha256": "00a13d50c650e1bcbde0f51f15260e4f8aeecbd9d0372bae284c6c50558e2967",
+  "candidate_sha256": "2c737c77fc2472cb7fcc31af2746e813a1b7779fedc8632f76b19f7fc396a5b3",
+  "installed_workbook_sha256": "2c737c77fc2472cb7fcc31af2746e813a1b7779fedc8632f76b19f7fc396a5b3",
+  "checks": {
+    "zip_valid": true,
+    "sheet_and_table_extents_valid": true,
+    "unique_sfa_records": 38278,
+    "named_records_alphabetized": true,
+    "unnamed_records_last": true,
+    "directory_changes_exactly_match_evidence": true,
+    "menu_items_match_source_snapshot": true,
+    "image_references_match_source_snapshots": true,
+    "coverage_metrics_recount_match_receipt": true,
+    "formulas_errors_or_blank_rows": 0,
+    "unjustified_removals": 0
+  },
+  "qa_summary": "Independent exact-SHA QA passed: all 38,278 unique SFA records preserved; directory remains alphabetical with unnamed entries last; Dumpling Ji name, 42 delivery menu rows and 16 unapproved image references match the source snapshots; coverage counts match; no formula errors or blank rows.",
+  "mapbox_usage": "User reported 59/50,000 Search Box requests. Dashboard not directly accessible; no Mapbox API requests were made during Refresh126.",
+  "no_paid_services_used": true
+}

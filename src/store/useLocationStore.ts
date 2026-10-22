@@ -10,7 +10,7 @@ interface LocationState {
   currentLocation: Coordinate;
   manualLocation?: string;
   manualCoordinate?: Coordinate;
-  gpsBadgeState: "live" | "manual" | "denied";
+  gpsBadgeState: "live" | "manual" | "denied" | "unknown";
   /** When the GPS fix in currentLocation was taken (ms since epoch). */
   lastLocationFixAt?: number;
   grantLocation: (options?: { manualLocation?: string }) => Promise<boolean>;
@@ -81,6 +81,15 @@ export function getDeniedLocationState(manualLocation?: string) {
   };
 }
 
+let locationGeneration = 0;
+/** A manual selection or account reset invalidates any older asynchronous fix. */
+export async function resolveCurrentLocationRequest<T>(
+  request: () => Promise<T>,
+): Promise<T | undefined> {
+  const generation = locationGeneration;
+  const result = await request();
+  return generation === locationGeneration ? result : undefined;
+}
 let refreshInFlight: Promise<boolean> | null = null;
 
 export const useLocationStore = create<LocationState>()(
@@ -90,8 +99,9 @@ export const useLocationStore = create<LocationState>()(
       currentLocation: defaultLocation,
       manualLocation: undefined,
       manualCoordinate: undefined,
-      gpsBadgeState: "live",
+      gpsBadgeState: "unknown",
       grantLocation: async (options) => {
+        const generation = ++locationGeneration;
         try {
           const Location = loadExpoLocationModule();
           if (!Location) {
@@ -104,15 +114,19 @@ export const useLocationStore = create<LocationState>()(
           }
 
           const permission = await Location.requestForegroundPermissionsAsync();
+          if (generation !== locationGeneration) return false;
           if (permission.status !== "granted") {
             set(getDeniedLocationState(options?.manualLocation));
             return false;
           }
 
-          const result = await Location.getCurrentPositionAsync({
-            accuracy: Location.Accuracy.Balanced,
-          });
+          const result = await resolveCurrentLocationRequest(() =>
+            Location.getCurrentPositionAsync({
+              accuracy: Location.Accuracy.Balanced,
+            }),
+          );
 
+          if (!result || generation !== locationGeneration) return false;
           set({
             ...getGrantedLocationState({
               latitude: result.coords.latitude,
@@ -125,6 +139,7 @@ export const useLocationStore = create<LocationState>()(
           trackAnalyticsEvent("location_permission_result", { result: "granted" });
           return true;
         } catch {
+          if (generation !== locationGeneration) return false;
           set(getDeniedLocationState(options?.manualLocation));
           trackAnalyticsEvent("location_permission_result", {
             result: "denied",
@@ -144,9 +159,11 @@ export const useLocationStore = create<LocationState>()(
         const getPermission = Location?.getForegroundPermissionsAsync;
         if (!Location || typeof getPermission !== "function") return Promise.resolve(false);
 
+        const generation = locationGeneration;
         refreshInFlight = (async () => {
           try {
             const permission = await getPermission();
+            if (generation !== locationGeneration) return false;
             if (permission.status !== "granted") {
               // Revoked in system settings since the last launch.
               set(getDeniedLocationState(get().manualLocation));
@@ -155,7 +172,7 @@ export const useLocationStore = create<LocationState>()(
             const result = await Location.getCurrentPositionAsync({
               accuracy: Location.Accuracy.Balanced,
             });
-            if (get().permission !== "granted") return false;
+            if (generation !== locationGeneration || get().permission !== "granted") return false;
             set({
               currentLocation: {
                 latitude: result.coords.latitude,
@@ -167,25 +184,32 @@ export const useLocationStore = create<LocationState>()(
           } catch {
             return false;
           } finally {
-            refreshInFlight = null;
+            if (generation === locationGeneration) refreshInFlight = null;
           }
         })();
         return refreshInFlight;
       },
       denyLocation: () => {
+        locationGeneration += 1;
+        refreshInFlight = null;
         set({ permission: "denied", gpsBadgeState: "denied", manualCoordinate: undefined });
         trackAnalyticsEvent("location_permission_result", {
           result: "denied",
           source: "manual_deny",
         });
       },
-      setManualLocation: (label) =>
+      setManualLocation: (label) => {
+        locationGeneration += 1;
+        refreshInFlight = null;
         set({
           manualLocation: normalizeManualLocationLabel(label),
           manualCoordinate: undefined,
           gpsBadgeState: "manual",
-        }),
+        });
+      },
       setManualSelection: (label, coordinate) => {
+        locationGeneration += 1;
+        refreshInFlight = null;
         set({
           permission: "denied",
           manualLocation: normalizeManualLocationLabel(label),
@@ -200,15 +224,18 @@ export const useLocationStore = create<LocationState>()(
           longitude: toCoarseCoordinate(coordinate.longitude),
         });
       },
-      resetLocationState: () =>
+      resetLocationState: () => {
+        locationGeneration += 1;
+        refreshInFlight = null;
         set({
           permission: "unknown",
           currentLocation: defaultLocation,
           manualLocation: undefined,
           manualCoordinate: undefined,
-          gpsBadgeState: "live",
+          gpsBadgeState: "unknown",
           lastLocationFixAt: undefined,
-        }),
+        });
+      },
     }),
     {
       name: "hungry-location-v1",

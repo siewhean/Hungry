@@ -1,0 +1,56 @@
+(node:78392) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ onboarding typed routes are registered and flow through cuisine, taste, and dietary setup (4.623ms)
+✔ root and nested route targets avoid stale or unregistered screens (0.636834ms)
+✔ synthetic create tab targets root routes without registering a fake tab route (0.576125ms)
+✔ going offline shows a banner instead of taking over navigation (0.161042ms)
+✔ wheel party mode is gated and /join links explain group spins are coming (0.886875ms)
+(node:78393) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Sprint 9 screen contract: Login screen uses service auth + error boundary (2.307833ms)
+✔ Sprint 9 screen contract: Review screen submits via service and triggers success UI (0.442667ms)
+✔ Sprint 9 screen contract: onboarding icon controls and location rows are labelled (4.202834ms)
+✔ Sprint 9 screen contract: stall menu cards expose dish actions (0.349416ms)
+✔ Sprint 9 screen contract: Search cards expose actionable semantics (0.42ms)
+✔ Sprint 9 screen contract: Home feed interactions are wired for like/save/comment/share (4.636917ms)
+✔ Sprint 9 screen contract: Home feed double tap likes with heart animation (1.829ms)
+✔ Sprint 9 screen contract: Home feed supports pull-to-refresh without hiding ready content (0.80575ms)
+✔ Sprint 9 screen contract: feed videos pause on tap and fast-forward only from edge holds (0.818083ms)
+✔ Sprint 9 screen contract: Home feed header follows app header scale (0.800042ms)
+✔ Taste recommendation contract: core surfaces use shared ranking and explicit signals (1.063292ms)
+✔ Sprint 9 screen contract: routed dish detail uses gallery-backed share flow (0.256917ms)
+✔ Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and data-backed (0.975666ms)
+✔ search home shows debounced inline results and keeps a see-all action (0.166083ms)
+(node:78394) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ user auth and onboarding flows cover account, taste, dietary, and location state (1.436208ms)
+✔ home feed post cards cover carousel media, captions, comments, reactions, and refresh (1.036875ms)
+✔ discover and search keep user mode map-free while browse grids open matching dish details (1.59725ms)
+✔ dish and stall details expose correct detail surfaces without user-mode map/cart regressions (1.679166ms)
+✔ review tab covers loading state, review cards, and bite card icon/sheet boundaries (0.540667ms)
+✔ post composer supports deliberate dish selection, durable drafts, media and confirmed publication (0.723333ms)
+✔ profile surfaces keep own and other-user layouts linked while hiding taste fingerprint for others (3.6075ms)
+✔ coverage plan surfaces have direct source, Playwright, and native smoke entry points (0.259916ms)
+(node:78395) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ failed Finish preserves previous profile and leaves staged retake retryable (1.003333ms)
+✔ confirmed Finish writes all preferences once and applies only the server response (0.562416ms)
+✔ account transition while Finish awaits cannot apply or commit its late response (0.160416ms)
+✔ guest Finish merges the staged fields locally without a service write (0.202625ms)
+(node:78397) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ taste and dietary routes share one resumable draft; cancellation leaves real profile unchanged (0.967333ms)
+✔ draft explicitly adopts guest at sign-in, survives same-account resume, and clears on account switch (0.511667ms)
+✔ guest snapshot survives SIGNED_IN replacement before signIn promise resolves (0.46125ms)
+✔ all dietary requirements apply before limit and zero matches never restore unrestricted dishes (0.151083ms)
+✔ queued Save is an idempotent desired state and retained after failure (3.291333ms)
+✔ pending saves are account-generation scoped and a retired completion cannot clear renewed intent (2.006709ms)
+✔ retired sign-in profile application returns false so screens cannot complete stale onboarding (0.704834ms)
+ℹ tests 38
+ℹ suites 0
+ℹ pass 38
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 423.1815

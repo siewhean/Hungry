@@ -477,9 +477,9 @@ export function MapSurface({
       <MapboxGL.MapView
         style={styles.map}
         styleURL="mapbox://styles/mapbox/streets-v12"
-        attributionEnabled={false}
+        attributionEnabled={true}
         compassEnabled={false}
-        logoEnabled={false}
+        logoEnabled={true}
         pitchEnabled={false}
         rotateEnabled={false}
         scaleBarEnabled={false}

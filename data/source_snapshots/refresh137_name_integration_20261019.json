@@ -1,0 +1,179 @@
+{
+  "snapshot": "refresh137_name_integration_20261019",
+  "baseline_sha256": "6b20769d389600a7e7838a64f3350330a6a2cade68a46321ac051fd68986d557",
+  "workbook_sha256_after": "bb74665b20d62a711463850a4d5de0648dc0237c4e1d75e96c9eb5f5a89d2d93",
+  "records_preserved": 38273,
+  "unique_licences_preserved": 38273,
+  "names_added": 14,
+  "withheld_from_agent_proposals": [
+    {
+      "row": 37383,
+      "sfa_licence": "SW21402N000",
+      "name": "Kopitiam Food Hall",
+      "address": "Address: 50 JURONG GATEWAY ROAD #05-01,JEM,Singapore 608549 (MR5)",
+      "postal_code": "608549",
+      "source_url": "https://www.jem.sg/store-directory/kopitiam-food-hall/",
+      "observed_date": "2026-10-19 Asia/Singapore",
+      "source_snapshot": "data/source_snapshots/lendlease_blank_name_candidates_20261019.json"
+    }
+  ],
+  "named_records_after": 32815,
+  "unnamed_records_after": 5458,
+  "sort": "F&B Name casefold; blanks last; stable order for equal keys",
+  "proposal_sources": [
+    "data/source_snapshots/capitaland_blank_names_refresh141_20261019.json",
+    "data/source_snapshots/lendlease_blank_name_candidates_20261019.json",
+    "data/source_snapshots/refresh137_suntec_vivocity_blank_names_20261019.json",
+    "data/source_snapshots/frasers_centres_blank_name_exact_directory_refresh_20261019.json"
+  ],
+  "integrated_proposals": [
+    {
+      "row": 34096,
+      "sfa_licence": "CE19C31E000",
+      "name": "KE MING 克茗冰室",
+      "address": "Address: 107 NORTH BRIDGE ROAD #B1-29,FUNAN,Singapore 179105",
+      "postal_code": "179105",
+      "source_url": "https://www.capitaland.com/sg/malls/funan/en/stores/ke-ming-.html",
+      "observed_date": "2026-10-19",
+      "source_snapshot": "data/source_snapshots/capitaland_blank_names_refresh141_20261019.json"
+    },
+    {
+      "row": 34099,
+      "sfa_licence": "CE19E06X008",
+      "name": "Big Appetite",
+      "address": "Address: 107 NORTH BRIDGE ROAD #B2-24,FUNAN,Singapore 179105",
+      "postal_code": "179105",
+      "source_url": "https://www.capitaland.com/sg/malls/funan/en/stores/big-appetite.html",
+      "observed_date": "2026-10-19",
+      "source_snapshot": "data/source_snapshots/capitaland_blank_names_refresh141_20261019.json"
+    },
+    {
+      "row": 35991,
+      "sfa_licence": "NW04070A000",
+      "name": "Ya Kun Kaya Toast",
+      "address": "Address: 1 JELEBU ROAD #02-01A,BUKIT PANJANG PLAZA,Singapore 677743",
+      "postal_code": "677743",
+      "source_url": "https://www.capitaland.com/sg/malls/bukitpanjangplaza/en/stores/ya-kun-kaya-toast.html",
+      "observed_date": "2026-10-19",
+      "source_snapshot": "data/source_snapshots/capitaland_blank_names_refresh141_20261019.json"
+    },
+    {
+      "row": 34178,
+      "sfa_licence": "CE21657K000",
+      "name": "Vanda Botanical Desserts",
+      "address": "Address: 313 ORCHARD ROAD #01-16/17,313 @ SOMERSET,Singapore 238895",
+      "postal_code": "238895",
+      "source_url": "https://www.313somerset.com.sg/store-directory/vanda-botanical-desserts/",
+      "observed_date": "2026-10-19 Asia/Singapore",
+      "source_snapshot": "data/source_snapshots/lendlease_blank_name_candidates_20261019.json"
+    },
+    {
+      "row": 37006,
+      "sfa_licence": "SE22G19B000",
+      "name": "Fisher King's Grill",
+      "address": "Address: 10 PAYA LEBAR ROAD #03-25,PLQ MALL,Singapore 409057",
+      "postal_code": "409057",
+      "source_url": "https://www.payalebarquarter.com/siteassets/paya-lebar-quarter/tenancy-images/campaign-tcs/2025-plq-x-lost-spirits-fest---tcs.pdf",
+      "observed_date": "2026-10-19 Asia/Singapore",
+      "source_snapshot": "data/source_snapshots/lendlease_blank_name_candidates_20261019.json"
+    },
+    {
+      "row": 36967,
+      "sfa_licence": "SE19914N000",
+      "name": "Kopitime",
+      "address": "Address: 10 PAYA LEBAR ROAD #04-11,PLQ MALL,Singapore 409057",
+      "postal_code": "409057",
+      "source_url": "https://www.payalebarquarter.com/siteassets/paya-lebar-quarter/tenancy-images/campaign-tcs/plq-cny-2026---store-operating-hours.pdf",
+      "observed_date": "2026-10-19 Asia/Singapore",
+      "source_snapshot": "data/source_snapshots/lendlease_blank_name_candidates_20261019.json"
+    },
+    {
+      "row": 36968,
+      "sfa_licence": "SE19914N011",
+      "name": "Kopitime",
+      "address": "Address: 10 PAYA LEBAR ROAD #04-11,PLQ MALL,Singapore 409057",
+      "postal_code": "409057",
+      "source_url": "https://www.payalebarquarter.com/siteassets/paya-lebar-quarter/tenancy-images/campaign-tcs/plq-cny-2026---store-operating-hours.pdf",
+      "observed_date": "2026-10-19 Asia/Singapore",
+      "source_snapshot": "data/source_snapshots/lendlease_blank_name_candidates_20261019.json"
+    },
+    {
+      "row": 37024,
+      "sfa_licence": "SE23L62B000",
+      "name": "ZTP",
+      "address": "Address: 80 MARINE PARADE ROAD #B1-75,#B1-76,PARKWAY PARADE,Singapore 449269",
+      "postal_code": "449269",
+      "source_url": "https://www.parkwayparade.com.sg/store-directory/ztp/",
+      "observed_date": "2026-10-19 Asia/Singapore",
+      "source_snapshot": "data/source_snapshots/lendlease_blank_name_candidates_20261019.json"
+    },
+    {
+      "row": 37272,
+      "sfa_licence": "SW13Q69N003",
+      "name": "Kopitiam Food Hall",
+      "address": "Address: 50 JURONG GATEWAY ROAD #05-01,JEM,Singapore 608549",
+      "postal_code": "608549",
+      "source_url": "https://www.jem.sg/store-directory/kopitiam-food-hall/",
+      "observed_date": "2026-10-19 Asia/Singapore",
+      "source_snapshot": "data/source_snapshots/lendlease_blank_name_candidates_20261019.json"
+    },
+    {
+      "row": 37357,
+      "sfa_licence": "SW18I61P000",
+      "name": "ZTP Ginseng Birdnest",
+      "address": "Address: 50 JURONG GATEWAY ROAD #B1-45,JEM,Singapore 608549",
+      "postal_code": "608549",
+      "source_url": "https://www.jem.sg/store-directory/ztp-ginseng-birdnest/",
+      "observed_date": "2026-10-19 Asia/Singapore",
+      "source_snapshot": "data/source_snapshots/lendlease_blank_name_candidates_20261019.json"
+    },
+    {
+      "row": 33962,
+      "sfa_licence": "CE14A70A009",
+      "name": "FOOD ARENA by Yew Kee Group",
+      "address": "Address: 3 TEMASEK BOULEVARD #03-367,#03-368,#03-369,#03-370,SUNTEC CITY MALL,Singapore 038983",
+      "postal_code": "038983",
+      "source_url": "https://sunteccity.com.sg/store_categories/dining/13757972",
+      "observed_date": null,
+      "source_snapshot": "data/source_snapshots/refresh137_suntec_vivocity_blank_names_20261019.json"
+    },
+    {
+      "row": 34325,
+      "sfa_licence": "CE24310L000",
+      "name": "Onggii",
+      "address": "Address: 3 TEMASEK BOULEVARD #02-300,#02-301,SUNTEC CITY MALL,Singapore 038983",
+      "postal_code": "038983",
+      "source_url": "https://sunteccity.com.sg/store_categories/dining?subCategoryID=5",
+      "observed_date": null,
+      "source_snapshot": "data/source_snapshots/refresh137_suntec_vivocity_blank_names_20261019.json"
+    },
+    {
+      "row": 36917,
+      "sfa_licence": "SE11925E000",
+      "name": "7-ELEVEN",
+      "address": "Address: 5 CHANGI BUSINESS PARK CENTRAL 1 #01-15,CHANGI CITY POINT,Singapore 486038",
+      "postal_code": "486038",
+      "source_url": "https://changicitypoint.com.sg/stores/",
+      "observed_date": "2026-10-19",
+      "source_snapshot": "data/source_snapshots/frasers_centres_blank_name_exact_directory_refresh_20261019.json"
+    },
+    {
+      "row": 37012,
+      "sfa_licence": "SE23370E005",
+      "name": "FOOD ARENA",
+      "address": "Address: 5 CHANGI BUSINESS PARK CENTRAL 1 #02-01,CHANGI CITY POINT,Singapore 486038",
+      "postal_code": "486038",
+      "source_url": "https://changicitypoint.com.sg/store/food-arena/",
+      "observed_date": "2026-10-19",
+      "source_snapshot": "data/source_snapshots/frasers_centres_blank_name_exact_directory_refresh_20261019.json"
+    }
+  ],
+  "validation": {
+    "candidate_zip_crc_pass": true,
+    "unique_ids_pass": true,
+    "alphabetical_order_pass": true,
+    "blank_names_last_pass": true,
+    "proposal_licence_and_name_pass": true,
+    "name_count_reconciliation_pass": true
+  }
+}

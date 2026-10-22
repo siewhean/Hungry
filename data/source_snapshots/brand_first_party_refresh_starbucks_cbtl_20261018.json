@@ -1,0 +1,526 @@
+{
+  "task": "Read-only first-party menu/store locator refresh for Starbucks Singapore and The Coffee Bean & Tea Leaf Singapore",
+  "retrieved_at_utc": "2026-10-18T10:13:57Z",
+  "master_workbook_path": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "master_sha256": "3ce9c0b79a9dbc4fb8724061754b0f3adfdbbeff56aa9caca71b8c5353fff9b7",
+  "sources": [
+    {
+      "label": "starbucks_beverages",
+      "url": "https://www.starbucks.com.sg/menu/beverages/",
+      "retrieved_at_utc": "2026-10-18T10:13:57Z",
+      "http_status": 200,
+      "captured_bytes": 121411,
+      "sha256": "d8f81eb4b0d39f9ae00c5bf9dd06e6fa63f96ba8db9a90d6fa101bd6c0663cf5"
+    },
+    {
+      "label": "cbtl_store_locator",
+      "url": "https://www.coffeebean.com.sg/amlocator",
+      "retrieved_at_utc": "2026-10-18T10:13:57Z",
+      "http_status": 200,
+      "captured_bytes": 696675,
+      "sha256": "6f1e58251b26f7f5533e89cbba3d2717634153094ce9e788f330cfbdc38687e6"
+    },
+    {
+      "label": "cbtl_online_cakes_catalogue",
+      "url": "https://www.coffeebean.com.sg/order-online/cakes.html",
+      "retrieved_at_utc": "2026-10-18T10:13:57Z",
+      "http_status": 200,
+      "captured_bytes": 160867,
+      "sha256": "e9b003c6fd910aadf7936b1a06dfa82552b056f6d8ed17aea786233580f1bca3"
+    }
+  ],
+  "exact_blank_field_proposals": [
+    {
+      "sfa_licence": "NW15314B000",
+      "brand": "The Coffee Bean & Tea Leaf",
+      "field": "Opening Hours / Closed Days",
+      "current_value": null,
+      "proposed_value": "Hours: Mon to Sun: 7.30am to 10.30pm. Operating hours for public holidays and eves of public holidays may differ.",
+      "source_match": {
+        "locator_store": "Bukit Panjang Plaza",
+        "official_address": "1 Jelebu Road, #02-08A/09 Bukit Panjang Plaza Singapore 677743",
+        "master_address": "1 JELEBU ROAD #02-09,#02-08A, BUKIT PANJANG PLAZA, Singapore 677743",
+        "postal_code": "677743",
+        "unit_match": "#02-08A and #02-09 both present in the master/official locator, exact location join"
+      },
+      "locator_excerpt": "amlocator-store-information\"> Bukit Panjang Plaza 1 Jelebu Road, #02-08A/09 Bukit Panjang Plaza Singapore 677743 Mon to Sun: 7.30am to 10.30pm Operating hours for Public Holidays and Eve of Public Holidays may differ. Distance: Monday 07:30 - 22:30 Tuesday 07:30 - 22:30 Wednesday 07:30 - 22:30 Thursday 07:30 - 22:30 Friday 07:30 - 22:30 Saturday 07:30 - 22:30 Sunday 07:30 - 22:30 View Store <a href=\"https://www.coffeebean.com.sg/amlocator/location/sche",
+      "confidence": "high",
+      "overwrite": false
+    }
+  ],
+  "catalogue_review": {
+    "brand": "The Coffee Bean & Tea Leaf Singapore",
+    "official_online_cake_catalogue_products": 12,
+    "new_menu_items_missing_from_master": 0,
+    "products": [
+      {
+        "brand": "The Coffee Bean & Tea Leaf Singapore",
+        "item": "Almond Fruit Tarts (9pcs)",
+        "published_price": "SGD 30.00",
+        "source_url": "https://www.coffeebean.com.sg/almond-fruit-tarts-9pcs.html",
+        "official_image_url_candidate": "https://www.coffeebean.com.sg/media/catalog/product/cache/e084c3b0c21d994c1fea2e34d473693c/9/p/9pcs_almond_tarts.jpg",
+        "image_visual_check": "not performed",
+        "image_reuse": "rights not cleared; review only",
+        "branch_availability": "Not established; official cakes/party pack order catalogue, not branch-specific menu.",
+        "already_present_in_master": true,
+        "current_master_matches": [
+          {
+            "license": null,
+            "price": "S$30",
+            "source_url": "https://www.coffeebean.com.sg/almond-fruit-tarts-9pcs.html",
+            "scope": "official Singapore online cake and party-pack catalogue; branch/menu availability not established",
+            "freshness": "Official Singapore catalogue snapshot observed 2026-10-17; source snapshot records the category/product pages as HTTP 200. A current browser fetch from this scout returned 405, so freshness is source-capture date, not a successful live recheck."
+          }
+        ]
+      },
+      {
+        "brand": "The Coffee Bean & Tea Leaf Singapore",
+        "item": "Cappuccino Cheesecake",
+        "published_price": "SGD 55.00",
+        "source_url": "https://www.coffeebean.com.sg/cappuccino-cheesecake.html",
+        "official_image_url_candidate": "https://www.coffeebean.com.sg/media/catalog/product/cache/e084c3b0c21d994c1fea2e34d473693c/1/0/1000x1000px_-_cappuccino_cheesecake.jpg",
+        "image_visual_check": "not performed",
+        "image_reuse": "rights not cleared; review only",
+        "branch_availability": "Not established; official cakes/party pack order catalogue, not branch-specific menu.",
+        "already_present_in_master": true,
+        "current_master_matches": [
+          {
+            "license": null,
+            "price": "S$55",
+            "source_url": "https://www.coffeebean.com.sg/cappuccino-cheesecake.html",
+            "scope": "official Singapore online cake and party-pack catalogue; branch/menu availability not established",
+            "freshness": "Official Singapore catalogue snapshot observed 2026-10-17; source snapshot records the category/product pages as HTTP 200. A current browser fetch from this scout returned 405, so freshness is source-capture date, not a successful live recheck."
+          }
+        ]
+      },
+      {
+        "brand": "The Coffee Bean & Tea Leaf Singapore",
+        "item": "Cheesecake Sampler (9pcs)",
+        "published_price": "SGD 24.90",
+        "source_url": "https://www.coffeebean.com.sg/cheesecake-sampler-9pcs.html",
+        "official_image_url_candidate": "https://www.coffeebean.com.sg/media/catalog/product/cache/e084c3b0c21d994c1fea2e34d473693c/9/p/9pcs_cheesecake_sampler.jpg",
+        "image_visual_check": "not performed",
+        "image_reuse": "rights not cleared; review only",
+        "branch_availability": "Not established; official cakes/party pack order catalogue, not branch-specific menu.",
+        "already_present_in_master": true,
+        "current_master_matches": [
+          {
+            "license": null,
+            "price": "S$24.9",
+            "source_url": "https://www.coffeebean.com.sg/cheesecake-sampler-9pcs.html",
+            "scope": "official Singapore online cake and party-pack catalogue; branch/menu availability not established",
+            "freshness": "Official Singapore catalogue snapshot observed 2026-10-17; source snapshot records the category/product pages as HTTP 200. A current browser fetch from this scout returned 405, so freshness is source-capture date, not a successful live recheck."
+          }
+        ]
+      },
+      {
+        "brand": "The Coffee Bean & Tea Leaf Singapore",
+        "item": "Chicago Cheesecake",
+        "published_price": "SGD 55.00",
+        "source_url": "https://www.coffeebean.com.sg/chicago-cheesecake.html",
+        "official_image_url_candidate": "https://www.coffeebean.com.sg/media/catalog/product/cache/e084c3b0c21d994c1fea2e34d473693c/b/a/batch_w0413_coffee_bean0077.png",
+        "image_visual_check": "not performed",
+        "image_reuse": "rights not cleared; review only",
+        "branch_availability": "Not established; official cakes/party pack order catalogue, not branch-specific menu.",
+        "already_present_in_master": true,
+        "current_master_matches": [
+          {
+            "license": "C98083P000",
+            "price": "8.8",
+            "source_url": null,
+            "scope": "Legacy branch association from prior dataset",
+            "freshness": "Historical reference; source data is dated July 2026 or unknown and was not rechecked in this refresh"
+          },
+          {
+            "license": null,
+            "price": "S$55",
+            "source_url": "https://www.coffeebean.com.sg/chicago-cheesecake.html",
+            "scope": "official Singapore online cake and party-pack catalogue; branch/menu availability not established",
+            "freshness": "Official Singapore catalogue snapshot observed 2026-10-17; source snapshot records the category/product pages as HTTP 200. A current browser fetch from this scout returned 405, so freshness is source-capture date, not a successful live recheck."
+          }
+        ]
+      },
+      {
+        "brand": "The Coffee Bean & Tea Leaf Singapore",
+        "item": "Chocolate Delight (9pcs)",
+        "published_price": "SGD 24.90",
+        "source_url": "https://www.coffeebean.com.sg/chocolate-delights-9pcs.html",
+        "official_image_url_candidate": "https://www.coffeebean.com.sg/media/catalog/product/cache/e084c3b0c21d994c1fea2e34d473693c/9/p/9pcs_chocolate_delight.jpg",
+        "image_visual_check": "not performed",
+        "image_reuse": "rights not cleared; review only",
+        "branch_availability": "Not established; official cakes/party pack order catalogue, not branch-specific menu.",
+        "already_present_in_master": true,
+        "current_master_matches": [
+          {
+            "license": null,
+            "price": "S$24.9",
+            "source_url": "https://www.coffeebean.com.sg/chocolate-delights-9pcs.html",
+            "scope": "official Singapore online cake and party-pack catalogue; branch/menu availability not established",
+            "freshness": "Official Singapore catalogue snapshot observed 2026-10-17; source snapshot records the category/product pages as HTTP 200. A current browser fetch from this scout returned 405, so freshness is source-capture date, not a successful live recheck."
+          }
+        ]
+      },
+      {
+        "brand": "The Coffee Bean & Tea Leaf Singapore",
+        "item": "Chocolate of A Thousand Leaves",
+        "published_price": "SGD 55.00",
+        "source_url": "https://www.coffeebean.com.sg/chocolate-of-a-thousand-leaves.html",
+        "official_image_url_candidate": "https://www.coffeebean.com.sg/media/catalog/product/cache/e084c3b0c21d994c1fea2e34d473693c/c/h/chocolate_of_thousand_leaves-1080x1080_1.jpg",
+        "image_visual_check": "not performed",
+        "image_reuse": "rights not cleared; review only",
+        "branch_availability": "Not established; official cakes/party pack order catalogue, not branch-specific menu.",
+        "already_present_in_master": true,
+        "current_master_matches": [
+          {
+            "license": "C98083P000",
+            "price": "8.8",
+            "source_url": null,
+            "scope": "Legacy branch association from prior dataset",
+            "freshness": "Historical reference; source data is dated July 2026 or unknown and was not rechecked in this refresh"
+          },
+          {
+            "license": null,
+            "price": "S$55",
+            "source_url": "https://www.coffeebean.com.sg/chocolate-of-a-thousand-leaves.html",
+            "scope": "official Singapore online cake and party-pack catalogue; branch/menu availability not established",
+            "freshness": "Official Singapore catalogue snapshot observed 2026-10-17; source snapshot records the category/product pages as HTTP 200. A current browser fetch from this scout returned 405, so freshness is source-capture date, not a successful live recheck."
+          }
+        ]
+      },
+      {
+        "brand": "The Coffee Bean & Tea Leaf Singapore",
+        "item": "Homestyle Carrot Cake",
+        "published_price": "SGD 55.00",
+        "source_url": "https://www.coffeebean.com.sg/homestyle-carrot-cake.html",
+        "official_image_url_candidate": "https://www.coffeebean.com.sg/media/catalog/product/cache/e084c3b0c21d994c1fea2e34d473693c/1/0/1000x1000px_-_homestyle_carrot_cake.jpg",
+        "image_visual_check": "not performed",
+        "image_reuse": "rights not cleared; review only",
+        "branch_availability": "Not established; official cakes/party pack order catalogue, not branch-specific menu.",
+        "already_present_in_master": true,
+        "current_master_matches": [
+          {
+            "license": "C98083P000",
+            "price": "8.8",
+            "source_url": null,
+            "scope": "Legacy branch association from prior dataset",
+            "freshness": "Historical reference; source data is dated July 2026 or unknown and was not rechecked in this refresh"
+          },
+          {
+            "license": "NE08065X000",
+            "price": "55",
+            "source_url": "https://www.coffeebean.com.sg/homestyle-carrot-cake.html",
+            "scope": "Legacy branch association from prior dataset",
+            "freshness": "Historical reference; source data is dated July 2026 or unknown and was not rechecked in this refresh"
+          },
+          {
+            "license": "W99179C000",
+            "price": "55",
+            "source_url": "https://www.coffeebean.com.sg/homestyle-carrot-cake.html",
+            "scope": "Legacy branch association from prior dataset",
+            "freshness": "Historical reference; source data is dated July 2026 or unknown and was not rechecked in this refresh"
+          },
+          {
+            "license": null,
+            "price": "S$55",
+            "source_url": "https://www.coffeebean.com.sg/homestyle-carrot-cake.html",
+            "scope": "official Singapore online cake and party-pack catalogue; branch/menu availability not established",
+            "freshness": "Official Singapore catalogue snapshot observed 2026-10-17; source snapshot records the category/product pages as HTTP 200. A current browser fetch from this scout returned 405, so freshness is source-capture date, not a successful live recheck."
+          }
+        ]
+      },
+      {
+        "brand": "The Coffee Bean & Tea Leaf Singapore",
+        "item": "Java-To-Go",
+        "published_price": "SGD 32.00",
+        "source_url": "https://www.coffeebean.com.sg/java-to-go.html",
+        "official_image_url_candidate": "https://www.coffeebean.com.sg/media/catalog/product/cache/e084c3b0c21d994c1fea2e34d473693c/g/r/grabfood_java_to_go_coffee.jpg",
+        "image_visual_check": "not performed",
+        "image_reuse": "rights not cleared; review only",
+        "branch_availability": "Not established; official cakes/party pack order catalogue, not branch-specific menu.",
+        "already_present_in_master": true,
+        "current_master_matches": [
+          {
+            "license": null,
+            "price": "S$32",
+            "source_url": "https://www.coffeebean.com.sg/java-to-go.html",
+            "scope": "official Singapore online cake and party-pack catalogue; branch/menu availability not established",
+            "freshness": "Official Singapore catalogue snapshot observed 2026-10-17; source snapshot records the category/product pages as HTTP 200. A current browser fetch from this scout returned 405, so freshness is source-capture date, not a successful live recheck."
+          }
+        ]
+      },
+      {
+        "brand": "The Coffee Bean & Tea Leaf Singapore",
+        "item": "Java-to-Go Cold Brew Coffee",
+        "published_price": "SGD 32.00",
+        "source_url": "https://www.coffeebean.com.sg/java-to-go-cold-brew-coffee.html",
+        "official_image_url_candidate": "https://www.coffeebean.com.sg/media/catalog/product/cache/e084c3b0c21d994c1fea2e34d473693c/g/r/grabfood-javatogo-coldbrewcoffee.jpg",
+        "image_visual_check": "not performed",
+        "image_reuse": "rights not cleared; review only",
+        "branch_availability": "Not established; official cakes/party pack order catalogue, not branch-specific menu.",
+        "already_present_in_master": true,
+        "current_master_matches": [
+          {
+            "license": "C98083P000",
+            "price": "36",
+            "source_url": null,
+            "scope": "Legacy branch association from prior dataset",
+            "freshness": "Historical reference; source data is dated July 2026 or unknown and was not rechecked in this refresh"
+          },
+          {
+            "license": null,
+            "price": "S$32",
+            "source_url": "https://www.coffeebean.com.sg/java-to-go-cold-brew-coffee.html",
+            "scope": "official Singapore online cake and party-pack catalogue; branch/menu availability not established",
+            "freshness": "Official Singapore catalogue snapshot observed 2026-10-17; source snapshot records the category/product pages as HTTP 200. A current browser fetch from this scout returned 405, so freshness is source-capture date, not a successful live recheck."
+          }
+        ]
+      },
+      {
+        "brand": "The Coffee Bean & Tea Leaf Singapore",
+        "item": "Java-to-Go Cold Brew Tea",
+        "published_price": "SGD 32.00",
+        "source_url": "https://www.coffeebean.com.sg/java-to-go-cold-brew-tea.html",
+        "official_image_url_candidate": "https://www.coffeebean.com.sg/media/catalog/product/cache/e084c3b0c21d994c1fea2e34d473693c/g/r/grabfood-javatogo-ceylontea_1.jpg",
+        "image_visual_check": "not performed",
+        "image_reuse": "rights not cleared; review only",
+        "branch_availability": "Not established; official cakes/party pack order catalogue, not branch-specific menu.",
+        "already_present_in_master": true,
+        "current_master_matches": [
+          {
+            "license": null,
+            "price": "S$32",
+            "source_url": "https://www.coffeebean.com.sg/java-to-go-cold-brew-tea.html",
+            "scope": "official Singapore online cake and party-pack catalogue; branch/menu availability not established",
+            "freshness": "Official Singapore catalogue snapshot observed 2026-10-17; source snapshot records the category/product pages as HTTP 200. A current browser fetch from this scout returned 405, so freshness is source-capture date, not a successful live recheck."
+          }
+        ]
+      },
+      {
+        "brand": "The Coffee Bean & Tea Leaf Singapore",
+        "item": "Mini Brownies (9pcs)",
+        "published_price": "SGD 30.00",
+        "source_url": "https://www.coffeebean.com.sg/mini-brownies-9pcs.html",
+        "official_image_url_candidate": "https://www.coffeebean.com.sg/media/catalog/product/cache/e084c3b0c21d994c1fea2e34d473693c/m/i/mini_brownies_party_pack_2_.jpg",
+        "image_visual_check": "not performed",
+        "image_reuse": "rights not cleared; review only",
+        "branch_availability": "Not established; official cakes/party pack order catalogue, not branch-specific menu.",
+        "already_present_in_master": true,
+        "current_master_matches": [
+          {
+            "license": null,
+            "price": "S$30",
+            "source_url": "https://www.coffeebean.com.sg/mini-brownies-9pcs.html",
+            "scope": "official Singapore online cake and party-pack catalogue; branch/menu availability not established",
+            "freshness": "Official Singapore catalogue snapshot observed 2026-10-17; source snapshot records the category/product pages as HTTP 200. A current browser fetch from this scout returned 405, so freshness is source-capture date, not a successful live recheck."
+          }
+        ]
+      },
+      {
+        "brand": "The Coffee Bean & Tea Leaf Singapore",
+        "item": "Mini Chocolate Muffins Party Pack (9 pcs)",
+        "published_price": "SGD 24.90",
+        "source_url": "https://www.coffeebean.com.sg/mini-chocolate-muffins-party-pack.html",
+        "official_image_url_candidate": "https://www.coffeebean.com.sg/media/catalog/product/cache/e084c3b0c21d994c1fea2e34d473693c/1/0/1000x1000_mini_skinny_chocolate_muffin_1_.jpg",
+        "image_visual_check": "not performed",
+        "image_reuse": "rights not cleared; review only",
+        "branch_availability": "Not established; official cakes/party pack order catalogue, not branch-specific menu.",
+        "already_present_in_master": true,
+        "current_master_matches": [
+          {
+            "license": null,
+            "price": "S$24.9",
+            "source_url": "https://www.coffeebean.com.sg/mini-chocolate-muffins-party-pack.html",
+            "scope": "official Singapore online cake and party-pack catalogue; branch/menu availability not established",
+            "freshness": "Official Singapore catalogue snapshot observed 2026-10-17; source snapshot records the category/product pages as HTTP 200. A current browser fetch from this scout returned 405, so freshness is source-capture date, not a successful live recheck."
+          }
+        ]
+      }
+    ],
+    "scope_caveat": "These products are listed for online cakes/party-pack ordering; outlet menu or availability is not guaranteed. Brand-level catalogue observations do not establish branch availability."
+  },
+  "image_review": {
+    "new_image_candidate_urls_missing_from_master": 0,
+    "coffee_bean_official_image_candidates_already_in_master": 16,
+    "starbucks_official_image_candidates_already_in_master": 137,
+    "coffee_bean_existing_candidates": [
+      {
+        "type": "Almond Fruit Tarts (9pcs)",
+        "url": "https://www.coffeebean.com.sg/media/catalog/product/cache/e084c3b0c21d994c1fea2e34d473693c/9/p/9pcs_almond_tarts.jpg",
+        "source_page": "https://www.coffeebean.com.sg/almond-fruit-tarts-9pcs.html",
+        "observed": "2026-10-17"
+      },
+      {
+        "type": "Cappuccino Cheesecake",
+        "url": "https://www.coffeebean.com.sg/media/catalog/product/cache/e084c3b0c21d994c1fea2e34d473693c/1/0/1000x1000px_-_cappuccino_cheesecake.jpg",
+        "source_page": "https://www.coffeebean.com.sg/cappuccino-cheesecake.html",
+        "observed": "2026-10-17"
+      },
+      {
+        "type": "Cheesecake Sampler (9pcs)",
+        "url": "https://www.coffeebean.com.sg/media/catalog/product/cache/e084c3b0c21d994c1fea2e34d473693c/9/p/9pcs_cheesecake_sampler.jpg",
+        "source_page": "https://www.coffeebean.com.sg/cheesecake-sampler-9pcs.html",
+        "observed": "2026-10-17"
+      },
+      {
+        "type": "Chicago Cheesecake",
+        "url": "https://www.coffeebean.com.sg/media/catalog/product/cache/e084c3b0c21d994c1fea2e34d473693c/b/a/batch_w0413_coffee_bean0077.png",
+        "source_page": "https://www.coffeebean.com.sg/chicago-cheesecake.html",
+        "observed": "2026-10-17"
+      },
+      {
+        "type": "Chocolate Delight (9pcs)",
+        "url": "https://www.coffeebean.com.sg/media/catalog/product/cache/e084c3b0c21d994c1fea2e34d473693c/9/p/9pcs_chocolate_delight.jpg",
+        "source_page": "https://www.coffeebean.com.sg/chocolate-delights-9pcs.html",
+        "observed": "2026-10-17"
+      },
+      {
+        "type": "Chocolate of A Thousand Leaves",
+        "url": "https://www.coffeebean.com.sg/media/catalog/product/cache/e084c3b0c21d994c1fea2e34d473693c/c/h/chocolate_of_thousand_leaves-1080x1080_1.jpg",
+        "source_page": "https://www.coffeebean.com.sg/chocolate-of-a-thousand-leaves.html",
+        "observed": "2026-10-17"
+      },
+      {
+        "type": "Homestyle Carrot Cake",
+        "url": "https://www.coffeebean.com.sg/media/catalog/product/cache/e084c3b0c21d994c1fea2e34d473693c/1/0/1000x1000px_-_homestyle_carrot_cake.jpg",
+        "source_page": "https://www.coffeebean.com.sg/homestyle-carrot-cake.html",
+        "observed": "2026-10-17"
+      },
+      {
+        "type": "Java-To-Go",
+        "url": "https://www.coffeebean.com.sg/media/catalog/product/cache/e084c3b0c21d994c1fea2e34d473693c/g/r/grabfood_java_to_go_coffee.jpg",
+        "source_page": "https://www.coffeebean.com.sg/java-to-go.html",
+        "observed": "2026-10-17"
+      },
+      {
+        "type": "Java-to-Go Cold Brew Coffee",
+        "url": "https://www.coffeebean.com.sg/media/catalog/product/cache/e084c3b0c21d994c1fea2e34d473693c/g/r/grabfood-javatogo-coldbrewcoffee.jpg",
+        "source_page": "https://www.coffeebean.com.sg/java-to-go-cold-brew-coffee.html",
+        "observed": "2026-10-17"
+      },
+      {
+        "type": "Java-to-Go Cold Brew Tea",
+        "url": "https://www.coffeebean.com.sg/media/catalog/product/cache/e084c3b0c21d994c1fea2e34d473693c/g/r/grabfood-javatogo-ceylontea_1.jpg",
+        "source_page": "https://www.coffeebean.com.sg/java-to-go-cold-brew-tea.html",
+        "observed": "2026-10-17"
+      },
+      {
+        "type": "Mini Brownies (9pcs)",
+        "url": "https://www.coffeebean.com.sg/media/catalog/product/cache/e084c3b0c21d994c1fea2e34d473693c/m/i/mini_brownies_party_pack_2_.jpg",
+        "source_page": "https://www.coffeebean.com.sg/mini-brownies-9pcs.html",
+        "observed": "2026-10-17"
+      },
+      {
+        "type": "Mini Chocolate Muffins Party Pack (9 pcs)",
+        "url": "https://www.coffeebean.com.sg/media/catalog/product/cache/e084c3b0c21d994c1fea2e34d473693c/1/0/1000x1000_mini_skinny_chocolate_muffin_1_.jpg",
+        "source_page": "https://www.coffeebean.com.sg/mini-chocolate-muffins-party-pack.html",
+        "observed": "2026-10-17"
+      },
+      {
+        "type": "Mini Hawaiian Pizzas (9pcs)",
+        "url": "https://www.coffeebean.com.sg/media/catalog/product/cache/e084c3b0c21d994c1fea2e34d473693c/9/p/9pcs_mini_hawaiian_pizza.jpg",
+        "source_page": "https://www.coffeebean.com.sg/mini-hawaiian-pizzas-9pcs.html",
+        "observed": "2026-10-17"
+      },
+      {
+        "type": "Mini Sandwiches (9 Pieces)",
+        "url": "https://www.coffeebean.com.sg/media/catalog/product/cache/e084c3b0c21d994c1fea2e34d473693c/9/p/9pcs_mini_sandwiches.jpg",
+        "source_page": "https://www.coffeebean.com.sg/mini-sandwiches-9-pieces.html",
+        "observed": "2026-10-17"
+      },
+      {
+        "type": "Pandan Gula Melaka Cake (8\")",
+        "url": "https://www.coffeebean.com.sg/media/catalog/product/cache/e084c3b0c21d994c1fea2e34d473693c/p/a/pandan_gula_melaka-01.jpg",
+        "source_page": "https://www.coffeebean.com.sg/pandan-gula-melaka-cake.html",
+        "observed": "2026-10-17"
+      },
+      {
+        "type": "Pandan Gula Melaka Cupcakes (9pcs)",
+        "url": "https://www.coffeebean.com.sg/media/catalog/product/cache/e084c3b0c21d994c1fea2e34d473693c/9/p/9pcs_pandan_gula_melaka.jpg",
+        "source_page": "https://www.coffeebean.com.sg/pandan-gula-melaka-cupcakes-9pcs.html",
+        "observed": "2026-10-17"
+      }
+    ],
+    "starbucks_existing_candidates_sample": [
+      {
+        "type": "Menu image candidate: Iced Low-fat Matcha Latte (Less Sweet)",
+        "url": "https://www.starbucks.com.sg/media/nutri-grade/website/website%20iced%20low%20fat%20pure%20matcha%20latte%20less%20sweet%20b3.jpg",
+        "source_page": "https://www.starbucks.com.sg/menu/beverages/",
+        "observed": "2026-10-17"
+      },
+      {
+        "type": "Menu image candidate: Oatmilk Latte",
+        "url": "https://www.starbucks.com.sg/media/nutri-grade/website/website%20oatmilk%20latte%20b2.jpg",
+        "source_page": "https://www.starbucks.com.sg/menu/beverages/",
+        "observed": "2026-10-17"
+      },
+      {
+        "type": "Menu image candidate: Low-fat Vanilla Latte (Less Sweet)",
+        "url": "https://www.starbucks.com.sg/media/nutri-grade/website/website%20low%20fat%20vanilla%20latte%20less%20sweet%20b3.jpg",
+        "source_page": "https://www.starbucks.com.sg/menu/beverages/",
+        "observed": "2026-10-17"
+      },
+      {
+        "type": "Menu image candidate: Low-fat Cappuccino",
+        "url": "https://www.starbucks.com.sg/media/nutri-grade/website/website%20low%20fat%20cappuccino%20b0.jpg",
+        "source_page": "https://www.starbucks.com.sg/menu/beverages/",
+        "observed": "2026-10-17"
+      },
+      {
+        "type": "Menu image candidate: Low-fat Caramel Macchiato (Less Sweet)",
+        "url": "https://www.starbucks.com.sg/media/nutri-grade/website/website%20low%20fat%20caramel%20macchiato%20less%20sweet%20b2.jpg",
+        "source_page": "https://www.starbucks.com.sg/menu/beverages/",
+        "observed": "2026-10-17"
+      },
+      {
+        "type": "Menu image candidate: Iced Americano",
+        "url": "https://www.starbucks.com.sg/media/nutri-grade/website/website%20iced%20americano.jpg",
+        "source_page": "https://www.starbucks.com.sg/menu/beverages/",
+        "observed": "2026-10-17"
+      },
+      {
+        "type": "Menu image candidate: Iced Low-fat Vanilla Latte (Less Sweet)",
+        "url": "https://www.starbucks.com.sg/media/nutri-grade/website/website%20iced%20low%20fat%20vanilla%20latte%20less%20sweet%20b4.jpg",
+        "source_page": "https://www.starbucks.com.sg/menu/beverages/",
+        "observed": "2026-10-17"
+      },
+      {
+        "type": "Menu image candidate: Low-fat Caffè Latte",
+        "url": "https://www.starbucks.com.sg/media/nutri-grade/website/website%20low%20fat%20latte%20b0.jpg",
+        "source_page": "https://www.starbucks.com.sg/menu/beverages/",
+        "observed": "2026-10-17"
+      },
+      {
+        "type": "Menu image candidate: Iced Low-fat Caramel Macchiato (Less Sweet)",
+        "url": "https://www.starbucks.com.sg/media/nutri-grade/website/website%20iced%20low%20fat%20caramel%20macchiato%20less%20sweet%20b2.jpg",
+        "source_page": "https://www.starbucks.com.sg/menu/beverages/",
+        "observed": "2026-10-17"
+      },
+      {
+        "type": "Menu image candidate: Low-fat Matcha Latte (Less Sweet)",
+        "url": "https://www.starbucks.com.sg/media/nutri-grade/website/website%20low%20fat%20pure%20matcha%20latte%20less%20sweet%20b2.jpg",
+        "source_page": "https://www.starbucks.com.sg/menu/beverages/",
+        "observed": "2026-10-17"
+      }
+    ],
+    "rights": "All candidates remain review-only; no reuse/display permission inferred. No images were downloaded or visually verified in this scout."
+  },
+  "brand_field_coverage": {
+    "starbucks_directory_rows": 121,
+    "starbucks_rows_missing_website": 0,
+    "starbucks_rows_missing_menu_url": 0,
+    "starbucks_rows_missing_menu_price": 109,
+    "cbtl_directory_rows": 69,
+    "cbtl_rows_missing_website": 6,
+    "cbtl_rows_missing_menu_url": 8,
+    "cbtl_rows_missing_opening_hours": 7,
+    "note": "No field blanks were filled without exact location evidence. Other missing records lack a current exact locator+unit join in this scout."
+  },
+  "starbucks_review": {
+    "official_menu_url": "https://www.starbucks.com.sg/menu/beverages/",
+    "official_food_menu_url": "https://www.starbucks.com.sg/menu/food/",
+    "branch_menu_scope": "Brand catalogue only; branch availability/prices not established by a generic page.",
+    "new_menu_rows_proposed": 0,
+    "note": "Current master already contains Starbucks brand-level catalogue items and image candidates; the fetched beverages HTML has no server-rendered product list to extract for deduplicated fresh items."
+  },
+  "changes_applied_to_workbook": false
+}

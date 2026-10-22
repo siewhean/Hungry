@@ -1,0 +1,99 @@
+(node:76347) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ native Maestro smoke scripts are skip-safe and target the Hungry app id (1.464666ms)
+✔ native interaction smoke covers discovery search, chips, and browse search controls (0.505084ms)
+✔ native activity smoke exposes the audited direct-message tab (1.441541ms)
+✔ native guest and location flows seed the mock session before entering Home (1.178042ms)
+✔ native media picker smoke reaches the post composer gallery entry point (0.837584ms)
+✖ native source-smoke coverage includes gestures, bottom sheets, media, and keyboard-sensitive entry points (2.839667ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 5
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 298.069625
+
+✖ failing tests:
+
+test at src/app/native-smoke-contracts.test.ts:2:12705
+✖ native source-smoke coverage includes gestures, bottom sheets, media, and keyboard-sensitive entry points (2.839667ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Permission Required/. Input:
+  
+  'appId: ${APP_ID}\n' +
+    '---\n' +
+    '- launchApp:\n' +
+    '    clearState: true\n' +
+    '    permissions:\n' +
+    '      all: deny\n' +
+    '- tapOn:\n' +
+    '    text: "Hungry, http://.*:8081"\n' +
+    '    optional: true\n' +
+    '- tapOn:\n' +
+    '    text: "Continue"\n' +
+    '    optional: true\n' +
+    '- tapOn:\n' +
+    '    text: "Close"\n' +
+    '    optional: true\n' +
+    '- runFlow:\n' +
+    '    when:\n' +
+    '      visible: "Enter URL manually"\n' +
+    '    commands:\n' +
+    '      - tapOn: "Enter URL manually"\n' +
+    '      - tapOn:\n' +
+    '          point: "50%,34%"\n' +
+    '      - inputText: "${METRO_URL}"\n' +
+    '      - tapOn: "Connect"\n' +
+    '- extendedWaitUntil:\n' +
+    '    visible: "Continue"\n' +
+    '    timeout: 60000\n' +
+    '- tapOn: "Continue"\n' +
+    '- tapOn:\n' +
+    '    text: "Close"\n' +
+    '    optional: true\n' +
+    '- tapOn:\n' +
+    '    text: "Continue"\n' +
+    '    optional: true\n' +
+    '- tapOn:\n' +
+    '    text: "Close"\n' +
+    '    optional: true\n' +
+    '- extendedWaitUntil:\n' +
+    '    visible: "Developer Launcher"\n' +
+    '    timeout: 60000\n' +
+    '- tapOn:\n' +
+    '    id: "dev-section-toggle-post-composer-v2-settings"\n' +
+    '- tapOn:\n' +
+    '    id: "dev-button-launch-v2-composer"\n' +
+    '- assertVisible:\n' +
+    '    id: "post-composer-screen"\n' +
+    '- assertVisible: "Create post"\n' +
+    '- assertVisible:\n' +
+    '    id: "post-composer-add-media"\n' +
+    '- tapOn:\n' +
+    '    id: "post-composer-add-media"\n' +
+    '- tapOn:\n' +
+    '    text: "Allow"\n' +
+    '    optional: true\n' +
+    '- tapOn:\n' +
+    '    text: "Don’t Allow"\n' +
+    '    optional: true\n' +
+    '- tapOn:\n' +
+    `    text: "Don't Allow"\n` +
+    '    optional: true\n' +
+    '- assertVisible: "Photo permission is required to publish a post."\n'
+  
+      at TestContext.<anonymous> (/Users/Siew Hean/Documents/GitHub/Hungry/src/app/native-smoke-contracts.test.ts:243:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'appId: ${APP_ID}\n---\n- launchApp:\n    clearState: true\n    permissions:\n      all: deny\n- tapOn:\n    text: "Hungry, http://.*:8081"\n    optional: true\n- tapOn:\n    text: "Continue"\n    optional: true\n- tapOn:\n    text: "Close"\n    optional: true\n- runFlow:\n    when:\n      visible: "Enter URL manually"\n    commands:\n      - tapOn: "Enter URL manually"\n      - tapOn:\n          point: "50%,34%"\n      - inputText: "${METRO_URL}"\n      - tapOn: "Connect"\n- extendedWaitUntil:\n    visible: "Continue"\n    timeout: 60000\n- tapOn: "Continue"\n- tapOn:\n    text: "Close"\n    optional: true\n- tapOn:\n    text: "Continue"\n    optional: true\n- tapOn:\n    text: "Close"\n    optional: true\n- extendedWaitUntil:\n    visible: "Developer Launcher"\n    timeout: 60000\n- tapOn:\n    id: "dev-section-toggle-post-composer-v2-settings"\n- tapOn:\n    id: "dev-button-launch-v2-composer"\n- assertVisible:\n    id: "post-composer-screen"\n- assertVisible: "Create post"\n- assertVisible:\n    id: "post-composer-add-media"\n- tapOn:\n    id: "post-composer-add-media"\n- tapOn:\n    text: "Allow"\n    optional: true\n- tapOn:\n    text: "Don’t Allow"\n    optional: true\n- tapOn:\n    text: "Don\'t Allow"\n    optional: true\n- assertVisible: "Photo permission is required to publish a post."\n',
+    expected: /Permission Required/,
+    operator: 'match',
+    diff: 'simple'
+  }

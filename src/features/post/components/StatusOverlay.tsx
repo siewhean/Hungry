@@ -199,7 +199,6 @@ export function StatusOverlay({ onFinish }: StatusOverlayProps) {
               variant="ghost"
               fullWidth
               onPress={() => {
-                reset();
                 onFinish?.();
               }}
             />

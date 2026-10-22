@@ -1,8 +1,9 @@
+import { useOnboardingDraftStore } from "@/features/onboarding/useOnboardingDraftStore";
+import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { useMemo, useState, useRef, useEffect } from "react";
-import { Pressable, View, Animated, ScrollView, Dimensions } from "react-native";
+import { Pressable, View, Animated, ScrollView, useWindowDimensions } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Check } from "lucide-react-native";
-import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 
@@ -18,11 +19,8 @@ import {
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, "CuisineSelection">;
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const H_PAD = 20;
 const GAP = 12;
-const CARD_W = (SCREEN_WIDTH - H_PAD * 2 - GAP) / 2;
-const CARD_H = CARD_W * 1.3;
 const DISH_TILE = 104;
 
 function DishTile({
@@ -97,9 +95,16 @@ function CuisineCard({
   enterAnim: Animated.Value;
 }) {
   const { palette } = useHungryTheme();
+  const reduceMotion = useReduceMotion();
+  const { width } = useWindowDimensions();
+  const cardWidth = (width - H_PAD * 2 - GAP) / 2;
   const pressAnim = useRef(new Animated.Value(1)).current;
 
   const handlePress = () => {
+    if (reduceMotion) {
+      onPress();
+      return;
+    }
     Animated.sequence([
       Animated.timing(pressAnim, { toValue: 0.95, duration: 70, useNativeDriver: true }),
       Animated.spring(pressAnim, { toValue: 1, damping: 14, useNativeDriver: true }),
@@ -128,8 +133,8 @@ function CuisineCard({
         accessibilityState={{ selected: isSelected }}
         accessibilityLabel={`${isSelected ? "Deselect" : "Select"} ${cuisine.label}`}
         style={{
-          width: CARD_W,
-          height: CARD_H,
+          width: cardWidth,
+          height: cardWidth * 1.3,
           borderRadius: 18,
           overflow: "hidden",
           borderWidth: isSelected ? 2.5 : 1.5,
@@ -210,9 +215,15 @@ function CuisineCard({
 export function CuisineSelectionScreen({ navigation }: Props) {
   const { palette } = useHungryTheme();
   const insets = useSafeAreaInsets();
-  const setOnboardingSelectedDishIds = useProfileStore((s) => s.setOnboardingSelectedDishIds);
-  const [selected, setSelected] = useState<string[]>([]);
-  const [selectedDishIds, setSelectedDishIds] = useState<string[]>([]);
+  const reduceMotion = useReduceMotion();
+  const [draft] = useState(() =>
+    useOnboardingDraftStore.getState().prepare(useProfileStore.getState().profile),
+  );
+  const [selected, setSelected] = useState<string[]>(draft.cuisineIds);
+  const [selectedDishIds, setSelectedDishIds] = useState<string[]>(draft.selectedDishIds);
+  useEffect(() => {
+    useOnboardingDraftStore.getState().update({ cuisineIds: selected, selectedDishIds });
+  }, [selected, selectedDishIds]);
 
   // Optional dish picks for the cuisines chosen above (one screen, no per-cuisine steps).
   const dishSections = useMemo(
@@ -229,33 +240,37 @@ export function CuisineSelectionScreen({ navigation }: Props) {
   const cardAnims = useRef(ONBOARDING_CUISINES.map(() => new Animated.Value(0))).current;
 
   useEffect(() => {
+    if (reduceMotion) {
+      cardAnims.forEach((anim) => anim.setValue(1));
+      return;
+    }
     Animated.stagger(
       45,
       cardAnims.map((anim) =>
         Animated.timing(anim, { toValue: 1, duration: 320, useNativeDriver: true }),
       ),
     ).start();
-  }, [cardAnims]);
+  }, [cardAnims, reduceMotion]);
 
   const toggle = (id: string) => {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
   const toggleDish = (id: string) => {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedDishIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
   };
 
   const handleNext = () => {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     // Only keep picks that still belong to a selected cuisine.
     const visibleDishIds = new Set(
       dishSections.flatMap((section) => section.dishes.map((dish) => dish.id)),
     );
-    setOnboardingSelectedDishIds(selectedDishIds.filter((id) => visibleDishIds.has(id)));
+    useOnboardingDraftStore.getState().update({
+      cuisineIds: selected,
+      selectedDishIds: selectedDishIds.filter((id) => visibleDishIds.has(id)),
+    });
     navigation.navigate("TasteQuiz");
   };
 
@@ -385,12 +400,7 @@ export function CuisineSelectionScreen({ navigation }: Props) {
             {selected.length} cuisine{selected.length !== 1 ? "s" : ""} selected
           </AppText>
         )}
-        <Button
-          label="Next"
-          onPress={handleNext}
-          disabled={selected.length === 0}
-          variant="primary"
-        />
+        <Button label="Next" onPress={handleNext} disabled={false} variant="primary" />
       </View>
     </View>
   );

@@ -1,0 +1,13 @@
+
+> hungry-mobile@0.1.0 test:edge-webhooks
+> npx --yes deno@2.9.6 test --frozen --allow-env supabase/functions/send-email/index.test.ts
+
+Check supabase/functions/send-email/index.test.ts
+running 4 tests from ./supabase/functions/send-email/index.test.ts
+auth hook validates signature and replay age before any provider call ... ok (33ms)
+auth hook rejects non-string recipient without sending ... ok (2ms)
+recovery hook sends verified token and same idempotency key on retry ... ok (5ms)
+email-change partial provider failure preserves per-recipient retry identities ... ok (1ms)
+
+ok | 4 passed | 0 failed (45ms)
+

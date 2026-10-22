@@ -254,9 +254,18 @@ test("security audit migration privatizes review media and adds owner-scoped pol
 test("review photo writes persist storage paths and reads resolve signed URLs", () => {
   const service = readRepoFile("src/lib/services/supabase/supabaseService.ts");
 
-  assert.match(service, /bucket: "review-media"/);
-  assert.match(service, /storage_bucket: "review-media"/);
-  assert.match(service, /storage_path: asset\.path/);
+  assert.match(service, /bucket:\s*"review-media-v2"/);
+  assert.match(service, /rpc\("list_review_attempt_media_v2"/);
+  assert.match(service, /rpc\("publish_review_v2"/);
+  assert.match(service, /p_attempt_version:\s*attempt/);
+  assert.match(service, /p_photos:\s*photos/);
+  assert.match(service, /No matching receipt|no matching receipt/);
+  const publication = readRepoFile(
+    "supabase/migrations/20261020132428_remediation_review_publication.sql",
+  );
+  assert.match(publication, /for key share/);
+  assert.match(publication, /Attempt identity cannot be reused/);
+  assert.match(publication, /Use transactional publication/);
   assert.match(service, /\.select\("review_id,url,storage_bucket,storage_path,sort_order"\)/);
   assert.match(service, /createSignedStorageUrl\(client, bucket, path\)/);
   assert.doesNotMatch(service, /uploadedPhotoUrls/);
@@ -460,7 +469,7 @@ test("store policy controls cover account deletion, UGC moderation, and location
   assert.match(migration, /user_blocks/);
   assert.match(migration, /enable row level security/);
   assert.match(serviceTypes, /communitySafety/);
-  assert.match(supabaseService, /account_deletion_requests/);
+  assert.match(supabaseService, /rpc\("request_account_deletion_v2"/);
   assert.match(supabaseService, /report_content/);
   assert.match(supabaseService, /user_blocks/);
   assert.match(safetyHelper, /promptReportReview/);
@@ -497,7 +506,8 @@ test("store policy controls cover account deletion, UGC moderation, and location
   assert.match(settingsScreen, /ACCOUNT_DELETION_GRACE_DAYS/);
   assert.match(gracePeriod, /scheduled_for <= now\(\)/);
   assert.match(gracePeriod, /cancel_my_account_deletion/);
-  assert.match(supabaseService, /cancel_my_account_deletion/);
+  assert.match(supabaseService, /rpc\("cancel_account_deletion_v2"/);
+  assert.match(supabaseService, /isDeletionCancellationConfirmed\(data\)/);
   assert.match(webV2Footer, /Account Deletion/);
   assert.match(webFooter, /Account Deletion/);
   assert.match(webV2DeletePage, /Delete your Hungry account/);
@@ -540,11 +550,15 @@ test("UGC surfaces expose report, hide, and block safety actions", () => {
   assert.match(helper, /communitySafety\.reportContent/);
   assert.match(helper, /communitySafety\.blockUser/);
   assert.match(helper, /communitySafety\.hidePost/);
-  assert.match(helper, /blockedAuthorKeys\.add\(targetAuthorKey\(target\.authorName\)\)/);
-  assert.match(helper, /hiddenPostIds\.add\(postId\)/);
+  assert.match(helper, /const blockedAuthorKey = target\.authorId/);
+  assert.match(helper, /communitySafetyState\.block\(blockedAuthorKey\)/);
+  assert.match(helper, /useSyncExternalStore/);
+  assert.match(home, /useCommunitySafetyRevision\(\)/);
+  assert.doesNotMatch(helper, /blockedAuthorKeys\.add\(targetAuthorKey/);
+  assert.match(helper, /communitySafetyState\.hide\(postId\)/);
   assert.match(home, /promptPostSafetyActions/);
   assert.match(home, /promptCommentSafetyActions/);
-  assert.match(home, /\{commentsEnabled \? \(\s*<Pressable[\s\S]*Read comments for/);
+  assert.match(home, /\{commentsEnabled \? \(\s*<Pressable[\s\S]*Comment on/);
   assert.match(activity, /promptPostSafetyActions/);
   assert.match(socialPost, /promptPostSafetyActions/);
   assert.match(comments, /promptCommentSafetyActions/);
@@ -556,7 +570,7 @@ test("shared post reads apply session hide and block filters before rendering", 
   assert.match(sharedPosts, /isContentHiddenForSession/);
   assert.match(
     sharedPosts,
-    /if \(isContentHiddenForSession\(\{ id: post\.id, authorName: post\.authorName \}\)\) return false;/,
+    /isContentHiddenForSession\(\{\s*id: post\.id,\s*authorName: post\.authorName,\s*authorId: post\.authorId,/,
   );
   assert.match(sharedPosts, /return mergeStallPosts\(localPublishedPosts, bitePosts, servicePosts/);
 });

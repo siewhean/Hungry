@@ -37,13 +37,12 @@ test("events tracked before the PostHog sink attaches are replayed to it", () =>
   assert.match(read("src/lib/analytics/posthogSink.ts"), /captureAppLifecycleEvents: true/);
 });
 
-test("sign-out unbinds this device's push token before ending the Supabase session", () => {
+test("sign-out retires local credentials and revokes only a captured session", () => {
   const session = read("src/store/useSessionStore.ts");
-  assert.match(
-    session,
-    /service\.push\.unregisterPushToken\(\)[\s\S]*?\.then\(\(\) => service\.auth\.signOut\(\)\)/,
-  );
+  assert.match(session, /signOutCleanup = getHungryService\(\)\.auth\.signOut\(\)/);
   const service = read("src/lib/services/supabase/supabaseService.ts");
+  assert.match(service, /retireSupabaseClient\(\)/);
+  assert.match(service, /capturedClient\.auth\.admin\.signOut\(token, "local"\)/);
   assert.match(service, /client\.rpc\("unregister_push_token", \{ p_token: token \}\)/);
   assert.match(service, /await rememberRegisteredPushToken\(token\);/);
 
@@ -105,7 +104,7 @@ test("GPS refreshes on foreground and first follow asks for push inline", () => 
 
   assert.match(
     read("src/app/screens/profile/SettingsScreen.tsx"),
-    /rootNavigation\.navigate\("MainTabs", \{\s*screen: "Profile",\s*params: \{ screen: "FollowedStalls" \},/,
+    /root\.navigate\("MainTabs", \{\s*screen: "Profile",\s*params: \{ screen: "FollowedStalls" \}/,
   );
   assert.match(read("src/store/useProfileStore.ts"), /trackAnalyticsEvent\("activated"/);
 });

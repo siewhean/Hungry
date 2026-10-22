@@ -1,0 +1,13 @@
+# Database remediation contracts
+
+Approved source: implementation brief and independent merchant/tools/accounts cross-checks. Forward migrations preserve records and production gates. Audience is immediate; publication labels confer no access. Owner and explicit collaborators can read protected notes; owner/editor can write. Removed portfolios are absent from ordinary reads/search/share. Scores accept 1–10 with one decimal without rounding invalid values. Merchant verification is a server capability, not a client label. Residential exact locations live in protected storage, with stable coarse public coordinates and hidden addresses. Review uploads are immutable private versions; one locked manifest transaction publishes complete validated objects and an idempotent receipt. Deletion cancellation is a locked confirmed state transition. Follow requests and decisions are atomic and block-aware. Search applies every requirement before ranking/limiting; unknown metadata never matches.
+
+All tests are local evidence only; clean replay, upgrade, hosted storage/worker and external release proof remain separately required.
+
+## Local evidence and limitations
+
+Four forward migrations20261020132426..429 compile on a fresh PostgreSQL18 affected-schema fixture. `supabase/smoke/remediation_fixture_bootstrap.sql` must only run inside a newly-created `hungry_remediation_*` database. Its geography functions are deliberate stubs: no geographic accuracy/performance, full historical replay, actual PostgREST or signed-storage proof is inferred. `remediation_authorization.sql` and `remediation_publication.sql` use transactional fixtures and roll back. Local acceptance database is `hungry_remediation_20261020_finalqa`; local temporary roles postgres/anon/authenticated/service_role/supabase_admin were created because none existed. They are not hosted accounts. Retain acceptance DB for independent QA then remove only these explicitly created fixture resources.
+
+Compatibility paths include the previously granted `app_private` portfolio wrappers. New safe public-profile audience policy extends the existing safe TABLE (May22 conversion), not the obsolete March view. Protected residential edits distinguish changed fields from coarse no-op refreshes; dedicated owner patch RPC supplies explicit clearing.
+
+Residential classification and last privacy mode are durable private metadata: changing an editable business category or removing its merchant outlet cannot switch off existing residential redaction. Explicit Public portfolio visibility controls audience independently of account privacy; blocks and moderation still apply.

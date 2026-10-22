@@ -1,0 +1,68 @@
+{
+  "snapshot_id": "refresh120_menu_urls_batch_20261019",
+  "snapshot_type": "read_only_official_outlet_menu_url_research",
+  "observed_date_local_singapore": "2026-10-19",
+  "workbook_path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256_at_audit": "0e3f6c7cc1594ba701f6fa4de6d11c6db1db9643060907f7292fb8a634d6eb6f",
+  "workbook_edited": false,
+  "scope": "Read current Menu URL blanks and prior official menu snapshots, then check official Singapore operator pages for exact outlet-level menu routes; prioritize chains with multiple outlets. No paid services, no delivery-platform data, no workbook edits.",
+  "proposals": [
+    {
+      "field": "Menu URL",
+      "value": "https://www.komalasrestaurants.com/Order/FusionDining",
+      "sfa_licence": "CE05006L000",
+      "directory_name": "KOMALAS",
+      "directory_address_current": "Address: 42/42A RACE COURSE ROAD Singapore 218557 (LEVEL 1 & 2)",
+      "postal_code_current": "218557",
+      "menu_url_current": null,
+      "outlet_crosswalk": "The current operator page lists KOMALA'S @ Race Course Road at 42 Race Course Road, Singapore 218557, and its menu/order route is titled 'Order @RaceCourse Outlet (Fusion Dining)'. This matches the workbook record's brand, street number, road, and postal code; the workbook licence covers the level 1 & 2 premises at 42/42A.",
+      "operator_page_evidence": "https://www.komalasrestaurants.com/Order/FarrerPark (operator page opened 2026-10-19): lines 53-65 list KOMALA'S @ Race Course Road, 42 Race Course Road Singapore 218557 and an 'Order Online' link. Following that link opens https://www.komalasrestaurants.com/Order/FusionDining, titled 'Order @RaceCourse Outlet (Fusion Dining)', with current menu categories and SGD price listings. The order page was crawled 2026-10-17.",
+      "freshness": "Official operator page and order route observed 2026-10-19; order route crawled 2026-10-17.",
+      "limits": "The outlet label and address are exact at brand/street/postal level, but the workbook licence address includes 42/42A and the operator page says 42 only. The order page's item assortment, prices, and availability may change; this proposal is only a menu URL and does not claim individual item availability for this SFA licence.",
+      "confidence": "high for outlet/menu-route crosswalk; medium-high on unit-address equivalence due operator listing omitting 42A.",
+      "source_hash": null,
+      "source_hash_note": "Official website inspected through live web access; no local source file saved."
+    }
+  ],
+  "reviewed_but_not_proposed": [
+    {
+      "brand": "STUFF'D",
+      "official_menu_url": "https://www.stuffd.com/sg/food/",
+      "official_outlet_url": "https://www.stuffd.com/sg/find-an-outlet/",
+      "result": "Official Singapore food page currently lists customizable menu categories, and the operator outlet directory lists outlet names, addresses, and units; however, the menu page has no outlet selector or branch-specific menu route. No branch menu availability or pricing is inferred, so no Directory Menu URL is proposed in this outlet-selector pass.",
+      "sample_exact_workbook_record": "CE10103V000 / STUFF'D / 313 Orchard Road #B3-47, 313 @ Somerset, Singapore 238895; Menu URL currently blank. The current official outlet list did not expose this branch in the reviewed result text."
+    },
+    {
+      "brand": "Mr Coconut",
+      "official_menu_url": "https://mrcoconut.sg/menu/",
+      "official_outlet_url": "https://mrcoconut.sg/outlets/",
+      "result": "The official menu page links to a current brand-wide Google Drive menu and a generic bulk-order entry point. The outlet directory provides current branch addresses, but the menu page does not provide an outlet selector or a branch-specific menu route. No brand-wide menu URL is proposed for individual outlets in this pass."
+    },
+    {
+      "brand": "Komala's",
+      "official_page": "https://www.komalasrestaurants.com/Order/FarrerPark",
+      "result": "The operator's Yishun page advertises an outlet-specific order route /Order/Yishun, but that route returned 404 when followed on 2026-10-19, so it is not proposed. The Changi Village outlet listing had no order/menu link. The Sengkang operator listing gives unit #01-05, while the workbook record says #01-06; no exact outlet crosswalk is proposed for that record."
+    },
+    {
+      "brand": "Al Majlis",
+      "official_menu_url": "https://almajlis.sg/menu/1",
+      "result": "The page names 'Al Majlis Thai Seafood Restaurant - Bukit Batok' and shows category/item headings, but the page does not give the exact outlet address or selector. The workbook has two Bukit Batok Al Majlis records at 166 Bukit Batok West Avenue 8, #01-252 and #01-254; no branch-specific crosswalk can be established from this page."
+    }
+  ],
+  "integration_summary": {
+    "menu_url_candidates": 1,
+    "unique_sfa_licences": 1,
+    "new_menu_item_rows_proposed": 0,
+    "image_urls_proposed": 0,
+    "workbook_changes": 0
+  },
+  "source_references": [
+    "https://www.komalasrestaurants.com/Order/FarrerPark",
+    "https://www.komalasrestaurants.com/Order/FusionDining",
+    "https://www.stuffd.com/sg/food/",
+    "https://www.stuffd.com/sg/find-an-outlet/",
+    "https://mrcoconut.sg/menu/",
+    "https://mrcoconut.sg/outlets/",
+    "https://almajlis.sg/menu/1"
+  ]
+}

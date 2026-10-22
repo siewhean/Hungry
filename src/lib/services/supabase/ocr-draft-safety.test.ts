@@ -45,7 +45,10 @@ test("OCR draft table access is confined to supply, merchant, and ops-admin path
   assert.match(merchant, /getOCRDrafts/);
   assert.match(merchant, /acceptOCRDraft/);
   assert.match(merchant, /rejectOCRDraft/);
-  assert.match(merchant, /\.from\("dishes_draft"\)/);
+  assert.doesNotMatch(merchant, /\.from\("dishes_draft"\)/);
+  assert.match(merchant, /merchant_get_ocr_drafts_v2/);
+  assert.match(merchant, /merchant_accept_ocr_draft_v2/);
+  assert.match(merchant, /merchant_reject_ocr_draft_v2/);
   assert.match(merchant, /requireLinkedMerchantOutlet\(client,\s*outletId\)/);
   assert.match(opsFunction, /requireAuthenticatedOpsUser/);
   assert.match(opsFunction, /app_ops_admins/);

@@ -1,0 +1,31 @@
+(node:76183) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ buildDishGallery keeps hero first and removes duplicate URLs (0.987917ms)
+✔ deriveStallCommunityReviews flattens dish reviews with deterministic metadata (0.213459ms)
+(node:76184) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ drafts stay scoped to the owner and restore after switching back (0.942375ms)
+✔ late hydration cannot replace another account or newly edited work (0.225417ms)
+(node:76185) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ initial review draft defaults to not recommended (1.095375ms)
+✔ initial review draft factory returns a fresh object (0.118083ms)
+✔ client review ids are RFC 4122 v4 uuids and unique (0.7575ms)
+✔ selecting the same dish keeps the draft; a different dish resets it (2.583334ms)
+(node:76186) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ failed gallery images retain the source index of the surviving image (1.155792ms)
+✔ a failed gallery never substitutes unrelated media (0.083833ms)
+(node:76187) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ recommendation budget and reviewed exclusions apply before a one-item limit (1.86525ms)
+✔ mock search price and dietary constraints are hard requirements (0.191917ms)
+✔ a slate started before an account transition cannot resolve into the new account (2.181416ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 474.542

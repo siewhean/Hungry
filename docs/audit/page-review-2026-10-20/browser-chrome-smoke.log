@@ -1,0 +1,24 @@
+(node:7064) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[1A[2K[2m[WebServer] [22mnode:internal/modules/cjs/loader:1607
+[2m[WebServer] [22m  throw err;
+[2m[WebServer] [22m  ^
+[2m[WebServer] [22m
+[2m[WebServer] [22mError: Cannot find module '/Users/Siew Hean/Documents/GitHub/Hungry/docs/audit/page-review-2026-10-20/scripts/run-expo.cjs'
+[2m[WebServer] [22m[90m    at Module._resolveFilename (node:internal/modules/cjs/loader:1603:15)[39m
+[2m[WebServer] [22m[90m    at wrapResolveFilename (node:internal/modules/cjs/loader:1145:27)[39m
+[2m[WebServer] [22m[90m    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1169:10)[39m
+[2m[WebServer] [22m[90m    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1196:12)[39m
+[2m[WebServer] [22m[90m    at Module._load (node:internal/modules/cjs/loader:1370:5)[39m
+[2m[WebServer] [22m[90m    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)[39m
+[2m[WebServer] [22m[90m    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)[39m
+[2m[WebServer] [22m[90m    at node:internal/main/run_main_module:33:47[39m {
+[2m[WebServer] [22m  code: [32m'MODULE_NOT_FOUND'[39m,
+[2m[WebServer] [22m  requireStack: []
+[2m[WebServer] [22m}
+[2m[WebServer] [22m
+[2m[WebServer] [22mNode.js v26.11.1
+
+Error: Process from config.webServer was not able to start. Exit code: 1
+
+[1A[2K

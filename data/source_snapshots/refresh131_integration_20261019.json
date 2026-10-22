@@ -1,0 +1,77 @@
+{
+  "refresh_id": "refresh131_increment_20261019",
+  "status": "installed_pass_independent_qa",
+  "observed_at_sgt": "2026-10-19",
+  "canonical_workbook": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_sha256": "80bbef4c8edee234e7ddad4a9b3390a67e9f7572621a8711fbe3c97fb7066212",
+  "installed_sha256": "66d0b6438982c0b74715bd83db5636392399f40b279ad615ee8e27afd7869611",
+  "updates": {
+    "verified_directory_fields": 6,
+    "exact_public_venue_names": 2,
+    "menu_items_added": 67,
+    "first_party_pickup_menu_items": 7,
+    "foodpanda_delivery_menu_items": 60,
+    "image_candidates_added": 1,
+    "approved_image_urls_added": 1,
+    "coordinates_added": 0,
+    "ratings_added": 0,
+    "records_removed": 0,
+    "new_menu_summaries": 3,
+    "directory_sorted_alphabetically": true,
+    "menu_summaries_updated": 1
+  },
+  "coverage": {
+    "active_public_access_directory_rows": 38273,
+    "unique_sfa_licences": 38273,
+    "usable_f_and_b_names": 32793,
+    "unnamed_rows": 5480,
+    "rows_with_coordinates": 35735,
+    "missing_coordinates": 2538,
+    "rows_with_contacts": 2708,
+    "rows_with_websites": 2819,
+    "rows_with_menu_urls": 1478,
+    "rows_with_opening_hours": 1488,
+    "rows_with_menu_summaries": 534,
+    "rows_with_ratings_or_reviews": 0,
+    "rows_with_approved_image_urls": 1,
+    "menu_item_rows": 13662,
+    "image_candidate_rows": 2763
+  },
+  "image_added": {
+    "sfa_licence": "CE09F38E000",
+    "outlet": "WAFFLE UP",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/7/75/Waffle_Up_Outlet.jpg",
+    "license": "CC0 1.0 Universal Public Domain Dedication",
+    "photograph_date": "2026-03-11",
+    "pixel_inspected": true,
+    "status": "approved_for_current_display",
+    "menu_item_join": null
+  },
+  "audit_dispositions": {
+    "directory_fields": "Six high-confidence first-party fills: four exact McDonald's branch contacts and two exact branch hours. Two additional directory fields were withheld as unpublished or ambiguous.",
+    "names": "Two blanks resolved from exact current venue/operator address and unit crosswalks.",
+    "menus": "Seven Carl's Jr. SingPost Centre first-party pickup combos; 60 Foodpanda outlet listings across Subway Tampines 1 and Texas Chicken at The Seletar Mall and Pioneer Mall. All source pages and observed times are recorded per row; platform menus/prices are explicitly delivery scoped and time sensitive.",
+    "closures_and_access": "Rechecked 23 exact SFA records; no strong permanent-closure or access restriction evidence justified removal. Eight records remain access-unresolved.",
+    "coordinates": "Reviewed 30 missing-coordinate rows; no new exact-address/postal pair qualified. One candidate with mismatched postal code was rejected. Six Mapbox Search Box requests were made; no result was persisted or written. OneMap token was not present in the research process.",
+    "ratings": "No durable, openly reusable, exact-branch rating/review source qualified; values left blank.",
+    "coverage_correction": "Rows with Menu / Price actual recount is 534. Refresh130's stated 533 was stale; corrected in this refresh.",
+    "menu_summary_scope_update": "Updated the existing Subway Tampines 1 row to distinguish its 16-item brand-wide menu from the 20-item branch-specific Foodpanda delivery snapshot."
+  },
+  "mapbox_usage": {
+    "user_reported_before_refresh": "59/50,000 Search Box API requests",
+    "requests_made_by_refresh131_coordinate_agent": 6,
+    "current_account_total": null,
+    "account_total_note": "The connected Mapbox tools do not expose the Statistics counter; a new account total could not be verified.",
+    "mapbox_results_persisted": false
+  },
+  "spending": 0,
+  "candidate_qa_receipt": "data/source_snapshots/refresh131_candidate_qa_20261019.json",
+  "installed_qa_receipt": "data/source_snapshots/refresh131_final_qa_20261019.json",
+  "qa_status": "candidate_and_installed_independent_qa_passed",
+  "limitations": [
+    "Nationwide public-access and permanent-closure verification remains incomplete.",
+    "2,538 coordinate pairs, 5,480 outlet names, contacts, websites, menus, hours, and images remain missing or incompletely verified as shown in coverage counts.",
+    "No durable open rating/review dataset was accepted.",
+    "Foodpanda menu visibility and displayed delivery prices can change and may differ from in-store availability and prices."
+  ]
+}

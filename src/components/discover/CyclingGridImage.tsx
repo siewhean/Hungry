@@ -1,3 +1,4 @@
+import { availableCardImages } from "@/features/search/cardMedia";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Dimensions,
@@ -28,7 +29,7 @@ interface CyclingGridImageProps {
 export function CyclingGridImage({
   images,
   cycleMs = DEFAULT_CYCLE_MS,
-  isAutoCycleActive = true,
+  isAutoCycleActive = false,
   startDelayMs = 0,
   style,
   accessibilityLabel = "Featured food image",
@@ -44,13 +45,11 @@ export function CyclingGridImage({
   const [failedUrls, setFailedUrls] = useState<readonly string[]>([]);
   const [layoutWidth, setLayoutWidth] = useState(0);
   const imageSignature = images.join("\u001f");
-  const safeImages = useMemo(
-    () =>
-      imageSignature
-        .split("\u001f")
-        .filter((image) => image.trim().length > 0 && !failedUrls.includes(image)),
+  const availableImages = useMemo(
+    () => availableCardImages(imageSignature.split("\u001f"), failedUrls),
     [failedUrls, imageSignature],
   );
+  const safeImages = useMemo(() => availableImages.map((image) => image.url), [availableImages]);
 
   useEffect(() => {
     onActiveIndexChangeRef.current = onActiveIndexChange;
@@ -60,15 +59,16 @@ export function CyclingGridImage({
     (nextIndex: number) => {
       const normalizedIndex = Math.max(0, Math.min(nextIndex, safeImages.length - 1));
 
+      const originalIndex = availableImages[normalizedIndex]?.originalIndex ?? 0;
+      onActiveIndexChangeRef.current?.(Math.max(0, originalIndex));
       if (activeIndexRef.current === normalizedIndex) {
         return;
       }
 
       activeIndexRef.current = normalizedIndex;
       setActiveIndex(normalizedIndex);
-      onActiveIndexChangeRef.current?.(normalizedIndex);
     },
-    [safeImages.length],
+    [safeImages, availableImages],
   );
 
   useEffect(() => {
@@ -80,10 +80,10 @@ export function CyclingGridImage({
   }, [imageSignature]);
 
   useEffect(() => {
-    if (activeIndex >= safeImages.length && safeImages.length > 0) {
-      commitIndex(0);
+    if (safeImages.length > 0) {
+      commitIndex(Math.min(activeIndexRef.current, safeImages.length - 1));
     }
-  }, [activeIndex, commitIndex, safeImages.length]);
+  }, [commitIndex, safeImages]);
 
   const handleImageError = useCallback((imageUrl: string) => {
     setFailedUrls((current) => (current.includes(imageUrl) ? current : [...current, imageUrl]));

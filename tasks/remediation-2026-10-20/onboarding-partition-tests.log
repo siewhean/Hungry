@@ -1,0 +1,23 @@
+(node:84861) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ onboarding owner partitions retain account A across B and memory clears; explicit reset removes only named owner (1.111167ms)
+✔ legacy owner is migrated safely even if another account restores first (0.159791ms)
+✔ late onboarding reads cannot replace edits or a later account generation (1.754666ms)
+✔ legacy guest owner is canonicalized and consumed guest deletion preserves adopted account (0.219292ms)
+(node:84862) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ taste and dietary routes share one resumable draft; cancellation leaves real profile unchanged (1.758ms)
+✔ draft explicitly adopts guest at sign-in, survives same-account resume, and clears on account switch (0.607708ms)
+✔ guest snapshot survives SIGNED_IN replacement before signIn promise resolves (0.662958ms)
+✔ all dietary requirements apply before limit and zero matches never restore unrestricted dishes (0.347792ms)
+✔ queued Save is an idempotent desired state and retained after failure (4.433208ms)
+✔ pending saves are account-generation scoped and a retired completion cannot clear renewed intent (2.975834ms)
+✔ retired sign-in profile application returns false so screens cannot complete stale onboarding (0.744ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 491.185458

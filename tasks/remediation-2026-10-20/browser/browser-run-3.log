@@ -1,0 +1,67 @@
+(node:82151) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[1A[2K[2m[WebServer] [22m(node:82163) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 5 tests using 1 worker
+
+[1A[2K(node:82368) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:82368) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+
+[1A[2K(node:82368) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K[1/5] [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:19:5 › fresh Welcome reaches existing-account login with real validation
+[1A[2K[2/5] [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:31:5 › onboarding selection and quiz answer resume after a browser reload
+[1A[2K  1) [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:31:5 › onboarding selection and quiz answer resume after a browser reload 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoHaveAttribute[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator:  getByRole('button', { name: 'Sweet-forward Pick your sweetness mood', exact: true })
+    Expected: [32m"true"[39m
+    Received: [31m""[39m
+    Timeout:  10000ms
+
+    Call log:
+    [2m  - Expect "toHaveAttribute" with timeout 10000ms[22m
+    [2m  - waiting for getByRole('button', { name: 'Sweet-forward Pick your sweetness mood', exact: true })[22m
+    [2m    - locator resolved to <button disabled role="button" tabindex="-1" type="button" aria-disabled="true" class="css-view-g5y9jx r-pointerEvents-12vffkv" aria-label="Sweet-forward Pick your sweetness mood">…</button>[22m
+    [2m    9 × unexpected value "null"[22m
+    [2m      - locator resolved to <button tabindex="0" role="button" type="button" aria-label="Sweet-forward Pick your sweetness mood" class="css-view-g5y9jx r-cursor-1loqt21 r-touchAction-1otgn73">…</button>[22m
+    [2m    - unexpected value "null"[22m
+
+
+      47 |  await expect(page.getByText('How spicy tonight?',{exact:true})).toBeVisible();
+      48 |  await page.getByRole('button',{name:'Back',exact:true}).click();
+    > 49 |  await expect(page.getByRole('button',{name:'Sweet-forward Pick your sweetness mood',exact:true})).toHaveAttribute('aria-selected','true');
+         |                                                                                                    ^
+      50 | });
+      51 | test('mock profile Settings exposes supported preferences and readonly auth email',async({page})=>{
+      52 |  await resetAppState(page);
+        at /Users/Siew Hean/Documents/GitHub/Hungry/tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:49:100
+
+    [31mTest timeout of 90000ms exceeded.[39m
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tasks/remediation-2026-10-20/browser/results/remediation.browser-onboar-98c9d-sume-after-a-browser-reload-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tasks/remediation-2026-10-20/browser/results/remediation.browser-onboar-98c9d-sume-after-a-browser-reload-chromium/error-context.md
+
+
+[1A[2K(node:83103) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:83103) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+
+[1A[2K(node:83103) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K[3/5] [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:51:5 › mock profile Settings exposes supported preferences and readonly auth email

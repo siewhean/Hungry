@@ -1,0 +1,40 @@
+(node:67720) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ A-to-B-to-A invalidates earlier sign-in's delayed profile-ready continuation (2.550167ms)
+(node:67721) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ actual RHF adapters ignore form values and enforce required label and minimum length (0.7435ms)
+✔ same-turn repeated keyboard/tap submits invoke one operation and failure unlocks retry (4.855125ms)
+✔ verification requires exactly eight digits and cooldown catches up after background time (0.438583ms)
+✔ recovery retries reuse exchanged code after update failure and retire with generation (21.937125ms)
+✔ failed recovery exchange is retryable and a retired in-flight exchange rejects (7.976041ms)
+✔ deletion outcomes distinguish unknown, processing, absent and confirmed cancellation (45.725667ms)
+(node:67722) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ validateRequired rejects blank input (1.405708ms)
+✔ validateEmail enforces required and format checks (0.254083ms)
+✔ validatePassword enforces minimum length (0.170375ms)
+✔ validateConfirmPassword requires matching values (0.070792ms)
+(node:67723) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ taste and dietary routes share one resumable draft; cancellation leaves real profile unchanged (0.983583ms)
+✔ draft explicitly adopts guest at sign-in, survives same-account resume, and clears on account switch (0.822292ms)
+✔ guest snapshot survives SIGNED_IN replacement before signIn promise resolves (1.058709ms)
+✔ all dietary requirements apply before limit and zero matches never restore unrestricted dishes (0.378291ms)
+✔ queued Save is an idempotent desired state and retained after failure (41.053583ms)
+✔ pending saves are account-generation scoped and a retired completion cannot clear renewed intent (6.34325ms)
+✔ retired sign-in profile application returns false so screens cannot complete stale onboarding (2.455625ms)
+(node:67724) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ grantLocation tracks denied analytics when location module is unavailable (58.612792ms)
+✔ manual location selection sends only coarse coordinates to analytics (0.712625ms)
+✔ refreshLocation never prompts and skips when permission is not granted (0.173833ms)
+✔ a delayed GPS fix is discarded after manual selection and account reset (3.777333ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 22
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1507.785458

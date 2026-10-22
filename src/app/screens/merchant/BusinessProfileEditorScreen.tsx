@@ -1,3 +1,5 @@
+import { useMerchantOperationScope } from "@/features/merchant/useMerchantOperationScope";
+import { useMerchantDirtyExit } from "@/features/merchant/useMerchantDirtyExit";
 import React, { useEffect, useState } from "react";
 import { View, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { Camera, Image as ImageIcon } from "lucide-react-native";
@@ -95,10 +97,15 @@ function BusinessImageField({
   isSaving: boolean;
   icon: React.ReactNode;
 }) {
+  const captureOperation = useMerchantOperationScope();
+
   const { componentRadii, palette, spacing } = useHungryTheme();
   const [error, setError] = useState<string | null>(null);
 
   const handlePick = async () => {
+    const isOperationCurrent = captureOperation();
+    if (!isOperationCurrent()) return;
+
     try {
       setError(null);
       const imagePicker = loadImagePickerModule();
@@ -114,12 +121,15 @@ function BusinessImageField({
         confirmLabel: "Allow",
         cancelLabel: "Not now",
       });
+      if (!isOperationCurrent()) return;
 
       if (!shouldRequestPermission) {
         return;
       }
 
       const permission = await imagePicker.requestMediaLibraryPermissionsAsync();
+      if (!isOperationCurrent()) return;
+
       if (!isGalleryPermissionGranted(permission)) {
         setError("Photos permission is required to upload this image.");
         return;
@@ -130,9 +140,13 @@ function BusinessImageField({
         quality: 0.82,
         selectionLimit: 1,
       });
+      if (!isOperationCurrent()) return;
+
       if (result.canceled || !result.assets?.length) return;
       onChange(result.assets[0].uri);
     } catch {
+      if (!isOperationCurrent()) return;
+
       setError("Unable to open the photo library right now.");
     }
   };
@@ -186,6 +200,8 @@ function BusinessImageField({
 }
 
 export function BusinessProfileEditorScreen() {
+  const captureOperation = useMerchantOperationScope();
+
   const { componentRadii, palette, spacing, radii } = useHungryTheme();
   const navigation = useNavigation<NavigationProp>();
   const rootNavigation = getRootNavigation(navigation as any);
@@ -193,12 +209,15 @@ export function BusinessProfileEditorScreen() {
   const activeOutlet = useMerchantStore(getActiveOutlet);
   const updateOutletProfile = useMerchantStore((state) => state.updateOutletProfile);
   const [isUploadingImages, setIsUploadingImages] = useState(false);
+  useEffect(() => setIsUploadingImages(false), [activeOutlet?.id]);
 
   const {
     control,
     handleSubmit,
     setValue,
-    formState: { isSubmitting, errors },
+    reset,
+    getValues,
+    formState: { isSubmitting, errors, isDirty },
   } = useForm<FormData>({
     defaultValues: {
       name: "",
@@ -219,6 +238,7 @@ export function BusinessProfileEditorScreen() {
     },
   });
 
+  const finishBack = useMerchantDirtyExit(isDirty, isSubmitting);
   useEffect(() => {
     if (activeOutlet) {
       setValue("name", activeOutlet.name || "");
@@ -236,10 +256,14 @@ export function BusinessProfileEditorScreen() {
       setValue("contactEmail", activeOutlet.contactEmail || "");
       setValue("dietaryLabels", activeOutlet.dietaryLabels?.join(", ") || "");
       setValue("tasteTags", activeOutlet.tasteTags?.join(", ") || "");
+      reset(getValues());
     }
-  }, [activeOutlet, setValue]);
+  }, [activeOutlet?.id, setValue, reset, getValues]);
 
   const onSubmit = async (data: FormData) => {
+    const isOperationCurrent = captureOperation();
+    if (!isOperationCurrent()) return;
+
     if (!activeOutlet) return;
     try {
       const profilePhotoUrl = data.profilePhotoUrl.trim();
@@ -251,7 +275,15 @@ export function BusinessProfileEditorScreen() {
         ),
       );
       const galleryUrls = Array.from(
-        new Set([profilePhotoUrl, coverPhotoUrl, ...activeOutlet.galleryUrls].filter(Boolean)),
+        new Set(
+          [
+            profilePhotoUrl,
+            coverPhotoUrl,
+            ...activeOutlet.galleryUrls.filter(
+              (url) => url !== activeOutlet.profilePhotoUrl && url !== activeOutlet.coverPhotoUrl,
+            ),
+          ].filter(Boolean),
+        ),
       );
       const updates: Partial<MerchantOutlet> = {
         name: data.name,
@@ -266,8 +298,8 @@ export function BusinessProfileEditorScreen() {
         locationPrivacy: data.locationPrivacy,
         operatingHours: data.operatingHours,
         temporaryClosure: data.temporaryClosure,
-        ...(profilePhotoUrl ? { profilePhotoUrl } : {}),
-        ...(coverPhotoUrl ? { coverPhotoUrl } : {}),
+        profilePhotoUrl,
+        coverPhotoUrl,
         galleryUrls,
         contactPhone: data.contactPhone,
         contactEmail: data.contactEmail,
@@ -285,14 +317,25 @@ export function BusinessProfileEditorScreen() {
         activeOutlet.id,
         updates,
       );
+      if (!isOperationCurrent()) return;
+
       updateOutletProfile(activeOutlet.id, updated);
+      reset({
+        ...data,
+        profilePhotoUrl: updated.profilePhotoUrl ?? "",
+        coverPhotoUrl: updated.coverPhotoUrl ?? "",
+      });
       Alert.alert("Success", "Profile updated successfully!");
-      navigation.goBack();
+      finishBack();
     } catch (error) {
+      if (!isOperationCurrent()) return;
+
       console.error(error);
       Alert.alert("Error", error instanceof Error ? error.message : "Failed to update profile.");
     } finally {
-      setIsUploadingImages(false);
+      if (isOperationCurrent()) {
+        setIsUploadingImages(false);
+      }
     }
   };
 
@@ -305,15 +348,12 @@ export function BusinessProfileEditorScreen() {
     const signatureVenueId = signatureDishId
       ? repository.getDishById(signatureDishId)?.venueId
       : undefined;
-    const fallbackVenueId = activeOutlet.buildingId
-      ? repository.listVenuesByBuilding(activeOutlet.buildingId)[0]?.id
-      : undefined;
-    const venueId = signatureVenueId ?? fallbackVenueId;
+    const venueId = signatureVenueId;
 
     if (venueId) {
       rootNavigation.navigate("StallDetail", { venueId });
     } else {
-      rootNavigation.navigate("DiscoverMap");
+      Alert.alert("Preview unavailable", "This outlet has no linked public venue yet.");
     }
   };
 
@@ -591,8 +631,8 @@ export function BusinessProfileEditorScreen() {
             name="locationPrivacy"
             render={({ field: { onChange, value } }) => (
               <FormSwitchRow
-                label="Exact Location Privacy"
-                description="Turn off to hide your exact unit number and floor (useful for home-based businesses)."
+                label="Requested exact location"
+                description="Home-based publication remains unavailable pending server location privacy verification."
                 value={value === "exact"}
                 onValueChange={(val) => onChange(val ? "exact" : "hidden")}
               />
@@ -658,6 +698,7 @@ export function BusinessProfileEditorScreen() {
         </View>
 
         <Button
+          loading={isSubmitting}
           label={isSubmitting ? "Saving..." : "Save Profile"}
           variant="primary"
           fullWidth

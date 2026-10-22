@@ -1,0 +1,71 @@
+{
+  "task": "Refresh119 platform-source permission audit",
+  "audited_at": "2026-10-19",
+  "workbook_edit": false,
+  "cost": 0,
+  "login_or_api_calls": false,
+  "summary": "No general public, no-cost, reusable API/source route was identified for extracting platform menus, images, outlet data, or ratings into the Hungry catalogue. Do not scrape platform pages or copy content for this workbook under the current evidence. Use merchant-controlled official sources or obtain written permission/data export from the merchant/platform.",
+  "platforms": [
+    {
+      "name": "Grab / GrabFood",
+      "official_terms": "https://www.grab.com/sg/terms-policies/transport-delivery-logistics/",
+      "evidence": [
+        "Terms of Service 3.1.12 restricts commercial exploitation without permission and prohibits copying, reproducing, publicly displaying, distributing, or otherwise using Platform content for public or commercial purposes except as specifically permitted in writing; it expressly includes creating/compiling a collection, compilation, or directory from Platform content and data mining/scraping (subject to applicable-law exception).",
+        "GrabMaps terms additionally prohibit copying, storing, archiving, or creating a database of GrabMaps Content (9.12.11)."
+      ],
+      "decision": "No scraping or copying. No general public F&B menu API identified; any use requiring platform data needs written authorization and must follow any applicable developer/partner terms.",
+      "candidate_workbook_fields": [],
+      "confidence": "high for restriction; no general API found in bounded search"
+    },
+    {
+      "name": "foodpanda Singapore",
+      "official_terms": "https://www.foodpanda.sg/contents/terms-and-conditions.htm",
+      "partner_api": "https://developer.foodpanda.com/api-specifications",
+      "evidence": [
+        "Terms 4 states platform trademarks, logos, images and service marks are foodpanda/authorized third-party IP and may not be used, copied, reproduced, republished, distributed, or modified without prior express written consent (4.1).",
+        "Terms 3.1.10 prohibits harvesting or otherwise collecting information about others, including email addresses, without consent. Terms 3.1.13 also prohibits conduct that restricts or inhibits use or exposes parties to detriment.",
+        "The Partner API documentation describes product/catalog and outlet APIs as partner integrations; API keys are generated through the Partner Portal or obtained from an account manager. It is not a public open directory API."
+      ],
+      "decision": "Do not reuse images, logos, or platform menu content without express rights. The terms reviewed do not expressly say 'scraping' in the cited sections, so avoid overclaiming a universal scraping ban; however, no public reusable catalogue API was found. Partner APIs require authorized merchant/chain access and are not a general source for Hungry.",
+      "candidate_workbook_fields": [],
+      "confidence": "high for image/IP and partner API restrictions; moderate on broader automated extraction because terms lack explicit scraping language in reviewed sections"
+    },
+    {
+      "name": "Oddle / Oddle Eats / Oddle Shop",
+      "official_terms": "https://docs.oddle.me/general/acceptable-use-policy/",
+      "evidence": [
+        "Acceptable Use Policy effective 2026-01-26 is incorporated into Oddle Terms of Service.",
+        "AUP 1.4 prohibits creating a database by downloading and storing platform contents.",
+        "AUP 1.10 prohibits robots, spiders, retrieval applications, and manual or automatic devices to retrieve, index, scrape, data mine, crawl, or gather the platform without express prior written consent.",
+        "AUP 1.16 prohibits caching, framing, or linking to the platform without prior written consent."
+      ],
+      "decision": "No scraping, database copying, image/menu reuse, or platform linking absent prior written consent. No general public reusable API identified. A merchant's independently controlled official site may be considered only after checking that site's own terms/rights; prefer its menu URL and facts where permitted.",
+      "candidate_workbook_fields": [],
+      "confidence": "high"
+    }
+  ],
+  "safe_alternative": {
+    "preferred_sources": [
+      "Merchant-controlled official website/menu and outlet pages, subject to the site terms and image rights",
+      "Official mall tenant directory for outlet name, unit and directory-listed hours; cross-check with merchant source",
+      "Singapore government/open datasets with documented reuse terms, for factual fields such as licence status or coordinates",
+      "Written merchant/platform permission or merchant-provided export where aggregator data is necessary"
+    ],
+    "workbook_fields_when_licensed_or_published_by_merchant": [
+      "official website URL",
+      "official menu URL",
+      "menu item name and price as published by merchant",
+      "official phone/contact and outlet hours",
+      "official image URL only when reuse/display rights are documented"
+    ],
+    "handling": "Record provenance URL, checked date, and source/permission basis. An image URL being publicly reachable does not by itself establish reuse rights. Do not infer physical dine-in access, permanent closure, or ratings from delivery-only platform status."
+  },
+  "search_scope": "Official Grab Singapore terms, foodpanda Singapore terms, foodpanda Partner API docs, Oddle official AUP and documentation. No login, scraping, API calls, paid services, or workbook edits.",
+  "sources": [
+    "https://www.grab.com/sg/terms-policies/transport-delivery-logistics/",
+    "https://www.foodpanda.sg/contents/terms-and-conditions.htm",
+    "https://developer.foodpanda.com/api-specifications",
+    "https://docs.oddle.me/general/acceptable-use-policy/",
+    "https://docs.oddle.me/"
+  ]
+}

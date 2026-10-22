@@ -84,7 +84,10 @@ test("home bell opens activity inbox and gates messages by feature flag", () => 
     home,
     /preloadRoute\(navigation, "ActivityInbox", \{ initialTab: activityInitialTab \}\)/,
   );
-  assert.match(home, /import \{ getActivityUnreadCount \} from "@\/features\/home\/activity"/);
+  assert.match(
+    home,
+    /import \{[^}]*getActivityUnreadCount[^}]*\} from "@\/features\/home\/activity"/,
+  );
   assert.match(
     home,
     /const dbActivityEvents = useActivityStore\(\(state\) => state\.dbActivityEvents\)/,
@@ -95,7 +98,7 @@ test("home bell opens activity inbox and gates messages by feature flag", () => 
   );
   assert.match(
     home,
-    /serviceProviderMode === "mock"[\s\S]*\? activityUpdates[\s\S]*: \[\.\.\.dbActivityEvents, \.\.\.activityUpdates\]/,
+    /serviceProviderMode === "mock"[\s\S]*\? \[\.\.\.ACTIVITY_UPDATES, \.\.\.activityUpdates\][\s\S]*: \[\.\.\.dbActivityEvents, \.\.\.activityUpdates\]/,
   );
   assert.match(home, /void fetchActivityEvents\(\)/);
   assert.match(home, /getHungryService\(\)[\s\S]*\.chat\.listConversations\(\)/);
@@ -133,9 +136,9 @@ test("home bell opens activity inbox and gates messages by feature flag", () => 
   );
   assert.match(activity, /route\.params\?\.initialTab \?\? "messages"/);
   assert.match(activity, /getHungryService\(\)[\s\S]*\.chat[\s\S]*\.listConversations\(\)/);
-  assert.match(activity, /type \{ ChatConversation \}/);
+  assert.match(activity, /type \{ ChatConversation, PublicAccountSummary \}/);
   assert.match(activity, /conversation\.unreadCount/);
-  assert.match(activity, /void getHungryService\(\)\.chat\.markConversationRead\(chatId\)/);
+  assert.match(activity, /void getHungryService\(\)[\s\S]*\.chat\.markConversationRead\(chatId\)/);
   assert.match(activity, /<UnreadCountBadge/);
   assert.match(activity, /accessibilityLabel=\{`\$\{unreadCount\} unread messages`\}/);
   assert.match(activity, /stylesInline\.unreadCountBadge/);
@@ -151,13 +154,13 @@ test("home bell opens activity inbox and gates messages by feature flag", () => 
   assert.match(activityStore, /fetchActivityEvents: \(\) => Promise<void>/);
   assert.match(
     activityStore,
-    /getActivityUnreadCount\(get\(\)\.readActivityIds, \[[\s\S]*\.\.\.get\(\)\.dbActivityEvents,[\s\S]*\.\.\.get\(\)\.activityUpdates/,
+    /getActivityUnreadCount\([\s\S]*get\(\)\.readActivityIds,[\s\S]*\.\.\.get\(\)\.dbActivityEvents,[\s\S]*\.\.\.get\(\)\.activityUpdates/,
   );
   assert.match(activityStore, /notifications\.listActivityEvents\(\)/);
   assert.match(activityStore, /notifications\.markActivityRead\(id\)/);
   assert.doesNotMatch(activityStore, /console\.error\("Failed to fetch activity events"/);
-  assert.match(activityStore, /console\.warn\("Failed to fetch activity events"/);
-  assert.match(activityStore, /set\(\{ dbActivityEvents: \[\] \}\)/);
+  assert.match(activityStore, /Activity could not be refreshed\. Retry to update/);
+  assert.doesNotMatch(activityStore, /set\(\{ dbActivityEvents: \[\] \}\)/);
   assert.match(supabaseService, /function isMissingActivityEventsSchemaError/);
   assert.match(supabaseService, /if \(isMissingActivityEventsSchemaError\(error\)\) return \[\]/);
   assert.match(supabaseService, /if \(isMissingMarkActivityReadRpcError\(error\)\) return/);
@@ -216,8 +219,8 @@ test("activity messages and update posts are functional routes, not static mocku
   assert.match(detail, /likeCount: 0/);
   assert.match(detail, /commentCount: 0/);
   assert.match(detail, /ReviewShareSheet/);
-  assert.match(detail, /onShared=\{\(postId, channel\) => \{/);
-  assert.match(detail, /incrementShare\(postId, channel\)/);
+  assert.match(detail, /subjectLabel="post"/);
+  assert.match(detail, /link: webShareUrl\("post", post\.id\)/);
   assert.doesNotMatch(detail, /likeCount: primaryDish\?\.reviews\.length/);
   assert.doesNotMatch(detail, /commentCount: primaryDish\?\.reviews\.length/);
   assert.doesNotMatch(detail, /localCommentCount/);

@@ -1,0 +1,138 @@
+{
+  "observed_at": "2026-10-19",
+  "workbook": "Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "method": "Mapbox Search Box exact-name plus full-address/postal search; only coordinates for location matches are proposed. No Mapbox POI attributes, ratings, hours, photos, or contact data are retained.",
+  "usage_control": {
+    "user_reported_search_box_usage_before": 59,
+    "search_box_requests_made": 20,
+    "user_reported_free_tier_limit": 50000,
+    "estimated_usage_after": 79,
+    "remaining_reported_allowance": 49921
+  },
+  "matches": [
+    {
+      "sfa_licence": "NW10303C000",
+      "business": "#87 JUST THAI",
+      "postal_code": "277691",
+      "query": "#87 JUST THAI, 34B LORONG MAMBONG HOLLAND VILLAGE 277691 Singapore",
+      "mapbox_id": "dXJuOm1ieHBvaTplNzMxYjMxZi1kMzBjLTRmMzktOGZmYi1lODVhMmNjYTMyNzk",
+      "longitude": 103.79457527,
+      "latitude": 1.31178711,
+      "confidence": "high",
+      "source_scope": "Mapbox Search Box returned matching POI name (87 Just Thai), matching street address and exact postal code; POI point coordinates only; coordinate accuracy not provided."
+    },
+    {
+      "sfa_licence": "B96175K000",
+      "business": "13 MILES",
+      "postal_code": "758455",
+      "query": "13 MILES, 596B SEMBAWANG ROAD 758455 Singapore",
+      "mapbox_id": "dXJuOm1ieHBvaTo2ZWY0YmRjYi1kZmQ0LTRkNGUtYjcyNS1hYWM1N2Y0MjI4NTM",
+      "longitude": 103.8248907,
+      "latitude": 1.44083389,
+      "confidence": "high",
+      "source_scope": "Mapbox Search Box returned matching POI name (13 Miles), matching street address and exact postal code; POI point coordinates only; coordinate accuracy not provided."
+    },
+    {
+      "sfa_licence": "CE18L21J000",
+      "business": "15 Stamford",
+      "postal_code": "178906",
+      "query": "15 Stamford, 15 STAMFORD ROAD THE CAPITOL KEMPINSKI HOTEL 178906 Singapore",
+      "mapbox_id": "dXJuOm1ieGFkcjo0OGIyZjEwNi0yYWRiLTQ4ZWEtYjNiNi1hM2NjYzEyYzIzMjA",
+      "longitude": 103.851551,
+      "latitude": 1.293493,
+      "confidence": "high",
+      "source_scope": "Search result is the exact 15 Stamford Road address and postal code, but not the restaurant POI; rooftop building/address coordinates only, not a separate restaurant entrance or unit point."
+    },
+    {
+      "sfa_licence": "E87097P000",
+      "business": "328 Katong Laksa",
+      "postal_code": "428914",
+      "query": "328 Katong Laksa, 216 EAST COAST ROAD 428914 Singapore",
+      "mapbox_id": "dXJuOm1ieGFkcjozNWI1OTMzOC0yNWVlLTQxOWItYTk0Mi1iYmMwZTUzNTg2YWQ",
+      "longitude": 103.907357,
+      "latitude": 1.307326,
+      "confidence": "high",
+      "source_scope": "Search result is exact 216 East Coast Road address and exact postal code; rooftop building/address coordinates only, not a separate restaurant POI or unit point."
+    },
+    {
+      "sfa_licence": "SE23Q59K000",
+      "business": "360 Joo Chiat Road",
+      "postal_code": "427605",
+      "query": "360 Joo Chiat Road, 360 JOO CHIAT ROAD 427605 Singapore",
+      "mapbox_id": "dXJuOm1ieGFkcjpjYzRiYmMzOC1kZjk1LTQ1N2YtODMxOC0yYmE5ZTMwZTE4Y2M",
+      "longitude": 103.90297,
+      "latitude": 1.3083,
+      "confidence": "medium",
+      "source_scope": "Search result is exact street address and postal code; Mapbox classifies the coordinate accuracy as proximate, so it is address-level approximate, not unit/POI precise."
+    },
+    {
+      "sfa_licence": "W90200J000",
+      "business": "49 Seats",
+      "postal_code": "277698",
+      "query": "49 Seats, 46 LORONG MAMBONG HOLLAND VILLAGE 277698 Singapore",
+      "mapbox_id": "dXJuOm1ieHBvaTowMDZlZTIzYy02NDM4LTRjMzgtYmMzZS1hZWRjMjYxOTE5NzI",
+      "longitude": 103.7943032,
+      "latitude": 1.31197017,
+      "confidence": "high",
+      "source_scope": "Mapbox Search Box returned matching Holland Village branch POI, matching street address and exact postal code; POI point coordinates only; coordinate accuracy not provided."
+    }
+  ],
+  "excluded_searches": [
+    {
+      "query": ".8890 eating house, 88/90 LORONG 25A GEYLANG 388264 Singapore",
+      "reason": "Mapbox result address/postal differed (88 Lor 25A Geylang, 388265); excluded due postal conflict."
+    },
+    {
+      "query": "109 Food Teochew Yong Tau Foo, 90 CIRCULAR ROAD 049441 Singapore",
+      "reason": "Returned 90 Circular Road with conflicting postal code 049366; excluded."
+    },
+    {
+      "query": "1 SGP, 24A FOCH ROAD 209263 Singapore",
+      "reason": "No results."
+    },
+    {
+      "query": "13% WINE BISTRO, 123A TELOK AYER STREET 068592 Singapore",
+      "reason": "No results."
+    },
+    {
+      "query": "151 rocovo restaurant, 151 THOMSON ROAD #01-151 GOLDHILL SHOPPING CENTRE 307606 Singapore",
+      "reason": "No results."
+    },
+    {
+      "query": "153 BREW CAFE, 153 TYRWHITT ROAD QINAN BUILDING 207566 Singapore",
+      "reason": "Returned 154 Tyrwhitt Road, postcode 207564; excluded due street-number and postal mismatch."
+    },
+    {
+      "query": "16 Geylang Eating House, 306 GEYLANG ROAD 389347 Singapore",
+      "reason": "Exact-name/address POI but postcode differs (389346 vs 389347); excluded due postal conflict."
+    },
+    {
+      "query": "1864, 9 WALLICH STREET #05-02 078885 Singapore",
+      "reason": "No exact business/address result; returned unrelated addresses."
+    },
+    {
+      "query": "1939, 36 KEONG SAIK ROAD 089143 Singapore",
+      "reason": "No exact business/address result."
+    },
+    {
+      "query": "233 Vietnamese Kitchen, 157 JOO CHIAT ROAD 427435 Singapore",
+      "reason": "No results."
+    },
+    {
+      "query": "28 cavan road, 28 CAVAN ROAD 209855 Singapore",
+      "reason": "Exact address candidate, but no business POI identity and Mapbox reported proximate accuracy; excluded from coordinate proposals."
+    },
+    {
+      "query": "283 Cafe, 318 CHANGI ROAD 419793 Singapore",
+      "reason": "No exact business/address result."
+    },
+    {
+      "query": "291 geylang eating house, 291 GEYLANG ROAD 389338 Singapore",
+      "reason": "No exact business/address result."
+    },
+    {
+      "query": "297 Tanjong Katong, 297 TANJONG KATONG ROAD 437080 Singapore",
+      "reason": "Exact street number but postcode conflict (Mapbox 437078 vs workbook 437080); excluded."
+    }
+  ]
+}

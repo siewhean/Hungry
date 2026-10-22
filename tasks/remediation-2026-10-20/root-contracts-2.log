@@ -1,0 +1,353 @@
+(node:71195) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ onboarding typed routes are registered and flow through cuisine, taste, and dietary setup (5.414667ms)
+✖ root and nested route targets avoid stale or unregistered screens (4.705ms)
+✔ synthetic create tab targets root routes without registering a fake tab route (2.472833ms)
+✔ going offline shows a banner instead of taking over navigation (1.482791ms)
+✔ wheel party mode is gated and /join links explain group spins are coming (1.743167ms)
+(node:71196) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ Supabase auth bootstrap gates protected-route redirects until session restore completes (2.164625ms)
+✔ Supabase auth responses hydrate the app profile store (3.357084ms)
+✔ Supabase auth bootstrap preserves restored sessions across transient startup failures (1.503458ms)
+✔ restored mock sessions keep the mock provider instead of being rejected as Supabase sessions (0.62ms)
+✔ explicit mock data source keeps user-mode bootstrap on mock services for dev and E2E (0.827542ms)
+✔ Supabase null-session bootstrap keeps a restored session only on a network failure (0.670583ms)
+(node:71197) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✖ onboarding food visuals use generated local food assets (2.776417ms)
+(node:71198) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ app bootstrap derives offline state from NetInfo and cleans up its subscription (4.471042ms)
+✔ offline recovery retries NetInfo instead of pretending the connection returned (0.29575ms)
+✔ Supabase legacy cache warm-up is opt-in and never blocks app-shell readiness (0.498ms)
+(node:71199) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ getConfiguredDataSource prefers HUNGRY_DATA_SOURCE when set (1.017833ms)
+✔ getConfiguredDataSource falls back to EXPO_PUBLIC_HUNGRY_DATA_SOURCE when private var blank (0.11625ms)
+✔ getConfiguredDataSource lets E2E public source override local dotenv defaults (0.116125ms)
+✔ released builds stay on Supabase even when a mock or Excel override is injected (0.0645ms)
+✔ missing Supabase credentials do not silently select mock data (0.073375ms)
+✔ Supabase client persists auth sessions through secure storage with PKCE enabled (0.403167ms)
+✔ Supabase auth storage mirrors tokens to AsyncStorage only in dev/test fallback mode (0.206666ms)
+✔ PKCE SHA-256 fallback produces the standard digest (0.294167ms)
+(node:71200) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ events tracked before the PostHog sink attaches are replayed to it (20.985666ms)
+✔ sign-out retires local credentials and revokes only a captured session (2.520417ms)
+✔ sign_in_completed is logged once per sign-in and identity flags are accurate (0.778708ms)
+✔ account deletion reports success once queued, and the grace prompt can't be dismissed (0.510542ms)
+✔ share attribution survives a relaunch for seven days (2.066666ms)
+✔ share attribution is cleared once a signup is credited to it (11.636625ms)
+✔ GPS refreshes on foreground and first follow asks for push inline (1.66575ms)
+(node:71201) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+✔ session store persists app auth state through the durable app storage adapter (2.021ms)
+✔ durable app storage migrates legacy SecureStore session metadata (0.504625ms)
+✔ guest onboarding survives first sign-in but is not inherited by a different account (103.757416ms)
+✔ completeAuth records the Supabase user and data source for reload restoration (0.513708ms)
+✔ invalid Supabase auth restoration is rejected instead of persisting a mock id (17.967291ms)
+✔ Supabase auth restoration preserves a service-hydrated profile with the same user id (2.31375ms)
+✔ explicit auth sign-out clears the restored app session (11.755084ms)
+✔ manual signOut clears auth state but keeps returning users on login (8.109166ms)
+✔ manual signOut clears account-scoped optimistic caches (4.035959ms)
+✔ visible sign-out actions reset to login instead of onboarding (30.543667ms)
+ℹ tests 40
+ℹ suites 0
+ℹ pass 38
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1622.779334
+
+✖ failing tests:
+
+test at src/app/navigation/nav-route-contracts.test.ts:2:3732
+✖ root and nested route targets avoid stale or unregistered screens (4.705ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /root\.navigate\("OnboardingStack", \{ screen: "ManualLocationPicker" \}\)/. Input:
+  
+  'import { assertAccountGeneration, getAccountGeneration } from "@/lib/security/accountScope";\n' +
+    'import Constants from "expo-constants";\n' +
+    'import { useEffect, useState } from "react";\n' +
+    'import { Alert, Linking } from "react-native";\n' +
+    'import { useNavigation } from "@react-navigation/native";\n' +
+    'import type { NativeStackNavigationProp } from "@react-navigation/native-stack";\n' +
+    'import { getRootNavigation } from "@/app/navigation/getRootNavigation";\n' +
+    'import type { RootStackParamList } from "@/app/navigation/navigationTypes";\n' +
+    'import { SettingsSection, SettingsRow } from "@/components/settings";\n' +
+    'import { StallAlertsSettings } from "@/components/settings/StallAlertsSettings";\n' +
+    'import { AppText, Button } from "@/components/ui";\n' +
+    'import { FEATURE_FLAGS } from "@/constants/featureFlags";\n' +
+    'import { SUPPORT_EMAIL, WEB_LINKS } from "@/constants/links";\n' +
+    'import { openTrustedExternalUrl } from "@/lib/security/safeLinking";\n' +
+    'import { getHungryService } from "@/lib/services/serviceProvider";\n' +
+    'import { ACCOUNT_DELETION_GRACE_DAYS } from "@/lib/services/types";\n' +
+    'import { buildMyDataExport } from "@/features/profile/exportMyData";\n' +
+    'import { shareMyDataExport } from "@/features/profile/shareMyDataExport";\n' +
+    'import { useLocationStore } from "@/store/useLocationStore";\n' +
+    'import { useProfileStore } from "@/store/useProfileStore";\n' +
+    'import { useSearchStore } from "@/store/useSearchStore";\n' +
+    'import { useSessionStore } from "@/store/useSessionStore";\n' +
+    'import { useUIStore } from "@/store/useUIStore";\n' +
+    'import { ProfileScreenShell } from "./ProfileScreenShell";\n' +
+    '\n' +
+    'export function SettingsScreen() {\n' +
+    '  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();\n' +
+    '  const root = getRootNavigation(navigation);\n' +
+    '  const profile = useProfileStore((s) => s.profile);\n' +
+    '  const setVisibility = useProfileStore((s) => s.setProfileVisibility);\n' +
+    '  const userId = useSessionStore((s) => s.authenticatedUserId);\n' +
+    '  const ui = useUIStore();\n' +
+    '  const location = useLocationStore((s) => s.manualLocation);\n' +
+    '  const [busy, setBusy] = useState<string | null>(null);\n' +
+    '  const [deletion, setDeletion] =\n' +
+    '    useState<\n' +
+    '      Awaited<ReturnType<ReturnType<typeof getHungryService>["auth"]["getPendingAccountDeletion"]>>\n' +
+    '    >(null);\n' +
+    '  const [lookupError, setLookupError] = useState(false);\n' +
+    '  const [lookupVersion, setLookupVersion] = useState(0);\n' +
+    '  const [lookingUp, setLookingUp] = useState(true);\n' +
+    '  useEffect(() => {\n' +
+    '    let active = true;\n' +
+    '    setLookingUp(true);\n' +
+    '    setLookupError(false);\n' +
+    '    void getHungryService()\n' +
+    '      .auth.getPendingAccountDeletion()\n' +
+    '      .then((value) => {\n' +
+    '        if (active) setDeletion(value);\n' +
+    '      })\n' +
+    '      .catch(() => {\n' +
+    '        if (active) setLookupError(true);\n' +
+    '      })\n' +
+    '      .finally(() => {\n' +
+    '        if (active) setLookingUp(false);\n' +
+    '      });\n' +
+    '    return () => {\n' +
+    '      active = false;\n' +
+    '    };\n' +
+    '  }, [userId, lookupVersion]);\n' +
+    '  const run = async (key: string, action: () => Promise<void>) => {\n' +
+    '    if (busy) return;\n' +
+    '    setBusy(key);\n' +
+    '    try {\n' +
+    '      await action();\n' +
+    '    } catch {\n' +
+    '      Alert.alert(\n' +
+    '        "Could not complete action",\n' +
+    '        "Your changes were not confirmed. Please try again.",\n' +
+    '      );\n' +
+    '    } finally {\n' +
+    '      setBusy(null);\n' +
+    '    }\n' +
+    '  };\n' +
+    '  const exportData = async () => {\n' +
+    '    const generation = getAccountGeneration();\n' +
+    '    const accountId = userId;\n' +
+    '    if (!accountId) throw new Error("Sign in to export data");\n' +
+    '    const data = await buildMyDataExport(getHungryService());\n' +
+    '    assertAccountGeneration(generation);\n' +
+    '    const failed = Object.entries(data)\n' +
+    '      .filter(([, value]) => value && typeof value === "object" && "ok" in value && !value.ok)\n' +
+    '      .map(([key]) => key);\n' +
+    '    if (failed.length) {\n' +
+    '      const proceed = await new Promise<boolean>((resolve) =>\n' +
+    '        Alert.alert(\n' +
+    '          "Incomplete export",\n' +
+    '          `These sections could not be loaded: ${failed.join(", ")}. Retry or share a file that clearly records the missing sections.`,\n' +
+    '          [\n' +
+    '            { text: "Retry later", style: "cancel", onPress: () => resolve(false) },\n' +
+    '            { text: "Share incomplete file", onPress: () => resolve(true) },\n' +
+    '          ],\n' +
+    '          { cancelable: true, onDismiss: () => resolve(false) },\n' +
+    '        ),\n' +
+    '      );\n' +
+    '      if (!proceed) return;\n' +
+    '    }\n' +
+    '    assertAccountGeneration(generation);\n' +
+    '    await shareMyDataExport(\n' +
+    '      data,\n' +
+    '      accountId,\n' +
+    '      () => useSessionStore.getState().authenticatedUserId ?? null,\n' +
+    '    );\n' +
+    '  };\n' +
+    '  const requestDeletion = () =>\n' +
+    '    Alert.alert(\n' +
+    '      "Delete account",\n' +
+    '      `Your account is scheduled for deletion after ${ACCOUNT_DELETION_GRACE_DAYS} days. Signing in does not cancel deletion. Use Keep my account and wait for confirmation before the deadline. Menu photos may remain without your name and required security or legal records may be retained.`,\n' +
+    '      [\n' +
+    '        { text: "Cancel", style: "cancel" },\n' +
+    '        {\n' +
+    '          text: "Request deletion",\n' +
+    '          style: "destructive",\n' +
+    '          onPress: () =>\n' +
+    '            void run("delete", async () => {\n' +
+    '              await getHungryService().auth.requestAccountDeletion({\n' +
+    '                reason: "user_initiated_settings_flow",\n' +
+    '              });\n' +
+    '              setLookupVersion((v) => v + 1);\n' +
+    '              Alert.alert(\n' +
+    '                "Deletion scheduled",\n' +
+    '                "Your request was accepted. You can keep your account by explicitly cancelling deletion before the deadline.",\n' +
+    '              );\n' +
+    '              try {\n' +
+    '                await useSessionStore.getState().signOut();\n' +
+    '                root.reset({\n' +
+    '                  index: 0,\n' +
+    '                  routes: [{ name: "AuthStack", params: { screen: "Login" } }],\n' +
+    '                });\n' +
+    '              } catch {\n' +
+    '                Alert.alert(\n' +
+    '                  "Deletion is still scheduled",\n' +
+    '                  "Local sign-out could not be confirmed. Retry sign out. This does not undo your deletion request.",\n' +
+    '                );\n' +
+    '              }\n' +
+    '            }),\n' +
+    '        },\n' +
+    '      ],\n' +
+    '    );\n' +
+    '  return (\n' +
+    '    <ProfileScreenShell title="Settings">\n' +
+    '      <SettingsSection title="Account and privacy">\n' +
+    '        <SettingsRow\n' +
+    '          label="Authentication email"\n' +
+    '          value={profile.email || "Unavailable"}\n' +
+    '          type="value"\n' +
+    '        />\n' +
+    '        <SettingsRow\n' +
+    '          label="Profile visibility"\n' +
+    '          value={profile.profileVisibility === "private" ? "Private" : "Public"}\n' +
+    '          busy={busy === "privacy"}\n' +
+    '          disabled={!!busy}\n' +
+    '          onPress={() =>\n' +
+    '            Alert.alert(\n' +
+    '              "Profile visibility",\n' +
+    '              "Choose who can follow your profile. Private profiles require approval.",\n' +
+    '              [\n' +
+    '                { text: "Cancel", style: "cancel" },\n' +
+    '                ...(["public", "private"] as const).map((value) => ({\n' +
+    '                  text: value === "public" ? "Public" : "Private",\n' +
+    '                  onPress: () =>\n' +
+    '                    void run("privacy", async () => {\n' +
+    '                      await setVisibility(value);\n' +
+    '                    }),\n' +
+    '                })),\n' +
+    '              ],\n' +
+    '            )\n' +
+    '          }\n' +
+    '        />\n' +
+    '        <SettingsRow\n' +
+    '          label="Hide reviewed dishes"\n' +
+    '          description="Exclude dishes you reviewed from your recommendations. Your public reviews stay visible."\n' +
+    '          type="toggle"\n' +
+    '          isEnabled={ui.hideReviewedDishesFromFeed}\n' +
+    '          onToggle={ui.setHideReviewedDishesFromFeed}\n' +
+    '        />\n' +
+    '        {lookingUp ? (\n' +
+    '          <AppText>Checking account deletion status…</AppText>\n' +
+    '        ) : lookupError ? (\n' +
+    '          <Button\n' +
+    '            label="Retry deletion status"\n' +
+    '            variant="secondary"\n' +
+    '            onPress={() => setLookupVersion((v) => v + 1)}\n' +
+    '          />\n' +
+    '        ) : deletion ? (\n' +
+    '          <>\n' +
+    '            <AppText>\n' +
+    '              Deletion scheduled for {new Date(deletion.scheduledFor).toLocaleString()}.\n' +
+    '            </AppText>\n' +
+    '            <SettingsRow\n' +
+    '              label="Keep my account"\n' +
+    '              busy={busy === "keep"}\n' +
+    '              disabled={!!busy}\n' +
+    '              onPress={() =>\n' +
+    '                void run("keep", async () => {\n' +
+    '                  const confirmed = await getHungryService().auth.cancelAccountDeletion();\n' +
+    '                  if (!confirmed) throw new Error("Cancellation was not confirmed");\n' +
+    '                  setDeletion(null);\n' +
+    '                  Alert.alert("Account kept", "Your deletion request was successfully cancelled.");\n' +
+    '                })\n' +
+    '              }\n' +
+    '            />\n' +
+    '          </>\n' +
+    '        ) : (\n' +
+    '          <SettingsRow\n' +
+    '            label="Delete account"\n' +
+    '            disabled={!!busy}\n' +
+    '            busy={busy === "delete"}\n' +
+    '            onPress={requestDeletion}\n' +
+    '          />\n' +
+    '        )}\n' +
+    '      </SettingsSection>\n' +
+    '      <SettingsSection title="Appearance and interaction">\n' +
+    '        <SettingsRow\n' +
+    '          label="Theme"\n' +
+    '          value={ui.themePreference}\n' +
+    '          onPress={() =>\n' +
+    '            Alert.alert("Choose theme", undefined, [\n' +
+    '              { text: "Cancel", style: "cancel" },\n' +
+    '              ...(["system", "light", "dark"] as const).map((value) => ({\n' +
+    '                text: value === "system" ? "Follow device" : value === "light" ? "Light" : "Dark",\n' +
+    '                onPress: () => ui.setThemePreference(value),\n' +
+    '              })),\n' +
+    '            ])\n' +
+    '          }\n' +
+    '        />\n' +
+    '        <SettingsRow\n' +
+    '          label="Reduce motion"\n' +
+    '          type="toggle"\n' +
+    '          isEnabled={ui.reducedMotionEnabled}\n' +
+    '          onToggle={ui.setReducedMotionEnabled}\n' +
+    '        />\n' +
+    '        <SettingsRow\n' +
+    '          label="Haptic feedback"\n' +
+    '          type="toggle"\n' +
+    '          isEnabled={ui.hapticFeedbackEnabled}\n' +
+    '          onToggle={ui.setHapticFeedbackEnabled}\n' +
+    '        />\n' +
+    '      </SettingsSection>\n' +
+    '      <SettingsSection title="Location and data">\n' +
+    '        <SettingsRow\n' +
+    '          label="Selected area"\n' +
+    '          type="value"\n' +
+    '          value={location || "Device location when available"}\n' +
+    '        />\n' +
+    '        <SettingsRow\n' +
+    '          label="Use current device location"\n' +
+    '          description="Clear the selected area and request a fresh device location. If access is denied, choose an area from discovery."\n' +
+    '          disabled={!!busy}\n' +
+    '          busy={busy === "location"}\n' +
+    '          onPress={() =>\n' +
+    '            void run("location", async () => {\n' +
+    '              useLo'... 3334 more characters
+  
+      at TestContext.<anonymous> (/Users/Siew Hean/Documents/GitHub/Hungry/src/app/navigation/nav-route-contracts.test.ts:69:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'import { assertAccountGeneration, getAccountGeneration } from "@/lib/security/accountScope";\nimport Constants from "expo-constants";\nimport { useEffect, useState } from "react";\nimport { Alert, Linking } from "react-native";\nimport { useNavigation } from "@react-navigation/native";\nimport type { NativeStackNavigationProp } from "@react-navigation/native-stack";\nimport { getRootNavigation } from "@/app/navigation/getRootNavigation";\nimport type { RootStackParamList } from "@/app/navigation/navigationTypes";\nimport { SettingsSection, SettingsRow } from "@/components/settings";\nimport { StallAlertsSettings } from "@/components/settings/StallAlertsSettings";\nimport { AppText, Button } from "@/components/ui";\nimport { FEATURE_FLAGS } from "@/constants/featureFlags";\nimport { SUPPORT_EMAIL, WEB_LINKS } from "@/constants/links";\nimport { openTrustedExternalUrl } from "@/lib/security/safeLinking";\nimport { getHungryService } from "@/lib/services/serviceProvider";\nimport { ACCOUNT_DELETION_GRACE_DAYS } from "@/lib/services/types";\nimport { buildMyDataExport } from "@/features/profile/exportMyData";\nimport { shareMyDataExport } from "@/features/profile/shareMyDataExport";\nimport { useLocationStore } from "@/store/useLocationStore";\nimport { useProfileStore } from "@/store/useProfileStore";\nimport { useSearchStore } from "@/store/useSearchStore";\nimport { useSessionStore } from "@/store/useSessionStore";\nimport { useUIStore } from "@/store/useUIStore";\nimport { ProfileScreenShell } from "./ProfileScreenShell";\n\nexport function SettingsScreen() {\n  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();\n  const root = getRootNavigation(navigation);\n  const profile = useProfileStore((s) => s.profile);\n  const setVisibility = useProfileStore((s) => s.setProfileVisibility);\n  const userId = useSessionStore((s) => s.authenticatedUserId);\n  const ui = useUIStore();\n  const location = useLocationStore((s) => s.manualLocation);\n  const [busy, setBusy] = useState<string | null>(null);\n  const [deletion, setDeletion] =\n    useState<\n      Awaited<ReturnType<ReturnType<typeof getHungryService>["auth"]["getPendingAccountDeletion"]>>\n    >(null);\n  const [lookupError, setLookupError] = useState(false);\n  const [lookupVersion, setLookupVersion] = useState(0);\n  const [lookingUp, setLookingUp] = useState(true);\n  useEffect(() => {\n    let active = true;\n    setLookingUp(true);\n    setLookupError(false);\n    void getHungryService()\n      .auth.getPendingAccountDeletion()\n      .then((value) => {\n        if (active) setDeletion(value);\n      })\n      .catch(() => {\n        if (active) setLookupError(true);\n      })\n      .finally(() => {\n        if (active) setLookingUp(false);\n      });\n    return () => {\n      active = false;\n    };\n  }, [userId, lookupVersion]);\n  const run = async (key: string, action: () => Promise<void>) => {\n    if (busy) return;\n    setBusy(key);\n    try {\n      await action();\n    } catch {\n      Alert.alert(\n        "Could not complete action",\n        "Your changes were not confirmed. Please try again.",\n      );\n    } finally {\n      setBusy(null);\n    }\n  };\n  const exportData = async () => {\n    const generation = getAccountGeneration();\n    const accountId = userId;\n    if (!accountId) throw new Error("Sign in to export data");\n    const data = await buildMyDataExport(getHungryService());\n    assertAccountGeneration(generation);\n    const failed = Object.entries(data)\n      .filter(([, value]) => value && typeof value === "object" && "ok" in value && !value.ok)\n      .map(([key]) => key);\n    if (failed.length) {\n      const proceed = await new Promise<boolean>((resolve) =>\n        Alert.alert(\n          "Incomplete export",\n          `These sections could not be loaded: ${failed.join(", ")}. Retry or share a file that clearly records the missing sections.`,\n          [\n            { text: "Retry later", style: "cancel", onPress: () => resolve(false) },\n            { text: "Share incomplete file", onPress: () => resolve(true) },\n          ],\n          { cancelable: true, onDismiss: () => resolve(false) },\n        ),\n      );\n      if (!proceed) return;\n    }\n    assertAccountGeneration(generation);\n    await shareMyDataExport(\n      data,\n      accountId,\n      () => useSessionStore.getState().authenticatedUserId ?? null,\n    );\n  };\n  const requestDeletion = () =>\n    Alert.alert(\n      "Delete account",\n      `Your account is scheduled for deletion after ${ACCOUNT_DELETION_GRACE_DAYS} days. Signing in does not cancel deletion. Use Keep my account and wait for confirmation before the deadline. Menu photos may remain without your name and required security or legal records may be retained.`,\n      [\n        { text: "Cancel", style: "cancel" },\n        {\n          text: "Request deletion",\n          style: "destructive",\n          onPress: () =>\n            void run("delete", async () => {\n              await getHungryService().auth.requestAccountDeletion({\n                reason: "user_initiated_settings_flow",\n              });\n              setLookupVersion((v) => v + 1);\n              Alert.alert(\n                "Deletion scheduled",\n                "Your request was accepted. You can keep your account by explicitly cancelling deletion before the deadline.",\n              );\n              try {\n                await useSessionStore.getState().signOut();\n                root.reset({\n                  index: 0,\n                  routes: [{ name: "AuthStack", params: { screen: "Login" } }],\n                });\n              } catch {\n                Alert.alert(\n                  "Deletion is still scheduled",\n                  "Local sign-out could not be confirmed. Retry sign out. This does not undo your deletion request.",\n                );\n              }\n            }),\n        },\n      ],\n    );\n  return (\n    <ProfileScreenShell title="Settings">\n      <SettingsSection title="Account and privacy">\n        <SettingsRow\n          label="Authentication email"\n          value={profile.email || "Unavailable"}\n          type="value"\n        />\n        <SettingsRow\n          label="Profile visibility"\n          value={profile.profileVisibility === "private" ? "Private" : "Public"}\n          busy={busy === "privacy"}\n          disabled={!!busy}\n          onPress={() =>\n            Alert.alert(\n              "Profile visibility",\n              "Choose who can follow your profile. Private profiles require approval.",\n              [\n                { text: "Cancel", style: "cancel" },\n                ...(["public", "private"] as const).map((value) => ({\n                  text: value === "public" ? "Public" : "Private",\n                  onPress: () =>\n                    void run("privacy", async () => {\n                      await setVisibility(value);\n                    }),\n                })),\n              ],\n            )\n          }\n        />\n        <SettingsRow\n          label="Hide reviewed dishes"\n          description="Exclude dishes you reviewed from your recommendations. Your public reviews stay visible."\n          type="toggle"\n          isEnabled={ui.hideReviewedDishesFromFeed}\n          onToggle={ui.setHideReviewedDishesFromFeed}\n        />\n        {lookingUp ? (\n          <AppText>Checking account deletion status…</AppText>\n        ) : lookupError ? (\n          <Button\n            label="Retry deletion status"\n            variant="secondary"\n            onPress={() => setLookupVersion((v) => v + 1)}\n          />\n        ) : deletion ? (\n          <>\n            <AppText>\n              Deletion scheduled for {new Date(deletion.scheduledFor).toLocaleString()}.\n            </AppText>\n            <SettingsRow\n              label="Keep my account"\n              busy={busy === "keep"}\n              disabled={!!busy}\n              onPress={() =>\n                void run("keep", async () => {\n                  const confirmed = await getHungryService().auth.cancelAccountDeletion();\n                  if (!confirmed) throw new Error("Cancellation was not confirmed");\n                  setDeletion(null);\n                  Alert.alert("Account kept", "Your deletion request was successfully cancelled.");\n                })\n              }\n            />\n          </>\n        ) : (\n          <SettingsRow\n            label="Delete account"\n            disabled={!!busy}\n            busy={busy === "delete"}\n            onPress={requestDeletion}\n          />\n        )}\n      </SettingsSection>\n      <SettingsSection title="Appearance and interaction">\n        <SettingsRow\n          label="Theme"\n          value={ui.themePreference}\n          onPress={() =>\n            Alert.alert("Choose theme", undefined, [\n              { text: "Cancel", style: "cancel" },\n              ...(["system", "light", "dark"] as const).map((value) => ({\n                text: value === "system" ? "Follow device" : value === "light" ? "Light" : "Dark",\n                onPress: () => ui.setThemePreference(value),\n              })),\n            ])\n          }\n        />\n        <SettingsRow\n          label="Reduce motion"\n          type="toggle"\n          isEnabled={ui.reducedMotionEnabled}\n          onToggle={ui.setReducedMotionEnabled}\n        />\n        <SettingsRow\n          label="Haptic feedback"\n          type="toggle"\n          isEnabled={ui.hapticFeedbackEnabled}\n          onToggle={ui.setHapticFeedbackEnabled}\n        />\n      </SettingsSection>\n      <SettingsSection title="Location and data">\n        <SettingsRow\n          label="Selected area"\n          type="value"\n          value={location || "Device location when available"}\n        />\n        <SettingsRow\n          label="Use current device location"\n          description="Clear the selected area and request a fresh device location. If access is denied, choose an area from discovery."\n          disabled={!!busy}\n          busy={busy === "location"}\n          onPress={() =>\n            void run("location", async () => {\n              useLo'... 3334 more characters,
+    expected: /root\.navigate\("OnboardingStack", \{ screen: "ManualLocationPicker" \}\)/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at src/app/screens/onboarding/onboarding-food-images-contracts.test.ts:2:1902
+✖ onboarding food visuals use generated local food assets (2.776417ms)
+  AssertionError [ERR_ASSERTION]: result dishes come from the provider and selected preferences
+      at TestContext.<anonymous> (/Users/Siew Hean/Documents/GitHub/Hungry/src/app/screens/onboarding/onboarding-food-images-contracts.test.ts:50:10)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'import { selectOnboardingRecommendations } from "@/features/onboarding/recommendationPreview";\nimport type { NavigationProp } from "@react-navigation/native";\nimport type { RootStackParamList } from "@/app/navigation/navigationTypes";\nimport { NativeStackScreenProps } from "@react-navigation/native-stack";\nimport { useEffect, useState } from "react";\nimport { Pressable, ScrollView, View } from "react-native";\nimport { Heart } from "lucide-react-native";\nimport { useSafeAreaInsets } from "react-native-safe-area-context";\n\nimport { AccessibleImage, AppText, Button, Card } from "@/components/ui";\nimport { getSearchResultsAsync } from "@/features/search/search";\nimport type { DishDetail, SearchFilters } from "@/types/domain";\nimport { useProfileStore } from "@/store/useProfileStore";\nimport { useSessionStore } from "@/store/useSessionStore";\nimport { useUIStore } from "@/store/useUIStore";\nimport { useHungryTheme } from "@/theme";\nimport type { OnboardingStackParamList } from "./OnboardingStack";\nimport { useOnboardingDraftStore } from "@/features/onboarding/useOnboardingDraftStore";\nimport { fulfillPendingOnboardingSave } from "@/features/onboarding/fulfillPendingSave";\n\ntype Props = NativeStackScreenProps<OnboardingStackParamList, "TasteProfileResult">;\n\nconst RESULT_COUNT = 4;\n\nfunction getResultFilters(): SearchFilters {\n  const { tasteVector, dietaryPreferences } = useProfileStore.getState().profile;\n  return {\n    query: "",\n    categories: [],\n    dietaryFlags: dietaryPreferences,\n    tasteValues: tasteVector,\n    radius: Number.MAX_SAFE_INTEGER,\n  };\n}\n\nexport function TasteProfileResultScreen({ navigation }: Props) {\n  const { palette, radii, spacing } = useHungryTheme();\n  const insets = useSafeAreaInsets();\n  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);\n  const showToast = useUIStore((state) => state.showToast);\n  const favouriteDishIds = useProfileStore((state) => state.profile.favouriteDishIds);\n  const toggleFavourite = useProfileStore((state) => state.toggleFavourite);\n\n  const [dishes, setDishes] = useState<DishDetail[]>([]);\n  const [loadState, setLoadState] = useState<"loading" | "ready" | "error">("loading");\n  const [attempt, setAttempt] = useState(0);\n  const draft = useOnboardingDraftStore((state) => state.draft);\n  const preferenceKey = JSON.stringify([\n    draft?.values,\n    draft?.dietaryPreferences,\n    draft?.maxDishBudget,\n  ]);\n  const pendingDishId = useOnboardingDraftStore((state) => state.draft?.pendingSaveDishId);\n  useEffect(() => {\n    let active = true;\n    setLoadState("loading");\n    const profile = useProfileStore.getState().profile;\n    void getSearchResultsAsync(getResultFilters(), profile.tasteVector)\n      .then((results) => {\n        const matches = selectOnboardingRecommendations(results, profile, RESULT_COUNT);\n        if (active) {\n          setDishes(matches.slice(0, RESULT_COUNT));\n          setLoadState("ready");\n        }\n      })\n      .catch(() => {\n        if (active) setLoadState("error");\n      });\n    return () => {\n      active = false;\n    };\n  }, [attempt, preferenceKey]);\n\n  return (\n    <View style={{ backgroundColor: palette.bg, flex: 1 }}>\n      <ScrollView\n        contentContainerStyle={{\n          gap: spacing[4],\n          padding: spacing[4],\n          paddingBottom: spacing[12],\n          paddingTop: insets.top + spacing[4],\n        }}\n      >\n        <View style={{ gap: spacing[1] }}>\n          <AppText variant="h1">Your taste profile is ready</AppText>\n          <AppText variant="bodySmall" tone="secondary">\n            {dishes.length > 0\n              ? "Here are dishes aligned with your current preferences."\n              : "We\'ll use it to rank dishes for you on Home."}\n          </AppText>\n        </View>\n\n        {loadState === "loading" ? (\n          <AppText accessibilityLiveRegion="polite">Finding dishes for your preferences…</AppText>\n        ) : null}\n        {loadState === "error" ? (\n          <View style={{ gap: spacing[2] }}>\n            <AppText>Couldn&apos;t load recommendations. Your preferences are saved.</AppText>\n            <Button\n              label="Retry recommendations"\n              onPress={() => setAttempt((value) => value + 1)}\n            />\n          </View>\n        ) : null}\n        {loadState === "ready" && dishes.length === 0 ? (\n          <AppText>\n            No dishes currently match all your dietary and budget preferences. You can continue and\n            adjust your preferences later.\n          </AppText>\n        ) : null}\n        {isAuthenticated && pendingDishId ? (\n          <Button\n            label="Retry saving selected dish"\n            onPress={() => {\n              void fulfillPendingOnboardingSave().catch(() =>\n                showToast({ message: "Couldn\'t save this dish. Try again.", tone: "error" }),\n              );\n            }}\n          />\n        ) : null}\n        <View\n          style={{\n            flexDirection: "row",\n            flexWrap: "wrap",\n            gap: spacing[3],\n            justifyContent: "space-between",\n          }}\n        >\n          {dishes.map((dish) => {\n            const isSaved = favouriteDishIds.includes(dish.id);\n            return (\n              <Card\n                key={dish.id}\n                style={{ borderRadius: radii.md, overflow: "hidden", padding: 0, width: "48%" }}\n              >\n                <AccessibleImage\n                  source={{ uri: dish.imageUrl }}\n                  contentFit="cover"\n                  style={{ height: 120, width: "100%" }}\n                  accessibilityLabel={`Photo of ${dish.name}`}\n                />\n                <View style={{ gap: spacing[1], padding: spacing[2] }}>\n                  <AppText variant="bodyBold" numberOfLines={1}>\n                    {dish.name}\n                  </AppText>\n                  <AppText variant="bodySmall" tone="secondary">\n                    {dish.venueName}\n                  </AppText>\n                  <AppText variant="bodySmall">\n                    {dish.price > 0 ? `$${dish.price.toFixed(2)}` : "Price unavailable"}\n                  </AppText>\n                  <Pressable\n                    accessibilityRole="button"\n                    accessibilityLabel={`View ${dish.name} details`}\n                    onPress={() =>\n                      navigation\n                        .getParent<NavigationProp<RootStackParamList>>()\n                        ?.navigate("DishDetail", { dishId: dish.id })\n                    }\n                    style={{ minHeight: 44, justifyContent: "center" }}\n                  >\n                    <AppText tone="accent">View dish</AppText>\n                  </Pressable>\n                  <View\n                    style={{\n                      alignItems: "center",\n                      flexDirection: "row",\n                      justifyContent: "space-between",\n                    }}\n                  >\n                    <AppText variant="micro" tone="secondary" numberOfLines={1}>\n                      {dish.tasteTags.slice(0, 2).join(" · ")}\n                    </AppText>\n                    <Pressable\n                      accessibilityRole="button"\n                      accessibilityLabel={`${isSaved ? "Unsave" : "Save"} ${dish.name}`}\n                      accessibilityState={{ selected: isSaved }}\n                      accessibilityHint={\n                        isAuthenticated\n                          ? undefined\n                          : "Create or sign in to an account before saving this dish"\n                      }\n                      onPress={() => {\n                        if (isAuthenticated) {\n                          toggleFavourite(dish);\n                          return;\n                        }\n                        useOnboardingDraftStore.getState().update({ pendingSaveDishId: dish.id });\n                        showToast({\n                          message: "Create or sign in to an account before saving dishes.",\n                          tone: "warning",\n                        });\n                        navigation.navigate("OnboardingAuth");\n                      }}\n                      hitSlop={8}\n                      style={{\n                        minHeight: 44,\n                        minWidth: 44,\n                        alignItems: "center",\n                        justifyContent: "center",\n                      }}\n                    >\n                      <Heart\n                        color={palette.orange}\n                        fill={isSaved ? palette.orange : "transparent"}\n                        size={15}\n                      />\n                    </Pressable>\n                  </View>\n                </View>\n              </Card>\n            );\n          })}\n        </View>\n      </ScrollView>\n\n      <View style={{ padding: spacing[4], paddingBottom: spacing[6] }}>\n        <Button\n          label="Continue"\n          onPress={() => {\n            // Location finishes onboarding; completing here would skip it.\n            navigation.navigate("LocationPermission");\n          }}\n        />\n      </View>\n    </View>\n  );\n}\n',
+    expected: /getRankedRecommendationsAsync/,
+    operator: 'match',
+    diff: 'simple'
+  }

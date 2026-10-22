@@ -1,0 +1,89 @@
+{
+  "schema_version": "1.0",
+  "snapshot_id": "rights_cleared_stall_images_followon_20261018",
+  "observed_at_sgt": "2026-10-18",
+  "workbook_path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "986a2656c3243d55c1a3914a3c5fbbdf2052e0423a69705785cbba0b7fee154e",
+  "workbook_edited": false,
+  "source_scope": "Targeted Wikimedia Commons search for genuine, openly licensed photos with an exact named Singapore outlet match; visual inspection of each proposed photo; cross-check against active workbook records and first-party outlet details where available.",
+  "candidate_count": 2,
+  "candidates": [
+    {
+      "sfa_licence": "W53012X000",
+      "f_and_b_name": "KAI JUAN COFFEESHOP",
+      "workbook_record": {
+        "registered_business_name": "KAI JUAN COFFEESHOP",
+        "full_address": "Address: 395/397 BALESTIER ROAD Singapore 329799 (1ST STOREY)",
+        "postal_code": "329799"
+      },
+      "item_or_image_type": "Kai Juan coffeeshop storefront",
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/5/59/Kai_Juan_Restaurant_-_RAGURAM_26.jpg",
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:Kai_Juan_Restaurant_-_RAGURAM_26.jpg",
+      "source_page_capture_sha256": "5eeabf597ae0b92f52247488e4dd9006396978091a2f6a90d7e712067b598f7d",
+      "original_creator": "RAGURAM RAMESHKUMAR",
+      "capture_date": "2023-07-14",
+      "license": "Creative Commons Attribution-Share Alike 4.0 International (CC BY-SA 4.0)",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "attribution": "RAGURAM RAMESHKUMAR, ‘Kai Juan Restaurant - RAGURAM 26.jpg’, via Wikimedia Commons, CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/; no changes made.",
+      "match_evidence": "The Commons caption identifies Kai Juan Bak Kut Teh at 395 Balestier Road. The visually inspected photo shows the KAI JUAN signage and the 395/397 Balestier Road frontage; the workbook record is Kai Juan Coffeeshop at 395/397 Balestier Road, postal 329799. The workbook contains a second unnamed licence at 395 Balestier Road, so this candidate is joined only to the named W53012X000 record.",
+      "visual_check": "Inspected the original 3984x2656 JPEG. It is a genuine street-level storefront photo with readable KAI JUAN signage; not a dish photo, stock image, or generated image.",
+      "image_file_sha256": "dd08286419f3f88882559f29fd904a592163e532bb6f07289a620aeb62777bad",
+      "freshness_and_limits": "Photo dated July 2023; use only as a dated storefront image, not as proof of current interior or menu. Workbook SFA row is the exact-name/address join, but it is not current image verification.",
+      "reuse_status": "Reuse permitted with creator attribution, license link, change indication if modified, and ShareAlike for adaptations. Candidate only; do not place in Approved Image URL until catalogue policy supports attribution and ShareAlike terms.",
+      "rights_status": "explicit_reuse_license_verified",
+      "candidate_status": "reviewed_candidate"
+    },
+    {
+      "sfa_licence": "CE10K71N000",
+      "f_and_b_name": "Yardbird Southern Table and Bar",
+      "workbook_record": {
+        "full_address": "Address: 2 BAYFRONT AVENUE #B1-07,#B1-08,#B1-09,#01-82,MARINA BAY SANDS,Singapore 018972",
+        "postal_code": "018972"
+      },
+      "item_or_image_type": "Yardbird Southern Table & Bar restaurant frontage at The Shoppes, Marina Bay Sands",
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/5/56/Yardbird_Southern_Table_%26_Bar.jpg",
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:Yardbird_Southern_Table_%26_Bar.jpg",
+      "source_page_capture_sha256": "f6c3342922341a13fe0c38a1b041ef92c9c477a0d71b2511adb93063ba00585c",
+      "original_creator": "Choo Yut Shing",
+      "capture_date": "2024-05-31",
+      "license": "Creative Commons Attribution 2.0 Generic (CC BY 2.0)",
+      "license_url": "https://creativecommons.org/licenses/by/2.0/",
+      "attribution": "Choo Yut Shing, ‘Yardbird Southern Table & Bar.jpg’, via Wikimedia Commons, CC BY 2.0, https://creativecommons.org/licenses/by/2.0/; no changes made.",
+      "match_evidence": "The visually inspected photo shows the YARDBIRD TABLE/BAR sign at The Shoppes. Its Commons caption identifies the restaurant at The Shoppes @ Marina Bay Sands. Marina Bay Sands' current official restaurant listing places Yardbird at The Shoppes #B1-07 and #01-82, matching the workbook licence record's unit list exactly.",
+      "official_match_crosscheck": {
+        "source_url": "https://www.marinabaysands.com/restaurants/yardbird-southern-table-and-bar.html/",
+        "observed_fact": "Current listing names Yardbird Southern Table & Bar and locates it at The Shoppes, #B1-07 & #01-82.",
+        "retrieval": "web search/open result during this audit; raw page capture did not complete due HTTP/2 transfer error"
+      },
+      "visual_check": "Inspected the original 3600x2400 JPEG. It is a real restaurant frontage photo with the Yardbird Table & Bar sign visible inside the Marina Bay Sands Shoppes; not a dish photo, stock image, or generated image.",
+      "image_file_sha256": "a392064024ef3f920326e03931bfe930f4726a14e7f3bcd848249103401c3646",
+      "freshness_and_limits": "Photo dated May 2024; official MBS listing currently confirms the outlet and matching unit locations. Photo is a frontage image, not a current menu/dish or interior proof.",
+      "reuse_status": "Reuse permitted with creator attribution, license link, and change indication if modified. CC BY 2.0 has no ShareAlike condition. Candidate only until catalogue policy stores attribution and license details.",
+      "rights_status": "explicit_reuse_license_verified",
+      "candidate_status": "reviewed_candidate"
+    }
+  ],
+  "held_candidates": [
+    {
+      "f_and_b_name": "Sushi Masa by Kisetsu",
+      "sfa_licence": "CE16053B000",
+      "source_pages": [
+        "https://commons.wikimedia.org/wiki/File:Sushi_Masa_by_Ki-setsu_Singapore_Omakase_Entrance.jpg",
+        "https://commons.wikimedia.org/wiki/File:Sushi_Masa_by_Ki-setsu_Singapore_Omakase_Restaurant.jpg"
+      ],
+      "reason": "Exact source pages and CC BY 4.0 licenses were found; visual inspection showed a very dark entrance image with no legible venue name and an unbranded empty interior. Held as weakly identifying/low-usefulness candidates, not included in the workbook proposal."
+    }
+  ],
+  "dedupe": {
+    "workbook_url_matches": 0,
+    "scope": "Exact original-image URL checked against all four workbook sheets; neither candidate was already present."
+  },
+  "next_integration_step": "If integrating either candidate, first rename the Image Candidates column ‘Official Image URL’ to neutral ‘Image URL’, and preserve each full creator, title, source page, license URL, attribution, and reuse obligation in the row's Display / Reuse Status or an equivalent provenance field. These Commons community photos must never be described as official brand assets.",
+  "limitations": [
+    "These are non-official, community-uploaded photos under explicit reuse licenses; neither is a first-party brand image.",
+    "No image bytes are stored in the workbook or repository; temporary /tmp copies were used only for visual verification and are not catalogue assets.",
+    "The photos are dated 2023 and 2024, so their exact capture date must remain visible in any later display.",
+    "No generic food-centre photo was assigned to individual stalls.",
+    "No stock, placeholder, delivery-platform, or generated image is included."
+  ]
+}

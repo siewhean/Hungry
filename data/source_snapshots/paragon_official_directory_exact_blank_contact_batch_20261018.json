@@ -1,0 +1,74 @@
+{
+  "snapshot_id": "paragon_official_directory_exact_blank_contact_batch_20261018",
+  "observed_date": "2026-10-18",
+  "workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "986a2656c3243d55c1a3914a3c5fbbdf2052e0423a69705785cbba0b7fee154e",
+  "workbook_edited": false,
+  "publisher": "Paragon Shopping Mall / Straits Properties",
+  "source_index_url": "https://paragon.com.sg/store-directory/",
+  "scope": "Fresh mall directory scope: Paragon, Singapore. Official store-detail pages were checked against current public-access SFA records by exact outlet name, mall, postal code, and unit. Only blank outlet contact fields proposed. No delivery-platform content or paid services used.",
+  "method": "For each proposal, the official Paragon store-detail page contains the outlet name, matching unit number, and telephone number. Workbook record matched on outlet identity and exact postal code 238859, with unit tokens matching. Existing nonblank fields were preserved. Paragon site footer hours are mall-level (10am-10pm daily), so no outlet-hours values were proposed. Search index retrieval was used to inspect official page content; raw page bytes and cryptographic page hashes were not captured.",
+  "summary": {
+    "proposals": 3,
+    "distinct_sfa_licences": 3,
+    "fields_proposed": 3,
+    "field_counts": {"Contact Details": 3},
+    "withheld": ["Opening hours shown in the general Paragon footer were withheld because they are not outlet-specific.", "No official outlet website URL was shown on the checked store-detail pages."]
+  },
+  "proposals": [
+    {
+      "sfa_licence": "CE23656X000",
+      "existing_name": "Avenue on 3",
+      "existing_address": "Address: 290 ORCHARD ROAD #03-46,#03-56,THE PARAGON,Singapore 238859",
+      "postal_code": "238859",
+      "official_tenant_name": "Avenue on 3 Café & Bar",
+      "official_unit": "#03-46/56",
+      "field_proposals": {"Contact Details": "+65 9617 9129"},
+      "before_values": {"Contact Details": null},
+      "field_evidence": {
+        "Contact Details": {
+          "source_url": "https://paragon.com.sg/store-detail/avenue-on-3-cafe-and-bar",
+          "evidence": "Official detail page identifies Avenue on 3 Café & Bar at #03-46/56 and lists 9617 9129.",
+          "observed_date": "2026-10-18"
+        }
+      },
+      "join_confidence": "high"
+    },
+    {
+      "sfa_licence": "CE05168A000",
+      "existing_name": "Bee Cheng Hiang",
+      "existing_address": "Address: 290 ORCHARD ROAD #B1-10A,THE PARAGON,Singapore 238859",
+      "postal_code": "238859",
+      "official_tenant_name": "Bee Cheng Hiang",
+      "official_unit": "#B1-10A",
+      "field_proposals": {"Contact Details": "+65 6732 3433"},
+      "before_values": {"Contact Details": null},
+      "field_evidence": {
+        "Contact Details": {
+          "source_url": "https://paragon.com.sg/store-detail/bee-cheng-hiang/",
+          "evidence": "Official detail page identifies Bee Cheng Hiang at #B1-10A and lists 6732 3433.",
+          "observed_date": "2026-10-18"
+        }
+      },
+      "join_confidence": "high"
+    },
+    {
+      "sfa_licence": "CE21966L000",
+      "existing_name": "KUROKI",
+      "existing_address": "Address: 290 ORCHARD ROAD #05-03,THE PARAGON,Singapore 238859",
+      "postal_code": "238859",
+      "official_tenant_name": "Kuroki",
+      "official_unit": "#05-03",
+      "field_proposals": {"Contact Details": "+65 6339 3383"},
+      "before_values": {"Contact Details": null},
+      "field_evidence": {
+        "Contact Details": {
+          "source_url": "https://paragon.com.sg/store-detail/kuroki/",
+          "evidence": "Official detail page identifies Kuroki at #05-03 and lists 6339 3383.",
+          "observed_date": "2026-10-18"
+        }
+      },
+      "join_confidence": "high"
+    }
+  ]
+}

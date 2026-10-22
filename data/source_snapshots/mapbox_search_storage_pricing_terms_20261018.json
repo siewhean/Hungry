@@ -1,0 +1,85 @@
+{
+  "snapshot_id": "mapbox_search_storage_pricing_terms_20261018",
+  "captured_at_utc": "2026-10-18T15:40:07Z",
+  "scope": "Read-only review of official Mapbox documentation, pricing and legal pages. No Mapbox data API, account dashboard, or token was accessed for this research. No workbook edits.",
+  "decision_for_public_spreadsheet": "Do not add any Mapbox API-returned business data, coordinates, ratings, hours, websites, photos, or photo URLs to a durable or publicly redistributed spreadsheet under the documented default terms. Search Box and legacy Details output is temporary-use only; Places API output is temporary display/use only, and persistent storage explicitly requires a separate Mapbox agreement. A Mapbox map attribution does not grant persistence or redistribution rights.",
+  "field_coverage_and_retention": [
+    {
+      "product": "Search Box API",
+      "fields_documented": ["POI/place/address text and IDs", "coordinates on retrieve", "some response metadata; optional photos/reviews can be excluded"],
+      "retention": "Temporary use only. Mapbox Search Box FAQ explicitly says results cannot be stored. API docs say all returned data is temporary use; if storing position data is required, contact Mapbox sales.",
+      "spreadsheet_action": "No persistent rows/values copied, including names and coordinates. Use transiently only for an immediate comparison, then discard."
+    },
+    {
+      "product": "Details API (legacy search/details/v1)",
+      "fields_documented": ["name/address/coordinates/category/primary photo", "opening hours", "website/phone", "rating/review count/price level", "photos"],
+      "retention": "Temporary use only; if storage of position data is required, contact Mapbox sales. Its API page says request-based pricing depends on attribute sets; current public pricing page does not expose a free tier or exact prices for this endpoint.",
+      "spreadsheet_action": "No persistent values or image URLs copied. Do not treat its richer metadata as reusable dataset content."
+    },
+    {
+      "product": "Places API (current Details endpoint, Public Preview)",
+      "fields_documented": ["name", "address", "coordinates", "opening_hours", "permanently_closed/status", "phone", "website", "score.popularity/reality/closed", "official-website-indexed photos and direct URLs", "business attributes", "historical activity signals"],
+      "ratings": "Current Places API documented schema does not list a user rating/review count; its popularity/quality scores are not user ratings.",
+      "retention": "Temporary display/use only. Storage of location data requires a separate agreement.",
+      "quota_and_price": "Public Preview default monthly quota is 1,000 successfully returned records per account; 100 records/sec. The official pricing page did not list Places API pricing or state the quota is free. No-spend condition means do not call absent explicit confirmation of zero cost/authorized account pricing.",
+      "spreadsheet_action": "No persistent metadata/photo URL or image copied. Do not infer license to publish photos merely because the URL is from an official website; the API response remains temporary-use data and image copyright/reuse is a separate issue."
+    }
+  ],
+  "search_box_usage_and_price": {
+    "user_dashboard_report": "139 Search Box API Requests for 2026-09-19 through 2026-10-18 UTC (all tokens and connected apps), followed by one unsuccessful query; no post-query dashboard count is known.",
+    "request_charge_rule": "Search Box /category and /reverse are billed by request; /forward is also one-off request billed. /suggest and /retrieve are billed per search session, though each request separately counts against rate limits.",
+    "official_pricing_page_currently_shows": {
+      "introductory_preview_requests": "Up to 50,000 free; 50,001-500,000 at $1.00 per 1,000; next bands $0.85/1,000 and $0.70/1,000.",
+      "standard_requests": "Up to 25,000 free; 25,001-100,000 at $1.70 per 1,000; subsequent bands $1.50 and $1.25 per 1,000.",
+      "session_pricing": "Introductory preview: up to 500 sessions free; then $3.00/1,000 for 501-100,000 sessions. Standard pricing is separately listed and must not be confused with the dashboard's per-request line."
+    },
+    "caution": "Which rate card applies is account/product-billing configuration specific. The user screenshot established a 50,000 free Search Box API Requests tier for that dashboard view, but this research did not access the account billing configuration. The single unsuccessful query may or may not be billable; usage after it is unverified. Do not assume zero balance without a fresh user-side dashboard check."
+  },
+  "attribution": {
+    "rule": "For maps using Mapbox map designs, data or software, Mapbox says maps usually must display Mapbox logo and text attribution; text includes © Mapbox, © OpenStreetMap and Improve this map links. API docs return an attribution property for search responses; preserve/use per the product docs when displaying Mapbox results. Attribution does not authorize saving or republishing API data.",
+    "public_spreadsheet": "Attribution alone does not make temporary-use search/detail data durable or distributable."
+  },
+  "official_sources": [
+    {
+      "title": "Search Box API docs",
+      "url": "https://docs.mapbox.com/api/search/search-box/",
+      "evidence": "Restrictions: all data returned by Search Box endpoints is only available for temporary use; contact sales if storing position data. Endpoints and request/session billing described here."
+    },
+    {
+      "title": "Search Box product FAQ",
+      "url": "https://www.mapbox.com/search-box",
+      "evidence": "FAQ: Search Box API results cannot be stored."
+    },
+    {
+      "title": "Mapbox Pricing",
+      "url": "https://www.mapbox.com/pricing",
+      "evidence": "Search Box pricing lists introductory preview and standard tiers separately. Requests: preview 50,000 free then $1/1,000; standard 25,000 free then $1.70/1,000. Sessions use a separate quota/pricing schedule."
+    },
+    {
+      "title": "Legacy Details API docs",
+      "url": "https://docs.mapbox.com/api/search/details/",
+      "evidence": "Schema documents website, opening hours, rating, review count, photos, coordinates; restrictions state all returned data temporary use only, contact sales for storage, request-based pricing by attribute sets."
+    },
+    {
+      "title": "Places API docs",
+      "url": "https://docs.mapbox.com/api/search/places/",
+      "evidence": "Schema documents business fields, hours, photos and direct URLs; photos default to official-website-indexed assets. Restrictions: temporary display/use only, separate storage agreement; 1,000 successfully returned records/month public preview quota, 100 records/sec."
+    },
+    {
+      "title": "Mapbox attribution guide",
+      "url": "https://docs.mapbox.com/help/dive-deeper/attribution/",
+      "evidence": "Mapbox says maps using its designs/data/software usually need logo and text attribution; attribution contains © Mapbox, © OpenStreetMap and Improve this map links."
+    },
+    {
+      "title": "Mapbox Terms of Service",
+      "url": "https://www.mapbox.com/legal/tos",
+      "evidence": "Services and proprietary/third-party content remain subject to Mapbox and third-party intellectual property rights; compliance with Product Terms and documentation is required."
+    }
+  ],
+  "limitations": [
+    "This is a documentation/terms reading, not legal advice or a Mapbox license determination for a signed customer contract.",
+    "Account-specific signed agreements or negotiated license terms could differ; none were inspected.",
+    "Mapbox's new Places public preview coverage is documented for US, Canada and parts of Western Europe for certain metadata signals; no evidence here establishes useful Singapore coverage.",
+    "No Mapbox data API calls were made, per assignment."
+  ]
+}

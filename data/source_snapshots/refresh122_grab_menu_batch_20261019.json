@@ -1,0 +1,140 @@
+{
+    "snapshot_id": "refresh122_grab_menu_batch_20261019",
+    "snapshot_type": "read_only_grabfood_chain_menu_and_branch_crosswalk",
+    "observed_date_local_singapore": "2026-10-19",
+    "workbook_path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "workbook_sha256_at_audit": "e75b32a39d9840532afbff2f5b497cc7a3a12870097418716f7d0b92f503f84f",
+    "workbook_edited": false,
+    "scope": "Read-only review of public GrabFood Singapore content for up to five existing SFA directory rows with blank Menu / Price and Menu URL fields. GrabFood's indexed public Genki Sushi chain page lists the chain's Singapore locations and a chain-level popular-items menu. The branch names, addresses, units and postcodes cross-match five SFA rows exactly. The platform exposes a shared chain page, not independently verified branch-specific menu pages, so no delivery item or price is assigned to a specific SFA branch in this proposal.",
+    "sources": [
+        {
+            "name": "GrabFood Singapore Genki Sushi public chain page (search-indexed; direct fetch returned HTTP 403)",
+            "url": "https://food.grab.com/sg/en/chain/genki-sushi-delivery",
+            "evidence_access": "Search-indexed page content reviewed on 2026-10-19; direct page open returned 403 Forbidden.",
+            "source_page_content": "Lists named Genki Sushi branches with addresses/units and displays a chain-level 'most popular menu' with item names and prices.",
+            "limitations": "Chain-level menu and pricing are not demonstrated as outlet-specific. Current delivery availability and prices may vary by location, time, promotions, and delivery configuration. Search indexing can lag. No images or descriptions reused; no account access, order, or paid service used."
+        }
+    ],
+    "outlets": [
+        {
+            "sfa_licence": "CE05182C000",
+            "directory_name": "Genki Sushi",
+            "directory_address_current": "Address: 68 ORCHARD ROAD #06-05/06,PLAZA SINGAPURA,Singapore 238839",
+            "directory_postal_code": "238839",
+            "menu_current": null,
+            "menu_url_current": null,
+            "proposed_menu_url": "https://food.grab.com/sg/en/chain/genki-sushi-delivery",
+            "proposed_menu_summary": null,
+            "grab_branch_listing": "Genki Sushi - Plaza Singapura; 68 Orchard Road, #06-05/06, 238839.",
+            "outlet_crosswalk": "Exact name, mall, street address, unit and six-digit postal match to workbook record.",
+            "confidence": "high for branch presence in GrabFood chain directory and exact SFA crosswalk; no branch-specific menu confirmation.",
+            "recommendation": "Menu URL can be added as a chain-level GrabFood discovery/listing link with platform scope noted. Keep Menu / Price blank until an outlet-specific menu is independently available."
+        },
+        {
+            "sfa_licence": "CE13627P000",
+            "directory_name": "Genki Sushi",
+            "directory_address_current": "Address: 101 THOMSON ROAD #B1-07,#B1-08,UNITED SQUARE,Singapore 307591",
+            "directory_postal_code": "307591",
+            "menu_current": null,
+            "menu_url_current": null,
+            "proposed_menu_url": "https://food.grab.com/sg/en/chain/genki-sushi-delivery",
+            "proposed_menu_summary": null,
+            "grab_branch_listing": "Genki Sushi - United Square; 101 Thomson Road, #B1-07/08, 307591.",
+            "outlet_crosswalk": "Exact name, mall, street address, unit range and six-digit postal match to workbook record.",
+            "confidence": "high for branch presence in GrabFood chain directory and exact SFA crosswalk; no branch-specific menu confirmation.",
+            "recommendation": "Menu URL can be added as a chain-level GrabFood discovery/listing link with platform scope noted. Keep Menu / Price blank until an outlet-specific menu is independently available."
+        },
+        {
+            "sfa_licence": "CE23057J000",
+            "directory_name": "Genki Sushi",
+            "directory_address_current": "Address: 11 BIDADARI PARK DRIVE #01-31,THE WOODLEIGH MALL,Singapore 367803",
+            "directory_postal_code": "367803",
+            "menu_current": null,
+            "menu_url_current": null,
+            "proposed_menu_url": "https://food.grab.com/sg/en/chain/genki-sushi-delivery",
+            "proposed_menu_summary": null,
+            "grab_branch_listing": "Genki Sushi - The Woodleigh Mall; 11 Bidadari Park Drive, #01-31, 367803.",
+            "outlet_crosswalk": "Exact name, mall, street address, unit and six-digit postal match to workbook record.",
+            "confidence": "high for branch presence in GrabFood chain directory and exact SFA crosswalk; no branch-specific menu confirmation.",
+            "recommendation": "Menu URL can be added as a chain-level GrabFood discovery/listing link with platform scope noted. Keep Menu / Price blank until an outlet-specific menu is independently available."
+        },
+        {
+            "sfa_licence": "NE09278K000",
+            "directory_name": "Genki Sushi",
+            "directory_address_current": "Address: 4 TAMPINES CENTRAL 5 #03-26/27,TAMPINES MALL,Singapore 529510",
+            "directory_postal_code": "529510",
+            "menu_current": null,
+            "menu_url_current": null,
+            "proposed_menu_url": "https://food.grab.com/sg/en/chain/genki-sushi-delivery",
+            "proposed_menu_summary": null,
+            "grab_branch_listing": "Genki Sushi - Tampines Mall; 4 Tampines Central 5, #03-26/27, 529510.",
+            "outlet_crosswalk": "Exact name, mall, street address, unit range and six-digit postal match to workbook record.",
+            "confidence": "high for branch presence in GrabFood chain directory and exact SFA crosswalk; no branch-specific menu confirmation.",
+            "recommendation": "Menu URL can be added as a chain-level GrabFood discovery/listing link with platform scope noted. Keep Menu / Price blank until an outlet-specific menu is independently available."
+        },
+        {
+            "sfa_licence": "SW13265L000",
+            "directory_name": "GENKI SUSHI",
+            "directory_address_current": "Address: 3 GATEWAY DRIVE #03-05,WESTGATE,Singapore 608532 WESTGATE",
+            "directory_postal_code": "608532",
+            "menu_current": null,
+            "menu_url_current": null,
+            "proposed_menu_url": "https://food.grab.com/sg/en/chain/genki-sushi-delivery",
+            "proposed_menu_summary": null,
+            "grab_branch_listing": "Genki Sushi - Westgate; 3 Gateway Drive, #03-05, 608532.",
+            "outlet_crosswalk": "Exact name, mall, street address, unit and six-digit postal match to workbook record.",
+            "confidence": "high for branch presence in GrabFood chain directory and exact SFA crosswalk; no branch-specific menu confirmation.",
+            "recommendation": "Menu URL can be added as a chain-level GrabFood discovery/listing link with platform scope noted. Keep Menu / Price blank until an outlet-specific menu is independently available."
+        }
+    ],
+    "chain_level_menu_facts_not_assigned_to_outlets": [
+        {
+            "item": "Cheese Tobikko Gunkan",
+            "description": "Cheesy Flying Fish Roe Gunkan",
+            "displayed_price": "S$2.90"
+        },
+        {
+            "item": "Corn Mayo Gunkan",
+            "description": "Corn Mayo Gunkan",
+            "displayed_price": "S$3.90"
+        },
+        {
+            "item": "French Fries",
+            "description": "",
+            "displayed_price": "S$4.90"
+        },
+        {
+            "item": "Scallop Wasabi Gunkan",
+            "description": "",
+            "displayed_price": "S$3.10"
+        },
+        {
+            "item": "Mentai Mayo Fries",
+            "description": "French Fries with Mentai Mayo Sauce",
+            "displayed_price": "S$5.30"
+        },
+        {
+            "item": "Ebikko Gunkan",
+            "description": "Shrimp Roe Gunkan",
+            "displayed_price": "S$3.10"
+        }
+    ],
+    "menu_item_proposals": [],
+    "limitations": [
+        "The popular-item list is chain-level and is not safely attributable to any one outlet; no menu items/prices are proposed for SFA branches.",
+        "The chain page is a delivery-platform listing, not an official dine-in menu. Delivery and promotional prices are volatile and can differ from in-store prices.",
+        "GrabFood's page was accessible through public search indexing, but direct open returned 403 Forbidden; source extraction is limited to the indexed content.",
+        "No images, platform descriptions, ratings, opening hours, closure status, or public-access status are proposed.",
+        "No account login, order, paid feature, or Mapbox request was used."
+    ],
+    "integration_summary": {
+        "candidate_outlets": 5,
+        "exact_sfa_branch_crosswalks": 5,
+        "menu_url_candidates": 5,
+        "menu_summary_proposals": 0,
+        "menu_item_proposals": 0,
+        "image_proposals": 0,
+        "field_status_updates": 0
+    },
+    "workbook_edit_status": "Research only; canonical workbook not edited."
+}

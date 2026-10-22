@@ -1,0 +1,106 @@
+{
+  "snapshot_type": "refresh133_exact_public_fnb_name_proposals",
+  "observed_at_local": "2026-10-19 Asia/Singapore",
+  "master_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "master_sha256": "b9b4d654cac9131405caf8c84c81194af8d4b856ab8bffbfdc746ae6cfad7463",
+  "worksheet": "Public F&B Directory",
+  "scope": "Read-only name discovery for blank F&B Name rows. Exact SFA licence, postal code, address and unit crosswalk required. No workbook edits.",
+  "matching_rule": "Exact SFA licence in workbook plus exact six-digit postal code, street address and unit from record; corroborated outlet name from first-party operator source. No fuzzy or name-only joins.",
+  "summary": {
+    "blank_rows_checked": 5480,
+    "exact_names_proposed": 2,
+    "other_records_reviewed": 0,
+    "excluded_due_to_ambiguous_or_stale_evidence": 0
+  },
+  "proposals": [
+    {
+      "excel_row": 32916,
+      "sfa_licence": "B00016A002",
+      "before_fnb_name": null,
+      "before_registered_business_name": null,
+      "business_type": "Foodcourt",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "existing_full_address": "Address: 548 WOODLANDS DRIVE 44 #01-21,VISTA POINT,Singapore 730548",
+      "existing_postal_code": "730548",
+      "proposed_fnb_name": "Kopitiam Corner (Vista Point)",
+      "exact_join": {
+        "sfa_licence": "B00016A002",
+        "street_address": "548 Woodlands Drive 44",
+        "unit": "#01-21",
+        "postal_code": "730548",
+        "premise": "Vista Point",
+        "business_type_compatibility": "Workbook SFA record is Foodcourt; operator identifies Vista Point as a Kopitiam Corner outlet."
+      },
+      "sources": [
+        {
+          "kind": "first_party_operator_current_outlet_listing",
+          "url": "https://www.kopitiam.biz/fairprice-group-app/",
+          "observed_date": "2026-10-19",
+          "evidence": "Current operator page lists Vista Point under Kopitiam Corner outlets (web source lines 119-127)."
+        },
+        {
+          "kind": "first_party_operator_exact_outlet_address",
+          "url": "https://www.kopitiam.biz/wp-content/uploads/2025/09/Stalls_Available_20250901.pdf",
+          "observed_date": "2026-10-19",
+          "source_as_of": "2025-09-01",
+          "evidence": "Operator document identifies 548 Woodlands (Vista Point), 548 Woodlands Drive 44 #01-21 Singapore 730548 (lines 19-22)."
+        },
+        {
+          "kind": "first_party_operator_exact_outlet_name_address",
+          "url": "https://www.kopitiam.biz/wp-content/uploads/2023/06/Participating-Outlets-for-Trust-Deals-June-2023.pdf",
+          "observed_date": "2026-10-19",
+          "source_as_of": "2023-06",
+          "evidence": "Search-indexed operator PDF lists Vista Point at 548 Woodlands Drive 44 #01-21 Singapore 730548. Historical corroboration only."
+        }
+      ],
+      "confidence": "high",
+      "limitations": [
+        "SFA licence plus exact address and unit uniquely identifies the workbook row, but the source address confirmation is from 2025 and 2023; current operator page corroborates Vista Point outlet presence and Kopitiam Corner brand as of observation date.",
+        "This is the named foodcourt outlet, not a name for any individual tenant stalls inside it."
+      ]
+    },
+    {
+      "excel_row": 33093,
+      "sfa_licence": "B92086V016",
+      "before_fnb_name": null,
+      "before_registered_business_name": null,
+      "business_type": "Foodcourt",
+      "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+      "existing_full_address": "Address: 930 YISHUN AVENUE 2 #B2-12,NORTHPOINT CITY,Singapore 769098",
+      "existing_postal_code": "769098",
+      "proposed_fnb_name": "Kopitiam (Northpoint City B2)",
+      "exact_join": {
+        "sfa_licence": "B92086V016",
+        "street_address": "930 Yishun Avenue 2",
+        "unit": "#B2-12",
+        "postal_code": "769098",
+        "premise": "Northpoint City",
+        "business_type_compatibility": "Workbook SFA record is Foodcourt; operator identifies a Kopitiam outlet at Northpoint City B2."
+      },
+      "sources": [
+        {
+          "kind": "first_party_operator_current_outlet_listing",
+          "url": "https://www.kopitiam.biz/fairprice-group-app/",
+          "observed_date": "2026-10-19",
+          "evidence": "Current operator page lists Northpoint City B2 under Kopitiam outlets (web source lines 110-117)."
+        },
+        {
+          "kind": "first_party_operator_exact_outlet_address",
+          "url": "https://www.kopitiam.biz/wp-content/uploads/2022/07/Updated-list-of-outlets-accepting-the-FairPrice-app-usage-v2.pdf",
+          "observed_date": "2026-10-19",
+          "source_as_of": "2022-07",
+          "evidence": "Operator PDF lists Kopitiam @ Northpoint at 930 Yishun Ave 2, #B2-12 Northpoint Shopping Centre, Singapore 769098. The current official page confirms the outlet remains at Northpoint City B2."
+        }
+      ],
+      "confidence": "high",
+      "limitations": [
+        "Exact unit and postal-code evidence is from a 2022 operator PDF; current operator page corroborates Northpoint City B2 but does not display the unit or postal code.",
+        "Name identifies the foodcourt outlet; it does not name tenant stalls within it."
+      ]
+    }
+  ],
+  "limitations": [
+    "The current NEA public hawker-centre dataset lists centre-level fields and does not identify individual stall trading names, so it cannot safely resolve unnamed stall records by itself.",
+    "A large share of unnamed rows are individual NEA hawker stalls where centre address/postal data do not prove the stall trading name. Those were left blank rather than inferred from third-party directories or legal-entity records."
+  ]
+}

@@ -1,0 +1,185 @@
+(node:90447) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[1A[2K[2m[WebServer] [22m(node:90461) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 6 tests using 1 worker
+
+[1A[2K(node:90766) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:90766) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+
+[1A[2K(node:90766) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K[1/6] [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:49:5 › fresh Welcome reaches existing-account login with real validation
+[1A[2K[2/6] [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:61:5 › onboarding selection and quiz answer resume after a browser reload
+[1A[2K[3/6] [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:108:5 › mock profile Settings exposes supported preferences and readonly auth email
+[1A[2K  1) [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:108:5 › mock profile Settings exposes supported preferences and readonly auth email 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByText('Authenticated').first()
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 10000ms[22m
+    [2m  - waiting for getByText('Authenticated').first()[22m
+
+
+       at ../../../tests/e2e/helpers/app.ts:105
+
+      103 |   await gotoLauncher(page);
+      104 |   await clickDevButton(page, authPresetLabel(account), "Session presets");
+    > 105 |   await expect(page.getByText("Authenticated").first()).toBeVisible();
+          |                                                         ^
+      106 | }
+      107 |
+      108 | export async function createEmailAccountFromScratch(page: Page, prefix: string) {
+        at startOnboardedMockSession (/Users/Siew Hean/Documents/GitHub/Hungry/tests/e2e/helpers/app.ts:105:57)
+        at /Users/Siew Hean/Documents/GitHub/Hungry/tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:112:3
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tasks/remediation-2026-10-20/browser/results/remediation.browser-mock-p-f7167-ces-and-readonly-auth-email-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tasks/remediation-2026-10-20/browser/results/remediation.browser-mock-p-f7167-ces-and-readonly-auth-email-chromium/error-context.md
+
+
+[1A[2K(node:91512) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:91512) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+
+[1A[2K(node:91512) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K[4/6] [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:180:5 › Discover cards keep their dish identity across the former cycle interval
+[1A[2K  2) [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:180:5 › Discover cards keep their dish identity across the former cycle interval 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByText('Authenticated').first()
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 10000ms[22m
+    [2m  - waiting for getByText('Authenticated').first()[22m
+
+
+       at ../../../tests/e2e/helpers/app.ts:105
+
+      103 |   await gotoLauncher(page);
+      104 |   await clickDevButton(page, authPresetLabel(account), "Session presets");
+    > 105 |   await expect(page.getByText("Authenticated").first()).toBeVisible();
+          |                                                         ^
+      106 | }
+      107 |
+      108 | export async function createEmailAccountFromScratch(page: Page, prefix: string) {
+        at startOnboardedMockSession (/Users/Siew Hean/Documents/GitHub/Hungry/tests/e2e/helpers/app.ts:105:57)
+        at /Users/Siew Hean/Documents/GitHub/Hungry/tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:184:3
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tasks/remediation-2026-10-20/browser/results/remediation.browser-Discov-8d1bc-s-the-former-cycle-interval-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tasks/remediation-2026-10-20/browser/results/remediation.browser-Discov-8d1bc-s-the-former-cycle-interval-chromium/error-context.md
+
+
+[1A[2K(node:91565) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:91565) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+
+[1A[2K(node:91565) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K[5/6] [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:203:5 › supported composer opens a deliberate dish and preserves entered draft
+[1A[2K  3) [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:203:5 › supported composer opens a deliberate dish and preserves entered draft 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByText('Authenticated').first()
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 10000ms[22m
+    [2m  - waiting for getByText('Authenticated').first()[22m
+
+
+       at ../../../tests/e2e/helpers/app.ts:105
+
+      103 |   await gotoLauncher(page);
+      104 |   await clickDevButton(page, authPresetLabel(account), "Session presets");
+    > 105 |   await expect(page.getByText("Authenticated").first()).toBeVisible();
+          |                                                         ^
+      106 | }
+      107 |
+      108 | export async function createEmailAccountFromScratch(page: Page, prefix: string) {
+        at startOnboardedMockSession (/Users/Siew Hean/Documents/GitHub/Hungry/tests/e2e/helpers/app.ts:105:57)
+        at /Users/Siew Hean/Documents/GitHub/Hungry/tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:205:3
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tasks/remediation-2026-10-20/browser/results/remediation.browser-suppor-bf292-and-preserves-entered-draft-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tasks/remediation-2026-10-20/browser/results/remediation.browser-suppor-bf292-and-preserves-entered-draft-chromium/error-context.md
+
+
+[1A[2K(node:91629) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:91629) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+
+[1A[2K(node:91629) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K[6/6] [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:228:5 › valid mock login establishes the authenticated account rather than a guest session
+[1A[2K  4) [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:228:5 › valid mock login establishes the authenticated account rather than a guest session 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+    Expected: [32m"user[7m-1[27m"[39m
+    Received: [31m"[7mguest-[27muser"[39m
+
+    Call Log:
+    - Timeout 10000ms exceeded while waiting on the predicate
+
+      235 |   await page.getByPlaceholder("Password", { exact: true }).fill("BrowserPass123!");
+      236 |   await page.getByRole("button", { name: "Sign in", exact: true }).click();
+    > 237 |   await expect
+          |   ^
+      238 |     .poll(async () =>
+      239 |       page.evaluate(() => {
+      240 |         const value = localStorage.getItem("hungry-session-v1");
+        at /Users/Siew Hean/Documents/GitHub/Hungry/tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:237:3
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tasks/remediation-2026-10-20/browser/results/remediation.browser-valid--23033-rather-than-a-guest-session-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tasks/remediation-2026-10-20/browser/results/remediation.browser-valid--23033-rather-than-a-guest-session-chromium/error-context.md
+
+
+[1A[2K  4 failed
+    [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:108:5 › mock profile Settings exposes supported preferences and readonly auth email 
+    [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:180:5 › Discover cards keep their dish identity across the former cycle interval 
+    [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:203:5 › supported composer opens a deliberate dish and preserves entered draft 
+    [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:228:5 › valid mock login establishes the authenticated account rather than a guest session 
+  2 passed (2.1m)

@@ -1,3 +1,4 @@
+import { getAccountGeneration } from "@/lib/security/accountScope";
 import { runRecommendationPipeline } from "@/lib/ai/tasteEngine";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/services/supabase/client";
 import type {
@@ -616,6 +617,7 @@ async function refreshCache(force = false): Promise<void> {
 
   const client = getSupabaseClient();
   if (!client) return;
+  const generation = getAccountGeneration();
   hydrationPromise = (async () => {
     try {
       const [
@@ -655,6 +657,7 @@ async function refreshCache(force = false): Promise<void> {
         client.from("post_media").select("*").order("sort_order", { ascending: true }),
       ]);
 
+      if (generation !== getAccountGeneration()) return;
       if (Array.isArray(buildingsResult.data) && !buildingsResult.error) {
         cachedBuildings = (buildingsResult.data as unknown as Row[]).map(mapBuilding);
       }
@@ -740,7 +743,7 @@ async function refreshCache(force = false): Promise<void> {
       hydrated = true;
       hydratedAt = Date.now();
     } finally {
-      hydrationPromise = null;
+      if (generation === getAccountGeneration()) hydrationPromise = null;
     }
   })();
   return hydrationPromise;
@@ -833,7 +836,8 @@ export async function searchDishesViaRpc(
   filters: SearchFilters,
   tasteProfile: TasteVector,
 ): Promise<SearchResult[] | undefined> {
-  const rows = await rpcRows("search_dishes", {
+  const rows = await rpcRows("search_dishes_v2", {
+    p_taste_values: filters.tasteValues ?? tasteProfile,
     p_query: filters.query.trim() || null,
     p_lat: filters.latitude ?? null,
     p_lng: filters.longitude ?? null,
@@ -1270,3 +1274,14 @@ export async function refreshSupabaseRepositoryCache(): Promise<void> {
 }
 
 export const supabaseRepository: DataRepository = supabaseRepositoryImpl;
+
+export function clearSupabaseRepositoryCache(): void {
+  hydrationPromise = null;
+  hydrated = false;
+  hydratedAt = 0;
+  cachedBuildings = [];
+  cachedVenues = [];
+  cachedDishes = [];
+  cachedBlogPosts = [];
+  cachedStallPosts = [];
+}

@@ -1,0 +1,93 @@
+(node:87723) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[1A[2K[2m[WebServer] [22m(node:87739) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+Running 5 tests using 1 worker
+
+[1A[2K(node:87971) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:87971) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+
+[1A[2K(node:87971) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K[1/5] [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:47:5 › fresh Welcome reaches existing-account login with real validation
+[1A[2K[2/5] [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:59:5 › onboarding selection and quiz answer resume after a browser reload
+[1A[2K[3/5] [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:106:5 › mock profile Settings exposes supported preferences and readonly auth email
+[1A[2K  1) [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:106:5 › mock profile Settings exposes supported preferences and readonly auth email 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByText('weiming@example.sg', { exact: true })
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 10000ms[22m
+    [2m  - waiting for getByText('weiming@example.sg', { exact: true })[22m
+
+
+      165 |     ),
+      166 |   );
+    > 167 |   await expect(page.getByText("weiming@example.sg", { exact: true })).toBeVisible();
+          |                                                                       ^
+      168 |   await expect(
+      169 |     page.getByRole("switch", { name: /Haptic feedback/ }).locator("input[type=checkbox]"),
+      170 |   ).toBeChecked({ checked: !original });
+        at /Users/Siew Hean/Documents/GitHub/Hungry/tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:167:71
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tasks/remediation-2026-10-20/browser/results/remediation.browser-mock-p-f7167-ces-and-readonly-auth-email-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tasks/remediation-2026-10-20/browser/results/remediation.browser-mock-p-f7167-ces-and-readonly-auth-email-chromium/error-context.md
+
+
+[1A[2K(node:88990) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K(node:88990) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+
+[1A[2K(node:88990) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+
+[1A[2K[4/5] [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:178:5 › Discover cards keep their dish identity across the former cycle interval
+[1A[2K[5/5] [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:201:5 › supported composer opens a deliberate dish and preserves entered draft
+[1A[2K  2) [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:201:5 › supported composer opens a deliberate dish and preserves entered draft 
+
+    Error: locator.fill: Error: strict mode violation: getByPlaceholder('What makes this worth the queue?') resolved to 2 elements:
+        1) <textarea rows="5" dir="auto" maxlength="280" autocorrect="on" spellcheck="true" autocomplete="on" aria-label="Caption" autocapitalize="sentences" virtualkeyboardpolicy="auto" placeholder="What makes this worth the queue?" class="css-textinput-11aywtz r-placeholderTextColor-6taxm2"></textarea> aka getByRole('textbox', { name: 'Caption' })
+        2) <textarea rows="5" dir="auto" maxlength="280" autocorrect="on" spellcheck="true" autocomplete="on" aria-label="Caption" autocapitalize="sentences" virtualkeyboardpolicy="auto" placeholder="What makes this worth the queue?" class="css-textinput-11aywtz r-placeholderTextColor-6taxm2"></textarea> aka getByPlaceholder('What makes this worth the').nth(1)
+
+    Call log:
+    [2m  - waiting for getByPlaceholder('What makes this worth the queue?')[22m
+
+
+      207 |   ).toBeVisible();
+      208 |   const caption = "Bounded browser durable draft.";
+    > 209 |   await page.getByPlaceholder("What makes this worth the queue?").fill(caption);
+          |                                                                   ^
+      210 |   await page.reload({ waitUntil: "domcontentloaded" });
+      211 |   await startOnboardedMockSession(page);
+      212 |   await clickDevButton(page, "Launch V2 Composer", "Post Composer V2 Settings");
+        at /Users/Siew Hean/Documents/GitHub/Hungry/tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:209:67
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    tasks/remediation-2026-10-20/browser/results/remediation.browser-suppor-bf292-and-preserves-entered-draft-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: tasks/remediation-2026-10-20/browser/results/remediation.browser-suppor-bf292-and-preserves-entered-draft-chromium/error-context.md
+
+
+[1A[2K  2 failed
+    [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:106:5 › mock profile Settings exposes supported preferences and readonly auth email 
+    [chromium] › tasks/remediation-2026-10-20/browser/remediation.browser.spec.ts:201:5 › supported composer opens a deliberate dish and preserves entered draft 
+  3 passed (2.4m)

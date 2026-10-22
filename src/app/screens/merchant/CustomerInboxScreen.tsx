@@ -1,14 +1,24 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { View, StyleSheet, Pressable, ActivityIndicator, Alert } from "react-native";
+import { useMerchantOperationScope } from "@/features/merchant/useMerchantOperationScope";
+import { useNavigation, usePreventRemove, type NavigationProp } from "@react-navigation/native";
+import type { MerchantTabParamList, RootStackParamList } from "@/app/navigation/navigationTypes";
+import { useProfileStore } from "@/store/useProfileStore";
 import {
-  MessageSquare,
-  Star,
-  Send,
-  MoreVertical,
-  CheckCircle2,
-  Sparkles,
-  X,
-} from "lucide-react-native";
+  useMerchantReplyDraftStore,
+  scopeMerchantReplyDrafts,
+  writeMerchantReplyDraft,
+} from "@/features/merchant/replyDraftStore";
+import { useRef as useMerchantRequestRef } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import {
+  View,
+  StyleSheet,
+  Pressable,
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
+import { MessageSquare, Star, Send, MoreVertical, CheckCircle2, X } from "lucide-react-native";
 
 import {
   AppText,
@@ -32,13 +42,15 @@ const INBOX_FILTER_OPTIONS: { id: InboxFilter; label: string }[] = [
   { id: "all", label: "All" },
   { id: "unreplied", label: "Unreplied" },
   { id: "review", label: "Reviews" },
-  { id: "comment", label: "Comments" },
-  { id: "post_mention", label: "Mentions" },
 ];
 
 export function CustomerInboxScreen() {
+  const captureOperation = useMerchantOperationScope();
+
   const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const activeOutlet = useMerchantStore(getActiveOutlet);
+  const navigation = useNavigation<NavigationProp<MerchantTabParamList>>();
+  const rootNavigation = navigation.getParent<NavigationProp<RootStackParamList>>();
 
   const [interactions, setInteractions] = useState<CustomerInteraction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -46,7 +58,20 @@ export function CustomerInboxScreen() {
   const [replyingTo, setReplyingTo] = useState<CustomerInteraction | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    setReplyingTo(null);
+  }, [activeOutlet?.id]);
+  const requestGeneration = useMerchantRequestRef(0);
+  const currentOutlet = useMerchantRequestRef(activeOutlet?.id);
+  currentOutlet.current = activeOutlet?.id;
   const fetchInteractions = useCallback(async () => {
+    const isOperationCurrent = captureOperation();
+    if (!isOperationCurrent()) return;
+
+    const request = ++requestGeneration.current;
+    const outletId = activeOutlet?.id;
+    const isCurrent = () =>
+      request === requestGeneration.current && outletId === currentOutlet.current;
     if (!activeOutlet) {
       setInteractions([]);
       setIsLoading(false);
@@ -59,12 +84,20 @@ export function CustomerInboxScreen() {
         type: filter === "all" || filter === "unreplied" ? undefined : filter,
         unrepliedOnly: filter === "unreplied",
       });
+      if (!isOperationCurrent()) return;
+
+      if (!isCurrent()) return;
       setInteractions(data);
     } catch (e) {
+      if (!isOperationCurrent()) return;
+
+      if (!isCurrent()) return;
       console.error("Failed to fetch interactions", e);
       setError(e instanceof Error ? e.message : "Unable to load customer interactions.");
     } finally {
-      setIsLoading(false);
+      if (isOperationCurrent()) {
+        if (isCurrent()) setIsLoading(false);
+      }
     }
   }, [activeOutlet, filter]);
 
@@ -72,13 +105,24 @@ export function CustomerInboxScreen() {
     void fetchInteractions();
   }, [fetchInteractions]);
 
-  const handleViewOriginal = useCallback((interaction: CustomerInteraction) => {
-    if (!interaction.sourceId) {
-      Alert.alert("Original unavailable", "This interaction is not linked to a source post.");
-      return;
-    }
-    Alert.alert("Original source", `Source ID: ${interaction.sourceId}`);
-  }, []);
+  const handleViewOriginal = useCallback(
+    (interaction: CustomerInteraction) => {
+      Alert.alert(`Review by ${interaction.authorName}`, interaction.text, [
+        { text: "Close", style: "cancel" },
+        ...(interaction.sourceDishId && rootNavigation
+          ? [
+              {
+                text: "Open dish",
+                onPress: () =>
+                  rootNavigation.navigate("DishDetail", { dishId: interaction.sourceDishId }),
+              },
+            ]
+          : []),
+        { text: "Reply", onPress: () => setReplyingTo(interaction) },
+      ]);
+    },
+    [rootNavigation],
+  );
 
   const handleReportInteraction = useCallback((interaction: CustomerInteraction) => {
     Alert.alert("Report Interaction", "Flag this interaction for moderation review?", [
@@ -87,13 +131,20 @@ export function CustomerInboxScreen() {
         text: "Report",
         style: "destructive",
         onPress: async () => {
+          const isOperationCurrent = captureOperation();
+          if (!isOperationCurrent()) return;
+
           try {
             await getHungryService().merchant.reportInteraction(
               interaction.id,
               "Merchant reported from customer inbox",
             );
+            if (!isOperationCurrent()) return;
+
             Alert.alert("Reported", "Interaction sent for moderation review.");
           } catch (e) {
+            if (!isOperationCurrent()) return;
+
             Alert.alert("Error", "Failed to report interaction.");
           }
         },
@@ -160,6 +211,7 @@ export function CustomerInboxScreen() {
       {/* Reply Composer Modal (Simulated) */}
       {replyingTo && (
         <ReplyComposer
+          key={`${replyingTo.outletId}:${replyingTo.id}`}
           interaction={replyingTo}
           onClose={() => setReplyingTo(null)}
           onSent={() => {
@@ -261,7 +313,7 @@ function InteractionCard({
   const showMoreActions = () => {
     Alert.alert("Interaction Actions", interaction.authorName, [
       ...(interaction.sourceId
-        ? [{ text: "View original", onPress: () => onViewOriginal(interaction) }]
+        ? [{ text: "View original review", onPress: () => onViewOriginal(interaction) }]
         : []),
       { text: "Report", style: "destructive" as const, onPress: () => onReport(interaction) },
       { text: "Cancel", style: "cancel" as const },
@@ -357,7 +409,7 @@ function InteractionCard({
           />
           {interaction.sourceId ? (
             <Button
-              label="View original"
+              label="View original review"
               variant="ghost"
               size="sm"
               fullWidth={false}
@@ -379,117 +431,146 @@ function ReplyComposer({
   onClose: () => void;
   onSent: () => void;
 }) {
-  const { componentRadii, palette, spacing, radii } = useHungryTheme();
-  const [text, setText] = useState("");
-  const [isSending, setIsSending] = useState(false);
-  const [suggestion, setSuggestion] = useState<string | null>(null);
+  const captureOperation = useMerchantOperationScope();
 
+  const { componentRadii, palette, spacing, radii } = useHungryTheme();
+  const accountId = useProfileStore((state) => state.profile.id);
+  const draftKey = `${interaction.outletId}:${interaction.id}`;
+  const text = useMerchantReplyDraftStore((state) => state.drafts[draftKey] ?? "");
+  const ready = useMerchantReplyDraftStore((state) => state.readyFor === accountId);
+  const setText = (value: string) => writeMerchantReplyDraft(accountId, draftKey, value);
   useEffect(() => {
-    async function loadSuggestion() {
-      try {
-        const res = await getHungryService().merchant.generateAIReply(interaction.id);
-        setSuggestion(res);
-      } catch (e) {}
+    void scopeMerchantReplyDrafts(accountId).catch(() => {});
+  }, [accountId]);
+  usePreventRemove(Boolean(text.trim()), ({ data }) => {
+    if (isSending) {
+      Alert.alert("Reply is sending", "Wait for the send result before leaving.");
+      return;
     }
-    void loadSuggestion();
-  }, [interaction.id]);
+    Alert.alert("Reply draft saved", "Your reply is saved to this account. Leave this page?", [
+      { text: "Keep editing", style: "cancel" },
+      {
+        text: "Leave",
+        onPress: () => {
+          onClose();
+          setTimeout(() => navigation.dispatch(data.action), 0);
+        },
+      },
+    ]);
+  });
+  const navigation = useNavigation();
+  const [isSending, setIsSending] = useState(false);
+  const closeReply = () => {
+    if (isSending) return;
+    if (!text.trim()) {
+      onClose();
+      return;
+    }
+    Alert.alert("Reply draft saved", "Keep this reply for later or discard it?", [
+      { text: "Keep editing", style: "cancel" },
+      { text: "Save for later", onPress: onClose },
+      {
+        text: "Discard",
+        style: "destructive",
+        onPress: () => {
+          setText("");
+          onClose();
+        },
+      },
+    ]);
+  };
 
   const handleSend = async () => {
-    if (!text.trim()) return;
+    const isOperationCurrent = captureOperation();
+    if (!isOperationCurrent()) return;
+
+    if (isSending || !ready || !text.trim()) return;
     setIsSending(true);
     try {
       await getHungryService().merchant.replyToInteraction(interaction.id, text);
+      if (!isOperationCurrent()) return;
+
+      setText("");
       onSent();
     } catch (e) {
+      if (!isOperationCurrent()) return;
+
       Alert.alert("Error", "Failed to send reply.");
     } finally {
-      setIsSending(false);
+      if (isOperationCurrent()) {
+        setIsSending(false);
+      }
     }
   };
 
   return (
     <View
+      accessibilityViewIsModal
       style={[
         StyleSheet.absoluteFill,
         { backgroundColor: palette.mediaScrim, justifyContent: "flex-end" },
       ]}
     >
-      <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-      <View
-        style={[
-          styles.composer,
-          {
-            backgroundColor: palette.surface,
-            borderTopLeftRadius: componentRadii.card,
-            borderTopRightRadius: componentRadii.card,
-            padding: spacing[5],
-            paddingBottom: 40,
-          },
-        ]}
-      >
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Close reply composer"
+          style={StyleSheet.absoluteFill}
+          onPress={closeReply}
+        />
         <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: spacing[4],
-          }}
+          style={[
+            styles.composer,
+            {
+              backgroundColor: palette.surface,
+              borderTopLeftRadius: componentRadii.card,
+              borderTopRightRadius: componentRadii.card,
+              padding: spacing[5],
+              paddingBottom: 40,
+            },
+          ]}
         >
-          <AppText variant="h3" style={{ fontWeight: "bold" }}>
-            Reply to {interaction.authorName}
-          </AppText>
-          <IconButton
-            accessibilityLabel="Close reply composer"
-            icon={<X size={24} color={palette.text} />}
-            onPress={onClose}
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: spacing[4],
+            }}
+          >
+            <AppText variant="h3" style={{ fontWeight: "bold" }}>
+              Reply to {interaction.authorName}
+            </AppText>
+            <IconButton
+              accessibilityLabel="Close reply composer"
+              icon={<X size={24} color={palette.text} />}
+              onPress={closeReply}
+            />
+          </View>
+
+          <Input
+            label="Reply to this review"
+            placeholder="Type your message..."
+            multiline
+            value={ready ? text : ""}
+            editable={ready && !isSending}
+            onChangeText={setText}
+            autoFocus
+            style={{ minHeight: 120, textAlignVertical: "top" }}
+          />
+
+          <Button
+            loading={isSending}
+            label={isSending ? "Sending..." : "Send Reply"}
+            variant="primary"
+            fullWidth
+            disabled={!text.trim() || isSending}
+            onPress={handleSend}
+            style={{ marginTop: spacing[4] }}
+            rightIcon={<Send size={18} color={palette.white} />}
           />
         </View>
-
-        {suggestion && (
-          <Pressable
-            onPress={() => setText(suggestion)}
-            style={[
-              styles.aiChip,
-              {
-                backgroundColor: palette.orangeLight,
-                borderColor: palette.orange,
-                borderRadius: componentRadii.card,
-                padding: spacing[3],
-                marginBottom: spacing[4],
-              },
-            ]}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 }}>
-              <Sparkles size={14} color={palette.orange} />
-              <AppText variant="bodySmallBold" style={{ color: palette.orange }}>
-                AI Suggestion
-              </AppText>
-            </View>
-            <AppText variant="bodySmall" numberOfLines={2}>
-              {suggestion}
-            </AppText>
-          </Pressable>
-        )}
-
-        <Input
-          placeholder="Type your message..."
-          multiline
-          value={text}
-          onChangeText={setText}
-          autoFocus
-          style={{ minHeight: 120, textAlignVertical: "top" }}
-        />
-
-        <Button
-          label={isSending ? "Sending..." : "Send Reply"}
-          variant="primary"
-          fullWidth
-          disabled={!text.trim() || isSending}
-          onPress={handleSend}
-          style={{ marginTop: spacing[4] }}
-          rightIcon={<Send size={18} color={palette.white} />}
-        />
-      </View>
+      </KeyboardAvoidingView>
     </View>
   );
 }

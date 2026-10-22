@@ -1,0 +1,214 @@
+{
+  "created_utc_date": "2026-10-18",
+  "purpose": "Capped, pre-call shortlist only. No Mapbox requests were made and no workbook cells were changed.",
+  "source_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "source_workbook_sha256": "69c17622f7e7dd965b09955a7383465eae54fd1b06cc09db97c1dbe4cf088548",
+  "record_count": 20,
+  "selection_limit": 25,
+  "user_reported_search_box_baseline": "59 / 50,000 requests; dashboard remains authoritative",
+  "proposed_request_budget": "At most one Search Box forward request per row (20 maximum) if separately authorized for ephemeral review; do not retry or fan out queries without rechecking usage.",
+  "mapbox_tool_guidance": "Specific outlet/address query -> search_and_geocode_tool / Search Box forward search, not category search. Country context Singapore is explicit. Exact address query should be matched against returned feature name, street, and postal code.",
+  "storage_and_retention_limit": "Mapbox Search Box API response data is temporary-use only under its API documentation and Terms of Service. Do not cache or persist returned coordinates, feature metadata, or response payload in the Excel database. For database coordinates requiring persistent storage, use a source that explicitly permits retention, or obtain Mapbox permanent-geocoding access/contract and verify allowed use; the standard Geocoding API permanent option is distinct from Search Box and may carry cost/usage conditions.",
+  "records": [
+    {
+      "sfa_licence": "CE17M69A000",
+      "name": "13% WINE BISTRO",
+      "address": "123A TELOK AYER STREET Singapore 068592",
+      "postal_code": "068592",
+      "coordinate_state": "latitude and longitude blank in source workbook",
+      "public_access_state": "public_access_candidate_based_on_sfa_type_and_address",
+      "rationale": "Exact outlet name + street address + six-digit Singapore postal code should disambiguate a specific POI/address; shortlisted for one focused Search Box forward query. Treat any result as ephemeral only.",
+      "query": "13% WINE BISTRO, 123A TELOK AYER STREET Singapore 068592, Singapore 068592"
+    },
+    {
+      "sfa_licence": "CE16L23V000",
+      "name": "153 BREW CAFE",
+      "address": "153 TYRWHITT ROAD QINAN BUILDING,Singapore 207566",
+      "postal_code": "207566",
+      "coordinate_state": "latitude and longitude blank in source workbook",
+      "public_access_state": "public_access_candidate_based_on_sfa_type_and_address",
+      "rationale": "Exact outlet name + street address + six-digit Singapore postal code should disambiguate a specific POI/address; shortlisted for one focused Search Box forward query. Treat any result as ephemeral only.",
+      "query": "153 BREW CAFE, 153 TYRWHITT ROAD QINAN BUILDING,Singapore 207566, Singapore 207566"
+    },
+    {
+      "sfa_licence": "CE18L21J000",
+      "name": "15 Stamford",
+      "address": "15 STAMFORD ROAD THE CAPITOL KEMPINSKI HOTEL SINGAPORE,Singapore 178906 LEVEL 1",
+      "postal_code": "178906",
+      "coordinate_state": "latitude and longitude blank in source workbook",
+      "public_access_state": "public_access_candidate_based_on_sfa_type_and_address",
+      "rationale": "Exact outlet name + street address + six-digit Singapore postal code should disambiguate a specific POI/address; shortlisted for one focused Search Box forward query. Treat any result as ephemeral only.",
+      "query": "15 Stamford, 15 STAMFORD ROAD THE CAPITOL KEMPINSKI HOTEL SINGAPORE,Singapore 178906 LEVEL 1, Singapore 178906"
+    },
+    {
+      "sfa_licence": "CE17E60A000",
+      "name": "1864",
+      "address": "9 WALLICH STREET #05-02,Singapore 078885",
+      "postal_code": "078885",
+      "coordinate_state": "latitude and longitude blank in source workbook",
+      "public_access_state": "public_access_candidate_based_on_sfa_type_and_address",
+      "rationale": "Exact outlet name + street address + six-digit Singapore postal code should disambiguate a specific POI/address; shortlisted for one focused Search Box forward query. Treat any result as ephemeral only.",
+      "query": "1864, 9 WALLICH STREET #05-02,Singapore 078885, Singapore 078885"
+    },
+    {
+      "sfa_licence": "W46018A000",
+      "name": "1939",
+      "address": "36 KEONG SAIK ROAD Singapore 089143 (LEVEL 1 TO 4)",
+      "postal_code": "089143",
+      "coordinate_state": "latitude and longitude blank in source workbook",
+      "public_access_state": "public_access_candidate_based_on_sfa_type_and_address",
+      "rationale": "Exact outlet name + street address + six-digit Singapore postal code should disambiguate a specific POI/address; shortlisted for one focused Search Box forward query. Treat any result as ephemeral only.",
+      "query": "1939, 36 KEONG SAIK ROAD Singapore 089143 (LEVEL 1 TO 4), Singapore 089143"
+    },
+    {
+      "sfa_licence": "W90200J000",
+      "name": "49 Seats",
+      "address": "46 LORONG MAMBONG HOLLAND VILLAGE,Singapore 277698",
+      "postal_code": "277698",
+      "coordinate_state": "latitude and longitude blank in source workbook",
+      "public_access_state": "public_access_candidate_based_on_sfa_type_and_address",
+      "rationale": "Exact outlet name + street address + six-digit Singapore postal code should disambiguate a specific POI/address; shortlisted for one focused Search Box forward query. Treat any result as ephemeral only.",
+      "query": "49 Seats, 46 LORONG MAMBONG HOLLAND VILLAGE,Singapore 277698, Singapore 277698"
+    },
+    {
+      "sfa_licence": "E87097P000",
+      "name": "328 Katong Laksa",
+      "address": "216 EAST COAST ROAD Singapore 428914 (1st storey)",
+      "postal_code": "428914",
+      "coordinate_state": "latitude and longitude blank in source workbook",
+      "public_access_state": "public_access_verified_operator_source",
+      "rationale": "Exact outlet name + street address + six-digit Singapore postal code should disambiguate a specific POI/address; shortlisted for one focused Search Box forward query. Treat any result as ephemeral only.",
+      "query": "328 Katong Laksa, 216 EAST COAST ROAD Singapore 428914 (1st storey), Singapore 428914"
+    },
+    {
+      "sfa_licence": "CE08277L000",
+      "name": "365 JUICES BAR",
+      "address": "6 RAFFLES BOULEVARD #02-253B,MARINA SQUARE,Singapore 039594",
+      "postal_code": "039594",
+      "coordinate_state": "latitude and longitude blank in source workbook",
+      "public_access_state": "public_access_candidate_based_on_sfa_type_and_address",
+      "rationale": "Exact outlet name + street address + six-digit Singapore postal code should disambiguate a specific POI/address; shortlisted for one focused Search Box forward query. Treat any result as ephemeral only.",
+      "query": "365 JUICES BAR, 6 RAFFLES BOULEVARD #02-253B,MARINA SQUARE,Singapore 039594, Singapore 039594"
+    },
+    {
+      "sfa_licence": "C85136N004",
+      "name": "6th Avenue Wanton Mee",
+      "address": "24 SIXTH AVENUE Singapore 276481",
+      "postal_code": "276481",
+      "coordinate_state": "latitude and longitude blank in source workbook",
+      "public_access_state": "public_access_candidate_based_on_sfa_type_and_address",
+      "rationale": "Exact outlet name + street address + six-digit Singapore postal code should disambiguate a specific POI/address; shortlisted for one focused Search Box forward query. Treat any result as ephemeral only.",
+      "query": "6th Avenue Wanton Mee, 24 SIXTH AVENUE Singapore 276481, Singapore 276481"
+    },
+    {
+      "sfa_licence": "CE05530C000",
+      "name": "7-Eleven",
+      "address": "112 TANJONG PAGAR ROAD Singapore 088528",
+      "postal_code": "088528",
+      "coordinate_state": "latitude and longitude blank in source workbook",
+      "public_access_state": "public_access_candidate_based_on_sfa_type_and_address",
+      "rationale": "Exact outlet name + street address + six-digit Singapore postal code should disambiguate a specific POI/address; shortlisted for one focused Search Box forward query. Treat any result as ephemeral only.",
+      "query": "7-Eleven, 112 TANJONG PAGAR ROAD Singapore 088528, Singapore 088528"
+    },
+    {
+      "sfa_licence": "CE05580E000",
+      "name": "7-ELEVEN",
+      "address": "271 JALAN KAYU Singapore 799499",
+      "postal_code": "799499",
+      "coordinate_state": "latitude and longitude blank in source workbook",
+      "public_access_state": "public_access_candidate_based_on_sfa_type_and_address",
+      "rationale": "Exact outlet name + street address + six-digit Singapore postal code should disambiguate a specific POI/address; shortlisted for one focused Search Box forward query. Treat any result as ephemeral only.",
+      "query": "7-ELEVEN, 271 JALAN KAYU Singapore 799499, Singapore 799499"
+    },
+    {
+      "sfa_licence": "E83165P000",
+      "name": "7-Eleven",
+      "address": "3 KENSINGTON PARK ROAD SERANGOON GARDEN ESTATE,Singapore 557255",
+      "postal_code": "557255",
+      "coordinate_state": "latitude and longitude blank in source workbook",
+      "public_access_state": "public_access_candidate_based_on_sfa_type_and_address",
+      "rationale": "Exact outlet name + street address + six-digit Singapore postal code should disambiguate a specific POI/address; shortlisted for one focused Search Box forward query. Treat any result as ephemeral only.",
+      "query": "7-Eleven, 3 KENSINGTON PARK ROAD SERANGOON GARDEN ESTATE,Singapore 557255, Singapore 557255"
+    },
+    {
+      "sfa_licence": "CE06A04N000",
+      "name": "109 Food Teochew Yong Tau Foo",
+      "address": "90 CIRCULAR ROAD Singapore 049441",
+      "postal_code": "049441",
+      "coordinate_state": "latitude and longitude blank in source workbook",
+      "public_access_state": "public_access_candidate_based_on_sfa_type_and_address",
+      "rationale": "Exact outlet name + street address + six-digit Singapore postal code should disambiguate a specific POI/address; shortlisted for one focused Search Box forward query. Treat any result as ephemeral only.",
+      "query": "109 Food Teochew Yong Tau Foo, 90 CIRCULAR ROAD Singapore 049441, Singapore 049441"
+    },
+    {
+      "sfa_licence": "CE19T24N000",
+      "name": "50 YEARS",
+      "address": "1 RAFFLES LINK #B1-07A,ONE RAFFLES LINK,Singapore 039393",
+      "postal_code": "039393",
+      "coordinate_state": "latitude and longitude blank in source workbook",
+      "public_access_state": "public_access_candidate_based_on_sfa_type_and_address",
+      "rationale": "Exact outlet name + street address + six-digit Singapore postal code should disambiguate a specific POI/address; shortlisted for one focused Search Box forward query. Treat any result as ephemeral only.",
+      "query": "50 YEARS, 1 RAFFLES LINK #B1-07A,ONE RAFFLES LINK,Singapore 039393, Singapore 039393"
+    },
+    {
+      "sfa_licence": "CE21M36B000",
+      "name": "66 Chambers",
+      "address": "22A TANJONG PAGAR ROAD Singapore 088445",
+      "postal_code": "088445",
+      "coordinate_state": "latitude and longitude blank in source workbook",
+      "public_access_state": "public_access_candidate_based_on_sfa_type_and_address",
+      "rationale": "Exact outlet name + street address + six-digit Singapore postal code should disambiguate a specific POI/address; shortlisted for one focused Search Box forward query. Treat any result as ephemeral only.",
+      "query": "66 Chambers, 22A TANJONG PAGAR ROAD Singapore 088445, Singapore 088445"
+    },
+    {
+      "sfa_licence": "CE08558A000",
+      "name": "6IX 6IX",
+      "address": "23 CUPPAGE ROAD CUPPAGE TERRACE,Singapore 229453",
+      "postal_code": "229453",
+      "coordinate_state": "latitude and longitude blank in source workbook",
+      "public_access_state": "public_access_candidate_based_on_sfa_type_and_address",
+      "rationale": "Exact outlet name + street address + six-digit Singapore postal code should disambiguate a specific POI/address; shortlisted for one focused Search Box forward query. Treat any result as ephemeral only.",
+      "query": "6IX 6IX, 23 CUPPAGE ROAD CUPPAGE TERRACE,Singapore 229453, Singapore 229453"
+    },
+    {
+      "sfa_licence": "CE05298C000",
+      "name": "6ixers Cuisine",
+      "address": "49 CHANDER ROAD LITTLE INDIA CONSERVATION AREA,Singapore 219547",
+      "postal_code": "219547",
+      "coordinate_state": "latitude and longitude blank in source workbook",
+      "public_access_state": "public_access_candidate_based_on_sfa_type_and_address",
+      "rationale": "Exact outlet name + street address + six-digit Singapore postal code should disambiguate a specific POI/address; shortlisted for one focused Search Box forward query. Treat any result as ephemeral only.",
+      "query": "6ixers Cuisine, 49 CHANDER ROAD LITTLE INDIA CONSERVATION AREA,Singapore 219547, Singapore 219547"
+    },
+    {
+      "sfa_licence": "SE07480E000",
+      "name": "233 Vietnamese Kitchen",
+      "address": "157 JOO CHIAT ROAD Singapore 427435 1st Storey",
+      "postal_code": "427435",
+      "coordinate_state": "latitude and longitude blank in source workbook",
+      "public_access_state": "public_access_candidate_based_on_sfa_type_and_address",
+      "rationale": "Exact outlet name + street address + six-digit Singapore postal code should disambiguate a specific POI/address; shortlisted for one focused Search Box forward query. Treat any result as ephemeral only.",
+      "query": "233 Vietnamese Kitchen, 157 JOO CHIAT ROAD Singapore 427435 1st Storey, Singapore 427435"
+    },
+    {
+      "sfa_licence": "SE10095X000",
+      "name": "283 Cafe",
+      "address": "318 CHANGI ROAD Singapore 419793",
+      "postal_code": "419793",
+      "coordinate_state": "latitude and longitude blank in source workbook",
+      "public_access_state": "public_access_candidate_based_on_sfa_type_and_address",
+      "rationale": "Exact outlet name + street address + six-digit Singapore postal code should disambiguate a specific POI/address; shortlisted for one focused Search Box forward query. Treat any result as ephemeral only.",
+      "query": "283 Cafe, 318 CHANGI ROAD Singapore 419793, Singapore 419793"
+    },
+    {
+      "sfa_licence": "CE19H35L000",
+      "name": "7-ELEVEN",
+      "address": "178 TELOK AYER STREET Singapore 068626",
+      "postal_code": "068626",
+      "coordinate_state": "latitude and longitude blank in source workbook",
+      "public_access_state": "public_access_candidate_based_on_sfa_type_and_address",
+      "rationale": "Exact outlet name + street address + six-digit Singapore postal code should disambiguate a specific POI/address; shortlisted for one focused Search Box forward query. Treat any result as ephemeral only.",
+      "query": "7-ELEVEN, 178 TELOK AYER STREET Singapore 068626, Singapore 068626"
+    }
+  ]
+}

@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import { usePreventRemove } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useEffect, useRef, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ArrowLeft } from "lucide-react-native";
@@ -13,6 +15,7 @@ import type { PortfolioType, PortfolioVisibility } from "@/types/domain";
 type Props = NativeStackScreenProps<ProfileStackParamList, "PortfolioEdit">;
 
 export function PortfolioEditScreen({ navigation, route }: Props) {
+  const insets = useSafeAreaInsets();
   const { palette, spacing } = useHungryTheme();
   const portfolioId = route.params.portfolioId;
   const { portfolios, loadPortfolios, updatePortfolio, conflicts, clearConflict } =
@@ -27,12 +30,31 @@ export function PortfolioEditScreen({ navigation, route }: Props) {
   );
   const [isSaving, setIsSaving] = useState(false);
 
+  const dirty =
+    Boolean(portfolio) &&
+    (name !== portfolio?.name ||
+      description !== (portfolio?.description ?? "") ||
+      type !== portfolio?.type ||
+      visibility !== portfolio?.visibility);
+  usePreventRemove(dirty && !isSaving, ({ data }) => {
+    Alert.alert("Discard portfolio changes?", "Your unsaved changes will be lost.", [
+      { text: "Keep editing", style: "cancel" },
+      { text: "Discard", style: "destructive", onPress: () => navigation.dispatch(data.action) },
+    ]);
+  });
+  const initializedPortfolio = useRef<string | undefined>(portfolio?.id);
   useEffect(() => {
-    void loadPortfolios();
+    void loadPortfolios().catch((error: unknown) =>
+      Alert.alert(
+        "Could not load saved tools",
+        error instanceof Error ? error.message : "Please retry.",
+      ),
+    );
   }, [loadPortfolios]);
 
   useEffect(() => {
-    if (!portfolio) return;
+    if (!portfolio || initializedPortfolio.current === portfolio.id) return;
+    initializedPortfolio.current = portfolio.id;
     setName(portfolio.name);
     setDescription(portfolio.description ?? "");
     setType(portfolio.type);
@@ -45,7 +67,7 @@ export function PortfolioEditScreen({ navigation, route }: Props) {
     try {
       await updatePortfolio(portfolio.id, {
         name,
-        description: description.trim() || undefined,
+        description: description.trim() || null,
         type,
         visibility,
       });
@@ -62,7 +84,9 @@ export function PortfolioEditScreen({ navigation, route }: Props) {
 
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: palette.bg }}
+      keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets
+      style={{ flex: 1, backgroundColor: palette.bg, paddingTop: insets.top }}
       contentContainerStyle={[styles.content, { gap: spacing[4], padding: spacing[4] }]}
     >
       <View style={styles.header}>
@@ -90,12 +114,16 @@ export function PortfolioEditScreen({ navigation, route }: Props) {
         <>
           {conflict ? (
             <Card>
-              <AppText variant="bodyBold">Latest version loaded</AppText>
+              <AppText variant="bodyBold">Remote changes detected; your edits are kept</AppText>
               <AppText variant="bodySmall" tone="secondary">
                 {conflict.message}
               </AppText>
+              <AppText variant="bodySmall">Server title: {portfolio.name}</AppText>
+              <AppText variant="bodySmall">
+                Server description: {portfolio.description || "None"}
+              </AppText>
               <Button
-                label="Review latest"
+                label="Keep my edits against this version"
                 size="sm"
                 fullWidth={false}
                 variant="secondary"

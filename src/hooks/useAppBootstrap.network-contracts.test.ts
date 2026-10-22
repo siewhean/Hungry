@@ -19,8 +19,9 @@ test("app bootstrap derives offline state from NetInfo and cleans up its subscri
 
 test("offline recovery retries NetInfo instead of pretending the connection returned", () => {
   assert.match(offlineScreen, /await NetInfo\.refresh\(\)/);
-  assert.match(offlineScreen, /setOffline\(isNetworkOffline\(state\)\)/);
-  assert.match(offlineScreen, /label="Retry connection"/);
+  assert.match(offlineScreen, /const offline = isNetworkOffline\(state\)/);
+  assert.match(offlineScreen, /setOffline\(offline\)/);
+  assert.match(offlineScreen, /label=\{busy \? "Checking connection…" : "Retry connection"\}/);
   assert.doesNotMatch(offlineScreen, /setOffline\(false\)/);
 });
 

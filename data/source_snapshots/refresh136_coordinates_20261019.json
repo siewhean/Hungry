@@ -1,0 +1,449 @@
+{
+  "snapshot_type": "refresh136_read_only_coordinate_proposals",
+  "captured_at_sgt": "2026-10-19",
+  "baseline_workbook": {
+    "path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "sha256": "dfdd8b9833f249e0c4539c8c8ed861f06df7f40ba842875aa6375b13d3c7e999",
+    "worksheet": "Public F&B Directory",
+    "record_count": 38273
+  },
+  "scope": {
+    "sample_method": "Next 100 distinct six-digit postal codes with at least one missing coordinate pair in workbook row order, excluding postal codes explicitly reviewed in Refresh134 and Refresh135. Refresh133 initial 100 are not excluded because its snapshot does not persist record-level postal codes.",
+    "sample_size": 100,
+    "postal_codes_reviewed": 100,
+    "external_live_queries": 0,
+    "local_official_dataset_crosschecks": 100,
+    "sources_checked": [
+      "Cached BCA Friendly Buildings dataset from data.gov.sg, Singapore Open Data Licence v1.0, captured 2026-10-18; exact postal and address-label filtering.",
+      "OneMap not queried: no live OneMap process/token safely available.",
+      "Mapbox Search Box not used; no temporary results persisted."
+    ],
+    "proposals": 1,
+    "withheld": 99,
+    "workbook_edits": 0,
+    "spending": 0
+  },
+  "proposals": [
+    {
+      "sfa_licence": "CE07024N000",
+      "f_and_b_name": "7-Eleven",
+      "postal_code": "539747",
+      "full_address": "Address: 10/1 BUANGKOK VIEW INSTITUTE OF MENTAL HEALTH,Singapore 539747 Level 1 Unit 11-130",
+      "latitude": 1.3815895,
+      "longitude": 103.8833488,
+      "coordinate_precision": "building/facility point; not outlet-front point",
+      "source": "BCA Friendly Buildings (data.gov.sg), captured 2026-10-18",
+      "source_url": "https://data.gov.sg/datasets/d_f19704cb6ce76309f3ec0c3a513bdeab/view",
+      "source_address_labels": [
+        "10 Buangkok View, 539747",
+        "10 Buangkok View, Block 5, 539747"
+      ],
+      "source_feature_names": [
+        "Econ Medicare Centre and Nursing Home",
+        "Institute Of Mental Health",
+        "Ren Ci Hospital & Medicare Centre",
+        "Tai Pei Social Service"
+      ],
+      "decision": "exact six-digit postal plus house-number/road-label match; review candidate only; no auto-apply"
+    }
+  ],
+  "withheld": [
+    {
+      "postal_code": "209078",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "388264",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "209263",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "207522",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "419737",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "049441",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "328187",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "387449",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "068592",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "307606",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "207566",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "427433",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "098269",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "389347",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "078885",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "427435",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "209855",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "419793",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "389338",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "437080",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "399684",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "209268",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "556680",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "239554",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "389468",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "069879",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "049845",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "458225",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "508754",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "088445",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "229453",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "219547",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "276481",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "459062",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "427509",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "787113",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "276472",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "088528",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "799499",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "209404",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "089129",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "018971",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "328811",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "059435",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "068626",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "557255",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "419701",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "437124",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "389286",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "589619",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "574369",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "428992",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "389617",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "388250",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "099567",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "329772",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "277672",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "459073",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "528882",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "427431",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "368216",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "118508",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "338814",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "338813",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "229459",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "118156",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "427542",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "799501",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "307630",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "669723",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "555966",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "218141",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "049364",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "758353",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "209393",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "247781",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "218671",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "389599",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "389604",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "208970",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "198705",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "209008",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "088475",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "238846",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "088895",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "089142",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "579077",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "069472",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "329799",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "529684",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "427786",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "428925",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "189876",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "388831",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "423623",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "088840",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "598603",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "068580",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    },
+    {
+      "postal_code": "188661",
+      "status": "withheld_no_unique_exact_address_coordinate_match"
+    }
+  ],
+  "limitations": "BCA dataset points identify buildings/facilities and cannot establish a stall or outlet entrance. All proposals require review and must not be automatically applied. Coverage is limited to the exact 100-postal sample and cached BCA dataset; no live service queries were made."
+}

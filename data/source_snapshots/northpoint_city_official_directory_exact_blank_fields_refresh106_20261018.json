@@ -1,0 +1,370 @@
+{
+  "snapshot_id": "northpoint_city_official_directory_exact_blank_fields_refresh106_20261018",
+  "observed_at_utc": "2026-10-18T10:03:49+00:00",
+  "observed_at_sgt": "2026-10-18T18:03:49+08:00",
+  "source": {
+    "publisher": "Frasers Experience / Northpoint City",
+    "directory_url": "https://www.frasersexperience.com/stores/npc",
+    "feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fnpc%2Fen%2Fstores&isdialog=true",
+    "feed_http_status": 200,
+    "feed_record_count": 27,
+    "feed_response_sha256": "bac4d74b0fe60b05edddfcdade2902c45df7f4655294acc293cfefcbccde299e",
+    "feed_observation": "Live public mall tenant feed fetched on 2026-10-18; feed records include tenant name, mall, unit, website, phone fields, tenant-specific opening hours and detail page path.",
+    "listing_scope": "Restaurant, cafe and fast-food category tags; public mall tenant directory."
+  },
+  "workbook_reference": {
+    "path": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "sha256": "3ce9c0b79a9dbc4fb8724061754b0f3adfdbbeff56aa9caca71b8c5353fff9b7",
+    "sheet": "Public F&B Directory",
+    "read_only": true,
+    "workbook_edited": false
+  },
+  "method": {
+    "join_keys": [
+      "postal code 769098",
+      "exact unit tokens",
+      "exact normalized tenant name or clear alias"
+    ],
+    "update_policy": "Only source values where the exact joined workbook field was blank are proposed. No overwrite. Placeholder phone strings and blank source values excluded. Hours are taken from tenant-specific detail pages/feed, not mall opening hours. Mall logos are excluded as not actual store or food imagery."
+  },
+  "summary": {
+    "feed_records": 27,
+    "unique_exact_outlet_matches": 7,
+    "outlets_with_blank_field_proposals": 7,
+    "proposed_blank_values": 17,
+    "field_counts": {
+      "Website": 5,
+      "Contact Details": 5,
+      "Opening Hours / Closed Days": 7
+    },
+    "new_tenant_rows": 0,
+    "menu_url_candidates": 0,
+    "official_food_or_stall_image_candidates": 0,
+    "ambiguous_matches_withheld": 0
+  },
+  "proposals": [
+    {
+      "sfa_licence": "NW17401L000",
+      "existing_name": "AYAM PENYET PRESIDENT",
+      "registered_business_name": "AYAM PENYET PRESIDENT",
+      "existing_address": "Address: 930 YISHUN AVENUE 2 #B1-54,Singapore 769098",
+      "official_tenant_name": "Ayam Penyet President",
+      "official_unit": "North Wing, #B1-54",
+      "join": {
+        "confidence": "high",
+        "basis": "Exact postal 769098, exact/overlapping unit token, unique exact normalized tenant name or clear alias in Public F&B Directory."
+      },
+      "source_detail_url": "https://www.frasersexperience.com/stores/npc/ayam-penyet-president",
+      "detail_http_status": 200,
+      "detail_response_sha256": "ea55e8fe9e86b814ff25e69dc28900f6c14e8895194c49f3787593dc32a9362d",
+      "field_proposals": {
+        "Opening Hours / Closed Days": "Monday to Sunday | 11.30am to 9.30pm"
+      },
+      "field_evidence": {
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/npc/ayam-penyet-president",
+          "source_type": "current official mall tenant-detail page and live tenant feed",
+          "confidence": "high",
+          "outlet_specific": true,
+          "basis": "Tenant-specific page identifies outlet name and unit; value is published for this tenant, not mall-wide."
+        }
+      },
+      "source_record_values": {
+        "website": "https://ayampresident.com/",
+        "phone1": "6257 3981",
+        "phone2": null,
+        "phone3": null,
+        "opening_hours_text": "Monday to Sunday | 11.30am to 9.30pm"
+      }
+    },
+    {
+      "sfa_licence": "B92066E000",
+      "existing_name": "MCDONALD'S",
+      "registered_business_name": "MCDONALD'S",
+      "existing_address": "Address: 930 YISHUN AVENUE 2 #01-12,NORTHPOINT SHOPPING CENTRE,Singapore 769098",
+      "official_tenant_name": "McDonald's",
+      "official_unit": "North Wing, #01-12/13",
+      "join": {
+        "confidence": "high",
+        "basis": "Exact postal 769098, exact/overlapping unit token, unique exact normalized tenant name or clear alias in Public F&B Directory."
+      },
+      "source_detail_url": "https://www.frasersexperience.com/stores/npc/mcdonalds",
+      "detail_http_status": 200,
+      "detail_response_sha256": "cbed7d26387ed05f70cfeeffb398e4690e2a67865e08a3089764b8d67cfb1de8",
+      "field_proposals": {
+        "Opening Hours / Closed Days": "Monday to Sunday | 6am to 12am"
+      },
+      "field_evidence": {
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/npc/mcdonalds",
+          "source_type": "current official mall tenant-detail page and live tenant feed",
+          "confidence": "high",
+          "outlet_specific": true,
+          "basis": "Tenant-specific page identifies outlet name and unit; value is published for this tenant, not mall-wide."
+        }
+      },
+      "source_record_values": {
+        "website": "https://www.mcdonalds.com.sg/",
+        "phone1": "6754 6043",
+        "phone2": null,
+        "phone3": null,
+        "opening_hours_text": "Monday to Sunday | 6am to 12am"
+      }
+    },
+    {
+      "sfa_licence": "NW09248K000",
+      "existing_name": "MINCHENG BIBIMBAP",
+      "registered_business_name": "MINCHENG BIBIMBAP",
+      "existing_address": "Address: 930 YISHUN AVENUE 2 #02-07,NORTHPOINT CITY,Singapore 769098",
+      "official_tenant_name": "Mincheng Bibimbap",
+      "official_unit": "North Wing, #02-07",
+      "join": {
+        "confidence": "high",
+        "basis": "Exact postal 769098, exact/overlapping unit token, unique exact normalized tenant name or clear alias in Public F&B Directory."
+      },
+      "source_detail_url": "https://www.frasersexperience.com/stores/npc/mincheng-bibimbap",
+      "detail_http_status": 200,
+      "detail_response_sha256": "49d1d9c8ce363d93361ab37faf5641690633cdd60b49e61f0e0dd02cc0fffef7",
+      "field_proposals": {
+        "Website": "https://www.minchengbibimbap.com/",
+        "Contact Details": "8565 8575",
+        "Opening Hours / Closed Days": "Monday to Sunday | 11.30am to 9.30pm"
+      },
+      "field_evidence": {
+        "Website": {
+          "source_url": "https://www.frasersexperience.com/stores/npc/mincheng-bibimbap",
+          "source_type": "current official mall tenant-detail page and live tenant feed",
+          "confidence": "high",
+          "outlet_specific": true,
+          "basis": "Tenant-specific page identifies outlet name and unit; value is published for this tenant, not mall-wide."
+        },
+        "Contact Details": {
+          "source_url": "https://www.frasersexperience.com/stores/npc/mincheng-bibimbap",
+          "source_type": "current official mall tenant-detail page and live tenant feed",
+          "confidence": "high",
+          "outlet_specific": true,
+          "basis": "Tenant-specific page identifies outlet name and unit; value is published for this tenant, not mall-wide."
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/npc/mincheng-bibimbap",
+          "source_type": "current official mall tenant-detail page and live tenant feed",
+          "confidence": "high",
+          "outlet_specific": true,
+          "basis": "Tenant-specific page identifies outlet name and unit; value is published for this tenant, not mall-wide."
+        }
+      },
+      "source_record_values": {
+        "website": "https://www.minchengbibimbap.com/",
+        "phone1": "8565 8575",
+        "phone2": null,
+        "phone3": null,
+        "opening_hours_text": "Monday to Sunday | 11.30am to 9.30pm"
+      }
+    },
+    {
+      "sfa_licence": "NW17518K000",
+      "existing_name": "PUTIEN",
+      "registered_business_name": "PUTIEN",
+      "existing_address": "Address: 930 YISHUN AVENUE 2 #02-42/44,Singapore 769098",
+      "official_tenant_name": "PUTIEN",
+      "official_unit": "North Wing, #02-42/43/44",
+      "join": {
+        "confidence": "high",
+        "basis": "Exact postal 769098, exact/overlapping unit token, unique exact normalized tenant name or clear alias in Public F&B Directory."
+      },
+      "source_detail_url": "https://www.frasersexperience.com/stores/npc/putien",
+      "detail_http_status": 200,
+      "detail_response_sha256": "27a72b3f02226ac34922b679672e1f83dc33716c6b405196e21bbac7ca612ab7",
+      "field_proposals": {
+        "Website": "https://www.putien.com/",
+        "Contact Details": "6257 1482",
+        "Opening Hours / Closed Days": "Monday to Friday | 11.30am to 3pm | 5.30pm to 10pm Saturday, Sunday & PH | 11.30am to 4.30pm | 5.30pm to 10pm"
+      },
+      "field_evidence": {
+        "Website": {
+          "source_url": "https://www.frasersexperience.com/stores/npc/putien",
+          "source_type": "current official mall tenant-detail page and live tenant feed",
+          "confidence": "high",
+          "outlet_specific": true,
+          "basis": "Tenant-specific page identifies outlet name and unit; value is published for this tenant, not mall-wide."
+        },
+        "Contact Details": {
+          "source_url": "https://www.frasersexperience.com/stores/npc/putien",
+          "source_type": "current official mall tenant-detail page and live tenant feed",
+          "confidence": "high",
+          "outlet_specific": true,
+          "basis": "Tenant-specific page identifies outlet name and unit; value is published for this tenant, not mall-wide."
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/npc/putien",
+          "source_type": "current official mall tenant-detail page and live tenant feed",
+          "confidence": "high",
+          "outlet_specific": true,
+          "basis": "Tenant-specific page identifies outlet name and unit; value is published for this tenant, not mall-wide."
+        }
+      },
+      "source_record_values": {
+        "website": "https://www.putien.com/",
+        "phone1": "6257 1482",
+        "phone2": null,
+        "phone3": null,
+        "opening_hours_text": "Monday to Friday | 11.30am to 3pm | 5.30pm to 10pm Saturday, Sunday & PH | 11.30am to 4.30pm | 5.30pm to 10pm"
+      }
+    },
+    {
+      "sfa_licence": "NW09211N000",
+      "existing_name": "PastaMania",
+      "registered_business_name": "PastaMania",
+      "existing_address": "Address: 930 YISHUN AVENUE 2 #03-04,NORTHPOINT,Singapore 769098",
+      "official_tenant_name": "PastaMania",
+      "official_unit": "North Wing, #03-04",
+      "join": {
+        "confidence": "high",
+        "basis": "Exact postal 769098, exact/overlapping unit token, unique exact normalized tenant name or clear alias in Public F&B Directory."
+      },
+      "source_detail_url": "https://www.frasersexperience.com/stores/npc/pastamania",
+      "detail_http_status": 200,
+      "detail_response_sha256": "43f7bb6c8d87010f505f7b0cbcd61036be1962a9d80db756cae7da14bfd486ab",
+      "field_proposals": {
+        "Website": "https://www.pastamania.com.sg/",
+        "Contact Details": "6755 0843",
+        "Opening Hours / Closed Days": "Monday to Sunday | 10am to 10.30pm"
+      },
+      "field_evidence": {
+        "Website": {
+          "source_url": "https://www.frasersexperience.com/stores/npc/pastamania",
+          "source_type": "current official mall tenant-detail page and live tenant feed",
+          "confidence": "high",
+          "outlet_specific": true,
+          "basis": "Tenant-specific page identifies outlet name and unit; value is published for this tenant, not mall-wide."
+        },
+        "Contact Details": {
+          "source_url": "https://www.frasersexperience.com/stores/npc/pastamania",
+          "source_type": "current official mall tenant-detail page and live tenant feed",
+          "confidence": "high",
+          "outlet_specific": true,
+          "basis": "Tenant-specific page identifies outlet name and unit; value is published for this tenant, not mall-wide."
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/npc/pastamania",
+          "source_type": "current official mall tenant-detail page and live tenant feed",
+          "confidence": "high",
+          "outlet_specific": true,
+          "basis": "Tenant-specific page identifies outlet name and unit; value is published for this tenant, not mall-wide."
+        }
+      },
+      "source_record_values": {
+        "website": "https://www.pastamania.com.sg/",
+        "phone1": "6755 0843",
+        "phone2": null,
+        "phone3": null,
+        "opening_hours_text": "Monday to Sunday | 10am to 10.30pm"
+      }
+    },
+    {
+      "sfa_licence": "NW09235V000",
+      "existing_name": "SEOUL GARDEN HOTPOT & SEOUL GARDEN",
+      "registered_business_name": "SEOUL GARDEN HOTPOT & SEOUL GARDEN",
+      "existing_address": "Address: 930 YISHUN AVENUE 2 #03-05/06,NORTHPOINT,Singapore 769098",
+      "official_tenant_name": "Seoul Garden",
+      "official_unit": "North Wing, #03-05",
+      "join": {
+        "confidence": "high",
+        "basis": "Exact postal 769098, exact/overlapping unit token, unique exact normalized tenant name or clear alias in Public F&B Directory."
+      },
+      "source_detail_url": "https://www.frasersexperience.com/stores/npc/seoul-garden",
+      "detail_http_status": 200,
+      "detail_response_sha256": "0e23a836683ad9614bd86d46dfed3b914c163f21a5d8c877af00c40a7e615c75",
+      "field_proposals": {
+        "Website": "https://www.seoulgarden.com.sg/",
+        "Contact Details": "6257 5339",
+        "Opening Hours / Closed Days": "Monday to Sunday | 11.30am to 10.30pm (Last order at 9.45pm)"
+      },
+      "field_evidence": {
+        "Website": {
+          "source_url": "https://www.frasersexperience.com/stores/npc/seoul-garden",
+          "source_type": "current official mall tenant-detail page and live tenant feed",
+          "confidence": "high",
+          "outlet_specific": true,
+          "basis": "Tenant-specific page identifies outlet name and unit; value is published for this tenant, not mall-wide."
+        },
+        "Contact Details": {
+          "source_url": "https://www.frasersexperience.com/stores/npc/seoul-garden",
+          "source_type": "current official mall tenant-detail page and live tenant feed",
+          "confidence": "high",
+          "outlet_specific": true,
+          "basis": "Tenant-specific page identifies outlet name and unit; value is published for this tenant, not mall-wide."
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/npc/seoul-garden",
+          "source_type": "current official mall tenant-detail page and live tenant feed",
+          "confidence": "high",
+          "outlet_specific": true,
+          "basis": "Tenant-specific page identifies outlet name and unit; value is published for this tenant, not mall-wide."
+        }
+      },
+      "source_record_values": {
+        "website": "https://www.seoulgarden.com.sg/",
+        "phone1": "6257 5339",
+        "phone2": null,
+        "phone3": null,
+        "opening_hours_text": "Monday to Sunday | 11.30am to 10.30pm (Last order at 9.45pm)"
+      }
+    },
+    {
+      "sfa_licence": "NW08390J000",
+      "existing_name": "XIN WANG HONGKONG CAFE",
+      "registered_business_name": "XIN WANG HONGKONG CAFE and WANG BAO",
+      "existing_address": "Address: 930 YISHUN AVENUE 2 #01-40,NORTHPOINT,Singapore 769098",
+      "official_tenant_name": "Xin Wang Hong Kong Café",
+      "official_unit": "North Wing, #01-40",
+      "join": {
+        "confidence": "high",
+        "basis": "Exact postal 769098, exact/overlapping unit token, unique exact normalized tenant name or clear alias in Public F&B Directory."
+      },
+      "source_detail_url": "https://www.frasersexperience.com/stores/npc/xin-wang-hong-kong-cafe",
+      "detail_http_status": 200,
+      "detail_response_sha256": "c6ecdb804dfa915ded2711dd16d02657630cca10e68812e485352e90ecd853aa",
+      "field_proposals": {
+        "Website": "https://www.xinwang.com.sg/",
+        "Contact Details": "6752 3280",
+        "Opening Hours / Closed Days": "Sunday to Thursday | 8am to 12am | | Friday, Saturday & Eve of PH | 8am to 2am"
+      },
+      "field_evidence": {
+        "Website": {
+          "source_url": "https://www.frasersexperience.com/stores/npc/xin-wang-hong-kong-cafe",
+          "source_type": "current official mall tenant-detail page and live tenant feed",
+          "confidence": "high",
+          "outlet_specific": true,
+          "basis": "Tenant-specific page identifies outlet name and unit; value is published for this tenant, not mall-wide."
+        },
+        "Contact Details": {
+          "source_url": "https://www.frasersexperience.com/stores/npc/xin-wang-hong-kong-cafe",
+          "source_type": "current official mall tenant-detail page and live tenant feed",
+          "confidence": "high",
+          "outlet_specific": true,
+          "basis": "Tenant-specific page identifies outlet name and unit; value is published for this tenant, not mall-wide."
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/npc/xin-wang-hong-kong-cafe",
+          "source_type": "current official mall tenant-detail page and live tenant feed",
+          "confidence": "high",
+          "outlet_specific": true,
+          "basis": "Tenant-specific page identifies outlet name and unit; value is published for this tenant, not mall-wide."
+        }
+      },
+      "source_record_values": {
+        "website": "https://www.xinwang.com.sg/",
+        "phone1": "6752 3280",
+        "phone2": null,
+        "phone3": null,
+        "opening_hours_text": "Sunday to Thursday | 8am to 12am | | Friday, Saturday & Eve of PH | 8am to 2am"
+      }
+    }
+  ],
+  "withheld": {
+    "menu_urls": "Official Northpoint City feed/pages in this batch expose no menu URL field.",
+    "images": "Feed imagery is store/logo artwork, not verified outlet/menu-item photography; no image URL proposed."
+  },
+  "ambiguous": []
+}

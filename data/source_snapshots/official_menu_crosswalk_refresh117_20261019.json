@@ -1,0 +1,82 @@
+{
+  "snapshot_id": "official_menu_crosswalk_refresh117_20261019",
+  "observed_date": "2026-10-19",
+  "workbook_path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "15cfa1d42b1dc818d19afa77839b8cd16ba8ed88909ad49d7a50a14f51f10c0f",
+  "scope": "Read-only crosswalk of stale platform-origin menu leads against current first-party restaurant/operator menus. No delivery-platform pages or content fetched or copied; no workbook edits.",
+  "source_set": [
+    {
+      "path": "data/menu_enrichment_results.json",
+      "role": "stale lead inventory only; platform URLs and prior names were not treated as current facts"
+    },
+    {
+      "path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+      "role": "exact current directory SFA licence joins and duplicate check"
+    }
+  ],
+  "lead_inventory": {
+    "grab_url_tagged_rows_in_local_legacy_inventory": 396,
+    "distinct_venue_labels": 20,
+    "distinct_sfa_ids": 20,
+    "note": "The assigned 118-lead subset was not independently identifiable as a separate snapshot file in data/source_snapshots; this inventory count is the broader legacy menu_enrichment_results.json and is not represented as 118."
+  },
+  "official_menu_checks": [
+    {
+      "brand": "Huggs Coffee",
+      "first_party_url": "https://order.huggscoffee.com/Category",
+      "observed": "2026-10-19",
+      "page_evidence": "Officially branded Huggs ordering page identifies Huggs Coffee CCP at 5 Changi Business Park Central 1, Changi City Point #01-50, Singapore 486038 and displays menu items with SGD prices. Search index/page snapshot was observed recently (September 2026 ordering date).",
+      "exact_directory_match": {
+        "sfa_licence": "SE21S41A000",
+        "name": "HUGGS COFFEE",
+        "address": "Address: 5 CHANGI BUSINESS PARK CENTRAL 1 #01-50,CHANGI CITY POINT,Singapore 486038"
+      },
+      "crosswalk_result": "No stale Grab lead is associated with this exact SFA licence. The legacy Huggs lead observed in local inventory points to SFA-CE17M73J000, which the workbook resolves to BU PIN, 1 Marina Boulevard #01-03. Brand-level menu items are not transferred across outlets.",
+      "qualifying_proposals": 0
+    },
+    {
+      "brand": "Boomarang Bar & Bistro",
+      "first_party_url": "https://www.boomarang.com.sg/paid-menu",
+      "observed": "2026-10-19",
+      "page_evidence": "Search result described the official menu, but direct fetch returned HTTP 404 on review.",
+      "crosswalk_result": "Could not confirm a live official menu, current items, prices, or exact outlet association.",
+      "qualifying_proposals": 0
+    },
+    {
+      "brand": "New Fut Kai Vegetarian Restaurant",
+      "first_party_url": "https://www.newfutkai.com.sg/menu/",
+      "observed": "2026-10-19",
+      "page_evidence": "Official menu page identifies its menu artwork as 2024; menu imagery provides no confirmed current 2026 item/price snapshot. Current official contact page identifies 282 Jalan Besar, but no per-outlet item/price feed was verified.",
+      "crosswalk_result": "Historical menu artwork is insufficient for freshest-current pricing; not proposed.",
+      "qualifying_proposals": 0
+    },
+    {
+      "brand": "Edith Patisserie",
+      "first_party_url": "https://www.edithpatisserie.com/",
+      "observed": "2026-10-19",
+      "page_evidence": "Official shop lists current products and prices, while locations page distinguishes multiple retail outlets and supermarket placements.",
+      "crosswalk_result": "Current products are brand/catalogue-level and do not establish that each item is sold at the SFA-licensed outlet represented in the stale lead. No exact outlet item crosswalk established.",
+      "qualifying_proposals": 0
+    },
+    {
+      "brand": "Joe & Dough",
+      "first_party_url": "https://capitaltower.joeanddough.com/",
+      "observed": "2026-10-19",
+      "page_evidence": "Brand-linked order portal shows items, SGD prices, and Capital Tower pickup address; page footer identifies Getz as the platform.",
+      "crosswalk_result": "No first-party evidence matching a stale lead’s exact SFA outlet was established. Outlet-specific menu not copied into proposal.",
+      "qualifying_proposals": 0
+    }
+  ],
+  "proposals": [],
+  "summary": {
+    "verified_exact_outlet_item_price_proposals": 0,
+    "images_proposed": 0,
+    "reason": "No candidate passed both (1) current first-party item/price evidence and (2) an exact SFA outlet match to the legacy lead. Where current first-party menus were visible, they were at a different outlet or brand/catalogue scope; other official menu content was stale or inaccessible."
+  },
+  "limitations": [
+    "No separate file corresponding exactly to the previously described 118-lead subset was identifiable in source_snapshots; local legacy menu_enrichment_results.json contains 396 rows tagged by Grab menu URL, across 20 venue labels.",
+    "No Grab, Foodpanda, or Oddle page was fetched or used as evidence.",
+    "No image URL was proposed because outlet/item image identity and reuse authorization were not established.",
+    "No workbook rows were modified."
+  ]
+}

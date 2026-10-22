@@ -3,9 +3,9 @@
  * Shows cover image, title, stall count, and save state.
  */
 
-import { View, Pressable, StyleSheet } from "react-native";
+import { Alert, View, Pressable, StyleSheet } from "react-native";
 import { Bookmark, BookmarkCheck } from "lucide-react-native";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import { useHungryTheme } from "@/theme";
 import { AccessibleImage } from "@/components/ui/AccessibleImage";
@@ -31,9 +31,18 @@ export function CollectionCard({ collection, userId, onPress }: CollectionCardPr
   );
   const toggleSave = useCollectionStore((s) => s.toggleSaveCollection);
 
+  const [saving, setSaving] = useState(false);
   function handleSave() {
-    if (!userId) return;
-    toggleSave(userId, collection.id);
+    if (!userId || saving) return;
+    setSaving(true);
+    void toggleSave(userId, collection.id)
+      .catch((error: unknown) =>
+        Alert.alert(
+          "Could not save collection",
+          error instanceof Error ? error.message : "Please retry.",
+        ),
+      )
+      .finally(() => setSaving(false));
   }
 
   const SaveIcon = isSaved ? BookmarkCheck : Bookmark;
@@ -82,7 +91,13 @@ export function CollectionCard({ collection, userId, onPress }: CollectionCardPr
           <Pressable
             accessibilityLabel={isSaved ? "Unsave collection" : "Save collection"}
             accessibilityRole="button"
-            onPress={handleSave}
+            disabled={!userId || saving}
+            accessibilityState={{ disabled: !userId || saving, busy: saving, selected: isSaved }}
+            style={{ minHeight: 44, minWidth: 44, alignItems: "center", justifyContent: "center" }}
+            onPress={(event) => {
+              event.stopPropagation();
+              handleSave();
+            }}
             hitSlop={8}
           >
             <SaveIcon

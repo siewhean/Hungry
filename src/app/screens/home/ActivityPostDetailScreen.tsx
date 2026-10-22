@@ -1,3 +1,4 @@
+import type { StallPost } from "@/types/domain";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, StyleSheet, TextInput, View, useWindowDimensions } from "react-native";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
@@ -16,10 +17,17 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { ZoomableMedia } from "@/components/social";
-import { AppText, Avatar, Screen } from "@/components/ui";
+import { AppText, Avatar, Screen, EmptyState } from "@/components/ui";
 import { ACTIVITY_UPDATES } from "@/features/home/activity";
-import { listSharedStallPostsSync } from "@/features/social/sharedStallPosts";
-import { promptPostSafetyActions } from "@/lib/security/communitySafety";
+import {
+  listSharedStallPostsSync,
+  listSharedStallPosts,
+  mergeStallPosts,
+} from "@/features/social/sharedStallPosts";
+import {
+  promptPostSafetyActions,
+  useCommunitySafetyRevision,
+} from "@/lib/security/communitySafety";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { ReviewCommentsSheet, type ActiveReviewCommentTarget } from "@/components/social";
 import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/ReviewShareSheet";
@@ -41,7 +49,33 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
   const commentsEnabled = FEATURE_FLAGS.commentsEnabled;
   const { postId, updateId } = route.params;
   const publishedPosts = usePublishedPostStore((state) => state.posts);
-  const posts = useMemo(() => listSharedStallPostsSync(repository), [publishedPosts, repository]);
+  const revision = useCommunitySafetyRevision();
+  const [loadedPosts, setLoadedPosts] = useState<StallPost[]>([]);
+  const [loadError, setLoadError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [retry, setRetry] = useState(0);
+  const posts = useMemo(
+    () => mergeStallPosts(loadedPosts, listSharedStallPostsSync(repository)),
+    [loadedPosts, publishedPosts, repository, revision],
+  );
+  useEffect(() => {
+    let active = true;
+    setIsLoading(true);
+    setLoadError(false);
+    listSharedStallPosts(repository)
+      .then((items) => {
+        if (active) setLoadedPosts(items);
+      })
+      .catch(() => {
+        if (active) setLoadError(true);
+      })
+      .finally(() => {
+        if (active) setIsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [repository, postId, retry]);
   const post = posts.find((candidate) => candidate.id === postId);
   const activityUpdates = useActivityStore((state) => state.activityUpdates);
   const dbActivityEvents = useActivityStore((state) => state.dbActivityEvents);
@@ -72,10 +106,10 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
   }, [initializeInteractions, posts]);
 
   useEffect(() => {
-    if (updateId) {
+    if (updateId && post) {
       markActivityRead("update", updateId);
     }
-  }, [markActivityRead, updateId]);
+  }, [markActivityRead, updateId, post]);
 
   useEffect(() => {
     void fetchActivityEvents();
@@ -117,7 +151,22 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
     return (
       <Screen title="Activity post">
         <View style={styles.empty}>
-          <AppText tone="secondary">This post is no longer available.</AppText>
+          <EmptyState
+            title={
+              isLoading
+                ? "Loading post"
+                : loadError
+                  ? "Post could not be loaded"
+                  : "Post unavailable"
+            }
+            body={
+              loadError
+                ? "Check your connection and retry."
+                : "This post may have been removed or its audience changed."
+            }
+            ctaLabel={isLoading ? undefined : "Retry"}
+            onPress={() => setRetry((value) => value + 1)}
+          />
         </View>
       </Screen>
     );
@@ -233,6 +282,9 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
               promptPostSafetyActions({
                 postId: post.id,
                 authorName: post.authorName,
+                authorId: post.authorId,
+                onHidden: () => navigation.goBack(),
+                onBlocked: () => navigation.goBack(),
                 label: "post",
               })
             }
@@ -271,7 +323,6 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
                   const title = primaryDish?.name ?? post.authorName;
                   setActiveShareReview({
                     reviewId: post.id,
-                    postId: post.id,
                     title,
                     subtitle: `${venue?.name ?? "Hungry"} · ${post.authorName}`,
                     imageUrl: post.mediaUrl,
@@ -371,12 +422,10 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
 
       <ReviewShareSheet
         activeReview={activeShareReview}
+        subjectLabel="post"
         bottomInset={insets.bottom}
         innerRef={shareSheetRef}
         onDismiss={() => setActiveShareReview(null)}
-        onShared={(postId, channel) => {
-          incrementShare(postId, channel);
-        }}
       />
     </Screen>
   );

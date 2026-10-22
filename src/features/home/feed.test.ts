@@ -1,3 +1,4 @@
+import { hungryService } from "@/lib/services/mock/mockService";
 import assert from "node:assert/strict";
 import test from "node:test";
 
@@ -7,6 +8,14 @@ import { resetServiceProvider, setServiceProvider } from "@/lib/services/service
 import type { DataRepository, HungryService } from "@/lib/services/types";
 import { userProfile } from "@/lib/services/mock/data";
 import { usePublishedPostStore } from "@/store/usePublishedPostStore";
+
+function serviceForRepository(repository: DataRepository): HungryService {
+  return {
+    ...hungryService,
+    content: { ...hungryService.content, listStallPosts: async () => repository.listStallPosts() },
+    social: { ...hungryService.social, getBitesFeed: async () => [] },
+  };
+}
 
 test("Home social feed uses the active repository instead of hidden mock fallbacks", async () => {
   const mockPosts = dataRepositoryMock.listStallPosts();
@@ -18,7 +27,7 @@ test("Home social feed uses the active repository instead of hidden mock fallbac
   setServiceProvider({
     mode: "mock",
     repository: partialRepository,
-    service: {} as HungryService,
+    service: serviceForRepository(partialRepository),
     similarityScore: () => 1,
   });
 
@@ -36,7 +45,7 @@ test("Home social feed treats relative fixture timestamps as recent posts", asyn
   setServiceProvider({
     mode: "mock",
     repository: dataRepositoryMock,
-    service: {} as HungryService,
+    service: serviceForRepository(dataRepositoryMock),
     similarityScore: () => 1,
   });
 
@@ -54,7 +63,7 @@ test("Home social feed ranks followed authors before unfollowed authors", async 
   setServiceProvider({
     mode: "mock",
     repository: dataRepositoryMock,
-    service: {} as HungryService,
+    service: serviceForRepository(dataRepositoryMock),
     similarityScore: () => 1,
   });
 
@@ -85,7 +94,7 @@ test("Home social feed refresh seed changes order without duplicating posts", as
   setServiceProvider({
     mode: "mock",
     repository: dataRepositoryMock,
-    service: {} as HungryService,
+    service: serviceForRepository(dataRepositoryMock),
     similarityScore: () => 1,
   });
 
@@ -112,7 +121,7 @@ test("Home social feed refresh keeps followed posts above non-followed posts", a
   setServiceProvider({
     mode: "mock",
     repository: dataRepositoryMock,
-    service: {} as HungryService,
+    service: serviceForRepository(dataRepositoryMock),
     similarityScore: () => 1,
   });
 
@@ -135,6 +144,27 @@ test("Home social feed refresh keeps followed posts above non-followed posts", a
     assert.ok(firstUnfollowedIndex > lastFollowedIndex);
   } finally {
     usePublishedPostStore.getState().clearPostsForTest();
+    resetServiceProvider();
+  }
+});
+
+test("Home propagates a failed feed source instead of reporting an empty successful slate", async () => {
+  const { clearHomeFeedBundleCache } = await import("./feed");
+  clearHomeFeedBundleCache();
+  const service = serviceForRepository(dataRepositoryMock);
+  service.social.getBitesFeed = async () => {
+    throw new Error("Feed temporarily offline");
+  };
+  setServiceProvider({
+    mode: "mock",
+    repository: dataRepositoryMock,
+    service,
+    similarityScore: () => 1,
+  });
+  try {
+    await assert.rejects(getHomeSocialFeed(userProfile), /Feed temporarily offline/);
+  } finally {
+    clearHomeFeedBundleCache();
     resetServiceProvider();
   }
 });

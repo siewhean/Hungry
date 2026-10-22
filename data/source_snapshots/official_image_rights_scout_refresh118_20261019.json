@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "snapshot_id": "official_image_rights_scout_refresh118_20261019",
+  "observed_at_sgt": "2026-10-19",
+  "workbook_path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "a70390e62c4b5a9605f8041e4136f92024d93275d99c58f8de7ebaf73c8c96b6",
+  "workbook_edited": false,
+  "scope": "Small targeted scout for exact-outlet, first-party image URLs with an explicit reuse license/permission or clearly stated rights. No paid sources, API calls, image downloads, or workbook edits.",
+  "method": {
+    "current_image_candidates_rows": 2575,
+    "comparison": "Reviewed existing Image Candidates headers, rights-status patterns, and existing Wikimedia Commons entries. The current list already contains review-only CC candidates, including Shashlik, Tian Tian, 328 Katong Laksa, Ya Kun, Din Tai Fung, and others; no new first-party permission-granting URL was identified in the targeted scout.",
+    "queries": [
+      "Singapore restaurant official website Creative Commons Attribution food images",
+      "Singapore hawker stall official website CC BY photos license",
+      "Singapore restaurant media assets image usage rights official restaurant photos",
+      "Singapore F&B image usage copyright official media kit"
+    ]
+  },
+  "findings": [],
+  "excluded_examples": [
+    {
+      "subject": "Tian Tian Hainanese Chicken Rice dish photo",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Singapore_food_-_Tian_Tian_chicken_rice_Nov_2016.jpg",
+      "direct_image_url": "https://upload.wikimedia.org/wikipedia/commons/7/77/Singapore_food_-_Tian_Tian_chicken_rice_Nov_2016.jpg",
+      "rights": "CC BY-SA 4.0 reported in current workbook candidate; attribution/share-alike conditions apply.",
+      "why_not_added": "Third-party Wikimedia Commons source, not an official first-party image URL. The current candidate has no SFA licence and explicitly says exact licence needs verification, so it does not satisfy exact-outlet matching for this batch. Existing workbook entry left untouched."
+    },
+    {
+      "subject": "General Singapore hawker-centre or dish photographs",
+      "source_page": "https://commons.wikimedia.org/wiki/Category:Hawker_centres_in_Singapore",
+      "rights": "Individual Commons files carry individual licenses; examples include CC BY-SA 4.0.",
+      "why_not_added": "Centre-level/general imagery does not identify an exact licensed outlet or stall and is not a first-party outlet asset."
+    },
+    {
+      "subject": "Official restaurant-site imagery without a reuse grant",
+      "source_page": "https://www.burgerking.com.sg/Legal",
+      "rights": "Official terms reserve intellectual-property rights and state that product photos/images are part of platform/promotional material; no reuse permission identified.",
+      "why_not_added": "Official provenance alone is not a reuse grant; excluded from image rows requiring permission for display."
+    }
+  ],
+  "rights_reference": {
+    "source_page": "https://www.ipos.gov.sg/about-ip/copyright/ownership-and-commercialisation/",
+    "summary": "IPOS says not to assume internet material is free to copy; check website terms and use Creative Commons materials only in accordance with their license attributes."
+  },
+  "result": {
+    "new_qualifying_images": 0,
+    "visual_checks_performed": 0,
+    "reason": "The targeted public search did not surface a first-party outlet asset with explicit permission or a license that clearly authorizes the intended catalogue display. Commons results can offer reuse terms, but are third-party submissions and do not meet the requested first-party-image constraint.",
+    "next_step": "For official photos whose pages reserve rights or do not state reuse terms, request written permission from the outlet/operator before upgrading a review-only URL for display."
+  }
+}

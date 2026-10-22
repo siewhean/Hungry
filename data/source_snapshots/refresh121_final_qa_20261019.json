@@ -1,0 +1,64 @@
+{
+  "snapshot_id": "refresh121_final_qa_20261019",
+  "observed_local_date": "2026-10-19",
+  "independent_qa": true,
+  "result": "PASS",
+  "workbook_path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "e75b32a39d9840532afbff2f5b497cc7a3a12870097418716f7d0b92f503f84f",
+  "checks": {
+    "zip_crc": "pass",
+    "sheet_ranges": {
+      "Public F&B Directory": "A1:U38280 (38,279 data rows)",
+      "Menu Items": "A1:L13117 (13,116 data rows)",
+      "Image Candidates": "A1:I2579 (2,578 data rows)",
+      "Coverage & Sources": "A1:C216 (215 data rows)"
+    },
+    "unique_sfa_licences": 38279,
+    "directory_alphabetical_casefold_blank_last": true,
+    "formula_error_blank_row_counts": {
+      "formulas": 0,
+      "errors": 0,
+      "blank_rows": 0
+    },
+    "coverage_counts": {
+      "named": 32775,
+      "unnamed": 5504,
+      "coordinates": 35735,
+      "contacts": 2692,
+      "websites": 2799,
+      "menu_urls": 1444,
+      "hours": 1460,
+      "ratings": 0,
+      "approved_images": 0,
+      "menu_summaries": 465
+    },
+    "proposal_readback": {
+      "exact_name_proposals": 8,
+      "exact_name_fills": 7,
+      "held_dumpling_ji": "NE23269X000 remains blank; official listing confirms #01-65 while SFA address spans #01-65/66",
+      "foodpanda_outlet_links_and_summaries": 5,
+      "foodpanda_menu_proposals": 25,
+      "new_menu_items": 24,
+      "refreshed_existing_items": 1,
+      "all_new_items_have_price_source_observed_freshness": true,
+      "legacy_price_source_preserved": true,
+      "mapbox_results_retained": false,
+      "new_coordinates": 0
+    }
+  },
+  "source_snapshots": {
+    "refresh121_blank_name_batch_20261019.json": {
+      "path": "data/source_snapshots/refresh121_blank_name_batch_20261019.json",
+      "sha256": "43d348600e03f6ae868d5ebfc9c5c0b614988f9736ffa534662572f0efdd4b02"
+    },
+    "refresh121_delivery_menu_audit_20261019.json": {
+      "path": "data/source_snapshots/refresh121_delivery_menu_audit_20261019.json",
+      "sha256": "10f92738bcefdb91025cca9c3818f97ad0f4660412675f4227565c529e7e812c"
+    },
+    "refresh121_mapbox_coordinates_20261019.json": {
+      "path": "data/source_snapshots/refresh121_mapbox_coordinates_20261019.json",
+      "sha256": "a34e1f552143ee83f72d1cf1853df44fd9769e8bb2fe21a9e629a0343663bc9e"
+    }
+  },
+  "discrepancies": []
+}

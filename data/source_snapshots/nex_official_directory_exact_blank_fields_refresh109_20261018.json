@@ -1,0 +1,125 @@
+{
+  "snapshot_id": "nex_official_directory_exact_blank_fields_refresh109_20261018",
+  "captured_date": "2026-10-18",
+  "workbook_path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "2118208143ab9c29af5bd98bf2872f34ca32bf6e08f077925b227e1c6bdbc5cb",
+  "publisher": "Gold Ridge Pte Ltd / NEX",
+  "scope": "Read-only official public mall-directory research. No Excel workbook edits, paid calls, or closure removals.",
+  "source_pages": [
+    {
+      "kind": "official directory by name",
+      "url": "https://www.nex.com.sg/Directory/ShopName/c",
+      "observed_date": "2026-10-18",
+      "http_status": 200,
+      "observations": ["Current HTML directory names CHATERAISE and #B2-49A; detail page confirms operator site and +65 6634 0014."]
+    },
+    {
+      "kind": "official directory by name",
+      "url": "https://www.nex.com.sg/Directory/ShopName/p",
+      "observed_date": "2026-10-18",
+      "http_status": 200,
+      "observations": ["Current HTML directory names PARIS BAGUETTE and #01-67; detail page confirms operator site and +65 6509 0445."]
+    },
+    {
+      "kind": "official directory by name",
+      "url": "https://www.nex.com.sg/Directory/ShopName/u",
+      "observed_date": "2026-10-18",
+      "http_status": 200,
+      "observations": ["Current HTML directory names UMISUSHI and #B2-40; detail page confirms operator site and +65 6513 0688."]
+    },
+    {
+      "kind": "official directory by name",
+      "url": "https://www.nex.com.sg/Directory/ShopName/x",
+      "observed_date": "2026-10-18",
+      "http_status": 200,
+      "observations": ["Current HTML directory names XIANG XIANG HUNAN CUISINE and #B1-41/42/43; detail page confirms official social page and +65 6908 1843."]
+    }
+  ],
+  "proposed_updates": [
+    {
+      "sfa_licence": "SE11C23N000",
+      "f_and_b_name": "CHATERAISE",
+      "postal_code": "556083",
+      "unit": "#B2-49A",
+      "join_basis": "Exact brand name, postal code, and unit match between workbook record and NEX directory/detail page.",
+      "current_blank_fields_verified": ["Contact Details", "Website"],
+      "proposed_values": {
+        "Contact Details": "Contact: +65 6634 0014",
+        "Website": "https://www.chateraise.co.jp/global"
+      },
+      "source_url": "https://www.nex.com.sg/Directory/Shop/HTl9NQDvk6NCa_2f2G_2f4jjWQ_3d_3d/OGNA6AN9sjn_2bodSJY5m6ew_3d_3d?Name=CHATERAISE",
+      "source_evidence": "NEX detail HTML reports CHATERAISE, unit #B2-49A, official Chateraise global URL, and +65 6634 0014.",
+      "destination_url_checked": "https://www.chateraise.co.jp/global",
+      "destination_http_status_after_redirect": 200,
+      "confidence": "high"
+    },
+    {
+      "sfa_licence": "SE20V22K000",
+      "f_and_b_name": "PARIS BAGUETTE",
+      "postal_code": "556083",
+      "unit": "#01-67",
+      "join_basis": "Exact brand name, postal code, and unit match between workbook record and NEX directory/detail page.",
+      "current_blank_fields_verified": ["Contact Details", "Website"],
+      "proposed_values": {
+        "Contact Details": "Contact: +65 6509 0445",
+        "Website": "https://www.parisbaguette.com.sg/"
+      },
+      "source_url": "https://www.nex.com.sg/Directory/Shop/qbjHWjcKv2GJGewRmzGQOA_3d_3d/9NJh84V0tInqPb6ZGN650w_3d_3d?Name=PARIS+BAGUETTE+",
+      "source_evidence": "NEX detail HTML reports PARIS BAGUETTE, unit #01-67, listed operator site http://www.parisbaguette.com.sg, and +65 6509 0445. The listed website redirects to the HTTPS URL shown above; final response was HTTP 200.",
+      "destination_url_checked": "https://www.parisbaguette.com.sg/",
+      "destination_http_status_after_redirect": 200,
+      "confidence": "high"
+    },
+    {
+      "sfa_licence": "SE20S65E000",
+      "f_and_b_name": "UMISUSHI",
+      "postal_code": "556083",
+      "unit": "#B2-40",
+      "join_basis": "Exact brand name, postal code, and unit match between workbook record and NEX directory/detail page.",
+      "current_blank_fields_verified": ["Contact Details", "Website"],
+      "proposed_values": {
+        "Contact Details": "Contact: +65 6513 0688",
+        "Website": "https://umisushi.com.sg/"
+      },
+      "source_url": "https://www.nex.com.sg/Directory/Shop/qbjHWjcKv2GJGewRmzGQOA_3d_3d/jPN1d4osj959wV_2fZgbWfiw_3d_3d?Name=UMISUSHI",
+      "source_evidence": "NEX detail HTML reports UMISUSHI, unit #B2-40, listed operator site http://www.umisushi.com.sg, and +65 6513 0688. The listed website redirects to HTTPS; final response was HTTP 200.",
+      "destination_url_checked": "https://umisushi.com.sg/",
+      "destination_http_status_after_redirect": 200,
+      "confidence": "high"
+    },
+    {
+      "sfa_licence": "SE20T37J000",
+      "f_and_b_name": "Xiang Xiang Hunan Cuisine",
+      "postal_code": "556083",
+      "unit": "#B1-41/42/43",
+      "join_basis": "Exact brand name, postal code, and all three unit numbers match between workbook record and NEX directory/detail page.",
+      "current_blank_fields_verified": ["Contact Details", "Website"],
+      "proposed_values": {
+        "Contact Details": "Contact: +65 6908 1843",
+        "Website": "https://www.facebook.com/xiangxianghunancuisinesg/"
+      },
+      "source_url": "https://www.nex.com.sg/Directory/Shop/qbjHWjcKv2GJGewRmzGQOA_3d_3d/9mBU6M_2buxl87iJiwl_2fzZ9Q_3d_3d?Name=XIANG+XIANG+HUNAN+CUISINE+",
+      "source_evidence": "NEX detail HTML reports XIANG XIANG HUNAN CUISINE, unit #B1-41/42/43, links the merchant's Facebook page, and lists +65 69081843. Facebook response was HTTP 200.",
+      "destination_url_checked": "https://www.facebook.com/xiangxianghunancuisinesg/",
+      "destination_http_status_after_redirect": 200,
+      "website_kind": "official merchant social page; not a standalone domain",
+      "confidence": "high"
+    }
+  ],
+  "counts": {
+    "malls_with_actionable_current_fields": 1,
+    "exact_sfa_name_postal_unit_matches": 4,
+    "blank_only_values_proposed": 8,
+    "menu_url_values_proposed": 0,
+    "opening_hours_values_proposed": 0,
+    "official_image_url_values_proposed": 0,
+    "explicit_exact_permanent_closure_notices": 0,
+    "records_to_remove": 0
+  },
+  "limitations": [
+    "NEX directory labels its 10:30am-10:30pm times as mall operating hours. Those hours were not copied to individual outlets.",
+    "No exact, current tenant-specific menu URL or image asset was captured in this batch. The directory shows brand/shopfront image content, but this snapshot does not propose image assets or reuse approval.",
+    "No explicit exact-unit/SFA permanent closure notice was found in the reviewed NEX pages.",
+    "Other candidate mall directories assessed during source triage did not expose sufficiently exact outlet contact, hours, or menu facts to propose field updates; no unverified mall-wide hours were imputed."
+  ]
+}

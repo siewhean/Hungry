@@ -1,7 +1,9 @@
-import React, { useCallback, useState, useEffect } from "react";
+import { useMerchantOperationScope } from "@/features/merchant/useMerchantOperationScope";
+import { useRef as useMerchantRequestRef } from "react";
+import React, { useCallback, useState, useEffect, useRef } from "react";
 import { View, StyleSheet, Alert, Pressable } from "react-native";
 import { Calendar, X } from "lucide-react-native";
-import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
+import { useRoute, type RouteProp } from "@react-navigation/native";
 
 import {
   AppText,
@@ -28,6 +30,13 @@ import {
 } from "@/features/merchant/merchantReadiness";
 import { validateMerchantPromotionInput } from "@/features/merchant/promotionValidation";
 
+import {
+  parseMerchantPrice,
+  singaporeCalendarDate,
+  singaporeDateBoundary,
+} from "@/features/merchant/workflowSafety";
+import { useMerchantDirtyExit } from "@/features/merchant/useMerchantDirtyExit";
+
 type RouteProps = RouteProp<MerchantTabParamList, "PromotionBuilder">;
 type PromotionItemType = NonNullable<MerchantPromotion["promotionItemType"]>;
 
@@ -37,14 +46,16 @@ const PROMOTION_ITEM_TYPE_OPTIONS: readonly { id: PromotionItemType; label: stri
 ];
 
 export function PromotionBuilderScreen() {
+  const captureOperation = useMerchantOperationScope();
+
   const { componentRadii, palette, spacing } = useHungryTheme();
-  const navigation = useNavigation();
   const route = useRoute<RouteProps>();
   const promotionId = route.params?.promotionId;
   const activeOutlet = useMerchantStore(getActiveOutlet);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  useEffect(() => setIsSaving(false), [activeOutlet?.id]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [targetDishId, setTargetDishId] = useState<string | undefined>(undefined);
@@ -55,10 +66,8 @@ export function PromotionBuilderScreen() {
   const [promotionalPrice, setPromotionalPrice] = useState("");
   const [discountPercentage, setDiscountPercentage] = useState("");
   const [isAvailable, setIsAvailable] = useState(true);
-  const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
-  const [endDate, setEndDate] = useState(
-    new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0],
-  );
+  const [startDate, setStartDate] = useState(singaporeCalendarDate(new Date()));
+  const [endDate, setEndDate] = useState(singaporeCalendarDate(Date.now() + 7 * 86400000));
   const [status, setStatus] = useState<PromotionStatus>("draft");
   const [error, setError] = useState<string | null>(null);
   const [targetAudiences, setTargetAudiences] = useState<Set<PromotionTargetAudience>>(
@@ -66,7 +75,47 @@ export function PromotionBuilderScreen() {
   );
   const [dateErrors, setDateErrors] = useState({ start: false, end: false });
 
+  const originalDates = useRef<{ start: string; end: string } | null>(null);
+  const baseline = useRef<string | null>(null);
+  const snapshot = JSON.stringify({
+    title,
+    description,
+    targetDishId,
+    promotionItemType,
+    originalPrice,
+    promotionalPrice,
+    discountPercentage,
+    isAvailable,
+    startDate,
+    endDate,
+    status,
+    targetAudiences: Array.from(targetAudiences),
+  });
+  useEffect(() => {
+    if (!isLoading && baseline.current === null) baseline.current = snapshot;
+  }, [isLoading, snapshot]);
+  const finishBack = useMerchantDirtyExit(
+    baseline.current !== null && baseline.current !== snapshot,
+    isSaving,
+  );
+  const dateValue = (day: string, boundary: "start" | "end") => {
+    const original =
+      boundary === "start" ? originalDates.current?.start : originalDates.current?.end;
+    return original && singaporeCalendarDate(original) === day
+      ? original
+      : singaporeDateBoundary(day, boundary);
+  };
+  const requestGeneration = useMerchantRequestRef(0);
+  const currentOutlet = useMerchantRequestRef(activeOutlet?.id);
+  currentOutlet.current = activeOutlet?.id;
   const loadPromotion = useCallback(async () => {
+    const isOperationCurrent = captureOperation();
+    if (!isOperationCurrent()) return;
+
+    const request = ++requestGeneration.current;
+    const outletId = activeOutlet?.id;
+    const isCurrent = () =>
+      request === requestGeneration.current && outletId === currentOutlet.current;
     setError(null);
     setIsLoading(true);
 
@@ -81,15 +130,19 @@ export function PromotionBuilderScreen() {
         getHungryService().merchant.getPromotions(activeOutlet.id),
         getHungryService().merchant.getMenu(activeOutlet.id),
       ]);
+      if (!isOperationCurrent()) return;
+
+      if (!isCurrent()) return;
       setMenu(menuItems);
       if (!promotionId) return;
       const promo = promos.find((p) => p.id === promotionId);
       if (promo) {
+        originalDates.current = { start: promo.startDate, end: promo.endDate };
         setTitle(promo.title);
         setDescription(promo.description);
         setTargetDishId(promo.targetDishId);
-        setStartDate(promo.startDate.split("T")[0]);
-        setEndDate(promo.endDate.split("T")[0]);
+        setStartDate(singaporeCalendarDate(promo.startDate));
+        setEndDate(singaporeCalendarDate(promo.endDate));
         setStatus(promo.status);
         setTargetAudiences(new Set(promo.targetAudience));
         setPromotionItemType(promo.promotionItemType ?? "new_item");
@@ -101,9 +154,14 @@ export function PromotionBuilderScreen() {
         setIsAvailable(promo.isAvailable ?? true);
       }
     } catch (e) {
+      if (!isOperationCurrent()) return;
+
+      if (!isCurrent()) return;
       setError(e instanceof Error ? e.message : "Failed to load promotion details.");
     } finally {
-      setIsLoading(false);
+      if (isOperationCurrent()) {
+        if (isCurrent()) setIsLoading(false);
+      }
     }
   }, [promotionId, activeOutlet]);
 
@@ -124,6 +182,9 @@ export function PromotionBuilderScreen() {
   };
 
   const handleSave = async (publish: boolean) => {
+    const isOperationCurrent = captureOperation();
+    if (!isOperationCurrent()) return;
+
     if (!activeOutlet) return;
     if (!title || !description || !startDate || !endDate) {
       Alert.alert("Missing Fields", "Please fill out all required fields.");
@@ -143,8 +204,10 @@ export function PromotionBuilderScreen() {
 
     setIsSaving(true);
     try {
-      const parsedOriginalPrice = originalPrice ? Number(originalPrice) : undefined;
-      const parsedPromotionalPrice = promotionalPrice ? Number(promotionalPrice) : undefined;
+      const parsedOriginalPrice = originalPrice ? parseMerchantPrice(originalPrice) : undefined;
+      const parsedPromotionalPrice = promotionalPrice
+        ? parseMerchantPrice(promotionalPrice)
+        : undefined;
       const parsedDiscount = discountPercentage ? Number(discountPercentage) : undefined;
       if (
         [parsedOriginalPrice, parsedPromotionalPrice, parsedDiscount].some(
@@ -156,8 +219,8 @@ export function PromotionBuilderScreen() {
       }
       const newStatus = publish
         ? resolvePromotionRuntimeStatus({
-            startDate: `${startDate}T00:00:00Z`,
-            endDate: `${endDate}T23:59:59Z`,
+            startDate: dateValue(startDate, "start"),
+            endDate: dateValue(endDate, "end"),
             status: "active",
           })
         : "draft";
@@ -166,8 +229,8 @@ export function PromotionBuilderScreen() {
         title,
         description,
         targetDishId,
-        startDate: `${startDate}T00:00:00Z`,
-        endDate: `${endDate}T23:59:59Z`,
+        startDate: dateValue(startDate, "start"),
+        endDate: dateValue(endDate, "end"),
         status: newStatus,
         targetAudience: Array.from(targetAudiences),
         promotionItemType,
@@ -180,17 +243,24 @@ export function PromotionBuilderScreen() {
 
       if (promotionId) {
         await getHungryService().merchant.updatePromotion(promotionId, promoData);
+        if (!isOperationCurrent()) return;
       } else {
         await getHungryService().merchant.createPromotion(activeOutlet.id, promoData);
+        if (!isOperationCurrent()) return;
       }
 
       Alert.alert("Success", `Promotion ${publish ? "published" : "saved as draft"}!`);
-      navigation.goBack();
+      baseline.current = snapshot;
+      finishBack();
     } catch (e) {
+      if (!isOperationCurrent()) return;
+
       Alert.alert("Error", e instanceof Error ? e.message : "Failed to save promotion.");
       console.error(e);
     } finally {
-      setIsSaving(false);
+      if (isOperationCurrent()) {
+        setIsSaving(false);
+      }
     }
   };
 
@@ -221,7 +291,11 @@ export function PromotionBuilderScreen() {
   const renderAudienceToggle = (id: PromotionTargetAudience, label: string, desc: string) => {
     const isSelected = targetAudiences.has(id);
     return (
-      <Pressable onPress={() => setAudienceSelected(id, !isSelected)}>
+      <Pressable
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: isSelected }}
+        onPress={() => setAudienceSelected(id, !isSelected)}
+      >
         <FormSwitchRow
           label={label}
           description={desc}
@@ -239,15 +313,15 @@ export function PromotionBuilderScreen() {
     title,
     description,
     targetDishId,
-    startDate: `${startDate}T00:00:00Z`,
-    endDate: `${endDate}T23:59:59Z`,
+    startDate: dateValue(startDate, "start"),
+    endDate: dateValue(endDate, "end"),
     targetAudience: Array.from(targetAudiences),
     status,
     createdAt: new Date().toISOString(),
     promotionItemType,
-    originalPrice: originalPrice ? Number(originalPrice) : selectedDish?.price,
-    promotionalPrice: promotionalPrice ? Number(promotionalPrice) : undefined,
-    finalPrice: promotionalPrice ? Number(promotionalPrice) : selectedDish?.price,
+    originalPrice: originalPrice ? parseMerchantPrice(originalPrice) : selectedDish?.price,
+    promotionalPrice: promotionalPrice ? parseMerchantPrice(promotionalPrice) : undefined,
+    finalPrice: promotionalPrice ? parseMerchantPrice(promotionalPrice) : selectedDish?.price,
     discountPercentage: discountPercentage ? Number(discountPercentage) : undefined,
     isAvailable,
   };
@@ -352,6 +426,8 @@ export function PromotionBuilderScreen() {
               {menu.map((dish) => (
                 <Pressable
                   key={dish.id}
+                  accessibilityRole="radio"
+                  accessibilityState={{ checked: targetDishId === dish.id }}
                   onPress={() => {
                     setTargetDishId(dish.id);
                     setOriginalPrice(dish.price.toString());
@@ -479,6 +555,7 @@ export function PromotionBuilderScreen() {
 
         <View style={{ flexDirection: "row", gap: spacing[3], marginTop: spacing[4] }}>
           <Button
+            loading={isSaving}
             label={isSaving ? "Saving..." : "Save as Draft"}
             variant="secondary"
             style={{ flex: 1 }}
@@ -486,6 +563,7 @@ export function PromotionBuilderScreen() {
             disabled={isSaving}
           />
           <Button
+            loading={isSaving}
             label={isSaving ? "Publishing..." : "Publish Now"}
             variant="primary"
             style={{ flex: 1 }}

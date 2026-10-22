@@ -1,0 +1,65 @@
+{
+  "snapshot_id": "refresh125_final_qa_20261019",
+  "qa_type": "independent_installed_workbook_quality_check",
+  "observed_date_local_singapore": "2026-10-19",
+  "result": "PASS",
+  "workbook_path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_sha256": "fe31f2c8926d09ce592189efa8012987f6a3e878ef2977f50fe466873d567a64",
+  "installed_sha256": "00a13d50c650e1bcbde0f51f15260e4f8aeecbd9d0372bae284c6c50558e2967",
+  "candidate_matches_installed_byte_for_byte": true,
+  "checks": {
+    "zip_crc": "PASS",
+    "sheets": {
+      "Public F&B Directory": "A1:U38279; 38,278 records",
+      "Menu Items": "A1:L13337; 13,336 records",
+      "Image Candidates": "A1:I2743; 2,742 records",
+      "Coverage & Sources": "A1:C219; 218 records"
+    },
+    "unique_sfa_licences": 38278,
+    "baseline_licence_multiset_unchanged": true,
+    "alphabetical_sort": {
+      "status": "PASS",
+      "named_records": 32793,
+      "casefold_inversions": 0,
+      "unnamed_records": 5485,
+      "unnamed_records_last": true
+    },
+    "formulas": 0,
+    "excel_errors": 0,
+    "fully_blank_rows": 0,
+    "directory_change_rows_checked": 110,
+    "directory_change_mismatches": 0,
+    "menu_rows_added": 160,
+    "menu_rows_updated": 2,
+    "image_rows_added": 162,
+    "image_image_urls_nonblank": true,
+    "image_rights_states": {
+      "permission_required": 150,
+      "review_only": 12,
+      "approved": 0
+    },
+    "coverage": {
+      "coordinates": 35734,
+      "contacts": 2704,
+      "websites": 2812,
+      "menu_urls": 1471,
+      "menu_summaries": 520,
+      "hours": 1474,
+      "ratings_reviews": 0,
+      "approved_images": 0
+    },
+    "public_access_evidence": {
+      "SW23625P000": "Burger King SAFRA Choa Chu Kang 24/7 drive-through",
+      "SE18181C000": "VE/LA Changi Terminal 1 Public area"
+    },
+    "mapbox_search_box_usage": "59/50000 user-reported; not independently verified",
+    "integration_receipt_sha_matches": true
+  },
+  "limitations": [
+    "No permanent closures were confirmed by the current SFA query.",
+    "Menu availability is not verified at every outlet for chain-level Aburi-EN and official menu summaries.",
+    "Image references are not approved for display or reuse.",
+    "Some SAFRA and Jewel public-access cases remain unresolved.",
+    "Nationwide catalogue verification remains incomplete."
+  ]
+}

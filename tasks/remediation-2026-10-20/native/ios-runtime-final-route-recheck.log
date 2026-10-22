@@ -1,0 +1,86 @@
+2026-10-20 22:25:25.888 Hungry[93986:33493136] You've implemented -[<UIApplicationDelegate> application:performFetchWithCompletionHandler:], but you still need to add "fetch" to the list of your supported UIBackgroundModes in your Info.plist.
+2026-10-20 22:25:25.888 Hungry[93986:33493136] You've implemented -[<UIApplicationDelegate> application:didReceiveRemoteNotification:fetchCompletionHandler:], but you still need to add "remote-notification" to the list of your supported UIBackgroundModes in your Info.plist.
+2026-10-20 22:25:25.890 Hungry[93986:33493136] _setUpFeatureFlags called with release level 2
+objc[93986]: Class UIAccessibilityLoaderWebShared is implemented in both /Library/Developer/CoreSimulator/Volumes/iOS_23F77/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebCore.axbundle/WebCore (0x10b7d0310) and /Library/Developer/CoreSimulator/Volumes/iOS_23F77/Library/Developer/CoreSimulator/Profiles/Runtimes/iOS 26.5.simruntime/Contents/Resources/RuntimeRoot/System/Library/AccessibilityBundles/WebKit.axbundle/WebKit (0x10b86c398). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+W1020 22:25:27.015882 1847799808 ReactInstance.cpp:256] ReactInstance: evaluateJavaScript() with JS bundle
+2026-10-20 22:25:28.462 Hungry[93986:33493136] Session replay disabled via configuration
+I1020 22:25:29.485121 1847799808 UIManagerBinding.cpp:135] instanceHandle is null, event of type topHeaderHeightChange will be dropped
+I1020 23:15:24.239238 1847799808 UIManagerBinding.cpp:135] instanceHandle is null, event of type topLoad will be dropped
+I1020 23:15:33.010339 1847799808 UIManagerBinding.cpp:135] instanceHandle is null, event of type topDismissed will be dropped
+I1020 23:15:37.114066 1847799808 UIManagerBinding.cpp:135] instanceHandle is null, event of type topMomentumScrollEnd will be dropped
+I1020 23:15:37.114298 1847799808 UIManagerBinding.cpp:135] instanceHandle is null, event of type topLoadStart will be dropped
+I1020 23:15:37.114401 1847799808 UIManagerBinding.cpp:135] instanceHandle is null, event of type topSvgLayout will be dropped
+I1020 23:15:37.114506 1847799808 UIManagerBinding.cpp:135] instanceHandle is null, event of type topSvgLayout will be dropped
+I1020 23:15:37.114662 1847799808 UIManagerBinding.cpp:135] instanceHandle is null, event of type topTransitionProgress will be dropped
+I1020 23:15:37.114758 1847799808 UIManagerBinding.cpp:135] instanceHandle is null, event of type topTransitionProgress will be dropped
+I1020 23:15:37.114832 1847799808 UIManagerBinding.cpp:135] instanceHandle is null, event of type topTransitionProgress will be dropped
+I1020 23:15:37.114913 1847799808 UIManagerBinding.cpp:135] instanceHandle is null, event of type topTransitionProgress will be dropped
+I1020 23:15:37.114993 1847799808 UIManagerBinding.cpp:135] instanceHandle is null, event of type topTransitionProgress will be dropped
+I1020 23:15:37.115067 1847799808 UIManagerBinding.cpp:135] instanceHandle is null, event of type topTransitionProgress will be dropped
+I1020 23:15:37.115155 1847799808 UIManagerBinding.cpp:135] instanceHandle is null, event of type topMomentumScrollEnd will be dropped
+I1020 23:15:37.115334 1847799808 UIManagerBinding.cpp:135] instanceHandle is null, event of type topHeaderHeightChange will be dropped
+W1020 23:15:38.759985 100294208 Scheduler.cpp:153] Scheduler::~Scheduler() was called (address: 0x108df6a00).
+W1020 23:15:38.806934 1847799808 UIManagerBinding.cpp:59] UIManagerBinding::~UIManagerBinding() was called (address: 0x108d679d8).
+W1020 23:15:38.807193 1847799808 UIManager.cpp:57] UIManager::~UIManager() was called (address: 0x108ebbc18).
+W1020 23:15:39.738796 1855254528 ReactInstance.cpp:256] ReactInstance: evaluateJavaScript() with JS bundle
+2026-10-20 23:15:41.165 Hungry[93986:33493136] Session replay disabled via configuration
+I1020 23:16:01.544325 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topHeaderHeightChange will be dropped
+I1020 23:16:20.652951 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topMomentumScrollEnd will be dropped
+I1020 23:16:21.975296 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topDisappear will be dropped
+I1020 23:16:57.592145 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topLoadStart will be dropped
+I1020 23:16:57.592334 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topLoad will be dropped
+I1020 23:16:57.592438 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topDisplay will be dropped
+I1020 23:16:57.592538 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topLoadStart will be dropped
+I1020 23:16:57.592633 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topLoad will be dropped
+I1020 23:16:57.592716 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topDisplay will be dropped
+I1020 23:16:57.592832 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topLoadStart will be dropped
+I1020 23:16:57.592926 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topLoad will be dropped
+I1020 23:16:57.593025 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topDisplay will be dropped
+I1020 23:16:57.593111 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topLoadStart will be dropped
+I1020 23:16:57.593207 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topLoad will be dropped
+I1020 23:16:57.593291 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topDisplay will be dropped
+I1020 23:16:57.593380 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topLoadStart will be dropped
+I1020 23:16:57.593479 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topLoad will be dropped
+I1020 23:16:57.593560 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topDisplay will be dropped
+I1020 23:16:57.593648 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topLoadStart will be dropped
+I1020 23:16:57.593736 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topLoad will be dropped
+I1020 23:16:57.593815 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topDisplay will be dropped
+I1020 23:16:57.593895 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topLoadStart will be dropped
+I1020 23:16:57.593982 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topLoad will be dropped
+I1020 23:16:57.594183 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topDisplay will be dropped
+I1020 23:16:57.594261 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topLoadStart will be dropped
+I1020 23:16:57.594385 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topLoad will be dropped
+I1020 23:16:57.594476 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topDisplay will be dropped
+I1020 23:16:57.594568 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topLoadStart will be dropped
+I1020 23:16:57.594712 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topLoad will be dropped
+I1020 23:16:57.594810 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topDisplay will be dropped
+I1020 23:16:57.594916 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topLoadStart will be dropped
+I1020 23:16:57.595027 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topLoad will be dropped
+I1020 23:16:57.595124 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topDisplay will be dropped
+I1020 23:16:57.595209 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topLoadStart will be dropped
+I1020 23:16:57.595304 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topLoad will be dropped
+I1020 23:16:57.595388 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topDisplay will be dropped
+I1020 23:16:57.595471 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topLoadStart will be dropped
+I1020 23:16:57.595563 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topLoad will be dropped
+I1020 23:16:57.595643 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topDisplay will be dropped
+I1020 23:16:57.595733 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topLoadStart will be dropped
+I1020 23:16:57.595829 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topLoad will be dropped
+I1020 23:16:57.595912 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topDisplay will be dropped
+I1020 23:16:57.595997 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topLoadStart will be dropped
+I1020 23:16:57.596101 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topLoad will be dropped
+I1020 23:16:57.596184 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topDisplay will be dropped
+I1020 23:16:57.596261 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topLoadStart will be dropped
+I1020 23:16:57.596342 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topLoad will be dropped
+I1020 23:16:57.596419 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topDisplay will be dropped
+I1020 23:16:57.596496 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topLoadStart will be dropped
+I1020 23:16:57.596577 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topLoad will be dropped
+I1020 23:16:57.596654 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topDisplay will be dropped
+I1020 23:16:57.596731 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topLoadStart will be dropped
+I1020 23:16:57.596814 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topLoad will be dropped
+I1020 23:16:57.597038 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topMomentumScrollEnd will be dropped
+I1020 23:17:17.005125 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topDisplay will be dropped
+I1020 23:17:19.360930 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topDisplay will be dropped
+I1020 23:17:22.915763 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topDisplay will be dropped
+I1020 23:18:15.869417 1855254528 UIManagerBinding.cpp:135] instanceHandle is null, event of type topMomentumScrollEnd will be dropped
+app.hungry.mobile.remediationrouteqa: 93986

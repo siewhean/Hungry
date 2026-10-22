@@ -1,0 +1,69 @@
+{
+  "snapshot": "refresh130_directory_fields_20261019",
+  "baseline_workbook_sha256": "b76b2a41688b67767fe1dfe7a63690100c6868dd949415b14bd5b224973131bb",
+  "scope": "Read-only audit of exact public-access outlet directory fields. No Mapbox or paid sources. No workbook edits.",
+  "sources_checked": [
+    {
+      "url": "https://www.vivocity.com.sg/stores/shake-shack/",
+      "source_type": "first-party mall tenant directory",
+      "retrieved": "2026-10-19",
+      "evidence": "VivoCity directory search result lists Shake Shack at unit #01-163 and displays contact number 8852 5873 as an image/alt-text in the More Info area. Listing is live/current in the directory crawl. Direct open returned 403; underlying directory page was not independently fetched in this session."
+    },
+    {
+      "url": "https://www.vivocity.com.sg/",
+      "source_type": "first-party venue operating-hours page",
+      "retrieved": "2026-10-19",
+      "evidence": "VivoCity states mall hours as daily 10am-10pm and customer service hotline 6377 6870. These are mall-level details, not outlet-specific, so neither was assigned to tenant records."
+    },
+    {
+      "url": "https://www.nex.com.sg/Directory/Shop/qbjHWjcKv2GJGewRmzGQOA_3d_3d/BSOrZPhGXS2wvwki9wvmgg_3d_3d?Name=4FINGERS+CRISPY+CHICKEN",
+      "source_type": "first-party mall tenant directory",
+      "retrieved": "2026-10-19",
+      "evidence": "NEX confirms 4Fingers at #B2-50/51 and displays NEX mall hours 10:30am-10:30pm. Tenant-specific phone and hours are not listed; not used to fill outlet contact or hours."
+    }
+  ],
+  "field_deltas": [
+    {
+      "sfa_licence": "SW20Q27C000",
+      "f_and_b_name": "Shake Shack",
+      "postal_code": "098585",
+      "address_match": "1 HARBOURFRONT WALK, VIVO CITY, SINGAPORE 098585; first-party directory identifies unit #01-163 (SFA address omits unit)",
+      "field": "Contact Details",
+      "old_value": null,
+      "proposed_value": "Contact: +65 8852 5873",
+      "source_url": "https://www.vivocity.com.sg/stores/shake-shack/",
+      "confidence": "medium",
+      "reason": "Exact brand/venue match; official mall directory displays the number, but it appears as image alt-text and the page itself could not be opened directly (403). Recommend human/source-level confirmation before integration."
+    }
+  ],
+  "closure_warnings": [],
+  "non_deltas": [
+    {
+      "sfa_licence": "SW06650K000",
+      "f_and_b_name": "4Fingers Crispy Chicken",
+      "postal_code": "098585",
+      "address_match": "1 HARBOURFRONT WALK #02-120, VIVO CITY, SINGAPORE 098585",
+      "field": "Opening Hours / Closed Days",
+      "finding": "VivoCity tenant listing confirms the outlet/unit remains listed. Mall publishes daily 10am-10pm, but this is mall-wide and not sufficient proof of outlet operating hours; no field change proposed.",
+      "source_url": "https://www.vivocity.com.sg/stores/4-fingers-crispy-chicken-2/"
+    },
+    {
+      "sfa_licence": "SE10597E000",
+      "f_and_b_name": "4FINGERS CRISPY CHICKEN",
+      "postal_code": "556083",
+      "address_match": "23 SERANGOON CENTRAL #B2-50/51, NEX, SINGAPORE 556083",
+      "field": "Opening Hours / Closed Days",
+      "finding": "NEX listing confirms the tenant and unit, but only mall-wide hours (Mon-Sun 10:30am-10:30pm) are stated. No outlet-hours field change proposed.",
+      "source_url": "https://www.nex.com.sg/Directory/Shop/qbjHWjcKv2GJGewRmzGQOA_3d_3d/BSOrZPhGXS2wvwki9wvmgg_3d_3d?Name=4FINGERS+CRISPY+CHICKEN"
+    }
+  ],
+  "summary": {
+    "candidate_field_fills": 1,
+    "verified_field_fills": 0,
+    "medium_confidence_unconfirmed_candidates": 1,
+    "mall_level_hours_rejected_as_outlet_hours": 2,
+    "confirmed_permanent_closures": 0,
+    "closure_warnings": 0,
+    "workbook_edited": false
+  }
+}

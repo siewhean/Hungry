@@ -1,3 +1,5 @@
+import { getHungryService } from "@/lib/services/serviceProvider";
+import type { VenueSummary } from "@/types/domain";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -7,7 +9,7 @@ import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { MapSurface, type MapSurfaceMarker } from "@/components/map/MapSurface";
-import { AppText, Card, Badge } from "@/components/ui";
+import { AppText, Card, Badge, Button, EmptyState, Screen } from "@/components/ui";
 import { getBuildingVenues } from "@/features/discovery/discovery";
 import { getBuildingById, singaporeBuildings, toSummary } from "@/lib/geo/singaporeBuildings";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
@@ -20,18 +22,35 @@ type Props = NativeStackScreenProps<RootStackParamList, "MapZoomedIn">;
 const DEFAULT_BUILDING_ID = "hc-maxwell";
 
 function resolveBuilding(buildingId?: string, selectedName?: string) {
-  if (buildingId) {
-    const byId = getBuildingById(buildingId);
-    if (byId) return byId;
-  }
+  if (buildingId) return getBuildingById(buildingId);
   if (selectedName) {
     const byName = singaporeBuildings.find((b) => b.name === selectedName);
     if (byName) return byName;
   }
-  return getBuildingById(DEFAULT_BUILDING_ID)!;
+  return undefined;
 }
 
-export function MapZoomedInScreen({ navigation, route }: Props) {
+export function MapZoomedInScreen(props: Props) {
+  const selectedBuilding = useDiscoveryStore((state) => state.selectedBuilding);
+  const building = resolveBuilding(props.route.params?.buildingId, selectedBuilding?.name);
+  if (!building)
+    return (
+      <Screen title="Map location unavailable">
+        <EmptyState
+          title="Building unavailable"
+          body="This building could not be found. Choose another location."
+        />
+        <Button label="Back" onPress={() => props.navigation.goBack()} />
+      </Screen>
+    );
+  return <ResolvedMapZoomedInScreen {...props} building={building} />;
+}
+
+function ResolvedMapZoomedInScreen({
+  navigation,
+  route,
+  building,
+}: Props & { building: NonNullable<ReturnType<typeof resolveBuilding>> }) {
   const insets = useSafeAreaInsets();
   const { palette, radii, spacing, shadows } = useHungryTheme();
   const currentLocation = useLocationStore((state) => state.currentLocation);
@@ -40,11 +59,6 @@ export function MapZoomedInScreen({ navigation, route }: Props) {
   const setSelectedFloor = useDiscoveryStore((state) => state.setSelectedFloor);
 
   const [currentZoom, setCurrentZoom] = useState(16.8);
-
-  const building = useMemo(
-    () => resolveBuilding(route.params?.buildingId, selectedBuilding?.name),
-    [route.params?.buildingId, selectedBuilding?.name],
-  );
 
   useEffect(() => {
     setSelectedBuilding(toSummary(building));
@@ -60,34 +74,38 @@ export function MapZoomedInScreen({ navigation, route }: Props) {
       type: building.type,
     };
 
-    if (currentZoom > 17.0) {
-      const stallMarkers = getBuildingVenues(building.id).map((v, index) => {
-        // Keep marker placement deterministic to avoid visual jitter on rerenders.
-        // This is a temporary spread strategy until exact stall geometry is used.
-        const latitudeOffset = ((index % 7) - 3) * 0.00007;
-        const longitudeOffset = ((Math.floor(index / 7) % 7) - 3) * 0.00007;
-        return {
-          id: `stall-${v.id}`,
-          label: v.name,
-          coordinate: {
-            latitude: building.coordinate.latitude + latitudeOffset,
-            longitude: building.coordinate.longitude + longitudeOffset,
-          },
-          accent: palette.orange,
-        };
-      });
-      return [buildingMarker, ...stallMarkers];
-    }
-
     return [buildingMarker];
   }, [building, palette, currentZoom]);
 
+  const [venues, setVenues] = useState<VenueSummary[]>([]);
+  const [venueLoading, setVenueLoading] = useState(true);
+  const [venueError, setVenueError] = useState(false);
+  const [venueRetry, setVenueRetry] = useState(0);
+  useEffect(() => {
+    let active = true;
+    setVenueLoading(true);
+    setVenueError(false);
+    void getHungryService()
+      .discovery.listVenuesByBuilding(building.id)
+      .then((next) => {
+        if (active) setVenues(next);
+      })
+      .catch(() => {
+        if (active) setVenueError(true);
+      })
+      .finally(() => {
+        if (active) setVenueLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [building.id, venueRetry]);
   const featuredStallsWithStatus = useMemo(() => {
-    return getBuildingVenues(building.id).map((venue) => ({
+    return venues.map((venue) => ({
       venue,
       isOpen: isVenueOpenFromHours(venue.operatingHours, venue.isOpen),
     }));
-  }, [building.id]);
+  }, [venues]);
 
   const openVenueCount = featuredStallsWithStatus.filter((entry) => entry.isOpen).length;
   const featuredStalls = featuredStallsWithStatus
@@ -123,7 +141,21 @@ export function MapZoomedInScreen({ navigation, route }: Props) {
         onZoomChange={setCurrentZoom}
       />
 
+      {venueError ? (
+        <View
+          style={{
+            position: "absolute",
+            top: insets.top + spacing[12],
+            left: spacing[4],
+            right: spacing[4],
+          }}
+        >
+          <Button label="Retry stall loading" onPress={() => setVenueRetry((value) => value + 1)} />
+        </View>
+      ) : null}
       <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Back"
         onPress={() => navigation.goBack()}
         style={[
           {
@@ -172,12 +204,25 @@ export function MapZoomedInScreen({ navigation, route }: Props) {
             >
               <View style={{ flex: 1, gap: spacing[1] }}>
                 <AppText variant="h2">{building.name}</AppText>
+                <Button
+                  label="Expand stall details"
+                  variant="secondary"
+                  onPress={() => bottomSheetRef.current?.snapToIndex(2)}
+                />
                 <AppText variant="bodySmall" tone="secondary">
                   {building.address}
                 </AppText>
               </View>
               <Badge
-                label={openVenueCount > 0 ? `Open now (${openVenueCount})` : "Closed now"}
+                label={
+                  venueLoading
+                    ? "Loading stalls…"
+                    : venueError
+                      ? "Stall data unavailable"
+                      : openVenueCount > 0
+                        ? `Listed open (${openVenueCount})`
+                        : "No stalls listed open"
+                }
                 tone={openVenueCount > 0 ? "success" : "warning"}
               />
             </View>

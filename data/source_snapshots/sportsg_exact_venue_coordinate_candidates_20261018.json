@@ -1,0 +1,487 @@
+{
+  "snapshot_type": "incremental_coordinate_open_data_candidate_review",
+  "observed_at_sgt": "2026-10-18",
+  "workbook": {
+    "path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "sha256": "986a2656c3243d55c1a3914a3c5fbbdf2052e0423a69705785cbba0b7fee154e",
+    "sheet": "Public F&B Directory",
+    "missing_coordinate_pairs_at_baseline": 2545
+  },
+  "source_datasets": [
+    {
+      "publisher": "Sport Singapore (SportSG)",
+      "name": "Sport Facilities",
+      "dataset_id": "d_2cfb0867cdeb2b7303068995699dc33b",
+      "dataset_page": "https://data.gov.sg/datasets/d_2cfb0867cdeb2b7303068995699dc33b/view",
+      "download_api": "https://api-open.data.gov.sg/v1/public/api/datasets/d_2cfb0867cdeb2b7303068995699dc33b/poll-download",
+      "source_vintage": "Based on the 2024 Sports Facilities National Census; page last updated 2026-03-12",
+      "retrieved_at_sgt": "2026-10-18",
+      "format": "CSV",
+      "rows": 16595,
+      "sha256": "4e7f9c67dc45b4b93ca5e2077bb0c871c4d9e69e25d346f4d3f30e37a12e6160",
+      "license": "Singapore Open Data Licence v1.0; allows copy, modify and commercial/non-commercial use with conspicuous attribution; see official license",
+      "license_url": "https://data.gov.sg/open-data-licence",
+      "required_attribution": "Contains information from Sport Facilities accessed on 2026-10-18 from data.gov.sg, made available under the terms of the Singapore Open Data Licence version 1.0.",
+      "coordinate_semantics": "Sport facility venue coordinates are supplied to only three decimal degrees, approximately 100 m resolution; they represent facility/venue points, not food outlet units."
+    }
+  ],
+  "matching_method": "Compare only current blank-coordinate workbook rows with exact six-digit postal code and exact normalized SportSG VenueName substring in Full Address. Duplicate SportSG sport-type rows are collapsed on venue/postal/coordinate. No postcode-only record is proposed.",
+  "limitations": [
+    "The source contains no street number or street fields, so the exact venue name in the target address is used together with exact postal code.",
+    "Coordinates are rounded to three decimal places and are not precise enough to claim outlet or storefront positioning.",
+    "No Mapbox Search Box calls/results were used.",
+    "No Mapbox token or OneMap token was read or used.",
+    "Workbook was not modified."
+  ],
+  "proposals_review_only": [
+    {
+      "target": {
+        "sfa_licence": "CE18L21J000",
+        "f_and_b_name": "15 Stamford",
+        "business_type": "Restaurant",
+        "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+        "postal_code": "178906",
+        "full_address": "Address: 15 STAMFORD ROAD THE CAPITOL KEMPINSKI HOTEL SINGAPORE,Singapore 178906 LEVEL 1",
+        "latitude_before": null,
+        "longitude_before": null,
+        "coordinate_precision_before": null
+      },
+      "proposed_coordinates": {
+        "Latitude": 1.294,
+        "Longitude": 103.851,
+        "Coordinate Precision": "SportSG facility/venue coordinate at 3 decimal degrees (roughly 100 m spatial resolution); building/facility-level only, not outlet/unit precision."
+      },
+      "source_match": {
+        "sportsg_venue_name": "The Capitol Kempinski Hotel Singapore",
+        "sportsg_postal_code": "178906",
+        "sportsg_latitude": 1.294,
+        "sportsg_longitude": 103.851,
+        "sportsg_sports_facility_types": [
+          "Gymnasium"
+        ],
+        "match_rule": "exact six-digit postal code plus exact normalized full SportSG venue name present in the workbook Full Address",
+        "point_semantics": "venue/facility point for the same named building; not the F&B outlet/unit/stall point"
+      },
+      "integration_status": "review_only_no_auto_apply",
+      "review_note": "Exact named facility and postal match. The published coordinate is rounded to 3 decimals; independently verify the point before permanent use if outlet-level positional accuracy is required."
+    },
+    {
+      "target": {
+        "sfa_licence": "CE19F73L000",
+        "f_and_b_name": "BARI BARI GRAND",
+        "business_type": "Restaurant",
+        "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+        "postal_code": "178906",
+        "full_address": "Address: 15 STAMFORD ROAD #01-82,THE CAPITOL KEMPINSKI HOTEL SINGAPORE,Singapore 178906",
+        "latitude_before": null,
+        "longitude_before": null,
+        "coordinate_precision_before": null
+      },
+      "proposed_coordinates": {
+        "Latitude": 1.294,
+        "Longitude": 103.851,
+        "Coordinate Precision": "SportSG facility/venue coordinate at 3 decimal degrees (roughly 100 m spatial resolution); building/facility-level only, not outlet/unit precision."
+      },
+      "source_match": {
+        "sportsg_venue_name": "The Capitol Kempinski Hotel Singapore",
+        "sportsg_postal_code": "178906",
+        "sportsg_latitude": 1.294,
+        "sportsg_longitude": 103.851,
+        "sportsg_sports_facility_types": [
+          "Gymnasium"
+        ],
+        "match_rule": "exact six-digit postal code plus exact normalized full SportSG venue name present in the workbook Full Address",
+        "point_semantics": "venue/facility point for the same named building; not the F&B outlet/unit/stall point"
+      },
+      "integration_status": "review_only_no_auto_apply",
+      "review_note": "Exact named facility and postal match. The published coordinate is rounded to 3 decimals; independently verify the point before permanent use if outlet-level positional accuracy is required."
+    },
+    {
+      "target": {
+        "sfa_licence": "CE22838X000",
+        "f_and_b_name": "Capitol Cigar & Whisky Lounge",
+        "business_type": "within Pubs/Bars/Nightclubs/Disco",
+        "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+        "postal_code": "178906",
+        "full_address": "Address: 15 STAMFORD ROAD #01-60,#01-61,THE CAPITOL KEMPINSKI HOTEL SINGAPORE,Singapore 178906",
+        "latitude_before": null,
+        "longitude_before": null,
+        "coordinate_precision_before": null
+      },
+      "proposed_coordinates": {
+        "Latitude": 1.294,
+        "Longitude": 103.851,
+        "Coordinate Precision": "SportSG facility/venue coordinate at 3 decimal degrees (roughly 100 m spatial resolution); building/facility-level only, not outlet/unit precision."
+      },
+      "source_match": {
+        "sportsg_venue_name": "The Capitol Kempinski Hotel Singapore",
+        "sportsg_postal_code": "178906",
+        "sportsg_latitude": 1.294,
+        "sportsg_longitude": 103.851,
+        "sportsg_sports_facility_types": [
+          "Gymnasium"
+        ],
+        "match_rule": "exact six-digit postal code plus exact normalized full SportSG venue name present in the workbook Full Address",
+        "point_semantics": "venue/facility point for the same named building; not the F&B outlet/unit/stall point"
+      },
+      "integration_status": "review_only_no_auto_apply",
+      "review_note": "Exact named facility and postal match. The published coordinate is rounded to 3 decimals; independently verify the point before permanent use if outlet-level positional accuracy is required."
+    },
+    {
+      "target": {
+        "sfa_licence": "CE26H44C000",
+        "f_and_b_name": "Dough",
+        "business_type": "Restaurant",
+        "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+        "postal_code": "178906",
+        "full_address": "Address: 15 STAMFORD ROAD #01-86,#01-K1,#01-K2,THE CAPITOL KEMPINSKI HOTEL SINGAPORE,Singapore 178906",
+        "latitude_before": null,
+        "longitude_before": null,
+        "coordinate_precision_before": null
+      },
+      "proposed_coordinates": {
+        "Latitude": 1.294,
+        "Longitude": 103.851,
+        "Coordinate Precision": "SportSG facility/venue coordinate at 3 decimal degrees (roughly 100 m spatial resolution); building/facility-level only, not outlet/unit precision."
+      },
+      "source_match": {
+        "sportsg_venue_name": "The Capitol Kempinski Hotel Singapore",
+        "sportsg_postal_code": "178906",
+        "sportsg_latitude": 1.294,
+        "sportsg_longitude": 103.851,
+        "sportsg_sports_facility_types": [
+          "Gymnasium"
+        ],
+        "match_rule": "exact six-digit postal code plus exact normalized full SportSG venue name present in the workbook Full Address",
+        "point_semantics": "venue/facility point for the same named building; not the F&B outlet/unit/stall point"
+      },
+      "integration_status": "review_only_no_auto_apply",
+      "review_note": "Exact named facility and postal match. The published coordinate is rounded to 3 decimals; independently verify the point before permanent use if outlet-level positional accuracy is required."
+    },
+    {
+      "target": {
+        "sfa_licence": "CE14O06V000",
+        "f_and_b_name": "HOLYCRAB",
+        "business_type": "Restaurant",
+        "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+        "postal_code": "178906",
+        "full_address": "Address: 15 STAMFORD ROAD #01-85,THE CAPITOL KEMPINSKI HOTEL SINGAPORE,Singapore 178906",
+        "latitude_before": null,
+        "longitude_before": null,
+        "coordinate_precision_before": null
+      },
+      "proposed_coordinates": {
+        "Latitude": 1.294,
+        "Longitude": 103.851,
+        "Coordinate Precision": "SportSG facility/venue coordinate at 3 decimal degrees (roughly 100 m spatial resolution); building/facility-level only, not outlet/unit precision."
+      },
+      "source_match": {
+        "sportsg_venue_name": "The Capitol Kempinski Hotel Singapore",
+        "sportsg_postal_code": "178906",
+        "sportsg_latitude": 1.294,
+        "sportsg_longitude": 103.851,
+        "sportsg_sports_facility_types": [
+          "Gymnasium"
+        ],
+        "match_rule": "exact six-digit postal code plus exact normalized full SportSG venue name present in the workbook Full Address",
+        "point_semantics": "venue/facility point for the same named building; not the F&B outlet/unit/stall point"
+      },
+      "integration_status": "review_only_no_auto_apply",
+      "review_note": "Exact named facility and postal match. The published coordinate is rounded to 3 decimals; independently verify the point before permanent use if outlet-level positional accuracy is required."
+    },
+    {
+      "target": {
+        "sfa_licence": "CE18L23C000",
+        "f_and_b_name": "Lobby Lounge",
+        "business_type": "Snack Counter",
+        "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+        "postal_code": "178906",
+        "full_address": "Address: 15 STAMFORD ROAD THE CAPITOL KEMPINSKI HOTEL SINGAPORE,Singapore 178906 (Part of)",
+        "latitude_before": null,
+        "longitude_before": null,
+        "coordinate_precision_before": null
+      },
+      "proposed_coordinates": {
+        "Latitude": 1.294,
+        "Longitude": 103.851,
+        "Coordinate Precision": "SportSG facility/venue coordinate at 3 decimal degrees (roughly 100 m spatial resolution); building/facility-level only, not outlet/unit precision."
+      },
+      "source_match": {
+        "sportsg_venue_name": "The Capitol Kempinski Hotel Singapore",
+        "sportsg_postal_code": "178906",
+        "sportsg_latitude": 1.294,
+        "sportsg_longitude": 103.851,
+        "sportsg_sports_facility_types": [
+          "Gymnasium"
+        ],
+        "match_rule": "exact six-digit postal code plus exact normalized full SportSG venue name present in the workbook Full Address",
+        "point_semantics": "venue/facility point for the same named building; not the F&B outlet/unit/stall point"
+      },
+      "integration_status": "review_only_no_auto_apply",
+      "review_note": "Exact named facility and postal match. The published coordinate is rounded to 3 decimals; independently verify the point before permanent use if outlet-level positional accuracy is required."
+    },
+    {
+      "target": {
+        "sfa_licence": "W98295E000",
+        "f_and_b_name": "POLAR CAFE",
+        "business_type": "Snack Counter",
+        "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+        "postal_code": "169608",
+        "full_address": "Address: 7 OUTRAM ROAD #01-01,SINGAPORE GENERAL HOSPITAL,Singapore 169608",
+        "latitude_before": null,
+        "longitude_before": null,
+        "coordinate_precision_before": null
+      },
+      "proposed_coordinates": {
+        "Latitude": 1.283,
+        "Longitude": 103.836,
+        "Coordinate Precision": "SportSG facility/venue coordinate at 3 decimal degrees (roughly 100 m spatial resolution); building/facility-level only, not outlet/unit precision."
+      },
+      "source_match": {
+        "sportsg_venue_name": "Singapore General Hospital",
+        "sportsg_postal_code": "169608",
+        "sportsg_latitude": 1.283,
+        "sportsg_longitude": 103.836,
+        "sportsg_sports_facility_types": [
+          "Gymnasium"
+        ],
+        "match_rule": "exact six-digit postal code plus exact normalized full SportSG venue name present in the workbook Full Address",
+        "point_semantics": "venue/facility point for the same named building; not the F&B outlet/unit/stall point"
+      },
+      "integration_status": "review_only_no_auto_apply",
+      "review_note": "Exact named facility and postal match. The published coordinate is rounded to 3 decimals; independently verify the point before permanent use if outlet-level positional accuracy is required."
+    },
+    {
+      "target": {
+        "sfa_licence": "CE17E59J000",
+        "f_and_b_name": "RACINES",
+        "business_type": "Restaurant with Catering",
+        "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+        "postal_code": "078885",
+        "full_address": "Address: 9 WALLICH STREET #05-00,SOFITEL SINGAPORE CITY CENTRE,Singapore 078885",
+        "latitude_before": null,
+        "longitude_before": null,
+        "coordinate_precision_before": null
+      },
+      "proposed_coordinates": {
+        "Latitude": 1.277,
+        "Longitude": 103.845,
+        "Coordinate Precision": "SportSG facility/venue coordinate at 3 decimal degrees (roughly 100 m spatial resolution); building/facility-level only, not outlet/unit precision."
+      },
+      "source_match": {
+        "sportsg_venue_name": "Sofitel Singapore City Centre",
+        "sportsg_postal_code": "078885",
+        "sportsg_latitude": 1.277,
+        "sportsg_longitude": 103.845,
+        "sportsg_sports_facility_types": [
+          "Gymnasium"
+        ],
+        "match_rule": "exact six-digit postal code plus exact normalized full SportSG venue name present in the workbook Full Address",
+        "point_semantics": "venue/facility point for the same named building; not the F&B outlet/unit/stall point"
+      },
+      "integration_status": "review_only_no_auto_apply",
+      "review_note": "Exact named facility and postal match. The published coordinate is rounded to 3 decimals; independently verify the point before permanent use if outlet-level positional accuracy is required."
+    },
+    {
+      "target": {
+        "sfa_licence": "CE22061B000",
+        "f_and_b_name": "Sushi Ryujiro",
+        "business_type": "Restaurant",
+        "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+        "postal_code": "178906",
+        "full_address": "Address: 15 STAMFORD ROAD #01-88,THE CAPITOL KEMPINSKI HOTEL SINGAPORE,Singapore 178906",
+        "latitude_before": null,
+        "longitude_before": null,
+        "coordinate_precision_before": null
+      },
+      "proposed_coordinates": {
+        "Latitude": 1.294,
+        "Longitude": 103.851,
+        "Coordinate Precision": "SportSG facility/venue coordinate at 3 decimal degrees (roughly 100 m spatial resolution); building/facility-level only, not outlet/unit precision."
+      },
+      "source_match": {
+        "sportsg_venue_name": "The Capitol Kempinski Hotel Singapore",
+        "sportsg_postal_code": "178906",
+        "sportsg_latitude": 1.294,
+        "sportsg_longitude": 103.851,
+        "sportsg_sports_facility_types": [
+          "Gymnasium"
+        ],
+        "match_rule": "exact six-digit postal code plus exact normalized full SportSG venue name present in the workbook Full Address",
+        "point_semantics": "venue/facility point for the same named building; not the F&B outlet/unit/stall point"
+      },
+      "integration_status": "review_only_no_auto_apply",
+      "review_note": "Exact named facility and postal match. The published coordinate is rounded to 3 decimals; independently verify the point before permanent use if outlet-level positional accuracy is required."
+    },
+    {
+      "target": {
+        "sfa_licence": "CE25P63B000",
+        "f_and_b_name": "THE AULD ALLIANCE",
+        "business_type": "Snack Counter",
+        "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+        "postal_code": "178906",
+        "full_address": "Address: 15 STAMFORD ROAD #01-62,THE CAPITOL KEMPINSKI HOTEL SINGAPORE,Singapore 178906",
+        "latitude_before": null,
+        "longitude_before": null,
+        "coordinate_precision_before": null
+      },
+      "proposed_coordinates": {
+        "Latitude": 1.294,
+        "Longitude": 103.851,
+        "Coordinate Precision": "SportSG facility/venue coordinate at 3 decimal degrees (roughly 100 m spatial resolution); building/facility-level only, not outlet/unit precision."
+      },
+      "source_match": {
+        "sportsg_venue_name": "The Capitol Kempinski Hotel Singapore",
+        "sportsg_postal_code": "178906",
+        "sportsg_latitude": 1.294,
+        "sportsg_longitude": 103.851,
+        "sportsg_sports_facility_types": [
+          "Gymnasium"
+        ],
+        "match_rule": "exact six-digit postal code plus exact normalized full SportSG venue name present in the workbook Full Address",
+        "point_semantics": "venue/facility point for the same named building; not the F&B outlet/unit/stall point"
+      },
+      "integration_status": "review_only_no_auto_apply",
+      "review_note": "Exact named facility and postal match. The published coordinate is rounded to 3 decimals; independently verify the point before permanent use if outlet-level positional accuracy is required."
+    }
+  ],
+  "held_matches": [
+    {
+      "target": {
+        "sfa_licence": "SE19243B000",
+        "f_and_b_name": "Fairway Bistro @ Changi",
+        "business_type": "Restaurant",
+        "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+        "postal_code": "499739",
+        "full_address": "Address: 10 CHANGI COAST WALK #00-00,NATIONAL SERVICE RESORT & COUNTRY CLUB,Singapore 499739 LEVEL 1",
+        "latitude_before": null,
+        "longitude_before": null,
+        "coordinate_precision_before": null
+      },
+      "source_match": {
+        "sportsg_venue_name": "NATIONAL SERVICE RESORT & COUNTRY CLUB",
+        "sportsg_postal_code": "499739",
+        "sportsg_latitude": 1.321,
+        "sportsg_longitude": 103.974,
+        "sportsg_sports_facility_types": [
+          "Cue Sports Table"
+        ],
+        "match_rule": "exact six-digit postal code plus exact normalized full SportSG venue name present in the workbook Full Address",
+        "point_semantics": "venue/facility point for the same named building; not the F&B outlet/unit/stall point"
+      },
+      "hold_reason": "Member-oriented country club / university society facility; no public-access confirmation, so excluded from public-access coordinate proposals.",
+      "source_precision": "SportSG facility/venue coordinate at 3 decimal degrees (roughly 100 m spatial resolution); building/facility-level only, not outlet/unit precision."
+    },
+    {
+      "target": {
+        "sfa_licence": "SE06137P000",
+        "f_and_b_name": "GLASS HOUSE BEACHFRONT",
+        "business_type": "Restaurant",
+        "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+        "postal_code": "499739",
+        "full_address": "Address: 10 CHANGI COAST WALK NATIONAL SERVICE RESORT & COUNTRY CLUB,Singapore 499739",
+        "latitude_before": null,
+        "longitude_before": null,
+        "coordinate_precision_before": null
+      },
+      "source_match": {
+        "sportsg_venue_name": "NATIONAL SERVICE RESORT & COUNTRY CLUB",
+        "sportsg_postal_code": "499739",
+        "sportsg_latitude": 1.321,
+        "sportsg_longitude": 103.974,
+        "sportsg_sports_facility_types": [
+          "Cue Sports Table"
+        ],
+        "match_rule": "exact six-digit postal code plus exact normalized full SportSG venue name present in the workbook Full Address",
+        "point_semantics": "venue/facility point for the same named building; not the F&B outlet/unit/stall point"
+      },
+      "hold_reason": "Member-oriented country club / university society facility; no public-access confirmation, so excluded from public-access coordinate proposals.",
+      "source_precision": "SportSG facility/venue coordinate at 3 decimal degrees (roughly 100 m spatial resolution); building/facility-level only, not outlet/unit precision."
+    },
+    {
+      "target": {
+        "sfa_licence": "SE14334P000",
+        "f_and_b_name": "Poolside Bistro",
+        "business_type": "Restaurant with Catering",
+        "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+        "postal_code": "499739",
+        "full_address": "Address: 10 CHANGI COAST WALK NATIONAL SERVICE RESORT & COUNTRY CLUB,Singapore 499739",
+        "latitude_before": null,
+        "longitude_before": null,
+        "coordinate_precision_before": null
+      },
+      "source_match": {
+        "sportsg_venue_name": "NATIONAL SERVICE RESORT & COUNTRY CLUB",
+        "sportsg_postal_code": "499739",
+        "sportsg_latitude": 1.321,
+        "sportsg_longitude": 103.974,
+        "sportsg_sports_facility_types": [
+          "Cue Sports Table"
+        ],
+        "match_rule": "exact six-digit postal code plus exact normalized full SportSG venue name present in the workbook Full Address",
+        "point_semantics": "venue/facility point for the same named building; not the F&B outlet/unit/stall point"
+      },
+      "hold_reason": "Member-oriented country club / university society facility; no public-access confirmation, so excluded from public-access coordinate proposals.",
+      "source_precision": "SportSG facility/venue coordinate at 3 decimal degrees (roughly 100 m spatial resolution); building/facility-level only, not outlet/unit precision."
+    },
+    {
+      "target": {
+        "sfa_licence": "W01078L000",
+        "f_and_b_name": null,
+        "business_type": "within Pubs/Bars/Nightclubs/Disco",
+        "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+        "postal_code": "248163",
+        "full_address": "Address: 1 SHERWOOD ROAD MINISTRY OF FOREIGN AFFAIRS,Singapore 248163",
+        "latitude_before": null,
+        "longitude_before": null,
+        "coordinate_precision_before": null
+      },
+      "source_match": {
+        "sportsg_venue_name": "Ministry Of Foreign Affairs",
+        "sportsg_postal_code": "248163",
+        "sportsg_latitude": 1.305,
+        "sportsg_longitude": 103.818,
+        "sportsg_sports_facility_types": [
+          "Cue Sports Table"
+        ],
+        "match_rule": "exact six-digit postal code plus exact normalized full SportSG venue name present in the workbook Full Address",
+        "point_semantics": "venue/facility point for the same named building; not the F&B outlet/unit/stall point"
+      },
+      "hold_reason": "Government organization facility; not a confirmed public-access outlet.",
+      "source_precision": "SportSG facility/venue coordinate at 3 decimal degrees (roughly 100 m spatial resolution); building/facility-level only, not outlet/unit precision."
+    },
+    {
+      "target": {
+        "sfa_licence": "NW16168A000",
+        "f_and_b_name": null,
+        "business_type": "Snack Counter",
+        "public_access_status": "public_access_candidate_based_on_sfa_type_and_address",
+        "postal_code": "269734",
+        "full_address": "Address: 661 BUKIT TIMAH ROAD HWA CHONG INSTITUTION,Singapore 269734",
+        "latitude_before": null,
+        "longitude_before": null,
+        "coordinate_precision_before": null
+      },
+      "source_match": {
+        "sportsg_venue_name": "Hwa Chong Institution",
+        "sportsg_postal_code": "269734",
+        "sportsg_latitude": 1.325,
+        "sportsg_longitude": 103.804,
+        "sportsg_sports_facility_types": [
+          "Table Tennis Court"
+        ],
+        "match_rule": "exact six-digit postal code plus exact normalized full SportSG venue name present in the workbook Full Address",
+        "point_semantics": "venue/facility point for the same named building; not the F&B outlet/unit/stall point"
+      },
+      "hold_reason": "School premises; school-access food records are excluded by user instruction.",
+      "source_precision": "SportSG facility/venue coordinate at 3 decimal degrees (roughly 100 m spatial resolution); building/facility-level only, not outlet/unit precision."
+    }
+  ],
+  "summary": {
+    "unique_source_venue_records": 6230,
+    "review_only_coordinate_candidates": 10,
+    "held_access_or_scope_matches": 5,
+    "auto_apply_count": 0,
+    "workbook_modified": false
+  }
+}

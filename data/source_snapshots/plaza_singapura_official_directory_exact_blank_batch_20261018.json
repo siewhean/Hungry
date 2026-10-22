@@ -1,0 +1,204 @@
+{
+  "snapshot_id": "plaza_singapura_official_directory_exact_blank_batch_20261018",
+  "observed_date": "2026-10-18",
+  "workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "ba519451ef5fa46aafcac14d67a1563365e6a15601c1ddc778d71ac20a960ef1",
+  "workbook_edited": false,
+  "publisher": "CapitaLand Malls / Plaza Singapura",
+  "scope": "Current official Plaza Singapura outlet listings matched to existing SFA records at postal code 238839 using exact licence ID, outlet identity and overlapping unit. Proposed only blank facts supported by current official mall/operator pages. No delivery-platform information used.",
+  "method": "Inspected prior snapshots for Plaza Singapura; no official mall-directory batch was present. Downloaded official CapitaLand pages (HTTP 200), recorded response byte length and SHA-256 of raw HTML, and confirmed the rendered/indexed official page fields against those responses. Local TLS trust validation fails in this environment, so curl raw-page retrieval used -k; URLs are the official capitaland.com domain. Nonblank workbook fields were preserved. Outlet hours were proposed only where an outlet detail page explicitly gave them; no current explicit Plaza-specific hours were found among proposals.",
+  "summary": {
+    "proposals": 7,
+    "distinct_sfa_licences": 7,
+    "fields_proposed": 10,
+    "field_counts": {
+      "F&B Name": 1,
+      "Contact Details": 5,
+      "Website": 4
+    },
+    "confirmed_closures": 0,
+    "held_records": 2
+  },
+  "proposals": [
+    {
+      "sfa_licence": "CE07664E000",
+      "existing_name": "50 YEARS",
+      "existing_address": "Address: 68 ORCHARD ROAD #B2-58,PLAZA SINGAPURA,Singapore 238839",
+      "postal_code": "238839",
+      "official_tenant_name": "50 年 Taste Of Tradition",
+      "official_unit": "#B2-58",
+      "field_proposals": {
+        "F&B Name": "50 年 Taste Of Tradition"
+      },
+      "before_values": {
+        "F&B Name": "50 YEARS"
+      },
+      "source_url": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/-50-taste-of-traditi.html",
+      "source_http_status": 200,
+      "source_response_bytes": 487034,
+      "source_response_sha256": "6d5bd93ece3ed20ec4f9c286e588432557ed31a207bcef17dbb350f953914149",
+      "source_evidence": "Official Plaza Singapura store page names 50 年 Taste Of Tradition and identifies the exact #B2-58 unit.",
+      "join_confidence": "high"
+    },
+    {
+      "sfa_licence": "W02412P000",
+      "existing_name": "Aki Sushi and Grill",
+      "existing_address": "Address: 68 ORCHARD ROAD #B2-40,PLAZA SINGAPURA,Singapore 238839",
+      "postal_code": "238839",
+      "official_tenant_name": "Aki Sushi & Grill",
+      "official_unit": "#B2-40",
+      "field_proposals": {
+        "Contact Details": "+65 9455 3953"
+      },
+      "before_values": {
+        "Contact Details": null
+      },
+      "source_url": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/aki-sushi-grill.html",
+      "source_http_status": 200,
+      "source_response_bytes": 488884,
+      "source_response_sha256": "26c64ecf7b0e1f17baafc9808a9b426e00b0f2cbcf60d8eb4374774336b1cfb6",
+      "source_evidence": "Official Plaza Singapura detail page identifies unit #B2-40 and contact +65 9455 3953.",
+      "join_confidence": "high"
+    },
+    {
+      "sfa_licence": "W03036P000",
+      "existing_name": "85 REDHILL TEOCHEW NOODLE",
+      "existing_address": "Address: 68 ORCHARD ROAD #B2-39,PLAZA SINGAPURA,Singapore 238839",
+      "postal_code": "238839",
+      "official_tenant_name": "85 Redhill Teochew Fishball Noodles",
+      "official_unit": "#B2-39",
+      "field_proposals": {
+        "Contact Details": "+65 8783 1088",
+        "Website": "http://www.85redhill.com.sg"
+      },
+      "before_values": {
+        "Contact Details": null,
+        "Website": null
+      },
+      "source_urls": [
+        "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/85-redhill-teochewfishballnoodles.html",
+        "https://www.capitaland.com/sg/en/shop/malls/stores/85-redhill-teochewfishballnoodles.html"
+      ],
+      "source_http_status": 200,
+      "source_response_bytes": [
+        488421,
+        324888
+      ],
+      "source_response_sha256": [
+        "5f069b392c5ba846ef2cf0321452a83f6412127113b936b87e53dd5c2cc51947",
+        "b80bacabda8d77225f95de1fd90231af5d449c59ed427dfc41250cd4e1503d1b"
+      ],
+      "source_evidence": "Current Plaza Singapura listing identifies the tenant at #B2-39. Official CapitaLand brand detail page links the brand website and specifically lists Plaza Singapura pre-order phone 8783 1088. The chain page states 11am-8pm takeaway daily, but this schedule is not explicitly scoped to this outlet, so hours were withheld.",
+      "join_confidence": "high"
+    },
+    {
+      "sfa_licence": "CE07711C000",
+      "existing_name": "Boost Juice Bars",
+      "existing_address": "Address: 68 ORCHARD ROAD #B2-55,PLAZA SINGAPURA,Singapore 238839",
+      "postal_code": "238839",
+      "official_tenant_name": "Boost Juice Bars",
+      "official_unit": "#B2-55",
+      "field_proposals": {
+        "Website": "http://www.boostjuicebars.com.sg"
+      },
+      "before_values": {
+        "Website": null
+      },
+      "source_url": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/boost-juice-bars.html",
+      "source_http_status": 200,
+      "source_response_bytes": 488468,
+      "source_response_sha256": "f6baed87f43bbe6e72110d4c1b06ab15c25977073c74a5657987fa996c95d0d6",
+      "source_evidence": "Official Plaza Singapura outlet page lists #B2-55 and the brand website.",
+      "join_confidence": "high"
+    },
+    {
+      "sfa_licence": "CE19U85C000",
+      "existing_name": "Five Guys Singapore Pte Ltd",
+      "existing_address": "Address: 68 ORCHARD ROAD #01-32,#01-34C,#01-33,#01-35,PLAZA SINGAPURA,Singapore 238839 PLAZA SINGAPURA",
+      "postal_code": "238839",
+      "official_tenant_name": "FIVE GUYS",
+      "official_unit": "#01-32 to 35",
+      "field_proposals": {
+        "Contact Details": "+65 6976 4385"
+      },
+      "before_values": {
+        "Contact Details": null
+      },
+      "source_url": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/five-guys.html",
+      "source_http_status": 200,
+      "source_response_bytes": 487101,
+      "source_response_sha256": "df4b8356981ac4ea2974badb069a9aebd37879af7418108c3d46f730a73fe90e",
+      "source_evidence": "Official Plaza Singapura detail page identifies FIVE GUYS at #01-32 to 35 and lists +65 6976 4385.",
+      "join_confidence": "high"
+    },
+    {
+      "sfa_licence": "CE05182C000",
+      "existing_name": "Genki Sushi",
+      "existing_address": "Address: 68 ORCHARD ROAD #06-05/06,PLAZA SINGAPURA,Singapore 238839",
+      "postal_code": "238839",
+      "official_tenant_name": "GENKI SUSHI",
+      "official_unit": "#06-05 to 06",
+      "field_proposals": {
+        "Contact Details": "+65 6920 0740",
+        "Website": "https://www.facebook.com/GenkiSushiSg"
+      },
+      "before_values": {
+        "Contact Details": null,
+        "Website": null
+      },
+      "source_url": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/genki-sushi.html",
+      "source_http_status": 200,
+      "source_response_bytes": 492463,
+      "source_response_sha256": "cca242ec0ad3d9ad776fa3b3f7addc4fb159ac8699e616f6d7847f6e6ce329e8",
+      "source_evidence": "Official Plaza Singapura detail page identifies GENKI SUSHI at #06-05 to 06 and lists contact +65 6920 0740 and its official Singapore Facebook page as the website.",
+      "join_confidence": "high"
+    },
+    {
+      "sfa_licence": "CE10J18J000",
+      "existing_name": "HAI DI LAO",
+      "existing_address": "Address: 68 ORCHARD ROAD #04-01/20,PLAZA SINGAPURA,Singapore 238839",
+      "postal_code": "238839",
+      "official_tenant_name": "Haidilao Hot Pot 海底捞火锅",
+      "official_unit": "#04-01/20",
+      "field_proposals": {
+        "Contact Details": "+65 6250 0330 / +65 6250 0990",
+        "Website": "http://www.haidilao.com/"
+      },
+      "before_values": {
+        "Contact Details": null,
+        "Website": null
+      },
+      "source_url": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/t-haidilao-plazasingapura.html",
+      "source_http_status": 200,
+      "source_response_bytes": 491363,
+      "source_response_sha256": "0e1110ebebbce30e8c7d4d77ad5d229073f93c3695b08d6c394f4975d8080609",
+      "source_evidence": "Official Plaza Singapura detail page identifies Haidilao at #04-01/20 and lists two contact numbers and haidilao.com. Page does not publish hours.",
+      "join_confidence": "high"
+    }
+  ],
+  "held_records": [
+    {
+      "sfa_licence": "CE07667A000",
+      "existing_name": null,
+      "existing_address": "Address: 68 ORCHARD ROAD #B2-52/54,PLAZA SINGAPURA,Singapore 238839",
+      "postal_code": "238839",
+      "issue": "Historical CapitaLand CNY hours PDF (around 2020) listed Greendot at #B2-52/54. Current official Plaza directory results reviewed did not surface a current exact outlet listing; CapitaLand brand-wide page does not list Plaza Singapura among its shown locations. This suggests a location/status conflict but does not prove closure. Leave F&B Name blank and do not mark closed until a current exact outlet source confirms identity or permanent closure.",
+      "sources": [
+        "https://www.capitaland.com/content/dam/capitaland-sites/singapore/shop/malls/group-marcom/cny-store-opening-hours/plazasingapura.pdf",
+        "https://www.capitaland.com/sg/en/shop/malls/stores/greendot.html"
+      ]
+    },
+    {
+      "sfa_licence": "W98413J000",
+      "existing_name": "Kopitiam",
+      "existing_address": "Address: 68 ORCHARD ROAD #06-15/17,PLAZA SINGAPURA,Singapore 238839",
+      "postal_code": "238839",
+      "issue": "Official CapitaLand page describes Kopitiam at #06-15 to 17 and gives food-court contact/hours, but this multi-tenant food court has numerous separate SFA licences at the same unit. Do not copy venue-wide contact/hours into one licence without establishing outlet-level scope. The same location also has W98413J001 Kopitiam Investment Pte Ltd, adding record ambiguity.",
+      "source_url": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/kopitiam.html"
+    }
+  ],
+  "closure_review": {
+    "confirmed_permanent_closures": 0,
+    "note": "No permanent closure was confirmed in this mall-directory pass. The Greendot mismatch is held as an unresolved status lead, not treated as closure evidence."
+  }
+}

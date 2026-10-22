@@ -1,0 +1,137 @@
+{
+  "snapshot": "Starbucks 37Smith named menu-image candidates: first-party listing and price check",
+  "captured_date": "2026-10-18",
+  "baseline_workbook": "Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_workbook_sha256": "ba519451ef5fa46aafcac14d67a1563365e6a15601c1ddc778d71ac20a960ef1",
+  "matched_directory_record": {
+    "sfa_licence": "CE22G07P000",
+    "f_and_b_name": "Starbucks",
+    "full_address": "Address: 37 SMITH STREET Singapore 058950 1st and 2nd Storey",
+    "postal_code": "058950",
+    "join_basis": "Exact branch name and postal/address association from existing workbook row; image/menu pages are Starbucks-owned first-party pages."
+  },
+  "official_sources": {
+    "outlet_page": {
+      "url": "https://www.starbucks.com.sg/starbucks-37smith-street",
+      "http_status": 200,
+      "resolved_url": "https://www.starbucks.com.sg/starbucks-37smith-street",
+      "title": "Starbucks 37Smith Street  - Starbucks Coffee Company",
+      "sha256": "a83cd28cf0fa570d1dd9ce3543614dcfc6fb9fc9cc9fca1a76b526fa9e256453",
+      "has_visible_sgd_price": false,
+      "raw_currency_or_price_marker": false,
+      "visible_menu_excerpt": "Exclusive Drinks: Black Sesame Oatmilk Coffee Frappuccino® with Soy Pudding; Yuan Yang Coffee Frappuccino®. Exclusive Food: Starbucks® Coffee Crust Polo Bun (Served with chilled butter); Java Chip Frappuccino Swiss Roll; Lychee Swiss Roll; Pandan Chiffon Cake; Starbucks® Gem Icing Cookie; Laksa Mac & Cheese Pie."
+    },
+    "menu_category_page": {
+      "url": "https://www.starbucks.com.sg/menu/beverages/sg-exclusive-frappuccinos",
+      "http_status": 200,
+      "resolved_url": "https://www.starbucks.com.sg/menu/beverages/sg-exclusive-frappuccinos",
+      "title": "SG Exclusive Frappuccinos - Starbucks Coffee Company",
+      "sha256": "0359a34fcbc4a35d29c26d0590e0d28a4e740a8477d8a2fb6d76c7f5d7dfd28a",
+      "has_visible_sgd_price": false,
+      "raw_currency_or_price_marker": false,
+      "text_finding": "Current official SG Exclusive Frappuccinos page says Black Sesame was a 37Smith store exclusive and was made available islandwide."
+    }
+  },
+  "items": [
+    {
+      "item_name": "Black Sesame Oatmilk Coffee Frappuccino® with Soy Pudding",
+      "official_outlet_page": "https://www.starbucks.com.sg/starbucks-37smith-street",
+      "listed_on_outlet_page": true,
+      "outlet_listing_section": "Exclusive Drinks",
+      "official_item_page": "https://www.starbucks.com.sg/menu/beverages/seasonal/black-sesame-oatmilk-coffee-frappuccino-with-soy-pudding",
+      "official_item_page_title": "Black Sesame Oatmilk Coffee Frappuccino® with Soy Pudding - Starbucks Coffee Company",
+      "item_page_name_match": true,
+      "official_item_page_http_status": 200,
+      "official_item_page_sha256": "30283699ce587ea7c74768265dde0e1c8c684ec356f4f2f15d4ab7c1d5733aa0",
+      "official_image_url_candidate": "https://www.starbucks.com.sg/media/2026/SummerOne/F%26B/Drinks/Black-Sesame-%20Oatmilk-Coffee-OnGreen_750x750.png",
+      "price_published_on_official_item_page": false,
+      "price_check": "No visible SGD/SG$ price found in fetched official item-page content; omit price rather than infer it.",
+      "availability_note": "Page listing verifies first-party catalogue presence only; outlet stock/availability and price are not confirmed."
+    },
+    {
+      "item_name": "Starbucks® Coffee Crust Polo Bun (Served with chilled butter)",
+      "official_outlet_page": "https://www.starbucks.com.sg/starbucks-37smith-street",
+      "listed_on_outlet_page": true,
+      "outlet_listing_section": "Exclusive Food",
+      "official_item_page": "https://www.starbucks.com.sg/menu/food/desserts/starbucks-coffee-crust-polo-bun-served-with-chilled-butter",
+      "official_item_page_title": "Starbucks® Coffee Crust Polo Bun (Served with chilled butter) - Starbucks Coffee Company",
+      "item_page_name_match": true,
+      "official_item_page_http_status": 200,
+      "official_item_page_sha256": "de5249e7756dc71f75d6966b808867e5bf26be9afac6a12f25b7e1300d3e5e44",
+      "official_image_url_candidate": "https://www.starbucks.com.sg/media/2025/spring/Beverage%20%26%20Food/4.png",
+      "price_published_on_official_item_page": false,
+      "price_check": "No visible SGD/SG$ price found in fetched official item-page content; omit price rather than infer it.",
+      "availability_note": "Page listing verifies first-party catalogue presence only; outlet stock/availability and price are not confirmed."
+    },
+    {
+      "item_name": "Lychee Swiss Roll",
+      "official_outlet_page": "https://www.starbucks.com.sg/starbucks-37smith-street",
+      "listed_on_outlet_page": true,
+      "outlet_listing_section": "Exclusive Food",
+      "official_item_page": "https://www.starbucks.com.sg/menu/food/desserts/lychee-swiss-roll",
+      "official_item_page_title": "Lychee Swiss Roll - Starbucks Coffee Company",
+      "item_page_name_match": true,
+      "official_item_page_http_status": 200,
+      "official_item_page_sha256": "6302710586471a6ba26e8449494c6170dad61dee64ac467af5fd4704f2e2cfb8",
+      "official_image_url_candidate": "https://www.starbucks.com.sg/media/2025/spring/Beverage%20%26%20Food/9.png",
+      "price_published_on_official_item_page": false,
+      "price_check": "No visible SGD/SG$ price found in fetched official item-page content; omit price rather than infer it.",
+      "availability_note": "Page listing verifies first-party catalogue presence only; outlet stock/availability and price are not confirmed."
+    },
+    {
+      "item_name": "Pandan Chiffon Cake",
+      "official_outlet_page": "https://www.starbucks.com.sg/starbucks-37smith-street",
+      "listed_on_outlet_page": true,
+      "outlet_listing_section": "Exclusive Food",
+      "official_item_page": "https://www.starbucks.com.sg/menu/food/desserts/pandan-chiffon-cake",
+      "official_item_page_title": "Pandan Chiffon Cake  - Starbucks Coffee Company",
+      "item_page_name_match": true,
+      "official_item_page_http_status": 200,
+      "official_item_page_sha256": "429aa615ae2369684fd99a5dfac1bbcb4b6eccce9372719e8a3403b2906c61fa",
+      "official_image_url_candidate": "https://www.starbucks.com.sg/media/2025/spring/Beverage%20%26%20Food/7.png",
+      "price_published_on_official_item_page": false,
+      "price_check": "No visible SGD/SG$ price found in fetched official item-page content; omit price rather than infer it.",
+      "availability_note": "Page listing verifies first-party catalogue presence only; outlet stock/availability and price are not confirmed."
+    },
+    {
+      "item_name": "Starbucks® Gem Icing Cookie",
+      "official_outlet_page": "https://www.starbucks.com.sg/starbucks-37smith-street",
+      "listed_on_outlet_page": true,
+      "outlet_listing_section": "Exclusive Food",
+      "official_item_page": "https://www.starbucks.com.sg/menu/food/desserts/starbucks-gem-icing-cookie",
+      "official_item_page_title": "Starbucks® Gem Icing Cookie - Starbucks Coffee Company",
+      "item_page_name_match": true,
+      "official_item_page_http_status": 200,
+      "official_item_page_sha256": "7476fa4dc52d4f06efbff3fa558c9c5c312c69a456c7683e970c17057d295695",
+      "official_image_url_candidate": "https://www.starbucks.com.sg/media/2025/spring/Beverage%20%26%20Food/11.png",
+      "price_published_on_official_item_page": false,
+      "price_check": "No visible SGD/SG$ price found in fetched official item-page content; omit price rather than infer it.",
+      "availability_note": "Page listing verifies first-party catalogue presence only; outlet stock/availability and price are not confirmed."
+    },
+    {
+      "item_name": "Laksa Mac & Cheese Pie",
+      "official_outlet_page": "https://www.starbucks.com.sg/starbucks-37smith-street",
+      "listed_on_outlet_page": true,
+      "outlet_listing_section": "Exclusive Food",
+      "official_item_page": "https://www.starbucks.com.sg/menu/food/pie-quiches/laksa-mac-cheese-pie-0",
+      "official_item_page_title": "Laksa Mac & Cheese Pie - Starbucks Coffee Company",
+      "item_page_name_match": true,
+      "official_item_page_http_status": 200,
+      "official_item_page_sha256": "813f3fa3ec78f1026dc2b2252902b8a55f724dd7b62443b024704b25e89406cc",
+      "official_image_url_candidate": "https://www.starbucks.com.sg/media/2025/spring/Beverage%20%26%20Food/2.png",
+      "price_published_on_official_item_page": false,
+      "price_check": "No visible SGD/SG$ price found in fetched official item-page content; omit price rather than infer it.",
+      "availability_note": "Page listing verifies first-party catalogue presence only; outlet stock/availability and price are not confirmed."
+    }
+  ],
+  "findings": {
+    "listed_items": 6,
+    "item_pages_returned_http_200": 6,
+    "named_items_currently_listed_on_37smith_page": 6,
+    "published_prices_found": 0,
+    "price_handling": "Leave prices blank; first-party item pages did not show visible SGD prices. Do not impute or use third-party delivery prices.",
+    "black_sesame_scope_conflict": "The 37Smith page lists Black Sesame under Exclusive Drinks and the item detail page text claims “Now only available at 37Smith” then references a future islandwide date; current official Singapore menu category states it was a 37Smith exclusive and is now islandwide. Treat outlet-only exclusivity as stale/conflicting; do not infer branch stock.",
+    "images": "Image URLs are first-party candidates from prior snapshot and remain review-only. This follow-up did not view, download, approve, or republish images; copyright/display permissions remain outstanding."
+  },
+  "integration": "Evidence-only; no workbook edits."
+}

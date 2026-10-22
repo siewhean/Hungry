@@ -1,3 +1,4 @@
+import { satisfiesDietaryRequirements } from "./dietaryRequirements";
 import {
   getDataRepository,
   getHungryService,
@@ -35,8 +36,25 @@ export async function getSearchResultsAsync(
   filters: SearchFilters,
   tasteVector = filters.tasteValues,
 ) {
-  const results = await getHungryService().discovery.searchDishes(filters, tasteVector);
-  return results.map((result) => result.dish);
+  const dietaryFlags = Array.from(
+    new Set([...useProfileStore.getState().profile.dietaryPreferences, ...filters.dietaryFlags]),
+  );
+  const budget = useProfileStore.getState().profile.maxDishBudget;
+  const maxPrice =
+    budget === undefined
+      ? filters.maxPrice
+      : filters.maxPrice === undefined
+        ? budget
+        : Math.min(budget, filters.maxPrice);
+  const effectiveFilters = { ...filters, dietaryFlags, maxPrice };
+  const results = await getHungryService().discovery.searchDishes(effectiveFilters, tasteVector);
+  return results
+    .map((result) => result.dish)
+    .filter(
+      (dish) =>
+        satisfiesDietaryRequirements(dish, dietaryFlags) &&
+        (maxPrice === undefined || dish.price <= maxPrice),
+    );
 }
 
 export function sortSearchResults(

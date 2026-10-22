@@ -1,0 +1,373 @@
+{
+  "snapshot_type": "capitaland_properties_blank_fnb_name_verified_proposals",
+  "observed_at_local": "2026-10-19 Asia/Singapore",
+  "master_workbook": "Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "master_sha256": "6b20769d389600a7e7838a64f3350330a6a2cade68a46321ac051fd68986d557",
+  "worksheet": "Public F&B Directory",
+  "scope": "Read-only bounded audit of blank F&B Name records whose current SFA address explicitly identifies selected CapitaLand malls/properties. Exact postal + unit + property matches only; public official mall tenant directories consulted. No workbook edits.",
+  "source_set": [
+    {
+      "source_title": "KE MING 克茗冰室 | Funan",
+      "source_url": "https://www.capitaland.com/sg/malls/funan/en/stores/ke-ming-.html",
+      "source_type": "official mall tenant directory",
+      "observed_date": "2026-10-19"
+    },
+    {
+      "source_title": "Big Appetite | Funan",
+      "source_url": "https://www.capitaland.com/sg/malls/funan/en/stores/big-appetite.html",
+      "source_type": "official mall tenant directory",
+      "observed_date": "2026-10-19"
+    },
+    {
+      "source_title": "Ya Kun Kaya Toast | Bukit Panjang Plaza",
+      "source_url": "https://www.capitaland.com/sg/malls/bukitpanjangplaza/en/stores/ya-kun-kaya-toast.html",
+      "source_type": "official mall tenant directory",
+      "observed_date": "2026-10-19"
+    },
+    {
+      "source_title": "Bugis Junction tourist privileges; tenant identity conflict",
+      "source_url": "https://www.capitaland.com/sg/malls/bugisjunction/en/tourist-privileges/deals-for-tourist.html",
+      "observed_date": "2026-10-19"
+    },
+    {
+      "source_title": "Food Opera | ION Orchard",
+      "source_url": "https://www.ionorchard.com/en/dine/food-opera.html",
+      "observed_date": "2026-10-19"
+    },
+    {
+      "source_title": "Reddog | Funan",
+      "source_url": "https://www.capitaland.com/sg/malls/funan/en/stores/reddog.html",
+      "observed_date": "2026-10-19"
+    },
+    {
+      "source_title": "Creative Intersections | Funan, identifies Lemonaide #B2-K12",
+      "source_url": "https://www.capitaland.com/sg/malls/funan/en/Creative-Intersections.html",
+      "observed_date": "2026-10-19"
+    },
+    {
+      "source_title": "Food Junction | Junction 8",
+      "source_url": "https://www.capitaland.com/sg/malls/junction8/en/stores/food-junction.html",
+      "observed_date": "2026-10-19"
+    },
+    {
+      "source_title": "Makan Street | IMM Building",
+      "source_url": "https://www.capitaland.com/sg/malls/imm/en/stores/makan-street-.html",
+      "observed_date": "2026-10-19"
+    },
+    {
+      "source_title": "The Food Place by Food Republic | Raffles City",
+      "source_url": "https://www.capitaland.com/sg/malls/rafflescity/en/stores/the-food-place-byfoodrepublic.html",
+      "observed_date": "2026-10-19"
+    },
+    {
+      "source_title": "Malaysia Boleh! | Bugis Junction",
+      "source_url": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/malaysia-boleh-.html",
+      "observed_date": "2026-10-19"
+    }
+  ],
+  "summary": {
+    "blank_records_reviewed": 24,
+    "exact_name_proposals": 3,
+    "held_for_ambiguity_or_unverified_match": 21,
+    "workbook_edits": 0,
+    "menu_or_image_proposals": 0,
+    "sort_implications": "No rows were sorted or moved. This is a proposal snapshot only; applying names in a later integration should preserve directory order unless the parent integration plan explicitly re-sorts alphabetically."
+  },
+  "proposals": [
+    {
+      "excel_row": 34096,
+      "sfa_licence": "CE19C31E000",
+      "current_fnb_name": "",
+      "business_type": "Restaurant",
+      "postal_code": "179105",
+      "current_sfa_address": "Address: 107 NORTH BRIDGE ROAD #B1-29,FUNAN,Singapore 179105",
+      "proposed_public_fnb_name": "KE MING 克茗冰室",
+      "source_type": "current_official_mall_store_directory",
+      "source_url": "https://www.capitaland.com/sg/malls/funan/en/stores/ke-ming-.html",
+      "source_title": "KE MING 克茗冰室 | Funan",
+      "observed_date": "2026-10-19",
+      "evidence": "CapitaLand’s official Funan store page names KE MING 克茗冰室 and gives location #B1-29. Workbook SFA record CE19C31E000 is a Restaurant at 107 North Bridge Road #B1-29, Funan, Singapore 179105.",
+      "matching_rule": "Exact SFA-record postal code and exact mall property + unit number match to the current official mall tenant page; business type is compatible.",
+      "confidence": "high",
+      "limitations": "Name-only proposal. Does not establish current operating status beyond the current mall directory listing. No menu/image/other field proposed."
+    },
+    {
+      "excel_row": 34099,
+      "sfa_licence": "CE19E06X008",
+      "current_fnb_name": "",
+      "business_type": "Foodcourt",
+      "postal_code": "179105",
+      "current_sfa_address": "Address: 107 NORTH BRIDGE ROAD #B2-24,FUNAN,Singapore 179105",
+      "proposed_public_fnb_name": "Big Appetite",
+      "source_type": "current_official_mall_store_directory",
+      "source_url": "https://www.capitaland.com/sg/malls/funan/en/stores/big-appetite.html",
+      "source_title": "Big Appetite | Funan",
+      "observed_date": "2026-10-19",
+      "evidence": "CapitaLand’s official Funan store page identifies Big Appetite as the food court at #B2-24. Workbook SFA record CE19E06X008 is a Foodcourt at 107 North Bridge Road #B2-24, Funan, Singapore 179105.",
+      "matching_rule": "Exact SFA-record postal code and exact mall property + unit number match to the current official mall tenant page; business type is compatible.",
+      "confidence": "high",
+      "limitations": "Name-only proposal. Does not establish current operating status beyond the current mall directory listing. No menu/image/other field proposed."
+    },
+    {
+      "excel_row": 35991,
+      "sfa_licence": "NW04070A000",
+      "current_fnb_name": "",
+      "business_type": "Snack Counter",
+      "postal_code": "677743",
+      "current_sfa_address": "Address: 1 JELEBU ROAD #02-01A,BUKIT PANJANG PLAZA,Singapore 677743",
+      "proposed_public_fnb_name": "Ya Kun Kaya Toast",
+      "source_type": "current_official_mall_store_directory",
+      "source_url": "https://www.capitaland.com/sg/malls/bukitpanjangplaza/en/stores/ya-kun-kaya-toast.html",
+      "source_title": "Ya Kun Kaya Toast | Bukit Panjang Plaza",
+      "observed_date": "2026-10-19",
+      "evidence": "CapitaLand’s official Bukit Panjang Plaza store page identifies Ya Kun Kaya Toast at #02-01A. Workbook SFA record NW04070A000 is a Snack Counter at 1 Jelebu Road #02-01A, Bukit Panjang Plaza, Singapore 677743.",
+      "matching_rule": "Exact SFA-record postal code and exact mall property + unit number match to the current official mall tenant page; business type is compatible.",
+      "confidence": "high",
+      "limitations": "Name-only proposal. Does not establish current operating status beyond the current mall directory listing. No menu/image/other field proposed."
+    }
+  ],
+  "held_rows": [
+    {
+      "excel_row": 33695,
+      "sfa_licence": "C99166C015",
+      "current_fnb_name": "",
+      "business_type": "Foodcourt",
+      "postal_code": "648886",
+      "current_sfa_address": "Address: 1 JURONG WEST CENTRAL 2 #B1-42,#B1-43,#B1-44,#B1-43,#B1-44,JURONG POINT,Singapore 648886",
+      "property": "Jurong Point",
+      "hold_reason": "Multiple #B1-42/#B1-43/#B1-44 units are combined/repeated in the SFA address; no current official directory source with a unique exact tenant match was verified.",
+      "relevant_official_source_url": "https://www.capitaland.com/sg/malls/jurongpoint/en/stores.html"
+    },
+    {
+      "excel_row": 33782,
+      "sfa_licence": "CE07437B002",
+      "current_fnb_name": "",
+      "business_type": "Foodcourt",
+      "postal_code": "188021",
+      "current_sfa_address": "Address: 200 VICTORIA STREET #03-30,BUGIS JUNCTION,Singapore 188021",
+      "property": "Bugis Junction",
+      "hold_reason": "Same exact #03-30/postal has two Foodcourt SFA records and official mall sources conflict on current tenant identity (Food Junction vs Malaysia Boleh!); held.",
+      "relevant_official_source_urls": [
+        "https://www.capitaland.com/sg/malls/bugisjunction/en/tourist-privileges/deals-for-tourist.html",
+        "https://www.capitaland.com/sg/en/shop/malls/stores/malaysia-boleh-.html"
+      ]
+    },
+    {
+      "excel_row": 33783,
+      "sfa_licence": "CE07437B004",
+      "current_fnb_name": "",
+      "business_type": "Foodcourt",
+      "postal_code": "188021",
+      "current_sfa_address": "Address: 200 VICTORIA STREET #03-30,BUGIS JUNCTION,Singapore 188021",
+      "property": "Bugis Junction",
+      "hold_reason": "Same exact #03-30/postal has two Foodcourt SFA records and official mall sources conflict on current tenant identity (Food Junction vs Malaysia Boleh!); held.",
+      "relevant_official_source_urls": [
+        "https://www.capitaland.com/sg/malls/bugisjunction/en/tourist-privileges/deals-for-tourist.html",
+        "https://www.capitaland.com/sg/en/shop/malls/stores/malaysia-boleh-.html"
+      ]
+    },
+    {
+      "excel_row": 33829,
+      "sfa_licence": "CE09266K007",
+      "current_fnb_name": "",
+      "business_type": "Foodcourt",
+      "postal_code": "238801",
+      "current_sfa_address": "Address: 2 ORCHARD TURN #B4-04,ION ORCHARD,Singapore 238801",
+      "property": "ION Orchard",
+      "hold_reason": "Six SFA records share the same #B4-04 address; mall lists Food Opera there, but the public directory does not disambiguate individual licensees/stalls. Held to avoid assigning a host food hall name to stall-level licences.",
+      "relevant_official_source_url": "https://www.ionorchard.com/en/dine/food-opera.html"
+    },
+    {
+      "excel_row": 33830,
+      "sfa_licence": "CE09266K008",
+      "current_fnb_name": "",
+      "business_type": "Foodcourt",
+      "postal_code": "238801",
+      "current_sfa_address": "Address: 2 ORCHARD TURN #B4-04,ION ORCHARD,Singapore 238801",
+      "property": "ION Orchard",
+      "hold_reason": "Six SFA records share the same #B4-04 address; mall lists Food Opera there, but the public directory does not disambiguate individual licensees/stalls. Held to avoid assigning a host food hall name to stall-level licences.",
+      "relevant_official_source_url": "https://www.ionorchard.com/en/dine/food-opera.html"
+    },
+    {
+      "excel_row": 33831,
+      "sfa_licence": "CE09266K011",
+      "current_fnb_name": "",
+      "business_type": "Foodcourt",
+      "postal_code": "238801",
+      "current_sfa_address": "Address: 2 ORCHARD TURN #B4-04,ION ORCHARD,Singapore 238801",
+      "property": "ION Orchard",
+      "hold_reason": "Six SFA records share the same #B4-04 address; mall lists Food Opera there, but the public directory does not disambiguate individual licensees/stalls. Held to avoid assigning a host food hall name to stall-level licences.",
+      "relevant_official_source_url": "https://www.ionorchard.com/en/dine/food-opera.html"
+    },
+    {
+      "excel_row": 33832,
+      "sfa_licence": "CE09266K018",
+      "current_fnb_name": "",
+      "business_type": "Foodcourt",
+      "postal_code": "238801",
+      "current_sfa_address": "Address: 2 ORCHARD TURN #B4-04,ION ORCHARD,Singapore 238801",
+      "property": "ION Orchard",
+      "hold_reason": "Six SFA records share the same #B4-04 address; mall lists Food Opera there, but the public directory does not disambiguate individual licensees/stalls. Held to avoid assigning a host food hall name to stall-level licences.",
+      "relevant_official_source_url": "https://www.ionorchard.com/en/dine/food-opera.html"
+    },
+    {
+      "excel_row": 33833,
+      "sfa_licence": "CE09266K020",
+      "current_fnb_name": "",
+      "business_type": "Foodcourt",
+      "postal_code": "238801",
+      "current_sfa_address": "Address: 2 ORCHARD TURN #B4-04,ION ORCHARD,Singapore 238801",
+      "property": "ION Orchard",
+      "hold_reason": "Six SFA records share the same #B4-04 address; mall lists Food Opera there, but the public directory does not disambiguate individual licensees/stalls. Held to avoid assigning a host food hall name to stall-level licences.",
+      "relevant_official_source_url": "https://www.ionorchard.com/en/dine/food-opera.html"
+    },
+    {
+      "excel_row": 34109,
+      "sfa_licence": "CE19N90E000",
+      "current_fnb_name": "",
+      "business_type": "Takeaway",
+      "postal_code": "179105",
+      "current_sfa_address": "Address: 107 NORTH BRIDGE ROAD #B2-K12,FUNAN,Singapore 179105",
+      "property": "Funan",
+      "hold_reason": "CapitaLand’s directory has a Reddog listing at #B2-K12, while a newer Funan 2026 promotion page identifies Lemonaide at the same unit. Current tenant identity conflicts; held.",
+      "relevant_official_source_url": "https://www.capitaland.com/sg/malls/funan/en/stores/reddog.html"
+    },
+    {
+      "excel_row": 34534,
+      "sfa_licence": "CE26F60L000",
+      "current_fnb_name": "",
+      "business_type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+      "postal_code": "238801",
+      "current_sfa_address": "Address: 2 ORCHARD TURN #B4-04,ION ORCHARD,Singapore 238801 (MR14)",
+      "property": "ION Orchard",
+      "hold_reason": "This is an MR14 sub-premise record sharing #B4-04 with six other SFA records; mall listing names Food Opera but does not identify the individual licensed business.",
+      "relevant_official_source_url": "https://www.ionorchard.com/en/dine/food-opera.html"
+    },
+    {
+      "excel_row": 36778,
+      "sfa_licence": "S93076E012",
+      "current_fnb_name": "",
+      "business_type": "Foodcourt",
+      "postal_code": "579837",
+      "current_sfa_address": "Address: 9 BISHAN PLACE #04-1/2E,JUNCTION 8,Singapore 579837",
+      "property": "Junction 8",
+      "hold_reason": "Two Foodcourt SFA records share #04-01/02E; official directory names Food Junction at the unit, but the evidence cannot determine whether both licences identify the same food-court operator or separate stall-level licensees.",
+      "relevant_official_source_url": "https://www.capitaland.com/sg/malls/junction8/en/stores/food-junction.html"
+    },
+    {
+      "excel_row": 36779,
+      "sfa_licence": "S93076E013",
+      "current_fnb_name": "",
+      "business_type": "Foodcourt",
+      "postal_code": "579837",
+      "current_sfa_address": "Address: 9 BISHAN PLACE #04-1/2E,JUNCTION 8,Singapore 579837",
+      "property": "Junction 8",
+      "hold_reason": "Two Foodcourt SFA records share #04-01/02E; official directory names Food Junction at the unit, but the evidence cannot determine whether both licences identify the same food-court operator or separate stall-level licensees.",
+      "relevant_official_source_url": "https://www.capitaland.com/sg/malls/junction8/en/stores/food-junction.html"
+    },
+    {
+      "excel_row": 37219,
+      "sfa_licence": "SW04197C001",
+      "current_fnb_name": "",
+      "business_type": "Foodcourt",
+      "postal_code": "609601",
+      "current_sfa_address": "Address: 2 JURONG EAST STREET 21 #03-55,IMM BUILDING,Singapore 609601",
+      "property": "IMM Building",
+      "hold_reason": "Two Foodcourt SFA records share #03-55; official CapitaLand listing names Makan Street there, but cannot determine whether each licence is the host food court or an individual licensee.",
+      "relevant_official_source_url": "https://www.capitaland.com/sg/malls/imm/en/stores/makan-street-.html"
+    },
+    {
+      "excel_row": 37220,
+      "sfa_licence": "SW04197C008",
+      "current_fnb_name": "",
+      "business_type": "Foodcourt",
+      "postal_code": "609601",
+      "current_sfa_address": "Address: 2 JURONG EAST STREET 21 #03-55,IMM BUILDING,Singapore 609601",
+      "property": "IMM Building",
+      "hold_reason": "Two Foodcourt SFA records share #03-55; official CapitaLand listing names Makan Street there, but cannot determine whether each licence is the host food court or an individual licensee.",
+      "relevant_official_source_url": "https://www.capitaland.com/sg/malls/imm/en/stores/makan-street-.html"
+    },
+    {
+      "excel_row": 37315,
+      "sfa_licence": "SW17882J000",
+      "current_fnb_name": "",
+      "business_type": "Takeaway",
+      "postal_code": "648886",
+      "current_sfa_address": "Address: 1 JURONG WEST CENTRAL 2 #B1-45,JURONG POINT,Singapore 648886",
+      "property": "Jurong Point",
+      "hold_reason": "Exact #B1-45 unit has no current official CapitaLand tenant match verified in this pass; held rather than infer a business name.",
+      "relevant_official_source_url": "https://www.capitaland.com/sg/malls/jurongpoint/en/stores.html"
+    },
+    {
+      "excel_row": 37555,
+      "sfa_licence": "SW25P96L000",
+      "current_fnb_name": "",
+      "business_type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+      "postal_code": "648331",
+      "current_sfa_address": "Address: 63 JURONG WEST CENTRAL 3 #03-26,#03-27,#03-28,JURONG POINT,Singapore 648331 (MR7)",
+      "property": "Jurong Point",
+      "hold_reason": "Address is a multi-unit #03-26/#03-27/#03-28 coffeeshop/foodcourt record; no unique official tenant/food stall identity verified.",
+      "relevant_official_source_url": "https://www.capitaland.com/sg/malls/jurongpoint/en/stores.html"
+    },
+    {
+      "excel_row": 37559,
+      "sfa_licence": "SW25Q41P000",
+      "current_fnb_name": "",
+      "business_type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+      "postal_code": "648886",
+      "current_sfa_address": "Address: 1 JURONG WEST CENTRAL 2 #03-26,#03-27,#03-28,JURONG POINT,Singapore 648886 (MR5)",
+      "property": "Jurong Point",
+      "hold_reason": "Address is a multi-unit #03-26/#03-27/#03-28 coffeeshop/foodcourt record; no unique official tenant/food stall identity verified.",
+      "relevant_official_source_url": "https://www.capitaland.com/sg/malls/jurongpoint/en/stores.html"
+    },
+    {
+      "excel_row": 37563,
+      "sfa_licence": "SW25Q90V000",
+      "current_fnb_name": "",
+      "business_type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+      "postal_code": "648886",
+      "current_sfa_address": "Address: 1 JURONG WEST CENTRAL 2 #03-26,#03-27,#03-28,JURONG POINT,Singapore 648886 (MR3)",
+      "property": "Jurong Point",
+      "hold_reason": "Address is a multi-unit #03-26/#03-27/#03-28 coffeeshop/foodcourt record; no unique official tenant/food stall identity verified.",
+      "relevant_official_source_url": "https://www.capitaland.com/sg/malls/jurongpoint/en/stores.html"
+    },
+    {
+      "excel_row": 38037,
+      "sfa_licence": "W96310N001",
+      "current_fnb_name": "",
+      "business_type": "Foodcourt",
+      "postal_code": "179103",
+      "current_sfa_address": "Address: 252 NORTH BRIDGE ROAD #03-15/17,RAFFLES CITY SHOPPING CENTRE,Singapore 179103",
+      "property": "Raffles City Shopping Centre",
+      "hold_reason": "Three Foodcourt SFA records share #03-15 to #03-17; official CapitaLand directory identifies The Food Place by Food Republic, but it is unclear whether each record is the host venue or a stall-level licensee.",
+      "relevant_official_source_url": "https://www.capitaland.com/sg/malls/rafflescity/en/stores/the-food-place-byfoodrepublic.html"
+    },
+    {
+      "excel_row": 38038,
+      "sfa_licence": "W96310N002",
+      "current_fnb_name": "",
+      "business_type": "Foodcourt",
+      "postal_code": "179103",
+      "current_sfa_address": "Address: 252 NORTH BRIDGE ROAD #03-15,#03-16,#03-17,RAFFLES CITY SHOPPING CENTRE,Singapore 179103",
+      "property": "Raffles City Shopping Centre",
+      "hold_reason": "Three Foodcourt SFA records share #03-15 to #03-17; official CapitaLand directory identifies The Food Place by Food Republic, but it is unclear whether each record is the host venue or a stall-level licensee.",
+      "relevant_official_source_url": "https://www.capitaland.com/sg/malls/rafflescity/en/stores/the-food-place-byfoodrepublic.html"
+    },
+    {
+      "excel_row": 38039,
+      "sfa_licence": "W96310N006",
+      "current_fnb_name": "",
+      "business_type": "Foodcourt",
+      "postal_code": "179103",
+      "current_sfa_address": "Address: 252 NORTH BRIDGE ROAD #03-15,#03-16,#03-17,RAFFLES CITY SHOPPING CENTRE,Singapore 179103",
+      "property": "Raffles City Shopping Centre",
+      "hold_reason": "Three Foodcourt SFA records share #03-15 to #03-17; official CapitaLand directory identifies The Food Place by Food Republic, but it is unclear whether each record is the host venue or a stall-level licensee.",
+      "relevant_official_source_url": "https://www.capitaland.com/sg/malls/rafflescity/en/stores/the-food-place-byfoodrepublic.html"
+    }
+  ],
+  "validation": {
+    "baseline_sha256": "6b20769d389600a7e7838a64f3350330a6a2cade68a46321ac051fd68986d557",
+    "method": "Independent read-back from canonical workbook using worksheet row indices, unique SFA licence IDs, current blank name cells, exact postal code/address checks, and proposal/held disjointness.",
+    "passed": true
+  }
+}

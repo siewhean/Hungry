@@ -74,18 +74,30 @@ test("MVP settings split keeps device-only preferences in local UI storage", () 
     assert.match(uiStore, new RegExp(`${key}: state\\.${key}`));
   }
 
-  assert.match(settingsScreen, /showNotificationSettings = FEATURE_FLAGS\.notificationsEnabled/);
-  assert.match(settingsScreen, /showGamificationSettings = FEATURE_FLAGS\.gamificationEnabled/);
-  assert.match(settingsScreen, /useUIStore\(\(state\) => state\.hapticFeedbackEnabled\)/);
-  assert.match(settingsScreen, /useUIStore\(\(state\) => state\.reducedMotionEnabled\)/);
-  assert.match(settingsScreen, /useUIStore\(\(state\) => state\.dietaryFiltersEnabled\)/);
-  assert.match(settingsScreen, /useUIStore\(\(state\) => state\.activityFeedEnabled\)/);
-  assert.match(settingsScreen, /\{showGamificationSettings \? \(/);
-  assert.match(settingsScreen, /\{showNotificationSettings \|\| showGamificationSettings \? \(/);
-  assert.match(settingsScreen, /setProfileVisibility\("private"\)/);
-  assert.match(settingsScreen, /label="Dietary filters"/);
-  assert.match(settingsScreen, /label="Reduce motion"/);
-  assert.doesNotMatch(settingsScreen, /label="Analytics sharing"/);
+  for (const label of [
+    "Theme",
+    "Reduce motion",
+    "Haptic feedback",
+    "Save search history",
+    "Hide reviewed dishes",
+    "Authentication email",
+  ]) {
+    assert.match(settingsScreen, new RegExp(`label="${label}"`));
+  }
+  assert.match(settingsScreen, /isEnabled=\{ui\.hapticFeedbackEnabled\}/);
+  assert.match(settingsScreen, /onToggle=\{ui\.setHapticFeedbackEnabled\}/);
+  assert.match(settingsScreen, /isEnabled=\{ui\.reducedMotionEnabled\}/);
+  assert.match(settingsScreen, /onToggle=\{ui\.setAllowSearchHistory\}/);
+  assert.match(settingsScreen, /isEnabled=\{ui\.hideReviewedDishesFromFeed\}/);
+  assert.match(read("src/lib/haptics.ts"), /hapticFeedbackEnabled/);
+  assert.match(read("src/hooks/useReduceMotion.ts"), /reducedMotionEnabled/);
+  assert.doesNotMatch(
+    settingsScreen,
+    /label="(?:Analytics sharing|Dietary filters|Activity feed|Mission notifications|Show profile badges)"/,
+    "unsupported preferences must not advertise controls without consumers",
+  );
+  assert.match(settingsScreen, /await setVisibility\(value\)/);
+  assert.match(settingsScreen, /\(\["public", "private"\] as const\)/);
 });
 
 test("EAS release profiles set explicit MVP feature-flag environments", () => {
@@ -114,15 +126,28 @@ test("production Post route publishes through the canonical composer service pat
   assert.match(postScreen, /confirmGalleryAccess/);
   assert.match(postScreen, /MediaTypeOptions: \{ All: string \}/);
   assert.match(postScreen, /launchImageLibraryAsync/);
-  assert.match(postScreen, /composer\.reset\(\)/);
+  assert.match(postScreen, /useComposerStore\.getState\(\)\.reset\(\)/);
+  assert.match(
+    postScreen,
+    /await publishComposerPost[\s\S]*Post published successfully\.[\s\S]*useComposerStore\.getState\(\)\.reset\(\)/,
+    "draft resets only after confirmed publication",
+  );
   assert.match(postScreen, /composer\.setCaption\(/);
-  assert.match(postScreen, /composer\.addMedia\(selectedMedia\)/);
+  assert.match(postScreen, /useComposerStore\.setState\(\{ media: selectedMedia \}\)/);
   assert.match(postScreen, /publishComposerPost\(\{\s*publishMode: "post"/);
   assert.match(postScreen, /disabled=\{selectedMedia\.length === 0\}/);
-  assert.match(postScreen, /const \[selectedDishId, setSelectedDishId\]/);
+  assert.match(
+    postScreen,
+    /const selectedDishId = useComposerStore\(\(state\) => state\.selectedDishId\)/,
+  );
   assert.match(postScreen, /const \[dishSearchQuery, setDishSearchQuery\]/);
-  assert.match(postScreen, /repository\.getDishById\(selectedDishId\) \?\? null/);
-  assert.match(postScreen, /repository\.listDishesByVenue\(selectedVenueId\)\[0\] \?\? null/);
+  assert.match(postScreen, /repository\.getDishById\(selectedDishId\)/);
+  assert.match(postScreen, /remoteDish\?\.id === selectedDishId/);
+  assert.doesNotMatch(
+    postScreen,
+    /listDishesByVenue\(selectedVenueId\)\[0\]/,
+    "venue selection cannot silently pick its first dish",
+  );
   assert.match(postScreen, /label="Find dish"/);
   assert.match(postScreen, /placeholder="Search dishes, stalls, or tags"/);
   assert.match(postScreen, /setSelectedDishId\(item\.id\)/);
@@ -152,14 +177,24 @@ test("signed-in onboarding merges guest taste and dietary choices into the Supab
   const mergeHelper = read("src/features/auth/applySignedInProfile.ts");
   const profileStore = read("src/store/useProfileStore.ts");
 
-  assert.match(onboardingAuth, /import \{ applySignedInProfile \}/);
-  assert.match(onboardingAuth, /completedOnboarding: true/);
-  assert.match(emailVerification, /import \{ applySignedInProfile \}/);
+  for (const screen of [onboardingAuth, emailVerification, login, signUp]) {
+    assert.match(screen, /import \{\s*applySignedInProfile,\s*captureGuestProfileSnapshot,/);
+    assert.match(screen, /const guestSnapshot = captureGuestProfileSnapshot\(\)/);
+    assert.match(screen, /guestSnapshot,/);
+  }
+  assert.match(onboardingAuth, /setAccountScope\(sessionProfile\.id, \{ adoptGuest: true \}\)/);
+  assert.match(
+    onboardingAuth,
+    /completedOnboarding: false/,
+    "verification must resume incomplete onboarding",
+  );
   assert.match(emailVerification, /applySignedInProfile\(session\.profile/);
   assert.match(emailVerification, /completedOnboarding: shouldCompleteOnboarding/);
   assert.match(emailVerification, /completeOnboarding\(\)/);
-  assert.match(login, /import \{ applySignedInProfile \}/);
-  assert.match(signUp, /import \{ applySignedInProfile \}/);
+  assert.match(mergeHelper, /const snapshot = options\.guestSnapshot \?\? pendingGuestSnapshot/);
+  assert.match(mergeHelper, /const guestProfile = snapshot\?\.profile \?\? profileState\.profile/);
+  assert.match(mergeHelper, /clearGuestProfileSnapshot\(\)/);
+  assert.match(mergeHelper, /generation === getAccountGeneration\(\)/);
   assert.match(mergeHelper, /function hasMeaningfulGuestTaste/);
   assert.match(mergeHelper, /profile\.id !== "guest-user"[\s\S]*return false/);
   assert.match(mergeHelper, /recommendationSignals\?\.signalCount/);
@@ -224,9 +259,11 @@ test("Supabase review reads hydrate review_photos and public profile names and a
   );
   assert.match(service, /photos: photosByReviewId\.get\(id\) \?\? \[\]/);
   assert.match(domain, /authorAvatarUrl\?: string/);
-  assert.match(
+  assert.match(detailTransforms, /avatarUrl: review\.authorAvatarUrl \?\? ""/);
+  assert.doesNotMatch(
     detailTransforms,
-    /avatarUrl: review\.authorAvatarUrl \?\? AVATAR_POOL\[avatarIndex\]/,
+    /AVATAR_POOL/,
+    "unknown canonical authors must not receive an invented identity photo",
   );
   assert.doesNotMatch(
     service,
@@ -237,16 +274,18 @@ test("Supabase review reads hydrate review_photos and public profile names and a
   assert.doesNotMatch(reviewFeed, /reviews\.getReviewsForDish\(dish\.id\)/);
   assert.match(
     service,
-    /async listRecentReviews\(options\)[\s\S]*\.order\("created_at", \{ ascending: false \}\)[\s\S]*\.limit\(limit\)/,
+    /async listRecentReviews\(options\)[\s\S]*client\.rpc\("list_recent_reviews_v2"/,
   );
-  assert.match(
-    reviewFeed,
-    /serviceProviderMode === "mock" \? listReviewFeedItems\(repository\) : \(serviceReviewItems \?\? \[\]\)/,
+  assert.match(reviewFeed, /const reviews = serviceReviewItems \?\? \[\]/);
+  assert.match(reviewHistory, /reviews\.getUserReviews\(userId\)/);
+  assert.match(reviewHistory, /setReviews\(\[\]\)/);
+  assert.match(reviewHistory, /if \(active\) setError\(true\)/);
+  assert.match(reviewHistory, /label="Retry loading reviews"/);
+  assert.doesNotMatch(
+    reviewHistory,
+    /hasRemoteHistory \|\| localHistory|localHistory|dish\.rating/,
+    "review history uses submitted author reviews, never cached dish aggregates",
   );
-  assert.match(reviewHistory, /serviceProviderMode === "supabase"\s*\?\s*remoteHistory/);
-  assert.match(reviewHistory, /serviceProviderMode === "mock"/);
-  assert.match(reviewHistory, /remoteLoadFailed/);
-  assert.doesNotMatch(reviewHistory, /hasRemoteHistory \|\| localHistory/);
 });
 
 test("Supabase review feed does not send review ids through post reaction writes", () => {
@@ -287,10 +326,13 @@ test("Search results route hydrates through the service before trusting reposito
   assert.match(searchFeature, /getHungryService\(\)\.discovery\.searchDishes/);
   assert.match(searchFeature, /export async function getSearchResultsAsync/);
   assert.match(searchScreen, /getSearchResultsAsync\(filters, profile\.tasteVector\)/);
-  assert.match(
+  assert.match(searchScreen, /setSearchError\(true\)/);
+  assert.doesNotMatch(
     searchScreen,
-    /serviceResults \?\? getSearchResults\(filters, profile\.tasteVector\)/,
+    /serviceResults \?\? getSearchResults\(/,
+    "failed asynchronous search must never resurrect unrestricted cached dishes",
   );
+  assert.match(searchScreen, /serviceResults \?\? \[\]/);
 });
 
 test("Supabase app readiness keeps the legacy cache opt-in and bounded away from public routes", () => {
@@ -362,6 +404,16 @@ test("profile/public-profile post history can read posts through the social serv
   assert.match(serviceTypes, /listUserPosts\(userId: string\): Promise<Bite\[\]>/);
   assert.match(mockService, /async listUserPosts\(userId: string\)/);
   assert.match(supabaseService, /async listUserPosts\(userId: string\)/);
-  assert.match(profileContent, /listUserPosts\(normalizedAuthorId\)/);
-  assert.match(profileContent, /mergeStallPosts\(/);
+  assert.match(profileContent, /service\.social\.listUserPosts\(authorId\)/);
+  assert.match(profileContent, /nextPosts\.filter\(\(post\) => post\.authorId === authorId\)/);
+  assert.match(
+    profileContent,
+    /nextReviews\.filter\(\(review\) => review\.authorId === authorId\)/,
+  );
+  assert.match(profileContent, /if \(!authorId\)/);
+  assert.doesNotMatch(
+    profileContent,
+    /mergeStallPosts|normalizedAuthorId|slugify/,
+    "public profiles require canonical author identity and exact owner attribution",
+  );
 });

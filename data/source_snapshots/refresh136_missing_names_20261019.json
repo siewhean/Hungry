@@ -1,0 +1,50 @@
+{
+  "snapshot_type": "refresh136_exact_public_fnb_name_proposals",
+  "observed_at_local": "2026-10-19 Asia/Singapore",
+  "master_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "master_sha256": "dfdd8b9833f249e0c4539c8c8ed861f06df7f40ba842875aa6375b13d3c7e999",
+  "worksheet": "Public F&B Directory",
+  "scope": "Read-only research of blank F&B Name records using current official mall or venue directories. No workbook edits or spending. This pass confirmed one exact current directory match; no minimum yield assumed.",
+  "matching_rule": "Exact blank SFA licence row plus exact outlet unit, street address and postal code crosswalk; public name must appear in current first-party venue directory. No legal-name substitution or inference from business type.",
+  "summary": {
+    "exact_public_name_proposals": 1,
+    "reviewed_matches": 1,
+    "unresolved_or_ambiguous_records_left_blank": 0,
+    "workbook_edits": 0,
+    "spending": 0
+  },
+  "proposals": [
+    {
+      "excel_row": 38042,
+      "sfa_licence": "W97070A012",
+      "before_fnb_name": null,
+      "business_type": "Foodcourt",
+      "existing_full_address": "Address: 100 BUKIT TIMAH ROAD #01-28,KK WOMEN'S AND CHILDREN'S HOSPITAL,Singapore 229899",
+      "existing_postal_code": "229899",
+      "proposed_fnb_name": "Koufu",
+      "exact_join": {
+        "sfa_licence": "W97070A012",
+        "street_address": "100 Bukit Timah Road",
+        "unit": "#01-28",
+        "postal_code": "229899",
+        "premise": "KK Women's and Children's Hospital",
+        "business_type_compatibility": "Workbook classifies this exact-unit record as Foodcourt; KKH identifies Koufu at #01-28 as a food court."
+      },
+      "sources": [
+        {
+          "kind": "first_party_venue_directory",
+          "url": "https://www.kkh.com.sg/patient-services/visitor-info/amenities-facilities/shops-eats",
+          "observed_date": "2026-10-19",
+          "evidence": "Current KKH Shops and Eats page lists Unit #01-28 as Koufu and describes it as a food court; page states the hospital address is 100 Bukit Timah Road, Singapore 229899."
+        }
+      ],
+      "confidence": "high",
+      "reuse_terms": "Source is linked for attribution; public-facing name transcribed from the venue directory.",
+      "recommendation": "Proposal only; apply only after parent-level deduplication against concurrent name batches."
+    }
+  ],
+  "limitations": [
+    "Only one record in this pass had directly checkable current first-party outlet-name evidence tied to an exact unit.",
+    "No claim is made about records not individually reviewed."
+  ]
+}

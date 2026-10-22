@@ -1,0 +1,66 @@
+
+> hungry-mobile@0.1.0 format:check
+> prettier --check src/
+
+Checking formatting...
+[warn] src/app/native-smoke-contracts.test.ts
+[warn] src/app/navigation/navigationTypes.ts
+[warn] src/app/navigation/RootNavigator.tsx
+[warn] src/app/navigation/supabase-auth-guards.test.ts
+[warn] src/app/screens/checklist-portfolio-phase3-contracts.test.ts
+[warn] src/app/screens/checklist-portfolio-phase5-contracts.test.ts
+[warn] src/app/screens/checklist/ChecklistDetailScreen.tsx
+[warn] src/app/screens/checklist/ChecklistItemPickerScreen.tsx
+[warn] src/app/screens/checklist/ChecklistsHomeScreen.tsx
+[warn] src/app/screens/detail/StallDetailScreen.tsx
+[warn] src/app/screens/discover/CollectionDetailScreen.tsx
+[warn] src/app/screens/discover/CollectionListScreen.tsx
+[warn] src/app/screens/home/ChatDetailScreen.tsx
+[warn] src/app/screens/home/DirectMessagesScreen.tsx
+[warn] src/app/screens/onboarding/TasteQuizScreen.tsx
+[warn] src/app/screens/portfolio/AdminPortfolioFlagsScreen.tsx
+[warn] src/app/screens/portfolio/PortfolioCollaboratorsScreen.tsx
+[warn] src/app/screens/portfolio/PortfolioCreateScreen.tsx
+[warn] src/app/screens/portfolio/PortfolioDetailScreen.tsx
+[warn] src/app/screens/portfolio/PortfolioEditScreen.tsx
+[warn] src/app/screens/portfolio/PortfolioItemPickerScreen.tsx
+[warn] src/app/screens/portfolio/PortfolioPublicViewScreen.tsx
+[warn] src/app/screens/portfolio/PortfolioSearchScreen.tsx
+[warn] src/app/screens/portfolio/PortfoliosHomeScreen.tsx
+[warn] src/app/screens/review/ReviewScreen.tsx
+[warn] src/app/screens/wheel/WheelEntryAddSheet.tsx
+[warn] src/app/screens/wheel/WheelResultModal.tsx
+[warn] src/app/screens/wheel/WheelSpinScreen.tsx
+[warn] src/components/checklist/ChecklistItemRow.tsx
+[warn] src/components/collections/CollectionCard.tsx
+[warn] src/components/portfolio/PortfolioCard.tsx
+[warn] src/components/social/CircleStoryCarousel.tsx
+[warn] src/components/stall/StallInteractionBar.tsx
+[warn] src/features/post/components/StatusOverlay.tsx
+[warn] src/hooks/useAppBootstrap.ts
+[warn] src/lib/haptics.ts
+[warn] src/lib/security/communitySafety.ts
+[warn] src/lib/security/communitySafetyState.ts
+[warn] src/lib/services/catalog/index.ts
+[warn] src/lib/services/mock/mockService.ts
+[warn] src/lib/services/mock/repositories.ts
+[warn] src/lib/services/supabase/authStorage.ts
+[warn] src/lib/services/supabase/client.test.ts
+[warn] src/lib/services/supabase/client.ts
+[warn] src/lib/services/supabase/supabaseRepository.ts
+[warn] src/lib/services/supabase/supabaseService.ts
+[warn] src/lib/services/types.ts
+[warn] src/store/accountPersistStorage.ts
+[warn] src/store/mvp-source-of-truth-contracts.test.ts
+[warn] src/store/profilePersistStorage.ts
+[warn] src/store/saved-tools-remediation.test.ts
+[warn] src/store/session-data-audit-contracts.test.ts
+[warn] src/store/useChatDraftStore.ts
+[warn] src/store/useChecklistStore.ts
+[warn] src/store/useCollectionStore.ts
+[warn] src/store/usePortfolioStore.ts
+[warn] src/store/useProfileStore.ts
+[warn] src/store/useSessionStore.ts
+[warn] src/store/useStallInteractionStore.ts
+[warn] src/store/useWheelStore.ts
+[warn] Code style issues found in 60 files. Run Prettier with --write to fix.

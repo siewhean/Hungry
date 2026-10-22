@@ -74,7 +74,7 @@ test("taste recommendation migration adds RLS policies and live recommendation R
   assert.match(sql, /grant execute on function public\.record_taste_interaction_event/i);
 });
 
-test("supabase service prefers live recommendation RPC with mock-compatible fallback", () => {
+test("supabase recommendation failures remain errors instead of cached success", () => {
   const source = readRepoFile("src/lib/services/supabase/supabaseService.ts");
   const getSlate = segmentBetween(
     source,
@@ -83,10 +83,15 @@ test("supabase service prefers live recommendation RPC with mock-compatible fall
   );
 
   assert.match(source, /async function getLiveTasteRecommendations/i);
-  assert.match(source, /client\.rpc\("get_taste_recommendations"/);
+  assert.match(source, /client\.rpc\("get_taste_recommendations_v2"/);
   assert.match(source, /refreshSupabaseRepositoryCache\(\)/);
-  assert.match(getSlate, /getLiveTasteRecommendations\(client, request, profile\)/);
-  assert.match(getSlate, /liveItems \?\? getRankedRecommendations\(request, profile\)/);
+  assert.match(
+    getSlate,
+    /getLiveTasteRecommendations\(\s*client,\s*\{\s*\.\.\.request,\s*excludeDishIds,?\s*\},\s*profile,?\s*\)/,
+  );
+  assert.doesNotMatch(getSlate, /\?\? getRankedRecommendations/);
+  assert.match(getSlate, /hideReviewedDishesFromFeed/);
+  assert.match(source, /p_max_price:\s*request\.maxPrice/);
 });
 
 test("supabase service records explicit feedback through RPC and preserves fallback update", () => {

@@ -1,0 +1,32 @@
+{
+  "snapshot_id": "refresh119_media_rights_20261019",
+  "observed_date": "2026-10-19",
+  "canonical_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256_read_only_baseline": "028e757cf68c3fd6be935a2908484a98ba1865c4318975cfde543d1175bf5475",
+  "workbook_edited": false,
+  "candidate_count": 1,
+  "qualifying_candidates": [
+    {
+      "sfa_licence": "MWF010004",
+      "outlet_name": "Tian Tian Hainanese Chicken Rice",
+      "outlet_address": "1 Kadayanallur Street #010, Singapore 069184",
+      "image_type": "stall photo",
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/0/01/Tiantian_chixrice.JPG",
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:Tiantian_chixrice.JPG",
+      "author": "Destron Commander",
+      "license": "CC BY-SA 3.0 Unported",
+      "license_url": "https://creativecommons.org/licenses/by-sa/3.0/",
+      "content_date": "2008-03-22",
+      "visual_check": "Visually inspected Commons page image; blue TIAN TIAN HAINANESE CHICKEN RICE fascia is legible and the stall number 10 is visible at upper right, matching Directory licence MWF010004 / unit #010.",
+      "url_check": "2026-10-19 HTTP HEAD returned 200 image/jpeg; content-length 1,129,296 bytes.",
+      "freshness_and_status_caveat": "Historical photo (2008); suitable only as a clearly dated, attributed historical outlet reference. Current appearance and live operation are not confirmed by this image. Workbook SFA row is listed in current export but its coverage status says operation is not live confirmed.",
+      "workbook_recommendation": "Add to Image Candidates as openly licensed, exact outlet match, review-only with attribution and CC BY-SA 3.0 terms; do not set as current/approved storefront photo without freshness review."
+    }
+  ],
+  "rejected_candidates_count": 0,
+  "sources": [
+    "https://commons.wikimedia.org/wiki/File:Tiantian_chixrice.JPG",
+    "https://creativecommons.org/licenses/by-sa/3.0/"
+  ],
+  "scope_note": "Read-only media-rights research; no unofficial platform media. Candidate must retain creator, license link, attribution and any ShareAlike obligations. This is not a claim of current outlet appearance."
+}

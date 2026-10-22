@@ -1,0 +1,25 @@
+{
+  "task": "Refresh121 read-only coordinate research",
+  "observed_at": "2026-10-19",
+  "workbook_path": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "6fca59ec8c51d62bfa8cf2ec556397fdb8b0eb780f0fc1bb8e39cc46e228c8dc",
+  "workbook_modified": false,
+  "mapbox_search_box_requests_issued": 24,
+  "usage": {
+    "before": 59,
+    "before_source": "user-reported; not dashboard-verified in this task",
+    "free_tier_cap": 50000,
+    "after_estimate": 83,
+    "after_source": "arithmetic estimate = user-reported 59 + 24 requests; not dashboard-verified",
+    "estimated_remaining": 49917
+  },
+  "proposal_count": 0,
+  "results_retained": false,
+  "reason": "Mapbox Search Box API results are available for temporary use only and must not be stored in a customer database. No Mapbox-returned coordinate or feature data is retained here or proposed for workbook insertion.",
+  "workbook_change": "None",
+  "recommended_persistent_alternative": "Use free OneMap postal-code lookup or another source whose terms permit persistent coordinate storage. Mapbox Geocoding API permanent mode requires a valid credit card or enterprise contract per Mapbox documentation, so it was not used.",
+  "official_documentation": [
+    "https://docs.mapbox.com/api/search/search-box/",
+    "https://docs.mapbox.com/api/search/geocoding/"
+  ]
+}

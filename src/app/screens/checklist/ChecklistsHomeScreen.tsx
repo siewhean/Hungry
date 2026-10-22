@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, FlatList, StyleSheet } from "react-native";
+import { Alert, View, FlatList, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -17,15 +17,20 @@ export function ChecklistsHomeScreen() {
   const theme = useHungryTheme();
   const { checklists, items, isLoaded, loadChecklists, createChecklist } = useChecklistStore();
   const { isAuthenticated } = useSessionStore();
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [retry, setRetry] = useState(0);
   const [isCreating, setIsCreating] = useState(false);
   const insets = useSafeAreaInsets();
   const topSpacing = Math.max(insets.top, theme.spacing[4]);
 
   useEffect(() => {
     if (isAuthenticated && !isLoaded) {
-      loadChecklists();
+      setLoadError(null);
+      void loadChecklists().catch((error: unknown) =>
+        setLoadError(error instanceof Error ? error.message : "Please retry."),
+      );
     }
-  }, [isAuthenticated, isLoaded, loadChecklists]);
+  }, [isAuthenticated, isLoaded, loadChecklists, retry]);
 
   const handleCreateChecklist = async () => {
     setIsCreating(true);
@@ -33,7 +38,10 @@ export function ChecklistsHomeScreen() {
       const checklist = await createChecklist("New Checklist");
       navigation.navigate("ChecklistDetail", { checklistId: checklist.id });
     } catch (error) {
-      console.error("Failed to create checklist:", error);
+      Alert.alert(
+        "Could not create checklist",
+        error instanceof Error ? error.message : "Please retry.",
+      );
     } finally {
       setIsCreating(false);
     }
@@ -57,8 +65,9 @@ export function ChecklistsHomeScreen() {
         style={[styles.container, { backgroundColor: theme.palette.bg, paddingTop: topSpacing }]}
       >
         <AppText variant="body" style={styles.emptyText}>
-          Loading...
+          {loadError ?? "Loading…"}
         </AppText>
+        {loadError ? <Button label="Retry" onPress={() => setRetry((value) => value + 1)} /> : null}
       </View>
     );
   }

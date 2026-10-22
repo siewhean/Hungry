@@ -1,0 +1,202 @@
+{
+  "snapshot_id": "refresh133_directory_fields_20261019",
+  "observed_date": "2026-10-19",
+  "canonical_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "canonical_workbook_sha256": "b9b4d654cac9131405caf8c84c81194af8d4b856ab8bffbfdc746ae6cfad7463",
+  "workbook_edited": false,
+  "proposal_status": "evidence_only_not_integrated",
+  "method": "Read-only audit against exact current workbook SHA. Proposals only fill blank cells after matching current first-party operator source to existing brand, postal code, and exact unit where present. No rows with only a postcode-level/ambiguous match were used. Ya Kun menu URL is explicitly the brand-wide official menu, not a branch-specific claim. No fields were cleared because no positive evidence of invalidity was found. No paid services or Mapbox used.",
+  "source_set": [
+    {
+      "url": "https://app.yakun.com/find-us",
+      "publisher": "Ya Kun International",
+      "observed_date": "2026-10-19",
+      "description": "First-party outlet directory with branch addresses, postcodes, selected phone numbers and operating hours."
+    },
+    {
+      "url": "https://app.yakun.com/menu.html",
+      "publisher": "Ya Kun International",
+      "observed_date": "2026-10-19",
+      "description": "First-party brand menu page; currently exposes 68 items."
+    },
+    {
+      "url": "https://www.burgerking.com.sg/Locator/Details/91",
+      "publisher": "Burger King Singapore",
+      "observed_date": "2026-10-19",
+      "description": "First-party exact branch locator."
+    },
+    {
+      "url": "https://www.burgerking.com.sg/Locator/Details/25",
+      "publisher": "Burger King Singapore",
+      "observed_date": "2026-10-19",
+      "description": "First-party exact branch locator."
+    },
+    {
+      "url": "https://www.burgerking.com.sg/Locator/Details/31",
+      "publisher": "Burger King Singapore",
+      "observed_date": "2026-10-19",
+      "description": "First-party exact branch locator."
+    },
+    {
+      "url": "https://www.burgerking.com.sg/Locator/Details/35",
+      "publisher": "Burger King Singapore",
+      "observed_date": "2026-10-19",
+      "description": "First-party exact branch locator."
+    }
+  ],
+  "summary": {
+    "proposals": 8,
+    "distinct_records": 8,
+    "field_counts": {
+      "Menu URL": 1,
+      "Website": 3,
+      "Opening Hours / Closed Days": 4
+    },
+    "clears": 0,
+    "scope_note": "Only blank fields with positive current first-party evidence were proposed; nonblank values were not changed."
+  },
+  "proposals": [
+    {
+      "row_number": 31684,
+      "sfa_licence": "NW17030C000",
+      "existing_name": "YAKUN KAYA TOAST",
+      "existing_address": "17 PETIR ROAD #B2-23,#B2-24,HILLION MALL,Singapore 678278",
+      "postal_code": "678278",
+      "official_outlet_name": "Hillion Mall",
+      "official_outlet_address": "17 Petir Road, #B2-23/24, Singapore 678278",
+      "field": "Menu URL",
+      "before": null,
+      "after": "https://app.yakun.com/menu.html",
+      "source_url": "https://app.yakun.com/menu.html",
+      "source_type": "first_party_operator_menu",
+      "evidence": "Official operator menu page currently lists 68 items; branch variation is not asserted.",
+      "observed_date": "2026-10-19",
+      "confidence": "high"
+    },
+    {
+      "row_number": 31681,
+      "sfa_licence": "CE23A06X000",
+      "existing_name": "Yakun coffee & toast",
+      "existing_address": "Address: 38 MARGARET DRIVE #02-05,Singapore 141038",
+      "postal_code": "141038",
+      "official_outlet_name": "Margaret Market",
+      "official_outlet_address": "38 Margaret Drive #02-05, Singapore 141038",
+      "field": "Website",
+      "before": null,
+      "after": "https://app.yakun.com/",
+      "source_url": "https://app.yakun.com/find-us",
+      "source_type": "first_party_operator_locator",
+      "evidence": "Official current outlet listing shows matching six-digit postal code and unit 02-05. Official directory is hosted on operator website.",
+      "observed_date": "2026-10-19",
+      "confidence": "high"
+    },
+    {
+      "row_number": 31682,
+      "sfa_licence": "CE05267X000",
+      "existing_name": "YAKUN KAYA TOAST",
+      "existing_address": "Address: 6 RAFFLES BOULEVARD #02-207A,MARINA SQUARE,Singapore 039594",
+      "postal_code": "039594",
+      "official_outlet_name": "Marina Square",
+      "official_outlet_address": "6 Raffles Boulevard, #02-207A, Singapore 039594",
+      "field": "Website",
+      "before": null,
+      "after": "https://app.yakun.com/",
+      "source_url": "https://app.yakun.com/find-us",
+      "source_type": "first_party_operator_locator",
+      "evidence": "Official current outlet listing shows matching six-digit postal code and unit 02-207A. Official directory is hosted on operator website.",
+      "observed_date": "2026-10-19",
+      "confidence": "high"
+    },
+    {
+      "row_number": 31683,
+      "sfa_licence": "CE16A34N000",
+      "existing_name": "Yakun Kaya Toast",
+      "existing_address": "Address: 302 TIONG BAHRU ROAD #B1-138,TIONG BAHRU PLAZA,Singapore 168732 TIONG BAHRU PLAZA",
+      "postal_code": "168732",
+      "official_outlet_name": "Tiong Bahru Plaza",
+      "official_outlet_address": "302 Tiong Bahru Road, #B1-138, Singapore 168732",
+      "field": "Website",
+      "before": null,
+      "after": "https://app.yakun.com/",
+      "source_url": "https://app.yakun.com/find-us",
+      "source_type": "first_party_operator_locator",
+      "evidence": "Official current outlet listing shows matching six-digit postal code and unit B1-138. Official directory is hosted on operator website.",
+      "observed_date": "2026-10-19",
+      "confidence": "high"
+    },
+    {
+      "row_number": 4677,
+      "sfa_licence": "SE17398C000",
+      "existing_name": "BURGER KING",
+      "existing_address": "Address: 10 AIRPORT BOULEVARD #02-204,CHANGI AIRPORT TERMINAL 4,Singapore 819665 Departure/Check-in Hall",
+      "postal_code": "819665",
+      "official_outlet_name": "Changi Airport Terminal 4",
+      "official_outlet_address": "10 Airport Boulevard, Changi Airport Terminal 4, Departure/Check-In Hall, Level 2 Mezzanine, #02-204, Singapore 819665",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": "Hours: Daily 00:00–24:00; breakfast daily 04:00–11:00",
+      "source_url": "https://www.burgerking.com.sg/Locator/Details/91",
+      "source_type": "first_party_operator_locator",
+      "evidence": "Official Burger King detail page provides the matching outlet address/postal code; exact unit overlaps 02-204. Weekly hours explicitly shown; existing field was blank.",
+      "observed_date": "2026-10-19",
+      "confidence": "high"
+    },
+    {
+      "row_number": 4683,
+      "sfa_licence": "SW11B54B000",
+      "existing_name": "BURGER KING",
+      "existing_address": "Address: 460 ALEXANDRA ROAD ALEXANDRA RETAIL CENTRE,Singapore 119963",
+      "postal_code": "119963",
+      "official_outlet_name": "Alexandra Retail Centre",
+      "official_outlet_address": "460 Alexandra Road, #01-17 and #01-20, PSA Building (Alexandra Retail Centre), Singapore 119963",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": "Hours: Mon–Fri 07:30–22:00; Sat–Sun 08:00–22:00; eve of PH 07:30–22:00; PH 08:00–22:00; breakfast weekdays 07:30–11:00, Sat/eve PH 07:30–11:00, Sun/PH 08:00–11:00",
+      "source_url": "https://www.burgerking.com.sg/Locator/Details/25",
+      "source_type": "first_party_operator_locator",
+      "evidence": "Official Burger King detail page provides the matching outlet address/postal code; SFA row has no unit but is the unique Burger King record at this exact address/postal code. Weekly hours explicitly shown; existing field was blank.",
+      "observed_date": "2026-10-19",
+      "confidence": "high"
+    },
+    {
+      "row_number": 4684,
+      "sfa_licence": "SW13325A000",
+      "existing_name": "BURGER KING",
+      "existing_address": "Address: 1 LOWER KENT RIDGE ROAD #03-09,#03-10,#03-11,Singapore 119082",
+      "postal_code": "119082",
+      "official_outlet_name": "One@Kent Ridge",
+      "official_outlet_address": "1 Lower Kent Ridge Road, #03-11, One@Kent Ridge, Singapore 119082",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": "Hours: Daily 07:00–22:00; breakfast daily 07:00–11:00",
+      "source_url": "https://www.burgerking.com.sg/Locator/Details/31",
+      "source_type": "first_party_operator_locator",
+      "evidence": "Official Burger King detail page provides the matching outlet address/postal code; exact unit overlaps 03-11. Weekly hours explicitly shown; existing field was blank.",
+      "observed_date": "2026-10-19",
+      "confidence": "high"
+    },
+    {
+      "row_number": 4697,
+      "sfa_licence": "SE14A99E000",
+      "existing_name": "BURGER KING SINGAPORE PTE. LTD.",
+      "existing_address": "Address: 60 PAYA LEBAR ROAD #01-39,#01-41,#01-38,#01-42,#01-43,#01-40,#01-37,PAYA LEBAR SQUARE,Singapore 409051",
+      "postal_code": "409051",
+      "official_outlet_name": "Paya Lebar Square",
+      "official_outlet_address": "60 Paya Lebar Road, #01-40/41/42/43, Paya Lebar Square, Singapore 409051",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": "Hours: Mon–Thu 08:00–00:00; Fri–Sat 08:00–02:00; Sun 08:00–00:00; eve of PH 08:00–02:00; PH 08:00–00:00; breakfast daily 08:00–11:00",
+      "source_url": "https://www.burgerking.com.sg/Locator/Details/35",
+      "source_type": "first_party_operator_locator",
+      "evidence": "Official Burger King detail page provides the matching outlet address/postal code; exact unit overlaps 01-40. Weekly hours explicitly shown; existing field was blank.",
+      "observed_date": "2026-10-19",
+      "confidence": "high"
+    }
+  ],
+  "review_flags": [
+    "No phone numbers proposed from Burger King locator because its pages do not publish phone numbers.",
+    "No values proposed when Ya Kun locator omitted contact or hours.",
+    "No address/postal/cuisine changes proposed because a complete exact-branch current review did not establish a justified change.",
+    "No source omission was treated as proof that a current workbook value is false."
+  ]
+}

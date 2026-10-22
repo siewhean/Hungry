@@ -1,0 +1,78 @@
+{
+  "schema_version": "hungry-image-rights-proposal-v1",
+  "snapshot_id": "refresh130_images_20261019",
+  "captured_at_sgt": "2026-10-19",
+  "workbook_path": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "b76b2a41688b67767fe1dfe7a63690100c6868dd949415b14bd5b224973131bb",
+  "workbook_edited": false,
+  "scope": "Read-only audit of exact-match Singapore F&B venue and menu-image leads, prioritizing explicit open reuse licenses. No image added to workbook; one Commons image was temporarily fetched to /tmp for pixel inspection and not retained as dataset data.",
+  "summary": {
+    "new_rights_cleared_candidates": 1,
+    "exact_directory_joins": 1,
+    "exact_menu_item_joins": 0,
+    "already_in_workbook_exact_url": 0,
+    "pixel_inspected": 1,
+    "approved_for_current_display": 0,
+    "workbook_changes": 0
+  },
+  "candidates": [
+    {
+      "sfa_licence": "W01217C000",
+      "workbook_outlet_name": "SONGFA BAK KUT TEH",
+      "workbook_directory_address": "11 NEW BRIDGE ROAD #01-01,Singapore 059383",
+      "workbook_coordinates": {"latitude": 1.2890187, "longitude": 103.8477137},
+      "image_type": "Dish / food photograph associated with the outlet; not a storefront image",
+      "pictured_menu_item": null,
+      "menu_join": null,
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/5/57/Song_Fa_Bak_Kut_Teh%2C_New_Bridge_Rd%2C_Singapore_%282023%29_02.jpg",
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:Song_Fa_Bak_Kut_Teh,_New_Bridge_Rd,_Singapore_(2023)_02.jpg",
+      "observed_at": "2026-10-19",
+      "photograph_date": "2023-06-03",
+      "creator": "Chainwit.",
+      "license": "Creative Commons Attribution 4.0 International (CC BY 4.0)",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "rights_basis": "Commons page identifies the file as the photographer's own work and explicitly licenses it CC BY 4.0, permitting sharing and adaptation with attribution, license link, and change notice.",
+      "required_attribution": "Chainwit., ‘Song Fa Bak Kut Teh, New Bridge Rd, Singapore (2023) 02.jpg’, via Wikimedia Commons, CC BY 4.0, https://creativecommons.org/licenses/by/4.0/; no changes made.",
+      "pixel_inspection": "Inspected the 960x1280 Commons thumbnail. It depicts a plated food item beside Song Fa branded packaging/plate; it is a genuine food photo and not stock, generated, or a placeholder. The dish cannot be identified confidently from the image, so it is not joined to any menu item.",
+      "exact_outlet_join_evidence": "Commons title identifies Song Fa Bak Kut Teh, New Bridge Road; the Commons geotag is 1.289211, 103.847664, approximately 22 m from workbook outlet coordinate 1.2890187, 103.8477137. The workbook exact address is 11 New Bridge Road #01-01. The image source is precise enough for an outlet-level historical association, not current operating status.",
+      "currentness": "Photographed 2023-06-03; current menu availability and current outlet appearance are not established. Historical food image only.",
+      "already_in_workbook_exact_url": false,
+      "exact_menu_row_count_for_outlet": 1,
+      "menu_row_match_note": "The only existing menu row for this licence is ‘Pork Ribs Soup’, a historical reference last sourced 2026-07-08. The pictured item is not confidently identifiable as that dish; do not associate it with that menu row.",
+      "display_status": "review_only_not_approved",
+      "evidence_urls": [
+        "https://commons.wikimedia.org/wiki/File:Song_Fa_Bak_Kut_Teh,_New_Bridge_Rd,_Singapore_(2023)_02.jpg",
+        "https://creativecommons.org/licenses/by/4.0/"
+      ]
+    }
+  ],
+  "excluded_or_not_reproposed": [
+    {
+      "candidate": "Suntec City Jollibee Commons photograph",
+      "reason": "Already present in the existing workbook as a review-only candidate; do not duplicate."
+    },
+    {
+      "candidate": "Sushi Masa by Kisetsu Cuppage Plaza entrance photograph",
+      "reason": "Already present in the existing workbook as a review-only candidate; do not duplicate."
+    },
+    {
+      "candidate": "Tian Tian Hainanese Chicken Rice Commons photographs",
+      "reason": "Existing workbook candidates already cover this outlet/group, including dated dish imagery; no new exact menu-item association found in this pass."
+    },
+    {
+      "candidate": "Hawker Chan / Liao Fan Chinatown Commons photograph",
+      "reason": "An existing workbook candidate already records the exact Chinatown Complex licence and image URL; do not duplicate."
+    },
+    {
+      "candidate": "Maxwell Food Centre 2025 overview/interior photographs",
+      "reason": "Centre-level imagery does not identify an exact F&B stall or menu item; excluded from outlet candidate list."
+    },
+    {
+      "candidate": "Official operator or mall directory images surfaced in workbook research",
+      "reason": "Operator/tenant-page provenance alone does not establish permission to reuse the image; held review-only and not proposed as rights-cleared."
+    }
+  ],
+  "integration_recommendation": "Add this one new Commons photo to Image Candidates only if the Refresh130 integration pipeline accepts historical food photos with exact outlet-level attribution; keep it review-only and do not fill Approved Image URL or attach it to Pork Ribs Soup.",
+  "no_spending": true,
+  "integration_status": "proposal_only_not_integrated"
+}

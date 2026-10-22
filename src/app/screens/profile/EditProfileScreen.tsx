@@ -1,5 +1,7 @@
-import { useMemo, useState } from "react";
-import { View, Pressable } from "react-native";
+import { useMemo, useState, type SetStateAction } from "react";
+import { useProfileFormDraft } from "@/features/profile/useProfileFormDraft";
+import { usePreventRemove } from "@react-navigation/native";
+import { Alert, View, Pressable } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ChevronRight, Camera } from "lucide-react-native";
 
@@ -37,10 +39,32 @@ export function EditProfileScreen({ navigation }: Props) {
   const applyProfile = useProfileStore((state) => state.applyProfile);
   const showToast = useUIStore((state) => state.showToast);
   const { palette, spacing, radii } = useHungryTheme();
-  const [displayName, setDisplayName] = useState(profile.displayName);
-  const [email, setEmail] = useState(profile.email);
-  const [avatarUri, setAvatarUri] = useState<string | undefined>(undefined);
+  const form = useProfileFormDraft("edit-profile", {
+    displayName: profile.displayName,
+    avatarUri: undefined as string | undefined,
+  });
+  const { displayName, avatarUri } = form.value;
+  const setDisplayName = (next: SetStateAction<string>) => form.update("displayName", next);
+  const setAvatarUri = (next: SetStateAction<string | undefined>) => form.update("avatarUri", next);
   const [isSaving, setIsSaving] = useState(false);
+  const dirty = displayName.trim() !== profile.displayName || avatarUri !== undefined;
+  usePreventRemove(form.ready && dirty && !isSaving, ({ data }) => {
+    Alert.alert("Discard profile changes?", "Your unsaved changes will be lost.", [
+      { text: "Keep editing", style: "cancel" },
+      {
+        text: "Discard",
+        style: "destructive",
+        onPress: () => {
+          void form
+            .clear()
+            .then(() => navigation.dispatch(data.action))
+            .catch(() =>
+              showToast({ message: "Could not discard draft. Try again.", tone: "error" }),
+            );
+        },
+      },
+    ]);
+  });
   const avatarPreviewUri = avatarUri ?? profile.avatarUrl;
   const avatarSize = spacing[20];
   const avatarInitials = useMemo(
@@ -97,24 +121,28 @@ export function EditProfileScreen({ navigation }: Props) {
     }
 
     setAvatarUri(result.assets[0].uri);
-    showToast({ message: "Profile photo updated.", tone: "success" });
+    showToast({ message: "Photo selected. Save changes to update your profile.", tone: "success" });
   };
 
   const handleChangePassword = () => {
     const rootNavigation = getRootNavigation(navigation);
-    rootNavigation.navigate("AuthStack", {
-      screen: "ResetPassword",
-      params: { email, code: "profile-settings" },
-    });
+    rootNavigation.navigate("AuthStack", { screen: "ChangePassword" });
   };
 
   return (
     <ProfileScreenShell title="Edit profile">
       <View style={{ alignItems: "center", marginBottom: spacing[2] }}>
         <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Choose profile photo"
           style={{ position: "relative" }}
           onPress={() => {
-            void handlePickAvatar();
+            void handlePickAvatar().catch(() =>
+              showToast({
+                message: "Could not open your photo library. Try again.",
+                tone: "error",
+              }),
+            );
           }}
         >
           <View
@@ -172,6 +200,11 @@ export function EditProfileScreen({ navigation }: Props) {
         </Pressable>
       </View>
 
+      {form.storageError ? (
+        <AppText tone="muted">
+          Draft could not be saved on this device. Keep this screen open until you save.
+        </AppText>
+      ) : null}
       <Card>
         <View style={{ gap: spacing[3] }}>
           <Input label="Display name" value={displayName} onChangeText={setDisplayName} />
@@ -179,10 +212,12 @@ export function EditProfileScreen({ navigation }: Props) {
             label="Email"
             autoCapitalize="none"
             keyboardType="email-address"
-            value={email}
-            onChangeText={setEmail}
+            value={profile.email ?? ""}
+            editable={false}
+            accessibilityLabel="Authentication email, read only"
           />
           <Pressable
+            accessibilityRole="button"
             onPress={handleChangePassword}
             style={{
               flexDirection: "row",
@@ -199,17 +234,24 @@ export function EditProfileScreen({ navigation }: Props) {
       <Button
         label="Save changes"
         loading={isSaving}
+        disabled={!form.ready || !dirty || !displayName.trim() || isSaving}
         onPress={() => {
           void (async () => {
+            if (isSaving || !displayName.trim()) return;
             setIsSaving(true);
             try {
               const savedProfile = await getHungryService().profile.updateProfile({
-                displayName,
-                email,
+                displayName: displayName.trim(),
                 avatarUrl: avatarUri,
                 dietaryPreferences: profile.dietaryPreferences,
               });
               applyProfile(savedProfile);
+              await form.clear().catch(() =>
+                showToast({
+                  message: "Profile saved. Could not remove the local draft.",
+                  tone: "warning",
+                }),
+              );
               showToast({ message: "Profile updated.", tone: "success" });
               navigation.goBack();
             } catch {

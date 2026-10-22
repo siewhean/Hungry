@@ -1,0 +1,62 @@
+{
+  "snapshot_type": "refresh131_unnamed_name_proposals",
+  "observed_at_local": "2026-10-19 Asia/Singapore",
+  "baseline_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_sha256": "80bbef4c8edee234e7ddad4a9b3390a67e9f7572621a8711fbe3c97fb7066212",
+  "worksheet": "Public F&B Directory",
+  "scope": "Official current directories and first-party brand source checked for a bounded slice of blank-name public mall records. Only exact unit/postal matches proposed.",
+  "source_set": [
+    "Suntec City official dining directory",
+    "Gala Food first-party outlet directory",
+    "Lo & Behold Group first-party venue page"
+  ],
+  "summary": {
+    "blank_names_examined": 2,
+    "exact_name_proposals": 2,
+    "ambiguous_or_unconfirmed_fills": 0,
+    "workbook_edits": 0,
+    "spending": 0
+  },
+  "proposals": [
+    {
+      "sfa_licence": "CE13172N000",
+      "excel_row": 33929,
+      "before_f_and_b_name": null,
+      "proposed_f_and_b_name": "Tongue Tip Lanzhou Beef Noodles",
+      "registered_business_name": null,
+      "business_type": "Restaurant",
+      "existing_full_address": "Address: 3 TEMASEK BOULEVARD #B1-165,#B1-166,SUNTEC CITY MALL,Singapore 038983",
+      "postal_code": "038983",
+      "source_url": "https://sunteccity.com.sg/store_categories/dining?subCategoryID=5",
+      "corroborating_source_url": "https://galafood.sg/en/global-presence.html",
+      "source_observed_date": "2026-10-19",
+      "match_basis": "Suntec City official dining directory lists Tongue Tip at #B1-165; first-party Gala Food outlet page independently lists Tongue Tip at Suntec City #B1-165, with the SFA row at #B1-165/#B1-166, Suntec City, 038983.",
+      "confidence": "high",
+      "scope": "exact SFA licensed unit crosswalk; name only; no additional fields",
+      "limitations": "Current directory evidence is a tenant/business trade name, not a claim about individual products or menu. Verify the SFA licence remains active in refresh integration."
+    },
+    {
+      "sfa_licence": "CE26727V000",
+      "excel_row": 34499,
+      "before_f_and_b_name": null,
+      "proposed_f_and_b_name": "Blue Box Cafe",
+      "registered_business_name": null,
+      "business_type": "Restaurant",
+      "existing_full_address": "Address: 2 ORCHARD TURN #03-11,#03-12,ION ORCHARD,Singapore 238801",
+      "postal_code": "238801",
+      "source_url": "https://www.lobehold.com/collaborations/blue-box-cafe-singapore/",
+      "corroborating_source_url": "https://www.lobehold.com/collaborations/blue-box-cafe-singapore/",
+      "source_observed_date": "2026-10-19",
+      "match_basis": "First-party Lo & Behold Group page names Blue Box Cafe at ION Orchard, 2 Orchard Turn #03-11 & #03-12, matching the SFA row unit and postal code 238801.",
+      "confidence": "high",
+      "scope": "exact SFA licensed unit crosswalk; name only; no additional fields",
+      "limitations": "Current directory evidence is a tenant/business trade name, not a claim about individual products or menu. Verify the SFA licence remains active in refresh integration."
+    }
+  ],
+  "dedupe_notes": "Both SFA licence IDs were matched against the stated exact address/unit. No legal business names were used to infer trade names.",
+  "limitations": [
+    "Only two records met the exact current source match threshold in this bounded slice.",
+    "This is a proposal snapshot and does not alter the workbook."
+  ],
+  "next_integration": "Integrate the two F&B Name values only if the baseline SHA is still current and the target cells remain blank."
+}

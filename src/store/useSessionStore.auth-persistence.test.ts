@@ -72,7 +72,7 @@ test("durable app storage migrates legacy SecureStore session metadata", () => {
   );
 });
 
-test("a guest who finished onboarding locally is not sent through onboarding after sign-in", () => {
+test("guest onboarding survives first sign-in but is not inherited by a different account", () => {
   useSessionStore.setState({ hasCompletedOnboarding: true });
 
   useSessionStore.getState().completeAuth({
@@ -83,10 +83,10 @@ test("a guest who finished onboarding locally is not sent through onboarding aft
 
   useSessionStore.getState().applyAuthStateFromSession({
     isAuthenticated: true,
-    userId: "guest-signin-user",
+    userId: "different-account",
     completedOnboarding: false,
   });
-  assert.equal(useSessionStore.getState().hasCompletedOnboarding, true);
+  assert.equal(useSessionStore.getState().hasCompletedOnboarding, false);
 });
 
 test("completeAuth records the Supabase user and data source for reload restoration", () => {
@@ -312,8 +312,22 @@ test("visible sign-out actions reset to login instead of onboarding", () => {
     assert.match(source, /signOut\(\)/);
     assert.match(
       source,
-      /rootNavigation\.reset\(\{\s*index: 0,[\s\S]*name: "AuthStack"[\s\S]*screen: "Login"/,
+      /(?:rootNavigation|root)\.reset\(\{\s*index: 0,[\s\S]*name: "AuthStack"[\s\S]*screen: "Login"/,
     );
     assert.doesNotMatch(source, /name: "OnboardingStack"/);
   });
+});
+
+test("clearing or signing out does not reset completed runtime hydration", async () => {
+  useSessionStore.setState({ hasHydrated: true });
+  useSessionStore.getState().clearSession();
+  assert.equal(useSessionStore.getState().hasHydrated, true);
+  await useSessionStore.getState().signOut();
+  assert.equal(useSessionStore.getState().hasHydrated, true);
+});
+
+test("a completion receipt cannot authenticate a different profile", () => {
+  useProfileStore.setState({ profile: userProfile });
+  useSessionStore.getState().completeAuth({ userId: "another-account", trackSignInEvent: false });
+  assert.equal(useSessionStore.getState().isAuthenticated, false);
 });

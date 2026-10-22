@@ -1,3 +1,6 @@
+import { selectOnboardingRecommendations } from "@/features/onboarding/recommendationPreview";
+import type { NavigationProp } from "@react-navigation/native";
+import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
@@ -6,14 +9,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AccessibleImage, AppText, Button, Card } from "@/components/ui";
 import { getSearchResultsAsync } from "@/features/search/search";
-import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
-import type { SearchFilters } from "@/types/domain";
+import type { DishDetail, SearchFilters } from "@/types/domain";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { OnboardingStackParamList } from "./OnboardingStack";
-import { getOnboardingDishImageSource } from "./onboardingFoodImages";
+import { useOnboardingDraftStore } from "@/features/onboarding/useOnboardingDraftStore";
+import { fulfillPendingOnboardingSave } from "@/features/onboarding/fulfillPendingSave";
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, "TasteProfileResult">;
 
@@ -38,32 +41,35 @@ export function TasteProfileResultScreen({ navigation }: Props) {
   const favouriteDishIds = useProfileStore((state) => state.profile.favouriteDishIds);
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
 
-  // Rank the catalog by the quiz taste vector (and dietary picks) instead of a fixed popular list.
-  // Fetched once so saving a dish (which nudges the vector) does not reshuffle the grid.
-  const [dishes, setDishes] = useState(() => {
-    const { tasteVector } = useProfileStore.getState().profile;
-    const repository = getDataRepository();
-    const ranked = repository.searchDishes(getResultFilters(), tasteVector);
-    return (ranked.length > 0 ? ranked : repository.listPopularNearby()).slice(0, RESULT_COUNT);
-  });
-
-  // The Supabase repository has no cached catalog during onboarding, so ask the server.
+  const [dishes, setDishes] = useState<DishDetail[]>([]);
+  const [loadState, setLoadState] = useState<"loading" | "ready" | "error">("loading");
+  const [attempt, setAttempt] = useState(0);
+  const draft = useOnboardingDraftStore((state) => state.draft);
+  const preferenceKey = JSON.stringify([
+    draft?.values,
+    draft?.dietaryPreferences,
+    draft?.maxDishBudget,
+  ]);
+  const pendingDishId = useOnboardingDraftStore((state) => state.draft?.pendingSaveDishId);
   useEffect(() => {
-    if (dishes.length > 0) return;
     let active = true;
-    const { tasteVector } = useProfileStore.getState().profile;
-    void getSearchResultsAsync(getResultFilters(), tasteVector)
-      .then((ranked) =>
-        ranked.length > 0 ? ranked : getHungryService().discovery.listPopularNearby(),
-      )
+    setLoadState("loading");
+    const profile = useProfileStore.getState().profile;
+    void getSearchResultsAsync(getResultFilters(), profile.tasteVector)
       .then((results) => {
-        if (active) setDishes(results.slice(0, RESULT_COUNT));
+        const matches = selectOnboardingRecommendations(results, profile, RESULT_COUNT);
+        if (active) {
+          setDishes(matches.slice(0, RESULT_COUNT));
+          setLoadState("ready");
+        }
       })
-      .catch(() => undefined);
+      .catch(() => {
+        if (active) setLoadState("error");
+      });
     return () => {
       active = false;
     };
-  }, []);
+  }, [attempt, preferenceKey]);
 
   return (
     <View style={{ backgroundColor: palette.bg, flex: 1 }}>
@@ -84,6 +90,34 @@ export function TasteProfileResultScreen({ navigation }: Props) {
           </AppText>
         </View>
 
+        {loadState === "loading" ? (
+          <AppText accessibilityLiveRegion="polite">Finding dishes for your preferences…</AppText>
+        ) : null}
+        {loadState === "error" ? (
+          <View style={{ gap: spacing[2] }}>
+            <AppText>Couldn&apos;t load recommendations. Your preferences are saved.</AppText>
+            <Button
+              label="Retry recommendations"
+              onPress={() => setAttempt((value) => value + 1)}
+            />
+          </View>
+        ) : null}
+        {loadState === "ready" && dishes.length === 0 ? (
+          <AppText>
+            No dishes currently match all your dietary and budget preferences. You can continue and
+            adjust your preferences later.
+          </AppText>
+        ) : null}
+        {isAuthenticated && pendingDishId ? (
+          <Button
+            label="Retry saving selected dish"
+            onPress={() => {
+              void fulfillPendingOnboardingSave().catch(() =>
+                showToast({ message: "Couldn't save this dish. Try again.", tone: "error" }),
+              );
+            }}
+          />
+        ) : null}
         <View
           style={{
             flexDirection: "row",
@@ -100,7 +134,7 @@ export function TasteProfileResultScreen({ navigation }: Props) {
                 style={{ borderRadius: radii.md, overflow: "hidden", padding: 0, width: "48%" }}
               >
                 <AccessibleImage
-                  source={getOnboardingDishImageSource(dish.id)}
+                  source={{ uri: dish.imageUrl }}
                   contentFit="cover"
                   style={{ height: 120, width: "100%" }}
                   accessibilityLabel={`Photo of ${dish.name}`}
@@ -109,6 +143,24 @@ export function TasteProfileResultScreen({ navigation }: Props) {
                   <AppText variant="bodyBold" numberOfLines={1}>
                     {dish.name}
                   </AppText>
+                  <AppText variant="bodySmall" tone="secondary">
+                    {dish.venueName}
+                  </AppText>
+                  <AppText variant="bodySmall">
+                    {dish.price > 0 ? `$${dish.price.toFixed(2)}` : "Price unavailable"}
+                  </AppText>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`View ${dish.name} details`}
+                    onPress={() =>
+                      navigation
+                        .getParent<NavigationProp<RootStackParamList>>()
+                        ?.navigate("DishDetail", { dishId: dish.id })
+                    }
+                    style={{ minHeight: 44, justifyContent: "center" }}
+                  >
+                    <AppText tone="accent">View dish</AppText>
+                  </Pressable>
                   <View
                     style={{
                       alignItems: "center",
@@ -133,6 +185,7 @@ export function TasteProfileResultScreen({ navigation }: Props) {
                           toggleFavourite(dish);
                           return;
                         }
+                        useOnboardingDraftStore.getState().update({ pendingSaveDishId: dish.id });
                         showToast({
                           message: "Create or sign in to an account before saving dishes.",
                           tone: "warning",
@@ -140,7 +193,12 @@ export function TasteProfileResultScreen({ navigation }: Props) {
                         navigation.navigate("OnboardingAuth");
                       }}
                       hitSlop={8}
-                      style={{ padding: spacing[1] }}
+                      style={{
+                        minHeight: 44,
+                        minWidth: 44,
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
                     >
                       <Heart
                         color={palette.orange}

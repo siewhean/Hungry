@@ -1,0 +1,104 @@
+{
+  "snapshot_type": "exact_blank_name_and_permanent_closure_review",
+  "observed_at_local": "2026-10-19 Asia/Singapore",
+  "workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "bb74665b20d62a711463850a4d5de0648dc0237c4e1d75e96c9eb5f5a89d2d93",
+  "workbook_edited": false,
+  "scope": {
+    "directory_rows": 38273,
+    "blank_fnb_name_count": 5458,
+    "exact_records_examined": 3,
+    "recommended_name_updates": 2,
+    "recommended_removals": 0,
+    "held_name_linkages": 0,
+    "held_closure_conflicts": 1
+  },
+  "sources": [
+    {
+      "url": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/malaysia-boleh-.html",
+      "publisher": "CapitaLand / Bugis Junction",
+      "observed": "2026-10-19",
+      "supports": "Current official venue listing identifies Malaysia Boleh! at Bugis Junction, unit #03-30. Page also describes the venue as a dining destination."
+    },
+    {
+      "url": "https://www.malaysiaboleh.com.sg/",
+      "publisher": "Malaysia Boleh!",
+      "observed": "2026-10-19",
+      "supports": "Official venue site identifies Bugis Junction outlet at 200 Victoria Street, #03-30, Singapore 188021 and lists current daily hours."
+    },
+    {
+      "url": "https://www.burgerking.com.sg/Locator/Details/20",
+      "publisher": "Burger King Singapore",
+      "observed": "2026-10-19",
+      "supports": "Exact Kallang Leisure Park branch #01-43 locator page shows Closed for every day and public holiday."
+    },
+    {
+      "url": "https://leisurepark.com.sg/discover/burger-king/",
+      "publisher": "Leisure Park Kallang",
+      "observed": "2026-10-19",
+      "supports": "Current mall tenant page still lists Burger King at #01-43 and phone 6016-0771, conflicting with branch locator closure indication."
+    },
+    {
+      "url": "https://www.sfa.gov.sg/food-retail/food-retail-licensing/track-record-of-food-establishments",
+      "publisher": "Singapore Food Agency",
+      "observed": "2026-10-19",
+      "supports": "Workbook identity/addresses are from current SFA export, but SFA licensing alone does not prove daily operation or permanent closure."
+    }
+  ],
+  "proposed_updates": [
+    {
+      "sfa_licence": "CE07437B002",
+      "excel_row": 33796,
+      "field": "F&B Name",
+      "proposed_value": "Malaysia Boleh!",
+      "exact_join": {
+        "postal_code": "188021",
+        "unit": "#03-30",
+        "property": "Bugis Junction"
+      },
+      "evidence": [
+        "CapitaLand current tenant page explicitly names Malaysia Boleh! at #03-30",
+        "Official Malaysia Boleh! site explicitly lists Bugis Junction, 200 Victoria Street, #03-30, Singapore 188021"
+      ],
+      "confidence": "high",
+      "note": "The same premises and unit appear under two separate SFA Foodcourt licences in the workbook. This proposal fills the public-facing venue name only; it does not claim these licence rows are duplicate records or distinct stalls."
+    },
+    {
+      "sfa_licence": "CE07437B004",
+      "excel_row": 33797,
+      "field": "F&B Name",
+      "proposed_value": "Malaysia Boleh!",
+      "exact_join": {
+        "postal_code": "188021",
+        "unit": "#03-30",
+        "property": "Bugis Junction"
+      },
+      "evidence": [
+        "CapitaLand current tenant page explicitly names Malaysia Boleh! at #03-30",
+        "Official Malaysia Boleh! site explicitly lists Bugis Junction, 200 Victoria Street, #03-30, Singapore 188021"
+      ],
+      "confidence": "high",
+      "note": "The same premises and unit appear under two separate SFA Foodcourt licences in the workbook. This proposal fills the public-facing venue name only; it does not claim these licence rows are duplicate records or distinct stalls."
+    }
+  ],
+  "proposed_removals": [],
+  "held": [
+    {
+      "sfa_licence": "SE09686K000",
+      "excel_row": 4672,
+      "fnb_name": "BURGER KING",
+      "disposition": "hold_no_removal",
+      "closure_assessment": "unresolved; do not mark permanently closed from current evidence",
+      "evidence": {
+        "brand_locator": "Official Burger King Singapore page for exact postal/address/unit lists Closed every day, but does not say permanently closed.",
+        "mall_listing": "Current Leisure Park Kallang tenant page lists Burger King at same #01-43 and gives phone 6016-0771.",
+        "reason": "Conflicting current operator and mall sources; the operator page may reflect a temporary inactive status, while the mall page may be stale. Permanent closure is not established."
+      }
+    }
+  ],
+  "coverage_and_limits": {
+    "name_audit": "Targeted exact-name audit; not exhaustive across all blank F&B names.",
+    "closure_audit": "Targeted current conflict follow-up for one exact outlet; not exhaustive across all named records.",
+    "permanent_closure_rule": "Recommend removal only when current exact-branch evidence clearly establishes permanent closure; conflicting listings or a generic Closed status remain held."
+  }
+}

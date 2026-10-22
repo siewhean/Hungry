@@ -1,0 +1,110 @@
+{
+  "schema_version": "1.0",
+  "snapshot_id": "liho_official_signature_menu_text_increment_20261018",
+  "observed_at_sgt": "2026-10-18",
+  "workbook_path": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "986a2656c3243d55c1a3914a3c5fbbdf2052e0423a69705785cbba0b7fee154e",
+  "workbook_edited": false,
+  "research_scope": "Read-only exact-brand menu enrichment for LiHO TEA from its corporate owner, Royal T Group. Checked all current snapshot JSON files and canonical Menu Items before proposal. No delivery-platform sources, paid API or workbook edits.",
+  "sources": [
+    {
+      "url": "https://www.royaltgroup.com/our-brands/liho.html",
+      "label": "Royal T Group official LiHO TEA brand page",
+      "source_owner": "Royal T Group",
+      "observed": "2026-10-18",
+      "access_method": "Web visible-text extraction",
+      "raw_http_capture_status": "Direct HTTPS body fetch returned ModSecurity Not Acceptable; no raw HTML file/hash retained.",
+      "visible_text_excerpt": "Royal T Group LiHO TEA page, Our SpecialTEA: If it's your first time at LiHO TEA, we got you covered. Some of our Signature drinks include Earl Grey Milk Tea, Da Hong Pao Milk Tea and our Avocado Series. Never go wrong with the classic. Give our fragrant Earl Grey Milk Tea a go. Craving for a more distinct tea taste? Try our Da Hong Pao where we infuse our premium Da Hong Pao tea leaves with milk to bring out an aromatic and rich taste.",
+      "visible_text_sha256": "256b9e9de3ab6d3932986da81e4e27870a336e7caf29df4336c96235b85ad3b3",
+      "content_metadata": "Web extractor reported page crawl age of 5 days during observation."
+    }
+  ],
+  "summary": {
+    "brand_directory_coverage_count": 49,
+    "exact_current_brand_menu_rows_proposed": 2,
+    "new_unique_brand_item_titles": 2,
+    "new_image_candidates": 0,
+    "published_prices_added": 0,
+    "raw_source_http_hash_available": false,
+    "workbook_edited": false,
+    "confidence": "High for the two names as owner-page-described signature drinks; medium for current menu availability because source describes signatures but does not publish a complete dated menu."
+  },
+  "menu_item_proposals": [
+    {
+      "brand": "LiHO TEA",
+      "f_and_b_name": "LIHO",
+      "sfa_licence": "",
+      "menu_item": "Earl Grey Milk Tea",
+      "section": "Signature Drinks",
+      "variant_notes": null,
+      "price_as_published": null,
+      "menu_scope": "Brand-level signature drinks described by Royal T Group; the source does not confirm outlet-specific availability or price.",
+      "official_source_url": "https://www.royaltgroup.com/our-brands/liho.html",
+      "source_page_url": "https://www.royaltgroup.com/our-brands/liho.html",
+      "source_capture_type": "Web extracted visible text; direct HTTPS body capture was blocked by origin ModSecurity (Not Acceptable).",
+      "source_capture_sha256": "256b9e9de3ab6d3932986da81e4e27870a336e7caf29df4336c96235b85ad3b3",
+      "source_capture_sha256_scope": "SHA-256 of exact excerpt reproduced in source_evidence_text, not the raw HTML response.",
+      "source_evidence_text": "Royal T Group LiHO TEA page, Our SpecialTEA: If it's your first time at LiHO TEA, we got you covered. Some of our Signature drinks include Earl Grey Milk Tea, Da Hong Pao Milk Tea and our Avocado Series. Never go wrong with the classic. Give our fragrant Earl Grey Milk Tea a go. Craving for a more distinct tea taste? Try our Da Hong Pao where we infuse our premium Da Hong Pao tea leaves with milk to bring out an aromatic and rich taste.",
+      "observed": "2026-10-18",
+      "freshness_status": "Observed through current owner page extraction on 2026-10-18; page content crawl metadata was 5 days old.",
+      "source_type": "official_brand_owner_page",
+      "rights_reuse_status": "Menu names are factual text. No item-image URLs sourced; no image candidate added.",
+      "exact_brand_item_match_exists": false,
+      "exact_title_exists_any_brand": false,
+      "existing_exact_brand_matches": []
+    },
+    {
+      "brand": "LiHO TEA",
+      "f_and_b_name": "LIHO",
+      "sfa_licence": "",
+      "menu_item": "Da Hong Pao Milk Tea",
+      "section": "Signature Drinks",
+      "variant_notes": null,
+      "price_as_published": null,
+      "menu_scope": "Brand-level signature drinks described by Royal T Group; the source does not confirm outlet-specific availability or price.",
+      "official_source_url": "https://www.royaltgroup.com/our-brands/liho.html",
+      "source_page_url": "https://www.royaltgroup.com/our-brands/liho.html",
+      "source_capture_type": "Web extracted visible text; direct HTTPS body capture was blocked by origin ModSecurity (Not Acceptable).",
+      "source_capture_sha256": "256b9e9de3ab6d3932986da81e4e27870a336e7caf29df4336c96235b85ad3b3",
+      "source_capture_sha256_scope": "SHA-256 of exact excerpt reproduced in source_evidence_text, not the raw HTML response.",
+      "source_evidence_text": "Royal T Group LiHO TEA page, Our SpecialTEA: If it's your first time at LiHO TEA, we got you covered. Some of our Signature drinks include Earl Grey Milk Tea, Da Hong Pao Milk Tea and our Avocado Series. Never go wrong with the classic. Give our fragrant Earl Grey Milk Tea a go. Craving for a more distinct tea taste? Try our Da Hong Pao where we infuse our premium Da Hong Pao tea leaves with milk to bring out an aromatic and rich taste.",
+      "observed": "2026-10-18",
+      "freshness_status": "Observed through current owner page extraction on 2026-10-18; page content crawl metadata was 5 days old.",
+      "source_type": "official_brand_owner_page",
+      "rights_reuse_status": "Menu names are factual text. No item-image URLs sourced; no image candidate added.",
+      "exact_brand_item_match_exists": false,
+      "exact_title_exists_any_brand": true,
+      "existing_exact_brand_matches": []
+    }
+  ],
+  "image_candidates": [],
+  "cross_snapshot_dedupe_audit": [
+    {
+      "menu_item": "Earl Grey Milk Tea",
+      "candidate_snapshot_exact_title_matches": []
+    },
+    {
+      "menu_item": "Da Hong Pao Milk Tea",
+      "candidate_snapshot_exact_title_matches": [
+        "chagee_first_party_menu_image_catalogue_20261018.json"
+      ]
+    }
+  ],
+  "workbook_dedupe_audit": {
+    "exact_existing_liho_titles": [],
+    "exact_titles_any_brand": [
+      {
+        "brand": "CHAGEE",
+        "item": "DA HONG PAO MILK TEA"
+      }
+    ],
+    "method": "Unicode NFKC, casefold and alphanumeric-title normalization; brand-scoped by F&B Name containing LIHO."
+  },
+  "limitations": [
+    "Royal T page lists Earl Grey Milk Tea and Da Hong Pao Milk Tea as signature drinks, not a complete current menu; no price or branch availability is stated.",
+    "No product-specific image mapping was available on this page. Images were not guessed or added.",
+    "The web-visible-text excerpt was captured; direct raw HTTP retrieval was denied by origin ModSecurity, so its hash is of the exact excerpt rather than raw HTML.",
+    "Da Hong Pao Milk Tea title also appears in a CHAGEE brand menu snapshot; retained only as a LiHO-branded title with brand scope."
+  ],
+  "integration_recommendation": "Append the two exact signature drink names as brand-level LiHO rows only if the parent integration pipeline accepts a web-extracted excerpt hash in lieu of raw HTTP bytes. Keep prices and SFA licence blank; do not infer individual outlet availability. No image rows recommended."
+}

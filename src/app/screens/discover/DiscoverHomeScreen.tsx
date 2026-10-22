@@ -16,7 +16,7 @@ import {
   type ViewStyle,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import * as Haptics from "expo-haptics";
+import * as Haptics from "@/lib/haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import {
   ChevronRight,
@@ -100,12 +100,7 @@ const INTENT_CHIPS: readonly {
   id: Exclude<DiscoverChipId, "dietary">;
   label: string;
   category: SearchCategory;
-}[] = [
-  { id: "spicy", label: "Spicy", category: "local favourites" },
-  { id: "halal", label: "Halal", category: "rice" },
-  { id: "late", label: "Late night", category: "late night" },
-  { id: "cheap", label: "Value", category: "noodles" },
-] as const;
+}[] = [{ id: "halal", label: "Halal", category: "rice" }] as const;
 
 const DISCOVER_DIETARY_FALLBACKS: readonly DietaryFlag[] = ["halal", "vegetarian", "pork_free"];
 const DISCOVER_STALL_INITIAL_VISIBLE_COUNT = 10;
@@ -1328,7 +1323,10 @@ export function DiscoverHomeScreen() {
   const isPopularFoodFilterPending =
     activeDiscoverChipSignature !== deferredDiscoverChipSignature ||
     isPopularFoodFilterSkeletonPending;
-  const isDiscoverFiltering = deferredDiscoverChipIds.length > 0;
+  const isDiscoverFiltering =
+    deferredDiscoverChipIds.length > 0 ||
+    profile.dietaryPreferences.length > 0 ||
+    profile.maxDishBudget !== undefined;
   const handleDiscoverViewportLayout = useCallback((event: LayoutChangeEvent) => {
     const nextHeight = event.nativeEvent.layout.height;
     if (nextHeight <= 0) {
@@ -1642,10 +1640,9 @@ export function DiscoverHomeScreen() {
     return image.imageUrl ? { uri: image.imageUrl } : DISHES_CARD_GRAPHIC;
   }, [areaDishPool]);
   const currentHour = new Date().getHours();
-  const isLateNightMakanVisible = currentHour >= 21 || currentHour < 4;
+  const isLateNightMakanVisible = false;
   const discoverDietaryFlags = useMemo(
-    () =>
-      profile.dietaryPreferences.length ? profile.dietaryPreferences : DISCOVER_DIETARY_FALLBACKS,
+    () => profile.dietaryPreferences,
     [profile.dietaryPreferences],
   );
   const toggleDiscoverChip = useCallback(
@@ -1680,12 +1677,29 @@ export function DiscoverHomeScreen() {
         );
       }
 
+      if (chipId === "halal") {
+        useSearchStore.setState((state) => ({
+          filters: {
+            ...state.filters,
+            dietaryFlags: wasActive
+              ? state.filters.dietaryFlags.filter((flag) => flag !== "halal")
+              : Array.from(new Set([...state.filters.dietaryFlags, "halal" as const])),
+          },
+        }));
+      }
       setActiveDiscoverChipIds(nextChipIds);
     },
     [activeDiscoverChipIds, clearPopularFoodFilterSkeletonTimer, recordTasteInteraction],
   );
   const matchesDiscoverChipSelection = useCallback(
     (dish?: DishDetail, textParts: string[] = []) => {
+      if (profile.maxDishBudget !== undefined && (!dish || dish.price > profile.maxDishBudget))
+        return false;
+      if (
+        discoverDietaryFlags.length &&
+        (!dish || !discoverDietaryFlags.every((flag) => dish.dietaryFlags.includes(flag)))
+      )
+        return false;
       if (!deferredDiscoverChipSet.size) {
         return true;
       }
@@ -1711,14 +1725,14 @@ export function DiscoverHomeScreen() {
       return Array.from(deferredDiscoverChipSet).every((chipId) => {
         if (chipId === "dietary") {
           return dish
-            ? discoverDietaryFlags.some((flag) => dish.dietaryFlags.includes(flag))
+            ? discoverDietaryFlags.every((flag) => dish.dietaryFlags.includes(flag))
             : false;
         }
         if (chipId === "halal") {
           if (dish?.dietaryFlags.includes("halal")) {
             return true;
           }
-          return getLateNightHaystack().includes("halal");
+          return false;
         }
         if (chipId === "spicy") {
           return (
@@ -1726,10 +1740,7 @@ export function DiscoverHomeScreen() {
           );
         }
         if (chipId === "late") {
-          const haystack = getLateNightHaystack();
-          return (
-            haystack.includes("late") || haystack.includes("satay") || haystack.includes("mala")
-          );
+          return false;
         }
         if (chipId === "cheap") {
           return Boolean(dish && dish.price < 8);
@@ -1737,7 +1748,7 @@ export function DiscoverHomeScreen() {
         return true;
       });
     },
-    [deferredDiscoverChipSet, discoverDietaryFlags],
+    [deferredDiscoverChipSet, discoverDietaryFlags, profile.maxDishBudget],
   );
   const areaVenueIds = useMemo(() => new Set(areaVenues.map((venue) => venue.id)), [areaVenues]);
   const discoverBaseBites = useMemo(() => {
@@ -1773,31 +1784,31 @@ export function DiscoverHomeScreen() {
     [discoverDishById],
   );
   const unfilteredQuickBiteCards = useMemo(
-    () => discoverBiteCollections.quickBites.slice(0, 6),
+    () => discoverBiteCollections.quickBites,
     [discoverBiteCollections.quickBites],
   );
   const unfilteredTrendingCards = useMemo(
-    () => discoverBiteCollections.trending.slice(0, 6),
+    () => discoverBiteCollections.trending,
     [discoverBiteCollections.trending],
   );
   const unfilteredEditorChoiceCards = useMemo(() => {
-    const editorChoice = discoverBiteCollections.editorChoice.slice(0, 6);
+    const editorChoice = discoverBiteCollections.editorChoice;
     if (editorChoice.length || !isSupabaseDataSource) {
       return editorChoice;
     }
 
-    return discoverBiteCollections.trending.slice(0, 6);
+    return discoverBiteCollections.trending;
   }, [
     discoverBiteCollections.editorChoice,
     discoverBiteCollections.trending,
     isSupabaseDataSource,
   ]);
   const unfilteredBudgetCards = useMemo(
-    () => discoverBiteCollections.budget.slice(0, 6),
+    () => discoverBiteCollections.budget,
     [discoverBiteCollections.budget],
   );
   const unfilteredLateNightCards = useMemo(
-    () => discoverBiteCollections.lateNight.slice(0, 5),
+    () => discoverBiteCollections.lateNight,
     [discoverBiteCollections.lateNight],
   );
   const filterDiscoverBites = useCallback(
@@ -1812,35 +1823,24 @@ export function DiscoverHomeScreen() {
     [getBiteDish, matchesDiscoverChipSelection],
   );
   const quickBiteCards = useMemo(
-    () =>
-      isDiscoverFiltering
-        ? filterDiscoverBites(unfilteredQuickBiteCards)
-        : unfilteredQuickBiteCards,
-    [filterDiscoverBites, isDiscoverFiltering, unfilteredQuickBiteCards],
+    () => filterDiscoverBites(unfilteredQuickBiteCards).slice(0, 6),
+    [filterDiscoverBites, unfilteredQuickBiteCards],
   );
   const trendingCards = useMemo(
-    () =>
-      isDiscoverFiltering ? filterDiscoverBites(unfilteredTrendingCards) : unfilteredTrendingCards,
-    [filterDiscoverBites, isDiscoverFiltering, unfilteredTrendingCards],
+    () => filterDiscoverBites(unfilteredTrendingCards).slice(0, 6),
+    [filterDiscoverBites, unfilteredTrendingCards],
   );
   const editorChoiceCards = useMemo(
-    () =>
-      isDiscoverFiltering
-        ? filterDiscoverBites(unfilteredEditorChoiceCards)
-        : unfilteredEditorChoiceCards,
-    [filterDiscoverBites, isDiscoverFiltering, unfilteredEditorChoiceCards],
+    () => filterDiscoverBites(unfilteredEditorChoiceCards).slice(0, 6),
+    [filterDiscoverBites, unfilteredEditorChoiceCards],
   );
   const budgetCards = useMemo(
-    () =>
-      isDiscoverFiltering ? filterDiscoverBites(unfilteredBudgetCards) : unfilteredBudgetCards,
-    [filterDiscoverBites, isDiscoverFiltering, unfilteredBudgetCards],
+    () => filterDiscoverBites(unfilteredBudgetCards).slice(0, 6),
+    [filterDiscoverBites, unfilteredBudgetCards],
   );
   const lateNightCards = useMemo(
-    () =>
-      isDiscoverFiltering
-        ? filterDiscoverBites(unfilteredLateNightCards)
-        : unfilteredLateNightCards,
-    [filterDiscoverBites, isDiscoverFiltering, unfilteredLateNightCards],
+    () => filterDiscoverBites(unfilteredLateNightCards).slice(0, 5),
+    [filterDiscoverBites, unfilteredLateNightCards],
   );
   const unfilteredPopularFoodStyleItems = useMemo(
     () =>
@@ -1990,61 +1990,7 @@ export function DiscoverHomeScreen() {
       radius_m: radiusMeters,
     });
 
-    const geoCell = toRecommendationGeoCell(currentLocation.latitude, currentLocation.longitude);
-    pruneExpiredRecommendations();
-
-    const cachedDishIds = getCachedRecommendationSlate(geoCell);
-    const cachedDishes = (cachedDishIds ?? [])
-      .map((dishId) => repositoryLookup.getDishById(dishId))
-      .filter((dish): dish is DishDetail => Boolean(dish));
-
-    let picked = repository.getDecideForMe(profile.tasteVector, {
-      dietaryFlags: profile.dietaryPreferences,
-      neophiliaIndex: profile.tasteProfile?.neophiliaIndex ?? 5,
-      radiusMeters,
-      latitude: currentLocation.latitude,
-      longitude: currentLocation.longitude,
-      excludeDishIds: [],
-    });
-
-    if (!picked && cachedDishes.length) {
-      picked = cachedDishes[0];
-    }
-
-    if (!cachedDishes.length) {
-      const liveSlate = repository
-        .searchDishes(
-          {
-            query: "",
-            categories: [],
-            dietaryFlags: profile.dietaryPreferences,
-            tasteValues: profile.tasteVector,
-            radius: radiusMeters,
-          },
-          profile.tasteVector,
-        )
-        .slice(0, 20);
-
-      if (liveSlate.length) {
-        cacheRecommendationSlate(
-          geoCell,
-          liveSlate.map((dish) => dish.id),
-        );
-        if (!picked) {
-          picked = liveSlate[0];
-        }
-      }
-    }
-
-    if (picked) {
-      recordTasteInteraction({
-        type: "food_button_click",
-        surface: "decide",
-        dish: picked,
-        buttonId: "decide_for_me",
-      });
-      setDecideForMe(picked);
-    }
+    setDecideForMe(undefined);
     navigation.navigate("DecideForMeResult", { surface: "discover" });
   };
 
@@ -2712,13 +2658,13 @@ export function DiscoverHomeScreen() {
                 >
                   <Zap color={palette.white} fill={palette.white} size={10} />
                   <AppText variant="micro" style={{ color: palette.white, fontWeight: "800" }}>
-                    &lt; 15 MIN
+                    NEARBY DISH
                   </AppText>
                 </View>
               </View>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="See all quick bites under 15 minutes"
+                accessibilityLabel="See all quick bites"
                 onPressIn={() => prefetchBiteCollectionRoute("quickBites")}
                 onPress={() => navigation.navigate("QuickBites", { collection: "quickBites" })}
               >
@@ -2823,10 +2769,10 @@ export function DiscoverHomeScreen() {
                 alignItems: "center",
               }}
             >
-              <AppText variant="h2">Trending in {discoverLocationLabel}</AppText>
+              <AppText variant="h2">Reviewed in {discoverLocationLabel}</AppText>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={`See all trending dishes in ${discoverLocationLabel}`}
+                accessibilityLabel={`See all reviewed dishes in ${discoverLocationLabel}`}
                 onPressIn={() => prefetchBiteCollectionRoute("trending")}
                 onPress={() => navigation.navigate("QuickBites", { collection: "trending" })}
               >
@@ -2925,7 +2871,7 @@ export function DiscoverHomeScreen() {
           </View>
         ) : null}
 
-        {/* Editor's Choice Carousel */}
+        {/* Highly rated Carousel */}
         {shouldRenderDiscoverRail(editorChoiceCards.length) ? (
           <View style={{ gap: discoverContentGap }}>
             <View
@@ -2937,7 +2883,7 @@ export function DiscoverHomeScreen() {
             >
               <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
                 <AppText variant="h2" style={{ color: themeTints.text }}>
-                  Editor&apos;s Choice
+                  Highly rated
                 </AppText>
                 <View
                   style={{
@@ -2954,7 +2900,7 @@ export function DiscoverHomeScreen() {
               </View>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="See all editor's choice dishes"
+                accessibilityLabel="See all highly rated dishes"
                 onPressIn={() => prefetchBiteCollectionRoute("editorChoice")}
                 onPress={() => navigation.navigate("QuickBites", { collection: "editorChoice" })}
               >
@@ -2986,7 +2932,7 @@ export function DiscoverHomeScreen() {
                   <Pressable
                     key={`ec-${bite.id}`}
                     accessibilityRole="button"
-                    accessibilityLabel={`Editor's choice: ${bite.dishName}`}
+                    accessibilityLabel={`Highly rated: ${bite.dishName}`}
                     onPressIn={() => prefetchBiteCard(bite)}
                     onPress={() => openBiteDish(bite, "editor_choice_bite_card")}
                     style={[
@@ -3015,7 +2961,7 @@ export function DiscoverHomeScreen() {
                       }}
                     >
                       <AppText variant="micro" style={{ color: palette.white, fontWeight: "800" }}>
-                        MUST ORDER
+                        FEATURED DISH
                       </AppText>
                     </View>
                     <View style={{ padding: spacing[3], gap: spacing[1] }}>
@@ -3206,7 +3152,7 @@ export function DiscoverHomeScreen() {
               </View>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="See all late night stalls"
+                accessibilityLabel="See all dishes"
                 onPressIn={() => prefetchBiteCollectionRoute("lateNight")}
                 onPress={() => navigation.navigate("QuickBites", { collection: "lateNight" })}
               >
@@ -3238,7 +3184,7 @@ export function DiscoverHomeScreen() {
                   <Pressable
                     key={`night-${bite.id}`}
                     accessibilityRole="button"
-                    accessibilityLabel={`Late night option: ${bite.dishName}`}
+                    accessibilityLabel={`Open ${bite.dishName}`}
                     onPressIn={() => prefetchBiteCard(bite)}
                     onPress={() => openBiteDish(bite, "late_night_bite_card")}
                     style={[

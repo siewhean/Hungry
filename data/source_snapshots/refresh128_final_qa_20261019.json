@@ -1,0 +1,33 @@
+{
+  "refresh_id": "refresh128_increment_20261019",
+  "status": "PASS",
+  "installed_workbook_sha256": "51b0eb281d08e735151ccf4ca99de823c3badf811d46c9ea337b4008b3251e0c",
+  "input_sha256": "1f32e2fe53ca6e82bffab65f1f39e21d197c8d1ea040018933e1b8cb26638081",
+  "checks": {
+    "xlsx_zip_integrity": true,
+    "sheet_count": 4,
+    "table_ranges_match_populated_rows": true,
+    "directory_rows": 38278,
+    "unique_sfa_licences": 38278,
+    "alphabetically_sorted": true,
+    "unnamed_records_last": true,
+    "menu_rows": 13408,
+    "image_candidate_rows": 2759,
+    "coverage_source_rows": 221,
+    "formulas": 0,
+    "blank_rows": 0,
+    "excel_error_cells": 0,
+    "foodpanda_menu_rows_source_match": 20,
+    "yakun_fields_match": 4,
+    "hours_corrections_match": 3,
+    "satay_by_the_bay_followup_notes": 12,
+    "nus_access_notes": 3,
+    "cc_by_sa_candidate_with_attribution": 1,
+    "approved_image_urls": 0,
+    "directory_records_removed": 0,
+    "coverage_metrics_match_receipt": true
+  },
+  "mapbox_usage": "Refresh127 estimate was 79/50,000 from user-reported 59 plus 20 requests. No Mapbox requests in Refresh128. Dashboard not verified.",
+  "qa_summary": "Independent installed workbook QA passed. Six worksheet table ranges and contents reconcile. Added menu/directory/hour/image/status deltas match source snapshots. No records removed; venue closure and visitor-pass access caveats remain explicit.",
+  "no_paid_services_used": true
+}

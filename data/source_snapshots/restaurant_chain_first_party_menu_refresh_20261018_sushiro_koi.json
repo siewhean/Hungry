@@ -1,0 +1,497 @@
+{
+  "schema": "hungry.first_party_chain_menu_research.v1",
+  "snapshot_id": "restaurant_chain_first_party_menu_refresh_20261018_sushiro_koi",
+  "observed_local_date": "2026-10-18",
+  "workbook_path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "1b521ba84d7fc6519ad0298ea3ab08b04ede0806b87060d71dc599e040dfc5ad",
+  "workbook_edited": false,
+  "scope": "Read-only source research; exact brand+item comparison; candidates for human/reconciliation review only.",
+  "method": "First-party Singapore operator pages fetched over TLS with normal certificate verification. Prices copied as displayed; no outlet extrapolation. Menu artwork checked visually; image URLs refer to complete published menu graphics, not extracted dish crops.",
+  "brands": [
+    {
+      "brand": "Sushiro",
+      "directory_rows": 23,
+      "existing_menu_rows": 24,
+      "existing_item_names": [
+        "D01. Sushiro Salmon Platter for 1 Portion",
+        "D02. Sushiro Salmon Platter for 2 Portions",
+        "D03. Sushiro Salmon Platter for 3 Portions",
+        "D04. Sushiro Salmon Platter for 4 Portions",
+        "D08. Sushiro Platter 10 for 1 Portion",
+        "D09. Sushiro Platter 10 for 2 Portions",
+        "D10. Sushiro Platter 10 for 3 Portions",
+        "D15. Sushiro Superior Platter For 1 Portion",
+        "D16. Sushiro Superior Platter For 2 Portion",
+        "D17. Sushiro Superior Platter For 3 Portion",
+        "D18. Sushiro Superior Platter For 4 Portion",
+        "D19 Recommended Mix 1 Portion",
+        "D20 Recommended Mix 2 Portions",
+        "D21. Recommended Mix 3 Portions",
+        "D22 Recommended Mix 4 Portions",
+        "D23. Kids Platter 1 Portion",
+        "D24. Kids Platter 2 Portions",
+        "D25 Kids Platter (3 Portions)",
+        "D26 Kids Platter (4 Portions)",
+        "D27 Fatty Mackerel Oshisushi",
+        "DS01. Edamame",
+        "DS02. Chicken Karaage",
+        "DS03. Fried Octopus",
+        "Original Pan Pizza"
+      ],
+      "source_url": "https://www.sushiro.com.sg/menu/",
+      "source_menu_modified_on_page": "2026-05-12",
+      "candidate_items": 12
+    },
+    {
+      "brand": "KOI Thé",
+      "directory_rows": 90,
+      "existing_menu_rows": 20,
+      "existing_item_names": [
+        "Chicken Katsu Curry",
+        "Chocolate Chip Cookies",
+        "Classic Milk Tea with Golden Pearls",
+        "Golden Bubble Milk Tea",
+        "Hainanese Chicken Rice",
+        "Hokkaido Milk Bun",
+        "Kopi"
+      ],
+      "source_url": "https://www.koithe.com/en/menu.php",
+      "source_menu_artwork_link": "Singapore / KOI Thé (distinct from Express and Signature KOI)",
+      "candidate_items": 7
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "sushiro_sg_menu",
+      "url": "https://www.sushiro.com.sg/menu/",
+      "observed": "2026-10-18",
+      "http_status": 200,
+      "tls_verify_result": 0,
+      "response_bytes": 148640,
+      "response_sha256": "bb0a7424c4f9e2a34f89bf3ad39af561eb2696f31f3fd3d1914651c9b54cc1f1"
+    },
+    {
+      "source_id": "sushiro_sg_menu_artwork",
+      "url": "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png",
+      "observed": "2026-10-18",
+      "http_status": 200,
+      "tls_verify_result": 0,
+      "response_bytes": 790516,
+      "response_sha256": "2bf59a25aa875f02bcf67187564f9396614d3d272a5fdbf0aef10b21474f7d3f"
+    },
+    {
+      "source_id": "koi_global_menu_with_singapore_section",
+      "url": "https://www.koithe.com/en/menu.php",
+      "observed": "2026-10-18",
+      "http_status": 200,
+      "tls_verify_result": 0,
+      "response_bytes": 93347,
+      "response_sha256": "9299ef05e6fb878376aa836390adbc1094f97e26bd8ea4c59e6eaa21b2adbff6"
+    },
+    {
+      "source_id": "koi_singapore_menu_artwork",
+      "url": "https://www.koithe.com/upload_file/menu/menu_803.png",
+      "observed": "2026-10-18",
+      "http_status": 200,
+      "tls_verify_result": 0,
+      "response_bytes": 1851839,
+      "response_sha256": "156a68dd1d2b24a4c08594f6a63675d253d6ba304a25db32e466f9d1eeb8673f"
+    }
+  ],
+  "menu_candidate_rows": [
+    {
+      "brand": "Sushiro",
+      "item": "Tuna",
+      "section": "Nigiri",
+      "price_as_published": "$2.30++",
+      "currency": "SGD",
+      "menu_scope": "Current official Singapore brand-level menu; outlet-level availability not stated",
+      "menu_url": "https://www.sushiro.com.sg/menu/",
+      "observed": "2026-10-18",
+      "existing_exact_brand_item_match": false,
+      "existing_menu_records": [],
+      "freshness_status": "Current source captured 2026-10-18; brand menu, not outlet-verified",
+      "source_type": "Official Singapore operator menu",
+      "rights_reuse_status": "No item-specific image URL captured; review menu asset separately"
+    },
+    {
+      "brand": "Sushiro",
+      "item": "Tuna Marinated in Soy Sauce",
+      "section": "Nigiri",
+      "price_as_published": "$2.30++",
+      "currency": "SGD",
+      "menu_scope": "Current official Singapore brand-level menu; outlet-level availability not stated",
+      "menu_url": "https://www.sushiro.com.sg/menu/",
+      "observed": "2026-10-18",
+      "existing_exact_brand_item_match": false,
+      "existing_menu_records": [],
+      "freshness_status": "Current source captured 2026-10-18; brand menu, not outlet-verified",
+      "source_type": "Official Singapore operator menu",
+      "rights_reuse_status": "No item-specific image URL captured; review menu asset separately"
+    },
+    {
+      "brand": "Sushiro",
+      "item": "Grilled Mackerel",
+      "section": "Nigiri",
+      "price_as_published": "$2.30++",
+      "currency": "SGD",
+      "menu_scope": "Current official Singapore brand-level menu; outlet-level availability not stated",
+      "menu_url": "https://www.sushiro.com.sg/menu/",
+      "observed": "2026-10-18",
+      "existing_exact_brand_item_match": false,
+      "existing_menu_records": [],
+      "freshness_status": "Current source captured 2026-10-18; brand menu, not outlet-verified",
+      "source_type": "Official Singapore operator menu",
+      "rights_reuse_status": "No item-specific image URL captured; review menu asset separately"
+    },
+    {
+      "brand": "Sushiro",
+      "item": "Vinegared Mackerel",
+      "section": "Nigiri",
+      "price_as_published": "$2.30++",
+      "currency": "SGD",
+      "menu_scope": "Current official Singapore brand-level menu; outlet-level availability not stated",
+      "menu_url": "https://www.sushiro.com.sg/menu/",
+      "observed": "2026-10-18",
+      "existing_exact_brand_item_match": false,
+      "existing_menu_records": [],
+      "freshness_status": "Current source captured 2026-10-18; brand menu, not outlet-verified",
+      "source_type": "Official Singapore operator menu",
+      "rights_reuse_status": "No item-specific image URL captured; review menu asset separately"
+    },
+    {
+      "brand": "Sushiro",
+      "item": "Ark Shell",
+      "section": "Nigiri",
+      "price_as_published": "$2.30++",
+      "currency": "SGD",
+      "menu_scope": "Current official Singapore brand-level menu; outlet-level availability not stated",
+      "menu_url": "https://www.sushiro.com.sg/menu/",
+      "observed": "2026-10-18",
+      "existing_exact_brand_item_match": false,
+      "existing_menu_records": [],
+      "freshness_status": "Current source captured 2026-10-18; brand menu, not outlet-verified",
+      "source_type": "Official Singapore operator menu",
+      "rights_reuse_status": "No item-specific image URL captured; review menu asset separately"
+    },
+    {
+      "brand": "Sushiro",
+      "item": "Surf Clam",
+      "section": "Nigiri",
+      "price_as_published": "$2.30++",
+      "currency": "SGD",
+      "menu_scope": "Current official Singapore brand-level menu; outlet-level availability not stated",
+      "menu_url": "https://www.sushiro.com.sg/menu/",
+      "observed": "2026-10-18",
+      "existing_exact_brand_item_match": false,
+      "existing_menu_records": [],
+      "freshness_status": "Current source captured 2026-10-18; brand menu, not outlet-verified",
+      "source_type": "Official Singapore operator menu",
+      "rights_reuse_status": "No item-specific image URL captured; review menu asset separately"
+    },
+    {
+      "brand": "Sushiro",
+      "item": "Japanese Omelette",
+      "section": "Nigiri",
+      "price_as_published": "$2.30++",
+      "currency": "SGD",
+      "menu_scope": "Current official Singapore brand-level menu; outlet-level availability not stated",
+      "menu_url": "https://www.sushiro.com.sg/menu/",
+      "observed": "2026-10-18",
+      "existing_exact_brand_item_match": false,
+      "existing_menu_records": [],
+      "freshness_status": "Current source captured 2026-10-18; brand menu, not outlet-verified",
+      "source_type": "Official Singapore operator menu",
+      "rights_reuse_status": "No item-specific image URL captured; review menu asset separately"
+    },
+    {
+      "brand": "Sushiro",
+      "item": "Mapo Eggplant",
+      "section": "Nigiri",
+      "price_as_published": "$2.30++",
+      "currency": "SGD",
+      "menu_scope": "Current official Singapore brand-level menu; outlet-level availability not stated",
+      "menu_url": "https://www.sushiro.com.sg/menu/",
+      "observed": "2026-10-18",
+      "existing_exact_brand_item_match": false,
+      "existing_menu_records": [],
+      "freshness_status": "Current source captured 2026-10-18; brand menu, not outlet-verified",
+      "source_type": "Official Singapore operator menu",
+      "rights_reuse_status": "No item-specific image URL captured; review menu asset separately"
+    },
+    {
+      "brand": "Sushiro",
+      "item": "Shrimp",
+      "section": "Nigiri",
+      "price_as_published": "$2.30++",
+      "currency": "SGD",
+      "menu_scope": "Current official Singapore brand-level menu; outlet-level availability not stated",
+      "menu_url": "https://www.sushiro.com.sg/menu/",
+      "observed": "2026-10-18",
+      "existing_exact_brand_item_match": false,
+      "existing_menu_records": [],
+      "freshness_status": "Current source captured 2026-10-18; brand menu, not outlet-verified",
+      "source_type": "Official Singapore operator menu",
+      "rights_reuse_status": "No item-specific image URL captured; review menu asset separately"
+    },
+    {
+      "brand": "Sushiro",
+      "item": "Big Red Shrimp",
+      "section": "Nigiri",
+      "price_as_published": "$2.30++",
+      "currency": "SGD",
+      "menu_scope": "Current official Singapore brand-level menu; outlet-level availability not stated",
+      "menu_url": "https://www.sushiro.com.sg/menu/",
+      "observed": "2026-10-18",
+      "existing_exact_brand_item_match": false,
+      "existing_menu_records": [],
+      "freshness_status": "Current source captured 2026-10-18; brand menu, not outlet-verified",
+      "source_type": "Official Singapore operator menu",
+      "rights_reuse_status": "No item-specific image URL captured; review menu asset separately"
+    },
+    {
+      "brand": "Sushiro",
+      "item": "Sweet Shrimp",
+      "section": "Nigiri",
+      "price_as_published": "$2.30++",
+      "currency": "SGD",
+      "menu_scope": "Current official Singapore brand-level menu; outlet-level availability not stated",
+      "menu_url": "https://www.sushiro.com.sg/menu/",
+      "observed": "2026-10-18",
+      "existing_exact_brand_item_match": false,
+      "existing_menu_records": [],
+      "freshness_status": "Current source captured 2026-10-18; brand menu, not outlet-verified",
+      "source_type": "Official Singapore operator menu",
+      "rights_reuse_status": "No item-specific image URL captured; review menu asset separately"
+    },
+    {
+      "brand": "Sushiro",
+      "item": "Swordfish",
+      "section": "Nigiri",
+      "price_as_published": "$2.30++",
+      "currency": "SGD",
+      "menu_scope": "Current official Singapore brand-level menu; outlet-level availability not stated",
+      "menu_url": "https://www.sushiro.com.sg/menu/",
+      "observed": "2026-10-18",
+      "existing_exact_brand_item_match": false,
+      "existing_menu_records": [],
+      "freshness_status": "Current source captured 2026-10-18; brand menu, not outlet-verified",
+      "source_type": "Official Singapore operator menu",
+      "rights_reuse_status": "No item-specific image URL captured; review menu asset separately"
+    },
+    {
+      "brand": "KOI Thé",
+      "item": "Green Tea/Black Tea",
+      "section": "Flavored Tea",
+      "price_as_published": "M S$3.2; L S$4.2",
+      "currency": "SGD",
+      "menu_scope": "Current official Singapore brand-level menu; outlet-level availability not stated",
+      "menu_url": "https://www.koithe.com/en/menu.php",
+      "observed": "2026-10-18",
+      "existing_exact_brand_item_match": false,
+      "existing_menu_records": [],
+      "freshness_status": "Current source captured 2026-10-18; brand menu, not outlet-verified",
+      "source_type": "Official Singapore operator menu",
+      "rights_reuse_status": "No item-specific image URL captured; review menu asset separately"
+    },
+    {
+      "brand": "KOI Thé",
+      "item": "Honey Green Tea/Oolong Tea",
+      "section": "Flavored Tea",
+      "price_as_published": "M S$4.2; L S$5.2",
+      "currency": "SGD",
+      "menu_scope": "Current official Singapore brand-level menu; outlet-level availability not stated",
+      "menu_url": "https://www.koithe.com/en/menu.php",
+      "observed": "2026-10-18",
+      "existing_exact_brand_item_match": false,
+      "existing_menu_records": [],
+      "freshness_status": "Current source captured 2026-10-18; brand menu, not outlet-verified",
+      "source_type": "Official Singapore operator menu",
+      "rights_reuse_status": "No item-specific image URL captured; review menu asset separately"
+    },
+    {
+      "brand": "KOI Thé",
+      "item": "Peach Green Tea/Oolong Tea",
+      "section": "Flavored Tea",
+      "price_as_published": "M S$4.2; L S$5.2",
+      "currency": "SGD",
+      "menu_scope": "Current official Singapore brand-level menu; outlet-level availability not stated",
+      "menu_url": "https://www.koithe.com/en/menu.php",
+      "observed": "2026-10-18",
+      "existing_exact_brand_item_match": false,
+      "existing_menu_records": [],
+      "freshness_status": "Current source captured 2026-10-18; brand menu, not outlet-verified",
+      "source_type": "Official Singapore operator menu",
+      "rights_reuse_status": "No item-specific image URL captured; review menu asset separately"
+    },
+    {
+      "brand": "KOI Thé",
+      "item": "Golden Bubble Milk Tea",
+      "section": "Milk Tea",
+      "price_as_published": "M S$5.2; L S$6.2",
+      "currency": "SGD",
+      "menu_scope": "Current official Singapore brand-level menu; outlet-level availability not stated",
+      "menu_url": "https://www.koithe.com/en/menu.php",
+      "observed": "2026-10-18",
+      "existing_exact_brand_item_match": true,
+      "existing_menu_records": [
+        {
+          "workbook_item": "Golden Bubble Milk Tea",
+          "workbook_price": "6",
+          "source_url": "https://data.gov.sg/datasets/d_1f0313499a17075d13aae6ed3e825bc6/view"
+        },
+        {
+          "workbook_item": "Golden Bubble Milk Tea",
+          "workbook_price": "6",
+          "source_url": "https://data.gov.sg/datasets/d_1f0313499a17075d13aae6ed3e825bc6/view"
+        },
+        {
+          "workbook_item": "Golden Bubble Milk Tea",
+          "workbook_price": "6",
+          "source_url": "https://data.gov.sg/datasets/d_1f0313499a17075d13aae6ed3e825bc6/view"
+        },
+        {
+          "workbook_item": "Golden Bubble Milk Tea",
+          "workbook_price": "6",
+          "source_url": "https://data.gov.sg/datasets/d_1f0313499a17075d13aae6ed3e825bc6/view"
+        },
+        {
+          "workbook_item": "Golden Bubble Milk Tea",
+          "workbook_price": "6",
+          "source_url": "https://data.gov.sg/datasets/d_1f0313499a17075d13aae6ed3e825bc6/view"
+        },
+        {
+          "workbook_item": "Golden Bubble Milk Tea",
+          "workbook_price": "6",
+          "source_url": "https://data.gov.sg/datasets/d_1f0313499a17075d13aae6ed3e825bc6/view"
+        },
+        {
+          "workbook_item": "Golden Bubble Milk Tea",
+          "workbook_price": "6",
+          "source_url": "https://data.gov.sg/datasets/d_1f0313499a17075d13aae6ed3e825bc6/view"
+        },
+        {
+          "workbook_item": "Golden Bubble Milk Tea",
+          "workbook_price": "6",
+          "source_url": "https://data.gov.sg/datasets/d_1f0313499a17075d13aae6ed3e825bc6/view"
+        }
+      ],
+      "freshness_status": "Current source captured 2026-10-18; brand menu, not outlet-verified",
+      "source_type": "Official Singapore operator menu",
+      "rights_reuse_status": "No item-specific image URL captured; review menu asset separately"
+    },
+    {
+      "brand": "KOI Thé",
+      "item": "Coconut Jelly Green Milk Tea",
+      "section": "Milk Tea",
+      "price_as_published": "M S$5.5; L S$6.5",
+      "currency": "SGD",
+      "menu_scope": "Current official Singapore brand-level menu; outlet-level availability not stated",
+      "menu_url": "https://www.koithe.com/en/menu.php",
+      "observed": "2026-10-18",
+      "existing_exact_brand_item_match": false,
+      "existing_menu_records": [],
+      "freshness_status": "Current source captured 2026-10-18; brand menu, not outlet-verified",
+      "source_type": "Official Singapore operator menu",
+      "rights_reuse_status": "No item-specific image URL captured; review menu asset separately"
+    },
+    {
+      "brand": "KOI Thé",
+      "item": "Chocolate Milk",
+      "section": "Milk Tea",
+      "price_as_published": "M S$4.9; L S$5.9",
+      "currency": "SGD",
+      "menu_scope": "Current official Singapore brand-level menu; outlet-level availability not stated",
+      "menu_url": "https://www.koithe.com/en/menu.php",
+      "observed": "2026-10-18",
+      "existing_exact_brand_item_match": false,
+      "existing_menu_records": [],
+      "freshness_status": "Current source captured 2026-10-18; brand menu, not outlet-verified",
+      "source_type": "Official Singapore operator menu",
+      "rights_reuse_status": "No item-specific image URL captured; review menu asset separately"
+    },
+    {
+      "brand": "KOI Thé",
+      "item": "Peach Macchiato",
+      "section": "Macchiato",
+      "price_as_published": "M S$5.4; L S$6.4",
+      "currency": "SGD",
+      "menu_scope": "Current official Singapore brand-level menu; outlet-level availability not stated",
+      "menu_url": "https://www.koithe.com/en/menu.php",
+      "observed": "2026-10-18",
+      "existing_exact_brand_item_match": false,
+      "existing_menu_records": [],
+      "freshness_status": "Current source captured 2026-10-18; brand menu, not outlet-verified",
+      "source_type": "Official Singapore operator menu",
+      "rights_reuse_status": "No item-specific image URL captured; review menu asset separately"
+    },
+    {
+      "brand": "KOI Thé",
+      "item": "Yakult Green Tea",
+      "section": "Flavored Tea",
+      "price_as_published": "M S$5.3; L S$6.8",
+      "currency": "SGD",
+      "menu_scope": "Current official Singapore brand-level menu; outlet-level availability not stated",
+      "menu_url": "https://www.koithe.com/en/menu.php",
+      "observed": "2026-10-18",
+      "existing_exact_brand_item_match": false,
+      "existing_menu_records": [],
+      "freshness_status": "Current source captured 2026-10-18; brand menu, not outlet-verified",
+      "source_type": "Official Singapore operator menu",
+      "rights_reuse_status": "No item-specific image URL captured; review menu asset separately"
+    }
+  ],
+  "image_candidate_rows": [
+    {
+      "brand": "Sushiro",
+      "item_names": [
+        "Full Singapore menu artwork"
+      ],
+      "official_image_url": "https://www.sushiro.com.sg/wp-content/uploads/2026/05/Sushiro-A4-Menu-1.png",
+      "source_page_url": "https://www.sushiro.com.sg/menu/",
+      "observed": "2026-10-18",
+      "image_scope": "Full menu image with product thumbnails; individual dish crops are not separate assets",
+      "rights_reuse_status": "Official source image; rights not cleared; review-only candidate",
+      "already_in_workbook": false
+    },
+    {
+      "brand": "KOI Thé",
+      "item_names": [
+        "KOI Thé Singapore menu artwork"
+      ],
+      "official_image_url": "https://www.koithe.com/upload_file/menu/menu_803.png",
+      "source_page_url": "https://www.koithe.com/en/menu.php",
+      "observed": "2026-10-18",
+      "image_scope": "Full brand menu artwork with product visuals; not an item-specific photo",
+      "rights_reuse_status": "Official source image; rights not cleared; review-only candidate",
+      "already_in_workbook": false
+    }
+  ],
+  "limitations": [
+    "KOI source artwork shows medium and large prices as abbreviated numeric values (e.g. 3.2); transcription preserves the published display and does not infer decimal formatting.",
+    "Sushiro artwork uses price tiers such as $2.30++; plus signs are preserved and charges/tax are not inferred.",
+    "Full menu artwork includes product images, but no standalone item image URLs were captured. Images are review-only and not cleared for reuse.",
+    "Branch availability and price parity are not established by the brand-level sources.",
+    "Sushiro source menu page states full menu may be subject to in-store availability."
+  ],
+  "dedupe": {
+    "normalization": "Unicode NFKD, casefold, alphanumeric-only exact brand item key",
+    "net_new_menu_candidates": 19,
+    "exact_menu_matches": 1,
+    "new_unique_image_urls": 2,
+    "exact_image_url_matches": 0
+  },
+  "excluded": [
+    "Saizeriya",
+    "Sukiya",
+    "WOK HEY",
+    "CHAGEE",
+    "Din Tai Fung",
+    "JUMBO",
+    "Mr Bean",
+    "7-Eleven",
+    "Luckin Coffee",
+    "brands already covered in source snapshots"
+  ],
+  "sources_already_reviewed": "Existing official chain menu snapshots checked; none had KOI Thé or Sushiro menu-item candidate rows. Existing Sushiro delivery menu entries were compared only for exact names, not accepted as source evidence."
+}

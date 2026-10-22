@@ -18,6 +18,7 @@ import { LinearGradient } from "expo-linear-gradient";
 
 import { AccessibleImage, AppText, Button } from "@/components/ui";
 import { getDataRepository } from "@/lib/services/serviceProvider";
+import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { useWheelStore } from "@/store/useWheelStore";
 import { useHungryTheme } from "@/theme";
 import type { WheelStackParamList } from "./WheelStack";
@@ -27,6 +28,7 @@ type Props = NativeStackScreenProps<WheelStackParamList, "WheelResult">;
 
 export function WheelResultModal({ navigation, route }: Props) {
   const { componentRadii, palette, spacing, radii, shadows, motion } = useHungryTheme();
+  const reduceMotion = useReduceMotion();
   const { winnerEntryId } = route.params;
   const repository = getDataRepository();
 
@@ -44,6 +46,11 @@ export function WheelResultModal({ navigation, route }: Props) {
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    if (reduceMotion) {
+      scaleAnim.setValue(1);
+      opacityAnim.setValue(1);
+      return;
+    }
     Animated.parallel([
       Animated.spring(scaleAnim, {
         toValue: 1,
@@ -57,7 +64,7 @@ export function WheelResultModal({ navigation, route }: Props) {
         useNativeDriver: true,
       }),
     ]).start();
-  }, [motion.modalEnter, opacityAnim, scaleAnim]);
+  }, [reduceMotion, motion.modalEnter, opacityAnim, scaleAnim]);
 
   function handleStallDetail() {
     if (!winnerEntry) return;
@@ -67,6 +74,7 @@ export function WheelResultModal({ navigation, route }: Props) {
 
   function handleSpinAgain() {
     if (!party) return;
+    useWheelStore.getState().prepareNextSpin();
     navigation.replace("WheelSpin", { partyId: party.id });
   }
 
@@ -192,9 +200,9 @@ export function WheelResultModal({ navigation, route }: Props) {
               leftIcon={<Navigation size={18} color={palette.white} />}
             />
 
-            {isElimination && remainingActive > 2 ? (
+            {isClassic || (isElimination && remainingActive > 2) ? (
               <Button
-                label={`Next Round (${remainingActive - 1} left)`}
+                label={isClassic ? "Spin again" : "Next round"}
                 onPress={handleSpinAgain}
                 variant="secondary"
                 leftIcon={<RotateCcw size={18} color={palette.text} />}

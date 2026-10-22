@@ -22,7 +22,6 @@ test.describe("cross-user visibility", () => {
     const caption = uniqueCaption(testInfo);
 
     await publishPostFromComposer(page, caption, { account: "User A" });
-    await page.getByRole("button", { name: "View Post" }).first().click();
     await expectPostCaptionVisible(page, caption, "home-social-feed");
 
     await gotoLauncher(page);

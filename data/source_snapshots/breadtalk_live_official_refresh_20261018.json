@@ -1,0 +1,1119 @@
+{
+  "schema_version": 1,
+  "batch": "BreadTalk live outlet directory and official product-detail refresh",
+  "captured_at_local": "2026-10-18T18:06:53+08:00",
+  "master_workbook": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "master_sha256": "3ce9c0b79a9dbc4fb8724061754b0f3adfdbbeff56aa9caca71b8c5353fff9b7",
+  "workbook_edit_performed": false,
+  "source_urls": [
+    {
+      "url": "https://www.breadtalk.com.sg/locations/",
+      "kind": "official Singapore locator landing page",
+      "http_status": 200
+    },
+    {
+      "url": "https://www.breadtalk.com.sg/wp-admin/admin-ajax.php?action=store_search&lat=1.352083&lng=103.819836&autoload=1&maxResults=1000&radius=100",
+      "kind": "public official locator JSON endpoint",
+      "http_status": 200,
+      "server_http_date": "Sun, 18 Oct 2026 10:06:27 GMT",
+      "outlet_records": 47
+    },
+    {
+      "url": "https://www.breadtalk.com.sg/",
+      "kind": "official Singapore brand homepage",
+      "http_status": 200
+    },
+    {
+      "url": "https://www.breadtalk.com.sg/shop/",
+      "kind": "official Singapore online cake catalogue",
+      "http_status": 200
+    }
+  ],
+  "directory_scan": {
+    "locator_outlets": 47,
+    "exact_unambiguous_sfa_outlet_matches": 21,
+    "same_postal_unmatched_or_ambiguous_candidates": [
+      {
+        "official_store_id": 1142,
+        "outlet_name": "City Square Mall",
+        "postal_code": "208539",
+        "official_unit_normalized": [
+          "01-41",
+          "01-43"
+        ],
+        "same_postal_sfa_licences": [
+          "CE18R59K000"
+        ],
+        "exact_unit_match_count": 0,
+        "disposition": "unit set mismatch; not joined",
+        "candidate_sfa_units": [
+          [
+            "01-41",
+            "01-42"
+          ]
+        ]
+      },
+      {
+        "official_store_id": 2590,
+        "outlet_name": "Clarke Quay Central",
+        "postal_code": "059817",
+        "official_unit_normalized": [
+          "01-27",
+          "01-28",
+          "01-38"
+        ],
+        "same_postal_sfa_licences": [
+          "CE25H76X000"
+        ],
+        "exact_unit_match_count": 0,
+        "disposition": "unit set mismatch; not joined",
+        "candidate_sfa_units": [
+          [
+            "01-27"
+          ]
+        ]
+      },
+      {
+        "official_store_id": 1159,
+        "outlet_name": "Jurong Point",
+        "postal_code": "648331",
+        "official_unit_normalized": [
+          "B1-72",
+          "B1-73"
+        ],
+        "same_postal_sfa_licences": [
+          "SW08869C000"
+        ],
+        "exact_unit_match_count": 0,
+        "disposition": "unit set mismatch; not joined",
+        "candidate_sfa_units": [
+          []
+        ]
+      },
+      {
+        "official_store_id": 1165,
+        "outlet_name": "NEX",
+        "postal_code": "556083",
+        "official_unit_normalized": [
+          "B2-59"
+        ],
+        "same_postal_sfa_licences": [
+          "SE18428X000"
+        ],
+        "exact_unit_match_count": 0,
+        "disposition": "unit set mismatch; not joined",
+        "candidate_sfa_units": [
+          [
+            "B2-59-2"
+          ]
+        ]
+      },
+      {
+        "official_store_id": 2167,
+        "outlet_name": "One Holland Village",
+        "postal_code": "275748",
+        "official_unit_normalized": [
+          "01-44",
+          "01-45"
+        ],
+        "same_postal_sfa_licences": [
+          "CE23M11V000"
+        ],
+        "exact_unit_match_count": 0,
+        "disposition": "unit set mismatch; not joined",
+        "candidate_sfa_units": [
+          [
+            "01-45"
+          ]
+        ]
+      },
+      {
+        "official_store_id": 1177,
+        "outlet_name": "Raffles City Shopping Centre",
+        "postal_code": "179103",
+        "official_unit_normalized": [
+          "B1-44A"
+        ],
+        "same_postal_sfa_licences": [
+          "CE07E70E000",
+          "CE13391X000"
+        ],
+        "exact_unit_match_count": 2,
+        "disposition": "ambiguous exact duplicate licence rows",
+        "candidate_sfa_units": [
+          [
+            "B1-44A"
+          ],
+          [
+            "B1-44A"
+          ]
+        ]
+      },
+      {
+        "official_store_id": 1147,
+        "outlet_name": "The Clementi Mall",
+        "postal_code": "129588",
+        "official_unit_normalized": [
+          "01-01",
+          "01-02"
+        ],
+        "same_postal_sfa_licences": [
+          "SW17A65V000"
+        ],
+        "exact_unit_match_count": 0,
+        "disposition": "unit set mismatch; not joined",
+        "candidate_sfa_units": [
+          [
+            "01-02"
+          ]
+        ]
+      },
+      {
+        "official_store_id": 2016,
+        "outlet_name": "The Woodleigh Mall",
+        "postal_code": "367803",
+        "official_unit_normalized": [
+          "01-35",
+          "01-36"
+        ],
+        "same_postal_sfa_licences": [
+          "CE23430E000"
+        ],
+        "exact_unit_match_count": 0,
+        "disposition": "unit set mismatch; not joined",
+        "candidate_sfa_units": [
+          [
+            "01-35"
+          ]
+        ]
+      },
+      {
+        "official_store_id": 1195,
+        "outlet_name": "United Square",
+        "postal_code": "307591",
+        "official_unit_normalized": [
+          "01-75A",
+          "01-76A"
+        ],
+        "same_postal_sfa_licences": [
+          "CE12J42N000"
+        ],
+        "exact_unit_match_count": 0,
+        "disposition": "unit set mismatch; not joined",
+        "candidate_sfa_units": [
+          [
+            "01-75A"
+          ]
+        ]
+      }
+    ],
+    "exact_matches": [
+      {
+        "official_store_id": 1106,
+        "outlet_name": "BreadTalk IHQ",
+        "postal_code": "534013",
+        "official_address": "30 Tai Seng Street, #01-04, BreadTalk IHQ",
+        "official_unit_raw": "01-04",
+        "official_unit_normalized": [
+          "01-04"
+        ],
+        "sfa_licence": "SE13R89C000",
+        "sfa_business_name": "BREADTALK",
+        "sfa_address": "Address: 30 TAI SENG STREET #01-04,BREADTALK,Singapore 534013",
+        "sfa_unit_raw": "01-04",
+        "sfa_unit_normalized": [
+          "01-04"
+        ],
+        "exact_postal_name_unit_match": true,
+        "currently_blank_fields": [],
+        "official_phone_current": "6636 4344",
+        "official_hours_current": "Weekday: 08:00am - 09:00pm Weekend: 08:00am - 09:00pm PH eve/ PH: 08:00am - 09:00pm",
+        "official_locator_location_status": null
+      },
+      {
+        "official_store_id": 1114,
+        "outlet_name": "Canberra Plaza",
+        "postal_code": "750133",
+        "official_address": "133 Canberra View, Canberra Plaza #01-05",
+        "official_unit_raw": "01-05",
+        "official_unit_normalized": [
+          "01-05"
+        ],
+        "sfa_licence": "NW20R55B000",
+        "sfa_business_name": "BreadTalk",
+        "sfa_address": "Address: 133 CANBERRA VIEW #01-05,Canberra Plaza,Singapore 750133",
+        "sfa_unit_raw": "01-05",
+        "sfa_unit_normalized": [
+          "01-05"
+        ],
+        "exact_postal_name_unit_match": true,
+        "currently_blank_fields": [],
+        "official_phone_current": "6970 4344",
+        "official_hours_current": "Weekday: 07:30am - 10:00pm Weekend: 08:00am - 10:00pm PH: 08:00am - 10:00pm",
+        "official_locator_location_status": null
+      },
+      {
+        "official_store_id": 1117,
+        "outlet_name": "Causeway Point",
+        "postal_code": "738099",
+        "official_address": "1 Woodlands Square #01-34, Causeway Point",
+        "official_unit_raw": "01-34",
+        "official_unit_normalized": [
+          "01-34"
+        ],
+        "sfa_licence": "B98098J000",
+        "sfa_business_name": "BREADTALK",
+        "sfa_address": "Address: 1 WOODLANDS SQUARE #01-34,CAUSEWAY POINT,Singapore 738099",
+        "sfa_unit_raw": "01-34",
+        "sfa_unit_normalized": [
+          "01-34"
+        ],
+        "exact_postal_name_unit_match": true,
+        "currently_blank_fields": [],
+        "official_phone_current": "6893 4434",
+        "official_hours_current": "Weekday: 07:00am - 10:30pm Weekend: 07:30am - 10:30pm PH eve/ PH: 07:30am -10:30pm",
+        "official_locator_location_status": null
+      },
+      {
+        "official_store_id": 1149,
+        "outlet_name": "Compass One",
+        "postal_code": "545078",
+        "official_address": "1 Sengkang Square #B1-29, Compass One",
+        "official_unit_raw": "B1-29",
+        "official_unit_normalized": [
+          "B1-29"
+        ],
+        "sfa_licence": "NE16461J000",
+        "sfa_business_name": "BREADTALK",
+        "sfa_address": "Address: 1 SENGKANG SQUARE #B1-29,COMPASS ONE,Singapore 545078 COMPASS ONE",
+        "sfa_unit_raw": "B1-29",
+        "sfa_unit_normalized": [
+          "B1-29"
+        ],
+        "exact_postal_name_unit_match": true,
+        "currently_blank_fields": [],
+        "official_phone_current": "6384 4434",
+        "official_hours_current": "Weekday: 09:30am - 10:00pm Weekend: 09:30am - 10:00pm PH eve/ PH: 09:30am – 10:00pm",
+        "official_locator_location_status": null
+      },
+      {
+        "official_store_id": 2527,
+        "outlet_name": "Geneo",
+        "postal_code": "119315",
+        "official_address": "1B Science Park Drive #B2-37/38 Geneo",
+        "official_unit_raw": "B2-37/38",
+        "official_unit_normalized": [
+          "B2-37",
+          "B2-38"
+        ],
+        "sfa_licence": "SW25204L000",
+        "sfa_business_name": "BREADTALK",
+        "sfa_address": "Address: 1B SCIENCE PARK DRIVE #B2-37,#B2-38,GENEO,Singapore 119315",
+        "sfa_unit_raw": "B2-37,#B2-38",
+        "sfa_unit_normalized": [
+          "B2-37",
+          "B2-38"
+        ],
+        "exact_postal_name_unit_match": true,
+        "currently_blank_fields": [],
+        "official_phone_current": "63484434",
+        "official_hours_current": "Weekday: 07:30am – 9:30pm Weekend & PH: 09:30am – 8:30pm",
+        "official_locator_location_status": null
+      },
+      {
+        "official_store_id": 1153,
+        "outlet_name": "Great World",
+        "postal_code": "237994",
+        "official_address": "Great World 1 Kim Seng Promenade, #B1-105",
+        "official_unit_raw": "B1-105",
+        "official_unit_normalized": [
+          "B1-105"
+        ],
+        "sfa_licence": "CE21F39X000",
+        "sfa_business_name": "BreadTalk",
+        "sfa_address": "Address: 1 KIM SENG PROMENADE #B1-105,GREAT WORLD CITY,Singapore 237994",
+        "sfa_unit_raw": "B1-105",
+        "sfa_unit_normalized": [
+          "B1-105"
+        ],
+        "exact_postal_name_unit_match": true,
+        "currently_blank_fields": [],
+        "official_phone_current": "6219 4344",
+        "official_hours_current": "Weekday: 08:00am - 09:00pm Weekend: 08:00 - 09:00 PH: 08:00am – 09:00pm",
+        "official_locator_location_status": null
+      },
+      {
+        "official_store_id": 2825,
+        "outlet_name": "Hougang Mall",
+        "postal_code": "538766",
+        "official_address": "90 Hougang Ave 10 #01-13B/13C Hougang Mall",
+        "official_unit_raw": "01-13B/13C",
+        "official_unit_normalized": [
+          "01-13B",
+          "01-13C"
+        ],
+        "sfa_licence": "NE25M04C000",
+        "sfa_business_name": "BreadTalk",
+        "sfa_address": "Address: 90 HOUGANG AVENUE 10 #01-13B,#01-13C,HOUGANG MALL,Singapore 538766",
+        "sfa_unit_raw": "01-13B,#01-13C",
+        "sfa_unit_normalized": [
+          "01-13B",
+          "01-13C"
+        ],
+        "exact_postal_name_unit_match": true,
+        "currently_blank_fields": [
+          "Contact Details"
+        ],
+        "official_phone_current": null,
+        "official_hours_current": "Weekdays: 08:00am - 10:00pm Weekends: 08:00am - 10:00pm PH eve/PH: 08:00am - 10:00pm",
+        "official_locator_location_status": null
+      },
+      {
+        "official_store_id": 2430,
+        "outlet_name": "IMM Building",
+        "postal_code": "609601",
+        "official_address": "2 Jurong East Street 21, #01-97",
+        "official_unit_raw": "01-97",
+        "official_unit_normalized": [
+          "01-97"
+        ],
+        "sfa_licence": "SW24L93N000",
+        "sfa_business_name": "BREADTALK",
+        "sfa_address": "Address: 2 JURONG EAST STREET 21 #01-97,IMM BUILDING,Singapore 609601",
+        "sfa_unit_raw": "01-97",
+        "sfa_unit_normalized": [
+          "01-97"
+        ],
+        "exact_postal_name_unit_match": true,
+        "currently_blank_fields": [],
+        "official_phone_current": "63417550",
+        "official_hours_current": "Mon - Sun & PH: 10:00am - 9.30pm",
+        "official_locator_location_status": null
+      },
+      {
+        "official_store_id": 1108,
+        "outlet_name": "ION Orchard Link",
+        "postal_code": "238801",
+        "official_address": "2 Orchard Turn, #B2-73, ION Orchard",
+        "official_unit_raw": "B2-73",
+        "official_unit_normalized": [
+          "B2-73"
+        ],
+        "sfa_licence": "CE18A33A000",
+        "sfa_business_name": "BREADTALK",
+        "sfa_address": "Address: 2 ORCHARD TURN #B2-73,ION ORCHARD,Singapore 238801",
+        "sfa_unit_raw": "B2-73",
+        "sfa_unit_normalized": [
+          "B2-73"
+        ],
+        "exact_postal_name_unit_match": true,
+        "currently_blank_fields": [],
+        "official_phone_current": "6737 4344",
+        "official_hours_current": "Mon - Thurs: 07:00am - 10:00pm Fri & Weekend: 08:00am – 11:00pm PH: 08:00am – 10:00pm",
+        "official_locator_location_status": null
+      },
+      {
+        "official_store_id": 1157,
+        "outlet_name": "Junction 8",
+        "postal_code": "579837",
+        "official_address": "9 Bishan Place #01-35/36, Junction 8",
+        "official_unit_raw": "01-35/36",
+        "official_unit_normalized": [
+          "01-35",
+          "01-36"
+        ],
+        "sfa_licence": "S00147N000",
+        "sfa_business_name": "BreadTalk",
+        "sfa_address": "Address: 9 BISHAN PLACE #01-35/36,JUNCTION 8 SHOPPING CENTRE,Singapore 579837",
+        "sfa_unit_raw": "01-35/36",
+        "sfa_unit_normalized": [
+          "01-35",
+          "01-36"
+        ],
+        "exact_postal_name_unit_match": true,
+        "currently_blank_fields": [],
+        "official_phone_current": "6251 3444",
+        "official_hours_current": "Weekday: 07:00am - 10:30pm Sat: 08:00am - 10:00pm Sun: 08:00am - 10:30pm PH eve/ PH : 08:00am – 10:00pm",
+        "official_locator_location_status": null
+      },
+      {
+        "official_store_id": 1163,
+        "outlet_name": "Marina Bay Sands",
+        "postal_code": "018972",
+        "official_address": "2 Bayfront Avenue #B1-01F",
+        "official_unit_raw": "B1-01F",
+        "official_unit_normalized": [
+          "B1-01F"
+        ],
+        "sfa_licence": "CE18X86L000",
+        "sfa_business_name": "BREADTALK",
+        "sfa_address": "Address: 2 BAYFRONT AVENUE #B1-01F,MARINA BAY SANDS,Singapore 018972",
+        "sfa_unit_raw": "B1-01F",
+        "sfa_unit_normalized": [
+          "B1-01F"
+        ],
+        "exact_postal_name_unit_match": true,
+        "currently_blank_fields": [],
+        "official_phone_current": "6634 3303",
+        "official_hours_current": "Weekday: 09:00am - 09:00pm Weekend: 09:00am - 10:00pm PH eve/ PH: 09:00am - 10:00pm",
+        "official_locator_location_status": null
+      },
+      {
+        "official_store_id": 1167,
+        "outlet_name": "Northpoint City",
+        "postal_code": "769098",
+        "official_address": "930 Yishun Ave 2 #01-49, Northpoint",
+        "official_unit_raw": "01-49",
+        "official_unit_normalized": [
+          "01-49"
+        ],
+        "sfa_licence": "NW26453J000",
+        "sfa_business_name": "BreadTalk",
+        "sfa_address": "Address: 930 YISHUN AVENUE 2 #01-49,Singapore 769098 (PART OF LEFT)",
+        "sfa_unit_raw": "01-49",
+        "sfa_unit_normalized": [
+          "01-49"
+        ],
+        "exact_postal_name_unit_match": true,
+        "currently_blank_fields": [],
+        "official_phone_current": "6481 4434",
+        "official_hours_current": "Weekday: 07:00am - 10:30pm Sat: 08:00am - 10:00pm Sun: 08:00am - 10:30pm PH eve/ PH: 08:00am – 10:00pm",
+        "official_locator_location_status": null
+      },
+      {
+        "official_store_id": 2270,
+        "outlet_name": "Pasir Ris Mall",
+        "postal_code": "519612",
+        "official_address": "Pasir Ris Mall, 7 Pasir Ris Central, #B1-40",
+        "official_unit_raw": "B1-40",
+        "official_unit_normalized": [
+          "B1-40"
+        ],
+        "sfa_licence": "NE24964A000",
+        "sfa_business_name": "BreadTalk",
+        "sfa_address": "Address: 7 PASIR RIS CENTRAL #B1-40,Singapore 519612 Left Part Of",
+        "sfa_unit_raw": "B1-40",
+        "sfa_unit_normalized": [
+          "B1-40"
+        ],
+        "exact_postal_name_unit_match": true,
+        "currently_blank_fields": [],
+        "official_phone_current": "6683 4434",
+        "official_hours_current": "Weekday: 09:00am – 10:00pm Weekend: 09:00am – 10:00pm PH eve/PH: 09:00am – 10:00pm",
+        "official_locator_location_status": null
+      },
+      {
+        "official_store_id": 1175,
+        "outlet_name": "Paya Lebar Quarter",
+        "postal_code": "409057",
+        "official_address": "10 Paya Lebar Rd, #B2-19, PLQ Mall",
+        "official_unit_raw": "B2-19",
+        "official_unit_normalized": [
+          "B2-19"
+        ],
+        "sfa_licence": "SE19B02K000",
+        "sfa_business_name": "BREADTALK",
+        "sfa_address": "Address: 10 PAYA LEBAR ROAD #B2-19,(PART LEFT),Singapore 409057",
+        "sfa_unit_raw": "B2-19",
+        "sfa_unit_normalized": [
+          "B2-19"
+        ],
+        "exact_postal_name_unit_match": true,
+        "currently_blank_fields": [],
+        "official_phone_current": "6904 4344",
+        "official_hours_current": "Weekday: 8:00am – 10:00pm Weekend: 8:00am – 10:00pm PH eve/ PH: 09:00am - 10:00pm",
+        "official_locator_location_status": null
+      },
+      {
+        "official_store_id": 1173,
+        "outlet_name": "Plaza Singapura",
+        "postal_code": "238839",
+        "official_address": "68 Orchard Rd #B2-26, Plaza Singapura",
+        "official_unit_raw": "B2-26",
+        "official_unit_normalized": [
+          "B2-26"
+        ],
+        "sfa_licence": "CE15B69P000",
+        "sfa_business_name": "BreadTalk",
+        "sfa_address": "Address: 68 ORCHARD ROAD #B2-26,PLAZA SINGAPURA,Singapore 238839",
+        "sfa_unit_raw": "B2-26",
+        "sfa_unit_normalized": [
+          "B2-26"
+        ],
+        "exact_postal_name_unit_match": true,
+        "currently_blank_fields": [],
+        "official_phone_current": "6334 4644",
+        "official_hours_current": "Weekday: 08:00am - 09:30pm Weekend: 08:00am - 09:30pm PH eve/ PH: 08:00am - 09:30pm",
+        "official_locator_location_status": null
+      },
+      {
+        "official_store_id": 2534,
+        "outlet_name": "Punggol Coast Mall",
+        "postal_code": "829913",
+        "official_address": "88 Punggol Way, #01-121 Punggol Coast Mall, Singapore",
+        "official_unit_raw": "01-121",
+        "official_unit_normalized": [
+          "01-121"
+        ],
+        "sfa_licence": "NE25552B000",
+        "sfa_business_name": "BreadTalk",
+        "sfa_address": "Address: 88 PUNGGOL WAY #01-121,PUNGGOL COAST MALL,Singapore 829913 TOWER 7",
+        "sfa_unit_raw": "01-121",
+        "sfa_unit_normalized": [
+          "01-121"
+        ],
+        "exact_postal_name_unit_match": true,
+        "currently_blank_fields": [],
+        "official_phone_current": "66004434",
+        "official_hours_current": "Daily: 07:30am – 09:30pm",
+        "official_locator_location_status": null
+      },
+      {
+        "official_store_id": 1169,
+        "outlet_name": "Velocity @ Novena Square",
+        "postal_code": "307683",
+        "official_address": "238 Thomson Rd #01-26, Novena Square",
+        "official_unit_raw": "01-26",
+        "official_unit_normalized": [
+          "01-26"
+        ],
+        "sfa_licence": "W00373L000",
+        "sfa_business_name": "BREADTALK",
+        "sfa_address": "Address: 238 THOMSON ROAD #01-26,NOVENA SQUARE,Singapore 307683",
+        "sfa_unit_raw": "01-26",
+        "sfa_unit_normalized": [
+          "01-26"
+        ],
+        "exact_postal_name_unit_match": true,
+        "currently_blank_fields": [],
+        "official_phone_current": "6251 4414",
+        "official_hours_current": "Weekday: 07:00am - 10:00pm Weekend: 08:00am - 10:00pm PH eve/ PH: 08:00am - 10:00pm",
+        "official_locator_location_status": null
+      },
+      {
+        "official_store_id": 2546,
+        "outlet_name": "V Hotel Lavender",
+        "postal_code": "208767",
+        "official_address": "70 Jellicoe Rd #01-12 V Hotel Lavender",
+        "official_unit_raw": "01-12",
+        "official_unit_normalized": [
+          "01-12"
+        ],
+        "sfa_licence": "CE11633N000",
+        "sfa_business_name": "BreadTalk",
+        "sfa_address": "Address: 70 JELLICOE ROAD #01-12,V HOTEL LAVENDER,Singapore 208767",
+        "sfa_unit_raw": "01-12",
+        "sfa_unit_normalized": [
+          "01-12"
+        ],
+        "exact_postal_name_unit_match": true,
+        "currently_blank_fields": [],
+        "official_phone_current": "67444434",
+        "official_hours_current": "Daily 08:00 am to 10:00pm",
+        "official_locator_location_status": null
+      },
+      {
+        "official_store_id": 1198,
+        "outlet_name": "VivoCity",
+        "postal_code": "098585",
+        "official_address": "1 Harbourfront Walk #B2-50, VivoCity",
+        "official_unit_raw": "B2-50",
+        "official_unit_normalized": [
+          "B2-50"
+        ],
+        "sfa_licence": "SW25F91L000",
+        "sfa_business_name": "BreadTalk",
+        "sfa_address": "Address: 1 HARBOURFRONT WALK #B2-50,VIVO CITY,Singapore 098585",
+        "sfa_unit_raw": "B2-50",
+        "sfa_unit_normalized": [
+          "B2-50"
+        ],
+        "exact_postal_name_unit_match": true,
+        "currently_blank_fields": [],
+        "official_phone_current": "6278 4434",
+        "official_hours_current": "Weekday: 07:30am - 10:00pm Weekend: 07:30am - 10:00pm PH eve/ PH: 07:30am - 10:30pm",
+        "official_locator_location_status": null
+      },
+      {
+        "official_store_id": 2549,
+        "outlet_name": "West Mall",
+        "postal_code": "658713",
+        "official_address": "1 Bukit Batok #01-45/46 Central Link",
+        "official_unit_raw": "01-45/46",
+        "official_unit_normalized": [
+          "01-45",
+          "01-46"
+        ],
+        "sfa_licence": "SW25838A000",
+        "sfa_business_name": "BREADTALK",
+        "sfa_address": "Address: 1 BUKIT BATOK CENTRAL LINK #01-45,#01-46,WEST MALL,Singapore 658713 (PART OF RIGHT)",
+        "sfa_unit_raw": "01-45,#01-46",
+        "sfa_unit_normalized": [
+          "01-45",
+          "01-46"
+        ],
+        "exact_postal_name_unit_match": true,
+        "currently_blank_fields": [],
+        "official_phone_current": "68344434",
+        "official_hours_current": "Daily: 8:00 AM to 10:00 PM",
+        "official_locator_location_status": null
+      },
+      {
+        "official_store_id": 1207,
+        "outlet_name": "Zhongshan Mall",
+        "postal_code": "329984",
+        "official_address": "20 Ah Hood Road #01-10/13, Zhongshan Mall",
+        "official_unit_raw": "01-10/13",
+        "official_unit_normalized": [
+          "01-10",
+          "01-13"
+        ],
+        "sfa_licence": "CE13V41B000",
+        "sfa_business_name": "BREADTALK",
+        "sfa_address": "Address: 20 AH HOOD ROAD #01-10&13,Singapore 329984",
+        "sfa_unit_raw": "01-10&13",
+        "sfa_unit_normalized": [
+          "01-10",
+          "01-13"
+        ],
+        "exact_postal_name_unit_match": true,
+        "currently_blank_fields": [],
+        "official_phone_current": "6684 4434",
+        "official_hours_current": "Weekday: 09:00am - 09:00pm Weekend: 09:00am - 09:00pm PH eve/ PH: 08:00am - 09:00pm",
+        "official_locator_location_status": null
+      }
+    ],
+    "rows_with_any_blank_target_field": [
+      {
+        "sfa_licence": "NE25M04C000",
+        "outlet_name": "Hougang Mall",
+        "blank_fields": [
+          "Contact Details"
+        ],
+        "official_phone_current": null,
+        "official_hours_current": "Weekdays: 08:00am - 10:00pm Weekends: 08:00am - 10:00pm PH eve/PH: 08:00am - 10:00pm"
+      }
+    ],
+    "source_resolvable_blank_field_proposals": [],
+    "note": "Exact matches require BreadTalk SFA business name, exact postal code, and equal full unit sets after shorthand range expansion. Two SFA licences at the same Raffles City unit are treated ambiguous; NEX #B2-59 vs SFA #B2-59-2 is a unit mismatch. No generic brand hours are assigned."
+  },
+  "menu_item_refresh": {
+    "live_shop_product_links": 9,
+    "official_product_pages_checked": 9,
+    "new_menu_items_to_append": 0,
+    "new_official_descriptions_for_existing_exact_item_rows": 9,
+    "products": [
+      {
+        "menu_item_exact_name": "Chantilly",
+        "official_product_page": "https://www.breadtalk.com.sg/product/chantilly/",
+        "product_page_http_status": 200,
+        "current_official_description": "Pillowy vanilla chiffon layered with luscious Chantilly cheese cream. Crowned with a medley of fresh fruits and a halo of ripe blueberries. A graceful balance of lightness and luxury in every slice.",
+        "description_is_new_vs_existing_notes": true,
+        "ingredients_as_published": "Vanilla Chiffon, Fruit Cocktail, Chantilly Cream Cheese",
+        "allergens_as_published": "Fish Gelatin, Soy",
+        "delivery_note_as_published": "Earliest delivery – 3 days after order placement (before 11am)",
+        "shelf_life_as_published": "2 days chilled, including day of delivery",
+        "current_official_price": "S$23.80–S$39.80",
+        "existing_menu_rows_exact_name": 1,
+        "existing_menu_rows_same_product_url": 1,
+        "existing_menu_price_values": [
+          "S$23.80–S$39.80"
+        ],
+        "official_og_image_url": "https://www.breadtalk.com.sg/wp-content/uploads/2025/11/RevampedCakes237.jpg",
+        "image_url_is_new_exact_string": true,
+        "image_asset_http_status_head": 200,
+        "image_asset_content_type_head": "image/jpeg",
+        "image_source_page": "https://www.breadtalk.com.sg/product/chantilly/",
+        "image_visual_review_done": false,
+        "image_reuse_permission_verified": false,
+        "menu_scope": "Official Singapore brand online cake listing; branch availability is not stated; do not fan out to SFA outlet rows.",
+        "existing_same_item_image_candidate_urls": [
+          "https://www.breadtalk.com.sg/wp-content/uploads/2025/11/RevampedCakes237-300x300.jpg"
+        ],
+        "same_item_thumbnail_url_count": 1,
+        "current_price_matches_existing_source_row": true,
+        "existing_notes_for_source_rows": [
+          "Published online cake catalogue range; size variants are represented as range exactly as published."
+        ]
+      },
+      {
+        "menu_item_exact_name": "Choco Hazel",
+        "official_product_page": "https://www.breadtalk.com.sg/product/choco-hazel/",
+        "product_page_http_status": 200,
+        "current_official_description": "A decadent pairing of rich chocolate and smooth hazelnut cream, with a light crunch in every bite. Perfect for cocoa and hazelnut lovers, this is a luxurious indulgence for any occasion.",
+        "description_is_new_vs_existing_notes": true,
+        "ingredients_as_published": "Chocolate Chiffon, Chocolate Pudding, 55% Royaltine Base, Chocolate Hazelnut Chocolate Topping Cream, Fresh Strawberry, Cocoa Powder, Dark Chocolate, Gold Leaf",
+        "allergens_as_published": "Fish Gelatin, Tree Nuts",
+        "delivery_note_as_published": "Earliest delivery – 3 days after order placement (before 11am)",
+        "shelf_life_as_published": "2 days chilled, including day of delivery",
+        "current_official_price": "S$28.80–S$46.80",
+        "existing_menu_rows_exact_name": 1,
+        "existing_menu_rows_same_product_url": 1,
+        "existing_menu_price_values": [
+          "S$28.80–S$46.80"
+        ],
+        "official_og_image_url": "https://www.breadtalk.com.sg/wp-content/uploads/2023/02/Choco-Hazel-6-inch-scaled.webp",
+        "image_url_is_new_exact_string": true,
+        "image_asset_http_status_head": 200,
+        "image_asset_content_type_head": "",
+        "image_source_page": "https://www.breadtalk.com.sg/product/choco-hazel/",
+        "image_visual_review_done": false,
+        "image_reuse_permission_verified": false,
+        "menu_scope": "Official Singapore brand online cake listing; branch availability is not stated; do not fan out to SFA outlet rows.",
+        "existing_same_item_image_candidate_urls": [
+          "https://www.breadtalk.com.sg/wp-content/uploads/2023/02/Choco-Hazel-6-inch-300x300.webp"
+        ],
+        "same_item_thumbnail_url_count": 1,
+        "current_price_matches_existing_source_row": true,
+        "existing_notes_for_source_rows": [
+          "Published online cake catalogue range; size variants are represented as range exactly as published."
+        ]
+      },
+      {
+        "menu_item_exact_name": "Dark Forest Gateau",
+        "official_product_page": "https://www.breadtalk.com.sg/product/dark-forest-gateau/",
+        "product_page_http_status": 200,
+        "current_official_description": "A richer, more mysterious take on the classic Black Forest. Covered in 70% dark chocolate mousse with run-soaked cherries, each slice hides a sweet-tart surprise of cherry coulis, layered with velvety vanilla white chocolate cream.",
+        "description_is_new_vs_existing_notes": true,
+        "ingredients_as_published": "Chocolate Chiffon, Dark Chocolate Mousse, Vanilla White Chocolate Cream, Cherry Coulis, Dark Cherries",
+        "allergens_as_published": "Fish Gelatin, Soy",
+        "delivery_note_as_published": "Earliest delivery – 3 days after order placement (before 11am)",
+        "shelf_life_as_published": "2 days chilled, including day of delivery",
+        "current_official_price": "S$23.80–S$39.80",
+        "existing_menu_rows_exact_name": 1,
+        "existing_menu_rows_same_product_url": 1,
+        "existing_menu_price_values": [
+          "S$23.80–S$39.80"
+        ],
+        "official_og_image_url": "https://www.breadtalk.com.sg/wp-content/uploads/2026/02/RevampedCakes229.jpg",
+        "image_url_is_new_exact_string": true,
+        "image_asset_http_status_head": 200,
+        "image_asset_content_type_head": "image/jpeg",
+        "image_source_page": "https://www.breadtalk.com.sg/product/dark-forest-gateau/",
+        "image_visual_review_done": false,
+        "image_reuse_permission_verified": false,
+        "menu_scope": "Official Singapore brand online cake listing; branch availability is not stated; do not fan out to SFA outlet rows.",
+        "existing_same_item_image_candidate_urls": [
+          "https://www.breadtalk.com.sg/wp-content/uploads/2026/02/RevampedCakes229-300x300.jpg"
+        ],
+        "same_item_thumbnail_url_count": 1,
+        "current_price_matches_existing_source_row": true,
+        "existing_notes_for_source_rows": [
+          "Published online cake catalogue range; size variants are represented as range exactly as published."
+        ]
+      },
+      {
+        "menu_item_exact_name": "Japan Light Cheesecake",
+        "official_product_page": "https://www.breadtalk.com.sg/product/japan-light-cheese-cake/",
+        "product_page_http_status": 200,
+        "current_official_description": "A guilt-free delight – with its signature soufflé texture, this Japanese cheesecake is sweet, delicate, and melt-in-your-mouth.",
+        "description_is_new_vs_existing_notes": true,
+        "ingredients_as_published": "-",
+        "allergens_as_published": "Soy",
+        "delivery_note_as_published": "Earliest delivery – 3 days after order placement (before 11am)",
+        "shelf_life_as_published": "2 days chilled, including day of delivery",
+        "current_official_price": "S$14.80",
+        "existing_menu_rows_exact_name": 1,
+        "existing_menu_rows_same_product_url": 1,
+        "existing_menu_price_values": [
+          "S$14.80"
+        ],
+        "official_og_image_url": "https://www.breadtalk.com.sg/wp-content/uploads/2023/02/Japan-Light-Cheesecake-scaled.webp",
+        "image_url_is_new_exact_string": true,
+        "image_asset_http_status_head": 200,
+        "image_asset_content_type_head": "",
+        "image_source_page": "https://www.breadtalk.com.sg/product/japan-light-cheese-cake/",
+        "image_visual_review_done": false,
+        "image_reuse_permission_verified": false,
+        "menu_scope": "Official Singapore brand online cake listing; branch availability is not stated; do not fan out to SFA outlet rows.",
+        "existing_same_item_image_candidate_urls": [
+          "https://www.breadtalk.com.sg/wp-content/uploads/2023/02/Japan-Light-Cheesecake-300x300.webp"
+        ],
+        "same_item_thumbnail_url_count": 1,
+        "current_price_matches_existing_source_row": true,
+        "existing_notes_for_source_rows": [
+          "Published online cake catalogue range; size variants are represented as range exactly as published."
+        ]
+      },
+      {
+        "menu_item_exact_name": "Lychee Rose",
+        "official_product_page": "https://www.breadtalk.com.sg/product/lychee-rose/",
+        "product_page_http_status": 200,
+        "current_official_description": "Pink lychee Chantilly cream, infused with subtle rose notes offers a burst of floral, tart, and sweet notes in every slice. Accented with pink vanilla white chocolate cream and glossy lychee, the Lychee Rose is the ultimate pink dream.",
+        "description_is_new_vs_existing_notes": true,
+        "ingredients_as_published": "Vanilla Chiffon, Lychee, Whipping Cream, Lychee Flavour, Mascarpone Cheese, Pink Topping Cream, Pink Vanilla White Chocolate Cream, Dried Rose Petal, Fresh Dill, Gold Leaf",
+        "allergens_as_published": "Fish Gelatin",
+        "delivery_note_as_published": "Earliest delivery – 3 days after order placement (before 11am)",
+        "shelf_life_as_published": "2 days chilled, including day of delivery",
+        "current_official_price": "S$23.80–S$39.80",
+        "existing_menu_rows_exact_name": 2,
+        "existing_menu_rows_same_product_url": 1,
+        "existing_menu_price_values": [
+          "S$23.80–S$39.80"
+        ],
+        "official_og_image_url": "https://www.breadtalk.com.sg/wp-content/uploads/2025/11/RevampedCakes046.jpg",
+        "image_url_is_new_exact_string": true,
+        "image_asset_http_status_head": 200,
+        "image_asset_content_type_head": "image/jpeg",
+        "image_source_page": "https://www.breadtalk.com.sg/product/lychee-rose/",
+        "image_visual_review_done": false,
+        "image_reuse_permission_verified": false,
+        "menu_scope": "Official Singapore brand online cake listing; branch availability is not stated; do not fan out to SFA outlet rows.",
+        "existing_same_item_image_candidate_urls": [
+          "https://www.breadtalk.com.sg/wp-content/uploads/2025/11/RevampedCakes046-300x300.jpg"
+        ],
+        "same_item_thumbnail_url_count": 1,
+        "current_price_matches_existing_source_row": true,
+        "existing_notes_for_source_rows": [
+          "Published online cake catalogue range; size variants are represented as range exactly as published."
+        ]
+      },
+      {
+        "menu_item_exact_name": "Mangococo",
+        "official_product_page": "https://www.breadtalk.com.sg/product/mangococo/",
+        "product_page_http_status": 200,
+        "current_official_description": "Tropical bliss meets playful texture. Sweet and tangy mango-pineapple coulis blanketed by layers of airy vanilla chiffon. Enveloped in silky mango mousse, coconut mousse, and chewy nata de coco cubes.",
+        "description_is_new_vs_existing_notes": true,
+        "ingredients_as_published": "Orange Chiffon, Mango Mousse, Coconut Mousse, Nata De Coco, Mango Pineapple Coulis",
+        "allergens_as_published": "-",
+        "delivery_note_as_published": "Earliest delivery – 3 days after order placement (before 11am)",
+        "shelf_life_as_published": "2 days chilled, including day of delivery",
+        "current_official_price": "S$23.80–S$39.80",
+        "existing_menu_rows_exact_name": 1,
+        "existing_menu_rows_same_product_url": 1,
+        "existing_menu_price_values": [
+          "S$23.80–S$39.80"
+        ],
+        "official_og_image_url": "https://www.breadtalk.com.sg/wp-content/uploads/2025/11/RevampedCakes038.jpg",
+        "image_url_is_new_exact_string": true,
+        "image_asset_http_status_head": 200,
+        "image_asset_content_type_head": "image/jpeg",
+        "image_source_page": "https://www.breadtalk.com.sg/product/mangococo/",
+        "image_visual_review_done": false,
+        "image_reuse_permission_verified": false,
+        "menu_scope": "Official Singapore brand online cake listing; branch availability is not stated; do not fan out to SFA outlet rows.",
+        "existing_same_item_image_candidate_urls": [
+          "https://www.breadtalk.com.sg/wp-content/uploads/2025/11/RevampedCakes038-300x300.jpg"
+        ],
+        "same_item_thumbnail_url_count": 1,
+        "current_price_matches_existing_source_row": true,
+        "existing_notes_for_source_rows": [
+          "Published online cake catalogue range; size variants are represented as range exactly as published."
+        ]
+      },
+      {
+        "menu_item_exact_name": "Mixed Fruits Yogurt",
+        "official_product_page": "https://www.breadtalk.com.sg/product/mixed-fruits-yogurt/",
+        "product_page_http_status": 200,
+        "current_official_description": "The vibrant assortment of strawberries, grapes, mandarins, and red currants take the spotlight in this fruit-forward cake. For the base, tangy yogurt mousse sits layered on a vanilla chiffon base. Finished with vanilla white chocolate and snow powder, it’s a picture-perfect centerpiece for fruit cake lovers.",
+        "description_is_new_vs_existing_notes": true,
+        "ingredients_as_published": "Vanilla Chiffon, Fresh Strawberry, Fresh Freen Grapes, Mandarin Orange, Yogurt Mousse, Vanilla White Chocolate, Fresh Red Currants, Snow Powder",
+        "allergens_as_published": "Fish Gelatin",
+        "delivery_note_as_published": "Earliest delivery – 3 days after order placement (before 11am)",
+        "shelf_life_as_published": "2 days chilled, including day of delivery",
+        "current_official_price": "S$23.80–S$39.80",
+        "existing_menu_rows_exact_name": 1,
+        "existing_menu_rows_same_product_url": 1,
+        "existing_menu_price_values": [
+          "S$23.80–S$39.80"
+        ],
+        "official_og_image_url": "https://www.breadtalk.com.sg/wp-content/uploads/2026/02/RevampedCakes199.jpg",
+        "image_url_is_new_exact_string": true,
+        "image_asset_http_status_head": 200,
+        "image_asset_content_type_head": "image/jpeg",
+        "image_source_page": "https://www.breadtalk.com.sg/product/mixed-fruits-yogurt/",
+        "image_visual_review_done": false,
+        "image_reuse_permission_verified": false,
+        "menu_scope": "Official Singapore brand online cake listing; branch availability is not stated; do not fan out to SFA outlet rows.",
+        "existing_same_item_image_candidate_urls": [
+          "https://www.breadtalk.com.sg/wp-content/uploads/2026/02/RevampedCakes199-300x300.jpg"
+        ],
+        "same_item_thumbnail_url_count": 1,
+        "current_price_matches_existing_source_row": true,
+        "existing_notes_for_source_rows": [
+          "Published online cake catalogue range; size variants are represented as range exactly as published."
+        ]
+      },
+      {
+        "menu_item_exact_name": "Strawberry Shortcake",
+        "official_product_page": "https://www.breadtalk.com.sg/product/strawberry-shortcake/",
+        "product_page_http_status": 200,
+        "current_official_description": "A strawberry lover’s favourite. Fluffy genoise cake is layered with chantilly cheese cream and strawberry jam, topped with carefully selected strawberries and delicate white chocolate cream, making every bite perfect.",
+        "description_is_new_vs_existing_notes": true,
+        "ingredients_as_published": "Genoise Cake, Strawberry Jam, Chantilly Cheese Cream, Vanilla White Chocolate Cream, Fresh Strawberry, White Chocolate",
+        "allergens_as_published": "Fish Gelatin, Nut, Soy",
+        "delivery_note_as_published": "Earliest delivery – 3 days after order placement (before 11am)",
+        "shelf_life_as_published": "2 days chilled, including day of delivery",
+        "current_official_price": "S$26.80–S$43.80",
+        "existing_menu_rows_exact_name": 2,
+        "existing_menu_rows_same_product_url": 1,
+        "existing_menu_price_values": [
+          "S$26.80–S$43.80"
+        ],
+        "official_og_image_url": "https://www.breadtalk.com.sg/wp-content/uploads/2025/11/RevampedCakes022.jpg",
+        "image_url_is_new_exact_string": true,
+        "image_asset_http_status_head": 200,
+        "image_asset_content_type_head": "image/jpeg",
+        "image_source_page": "https://www.breadtalk.com.sg/product/strawberry-shortcake/",
+        "image_visual_review_done": false,
+        "image_reuse_permission_verified": false,
+        "menu_scope": "Official Singapore brand online cake listing; branch availability is not stated; do not fan out to SFA outlet rows.",
+        "existing_same_item_image_candidate_urls": [
+          "https://www.breadtalk.com.sg/wp-content/uploads/2025/11/RevampedCakes022-300x300.jpg"
+        ],
+        "same_item_thumbnail_url_count": 1,
+        "current_price_matches_existing_source_row": true,
+        "existing_notes_for_source_rows": [
+          "Published online cake catalogue range; size variants are represented as range exactly as published."
+        ]
+      },
+      {
+        "menu_item_exact_name": "Strawberry Yogurt",
+        "official_product_page": "https://www.breadtalk.com.sg/product/strawberry-yogurt/",
+        "product_page_http_status": 200,
+        "current_official_description": "A light, berry-filled delight for strawberry lovers! Layers of creamy yogurt mousse and sliced strawberries sit atop soft vanilla chiffon base. Topped with glossy, red strawberries for a charming finish",
+        "description_is_new_vs_existing_notes": true,
+        "ingredients_as_published": "Vanilla Chiffon, Yogurt Mousse, Raspberry Rose Coulis, Strawberry, Blueberry",
+        "allergens_as_published": "Fish Gelatin, Soy",
+        "delivery_note_as_published": "Earliest delivery – 3 days after order placement (before 11am)",
+        "shelf_life_as_published": "2 days chilled, including day of delivery",
+        "current_official_price": "S$26.80–S$43.80",
+        "existing_menu_rows_exact_name": 1,
+        "existing_menu_rows_same_product_url": 1,
+        "existing_menu_price_values": [
+          "S$26.80–S$43.80"
+        ],
+        "official_og_image_url": "https://www.breadtalk.com.sg/wp-content/uploads/2026/02/RevampedCakes222.jpg",
+        "image_url_is_new_exact_string": true,
+        "image_asset_http_status_head": 200,
+        "image_asset_content_type_head": "image/jpeg",
+        "image_source_page": "https://www.breadtalk.com.sg/product/strawberry-yogurt/",
+        "image_visual_review_done": false,
+        "image_reuse_permission_verified": false,
+        "menu_scope": "Official Singapore brand online cake listing; branch availability is not stated; do not fan out to SFA outlet rows.",
+        "existing_same_item_image_candidate_urls": [
+          "https://www.breadtalk.com.sg/wp-content/uploads/2026/02/RevampedCakes222-300x300.jpg"
+        ],
+        "same_item_thumbnail_url_count": 1,
+        "current_price_matches_existing_source_row": true,
+        "existing_notes_for_source_rows": [
+          "Published online cake catalogue range; size variants are represented as range exactly as published."
+        ]
+      }
+    ],
+    "scope_note": "Exact menu-item name and official product URL matched to existing BreadTalk brand-level Menu Items rows. Descriptions, ingredients, allergens, delivery lead time and shelf life are brand online-catalogue facts, not outlet-specific availability."
+  },
+  "image_candidates": {
+    "new_official_image_url_candidates": 9,
+    "candidate_rows": [
+      {
+        "menu_item": "Chantilly",
+        "official_image_url": "https://www.breadtalk.com.sg/wp-content/uploads/2025/11/RevampedCakes237.jpg",
+        "source_page_url": "https://www.breadtalk.com.sg/product/chantilly/",
+        "http_status_head": 200,
+        "content_type_head": "image/jpeg",
+        "new_url_exact_string": true,
+        "image_visual_review_done": false,
+        "reuse_permission_verified": false,
+        "status": "review-only; do not promote to active image field"
+      },
+      {
+        "menu_item": "Choco Hazel",
+        "official_image_url": "https://www.breadtalk.com.sg/wp-content/uploads/2023/02/Choco-Hazel-6-inch-scaled.webp",
+        "source_page_url": "https://www.breadtalk.com.sg/product/choco-hazel/",
+        "http_status_head": 200,
+        "content_type_head": "",
+        "new_url_exact_string": true,
+        "image_visual_review_done": false,
+        "reuse_permission_verified": false,
+        "status": "review-only; do not promote to active image field"
+      },
+      {
+        "menu_item": "Dark Forest Gateau",
+        "official_image_url": "https://www.breadtalk.com.sg/wp-content/uploads/2026/02/RevampedCakes229.jpg",
+        "source_page_url": "https://www.breadtalk.com.sg/product/dark-forest-gateau/",
+        "http_status_head": 200,
+        "content_type_head": "image/jpeg",
+        "new_url_exact_string": true,
+        "image_visual_review_done": false,
+        "reuse_permission_verified": false,
+        "status": "review-only; do not promote to active image field"
+      },
+      {
+        "menu_item": "Japan Light Cheesecake",
+        "official_image_url": "https://www.breadtalk.com.sg/wp-content/uploads/2023/02/Japan-Light-Cheesecake-scaled.webp",
+        "source_page_url": "https://www.breadtalk.com.sg/product/japan-light-cheese-cake/",
+        "http_status_head": 200,
+        "content_type_head": "",
+        "new_url_exact_string": true,
+        "image_visual_review_done": false,
+        "reuse_permission_verified": false,
+        "status": "review-only; do not promote to active image field"
+      },
+      {
+        "menu_item": "Lychee Rose",
+        "official_image_url": "https://www.breadtalk.com.sg/wp-content/uploads/2025/11/RevampedCakes046.jpg",
+        "source_page_url": "https://www.breadtalk.com.sg/product/lychee-rose/",
+        "http_status_head": 200,
+        "content_type_head": "image/jpeg",
+        "new_url_exact_string": true,
+        "image_visual_review_done": false,
+        "reuse_permission_verified": false,
+        "status": "review-only; do not promote to active image field"
+      },
+      {
+        "menu_item": "Mangococo",
+        "official_image_url": "https://www.breadtalk.com.sg/wp-content/uploads/2025/11/RevampedCakes038.jpg",
+        "source_page_url": "https://www.breadtalk.com.sg/product/mangococo/",
+        "http_status_head": 200,
+        "content_type_head": "image/jpeg",
+        "new_url_exact_string": true,
+        "image_visual_review_done": false,
+        "reuse_permission_verified": false,
+        "status": "review-only; do not promote to active image field"
+      },
+      {
+        "menu_item": "Mixed Fruits Yogurt",
+        "official_image_url": "https://www.breadtalk.com.sg/wp-content/uploads/2026/02/RevampedCakes199.jpg",
+        "source_page_url": "https://www.breadtalk.com.sg/product/mixed-fruits-yogurt/",
+        "http_status_head": 200,
+        "content_type_head": "image/jpeg",
+        "new_url_exact_string": true,
+        "image_visual_review_done": false,
+        "reuse_permission_verified": false,
+        "status": "review-only; do not promote to active image field"
+      },
+      {
+        "menu_item": "Strawberry Shortcake",
+        "official_image_url": "https://www.breadtalk.com.sg/wp-content/uploads/2025/11/RevampedCakes022.jpg",
+        "source_page_url": "https://www.breadtalk.com.sg/product/strawberry-shortcake/",
+        "http_status_head": 200,
+        "content_type_head": "image/jpeg",
+        "new_url_exact_string": true,
+        "image_visual_review_done": false,
+        "reuse_permission_verified": false,
+        "status": "review-only; do not promote to active image field"
+      },
+      {
+        "menu_item": "Strawberry Yogurt",
+        "official_image_url": "https://www.breadtalk.com.sg/wp-content/uploads/2026/02/RevampedCakes222.jpg",
+        "source_page_url": "https://www.breadtalk.com.sg/product/strawberry-yogurt/",
+        "http_status_head": 200,
+        "content_type_head": "image/jpeg",
+        "new_url_exact_string": true,
+        "image_visual_review_done": false,
+        "reuse_permission_verified": false,
+        "status": "review-only; do not promote to active image field"
+      }
+    ],
+    "note": "These are first-party product page og:image URLs and appear to be full-resolution equivalents of existing 300x300 candidates. URLs are new strings, not a claim of distinct image content. No image was downloaded or visually reviewed; reuse rights remain unverified. Existing same-item candidate URLs are listed on each product for explicit comparison; active approved image fields in the master were checked separately.",
+    "approved_active_image_url_count_in_master": 0
+  },
+  "limitations": [
+    "Current directory membership does not prove that a specific outlet was physically observed operating.",
+    "The official online cake catalogue does not state branch-level availability.",
+    "No ratings, review counts, or fresh outlet-specific operating status were provided by these official pages.",
+    "Contact Details for Hougang Mall remains blank because BreadTalk locator currently publishes no phone there."
+  ],
+  "no_paid_services_used": true
+}

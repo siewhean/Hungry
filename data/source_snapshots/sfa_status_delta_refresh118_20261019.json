@@ -1,0 +1,1080 @@
+{
+  "snapshot_type": "sfa_official_status_closure_delta_refresh118",
+  "retrieved_at_utc": "2026-10-18T17:23:48Z",
+  "workbook": {
+    "path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "sha256": "a70390e62c4b5a9605f8041e4136f92024d93275d99c58f8de7ebaf73c8c96b6",
+    "directory_rows": 38279,
+    "unique_nonblank_sfa_licences": 38279
+  },
+  "sources": [
+    {
+      "name": "SFA Track Records current standard query",
+      "url": "https://www.sfa.gov.sg/tools-and-resources/track-records",
+      "api": "https://www.sfa.gov.sg/api/TrackRecord/GetTrackRecord",
+      "query": "GET with postalCode, establishmentAddress, licenceNumber, businessName, licenseeName, typeOfFoodBussiness, grades blank and isShowLicenceSuspended=false, matching current official frontend query shape",
+      "official_source_fields": [
+        "licenceNumber",
+        "establishmentAddress",
+        "businessName",
+        "typeOfFoodBussiness",
+        "grades"
+      ],
+      "records": 52529,
+      "unique_licences": 52526,
+      "duplicate_licence_ids": [
+        "CE25Q84K000",
+        "SE10614P000",
+        "SW26112K000"
+      ],
+      "response_sha256": "3e707eea42d8f694a2c887b5021697df4a83bb40650601313475c0bbecc56766",
+      "comparison_to_2026_10_18_full_snapshot": "Byte-identical response to sfa_track_records_update_proposal_20261018.json source_response_sha256 3e707eea42d8f694a2c887b5021697df4a83bb40650601313475c0bbecc56766; no new current-result-set delta."
+    },
+    {
+      "name": "SFA Track Records past-year suspension filter",
+      "url": "https://www.sfa.gov.sg/tools-and-resources/track-records",
+      "api": "https://www.sfa.gov.sg/api/TrackRecord/GetTrackRecord",
+      "query": "Same fields blank; isShowLicenceSuspended=true. The official page labels this control “Licence Suspended in the past 1 year”.",
+      "filter_label": "Licence Suspended in the past 1 year",
+      "records": 61,
+      "unique_licences": 61,
+      "response_sha256": "c9814ebd1bd82d5223038ba5dc5f4185d243b49ee7f43639d797e5dd21507bcc",
+      "response_fields": [
+        "refNo",
+        "applType",
+        "establishmentAddress",
+        "licenceNumber",
+        "businessName",
+        "licenseeName",
+        "typeOfFoodBussiness",
+        "grades"
+      ],
+      "explicit_current_licence_status_or_closure_field": false
+    }
+  ],
+  "delta_counts": {
+    "new_sfa_licence_records": 0,
+    "current_standard_query_rows_not_previously_seen": 0,
+    "confirmed_permanent_closures": 0,
+    "exact_workbook_removal_candidates": 0,
+    "current_licence_status_changes": 0,
+    "sfa_grade_changes_vs_workbook": null,
+    "past_year_suspension_filter_records": 61,
+    "past_year_suspension_filter_exact_workbook_matches": 47,
+    "past_year_suspension_filter_without_workbook_match": 14
+  },
+  "workbook_current_query_match_counts": {
+    "workbook_exact_licences": 38279,
+    "exact_licences_returned_by_standard_query": 38228,
+    "no_exact_record_in_standard_query": 51,
+    "suspended_filter_records_also_in_standard_query": 61
+  },
+  "limits_and_interpretation": [
+    "SFA Track Records provides current business name, establishment address, food-business type, and grade, but no current licence-validity, cancellation/expiry, permanent-closure, or current-operating-status field.",
+    "The 61-result past-year suspension filter is historical track-record information. Its result does not establish that a licence is currently suspended, cancelled, expired, or that an outlet is permanently closed.",
+    "All 61 filter results also appear in the standard query result. This reinforces that the filter is a historical track-record flag rather than an active-vs-inactive roster.",
+    "The current standard response is byte-identical to the prior 2026-10-18 full result snapshot; the 2024-06-06 SFA open-data location collections remain stale for current status and are not treated as authoritative closure data.",
+    "SFA records do not verify general-public access or that an establishment remains open today. Operator/mall evidence or direct verification is still required.",
+    "No workbook edits were made. No row should be removed or marked currently suspended from this SFA endpoint alone."
+  ],
+  "proposed_exact_row_reviews": [
+    {
+      "sfa_licence": "CE18A22E000",
+      "workbook": {
+        "excel_row": 18238,
+        "F&B Name": "MARINA 1 MALAYSIA CHIAK",
+        "Registered Business Name": "MARINA 1 MALAYSIA CHIAK",
+        "Business Type": "Restaurant",
+        "Full Address": "Address: 5 STRAITS VIEW #B2-48,#B2-49,THE HEART,Singapore 018935",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "CE18A22E000",
+        "businessName": "MARINA 1 MALAYSIA CHIAK",
+        "establishmentAddress": "5 STRAITS VIEW #B2-48,#B2-49,THE HEART,Singapore 018935",
+        "typeOfFoodBussiness": "Restaurant",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "CL30142002",
+      "workbook": {
+        "excel_row": 30630,
+        "F&B Name": "Western Food",
+        "Registered Business Name": "Western Food",
+        "Business Type": "NEA Managed Foodstall",
+        "Full Address": "Address: 448 CLEMENTI AVENUE 3 #01-42,Singapore 120448",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "CL30142002",
+        "businessName": "Western Food",
+        "establishmentAddress": "448 CLEMENTI AVENUE 3 #01-42,Singapore 120448",
+        "typeOfFoodBussiness": "NEA Managed Foodstall",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "CE06881A000",
+      "workbook": {
+        "excel_row": 21920,
+        "F&B Name": "Peony Jade",
+        "Registered Business Name": "Peony Jade",
+        "Business Type": "Restaurant",
+        "Full Address": "Address: 165 TANJONG PAGAR ROAD #02-00,AMARA SINGAPORE,Singapore 088539",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "CE06881A000",
+        "businessName": "Peony Jade",
+        "establishmentAddress": "165 TANJONG PAGAR ROAD #02-00,AMARA SINGAPORE,Singapore 088539",
+        "typeOfFoodBussiness": "Restaurant",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "CE15620N000",
+      "workbook": {
+        "excel_row": 3085,
+        "F&B Name": "Bamboo king's briyani & kebab",
+        "Registered Business Name": "Bamboo king's briyani & kebab",
+        "Business Type": "Restaurant",
+        "Full Address": "Address: 157 KITCHENER ROAD Singapore 208529 (1st Storey)",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "CE15620N000",
+        "businessName": "Bamboo king's briyani & kebab",
+        "establishmentAddress": "157 KITCHENER ROAD Singapore 208529 (1st Storey)",
+        "typeOfFoodBussiness": "Restaurant",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "SE10435X000",
+      "workbook": {
+        "excel_row": 28434,
+        "F&B Name": "The Hainan Story Coffee House",
+        "Registered Business Name": "The Hainan Story Coffee House",
+        "Business Type": "Restaurant",
+        "Full Address": "Address: 23 SERANGOON CENTRAL #02-17,NEX,Singapore 556083",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "SE10435X000",
+        "businessName": "The Hainan Story Coffee House",
+        "establishmentAddress": "23 SERANGOON CENTRAL #02-17,NEX,Singapore 556083",
+        "typeOfFoodBussiness": "Restaurant",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "NMF011124A004",
+      "workbook": {
+        "excel_row": 11466,
+        "F&B Name": "Happy Pure Sugarcane Juice",
+        "Registered Business Name": "Happy Pure Sugarcane Juice",
+        "Business Type": "NEA Managed Foodstall",
+        "Full Address": "Address: 32 NEW MARKET ROAD #01-1124A,Singapore 050032",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "NMF011124A004",
+        "businessName": "Happy Pure Sugarcane Juice",
+        "establishmentAddress": "32 NEW MARKET ROAD #01-1124A,Singapore 050032",
+        "typeOfFoodBussiness": "NEA Managed Foodstall",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "NE16445J000",
+      "workbook": {
+        "excel_row": 27224,
+        "F&B Name": "Swensens",
+        "Registered Business Name": "Swensens",
+        "Business Type": "Restaurant",
+        "Full Address": "Address: 1 SENGKANG SQUARE #B1-16,COMPASS ONE,Singapore 545078 COMPASS ONE",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "NE16445J000",
+        "businessName": "Swensens",
+        "establishmentAddress": "1 SENGKANG SQUARE #B1-16,COMPASS ONE,Singapore 545078 COMPASS ONE",
+        "typeOfFoodBussiness": "Restaurant",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "W85121P000",
+      "workbook": {
+        "excel_row": 15498,
+        "F&B Name": "KO RYO JEONG RESTAURANT",
+        "Registered Business Name": "KO RYO JEONG RESTAURANT",
+        "Business Type": "Restaurant",
+        "Full Address": "Address: 10 ANSON ROAD #02-59,INTERNATIONAL PLAZA,Singapore 079903",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "W85121P000",
+        "businessName": "KO RYO JEONG RESTAURANT",
+        "establishmentAddress": "10 ANSON ROAD #02-59,INTERNATIONAL PLAZA,Singapore 079903",
+        "typeOfFoodBussiness": "Restaurant",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "BF101240003",
+      "workbook": {
+        "excel_row": 21605,
+        "F&B Name": "PANDI AYYA TIFFIN CENTRE",
+        "Registered Business Name": "PANDI AYYA TIFFIN CENTRE",
+        "Business Type": "NEA Managed Foodstall",
+        "Full Address": "Address: 665 BUFFALO ROAD #01-240,ZHUJIAO CENTRE (TEKKA MARKET),Singapore 210665",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "BF101240003",
+        "businessName": "PANDI AYYA TIFFIN CENTRE",
+        "establishmentAddress": "665 BUFFALO ROAD #01-240,ZHUJIAO CENTRE (TEKKA MARKET),Singapore 210665",
+        "typeOfFoodBussiness": "NEA Managed Foodstall",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "B92057J000",
+      "workbook": {
+        "excel_row": 3550,
+        "F&B Name": "BEI SHENG SEAFOOD",
+        "Registered Business Name": "BEI SHENG SEAFOOD",
+        "Business Type": "Restaurant",
+        "Full Address": "Address: 701A YISHUN AVENUE 5 (PART OF) #01-02,Singapore 761701",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "B92057J000",
+        "businessName": "BEI SHENG SEAFOOD",
+        "establishmentAddress": "701A YISHUN AVENUE 5 (PART OF) #01-02,Singapore 761701",
+        "typeOfFoodBussiness": "Restaurant",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "W86025E000",
+      "workbook": {
+        "excel_row": 1782,
+        "F&B Name": "AL AFROSE RESTAURANT PTE LTD",
+        "Registered Business Name": "AL AFROSE RESTAURANT PTE LTD",
+        "Business Type": "Restaurant",
+        "Full Address": "Address: 421 RIVER VALLEY ROAD Singapore 248320",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "W86025E000",
+        "businessName": "AL AFROSE RESTAURANT PTE LTD",
+        "establishmentAddress": "421 RIVER VALLEY ROAD Singapore 248320",
+        "typeOfFoodBussiness": "Restaurant",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "NW16737A000",
+      "workbook": {
+        "excel_row": 27225,
+        "F&B Name": "SWENSENS",
+        "Registered Business Name": "SWENSENS",
+        "Business Type": "Restaurant",
+        "Full Address": "Address: 930 YISHUN AVENUE 2 #02-14,NORTHPOINT SHOPPING CENTRE,Singapore 769098",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "NW16737A000",
+        "businessName": "SWENSENS",
+        "establishmentAddress": "930 YISHUN AVENUE 2 #02-14,NORTHPOINT SHOPPING CENTRE,Singapore 769098",
+        "typeOfFoodBussiness": "Restaurant",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "W78005J000",
+      "workbook": {
+        "excel_row": 37927,
+        "F&B Name": null,
+        "Registered Business Name": null,
+        "Business Type": "Small restaurant",
+        "Full Address": "Address: 55 TEMPLE STREET Singapore 058600",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "W78005J000",
+        "businessName": "NA",
+        "establishmentAddress": "55 TEMPLE STREET Singapore 058600",
+        "typeOfFoodBussiness": "Small restaurant",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "NW16081L002",
+      "workbook": {
+        "excel_row": 30363,
+        "F&B Name": "Wanton Noodle",
+        "Registered Business Name": "Wanton Noodle",
+        "Business Type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+        "Full Address": "Address: 317 YISHUN AVENUE 9 #01-01,YISHUN GREENWALK,Singapore 760317",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "NW16081L002",
+        "businessName": "Wanton Noodle",
+        "establishmentAddress": "317 YISHUN AVENUE 9 #01-01,YISHUN GREENWALK,Singapore 760317",
+        "typeOfFoodBussiness": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "CE21N85B000",
+      "workbook": {
+        "excel_row": 433,
+        "F&B Name": "4 Star Briyani Hut",
+        "Registered Business Name": "4 Star Briyani Hut",
+        "Business Type": "Restaurant",
+        "Full Address": "Address: 150 SOUTH BRIDGE ROAD #01-18,FOOK HAI BUILDING,Singapore 058727",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "CE21N85B000",
+        "businessName": "4 Star Briyani Hut",
+        "establishmentAddress": "150 SOUTH BRIDGE ROAD #01-18,FOOK HAI BUILDING,Singapore 058727",
+        "typeOfFoodBussiness": "Restaurant",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "CE19383N000",
+      "workbook": {
+        "excel_row": 22723,
+        "F&B Name": "Pu3 Restaurant",
+        "Registered Business Name": "Pu3 Restaurant",
+        "Business Type": "Restaurant",
+        "Full Address": "Address: 111 SOMERSET ROAD #02-20,#02-22,#02-23,#02-24,#02-25,#02-26,111 SOMERSET,Singapore 238164",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "CE19383N000",
+        "businessName": "Pu3 Restaurant",
+        "establishmentAddress": "111 SOMERSET ROAD #02-20,#02-22,#02-23,#02-24,#02-25,#02-26,111 SOMERSET,Singapore 238164",
+        "typeOfFoodBussiness": "Restaurant",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "CE17E79A000",
+      "workbook": {
+        "excel_row": 29909,
+        "F&B Name": "URBAN MIX",
+        "Registered Business Name": "URBAN MIX",
+        "Business Type": "Restaurant",
+        "Full Address": "Address: 1 RAFFLES PLACE #B1-01A,ONE RAFFLES PLACE,Singapore 048616",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "CE17E79A000",
+        "businessName": "URBAN MIX",
+        "establishmentAddress": "1 RAFFLES PLACE #B1-01A,ONE RAFFLES PLACE,Singapore 048616",
+        "typeOfFoodBussiness": "Restaurant",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "S87179E000",
+      "workbook": {
+        "excel_row": 4426,
+        "F&B Name": "BROADWAY",
+        "Registered Business Name": "BROADWAY",
+        "Business Type": "Coffeeshop/Eating House",
+        "Full Address": "Address: 644 HOUGANG AVENUE 8 #01-257,Singapore 530644",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: Not Under SAFE"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "S87179E000",
+        "businessName": "BROADWAY",
+        "establishmentAddress": "644 HOUGANG AVENUE 8 #01-257,Singapore 530644",
+        "typeOfFoodBussiness": "Coffeeshop/Eating House",
+        "grades": "Not Under SAFE"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "NW15152B000",
+      "workbook": {
+        "excel_row": 6423,
+        "F&B Name": "COBA COBA",
+        "Registered Business Name": "COBA COBA",
+        "Business Type": "Restaurant with Catering",
+        "Full Address": "Address: 156 YISHUN STREET 11 #01-106,Singapore 760156",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "NW15152B000",
+        "businessName": "COBA COBA",
+        "establishmentAddress": "156 YISHUN STREET 11 #01-106,Singapore 760156",
+        "typeOfFoodBussiness": "Restaurant with Catering",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "CE22D29A000",
+      "workbook": {
+        "excel_row": 17913,
+        "F&B Name": "MALA BOSS",
+        "Registered Business Name": "MALA BOSS",
+        "Business Type": "Restaurant",
+        "Full Address": "Address: 1 PARK ROAD #01-78C,PEOPLE'S PARK COMPLEX,Singapore 059108",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "CE22D29A000",
+        "businessName": "MALA BOSS",
+        "establishmentAddress": "1 PARK ROAD #01-78C,PEOPLE'S PARK COMPLEX,Singapore 059108",
+        "typeOfFoodBussiness": "Restaurant",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "NE19X48C000",
+      "workbook": {
+        "excel_row": 10117,
+        "F&B Name": "GADO & GRILL",
+        "Registered Business Name": "GADO & GRILL",
+        "Business Type": "Restaurant",
+        "Full Address": "Address: 1 TAMPINES WALK #B1-K4,OUR TAMPINES HUB,Singapore 528523 OUR TAMPINES HUB",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "NE19X48C000",
+        "businessName": "GADO & GRILL",
+        "establishmentAddress": "1 TAMPINES WALK #B1-K4,OUR TAMPINES HUB,Singapore 528523 OUR TAMPINES HUB",
+        "typeOfFoodBussiness": "Restaurant",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "B01032N000",
+      "workbook": {
+        "excel_row": 32891,
+        "F&B Name": null,
+        "Registered Business Name": null,
+        "Business Type": "Restaurant",
+        "Full Address": "Address: 727 ANG MO KIO AVENUE 6 #01-4264,Singapore 560727",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "B01032N000",
+        "businessName": "NA",
+        "establishmentAddress": "727 ANG MO KIO AVENUE 6 #01-4264,Singapore 560727",
+        "typeOfFoodBussiness": "Restaurant",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "CE05589K000",
+      "workbook": {
+        "excel_row": 2486,
+        "F&B Name": "ARIFF'S RESTAURANT",
+        "Registered Business Name": "ARIFF'S RESTAURANT",
+        "Business Type": "Restaurant",
+        "Full Address": "Address: 71 KALLANG BAHRU #01-529B,Singapore 330071",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "CE05589K000",
+        "businessName": "ARIFF'S RESTAURANT",
+        "establishmentAddress": "71 KALLANG BAHRU #01-529B,Singapore 330071",
+        "typeOfFoodBussiness": "Restaurant",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "SE08369P000",
+      "workbook": {
+        "excel_row": 15477,
+        "F&B Name": "KNS Cafe",
+        "Registered Business Name": "KNS Cafe",
+        "Business Type": "Takeaway",
+        "Full Address": "Address: 409 EUNOS ROAD 2 #01-03A,Singapore 409388",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "SE08369P000",
+        "businessName": "KNS Cafe",
+        "establishmentAddress": "409 EUNOS ROAD 2 #01-03A,Singapore 409388",
+        "typeOfFoodBussiness": "Takeaway",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "GS102131002",
+      "workbook": {
+        "excel_row": 10306,
+        "F&B Name": "Geylang Serai Nasi Ayam Bubur Ayam Sedap",
+        "Registered Business Name": "Geylang Serai Nasi Ayam Bubur Ayam Sedap",
+        "Business Type": "NEA Managed Foodstall",
+        "Full Address": "Address: 1 GEYLANG SERAI #02-131,Singapore 402001",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "GS102131002",
+        "businessName": "Geylang Serai Nasi Ayam Bubur Ayam Sedap",
+        "establishmentAddress": "1 GEYLANG SERAI #02-131,Singapore 402001",
+        "typeOfFoodBussiness": "NEA Managed Foodstall",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "W69023P003",
+      "workbook": {
+        "excel_row": 18706,
+        "F&B Name": "Meng Hup Eating House (Wantan Noodle stall)",
+        "Registered Business Name": "Meng Hup Eating House (Wantan Noodle stall)",
+        "Business Type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+        "Full Address": "Address: 164 STIRLING ROAD #01-1200,MEI LING VISTA,Singapore 140164",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "W69023P003",
+        "businessName": "Meng Hup Eating House (Wantan Noodle stall)",
+        "establishmentAddress": "164 STIRLING ROAD #01-1200,MEI LING VISTA,Singapore 140164",
+        "typeOfFoodBussiness": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "CE12662X000",
+      "workbook": {
+        "excel_row": 16594,
+        "F&B Name": "LAU TAN'S TU TU CAFETERIA",
+        "Registered Business Name": "LAU TAN'S TU TU CAFETERIA",
+        "Business Type": "Snack Counter",
+        "Full Address": "Address: 1 QUEENSWAY #02-K47,QUEENSWAY SHOPPING CENTRE/QUEENSWAY TOWER,Singapore 149053",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "CE12662X000",
+        "businessName": "LAU TAN'S TU TU CAFETERIA",
+        "establishmentAddress": "1 QUEENSWAY #02-K47,QUEENSWAY SHOPPING CENTRE/QUEENSWAY TOWER,Singapore 149053",
+        "typeOfFoodBussiness": "Snack Counter",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "C02105A033",
+      "workbook": {
+        "excel_row": 22142,
+        "F&B Name": "PINK CANDY",
+        "Registered Business Name": "PINK CANDY",
+        "Business Type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+        "Full Address": "Address: 144 UPPER BUKIT TIMAH ROAD #04-08,BEAUTY WORLD CENTRE,Singapore 588177",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "C02105A033",
+        "businessName": "PINK CANDY",
+        "establishmentAddress": "144 UPPER BUKIT TIMAH ROAD #04-08,BEAUTY WORLD CENTRE,Singapore 588177",
+        "typeOfFoodBussiness": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "NMF011120004",
+      "workbook": {
+        "excel_row": 29865,
+        "F&B Name": "Uncle Louis Famous Hainanese Chicken Rice",
+        "Registered Business Name": "Uncle Louis Famous Hainanese Chicken Rice",
+        "Business Type": "NEA Managed Foodstall",
+        "Full Address": "Address: 32 NEW MARKET ROAD #01-1120,Singapore 050032",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "NMF011120004",
+        "businessName": "Uncle Louis Famous Hainanese Chicken Rice",
+        "establishmentAddress": "32 NEW MARKET ROAD #01-1120,Singapore 050032",
+        "typeOfFoodBussiness": "NEA Managed Foodstall",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "W83247B000",
+      "workbook": {
+        "excel_row": 3219,
+        "F&B Name": "BAO ER CAFE PTE LTD",
+        "Registered Business Name": "BAO ER CAFE PTE LTD",
+        "Business Type": "Restaurant",
+        "Full Address": "Address: 400 BALESTIER ROAD #02-01,#02-02,#02-30,BALESTIER PLAZA,Singapore 329802",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "W83247B000",
+        "businessName": "BAO ER CAFE PTE LTD",
+        "establishmentAddress": "400 BALESTIER ROAD #02-01,#02-02,#02-30,BALESTIER PLAZA,Singapore 329802",
+        "typeOfFoodBussiness": "Restaurant",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "W94184E000",
+      "workbook": {
+        "excel_row": 6653,
+        "F&B Name": "CONCEPT CUISINE",
+        "Registered Business Name": "CONCEPT CUISINE",
+        "Business Type": "Restaurant with Catering",
+        "Full Address": "Address: 97 TANJONG PAGAR ROAD Singapore 088518",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "W94184E000",
+        "businessName": "CONCEPT CUISINE",
+        "establishmentAddress": "97 TANJONG PAGAR ROAD Singapore 088518",
+        "typeOfFoodBussiness": "Restaurant with Catering",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "CE18843J000",
+      "workbook": {
+        "excel_row": 31230,
+        "F&B Name": "xiao yao ge f&b pte.ltd.",
+        "Registered Business Name": "xiao yao ge f&b pte.ltd.",
+        "Business Type": "Restaurant",
+        "Full Address": "Address: 26/28 TEMPLE STREET Singapore 058571 (1st,2nd,3rd storey)",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "CE18843J000",
+        "businessName": "xiao yao ge f&b pte.ltd.",
+        "establishmentAddress": "26/28 TEMPLE STREET Singapore 058571 (1st,2nd,3rd storey)",
+        "typeOfFoodBussiness": "Restaurant",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "CE15G92K000",
+      "workbook": {
+        "excel_row": 7693,
+        "F&B Name": "DOLPAN HWAJOO",
+        "Registered Business Name": "DOLPAN HWAJOO",
+        "Business Type": "Restaurant",
+        "Full Address": "Address: 99 TANJONG PAGAR ROAD Singapore 088520",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "CE15G92K000",
+        "businessName": "DOLPAN HWAJOO",
+        "establishmentAddress": "99 TANJONG PAGAR ROAD Singapore 088520",
+        "typeOfFoodBussiness": "Restaurant",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "C84350E008",
+      "workbook": {
+        "excel_row": 2570,
+        "F&B Name": "ASIAN FOOD",
+        "Registered Business Name": "ASIAN FOOD",
+        "Business Type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+        "Full Address": "Address: 134 BUKIT BATOK WEST AVENUE 6 #01-463,Singapore 650134",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "C84350E008",
+        "businessName": "ASIAN FOOD",
+        "establishmentAddress": "134 BUKIT BATOK WEST AVENUE 6 #01-463,Singapore 650134",
+        "typeOfFoodBussiness": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "NW17285E000",
+      "workbook": {
+        "excel_row": 32224,
+        "F&B Name": "Yu Ji Claypot",
+        "Registered Business Name": "Yu Ji Claypot",
+        "Business Type": "Small restaurant",
+        "Full Address": "Address: 18 YISHUN AVENUE 9 #01-02,JUNCTION NINE,Singapore 768897",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "NW17285E000",
+        "businessName": "Yu Ji Claypot",
+        "establishmentAddress": "18 YISHUN AVENUE 9 #01-02,JUNCTION NINE,Singapore 768897",
+        "typeOfFoodBussiness": "Small restaurant",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "S88223A000",
+      "workbook": {
+        "excel_row": 18716,
+        "F&B Name": "Meng Kiat",
+        "Registered Business Name": "Meng Kiat",
+        "Business Type": "Coffeeshop/Eating House",
+        "Full Address": "Address: 682 HOUGANG AVENUE 4 #01-346,HOUGANG VILLAGE,Singapore 530682",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: Not Under SAFE"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "S88223A000",
+        "businessName": "Meng Kiat",
+        "establishmentAddress": "682 HOUGANG AVENUE 4 #01-346,HOUGANG VILLAGE,Singapore 530682",
+        "typeOfFoodBussiness": "Coffeeshop/Eating House",
+        "grades": "Not Under SAFE"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "CE09K32K000",
+      "workbook": {
+        "excel_row": 3181,
+        "F&B Name": "Banglar shad restaurant",
+        "Registered Business Name": "Banglar shad restaurant",
+        "Business Type": "Restaurant",
+        "Full Address": "Address: 1C ROWELL ROAD #01-01,Singapore 207958",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "CE09K32K000",
+        "businessName": "Banglar shad restaurant",
+        "establishmentAddress": "1C ROWELL ROAD #01-01,Singapore 207958",
+        "typeOfFoodBussiness": "Restaurant",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "NW19X21N000",
+      "workbook": {
+        "excel_row": 15635,
+        "F&B Name": "Komalas",
+        "Registered Business Name": "Komalas",
+        "Business Type": "Restaurant",
+        "Full Address": "Address: 51 YISHUN CENTRAL 1 #01-05,#01-06,#01-K2,YISHUN 10 CINEMA COMPLEX,Singapore 768794",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "NW19X21N000",
+        "businessName": "Komalas",
+        "establishmentAddress": "51 YISHUN CENTRAL 1 #01-05,#01-06,#01-K2,YISHUN 10 CINEMA COMPLEX,Singapore 768794",
+        "typeOfFoodBussiness": "Restaurant",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "S87142K000",
+      "workbook": {
+        "excel_row": 11161,
+        "F&B Name": "HAJI SYED EATING HOUSE PTE LTD",
+        "Registered Business Name": "HAJI SYED EATING HOUSE PTE LTD",
+        "Business Type": "Coffeeshop/Eating House",
+        "Full Address": "Address: 136 BEDOK RESERVOIR ROAD #01-1429,EUNOS SPRING,Singapore 470136",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: Not Under SAFE"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "S87142K000",
+        "businessName": "HAJI SYED EATING HOUSE PTE LTD",
+        "establishmentAddress": "136 BEDOK RESERVOIR ROAD #01-1429,EUNOS SPRING,Singapore 470136",
+        "typeOfFoodBussiness": "Coffeeshop/Eating House",
+        "grades": "Not Under SAFE"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "C02090B001",
+      "workbook": {
+        "excel_row": 33450,
+        "F&B Name": null,
+        "Registered Business Name": null,
+        "Business Type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+        "Full Address": "Address: 61 TEBAN GARDENS ROAD #02-10,TEBAN PLACE,Singapore 600061",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "C02090B001",
+        "businessName": "NA",
+        "establishmentAddress": "61 TEBAN GARDENS ROAD #02-10,TEBAN PLACE,Singapore 600061",
+        "typeOfFoodBussiness": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "CE09A02P000",
+      "workbook": {
+        "excel_row": 10163,
+        "F&B Name": "GANGNAM STORY",
+        "Registered Business Name": "GANGNAM STORY",
+        "Business Type": "Restaurant",
+        "Full Address": "Address: 181 ORCHARD ROAD #08-04,#08-05,ORCHARD CENTRAL,Singapore 238896",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "CE09A02P000",
+        "businessName": "GANGNAM STORY",
+        "establishmentAddress": "181 ORCHARD ROAD #08-04,#08-05,ORCHARD CENTRAL,Singapore 238896",
+        "typeOfFoodBussiness": "Restaurant",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "CE18B42N000",
+      "workbook": {
+        "excel_row": 17339,
+        "F&B Name": "LONE STAR BAR & GRILL PTE.LTD. PTE.",
+        "Registered Business Name": "LONE STAR BAR & GRILL PTE.LTD. PTE.",
+        "Business Type": "Restaurant",
+        "Full Address": "Address: 545 ORCHARD ROAD #01-07,FAR EAST SHOPPING CENTRE,Singapore 238882",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "CE18B42N000",
+        "businessName": "LONE STAR BAR & GRILL PTE.LTD. PTE.",
+        "establishmentAddress": "545 ORCHARD ROAD #01-07,FAR EAST SHOPPING CENTRE,Singapore 238882",
+        "typeOfFoodBussiness": "Restaurant",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "W84231K005",
+      "workbook": {
+        "excel_row": 11944,
+        "F&B Name": "hill st noodle",
+        "Registered Business Name": "hill st noodle",
+        "Business Type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+        "Full Address": "Address: 465 CRAWFORD LANE #01-12,Singapore 190465",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "W84231K005",
+        "businessName": "hill st noodle",
+        "establishmentAddress": "465 CRAWFORD LANE #01-12,Singapore 190465",
+        "typeOfFoodBussiness": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "SW07061K000",
+      "workbook": {
+        "excel_row": 31275,
+        "F&B Name": "Xin Heng Kee",
+        "Registered Business Name": "Xin Heng Kee",
+        "Business Type": "Restaurant",
+        "Full Address": "Address: 416 PANDAN GARDENS #01-130,Singapore 600416",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "SW07061K000",
+        "businessName": "Xin Heng Kee",
+        "establishmentAddress": "416 PANDAN GARDENS #01-130,Singapore 600416",
+        "typeOfFoodBussiness": "Restaurant",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "BF101251004",
+      "workbook": {
+        "excel_row": 1736,
+        "F&B Name": "Ajimer Sharif. Famous Satay Club Mee Goreng",
+        "Registered Business Name": "Ajimer Sharif. Famous Satay Club Mee Goreng",
+        "Business Type": "NEA Managed Foodstall",
+        "Full Address": "Address: 665 BUFFALO ROAD #01-251,ZHUJIAO CENTRE (TEKKA MARKET),Singapore 210665",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "BF101251004",
+        "businessName": "Ajimer Sharif. Famous Satay Club Mee Goreng",
+        "establishmentAddress": "665 BUFFALO ROAD #01-251,ZHUJIAO CENTRE (TEKKA MARKET),Singapore 210665",
+        "typeOfFoodBussiness": "NEA Managed Foodstall",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "SW22E64B000",
+      "workbook": {
+        "excel_row": 28567,
+        "F&B Name": "The Original Scissors Cut Curry Rice Since 1930",
+        "Registered Business Name": "The Original Scissors Cut Curry Rice Since 1930",
+        "Business Type": "Restaurant",
+        "Full Address": "Address: 1 HARBOURFRONT WALK #B2-23A,VIVO CITY,Singapore 098585",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "SW22E64B000",
+        "businessName": "The Original Scissors Cut Curry Rice Since 1930",
+        "establishmentAddress": "1 HARBOURFRONT WALK #B2-23A,VIVO CITY,Singapore 098585",
+        "typeOfFoodBussiness": "Restaurant",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    },
+    {
+      "sfa_licence": "S00095C000",
+      "workbook": {
+        "excel_row": 2485,
+        "F&B Name": "ARIFF'S CURRY",
+        "Registered Business Name": "ARIFF'S CURRY",
+        "Business Type": "Restaurant",
+        "Full Address": "Address: 381 LORONG 1 TOA PAYOH #01-08,ONEPEOPLE.SG,Singapore 319758",
+        "SFA Status / Hygiene Grade": "Registry status: listed_in_current_sfa_export; suspended licences excluded | SFA grade: C"
+      },
+      "sfa_track_record": {
+        "licenceNumber": "S00095C000",
+        "businessName": "ARIFF'S CURRY",
+        "establishmentAddress": "381 LORONG 1 TOA PAYOH #01-08,ONEPEOPLE.SG,Singapore 319758",
+        "typeOfFoodBussiness": "Restaurant",
+        "grades": "C"
+      },
+      "interpretation": "Exact licence is returned by official past-year licence-suspension filter. This signifies a historical suspension event in the filter period; the API does not state current licence status, effective date, duration, cancellation, closure, or current operating status. Review only."
+    }
+  ],
+  "past_year_suspension_filter_records_without_exact_workbook_match": [
+    {
+      "licenceNumber": "SW16A02N000",
+      "businessName": "CLASSIC FOOD",
+      "establishmentAddress": "5/5D JALAN PAPAN #01-33,ASPRI-WESTLITE PAPAN,Singapore 619396",
+      "typeOfFoodBussiness": "Canteen with stalls",
+      "grades": "Not Under SAFE"
+    },
+    {
+      "licenceNumber": "E84051E000",
+      "businessName": "Sunrise Cafe",
+      "establishmentAddress": "30 KALLANG PUDDING ROAD #06-08,VALIANT INDUSTRIAL BUILDING,Singapore 349312",
+      "typeOfFoodBussiness": "Canteen with Catering",
+      "grades": "C"
+    },
+    {
+      "licenceNumber": "SE22E28J002",
+      "businessName": "Original Botak Jones",
+      "establishmentAddress": "1550 BEDOK NORTH AVENUE 4 #01-15,Bedok Food City,Singapore 489950",
+      "typeOfFoodBussiness": "Canteen",
+      "grades": "C"
+    },
+    {
+      "licenceNumber": "S95107B001",
+      "businessName": "ban mian fish soup",
+      "establishmentAddress": "21 TAMPINES AVENUE 1 TEMASEK POLYTECHNIC,Singapore 529757",
+      "typeOfFoodBussiness": "Canteen",
+      "grades": "C"
+    },
+    {
+      "licenceNumber": "SE25121V000",
+      "businessName": "NA",
+      "establishmentAddress": "3015 BEDOK NORTH STREET 5 #01-06,SHIMEI EAST KITCHEN,Singapore 486350",
+      "typeOfFoodBussiness": "Food Caterer",
+      "grades": "C"
+    },
+    {
+      "licenceNumber": "SE05237X000",
+      "businessName": "A.R Catering Services",
+      "establishmentAddress": "3015 BEDOK NORTH STREET 5 #05-06,SHIMEI EAST KITCHEN,Singapore 486350",
+      "typeOfFoodBussiness": "Food Caterer",
+      "grades": "A"
+    },
+    {
+      "licenceNumber": "NE12D01K002",
+      "businessName": "MTK Food",
+      "establishmentAddress": "31 KAKI BUKIT AVENUE 3 #01-01,HOMESTAY LODGE,Singapore 415916 (1ST STOREY)",
+      "typeOfFoodBussiness": "Canteen",
+      "grades": "C"
+    },
+    {
+      "licenceNumber": "SE03006P000",
+      "businessName": "CHILLI API CATERING PTE. LTD.",
+      "establishmentAddress": "3015 BEDOK NORTH STREET 5 #06-19,SHIMEI EAST KITCHEN,Singapore 486350",
+      "typeOfFoodBussiness": "Food Caterer",
+      "grades": "A"
+    },
+    {
+      "licenceNumber": "SW09706K002",
+      "businessName": "MBS RESTURANT",
+      "establishmentAddress": "5 TECH PARK CRESCENT #01-03,TUAS TECHPARK,Singapore 638127",
+      "typeOfFoodBussiness": "Canteen",
+      "grades": "C"
+    },
+    {
+      "licenceNumber": "NE18203B000",
+      "businessName": "SHIVAM CATERING SERVICESPTE. LTD.",
+      "establishmentAddress": "21 DEFU SOUTH STREET 1 #01-01,Singapore 533848",
+      "typeOfFoodBussiness": "Food Caterer",
+      "grades": "C"
+    },
+    {
+      "licenceNumber": "B97144P000",
+      "businessName": "XIN YI PIN CATERING",
+      "establishmentAddress": "15 WOODLANDS LOOP #04-36,Singapore 738322",
+      "typeOfFoodBussiness": "Food Caterer",
+      "grades": "C"
+    },
+    {
+      "licenceNumber": "SW14413P006",
+      "businessName": "nasi padang malay delights",
+      "establishmentAddress": "21 BENOI SECTOR #01-05,Singapore 629853",
+      "typeOfFoodBussiness": "Canteen",
+      "grades": "C"
+    },
+    {
+      "licenceNumber": "B99105N000",
+      "businessName": "E CREATIVE CATERING",
+      "establishmentAddress": "15 WOODLANDS LOOP #04-33,Singapore 738322",
+      "typeOfFoodBussiness": "Food Caterer",
+      "grades": "C"
+    },
+    {
+      "licenceNumber": "SE25122X000",
+      "businessName": "IDLY KADAI",
+      "establishmentAddress": "25 UBI AVENUE 3 #01-08,Singapore 409821",
+      "typeOfFoodBussiness": "Canteen without stalls",
+      "grades": "C"
+    }
+  ],
+  "prior_exact_licence_batch_2026_10_18_intersection_with_past_year_suspension_filter": {
+    "prior_batch_licence_count": 18,
+    "intersecting_ids": [],
+    "interpretation": "Existing exact batch-2 audits queried these IDs and returned no records under past-year filter; no contradiction if they do not intersect."
+  }
+}

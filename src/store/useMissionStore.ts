@@ -21,6 +21,8 @@ interface MissionState {
   /** Map of missionId → progress */
   progressMap: Record<string, UserMissionProgress>;
   isLoaded: boolean;
+  loadedKey: string | null;
+  loadError: boolean;
 
   // Queries
   getMission: (missionId: string) => WeeklyMission | null;
@@ -40,12 +42,22 @@ interface MissionState {
   _reset: () => void;
 }
 
+export function singaporeMissionWeekKey(userId: string, now = new Date()): string {
+  const singapore = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+  const day = (singapore.getUTCDay() + 6) % 7;
+  singapore.setUTCDate(singapore.getUTCDate() - day);
+  return `${userId}:${singapore.toISOString().slice(0, 10)}`;
+}
+let missionGeneration = 0;
+
 // ─── Store ────────────────────────────────────────────────────────────────────
 
 export const useMissionStore = create<MissionState>()((set, get) => ({
   missions: [],
   progressMap: {},
   isLoaded: false,
+  loadedKey: null,
+  loadError: false,
 
   getMission: (missionId) => get().missions.find((m) => m.id === missionId) ?? null,
 
@@ -56,30 +68,40 @@ export const useMissionStore = create<MissionState>()((set, get) => ({
   getActiveMissions: () => get().missions.filter((m) => !get().progressMap[m.id]?.completedAt),
 
   loadMissions: async (userId) => {
-    if (get().isLoaded) return;
+    const loadedKey = singaporeMissionWeekKey(userId);
+    if (get().isLoaded && get().loadedKey === loadedKey) return;
+    const generation = ++missionGeneration;
+    set({ missions: [], progressMap: {}, isLoaded: false, loadedKey, loadError: false });
+    try {
+      const repo = getDataRepository();
+      const missions: WeeklyMission[] = (await repo.listActiveMissions?.()) ?? [];
 
-    const repo = getDataRepository();
-    const missions: WeeklyMission[] = (await repo.listActiveMissions?.()) ?? [];
+      const progressList: UserMissionProgress[] =
+        (await repo.listUserMissionProgress?.(userId)) ?? [];
 
-    const progressList: UserMissionProgress[] =
-      (await repo.listUserMissionProgress?.(userId)) ?? [];
-
-    const progressMap: Record<string, UserMissionProgress> = {};
-    for (const p of progressList) {
-      progressMap[p.missionId] = p;
-    }
-
-    // Seed 0-progress entries for missions with no existing record
-    for (const m of missions) {
-      if (!progressMap[m.id]) {
-        progressMap[m.id] = { userId, missionId: m.id, currentCount: 0 };
+      const progressMap: Record<string, UserMissionProgress> = {};
+      for (const p of progressList) {
+        progressMap[p.missionId] = p;
       }
-    }
 
-    set({ missions, progressMap, isLoaded: true });
+      // Seed 0-progress entries for missions with no existing record
+      for (const m of missions) {
+        if (!progressMap[m.id]) {
+          progressMap[m.id] = { userId, missionId: m.id, currentCount: 0 };
+        }
+      }
+
+      if (generation !== missionGeneration) return;
+      set({ missions, progressMap, isLoaded: true });
+    } catch (error) {
+      if (generation === missionGeneration) set({ loadError: true });
+      throw error;
+    }
   },
 
   incrementProgress: async (userId, missionType) => {
+    await get().loadMissions(userId);
+    const generation = missionGeneration;
     const repo = getDataRepository();
     if (repo.incrementMissionProgress) {
       await repo.incrementMissionProgress(userId, missionType);
@@ -92,6 +114,7 @@ export const useMissionStore = create<MissionState>()((set, get) => ({
       for (const progress of progressList) {
         progressMap[progress.missionId] = progress;
       }
+      if (generation !== missionGeneration) return;
       set({ missions, progressMap, isLoaded: true });
       if (cred) {
         useFoodCredStore.setState({
@@ -150,8 +173,11 @@ export const useMissionStore = create<MissionState>()((set, get) => ({
       }
     }
 
-    set({ progressMap: newProgressMap });
+    if (generation === missionGeneration) set({ progressMap: newProgressMap });
   },
 
-  _reset: () => set({ missions: [], progressMap: {}, isLoaded: false }),
+  _reset: () => {
+    missionGeneration += 1;
+    set({ missions: [], progressMap: {}, isLoaded: false, loadedKey: null, loadError: false });
+  },
 }));

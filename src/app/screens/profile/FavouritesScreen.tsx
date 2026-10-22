@@ -3,13 +3,14 @@ import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { Heart, Star } from "lucide-react-native";
 
-import { AccessibleImage, AppText, Chip, EmptyState } from "@/components/ui";
+import { AccessibleImage, AppText, Button, Chip, EmptyState } from "@/components/ui";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { prefetchDishDetail, preloadRoute } from "@/features/navigation/prefetch";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
-import { isDishDetail } from "./profileGuards";
+import { useResolvedProfileEntities } from "@/features/profile/useResolvedProfileEntities";
+import type { DishDetail } from "@/types/domain";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 import type { ProfileStackParamList } from "./ProfileStack";
 
@@ -22,14 +23,12 @@ export function FavouritesScreen({ navigation }: Props) {
   const repository = getDataRepository();
   const [tab, setTab] = useState<"want" | "tried">("want");
   const dishIds = tab === "want" ? profile.favouriteDishIds : profile.reviewedDishIds;
-  const dishes = dishIds.map((dishId) => repository.getDishById(dishId)).filter(isDishDetail);
+  const resolved = useResolvedProfileEntities(dishIds, "dish");
+  const dishes = resolved.items as DishDetail[];
   const rootNavigation = getRootNavigation(navigation as any);
 
   return (
-    <ProfileScreenShell
-      title="Saved dishes"
-      subtitle="Dishes you want to try and dishes you've tried."
-    >
+    <ProfileScreenShell title="Saved dishes" subtitle="Saved dishes and your reviewed dishes.">
       <View style={{ flexDirection: "row", gap: spacing[2], marginBottom: spacing[4] }}>
         <Chip
           label={`Want to try (${profile.favouriteDishIds.length})`}
@@ -37,11 +36,21 @@ export function FavouritesScreen({ navigation }: Props) {
           onPress={() => setTab("want")}
         />
         <Chip
-          label={`Tried (${profile.reviewedDishIds.length})`}
+          label={`Reviewed (${profile.reviewedDishIds.length})`}
           selected={tab === "tried"}
           onPress={() => setTab("tried")}
         />
       </View>
+      {resolved.loading ? <AppText>Loading saved dishes…</AppText> : null}
+      {resolved.failed ? (
+        <Button
+          label={`Retry ${resolved.failed} dishes that failed to load`}
+          onPress={resolved.retry}
+        />
+      ) : null}
+      {resolved.missing ? (
+        <AppText tone="muted">{resolved.missing} saved dishes are no longer available.</AppText>
+      ) : null}
       {dishes.length ? (
         <View
           style={{
@@ -91,8 +100,8 @@ export function FavouritesScreen({ navigation }: Props) {
                         position: "absolute",
                         top: spacing[2],
                         right: spacing[2],
-                        width: 32,
-                        height: 32,
+                        width: spacing[12],
+                        height: spacing[12],
                         borderRadius: componentRadii.iconButton,
                         backgroundColor: palette.surfaceTranslucent,
                         alignItems: "center",
@@ -145,18 +154,18 @@ export function FavouritesScreen({ navigation }: Props) {
             );
           })}
         </View>
-      ) : (
+      ) : !resolved.loading && !resolved.failed && !resolved.missing ? (
         <EmptyState
-          title={tab === "want" ? "Nothing saved yet" : "No dishes tried yet"}
+          title={tab === "want" ? "Nothing saved yet" : "No reviewed dishes yet"}
           body={
             tab === "want"
               ? "Save dishes you want to try and they'll show up here."
-              : "Mark a dish as tried from its page to keep a record here."
+              : "Review a dish to keep your rating and notes here."
           }
           ctaLabel="Discover Dishes"
           onPress={() => rootNavigation.navigate("MainTabs", { screen: "Discover" })}
         />
-      )}
+      ) : null}
     </ProfileScreenShell>
   );
 }

@@ -1,0 +1,78 @@
+{
+  "snapshot_id": "refresh120_final_qa_20261019",
+  "observed_local_date": "2026-10-19",
+  "independent_qa": true,
+  "result": "PASS",
+  "workbook_path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "6fca59ec8c51d62bfa8cf2ec556397fdb8b0eb780f0fc1bb8e39cc46e228c8dc",
+  "checks": {
+    "zip_crc": "pass",
+    "sheet_ranges": {
+      "Public F&B Directory": "A1:U38280 (38,279 data rows)",
+      "Menu Items": "A1:L13093 (13,092 data rows)",
+      "Image Candidates": "A1:I2579 (2,578 data rows)",
+      "Coverage & Sources": "A1:C215 (214 data rows)"
+    },
+    "unique_sfa_licences": 38279,
+    "directory_alphabetical_casefold_blank_last": true,
+    "formula_error_blank_row_counts": {
+      "formulas": 0,
+      "errors": 0,
+      "blank_rows": 0
+    },
+    "coverage_counts": {
+      "named": 32768,
+      "unnamed": 5511,
+      "coordinates": 35735,
+      "contacts": 2692,
+      "websites": 2799,
+      "menu_urls": 1439,
+      "hours": 1460,
+      "ratings": 0,
+      "approved_images": 0,
+      "menu_summaries": 460
+    },
+    "proposal_readback": {
+      "exact_names": 11,
+      "chagee_field_updates": 76,
+      "komalas_menu_url": 1,
+      "ng_ah_sio_menu_urls": 3,
+      "ng_ah_sio_menu_items": 128,
+      "priced_ng_ah_sio_items": 128,
+      "hawker_chan_hours": 1,
+      "hawker_chan_review_only_image": 1
+    },
+    "images": "Hawker Chan candidate carries creator, CC BY-SA 4.0 license/link, dated context and reuse restrictions; no approved image URL."
+  },
+  "source_snapshots": {
+    "refresh120_blank_names_batch_20261019.json": {
+      "path": "data/source_snapshots/refresh120_blank_names_batch_20261019.json",
+      "sha256": "7b3b0038c8fc838b7163ec9ce2a1c78c6de715ab961a2559fb71b5bf2e4cd72b"
+    },
+    "refresh120_directory_fields_batch_20261019.json": {
+      "path": "data/source_snapshots/refresh120_directory_fields_batch_20261019.json",
+      "sha256": "e58c0275ecc8efa62d86ed18f297ca97b11c5d91ce6a00adc6a4db4232d46ef0"
+    },
+    "refresh120_menu_urls_batch_20261019.json": {
+      "path": "data/source_snapshots/refresh120_menu_urls_batch_20261019.json",
+      "sha256": "03952d4d1c7f049ed71ad9d9240216e4147c76f6382673b101e77a034a926c81"
+    },
+    "refresh120_official_menu_items_20261019.json": {
+      "path": "data/source_snapshots/refresh120_official_menu_items_20261019.json",
+      "sha256": "796d50b4c55eb231ebcd772f2ed1ecebed5600ded23d2da42aad8be6f0c4753d"
+    },
+    "refresh120_public_mall_batch_20261019.json": {
+      "path": "data/source_snapshots/refresh120_public_mall_batch_20261019.json",
+      "sha256": "33f312cc2bd83efbe1cc6a0035dd37db20cb3e1c36566017fc2a20e49fd2f376"
+    },
+    "refresh120_open_images_batch_20261019.json": {
+      "path": "data/source_snapshots/refresh120_open_images_batch_20261019.json",
+      "sha256": "47fd550430bac707844d70c90d6a9091d3d9fa08a582255ee265c8eeaeaf92dc"
+    },
+    "refresh120_hawker_chan_image_visual_addendum_20261019.json": {
+      "path": "data/source_snapshots/refresh120_hawker_chan_image_visual_addendum_20261019.json",
+      "sha256": "4c9a18a2ad1ca17f868825adbe8fd6eeb8fe0e3cab654fafcc9c91a10491dfa0"
+    }
+  },
+  "discrepancies": []
+}

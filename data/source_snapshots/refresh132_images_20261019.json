@@ -1,0 +1,126 @@
+{
+  "schema_version": "hungry-image-rights-proposal-v1",
+  "snapshot_id": "refresh132_images_20261019",
+  "captured_at_sgt": "2026-10-19",
+  "workbook_path": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "66d0b6438982c0b74715bd83db5636392399f40b279ad615ee8e27afd7869611",
+  "workbook_edited": false,
+  "scope": "Read-only audit of exact-SFA-outlet, real pixel-inspected photos with explicit reuse licenses. Temporary image copies were used only for pixel verification, then removed. No images or workbook changes retained; no spend or Mapbox requests.",
+  "summary": {
+    "new_candidates": 1,
+    "exact_directory_joins": 3,
+    "exact_menu_item_joins": 0,
+    "already_in_workbook_exact_url": 1,
+    "pixel_inspected": 3,
+    "approved_for_current_display": 1,
+    "review_only": 2,
+    "workbook_changes": 0,
+    "already_in_workbook_same_image_asset": 2
+  },
+  "candidates": [
+    {
+      "action": "upgrade_existing_candidate_with_verified_rights_and_branch_match",
+      "sfa_licence": "AMO039004",
+      "workbook_outlet_name": "A Noodle Story",
+      "workbook_directory_address": "Address: 7 MAXWELL ROAD 039,MND BUILDING ANNEXE B,Singapore 069111",
+      "item_or_image_type": "Exact-outlet stall photo",
+      "pictured_menu_item": null,
+      "menu_item_join": null,
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/b/b9/A_Noodle_Story.jpg",
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:A_Noodle_Story.jpg",
+      "observed_at_sgt": "2026-10-19",
+      "photograph_date": "2024-03-11 11:23:53 SGT (Commons EXIF metadata)",
+      "creator": "Mx. Granger; Commons page identifies uploader and copyright holder.",
+      "license": "CC0 1.0 Universal Public Domain Dedication",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "rights_basis": "Commons page states uploader/copyright holder dedicated this file to CC0 1.0.",
+      "attribution": "Mx. Granger, “A Noodle Story.jpg,” via Wikimedia Commons, CC0 1.0 (attribution retained for provenance although not required by CC0).",
+      "pixel_inspection": "Inspected the 2918x3083 original. Genuine hawker stall image, not stock/generated/placeholder. Visible A Noodle Story signage and the exact stall number 01-39; an on-stall menu display is also visible but no individual item is asserted from it. Temporary inspection copy removed after review.",
+      "exact_outlet_join_evidence": "Workbook SFA licence AMO039004 is A Noodle Story at Maxwell Road unit 039. The Commons page describes the exact outlet as a stall at Amoy Street Food Centre and gives GPS 1.279247,103.846764. Pixels show unit 01-39 and A Noodle Story branding. Address, unit, and location agree.",
+      "currentness_and_scope": "Captured 2024-03-11; current workbook snapshot contains the exact active SFA record as of 2026-10-17. Suitable as a recent outlet photo with date preserved; does not claim the physical appearance is unchanged after capture.",
+      "already_in_workbook_exact_url": true,
+      "existing_workbook_row_status": "Existing Image Candidates row is visually confirmed but marked review-only because creator/attribution was missing from its supplied inventory. Recommend updating that row’s license, creator, attribution, pixel evidence, and display status; do not add a duplicate URL.",
+      "display_status": "approved_for_current_display",
+      "approval_rationale": "Explicit CC0 reuse; 2024 pixels identify the exact 01-39 stall, which matches the SFA-record address and unit. Current SFA snapshot independently shows the exact record still present. Preserve the capture date and do not imply endorsement.",
+      "evidence_urls": [
+        "https://commons.wikimedia.org/wiki/File:A_Noodle_Story.jpg",
+        "https://creativecommons.org/publicdomain/zero/1.0/deed.en"
+      ]
+    },
+    {
+      "action": "revalidate_existing_candidate_pixel_and_license_evidence",
+      "sfa_licence": "W84231K002",
+      "workbook_outlet_name": "Hill Street Tai Hwa Pork Noodle",
+      "workbook_directory_address": "Address: 465 CRAWFORD LANE #01-12,Singapore 190465",
+      "item_or_image_type": "Exact-outlet storefront photo (historical; 2011 capture)",
+      "pictured_menu_item": null,
+      "menu_item_join": null,
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/6/66/Hill_Street_Tai_Hwa_Pork_Noodle.jpg",
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:Hill_Street_Tai_Hwa_Pork_Noodle.jpg",
+      "observed_at_sgt": "2026-10-19",
+      "photograph_date": "2011-12-21 02:44 (Commons EXIF metadata)",
+      "creator": "Ken Marshall (Flickr username kenner116; Commons page lists author as Ken Marshall).",
+      "license": "Creative Commons Attribution 2.0 Generic (CC BY 2.0)",
+      "license_url": "https://creativecommons.org/licenses/by/2.0/",
+      "rights_basis": "Commons page confirms CC BY 2.0; source was uploaded from Flickr and reviewed by FlickreviewR 2 on 2018-09-23 as licensed CC BY 2.0.",
+      "attribution": "Ken Marshall (kenner116), “Hill Street Tai Hwa Pork Noodle.jpg,” via Wikimedia Commons, CC BY 2.0; link to license and note any modifications.",
+      "pixel_inspection": "Inspected the 4000x3000 original. Pixels clearly show the Hill Street Tai Hwa Pork Noodle sign and counter; the sign itself labels menu dishes including minced meat noodle. Genuine historical outlet photo, not stock/generated/placeholder. Temporary inspection copy removed after review.",
+      "exact_outlet_join_evidence": "SFA record W84231K002 is Hill Street Tai Hwa Pork Noodle at 465 Crawford Lane #01-12. Commons describes the named business, gives camera coordinates 1.304952,103.862322 at the photographed stall, and the pixels visibly show its named fascia. This matches the directory outlet/location.",
+      "currentness_and_scope": "Historical capture from 2011. Workbook has the exact SFA record in the 2026 directory, but that does not prove the 2011 appearance remains current. Store as dated historical candidate; do not place in the current approved-image field without product support for historical labels.",
+      "already_in_workbook_exact_url": true,
+      "existing_workbook_row_status": "Existing Image Candidates row points to the same Flickr original and Commons page; it was not visually inspected and is marked review-only. Update evidence and reuse metadata rather than adding a duplicate photo. If canonicalizing URL, switch to the Commons-hosted original listed here.",
+      "display_status": "review_only_historical",
+      "approval_rationale": "Exact real outlet photo with clear pixels and explicit CC BY 2.0 rights, but image is from 2011 and cannot represent current appearance. Retain historical date and attribution; do not treat as a current storefront image.",
+      "evidence_urls": [
+        "https://commons.wikimedia.org/wiki/File:Hill_Street_Tai_Hwa_Pork_Noodle.jpg",
+        "https://flickr.com/photos/kenner116/6686264727/",
+        "https://creativecommons.org/licenses/by/2.0/"
+      ]
+    },
+    {
+      "action": "add_new_image_candidate",
+      "sfa_licence": "W84231K002",
+      "workbook_outlet_name": "Hill Street Tai Hwa Pork Noodle",
+      "workbook_directory_address": "Address: 465 CRAWFORD LANE #01-12,Singapore 190465",
+      "item_or_image_type": "Branch-specific dish photo (historical; exact item pictured: bak chor mee)",
+      "pictured_menu_item": "Bak chor mee",
+      "menu_item_join": null,
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/6/6a/Bak-chor-mee.jpg",
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:Bak-chor-mee.jpg",
+      "observed_at_sgt": "2026-10-19",
+      "photograph_date": "2016-07-10",
+      "creator": "JB Macatulad (Commons username Foodforflywill).",
+      "license": "Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "rights_basis": "Commons identifies CC BY-SA 4.0 and displays a Wikimedia VRT permission confirmation; file page links the original source and license.",
+      "attribution": "JB Macatulad (Foodforflywill), “Bak-chor-mee.jpg,” via Wikimedia Commons, CC BY-SA 4.0; link to license and note changes. Adaptations, if any, must be shared under the same or a compatible license.",
+      "pixel_inspection": "Inspected the 1200x800 original. It shows a bowl of bak chor mee with soup and condiments. No stock/generated/placeholder content. Temporary inspection copy was removed after review.",
+      "exact_outlet_join_evidence": "Commons image description explicitly says the bak chor mee is at Hill Street Tai Hwa Pork Noodle in Singapore. Workbook has exact SFA licence W84231K002 for that stall at 465 Crawford Lane #01-12. This is branch-specific dish evidence, not an inference from dish appearance alone.",
+      "currentness_and_scope": "Captured in 2016. No matching menu item row exists in the workbook for this SFA licence, so do not create a menu join or claim current availability from this photo. Retain only as a dated, historically attributed item-image candidate.",
+      "already_in_workbook_exact_url": false,
+      "display_status": "review_only_historical",
+      "approval_rationale": "Exact venue and pictured dish are supported by the Commons description, pixels, and exact SFA row. CC BY-SA 4.0 reuse is permitted with attribution/share-alike conditions, but the image is dated and current menu availability is unverified; review-only historical status is appropriate.",
+      "evidence_urls": [
+        "https://commons.wikimedia.org/wiki/File:Bak-chor-mee.jpg",
+        "https://creativecommons.org/licenses/by-sa/4.0/",
+        "https://commons.wikimedia.org/wiki/Commons:Reusing_content_outside_Wikimedia"
+      ]
+    }
+  ],
+  "excluded_or_not_reproposed": [
+    {
+      "candidate": "Song Fa Bak Kut Teh, New Bridge Road photos",
+      "reason": "Previously proposed in Refresh130; source location does not exactly join to an SFA branch in the current workbook, so no duplicate or uncertain branch join was proposed."
+    },
+    {
+      "candidate": "Generic photos of hawker centres, food stalls, or food dishes",
+      "reason": "No exact named SFA stall/branch join or item match was available; excluded to avoid generic or misleading images."
+    }
+  ],
+  "integration_recommendation": "Update the existing A Noodle Story AMO039004 image candidate with the verified creator, CC0 source, pixel, exact 01-39, and current-directory corroboration fields; it is suitable for the directory Approved Image URL while retaining 2024 capture date. Revalidate and canonicalize the existing Hill Street Tai Hwa storefront candidate using the Commons URL and rights metadata, but keep it historical/review-only. Add the new Hill Street Tai Hwa bak chor mee image candidate as historical/review-only with CC BY-SA attribution, and leave menu_item_join blank because no exact menu item row exists.",
+  "limitations": [
+    "Only the three entries above passed this bounded exact-branch and rights review; other found images were generic or did not distinguish the exact licensed branch.",
+    "A current SFA listing proves a current registry record, not that an old photograph accurately represents present appearance or menu availability.",
+    "No persistent copies of image assets were retained; no workbook edits, spending, or Mapbox requests occurred."
+  ]
+}

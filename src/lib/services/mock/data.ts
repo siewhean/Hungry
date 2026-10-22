@@ -214,6 +214,30 @@ export const venues: VenueSummary[] = [
     deliveryLinks: [],
     planningArea: "Chinatown",
   },
+  {
+    id: "venue-katong-laksa-maxwell",
+    buildingId: "building-maxwell",
+    name: "Katong Laksa Maxwell",
+    unitNumber: "#01-04",
+    floor: "L1",
+    isOpen: false,
+    topDishId: "dish-laksa",
+    operatingHours: "",
+    deliveryLinks: [],
+    planningArea: "Chinatown",
+  },
+  {
+    id: "venue-ah-seng-toast",
+    buildingId: "building-amoy",
+    name: "Ah Seng Toast",
+    unitNumber: "#02-77",
+    floor: "L2",
+    isOpen: false,
+    topDishId: "dish-kaya-toast",
+    operatingHours: "",
+    deliveryLinks: [],
+    planningArea: "Chinatown",
+  },
 ];
 
 export const dishes: DishDetail[] = [
@@ -320,7 +344,7 @@ export const dishes: DishDetail[] = [
   },
   {
     id: "dish-laksa",
-    venueId: "venue-tian-tian",
+    venueId: "venue-katong-laksa-maxwell",
     buildingId: "building-maxwell",
     venueName: "Katong Laksa Maxwell",
     unitNumber: "#01-04",
@@ -366,7 +390,7 @@ export const dishes: DishDetail[] = [
   },
   {
     id: "dish-kaya-toast",
-    venueId: "venue-fish-soup",
+    venueId: "venue-ah-seng-toast",
     buildingId: "building-amoy",
     venueName: "Ah Seng Toast",
     unitNumber: "#02-77",
@@ -527,7 +551,7 @@ export const dishes: DishDetail[] = [
 ];
 
 export const guestProfile: UserProfile = {
-  id: "guest",
+  id: "guest-user",
   displayName: "Guest",
   email: "",
   profileVisibility: "public",

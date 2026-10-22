@@ -1,0 +1,162 @@
+{
+  "snapshot": "refresh137_suntec_vivocity_blank_names_20261019",
+  "workbook": "Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_workbook_sha256": "6b20769d389600a7e7838a64f3350330a6a2cade68a46321ac051fd68986d557",
+  "workbook_edited": false,
+  "observed_at": "2026-10-19T12:44:34+08:00",
+  "scope": "Blank F&B Name SFA records located at Suntec City and VivoCity; only exact postal + property + unit matches to current official tenant directory pages proposed.",
+  "proposal_count": 2,
+  "proposals": [
+    {
+      "excel_row": 33962,
+      "sfa_licence": "CE14A70A009",
+      "matched_name": "FOOD ARENA by Yew Kee Group",
+      "property": "Suntec City",
+      "postal_code": "038983",
+      "sfa_address": "Address: 3 TEMASEK BOULEVARD #03-367,#03-368,#03-369,#03-370,SUNTEC CITY MALL,Singapore 038983",
+      "matched_unit": "#03-367",
+      "source_url": "https://sunteccity.com.sg/store_categories/dining/13757972",
+      "source_evidence": "Official Suntec tenant detail page lists FOOD ARENA by Yew Kee Group at #03-367; the current dining directory lists the same tenant at #03-367. Address and postal code match Suntec City. Workbook SFA business type is Foodcourt and unit range includes the listed unit.",
+      "confidence": "high"
+    },
+    {
+      "excel_row": 34325,
+      "sfa_licence": "CE24310L000",
+      "matched_name": "Onggii",
+      "property": "Suntec City",
+      "postal_code": "038983",
+      "sfa_address": "Address: 3 TEMASEK BOULEVARD #02-300,#02-301,SUNTEC CITY MALL,Singapore 038983",
+      "matched_unit": "#02-300",
+      "source_url": "https://sunteccity.com.sg/store_categories/dining?subCategoryID=5",
+      "source_evidence": "Current official Suntec City dining directory lists Onggii at #02-300. The SFA-registered unit range includes #02-300; postal code and property match. Workbook SFA business type is Restaurant.",
+      "confidence": "high"
+    }
+  ],
+  "withheld_count": 12,
+  "withheld": [
+    {
+      "excel_row": 33925,
+      "sfa_licence": "CE12H72N004",
+      "property": "Suntec City",
+      "postal_code": "038983",
+      "sfa_address": "Address: 3 TEMASEK BOULEVARD #B1-115,#B1-116,#B1-117,#B1-118,#B1-119,#B1-120,SUNTEC CITY MALL,Singapore 038983",
+      "reason": "Shared Food Republic premises (#B1-115..#B1-120); current mall directory verifies Food Republic at #B1-115 but these records include multiple SFA licences at the same shared address and do not resolve whether each blank SFA record is the food-court operator or an individual tenant. Withhold the venue-level name rather than assigning it to separate licensees."
+    },
+    {
+      "excel_row": 33926,
+      "sfa_licence": "CE12H72N006",
+      "property": "Suntec City",
+      "postal_code": "038983",
+      "sfa_address": "Address: 3 TEMASEK BOULEVARD #B1-115,#B1-116,#B1-117,#B1-118,#B1-119,#B1-120,SUNTEC CITY MALL,Singapore 038983",
+      "reason": "Shared Food Republic premises (#B1-115..#B1-120); current mall directory verifies Food Republic at #B1-115 but these records include multiple SFA licences at the same shared address and do not resolve whether each blank SFA record is the food-court operator or an individual tenant. Withhold the venue-level name rather than assigning it to separate licensees."
+    },
+    {
+      "excel_row": 33927,
+      "sfa_licence": "CE12H72N010",
+      "property": "Suntec City",
+      "postal_code": "038983",
+      "sfa_address": "Address: 3 TEMASEK BOULEVARD #B1-115,#B1-116,#B1-117,#B1-118,#B1-119,#B1-120,SUNTEC CITY MALL,Singapore 038983",
+      "reason": "Shared Food Republic premises (#B1-115..#B1-120); current mall directory verifies Food Republic at #B1-115 but these records include multiple SFA licences at the same shared address and do not resolve whether each blank SFA record is the food-court operator or an individual tenant. Withhold the venue-level name rather than assigning it to separate licensees."
+    },
+    {
+      "excel_row": 33928,
+      "sfa_licence": "CE12H72N011",
+      "property": "Suntec City",
+      "postal_code": "038983",
+      "sfa_address": "Address: 3 TEMASEK BOULEVARD #B1-115,#B1-116,#B1-117,#B1-118,#B1-119,#B1-120,SUNTEC CITY MALL,Singapore 038983",
+      "reason": "Shared Food Republic premises (#B1-115..#B1-120); current mall directory verifies Food Republic at #B1-115 but these records include multiple SFA licences at the same shared address and do not resolve whether each blank SFA record is the food-court operator or an individual tenant. Withhold the venue-level name rather than assigning it to separate licensees."
+    },
+    {
+      "excel_row": 33960,
+      "sfa_licence": "CE14940X000",
+      "property": "Suntec City",
+      "postal_code": "038983",
+      "sfa_address": "Address: 3 TEMASEK BOULEVARD #01-606,#01-607,#01-602,#01-603,GOLDEN VILLAGE (GV SUNTEC CITY),Singapore 038983",
+      "reason": "Address explicitly identifies Golden Village (GV Suntec City); apparent overlap with other tenants sharing unit numbers is insufficient to resolve the licensed premises. Withhold."
+    },
+    {
+      "excel_row": 34204,
+      "sfa_licence": "CE21K21J000",
+      "property": "Suntec City",
+      "postal_code": "038983",
+      "sfa_address": "Address: 3 TEMASEK BOULEVARD #B1-115,#B1-116,#B1-117,#B1-118,#B1-119,#B1-120,SUNTEC CITY MALL,Singapore 038983 (MR12)",
+      "reason": "Foodcourt tenant row at same #03-367..#03-370 premises as FOOD ARENA. Directory identifies the venue but not this specific within-food-court SFA license. Withhold."
+    },
+    {
+      "excel_row": 34450,
+      "sfa_licence": "CE25J95C000",
+      "property": "Suntec City",
+      "postal_code": "038983",
+      "sfa_address": "Address: 3 TEMASEK BOULEVARD #03-367,#03-368,#03-369,#03-370,SUNTEC CITY MALL,Singapore 038983 (MR6)",
+      "reason": "Foodcourt tenant row at same #03-367..#03-370 premises as FOOD ARENA. Directory identifies the venue but not this specific within-food-court SFA license. Withhold."
+    },
+    {
+      "excel_row": 37232,
+      "sfa_licence": "SW06558A007",
+      "property": "VivoCity",
+      "postal_code": "098585",
+      "sfa_address": "Address: 1 HARBOURFRONT WALK #03-01,VIVO CITY,Singapore 098585",
+      "reason": "Foodcourt premises at #03-01. VivoCity’s official page verifies Food Republic at #03-01, but two blank SFA foodcourt records share this address and the directory does not map license IDs to venue operator versus specific licensed sub-entities. Withhold."
+    },
+    {
+      "excel_row": 37233,
+      "sfa_licence": "SW06558A025",
+      "property": "VivoCity",
+      "postal_code": "098585",
+      "sfa_address": "Address: 1 HARBOURFRONT WALK #03-01,VIVO CITY,Singapore 098585",
+      "reason": "Foodcourt premises at #03-01. VivoCity’s official page verifies Food Republic at #03-01, but two blank SFA foodcourt records share this address and the directory does not map license IDs to venue operator versus specific licensed sub-entities. Withhold."
+    },
+    {
+      "excel_row": 37535,
+      "sfa_licence": "SW25G94B010",
+      "property": "VivoCity",
+      "postal_code": "098585",
+      "sfa_address": "Address: 1 HARBOURFRONT WALK #B2-40,VIVO CITY,Singapore 098585",
+      "reason": "Kopitiam Food Hall shared premises at #B2-40; official page confirms the food hall and says it contains 30 stalls, but no evidence maps this SFA license to the food hall operator or to an individual stall. Withhold."
+    },
+    {
+      "excel_row": 37536,
+      "sfa_licence": "SW25G94B012",
+      "property": "VivoCity",
+      "postal_code": "098585",
+      "sfa_address": "Address: 1 HARBOURFRONT WALK #B2-40,VIVO CITY,Singapore 098585",
+      "reason": "Kopitiam Food Hall shared premises at #B2-40; official page confirms the food hall and says it contains 30 stalls, but no evidence maps this SFA license to the food hall operator or to an individual stall. Withhold."
+    },
+    {
+      "excel_row": 37537,
+      "sfa_licence": "SW25G94B013",
+      "property": "VivoCity",
+      "postal_code": "098585",
+      "sfa_address": "Address: 1 HARBOURFRONT WALK #B2-40,VIVO CITY,Singapore 098585",
+      "reason": "Kopitiam Food Hall shared premises at #B2-40; official page confirms the food hall and says it contains 30 stalls, but no evidence maps this SFA license to the food hall operator or to an individual stall. Withhold."
+    }
+  ],
+  "validation": {
+    "excel_row_references_rechecked": true,
+    "proposed_name_cells_blank": true,
+    "withheld_name_cells_blank": true,
+    "sfa_licence_ids_unique_in_workbook": true,
+    "proposed_licence_ids_unique": true,
+    "no_proposal_overlap_with_withheld": true,
+    "all_proposal_postal_and_address_values_exactly_match_workbook": true,
+    "read_only_workbook_check": true
+  },
+  "sources": [
+    {
+      "url": "https://sunteccity.com.sg/store_categories/dining?subCategoryID=5",
+      "description": "Official Suntec City dining tenant directory; lists Onggii #02-300, FOOD ARENA #03-367 and Food Republic #B1-115."
+    },
+    {
+      "url": "https://sunteccity.com.sg/store_categories/dining/13757972",
+      "description": "Official Food Arena tenant detail page; lists #03-367."
+    },
+    {
+      "url": "https://www.vivocity.com.sg/stores/food-republic/",
+      "description": "Official VivoCity Food Republic page; lists #03-01."
+    },
+    {
+      "url": "https://www.vivocity.com.sg/stores/kopitiam-2/",
+      "description": "Official VivoCity Kopitiam Food Hall page; lists #B2-40 and describes 30 food stalls."
+    }
+  ]
+}

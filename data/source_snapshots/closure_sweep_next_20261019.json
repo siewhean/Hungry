@@ -1,0 +1,104 @@
+{
+  "snapshot_type": "bounded_official_closure_verification_sweep",
+  "observed_local_date": "2026-10-19",
+  "canonical_workbook": {
+    "path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "sha256": "2c737c77fc2472cb7fcc31af2746e813a1b7779fedc8632f76b19f7fc396a5b3",
+    "directory_sheet": "Public F&B Directory"
+  },
+  "scope": "Bounded check of five stale-SFA-query candidates in dense mall/restaurant addresses using official mall/store/SFA sources; no delivery-platform evidence used. Workbook not edited.",
+  "baseline_context": {
+    "prior_sfa_comparison": "data/source_snapshots/refresh125_sfa_current_delta_20261019.json",
+    "prior_result": "51 workbook licences were absent from the SFA Track Records standard query; the source has no current licence status, cancellation, expiry, closure or active-trading field. Absence is not closure evidence."
+  },
+  "candidates_reviewed": [
+    {
+      "sfa_licence": "CE09G07N000",
+      "workbook_record": {
+        "excel_row": 2670,
+        "sfa_licence": "CE09G07N000",
+        "f_and_b_name": "AUNT MYEONGDONG",
+        "business_type": "Restaurant",
+        "address": "Address: 180 KITCHENER ROAD #03-53,#03-54,#03-55,CITY SQUARE MALL,Singapore 208539"
+      },
+      "decision": "retain_no_closure_evidence",
+      "confidence": "high",
+      "official_evidence": [
+        {
+          "url": "https://www.citysquaremall.com.sg/wp-content/uploads/2026/03/Press-Release-City-Square-Mall-Unveils-S50-Million-Revamp-1.pdf",
+          "observed": "Official City Square Mall press release (March 2026) identifies Aunt MyeongDong #03-53 as a dining concept. This is positive evidence of presence after the prior SFA comparison, not closure."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "C98085L012",
+      "workbook_record": {
+        "excel_row": 20685,
+        "sfa_licence": "C98085L012",
+        "f_and_b_name": "NO.1 JINGDONG ROTI",
+        "business_type": "Foodcourt",
+        "address": "Address: 1 BUKIT BATOK CENTRAL LINK #04-01,WEST MALL,Singapore 658713"
+      },
+      "decision": "unresolved_retain",
+      "confidence": "none_for_closure",
+      "official_evidence": [],
+      "research_note": "No current official West Mall/SFA source with a permanent-closure notice was found in this bounded search. A recent non-official social post suggests the named foodcourt tenant may exist, but is excluded as closure evidence."
+    },
+    {
+      "sfa_licence": "CE09300X000",
+      "workbook_record": {
+        "excel_row": 7225,
+        "sfa_licence": "CE09300X000",
+        "f_and_b_name": "DANIU CHAOSHAN",
+        "business_type": "Restaurant",
+        "address": "Address: 320 TANGLIN ROAD Singapore 247980 (BLOCK H & I)"
+      },
+      "decision": "unresolved_retain",
+      "confidence": "none_for_closure",
+      "official_evidence": [],
+      "research_note": "No current official mall/operator/SFA permanent-closure notice was located in this bounded search. Search hits were third-party/company-directory material, not accepted as closure proof."
+    },
+    {
+      "sfa_licence": "CE16G44X000",
+      "workbook_record": {
+        "excel_row": 5240,
+        "sfa_licence": "CE16G44X000",
+        "f_and_b_name": "CHANG AN BBQ",
+        "business_type": "Restaurant",
+        "address": "Address: 19 LORONG LIPUT HOLLAND VILLAGE,Singapore 277732"
+      },
+      "decision": "unresolved_retain",
+      "confidence": "none_for_closure",
+      "official_evidence": [],
+      "research_note": "No current official mall/operator/SFA permanent-closure notice was located in this bounded search."
+    },
+    {
+      "sfa_licence": "CE24I08L000",
+      "workbook_record": {
+        "excel_row": 34357,
+        "sfa_licence": "CE24I08L000",
+        "f_and_b_name": null,
+        "business_type": "Restaurant",
+        "address": "Address: 1 LIANG SEAH STREET #01-05,#01-06,#02-06,#02-07,LIANG SEAH PLACE,Singapore 189022"
+      },
+      "decision": "unresolved_retain",
+      "confidence": "none_for_closure",
+      "official_evidence": [],
+      "research_note": "Workbook name is blank; no outlet identity or exact official closure notice can be established from this record. Do not remove based on name/address ambiguity."
+    }
+  ],
+  "summary": {
+    "candidates_reviewed": 5,
+    "official_permanent_closures_confirmed": 0,
+    "exact_rows_recommended_for_removal": 0,
+    "unresolved_retain": 4,
+    "positive_current_official_presence": 1
+  },
+  "conclusion": "No candidate met the evidentiary threshold for permanent closure. Keep all reviewed records. A future exact official closure notice should be matched by outlet address/unit and SFA licence before removal.",
+  "limitations": [
+    "This is a bounded sample, not a nationwide closure audit.",
+    "Search-result absence is not evidence that a business is closed.",
+    "The prior SFA query snapshot is one day old and lacks any closure/status field.",
+    "The currently installed workbook is Refresh126, SHA recorded above; Refresh125 source snapshot used an earlier workbook checksum."
+  ]
+}

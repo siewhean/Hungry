@@ -41,6 +41,7 @@ export class MockRealtimeChannel implements IRealtimeChannel {
     const subscribers = eventBus.get(this.channelId);
     if (!subscribers) return;
     setTimeout(() => {
+      if (eventBus.get(this.channelId) !== subscribers) return;
       subscribers.forEach((handler) => handler(event));
     }, SIMULATED_LATENCY_MS);
   }
@@ -80,6 +81,8 @@ export class MockRealtimeChannel implements IRealtimeChannel {
     if (this.eventHandler) {
       eventBus.get(this.channelId)?.delete(this.eventHandler);
     }
+    this.eventHandler = undefined;
+    this.presenceHandler = undefined;
     // Remove from presence
     const state = presenceBus.get(this.channelId) ?? {};
     presenceBus.set(this.channelId, state);

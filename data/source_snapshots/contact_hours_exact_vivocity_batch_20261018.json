@@ -1,0 +1,110 @@
+{
+  "snapshot_id": "contact_hours_exact_vivocity_batch_20261018",
+  "captured_at": "2026-10-18",
+  "baseline_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_workbook_sha256": "986a2656c3243d55c1a3914a3c5fbbdf2052e0423a69705785cbba0b7fee154e",
+  "scope": "Read-only exact-licence audit of three VivoCity records with nonblank hours and/or contact and website values. Checked matching unit/postal against first-party operator locator pages. No workbook edits.",
+  "transport_note": "Raw HTML captures were fetched with curl -k because local Python TLS verification failed for these hosts. Source page SHA-256 values below bind the captured bytes, but TLS certificate validation was disabled for raw captures. Search results also independently exposed the primary-source listings.",
+  "source_evidence": [
+    {
+      "url": "https://auntieannesg.com/store-locations/",
+      "publisher": "Auntie Anne's Singapore official outlet locator",
+      "http_status": 200,
+      "content_sha256": "ca0fb69d7a81299759e9867ae4f9085f54aecc00fd4905719d47bcc44398d2ad",
+      "evidence_excerpt": "VIVO CITY; 1 Harbourfront Walk, B2-K6, Singapore 098585; 11am-9.30pm.",
+      "exact_match_fields": ["unit", "postal_code", "hours"]
+    },
+    {
+      "url": "https://tiongbahrubakery.com/pages/locations",
+      "publisher": "Tiong Bahru Bakery official outlet locator",
+      "http_status": 200,
+      "content_sha256": "e5d81956f15071ff449bbf7329d5be2aaa155d8ddaaa489cf63560b7d8af23a8",
+      "evidence_excerpt": "VivoCity; 1 Harbourfront Walk #01-188B, Singapore 098585; +65 6877 4874; Open from 8am to 10pm daily.",
+      "exact_match_fields": ["unit", "postal_code", "contact", "hours"]
+    },
+    {
+      "url": "https://www.coffeebean.com.sg/amlocator/Vivocity/",
+      "publisher": "The Coffee Bean & Tea Leaf Singapore official outlet locator",
+      "http_status": 200,
+      "content_sha256": "5f5cdebe6f7148d235e2b2bd9d9681ffd87741cb52bc8a4c34d58dde3cbc155b",
+      "evidence_excerpt": "VivoCity; 1 HarbourFront Walk #02-04, Singapore 098585; 6252 2465; Mon-Thurs, Sun 8am-11pm; Fri-Sat 8am-12am; holiday variations noted.",
+      "exact_match_fields": ["unit", "postal_code", "contact", "hours"]
+    },
+    {
+      "url": "http://www.coffeebean.com.sg/",
+      "publisher": "The Coffee Bean & Tea Leaf Singapore official homepage",
+      "http_status": 200,
+      "effective_url": "https://www.coffeebean.com.sg/",
+      "content_sha256": "4ded717b60227e5aafe6f80b01efddc48e5b7fc1fafdf01249f85b0f3833cab3",
+      "basis": "HTTP URL redirects to the HTTPS homepage on the same official operator domain."
+    }
+  ],
+  "records": [
+    {
+      "sfa_licence": "SW16789J000",
+      "directory_row": 2644,
+      "name": "AUNTIE ANNE'S",
+      "postal_code": "098585",
+      "unit": "#B2-K6",
+      "before": {
+        "opening_hours_closed_days": "Hours: Daily: 11:00 AM - 9:30 PM",
+        "contact_details": null,
+        "website": "https://auntieannesg.com/"
+      },
+      "disposition": "No replacement. Exact first-party outlet locator confirms the workbook hours and website domain; no contact is populated.",
+      "proposals": []
+    },
+    {
+      "sfa_licence": "SW23786E000",
+      "directory_row": 29045,
+      "name": "TIONG BAHRU BAKERY",
+      "postal_code": "098585",
+      "unit": "#01-188B",
+      "before": {
+        "opening_hours_closed_days": "Hours: Open from 8am to 10pm daily.",
+        "contact_details": "Contact: +65 6877 4874",
+        "website": null
+      },
+      "disposition": "No replacement. Exact first-party outlet locator confirms the nonblank hours and contact. The website field is blank and outside this false-value audit.",
+      "proposals": []
+    },
+    {
+      "sfa_licence": "SW23379E000",
+      "directory_row": 28231,
+      "name": "The Coffee Bean & Tea Leaf",
+      "postal_code": "098585",
+      "unit": "#02-04",
+      "before": {
+        "opening_hours_closed_days": "Hours: Mon - Thurs, Sun: 8am - 11pm Fri - Sat: 8am - 12am Operating hours for Public Holidays and Eve of Public Holidays may differ.",
+        "contact_details": "Contact: +6562522465",
+        "website": "http://www.coffeebean.com.sg/"
+      },
+      "disposition": "Hours and contact corroborated by the exact first-party outlet locator. Propose canonical HTTPS URL normalization because the current HTTP URL redirects to HTTPS on the same official operator domain.",
+      "proposals": [
+        {
+          "field": "website",
+          "before": "http://www.coffeebean.com.sg/",
+          "after": "https://www.coffeebean.com.sg/",
+          "action": "normalize_url",
+          "confidence": "high",
+          "reason": "The current URL resolves to the HTTPS homepage at the same official operator domain.",
+          "evidence_urls": ["https://www.coffeebean.com.sg/amlocator/Vivocity/", "http://www.coffeebean.com.sg/"],
+          "source_hashes": ["5f5cdebe6f7148d235e2b2bd9d9681ffd87741cb52bc8a4c34d58dde3cbc155b", "4ded717b60227e5aafe6f80b01efddc48e5b7fc1fafdf01249f85b0f3833cab3"]
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "records_audited": 3,
+    "field_values_corroborated": 6,
+    "replacement_proposals": 1,
+    "confirmed_false_values": 0,
+    "unresolved_fields": 0,
+    "workbook_edits": 0
+  },
+  "limitations": [
+    "This is a three-record audit, not a database-wide validation.",
+    "Auntie Anne's VivoCity mall directory displays a general mall opening-hours footer; the brand's exact outlet locator is the more specific source and corroborates the workbook's 11:00am-9:30pm hours.",
+    "The URL normalization proposal is a canonicalization of a redirecting official URL, not a claim that the prior URL was false."
+  ]
+}

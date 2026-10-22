@@ -1,0 +1,701 @@
+[
+  {
+    "id": "RP-01",
+    "status": "shared",
+    "files": [
+      "src/store/useReviewDraftStore.ts",
+      "src/features/post/accountDraftPersistence.ts",
+      "src/lib/security/accountScope.ts"
+    ],
+    "checks": [
+      {
+        "command": "focused contribution, publication, draft, article and exit contracts; see contributions-focused-tests.log",
+        "result": "23 passed, 0 failed; includes behavioral account isolation, stale publication rejection, exact dish, retry identity and article identity checks"
+      },
+      {
+        "command": "npx eslint on owned screens/components/stores/helpers",
+        "result": "passed"
+      },
+      {
+        "command": "Independent publication/provider QA and page follow-up; QA-publication.md",
+        "result": "Publication-focused 60/60 and follow-up 14/14 pass; historical full suite 8 failures explicitly preserved for integrator follow-up"
+      }
+    ],
+    "reason": "Partitioned durable review drafts by account; generation/edit guards reject delayed hydration. Root invokes scope transitions centrally.",
+    "remaining": [],
+    "sharedOwner": "root account-transition lifecycle"
+  },
+  {
+    "id": "RP-02",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/post/PostComposerScreen.tsx",
+      "src/app/screens/review/ReviewScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused contribution, publication, draft, article and exit contracts; see contributions-focused-tests.log",
+        "result": "23 passed, 0 failed; includes behavioral account isolation, stale publication rejection, exact dish, retry identity and article identity checks"
+      },
+      {
+        "command": "npx eslint on owned screens/components/stores/helpers",
+        "result": "passed"
+      },
+      {
+        "command": "Independent publication/provider QA and page follow-up; QA-publication.md",
+        "result": "Publication-focused 60/60 and follow-up 14/14 pass; historical full suite 8 failures explicitly preserved for integrator follow-up"
+      }
+    ],
+    "reason": "Production async service dish search; review bounded location/query venue search; async venue menu; dish-only route resolves canonical venue and confirms draft reconciliation.",
+    "remaining": []
+  },
+  {
+    "id": "RP-03",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/post/PostComposerScreen.tsx",
+      "src/features/post/useComposerStore.ts",
+      "src/features/post/useDraftExitGuard.ts"
+    ],
+    "checks": [
+      {
+        "command": "focused contribution, publication, draft, article and exit contracts; see contributions-focused-tests.log",
+        "result": "23 passed, 0 failed; includes behavioral account isolation, stale publication rejection, exact dish, retry identity and article identity checks"
+      },
+      {
+        "command": "npx eslint on owned screens/components/stores/helpers",
+        "result": "passed"
+      },
+      {
+        "command": "Independent publication/provider QA and page follow-up; QA-publication.md",
+        "result": "Publication-focused 60/60 and follow-up 14/14 pass; historical full suite 8 failures explicitly preserved for integrator follow-up"
+      }
+    ],
+    "reason": "Production caption/media/target now live in durable scoped composer; actual beforeRemove offers Save draft, Discard and Keep editing.",
+    "remaining": [
+      "Native process recreation and picker asset lifetime acceptance pending."
+    ]
+  },
+  {
+    "id": "RP-04",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/post/PostComposerScreen.tsx",
+      "src/features/post/publishing.ts"
+    ],
+    "checks": [
+      {
+        "command": "focused contribution, publication, draft, article and exit contracts; see contributions-focused-tests.log",
+        "result": "23 passed, 0 failed; includes behavioral account isolation, stale publication rejection, exact dish, retry identity and article identity checks"
+      },
+      {
+        "command": "npx eslint on owned screens/components/stores/helpers",
+        "result": "passed"
+      }
+    ],
+    "reason": "Venue-only routes never substitute the first menu item; exact deliberate dish is mandatory. Behavioral publication tests pass.",
+    "remaining": []
+  },
+  {
+    "id": "RP-05",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/review/ReviewScreen.tsx",
+      "src/store/useReviewDraftStore.ts",
+      "src/features/post/useDraftExitGuard.ts"
+    ],
+    "checks": [
+      {
+        "command": "focused contribution, publication, draft, article and exit contracts; see contributions-focused-tests.log",
+        "result": "23 passed, 0 failed; includes behavioral account isolation, stale publication rejection, exact dish, retry identity and article identity checks"
+      },
+      {
+        "command": "npx eslint on owned screens/components/stores/helpers",
+        "result": "passed"
+      },
+      {
+        "command": "Independent publication/provider QA and page follow-up; QA-publication.md",
+        "result": "Publication-focused 60/60 and follow-up 14/14 pass; historical full suite 8 failures explicitly preserved for integrator follow-up"
+      }
+    ],
+    "reason": "Changing selected or routed dish confirms Keep content versus Start again; preserving content invalidates publication retry identity.",
+    "remaining": []
+  },
+  {
+    "id": "RP-06",
+    "status": "removed",
+    "files": [
+      "src/components/review/MediaPicker.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused contribution, publication, draft, article and exit contracts; see contributions-focused-tests.log",
+        "result": "23 passed, 0 failed; includes behavioral account isolation, stale publication rejection, exact dish, retry identity and article identity checks"
+      },
+      {
+        "command": "npx eslint on owned screens/components/stores/helpers",
+        "result": "passed"
+      }
+    ],
+    "reason": "Removed fake photo filter/editor controls and applied-filter toast. Actual native image picker cropping remains.",
+    "remaining": []
+  },
+  {
+    "id": "RP-07",
+    "status": "shared",
+    "files": [
+      "src/app/screens/review/ReviewScreen.tsx",
+      "src/features/post/publishing.ts",
+      "src/features/review/reviewPublication.ts",
+      "src/features/review/reviewMediaManifest.ts"
+    ],
+    "checks": [
+      {
+        "command": "focused contribution, publication, draft, article and exit contracts; see contributions-focused-tests.log",
+        "result": "23 passed, 0 failed; includes behavioral account isolation, stale publication rejection, exact dish, retry identity and article identity checks"
+      },
+      {
+        "command": "npx eslint on owned screens/components/stores/helpers",
+        "result": "passed"
+      },
+      {
+        "command": "Independent publication/provider QA and page follow-up; QA-publication.md",
+        "result": "Publication-focused 60/60 and follow-up 14/14 pass; historical full suite 8 failures explicitly preserved for integrator follow-up"
+      }
+    ],
+    "reason": "Atomic v2 receipt integration independently checked; content fingerprints, exact owner attempt metadata RPC, lost-ack immutable retry recovery and account-generation guards implemented. Database specialist owns migration/RPC authorization.",
+    "remaining": [
+      "Staging transaction, storage policies and cleanup proof pending."
+    ],
+    "sharedOwner": "root review publication v2 plus database migration"
+  },
+  {
+    "id": "RP-08",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/review/ReviewScreen.tsx",
+      "src/app/screens/review/ReviewSuccessModal.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused contribution, publication, draft, article and exit contracts; see contributions-focused-tests.log",
+        "result": "23 passed, 0 failed; includes behavioral account isolation, stale publication rejection, exact dish, retry identity and article identity checks"
+      },
+      {
+        "command": "npx eslint on owned screens/components/stores/helpers",
+        "result": "passed"
+      }
+    ],
+    "reason": "Removed locally computed rewards. Positive award display requires authoritative receipt points and enabled gamification gate.",
+    "remaining": []
+  },
+  {
+    "id": "RP-09",
+    "status": "shared",
+    "files": [
+      "src/app/screens/review/ReviewFeedScreen.tsx",
+      "src/features/review/reviewFeedQuery.ts"
+    ],
+    "checks": [
+      {
+        "command": "focused contribution, publication, draft, article and exit contracts; see contributions-focused-tests.log",
+        "result": "23 passed, 0 failed; includes behavioral account isolation, stale publication rejection, exact dish, retry identity and article identity checks"
+      },
+      {
+        "command": "npx eslint on owned screens/components/stores/helpers",
+        "result": "passed"
+      },
+      {
+        "command": "Independent publication/provider QA and page follow-up; QA-publication.md",
+        "result": "Publication-focused 60/60 and follow-up 14/14 pass; historical full suite 8 failures explicitly preserved for integrator follow-up"
+      }
+    ],
+    "reason": "Server receives query and recent/top_rated sort before pagination. Removed unsupported alphabetic location/dish sort choices.",
+    "remaining": [],
+    "sharedOwner": "root service listRecentReviews query/sort"
+  },
+  {
+    "id": "RP-10",
+    "status": "shared",
+    "files": [
+      "src/app/screens/review/ReviewFeedScreen.tsx",
+      "src/features/review/reviewFeedQuery.ts"
+    ],
+    "checks": [
+      {
+        "command": "focused contribution, publication, draft, article and exit contracts; see contributions-focused-tests.log",
+        "result": "23 passed, 0 failed; includes behavioral account isolation, stale publication rejection, exact dish, retry identity and article identity checks"
+      },
+      {
+        "command": "npx eslint on owned screens/components/stores/helpers",
+        "result": "passed"
+      },
+      {
+        "command": "Independent publication/provider QA and page follow-up; QA-publication.md",
+        "result": "Publication-focused 60/60 and follow-up 14/14 pass; historical full suite 8 failures explicitly preserved for integrator follow-up"
+      }
+    ],
+    "reason": "Composite createdAt,id,rating cursor passes exact page boundary to service.",
+    "remaining": [],
+    "sharedOwner": "root service composite cursor"
+  },
+  {
+    "id": "RP-11",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/review/ReviewShareSheet.tsx",
+      "src/app/screens/review/ReviewFeedScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused contribution, publication, draft, article and exit contracts; see contributions-focused-tests.log",
+        "result": "23 passed, 0 failed; includes behavioral account isolation, stale publication rejection, exact dish, retry identity and article identity checks"
+      },
+      {
+        "command": "npx eslint on owned screens/components/stores/helpers",
+        "result": "passed"
+      },
+      {
+        "command": "Independent publication/provider QA and page follow-up; QA-publication.md",
+        "result": "Publication-focused 60/60 and follow-up 14/14 pass; historical full suite 8 failures explicitly preserved for integrator follow-up"
+      }
+    ],
+    "reason": "Share dish uses real canonical dish URL; in-app recipients receive text/link, never a guessed linked post ID.",
+    "remaining": []
+  },
+  {
+    "id": "RP-12",
+    "status": "shared",
+    "files": [
+      "src/app/screens/review/ReviewShareSheet.tsx",
+      "src/features/share/messagingShare.ts",
+      "src/features/share/shareHandoff.ts"
+    ],
+    "checks": [
+      {
+        "command": "focused contribution, publication, draft, article and exit contracts; see contributions-focused-tests.log",
+        "result": "23 passed, 0 failed; includes behavioral account isolation, stale publication rejection, exact dish, retry identity and article identity checks"
+      },
+      {
+        "command": "npx eslint on owned screens/components/stores/helpers",
+        "result": "passed"
+      },
+      {
+        "command": "Independent publication/provider QA and page follow-up; QA-publication.md",
+        "result": "Publication-focused 60/60 and follow-up 14/14 pass; historical full suite 8 failures explicitly preserved for integrator follow-up"
+      }
+    ],
+    "reason": "Native cancellation does not count shares; failed messaging handoffs return false; recipient sends use stable nonce and retain only failed recipients for retry.",
+    "remaining": [
+      "Native WhatsApp, Telegram and system share acceptance pending."
+    ],
+    "sharedOwner": "root safeLinking boolean outcomes"
+  },
+  {
+    "id": "RP-13",
+    "status": "external_pending",
+    "files": [
+      "src/app/screens/review/ReviewScreen.tsx",
+      "src/app/screens/review/ReviewShareSheet.tsx",
+      "src/components/review/StarRating.tsx",
+      "src/components/review/MediaPicker.tsx",
+      "src/features/post/useDraftExitGuard.ts"
+    ],
+    "checks": [
+      {
+        "command": "focused contribution, publication, draft, article and exit contracts; see contributions-focused-tests.log",
+        "result": "23 passed, 0 failed; includes behavioral account isolation, stale publication rejection, exact dish, retry identity and article identity checks"
+      },
+      {
+        "command": "npx eslint on owned screens/components/stores/helpers",
+        "result": "passed"
+      }
+    ],
+    "reason": "Added safe-area native modal, labelled search/photo actions, actual adjustable rating actions, selected/busy state and larger removal targets.",
+    "remaining": [
+      "Fresh iOS/Android large-text, keyboard, modal focus, VoiceOver/TalkBack visual acceptance pending."
+    ]
+  },
+  {
+    "id": "RP-14",
+    "status": "removed",
+    "files": [
+      "src/app/screens/review/QuickReviewSheet.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused contribution, publication, draft, article and exit contracts; see contributions-focused-tests.log",
+        "result": "23 passed, 0 failed; includes behavioral account isolation, stale publication rejection, exact dish, retry identity and article identity checks"
+      },
+      {
+        "command": "npx eslint on owned screens/components/stores/helpers",
+        "result": "passed"
+      }
+    ],
+    "reason": "Retired dormant fake success/points/publication wizard; legacy host explains the supported full review entry.",
+    "remaining": []
+  },
+  {
+    "id": "RP-15",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/post/PostComposerScreenV2.tsx",
+      "src/features/post/useComposerStore.ts",
+      "src/features/post/components/StatusOverlay.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused contribution, publication, draft, article and exit contracts; see contributions-focused-tests.log",
+        "result": "23 passed, 0 failed; includes behavioral account isolation, stale publication rejection, exact dish, retry identity and article identity checks"
+      },
+      {
+        "command": "npx eslint on owned screens/components/stores/helpers",
+        "result": "passed"
+      }
+    ],
+    "reason": "V2 delegates to durable supported composer; Finish Later no longer resets saved draft content.",
+    "remaining": []
+  },
+  {
+    "id": "RP-16",
+    "status": "removed",
+    "files": [
+      "src/app/screens/post/PostComposerScreenV2.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused contribution, publication, draft, article and exit contracts; see contributions-focused-tests.log",
+        "result": "23 passed, 0 failed; includes behavioral account isolation, stale publication rejection, exact dish, retry identity and article identity checks"
+      },
+      {
+        "command": "npx eslint on owned screens/components/stores/helpers",
+        "result": "passed"
+      }
+    ],
+    "reason": "Removed reachable creator-suite music, scheduling, collaborator, sponsor and AI promises by replacing prototype editor with supported composer.",
+    "remaining": []
+  },
+  {
+    "id": "RP-17",
+    "status": "removed",
+    "files": [
+      "src/app/screens/review/MusicSelectionScreen.tsx",
+      "src/app/screens/review/ReviewScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused contribution, publication, draft, article and exit contracts; see contributions-focused-tests.log",
+        "result": "23 passed, 0 failed; includes behavioral account isolation, stale publication rejection, exact dish, retry identity and article identity checks"
+      },
+      {
+        "command": "npx eslint on owned screens/components/stores/helpers",
+        "result": "passed"
+      }
+    ],
+    "reason": "Removed simulated tracks/playback and unsupported review music entry. Legacy route states music unavailable.",
+    "remaining": []
+  },
+  {
+    "id": "RP-18",
+    "status": "external_pending",
+    "files": [
+      "src/app/screens/review/ReviewScreen.tsx",
+      "src/app/screens/post/PostComposerScreenV2.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused contribution, publication, draft, article and exit contracts; see contributions-focused-tests.log",
+        "result": "23 passed, 0 failed; includes behavioral account isolation, stale publication rejection, exact dish, retry identity and article identity checks"
+      },
+      {
+        "command": "npx eslint on owned screens/components/stores/helpers",
+        "result": "passed"
+      }
+    ],
+    "reason": "Review now puts exact food selection and rating/taste before optional media/note; V2 shares food-first editor.",
+    "remaining": [
+      "Rendered design fidelity and completion-time/usability comparison require native/user acceptance."
+    ]
+  },
+  {
+    "id": "RP-19",
+    "status": "shared",
+    "files": [
+      "src/app/screens/review/ReviewFeedScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused contribution, publication, draft, article and exit contracts; see contributions-focused-tests.log",
+        "result": "23 passed, 0 failed; includes behavioral account isolation, stale publication rejection, exact dish, retry identity and article identity checks"
+      },
+      {
+        "command": "npx eslint on owned screens/components/stores/helpers",
+        "result": "passed"
+      },
+      {
+        "command": "Independent publication/provider QA and page follow-up; QA-publication.md",
+        "result": "Publication-focused 60/60 and follow-up 14/14 pass; historical full suite 8 failures explicitly preserved for integrator follow-up"
+      }
+    ],
+    "reason": "Safety calls use canonical authorId and visible review feed reacts to shared block/hide revision.",
+    "remaining": [],
+    "sharedOwner": "root canonical safety identity and reactive state"
+  },
+  {
+    "id": "RD-01",
+    "status": "shared",
+    "files": [
+      "src/app/screens/reads/ReadsFeedScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused contribution, publication, draft, article and exit contracts; see contributions-focused-tests.log",
+        "result": "23 passed, 0 failed; includes behavioral account isolation, stale publication rejection, exact dish, retry identity and article identity checks"
+      },
+      {
+        "command": "npx eslint on owned screens/components/stores/helpers",
+        "result": "passed"
+      }
+    ],
+    "reason": "Dormant editorial feed retired; remaining component honestly reports unavailable.",
+    "remaining": [],
+    "sharedOwner": "root unused readsEnabled flag/document retirement"
+  },
+  {
+    "id": "RD-02",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/reads/BlogPostWebViewScreen.tsx",
+      "src/features/reads/articleInspector.ts"
+    ],
+    "checks": [
+      {
+        "command": "focused contribution, publication, draft, article and exit contracts; see contributions-focused-tests.log",
+        "result": "23 passed, 0 failed; includes behavioral account isolation, stale publication rejection, exact dish, retry identity and article identity checks"
+      },
+      {
+        "command": "npx eslint on owned screens/components/stores/helpers",
+        "result": "passed"
+      }
+    ],
+    "reason": "Exact asynchronous article loading has distinct loading/missing/error/retry states and no unsafe empty-cache dereference.",
+    "remaining": []
+  },
+  {
+    "id": "RD-03",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/reads/BlogPostWebViewScreen.tsx",
+      "src/features/reads/articleInspector.ts"
+    ],
+    "checks": [
+      {
+        "command": "focused contribution, publication, draft, article and exit contracts; see contributions-focused-tests.log",
+        "result": "23 passed, 0 failed; includes behavioral account isolation, stale publication rejection, exact dish, retry identity and article identity checks"
+      },
+      {
+        "command": "npx eslint on owned screens/components/stores/helpers",
+        "result": "passed"
+      }
+    ],
+    "reason": "Exact ID helper rejects a mismatched result and never falls back to first article.",
+    "remaining": []
+  },
+  {
+    "id": "RD-04",
+    "status": "removed",
+    "files": [
+      "src/app/screens/reads/ReadsFeedScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused contribution, publication, draft, article and exit contracts; see contributions-focused-tests.log",
+        "result": "23 passed, 0 failed; includes behavioral account isolation, stale publication rejection, exact dish, retry identity and article identity checks"
+      },
+      {
+        "command": "npx eslint on owned screens/components/stores/helpers",
+        "result": "passed"
+      }
+    ],
+    "reason": "Retired cache-only dormant feed rather than displaying fake timer-driven loading/error states.",
+    "remaining": []
+  },
+  {
+    "id": "RD-05",
+    "status": "removed",
+    "files": [
+      "src/app/screens/reads/ReadsFeedScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused contribution, publication, draft, article and exit contracts; see contributions-focused-tests.log",
+        "result": "23 passed, 0 failed; includes behavioral account isolation, stale publication rejection, exact dish, retry identity and article identity checks"
+      },
+      {
+        "command": "npx eslint on owned screens/components/stores/helpers",
+        "result": "passed"
+      }
+    ],
+    "reason": "Removed dormant Archive and atmosphere promises with feed retirement.",
+    "remaining": []
+  },
+  {
+    "id": "RD-06",
+    "status": "removed",
+    "files": [
+      "src/app/screens/reads/ReadsFeedScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused contribution, publication, draft, article and exit contracts; see contributions-focused-tests.log",
+        "result": "23 passed, 0 failed; includes behavioral account isolation, stale publication rejection, exact dish, retry identity and article identity checks"
+      },
+      {
+        "command": "npx eslint on owned screens/components/stores/helpers",
+        "result": "passed"
+      }
+    ],
+    "reason": "Removed fabricated snippet-character-based reading times.",
+    "remaining": []
+  },
+  {
+    "id": "RD-07",
+    "status": "removed",
+    "files": [
+      "src/app/screens/reads/ReadsFeedScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused contribution, publication, draft, article and exit contracts; see contributions-focused-tests.log",
+        "result": "23 passed, 0 failed; includes behavioral account isolation, stale publication rejection, exact dish, retry identity and article identity checks"
+      },
+      {
+        "command": "npx eslint on owned screens/components/stores/helpers",
+        "result": "passed"
+      }
+    ],
+    "reason": "Removed repetitive disconnected dormant editorial feed hierarchy.",
+    "remaining": []
+  },
+  {
+    "id": "RD-08",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/reads/BlogPostWebViewScreen.tsx",
+      "src/features/reads/articleInspector.ts"
+    ],
+    "checks": [
+      {
+        "command": "focused contribution, publication, draft, article and exit contracts; see contributions-focused-tests.log",
+        "result": "23 passed, 0 failed; includes behavioral account isolation, stale publication rejection, exact dish, retry identity and article identity checks"
+      },
+      {
+        "command": "npx eslint on owned screens/components/stores/helpers",
+        "result": "passed"
+      }
+    ],
+    "reason": "Original article opens only through deliberate button; failed handoff exposes reopen and failure text.",
+    "remaining": [
+      "Native trusted-browser handoff acceptance pending."
+    ]
+  },
+  {
+    "id": "RD-09",
+    "status": "removed",
+    "files": [
+      "src/app/screens/dev/DeveloperLauncherScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused contribution, publication, draft, article and exit contracts; see contributions-focused-tests.log",
+        "result": "23 passed, 0 failed; includes behavioral account isolation, stale publication rejection, exact dish, retry identity and article identity checks"
+      },
+      {
+        "command": "npx eslint on owned screens/components/stores/helpers",
+        "result": "passed"
+      }
+    ],
+    "reason": "Removed inert feature switches and fake Slow 3G control; connectivity controls explicitly preview UI without altering transport.",
+    "remaining": []
+  },
+  {
+    "id": "RD-10",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/dev/DeveloperLauncherScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused contribution, publication, draft, article and exit contracts; see contributions-focused-tests.log",
+        "result": "23 passed, 0 failed; includes behavioral account isolation, stale publication rejection, exact dish, retry identity and article identity checks"
+      },
+      {
+        "command": "npx eslint on owned screens/components/stores/helpers",
+        "result": "passed"
+      }
+    ],
+    "reason": "Opening public sample dish preserves current guest/auth state.",
+    "remaining": []
+  },
+  {
+    "id": "RD-11",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/dev/DeveloperLauncherScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused contribution, publication, draft, article and exit contracts; see contributions-focused-tests.log",
+        "result": "23 passed, 0 failed; includes behavioral account isolation, stale publication rejection, exact dish, retry identity and article identity checks"
+      },
+      {
+        "command": "npx eslint on owned screens/components/stores/helpers",
+        "result": "passed"
+      }
+    ],
+    "reason": "Async session presets serialize, catch failures and guard account generations. Live User mode revalidates server session. Cached counts explicitly labelled and refreshable.",
+    "remaining": []
+  },
+  {
+    "id": "RD-12",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/dev/DeveloperLauncherScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused contribution, publication, draft, article and exit contracts; see contributions-focused-tests.log",
+        "result": "23 passed, 0 failed; includes behavioral account isolation, stale publication rejection, exact dish, retry identity and article identity checks"
+      },
+      {
+        "command": "npx eslint on owned screens/components/stores/helpers",
+        "result": "passed"
+      }
+    ],
+    "reason": "Version buttons include target names; connectivity previews expose roles and selected state; dev controls minimum height increased.",
+    "remaining": [
+      "Native assistive technology acceptance pending."
+    ]
+  },
+  {
+    "id": "RD-13",
+    "status": "external_pending",
+    "files": [
+      "src/app/screens/dev/DesignGalleryScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused contribution, publication, draft, article and exit contracts; see contributions-focused-tests.log",
+        "result": "23 passed, 0 failed; includes behavioral account isolation, stale publication rejection, exact dish, retry identity and article identity checks"
+      },
+      {
+        "command": "npx eslint on owned screens/components/stores/helpers",
+        "result": "passed"
+      }
+    ],
+    "reason": "One scroll owner, truthful Back label, token-based flexible cells replace hardcoded grid dimensions.",
+    "remaining": [
+      "Native narrow-screen/large-text and brand-art clipping inspection pending."
+    ]
+  }
+]

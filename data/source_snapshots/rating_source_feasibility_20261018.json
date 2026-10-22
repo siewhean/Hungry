@@ -1,0 +1,134 @@
+{
+  "observed_at": "2026-10-18",
+  "workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "3ce9c0b79a9dbc4fb8724061754b0f3adfdbbeff56aa9caca71b8c5353fff9b7",
+  "scope": "Read-only source feasibility audit. No workbook edits, API calls, restricted scraping, login, or spend.",
+  "directory_records": 38280,
+  "field_coverage": {
+    "Rating / Review Count": {
+      "filled": 0,
+      "blank": 38280
+    },
+    "SFA Status / Hygiene Grade": {
+      "filled": 38280,
+      "blank": 0
+    },
+    "Latitude": {
+      "filled": 34385,
+      "blank": 3895
+    },
+    "Longitude": {
+      "filled": 34385,
+      "blank": 3895
+    },
+    "Website": {
+      "filled": 2599,
+      "blank": 35681
+    },
+    "Menu / Price": {
+      "filled": 460,
+      "blank": 37820
+    },
+    "Opening Hours / Closed Days": {
+      "filled": 1359,
+      "blank": 36921
+    },
+    "Contact Details": {
+      "filled": 2597,
+      "blank": 35683
+    }
+  },
+  "coverage_sheet_evidence": [
+    {
+      "metric": "Active public-access directory rows",
+      "value": 38280,
+      "interpretation": "Active public-access candidates after exact restricted-scope exclusions; source history retained in audit ledger."
+    },
+    {
+      "metric": "Rows with rating/review count",
+      "value": 0,
+      "interpretation": "No ratings were inferred or copied from Mapbox."
+    },
+    {
+      "metric": "Rows with approved image URL",
+      "value": 0,
+      "interpretation": "New photos remain in review-only image candidates."
+    },
+    {
+      "metric": "Coverage and status policy",
+      "value": "Blank means unavailable or unverified",
+      "interpretation": "Do not infer closure from missing listings or delivery status. Public access stays candidate unless backed by direct facility/operator evidence. Ratings and approved images remain blank where verification did not pass."
+    }
+  ],
+  "candidate_source_assessment": [
+    {
+      "source": "Google Maps public site",
+      "rating_and_review_count_coverage": "broad but not extracted",
+      "free_access": "public page view",
+      "persistent_workbook_reuse": "not permitted under no-scraping/copy-save terms for bulk content",
+      "source_url": "https://cloud.google.com/maps-platform/terms",
+      "evidence_limit": "Current terms prohibit scraping, bulk Places extraction, review copy/save, and use of Maps Core Services to create or augment a listings/directory service."
+    },
+    {
+      "source": "Google Places API",
+      "rating_and_review_count_coverage": "structured through API",
+      "free_access": "pay-as-you-go; monthly SKU free caps",
+      "persistent_workbook_reuse": "not established; content storage is restricted; place_id is exempt only",
+      "source_url": "https://developers.google.com/maps/documentation/places/web-service/policies",
+      "evidence_limit": "No API call; project billing/quota state not verified. In addition, general terms prohibit using Places to create or augment a listings/directory service."
+    },
+    {
+      "source": "Grab / GrabFood",
+      "rating_and_review_count_coverage": "merchant/platform pages may show platform-specific metrics",
+      "free_access": "public viewing may be available",
+      "persistent_workbook_reuse": "not without permission; terms restrict compilation, republication, data mining/scraping",
+      "source_url": "https://www.grab.com/sg/terms-policies/transport-delivery-logistics/",
+      "evidence_limit": "Not a free open data license."
+    },
+    {
+      "source": "Foodpanda",
+      "rating_and_review_count_coverage": "prior workbook observations exist, platform-specific and time-bound",
+      "free_access": "public page observations",
+      "persistent_workbook_reuse": "not certified; terms do not grant open license for separate persistent rating catalogue",
+      "source_url": "https://www.foodpanda.sg/contents/terms-and-conditions.htm",
+      "evidence_limit": "Ratings/counts are volatile and cannot be generalized to walk-in reputation."
+    },
+    {
+      "source": "Oddle",
+      "rating_and_review_count_coverage": "none verified",
+      "free_access": "merchant website pages",
+      "persistent_workbook_reuse": "no rating field/use permission verified",
+      "source_url": "https://docs.oddle.me/general/terms-of-service/",
+      "evidence_limit": "Terms are merchant/platform service terms; rating/review count is not a defined source metric."
+    },
+    {
+      "source": "OpenStreetMap",
+      "rating_and_review_count_coverage": "optional recognized-star classification only; no review count",
+      "free_access": "ODbL community dataset",
+      "persistent_workbook_reuse": "not applicable to subjective customer ratings",
+      "source_url": "https://wiki.openstreetmap.org/wiki/Key:stars",
+      "evidence_limit": "OSM wiki distinguishes recognized classifications from subjective ratings-platform opinions."
+    },
+    {
+      "source": "data.gov.sg SFA",
+      "rating_and_review_count_coverage": "official hygiene/regulatory grade, no consumer review count",
+      "free_access": "open government data",
+      "persistent_workbook_reuse": "yes for status/grade under source license; not a customer rating",
+      "source_url": "https://data.gov.sg/datasets/d_546a95c5e6a0a264a82247ec107a0629/view",
+      "evidence_limit": "Workbook already has SFA Status / Hygiene Grade on all rows."
+    }
+  ],
+  "conclusion": "No source was verified that simultaneously provides current outlet-by-outlet customer rating plus review count, costs nothing, and permits persistent reuse in this workbook.",
+  "sources": [
+    "https://cloud.google.com/maps-platform/terms",
+    "https://developers.google.com/maps/documentation/places/web-service/policies",
+    "https://developers.google.com/maps/billing-and-pricing/overview",
+    "https://www.grab.com/sg/terms-policies/transport-delivery-logistics/",
+    "https://www.foodpanda.sg/contents/terms-and-conditions.htm",
+    "https://docs.oddle.me/general/terms-of-service/",
+    "https://wiki.openstreetmap.org/wiki/Map_Features/restaurant",
+    "https://wiki.openstreetmap.org/wiki/Key:stars",
+    "https://data.gov.sg/datasets/d_1f0313499a17075d13aae6ed3e825bc6/view",
+    "https://data.gov.sg/datasets/d_546a95c5e6a0a264a82247ec107a0629/view"
+  ]
+}

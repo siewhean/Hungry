@@ -234,6 +234,8 @@ export interface DishSummary {
 
 export interface Review {
   id: string;
+  /** Canonical account identity; absent only for unattributed legacy data. */
+  authorId?: string;
   dishId?: string;
   venueId?: string;
   authorName: string;
@@ -371,6 +373,7 @@ export interface UserProfile {
   recommendationSignals?: RecommendationSignalState;
   leftHandedMode?: boolean;
   onboardingSelectedDishIds?: string[];
+  onboardingCuisineIds?: string[];
   /** Usual max price per dish in SGD, set during onboarding. Undefined = no budget limit. */
   maxDishBudget?: number;
 }
@@ -579,6 +582,7 @@ export interface MerchantVerification {
 
 export interface MerchantOutlet {
   id: string;
+  venueId?: string;
   merchantAccountId: string;
   name: string;
   businessType: BusinessType;
@@ -866,6 +870,8 @@ export interface CustomerInteraction {
   };
   /** ID of the source review/post for "View original" navigation */
   sourceId?: string;
+  /** Canonical dish that owns this review; never inferred from outlet order. */
+  sourceDishId?: string;
   sentiment?: "positive" | "neutral" | "negative";
 }
 

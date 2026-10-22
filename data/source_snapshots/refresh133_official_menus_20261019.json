@@ -1,0 +1,26 @@
+{
+  "proposal_id": "refresh133_official_menus_20261019",
+  "baseline_workbook": "Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_sha256": "b9b4d654cac9131405caf8c84c81194af8d4b856ab8bffbfdc746ae6cfad7463",
+  "observed_at": "2026-10-19T05:31:22+08:00",
+  "proposal_status": "no_exact_branch_items_qualified",
+  "items": [],
+  "source_reviews": [
+    {
+      "brand": "Domino's Pizza Singapore",
+      "official_source_url": "https://www.dominos.com.sg/menu/",
+      "source_observation": "The first-party menu is available, but the page explicitly says to set a store for local pricing and currently provides generic or from-prices before branch selection. The fetched page did not establish a selected Singapore outlet or branch-specific price.",
+      "decision": "excluded_from_exact_branch_catalogue",
+      "reason": "Cannot safely bind displayed menu and prices to a specific existing SFA branch record without selecting and confirming an exact store."
+    },
+    {
+      "brand": "McDonald's Singapore",
+      "official_source_url": "https://www.mcdonalds.com.sg/full-menu/",
+      "source_observation": "The first-party full menu lists items but is brand-wide and does not publish exact branch prices on the menu page. McDonald's customer-care states restaurant prices vary by restaurant.",
+      "supporting_source_url": "https://custcare.mcdonalds.com.sg/hc/en-us/articles/47181059631129-Why-are-there-differences-in-menu-pricing-when-I-order-from-different-store",
+      "decision": "excluded_from_exact_branch_catalogue",
+      "reason": "Branch-specific price/scope not established; brand-wide items would be extrapolation."
+    }
+  ],
+  "method_note": "The workbook was inspected for existing Menu Items coverage and target branches. Only exact-outlet first-party pages with identifiable items, published prices and explicit pickup/in-store scope were eligible. No source reviewed in this pass met all criteria. No workbook was modified and no paid service was used."
+}

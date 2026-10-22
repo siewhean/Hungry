@@ -1,0 +1,555 @@
+{
+  "snapshot_type": "refresh136_exact_sfa_t3b2_closure_public_access_review",
+  "observed_local_date": "2026-10-19",
+  "canonical_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_sha256": "dfdd8b9833f249e0c4539c8c8ed861f06df7f40ba842875aa6375b13d3c7e999",
+  "scope": {
+    "exact_sfa_records_reviewed": 25,
+    "selection": "Unreviewed exact SFA records at Changi Airport Terminal 3 #B2-03, selected as the strongest overlap between prior temporary-closure and staff-area access signals. Excludes all 20 CAG T1/T4 records reviewed in Refresh135. Checked licence IDs against prior refresh*_closures_access_20261019 snapshots.",
+    "prior_closure_snapshot_licence_overlap": 0,
+    "read_only": true,
+    "removal_recommendations": 0,
+    "confirmed_permanent_closures": 0
+  },
+  "sources": [
+    {
+      "id": "caas_t3_reopening_staff_area",
+      "url": "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-reopens-terminals-1-and-3-to-the-public-with-additional-safeguard/",
+      "publisher": "Civil Aviation Authority of Singapore",
+      "published": "2021-08-27",
+      "observed": "Official release states T1/T3 reopened to public on 2021-09-01; dedicated staff dining area at T3B2 is adjacent to Kopitiam food court; visitors may freely visit T3B2. Staff zone is explicitly narrower than whole floor."
+    },
+    {
+      "id": "caas_t3b2_temporary_closure",
+      "url": "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-steps-up-precautionary-measures/",
+      "publisher": "Civil Aviation Authority of Singapore",
+      "published": "2021-05-09",
+      "observed": "Official COVID-19 response described temporary T3 B2 public closure; F&B outlets were to reopen for takeaway to airport employees only. Dated, temporary restriction, not evidence of current closure."
+    },
+    {
+      "id": "cag_public_airport_definition",
+      "url": "https://www.changiairport.com/en/corporate/resources/forms-and-manuals/self-conducted-tours.html",
+      "publisher": "Changi Airport Group",
+      "observed": "Current CAG terms define airport as public areas of T1-T4; does not determine access to an exact tenant/staff dining zone."
+    }
+  ],
+  "records": [
+    {
+      "excel_row": 3691,
+      "sfa_licence": "SE07405E006",
+      "fnb_name": "BERADIK",
+      "registered_business_name": "BERADIK",
+      "business_type": "Foodcourt",
+      "address": "Address: 65 AIRPORT BOULEVARD #B2-03,CHANGI AIRPORT TERMINAL 3,Singapore 819663",
+      "public_access_status_before": "public_access_candidate_based_on_sfa_type_and_address",
+      "coverage_status": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "closure_assessment": "temporary_facility_closure_documented_2021; no current exact-branch permanent closure evidence found",
+      "access_assessment": "exact_tenant_access_unresolved; CAAS describes designated airport-staff dining area adjacent to Kopitiam, not all T3B2 F&B tenants",
+      "branch_match": "exact SFA licence and address read from baseline; shared address/unit does not establish tenant identity in reserved staff area",
+      "recommendation": "retain_pending_exact_current_branch_evidence",
+      "evidence_urls": [
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-reopens-terminals-1-and-3-to-the-public-with-additional-safeguard/",
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-steps-up-precautionary-measures/",
+        "https://www.changiairport.com/en/corporate/resources/forms-and-manuals/self-conducted-tours.html"
+      ],
+      "evidence_note": "CAAS 27 Aug 2021 says T1/T3 reopened to public on 2021-09-01; describes a dedicated staff dining area adjacent to Kopitiam food court and says visitors may freely visit T3B2. CAAS also documented temporary B2 closure and takeaway-only service during May 2021 COVID response. Current public-access rules at the exact stall remain unverified. Neither historic temporary restriction nor adjacency to staff area proves current permanent closure or restricted tenant access."
+    },
+    {
+      "excel_row": 4158,
+      "sfa_licence": "SE07405E002",
+      "fnb_name": "Boon Heng Atas Roasted Delight",
+      "registered_business_name": "Boon Heng Atas Roasted Delight",
+      "business_type": "Foodcourt",
+      "address": "Address: 65 AIRPORT BOULEVARD #B2-03,CHANGI AIRPORT TERMINAL 3,Singapore 819663 (#B2-10 LEFT PART OF)",
+      "public_access_status_before": "public_access_candidate_based_on_sfa_type_and_address",
+      "coverage_status": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "closure_assessment": "temporary_facility_closure_documented_2021; no current exact-branch permanent closure evidence found",
+      "access_assessment": "exact_tenant_access_unresolved; CAAS describes designated airport-staff dining area adjacent to Kopitiam, not all T3B2 F&B tenants",
+      "branch_match": "exact SFA licence and address read from baseline; shared address/unit does not establish tenant identity in reserved staff area",
+      "recommendation": "retain_pending_exact_current_branch_evidence",
+      "evidence_urls": [
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-reopens-terminals-1-and-3-to-the-public-with-additional-safeguard/",
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-steps-up-precautionary-measures/",
+        "https://www.changiairport.com/en/corporate/resources/forms-and-manuals/self-conducted-tours.html"
+      ],
+      "evidence_note": "CAAS 27 Aug 2021 says T1/T3 reopened to public on 2021-09-01; describes a dedicated staff dining area adjacent to Kopitiam food court and says visitors may freely visit T3B2. CAAS also documented temporary B2 closure and takeaway-only service during May 2021 COVID response. Current public-access rules at the exact stall remain unverified. Neither historic temporary restriction nor adjacency to staff area proves current permanent closure or restricted tenant access."
+    },
+    {
+      "excel_row": 5923,
+      "sfa_licence": "SE07405E010",
+      "fnb_name": "CHINESE BEEF ROTI",
+      "registered_business_name": "CHINESE BEEF ROTI",
+      "business_type": "Foodcourt",
+      "address": "Address: 65 AIRPORT BOULEVARD #B2-03,CHANGI AIRPORT TERMINAL 3 BUILDING,Singapore 819663",
+      "public_access_status_before": "public_access_candidate_based_on_sfa_type_and_address",
+      "coverage_status": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "closure_assessment": "temporary_facility_closure_documented_2021; no current exact-branch permanent closure evidence found",
+      "access_assessment": "exact_tenant_access_unresolved; CAAS describes designated airport-staff dining area adjacent to Kopitiam, not all T3B2 F&B tenants",
+      "branch_match": "exact SFA licence and address read from baseline; shared address/unit does not establish tenant identity in reserved staff area",
+      "recommendation": "retain_pending_exact_current_branch_evidence",
+      "evidence_urls": [
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-reopens-terminals-1-and-3-to-the-public-with-additional-safeguard/",
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-steps-up-precautionary-measures/",
+        "https://www.changiairport.com/en/corporate/resources/forms-and-manuals/self-conducted-tours.html"
+      ],
+      "evidence_note": "CAAS 27 Aug 2021 says T1/T3 reopened to public on 2021-09-01; describes a dedicated staff dining area adjacent to Kopitiam food court and says visitors may freely visit T3B2. CAAS also documented temporary B2 closure and takeaway-only service during May 2021 COVID response. Current public-access rules at the exact stall remain unverified. Neither historic temporary restriction nor adjacency to staff area proves current permanent closure or restricted tenant access."
+    },
+    {
+      "excel_row": 6388,
+      "sfa_licence": "SE24M93V000",
+      "fnb_name": "Claypot Rice",
+      "registered_business_name": "Claypot Rice",
+      "business_type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+      "address": "Address: 65 AIRPORT BOULEVARD #B2-03,CHANGI AIRPORT TERMINAL 3,Singapore 819663 MR 6",
+      "public_access_status_before": "public_access_candidate_based_on_sfa_type_and_address",
+      "coverage_status": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "closure_assessment": "temporary_facility_closure_documented_2021; no current exact-branch permanent closure evidence found",
+      "access_assessment": "exact_tenant_access_unresolved; CAAS describes designated airport-staff dining area adjacent to Kopitiam, not all T3B2 F&B tenants",
+      "branch_match": "exact SFA licence and address read from baseline; shared address/unit does not establish tenant identity in reserved staff area",
+      "recommendation": "retain_pending_exact_current_branch_evidence",
+      "evidence_urls": [
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-reopens-terminals-1-and-3-to-the-public-with-additional-safeguard/",
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-steps-up-precautionary-measures/",
+        "https://www.changiairport.com/en/corporate/resources/forms-and-manuals/self-conducted-tours.html"
+      ],
+      "evidence_note": "CAAS 27 Aug 2021 says T1/T3 reopened to public on 2021-09-01; describes a dedicated staff dining area adjacent to Kopitiam food court and says visitors may freely visit T3B2. CAAS also documented temporary B2 closure and takeaway-only service during May 2021 COVID response. Current public-access rules at the exact stall remain unverified. Neither historic temporary restriction nor adjacency to staff area proves current permanent closure or restricted tenant access."
+    },
+    {
+      "excel_row": 9674,
+      "sfa_licence": "SE07405E028",
+      "fnb_name": "FORMOSA DELIGHTS",
+      "registered_business_name": "FORMOSA DELIGHTS",
+      "business_type": "Foodcourt",
+      "address": "Address: 65 AIRPORT BOULEVARD #B2-03,CHANGI AIRPORT TERMINAL 3,Singapore 819663 (B2-10 (Left part of)",
+      "public_access_status_before": "public_access_candidate_based_on_sfa_type_and_address",
+      "coverage_status": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "closure_assessment": "temporary_facility_closure_documented_2021; no current exact-branch permanent closure evidence found",
+      "access_assessment": "exact_tenant_access_unresolved; CAAS describes designated airport-staff dining area adjacent to Kopitiam, not all T3B2 F&B tenants",
+      "branch_match": "exact SFA licence and address read from baseline; shared address/unit does not establish tenant identity in reserved staff area",
+      "recommendation": "retain_pending_exact_current_branch_evidence",
+      "evidence_urls": [
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-reopens-terminals-1-and-3-to-the-public-with-additional-safeguard/",
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-steps-up-precautionary-measures/",
+        "https://www.changiairport.com/en/corporate/resources/forms-and-manuals/self-conducted-tours.html"
+      ],
+      "evidence_note": "CAAS 27 Aug 2021 says T1/T3 reopened to public on 2021-09-01; describes a dedicated staff dining area adjacent to Kopitiam food court and says visitors may freely visit T3B2. CAAS also documented temporary B2 closure and takeaway-only service during May 2021 COVID response. Current public-access rules at the exact stall remain unverified. Neither historic temporary restriction nor adjacency to staff area proves current permanent closure or restricted tenant access."
+    },
+    {
+      "excel_row": 11601,
+      "sfa_licence": "SE07405E011",
+      "fnb_name": "HAUS FISH & SPINACH SOUP",
+      "registered_business_name": "HAUS FISH & SPINACH SOUP",
+      "business_type": "Foodcourt",
+      "address": "Address: 65 AIRPORT BOULEVARD #B2-03,CHANGI AIRPORT TERMINAL 3,Singapore 819663",
+      "public_access_status_before": "public_access_candidate_based_on_sfa_type_and_address",
+      "coverage_status": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "closure_assessment": "temporary_facility_closure_documented_2021; no current exact-branch permanent closure evidence found",
+      "access_assessment": "exact_tenant_access_unresolved; CAAS describes designated airport-staff dining area adjacent to Kopitiam, not all T3B2 F&B tenants",
+      "branch_match": "exact SFA licence and address read from baseline; shared address/unit does not establish tenant identity in reserved staff area",
+      "recommendation": "retain_pending_exact_current_branch_evidence",
+      "evidence_urls": [
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-reopens-terminals-1-and-3-to-the-public-with-additional-safeguard/",
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-steps-up-precautionary-measures/",
+        "https://www.changiairport.com/en/corporate/resources/forms-and-manuals/self-conducted-tours.html"
+      ],
+      "evidence_note": "CAAS 27 Aug 2021 says T1/T3 reopened to public on 2021-09-01; describes a dedicated staff dining area adjacent to Kopitiam food court and says visitors may freely visit T3B2. CAAS also documented temporary B2 closure and takeaway-only service during May 2021 COVID response. Current public-access rules at the exact stall remain unverified. Neither historic temporary restriction nor adjacency to staff area proves current permanent closure or restricted tenant access."
+    },
+    {
+      "excel_row": 11670,
+      "sfa_licence": "SE24M69N000",
+      "fnb_name": "HE JIA MIXED VEG RICE",
+      "registered_business_name": "HE JIA MIXED VEG RICE",
+      "business_type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+      "address": "Address: 65 AIRPORT BOULEVARD #B2-03,CHANGI AIRPORT TERMINAL 3,Singapore 819663 (MR5)",
+      "public_access_status_before": "public_access_candidate_based_on_sfa_type_and_address",
+      "coverage_status": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "closure_assessment": "temporary_facility_closure_documented_2021; no current exact-branch permanent closure evidence found",
+      "access_assessment": "exact_tenant_access_unresolved; CAAS describes designated airport-staff dining area adjacent to Kopitiam, not all T3B2 F&B tenants",
+      "branch_match": "exact SFA licence and address read from baseline; shared address/unit does not establish tenant identity in reserved staff area",
+      "recommendation": "retain_pending_exact_current_branch_evidence",
+      "evidence_urls": [
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-reopens-terminals-1-and-3-to-the-public-with-additional-safeguard/",
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-steps-up-precautionary-measures/",
+        "https://www.changiairport.com/en/corporate/resources/forms-and-manuals/self-conducted-tours.html"
+      ],
+      "evidence_note": "CAAS 27 Aug 2021 says T1/T3 reopened to public on 2021-09-01; describes a dedicated staff dining area adjacent to Kopitiam food court and says visitors may freely visit T3B2. CAAS also documented temporary B2 closure and takeaway-only service during May 2021 COVID response. Current public-access rules at the exact stall remain unverified. Neither historic temporary restriction nor adjacency to staff area proves current permanent closure or restricted tenant access."
+    },
+    {
+      "excel_row": 11915,
+      "sfa_licence": "SE07405E026",
+      "fnb_name": "Heritage Tanglin Puff",
+      "registered_business_name": "Heritage Tanglin Puff",
+      "business_type": "Foodcourt",
+      "address": "Address: 65 AIRPORT BOULEVARD #B2-03,CHANGI AIRPORT TERMINAL 3,Singapore 819663 B2-10 (Left part of)",
+      "public_access_status_before": "public_access_candidate_based_on_sfa_type_and_address",
+      "coverage_status": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "closure_assessment": "temporary_facility_closure_documented_2021; no current exact-branch permanent closure evidence found",
+      "access_assessment": "exact_tenant_access_unresolved; CAAS describes designated airport-staff dining area adjacent to Kopitiam, not all T3B2 F&B tenants",
+      "branch_match": "exact SFA licence and address read from baseline; shared address/unit does not establish tenant identity in reserved staff area",
+      "recommendation": "retain_pending_exact_current_branch_evidence",
+      "evidence_urls": [
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-reopens-terminals-1-and-3-to-the-public-with-additional-safeguard/",
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-steps-up-precautionary-measures/",
+        "https://www.changiairport.com/en/corporate/resources/forms-and-manuals/self-conducted-tours.html"
+      ],
+      "evidence_note": "CAAS 27 Aug 2021 says T1/T3 reopened to public on 2021-09-01; describes a dedicated staff dining area adjacent to Kopitiam food court and says visitors may freely visit T3B2. CAAS also documented temporary B2 closure and takeaway-only service during May 2021 COVID response. Current public-access rules at the exact stall remain unverified. Neither historic temporary restriction nor adjacency to staff area proves current permanent closure or restricted tenant access."
+    },
+    {
+      "excel_row": 12313,
+      "sfa_licence": "SE07405E025",
+      "fnb_name": "HOME WOK",
+      "registered_business_name": "HOME WOK",
+      "business_type": "Foodcourt",
+      "address": "Address: 65 AIRPORT BOULEVARD #B2-03,CHANGI AIRPORT TERMINAL 3,Singapore 819663 B2-10 (Left part of)",
+      "public_access_status_before": "public_access_candidate_based_on_sfa_type_and_address",
+      "coverage_status": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "closure_assessment": "temporary_facility_closure_documented_2021; no current exact-branch permanent closure evidence found",
+      "access_assessment": "exact_tenant_access_unresolved; CAAS describes designated airport-staff dining area adjacent to Kopitiam, not all T3B2 F&B tenants",
+      "branch_match": "exact SFA licence and address read from baseline; shared address/unit does not establish tenant identity in reserved staff area",
+      "recommendation": "retain_pending_exact_current_branch_evidence",
+      "evidence_urls": [
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-reopens-terminals-1-and-3-to-the-public-with-additional-safeguard/",
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-steps-up-precautionary-measures/",
+        "https://www.changiairport.com/en/corporate/resources/forms-and-manuals/self-conducted-tours.html"
+      ],
+      "evidence_note": "CAAS 27 Aug 2021 says T1/T3 reopened to public on 2021-09-01; describes a dedicated staff dining area adjacent to Kopitiam food court and says visitors may freely visit T3B2. CAAS also documented temporary B2 closure and takeaway-only service during May 2021 COVID response. Current public-access rules at the exact stall remain unverified. Neither historic temporary restriction nor adjacency to staff area proves current permanent closure or restricted tenant access."
+    },
+    {
+      "excel_row": 14670,
+      "sfa_licence": "SE07405E013",
+      "fnb_name": "Kallang Airport Wanton Noodle",
+      "registered_business_name": "Kallang Airport Wanton Noodle",
+      "business_type": "Foodcourt",
+      "address": "Address: 65 AIRPORT BOULEVARD #B2-03,CHANGI AIRPORT TERMINAL 3,Singapore 819663 B2-10 (Left part of)",
+      "public_access_status_before": "public_access_candidate_based_on_sfa_type_and_address",
+      "coverage_status": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "closure_assessment": "temporary_facility_closure_documented_2021; no current exact-branch permanent closure evidence found",
+      "access_assessment": "exact_tenant_access_unresolved; CAAS describes designated airport-staff dining area adjacent to Kopitiam, not all T3B2 F&B tenants",
+      "branch_match": "exact SFA licence and address read from baseline; shared address/unit does not establish tenant identity in reserved staff area",
+      "recommendation": "retain_pending_exact_current_branch_evidence",
+      "evidence_urls": [
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-reopens-terminals-1-and-3-to-the-public-with-additional-safeguard/",
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-steps-up-precautionary-measures/",
+        "https://www.changiairport.com/en/corporate/resources/forms-and-manuals/self-conducted-tours.html"
+      ],
+      "evidence_note": "CAAS 27 Aug 2021 says T1/T3 reopened to public on 2021-09-01; describes a dedicated staff dining area adjacent to Kopitiam food court and says visitors may freely visit T3B2. CAAS also documented temporary B2 closure and takeaway-only service during May 2021 COVID response. Current public-access rules at the exact stall remain unverified. Neither historic temporary restriction nor adjacency to staff area proves current permanent closure or restricted tenant access."
+    },
+    {
+      "excel_row": 15817,
+      "sfa_licence": "SE07405E023",
+      "fnb_name": "Kopi Kiosk",
+      "registered_business_name": "Kopi Kiosk",
+      "business_type": "Foodcourt",
+      "address": "Address: 65 AIRPORT BOULEVARD #b2-03,CHANGI AIRPORT TERMINAL 3,Singapore 819663 B2-10 (Left part of)",
+      "public_access_status_before": "public_access_candidate_based_on_sfa_type_and_address",
+      "coverage_status": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "closure_assessment": "temporary_facility_closure_documented_2021; no current exact-branch permanent closure evidence found",
+      "access_assessment": "exact_tenant_access_unresolved; CAAS describes designated airport-staff dining area adjacent to Kopitiam, not all T3B2 F&B tenants",
+      "branch_match": "exact SFA licence and address read from baseline; shared address/unit does not establish tenant identity in reserved staff area",
+      "recommendation": "retain_pending_exact_current_branch_evidence",
+      "evidence_urls": [
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-reopens-terminals-1-and-3-to-the-public-with-additional-safeguard/",
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-steps-up-precautionary-measures/",
+        "https://www.changiairport.com/en/corporate/resources/forms-and-manuals/self-conducted-tours.html"
+      ],
+      "evidence_note": "CAAS 27 Aug 2021 says T1/T3 reopened to public on 2021-09-01; describes a dedicated staff dining area adjacent to Kopitiam food court and says visitors may freely visit T3B2. CAAS also documented temporary B2 closure and takeaway-only service during May 2021 COVID response. Current public-access rules at the exact stall remain unverified. Neither historic temporary restriction nor adjacency to staff area proves current permanent closure or restricted tenant access."
+    },
+    {
+      "excel_row": 15944,
+      "sfa_licence": "SE07405E001",
+      "fnb_name": "Kopitiam Investment Pte Ltd",
+      "registered_business_name": "Kopitiam Investment Pte Ltd",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "address": "Address: 65 AIRPORT BOULEVARD #B2-03,CHANGI AIRPORT TERMINAL 3,Singapore 819663",
+      "public_access_status_before": "public_access_candidate_based_on_sfa_type_and_address",
+      "coverage_status": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "closure_assessment": "temporary_facility_closure_documented_2021; no current exact-branch permanent closure evidence found",
+      "access_assessment": "exact_tenant_access_unresolved; CAAS describes designated airport-staff dining area adjacent to Kopitiam, not all T3B2 F&B tenants",
+      "branch_match": "exact SFA licence and address read from baseline; shared address/unit does not establish tenant identity in reserved staff area",
+      "recommendation": "retain_pending_exact_current_branch_evidence",
+      "evidence_urls": [
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-reopens-terminals-1-and-3-to-the-public-with-additional-safeguard/",
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-steps-up-precautionary-measures/",
+        "https://www.changiairport.com/en/corporate/resources/forms-and-manuals/self-conducted-tours.html"
+      ],
+      "evidence_note": "CAAS 27 Aug 2021 says T1/T3 reopened to public on 2021-09-01; describes a dedicated staff dining area adjacent to Kopitiam food court and says visitors may freely visit T3B2. CAAS also documented temporary B2 closure and takeaway-only service during May 2021 COVID response. Current public-access rules at the exact stall remain unverified. Neither historic temporary restriction nor adjacency to staff area proves current permanent closure or restricted tenant access."
+    },
+    {
+      "excel_row": 16666,
+      "sfa_licence": "SE07405E003",
+      "fnb_name": "Laven Wa Pte Ltd",
+      "registered_business_name": "Laven Wa Pte Ltd",
+      "business_type": "Foodcourt",
+      "address": "Address: 65/T3 AIRPORT BOULEVARD #B2-03,CHANGI AIRPORT TERMINAL 3,Singapore 819663 B2-10 (Left part of)",
+      "public_access_status_before": "public_access_candidate_based_on_sfa_type_and_address",
+      "coverage_status": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "closure_assessment": "temporary_facility_closure_documented_2021; no current exact-branch permanent closure evidence found",
+      "access_assessment": "exact_tenant_access_unresolved; CAAS describes designated airport-staff dining area adjacent to Kopitiam, not all T3B2 F&B tenants",
+      "branch_match": "exact SFA licence and address read from baseline; shared address/unit does not establish tenant identity in reserved staff area",
+      "recommendation": "retain_pending_exact_current_branch_evidence",
+      "evidence_urls": [
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-reopens-terminals-1-and-3-to-the-public-with-additional-safeguard/",
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-steps-up-precautionary-measures/",
+        "https://www.changiairport.com/en/corporate/resources/forms-and-manuals/self-conducted-tours.html"
+      ],
+      "evidence_note": "CAAS 27 Aug 2021 says T1/T3 reopened to public on 2021-09-01; describes a dedicated staff dining area adjacent to Kopitiam food court and says visitors may freely visit T3B2. CAAS also documented temporary B2 closure and takeaway-only service during May 2021 COVID response. Current public-access rules at the exact stall remain unverified. Neither historic temporary restriction nor adjacency to staff area proves current permanent closure or restricted tenant access."
+    },
+    {
+      "excel_row": 16667,
+      "sfa_licence": "SE07405E004",
+      "fnb_name": "Laven Wa Pte Ltd",
+      "registered_business_name": "Laven Wa Pte Ltd",
+      "business_type": "Foodcourt",
+      "address": "Address: 65 AIRPORT BOULEVARD #B2-03,CHANGI AIRPORT TERMINAL 3,Singapore 819663",
+      "public_access_status_before": "public_access_candidate_based_on_sfa_type_and_address",
+      "coverage_status": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "closure_assessment": "temporary_facility_closure_documented_2021; no current exact-branch permanent closure evidence found",
+      "access_assessment": "exact_tenant_access_unresolved; CAAS describes designated airport-staff dining area adjacent to Kopitiam, not all T3B2 F&B tenants",
+      "branch_match": "exact SFA licence and address read from baseline; shared address/unit does not establish tenant identity in reserved staff area",
+      "recommendation": "retain_pending_exact_current_branch_evidence",
+      "evidence_urls": [
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-reopens-terminals-1-and-3-to-the-public-with-additional-safeguard/",
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-steps-up-precautionary-measures/",
+        "https://www.changiairport.com/en/corporate/resources/forms-and-manuals/self-conducted-tours.html"
+      ],
+      "evidence_note": "CAAS 27 Aug 2021 says T1/T3 reopened to public on 2021-09-01; describes a dedicated staff dining area adjacent to Kopitiam food court and says visitors may freely visit T3B2. CAAS also documented temporary B2 closure and takeaway-only service during May 2021 COVID response. Current public-access rules at the exact stall remain unverified. Neither historic temporary restriction nor adjacency to staff area proves current permanent closure or restricted tenant access."
+    },
+    {
+      "excel_row": 19436,
+      "sfa_licence": "SE24M03A000",
+      "fnb_name": "Monster Chili Mala Hotpot",
+      "registered_business_name": "Monster Chili Mala Hotpot",
+      "business_type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+      "address": "Address: 65 AIRPORT BOULEVARD #B2-03,CHANGI AIRPORT TERMINAL 3,Singapore 819663 MR3",
+      "public_access_status_before": "public_access_candidate_based_on_sfa_type_and_address",
+      "coverage_status": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "closure_assessment": "temporary_facility_closure_documented_2021; no current exact-branch permanent closure evidence found",
+      "access_assessment": "exact_tenant_access_unresolved; CAAS describes designated airport-staff dining area adjacent to Kopitiam, not all T3B2 F&B tenants",
+      "branch_match": "exact SFA licence and address read from baseline; shared address/unit does not establish tenant identity in reserved staff area",
+      "recommendation": "retain_pending_exact_current_branch_evidence",
+      "evidence_urls": [
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-reopens-terminals-1-and-3-to-the-public-with-additional-safeguard/",
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-steps-up-precautionary-measures/",
+        "https://www.changiairport.com/en/corporate/resources/forms-and-manuals/self-conducted-tours.html"
+      ],
+      "evidence_note": "CAAS 27 Aug 2021 says T1/T3 reopened to public on 2021-09-01; describes a dedicated staff dining area adjacent to Kopitiam food court and says visitors may freely visit T3B2. CAAS also documented temporary B2 closure and takeaway-only service during May 2021 COVID response. Current public-access rules at the exact stall remain unverified. Neither historic temporary restriction nor adjacency to staff area proves current permanent closure or restricted tenant access."
+    },
+    {
+      "excel_row": 20048,
+      "sfa_licence": "SE07405E027",
+      "fnb_name": "Na Na Homemade Curry",
+      "registered_business_name": "Na Na Homemade Curry",
+      "business_type": "Foodcourt",
+      "address": "Address: 65 AIRPORT BOULEVARD #B2-03,CHANGI AIRPORT TERMINAL 3 BUILDING,Singapore 819663",
+      "public_access_status_before": "public_access_candidate_based_on_sfa_type_and_address",
+      "coverage_status": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "closure_assessment": "temporary_facility_closure_documented_2021; no current exact-branch permanent closure evidence found",
+      "access_assessment": "exact_tenant_access_unresolved; CAAS describes designated airport-staff dining area adjacent to Kopitiam, not all T3B2 F&B tenants",
+      "branch_match": "exact SFA licence and address read from baseline; shared address/unit does not establish tenant identity in reserved staff area",
+      "recommendation": "retain_pending_exact_current_branch_evidence",
+      "evidence_urls": [
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-reopens-terminals-1-and-3-to-the-public-with-additional-safeguard/",
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-steps-up-precautionary-measures/",
+        "https://www.changiairport.com/en/corporate/resources/forms-and-manuals/self-conducted-tours.html"
+      ],
+      "evidence_note": "CAAS 27 Aug 2021 says T1/T3 reopened to public on 2021-09-01; describes a dedicated staff dining area adjacent to Kopitiam food court and says visitors may freely visit T3B2. CAAS also documented temporary B2 closure and takeaway-only service during May 2021 COVID response. Current public-access rules at the exact stall remain unverified. Neither historic temporary restriction nor adjacency to staff area proves current permanent closure or restricted tenant access."
+    },
+    {
+      "excel_row": 21863,
+      "sfa_licence": "SE07405E030",
+      "fnb_name": "Patisserie Glace",
+      "registered_business_name": "Patisserie Glace",
+      "business_type": "Foodcourt",
+      "address": "Address: 65 AIRPORT BOULEVARD #B2-03,CHANGI AIRPORT TERMINAL 3 BUILDING,Singapore 819663 B2-10 (Left part of)",
+      "public_access_status_before": "public_access_candidate_based_on_sfa_type_and_address",
+      "coverage_status": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "closure_assessment": "temporary_facility_closure_documented_2021; no current exact-branch permanent closure evidence found",
+      "access_assessment": "exact_tenant_access_unresolved; CAAS describes designated airport-staff dining area adjacent to Kopitiam, not all T3B2 F&B tenants",
+      "branch_match": "exact SFA licence and address read from baseline; shared address/unit does not establish tenant identity in reserved staff area",
+      "recommendation": "retain_pending_exact_current_branch_evidence",
+      "evidence_urls": [
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-reopens-terminals-1-and-3-to-the-public-with-additional-safeguard/",
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-steps-up-precautionary-measures/",
+        "https://www.changiairport.com/en/corporate/resources/forms-and-manuals/self-conducted-tours.html"
+      ],
+      "evidence_note": "CAAS 27 Aug 2021 says T1/T3 reopened to public on 2021-09-01; describes a dedicated staff dining area adjacent to Kopitiam food court and says visitors may freely visit T3B2. CAAS also documented temporary B2 closure and takeaway-only service during May 2021 COVID response. Current public-access rules at the exact stall remain unverified. Neither historic temporary restriction nor adjacency to staff area proves current permanent closure or restricted tenant access."
+    },
+    {
+      "excel_row": 24189,
+      "sfa_licence": "SE07405E015",
+      "fnb_name": "SANYOU Braised duck",
+      "registered_business_name": "SANYOU Braised duck",
+      "business_type": "Foodcourt",
+      "address": "Address: 65 AIRPORT BOULEVARD #B2-03,CHANGI AIRPORT TERMINAL 3,Singapore 819663",
+      "public_access_status_before": "public_access_candidate_based_on_sfa_type_and_address",
+      "coverage_status": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "closure_assessment": "temporary_facility_closure_documented_2021; no current exact-branch permanent closure evidence found",
+      "access_assessment": "exact_tenant_access_unresolved; CAAS describes designated airport-staff dining area adjacent to Kopitiam, not all T3B2 F&B tenants",
+      "branch_match": "exact SFA licence and address read from baseline; shared address/unit does not establish tenant identity in reserved staff area",
+      "recommendation": "retain_pending_exact_current_branch_evidence",
+      "evidence_urls": [
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-reopens-terminals-1-and-3-to-the-public-with-additional-safeguard/",
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-steps-up-precautionary-measures/",
+        "https://www.changiairport.com/en/corporate/resources/forms-and-manuals/self-conducted-tours.html"
+      ],
+      "evidence_note": "CAAS 27 Aug 2021 says T1/T3 reopened to public on 2021-09-01; describes a dedicated staff dining area adjacent to Kopitiam food court and says visitors may freely visit T3B2. CAAS also documented temporary B2 closure and takeaway-only service during May 2021 COVID response. Current public-access rules at the exact stall remain unverified. Neither historic temporary restriction nor adjacency to staff area proves current permanent closure or restricted tenant access."
+    },
+    {
+      "excel_row": 30221,
+      "sfa_licence": "SE24M63K000",
+      "fnb_name": "Wah Kee Fish Ball Noodles",
+      "registered_business_name": "Wah Kee Fish Ball Noodles",
+      "business_type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+      "address": "Address: 65 AIRPORT BOULEVARD #B2-03,CHANGI AIRPORT TERMINAL 3,Singapore 819663 (MR1)",
+      "public_access_status_before": "public_access_candidate_based_on_sfa_type_and_address",
+      "coverage_status": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "closure_assessment": "temporary_facility_closure_documented_2021; no current exact-branch permanent closure evidence found",
+      "access_assessment": "exact_tenant_access_unresolved; CAAS describes designated airport-staff dining area adjacent to Kopitiam, not all T3B2 F&B tenants",
+      "branch_match": "exact SFA licence and address read from baseline; shared address/unit does not establish tenant identity in reserved staff area",
+      "recommendation": "retain_pending_exact_current_branch_evidence",
+      "evidence_urls": [
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-reopens-terminals-1-and-3-to-the-public-with-additional-safeguard/",
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-steps-up-precautionary-measures/",
+        "https://www.changiairport.com/en/corporate/resources/forms-and-manuals/self-conducted-tours.html"
+      ],
+      "evidence_note": "CAAS 27 Aug 2021 says T1/T3 reopened to public on 2021-09-01; describes a dedicated staff dining area adjacent to Kopitiam food court and says visitors may freely visit T3B2. CAAS also documented temporary B2 closure and takeaway-only service during May 2021 COVID response. Current public-access rules at the exact stall remain unverified. Neither historic temporary restriction nor adjacency to staff area proves current permanent closure or restricted tenant access."
+    },
+    {
+      "excel_row": 31515,
+      "sfa_licence": "SE07405E007",
+      "fnb_name": "Y&H AYAM BENYET",
+      "registered_business_name": "Y&H AYAM BENYET",
+      "business_type": "Coffeeshop/Eating house/Canteen/Foodcourt/Canteen within tertiary institution",
+      "address": "Address: 65 AIRPORT BOULEVARD #B2-03,CHANGI AIRPORT TERMINAL 3,Singapore 819663",
+      "public_access_status_before": "public_access_candidate_based_on_sfa_type_and_address",
+      "coverage_status": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "closure_assessment": "temporary_facility_closure_documented_2021; no current exact-branch permanent closure evidence found",
+      "access_assessment": "exact_tenant_access_unresolved; CAAS describes designated airport-staff dining area adjacent to Kopitiam, not all T3B2 F&B tenants",
+      "branch_match": "exact SFA licence and address read from baseline; shared address/unit does not establish tenant identity in reserved staff area",
+      "recommendation": "retain_pending_exact_current_branch_evidence",
+      "evidence_urls": [
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-reopens-terminals-1-and-3-to-the-public-with-additional-safeguard/",
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-steps-up-precautionary-measures/",
+        "https://www.changiairport.com/en/corporate/resources/forms-and-manuals/self-conducted-tours.html"
+      ],
+      "evidence_note": "CAAS 27 Aug 2021 says T1/T3 reopened to public on 2021-09-01; describes a dedicated staff dining area adjacent to Kopitiam food court and says visitors may freely visit T3B2. CAAS also documented temporary B2 closure and takeaway-only service during May 2021 COVID response. Current public-access rules at the exact stall remain unverified. Neither historic temporary restriction nor adjacency to staff area proves current permanent closure or restricted tenant access."
+    },
+    {
+      "excel_row": 36870,
+      "sfa_licence": "SE07405E005",
+      "fnb_name": null,
+      "registered_business_name": null,
+      "business_type": "Foodcourt",
+      "address": "Address: 65 AIRPORT BOULEVARD #B2-03,CHANGI AIRPORT TERMINAL 3,Singapore 819663 B2-10 (Left part of)",
+      "public_access_status_before": "public_access_candidate_based_on_sfa_type_and_address",
+      "coverage_status": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "closure_assessment": "temporary_facility_closure_documented_2021; no current exact-branch permanent closure evidence found",
+      "access_assessment": "exact_tenant_access_unresolved; CAAS describes designated airport-staff dining area adjacent to Kopitiam, not all T3B2 F&B tenants",
+      "branch_match": "exact SFA licence and address read from baseline; shared address/unit does not establish tenant identity in reserved staff area",
+      "recommendation": "retain_pending_exact_current_branch_evidence",
+      "evidence_urls": [
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-reopens-terminals-1-and-3-to-the-public-with-additional-safeguard/",
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-steps-up-precautionary-measures/",
+        "https://www.changiairport.com/en/corporate/resources/forms-and-manuals/self-conducted-tours.html"
+      ],
+      "evidence_note": "CAAS 27 Aug 2021 says T1/T3 reopened to public on 2021-09-01; describes a dedicated staff dining area adjacent to Kopitiam food court and says visitors may freely visit T3B2. CAAS also documented temporary B2 closure and takeaway-only service during May 2021 COVID response. Current public-access rules at the exact stall remain unverified. Neither historic temporary restriction nor adjacency to staff area proves current permanent closure or restricted tenant access."
+    },
+    {
+      "excel_row": 36871,
+      "sfa_licence": "SE07405E008",
+      "fnb_name": null,
+      "registered_business_name": null,
+      "business_type": "Foodcourt",
+      "address": "Address: 65 AIRPORT BOULEVARD #B2-03,CHANGI AIRPORT TERMINAL 3,Singapore 819663 B2-10 (Left part of)",
+      "public_access_status_before": "public_access_candidate_based_on_sfa_type_and_address",
+      "coverage_status": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "closure_assessment": "temporary_facility_closure_documented_2021; no current exact-branch permanent closure evidence found",
+      "access_assessment": "exact_tenant_access_unresolved; CAAS describes designated airport-staff dining area adjacent to Kopitiam, not all T3B2 F&B tenants",
+      "branch_match": "exact SFA licence and address read from baseline; shared address/unit does not establish tenant identity in reserved staff area",
+      "recommendation": "retain_pending_exact_current_branch_evidence",
+      "evidence_urls": [
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-reopens-terminals-1-and-3-to-the-public-with-additional-safeguard/",
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-steps-up-precautionary-measures/",
+        "https://www.changiairport.com/en/corporate/resources/forms-and-manuals/self-conducted-tours.html"
+      ],
+      "evidence_note": "CAAS 27 Aug 2021 says T1/T3 reopened to public on 2021-09-01; describes a dedicated staff dining area adjacent to Kopitiam food court and says visitors may freely visit T3B2. CAAS also documented temporary B2 closure and takeaway-only service during May 2021 COVID response. Current public-access rules at the exact stall remain unverified. Neither historic temporary restriction nor adjacency to staff area proves current permanent closure or restricted tenant access."
+    },
+    {
+      "excel_row": 36872,
+      "sfa_licence": "SE07405E009",
+      "fnb_name": null,
+      "registered_business_name": null,
+      "business_type": "Foodcourt",
+      "address": "Address: 65 AIRPORT BOULEVARD #B2-03,CHANGI AIRPORT TERMINAL 3,Singapore 819663",
+      "public_access_status_before": "public_access_candidate_based_on_sfa_type_and_address",
+      "coverage_status": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "closure_assessment": "temporary_facility_closure_documented_2021; no current exact-branch permanent closure evidence found",
+      "access_assessment": "exact_tenant_access_unresolved; CAAS describes designated airport-staff dining area adjacent to Kopitiam, not all T3B2 F&B tenants",
+      "branch_match": "exact SFA licence and address read from baseline; shared address/unit does not establish tenant identity in reserved staff area",
+      "recommendation": "retain_pending_exact_current_branch_evidence",
+      "evidence_urls": [
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-reopens-terminals-1-and-3-to-the-public-with-additional-safeguard/",
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-steps-up-precautionary-measures/",
+        "https://www.changiairport.com/en/corporate/resources/forms-and-manuals/self-conducted-tours.html"
+      ],
+      "evidence_note": "CAAS 27 Aug 2021 says T1/T3 reopened to public on 2021-09-01; describes a dedicated staff dining area adjacent to Kopitiam food court and says visitors may freely visit T3B2. CAAS also documented temporary B2 closure and takeaway-only service during May 2021 COVID response. Current public-access rules at the exact stall remain unverified. Neither historic temporary restriction nor adjacency to staff area proves current permanent closure or restricted tenant access."
+    },
+    {
+      "excel_row": 36873,
+      "sfa_licence": "SE07405E012",
+      "fnb_name": null,
+      "registered_business_name": null,
+      "business_type": "Foodcourt",
+      "address": "Address: 65 AIRPORT BOULEVARD #B2-03,#B2-10,CHANGI AIRPORT TERMINAL 3,Singapore 819663",
+      "public_access_status_before": "public_access_candidate_based_on_sfa_type_and_address",
+      "coverage_status": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "closure_assessment": "temporary_facility_closure_documented_2021; no current exact-branch permanent closure evidence found",
+      "access_assessment": "exact_tenant_access_unresolved; CAAS describes designated airport-staff dining area adjacent to Kopitiam, not all T3B2 F&B tenants",
+      "branch_match": "exact SFA licence and address read from baseline; shared address/unit does not establish tenant identity in reserved staff area",
+      "recommendation": "retain_pending_exact_current_branch_evidence",
+      "evidence_urls": [
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-reopens-terminals-1-and-3-to-the-public-with-additional-safeguard/",
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-steps-up-precautionary-measures/",
+        "https://www.changiairport.com/en/corporate/resources/forms-and-manuals/self-conducted-tours.html"
+      ],
+      "evidence_note": "CAAS 27 Aug 2021 says T1/T3 reopened to public on 2021-09-01; describes a dedicated staff dining area adjacent to Kopitiam food court and says visitors may freely visit T3B2. CAAS also documented temporary B2 closure and takeaway-only service during May 2021 COVID response. Current public-access rules at the exact stall remain unverified. Neither historic temporary restriction nor adjacency to staff area proves current permanent closure or restricted tenant access."
+    },
+    {
+      "excel_row": 36874,
+      "sfa_licence": "SE07405E029",
+      "fnb_name": null,
+      "registered_business_name": null,
+      "business_type": "Foodcourt",
+      "address": "Address: 65 AIRPORT BOULEVARD #B2-03,CHANGI AIRPORT TERMINAL 3,Singapore 819663 B2-10 (Left part of)",
+      "public_access_status_before": "public_access_candidate_based_on_sfa_type_and_address",
+      "coverage_status": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "closure_assessment": "temporary_facility_closure_documented_2021; no current exact-branch permanent closure evidence found",
+      "access_assessment": "exact_tenant_access_unresolved; CAAS describes designated airport-staff dining area adjacent to Kopitiam, not all T3B2 F&B tenants",
+      "branch_match": "exact SFA licence and address read from baseline; shared address/unit does not establish tenant identity in reserved staff area",
+      "recommendation": "retain_pending_exact_current_branch_evidence",
+      "evidence_urls": [
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-reopens-terminals-1-and-3-to-the-public-with-additional-safeguard/",
+        "https://www.caas.gov.sg/resources/media-and-publication/newsroom/changi-airport-steps-up-precautionary-measures/",
+        "https://www.changiairport.com/en/corporate/resources/forms-and-manuals/self-conducted-tours.html"
+      ],
+      "evidence_note": "CAAS 27 Aug 2021 says T1/T3 reopened to public on 2021-09-01; describes a dedicated staff dining area adjacent to Kopitiam food court and says visitors may freely visit T3B2. CAAS also documented temporary B2 closure and takeaway-only service during May 2021 COVID response. Current public-access rules at the exact stall remain unverified. Neither historic temporary restriction nor adjacency to staff area proves current permanent closure or restricted tenant access."
+    }
+  ],
+  "summary": {
+    "records": 25,
+    "historic_temporary_closure_signal": 25,
+    "exact_tenant_permanent_closure_confirmed": 0,
+    "exact_tenant_restricted_access_confirmed": 0,
+    "exact_branch_status_unresolved": 25,
+    "removal_recommendations": 0
+  },
+  "limitations": [
+    "SFA licence presence and exact address are not proof of live operation.",
+    "Official source distinguishes a reserved staff dining area adjacent to Kopitiam food court; shared B2-03 address does not map each SFA licence to that zone.",
+    "No current branch-level operator/tenant access notice or closure notice was identified for reviewed records.",
+    "CAAS COVID-era closure and takeaway-only measure was temporary and is not carried forward as current status."
+  ],
+  "workbook_edits": false,
+  "mapbox_requests": 0,
+  "spend_sgd": 0
+}

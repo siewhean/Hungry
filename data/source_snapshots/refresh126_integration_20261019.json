@@ -1,0 +1,71 @@
+{
+  "refresh_id": "refresh126_increment_20261019",
+  "status": "installed",
+  "canonical_workbook": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "candidate_workbook": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "input_sha256": "00a13d50c650e1bcbde0f51f15260e4f8aeecbd9d0372bae284c6c50558e2967",
+  "candidate_sha256": "2c737c77fc2472cb7fcc31af2746e813a1b7779fedc8632f76b19f7fc396a5b3",
+  "updates": {
+    "name": 1,
+    "menuSummary": 1,
+    "menuUrl": 0,
+    "menuItemsAdded": 42,
+    "foodpandaImagesAdded": 13,
+    "officialImagesAdded": 3
+  },
+  "changes": [
+    {
+      "sfa_licence": "NE23269X000",
+      "field": "F&B Name",
+      "before": null,
+      "after": "DUMPLING JI 吉吉饺子",
+      "source": "https://www.sengkanggrandmall.com.sg/en/stores/dumpling-ji-.html"
+    },
+    {
+      "sfa_licence": "NW18130L000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Foodpanda delivery menu observed 2026-10-19; 42 outlet-specific delivery items and prices are listed in Menu Items. Prices and availability may differ from dine-in.",
+      "source": "https://www.foodpanda.sg/restaurant/v5dv/burger-king-r-yishun"
+    }
+  ],
+  "directory_rows_after": 38278,
+  "menu_item_rows_before": 13336,
+  "menu_item_rows_added": 42,
+  "image_candidate_rows_before": 2742,
+  "image_candidate_rows_added": 16,
+  "coverage_metrics": {
+    "Active public-access directory rows": 38278,
+    "Unique SFA licences": 38278,
+    "Rows with a usable F&B name": 32794,
+    "Rows with no usable F&B name": 5484,
+    "Rows with coordinates": 35734,
+    "Rows with contact details": 2704,
+    "Rows with website": 2812,
+    "Rows with menu URL": 1471,
+    "Rows with menu summary": 521,
+    "Rows with rating/review count": 0,
+    "Rows with approved image URL": 0,
+    "Rows with opening hours": 1474,
+    "Image candidates": 2758,
+    "Official and open-license image candidates": 0
+  },
+  "mapbox_search_box_usage": "59/50000 user-reported; not dashboard verified; no Mapbox calls during Refresh126.",
+  "no_spending": true,
+  "public_access_records_removed": 0,
+  "evidence_files": [
+    "next_names_20261019.json",
+    "next_menu_refresh_20261019.json",
+    "next_image_refs_20261019.json",
+    "next_access_scope_20261019.json",
+    "next_onemap_status_20261019.json"
+  ],
+  "limitations": [
+    "OneMap token not available in the worker environment; coordinate gaps were not backfilled.",
+    "No new SFA-verified closures were found.",
+    "Menu prices are Foodpanda delivery prices and may differ from dine-in.",
+    "Image references remain unapproved; Foodpanda pixels were not inspected and Paragon prohibits reuse without permission.",
+    "Twenty SAFRA/Jewel public-access cases remain unresolved."
+  ],
+  "installed_workbook_sha256": "2c737c77fc2472cb7fcc31af2746e813a1b7779fedc8632f76b19f7fc396a5b3"
+}

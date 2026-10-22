@@ -1,0 +1,45 @@
+{
+  "snapshot_type": "refresh122_free_persistent_geocoding_options",
+  "observed_date": "2026-10-19",
+  "workbook": {
+    "path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "sha256": "e75b32a39d9840532afbff2f5b497cc7a3a12870097418716f7d0b92f503f84f",
+    "worksheet": "Public F&B Directory",
+    "records": 38279,
+    "blank_coordinate_pairs": 2544,
+    "blank_coordinates_with_six_digit_postal": 2442,
+    "blank_coordinates_without_usable_six_digit_postal": 102,
+    "coordinate_precision_of_existing_onemap_rows": "OneMap postal-code/building point; not outlet or stall-front precision"
+  },
+  "providers": [
+    {
+      "name": "OneMap Search API (Singapore Land Authority)",
+      "urls": [
+        "https://www.onemap.gov.sg/apidocs/search",
+        "https://www.onemap.gov.sg/legal/apitermsofservice.html",
+        "https://www.onemap.gov.sg/legal/opendatalicence.html",
+        "https://www.onemap.gov.sg/apidocs/static/media/OneMap_API_Workshop_Presentation_260825.04f72136081dd249c5ee.pdf"
+      ],
+      "cost": "Official workshop describes APIs as free-to-use.",
+      "match_coverage": "Search endpoint accepts postal code; returns WGS84 latitude and longitude with address details. Potentially applicable to the 2,442 exact six-digit postals; each result must be checked for exact POSTAL equality and valid coordinates. The remaining 102 records need address/name research or must remain blank.",
+      "persistence_and_rights": "API Terms state datasets are governed by Singapore Open Data Licence. SODL v1.0 permits copying, modifying, adapting and distributing datasets or derived analyses/apps, with conspicuous source/date attribution and link to current licence. Third-party rights/personal data exclusions apply.",
+      "rate_and_access": "Current endpoint docs require Authorization token and document HTTP 429 when API limit is exceeded. Official OneMap workshop states token-based APIs have a 300 calls/minute limit. Conservative client should pace below 300/min, use one worker, cache by postal code, checkpoint and retry 429s. 2,442 unique postal lookups require at least 8.14 minutes at the published ceiling; operationally allow longer.",
+      "precision_limit": "Building/postal centroid or building address point, not a restaurant entrance, unit, or stall-front pin. Preserve source and label Coordinate Precision accordingly; never imply storefront precision.",
+      "current_execution_status": "No bulk or sample API request made. ONEMAP_API_TOKEN is absent in this shell, so live authorization and current token validity are unverified. User previously stated token expiry date 2026-10-19; expiry time/renewal status unknown.",
+      "recommendation": "Preferred free persistent source for postal-coded blanks, once a valid token is configured securely. Process unique postals only; cache results; exact-postal match; manually hold multi-result/no-result/ambiguous matches; leave non-postal rows blank pending higher-confidence official address source."
+    },
+    {
+      "name": "OpenStreetMap public Nominatim",
+      "urls": [
+        "https://operations.osmfoundation.org/policies/nominatim/"
+      ],
+      "cost": "Public service is free, community-hosted, best-effort.",
+      "match_coverage": "Potentially useful for hand-reviewed mapped businesses, but postal coverage and feature completeness are not guaranteed; weak for 2,442 systematic postal lookups.",
+      "persistence_and_rights": "Nominatim policy says data is ODbL and attribution is required; ODbL share-alike obligations may apply to the resulting database. Review ODbL obligations before mixing results into a distributed catalogue.",
+      "rate_and_access": "Absolute maximum 1 request/second; bulk geocoding of larger amounts is discouraged. Policy expressly forbids systematic queries such as searching for complete lists of postcodes/towns; requires a single thread, one machine, caching, and tighter limits for long-running/repeated scripts.",
+      "recommendation": "Do not use the public Nominatim endpoint for this systematic postal backfill. Self-hosted OSM data/geocoder could be evaluated separately, but would have nontrivial setup and incomplete postal/address coverage."
+    }
+  ],
+  "decision": "OneMap is the suitable free source for persistent building/postal coordinates, subject to valid token configuration, exact returned-postal validation, proper SODL attribution, conservative rate control, and explicit building-level precision. No Mapbox Search Box calls and no external API requests were made for this research.",
+  "secrets": "No credential value is recorded in this report."
+}

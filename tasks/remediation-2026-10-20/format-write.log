@@ -1,0 +1,289 @@
+src/app/catalog-read-v2-contracts.test.ts 41ms (unchanged)
+src/app/full-project-audit-completion.test.ts 17ms (unchanged)
+src/app/merchant-coverage-contracts.test.ts 8ms (unchanged)
+src/app/native-smoke-contracts.test.ts 15ms
+src/app/navigation/RootNavigator.tsx 51ms
+src/app/navigation/nav-activity-contracts.test.ts 13ms (unchanged)
+src/app/navigation/nav-route-contracts.test.ts 5ms (unchanged)
+src/app/navigation/navigationTypes.ts 9ms
+src/app/navigation/supabase-auth-guards.test.ts 5ms
+src/app/screens/SplashScreen.tsx 11ms (unchanged)
+src/app/screens/auth/AuthProviderButton.tsx 4ms (unchanged)
+src/app/screens/auth/AuthScreenShell.tsx 4ms (unchanged)
+src/app/screens/auth/AuthStack.tsx 2ms (unchanged)
+src/app/screens/auth/ChangePasswordScreen.tsx 8ms (unchanged)
+src/app/screens/auth/EmailVerificationScreen.tsx 16ms (unchanged)
+src/app/screens/auth/ForgotPasswordScreen.tsx 5ms (unchanged)
+src/app/screens/auth/LoginScreen.tsx 16ms (unchanged)
+src/app/screens/auth/ResetPasswordScreen.tsx 9ms (unchanged)
+src/app/screens/auth/ResetPasswordSuccessScreen.tsx 3ms (unchanged)
+src/app/screens/auth/SignUpScreen.tsx 16ms (unchanged)
+src/app/screens/auth/authCopy.ts 3ms (unchanged)
+src/app/screens/catalog/CatalogRawDetailScreen.tsx 9ms (unchanged)
+src/app/screens/checklist-portfolio-phase3-contracts.test.ts 5ms
+src/app/screens/checklist-portfolio-phase5-contracts.test.ts 7ms
+src/app/screens/checklist/ChecklistDetailScreen.tsx 16ms
+src/app/screens/checklist/ChecklistItemPickerScreen.tsx 12ms
+src/app/screens/checklist/ChecklistsHomeScreen.tsx 5ms
+src/app/screens/detail-v2-data-contracts.test.ts 2ms (unchanged)
+src/app/screens/detail/DishDetailScreenV2.tsx 62ms (unchanged)
+src/app/screens/detail/MerchantClaimExplainerScreen.tsx 4ms (unchanged)
+src/app/screens/detail/NotFoundScreen.tsx 4ms (unchanged)
+src/app/screens/detail/OfflineStateScreen.tsx 2ms (unchanged)
+src/app/screens/detail/StallDetailScreen.tsx 51ms (unchanged)
+src/app/screens/dev/DesignGalleryScreen.tsx 5ms (unchanged)
+src/app/screens/dev/DeveloperLauncherScreen.tsx 32ms (unchanged)
+src/app/screens/discover/CollectionDetailScreen.tsx 11ms
+src/app/screens/discover/CollectionListScreen.tsx 3ms
+src/app/screens/discover/CraveScreen.tsx 13ms (unchanged)
+src/app/screens/discover/DecideForMeResultScreen.tsx 30ms (unchanged)
+src/app/screens/discover/DiscoverHomeScreen.tsx 104ms (unchanged)
+src/app/screens/discover/HomeMapScreen.tsx 27ms (unchanged)
+src/app/screens/discover/MapZoomedInScreen.tsx 9ms (unchanged)
+src/app/screens/discover/QuickBitesScreen.tsx 20ms (unchanged)
+src/app/screens/home/ActivityInboxScreen.tsx 22ms (unchanged)
+src/app/screens/home/ActivityPostDetailScreen.tsx 13ms (unchanged)
+src/app/screens/home/AddStoryScreen.tsx 8ms (unchanged)
+src/app/screens/home/ChatDetailScreen.tsx 16ms
+src/app/screens/home/DirectMessagesScreen.tsx 6ms
+src/app/screens/home/HomeFeedScreen.tsx 75ms (unchanged)
+src/app/screens/home/StoryViewerScreen.tsx 23ms (unchanged)
+src/app/screens/merchant-screen-contracts.test.ts 9ms (unchanged)
+src/app/screens/merchant/AIAssistantScreen.tsx 8ms (unchanged)
+src/app/screens/merchant/BusinessProfileEditorScreen.tsx 16ms (unchanged)
+src/app/screens/merchant/CustomerInboxScreen.tsx 17ms (unchanged)
+src/app/screens/merchant/DishEditorScreen.tsx 11ms (unchanged)
+src/app/screens/merchant/FeaturedVisitorsScreen.tsx 10ms (unchanged)
+src/app/screens/merchant/HomeBasedVerificationScreen.tsx 9ms (unchanged)
+src/app/screens/merchant/MerchantAnalyticsScreen.tsx 15ms (unchanged)
+src/app/screens/merchant/MerchantDashboardScreen.tsx 19ms (unchanged)
+src/app/screens/merchant/MerchantMenuScreen.tsx 14ms (unchanged)
+src/app/screens/merchant/MerchantProfileScreen.tsx 5ms (unchanged)
+src/app/screens/merchant/MerchantSettingsScreen.tsx 13ms (unchanged)
+src/app/screens/merchant/OCRDraftScreen.tsx 10ms (unchanged)
+src/app/screens/merchant/OrdersComingSoonScreen.tsx 1ms (unchanged)
+src/app/screens/merchant/PromotionBuilderScreen.tsx 16ms (unchanged)
+src/app/screens/merchant/PromotionListScreen.tsx 8ms (unchanged)
+src/app/screens/merchant/VerificationCentreScreen.tsx 8ms (unchanged)
+src/app/screens/onboarding/CuisineSelectionScreen.tsx 10ms (unchanged)
+src/app/screens/onboarding/LocationPermissionScreen.tsx 11ms (unchanged)
+src/app/screens/onboarding/OnboardingAuthScreen.tsx 17ms (unchanged)
+src/app/screens/onboarding/OnboardingIntroTemplate.tsx 16ms (unchanged)
+src/app/screens/onboarding/TasteProfileResultScreen.tsx 8ms (unchanged)
+src/app/screens/onboarding/TasteQuizScreen.tsx 24ms (unchanged)
+src/app/screens/onboarding/WelcomeScreen.tsx 6ms (unchanged)
+src/app/screens/onboarding/onboarding-food-images-contracts.test.ts 2ms (unchanged)
+src/app/screens/portfolio/AdminPortfolioFlagsScreen.tsx 4ms
+src/app/screens/portfolio/PortfolioCollaboratorsScreen.tsx 11ms
+src/app/screens/portfolio/PortfolioCreateScreen.tsx 4ms
+src/app/screens/portfolio/PortfolioDetailScreen.tsx 15ms
+src/app/screens/portfolio/PortfolioEditScreen.tsx 5ms
+src/app/screens/portfolio/PortfolioItemPickerScreen.tsx 7ms
+src/app/screens/portfolio/PortfolioPublicViewScreen.tsx 7ms
+src/app/screens/portfolio/PortfolioSearchScreen.tsx 4ms
+src/app/screens/portfolio/PortfoliosHomeScreen.tsx 6ms
+src/app/screens/post-composer-exit-contracts.test.ts 2ms (unchanged)
+src/app/screens/post/PostComposerScreen.tsx 13ms (unchanged)
+src/app/screens/post/PostComposerScreenV2.tsx 1ms (unchanged)
+src/app/screens/profile-home-contracts.test.ts 3ms (unchanged)
+src/app/screens/profile-social-post-detail-contracts.test.ts 2ms (unchanged)
+src/app/screens/profile/AddStallScreen.tsx 46ms (unchanged)
+src/app/screens/profile/EditProfileScreen.tsx 8ms (unchanged)
+src/app/screens/profile/FavouritesScreen.tsx 6ms (unchanged)
+src/app/screens/profile/FollowedStallsScreen.tsx 3ms (unchanged)
+src/app/screens/profile/MissionsScreen.tsx 4ms (unchanged)
+src/app/screens/profile/PassportScreen.tsx 10ms (unchanged)
+src/app/screens/profile/ProfileConnectionsScreen.tsx 4ms (unchanged)
+src/app/screens/profile/ProfileHomeScreen.tsx 32ms (unchanged)
+src/app/screens/profile/ReviewHistoryScreen.tsx 4ms (unchanged)
+src/app/screens/profile/SettingsScreen.tsx 10ms (unchanged)
+src/app/screens/profile/SocialGridScreen.tsx 8ms (unchanged)
+src/app/screens/profile/SocialPostDetailScreen.tsx 12ms (unchanged)
+src/app/screens/profile/UserProfileContent.tsx 7ms (unchanged)
+src/app/screens/profile/VisitedStallsScreen.tsx 5ms (unchanged)
+src/app/screens/reads/BlogPostWebViewScreen.tsx 4ms (unchanged)
+src/app/screens/reads/ReadsFeedScreen.tsx 1ms (unchanged)
+src/app/screens/review-feed-bites-contracts.test.ts 3ms (unchanged)
+src/app/screens/review/MusicSelectionScreen.tsx 1ms (unchanged)
+src/app/screens/review/QuickReviewSheet.tsx 1ms (unchanged)
+src/app/screens/review/ReviewFeedScreen.tsx 24ms
+src/app/screens/review/ReviewScreen.tsx 15ms
+src/app/screens/review/ReviewShareSheet.tsx 7ms (unchanged)
+src/app/screens/review/ReviewSuccessModal.tsx 4ms (unchanged)
+src/app/screens/review/review-posting-contracts.test.ts 2ms (unchanged)
+src/app/screens/search/DishSearchScreen.tsx 9ms (unchanged)
+src/app/screens/search/SearchResultsScreen.tsx 38ms (unchanged)
+src/app/screens/search/TasteFilterScreen.tsx 4ms (unchanged)
+src/app/screens/search/browse-grid-contracts.test.ts 2ms (unchanged)
+src/app/screens/sprint9-screen-contracts.test.ts 14ms (unchanged)
+src/app/screens/stall-submission-contracts.test.ts 3ms (unchanged)
+src/app/screens/story-viewer-contracts.test.ts 7ms (unchanged)
+src/app/screens/wheel/WheelEntryAddSheet.tsx 16ms
+src/app/screens/wheel/WheelResultModal.tsx 6ms
+src/app/screens/wheel/WheelSpinScreen.tsx 8ms
+src/app/user-mode-coverage-contracts.test.ts 5ms (unchanged)
+src/components/checklist/ChecklistItemRow.tsx 5ms
+src/components/collections/CollectionCard.tsx 4ms
+src/components/discover/CyclingGridImage.tsx 7ms (unchanged)
+src/components/gamification/CredEarnedToast.tsx 3ms (unchanged)
+src/components/map/MapSurface.tsx 13ms (unchanged)
+src/components/portfolio/PortfolioCard.tsx 2ms
+src/components/portfolio/PortfolioItemRow.tsx 5ms (unchanged)
+src/components/review/MediaPicker.tsx 7ms (unchanged)
+src/components/review/StarRating.tsx 3ms (unchanged)
+src/components/settings/SettingsRow.tsx 3ms (unchanged)
+src/components/settings/SettingsSection.tsx 2ms (unchanged)
+src/components/settings/StallAlertsSettings.tsx 4ms (unchanged)
+src/components/social/CircleStoryCarousel.tsx 4ms
+src/components/stall/StallInteractionBar.tsx 4ms
+src/components/ui/Button.tsx 4ms (unchanged)
+src/components/ui/Chip.tsx 2ms (unchanged)
+src/components/ui/FloatingToast.tsx 3ms (unchanged)
+src/components/ui/IconButton.tsx 3ms (unchanged)
+src/components/ui/Screen.tsx 3ms (unchanged)
+src/components/ui/accessible-image-contracts.test.ts 3ms (unchanged)
+src/components/ui/component-standardization-contracts.test.ts 3ms (unchanged)
+src/components/ui/screen-header-contracts.test.ts 23ms (unchanged)
+src/features/auth/accountDeletionOutcomes.ts 1ms (unchanged)
+src/features/auth/applySignedInProfile.generation.test.ts 3ms (unchanged)
+src/features/auth/applySignedInProfile.ts 4ms (unchanged)
+src/features/auth/changePasswordValidation.ts 1ms (unchanged)
+src/features/auth/exclusiveOperation.ts 1ms (unchanged)
+src/features/auth/recoveryCodeExchange.ts 1ms (unchanged)
+src/features/auth/remediation-auth.test.ts 4ms (unchanged)
+src/features/auth/useAccountDeletionGracePrompt.ts 4ms (unchanged)
+src/features/auth/useAuthFlowStore.ts 1ms (unchanged)
+src/features/auth/useAuthOperation.ts 1ms (unchanged)
+src/features/auth/verificationCode.ts 1ms (unchanged)
+src/features/detail/detailTransforms.test.ts 1ms (unchanged)
+src/features/detail/detailTransforms.ts 1ms (unchanged)
+src/features/discover/bites.test.ts 4ms (unchanged)
+src/features/discover/bites.ts 10ms (unchanged)
+src/features/home/activity.ts 4ms (unchanged)
+src/features/home/chatDelivery.test.ts 2ms (unchanged)
+src/features/home/feed.test.ts 5ms (unchanged)
+src/features/home/socialState.test.ts 3ms (unchanged)
+src/features/home/socialState.ts 2ms (unchanged)
+src/features/merchant/operationScope.test.ts 2ms (unchanged)
+src/features/merchant/operationScope.ts 1ms (unchanged)
+src/features/merchant/replyDraftModel.test.ts 2ms (unchanged)
+src/features/merchant/replyDraftModel.ts 2ms (unchanged)
+src/features/merchant/replyDraftStore.ts 1ms (unchanged)
+src/features/merchant/useMerchantDirtyExit.ts 2ms (unchanged)
+src/features/merchant/useMerchantOperationScope.ts 1ms (unchanged)
+src/features/merchant/verificationStateMachine.test.ts 2ms (unchanged)
+src/features/merchant/verificationStateMachine.ts 2ms (unchanged)
+src/features/merchant/workflowSafety.test.ts 3ms (unchanged)
+src/features/merchant/workflowSafety.ts 2ms (unchanged)
+src/features/onboarding/commitQuizProfile.test.ts 3ms (unchanged)
+src/features/onboarding/commitQuizProfile.ts 1ms (unchanged)
+src/features/onboarding/fulfillPendingSave.ts 2ms (unchanged)
+src/features/onboarding/recommendationPreview.ts 1ms (unchanged)
+src/features/onboarding/remediation-onboarding.test.ts 8ms (unchanged)
+src/features/onboarding/useOnboardingDraftStore.ts 7ms (unchanged)
+src/features/post/__tests__/accountDraftPersistence.test.ts 3ms (unchanged)
+src/features/post/accountDraftPersistence.ts 2ms (unchanged)
+src/features/post/components/CollaboratorModal.tsx 5ms (unchanged)
+src/features/post/components/ComposerBottomBar.tsx 12ms (unchanged)
+src/features/post/components/LocationSearchModal.tsx 8ms (unchanged)
+src/features/post/components/MediaEditor.tsx 7ms (unchanged)
+src/features/post/components/MusicSearchModal.tsx 7ms (unchanged)
+src/features/post/components/ReviewTab.tsx 6ms (unchanged)
+src/features/post/components/SharedMetadata.tsx 6ms (unchanged)
+src/features/post/components/StatusOverlay.tsx 7ms
+src/features/post/components/TabSwitcher.tsx 3ms (unchanged)
+src/features/post/publishing.test.ts 13ms (unchanged)
+src/features/post/publishing.ts 6ms (unchanged)
+src/features/post/useComposerStore.ts 9ms (unchanged)
+src/features/post/useDraftExitGuard.ts 2ms (unchanged)
+src/features/profile/ProfilePostMedia.tsx 3ms (unchanged)
+src/features/profile/exportMyData.test.ts 2ms (unchanged)
+src/features/profile/shareMyDataExport.ts 2ms (unchanged)
+src/features/profile/useProfileFormDraft.ts 3ms (unchanged)
+src/features/profile/useResolvedProfileEntities.ts 2ms (unchanged)
+src/features/reads/articleInspector.test.ts 1ms (unchanged)
+src/features/reads/articleInspector.ts 1ms (unchanged)
+src/features/review/reviewFeedQuery.test.ts 3ms (unchanged)
+src/features/review/reviewFeedQuery.ts 4ms (unchanged)
+src/features/review/reviewMediaManifest.test.ts 2ms (unchanged)
+src/features/review/reviewMediaManifest.ts 4ms (unchanged)
+src/features/review/reviewPublication.test.ts 2ms (unchanged)
+src/features/review/reviewPublication.ts 2ms (unchanged)
+src/features/search/cardMedia.test.ts 2ms (unchanged)
+src/features/search/cardMedia.ts 1ms (unchanged)
+src/features/search/dietaryRequirements.test.ts 2ms (unchanged)
+src/features/search/dietaryRequirements.ts 2ms (unchanged)
+src/features/search/recommendationPreferences.test.ts 4ms (unchanged)
+src/features/search/search.ts 8ms (unchanged)
+src/features/search/searchSort.test.ts 2ms (unchanged)
+src/features/share/messagingShare.ts 2ms (unchanged)
+src/features/share/shareHandoff.test.ts 2ms (unchanged)
+src/features/share/shareHandoff.ts 1ms (unchanged)
+src/features/social/sharedStallPosts.ts 3ms (unchanged)
+src/hooks/useAppBootstrap.network-contracts.test.ts 2ms (unchanged)
+src/hooks/useAppBootstrap.ts 10ms
+src/lib/haptics.ts 2ms
+src/lib/security/accountScope.test.ts 1ms (unchanged)
+src/lib/security/accountScope.ts 1ms (unchanged)
+src/lib/security/catalogSourcePolicy.test.ts 1ms (unchanged)
+src/lib/security/catalogSourcePolicy.ts 1ms (unchanged)
+src/lib/security/communitySafety.ts 6ms
+src/lib/security/communitySafetyState.ts 2ms
+src/lib/security/expo-constants-patch-contracts.test.ts 1ms (unchanged)
+src/lib/security/safeLinking.ts 4ms (unchanged)
+src/lib/security/security-hardening.test.ts 17ms (unchanged)
+src/lib/services/catalog/index.ts 16ms
+src/lib/services/dataTrustDisclosure.ts 1ms (unchanged)
+src/lib/services/mock/account-isolation-qa.test.ts 3ms (unchanged)
+src/lib/services/mock/mockService.ts 145ms
+src/lib/services/mock/repositories.ts 8ms
+src/lib/services/mock/review-publication-parity.test.ts 3ms (unchanged)
+src/lib/services/realtime/MockRealtimeChannel.ts 5ms (unchanged)
+src/lib/services/supabase/authStorage.generation-qa.test.ts 8ms (unchanged)
+src/lib/services/supabase/authStorage.ts 16ms
+src/lib/services/supabase/client.test.ts 5ms
+src/lib/services/supabase/client.ts 4ms
+src/lib/services/supabase/ocr-draft-safety.test.ts 3ms (unchanged)
+src/lib/services/supabase/quiz-responses.test.ts 1ms
+src/lib/services/supabase/supabaseRepository.ts 41ms
+src/lib/services/supabase/supabaseService.ts 231ms
+src/lib/services/supabase/taste-recommendations.test.ts 6ms (unchanged)
+src/lib/services/types.ts 31ms
+src/store/accountAsyncStores.qa.test.ts 6ms (unchanged)
+src/store/accountPersistStorage.qa.test.ts 2ms (unchanged)
+src/store/accountPersistStorage.ts 3ms
+src/store/checklist-portfolio-store.test.ts 5ms (unchanged)
+src/store/missionCacheRemediation.test.ts 2ms (unchanged)
+src/store/mvp-source-of-truth-contracts.test.ts 10ms
+src/store/preferencesConsumers.qa.test.ts 2ms
+src/store/profilePersistStorage.qa.test.ts 3ms (unchanged)
+src/store/profilePersistStorage.ts 3ms
+src/store/saved-tools-remediation.test.ts 8ms
+src/store/session-data-audit-contracts.test.ts 3ms
+src/store/useActivityStore.ts 6ms (unchanged)
+src/store/useChatDraftStore.test.ts 2ms (unchanged)
+src/store/useChatDraftStore.ts 3ms
+src/store/useChecklistStore.ts 10ms
+src/store/useCollectionStore.ts 5ms
+src/store/useDiscoveryStore.ts 4ms (unchanged)
+src/store/useFoodCredStore.ts 5ms (unchanged)
+src/store/useLocationStore.analytics.test.ts 3ms (unchanged)
+src/store/useLocationStore.ts 6ms (unchanged)
+src/store/useMerchantStore.ts 4ms (unchanged)
+src/store/useMissionStore.ts 6ms (unchanged)
+src/store/usePassportStore.ts 7ms (unchanged)
+src/store/usePortfolioStore.ts 19ms
+src/store/useProfileStore.ts 21ms
+src/store/usePublishedPostStore.ts 2ms (unchanged)
+src/store/useReviewDraftStore.ts 4ms (unchanged)
+src/store/useSearchStore.ts 4ms (unchanged)
+src/store/useSessionStore.auth-persistence.test.ts 6ms (unchanged)
+src/store/useSessionStore.ts 11ms
+src/store/useSocialStore.contracts.test.ts 5ms (unchanged)
+src/store/useSocialStore.ts 13ms (unchanged)
+src/store/useStallFollowStore.ts 2ms (unchanged)
+src/store/useStallInteractionStore.ts 5ms
+src/store/useStallSubmissionStore.ts 2ms (unchanged)
+src/store/useStoryStore.ts 9ms (unchanged)
+src/store/useWheelStore.ts 12ms
+src/types/domain.ts 22ms (unchanged)

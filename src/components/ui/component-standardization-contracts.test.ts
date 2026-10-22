@@ -68,7 +68,7 @@ test("primary user filter surfaces use shared chip primitives", () => {
   );
   assertSourceIncludes(
     homeMap,
-    [/<FilterChipRail[\s\S]*options=\{HOME_MAP_FILTER_OPTIONS\}/],
+    [/<FilterChipRail[\s\S]*options=\{[\s\S]*HOME_MAP_FILTER_OPTIONS/],
     "Home Map filters",
   );
   assertSourceIncludes(
@@ -132,7 +132,7 @@ test("merchant forms use shared user-mode input, select, chip, and toggle primit
     [
       /<Input[\s\S]*label="Business Name \*"/,
       /<SelectField[\s\S]*label="Business Type"/,
-      /<FormSwitchRow[\s\S]*label="Exact Location Privacy"/,
+      /<FormSwitchRow[\s\S]*label="Requested exact location"/,
     ],
     "Business Profile form",
   );

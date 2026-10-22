@@ -1,0 +1,791 @@
+{
+  "snapshot_type": "incremental_open_source_coordinate_candidates_read_only",
+  "observed_at": "2026-10-18",
+  "workbook": {
+    "path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "sha256": "1b521ba84d7fc6519ad0298ea3ab08b04ede0806b87060d71dc599e040dfc5ad",
+    "sheet": "Public F&B Directory",
+    "missing_coordinate_pairs": 2587
+  },
+  "results": {
+    "additional_candidate_records": 41,
+    "unique_postal_groups": 21,
+    "apply_to_workbook": false,
+    "assessment": "Review candidates individually. Exact postal and normalized number/street line establish the same address/building only. Source point is for the GTP/facility address and can differ from tenant outlet position."
+  },
+  "sources": [
+    {
+      "publisher": "Ministry of Health (MOH), Singapore",
+      "name": "Dementia Friendly Go-To-Points (GTPs)",
+      "dataset_id": "d_e2d10e591bc8560b8946a0da24790fa5",
+      "url": "https://data.gov.sg/datasets/d_e2d10e591bc8560b8946a0da24790fa5/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_e2d10e591bc8560b8946a0da24790fa5/poll-download",
+      "format": "GeoJSON",
+      "source_vintage": "Data from Oct 2025; dataset last updated 2026-08-20, annual; feature FMEL_UPD_D 2026-08-18",
+      "feature_count": 831,
+      "source_file_sha256": "8ece10b8c30fc3586919611e525e61ab19597f464eec4d7b848def96d78636f2",
+      "license": "Singapore Open Data Licence v1.0; free for personal/commercial reuse with attribution",
+      "attribution": "Ministry of Health (MOH), Singapore, Dementia Friendly Go-To-Points dataset, accessed 2026-10-18",
+      "match_count": 41,
+      "match_method": "Only workbook rows with missing coordinate pairs. Exact six-digit postal code equality, plus normalized source ADDRESS house number and street line appearing contiguously in normalized workbook Full Address. Source matching records must yield one unique coordinate.",
+      "coordinate_semantics": "Coordinates are GeoJSON points associated with GTP/facility address records, not verified F&B outlet or unit locations."
+    },
+    {
+      "publisher": "Building and Construction Authority (BCA), Singapore",
+      "name": "Green Mark Buildings (GEOJSON)",
+      "dataset_id": "d_da116ef216e3fb501846e1c9faf7e683",
+      "url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "download_url": "https://api-open.data.gov.sg/v1/public/api/datasets/d_da116ef216e3fb501846e1c9faf7e683/poll-download",
+      "format": "GeoJSON",
+      "source_vintage": "Source data from Apr 2022; last updated 2026-04-18",
+      "feature_count": 2919,
+      "source_file_sha256": "51cc6fcdc6e613fd583eba6d08d308ba7f2c76a961d502ac95ff416807c38586",
+      "license": "Singapore Open Data Licence v1.0; free for personal/commercial reuse with attribution",
+      "match_count": 0,
+      "postal_overlap_rows": 15,
+      "match_method": "Exact six-digit postal plus normalized street number and name; street-number/name source fields blank for postal-overlap candidates, therefore no strict matches accepted.",
+      "coordinate_semantics": "Building Green Mark point; postal-only overlap cannot establish target address point."
+    }
+  ],
+  "candidates": [
+    {
+      "sfa_licence": "NW15740X000",
+      "fb_name": "7-Eleven",
+      "postal_code": "678213",
+      "full_address": "Address: 950 UPPER BUKIT TIMAH ROAD #B2-02,BUKIT PANJANG MRT STATION (DT1),Singapore 678213",
+      "source_objectid": 39102,
+      "source_name": "Bukit Panjang MRT Station (DT1)",
+      "source_address": "950 UPPER BUKIT TIMAH ROAD",
+      "coordinates_lon_lat": [
+        103.76153511473323,
+        1.3790021167177082
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20240927150731",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    },
+    {
+      "sfa_licence": "CE25A58A000",
+      "fb_name": "BAKERY CUISINE",
+      "postal_code": "248654",
+      "full_address": "Address: 20 ORCHARD BOULEVARD #B1-01,Singapore 248654",
+      "source_objectid": 39186,
+      "source_name": "Orchard Boulevard MRT Station (TE13)",
+      "source_address": "20 ORCHARD BOULEVARD",
+      "coordinates_lon_lat": [
+        103.82386852291181,
+        1.3024222488386645
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20240927150731",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    },
+    {
+      "sfa_licence": "NW21F62A000",
+      "fb_name": "BANH MI CONNECTION",
+      "postal_code": "769100",
+      "full_address": "Address: 920 YISHUN AVENUE 2 #01-21,Singapore 769100",
+      "source_objectid": 39149,
+      "source_name": "WeCare Concierge @ Yishun Integrated Transport Hub (YITH)",
+      "source_address": "920 YISHUN AVENUE 2",
+      "coordinates_lon_lat": [
+        103.83617765072373,
+        1.4279028901682527
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20240927150731",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    },
+    {
+      "sfa_licence": "SE23138X000",
+      "fb_name": "BUZZ BAKES",
+      "postal_code": "379314",
+      "full_address": "Address: 60 MERPATI ROAD #B2-03,MATTAR MRT STATION,Singapore 379314",
+      "source_objectid": 39383,
+      "source_name": "Mattar MRT Station (DT25)",
+      "source_address": "60 MERPATI ROAD",
+      "coordinates_lon_lat": [
+        103.88324750918025,
+        1.3268767147119216
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20240927150731",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    },
+    {
+      "sfa_licence": "NE25M25E000",
+      "fb_name": "CAFE KOOK",
+      "postal_code": "529544",
+      "full_address": "Address: 15 TAMPINES CENTRAL 1 #B1-10,#B1-11,TAMPINES MRT STATION,Singapore 529544",
+      "source_objectid": 39371,
+      "source_name": "Tampines MRT Station (DT32)",
+      "source_address": "15 TAMPINES CENTRAL 1",
+      "coordinates_lon_lat": [
+        103.94300988287966,
+        1.3551504115659956
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20240927150731",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    },
+    {
+      "sfa_licence": "SE24K59C000",
+      "fb_name": "CHEERS",
+      "postal_code": "449969",
+      "full_address": "Address: 1000 MARINE PARADE ROAD #B1-01,SIGLAP MRT STATION,Singapore 449969",
+      "source_objectid": 38929,
+      "source_name": "Siglap MRT Station (TE28)",
+      "source_address": "1000 MARINE PARADE ROAD",
+      "coordinates_lon_lat": [
+        103.93002582692921,
+        1.3100086942792524
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20250911140853",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    },
+    {
+      "sfa_licence": "SE24L88L000",
+      "fb_name": "Cheers",
+      "postal_code": "449971",
+      "full_address": "Address: 101 MARINE PARADE ROAD #B1-02,MARINE PARADE MRT STATION,Singapore 449971",
+      "source_objectid": 38927,
+      "source_name": "Marine Parade MRT Station (TE26)",
+      "source_address": "101 MARINE PARADE ROAD",
+      "coordinates_lon_lat": [
+        103.90498308728012,
+        1.3026116349006993
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20250911140853",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    },
+    {
+      "sfa_licence": "CE24G37A000",
+      "fb_name": "CHEERS",
+      "postal_code": "019396",
+      "full_address": "Address: 11 MARINA MALL #B1-03,GARDENS BY THE BAY MRT STATION,Singapore 019396",
+      "source_objectid": 38744,
+      "source_name": "Gardens by the Bay MRT Station (TE22)",
+      "source_address": "11 MARINA MALL",
+      "coordinates_lon_lat": [
+        103.86745466461196,
+        1.278487258964135
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20251110113129",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    },
+    {
+      "sfa_licence": "CE15L93A000",
+      "fb_name": "CHEERS",
+      "postal_code": "188505",
+      "full_address": "Address: 11 ROCHOR CANAL ROAD #B1-02,ROCHOR MRT STATION,Singapore 188505",
+      "source_objectid": 39532,
+      "source_name": "Rochor MRT Station (DT13)",
+      "source_address": "11 ROCHOR CANAL ROAD",
+      "coordinates_lon_lat": [
+        103.85276942932991,
+        1.303852185476065
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20240927150731",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    },
+    {
+      "sfa_licence": "CE24486K000",
+      "fb_name": "Cheers",
+      "postal_code": "248654",
+      "full_address": "Address: 20 ORCHARD BOULEVARD #B1-02,ORCHARD BOULEVARD MRT STATION,Singapore 248654",
+      "source_objectid": 39186,
+      "source_name": "Orchard Boulevard MRT Station (TE13)",
+      "source_address": "20 ORCHARD BOULEVARD",
+      "coordinates_lon_lat": [
+        103.82386852291181,
+        1.3024222488386645
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20240927150731",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    },
+    {
+      "sfa_licence": "CE24741X000",
+      "fb_name": "Cheers",
+      "postal_code": "018928",
+      "full_address": "Address: 2 PARK STREET #B1-02,Singapore 018928",
+      "source_objectid": 38742,
+      "source_name": "Shenton Way MRT Station (TE19)",
+      "source_address": "2 PARK STREET",
+      "coordinates_lon_lat": [
+        103.85036759652594,
+        1.2777168281502467
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20251110113129",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    },
+    {
+      "sfa_licence": "CE23D11X000",
+      "fb_name": "Cheers",
+      "postal_code": "237974",
+      "full_address": "Address: 301 ORCHARD BOULEVARD #B2-04,ORCHARD MRT STATION,Singapore 237974",
+      "source_objectid": 39187,
+      "source_name": "Orchard MRT Station (TE14)",
+      "source_address": "301 ORCHARD BOULEVARD",
+      "coordinates_lon_lat": [
+        103.83137499975132,
+        1.3030442627323626
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20240927150731",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    },
+    {
+      "sfa_licence": "CE23D05J000",
+      "fb_name": "Cheers",
+      "postal_code": "058841",
+      "full_address": "Address: 321 SOUTH BRIDGE ROAD #B1-05,MAXWELL MRT STATION,Singapore 058841",
+      "source_objectid": 38741,
+      "source_name": "Maxwell MRT Station (TE18)",
+      "source_address": "321 SOUTH BRIDGE ROAD",
+      "coordinates_lon_lat": [
+        103.84388367030975,
+        1.280533298865553
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20251110113129",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    },
+    {
+      "sfa_licence": "NW22C24K000",
+      "fb_name": "Cheers",
+      "postal_code": "787140",
+      "full_address": "Address: 825 UPPER THOMSON ROAD SPRINGLEAF MRT STATION,Singapore 787140",
+      "source_objectid": 38807,
+      "source_name": "Springleaf MRT Station (TE4)",
+      "source_address": "825 UPPER THOMSON ROAD",
+      "coordinates_lon_lat": [
+        103.81785694961954,
+        1.397581060907215
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20240927150731",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    },
+    {
+      "sfa_licence": "CE23D14L000",
+      "fb_name": "Cheers",
+      "postal_code": "257879",
+      "full_address": "Address: 82 STEVENS ROAD #B1-02,STEVENS MRT STATION,Singapore 257879",
+      "source_objectid": 39184,
+      "source_name": "Stevens MRT Station (TE11)",
+      "source_address": "82 STEVENS ROAD",
+      "coordinates_lon_lat": [
+        103.82556696508883,
+        1.3193343740765846
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20240927150731",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    },
+    {
+      "sfa_licence": "NW22H21B000",
+      "fb_name": "Cheers",
+      "postal_code": "569900",
+      "full_address": "Address: 91 ANG MO KIO AVENUE 4 #B2-02,#B2-03,#B2-04,MAYFLOWER MRT STATION,Singapore 569900",
+      "source_objectid": 39493,
+      "source_name": "Mayflower MRT Station (TE6)",
+      "source_address": "91 ANG MO KIO AVENUE 4",
+      "coordinates_lon_lat": [
+        103.83656776739822,
+        1.3714631883952781
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20240927150731",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    },
+    {
+      "sfa_licence": "NW21670L000",
+      "fb_name": "CHEERS HOLDINGS (2004)",
+      "postal_code": "737741",
+      "full_address": "Address: 30 WOODLANDS DRIVE 17 #B1-04,#B1-05,WOODLANDS SOUTH MRT STATION,Singapore 737741",
+      "source_objectid": 38961,
+      "source_name": "Woodlands South MRT Station (TE3)",
+      "source_address": "30 WOODLANDS DRIVE 17",
+      "coordinates_lon_lat": [
+        103.7932643224816,
+        1.4273960526199168
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20240927150731",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    },
+    {
+      "sfa_licence": "NW22E44A000",
+      "fb_name": "CHEERS HOLDINGS (2004) PTE LTD",
+      "postal_code": "789361",
+      "full_address": "Address: 1 LENTOR DRIVE #B1-02,LENTOR MRT STATION,Singapore 789361",
+      "source_objectid": 38809,
+      "source_name": "Lentor MRT Station (TE5)",
+      "source_address": "1 LENTOR DRIVE",
+      "coordinates_lon_lat": [
+        103.83574380991212,
+        1.3855065793288235
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20240927150731",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    },
+    {
+      "sfa_licence": "NW21671K000",
+      "fb_name": "CHEERS HOLDINGS (2004) PTE LTD",
+      "postal_code": "737668",
+      "full_address": "Address: 20 WOODLANDS NORTH COAST ROAD #B1-04,#B1-05,#B1-06,WOODLANDS NORTH MRT STATION,Singapore 737668",
+      "source_objectid": 39119,
+      "source_name": "Woodlands North MRT Station (TE1)",
+      "source_address": "20 WOODLANDS NORTH COAST ROAD",
+      "coordinates_lon_lat": [
+        103.78569268203805,
+        1.4482924528443928
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20240927150731",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    },
+    {
+      "sfa_licence": "NW24C36J000",
+      "fb_name": "Each a Cup",
+      "postal_code": "569900",
+      "full_address": "Address: 91 ANG MO KIO AVENUE 4 #B2-05,MAYFLOWER MRT STATION,Singapore 569900",
+      "source_objectid": 39493,
+      "source_name": "Mayflower MRT Station (TE6)",
+      "source_address": "91 ANG MO KIO AVENUE 4",
+      "coordinates_lon_lat": [
+        103.83656776739822,
+        1.3714631883952781
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20240927150731",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    },
+    {
+      "sfa_licence": "NW21J22A000",
+      "fb_name": "Fate of Potatoes",
+      "postal_code": "769100",
+      "full_address": "Address: 920 YISHUN AVENUE 2 #01-18,Singapore 769100",
+      "source_objectid": 39149,
+      "source_name": "WeCare Concierge @ Yishun Integrated Transport Hub (YITH)",
+      "source_address": "920 YISHUN AVENUE 2",
+      "coordinates_lon_lat": [
+        103.83617765072373,
+        1.4279028901682527
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20240927150731",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    },
+    {
+      "sfa_licence": "NE25G58E000",
+      "fb_name": "HUONG PHO",
+      "postal_code": "529544",
+      "full_address": "Address: 15 TAMPINES CENTRAL 1 #B1-15,TAMPINES MRT STATION,Singapore 529544",
+      "source_objectid": 39371,
+      "source_name": "Tampines MRT Station (DT32)",
+      "source_address": "15 TAMPINES CENTRAL 1",
+      "coordinates_lon_lat": [
+        103.94300988287966,
+        1.3551504115659956
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20240927150731",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    },
+    {
+      "sfa_licence": "SE26D12B000",
+      "fb_name": "iBoozee",
+      "postal_code": "449969",
+      "full_address": "Address: 1000 MARINE PARADE ROAD Singapore 449969 SIGLAP MRT TE 28 Level B1 (AM01)",
+      "source_objectid": 38929,
+      "source_name": "Siglap MRT Station (TE28)",
+      "source_address": "1000 MARINE PARADE ROAD",
+      "coordinates_lon_lat": [
+        103.93002582692921,
+        1.3100086942792524
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20250911140853",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    },
+    {
+      "sfa_licence": "NE25B23C000",
+      "fb_name": "KOU KOU XIANG",
+      "postal_code": "529544",
+      "full_address": "Address: 15 TAMPINES CENTRAL 1 #B1-08,TAMPINES MRT STATION (DT32),Singapore 529544",
+      "source_objectid": 39371,
+      "source_name": "Tampines MRT Station (DT32)",
+      "source_address": "15 TAMPINES CENTRAL 1",
+      "coordinates_lon_lat": [
+        103.94300988287966,
+        1.3551504115659956
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20240927150731",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    },
+    {
+      "sfa_licence": "NE25G26E000",
+      "fb_name": "Lee House Tea Vibe",
+      "postal_code": "529544",
+      "full_address": "Address: 15 TAMPINES CENTRAL 1 #B1-14,TAMPINES MRT STATION (DT32),Singapore 529544",
+      "source_objectid": 39371,
+      "source_name": "Tampines MRT Station (DT32)",
+      "source_address": "15 TAMPINES CENTRAL 1",
+      "coordinates_lon_lat": [
+        103.94300988287966,
+        1.3551504115659956
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20240927150731",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    },
+    {
+      "sfa_licence": "NW21E83P000",
+      "fb_name": "LU JI XUN JIANG",
+      "postal_code": "769100",
+      "full_address": "Address: 920 YISHUN AVENUE 2 #01-10,Singapore 769100",
+      "source_objectid": 39149,
+      "source_name": "WeCare Concierge @ Yishun Integrated Transport Hub (YITH)",
+      "source_address": "920 YISHUN AVENUE 2",
+      "coordinates_lon_lat": [
+        103.83617765072373,
+        1.4279028901682527
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20240927150731",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    },
+    {
+      "sfa_licence": "CE24A82J000",
+      "fb_name": "MEMORIES BAKERY SHOP",
+      "postal_code": "208826",
+      "full_address": "Address: 90 JALAN BESAR #B1-01,JALAN BESAR MRT STATION,Singapore 208826",
+      "source_objectid": 39438,
+      "source_name": "Jalan Besar MRT Station (DT22)",
+      "source_address": "90 JALAN BESAR",
+      "coordinates_lon_lat": [
+        103.85529571362592,
+        1.3051713875937208
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20240927150731",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    },
+    {
+      "sfa_licence": "SE24E85B000",
+      "fb_name": "Mr. Coconut go",
+      "postal_code": "449971",
+      "full_address": "Address: 101 MARINE PARADE ROAD #B1-03,MARINE PARADE MRT STATION,Singapore 449971",
+      "source_objectid": 38927,
+      "source_name": "Marine Parade MRT Station (TE26)",
+      "source_address": "101 MARINE PARADE ROAD",
+      "coordinates_lon_lat": [
+        103.90498308728012,
+        1.3026116349006993
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20250911140853",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    },
+    {
+      "sfa_licence": "NW21901V000",
+      "fb_name": "Mr Teh Tarik Deli",
+      "postal_code": "769100",
+      "full_address": "Address: 920 YISHUN AVENUE 2 #01-08,Yishun Integrated Transport Hub,Singapore 769100",
+      "source_objectid": 39149,
+      "source_name": "WeCare Concierge @ Yishun Integrated Transport Hub (YITH)",
+      "source_address": "920 YISHUN AVENUE 2",
+      "coordinates_lon_lat": [
+        103.83617765072373,
+        1.4279028901682527
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20240927150731",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    },
+    {
+      "sfa_licence": "NW21891L000",
+      "fb_name": "Mr Teh Tarik Deli",
+      "postal_code": "769100",
+      "full_address": "Address: 920 YISHUN AVENUE 2 #01-09,Yishun Integrated Transport Hub,Singapore 769100",
+      "source_objectid": 39149,
+      "source_name": "WeCare Concierge @ Yishun Integrated Transport Hub (YITH)",
+      "source_address": "920 YISHUN AVENUE 2",
+      "coordinates_lon_lat": [
+        103.83617765072373,
+        1.4279028901682527
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20240927150731",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    },
+    {
+      "sfa_licence": "NW21G89L000",
+      "fb_name": "MY KAMPUNG",
+      "postal_code": "769100",
+      "full_address": "Address: 920 YISHUN AVENUE 2 #01-13,YISHUN INTEGRATED TRANSPORT HUB,Singapore 769100",
+      "source_objectid": 39149,
+      "source_name": "WeCare Concierge @ Yishun Integrated Transport Hub (YITH)",
+      "source_address": "920 YISHUN AVENUE 2",
+      "coordinates_lon_lat": [
+        103.83617765072373,
+        1.4279028901682527
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20240927150731",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    },
+    {
+      "sfa_licence": "NW16053V000",
+      "fb_name": "NOM S TRANSIT",
+      "postal_code": "678213",
+      "full_address": "Address: 950 UPPER BUKIT TIMAH ROAD #B2-03,BUKIT PANJANG MRT STATION,Singapore 678213",
+      "source_objectid": 39102,
+      "source_name": "Bukit Panjang MRT Station (DT1)",
+      "source_address": "950 UPPER BUKIT TIMAH ROAD",
+      "coordinates_lon_lat": [
+        103.76153511473323,
+        1.3790021167177082
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20240927150731",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    },
+    {
+      "sfa_licence": "CE20L05X000",
+      "fb_name": "Pizza Hut",
+      "postal_code": "575738",
+      "full_address": "Address: 191 SIN MING AVENUE #02-01,Singapore 575738",
+      "source_objectid": 38937,
+      "source_name": "Marymount Community Club",
+      "source_address": "191 SIN MING AVENUE 01",
+      "coordinates_lon_lat": [
+        103.84128616880905,
+        1.3621375715832422
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20240927150731",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    },
+    {
+      "sfa_licence": "NE26043C000",
+      "fb_name": "Pizza Nation",
+      "postal_code": "529544",
+      "full_address": "Address: 15 TAMPINES CENTRAL 1 #B1-12,Singapore 529544",
+      "source_objectid": 39371,
+      "source_name": "Tampines MRT Station (DT32)",
+      "source_address": "15 TAMPINES CENTRAL 1",
+      "coordinates_lon_lat": [
+        103.94300988287966,
+        1.3551504115659956
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20240927150731",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    },
+    {
+      "sfa_licence": "CE24L02X000",
+      "fb_name": "SICHUAN CHEF",
+      "postal_code": "544575",
+      "full_address": "Address: 11 SENGKANG CENTRAL #01-106,Singapore 544575",
+      "source_objectid": 38735,
+      "source_name": "Buangkok Interchange (BKI)",
+      "source_address": "11 SENGKANG CENTRAL",
+      "coordinates_lon_lat": [
+        103.89272100789816,
+        1.3829816322433666
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20250911140853",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    },
+    {
+      "sfa_licence": "NE25972N000",
+      "fb_name": "SUBWAY",
+      "postal_code": "529544",
+      "full_address": "Address: 15 TAMPINES CENTRAL 1 #B1-07,TAMPINES MRT STATION (DT32),Singapore 529544",
+      "source_objectid": 39371,
+      "source_name": "Tampines MRT Station (DT32)",
+      "source_address": "15 TAMPINES CENTRAL 1",
+      "coordinates_lon_lat": [
+        103.94300988287966,
+        1.3551504115659956
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20240927150731",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    },
+    {
+      "sfa_licence": "CE24E45J000",
+      "fb_name": "Ton Coffee",
+      "postal_code": "018928",
+      "full_address": "Address: 2 PARK STREET #B1-01,Singapore 018928",
+      "source_objectid": 38742,
+      "source_name": "Shenton Way MRT Station (TE19)",
+      "source_address": "2 PARK STREET",
+      "coordinates_lon_lat": [
+        103.85036759652594,
+        1.2777168281502467
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20251110113129",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    },
+    {
+      "sfa_licence": "NE25J11J000",
+      "fb_name": "Warrior",
+      "postal_code": "529544",
+      "full_address": "Address: 15 TAMPINES CENTRAL 1 #B1-13,TAMPINES MRT STATION,Singapore 529544",
+      "source_objectid": 39371,
+      "source_name": "Tampines MRT Station (DT32)",
+      "source_address": "15 TAMPINES CENTRAL 1",
+      "coordinates_lon_lat": [
+        103.94300988287966,
+        1.3551504115659956
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20240927150731",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    },
+    {
+      "sfa_licence": "NW21H05V000",
+      "fb_name": "YEW KEE DUCK RICE",
+      "postal_code": "769100",
+      "full_address": "Address: 920 YISHUN AVENUE 2 #01-12,YISHUN INTEGRATED TRANSPORT HUB,Singapore 769100",
+      "source_objectid": 39149,
+      "source_name": "WeCare Concierge @ Yishun Integrated Transport Hub (YITH)",
+      "source_address": "920 YISHUN AVENUE 2",
+      "coordinates_lon_lat": [
+        103.83617765072373,
+        1.4279028901682527
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20240927150731",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    },
+    {
+      "sfa_licence": "NE25H16E000",
+      "fb_name": "None",
+      "postal_code": "544575",
+      "full_address": "Address: 11 SENGKANG CENTRAL #01-107,Singapore 544575",
+      "source_objectid": 38735,
+      "source_name": "Buangkok Interchange (BKI)",
+      "source_address": "11 SENGKANG CENTRAL",
+      "coordinates_lon_lat": [
+        103.89272100789816,
+        1.3829816322433666
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20250911140853",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    },
+    {
+      "sfa_licence": "NE25I13J000",
+      "fb_name": "None",
+      "postal_code": "529544",
+      "full_address": "Address: 15 TAMPINES CENTRAL 1 #B1-16,#B1-17,Singapore 529544",
+      "source_objectid": 39371,
+      "source_name": "Tampines MRT Station (DT32)",
+      "source_address": "15 TAMPINES CENTRAL 1",
+      "coordinates_lon_lat": [
+        103.94300988287966,
+        1.3551504115659956
+      ],
+      "match_method": "exact six-digit postal plus normalized source house/street line contiguous in workbook Full Address; unique source coordinate",
+      "coordinate_precision": "source point identifies the named GTP/facility or address point; not verified F&B outlet/unit or stall-front point",
+      "source_updated": "20240927150731",
+      "auto_apply": false,
+      "source_attribution": "Ministry of Health (MOH), Singapore; Dementia Friendly Go-To-Points, data.gov.sg"
+    }
+  ],
+  "excluded_sources_note": "No Mapbox permanent geocoding or temporary Search Box output used. OSM Overpass query attempt was rejected by public endpoint HTTP 406; no OSM records used."
+}

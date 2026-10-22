@@ -1,0 +1,79 @@
+{
+  "snapshot_type": "current_official_tenant_directory_exact_sfa_field_candidates",
+  "observed_at_local": "2026-10-19T01:26:47+08:00",
+  "master_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "master_sha256": "a70390e62c4b5a9605f8041e4136f92024d93275d99c58f8de7ebaf73c8c96b6",
+  "worksheet": "Public F&B Directory",
+  "scope": "Read-only bounded exact-match review of rows with blank contact, website, or opening-hours fields. No workbook edits. Venue sources were matched to SFA rows by exact public outlet name plus exact unit and venue address; do not infer physical open status from a directory listing.",
+  "findings": [
+    {
+      "excel_row": 362,
+      "sfa_licence": "W03097L000",
+      "current_row": {
+        "fnb_name": "328 Katong Laksa",
+        "registered_business_name": "328 Katong Laksa",
+        "address": "101 THOMSON ROAD #01-K1, UNITED SQUARE, Singapore 307591",
+        "postal_code": "307591",
+        "contact": null,
+        "website": null,
+        "opening_hours": null
+      },
+      "source_match": {
+        "source_name": "United Square official store page",
+        "url": "https://www.unitedsquare.com.sg/stores/328-katong-laksa/",
+        "observed_by_web": "crawled 3 days ago; search result crawled 2026-10-19",
+        "match_basis": "Exact trading name 328 Katong Laksa; source unit 01-K1 matches SFA row unit #01-K1; venue United Square and address 101 Thomson Road match workbook row.",
+        "evidence": {
+          "unit": "01-K1",
+          "contact": "6707 5001",
+          "opening_hours": "9:00am-8:00pm; last order 7:30pm",
+          "business_website": "https://www.328katonglaksa.sg/"
+        }
+      },
+      "proposed_changes": {
+        "contact": "+65 6707 5001",
+        "website": "https://www.328katonglaksa.sg/",
+        "opening_hours": "9:00am-8:00pm (last order 7:30pm); days not specified by source"
+      },
+      "operational_status": "Official venue directory currently lists this outlet; directory listing supports presence, not an independent same-day physical-open check.",
+      "confidence": "high for the listed fields and row identity; no closure action proposed"
+    },
+    {
+      "excel_row": 26,
+      "sfa_licence": "W02211J000",
+      "current_row": {
+        "fnb_name": "101 POT NOODLES",
+        "registered_business_name": "101 POT NOODLES",
+        "address": "101 THOMSON ROAD #B1-03, UNITED SQUARE, Singapore 307591",
+        "postal_code": "307591",
+        "contact": null,
+        "website": null,
+        "opening_hours": null
+      },
+      "source_match": {
+        "source_name": "United Square official store page",
+        "url": "https://www.unitedsquare.com.sg/stores/101-pot-noodles-opening-soon/",
+        "directory_url": "https://www.unitedsquare.com.sg/stores/",
+        "observed_by_web": "detail page crawled last month; main directory search result crawled 2026-10-19",
+        "match_basis": "Exact trading name 101 Pot Noodles; source unit B1-03 matches SFA row unit #B1-03; venue United Square and address 101 Thomson Road match workbook row.",
+        "evidence": {
+          "unit": "B1-03",
+          "contact": "9023 1278",
+          "opening_hours": "10:00am-9:00pm"
+        }
+      },
+      "proposed_changes": {
+        "contact": "+65 9023 1278",
+        "opening_hours": "10:00am-9:00pm; days not specified by source"
+      },
+      "proposed_website": "No business-owned website found in this official venue record; keep blank.",
+      "operational_status": "Currently listed on United Square official store directory; older detail-page crawl includes hours. Presence is not an independent same-day physical-open check.",
+      "confidence": "high for exact row and contact; medium for opening hours freshness"
+    }
+  ],
+  "not_proposed": [
+    "No SFA status changes: the retrieved tenant pages are venue directories, not current licence-status responses.",
+    "No closure removals.",
+    "No website value is inferred from a mall-hosted directory URL."
+  ]
+}

@@ -1,0 +1,230 @@
+{
+  "refresh_id": "refresh128_increment_20261019",
+  "status": "installed",
+  "canonical_workbook": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "candidate_workbook": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "input_sha256": "1f32e2fe53ca6e82bffab65f1f39e21d197c8d1ea040018933e1b8cb26638081",
+  "candidate_sha256": "51b0eb281d08e735151ccf4ca99de823c3badf811d46c9ea337b4008b3251e0c",
+  "updates": {
+    "websites": 2,
+    "hoursFilled": 2,
+    "hoursCorrected": 3,
+    "menuSummary": 2,
+    "menuUrl": 0,
+    "menuItemsAdded": 20,
+    "imageCandidatesAdded": 1,
+    "closureStatusNotes": 12,
+    "accessStatusNotes": 3
+  },
+  "changes": [
+    {
+      "sfa_licence": "CE19B31L000",
+      "field": "Website",
+      "before": null,
+      "after": "https://app.yakun.com/find-us",
+      "source": "https://app.yakun.com/find-us"
+    },
+    {
+      "sfa_licence": "CE19B31L000",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": "Mon–Sun 08:00–21:00 (last order 30 minutes before closing)",
+      "source": "https://app.yakun.com/find-us"
+    },
+    {
+      "sfa_licence": "CE20K87K000",
+      "field": "Website",
+      "before": null,
+      "after": "https://app.yakun.com/find-us",
+      "source": "https://app.yakun.com/find-us"
+    },
+    {
+      "sfa_licence": "CE20K87K000",
+      "field": "Opening Hours / Closed Days",
+      "before": null,
+      "after": "Mon–Sun 07:30–20:00 (last order 30 minutes before closing)",
+      "source": "https://app.yakun.com/find-us"
+    },
+    {
+      "sfa_licence": "W02041J000",
+      "field": "Opening Hours / Closed Days",
+      "before": "Hours: Tue–Thu 11:45am–2:30pm, 5:30pm–10:00pm; Fri–Sat 11:45am–2:30pm, 5:30pm–10:30pm; Sun 11:45am–2:30pm, 5:00pm–10:00pm; Mon closed",
+      "after": "Hours: Daily except Wed 11:30–14:30, 17:30–21:30; Wed closed",
+      "source": "https://87justthai.com/contact-us/"
+    },
+    {
+      "sfa_licence": "SE22I83E000",
+      "field": "Opening Hours / Closed Days",
+      "before": "Hours: Daily 10:00 AM–10:00 PM",
+      "after": "Hours: Daily 10:00–21:30",
+      "source": "https://thebackyardbakers.com.sg/"
+    },
+    {
+      "sfa_licence": "W03097L000",
+      "field": "Opening Hours / Closed Days",
+      "before": "9:00am-8:00pm (last order 7:30pm); days not specified by source",
+      "after": "Hours: Daily 09:00–19:30",
+      "source": "https://www.328katonglaksa.sg/"
+    },
+    {
+      "sfa_licence": "NE15716J000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Foodpanda delivery menu observed 2026-10-19; 10 outlet-specific delivery menu items and prices listed in Menu Items. Prices and availability may differ from dine-in.",
+      "source": "https://www.foodpanda.sg/restaurant/h8on/burger-king-r-waterway-point"
+    },
+    {
+      "sfa_licence": "NW16647B000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Foodpanda delivery menu observed 2026-10-19; 10 outlet-specific delivery menu items and prices listed in Menu Items. Prices and availability may differ from dine-in.",
+      "source": "https://www.foodpanda.sg/restaurant/nhmd/burger-king-r-junction-9"
+    },
+    {
+      "sfa_licence": "CE12H48N000",
+      "field": "Coverage Status",
+      "before": "Official source reports closure from 2026-10-01; permanent closure/reopening status not stated. Retained pending recheck. | Operational status (2026-10-18): Satay by the Bay venue closed effective 2026-10-01; exact licence relocation/reopening unverified. Retained pending outlet-specific status. | Source check 2026-10-18: https://www.gardensbythebay.com.sg/en.html",
+      "after": "Official source reports closure from 2026-10-01; permanent closure/reopening status not stated. Retained pending recheck. | Operational status (2026-10-18): Satay by the Bay venue closed effective 2026-10-01; exact licence relocation/reopening unverified. Retained pending outlet-specific status. | Source check 2026-10-18: https://www.gardensbythebay.com.sg/en.html | Satay by the Bay venue closure effective 2026-10-01; official site says refreshed waterfront dining experience, but individual outlet permanent closure or relocation is unverified. Recheck outlet status; not confirmed open. | https://www.gardensbythebay.com.sg/en/promotions.html",
+      "source": "closure_access_batch_next_20261019.json"
+    },
+    {
+      "sfa_licence": "CE12H48N002",
+      "field": "Coverage Status",
+      "before": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "after": "SFA-listed; public access inferred; premises operation not live confirmed | Satay by the Bay venue closure effective 2026-10-01; official site says refreshed waterfront dining experience, but individual outlet permanent closure or relocation is unverified. Recheck outlet status; not confirmed open. | https://www.gardensbythebay.com.sg/en/promotions.html",
+      "source": "closure_access_batch_next_20261019.json"
+    },
+    {
+      "sfa_licence": "CE12H48N003",
+      "field": "Coverage Status",
+      "before": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "after": "SFA-listed; public access inferred; premises operation not live confirmed | Satay by the Bay venue closure effective 2026-10-01; official site says refreshed waterfront dining experience, but individual outlet permanent closure or relocation is unverified. Recheck outlet status; not confirmed open. | https://www.gardensbythebay.com.sg/en/promotions.html",
+      "source": "closure_access_batch_next_20261019.json"
+    },
+    {
+      "sfa_licence": "CE12H48N004",
+      "field": "Coverage Status",
+      "before": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "after": "SFA-listed; public access inferred; premises operation not live confirmed | Satay by the Bay venue closure effective 2026-10-01; official site says refreshed waterfront dining experience, but individual outlet permanent closure or relocation is unverified. Recheck outlet status; not confirmed open. | https://www.gardensbythebay.com.sg/en/promotions.html",
+      "source": "closure_access_batch_next_20261019.json"
+    },
+    {
+      "sfa_licence": "CE12H48N005",
+      "field": "Coverage Status",
+      "before": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "after": "SFA-listed; public access inferred; premises operation not live confirmed | Satay by the Bay venue closure effective 2026-10-01; official site says refreshed waterfront dining experience, but individual outlet permanent closure or relocation is unverified. Recheck outlet status; not confirmed open. | https://www.gardensbythebay.com.sg/en/promotions.html",
+      "source": "closure_access_batch_next_20261019.json"
+    },
+    {
+      "sfa_licence": "CE12H48N006",
+      "field": "Coverage Status",
+      "before": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "after": "SFA-listed; public access inferred; premises operation not live confirmed | Satay by the Bay venue closure effective 2026-10-01; official site says refreshed waterfront dining experience, but individual outlet permanent closure or relocation is unverified. Recheck outlet status; not confirmed open. | https://www.gardensbythebay.com.sg/en/promotions.html",
+      "source": "closure_access_batch_next_20261019.json"
+    },
+    {
+      "sfa_licence": "CE12H48N007",
+      "field": "Coverage Status",
+      "before": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "after": "SFA-listed; public access inferred; premises operation not live confirmed | Satay by the Bay venue closure effective 2026-10-01; official site says refreshed waterfront dining experience, but individual outlet permanent closure or relocation is unverified. Recheck outlet status; not confirmed open. | https://www.gardensbythebay.com.sg/en/promotions.html",
+      "source": "closure_access_batch_next_20261019.json"
+    },
+    {
+      "sfa_licence": "CE12H48N008",
+      "field": "Coverage Status",
+      "before": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "after": "SFA-listed; public access inferred; premises operation not live confirmed | Satay by the Bay venue closure effective 2026-10-01; official site says refreshed waterfront dining experience, but individual outlet permanent closure or relocation is unverified. Recheck outlet status; not confirmed open. | https://www.gardensbythebay.com.sg/en/promotions.html",
+      "source": "closure_access_batch_next_20261019.json"
+    },
+    {
+      "sfa_licence": "CE12H48N018",
+      "field": "Coverage Status",
+      "before": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "after": "SFA-listed; public access inferred; premises operation not live confirmed | Satay by the Bay venue closure effective 2026-10-01; official site says refreshed waterfront dining experience, but individual outlet permanent closure or relocation is unverified. Recheck outlet status; not confirmed open. | https://www.gardensbythebay.com.sg/en/promotions.html",
+      "source": "closure_access_batch_next_20261019.json"
+    },
+    {
+      "sfa_licence": "CE12H48N019",
+      "field": "Coverage Status",
+      "before": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "after": "SFA-listed; public access inferred; premises operation not live confirmed | Satay by the Bay venue closure effective 2026-10-01; official site says refreshed waterfront dining experience, but individual outlet permanent closure or relocation is unverified. Recheck outlet status; not confirmed open. | https://www.gardensbythebay.com.sg/en/promotions.html",
+      "source": "closure_access_batch_next_20261019.json"
+    },
+    {
+      "sfa_licence": "CE12H48N020",
+      "field": "Coverage Status",
+      "before": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "after": "SFA-listed; public access inferred; premises operation not live confirmed | Satay by the Bay venue closure effective 2026-10-01; official site says refreshed waterfront dining experience, but individual outlet permanent closure or relocation is unverified. Recheck outlet status; not confirmed open. | https://www.gardensbythebay.com.sg/en/promotions.html",
+      "source": "closure_access_batch_next_20261019.json"
+    },
+    {
+      "sfa_licence": "CE12H48N022",
+      "field": "Coverage Status",
+      "before": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "after": "SFA-listed; public access inferred; premises operation not live confirmed | Satay by the Bay venue closure effective 2026-10-01; official site says refreshed waterfront dining experience, but individual outlet permanent closure or relocation is unverified. Recheck outlet status; not confirmed open. | https://www.gardensbythebay.com.sg/en/promotions.html",
+      "source": "closure_access_batch_next_20261019.json"
+    },
+    {
+      "sfa_licence": "C81041N007",
+      "field": "Coverage Status",
+      "before": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "after": "SFA-listed; public access inferred; premises operation not live confirmed | NUS canteen access may require visitor pass; current evidence does not establish unrestricted general-public access for this exact outlet. Retained pending outlet-specific access verification.",
+      "source": "closure_access_batch_next_20261019.json"
+    },
+    {
+      "sfa_licence": "C81041N010",
+      "field": "Coverage Status",
+      "before": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "after": "SFA-listed; public access inferred; premises operation not live confirmed | NUS canteen access may require visitor pass; current evidence does not establish unrestricted general-public access for this exact outlet. Retained pending outlet-specific access verification.",
+      "source": "closure_access_batch_next_20261019.json"
+    },
+    {
+      "sfa_licence": "SW25199P003",
+      "field": "Coverage Status",
+      "before": "SFA-listed; public access inferred; premises operation not live confirmed",
+      "after": "SFA-listed; public access inferred; premises operation not live confirmed | NUS canteen access may require visitor pass; current evidence does not establish unrestricted general-public access for this exact outlet. Retained pending outlet-specific access verification.",
+      "source": "closure_access_batch_next_20261019.json"
+    }
+  ],
+  "directory_rows_after": 38278,
+  "menu_item_rows_before": 13388,
+  "menu_item_rows_added": 20,
+  "image_candidate_rows_before": 2758,
+  "image_candidate_rows_added": 1,
+  "coverage_metrics": {
+    "Active public-access directory rows": 38278,
+    "Unique SFA licences": 38278,
+    "Rows with a usable F&B name": 32796,
+    "Rows with no usable F&B name": 5482,
+    "Rows with coordinates": 35740,
+    "Rows with contact details": 2704,
+    "Rows with website": 2816,
+    "Rows with menu URL": 1471,
+    "Rows with menu summary": 524,
+    "Rows with rating/review count": 0,
+    "Rows with approved image URL": 0,
+    "Rows with opening hours": 1476,
+    "Image candidates": 2759,
+    "Official and open-license image candidates": 1
+  },
+  "mapbox_search_box_usage": "User-reported 59/50000 before prior batch + 20 Search Box requests in Refresh127 = 79/50000 estimated; no Search Box requests in Refresh128; not dashboard verified.",
+  "no_spending": true,
+  "public_access_records_removed": 0,
+  "evidence_files": [
+    "menu_batch_next_20261019.json",
+    "directory_batch_next_20261019.json",
+    "hours_contact_verify_batch_20261019.json",
+    "image_rights_batch_next_20261019.json",
+    "closure_access_batch_next_20261019.json",
+    "open_data_alignment_next_20261019.json"
+  ],
+  "limitations": [
+    "OneMap token not available in the worker environment; 2,538 coordinate gaps remain.",
+    "Satay by the Bay venue closure is confirmed but individual permanent outlet closure/relocation is not; 12 records flagged for follow-up.",
+    "Three NUS canteen records require visitor-pass access and exact unrestricted public-access status remains unresolved.",
+    "Foodpanda delivery prices may differ from dine-in.",
+    "Swensen’s CC BY-SA photo is historical and not visually inspected; approved image URL count remains zero.",
+    "NEA centre-level photos are not individual stall imagery."
+  ],
+  "installed_workbook_sha256": "51b0eb281d08e735151ccf4ca99de823c3badf811d46c9ea337b4008b3251e0c"
+}

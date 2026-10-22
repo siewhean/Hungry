@@ -1,0 +1,378 @@
+{
+  "snapshot_type": "refresh135_exact_outlet_closure_public_access_review",
+  "observed_at_utc": "2026-10-18T22:06:03Z",
+  "observed_local_date": "2026-10-19",
+  "canonical_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_sha256": "bf28dd39739f1ab1ecf6137b4f6028305c1c26ed0541dd463e369d48c8b0e795",
+  "scope": {
+    "exact_sfa_records_reviewed": 20,
+    "selection": "20 current named SFA records at Changi Airport T1/T4, selected as a disjoint exact-license cohort from records with a CAG outlet roster/page match; this is a site-focused verification and not a Singapore-wide closure audit.",
+    "prior_review_overlap": "Checked licence IDs against prior refresh*_closures_access_*.json records; none overlapped.",
+    "read_only": true,
+    "removal_recommendations": 0,
+    "confirmed_permanent_closures": 0
+  },
+  "sources": [
+    {
+      "id": "cag_terminal_roster",
+      "url": "https://www.changiairport.com/en/happenings/promotions/changi-shopping-carnival.html",
+      "publisher": "Changi Airport Group",
+      "observed": "2026-10-18T22:06:03Z",
+      "scope": "Current promotion page lists T1 and T4 participating outlets explicitly under Public vs Transit headings; promotion period through 2026-10-21, so current on observation date."
+    },
+    {
+      "id": "cag_dining_directory",
+      "url": "https://www.changiairport.com/en/dine-and-shop/dining-directory.html",
+      "publisher": "Changi Airport Group",
+      "observed": "2026-10-18T22:06:03Z",
+      "scope": "Live terminal dining directory; outlet pages provide exact unit and Public/Transit classification for matched subset."
+    },
+    {
+      "id": "cag_outlet_pages",
+      "url": "See individual evidence_urls on records",
+      "publisher": "Changi Airport Group",
+      "observed": "2026-10-18T22:06:03Z",
+      "scope": "Exact branch-level pages for 8 of 20 selected licences."
+    }
+  ],
+  "records": [
+    {
+      "sfa_licence": "SE26674A000",
+      "fnb_name": "7 Eleven",
+      "address": "Address: 10 AIRPORT BOULEVARD #02-07,CHANGI AIRPORT TERMINAL 4,Singapore 819665",
+      "terminal": "T4",
+      "current_status": "current_official_terminal_public_roster_match; exact_outlet_status_unresolved",
+      "branch_match": "exact_sfa_record_identity_read_from_baseline; official current source is terminal/brand roster and does not establish this licence-to-unit linkage",
+      "unit_evidence": null,
+      "closure_status": "no_exact_branch_permanent_closure_notice_found; inclusion on the current public-area roster is affirmative continuity evidence at brand/terminal level only",
+      "public_access": "public_access_supported_at_terminal_area_level",
+      "access_note": "Changi Airport identifies this terminal outlet as PUBLIC. Public-area status excludes transit/airside access restrictions; does not prove day-to-day walk-in service at the exact licensed unit.",
+      "evidence_urls": [
+        "https://www.changiairport.com/en/happenings/promotions/changi-shopping-carnival.html"
+      ],
+      "confidence": "high for public area classification; medium/low for exact outlet-to-SFA licence identity"
+    },
+    {
+      "sfa_licence": "SE26D82X000",
+      "fnb_name": "7 Eleven",
+      "address": "Address: 10 AIRPORT BOULEVARD #01-09,CHANGI AIRPORT TERMINAL 4,Singapore 819665",
+      "terminal": "T4",
+      "current_status": "current_official_terminal_public_roster_match; exact_outlet_status_unresolved",
+      "branch_match": "exact_sfa_record_identity_read_from_baseline; official current source is terminal/brand roster and does not establish this licence-to-unit linkage",
+      "unit_evidence": null,
+      "closure_status": "no_exact_branch_permanent_closure_notice_found; inclusion on the current public-area roster is affirmative continuity evidence at brand/terminal level only",
+      "public_access": "public_access_supported_at_terminal_area_level",
+      "access_note": "Changi Airport identifies this terminal outlet as PUBLIC. Public-area status excludes transit/airside access restrictions; does not prove day-to-day walk-in service at the exact licensed unit.",
+      "evidence_urls": [
+        "https://www.changiairport.com/en/happenings/promotions/changi-shopping-carnival.html"
+      ],
+      "confidence": "high for public area classification; medium/low for exact outlet-to-SFA licence identity"
+    },
+    {
+      "sfa_licence": "SE22E86K000",
+      "fnb_name": "7-Eleven",
+      "address": "Address: 10 AIRPORT BOULEVARD #02-240,CHANGI AIRPORT TERMINAL 4,Singapore 819665",
+      "terminal": "T4",
+      "current_status": "current_official_terminal_public_roster_match; exact_outlet_status_unresolved",
+      "branch_match": "exact_sfa_record_identity_read_from_baseline; official current source is terminal/brand roster and does not establish this licence-to-unit linkage",
+      "unit_evidence": null,
+      "closure_status": "no_exact_branch_permanent_closure_notice_found; inclusion on the current public-area roster is affirmative continuity evidence at brand/terminal level only",
+      "public_access": "public_access_supported_at_terminal_area_level",
+      "access_note": "Changi Airport identifies this terminal outlet as PUBLIC. Public-area status excludes transit/airside access restrictions; does not prove day-to-day walk-in service at the exact licensed unit.",
+      "evidence_urls": [
+        "https://www.changiairport.com/en/happenings/promotions/changi-shopping-carnival.html"
+      ],
+      "confidence": "high for public area classification; medium/low for exact outlet-to-SFA licence identity"
+    },
+    {
+      "sfa_licence": "SE17558J000",
+      "fnb_name": "ANDES BY ASTONS",
+      "address": "Address: 10 AIRPORT BOULEVARD #02-202,CHANGI AIRPORT TERMINAL 4,Singapore 819665",
+      "terminal": "T4",
+      "current_status": "current_exact_unit_listed_by_Changi_Airport",
+      "branch_match": "exact_sfa_unit_matches_official_dining_page",
+      "unit_evidence": "T4 Public Level 2M, #02-202 exactly matches",
+      "closure_status": "no_exact_branch_permanent_closure_notice_found; current exact-unit dining listing supports continued listing, not a live inspection",
+      "public_access": "public_access_supported_at_terminal_area_level",
+      "access_note": "Changi Airport outlet page labels the exact unit PUBLIC; this supports entry without boarding-pass/security clearance.",
+      "evidence_urls": [
+        "https://www.changiairport.com/en/dine-and-shop/dining-directory/dine-detail.andes-by-astons.html"
+      ],
+      "confidence": "high for listed exact branch and public area; not a physical operating-hours inspection"
+    },
+    {
+      "sfa_licence": "SE17438A000",
+      "fnb_name": "BAKERY CUISINE",
+      "address": "Address: 10 AIRPORT BOULEVARD #02-11,CHANGI AIRPORT TERMINAL 4,Singapore 819665",
+      "terminal": "T4",
+      "current_status": "current_official_terminal_public_roster_match; exact_outlet_status_unresolved",
+      "branch_match": "exact_sfa_record_identity_read_from_baseline; official current source is terminal/brand roster and does not establish this licence-to-unit linkage",
+      "unit_evidence": null,
+      "closure_status": "no_exact_branch_permanent_closure_notice_found; inclusion on the current public-area roster is affirmative continuity evidence at brand/terminal level only",
+      "public_access": "public_access_supported_at_terminal_area_level",
+      "access_note": "Changi Airport identifies this terminal outlet as PUBLIC. Public-area status excludes transit/airside access restrictions; does not prove day-to-day walk-in service at the exact licensed unit.",
+      "evidence_urls": [
+        "https://www.changiairport.com/en/happenings/promotions/changi-shopping-carnival.html"
+      ],
+      "confidence": "high for public area classification; medium/low for exact outlet-to-SFA licence identity"
+    },
+    {
+      "sfa_licence": "SE17502X000",
+      "fnb_name": "Bee Cheng Hiang",
+      "address": "Address: 10 AIRPORT BOULEVARD #02-85,CHANGI AIRPORT TERMINAL 4,Singapore 819665",
+      "terminal": "T4",
+      "current_status": "current_official_terminal_public_roster_match; exact_outlet_status_unresolved",
+      "branch_match": "exact_sfa_record_identity_read_from_baseline; official current source is terminal/brand roster and does not establish this licence-to-unit linkage",
+      "unit_evidence": null,
+      "closure_status": "no_exact_branch_permanent_closure_notice_found; inclusion on the current public-area roster is affirmative continuity evidence at brand/terminal level only",
+      "public_access": "public_access_supported_at_terminal_area_level",
+      "access_note": "Changi Airport identifies this terminal outlet as PUBLIC. Public-area status excludes transit/airside access restrictions; does not prove day-to-day walk-in service at the exact licensed unit.",
+      "evidence_urls": [
+        "https://www.changiairport.com/en/happenings/promotions/changi-shopping-carnival.html"
+      ],
+      "confidence": "high for public area classification; medium/low for exact outlet-to-SFA licence identity"
+    },
+    {
+      "sfa_licence": "SE17398C000",
+      "fnb_name": "BURGER KING",
+      "address": "Address: 10 AIRPORT BOULEVARD #02-204,CHANGI AIRPORT TERMINAL 4,Singapore 819665 Departure/Check-in Hall",
+      "terminal": "T4",
+      "current_status": "current_exact_unit_listed_by_Changi_Airport",
+      "branch_match": "exact_sfa_unit_matches_official_dining_page",
+      "unit_evidence": "T4 Public Level 2M, #02-204 exactly matches",
+      "closure_status": "no_exact_branch_permanent_closure_notice_found; current exact-unit dining listing supports continued listing, not a live inspection",
+      "public_access": "public_access_supported_at_terminal_area_level",
+      "access_note": "Changi Airport outlet page labels the exact unit PUBLIC; this supports entry without boarding-pass/security clearance.",
+      "evidence_urls": [
+        "https://www.changiairport.com/en/dine-and-shop/dining-directory/dine-detail.burger-king.html"
+      ],
+      "confidence": "high for listed exact branch and public area; not a physical operating-hours inspection"
+    },
+    {
+      "sfa_licence": "SE17570P000",
+      "fnb_name": "GO NOODLE HOUSE",
+      "address": "Address: 10 AIRPORT BOULEVARD #02-203,CHANGI AIRPORT TERMINAL 4,Singapore 819665",
+      "terminal": "T4",
+      "current_status": "current_official_terminal_public_roster_match; exact_outlet_status_unresolved",
+      "branch_match": "exact_sfa_record_identity_read_from_baseline; official current source is terminal/brand roster and does not establish this licence-to-unit linkage",
+      "unit_evidence": null,
+      "closure_status": "no_exact_branch_permanent_closure_notice_found; inclusion on the current public-area roster is affirmative continuity evidence at brand/terminal level only",
+      "public_access": "public_access_supported_at_terminal_area_level",
+      "access_note": "Changi Airport identifies this terminal outlet as PUBLIC. Public-area status excludes transit/airside access restrictions; does not prove day-to-day walk-in service at the exact licensed unit.",
+      "evidence_urls": [
+        "https://www.changiairport.com/en/happenings/promotions/changi-shopping-carnival.html"
+      ],
+      "confidence": "high for public area classification; medium/low for exact outlet-to-SFA licence identity"
+    },
+    {
+      "sfa_licence": "SE17108J000",
+      "fnb_name": "Kopitiam",
+      "address": "Address: 10 AIRPORT BOULEVARD #02-205,CHANGI AIRPORT TERMINAL 4,Singapore 819665",
+      "terminal": "T4",
+      "current_status": "current_exact_unit_listed_by_Changi_Airport",
+      "branch_match": "exact_sfa_unit_matches_official_dining_page",
+      "unit_evidence": "T4 Public Level 2M, #02-205 exactly matches",
+      "closure_status": "no_exact_branch_permanent_closure_notice_found; current exact-unit dining listing supports continued listing, not a live inspection",
+      "public_access": "public_access_supported_at_terminal_area_level",
+      "access_note": "Changi Airport outlet page labels the exact unit PUBLIC; this supports entry without boarding-pass/security clearance.",
+      "evidence_urls": [
+        "https://www.changiairport.com/in/en/dine-and-shop/dining-directory/dine-detail.kopitiam.html"
+      ],
+      "confidence": "high for listed exact branch and public area; not a physical operating-hours inspection"
+    },
+    {
+      "sfa_licence": "SE17708P000",
+      "fnb_name": "MA MUM",
+      "address": "Address: 10 AIRPORT BOULEVARD #01-04,CHANGI AIRPORT TERMINAL 4,Singapore 819665",
+      "terminal": "T4",
+      "current_status": "current_exact_unit_listed_by_Changi_Airport",
+      "branch_match": "exact_sfa_unit_matches_official_dining_page",
+      "unit_evidence": "T4 Public Level 1, #01-04 exactly matches",
+      "closure_status": "no_exact_branch_permanent_closure_notice_found; current exact-unit dining listing supports continued listing, not a live inspection",
+      "public_access": "public_access_supported_at_terminal_area_level",
+      "access_note": "Changi Airport outlet page labels the exact unit PUBLIC; this supports entry without boarding-pass/security clearance.",
+      "evidence_urls": [
+        "https://www.changiairport.com/en/dine-and-shop/dining-directory/dine-detail.ma-mum.html"
+      ],
+      "confidence": "high for listed exact branch and public area; not a physical operating-hours inspection"
+    },
+    {
+      "sfa_licence": "SE17655J000",
+      "fnb_name": "O Coffee Club",
+      "address": "Address: 10 AIRPORT BOULEVARD #02-13,CHANGI AIRPORT TERMINAL 4,Singapore 819665",
+      "terminal": "T4",
+      "current_status": "current_official_terminal_public_roster_match; exact_outlet_status_unresolved",
+      "branch_match": "exact_sfa_record_identity_read_from_baseline; official current source is terminal/brand roster and does not establish this licence-to-unit linkage",
+      "unit_evidence": null,
+      "closure_status": "no_exact_branch_permanent_closure_notice_found; inclusion on the current public-area roster is affirmative continuity evidence at brand/terminal level only",
+      "public_access": "public_access_supported_at_terminal_area_level",
+      "access_note": "Changi Airport identifies this terminal outlet as PUBLIC. Public-area status excludes transit/airside access restrictions; does not prove day-to-day walk-in service at the exact licensed unit.",
+      "evidence_urls": [
+        "https://www.changiairport.com/en/happenings/promotions/changi-shopping-carnival.html"
+      ],
+      "confidence": "high for public area classification; medium/low for exact outlet-to-SFA licence identity"
+    },
+    {
+      "sfa_licence": "SE24777C000",
+      "fnb_name": "PAPPARICH",
+      "address": "Address: 10 AIRPORT BOULEVARD #02-203A,CHANGI AIRPORT TERMINAL 4,Singapore 819665",
+      "terminal": "T4",
+      "current_status": "current_exact_unit_listed_by_Changi_Airport",
+      "branch_match": "exact_sfa_unit_matches_official_dining_page",
+      "unit_evidence": "T4 Public Level 2M, #02-203A exactly matches",
+      "closure_status": "no_exact_branch_permanent_closure_notice_found; current exact-unit dining listing supports continued listing, not a live inspection",
+      "public_access": "public_access_supported_at_terminal_area_level",
+      "access_note": "Changi Airport outlet page labels the exact unit PUBLIC; this supports entry without boarding-pass/security clearance.",
+      "evidence_urls": [
+        "https://www.changiairport.com/id/en/dine-and-shop/dining-directory/dine-detail.papparich.html"
+      ],
+      "confidence": "high for listed exact branch and public area; not a physical operating-hours inspection"
+    },
+    {
+      "sfa_licence": "SE17384P000",
+      "fnb_name": "PARIS BAGUETTE",
+      "address": "Address: 10 AIRPORT BOULEVARD #01-05,CHANGI AIRPORT TERMINAL 4,Singapore 819665",
+      "terminal": "T4",
+      "current_status": "current_official_terminal_public_roster_match; exact_outlet_status_unresolved",
+      "branch_match": "exact_sfa_record_identity_read_from_baseline; official current source is terminal/brand roster and does not establish this licence-to-unit linkage",
+      "unit_evidence": null,
+      "closure_status": "no_exact_branch_permanent_closure_notice_found; inclusion on the current public-area roster is affirmative continuity evidence at brand/terminal level only",
+      "public_access": "public_access_supported_at_terminal_area_level",
+      "access_note": "Changi Airport identifies this terminal outlet as PUBLIC. Public-area status excludes transit/airside access restrictions; does not prove day-to-day walk-in service at the exact licensed unit.",
+      "evidence_urls": [
+        "https://www.changiairport.com/en/happenings/promotions/changi-shopping-carnival.html"
+      ],
+      "confidence": "high for public area classification; medium/low for exact outlet-to-SFA licence identity"
+    },
+    {
+      "sfa_licence": "SE17738C000",
+      "fnb_name": "ROOST",
+      "address": "Address: 10 AIRPORT BOULEVARD #01-10,CHANGI AIRPORT TERMINAL 4,Singapore 819665",
+      "terminal": "T4",
+      "current_status": "current_official_terminal_public_roster_match; exact_outlet_status_unresolved",
+      "branch_match": "exact_sfa_record_identity_read_from_baseline; official current source is terminal/brand roster and does not establish this licence-to-unit linkage",
+      "unit_evidence": null,
+      "closure_status": "no_exact_branch_permanent_closure_notice_found; inclusion on the current public-area roster is affirmative continuity evidence at brand/terminal level only",
+      "public_access": "public_access_supported_at_terminal_area_level",
+      "access_note": "Changi Airport identifies this terminal outlet as PUBLIC. Public-area status excludes transit/airside access restrictions; does not prove day-to-day walk-in service at the exact licensed unit.",
+      "evidence_urls": [
+        "https://www.changiairport.com/en/happenings/promotions/changi-shopping-carnival.html"
+      ],
+      "confidence": "high for public area classification; medium/low for exact outlet-to-SFA licence identity"
+    },
+    {
+      "sfa_licence": "SE17347C000",
+      "fnb_name": "STARBUCKS",
+      "address": "Address: 10 AIRPORT BOULEVARD #02-04,CHANGI AIRPORT TERMINAL 4,Singapore 819665",
+      "terminal": "T4",
+      "current_status": "current_exact_unit_listed_by_Changi_Airport",
+      "branch_match": "exact_sfa_unit_matches_official_dining_page",
+      "unit_evidence": "T4 Public Level 2, #02-04 exactly matches",
+      "closure_status": "no_exact_branch_permanent_closure_notice_found; current exact-unit dining listing supports continued listing, not a live inspection",
+      "public_access": "public_access_supported_at_terminal_area_level",
+      "access_note": "Changi Airport outlet page labels the exact unit PUBLIC; this supports entry without boarding-pass/security clearance.",
+      "evidence_urls": [
+        "https://www.changiairport.com/in/en/dine-and-shop/dining-directory/dine-detail.starbucks.html"
+      ],
+      "confidence": "high for listed exact branch and public area; not a physical operating-hours inspection"
+    },
+    {
+      "sfa_licence": "SE16628A001",
+      "fnb_name": "ANJAPPAR RESTAURANT",
+      "address": "Address: 80 AIRPORT BOULEVARD #03-20B,CHANGI AIRPORT TERMINAL 1 BUILDING,Singapore 819642",
+      "terminal": "T1",
+      "current_status": "current_official_terminal_public_roster_match; exact_outlet_status_unresolved",
+      "branch_match": "exact_sfa_record_identity_read_from_baseline; official current source is terminal/brand roster and does not establish this licence-to-unit linkage",
+      "unit_evidence": null,
+      "closure_status": "no_exact_branch_permanent_closure_notice_found; inclusion on the current public-area roster is affirmative continuity evidence at brand/terminal level only",
+      "public_access": "public_access_supported_at_terminal_area_level",
+      "access_note": "Changi Airport identifies this terminal outlet as PUBLIC. Public-area status excludes transit/airside access restrictions; does not prove day-to-day walk-in service at the exact licensed unit.",
+      "evidence_urls": [
+        "https://www.changiairport.com/en/happenings/promotions/changi-shopping-carnival.html"
+      ],
+      "confidence": "high for public area classification; medium/low for exact outlet-to-SFA licence identity"
+    },
+    {
+      "sfa_licence": "SE11495J000",
+      "fnb_name": "BURGER KING",
+      "address": "Address: 80 AIRPORT BOULEVARD #03-23,CHANGI AIRPORT TERMINAL 1,Singapore 819642 VIEWING MALL EAST(LANDSIDE)",
+      "terminal": "T1",
+      "current_status": "current_official_terminal_public_roster_match; exact_outlet_status_unresolved",
+      "branch_match": "exact_sfa_record_identity_read_from_baseline; official current source is terminal/brand roster and does not establish this licence-to-unit linkage",
+      "unit_evidence": null,
+      "closure_status": "no_exact_branch_permanent_closure_notice_found; inclusion on the current public-area roster is affirmative continuity evidence at brand/terminal level only",
+      "public_access": "public_access_supported_at_terminal_area_level",
+      "access_note": "Changi Airport identifies this terminal outlet as PUBLIC. Public-area status excludes transit/airside access restrictions; does not prove day-to-day walk-in service at the exact licensed unit.",
+      "evidence_urls": [
+        "https://www.changiairport.com/en/happenings/promotions/changi-shopping-carnival.html"
+      ],
+      "confidence": "high for public area classification; medium/low for exact outlet-to-SFA licence identity"
+    },
+    {
+      "sfa_licence": "SE19528C000",
+      "fnb_name": "Saboten",
+      "address": "Address: 80 AIRPORT BOULEVARD #03-21,CHANGI AIRPORT TERMINAL 1,Singapore 819642",
+      "terminal": "T1",
+      "current_status": "current_exact_unit_listed_by_Changi_Airport",
+      "branch_match": "exact_sfa_unit_matches_official_dining_page",
+      "unit_evidence": "T1 Public Level 3, #03-21 exactly matches",
+      "closure_status": "no_exact_branch_permanent_closure_notice_found; current exact-unit dining listing supports continued listing, not a live inspection",
+      "public_access": "public_access_supported_at_terminal_area_level",
+      "access_note": "Changi Airport outlet page labels the exact unit PUBLIC; this supports entry without boarding-pass/security clearance.",
+      "evidence_urls": [
+        "https://www.changiairport.com/in/en/dine-and-shop/dining-directory/dine-detail.saboten.html"
+      ],
+      "confidence": "high for listed exact branch and public area; not a physical operating-hours inspection"
+    },
+    {
+      "sfa_licence": "SE11513P000",
+      "fnb_name": "TERRACE CHINESE KITCHEN",
+      "address": "Address: 80 AIRPORT BOULEVARD #03-22,CHANGI AIRPORT TERMINAL 1,Singapore 819642",
+      "terminal": "T1",
+      "current_status": "current_exact_unit_listed_by_Changi_Airport",
+      "branch_match": "exact_sfa_unit_matches_official_dining_page",
+      "unit_evidence": "T1 Public Level 3, #03-22 exactly matches",
+      "closure_status": "no_exact_branch_permanent_closure_notice_found; current exact-unit dining listing supports continued listing, not a live inspection",
+      "public_access": "public_access_supported_at_terminal_area_level",
+      "access_note": "Changi Airport outlet page labels the exact unit PUBLIC; this supports entry without boarding-pass/security clearance.",
+      "evidence_urls": [
+        "https://www.changiairport.com/en/dine-and-shop/dining-directory/dine-detail.terrace-chinese-kitchen.html"
+      ],
+      "confidence": "high for listed exact branch and public area; not a physical operating-hours inspection"
+    },
+    {
+      "sfa_licence": "SE16741A000",
+      "fnb_name": "Penang Culture",
+      "address": "Address: 80 AIRPORT BOULEVARD #03-19,CHANGI AIRPORT TERMINAL 1,Singapore 819642 PART LEFT OF",
+      "terminal": "T1",
+      "current_status": "current_official_terminal_public_roster_match; exact_outlet_status_unresolved",
+      "branch_match": "exact_sfa_record_identity_read_from_baseline; official current source is terminal/brand roster and does not establish this licence-to-unit linkage",
+      "unit_evidence": null,
+      "closure_status": "no_exact_branch_permanent_closure_notice_found; inclusion on the current public-area roster is affirmative continuity evidence at brand/terminal level only",
+      "public_access": "public_access_supported_at_terminal_area_level",
+      "access_note": "Changi Airport identifies this terminal outlet as PUBLIC. Public-area status excludes transit/airside access restrictions; does not prove day-to-day walk-in service at the exact licensed unit.",
+      "evidence_urls": [
+        "https://www.changiairport.com/en/happenings/promotions/changi-shopping-carnival.html"
+      ],
+      "confidence": "high for public area classification; medium/low for exact outlet-to-SFA licence identity"
+    }
+  ],
+  "summary": {
+    "records": 20,
+    "exact_unit_current_listing_supported": 8,
+    "brand_terminal_only_match": 12,
+    "public_area_supported": 20,
+    "exact_permanent_closure_confirmed": 0,
+    "removal_recommendations": 0,
+    "still_unresolved_exact_branch_status": 12
+  },
+  "limitations": [
+    "A current official listing is not a physical inspection and does not guarantee service at the moment of access.",
+    "For 12 licences the official current roster names the brand and terminal but does not expose an exact unit-to-SFA-licence mapping; these remain exact-branch unresolved and are not claimed as individually verified operating.",
+    "No removal recommendation is warranted without direct exact-outlet permanent-closure evidence. Public-area classification comes from CAG roster categorization.",
+    "SFA presence is only the workbook baseline identity; it is not itself evidence of current operation."
+  ],
+  "workbook_edits": false,
+  "mapbox_requests": 0,
+  "spend_sgd": 0
+}

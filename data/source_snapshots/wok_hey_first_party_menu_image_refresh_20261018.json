@@ -1,0 +1,511 @@
+{
+  "schema": "hungry-source-snapshot/v1",
+  "snapshot_id": "wok_hey_official_current_menu_images_20261018",
+  "captured_at_local": "2026-10-18",
+  "workbook": {
+    "path": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "sha256": "69c17622f7e7dd965b09955a7383465eae54fd1b06cc09db97c1dbe4cf088548",
+    "directory_sfa_rows": 38280
+  },
+  "scope": "Read-only first-party menu and official image candidate collection for WOK HEY; no Excel edits.",
+  "official_sources": [
+    {
+      "url": "https://www.wokhey.sg/food/",
+      "type": "Singapore official menu",
+      "observed": "2026-10-18",
+      "evidence": "Lists 35 exact dishes with linked image assets. Published prices not present on menu page."
+    },
+    {
+      "url": "https://www.wokhey.sg/",
+      "type": "official brand site",
+      "observed": "2026-10-18",
+      "evidence": "Homepage campaign modules current through March 2026; excluded campaign-only claims from core menu."
+    }
+  ],
+  "workbook_comparison": {
+    "public_access_record_names_containing_brand": 43,
+    "existing_brand_menu_rows": 9,
+    "existing_rows": [
+      {
+        "item": "Hokkaido Milk Bun",
+        "price": "6",
+        "source_url": "https://data.gov.sg/datasets/d_1f0313499a17075d13aae6ed3e825bc6/view"
+      },
+      {
+        "item": "Chocolate Chip Cookies",
+        "price": "6",
+        "source_url": "https://data.gov.sg/datasets/d_1f0313499a17075d13aae6ed3e825bc6/view"
+      },
+      {
+        "item": "Thai Milk Tea",
+        "price": "15",
+        "source_url": "https://data.gov.sg/datasets/d_1f0313499a17075d13aae6ed3e825bc6/view"
+      },
+      {
+        "item": "All Berry Bang",
+        "price": "15",
+        "source_url": "https://data.gov.sg/datasets/d_1f0313499a17075d13aae6ed3e825bc6/view"
+      },
+      {
+        "item": "Chicken Katsu Curry",
+        "price": "6",
+        "source_url": "https://data.gov.sg/datasets/d_1f0313499a17075d13aae6ed3e825bc6/view"
+      },
+      {
+        "item": "Roast Duck",
+        "price": "6",
+        "source_url": "https://data.gov.sg/datasets/d_1f0313499a17075d13aae6ed3e825bc6/view"
+      },
+      {
+        "item": "Butter Croissant",
+        "price": "5",
+        "source_url": "https://data.gov.sg/datasets/d_1f0313499a17075d13aae6ed3e825bc6/view"
+      },
+      {
+        "item": "Hainanese Chicken Rice",
+        "price": "6",
+        "source_url": "https://data.gov.sg/datasets/d_1f0313499a17075d13aae6ed3e825bc6/view"
+      },
+      {
+        "item": "Fried Rice",
+        "price": "6",
+        "source_url": "https://data.gov.sg/datasets/d_1f0313499a17075d13aae6ed3e825bc6/view"
+      }
+    ],
+    "existing_official_image_candidates_for_wok_hey": 0,
+    "new_menu_names": 35,
+    "exact_name_dedupes": 0,
+    "new_official_image_urls": 34
+  },
+  "menu_candidate_rows": [
+    {
+      "item": "Egg Fried Rice",
+      "section": "Official menu listing; no price displayed on source page",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level public menu; outlet-level availability not stated",
+      "source_url": "https://www.wokhey.sg/food/",
+      "image_url": "https://www.wokhey.sg/wp-content/uploads/2026/05/300x300px_EFR-Plain.webp",
+      "image_scope": "Official brand-level menu image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "Egg Fried Brown Rice",
+      "section": "Official menu listing; no price displayed on source page",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level public menu; outlet-level availability not stated",
+      "source_url": "https://www.wokhey.sg/food/",
+      "image_url": "https://www.wokhey.sg/wp-content/uploads/2026/03/300x300px_Egg-Fried-Brown-Rice.png",
+      "image_scope": "Official brand-level menu image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "Egg Fried Rice with Grilled Chicken",
+      "section": "Official menu listing; no price displayed on source page",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level public menu; outlet-level availability not stated",
+      "source_url": "https://www.wokhey.sg/food/",
+      "image_url": "https://www.wokhey.sg/wp-content/uploads/2026/05/300x300px_EFR-Chicken.webp",
+      "image_scope": "Official brand-level menu image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "Egg Fried Rice with Braised Beef",
+      "section": "Official menu listing; no price displayed on source page",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level public menu; outlet-level availability not stated",
+      "source_url": "https://www.wokhey.sg/food/",
+      "image_url": "https://www.wokhey.sg/wp-content/uploads/2026/05/300x300px_EFR-Beef.webp",
+      "image_scope": "Official brand-level menu image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "Egg Fried Rice with Seasoned Prawns",
+      "section": "Official menu listing; no price displayed on source page",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level public menu; outlet-level availability not stated",
+      "source_url": "https://www.wokhey.sg/food/",
+      "image_url": "https://www.wokhey.sg/wp-content/uploads/2026/05/300x300px_EFR-Prawn.webp",
+      "image_scope": "Official brand-level menu image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "Egg Fried Rice with Wild-Caught Crab Meat",
+      "section": "Official menu listing; no price displayed on source page",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level public menu; outlet-level availability not stated",
+      "source_url": "https://www.wokhey.sg/food/",
+      "image_url": "https://www.wokhey.sg/wp-content/uploads/2026/05/300x300px_EFR-Crab.webp",
+      "image_scope": "Official brand-level menu image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "Egg Fried Rice HE",
+      "section": "Official menu listing; no price displayed on source page",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level public menu; outlet-level availability not stated",
+      "source_url": "https://www.wokhey.sg/food/",
+      "image_url": "https://www.wokhey.sg/wp-content/uploads/2026/05/300x300px_HE_EFR-Plain.webp",
+      "image_scope": "Official brand-level menu image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "Egg Fried Rice HE with Grilled Chicken",
+      "section": "Official menu listing; no price displayed on source page",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level public menu; outlet-level availability not stated",
+      "source_url": "https://www.wokhey.sg/food/",
+      "image_url": "https://www.wokhey.sg/wp-content/uploads/2026/05/300x300px_HE_EFR-Chicken.webp",
+      "image_scope": "Official brand-level menu image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "Egg Fried Rice HE with Braised Beef",
+      "section": "Official menu listing; no price displayed on source page",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level public menu; outlet-level availability not stated",
+      "source_url": "https://www.wokhey.sg/food/",
+      "image_url": "https://www.wokhey.sg/wp-content/uploads/2026/05/300x300px_HE_EFR-Beef.webp",
+      "image_scope": "Official brand-level menu image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "Egg Fried Rice HE with Seasoned Prawns",
+      "section": "Official menu listing; no price displayed on source page",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level public menu; outlet-level availability not stated",
+      "source_url": "https://www.wokhey.sg/food/",
+      "image_url": "https://www.wokhey.sg/wp-content/uploads/2026/05/300x300px_HE_SHFR-Prawn.webp",
+      "image_scope": "Official brand-level menu image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "Shanghai Fried Rice",
+      "section": "Official menu listing; no price displayed on source page",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level public menu; outlet-level availability not stated",
+      "source_url": "https://www.wokhey.sg/food/",
+      "image_url": "https://www.wokhey.sg/wp-content/uploads/2026/05/300x300px_SHFR-No-Protein.webp",
+      "image_scope": "Official brand-level menu image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "Shanghai Fried Brown Rice",
+      "section": "Official menu listing; no price displayed on source page",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level public menu; outlet-level availability not stated",
+      "source_url": "https://www.wokhey.sg/food/",
+      "image_url": "https://www.wokhey.sg/wp-content/uploads/2026/03/300x300px_Shanghai-Fried-Brown-Rice.png",
+      "image_scope": "Official brand-level menu image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "Shanghai Fried CauliRice",
+      "section": "Official menu listing; no price displayed on source page",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level public menu; outlet-level availability not stated",
+      "source_url": "https://www.wokhey.sg/food/",
+      "image_url": "https://www.wokhey.sg/wp-content/uploads/2026/03/300x300px_Shanghai-Cauliflower-Rice.png",
+      "image_scope": "Official brand-level menu image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "Shanghai Fried Rice with Grilled Chicken",
+      "section": "Official menu listing; no price displayed on source page",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level public menu; outlet-level availability not stated",
+      "source_url": "https://www.wokhey.sg/food/",
+      "image_url": "https://www.wokhey.sg/wp-content/uploads/2026/05/300x300px_SHFR-Chicken.webp",
+      "image_scope": "Official brand-level menu image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "Shanghai Fried Rice with Braised Beef",
+      "section": "Official menu listing; no price displayed on source page",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level public menu; outlet-level availability not stated",
+      "source_url": "https://www.wokhey.sg/food/",
+      "image_url": "https://www.wokhey.sg/wp-content/uploads/2026/05/300x300px_SHFR-Beef.webp",
+      "image_scope": "Official brand-level menu image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "Shanghai Fried Rice with Seasoned Prawns",
+      "section": "Official menu listing; no price displayed on source page",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level public menu; outlet-level availability not stated",
+      "source_url": "https://www.wokhey.sg/food/",
+      "image_url": "https://www.wokhey.sg/wp-content/uploads/2026/05/300x300px_SHFR-Prawn.webp",
+      "image_scope": "Official brand-level menu image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "Shanghai Fried Rice with Wild-Caught Crab Meat",
+      "section": "Official menu listing; no price displayed on source page",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level public menu; outlet-level availability not stated",
+      "source_url": "https://www.wokhey.sg/food/",
+      "image_url": "https://www.wokhey.sg/wp-content/uploads/2026/05/300x300px_SHFR-Crab.webp",
+      "image_scope": "Official brand-level menu image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "Shanghai Fried Rice HE",
+      "section": "Official menu listing; no price displayed on source page",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level public menu; outlet-level availability not stated",
+      "source_url": "https://www.wokhey.sg/food/",
+      "image_url": "https://www.wokhey.sg/wp-content/uploads/2026/05/300x300px_HE_SHFR-No-Protein.webp",
+      "image_scope": "Official brand-level menu image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "Shanghai Fried Rice HE with Grilled Chicken",
+      "section": "Official menu listing; no price displayed on source page",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level public menu; outlet-level availability not stated",
+      "source_url": "https://www.wokhey.sg/food/",
+      "image_url": "https://www.wokhey.sg/wp-content/uploads/2026/05/300x300px_HE_SHFR-Chicken.webp",
+      "image_scope": "Official brand-level menu image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "Shanghai Fried Rice HE with Braised Beef",
+      "section": "Official menu listing; no price displayed on source page",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level public menu; outlet-level availability not stated",
+      "source_url": "https://www.wokhey.sg/food/",
+      "image_url": "https://www.wokhey.sg/wp-content/uploads/2026/05/300x300px_HE_SHFR-Beef.webp",
+      "image_scope": "Official brand-level menu image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "Shanghai Fried Rice HE with Seasoned Prawns",
+      "section": "Official menu listing; no price displayed on source page",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level public menu; outlet-level availability not stated",
+      "source_url": "https://www.wokhey.sg/food/",
+      "image_url": "https://www.wokhey.sg/wp-content/uploads/2026/05/300x300px_HE_SHFR-Prawn.webp",
+      "image_scope": "Official brand-level menu image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "Fresh Ramen",
+      "section": "Official menu listing; no price displayed on source page",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level public menu; outlet-level availability not stated",
+      "source_url": "https://www.wokhey.sg/food/",
+      "image_url": "https://www.wokhey.sg/wp-content/uploads/2026/05/300x300px_FR-No-Protein.webp",
+      "image_scope": "Official brand-level menu image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "Fresh Ramen with Grilled Chicken",
+      "section": "Official menu listing; no price displayed on source page",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level public menu; outlet-level availability not stated",
+      "source_url": "https://www.wokhey.sg/food/",
+      "image_url": "https://www.wokhey.sg/wp-content/uploads/2026/05/300x300px_FR-Chicken.webp",
+      "image_scope": "Official brand-level menu image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "Fresh Ramen with Braised Beef",
+      "section": "Official menu listing; no price displayed on source page",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level public menu; outlet-level availability not stated",
+      "source_url": "https://www.wokhey.sg/food/",
+      "image_url": "https://www.wokhey.sg/wp-content/uploads/2026/05/300x300px_FR-Beef.webp",
+      "image_scope": "Official brand-level menu image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "Fresh Ramen with Seasoned Prawns",
+      "section": "Official menu listing; no price displayed on source page",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level public menu; outlet-level availability not stated",
+      "source_url": "https://www.wokhey.sg/food/",
+      "image_url": "https://www.wokhey.sg/wp-content/uploads/2026/05/300x300px_FR-Prawn.webp",
+      "image_scope": "Official brand-level menu image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "Fresh Ramen with Wild-Caught Crab Meat",
+      "section": "Official menu listing; no price displayed on source page",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level public menu; outlet-level availability not stated",
+      "source_url": "https://www.wokhey.sg/food/",
+      "image_url": "https://www.wokhey.sg/wp-content/uploads/2026/05/300x300px_FR-Crab.webp",
+      "image_scope": "Official brand-level menu image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "Fresh Ramen HE",
+      "section": "Official menu listing; no price displayed on source page",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level public menu; outlet-level availability not stated",
+      "source_url": "https://www.wokhey.sg/food/",
+      "image_url": "https://www.wokhey.sg/wp-content/uploads/2026/05/300x300px_HE_FR-No-Protein.webp",
+      "image_scope": "Official brand-level menu image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "Fresh Ramen HE with Seasoned Prawns",
+      "section": "Official menu listing; no price displayed on source page",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level public menu; outlet-level availability not stated",
+      "source_url": "https://www.wokhey.sg/food/",
+      "image_url": "https://www.wokhey.sg/wp-content/uploads/2026/05/300x300px_HE_FU-Prawn.webp",
+      "image_scope": "Official brand-level menu image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "Fresh Udon",
+      "section": "Official menu listing; no price displayed on source page",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level public menu; outlet-level availability not stated",
+      "source_url": "https://www.wokhey.sg/food/",
+      "image_url": "https://www.wokhey.sg/wp-content/uploads/2026/05/300x300px_FU-No-Protein.webp",
+      "image_scope": "Official brand-level menu image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "Fresh Udon with Grilled Chicken",
+      "section": "Official menu listing; no price displayed on source page",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level public menu; outlet-level availability not stated",
+      "source_url": "https://www.wokhey.sg/food/",
+      "image_url": "https://www.wokhey.sg/wp-content/uploads/2026/05/300x300px_FU-Chicken.webp",
+      "image_scope": "Official brand-level menu image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "Fresh Udon with Braised Beef",
+      "section": "Official menu listing; no price displayed on source page",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level public menu; outlet-level availability not stated",
+      "source_url": "https://www.wokhey.sg/food/",
+      "image_url": "https://www.wokhey.sg/wp-content/uploads/2026/05/300x300px_FU-Beef.webp",
+      "image_scope": "Official brand-level menu image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "Fresh Udon with Seasoned Prawns",
+      "section": "Official menu listing; no price displayed on source page",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level public menu; outlet-level availability not stated",
+      "source_url": "https://www.wokhey.sg/food/",
+      "image_url": "https://www.wokhey.sg/wp-content/uploads/2026/05/300x300px_FU-Prawn.webp",
+      "image_scope": "Official brand-level menu image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "Fresh Udon with Wild-Caught Crab Meat",
+      "section": "Official menu listing; no price displayed on source page",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level public menu; outlet-level availability not stated",
+      "source_url": "https://www.wokhey.sg/food/",
+      "image_url": "https://www.wokhey.sg/wp-content/uploads/2026/05/300x300px_FU-Crab.webp",
+      "image_scope": "Official brand-level menu image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "Fresh Udon HE",
+      "section": "Official menu listing; no price displayed on source page",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level public menu; outlet-level availability not stated",
+      "source_url": "https://www.wokhey.sg/food/",
+      "image_url": "https://www.wokhey.sg/wp-content/uploads/2026/05/300x300px_HE_FU-No-Protein.webp",
+      "image_scope": "Official brand-level menu image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    },
+    {
+      "item": "Egg CauliRice",
+      "section": "Official menu listing; no price displayed on source page",
+      "price_as_published": null,
+      "menu_scope": "Singapore brand-level public menu; outlet-level availability not stated",
+      "source_url": "https://www.wokhey.sg/food/",
+      "image_url": "https://www.wokhey.sg/wp-content/uploads/2026/08/300x300px_Egg-Fried-Cauliflower-Rice-.png",
+      "image_scope": "Official brand-level menu image",
+      "rights_reuse_status": "Rights not cleared; candidate only, do not display without approval",
+      "observed": "2026-10-18",
+      "duplicate_in_existing_menu_items": false
+    }
+  ],
+  "field_updates": [],
+  "limitations": [
+    "No menu prices were shown in the official menu, so no prices proposed.",
+    "Public menu does not state outlet-level availability; all menu candidates are brand-level.",
+    "Image URLs are official and attached to the corresponding menu cards; copyright/reuse permission is not cleared.",
+    "Do not infer current values from delivery platforms or historical SFA menu scraps.",
+    "No public outlet locator rows were joined in this batch because postal/unit exact-match check was not performed."
+  ],
+  "recommended_integration": "Append only rows that pass exact normalized item-name dedupe; add matching Image Candidates rows as review-only. Keep Approved Image URL blank."
+}

@@ -24,7 +24,7 @@ import {
   Zap,
 } from "lucide-react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import * as Haptics from "expo-haptics";
+import * as Haptics from "@/lib/haptics";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { MapSurface, type MapSurfaceMarker, BuildingLegend } from "@/components/map";
@@ -73,13 +73,13 @@ function CrowdIndicator({ level }: { level?: "low" | "medium" | "high" }) {
   const config = {
     low: {
       color: palette.statusFast,
-      label: "Fast",
+      label: "Low crowd",
       icon: <Zap size={10} color={palette.statusFast} fill={palette.statusFast} />,
     },
     medium: { color: palette.statusModerate, label: "Moderate", icon: null },
     high: {
       color: palette.statusBusy,
-      label: "Trending",
+      label: "High crowd",
       icon: <Flame size={10} color={palette.statusBusy} fill={palette.statusBusy} />,
     },
   };
@@ -155,25 +155,57 @@ export function HomeMapScreen() {
     return nameMatch ?? getBuildingById(DEFAULT_BUILDING_ID)!;
   }, [selectedBuilding]);
 
+  const matchesVenueFilters = useCallback(
+    (venue: ReturnType<typeof repository.listVenuesByBuilding>[number]) => {
+      const topDish = repository.getDishById(venue.topDishId);
+      return (
+        (!mapFilters.topRated || (topDish?.rating ?? 0) >= 4.5) &&
+        (!mapFilters.openNow || venue.isOpen)
+      );
+    },
+    [mapFilters.topRated, mapFilters.openNow, repository],
+  );
   const visibleBuildings = useMemo(() => {
-    const nearest = getNearestBuildings(currentLocation.latitude, currentLocation.longitude, 5, 8);
-    const combined = [activeBuildingRecord, ...nearest];
+    const nearest = getNearestBuildings(
+      currentLocation.latitude,
+      currentLocation.longitude,
+      mapFilters.nearMe ? 3 : 5,
+      8,
+    );
+    const combined = mapFilters.nearMe ? nearest : [activeBuildingRecord, ...nearest];
     const seen = new Set<string>();
     return combined.filter((b) => {
       if (seen.has(b.id)) return false;
+      if (mapFilters.hawkerOnly && b.type !== "hawker_centre") return false;
+      if (mapFilters.mallOnly && b.type === "hawker_centre") return false;
+      if (mapFilters.topRated || mapFilters.openNow || mapFilters.trendingOnly) {
+        const venues = repository.listVenuesByBuilding(b.id);
+        if (
+          !venues.some(
+            (venue) =>
+              (!mapFilters.topRated ||
+                (repository.getDishById(venue.topDishId)?.rating ?? 0) >= 4.5) &&
+              (!mapFilters.openNow || venue.isOpen) &&
+              true,
+          )
+        )
+          return false;
+      }
       seen.add(b.id);
       return true;
     });
-  }, [activeBuildingRecord, currentLocation]);
+  }, [activeBuildingRecord, currentLocation, mapFilters, repository]);
 
   const areaPopularDishes = useMemo(() => {
     if (shouldUseCatalogReadV2) return [];
-    const allVenues = visibleBuildings.flatMap((b) => repository.listVenuesByBuilding(b.id));
+    const allVenues = visibleBuildings
+      .flatMap((b) => repository.listVenuesByBuilding(b.id))
+      .filter(matchesVenueFilters);
     return allVenues
       .map((v) => repository.getDishById(v.topDishId))
       .filter((d): d is DishDetail => !!d)
       .slice(0, 10);
-  }, [repository, shouldUseCatalogReadV2, visibleBuildings]);
+  }, [repository, shouldUseCatalogReadV2, visibleBuildings, matchesVenueFilters]);
 
   const [currentZoom, setCurrentZoom] = useState(highlightedStallVenueId ? 17.1 : 15.5);
   const [mapCenter, setMapCenter] = useState(activeBuildingRecord.coordinate);
@@ -181,6 +213,8 @@ export function HomeMapScreen() {
   const [showLegend, setShowLegend] = useState(false);
   const [rawMapItems, setRawMapItems] = useState<CatalogMapItem[]>([]);
   const [rawVenueCards, setRawVenueCards] = useState<CatalogRawVenueCard[]>([]);
+  const [mapError, setMapError] = useState(false);
+  const [mapRetry, setMapRetry] = useState(0);
   const [rawReleaseId, setRawReleaseId] = useState<string | undefined>();
 
   const CAROUSEL_HEIGHT = 240;
@@ -202,6 +236,7 @@ export function HomeMapScreen() {
       return;
     }
     let active = true;
+    setMapError(false);
     const span = currentZoom >= 15 ? 0.018 : currentZoom >= 13 ? 0.08 : 0.3;
     const buildingTypes = mapFilters.hawkerOnly ? ["hawker_centre"] : [];
     const nearCoordinate = mapFilters.nearMe ? currentLocation : undefined;
@@ -234,9 +269,7 @@ export function HomeMapScreen() {
       }
     })().catch(() => {
       if (!active) return;
-      setRawMapItems([]);
-      setRawVenueCards([]);
-      setRawReleaseId(undefined);
+      setMapError(true);
     });
     return () => {
       active = false;
@@ -248,6 +281,7 @@ export function HomeMapScreen() {
     mapCenter,
     mapFilters,
     shouldUseCatalogReadV2,
+    mapRetry,
   ]);
 
   const snapTo = (height: number) => {
@@ -361,24 +395,6 @@ export function HomeMapScreen() {
       accent: b.type === "hawker_centre" ? palette.orange : palette.teal,
       type: b.type,
     }));
-    if (currentZoom > 16.5) {
-      const venues = repository.listVenuesByBuilding(activeBuildingRecord.id);
-      const stallMarkers = venues.map((v, index) => {
-        const latitudeOffset = ((index % 7) - 3) * 0.00007;
-        const longitudeOffset = ((Math.floor(index / 7) % 7) - 3) * 0.00007;
-        return {
-          id: `stall-${v.id}`,
-          label: v.name,
-          coordinate: {
-            latitude: activeBuildingRecord.coordinate.latitude + latitudeOffset,
-            longitude: activeBuildingRecord.coordinate.longitude + longitudeOffset,
-          },
-          accent: v.id === highlightedStallVenueId ? palette.error : palette.orange,
-          isTrending: v.id === highlightedStallVenueId,
-        };
-      });
-      return [...bMarkers, ...stallMarkers];
-    }
     return bMarkers;
   }, [
     palette,
@@ -430,7 +446,17 @@ export function HomeMapScreen() {
                 : centerCoordinate,
             );
           }}
-          onMarkerPress={shouldUseCatalogReadV2 ? handleRawMarkerPress : undefined}
+          onMarkerPress={
+            shouldUseCatalogReadV2
+              ? handleRawMarkerPress
+              : (id) => {
+                  const building = getBuildingById(id);
+                  if (building) {
+                    setSelectedBuilding(toSummary(building));
+                    navigation.navigate("MapZoomedIn", { buildingId: building.id });
+                  }
+                }
+          }
           selectedMarkerId={
             highlightedStallVenueId ? `stall-${highlightedStallVenueId}` : undefined
           }
@@ -518,7 +544,11 @@ export function HomeMapScreen() {
             </Pressable>
           </View>
           <FilterChipRail
-            options={HOME_MAP_FILTER_OPTIONS}
+            options={
+              shouldUseCatalogReadV2
+                ? HOME_MAP_FILTER_OPTIONS.filter((option) => option.id !== "topRated")
+                : HOME_MAP_FILTER_OPTIONS
+            }
             selectedIds={HOME_MAP_FILTER_OPTIONS.filter((option) => mapFilters[option.id]).map(
               (option) => option.id,
             )}
@@ -550,6 +580,9 @@ export function HomeMapScreen() {
         <View style={{ gap: spacing[3], alignItems: "flex-start" }}>
           {showLegend && <BuildingLegend />}
           <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={showLegend ? "Hide map legend" : "Show map legend"}
+            accessibilityState={{ expanded: showLegend }}
             onPress={() => {
               setShowLegend(!showLegend);
               void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -595,7 +628,6 @@ export function HomeMapScreen() {
 
       {/* Bottom UI Container */}
       <Animated.View
-        {...panResponder.panHandlers}
         style={[
           styles.animatedCard,
           {
@@ -610,7 +642,21 @@ export function HomeMapScreen() {
           },
         ]}
       >
-        <View style={styles.dragHandle}>
+        <View {...panResponder.panHandlers} style={styles.dragHandle}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Expand map details"
+            onPress={() => snapTo(FULL_HEIGHT)}
+          >
+            <AppText variant="micro">Expand details</AppText>
+          </Pressable>
+          {mapError ? (
+            <Button
+              label="Map refresh failed. Retry"
+              variant="secondary"
+              onPress={() => setMapRetry((value) => value + 1)}
+            />
+          ) : null}
           <View style={[styles.dragBar, { backgroundColor: palette.border }]} />
         </View>
 
@@ -665,6 +711,7 @@ export function HomeMapScreen() {
                 ))
               : visibleBuildings
                   .flatMap((b) => repository.listVenuesByBuilding(b.id))
+                  .filter(matchesVenueFilters)
                   .map((venue) => (
                     <Pressable
                       key={venue.id}
@@ -833,7 +880,7 @@ export function HomeMapScreen() {
                             {dish.name}
                           </AppText>
                           <AppText style={{ color: palette.orange, fontWeight: "800" }}>
-                            S${Math.round(dish.price)}
+                            S${dish.price.toFixed(2)}
                           </AppText>
                         </View>
                         <AppText variant="micro" tone="secondary">

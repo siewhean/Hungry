@@ -1,0 +1,750 @@
+{
+  "schema_version": 1,
+  "brand": "Old Chang Kee Singapore",
+  "observed_at_sgt": "2026-10-18T17:49:53+08:00",
+  "source_policy": "Live first-party official Singapore website URLs only; no paid source, no menu or image rows added.",
+  "workbook_snapshot": {
+    "path": "/tmp/hungry-refresh106-staged.xlsx",
+    "sha256": "fce81938ecec07cbd54555577f98a773e06aa839ad978b60800b5345b900ff96",
+    "exact_name_and_registered_name_record_count": 73,
+    "unique_sfa_licence_count": 73
+  },
+  "sources": [
+    {
+      "url": "https://www.oldchangkee.com/",
+      "http_status": 200,
+      "last_modified": "Wed, 07 Oct 2026 02:50:06 GMT",
+      "sha256": "a9091a486becab45d4e6a9ddaef915b6ce9afd2771bfa669b6ab0703f7496372",
+      "purpose": "official brand website field"
+    },
+    {
+      "url": "https://www.oldchangkee.com/our-products.htm",
+      "http_status": 200,
+      "last_modified": "Wed, 12 Aug 2026 08:59:38 GMT",
+      "sha256": "671f6664de9f21950a2e0586b6e40292002a51f0405352f7dccaeeb511b364bc",
+      "purpose": "official brand product overview/menu URL; links product category pages; not a branch-specific priced menu"
+    }
+  ],
+  "exact_join_rule": "Both F&B Name and Registered Business Name equal Old Chang Kee after trim and casefold; SFA Licence is carried from that exact row. CURRY TIMES / OLD CHANG KEE is excluded.",
+  "blank_only_candidates": {
+    "Website": {
+      "blank_count": 60,
+      "value": "https://www.oldchangkee.com/",
+      "records": [
+        {
+          "sfa_licence": "B92060X000",
+          "fnb_name": "Old Chang Kee",
+          "registered_business_name": "Old Chang Kee",
+          "postal_code": "769098",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "B94109B000",
+          "fnb_name": "Old Chang Kee",
+          "registered_business_name": "Old Chang Kee",
+          "postal_code": "738954",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "CE04254N000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "150166",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "CE05174C000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "310500",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "CE05383L000",
+          "fnb_name": "Old Chang Kee",
+          "registered_business_name": "Old Chang Kee",
+          "postal_code": "188064",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "CE06M34X000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "307683",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "CE07S43P000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "569933",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "CE08255B000",
+          "fnb_name": "Old Chang Kee",
+          "registered_business_name": "Old Chang Kee",
+          "postal_code": "387405",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "CE09657K000",
+          "fnb_name": "Old Chang Kee",
+          "registered_business_name": "Old Chang Kee",
+          "postal_code": "228678",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "CE09A86V000",
+          "fnb_name": "old chang kee",
+          "registered_business_name": "old chang kee",
+          "postal_code": "238801",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "CE11818A000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "238839",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "CE16B12V000",
+          "fnb_name": "Old Chang Kee",
+          "registered_business_name": "Old Chang Kee",
+          "postal_code": "168732",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "CE17365L000",
+          "fnb_name": "Old Chang Kee",
+          "registered_business_name": "Old Chang Kee",
+          "postal_code": "082001",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "CE19P54B000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "059413",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "CE20B52V000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "574408",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "CE20E94C000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "048622",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "CE20L44C000",
+          "fnb_name": "Old Chang Kee",
+          "registered_business_name": "Old Chang Kee",
+          "postal_code": "158736",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "CE23943K000",
+          "fnb_name": "Old Chang Kee",
+          "registered_business_name": "Old Chang Kee",
+          "postal_code": "367803",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "CE25N12V000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "797653",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "CE26A94E000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "188770",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "NE06062X000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "529538",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "NE07095N000",
+          "fnb_name": "Old Chang Kee",
+          "registered_business_name": "Old Chang Kee",
+          "postal_code": "828839",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "NE16135J000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "828761",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "NE16503A000",
+          "fnb_name": "Old Chang Kee",
+          "registered_business_name": "Old Chang Kee",
+          "postal_code": "545078",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "NE17665B000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "528523",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "NE23322V000",
+          "fnb_name": "Old Chang Kee",
+          "registered_business_name": "Old Chang Kee",
+          "postal_code": "544692",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "NE25P07J000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "538766",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "NE26H02V000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "519612",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "NW14644B000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "757713",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "NW17079N000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "678278",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "NW22M86N000",
+          "fnb_name": "Old Chang Kee",
+          "registered_business_name": "Old Chang Kee",
+          "postal_code": "731678",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "NW23610V000",
+          "fnb_name": "Old Chang Kee",
+          "registered_business_name": "Old Chang Kee",
+          "postal_code": "729825",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "S03216V000",
+          "fnb_name": "Old Chang Kee",
+          "registered_business_name": "Old Chang Kee",
+          "postal_code": "530205",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "SE04014J000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "408896",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "SE06159C000",
+          "fnb_name": "old chang kee",
+          "registered_business_name": "old chang kee",
+          "postal_code": "529888",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "SE08022V000",
+          "fnb_name": "Old Chang Kee",
+          "registered_business_name": "Old Chang Kee",
+          "postal_code": "416551",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "SE08272K000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "388310",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "SE10769B000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "556083",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "SE12N94V000",
+          "fnb_name": "old chang kee",
+          "registered_business_name": "old chang kee",
+          "postal_code": "449269",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "SE13289A000",
+          "fnb_name": "old chang kee",
+          "registered_business_name": "old chang kee",
+          "postal_code": "467360",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "SE15114E000",
+          "fnb_name": "Old Chang Kee",
+          "registered_business_name": "Old Chang Kee",
+          "postal_code": "819663",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "SE19616E000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "409057",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "SE23I24V000",
+          "fnb_name": "Old Chang Kee",
+          "registered_business_name": "Old Chang Kee",
+          "postal_code": "819643",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "SW08609X000",
+          "fnb_name": "old chang kee",
+          "registered_business_name": "old chang kee",
+          "postal_code": "689812",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "SW08989L000",
+          "fnb_name": "Old Chang Kee",
+          "registered_business_name": "Old Chang Kee",
+          "postal_code": "648331",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "SW09153K000",
+          "fnb_name": "Old Chang Kee",
+          "registered_business_name": "Old Chang Kee",
+          "postal_code": "689578",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "SW09719A000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "098585",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "SW10592L000",
+          "fnb_name": "Old Chang Kee",
+          "registered_business_name": "Old Chang Kee",
+          "postal_code": "659958",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "SW10607K000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "098604",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "SW12K33P000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "609601",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "SW13R57P000",
+          "fnb_name": "Old Chang Kee",
+          "registered_business_name": "Old Chang Kee",
+          "postal_code": "119963",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "SW13S73K000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "608549",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "SW15029P000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "629117",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "SW15E68E000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "609606",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "SW16E39J000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "129588",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "SW26E63P000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "099549",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "W02378J000",
+          "fnb_name": "old Chang kee",
+          "registered_business_name": "old Chang kee",
+          "postal_code": "307591",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "W03485X000",
+          "fnb_name": "Old Chang Kee",
+          "registered_business_name": "Old Chang Kee",
+          "postal_code": "579837",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "W92262J000",
+          "fnb_name": "Old Chang Kee",
+          "registered_business_name": "Old Chang Kee",
+          "postal_code": "228213",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        },
+        {
+          "sfa_licence": "W95235X000",
+          "fnb_name": "Old Chang Kee",
+          "registered_business_name": "Old Chang Kee",
+          "postal_code": "188021",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/"
+        }
+      ]
+    },
+    "Menu URL": {
+      "blank_count": 27,
+      "value": "https://www.oldchangkee.com/our-products.htm",
+      "records": [
+        {
+          "sfa_licence": "CE04254N000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "150166",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/our-products.htm"
+        },
+        {
+          "sfa_licence": "CE05174C000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "310500",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/our-products.htm"
+        },
+        {
+          "sfa_licence": "CE08255B000",
+          "fnb_name": "Old Chang Kee",
+          "registered_business_name": "Old Chang Kee",
+          "postal_code": "387405",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/our-products.htm"
+        },
+        {
+          "sfa_licence": "CE09657K000",
+          "fnb_name": "Old Chang Kee",
+          "registered_business_name": "Old Chang Kee",
+          "postal_code": "228678",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/our-products.htm"
+        },
+        {
+          "sfa_licence": "CE09G15N000",
+          "fnb_name": "Old Chang Kee",
+          "registered_business_name": "Old Chang Kee",
+          "postal_code": "208539",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/our-products.htm"
+        },
+        {
+          "sfa_licence": "CE17365L000",
+          "fnb_name": "Old Chang Kee",
+          "registered_business_name": "Old Chang Kee",
+          "postal_code": "082001",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/our-products.htm"
+        },
+        {
+          "sfa_licence": "CE20B52V000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "574408",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/our-products.htm"
+        },
+        {
+          "sfa_licence": "CE20E94C000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "048622",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/our-products.htm"
+        },
+        {
+          "sfa_licence": "CE23943K000",
+          "fnb_name": "Old Chang Kee",
+          "registered_business_name": "Old Chang Kee",
+          "postal_code": "367803",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/our-products.htm"
+        },
+        {
+          "sfa_licence": "CE25N12V000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "797653",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/our-products.htm"
+        },
+        {
+          "sfa_licence": "NE07095N000",
+          "fnb_name": "Old Chang Kee",
+          "registered_business_name": "Old Chang Kee",
+          "postal_code": "828839",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/our-products.htm"
+        },
+        {
+          "sfa_licence": "NE26H02V000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "519612",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/our-products.htm"
+        },
+        {
+          "sfa_licence": "NW22M86N000",
+          "fnb_name": "Old Chang Kee",
+          "registered_business_name": "Old Chang Kee",
+          "postal_code": "731678",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/our-products.htm"
+        },
+        {
+          "sfa_licence": "S03216V000",
+          "fnb_name": "Old Chang Kee",
+          "registered_business_name": "Old Chang Kee",
+          "postal_code": "530205",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/our-products.htm"
+        },
+        {
+          "sfa_licence": "SE08022V000",
+          "fnb_name": "Old Chang Kee",
+          "registered_business_name": "Old Chang Kee",
+          "postal_code": "416551",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/our-products.htm"
+        },
+        {
+          "sfa_licence": "SE08272K000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "388310",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/our-products.htm"
+        },
+        {
+          "sfa_licence": "SE15114E000",
+          "fnb_name": "Old Chang Kee",
+          "registered_business_name": "Old Chang Kee",
+          "postal_code": "819663",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/our-products.htm"
+        },
+        {
+          "sfa_licence": "SE23I24V000",
+          "fnb_name": "Old Chang Kee",
+          "registered_business_name": "Old Chang Kee",
+          "postal_code": "819643",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/our-products.htm"
+        },
+        {
+          "sfa_licence": "SW08989L000",
+          "fnb_name": "Old Chang Kee",
+          "registered_business_name": "Old Chang Kee",
+          "postal_code": "648331",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/our-products.htm"
+        },
+        {
+          "sfa_licence": "SW09719A000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "098585",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/our-products.htm"
+        },
+        {
+          "sfa_licence": "SW10607K000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "098604",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/our-products.htm"
+        },
+        {
+          "sfa_licence": "SW13S73K000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "608549",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/our-products.htm"
+        },
+        {
+          "sfa_licence": "SW15E68E000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "609606",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/our-products.htm"
+        },
+        {
+          "sfa_licence": "SW16940J000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "648964",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/our-products.htm"
+        },
+        {
+          "sfa_licence": "SW26E63P000",
+          "fnb_name": "OLD CHANG KEE",
+          "registered_business_name": "OLD CHANG KEE",
+          "postal_code": "099549",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/our-products.htm"
+        },
+        {
+          "sfa_licence": "W92262J000",
+          "fnb_name": "Old Chang Kee",
+          "registered_business_name": "Old Chang Kee",
+          "postal_code": "228213",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/our-products.htm"
+        },
+        {
+          "sfa_licence": "W95235X000",
+          "fnb_name": "Old Chang Kee",
+          "registered_business_name": "Old Chang Kee",
+          "postal_code": "188021",
+          "current_value": null,
+          "proposed_value": "https://www.oldchangkee.com/our-products.htm"
+        }
+      ]
+    }
+  },
+  "non_updates": {
+    "populated_fields_overwritten": false,
+    "menu_item_rows_added": 0,
+    "image_rows_added": 0,
+    "workbook_edited": false,
+    "spend_sgd": 0
+  },
+  "limitations": [
+    "Official Menu URL points to brand product categories, not exact outlet availability or current prices.",
+    "This snapshot only proposes values for fields confirmed blank in the named staged workbook; recheck blank state before merging if the workbook changes."
+  ]
+}

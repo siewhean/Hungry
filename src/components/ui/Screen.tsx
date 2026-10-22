@@ -58,6 +58,8 @@ export function Screen({
         <ScrollView
           style={styles.flex}
           ref={scrollRef}
+          keyboardShouldPersistTaps="handled"
+          automaticallyAdjustKeyboardInsets
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[
             styles.content,

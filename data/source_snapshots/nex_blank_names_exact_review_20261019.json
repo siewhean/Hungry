@@ -1,0 +1,75 @@
+{
+  "snapshot": "nex_blank_names_exact_review_20261019",
+  "snapshot_type": "official_mall_directory_blank_name_proposal",
+  "canonical_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_workbook_sha256": "bb74665b20d62a711463850a4d5de0648dc0237c4e1d75e96c9eb5f5a89d2d93",
+  "worksheet": "Public F&B Directory",
+  "workbook_edited": false,
+  "observed_at_local": "2026-10-19",
+  "scope": "Review blank F&B Name records at NEX Serangoon; exact property, postal code, floor/unit and current SFA-licence-row cross-check.",
+  "source_set": [
+    {
+      "publisher": "NEX / Gold Ridge Pte. Ltd.",
+      "url": "https://www.nex.com.sg/Directory/Category/SjEjAPFhFjXmYn4lg6NTjA_3d_3d/FoodCourt",
+      "source_type": "official current NEX Food Court directory",
+      "access_date": "2026-10-19",
+      "evidence": "Lists FOOD JUNCTION at #04-36/37; NEX address is 23 Serangoon Central, Singapore 556083. It presents a venue-level foodcourt directory, not stall-by-stall names."
+    },
+    {
+      "publisher": "NEX / Gold Ridge Pte. Ltd.",
+      "url": "https://www.nex.com.sg/Directory/Shop/SjEjAPFhFjXmYn4lg6NTjA_3d_3d/c8Y_2fnTXnJkLLRHdBBpiu8A_3d_3d?Name=FOOD+JUNCTION",
+      "source_type": "official outlet detail page",
+      "access_date": "2026-10-19",
+      "evidence": "Names FOOD JUNCTION, Food Court, #04-36/37, official website foodjunction.com and +65 6634 4358."
+    }
+  ],
+  "summary": {
+    "blank_name_records_at_scope": 3,
+    "proposals": 0,
+    "withheld": 3,
+    "workbook_changes": 0,
+    "match_self_check": "PASS: all scoped rows have unique SFA licence IDs; each exact NEX property/postal/unit was checked against the current official NEX food-court directory. No individual tenant identity was established for any blank licence."
+  },
+  "proposals": [],
+  "withheld": [
+    {
+      "excel_row": 36919,
+      "sfa_licence": "SE10643E002",
+      "business_type": "Foodcourt",
+      "full_address": "Address: 23 SERANGOON CENTRAL #04-36,#04-37,NEX,Singapore 556083",
+      "postal_code": "556083",
+      "reason": "The official directory verifies FOOD JUNCTION as the food-court operator at the shared #04-36/37 premises, but does not identify the individual stall/licensee for this separate SFA licence. The workbook also has multiple named tenant records and multiple blank SFA licences at the same shared premises. Assigning the operator name to a stall-level licence would conflate host food court and licensee; no name update proposed.",
+      "public_access_caveat": "NEX is a public shopping mall, but this licence’s precise licensed food stall/tenant identity is unresolved. Existing derived public-access status is not independent evidence that the licence is an independently listed public outlet.",
+      "evidence_urls": [
+        "https://www.nex.com.sg/Directory/Category/SjEjAPFhFjXmYn4lg6NTjA_3d_3d/FoodCourt",
+        "https://www.nex.com.sg/Directory/Shop/SjEjAPFhFjXmYn4lg6NTjA_3d_3d/c8Y_2fnTXnJkLLRHdBBpiu8A_3d_3d?Name=FOOD+JUNCTION"
+      ]
+    },
+    {
+      "excel_row": 36920,
+      "sfa_licence": "SE10643E009",
+      "business_type": "Foodcourt",
+      "full_address": "Address: 23 SERANGOON CENTRAL #04-36,#04-37,NEX,Singapore 556083",
+      "postal_code": "556083",
+      "reason": "The official directory verifies FOOD JUNCTION as the food-court operator at the shared #04-36/37 premises, but does not identify the individual stall/licensee for this separate SFA licence. The workbook also has multiple named tenant records and multiple blank SFA licences at the same shared premises. Assigning the operator name to a stall-level licence would conflate host food court and licensee; no name update proposed.",
+      "public_access_caveat": "NEX is a public shopping mall, but this licence’s precise licensed food stall/tenant identity is unresolved. Existing derived public-access status is not independent evidence that the licence is an independently listed public outlet.",
+      "evidence_urls": [
+        "https://www.nex.com.sg/Directory/Category/SjEjAPFhFjXmYn4lg6NTjA_3d_3d/FoodCourt",
+        "https://www.nex.com.sg/Directory/Shop/SjEjAPFhFjXmYn4lg6NTjA_3d_3d/c8Y_2fnTXnJkLLRHdBBpiu8A_3d_3d?Name=FOOD+JUNCTION"
+      ]
+    },
+    {
+      "excel_row": 37102,
+      "sfa_licence": "SE26H07L000",
+      "business_type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+      "full_address": "Address: 23 SERANGOON CENTRAL #04-36,#04-37,NEX,Singapore 556083 (MR9)",
+      "postal_code": "556083",
+      "reason": "The official directory verifies FOOD JUNCTION as the food-court operator at the shared #04-36/37 premises, but does not identify the individual stall/licensee for this separate SFA licence. The workbook also has multiple named tenant records and multiple blank SFA licences at the same shared premises. Assigning the operator name to a stall-level licence would conflate host food court and licensee; no name update proposed.",
+      "public_access_caveat": "NEX is a public shopping mall, but this licence’s precise licensed food stall/tenant identity is unresolved. Existing derived public-access status is not independent evidence that the licence is an independently listed public outlet.",
+      "evidence_urls": [
+        "https://www.nex.com.sg/Directory/Category/SjEjAPFhFjXmYn4lg6NTjA_3d_3d/FoodCourt",
+        "https://www.nex.com.sg/Directory/Shop/SjEjAPFhFjXmYn4lg6NTjA_3d_3d/c8Y_2fnTXnJkLLRHdBBpiu8A_3d_3d?Name=FOOD+JUNCTION"
+      ]
+    }
+  ]
+}

@@ -50,7 +50,13 @@ test("taste quiz asks for a usual budget and saves it with dietary preferences",
   const quiz = read("src/app/screens/onboarding/TasteQuizScreen.tsx");
 
   assert.match(quiz, /Usual budget per dish/);
-  assert.match(quiz, /setMaxDishBudget\(maxDishBudget\)/);
+  assert.match(quiz, /await commitQuizProfile\(/);
+  assert.match(quiz, /values, dietaryPreferences, maxDishBudget/);
+  const commit = read("src/features/onboarding/commitQuizProfile.ts");
+  assert.match(commit, /maxDishBudget: draft\.maxDishBudget/);
+  assert.match(commit, /dietaryPreferences: \[\.\.\.draft\.dietaryPreferences\]/);
+  assert.match(commit, /await dependencies\.save\(updates\)/);
+  assert.doesNotMatch(quiz, /setMaxDishBudget\(maxDishBudget\)/);
 });
 
 test("setMaxDishBudget stores the budget locally and logs it", () => {

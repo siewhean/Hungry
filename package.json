@@ -85,6 +85,8 @@
     "data:excel:test": "python3 scripts/__tests__/validate_excel.test.py && python3 scripts/__tests__/audit_excel_source_quality.test.py",
     "data:excel:import": "python3 scripts/import_excel_to_supabase.py",
     "data:enrich": "python3 scripts/enrich_food_business_workbook.py",
+    "data:harvest:public": "python3 scripts/harvest_public_fnb_sources.py",
+    "data:harvest:test": "python3 scripts/__tests__/harvest_public_fnb_sources.test.py",
     "data:enrich:review": "node scripts/run-scheduled-enrichment-review.mjs",
     "data:enrich:discover-grab": "node scripts/discover-grab-menu-sources.mjs",
     "data:enrich:classify-non-consumer": "python3 scripts/classify_non_consumer_entities.py",
@@ -96,7 +98,9 @@
     "format": "prettier --write src/",
     "format:check": "prettier --check src/",
     "prepare": "husky",
-    "postinstall": "patch-package && node ./scripts/repair-expo-autolinking-ruby.cjs && node ./scripts/repair-expo-build-jsx.cjs"
+    "postinstall": "patch-package && node ./scripts/repair-expo-autolinking-ruby.cjs && node ./scripts/repair-expo-build-jsx.cjs",
+    "check:edge-types": "node scripts/check-edge-types.mjs",
+    "test:edge-webhooks": "npx --yes deno@2.9.6 test --frozen --allow-env supabase/functions/send-email/index.test.ts"
   },
   "dependencies": {
     "@expo-google-fonts/dm-mono": "^0.2.3",
@@ -125,6 +129,7 @@
     "expo-crypto": "~55.0.19",
     "expo-dev-client": "~55.0.40",
     "expo-device": "~55.0.21",
+    "expo-file-system": "~55.0.26",
     "expo-font": "~55.0.8",
     "expo-haptics": "~55.0.18",
     "expo-image": "~55.0.11",
@@ -135,6 +140,7 @@
     "expo-location": "~55.1.14",
     "expo-notifications": "~55.0.27",
     "expo-secure-store": "~55.0.18",
+    "expo-sharing": "~55.0.24",
     "expo-status-bar": "~55.0.6",
     "expo-updates": "~55.0.33",
     "expo-video": "~55.0.21",

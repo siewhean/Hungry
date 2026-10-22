@@ -1,3 +1,4 @@
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useEffect, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -16,11 +17,12 @@ type Props = NativeStackScreenProps<ProfileStackParamList, "PortfolioItemPicker"
 function parsePortfolioScore(value: string): number | undefined {
   const trimmed = value.trim();
   if (!trimmed) return undefined;
-  const parsed = Number.parseFloat(trimmed);
+  const parsed = /^(?:[1-9](?:\.\d)?|10(?:\.0)?)$/.test(trimmed) ? Number(trimmed) : Number.NaN;
   return Number.isFinite(parsed) ? parsed : Number.NaN;
 }
 
 export function PortfolioItemPickerScreen({ navigation, route }: Props) {
+  const insets = useSafeAreaInsets();
   const { palette, spacing } = useHungryTheme();
   const { portfolioId, mode } = route.params;
   const addItem = usePortfolioStore((state) => state.addItem);
@@ -60,21 +62,18 @@ export function PortfolioItemPickerScreen({ navigation, route }: Props) {
         return;
       }
 
-      const buildings = await service.discovery.listBuildings();
-      const venueLists = await Promise.all(
-        buildings
-          .slice(0, 6)
-          .map((building) => service.discovery.listVenuesByBuilding(building.id)),
-      );
-      const normalizedQuery = query.trim().toLowerCase();
-      const nextVenues = venueLists
-        .flat()
-        .filter((venue) => venue.name.toLowerCase().includes(normalizedQuery))
-        .slice(0, 16);
+      const nextVenues = await service.discovery.searchVenuesByLocation({ query, limit: 32 });
+      if (!nextVenues) throw new Error("Venue search is unavailable. Please retry.");
       if (mounted) setVenues(nextVenues);
     }
 
-    void loadChoices();
+    void loadChoices().catch((error: unknown) => {
+      if (mounted)
+        Alert.alert(
+          "Could not load choices",
+          error instanceof Error ? error.message : "Please retry.",
+        );
+    });
     return () => {
       mounted = false;
     };
@@ -126,7 +125,9 @@ export function PortfolioItemPickerScreen({ navigation, route }: Props) {
 
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: palette.bg }}
+      keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets
+      style={{ flex: 1, backgroundColor: palette.bg, paddingTop: insets.top }}
       contentContainerStyle={[styles.content, { gap: spacing[4], padding: spacing[4] }]}
     >
       <View style={styles.header}>

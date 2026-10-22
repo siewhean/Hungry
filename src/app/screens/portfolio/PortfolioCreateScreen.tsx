@@ -1,5 +1,6 @@
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ArrowLeft } from "lucide-react-native";
 
@@ -13,6 +14,7 @@ import type { PortfolioType, PortfolioVisibility } from "@/types/domain";
 type Props = NativeStackScreenProps<ProfileStackParamList, "PortfolioCreate">;
 
 export function PortfolioCreateScreen({ navigation }: Props) {
+  const insets = useSafeAreaInsets();
   const { palette, spacing } = useHungryTheme();
   const createPortfolio = usePortfolioStore((state) => state.createPortfolio);
   const [name, setName] = useState("");
@@ -33,6 +35,11 @@ export function PortfolioCreateScreen({ navigation }: Props) {
         visibility,
       });
       navigation.replace("PortfolioDetail", { portfolioId: portfolio.id });
+    } catch (error) {
+      Alert.alert(
+        "Could not complete action",
+        error instanceof Error ? error.message : "Please retry.",
+      );
     } finally {
       setIsSaving(false);
     }
@@ -40,7 +47,9 @@ export function PortfolioCreateScreen({ navigation }: Props) {
 
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: palette.bg }}
+      keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets
+      style={{ flex: 1, backgroundColor: palette.bg, paddingTop: insets.top }}
       contentContainerStyle={[styles.content, { gap: spacing[4], padding: spacing[4] }]}
     >
       <View style={styles.header}>

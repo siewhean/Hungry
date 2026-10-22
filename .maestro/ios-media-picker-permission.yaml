@@ -44,7 +44,7 @@ appId: ${APP_ID}
     id: "dev-button-launch-v2-composer"
 - assertVisible:
     id: "post-composer-screen"
-- assertVisible: "New post"
+- assertVisible: "Create post"
 - assertVisible:
     id: "post-composer-add-media"
 - tapOn:
@@ -58,5 +58,4 @@ appId: ${APP_ID}
 - tapOn:
     text: "Don't Allow"
     optional: true
-- assertVisible: "Permission Required"
-- tapOn: "OK"
+- assertVisible: "Photo permission is required to publish a post."

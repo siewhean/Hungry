@@ -1,0 +1,665 @@
+{
+  "schema": "hungry.refresh136.complete_final_qa.v1",
+  "qa_date": "2026-10-19",
+  "workbook": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "expected_sha256": "79faa88e6bbd2fc9118358a264047edd9179a6c086bddbe1438262b5c391907e",
+  "sha256_before": "79faa88e6bbd2fc9118358a264047edd9179a6c086bddbe1438262b5c391907e",
+  "sha256_after": "79faa88e6bbd2fc9118358a264047edd9179a6c086bddbe1438262b5c391907e",
+  "size_bytes": 5664493,
+  "status": "PASS_WITH_LIMITATIONS",
+  "failures": [],
+  "zip_stable_valid": true,
+  "checks": {
+    "workbook_sheets_tables_and_errors": {
+      "status": "PASS",
+      "sheets": {
+        "Public F&B Directory": {
+          "rows": 38274,
+          "columns": 21,
+          "tables": {
+            "PublicFnbDirectory": "A1:U38274"
+          },
+          "blank_rows": 0,
+          "formula_cells": 0,
+          "errors": []
+        },
+        "Menu Items": {
+          "rows": 14271,
+          "columns": 12,
+          "tables": {
+            "MenuItems": "A1:L14271"
+          },
+          "blank_rows": 0,
+          "formula_cells": 0,
+          "errors": []
+        },
+        "Image Candidates": {
+          "rows": 2768,
+          "columns": 9,
+          "tables": {
+            "ImageCandidates": "A1:I2768"
+          },
+          "blank_rows": 0,
+          "formula_cells": 0,
+          "errors": []
+        },
+        "Coverage & Sources": {
+          "rows": 243,
+          "columns": 3,
+          "tables": {
+            "CoverageSources": "A1:C243"
+          },
+          "blank_rows": 0,
+          "formula_cells": 0,
+          "errors": []
+        }
+      },
+      "external_links": [],
+      "zip_crc_start": null,
+      "zip_crc_end": null
+    },
+    "directory_rows_and_IDs": {
+      "status": "PASS",
+      "data_rows": 38273,
+      "unique_SFA_licences": 38273,
+      "blank_SFA_licences": 0,
+      "record_count_matches_predecessor_snapshot": true,
+      "exact_prior_ID_set_comparison": "Unavailable: predecessor binary is not present in Git/data."
+    },
+    "directory_name_ordering": {
+      "status": "PASS",
+      "unnamed_rows_last": true,
+      "Koufu_W97070A012_in_existing_Koufu_block": true,
+      "Koufu_row": 16067,
+      "unnamed_row_count": 5472
+    },
+    "Refresh136_Foodpanda": {
+      "status": "PASS",
+      "source_rows": 40,
+      "workbook_rows": 40,
+      "keys_prices_links_timestamps_scope_match": true,
+      "duplicate_keys": 0,
+      "mismatches": []
+    },
+    "Koufu_KKH": {
+      "status": "PASS",
+      "row": 16067,
+      "fields": {
+        "F&B Name": "Koufu",
+        "Business Type": "Foodcourt",
+        "Full Address": "Address: 100 BUKIT TIMAH ROAD #01-28,KK WOMEN'S AND CHILDREN'S HOSPITAL,Singapore 229899",
+        "Postal Code": "229899"
+      },
+      "source_url": "https://www.kkh.com.sg/patient-services/visitor-info/amenities-facilities/shops-eats"
+    },
+    "BCA_coordinate_candidate": {
+      "status": "PASS",
+      "row": 759,
+      "fields": {
+        "Full Address": "Address: 10/1 BUANGKOK VIEW INSTITUTE OF MENTAL HEALTH,Singapore 539747 Level 1 Unit 11-130",
+        "Postal Code": "539747",
+        "Latitude": 1.3815895,
+        "Longitude": 103.8833488,
+        "Coordinate Precision": "Building/facility point (BCA); not outlet-front point"
+      },
+      "candidate": {
+        "sfa_licence": "CE07024N000",
+        "f_and_b_name": "7-Eleven",
+        "postal_code": "539747",
+        "full_address": "Address: 10/1 BUANGKOK VIEW INSTITUTE OF MENTAL HEALTH,Singapore 539747 Level 1 Unit 11-130",
+        "latitude": 1.3815895,
+        "longitude": 103.8833488,
+        "coordinate_precision": "building/facility point; not outlet-front point",
+        "source": "BCA Friendly Buildings (data.gov.sg), captured 2026-10-18",
+        "source_url": "https://data.gov.sg/datasets/d_f19704cb6ce76309f3ec0c3a513bdeab/view",
+        "source_address_labels": [
+          "10 Buangkok View, 539747",
+          "10 Buangkok View, Block 5, 539747"
+        ],
+        "source_feature_names": [
+          "Econ Medicare Centre and Nursing Home",
+          "Institute Of Mental Health",
+          "Ren Ci Hospital & Medicare Centre",
+          "Tai Pei Social Service"
+        ],
+        "decision": "exact six-digit postal plus house-number/road-label match; review candidate only; no auto-apply"
+      },
+      "precision": "building/facility point, not outlet-front point"
+    },
+    "Starbucks_53_fields": {
+      "status": "PASS",
+      "fields_expected": 53,
+      "fields_checked": 53,
+      "field_counts": {
+        "Opening Hours / Closed Days": 30,
+        "Contact Details": 23
+      },
+      "records_updated": 30,
+      "rows": [
+        {
+          "licence": "CE07727K000",
+          "field": "Opening Hours / Closed Days",
+          "row": 26360,
+          "expected": "Hours: Mon-Thu 07:30-22:00; Fri-Sat 07:30-22:30; Sun 07:30-22:00; PH 07:30-22:00; Eve PH 07:30-22:30",
+          "actual": "Hours: Mon-Thu 07:30-22:00; Fri-Sat 07:30-22:30; Sun 07:30-22:00; PH 07:30-22:00; Eve PH 07:30-22:30",
+          "status": "PASS"
+        },
+        {
+          "licence": "CE07727K000",
+          "field": "Contact Details",
+          "row": 26360,
+          "expected": "Contact: +6569101152",
+          "actual": "Contact: +6569101152",
+          "status": "PASS"
+        },
+        {
+          "licence": "CE09985E000",
+          "field": "Opening Hours / Closed Days",
+          "row": 26362,
+          "expected": "Hours: Mon-Thu 07:30-22:00; Fri-Sat 07:30-22:30; Sun 07:30-22:00; PH 07:30-22:30; Eve PH 07:30-22:30",
+          "actual": "Hours: Mon-Thu 07:30-22:00; Fri-Sat 07:30-22:30; Sun 07:30-22:00; PH 07:30-22:30; Eve PH 07:30-22:30",
+          "status": "PASS"
+        },
+        {
+          "licence": "CE09985E000",
+          "field": "Contact Details",
+          "row": 26362,
+          "expected": "Contact: +6569101197",
+          "actual": "Contact: +6569101197",
+          "status": "PASS"
+        },
+        {
+          "licence": "CE10311J000",
+          "field": "Opening Hours / Closed Days",
+          "row": 26363,
+          "expected": "Hours: Mon-Fri 07:00-19:00; Sat-Sun Closed; PH Closed; Eve PH Closed",
+          "actual": "Hours: Mon-Fri 07:00-19:00; Sat-Sun Closed; PH Closed; Eve PH Closed",
+          "status": "PASS"
+        },
+        {
+          "licence": "CE12025V000",
+          "field": "Opening Hours / Closed Days",
+          "row": 26366,
+          "expected": "Hours: Mon-Thu 08:00-22:00; Fri 08:00-22:30; Sat 07:00-23:00; Sun 07:00-22:00; PH 07:00-22:00; Eve PH 07:00-23:00",
+          "actual": "Hours: Mon-Thu 08:00-22:00; Fri 08:00-22:30; Sat 07:00-23:00; Sun 07:00-22:00; PH 07:00-22:00; Eve PH 07:00-23:00",
+          "status": "PASS"
+        },
+        {
+          "licence": "CE12025V000",
+          "field": "Contact Details",
+          "row": 26366,
+          "expected": "Contact: +6569933677",
+          "actual": "Contact: +6569933677",
+          "status": "PASS"
+        },
+        {
+          "licence": "CE17D68L000",
+          "field": "Opening Hours / Closed Days",
+          "row": 26367,
+          "expected": "Hours: Mon-Sun 08:00-22:00; PH 08:00-22:00; Eve PH 08:00-22:00",
+          "actual": "Hours: Mon-Sun 08:00-22:00; PH 08:00-22:00; Eve PH 08:00-22:00",
+          "status": "PASS"
+        },
+        {
+          "licence": "CE17D68L000",
+          "field": "Contact Details",
+          "row": 26367,
+          "expected": "Contact: +6569105455",
+          "actual": "Contact: +6569105455",
+          "status": "PASS"
+        },
+        {
+          "licence": "CE18N36C000",
+          "field": "Opening Hours / Closed Days",
+          "row": 26368,
+          "expected": "Hours: Mon-Fri 07:00-21:00; Sat-Sun Closed; PH Closed; Eve PH 07:00-21:00",
+          "actual": "Hours: Mon-Fri 07:00-21:00; Sat-Sun Closed; PH Closed; Eve PH 07:00-21:00",
+          "status": "PASS"
+        },
+        {
+          "licence": "CE18N36C000",
+          "field": "Contact Details",
+          "row": 26368,
+          "expected": "Contact: +6560412695",
+          "actual": "Contact: +6560412695",
+          "status": "PASS"
+        },
+        {
+          "licence": "CE19014N000",
+          "field": "Opening Hours / Closed Days",
+          "row": 26369,
+          "expected": "Hours: Mon-Fri 07:00-22:30; Sat-Sun 07:30-22:30; PH 07:30-22:30; Eve PH 07:30-22:30",
+          "actual": "Hours: Mon-Fri 07:00-22:30; Sat-Sun 07:30-22:30; PH 07:30-22:30; Eve PH 07:30-22:30",
+          "status": "PASS"
+        },
+        {
+          "licence": "CE19P01E000",
+          "field": "Opening Hours / Closed Days",
+          "row": 26370,
+          "expected": "Hours: Mon-Fri 07:00-21:30; Sat-Sun 07:30-21:30; PH 07:30-21:30; Eve PH 07:30-21:30",
+          "actual": "Hours: Mon-Fri 07:00-21:30; Sat-Sun 07:30-21:30; PH 07:30-21:30; Eve PH 07:30-21:30",
+          "status": "PASS"
+        },
+        {
+          "licence": "CE19P01E000",
+          "field": "Contact Details",
+          "row": 26370,
+          "expected": "Contact: +6568161615",
+          "actual": "Contact: +6568161615",
+          "status": "PASS"
+        },
+        {
+          "licence": "CE20C91A000",
+          "field": "Opening Hours / Closed Days",
+          "row": 26372,
+          "expected": "Hours: Mon-Sun 07:30-22:00; PH 07:30-22:00; Eve PH 07:30-22:00",
+          "actual": "Hours: Mon-Sun 07:30-22:00; PH 07:30-22:00; Eve PH 07:30-22:00",
+          "status": "PASS"
+        },
+        {
+          "licence": "CE20C91A000",
+          "field": "Contact Details",
+          "row": 26372,
+          "expected": "Contact: +6569748079",
+          "actual": "Contact: +6569748079",
+          "status": "PASS"
+        },
+        {
+          "licence": "CE21488J000",
+          "field": "Opening Hours / Closed Days",
+          "row": 26373,
+          "expected": "Hours: Mon-Thu 08:00-21:30; Fri-Sat 08:00-22:00; Sun 08:00-21:30; PH 08:00-21:30; Eve PH 08:00-22:00",
+          "actual": "Hours: Mon-Thu 08:00-21:30; Fri-Sat 08:00-22:00; Sun 08:00-21:30; PH 08:00-21:30; Eve PH 08:00-22:00",
+          "status": "PASS"
+        },
+        {
+          "licence": "CE21488J000",
+          "field": "Contact Details",
+          "row": 26373,
+          "expected": "Contact: +6569312877",
+          "actual": "Contact: +6569312877",
+          "status": "PASS"
+        },
+        {
+          "licence": "CE22328J000",
+          "field": "Opening Hours / Closed Days",
+          "row": 26374,
+          "expected": "Hours: Mon-Fri 07:00-21:00; Sat-Sun 09:00-18:00; PH 09:00-18:00; Eve PH 09:00-18:00",
+          "actual": "Hours: Mon-Fri 07:00-21:00; Sat-Sun 09:00-18:00; PH 09:00-18:00; Eve PH 09:00-18:00",
+          "status": "PASS"
+        },
+        {
+          "licence": "CE22328J000",
+          "field": "Contact Details",
+          "row": 26374,
+          "expected": "Contact: +6569101214",
+          "actual": "Contact: +6569101214",
+          "status": "PASS"
+        },
+        {
+          "licence": "CE22369L000",
+          "field": "Opening Hours / Closed Days",
+          "row": 26375,
+          "expected": "Hours: Mon-Sun 07:30-22:00; PH 07:30-22:00; Eve PH 07:30-22:00",
+          "actual": "Hours: Mon-Sun 07:30-22:00; PH 07:30-22:00; Eve PH 07:30-22:00",
+          "status": "PASS"
+        },
+        {
+          "licence": "CE22369L000",
+          "field": "Contact Details",
+          "row": 26375,
+          "expected": "Contact: +6569101149",
+          "actual": "Contact: +6569101149",
+          "status": "PASS"
+        },
+        {
+          "licence": "CE22384N000",
+          "field": "Opening Hours / Closed Days",
+          "row": 26376,
+          "expected": "Hours: Mon-Thu 07:00-21:00; Fri 07:00-22:00; Sat 07:30-22:00; Sun 07:30-21:00; PH 07:30-21:00; Eve PH 07:30-22:00",
+          "actual": "Hours: Mon-Thu 07:00-21:00; Fri 07:00-22:00; Sat 07:30-22:00; Sun 07:30-21:00; PH 07:30-21:00; Eve PH 07:30-22:00",
+          "status": "PASS"
+        },
+        {
+          "licence": "CE22933A000",
+          "field": "Opening Hours / Closed Days",
+          "row": 26377,
+          "expected": "Hours: Mon-Sun 07:30-21:30; PH 07:30-21:30; Eve PH 07:30-21:30",
+          "actual": "Hours: Mon-Sun 07:30-21:30; PH 07:30-21:30; Eve PH 07:30-21:30",
+          "status": "PASS"
+        },
+        {
+          "licence": "CE22933A000",
+          "field": "Contact Details",
+          "row": 26377,
+          "expected": "Contact: +6569100971",
+          "actual": "Contact: +6569100971",
+          "status": "PASS"
+        },
+        {
+          "licence": "CE23253C000",
+          "field": "Opening Hours / Closed Days",
+          "row": 26379,
+          "expected": "Hours: Mon-Fri 06:30-22:00; Sat-Sun 07:00-22:00; PH 07:00-22:00; Eve PH 07:00-22:00",
+          "actual": "Hours: Mon-Fri 06:30-22:00; Sat-Sun 07:00-22:00; PH 07:00-22:00; Eve PH 07:00-22:00",
+          "status": "PASS"
+        },
+        {
+          "licence": "CE23253C000",
+          "field": "Contact Details",
+          "row": 26379,
+          "expected": "Contact: +6569101131",
+          "actual": "Contact: +6569101131",
+          "status": "PASS"
+        },
+        {
+          "licence": "CE23J55N000",
+          "field": "Opening Hours / Closed Days",
+          "row": 26381,
+          "expected": "Hours: Mon-Thu 07:30-22:00; Fri-Sat 07:30-22:30; Sun 07:30-22:00; PH 07:30-22:00; Eve PH 07:30-22:30",
+          "actual": "Hours: Mon-Thu 07:30-22:00; Fri-Sat 07:30-22:30; Sun 07:30-22:00; PH 07:30-22:00; Eve PH 07:30-22:30",
+          "status": "PASS"
+        },
+        {
+          "licence": "CE23J55N000",
+          "field": "Contact Details",
+          "row": 26381,
+          "expected": "Contact: +6569740516",
+          "actual": "Contact: +6569740516",
+          "status": "PASS"
+        },
+        {
+          "licence": "CE24365C000",
+          "field": "Opening Hours / Closed Days",
+          "row": 26382,
+          "expected": "Hours: Mon-Thu 08:00-22:00; Fri 08:00-22:30; Sat 07:00-23:00; Sun 07:30-22:00; PH 07:30-22:00; Eve PH 07:30-23:00",
+          "actual": "Hours: Mon-Thu 08:00-22:00; Fri 08:00-22:30; Sat 07:00-23:00; Sun 07:30-22:00; PH 07:30-22:00; Eve PH 07:30-23:00",
+          "status": "PASS"
+        },
+        {
+          "licence": "CE24365C000",
+          "field": "Contact Details",
+          "row": 26382,
+          "expected": "Contact: +6569101311",
+          "actual": "Contact: +6569101311",
+          "status": "PASS"
+        },
+        {
+          "licence": "CE25F02E000",
+          "field": "Opening Hours / Closed Days",
+          "row": 26384,
+          "expected": "Hours: Mon-Fri 07:00-21:00; Sat 08:00-17:00; Sun Closed; PH Closed; Eve PH 08:00-17:00",
+          "actual": "Hours: Mon-Fri 07:00-21:00; Sat 08:00-17:00; Sun Closed; PH Closed; Eve PH 08:00-17:00",
+          "status": "PASS"
+        },
+        {
+          "licence": "CE25F02E000",
+          "field": "Contact Details",
+          "row": 26384,
+          "expected": "Contact: +6569101160",
+          "actual": "Contact: +6569101160",
+          "status": "PASS"
+        },
+        {
+          "licence": "NE24O55A000",
+          "field": "Opening Hours / Closed Days",
+          "row": 26387,
+          "expected": "Hours: Mon-Thu 07:00-21:00; Fri 07:00-22:00; Sat-Sun 07:30-22:00; PH 07:30-22:00; Eve PH 07:30-22:00",
+          "actual": "Hours: Mon-Thu 07:00-21:00; Fri 07:00-22:00; Sat-Sun 07:30-22:00; PH 07:30-22:00; Eve PH 07:30-22:00",
+          "status": "PASS"
+        },
+        {
+          "licence": "NE24O55A000",
+          "field": "Contact Details",
+          "row": 26387,
+          "expected": "Contact: +6569101096",
+          "actual": "Contact: +6569101096",
+          "status": "PASS"
+        },
+        {
+          "licence": "NW20S48P000",
+          "field": "Opening Hours / Closed Days",
+          "row": 26389,
+          "expected": "Hours: Mon-Thu 07:00-22:00; Fri-Sat 07:00-23:00; Sun 07:00-22:00; PH 07:00-22:00; Eve PH 07:00-23:00",
+          "actual": "Hours: Mon-Thu 07:00-22:00; Fri-Sat 07:00-23:00; Sun 07:00-22:00; PH 07:00-22:00; Eve PH 07:00-23:00",
+          "status": "PASS"
+        },
+        {
+          "licence": "NW23328X000",
+          "field": "Opening Hours / Closed Days",
+          "row": 26391,
+          "expected": "Hours: Mon-Fri 09:00-18:30; Sat-Sun 08:00-19:00; PH 08:00-19:00; Eve PH 08:00-19:00",
+          "actual": "Hours: Mon-Fri 09:00-18:30; Sat-Sun 08:00-19:00; PH 08:00-19:00; Eve PH 08:00-19:00",
+          "status": "PASS"
+        },
+        {
+          "licence": "NW23328X000",
+          "field": "Contact Details",
+          "row": 26391,
+          "expected": "Contact: +6560251675",
+          "actual": "Contact: +6560251675",
+          "status": "PASS"
+        },
+        {
+          "licence": "SE16564V000",
+          "field": "Opening Hours / Closed Days",
+          "row": 26394,
+          "expected": "Hours: Mon-Sun 07:00-22:00; PH 07:00-22:00; Eve PH 07:00-22:00",
+          "actual": "Hours: Mon-Sun 07:00-22:00; PH 07:00-22:00; Eve PH 07:00-22:00",
+          "status": "PASS"
+        },
+        {
+          "licence": "SE19625C000",
+          "field": "Opening Hours / Closed Days",
+          "row": 26397,
+          "expected": "Hours: Mon-Thu 07:30-22:00; Fri-Sat 07:30-22:30; Sun 07:30-22:00; PH 07:30-22:30; Eve PH 07:30-22:30",
+          "actual": "Hours: Mon-Thu 07:30-22:00; Fri-Sat 07:30-22:30; Sun 07:30-22:00; PH 07:30-22:30; Eve PH 07:30-22:30",
+          "status": "PASS"
+        },
+        {
+          "licence": "SE19625C000",
+          "field": "Contact Details",
+          "row": 26397,
+          "expected": "Contact: +6569741939",
+          "actual": "Contact: +6569741939",
+          "status": "PASS"
+        },
+        {
+          "licence": "SW10755K000",
+          "field": "Opening Hours / Closed Days",
+          "row": 26401,
+          "expected": "Hours: Mon-Thu 08:00-21:00; Fri-Sat 08:00-22:00; Sun 08:00-21:00; PH 08:00-21:00; Eve PH 08:00-22:00",
+          "actual": "Hours: Mon-Thu 08:00-21:00; Fri-Sat 08:00-22:00; Sun 08:00-21:00; PH 08:00-21:00; Eve PH 08:00-22:00",
+          "status": "PASS"
+        },
+        {
+          "licence": "SW10755K000",
+          "field": "Contact Details",
+          "row": 26401,
+          "expected": "Contact: +6569741330",
+          "actual": "Contact: +6569741330",
+          "status": "PASS"
+        },
+        {
+          "licence": "SW14893C000",
+          "field": "Opening Hours / Closed Days",
+          "row": 26403,
+          "expected": "Hours: Mon-Thu 07:30-21:30; Fri-Sat 07:30-22:00; Sun 07:30-21:30; PH 07:30-21:30; Eve PH 07:30-22:00",
+          "actual": "Hours: Mon-Thu 07:30-21:30; Fri-Sat 07:30-22:00; Sun 07:30-21:30; PH 07:30-21:30; Eve PH 07:30-22:00",
+          "status": "PASS"
+        },
+        {
+          "licence": "SW18280X000",
+          "field": "Opening Hours / Closed Days",
+          "row": 26404,
+          "expected": "Hours: Mon-Fri 07:00-21:00; Sat 08:00-17:30; Sun 08:30-17:30; PH 08:30-17:30; Eve PH 08:00-17:30",
+          "actual": "Hours: Mon-Fri 07:00-21:00; Sat 08:00-17:30; Sun 08:30-17:30; PH 08:30-17:30; Eve PH 08:00-17:30",
+          "status": "PASS"
+        },
+        {
+          "licence": "SW18280X000",
+          "field": "Contact Details",
+          "row": 26404,
+          "expected": "Contact: +6569101215",
+          "actual": "Contact: +6569101215",
+          "status": "PASS"
+        },
+        {
+          "licence": "SW19A68V000",
+          "field": "Opening Hours / Closed Days",
+          "row": 26405,
+          "expected": "Hours: Mon-Thu 07:30-22:00; Fri-Sat 07:30-22:30; Sun 07:30-22:00; PH 07:30-22:00; Eve PH 07:30-22:30",
+          "actual": "Hours: Mon-Thu 07:30-22:00; Fri-Sat 07:30-22:30; Sun 07:30-22:00; PH 07:30-22:00; Eve PH 07:30-22:30",
+          "status": "PASS"
+        },
+        {
+          "licence": "SW22I58C000",
+          "field": "Opening Hours / Closed Days",
+          "row": 26408,
+          "expected": "Hours: Mon-Thu 07:30-22:00; Fri 07:30-23:59; Sat 07:00-23:59; Sun 07:00-22:00; PH 07:00-22:00; Eve PH 07:00-23:59",
+          "actual": "Hours: Mon-Thu 07:30-22:00; Fri 07:30-23:59; Sat 07:00-23:59; Sun 07:00-22:00; PH 07:00-22:00; Eve PH 07:00-23:59",
+          "status": "PASS"
+        },
+        {
+          "licence": "SW22I58C000",
+          "field": "Contact Details",
+          "row": 26408,
+          "expected": "Contact: +6569101219",
+          "actual": "Contact: +6569101219",
+          "status": "PASS"
+        },
+        {
+          "licence": "SW25608B000",
+          "field": "Opening Hours / Closed Days",
+          "row": 26409,
+          "expected": "Hours: Mon-Fri 07:30-18:00; Sat-Sun Closed; PH Closed; Eve PH Closed",
+          "actual": "Hours: Mon-Fri 07:30-18:00; Sat-Sun Closed; PH Closed; Eve PH Closed",
+          "status": "PASS"
+        },
+        {
+          "licence": "SW25608B000",
+          "field": "Contact Details",
+          "row": 26409,
+          "expected": "Contact: +6569101123",
+          "actual": "Contact: +6569101123",
+          "status": "PASS"
+        },
+        {
+          "licence": "SW26649V000",
+          "field": "Opening Hours / Closed Days",
+          "row": 26410,
+          "expected": "Hours: Mon-Fri 07:30-16:30; Sat-Sun Closed; PH Closed; Eve PH Closed",
+          "actual": "Hours: Mon-Fri 07:30-16:30; Sat-Sun Closed; PH Closed; Eve PH Closed",
+          "status": "PASS"
+        },
+        {
+          "licence": "SW26649V000",
+          "field": "Contact Details",
+          "row": 26410,
+          "expected": "Contact: +6569101121",
+          "actual": "Contact: +6569101121",
+          "status": "PASS"
+        }
+      ]
+    },
+    "McDonalds_contacts": {
+      "status": "PASS",
+      "fields_expected": 2,
+      "rows": [
+        {
+          "licence": "C84333E000",
+          "row": 18458,
+          "expected": "Contact: +65 6265 9104",
+          "actual": "Contact: +65 6265 9104",
+          "status": "PASS"
+        },
+        {
+          "licence": "SW09279E000",
+          "row": 18587,
+          "expected": "Contact: +65 6762 8779",
+          "actual": "Contact: +65 6762 8779",
+          "status": "PASS"
+        }
+      ]
+    },
+    "Kallang_Burger_King_contact_only": {
+      "status": "PASS",
+      "licence": "SE09686K000",
+      "row": 4670,
+      "field": "Contact Details",
+      "expected": "Contact: +65 6016 0771",
+      "actual": "Contact: +65 6016 0771",
+      "source": "https://leisurepark.com.sg/discover/burger-king/",
+      "status_and_hours_not_changed_per_integration_record": true,
+      "business_name": "BURGER KING",
+      "full_address": "Address: 5 STADIUM WALK #01-43,LEISURE PARK,Singapore 397693",
+      "opening_hours_current": null,
+      "verified_only_field": "Contact Details",
+      "integration_reason": "Mall tenant page lists exact #01-43 branch and phone. Contact only; status and hours were left unchanged.",
+      "location_rule": "SFA licence SE09686K000 plus workbook address 5 Stadium Walk #01-43, Leisure Park; integration source identifies Kallang Leisure Park."
+    },
+    "typed_date_cells": {
+      "status": "PASS",
+      "count": 536
+    },
+    "coverage": {
+      "status": "PASS",
+      "Refresh136_rows": [
+        {
+          "row": 236,
+          "metric": "Refresh136 public name",
+          "value": "1 verified name added: Koufu, KKH #01-28 (W97070A012)"
+        },
+        {
+          "row": 237,
+          "metric": "Refresh136 coordinate",
+          "value": "1 building/facility point added; not outlet-front precision"
+        },
+        {
+          "row": 238,
+          "metric": "Refresh136 delivery menus",
+          "value": "40 exact-branch menu observations across Jollibee Square 2 and City Square Mall"
+        },
+        {
+          "row": 239,
+          "metric": "Refresh136 official menu links",
+          "value": "Both exact Jollibee branches already link to Jollibee Singapore menu"
+        },
+        {
+          "row": 240,
+          "metric": "Refresh136 first-party directory fields",
+          "value": "8 exact-branch blank fields filled (3 Website; 5 Opening Hours / Closed Days)"
+        },
+        {
+          "row": 241,
+          "metric": "Refresh136 first-party McDonald’s contacts",
+          "value": "2 exact-branch phone contacts added"
+        },
+        {
+          "row": 242,
+          "metric": "Refresh136 first-party Starbucks branches",
+          "value": "53 exact-outlet fields added across 30 records (30 schedules; 23 contacts)"
+        },
+        {
+          "row": 243,
+          "metric": "Refresh136 first-party Leisure Park Burger King contact",
+          "value": "1 exact-branch phone added; closure and hours remain unresolved"
+        }
+      ],
+      "directory_count": 38273,
+      "menu_data_rows": 14270,
+      "image_candidate_rows": 2767
+    },
+    "image_URLs": {
+      "status": "PASS",
+      "approved_count": 2,
+      "new_refresh136_promotions": [],
+      "suspicious_or_malformed": [],
+      "historical_approved_set_comparison": "Unavailable: prior binary absent; Refresh136 image snapshot declares workbook_edits=false."
+    },
+    "extra_Refresh136_workbooks": {
+      "status": "PASS",
+      "matches": []
+    }
+  }
+}

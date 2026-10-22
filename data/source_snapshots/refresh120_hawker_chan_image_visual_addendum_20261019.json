@@ -1,0 +1,52 @@
+{
+  "schema_version": "1.0",
+  "snapshot_id": "refresh120_hawker_chan_image_visual_addendum_20261019",
+  "observed_at_sgt": "2026-10-19",
+  "canonical_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256_read_only_baseline": "0e3f6c7cc1594ba701f6fa4de6d11c6db1db9643060907f7292fb8a634d6eb6f",
+  "workbook_edited": false,
+  "candidate_source_snapshot": "data/source_snapshots/refresh120_open_images_batch_20261019.json",
+  "sfa_licence": "SM102126004",
+  "workbook_record": {
+    "name": "liao fan hawker chan",
+    "address": "335 SMITH STREET #02-126, CHINATOWN COMPLEX, Singapore 050335"
+  },
+  "image": {
+    "direct_image_url": "https://upload.wikimedia.org/wikipedia/commons/3/36/Singapore_today-Chinatown-Smith_Street-Hawker_Chan-151236.jpg",
+    "source_page_url": "https://commons.wikimedia.org/wiki/File:Singapore_today-Chinatown-Smith_Street-Hawker_Chan-151236.jpg",
+    "creator": "Rainer Halama",
+    "capture_date": "2023-08-24",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "capture_sha256": "0f3f02161b1d27339abb705a27df882d0ae3f238fc3bcd877e126fb9bd6e955e"
+  },
+  "visual_inspection": {
+    "performed": true,
+    "method": "Opened the original Wikimedia upload URL directly in Arc and visually inspected the displayed 3568x2635 image. The remote image was viewed in-browser; it was not downloaded or copied.",
+    "observations": [
+      "The photograph shows a seated diner with plated chicken rice and a large red Hawker Chan promotional sign in the background.",
+      "The sign contains the Hawker Chan branding and text about the Michelin-awarded stall; the lower line visibly identifies the award as being at 335 Smith Street #02-126. The unit digits are slightly soft in the photo, so the official current listing below is used as the corroborating exact-address source.",
+      "This is a dish/brand-context photograph taken inside or at the named location, not a storefront-fascia or stall-front photograph.",
+      "No current exterior appearance, current menu presentation, or current premises operation can be inferred from this 2023 photo."
+    ],
+    "visual_match_assessment": "Exact named outlet and exact unit are supported by the combination of Hawker Chan/Smith Street photo signage and the current first-party location listing. The visible unit text alone is not perfectly sharp."
+  },
+  "official_location_crosscheck": {
+    "source_url": "https://www.liaofanhawkerchan.com/locations",
+    "retrieved_at_sgt": "2026-10-19",
+    "capture_sha256": "347488e8d27dcdbc1820aa60228c0c97d027a8b8e6e62d7a1f3583e0e52cdaa5",
+    "observed_source_facts": [
+      "Current official Singapore Locations page lists Chinatown at 335 Smith Street, #02-126 Chinatown Complex Market & Food Centre, Singapore 050335.",
+      "The official page separately lists the nearby 78 Smith Street branch, showing the two Hawker Chan locations are distinct.",
+      "Official page lists the #02-126 stall hours as 10:30am–3:30pm and closed every Sunday (observed only as a current listing fact; not an image claim)."
+    ],
+    "workbook_match": "Official listing address and unit exactly match directory SFA record SM102126004. The other nearby 78 Smith Street location is not matched to this SFA record."
+  },
+  "assessment": {
+    "exact_enough_for_review_only_candidate": true,
+    "approved_image_url_recommendation": false,
+    "candidate_row_recommendation": "Eligible to add as a dated Commons dish/brand-context image candidate for SM102126004, status review-only, retaining full Rainer Halama attribution, CC BY-SA 4.0 license/link, and share-alike obligations. Do not label it as a stall-front image or place it in Approved Image URL.",
+    "freshness_caveat": "Captured 2023-08-24. Official listing confirms current outlet identity/location as of retrieval date but does not establish that the photographed sign, interior, food presentation, or operation remains current.",
+    "creator_request": "Commons page requests that the creator be sent a specimen copy or URL where the image is used. If catalogue display proceeds, include this notice/attribution step in downstream use tracking."
+  }
+}

@@ -1,0 +1,288 @@
+{
+  "snapshot_id": "frasers_centres_blank_name_exact_directory_refresh_20261019",
+  "observed_at_utc": "2026-10-19T04:44:03+00:00",
+  "observed_at_sgt": "2026-10-19T12:44:03+08:00",
+  "workbook_reference": {
+    "path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "sha256": "6b20769d389600a7e7838a64f3350330a6a2cade68a46321ac051fd68986d557",
+    "sheet": "Public F&B Directory",
+    "row_count": 38273,
+    "licence_unique_count": 38273
+  },
+  "scope": "Blank F&B Name records whose address identifies selected Frasers Experience centres or Changi City Point. Name-only proposals; no workbook edits.",
+  "official_directory_sources": {
+    "Causeway Point": {
+      "directory_url": "https://www.frasersexperience.com/stores/cwp",
+      "feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fcwp%2Fen%2Fstores&isdialog=true",
+      "http_status": 200,
+      "feed_records": 26,
+      "response_sha256": "c351c8e4d74b5e7a7e9d0c283270c6130008210f550945e82bd89dddcdb14a21",
+      "scope": "Official mall public F&B feed: restaurants, cafes, fast-food."
+    },
+    "Northpoint City": {
+      "directory_url": "https://www.frasersexperience.com/stores/npc",
+      "feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fnpc%2Fen%2Fstores&isdialog=true",
+      "http_status": 200,
+      "feed_records": 27,
+      "response_sha256": "bac4d74b0fe60b05edddfcdade2902c45df7f4655294acc293cfefcbccde299e",
+      "scope": "Official mall public F&B feed: restaurants, cafes, fast-food."
+    },
+    "Tiong Bahru Plaza": {
+      "directory_url": "https://www.frasersexperience.com/stores/tbp",
+      "feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftbp%2Fen%2Fstores&isdialog=true",
+      "http_status": 200,
+      "feed_records": 28,
+      "response_sha256": "c6d610079efdc6c7468cf9061268bde6670f46e11e68ce8557177c6e2a019a6b",
+      "scope": "Official mall public F&B feed: restaurants, cafes, fast-food."
+    },
+    "Century Square": {
+      "directory_url": "https://www.frasersexperience.com/stores/cs",
+      "feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fcs%2Fen%2Fstores&isdialog=true",
+      "http_status": 200,
+      "feed_records": 18,
+      "response_sha256": "78f51a5af5d6c855f9bcb0129016c410004556ef244249e14e9fdc0272822436",
+      "scope": "Official mall public F&B feed: restaurants, cafes, fast-food."
+    },
+    "The Centrepoint": {
+      "directory_url": "https://www.frasersexperience.com/stores/tcp",
+      "feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Ftcp%2Fen%2Fstores&isdialog=true",
+      "http_status": 200,
+      "feed_records": 16,
+      "response_sha256": "b421e1f9465805f3321da626ce8d42c322cc446f6c64061b99092b47c5cf53f2",
+      "scope": "Official mall public F&B feed: restaurants, cafes, fast-food."
+    },
+    "Waterway Point": {
+      "directory_url": "https://www.frasersexperience.com/stores/wwp",
+      "feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fwwp%2Fen%2Fstores&isdialog=true",
+      "http_status": 200,
+      "feed_records": 42,
+      "response_sha256": "f872d58a53938a319c3e8e11400cd01bdfdad318b8a9cfb1a6092d23846181f5",
+      "scope": "Official mall public F&B feed: restaurants, cafes, fast-food."
+    },
+    "Changi City Point": {
+      "directory_url": "https://changicitypoint.com.sg/stores/",
+      "publisher": "Changi City Point official mall website",
+      "evidence_pages": [
+        "https://changicitypoint.com.sg/stores/",
+        "https://changicitypoint.com.sg/store/food-arena/"
+      ],
+      "observed_date": "2026-10-19",
+      "source_scope": "Current public mall store directory and tenant detail page."
+    }
+  },
+  "proposals": [
+    {
+      "excel_row": 36917,
+      "sfa_licence": "SE11925E000",
+      "existing_fnb_name": null,
+      "existing_address": "Address: 5 CHANGI BUSINESS PARK CENTRAL 1 #01-15,CHANGI CITY POINT,Singapore 486038",
+      "postal_code": "486038",
+      "official_mall": "Changi City Point",
+      "official_tenant_name": "7-ELEVEN",
+      "official_unit": "#01-15",
+      "field_proposals": {
+        "F&B Name": "7-ELEVEN"
+      },
+      "source_url": "https://changicitypoint.com.sg/stores/",
+      "source_publisher": "Changi City Point official mall directory",
+      "observed_at": "2026-10-19",
+      "join_confidence": "high",
+      "join_basis": "Current official Changi City Point directory lists 7-ELEVEN at #01-15 (category shown as Services). Exact postal code and unit match the SFA address; name-only proposal, without category or status changes."
+    },
+    {
+      "excel_row": 37012,
+      "sfa_licence": "SE23370E005",
+      "existing_fnb_name": null,
+      "existing_address": "Address: 5 CHANGI BUSINESS PARK CENTRAL 1 #02-01,CHANGI CITY POINT,Singapore 486038",
+      "postal_code": "486038",
+      "official_mall": "Changi City Point",
+      "official_tenant_name": "FOOD ARENA",
+      "official_unit": "#02-01",
+      "field_proposals": {
+        "F&B Name": "FOOD ARENA"
+      },
+      "source_url": "https://changicitypoint.com.sg/store/food-arena/",
+      "source_publisher": "Changi City Point official mall directory",
+      "observed_at": "2026-10-19",
+      "join_confidence": "high",
+      "join_basis": "Current official Changi City Point detail page identifies FOOD ARENA at #02-01. Exact postal code and unit match the SFA address. A 2025 mall holiday-hours PDF labels the unit MY KAMPUNG; current directory/detail evidence is treated as more recent."
+    }
+  ],
+  "withheld": [
+    {
+      "excel_row": 33158,
+      "sfa_licence": "B98155B014",
+      "address": "Address: 1 WOODLANDS SQUARE #04-01,#04-03,#04-04,#04-02,#04-03,#04-04,#04-01,#04-03,#04-04,#04-01,#04-03,#04-04,#04-02,CAUSEWAY POINT,Singapore 738099",
+      "postal_code": "738099",
+      "official_mall": "Causeway Point",
+      "candidate_unit_tokens": [
+        "#04-01",
+        "#04-03",
+        "#04-04",
+        "#04-02",
+        "#04-03",
+        "#04-04",
+        "#04-01",
+        "#04-03",
+        "#04-04",
+        "#04-01",
+        "#04-03",
+        "#04-04",
+        "#04-02"
+      ],
+      "source_url": "https://www.frasersexperience.com/stores/cwp",
+      "reason": "No exact unit match among current official mall directory F&B feed records; name withheld to avoid guessing or joining the wrong SFA licence."
+    },
+    {
+      "excel_row": 34027,
+      "sfa_licence": "CE17752V000",
+      "address": "Address: 176 ORCHARD ROAD #01-33E,THE CENTREPOINT,Singapore 238843",
+      "postal_code": "238843",
+      "official_mall": "The Centrepoint",
+      "candidate_unit_tokens": [
+        "#01-33E"
+      ],
+      "source_url": "https://www.frasersexperience.com/stores/tcp",
+      "reason": "No exact unit match among current official mall directory F&B feed records; name withheld to avoid guessing or joining the wrong SFA licence."
+    },
+    {
+      "excel_row": 34106,
+      "sfa_licence": "CE19K86P000",
+      "address": "Address: 302 TIONG BAHRU ROAD #B1-117,TIONG BAHRU PLAZA,Singapore 168732",
+      "postal_code": "168732",
+      "official_mall": "Tiong Bahru Plaza",
+      "candidate_unit_tokens": [
+        "#B1-117"
+      ],
+      "source_url": "https://www.frasersexperience.com/stores/tbp",
+      "reason": "No exact unit match among current official mall directory F&B feed records; name withheld to avoid guessing or joining the wrong SFA licence."
+    },
+    {
+      "excel_row": 34396,
+      "sfa_licence": "CE25763V000",
+      "address": "Address: 302 TIONG BAHRU ROAD #02-117,TIONG BAHRU PLAZA,Singapore 168732",
+      "postal_code": "168732",
+      "official_mall": "Tiong Bahru Plaza",
+      "candidate_unit_tokens": [
+        "#02-117"
+      ],
+      "source_url": "https://www.frasersexperience.com/stores/tbp",
+      "reason": "No exact unit match among current official mall directory F&B feed records; name withheld to avoid guessing or joining the wrong SFA licence."
+    },
+    {
+      "excel_row": 35736,
+      "sfa_licence": "NE15599C001",
+      "address": "Address: 83 PUNGGOL CENTRAL #02-20,WATERWAY POINT,Singapore 828761",
+      "postal_code": "828761",
+      "official_mall": "Waterway Point",
+      "candidate_unit_tokens": [
+        "#02-20"
+      ],
+      "source_url": "https://www.frasersexperience.com/stores/wwp",
+      "reason": "No exact unit match among current official mall directory F&B feed records; name withheld to avoid guessing or joining the wrong SFA licence."
+    },
+    {
+      "excel_row": 35761,
+      "sfa_licence": "NE18402N000",
+      "address": "Address: 2 TAMPINES CENTRAL 5 #01-37,CENTURY SQUARE,Singapore 529509",
+      "postal_code": "529509",
+      "official_mall": "Century Square",
+      "candidate_unit_tokens": [
+        "#01-37"
+      ],
+      "source_url": "https://www.frasersexperience.com/stores/cs",
+      "reason": "No exact unit match among current official mall directory F&B feed records; name withheld to avoid guessing or joining the wrong SFA licence."
+    },
+    {
+      "excel_row": 36024,
+      "sfa_licence": "NW11728V000",
+      "address": "Address: 1 WOODLANDS SQUARE #B1-17,CATHAY CINEPLEX CAUSEWAY POINT,Singapore 738099",
+      "postal_code": "738099",
+      "official_mall": "Causeway Point",
+      "candidate_unit_tokens": [
+        "#B1-17"
+      ],
+      "source_url": "https://www.frasersexperience.com/stores/cwp",
+      "reason": "No exact unit match among current official mall directory F&B feed records; name withheld to avoid guessing or joining the wrong SFA licence."
+    },
+    {
+      "excel_row": 36025,
+      "sfa_licence": "NW12H68B000",
+      "address": "Address: 1 WOODLANDS SQUARE #07-03,CAUSEWAY POINT,Singapore 738099 (MR1)",
+      "postal_code": "738099",
+      "official_mall": "Causeway Point",
+      "candidate_unit_tokens": [
+        "#07-03"
+      ],
+      "source_url": "https://www.frasersexperience.com/stores/cwp",
+      "reason": "No exact unit match among current official mall directory F&B feed records; name withheld to avoid guessing or joining the wrong SFA licence."
+    },
+    {
+      "excel_row": 36067,
+      "sfa_licence": "NW17788N009",
+      "address": "Address: 1 NORTHPOINT DRIVE #02-101,#02-102,#02-103,NORTHPOINT CITY,Singapore 768019",
+      "postal_code": "768019",
+      "official_mall": "Northpoint City",
+      "candidate_unit_tokens": [
+        "#02-101",
+        "#02-102",
+        "#02-103"
+      ],
+      "source_url": "https://www.frasersexperience.com/stores/npc",
+      "reason": "No exact unit match among current official mall directory F&B feed records; name withheld to avoid guessing or joining the wrong SFA licence."
+    },
+    {
+      "excel_row": 36083,
+      "sfa_licence": "NW19171J000",
+      "address": "Address: 1 WOODLANDS SQUARE #B1-35,CAUSEWAY POINT,Singapore 738099",
+      "postal_code": "738099",
+      "official_mall": "Causeway Point",
+      "candidate_unit_tokens": [
+        "#B1-35"
+      ],
+      "source_url": "https://www.frasersexperience.com/stores/cwp",
+      "reason": "No exact unit match among current official mall directory F&B feed records; name withheld to avoid guessing or joining the wrong SFA licence."
+    },
+    {
+      "excel_row": 38021,
+      "sfa_licence": "W94170X003",
+      "address": "Address: 302 TIONG BAHRU ROAD #03-101,#03-102,TIONG BAHRU PLAZA,Singapore 168732",
+      "postal_code": "168732",
+      "official_mall": "Tiong Bahru Plaza",
+      "candidate_unit_tokens": [
+        "#03-101",
+        "#03-102"
+      ],
+      "source_url": "https://www.frasersexperience.com/stores/tbp",
+      "reason": "No exact unit match among current official mall directory F&B feed records; name withheld to avoid guessing or joining the wrong SFA licence."
+    },
+    {
+      "excel_row": 38022,
+      "sfa_licence": "W94170X005",
+      "address": "Address: 302 TIONG BAHRU ROAD #03-101,#03-102,TIONG BAHRU PLAZA,Singapore 168732",
+      "postal_code": "168732",
+      "official_mall": "Tiong Bahru Plaza",
+      "candidate_unit_tokens": [
+        "#03-101",
+        "#03-102"
+      ],
+      "source_url": "https://www.frasersexperience.com/stores/tbp",
+      "reason": "No exact unit match among current official mall directory F&B feed records; name withheld to avoid guessing or joining the wrong SFA licence."
+    }
+  ],
+  "validation": {
+    "blank_name_candidates": 14,
+    "proposed_count": 2,
+    "withheld_count": 12,
+    "sfa_licence_unique_in_candidates": true,
+    "exact_current_row_and_address_checked": true,
+    "all_candidate_names_blank_at_validation_time": true,
+    "proposed_withheld_disjoint": true,
+    "workbook_edited": false,
+    "notes": [
+      "Food Arena at #02-01 is shown by current mall directory; 2025 mall holiday-hours PDF uses the older name MY KAMPUNG for that unit.",
+      "7-ELEVEN appears at #01-15 on the mall directory under Services; exact unit/postal match and active SFA F&B record support a name-only crosswalk.",
+      "No exact unit matches were found for other Frasers Experience candidates in the current official F&B feeds."
+    ]
+  }
+}

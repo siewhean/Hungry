@@ -11,7 +11,8 @@ import type {
   TasteVector,
   SearchHistoryEntry,
 } from "@/types/domain";
-import { hungryPersistStorage } from "./persistStorage";
+import { useUIStore } from "./useUIStore";
+import { createAccountPersistStorage } from "./accountPersistStorage";
 
 const MAX_RECENT_SEARCHES = 5;
 
@@ -112,6 +113,7 @@ export const useSearchStore = create<SearchState>()(
         }),
       rememberSearch: (query) =>
         set((state) => {
+          if (!useUIStore.getState().allowSearchHistory) return state;
           const normalizedQuery = normalizeSearchQuery(query);
           if (!normalizedQuery) {
             return state;
@@ -132,6 +134,7 @@ export const useSearchStore = create<SearchState>()(
         }),
       addHistoryEntry: (entry) =>
         set((state) => {
+          if (!useUIStore.getState().allowSearchHistory) return state;
           const newEntry: SearchHistoryEntry = {
             ...entry,
             id: `sh-${Date.now()}`,
@@ -145,7 +148,7 @@ export const useSearchStore = create<SearchState>()(
         set((state) => ({
           history: state.history.filter((h) => h.id !== id),
         })),
-      clearHistory: () => set({ history: [] }),
+      clearHistory: () => set({ history: [], recentSearches: [] }),
       clearSearchState: () =>
         set({
           filters: {
@@ -161,7 +164,7 @@ export const useSearchStore = create<SearchState>()(
     }),
     {
       name: "hungry-search-v1",
-      storage: hungryPersistStorage,
+      storage: createAccountPersistStorage("hungry-search-v1"),
       partialize: (state) => ({
         filters: state.filters,
         recentSearches: state.recentSearches,

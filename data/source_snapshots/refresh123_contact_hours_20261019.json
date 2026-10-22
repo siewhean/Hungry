@@ -1,0 +1,493 @@
+{
+  "task": "Refresh123 research-only contact, website and opening-hours audit",
+  "baseline_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_sha256": "2674213d695cbe29ef25cab0ca9535a1dbca6dbf81b5b1ea983561632994e233",
+  "observed_on": "2026-10-19",
+  "scope": "20 named Genki Sushi SFA outlet records whose contact, website or hours fields were missing, inconsistent, or aggregator/social-only. Proposal only; workbook not edited.",
+  "source_urls": [
+    "https://www.genkisushi.com.sg/locate-us/"
+  ],
+  "records": [
+    {
+      "sfa_licence_id": "CE05182C000",
+      "directory_row_1_based": 10282,
+      "record_name": "Genki Sushi",
+      "matched_branch": "Plaza Singapura",
+      "before": {
+        "contact": "+65 6920 0740",
+        "opening_hours": null,
+        "website": "https://www.facebook.com/GenkiSushiSg"
+      },
+      "proposed": {
+        "contact": "Contact: +65 6920 0740",
+        "opening_hours": "Hours: Daily: 11:00–22:00; last order 21:45",
+        "website": "https://www.genkisushi.com.sg/locate-us/"
+      },
+      "source": {
+        "url": "https://www.genkisushi.com.sg/locate-us/",
+        "publisher": "Genki Sushi Singapore (official first-party outlet directory)",
+        "retrieved_on": "2026-10-19",
+        "page_lines": "L124-L132",
+        "evidence": "Outlet name, address, telephone number and operating hours are listed together in the official Locate Us directory."
+      },
+      "confidence": "high for phone, hours, official website and branch match; SFA record provides the matching mall/address context."
+    },
+    {
+      "sfa_licence_id": "CE12117N000",
+      "directory_row_1_based": 10283,
+      "record_name": "Genki Sushi",
+      "matched_branch": "Bugis+",
+      "before": {
+        "contact": "Contact: +65 6957 2732",
+        "opening_hours": "Hours: Mo-Su,PH 11:00-22:00",
+        "website": "https://www.genkisushi.com.sg/"
+      },
+      "proposed": {
+        "opening_hours": "Hours: Daily: 11:00–22:00; last order 21:45",
+        "website": "https://www.genkisushi.com.sg/locate-us/"
+      },
+      "source": {
+        "url": "https://www.genkisushi.com.sg/locate-us/",
+        "publisher": "Genki Sushi Singapore (official first-party outlet directory)",
+        "retrieved_on": "2026-10-19",
+        "page_lines": "L39-L47",
+        "evidence": "Outlet name, address, telephone number and operating hours are listed together in the official Locate Us directory."
+      },
+      "confidence": "high for phone, hours, official website and branch match; SFA record provides the matching mall/address context."
+    },
+    {
+      "sfa_licence_id": "CE13627P000",
+      "directory_row_1_based": 10284,
+      "record_name": "Genki Sushi",
+      "matched_branch": "United Square",
+      "before": {
+        "contact": null,
+        "opening_hours": null,
+        "website": null
+      },
+      "proposed": {
+        "contact": "Contact: +65 6993 9786",
+        "opening_hours": "Hours: Mon–Thu: 11:00–21:00 (last order 20:45); Fri–Sun: 11:00–22:00 (last order 21:45)",
+        "website": "https://www.genkisushi.com.sg/locate-us/"
+      },
+      "source": {
+        "url": "https://www.genkisushi.com.sg/locate-us/",
+        "publisher": "Genki Sushi Singapore (official first-party outlet directory)",
+        "retrieved_on": "2026-10-19",
+        "page_lines": "L206-L218",
+        "evidence": "Outlet name, address, telephone number and operating hours are listed together in the official Locate Us directory."
+      },
+      "confidence": "high for phone, hours, official website and branch match; SFA record provides the matching mall/address context."
+    },
+    {
+      "sfa_licence_id": "CE19B21P000",
+      "directory_row_1_based": 10285,
+      "record_name": "Genki Sushi",
+      "matched_branch": "Chinatown Point",
+      "before": {
+        "contact": null,
+        "opening_hours": null,
+        "website": null
+      },
+      "proposed": {
+        "contact": "Contact: +65 6957 2720",
+        "opening_hours": "Hours: Daily: 11:00–22:00; last order 21:45",
+        "website": "https://www.genkisushi.com.sg/locate-us/"
+      },
+      "source": {
+        "url": "https://www.genkisushi.com.sg/locate-us/",
+        "publisher": "Genki Sushi Singapore (official first-party outlet directory)",
+        "retrieved_on": "2026-10-19",
+        "page_lines": "L27-L35",
+        "evidence": "Outlet name, address, telephone number and operating hours are listed together in the official Locate Us directory."
+      },
+      "confidence": "high for phone, hours, official website and branch match; SFA record provides the matching mall/address context."
+    },
+    {
+      "sfa_licence_id": "CE23057J000",
+      "directory_row_1_based": 10286,
+      "record_name": "Genki Sushi",
+      "matched_branch": "The Woodleigh Mall",
+      "before": {
+        "contact": null,
+        "opening_hours": null,
+        "website": null
+      },
+      "proposed": {
+        "contact": "Contact: +65 6025 2250",
+        "opening_hours": "Hours: Daily: 11:00–22:00; last order 21:45",
+        "website": "https://www.genkisushi.com.sg/locate-us/"
+      },
+      "source": {
+        "url": "https://www.genkisushi.com.sg/locate-us/",
+        "publisher": "Genki Sushi Singapore (official first-party outlet directory)",
+        "retrieved_on": "2026-10-19",
+        "page_lines": "L248-L256",
+        "evidence": "Outlet name, address, telephone number and operating hours are listed together in the official Locate Us directory."
+      },
+      "confidence": "high for phone, hours, official website and branch match; SFA record provides the matching mall/address context."
+    },
+    {
+      "sfa_licence_id": "NE09278K000",
+      "directory_row_1_based": 10287,
+      "record_name": "Genki Sushi",
+      "matched_branch": "Tampines Mall",
+      "before": {
+        "contact": "Contact: +65 6816 4573",
+        "opening_hours": "Hours: Mo-Su 11:00-22:00",
+        "website": "https://genkisushi.com.sg/"
+      },
+      "proposed": {
+        "contact": "Contact: +65 6816 4574",
+        "opening_hours": "Hours: Daily: 11:00–22:00; last order 21:45",
+        "website": "https://www.genkisushi.com.sg/locate-us/"
+      },
+      "source": {
+        "url": "https://www.genkisushi.com.sg/locate-us/",
+        "publisher": "Genki Sushi Singapore (official first-party outlet directory)",
+        "retrieved_on": "2026-10-19",
+        "page_lines": "L86-L94",
+        "evidence": "Outlet name, address, telephone number and operating hours are listed together in the official Locate Us directory."
+      },
+      "confidence": "high for phone, hours, official website and branch match; SFA record provides the matching mall/address context."
+    },
+    {
+      "sfa_licence_id": "NE16111B000",
+      "directory_row_1_based": 10288,
+      "record_name": "GENKI SUSHI",
+      "matched_branch": "Waterway Point",
+      "before": {
+        "contact": null,
+        "opening_hours": null,
+        "website": null
+      },
+      "proposed": {
+        "contact": "Contact: +65 6957 2728",
+        "opening_hours": "Hours: Daily: 11:00–22:00; last order 21:45",
+        "website": "https://www.genkisushi.com.sg/locate-us/"
+      },
+      "source": {
+        "url": "https://www.genkisushi.com.sg/locate-us/",
+        "publisher": "Genki Sushi Singapore (official first-party outlet directory)",
+        "retrieved_on": "2026-10-19",
+        "page_lines": "L51-L59",
+        "evidence": "Outlet name, address, telephone number and operating hours are listed together in the official Locate Us directory."
+      },
+      "confidence": "high for phone, hours, official website and branch match; SFA record provides the matching mall/address context."
+    },
+    {
+      "sfa_licence_id": "NE21J95A000",
+      "directory_row_1_based": 10289,
+      "record_name": "Genki Sushi",
+      "matched_branch": "Compass One",
+      "before": {
+        "contact": null,
+        "opening_hours": null,
+        "website": null
+      },
+      "proposed": {
+        "contact": "Contact: +65 6993 5684",
+        "opening_hours": "Hours: Daily: 11:00–22:00; last order 21:45",
+        "website": "https://www.genkisushi.com.sg/locate-us/"
+      },
+      "source": {
+        "url": "https://www.genkisushi.com.sg/locate-us/",
+        "publisher": "Genki Sushi Singapore (official first-party outlet directory)",
+        "retrieved_on": "2026-10-19",
+        "page_lines": "L183-L191",
+        "evidence": "Outlet name, address, telephone number and operating hours are listed together in the official Locate Us directory."
+      },
+      "confidence": "high for phone, hours, official website and branch match; SFA record provides the matching mall/address context."
+    },
+    {
+      "sfa_licence_id": "NW13N42A000",
+      "directory_row_1_based": 10290,
+      "record_name": "Genki Sushi",
+      "matched_branch": "Sembawang Shopping Centre",
+      "before": {
+        "contact": null,
+        "opening_hours": null,
+        "website": null
+      },
+      "proposed": {
+        "contact": "Contact: +65 6041 8019",
+        "opening_hours": "Hours: Daily: 11:00–22:00",
+        "website": "https://www.genkisushi.com.sg/locate-us/"
+      },
+      "source": {
+        "url": "https://www.genkisushi.com.sg/locate-us/",
+        "publisher": "Genki Sushi Singapore (official first-party outlet directory)",
+        "retrieved_on": "2026-10-19",
+        "page_lines": "L286-L293",
+        "evidence": "Outlet name, address, telephone number and operating hours are listed together in the official Locate Us directory."
+      },
+      "confidence": "high for phone, hours, official website and branch match; SFA record provides the matching mall/address context."
+    },
+    {
+      "sfa_licence_id": "NW17033V000",
+      "directory_row_1_based": 10291,
+      "record_name": "Genki Sushi",
+      "matched_branch": "Hillion Mall",
+      "before": {
+        "contact": "Contact: +65 6974 7308",
+        "opening_hours": "Hours: 11:00-22:00",
+        "website": "https://www.genkisushi.com.sg/"
+      },
+      "proposed": {
+        "opening_hours": "Hours: Daily: 11:00–22:00; last order 21:45",
+        "website": "https://www.genkisushi.com.sg/locate-us/"
+      },
+      "source": {
+        "url": "https://www.genkisushi.com.sg/locate-us/",
+        "publisher": "Genki Sushi Singapore (official first-party outlet directory)",
+        "retrieved_on": "2026-10-19",
+        "page_lines": "L136-L144",
+        "evidence": "Outlet name, address, telephone number and operating hours are listed together in the official Locate Us directory."
+      },
+      "confidence": "high for phone, hours, official website and branch match; SFA record provides the matching mall/address context."
+    },
+    {
+      "sfa_licence_id": "NW17534K000",
+      "directory_row_1_based": 10292,
+      "record_name": "Genki Sushi",
+      "matched_branch": "Northpoint City",
+      "before": {
+        "contact": null,
+        "opening_hours": null,
+        "website": null
+      },
+      "proposed": {
+        "contact": "Contact: +65 6993 4188",
+        "opening_hours": "Hours: Daily: 11:00–22:00; last order 21:45",
+        "website": "https://www.genkisushi.com.sg/locate-us/"
+      },
+      "source": {
+        "url": "https://www.genkisushi.com.sg/locate-us/",
+        "publisher": "Genki Sushi Singapore (official first-party outlet directory)",
+        "retrieved_on": "2026-10-19",
+        "page_lines": "L171-L179",
+        "evidence": "Outlet name, address, telephone number and operating hours are listed together in the official Locate Us directory."
+      },
+      "confidence": "high for phone, hours, official website and branch match; SFA record provides the matching mall/address context."
+    },
+    {
+      "sfa_licence_id": "SE10635E000",
+      "directory_row_1_based": 10293,
+      "record_name": "Genki Sushi",
+      "matched_branch": "NEX",
+      "before": {
+        "contact": "Contact: +65 6974 7061",
+        "opening_hours": "Hours: Mo-Su 11:00-22:00",
+        "website": "https://www.genkisushi.com.sg/"
+      },
+      "proposed": {
+        "opening_hours": "Hours: Daily: 11:00–22:00; last order 21:45",
+        "website": "https://www.genkisushi.com.sg/locate-us/"
+      },
+      "source": {
+        "url": "https://www.genkisushi.com.sg/locate-us/",
+        "publisher": "Genki Sushi Singapore (official first-party outlet directory)",
+        "retrieved_on": "2026-10-19",
+        "page_lines": "L148-L156",
+        "evidence": "Outlet name, address, telephone number and operating hours are listed together in the official Locate Us directory."
+      },
+      "confidence": "high for phone, hours, official website and branch match; SFA record provides the matching mall/address context."
+    },
+    {
+      "sfa_licence_id": "SE17609V000",
+      "directory_row_1_based": 10294,
+      "record_name": "Genki Sushi",
+      "matched_branch": "Singpost Centre",
+      "before": {
+        "contact": null,
+        "opening_hours": null,
+        "website": null
+      },
+      "proposed": {
+        "contact": "Contact: +65 6993 7664",
+        "opening_hours": "Hours: Daily: 11:00–22:00; last order 21:45",
+        "website": "https://www.genkisushi.com.sg/locate-us/"
+      },
+      "source": {
+        "url": "https://www.genkisushi.com.sg/locate-us/",
+        "publisher": "Genki Sushi Singapore (official first-party outlet directory)",
+        "retrieved_on": "2026-10-19",
+        "page_lines": "L237-L245",
+        "evidence": "Outlet name, address, telephone number and operating hours are listed together in the official Locate Us directory."
+      },
+      "confidence": "high for phone, hours, official website and branch match; SFA record provides the matching mall/address context."
+    },
+    {
+      "sfa_licence_id": "SE22E92V000",
+      "directory_row_1_based": 10295,
+      "record_name": "GENKI SUSHI",
+      "matched_branch": "I12 Katong",
+      "before": {
+        "contact": null,
+        "opening_hours": null,
+        "website": null
+      },
+      "proposed": {
+        "contact": "Contact: +65 6993 7796",
+        "opening_hours": "Hours: Mon–Thu: 11:00–21:00 (last order 20:45); Fri–Sun: 11:00–22:00 (last order 21:45)",
+        "website": "https://www.genkisushi.com.sg/locate-us/"
+      },
+      "source": {
+        "url": "https://www.genkisushi.com.sg/locate-us/",
+        "publisher": "Genki Sushi Singapore (official first-party outlet directory)",
+        "retrieved_on": "2026-10-19",
+        "page_lines": "L221-L233",
+        "evidence": "Outlet name, address, telephone number and operating hours are listed together in the official Locate Us directory."
+      },
+      "confidence": "high for phone, hours, official website and branch match; SFA record provides the matching mall/address context."
+    },
+    {
+      "sfa_licence_id": "SW13265L000",
+      "directory_row_1_based": 10296,
+      "record_name": "GENKI SUSHI",
+      "matched_branch": "Westgate",
+      "before": {
+        "contact": null,
+        "opening_hours": null,
+        "website": null
+      },
+      "proposed": {
+        "contact": "Contact: +65 6974 0472",
+        "opening_hours": "Hours: Daily: 11:00–22:00; last order 21:45",
+        "website": "https://www.genkisushi.com.sg/locate-us/"
+      },
+      "source": {
+        "url": "https://www.genkisushi.com.sg/locate-us/",
+        "publisher": "Genki Sushi Singapore (official first-party outlet directory)",
+        "retrieved_on": "2026-10-19",
+        "page_lines": "L74-L82",
+        "evidence": "Outlet name, address, telephone number and operating hours are listed together in the official Locate Us directory."
+      },
+      "confidence": "high for phone, hours, official website and branch match; SFA record provides the matching mall/address context."
+    },
+    {
+      "sfa_licence_id": "SW21C07J000",
+      "directory_row_1_based": 10297,
+      "record_name": "Genki Sushi",
+      "matched_branch": "VivoCity",
+      "before": {
+        "contact": "Contact: +65 6974 9986",
+        "opening_hours": "Hours: Daily 11:00–22:00 (last order 21:45)",
+        "website": "https://www.genkisushi.com.sg/"
+      },
+      "proposed": {
+        "opening_hours": "Hours: Daily: 11:00–22:00; last order 21:45",
+        "website": "https://www.genkisushi.com.sg/locate-us/"
+      },
+      "source": {
+        "url": "https://www.genkisushi.com.sg/locate-us/",
+        "publisher": "Genki Sushi Singapore (official first-party outlet directory)",
+        "retrieved_on": "2026-10-19",
+        "page_lines": "L159-L167",
+        "evidence": "Outlet name, address, telephone number and operating hours are listed together in the official Locate Us directory."
+      },
+      "confidence": "high for phone, hours, official website and branch match; SFA record provides the matching mall/address context."
+    },
+    {
+      "sfa_licence_id": "SW21Q46P000",
+      "directory_row_1_based": 10298,
+      "record_name": "Genki Sushi",
+      "matched_branch": "Jurong Point",
+      "before": {
+        "contact": "Contact: +6569939814",
+        "opening_hours": "Mon-Sun 10:00 AM-10:00 PM",
+        "website": null
+      },
+      "proposed": {
+        "contact": "Contact: +65 6993 9814",
+        "opening_hours": "Hours: Daily: 11:00–22:00; last order 21:45",
+        "website": "https://www.genkisushi.com.sg/locate-us/"
+      },
+      "source": {
+        "url": "https://www.genkisushi.com.sg/locate-us/",
+        "publisher": "Genki Sushi Singapore (official first-party outlet directory)",
+        "retrieved_on": "2026-10-19",
+        "page_lines": "L194-L202",
+        "evidence": "Outlet name, address, telephone number and operating hours are listed together in the official Locate Us directory."
+      },
+      "confidence": "high for phone, hours, official website and branch match; SFA record provides the matching mall/address context."
+    },
+    {
+      "sfa_licence_id": "CE09D84E000",
+      "directory_row_1_based": 10299,
+      "record_name": "Genki Sushi Singapore",
+      "matched_branch": "City Square Mall",
+      "before": {
+        "contact": null,
+        "opening_hours": null,
+        "website": null
+      },
+      "proposed": {
+        "contact": "Contact: +65 6974 8040",
+        "opening_hours": "Hours: Mon–Thu: 11:00–21:00 (last order 20:45); Fri–Sun: 11:00–22:00 (last order 21:45)",
+        "website": "https://www.genkisushi.com.sg/locate-us/"
+      },
+      "source": {
+        "url": "https://www.genkisushi.com.sg/locate-us/",
+        "publisher": "Genki Sushi Singapore (official first-party outlet directory)",
+        "retrieved_on": "2026-10-19",
+        "page_lines": "L109-L121",
+        "evidence": "Outlet name, address, telephone number and operating hours are listed together in the official Locate Us directory."
+      },
+      "confidence": "high for phone, hours, official website and branch match; SFA record provides the matching mall/address context."
+    },
+    {
+      "sfa_licence_id": "CE20Z86L000",
+      "directory_row_1_based": 10300,
+      "record_name": "GENKI SUSHI SINGAPORE",
+      "matched_branch": "Suntec City",
+      "before": {
+        "contact": null,
+        "opening_hours": null,
+        "website": null
+      },
+      "proposed": {
+        "contact": "Contact: +65 6816 8880",
+        "opening_hours": "Hours: Daily: 11:00–22:00; last order 21:45",
+        "website": "https://www.genkisushi.com.sg/locate-us/"
+      },
+      "source": {
+        "url": "https://www.genkisushi.com.sg/locate-us/",
+        "publisher": "Genki Sushi Singapore (official first-party outlet directory)",
+        "retrieved_on": "2026-10-19",
+        "page_lines": "L97-L105",
+        "evidence": "Outlet name, address, telephone number and operating hours are listed together in the official Locate Us directory."
+      },
+      "confidence": "high for phone, hours, official website and branch match; SFA record provides the matching mall/address context."
+    },
+    {
+      "sfa_licence_id": "CE23J43A000",
+      "directory_row_1_based": 10301,
+      "record_name": "GENKI SUSHI SINGAPORE",
+      "matched_branch": "313@somerset",
+      "before": {
+        "contact": null,
+        "opening_hours": null,
+        "website": null
+      },
+      "proposed": {
+        "contact": "Contact: +65 6931 6944",
+        "opening_hours": "Hours: Daily: 11:00–22:00; last order 21:45",
+        "website": "https://www.genkisushi.com.sg/locate-us/"
+      },
+      "source": {
+        "url": "https://www.genkisushi.com.sg/locate-us/",
+        "publisher": "Genki Sushi Singapore (official first-party outlet directory)",
+        "retrieved_on": "2026-10-19",
+        "page_lines": "L260-L268",
+        "evidence": "Outlet name, address, telephone number and operating hours are listed together in the official Locate Us directory."
+      },
+      "confidence": "high for phone, hours, official website and branch match; SFA record provides the matching mall/address context."
+    }
+  ],
+  "limitations": [
+    "The official directory is a direct merchant source and lists all 20 matched branches, phone numbers and opening hours. Hours can change; recheck the page before applying at a later date.",
+    "No phone call or separate live visit was performed.",
+    "Outlet addresses were used to match branch listings; where directory unit notation differs slightly from SFA listing, only contact, website and hours fields are proposed here."
+  ]
+}

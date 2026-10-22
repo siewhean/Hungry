@@ -1,0 +1,236 @@
+{
+  "sha256": {
+    "baseline": "b9b4d654cac9131405caf8c84c81194af8d4b856ab8bffbfdc746ae6cfad7463",
+    "candidate": "2e398d1a6c872287c0b093a40cac17a63557293b27471b82832756ba6019a916",
+    "expected_baseline": "b9b4d654cac9131405caf8c84c81194af8d4b856ab8bffbfdc746ae6cfad7463",
+    "expected_candidate": "2e398d1a6c872287c0b093a40cac17a63557293b27471b82832756ba6019a916"
+  },
+  "zip_integrity": {
+    "baseline": true,
+    "candidate": true
+  },
+  "sheets": {
+    "names": [
+      "Public F&B Directory",
+      "Menu Items",
+      "Image Candidates",
+      "Coverage & Sources"
+    ],
+    "match_baseline": true,
+    "tables": {
+      "Public F&B Directory": {
+        "baseline": [
+          [
+            "PublicFnbDirectory",
+            "A1:U38274"
+          ]
+        ],
+        "candidate": [
+          [
+            "PublicFnbDirectory",
+            "A1:U38274"
+          ]
+        ]
+      },
+      "Menu Items": {
+        "baseline": [
+          [
+            "MenuItems",
+            "A1:L13799"
+          ]
+        ],
+        "candidate": [
+          [
+            "MenuItems",
+            "A1:L13859"
+          ]
+        ]
+      },
+      "Image Candidates": {
+        "baseline": [
+          [
+            "ImageCandidates",
+            "A1:I2766"
+          ]
+        ],
+        "candidate": [
+          [
+            "ImageCandidates",
+            "A1:I2767"
+          ]
+        ]
+      },
+      "Coverage & Sources": {
+        "baseline": [
+          [
+            "CoverageSources",
+            "A1:C229"
+          ]
+        ],
+        "candidate": [
+          [
+            "CoverageSources",
+            "A1:C231"
+          ]
+        ]
+      }
+    }
+  },
+  "directory": {
+    "baseline_and_candidate_rows": [
+      38273,
+      38273
+    ],
+    "candidate_unique_licences": 38273,
+    "same_licence_set": true,
+    "alphabetical_blanks_last": true,
+    "diff_counts_by_field": {
+      "Opening Hours / Closed Days": 4,
+      "Menu / Price": 3,
+      "Menu URL": 4,
+      "F&B Name": 2,
+      "Website": 3
+    },
+    "access_or_status_changes": 0,
+    "eight_blank_fields_added": true
+  },
+  "menus": {
+    "baseline": 13798,
+    "candidate": 13858,
+    "added": 60,
+    "removed": 0,
+    "added_counts_by_licence": {
+      "SE19093P000": 20,
+      "SE23F29P000": 20,
+      "SW23Q75L000": 20
+    },
+    "all_added_rows_have_source_url_observed_date_scope_freshness": true,
+    "delivery_only_scope_explicit": true,
+    "freshness_caveats_present": true
+  },
+  "image": {
+    "added": 1,
+    "exact_candidate": true,
+    "source_and_cc_bysa_attribution": true,
+    "review_only": true,
+    "photo_date_and_pixel_check_recorded": true
+  },
+  "coverage": {
+    "baseline_data_rows": 228,
+    "candidate_data_rows": 230,
+    "appended": 2,
+    "changed_existing_rows": 8,
+    "changed_rows_are_recounted_metrics": true,
+    "change_details": [
+      {
+        "row": 4,
+        "metric": "Rows with a usable F&B name",
+        "before": 32797,
+        "after": 32799
+      },
+      {
+        "row": 5,
+        "metric": "Rows with no usable F&B name",
+        "before": 5476,
+        "after": 5474
+      },
+      {
+        "row": 9,
+        "metric": "Rows with website",
+        "before": 2819,
+        "after": 2822
+      },
+      {
+        "row": 10,
+        "metric": "Rows with menu URL",
+        "before": 1478,
+        "after": 1482
+      },
+      {
+        "row": 11,
+        "metric": "Rows with menu summary",
+        "before": 536,
+        "after": 539
+      },
+      {
+        "row": 16,
+        "metric": "Image candidates",
+        "before": 2765,
+        "after": 2766
+      },
+      {
+        "row": 42,
+        "metric": "Official and open-license image candidates",
+        "before": 26,
+        "after": 27
+      },
+      {
+        "row": 44,
+        "metric": "Rows with opening hours",
+        "before": 1488,
+        "after": 1492
+      }
+    ],
+    "appended_rows": [
+      [
+        "Refresh133 verified additions",
+        "2026-10-19: 60 exact-branch Foodpanda menu item/price rows across three Kenangan Coffee outlets; two exact Kopitiam foodcourt names; four Burger King hours, three Ya Kun websites, one Ya Kun official menu URL; three delivery-menu URLs and three delivery summaries; one licensed Ya Kun storefront photo candidate (review-only).",
+        "Source proposals: refresh133_delivery_menus_20261019.json; refresh133_names_20261019.json; refresh133_directory_fields_20261019.json; refresh133_images_20261019.json. Foodpanda prices are delivery listings and may differ in store; crawl recency varies. Commons photo date 2024-12-04, CC BY-SA 4.0, not approved for current display. No confirmed closures or coordinate additions; SAF/RSYC restrictions were not tenant-specific. No spending or Mapbox calls."
+      ],
+      [
+        "Foodpanda exact-branch menu rows",
+        "60 items across 3 Kenangan Coffee licences",
+        "Exact outlet crosswalks, source URLs, observation date, freshness notes and delivery-only price caveats are recorded in Menu Items and refresh133_delivery_menus_20261019.json."
+      ]
+    ],
+    "recounted": {
+      "Rows with a usable F&B name": 32799,
+      "Rows with no usable F&B name": 5474,
+      "Rows with website": 2822,
+      "Rows with menu URL": 1482,
+      "Rows with menu summary": 539,
+      "Rows with opening hours": 1492
+    },
+    "metrics_match": {
+      "Rows with a usable F&B name": true,
+      "Rows with no usable F&B name": true,
+      "Rows with website": true,
+      "Rows with menu URL": true,
+      "Rows with menu summary": true,
+      "Rows with opening hours": true
+    }
+  },
+  "table_refs_match_dimensions": true,
+  "formula_errors_external_links": {
+    "formulas": 0,
+    "cell_errors": [],
+    "external_links": 0
+  },
+  "source_proposal_match": {
+    "delivery_proposal_items": 60,
+    "delivery_licence_counts": {
+      "SE19093P000": 20,
+      "SE23F29P000": 20,
+      "SW23Q75L000": 20
+    },
+    "delivery_matches_candidate": true
+  },
+  "cost_and_mapbox": {
+    "agent_evidence_reports_no_spend": true,
+    "refresh133_mapbox_calls": 0,
+    "evidence": "refresh133_directory_fields_20261019.json, refresh133_coordinates_20261019.json, refresh133_images_20261019.json and candidate Coverage & Sources Refresh133 row"
+  },
+  "data_xlsx_inventory": {
+    "xlsx_files": [
+      "Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+      "Hungry F&B Database.xlsx",
+      "dish-food-types-to-vet.xlsx",
+      "singapore_food_stalls.xlsx",
+      "stall-logo-candidates.xlsx",
+      "taste-answer-key.xlsx"
+    ],
+    "candidate_or_new_refresh133_copy_in_data": false
+  },
+  "git_diff_check": true,
+  "pass": true
+}

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { View } from "react-native";
 import Slider from "@react-native-community/slider";
 import { useNavigation } from "@react-navigation/native";
@@ -17,8 +18,10 @@ export function TasteFilterScreen() {
   const { palette, spacing } = useHungryTheme();
   const filters = useSearchStore((state) => state.filters);
   const setTasteValues = useSearchStore((state) => state.setTasteValues);
-  const resetToProfile = useSearchStore((state) => state.resetToProfile);
+
   const profile = useProfileStore((state) => state.profile);
+
+  const [draft, setDraft] = useState({ ...filters.tasteValues });
 
   return (
     <Screen title="Taste filters" subtitle="Slide each dimension to match the current craving.">
@@ -33,19 +36,21 @@ export function TasteFilterScreen() {
                 }}
               >
                 <AppText variant="h3">{dimension.label}</AppText>
-                <AppText variant="price">{Math.round(filters.tasteValues[dimension.key])}</AppText>
+                <AppText variant="price">{Math.round(draft[dimension.key])}</AppText>
               </View>
               <Slider
+                accessibilityLabel={`${dimension.label} preference`}
+                accessibilityValue={{ min: 0, max: 10, now: draft[dimension.key] }}
                 minimumValue={0}
                 maximumValue={10}
                 step={1}
                 minimumTrackTintColor={palette.orange}
                 maximumTrackTintColor={palette.border}
                 thumbTintColor={palette.orange}
-                value={filters.tasteValues[dimension.key]}
+                value={draft[dimension.key]}
                 onValueChange={(value) =>
-                  setTasteValues({
-                    ...filters.tasteValues,
+                  setDraft({
+                    ...draft,
                     [dimension.key]: value,
                   })
                 }
@@ -70,9 +75,15 @@ export function TasteFilterScreen() {
         <Button
           label="Reset to my profile"
           variant="secondary"
-          onPress={() => resetToProfile(profile.tasteVector)}
+          onPress={() => setDraft({ ...profile.tasteVector })}
         />
-        <Button label="Apply filters" onPress={() => navigation.goBack()} />
+        <Button
+          label="Apply filters"
+          onPress={() => {
+            setTasteValues(draft);
+            navigation.goBack();
+          }}
+        />
       </View>
     </Screen>
   );

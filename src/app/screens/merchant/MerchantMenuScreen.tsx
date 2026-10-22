@@ -1,3 +1,5 @@
+import { useMerchantOperationScope } from "@/features/merchant/useMerchantOperationScope";
+import { useRef as useMerchantRequestRef } from "react";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { View, StyleSheet, Alert, Pressable, ScrollView } from "react-native";
 import { Plus, Search, MoreVertical, Camera, X } from "lucide-react-native";
@@ -53,6 +55,8 @@ function formatDietaryFlag(flag: string): string {
 }
 
 export function MerchantMenuScreen() {
+  const captureOperation = useMerchantOperationScope();
+
   const { componentRadii, palette, spacing, radii } = useHungryTheme();
   const navigation = useNavigation<NavigationProp>();
   const rootNavigation = getRootNavigation(navigation as any);
@@ -66,22 +70,41 @@ export function MerchantMenuScreen() {
   const [showCreateOptions, setShowCreateOptions] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const requestGeneration = useMerchantRequestRef(0);
+  const currentOutlet = useMerchantRequestRef(activeOutlet?.id);
+  currentOutlet.current = activeOutlet?.id;
   const loadMenu = useCallback(async () => {
+    const isOperationCurrent = captureOperation();
+    if (!isOperationCurrent()) return;
+
+    const request = ++requestGeneration.current;
+    const outletId = activeOutlet?.id;
+    const isCurrent = () =>
+      request === requestGeneration.current && outletId === currentOutlet.current;
     if (!activeOutlet) return;
     setIsLoading(true);
     setError(null);
     try {
       const data = await getHungryService().merchant.getMenu(activeOutlet.id);
+      if (!isOperationCurrent()) return;
+
+      if (!isCurrent()) return;
       setMenu(data);
     } catch (e) {
-      console.error(e);
+      if (!isOperationCurrent()) return;
+
+      if (!isCurrent()) return;
+      Alert.alert("Menu operation failed", e instanceof Error ? e.message : "Please retry.");
       setError(e instanceof Error ? e.message : "Unable to load dishes.");
     } finally {
-      setIsLoading(false);
+      if (isOperationCurrent()) {
+        if (isCurrent()) setIsLoading(false);
+      }
     }
   }, [activeOutlet]);
 
   useEffect(() => {
+    void loadMenu();
     const unsubscribe = navigation.addListener("focus", () => {
       loadMenu();
     });
@@ -124,13 +147,12 @@ export function MerchantMenuScreen() {
 
   const previewVenueId = useMemo(
     () =>
+      activeOutlet?.venueId ??
       menu[0]?.venueId ??
       activeOutlet?.signatureDishIds
         .map((dishId) => repository.getDishById(dishId)?.venueId)
         .find(Boolean) ??
-      (activeOutlet?.buildingId
-        ? repository.listVenuesByBuilding(activeOutlet.buildingId)[0]?.id
-        : undefined),
+      undefined,
     [activeOutlet, menu, repository],
   );
 
@@ -153,10 +175,61 @@ export function MerchantMenuScreen() {
     }
   }, [previewVenueId, repository, rootNavigation]);
 
+  const handleMenuPhoto = async () => {
+    const isOperationCurrent = captureOperation();
+    if (!isOperationCurrent()) return;
+
+    if (!activeOutlet?.venueId) {
+      Alert.alert(
+        "Scan unavailable",
+        "This outlet needs an authoritative venue mapping before uploading a menu.",
+      );
+      return;
+    }
+    try {
+      const picker = await import("expo-image-picker");
+      if (!isOperationCurrent()) return;
+
+      const permission = await picker.requestMediaLibraryPermissionsAsync();
+      if (!isOperationCurrent()) return;
+
+      if (!permission.granted) {
+        Alert.alert("Photo access needed", "Allow photo access to select your menu.");
+        return;
+      }
+      const result = await picker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        quality: 0.85,
+      });
+      if (!isOperationCurrent()) return;
+
+      if (result.canceled || !result.assets[0]) return;
+      const asset = result.assets[0];
+      await getHungryService().supply.submitMenuPhoto({
+        venueId: activeOutlet.venueId,
+        photoUri: asset.uri,
+        photoMimeType: asset.mimeType ?? undefined,
+        photoFileSizeBytes: asset.fileSize,
+      });
+      if (!isOperationCurrent()) return;
+
+      navigation.navigate("OCRDrafts");
+    } catch (error) {
+      if (!isOperationCurrent()) return;
+
+      Alert.alert("Menu upload failed", error instanceof Error ? error.message : "Please retry.");
+    }
+  };
+
   const handleToggleSoldOut = async (dish: DishDetail) => {
+    const isOperationCurrent = captureOperation();
+    if (!isOperationCurrent()) return;
+
     if (!activeOutlet) return;
     try {
       await getHungryService().merchant.toggleSoldOut(activeOutlet.id, dish.id);
+      if (!isOperationCurrent()) return;
+
       // Optimistic update
       setMenu((prev) =>
         prev.map((d) => {
@@ -171,17 +244,27 @@ export function MerchantMenuScreen() {
         }),
       );
     } catch (e) {
-      console.error(e);
+      if (!isOperationCurrent()) return;
+
+      Alert.alert("Menu operation failed", e instanceof Error ? e.message : "Please retry.");
     }
   };
 
   const handleToggleFeatured = async (dish: DishDetail) => {
+    const isOperationCurrent = captureOperation();
+    if (!isOperationCurrent()) return;
+
     if (!activeOutlet) return;
     try {
       await getHungryService().merchant.toggleFeatured(activeOutlet.id, dish.id);
-      Alert.alert("Success", `${dish.name} featured status toggled.`);
+      if (!isOperationCurrent()) return;
+
+      await loadMenu();
+      if (!isOperationCurrent()) return;
     } catch (e) {
-      console.error(e);
+      if (!isOperationCurrent()) return;
+
+      Alert.alert("Menu operation failed", e instanceof Error ? e.message : "Please retry.");
     }
   };
 
@@ -193,11 +276,18 @@ export function MerchantMenuScreen() {
         text: "Delete",
         style: "destructive",
         onPress: async () => {
+          const isOperationCurrent = captureOperation();
+          if (!isOperationCurrent()) return;
+
           try {
             await getHungryService().merchant.deleteDish(activeOutlet.id, dish.id);
+            if (!isOperationCurrent()) return;
+
             setMenu((prev) => prev.filter((d) => d.id !== dish.id));
           } catch (e) {
-            console.error(e);
+            if (!isOperationCurrent()) return;
+
+            Alert.alert("Menu operation failed", e instanceof Error ? e.message : "Please retry.");
           }
         },
       },
@@ -407,14 +497,14 @@ export function MerchantMenuScreen() {
               }}
             >
               <Button
-                label="Use Camera"
+                label="Scan menu photo"
                 variant="secondary"
                 fullWidth
                 leftIcon={<Camera size={16} color={palette.text} />}
                 onPressIn={() => preloadRoute(navigation, "OCRDrafts")}
                 onPress={() => {
                   setShowCreateOptions(false);
-                  navigation.navigate("OCRDrafts");
+                  void handleMenuPhoto();
                 }}
               />
               <Button

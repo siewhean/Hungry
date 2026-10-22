@@ -1,0 +1,67 @@
+{
+  "snapshot_id": "next_names_20261019",
+  "captured_date": "2026-10-19",
+  "baseline_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_workbook_sha256": "00a13d50c650e1bcbde0f51f15260e4f8aeecbd9d0372bae284c6c50558e2967",
+  "scope": "Read-only exact-name enrichment. One high-confidence public mall tenant proposal. No workbook changes and no XLSX generated. Refresh125 named proposals were excluded from the new batch.",
+  "method": "Rechecked all saved JSON name proposals against the current canonical SHA and current Public F&B Directory cells, then live-fetched the official CapitaLand tenant detail page and verified the current exact licence/address/unit join and duplicate absence.",
+  "summary": {
+    "high_confidence_name_proposals": 1,
+    "proposals": [
+      "NE23269X000"
+    ],
+    "excluded_or_held": {
+      "refresh125_duplicate_name_proposals": [
+        "SE19336P000 BHC Chicken"
+      ],
+      "already_named_in_current_workbook": [
+        "CE21P70N000 3 Little Girls",
+        "CE24322C000 AWFULLY CHOCOLATE",
+        "CE10620K000 ALCHEMIST",
+        "SW09692K000 Au Croissant",
+        "SW22K81C000 WHITE 三巴旺白米粉",
+        "SW13153C000 Ben & Jerry’s",
+        "SW18I60X000 Z T P Ginseng Birdnest"
+      ],
+      "held_scope_or_category": [
+        "CE13L71E000 ZTP at AMK Hub: landlord classifies Beauty & Wellness; not included as public F&B name proposal"
+      ]
+    },
+    "workbook_edits": 0
+  },
+  "source_publishers": [
+    "CapitaLand / Sengkang Grand Mall"
+  ],
+  "proposals": [
+    {
+      "sfa_licence": "NE23269X000",
+      "excel_row": 35804,
+      "before_fnb_name": null,
+      "proposed_public_fnb_name": "DUMPLING JI 吉吉饺子",
+      "business_type": "Restaurant",
+      "postal_code": "544692",
+      "existing_address": "Address: 70 COMPASSVALE BOW #01-65,#01-66,SENGKANG GRAND MALL,Singapore 544692",
+      "proposed_field": "F&B Name",
+      "confidence": "high",
+      "source_urls": [
+        "https://www.sengkanggrandmall.com.sg/en/stores/dumpling-ji-.html",
+        "https://www.sengkanggrandmall.com.sg/en.html"
+      ],
+      "evidence": "Fresh HTTPS fetch of the current official Sengkang Grand Mall / CapitaLand detail page contains the exact trading name DUMPLING JI 吉吉饺子 and unit #01-65. The current official Sengkang Grand Mall landing page also lists DUMPLING JI 吉吉饺子 at 01-65. The workbook row is the unique SFA licence NE23269X000, Restaurant, postal 544692, address 70 Compassvale Bow #01-65/#01-66, Sengkang Grand Mall; exact unit overlap and matching postal/mall. No same brand text exists elsewhere in the workbook.",
+      "source_detail_response_sha256": "ad489e967b70e3a414df25484c072d2c219b520260fc0cee06e506dee1e00b31",
+      "source_capture_observed_at": "2026-10-19 Asia/Singapore",
+      "source_freshness_note": "Direct page fetched in this turn. Embedded CapitaLand issueDate is 06-09-2026; the landing page search-index result was crawled 3 days ago.",
+      "limitation": "The official detail page lists #01-65 while SFA lists #01-65 and #01-66. The exact licensed address includes the listed tenant unit, but page does not independently confirm use of adjacent #01-66. Name only is proposed; all other fields remain untouched.",
+      "qa": {
+        "exact_sfa_match_count": 1,
+        "blank_name_before_value": true,
+        "exact_postal_match": true,
+        "exact_unit_overlap": true,
+        "mall_match": true,
+        "duplicate_brand_in_canonical_workbook": false,
+        "public_access_scope": "public shopping mall directory; current workbook row remains public_access_candidate_based_on_sfa_type_and_address",
+        "workbook_edited": false
+      }
+    }
+  ]
+}

@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { useAuthOperation } from "@/features/auth/useAuthOperation";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Controller, useForm } from "react-hook-form";
 import { Pressable, View } from "react-native";
@@ -7,7 +9,6 @@ import { AppText, Button, FeedErrorBoundary, Input } from "@/components/ui";
 import { useUIStore } from "@/store/useUIStore";
 import { validateEmail } from "@/features/auth/validation";
 import { getHungryService } from "@/lib/services/serviceProvider";
-import { getConfiguredDataSource } from "@/lib/services/supabase/client";
 import { useHungryTheme } from "@/theme";
 import type { AuthStackParamList } from "./AuthStack";
 import { AuthScreenShell } from "./AuthScreenShell";
@@ -17,6 +18,8 @@ type Props = NativeStackScreenProps<AuthStackParamList, "ForgotPassword">;
 type FormValues = { email: string };
 
 export function ForgotPasswordScreen({ navigation }: Props) {
+  const [sentTo, setSentTo] = useState<string | null>(null);
+  const { busy, run } = useAuthOperation();
   const { colorScheme, palette, radii, spacing } = useHungryTheme();
   const showToast = useUIStore((state) => state.showToast);
   const {
@@ -25,20 +28,17 @@ export function ForgotPasswordScreen({ navigation }: Props) {
     formState: { errors },
   } = useForm<FormValues>({ defaultValues: { email: "" } });
 
-  const handleSend = handleSubmit(async ({ email }) => {
-    try {
-      if (getConfiguredDataSource() === "supabase") {
-        await getHungryService().auth.forgotPassword(email);
+  const handleSend = handleSubmit(async ({ email }) =>
+    run(async () => {
+      try {
+        await getHungryService().auth.forgotPassword(email.trim());
+        setSentTo(email.trim());
         showToast({ message: AUTH_COPY.forgotPassword.sentToast, tone: "info" });
-        navigation.navigate("Login");
-        return;
+      } catch {
+        showToast({ message: AUTH_COPY.forgotPassword.genericErrorToast, tone: "error" });
       }
-      showToast({ message: AUTH_COPY.forgotPassword.sentToast, tone: "info" });
-      navigation.navigate("ResetPassword", { email });
-    } catch {
-      showToast({ message: AUTH_COPY.forgotPassword.genericErrorToast, tone: "error" });
-    }
-  });
+    }),
+  );
 
   return (
     <FeedErrorBoundary
@@ -47,7 +47,11 @@ export function ForgotPasswordScreen({ navigation }: Props) {
     >
       <AuthScreenShell
         title={AUTH_COPY.forgotPassword.title}
-        subtitle={AUTH_COPY.forgotPassword.subtitle}
+        subtitle={
+          sentTo
+            ? `If an account exists for ${sentTo}, reset instructions have been requested. Check your inbox and spam folder.`
+            : AUTH_COPY.forgotPassword.subtitle
+        }
         compact
         contentOffsetTop={spacing[16]}
         wordmarkColor={colorScheme === "dark" ? palette.white : palette.navy}
@@ -101,6 +105,10 @@ export function ForgotPasswordScreen({ navigation }: Props) {
             render={({ field: { onChange, value } }) => (
               <Input
                 keyboardType="email-address"
+                textContentType="emailAddress"
+                autoComplete="email"
+                autoCorrect={false}
+                spellCheck={false}
                 autoCapitalize="none"
                 placeholder={AUTH_COPY.forgotPassword.emailPlaceholder}
                 value={value}
@@ -111,7 +119,11 @@ export function ForgotPasswordScreen({ navigation }: Props) {
               />
             )}
           />
-          <Button label={AUTH_COPY.forgotPassword.primaryButton} onPress={handleSend} />
+          <Button
+            label={sentTo ? "Send reset email again" : AUTH_COPY.forgotPassword.primaryButton}
+            loading={busy}
+            onPress={handleSend}
+          />
         </View>
       </AuthScreenShell>
     </FeedErrorBoundary>

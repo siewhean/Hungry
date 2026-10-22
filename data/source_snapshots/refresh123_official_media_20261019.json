@@ -1,0 +1,103 @@
+{
+  "schema_version": "1.0",
+  "snapshot_id": "refresh123_official_media_20261019",
+  "observed_at_local": "2026-10-19 Asia/Singapore",
+  "canonical_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256_read_only_baseline": "2674213d695cbe29ef25cab0ca9535a1dbca6dbf81b5b1ea983561632994e233",
+  "workbook_edited": false,
+  "scope": "Read-only determination of whether source-publisher images can be included as references/display assets for exact workbook outlets. No paid APIs, image downloads, delivery-platform media, or workbook edits.",
+  "result": "No newly reviewed official-source image qualifies for display/reuse on the evidence found. Preserve exact official image URLs only in this provenance proposal pending permission; do not add to Approved Image URL or display. Existing openly licensed Wikimedia candidates are separate community-authored assets and already appear in Image Candidates.",
+  "verified_official_source_findings": [
+    {
+      "publisher": "Komala’s Restaurants (first-party order page)",
+      "source_page_url": "https://www.komalasrestaurants.com/Order/FusionDining",
+      "source_page_title": "Order @RaceCourse Outlet (Fusion Dining)",
+      "workbook_exact_outlet": {
+        "sfa_licence": "CE05006L000",
+        "f_and_b_name": "KOMALAS",
+        "full_address": "Address: 42/42A RACE COURSE ROAD Singapore 218557 (LEVEL 1 & 2)",
+        "approved_image_url": null
+      },
+      "match_basis": "Official page explicitly labels RaceCourse outlet at 42 Race Course Road, Singapore 218557; exact brand/address/postcode match to SFA CE05006L000.",
+      "official_image_urls": [
+        {
+          "image_url": "https://adm.komalasrestaurants.com/Dynamic/Products/473/Images/V15%20-%20Parotta%20Meal.jpg",
+          "depicted_item": "V15 2 Pcs Parotta Meal",
+          "verification": "Direct official asset and menu context visually checked in prior research snapshot; authentic item photo, no stock/placeholder."
+        },
+        {
+          "image_url": "https://adm.komalasrestaurants.com/Dynamic/Products/690/Images/MASALA%20DOSAI.jpg",
+          "depicted_item": "Masala Dosai",
+          "verification": "Direct official asset and menu context visually checked in prior research snapshot; authentic item photo, no stock/placeholder."
+        }
+      ],
+      "rights_evidence": "The page footer says “Komala’s Restaurants © 2020. All Copyright Reserved”; no permission/license for reproduction, embedding, caching, redistribution or catalogue display was found. Treat URL storage as provenance-only pending rights-holder permission; do not display/embed.",
+      "source_evidence_snapshot": "data/source_snapshots/refresh122_official_media_batch_20261019.json"
+    },
+    {
+      "publisher": "Paragon Shopping Mall (mall tenant page for Crystal Jade Golden Palace)",
+      "source_page_url": "https://paragon.com.sg/store-detail/crystal-jade-golden-palace/",
+      "official_directory_url": "https://paragon.com.sg/store-directory/",
+      "workbook_exact_outlet": {
+        "sfa_licence": "W02322X000",
+        "f_and_b_name": "Crystal Jade Golden Palace",
+        "full_address": "Address: 290 ORCHARD ROAD #05-21,#05-22,#05-23,THE PARAGON,Singapore 238859",
+        "approved_image_url": null
+      },
+      "match_basis": "Exact tenant name, Paragon address and units cross-matched in prior source snapshot.",
+      "official_image_urls": [
+        {
+          "image_url": "https://paragon.com.sg/wp-content/uploads/2025/01/Crispy-Applewood-Smoked-American-Duck.jpg",
+          "depicted_item": "Crispy Applewood Smoked American Duck",
+          "verification": "Official detail-page alt text and visual image check recorded in refresh117 snapshot."
+        },
+        {
+          "image_url": "https://paragon.com.sg/wp-content/uploads/2025/01/Roasted-Baby-Suckling-Pig-rolled-with-Black-Truffle-Rice.jpg",
+          "depicted_item": "Roasted Baby Suckling Pig rolled with Black Truffle Rice",
+          "verification": "Official detail-page alt text and visual image check recorded in refresh117 snapshot."
+        },
+        {
+          "image_url": "https://paragon.com.sg/wp-content/uploads/2025/01/Teochew-Happiness-Four-Platter.jpg",
+          "depicted_item": "Teochew Happiness Four Platter",
+          "verification": "Official detail-page alt text and visual image check recorded in refresh117 snapshot."
+        },
+        {
+          "image_url": "https://paragon.com.sg/wp-content/uploads/2025/01/Teochew-Seafood-Crispy-Noodle.jpg",
+          "depicted_item": "Teochew Seafood Crispy Noodle",
+          "verification": "Official detail-page alt text and visual image check recorded in refresh117 snapshot."
+        },
+        {
+          "image_url": "https://paragon.com.sg/wp-content/uploads/2025/01/Double-boiled-Fish-Maw-Sea-Whelk-with-Xinhui-Sanbao-Zha-Chicken-Soup.jpg",
+          "depicted_item": "Double-boiled Fish Maw, Sea Whelk with Xinhui Sanbao Zha Chicken Soup",
+          "verification": "Official detail-page alt text and visual image check recorded in refresh117 snapshot."
+        }
+      ],
+      "rights_evidence": "Paragon page states all rights reserved and prohibits redistribution or reproduction of contents and images. No reuse licence found. Keep URL/source references in research provenance only; do not display/embed/cache/redistribute without written permission.",
+      "source_evidence_snapshot": "data/source_snapshots/mall_media_delta_refresh117_20261019.json"
+    }
+  ],
+  "rights_guidance_source": {
+    "publisher": "Intellectual Property Office of Singapore",
+    "url": "https://ask.gov.sg/ipos/questions/clglxzrrv00fbl4084mz5gwo3?from=relatedquestions",
+    "relevant_point": "IPOS says follow portal terms/limitations; where terms do not address intended use, contact copyright owners for consent; internet availability alone is not reuse permission."
+  },
+  "existing_open_license_alternatives": {
+    "status": "Not official operator assets; these community-authored Commons images are already recorded as dated review candidates in workbook Image Candidates with attribution and license obligations. They are eligible only under their stated licenses and are not Approved Image URLs.",
+    "sfa_licences": [
+      "W53012X000",
+      "CE10K71N000",
+      "SM102126004"
+    ],
+    "evidence_snapshots": [
+      "data/source_snapshots/rights_cleared_stall_images_followon_20261018.json",
+      "data/source_snapshots/refresh120_hawker_chan_image_visual_addendum_20261019.json"
+    ]
+  },
+  "integration_recommendation": "No official image URL or image candidate row should be added from these findings without written permission or a clear reuse license that permits the intended display. If permission is granted, retain image URL, source page, exact SFA crosswalk, attribution, license/permission evidence, observed date, and image-specific scope/freshness note. Do not label mall-hosted imagery as restaurant-owned.",
+  "limitations": [
+    "Rights review is bounded to exact sources/assets listed, not every Singapore outlet or every image on those sites.",
+    "A public image URL and a right to link to its source do not establish permission to embed/display it in Hungry.",
+    "URL references in this proposal serve internal source-tracking only; no public-facing display clearance is inferred.",
+    "No image bytes were downloaded in this refresh; visual checks are carried forward only where cited prior snapshots say they were performed."
+  ]
+}

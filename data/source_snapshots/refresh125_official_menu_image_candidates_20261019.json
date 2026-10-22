@@ -1,0 +1,431 @@
+{
+  "snapshot_id": "refresh125_official_menu_image_candidates_20261019",
+  "snapshot_type": "read_only_official_menu_image_url_proposals",
+  "observed_at_local": "2026-10-19 Asia/Singapore",
+  "workbook_path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "fe31f2c8926d09ce592189efa8012987f6a3e878ef2977f50fe466873d567a64",
+  "workbook_edited": false,
+  "scope": "Extracted direct menu-item image URL fields for 50 named items from the Aburi-EN Singapore official online menu/order site. Candidate outlet crosswalks are limited to three current SFA records already marked public_access_verified_operator_source, matched against Aburi-EN’s official locations page. No images downloaded, copied, approved, embedded, or added to the workbook; no paid service or purchase.",
+  "counts": {
+    "unique_image_urls": 50,
+    "named_menu_items": 50,
+    "candidate_sfa_outlets": 3,
+    "approved_for_display_or_reuse": 0,
+    "workbook_rows_added": 0
+  },
+  "source_pages": [
+    {
+      "url": "https://order.aburi-en.com/en_SG",
+      "publisher": "Aburi-EN Singapore official order/catalogue website",
+      "observed_date": "2026-10-19",
+      "evidence": "Page contains JSON-LD Organization.hasMenu sections with individual MenuItem names, descriptions, SGD prices and direct image URLs. Image URL for each selected menu item is taken from that item entry."
+    },
+    {
+      "url": "https://aburi-en.com/locations/",
+      "publisher": "Aburi-EN Singapore official locations page",
+      "observed_date": "2026-10-19",
+      "evidence": "Lists the three selected outlet names, addresses and units used to cross-match SFA records."
+    },
+    {
+      "url": "https://aburi-en.com/terms-of-use/",
+      "publisher": "Aburi-EN Singapore official terms of use",
+      "observed_date": "2026-10-19",
+      "evidence": "Terms say site material is exclusive property and may not be copied, distributed, reproduced, displayed or transmitted without prior written permission; URL presence is not a reuse license."
+    },
+    {
+      "url": "https://aburi-en.com/menu/",
+      "publisher": "Aburi-EN Singapore official menu page",
+      "observed_date": "2026-10-19",
+      "evidence": "Official Restaurant Menus page states items and menus are subject to change and provides separate menus, showing menu scope can differ."
+    }
+  ],
+  "candidate_outlets": [
+    {
+      "sfa_licence": "CE13L96K000",
+      "fnb_name": "ABURI-EN",
+      "public_access_status": "public_access_verified_operator_source",
+      "sfa_address": "3 TEMASEK BOULEVARD #B1-121,SUNTEC CITY MALL,Singapore 038983",
+      "approved_image_url": null,
+      "branch_evidence_url": "https://aburi-en.com/locations/",
+      "branch_match_basis": "Official Aburi-EN locations page lists the outlet name, street address, unit and postal code matching the SFA record."
+    },
+    {
+      "sfa_licence": "CE18Q51K000",
+      "fnb_name": "ABURI-EN",
+      "public_access_status": "public_access_verified_operator_source",
+      "sfa_address": "7 WALLICH STREET #B2-09,TANJONG PAGAR CENTRE,Singapore 078884 TANJONG PAGAR CENTRE",
+      "approved_image_url": null,
+      "branch_evidence_url": "https://aburi-en.com/locations/",
+      "branch_match_basis": "Official Aburi-EN locations page lists the outlet name, street address, unit and postal code matching the SFA record."
+    },
+    {
+      "sfa_licence": "SW09958X000",
+      "fnb_name": "ABURI-EN",
+      "public_access_status": "public_access_verified_operator_source",
+      "sfa_address": "1 HARBOURFRONT WALK #01-159,#01-160,VIVO CITY,Singapore 098585",
+      "approved_image_url": null,
+      "branch_evidence_url": "https://aburi-en.com/locations/",
+      "branch_match_basis": "Official Aburi-EN locations page lists the outlet name, street address, unit and postal code matching the SFA record."
+    }
+  ],
+  "image_candidates": [
+    {
+      "section": "BENTOS",
+      "item_name": "Chicken Nanban Bento (Rice)",
+      "description": "Deep-fried chicken drizzled with tartar sauce, served with edamame, cherry tomato, corn and Japanese white rice topped with furikake",
+      "image_url": "https://ucarecdn.com/aac4d465-c22c-43fb-ade2-fb80b6c59ff2/",
+      "price_sgd": 11.5
+    },
+    {
+      "section": "BENTOS",
+      "item_name": "Chicken Nanban Bento (Dry Ramen)",
+      "description": "Deep-fried chicken drizzled with tartar sauce, served with edamame, cherry tomato, corn and dry ramen",
+      "image_url": "https://ucarecdn.com/e2af1813-298b-425f-987b-4f1015e474c2/",
+      "price_sgd": 12.5
+    },
+    {
+      "section": "BENTOS",
+      "item_name": "Chicken Wafu Oroshi Bento (Rice)",
+      "description": "Grilled chicken thigh with grated daikon and Japanese wafu onion sauce, served with edamame, cherry tomato, corn and Japanese white rice topped with furikake",
+      "image_url": "https://ucarecdn.com/a8969cd7-0d8c-4b5c-b845-b7e0232affbf/",
+      "price_sgd": 10.5
+    },
+    {
+      "section": "BENTOS",
+      "item_name": "Chicken Wafu Oroshi Bento (Dry Ramen)",
+      "description": "Grilled chicken thigh with grated daikon and Japanese wafu onion sauce, served with edamame, cherry tomato, corn and dry ramen",
+      "image_url": "https://ucarecdn.com/788352bf-f81a-4f71-964a-d3046f03156e/",
+      "price_sgd": 11.5
+    },
+    {
+      "section": "BENTOS",
+      "item_name": "Chicken Yakitori Bento (Rice)",
+      "description": "Chicken skewers served with edamame, cherry tomato, corn and Japanese white rice topped with furikake",
+      "image_url": "https://ucarecdn.com/2ad71a4f-4067-4a83-9acf-38452dfc738f/",
+      "price_sgd": 12.5
+    },
+    {
+      "section": "BENTOS",
+      "item_name": "Chicken Yakitori Bento (Dry Ramen)",
+      "description": "Chicken skewers served with edamame, cherry tomato, corn and dry ramen",
+      "image_url": "https://ucarecdn.com/1524b5ca-d5b1-4265-aeec-08ee9e3265ee/",
+      "price_sgd": 13.9
+    },
+    {
+      "section": "BENTOS",
+      "item_name": "Wagyu Suji Bento (Rice)",
+      "description": "A4/A5 Miyazaki and Australian wagyu stew, served with edamame, cherry tomato, corn and Japanese white rice topped with furikake",
+      "image_url": "https://ucarecdn.com/70dde954-07b7-4261-89e4-e7d1ef9cbdd9/",
+      "price_sgd": 14.9
+    },
+    {
+      "section": "BENTOS",
+      "item_name": "Wagyu Suji Bento (Dry Ramen)",
+      "description": "A4/A5 Miyazaki and Australian wagyu stew, served with edamame, cherry tomato, corn and dry ramen",
+      "image_url": "https://ucarecdn.com/ce16405f-0c55-4804-82ea-2d023ee42829/",
+      "price_sgd": 15.9
+    },
+    {
+      "section": "BENTOS",
+      "item_name": "Kaisen Seafood Bento (Rice)",
+      "description": "Assorted seafood with salmon, ebi fry, crab cream croquette and tartar sauce, served with edamame, cherry tomato, corn and Japanese white rice topped with furikake",
+      "image_url": "https://ucarecdn.com/e4cfaf04-ce9a-4d6a-aeeb-f6c4f83dd452/",
+      "price_sgd": 16.5
+    },
+    {
+      "section": "BENTOS",
+      "item_name": "Kaisen Seafood Bento (Dry Ramen)",
+      "description": "Assorted seafood with salmon, ebi fry, crab cream croquette and tartar sauce, served with edamame, cherry tomato, corn and dry ramen",
+      "image_url": "https://ucarecdn.com/c7d30e71-5d84-42c5-824a-2830703ee7c3/",
+      "price_sgd": 17.5
+    },
+    {
+      "section": "BUTA DON",
+      "item_name": "Buta Don",
+      "description": "Grilled pork loin, shimeji mushrooms on rice",
+      "image_url": "https://s3-ap-southeast-1.amazonaws.com/v3-live.image.oddle.me/product/ButaDond7b24c.jpg",
+      "price_sgd": 17.5
+    },
+    {
+      "section": "BUTA DON",
+      "item_name": "Premium Buta Don",
+      "description": "Grilled chestnut pork loin, shimeji mushrooms on rice",
+      "image_url": "https://s3-ap-southeast-1.amazonaws.com/v3-live.image.oddle.me/product/PremiumButaDondda3bf.jpg",
+      "price_sgd": 19.9
+    },
+    {
+      "section": "BUTA DON",
+      "item_name": "Truffle Buta Don",
+      "description": "Grilled pork loin topped with truffle paste, shimeji mushrooms, onsen egg on rice",
+      "image_url": "https://s3-ap-southeast-1.amazonaws.com/v3-live.image.oddle.me/product/TruffleButaDon1b165b.jpg",
+      "price_sgd": 18.5
+    },
+    {
+      "section": "BUTA DON",
+      "item_name": "Premium Truffle Buta Don",
+      "description": "Grilled chestnut pork loin topped with truffle paste, shimeji mushrooms, onsen egg on rice",
+      "image_url": "https://ucarecdn.com/7c7a8ca5-a49d-4907-a19a-1cb46b59decc/",
+      "price_sgd": 20.9
+    },
+    {
+      "section": "BUTA DON",
+      "item_name": "Mentaiko Buta Don",
+      "description": "Grilled pork loin topped with flame-seared mentaiko cheese sauce, shimeji mushrooms, onsen egg on rice",
+      "image_url": "https://s3-ap-southeast-1.amazonaws.com/v3-live.image.oddle.me/product/MentaikoButaDon42bc21.jpg",
+      "price_sgd": 18.5
+    },
+    {
+      "section": "BUTA DON",
+      "item_name": "Premium Mentaiko Buta Don",
+      "description": "Grilled chestnut pork loin topped with flame-seared mentaiko cheese sauce, shimeji mushrooms, onsen egg on rice",
+      "image_url": "https://ucarecdn.com/325f4c59-74e1-4134-96e8-69004331d02c/",
+      "price_sgd": 20.9
+    },
+    {
+      "section": "BUTA DON",
+      "item_name": "Iberico Hoho Don",
+      "description": "Grilled Iberico pork jowl, shimeji mushrooms on rice",
+      "image_url": "https://s3-ap-southeast-1.amazonaws.com/v3-live.image.oddle.me/product/IbericoHohoDon03f0e9.jpg",
+      "price_sgd": 20.5
+    },
+    {
+      "section": "BUTA DON",
+      "item_name": "Premium Buta Bara Don",
+      "description": "Grilled premium pork belly, shimeji mushrooms on rice",
+      "image_url": "https://ucarecdn.com/75dabdf9-e40b-497c-88be-b269779acfec/",
+      "price_sgd": 21
+    },
+    {
+      "section": "TORI DON (CHICKEN DON)",
+      "item_name": "Chicken Teriyaki Don",
+      "description": "Grilled teriyaki chicken thigh, shimeji mushrooms, mixed salad on rice",
+      "image_url": "https://s3-ap-southeast-1.amazonaws.com/v3-live.image.oddle.me/product/ChickenTeriyakiDon31367e.jpg",
+      "price_sgd": 14
+    },
+    {
+      "section": "TORI DON (CHICKEN DON)",
+      "item_name": "Chicken Nanban Don",
+      "description": "Deep fried chicken with tartar sauce",
+      "image_url": "https://s3-ap-southeast-1.amazonaws.com/v3-live.image.oddle.me/product/ChickenNanbanDon403136.jpg",
+      "price_sgd": 15
+    },
+    {
+      "section": "TORI DON (CHICKEN DON)",
+      "item_name": "Mentaiko Chicken Don",
+      "description": "Deep-fried chicken with mentaiko sauce on rice",
+      "image_url": "https://s3-ap-southeast-1.amazonaws.com/v3-live.image.oddle.me/product/MentaikoChickenDonedba71.jpg",
+      "price_sgd": 15
+    },
+    {
+      "section": "GYUDON",
+      "item_name": "Premium Miyazakigyu Jyu",
+      "description": "90g A4/A5 Miyazaki Wagyu, shimeji mushrooms on rice",
+      "image_url": "https://s3-ap-southeast-1.amazonaws.com/v3-live.image.oddle.me/product/PremiumMiyazakigyuJyu6f81e5.jpg",
+      "price_sgd": 42
+    },
+    {
+      "section": "GYUDON",
+      "item_name": "Roast Wagyu Don",
+      "description": "Australian roast wagyu with smoked yakiniku sauce, shimeji mushrooms, onsen egg on rice",
+      "image_url": "https://s3-ap-southeast-1.amazonaws.com/v3-live.image.oddle.me/product/RoastWagyuDon74ba76.jpg",
+      "price_sgd": 23.5
+    },
+    {
+      "section": "GYUDON",
+      "item_name": "Truffle Roast Wagyu Don",
+      "description": "Australian roast wagyu topped with truffle paste, shimeji mushrooms, onsen egg on rice",
+      "image_url": "https://s3-ap-southeast-1.amazonaws.com/v3-live.image.oddle.me/product/TruffleRoastWagyuDon41ffde.jpg",
+      "price_sgd": 24.5
+    },
+    {
+      "section": "GYUDON",
+      "item_name": "Mentaiko Roast Wagyu Don",
+      "description": "Australian roast wagyu topped with flame-seared mentaiko cheese sauce, shimeji mushrooms, onsen egg on rice",
+      "image_url": "https://s3-ap-southeast-1.amazonaws.com/v3-live.image.oddle.me/product/MentaikoRoastWagyuDon54920c.jpg",
+      "price_sgd": 24.5
+    },
+    {
+      "section": "GYUDON",
+      "item_name": "Wagyu Suji Don",
+      "description": "A4/A5 Miyazaki & Australian Wagyu stew with seasonal vegetables topped with onsen egg on rice",
+      "image_url": "https://s3-ap-southeast-1.amazonaws.com/v3-live.image.oddle.me/product/WagyuSujiDon385fbc.jpg",
+      "price_sgd": 21
+    },
+    {
+      "section": "GYUDON",
+      "item_name": "Miyazakigyu Saikoro Don",
+      "description": "Diced A4/A5 Miyazaki wagyu karubi chuck roll with sautéed onions, shimeji mushrooms and onsen egg on rice",
+      "image_url": "https://ucarecdn.com/f4318e2a-123b-420a-99d6-95e4ef531de3/",
+      "price_sgd": 26.9
+    },
+    {
+      "section": "PLANT-BASED",
+      "item_name": "Plant-Based Truffle Hamburg Don",
+      "description": "",
+      "image_url": "https://ucarecdn.com/20db29a3-ece5-4ae0-a7f4-2b50bc6df7a3/",
+      "price_sgd": 17.5
+    },
+    {
+      "section": "COMBO JYU",
+      "item_name": "3 Kinds Buta Combo Jyu",
+      "description": "Premium pork belly, pork loin, Iberico pork jowl, shimeji mushrooms on rice",
+      "image_url": "https://s3-ap-southeast-1.amazonaws.com/v3-live.image.oddle.me/product/3KindsButaComboJyu34a8e0.jpg",
+      "price_sgd": 26.9
+    },
+    {
+      "section": "COMBO JYU",
+      "item_name": "3 Kinds Wagyu Combo",
+      "description": "A4/A5 Miyazaki premium wagyu, diced Miyazaki wagyu karubi chuck roll, Australian roast wagyu, shimeji mushrooms on rice",
+      "image_url": "https://ucarecdn.com/a37ab195-6bf3-4992-a16d-2e30c8ab9761/",
+      "price_sgd": 35
+    },
+    {
+      "section": "COMBO JYU",
+      "item_name": "Miyazakigyu Saikoro & Buta Combo Jyu",
+      "description": "Diced A4/A5 Miyazaki wagyu karubi chuck roll, pork loin, shimeji mushrooms on rice",
+      "image_url": "https://ucarecdn.com/de00a881-8745-44fc-9b0c-b22f33993f7e/",
+      "price_sgd": 31.5
+    },
+    {
+      "section": "COMBO JYU",
+      "item_name": "Aburi Buta & Unagi Combo Jyu",
+      "description": "Pork loin, grilled eel, shimeji mushrooms on rice",
+      "image_url": "https://s3-ap-southeast-1.amazonaws.com/v3-live.image.oddle.me/product/AburiButaUnagiComboJyuf31845.jpg",
+      "price_sgd": 23.5
+    },
+    {
+      "section": "COMBO JYU",
+      "item_name": "Miyazakigyu Saikoro & Unagi Combo Jyu",
+      "description": "Diced A4/A5 Miyazaki wagyu karubi chuck roll, grilled eel, shimeji mushrooms on rice",
+      "image_url": "https://ucarecdn.com/8d6d3ba9-2631-4e12-b825-17613d070616/",
+      "price_sgd": 28.9
+    },
+    {
+      "section": "COMBO JYU",
+      "item_name": "Unagi & Chicken Teriyaki Combo Jyu",
+      "description": "Grilled eel, chicken teriyaki, shimeji mushrooms on rice",
+      "image_url": "https://s3-ap-southeast-1.amazonaws.com/v3-live.image.oddle.me/product/UnagiChickenTeriyakiComboJyudb19f5.jpg",
+      "price_sgd": 23.5
+    },
+    {
+      "section": "COMBO JYU",
+      "item_name": "Chicken Teriyaki & Buta Bara Combo Jyu",
+      "description": "Chicken teriyaki , premium pork belly, shimeji mushrooms on rice",
+      "image_url": "https://s3-ap-southeast-1.amazonaws.com/v3-live.image.oddle.me/product/ChickenTeriyakiButaBaraComboJyu9942cc.jpg",
+      "price_sgd": 22
+    },
+    {
+      "section": "KAISEN DON (SEAFOOD)",
+      "item_name": "Salmon Mentaiko Don",
+      "description": "Grilled salmon steak topped with flame-seared mentaiko cheese sauce, shimeji mushrooms, onsen egg on rice",
+      "image_url": "https://s3-ap-southeast-1.amazonaws.com/v3-live.image.oddle.me/product/SalmonMentaikoDon15494e.jpg",
+      "price_sgd": 19.9
+    },
+    {
+      "section": "KAISEN DON (SEAFOOD)",
+      "item_name": "Aburi-EN Kaisen Don",
+      "description": "Grilled salmon steak topped with flame-seared mentaiko cheese sauce, shimeji mushrooms, onsen egg on rice",
+      "image_url": "https://ucarecdn.com/c0b7fa7e-42f1-43e9-bf8e-f76c24b35ab0/",
+      "price_sgd": 26.9
+    },
+    {
+      "section": "UNAGI",
+      "item_name": "Unagi Jyu",
+      "description": "Grilled eel on rice",
+      "image_url": "https://s3-ap-southeast-1.amazonaws.com/v3-live.image.oddle.me/product/UnagiJyu4fc6d9.jpg",
+      "price_sgd": 24.5
+    },
+    {
+      "section": "UNAGI",
+      "item_name": "Unagi Combo Jyu",
+      "description": "Grilled and battered eel on rice",
+      "image_url": "https://ucarecdn.com/6943ca29-2969-4722-847d-00b439deebea/",
+      "price_sgd": 26.9
+    },
+    {
+      "section": "UNAGI",
+      "item_name": "Unagi Hitsumabushi",
+      "description": "Indulge in grilled eel and rice three ways: as is, with toppings, or with dashi for a comforting finish",
+      "image_url": "https://ucarecdn.com/1673bc95-f3e7-437f-a2e6-4c35e6daa8b8/",
+      "price_sgd": 33.9
+    },
+    {
+      "section": "TEPPAN (HOT PLATE)",
+      "item_name": "Yakiniku Chicken Teppan",
+      "description": "Sizzling grilled chicken thigh with Miyazaki yakiniku sauce. Served with shimeji mushrooms, broccoli, and corn",
+      "image_url": "https://s3-ap-southeast-1.amazonaws.com/v3-live.image.oddle.me/product/YakinikuChickenTeppan3ea984.jpg",
+      "price_sgd": 13.9
+    },
+    {
+      "section": "TEPPAN (HOT PLATE)",
+      "item_name": "Beef Flank Steak Teppan",
+      "description": "Australian Beef Flank Steak Cut (160g), served with corn, carrots and zucchini",
+      "image_url": "https://ucarecdn.com/1762aa4a-576d-4408-b525-1647aa3379dd/",
+      "price_sgd": 23.5
+    },
+    {
+      "section": "TEPPAN (HOT PLATE)",
+      "item_name": "Beef Striploin Steak Teppan",
+      "description": "Australian beef striploin steak cut (160g), served with corn, carrots and zucchini",
+      "image_url": "https://ucarecdn.com/87b85138-d9ba-4083-8575-9789622b88cc/",
+      "price_sgd": 25.9
+    },
+    {
+      "section": "TEPPAN (HOT PLATE)",
+      "item_name": "Black Angus Beef Skirt Steak Teppan",
+      "description": "US black angus beef skirt cut (160g), served with corn, carrots and zucchini",
+      "image_url": "https://ucarecdn.com/618c3546-b76e-4f5b-8433-7a99fbea2015/",
+      "price_sgd": 22.5
+    },
+    {
+      "section": "TEPPAN (HOT PLATE)",
+      "item_name": "Mentaiko Chicken Teppan",
+      "description": "Sizzling grilled chicken thigh with mentaiko cheese sauce. Served with shimeji mushrooms, broccoli, and corn",
+      "image_url": "https://s3-ap-southeast-1.amazonaws.com/v3-live.image.oddle.me/product/MentaikoChickenTeppan1db747.jpg",
+      "price_sgd": 13.9
+    },
+    {
+      "section": "TEPPAN (HOT PLATE)",
+      "item_name": "Wagyu Hamburg and Chicken Teppan",
+      "description": "Australian wagyu hamburg (100g) and grilled chicken thigh, served with corn, carrots and zucchini",
+      "image_url": "https://ucarecdn.com/a330a1d5-2750-4a24-b730-5dc20c4b7bf0/",
+      "price_sgd": 23.5
+    },
+    {
+      "section": "NOODLES",
+      "item_name": "Tonkotsu Chashu Ramen",
+      "description": "Ramen in pork broth with chashu",
+      "image_url": "https://s3-ap-southeast-1.amazonaws.com/v3-live.image.oddle.me/product/TonkotsuChashuRamen6f2e5f.jpg",
+      "price_sgd": 15
+    },
+    {
+      "section": "NOODLES",
+      "item_name": "Black Tonkotsu Ramen",
+      "description": "Ramen in pork broth with roasted black garlic oil and chashu",
+      "image_url": "https://s3-ap-southeast-1.amazonaws.com/v3-live.image.oddle.me/product/BlackTonkotsuRamenaaf56a.jpg",
+      "price_sgd": 17.5
+    },
+    {
+      "section": "NOODLES",
+      "item_name": "Red Tonkotsu Ramen",
+      "description": "Ramen in spicy pork broth with chashu",
+      "image_url": "https://s3-ap-southeast-1.amazonaws.com/v3-live.image.oddle.me/product/TonkotsuKaramisoRamen904251.jpg",
+      "price_sgd": 17.5
+    },
+    {
+      "section": "NOODLES",
+      "item_name": "Wagyu Suji Udon",
+      "description": "Stewed A4/A5 Miyazaki & Australian wagyu with inaniwa udon in bonito broth",
+      "image_url": "https://s3-ap-southeast-1.amazonaws.com/v3-live.image.oddle.me/product/WagyuSujiUdonbc4da5.jpg",
+      "price_sgd": 19.9
+    }
+  ],
+  "confidence_and_limits": {
+    "source_authenticity": "High: first-party Aburi-EN branded order site declares item name, content and corresponding image URL within individual MenuItem records. No external stock source was used.",
+    "image_visual_inspection": "Not individually pixel-inspected. Item image URL is attached to a named product entry in official menu JSON-LD; visually inspect before any consumer-facing display to rule out poor/incorrect rendering.",
+    "exact_branch_menu_scope": "Outlet address matching is exact for all three SFA records. The ordering page exposes one brand-level catalogue, not a separately selected/validated menu per branch. Thus item availability for each of the three exact branches is not proven by this snapshot; keep item-to-branch applicability as provisional pending branch-specific confirmation.",
+    "image_rights": "Restricted reference only. Operator terms prohibit display/reuse without prior written permission; do not set Approved Image URL or publish/embed/cache/redistribute.",
+    "freshness": "Observed 2026-10-19. Ordering menu is a live catalogue at observation time; items/prices may change.",
+    "availability": "No login, checkout, order, payment, paid API, or Mapbox request was used."
+  }
+}

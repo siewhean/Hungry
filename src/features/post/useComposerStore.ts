@@ -1,4 +1,5 @@
-import { create } from "zustand";
+import { create, type StoreApi, type UseBoundStore } from "zustand";
+import { accountDraftPersistence } from "./accountDraftPersistence";
 
 export type PublishingState =
   | "empty"
@@ -30,6 +31,9 @@ export interface MediaItem {
 }
 
 interface ComposerState {
+  selectedDishId: string | null;
+  selectedVenueId: string | null;
+  setAccountScope: (accountId: string | null) => Promise<void>;
   // Navigation
   activeTab: ComposerTab;
   setActiveTab: (tab: ComposerTab) => void;
@@ -112,188 +116,214 @@ interface ComposerState {
   reset: () => void;
 }
 
-export const useComposerStore = create<ComposerState>((set, get) => ({
-  activeTab: "post",
-  setActiveTab: (activeTab) => set({ activeTab }),
+export const useComposerStore: UseBoundStore<StoreApi<ComposerState>> = create<ComposerState>(
+  (set, get) => ({
+    selectedDishId: null,
+    selectedVenueId: null,
+    setAccountScope: (accountId) => changeComposerAccount(accountId),
+    activeTab: "post",
+    setActiveTab: (activeTab) => set({ activeTab }),
 
-  media: [],
-  collaborators: [],
-  taggedAccounts: [],
-  location: null,
-  foodTags: [],
-  tasteTags: [],
-  useSameCaption: false,
-  showFoodContextOverlay: true,
+    media: [],
+    collaborators: [],
+    taggedAccounts: [],
+    location: null,
+    foodTags: [],
+    tasteTags: [],
+    useSameCaption: false,
+    showFoodContextOverlay: true,
 
-  reviewCaption: "",
-  postCaption: "",
-  rating: 0,
-  musicId: null,
-  selectedTrackName: null,
-  selectedTrackArtist: null,
-  musicDuration: 30,
-  musicStartMs: 0,
-  ctaButton: null,
-  isSponsored: false,
-  scheduledTime: null,
-  isBusinessMode: false,
+    reviewCaption: "",
+    postCaption: "",
+    rating: 0,
+    musicId: null,
+    selectedTrackName: null,
+    selectedTrackArtist: null,
+    musicDuration: 30,
+    musicStartMs: 0,
+    ctaButton: null,
+    isSponsored: false,
+    scheduledTime: null,
+    isBusinessMode: false,
 
-  publishingState: "empty",
-  publishingError: null,
-  showPreview: false,
-  previewPlatform: "hungry",
-  editingMediaId: null,
-  isAiProcessing: false,
-  lastPublishRequest: null,
-  pendingReviewId: null,
+    publishingState: "empty",
+    publishingError: null,
+    showPreview: false,
+    previewPlatform: "hungry",
+    editingMediaId: null,
+    isAiProcessing: false,
+    lastPublishRequest: null,
+    pendingReviewId: null,
 
-  addMedia: (items) =>
-    set((state) => ({ media: [...state.media, ...items], publishingState: "editing" })),
-  removeMedia: (id) =>
-    set((state) => ({
-      media: state.media.filter((m) => m.id !== id),
-      publishingState: state.media.length <= 1 ? "empty" : state.publishingState,
-    })),
-  updateMediaAdjustment: (id, adjustments) =>
-    set((state) => ({
-      media: state.media.map((m) =>
-        m.id === id
-          ? {
-              ...m,
-              adjustments: {
-                ...(m.adjustments || { brightness: 1, contrast: 1, saturation: 1 }),
-                ...adjustments,
-              },
-            }
-          : m,
-      ),
-    })),
-  setCaption: (text) =>
-    set((state) => {
-      if (state.useSameCaption) {
-        return { postCaption: text, reviewCaption: text.slice(0, 500) };
-      }
-      return state.activeTab === "post"
-        ? { postCaption: text }
-        : { reviewCaption: text.slice(0, 500) };
-    }),
-  setUseSameCaption: (useSameCaption) =>
-    set((state) => {
-      if (!useSameCaption) return { useSameCaption };
+    addMedia: (items) =>
+      set((state) => ({ media: [...state.media, ...items], publishingState: "editing" })),
+    removeMedia: (id) =>
+      set((state) => ({
+        media: state.media.filter((m) => m.id !== id),
+        publishingState: state.media.length <= 1 ? "empty" : state.publishingState,
+      })),
+    updateMediaAdjustment: (id, adjustments) =>
+      set((state) => ({
+        media: state.media.map((m) =>
+          m.id === id
+            ? {
+                ...m,
+                adjustments: {
+                  ...(m.adjustments || { brightness: 1, contrast: 1, saturation: 1 }),
+                  ...adjustments,
+                },
+              }
+            : m,
+        ),
+      })),
+    setCaption: (text) =>
+      set((state) => {
+        if (state.useSameCaption) {
+          return { postCaption: text, reviewCaption: text.slice(0, 500) };
+        }
+        return state.activeTab === "post"
+          ? { postCaption: text }
+          : { reviewCaption: text.slice(0, 500) };
+      }),
+    setUseSameCaption: (useSameCaption) =>
+      set((state) => {
+        if (!useSameCaption) return { useSameCaption };
 
-      // Sync based on where we are
-      const syncedCaption = state.activeTab === "post" ? state.reviewCaption : state.postCaption;
+        // Sync based on where we are
+        const syncedCaption = state.activeTab === "post" ? state.reviewCaption : state.postCaption;
 
-      return {
-        useSameCaption,
-        postCaption: syncedCaption,
-        reviewCaption: syncedCaption.slice(0, 500),
-      };
-    }),
-  setShowFoodContextOverlay: (showFoodContextOverlay) => set({ showFoodContextOverlay }),
-  toggleTag: (tag, type) =>
-    set((state) => {
-      const field = type === "food" ? "foodTags" : "tasteTags";
-      const list = state[field];
-      return { [field]: list.includes(tag) ? list.filter((t) => t !== tag) : [...list, tag] };
-    }),
-  setRating: (rating) => set({ rating }),
-  setMusic: (
-    musicId,
-    selectedTrackName = null,
-    selectedTrackArtist = null,
-    musicDuration = 30,
-    musicStartMs = 0,
-  ) => set({ musicId, selectedTrackName, selectedTrackArtist, musicDuration, musicStartMs }),
-  setLocation: (location) => set({ location }),
-  setCollaborators: (collaborators) => set({ collaborators }),
-  toggleCollaborator: (user) =>
-    set((state) => ({
-      collaborators: state.collaborators.includes(user)
-        ? state.collaborators.filter((u) => u !== user)
-        : [...state.collaborators, user],
-    })),
-  setPublishingState: (publishingState) => set({ publishingState }),
-  setShowPreview: (showPreview) => set({ showPreview }),
-  setPreviewPlatform: (previewPlatform) => set({ previewPlatform }),
-  setEditingMediaId: (editingMediaId) => set({ editingMediaId }),
-  setPublishingError: (publishingError) => set({ publishingError }),
-  setLastPublishRequest: (lastPublishRequest) => set({ lastPublishRequest }),
-  setPendingReviewId: (pendingReviewId) => set({ pendingReviewId }),
-  setScheduledTime: (scheduledTime) => set({ scheduledTime }),
-  setIsBusinessMode: (isBusinessMode) => set({ isBusinessMode }),
-  setCTA: (ctaButton) => set({ ctaButton }),
-  setIsSponsored: (isSponsored) => set({ isSponsored }),
+        return {
+          useSameCaption,
+          postCaption: syncedCaption,
+          reviewCaption: syncedCaption.slice(0, 500),
+        };
+      }),
+    setShowFoodContextOverlay: (showFoodContextOverlay) => set({ showFoodContextOverlay }),
+    toggleTag: (tag, type) =>
+      set((state) => {
+        const field = type === "food" ? "foodTags" : "tasteTags";
+        const list = state[field];
+        return { [field]: list.includes(tag) ? list.filter((t) => t !== tag) : [...list, tag] };
+      }),
+    setRating: (rating) => set({ rating }),
+    setMusic: (
+      musicId,
+      selectedTrackName = null,
+      selectedTrackArtist = null,
+      musicDuration = 30,
+      musicStartMs = 0,
+    ) => set({ musicId, selectedTrackName, selectedTrackArtist, musicDuration, musicStartMs }),
+    setLocation: (location) => set({ location }),
+    setCollaborators: (collaborators) => set({ collaborators }),
+    toggleCollaborator: (user) =>
+      set((state) => ({
+        collaborators: state.collaborators.includes(user)
+          ? state.collaborators.filter((u) => u !== user)
+          : [...state.collaborators, user],
+      })),
+    setPublishingState: (publishingState) => set({ publishingState }),
+    setShowPreview: (showPreview) => set({ showPreview }),
+    setPreviewPlatform: (previewPlatform) => set({ previewPlatform }),
+    setEditingMediaId: (editingMediaId) => set({ editingMediaId }),
+    setPublishingError: (publishingError) => set({ publishingError }),
+    setLastPublishRequest: (lastPublishRequest) => set({ lastPublishRequest }),
+    setPendingReviewId: (pendingReviewId) => set({ pendingReviewId }),
+    setScheduledTime: (scheduledTime) => set({ scheduledTime }),
+    setIsBusinessMode: (isBusinessMode) => set({ isBusinessMode }),
+    setCTA: (ctaButton) => set({ ctaButton }),
+    setIsSponsored: (isSponsored) => set({ isSponsored }),
 
-  generateCaptionIdeas: async () => {
-    set({ isAiProcessing: true, publishingState: "ai_processing" });
-    // Mock API delay
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    generateCaptionIdeas: async () => {
+      set({ isAiProcessing: true, publishingState: "ai_processing" });
+      // Mock API delay
+      await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    const ideas = [
-      "Still thinking about this meal... 🤤✨",
-      "The kind of meal you dream about for weeks. #foodie #hungry",
-      "Hidden gem found! You guys HAVE to try this. 📍🍴",
-      "Good food = Good mood. Case in point: this dish. 📸🥘",
-      "Proof that heaven is a place on earth, and it's served on this plate. 🌟",
-    ];
+      const ideas = [
+        "Still thinking about this meal... 🤤✨",
+        "The kind of meal you dream about for weeks. #foodie #hungry",
+        "Hidden gem found! You guys HAVE to try this. 📍🍴",
+        "Good food = Good mood. Case in point: this dish. 📸🥘",
+        "Proof that heaven is a place on earth, and it's served on this plate. 🌟",
+      ];
 
-    const randomCaption = ideas[Math.floor(Math.random() * ideas.length)];
-    get().setCaption(randomCaption);
+      const randomCaption = ideas[Math.floor(Math.random() * ideas.length)];
+      get().setCaption(randomCaption);
 
-    set({ isAiProcessing: false, publishingState: "editing" });
-  },
+      set({ isAiProcessing: false, publishingState: "editing" });
+    },
 
-  suggestBestTime: async () => {
-    set({ isAiProcessing: true, publishingState: "ai_processing" });
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    suggestBestTime: async () => {
+      set({ isAiProcessing: true, publishingState: "ai_processing" });
+      await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    // Suggest 2 hours from now
-    const bestTime = new Date(Date.now() + 2 * 60 * 60 * 1000);
-    set({ scheduledTime: bestTime });
+      // Suggest 2 hours from now
+      const bestTime = new Date(Date.now() + 2 * 60 * 60 * 1000);
+      set({ scheduledTime: bestTime });
 
-    set({ isAiProcessing: false, publishingState: "editing" });
-  },
+      set({ isAiProcessing: false, publishingState: "editing" });
+    },
 
-  optimiseCaption: async () => {
-    set({ isAiProcessing: true, publishingState: "ai_processing" });
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    optimiseCaption: async () => {
+      set({ isAiProcessing: true, publishingState: "ai_processing" });
+      await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    const currentCaption = get().postCaption;
-    const emojis = ["🔥", "✨", "🙌", "🍱", "🥢"];
-    const hashtags = ["#HungryApp", "#SGFoodie", "#Gourmet"];
+      const currentCaption = get().postCaption;
+      const emojis = ["🔥", "✨", "🙌", "🍱", "🥢"];
+      const hashtags = ["#HungryApp", "#SGFoodie", "#Gourmet"];
 
-    const optimised = `${currentCaption} ${emojis.join("")}\n\n${hashtags.join(" ")}`;
-    get().setCaption(optimised);
+      const optimised = `${currentCaption} ${emojis.join("")}\n\n${hashtags.join(" ")}`;
+      get().setCaption(optimised);
 
-    set({ isAiProcessing: false, publishingState: "editing" });
-  },
+      set({ isAiProcessing: false, publishingState: "editing" });
+    },
 
-  reset: () =>
-    set({
-      media: [],
-      collaborators: [],
-      taggedAccounts: [],
-      location: null,
-      foodTags: [],
-      tasteTags: [],
-      useSameCaption: false,
-      showFoodContextOverlay: true,
-      reviewCaption: "",
-      postCaption: "",
-      rating: 0,
-      musicId: null,
-      selectedTrackName: null,
-      selectedTrackArtist: null,
-      ctaButton: null,
-      isSponsored: false,
-      scheduledTime: null,
-      isBusinessMode: false,
-      publishingState: "empty",
-      showPreview: false,
-      isAiProcessing: false,
-      publishingError: null,
-      lastPublishRequest: null,
-      pendingReviewId: null,
-    }),
-}));
+    reset: () =>
+      set({
+        selectedDishId: null,
+        selectedVenueId: null,
+        media: [],
+        collaborators: [],
+        taggedAccounts: [],
+        location: null,
+        foodTags: [],
+        tasteTags: [],
+        useSameCaption: false,
+        showFoodContextOverlay: true,
+        reviewCaption: "",
+        postCaption: "",
+        rating: 0,
+        musicId: null,
+        selectedTrackName: null,
+        selectedTrackArtist: null,
+        ctaButton: null,
+        isSponsored: false,
+        scheduledTime: null,
+        isBusinessMode: false,
+        publishingState: "empty",
+        showPreview: false,
+        isAiProcessing: false,
+        publishingError: null,
+        lastPublishRequest: null,
+        pendingReviewId: null,
+      }),
+  }),
+);
+
+const selectComposerDraft = (state: ComposerState) => ({
+  selectedDishId: state.selectedDishId,
+  selectedVenueId: state.selectedVenueId,
+  media: state.media,
+  reviewCaption: state.reviewCaption,
+  postCaption: state.postCaption,
+  rating: state.rating,
+  foodTags: state.foodTags,
+  tasteTags: state.tasteTags,
+  location: state.location,
+  pendingReviewId: state.pendingReviewId,
+});
+const changeComposerAccount: (accountId: string | null) => Promise<void> = accountDraftPersistence(
+  useComposerStore,
+  "hungry-composer-draft-v2",
+  selectComposerDraft,
+  selectComposerDraft(useComposerStore.getState()),
+);

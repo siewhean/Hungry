@@ -1,0 +1,63 @@
+{
+  "schema_version": "hungry-image-rights-proposal-v1",
+  "snapshot_id": "refresh131_images_20261019",
+  "captured_at_sgt": "2026-10-19",
+  "workbook_path": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "80bbef4c8edee234e7ddad4a9b3390a67e9f7572621a8711fbe3c97fb7066212",
+  "workbook_edited": false,
+  "scope": "Read-only image URL audit for new exact-outlet images with explicit reuse terms. Inspected a temporary image copy for pixels; no image asset copied into workbook or repository; no spending.",
+  "summary": {
+    "new_candidates": 1,
+    "exact_directory_joins": 1,
+    "exact_menu_item_joins": 0,
+    "already_in_workbook_exact_url": 0,
+    "pixel_inspected": 1,
+    "approved_for_current_display": 1,
+    "review_only": 0,
+    "workbook_changes": 0
+  },
+  "candidates": [
+    {
+      "sfa_licence": "CE09F38E000",
+      "workbook_outlet_name": "WAFFLE UP",
+      "workbook_directory_address": "Address: 3D RIVER VALLEY ROAD #01-12,CQ @ CLARKE QUAY,Singapore 179023",
+      "item_or_image_type": "Exact-outlet storefront photo; no menu-item association",
+      "pictured_menu_item": null,
+      "menu_item_join": null,
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/7/75/Waffle_Up_Outlet.jpg",
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:Waffle_Up_Outlet.jpg",
+      "observed_at_sgt": "2026-10-19",
+      "photograph_date": "2026-03-11",
+      "creator": "WaffleUpSG (brand account; Commons file page identifies uploader as copyright holder)",
+      "license": "CC0 1.0 Universal Public Domain Dedication",
+      "license_url": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "rights_basis": "Commons page states the copyright holder dedicated the photo under CC0 1.0, permitting reuse without attribution. Attribution is retained for provenance.",
+      "attribution": "WaffleUpSG, “Waffle Up Outlet.jpg,” via Wikimedia Commons, CC0 1.0.",
+      "pixel_inspection": "Fetched the 1600x1200 original to /tmp and inspected pixels; it is a genuine storefront photo, with Waffle Up sign, counter, and unit marking D1-12 visible. No stock, generated, or placeholder content. Temporary inspection copy was not retained in the dataset.",
+      "exact_outlet_join_evidence": "Commons caption identifies Waffle Up outlet in Clarke Quay Singapore. The image visibly shows Waffle Up brand and unit marking D1-12. CapitaLand’s current mall directory lists Waffle Up at CQ @ Clarke Quay, Block D #01-12; this matches the workbook SFA licence CE09F38E000, F&B Name WAFFLE UP, address 3D River Valley Road #01-12, postal 179023.",
+      "corroborating_official_source_url": "https://www.capitaland.com/sg/en/shop/malls/stores/waffle-up.html",
+      "currentness_and_scope": "Photographed 2026-03-11, after the outlet’s 2025 opening; recent and branch-specific. It documents appearance as of capture date, not live operating status. Mall directory was crawled 2026-10-18/19 and confirms branch/unit.",
+      "already_in_workbook_exact_url": false,
+      "display_status": "approved_for_current_display",
+      "approval_rationale": "Recent, exact branch shown in pixels and cross-checked against the current mall directory; current outlet record has exact SFA licence/address; photo reuse is explicitly CC0; no menu-item claim made.",
+      "evidence_urls": [
+        "https://commons.wikimedia.org/wiki/File:Waffle_Up_Outlet.jpg",
+        "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+        "https://www.capitaland.com/sg/en/shop/malls/stores/waffle-up.html"
+      ]
+    }
+  ],
+  "excluded_or_not_reproposed": [
+    {
+      "candidate": "Song Fa Bak Kut Teh, New Bridge Road food photograph",
+      "reason": "Already proposed in Refresh130; historical dish photo is review-only and not linked to an exact menu item."
+    }
+  ],
+  "integration_recommendation": "Add the Waffle Up Commons URL to Image Candidates and the directory Approved Image URL for SFA licence CE09F38E000 if integrating approved current storefront images. Keep no menu-item association.",
+  "limitations": [
+    "Only one newly verified candidate was found in this targeted pass.",
+    "CC0 grants reuse rights, but trademark/endorsement and other non-copyright considerations remain independent; do not imply brand endorsement.",
+    "Image represents the outlet as photographed on 2026-03-11; it does not independently prove current operating status.",
+    "No stock-image provider was used; no paid services or Mapbox requests were used."
+  ]
+}

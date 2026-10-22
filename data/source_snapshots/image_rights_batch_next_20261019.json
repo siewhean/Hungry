@@ -1,0 +1,84 @@
+{
+  "schema_version": "hungry-image-rights-proposal-v1",
+  "snapshot_id": "image_rights_batch_next_20261019",
+  "captured_at_sgt": "2026-10-19",
+  "workbook_path": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256": "1f32e2fe53ca6e82bffab65f1f39e21d197c8d1ea040018933e1b8cb26638081",
+  "workbook_edited": false,
+  "scope": "Read-only licensed-image audit; only Wikimedia Commons candidates with explicit CC licenses; exact outlet joins against current Public F&B Directory; menu-row join counts independently checked. No image bytes downloaded.",
+  "summary": {
+    "rights_cleared_candidates": 2,
+    "exact_menu_item_image_joins": 0,
+    "directory_entity_joins": 2,
+    "visually_inspected": 0,
+    "approved_for_current_appearance": 0,
+    "candidate_urls_already_in_workbook": 1,
+    "candidates_are_historical": true
+  },
+  "candidates": [
+    {
+      "sfa_licence": "S79012K000",
+      "workbook_outlet_name": "SWENSEN'S",
+      "workbook_directory_address": "Address: 301 UPPER THOMSON ROAD #03-23,THOMSON PLAZA,Singapore 574408",
+      "workbook_menu_row_count_for_exact_sfa_licence": 1,
+      "item_or_image_type": "Exact outlet exterior/interior restaurant photo (stall/venue image)",
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/3/3f/Swensen%27s_restaurant_in_Thomson_Plaza%2C_first_Swensen%27s_restaurant_in_Singapore_-_2022-07-05.jpg",
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:Swensen's_restaurant_in_Thomson_Plaza,_first_Swensen's_restaurant_in_Singapore_-_2022-07-05.jpg",
+      "observed_at": "2026-10-19",
+      "photograph_date": "2022-07-05",
+      "creator": "Wzhkevin",
+      "license": "CC BY-SA 4.0",
+      "rights_basis": "Commons file page states uploader is copyright holder and licenses own work under CC BY-SA 4.0. Permits commercial reuse, subject to attribution and share-alike for adaptations.",
+      "reuse_conditions": "Credit Wzhkevin; link source page and https://creativecommons.org/licenses/by-sa/4.0/; state changes if modified; adaptations under same or compatible license.",
+      "http_status": "200",
+      "content_type": "image/jpeg",
+      "visual_inspection": "No; inspected Commons metadata and source page, not image pixels.",
+      "currentness_and_scope": "Photo is specifically titled and geotagged at Swensen’s Thomson Plaza (1.354778, 103.831322); exact directory record says 301 Upper Thomson Road #03-23, Thomson Plaza, postal 574408. Venue shot is dated 2022, therefore historical and current storefront appearance is not verified. No exact menu row exists under this SFA licence.",
+      "candidate_status": "rights_cleared_with_CC_BY_SA_attribution_and_share_alike",
+      "notes": "This is a dated, genuine venue photo, not current storefront proof and not a menu-item photo. The workbook has one legacy menu row (Crab Meat Fried Rice, dated 2026-07-08 with data.gov.sg provenance) under this SFA licence; photo has no menu association.",
+      "already_in_workbook_exact_url": false,
+      "directory_join_basis": "Exact outlet name and Thomson Plaza location match; Commons geotag is within Thomson Plaza at 1.354778, 103.831322 and workbook SFA row is #03-23, Thomson Plaza, postal 574408."
+    },
+    {
+      "sfa_licence": "MWF010004; MWF011005 (unit-level split unresolved)",
+      "workbook_outlet_name": "Tian Tian Hainanese Chicken Rice",
+      "workbook_directory_address": "1 KADAYANALLUR STREET #010 and #011, Singapore 069184 (two directory records)",
+      "workbook_menu_row_count_for_exact_sfa_licence": 0,
+      "item_or_image_type": "Hainanese chicken rice dish photograph (named as Tian Tian, Maxwell Food Centre)",
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/7/77/Singapore_food_-_Tian_Tian_chicken_rice_Nov_2016.jpg",
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:Singapore_food_-_Tian_Tian_chicken_rice_Nov_2016.jpg",
+      "observed_at": "2026-10-19",
+      "photograph_date": "2016-11-16",
+      "creator": "Orderinchaos",
+      "license": "CC BY-SA 4.0",
+      "rights_basis": "Commons page says copyright holder publishes own work under CC BY-SA 4.0. Permits commercial reuse subject to attribution and share-alike for adaptations.",
+      "reuse_conditions": "Credit Orderinchaos; link source page and https://creativecommons.org/licenses/by-sa/4.0/; state changes if modified; adaptations under same or compatible license.",
+      "http_status": "200",
+      "content_type": "image/jpeg",
+      "visual_inspection": "No; inspected Commons metadata and source page, not image pixels.",
+      "currentness_and_scope": "Commons description identifies Tian Tian chicken rice at Maxwell Food Centre. Directory has exact Tian Tian Hainanese Chicken Rice row at 1 Kadayanallur Street, #010 (MWF010004). Photograph is 2016; the current menu sheet has zero rows for this exact SFA licence, so no item-level menu linkage is proven.",
+      "candidate_status": "rights_cleared_candidate_existing_row_needs_exact_dual_record_and_historical_caveat",
+      "notes": "Existing Image Candidates row already has this exact URL but marks exact SFA licence ambiguous. Source identity supports Tian Tian at Maxwell; map to both MWF010004 and MWF011005 unless an independent source resolves which stall/unit. Image is historical (2016), not current menu evidence. No matching menu rows exist for either licence.",
+      "already_in_workbook_exact_url": true,
+      "directory_join_basis": "Exact brand and Maxwell Food Centre match from Commons source title; the page does not distinguish unit 010 from 011, so both SFA records are included and no narrower join is claimed."
+    }
+  ],
+  "excluded": [
+    {
+      "candidate": "Tian Tian Hainanese Chicken Rice, Maxwell stall-front image, 2008",
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:Tiantian_chixrice.JPG",
+      "reason": "The existing workbook contains this genuine exact #010 stall photo but Commons metadata indicates the migrated file requires review; not rights-cleared enough for this batch and image is historical."
+    },
+    {
+      "candidate": "Paragon gallery assets previously audited",
+      "source_page_url": "https://www.paragon.com.sg/",
+      "reason": "Source terms prohibit reproduction/redistribution; excluded."
+    },
+    {
+      "candidate": "Official merchant site and delivery platform imagery",
+      "reason": "Official-source hosting alone does not establish republication rights; no candidates added without explicit license/permission."
+    }
+  ],
+  "recommendation": "Both URLs have explicit Creative Commons reuse licenses, but both are historical and were not visually inspected at pixel level; keep them as dated Image Candidates only, not Approved Image URLs for current appearance. Existing Tian Tian 2016 image row is supported as an image of the named outlet/food centre, but its SFA unit join must include both MWF010004 and MWF011005 because the source does not identify #010 versus #011. The Swensen’s 2022 photo exact-matches the Thomson Plaza venue; it is not tied to the one legacy menu item. Include attribution and license link, state modifications, and share-alike any adapted image.",
+  "integration_status": "one Swensens CC BY-SA historical candidate added; Tian Tian excluded due unresolved outlet unit and no visual inspection"
+}

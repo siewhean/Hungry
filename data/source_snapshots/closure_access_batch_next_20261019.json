@@ -1,0 +1,209 @@
+{
+  "snapshot_type": "bounded_official_closure_and_public_access_review",
+  "observed_local_date": "2026-10-19",
+  "canonical_workbook": {
+    "path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "sha256": "1f32e2fe53ca6e82bffab65f1f39e21d197c8d1ea040018933e1b8cb26638081"
+  },
+  "scope": {
+    "records_reviewed": 15,
+    "closure_site_records": 12,
+    "campus_access_records": 3,
+    "rules": [
+      "Recommend permanent removal only with direct official evidence explicitly establishing permanent closure of the exact outlet.",
+      "SFA absence alone is not closure evidence; current SFA presence is recorded only as a current licence-list cross-check.",
+      "Recommend public-access removal only where official evidence explicitly restricts entry to a closed group or authorized persons."
+    ],
+    "no_workbook_edits": true
+  },
+  "sources": [
+    {
+      "id": "sfa_current_track_records",
+      "url": "https://www.sfa.gov.sg/api/TrackRecord/GetTrackRecord?postalCode=&establishmentAddress=&licenceNumber=&businessName=&licenseeName=&typeOfFoodBussiness=&grades=&isShowLicenceSuspended=false",
+      "publisher": "Singapore Food Agency",
+      "retrieved_at_utc": "2026-10-18T19:55:39Z",
+      "http_status": 200,
+      "record_count": 52529,
+      "response_sha256": "3e707eea42d8f694a2c887b5021697df4a83bb40650601313475c0bbecc56766",
+      "limitation": "SFA Track Records is a current result set, not a closure register. Presence does not prove the outlet is operating; absence is not used to infer closure."
+    },
+    {
+      "id": "gardens_by_the_bay_closure_notice",
+      "url": "https://www.gardensbythebay.com.sg/en/promotions.html",
+      "publisher": "Gardens by the Bay",
+      "observed": "Official notice says Satay by the Bay will close from 2026-10-01 to make way for a refreshed waterfront dining experience as part of Wetlands by the Bay development.",
+      "interpretation": "Direct evidence that the named venue is closed from the stated date. It does not say permanently closed and does not identify whether individual licensed tenants will relocate or reopen elsewhere."
+    },
+    {
+      "id": "gardens_by_the_bay_live_dining_directory",
+      "url": "https://www.gardensbythebay.com.sg/en/things-to-do/dine-and-shop.html",
+      "publisher": "Gardens by the Bay",
+      "observed": "Current Dine & Shop directory page observed; it directs visitors to the live Opening Hours & Closures page for operating status. Satay by the Bay is omitted from the currently rendered dining directory.",
+      "interpretation": "Supports current venue-level non-listing only; it is not evidence of permanent closure for each stall."
+    },
+    {
+      "id": "nus_visitor_pass_terms",
+      "url": "https://inetapps.nus.edu.sg/vpass/terms-conditions",
+      "publisher": "National University of Singapore",
+      "observed": "Visitor Pass terms state that a pass grants one individual access to NUS buses and dining at NUS canteens and food courts as specified on the pass; unauthorized access types can be denied and visitors may be asked to verify identity or visit purpose.",
+      "interpretation": "NUS canteen access is conditional on a valid pass/access type. The terms do not establish that the pass is unavailable to the general public, so this alone is insufficient to classify the exact outlets as private-only."
+    },
+    {
+      "id": "nus_2026_methods_school_campus_information",
+      "url": "https://fass.nus.edu.sg/methods-school/accommodation/campus/",
+      "publisher": "NUS Faculty of Arts and Social Sciences / IPSA-NUS Methods School",
+      "observed": "2026 information says Methods School participants have access to NUS cafeterias, restaurants and cafes, and identifies The Deck as the FASS canteen.",
+      "interpretation": "Confirms access for programme participants, not unrestricted access for all members of the public."
+    },
+    {
+      "id": "nus_2026_campus_tour_access_notice",
+      "url": "https://uci.nus.edu.sg/campus-tour/",
+      "publisher": "NUS University Campus Infrastructure",
+      "observed": "The current notice describes specific UTown Food Court access restrictions on weekdays from 2026-09-28 to 2026-10-09, and says campus visitors during that period need licensed student tour guides. This period ended before the observation date and the listed food courts are not the three exact records in this review.",
+      "interpretation": "Not applied as a current restriction to The Deck or Yusof Ishak House records."
+    },
+    {
+      "id": "nus_visitor_dining_reference",
+      "url": "https://lkcnhm.nus.edu.sg/plan-your-visit/",
+      "publisher": "NUS Lee Kong Chian Natural History Museum",
+      "observed": "Visitor-facing page lists food outlets at Yusof Ishak House, including Central Square food court.",
+      "interpretation": "Shows NUS itself directs visitors to Yusof Ishak House dining options, but does not specifically verify access to each licensed outlet below."
+    }
+  ],
+  "records": [
+    {
+      "sfa_licence": "CE12H48N000",
+      "fnb_name": "SATAY BY THE BAY",
+      "address": "18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+      "current_sfa_match": true,
+      "closure_evidence": "Venue-level closure from 2026-10-01; exact outlet permanence or relocation not established.",
+      "recommendation": "do_not_permanently_remove; mark closure follow-up pending exact outlet/relocation confirmation"
+    },
+    {
+      "sfa_licence": "CE12H48N002",
+      "fnb_name": "MIXED VEGETABLE RICE",
+      "address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+      "current_sfa_match": true,
+      "closure_evidence": "Exact venue address falls within Satay by the Bay site announced closed from 2026-10-01; no individual permanent-closure or relocation notice found.",
+      "recommendation": "do_not_permanently_remove; flag outlet status pending"
+    },
+    {
+      "sfa_licence": "CE12H48N003",
+      "fnb_name": "DumPrince Dumpling House",
+      "address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+      "current_sfa_match": true,
+      "closure_evidence": "Exact venue address falls within Satay by the Bay site announced closed from 2026-10-01; no individual permanent-closure or relocation notice found.",
+      "recommendation": "do_not_permanently_remove; flag outlet status pending"
+    },
+    {
+      "sfa_licence": "CE12H48N004",
+      "fnb_name": "DumPrince Dumpling House Stall 4",
+      "address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+      "current_sfa_match": true,
+      "closure_evidence": "Exact venue address falls within Satay by the Bay site announced closed from 2026-10-01; no individual permanent-closure or relocation notice found.",
+      "recommendation": "do_not_permanently_remove; flag outlet status pending"
+    },
+    {
+      "sfa_licence": "CE12H48N005",
+      "fnb_name": "BBQ SEAFOOD &SATAY",
+      "address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+      "current_sfa_match": true,
+      "closure_evidence": "Exact venue address falls within Satay by the Bay site announced closed from 2026-10-01; no individual permanent-closure or relocation notice found.",
+      "recommendation": "do_not_permanently_remove; flag outlet status pending"
+    },
+    {
+      "sfa_licence": "CE12H48N006",
+      "fnb_name": "THAI FOOD",
+      "address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+      "current_sfa_match": true,
+      "closure_evidence": "Exact venue address falls within Satay by the Bay site announced closed from 2026-10-01; no individual permanent-closure or relocation notice found.",
+      "recommendation": "do_not_permanently_remove; flag outlet status pending"
+    },
+    {
+      "sfa_licence": "CE12H48N007",
+      "fnb_name": "THAI FOOD",
+      "address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+      "current_sfa_match": true,
+      "closure_evidence": "Exact venue address falls within Satay by the Bay site announced closed from 2026-10-01; no individual permanent-closure or relocation notice found.",
+      "recommendation": "do_not_permanently_remove; flag outlet status pending"
+    },
+    {
+      "sfa_licence": "CE12H48N008",
+      "fnb_name": "TURKISH & INDIAN",
+      "address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+      "current_sfa_match": true,
+      "closure_evidence": "Exact venue address falls within Satay by the Bay site announced closed from 2026-10-01; no individual permanent-closure or relocation notice found.",
+      "recommendation": "do_not_permanently_remove; flag outlet status pending"
+    },
+    {
+      "sfa_licence": "CE12H48N018",
+      "fnb_name": "HUAT HUAT BBQ CHICKEN WING",
+      "address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+      "current_sfa_match": true,
+      "closure_evidence": "Exact venue address falls within Satay by the Bay site announced closed from 2026-10-01; no individual permanent-closure or relocation notice found.",
+      "recommendation": "do_not_permanently_remove; flag outlet status pending"
+    },
+    {
+      "sfa_licence": "CE12H48N019",
+      "fnb_name": "Huat Huat BBQ Chicken Wings",
+      "address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+      "current_sfa_match": true,
+      "closure_evidence": "Exact venue address falls within Satay by the Bay site announced closed from 2026-10-01; no individual permanent-closure or relocation notice found.",
+      "recommendation": "do_not_permanently_remove; flag outlet status pending"
+    },
+    {
+      "sfa_licence": "CE12H48N020",
+      "fnb_name": "Gopals The Holy Basil",
+      "address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+      "current_sfa_match": true,
+      "closure_evidence": "Exact venue address falls within Satay by the Bay site announced closed from 2026-10-01; no individual permanent-closure or relocation notice found.",
+      "recommendation": "do_not_permanently_remove; flag outlet status pending"
+    },
+    {
+      "sfa_licence": "CE12H48N022",
+      "fnb_name": "GEYLANG LOR 29 HOKKIEN MEE",
+      "address": "Address: 18 MARINA GARDENS DRIVE #01-19,GARDENS BY THE BAY,Singapore 018953",
+      "current_sfa_match": true,
+      "closure_evidence": "Exact venue address falls within Satay by the Bay site announced closed from 2026-10-01; no individual permanent-closure or relocation notice found.",
+      "recommendation": "do_not_permanently_remove; flag outlet status pending"
+    },
+    {
+      "sfa_licence": "C81041N007",
+      "fnb_name": "Ba Wei Ban Mian",
+      "address": "Address: 21 LOWER KENT RIDGE ROAD Faculty of Arts and Social Sciences,Singapore 119077 The Deck Canteen",
+      "current_sfa_match": true,
+      "access_assessment": "NUS Visitor Pass terms gate canteen/food-court access by pass and authorized access type; visitor/programme sources support some visitor access. Unrestricted general-public access to this exact stall remains unverified.",
+      "recommendation": "retain pending exact public access confirmation; do not remove based on institution/canteen label alone"
+    },
+    {
+      "sfa_licence": "C81041N010",
+      "fnb_name": "Jito's Dhaba",
+      "address": "Address: 21 LOWER KENT RIDGE ROAD The Deck Canteen, Faculty of Arts and Social Sciences,Singapore 119077",
+      "current_sfa_match": true,
+      "access_assessment": "NUS Visitor Pass terms gate canteen/food-court access by pass and authorized access type; visitor/programme sources support some visitor access. Unrestricted general-public access to this exact stall remains unverified.",
+      "recommendation": "retain pending exact public access confirmation; do not remove based on institution/canteen label alone"
+    },
+    {
+      "sfa_licence": "SW25199P003",
+      "fnb_name": "Indian Veg",
+      "address": "Address: 31 LOWER KENT RIDGE ROAD Yusof Ishak House Canteen,Singapore 119078",
+      "current_sfa_match": true,
+      "access_assessment": "NUS Visitor Pass terms gate canteen/food-court access by pass and authorized access type. NUS visitor-facing source lists dining at Yusof Ishak House, but exact outlet's unrestricted public access remains unverified.",
+      "recommendation": "retain pending exact public access confirmation; do not remove based on canteen label alone"
+    }
+  ],
+  "summary": {
+    "permanent_removal_recommendations": 0,
+    "temporary_or_relocation_follow_up": 12,
+    "unresolved_conditional_public_access": 3,
+    "exact_records_absent_from_sfa": 0,
+    "workbook_edits": 0
+  },
+  "limitations": [
+    "This is a bounded review, not a nationwide closure audit.",
+    "The Gardens by the Bay announcement concerns the venue and does not state whether tenants permanently ceased, will relocate, or will resume at a refreshed site.",
+    "The NUS sources do not establish a current, universally available guest pass or unrestricted walk-in policy for the exact stalls.",
+    "Six additional stalls at the same Gardens by the Bay #01-19 address and unrelated campus/outlet candidates were outside this 15-record batch."
+  ],
+  "integration_status": "12 venue closure follow-up notes and 3 NUS access notes applied; no removals"
+}

@@ -1,0 +1,125 @@
+{
+  "snapshot_type": "exact_public_fnb_name_official_mall_directory_proposals",
+  "observed_at_local": "2026-10-18 Asia/Singapore",
+  "master_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "master_sha256": "ba519451ef5fa46aafcac14d67a1563365e6a15601c1ddc778d71ac20a960ef1",
+  "worksheet": "Public F&B Directory",
+  "scope": "Bounded read-only public-name review for blank-name Plaza Singapura SFA outlet rows; no workbook edits.",
+  "source_set": [
+    {
+      "source": "CapitaLand official Plaza Singapura store directory and brand store pages",
+      "operator": "CapitaLand Investment",
+      "observed_date": "2026-10-18",
+      "pages": [
+        {
+          "url": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/pawa-bakery.html",
+          "sha256": "90b90230acef4b734afb4a940b04e2e5b58c353fb948c69a5160269ae0bfeeea"
+        },
+        {
+          "url": "https://www.capitaland.com/sg/en/shop/malls/stores/ygf-malatang.html",
+          "sha256": "59a260f67aa65598fb2afae50618f65b31ac781a9c7dd5c638ffd1b88a18ac86"
+        },
+        {
+          "url": "https://www.capitaland.com/sg/en/shop/malls/stores/zhengxin-chickensteak.html",
+          "sha256": "083ae6c859fcdd8c7efe451eb14de858ad3dd02b3faeaa877c98bae3cf3c2d6e"
+        }
+      ]
+    },
+    {
+      "source": "CapitaLand current participating F&B stores list",
+      "url": "https://www.capitaland.com/sg/en/shop/malls/discover/curated-for-you/participating-stores.html",
+      "observed_date": "2026-10-18",
+      "sha256": "63c5b7f7c4df536520037f0c90c1772d4b3ac009ff5d8d0f0b5f41a5bea0ac63",
+      "role": "Current independent CapitaLand confirmation of ZhengXin Chicken Steak at Plaza Singapura #B2-45."
+    }
+  ],
+  "summary": {
+    "blank_name_records_reviewed": 5,
+    "exact_public_fnb_name_proposals": 3,
+    "held_for_foodcourt_multi_license_or_stall_ambiguity": 2,
+    "non_fnb_or_private_access_proposals": 0
+  },
+  "proposals": [
+    {
+      "excel_row": 33737,
+      "sfa_licence": "CE07474N000",
+      "before_fnb_name": "",
+      "existing_address": "Address: 68 ORCHARD ROAD #B2-32,PLAZA SINGAPURA,Singapore 238839",
+      "postal_code": "238839",
+      "business_type": "Bakery",
+      "proposed_public_fnb_name": "Pawa Bakery",
+      "source_type": "official_capitaland_mall_or_store_page",
+      "source_url": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/pawa-bakery.html",
+      "source_page_sha256": "90b90230acef4b734afb4a940b04e2e5b58c353fb948c69a5160269ae0bfeeea",
+      "observed_date": "2026-10-18",
+      "evidence": "Official Plaza Singapura store page names PAWA BAKERY and locates it at #B2-32; the exact licensed address and postal code match.",
+      "matching_rule": "Exact Plaza Singapura postal code 238839 and exact outlet unit (B2-32, B2-52/B2-54, B2-45) confirmed by CapitaLand directory pages.",
+      "confidence": "high",
+      "limitations": "Proposes only the public-facing name and exact branch association. Apply only after a current-cell before-value check against the bound workbook SHA."
+    },
+    {
+      "excel_row": 33739,
+      "sfa_licence": "CE07667A000",
+      "before_fnb_name": "",
+      "existing_address": "Address: 68 ORCHARD ROAD #B2-52/54,PLAZA SINGAPURA,Singapore 238839",
+      "postal_code": "238839",
+      "business_type": "Restaurant",
+      "proposed_public_fnb_name": "YGF MALATANG",
+      "source_type": "official_capitaland_mall_or_store_page",
+      "source_url": "https://www.capitaland.com/sg/en/shop/malls/stores/ygf-malatang.html",
+      "source_page_sha256": "59a260f67aa65598fb2afae50618f65b31ac781a9c7dd5c638ffd1b88a18ac86",
+      "observed_date": "2026-10-18",
+      "evidence": "Official CapitaLand brand store page lists Plaza Singapura at #B2-52 and #B2-54; exact licensed address and postal code match.",
+      "matching_rule": "Exact Plaza Singapura postal code 238839 and exact outlet unit (B2-32, B2-52/B2-54, B2-45) confirmed by CapitaLand directory pages.",
+      "confidence": "high",
+      "limitations": "Proposes only the public-facing name and exact branch association. Apply only after a current-cell before-value check against the bound workbook SHA."
+    },
+    {
+      "excel_row": 33740,
+      "sfa_licence": "CE07670K000",
+      "before_fnb_name": "",
+      "existing_address": "Address: 68 ORCHARD ROAD #B2-45,PLAZA SINGAPURA,Singapore 238839",
+      "postal_code": "238839",
+      "business_type": "Takeaway",
+      "proposed_public_fnb_name": "ZhengXin Chicken Steak",
+      "source_type": "official_capitaland_mall_or_store_page",
+      "source_url": "https://www.capitaland.com/sg/en/shop/malls/stores/zhengxin-chickensteak.html",
+      "source_page_sha256": "083ae6c859fcdd8c7efe451eb14de858ad3dd02b3faeaa877c98bae3cf3c2d6e",
+      "observed_date": "2026-10-18",
+      "evidence": "Official CapitaLand brand page identifies Plaza Singapura at #B2-45; current CapitaLand participating F&B store list also lists ZhengXin Chicken Steak at Plaza Singapura #B2-45.",
+      "matching_rule": "Exact Plaza Singapura postal code 238839 and exact outlet unit (B2-32, B2-52/B2-54, B2-45) confirmed by CapitaLand directory pages.",
+      "confidence": "high",
+      "limitations": "Proposes only the public-facing name and exact branch association. Apply only after a current-cell before-value check against the bound workbook SHA."
+    }
+  ],
+  "held_rows": [
+    {
+      "excel_row": 34148,
+      "sfa_licence": "CE21713E000",
+      "before_fnb_name": "",
+      "existing_address": "Address: 68 ORCHARD ROAD #06-15,#06-16,#06-17,PLAZA SINGAPURA,Singapore 238839 (MR3)",
+      "postal_code": "238839",
+      "business_type": "WITHIN A COFFEESHOP/CANTEEN/FOODCOURT",
+      "reason": "SFA record is a within-coffeeshop/canteen/foodcourt permit at #06-15/#06-16/#06-17 and carries MR3. CapitaLand identifies Kopitiam across #06-15 to 17 but the licence does not identify an individual stall or prove a distinct venue-level trading name for this permit; held under foodcourt/private-access ambiguity rule.",
+      "evidence_url": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/kopitiam.html",
+      "evidence_page_sha256": "2a7f54a21785ca6f6455581b5e78aede375ce79007b1e6df6553433b8eae832d"
+    },
+    {
+      "excel_row": 38071,
+      "sfa_licence": "W98413J006",
+      "before_fnb_name": "",
+      "existing_address": "Address: 68 ORCHARD ROAD #06-15,PLAZA SINGAPURA,Singapore 238839",
+      "postal_code": "238839",
+      "business_type": "Foodcourt",
+      "reason": "SFA type is Foodcourt at Kopitiam #06-15 to 17; the official directory verifies the foodcourt but not which individual vendor or whether this licence is a hall-level business. Held due foodcourt multi-license ambiguity.",
+      "evidence_url": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/kopitiam.html",
+      "evidence_page_sha256": "2a7f54a21785ca6f6455581b5e78aede375ce79007b1e6df6553433b8eae832d"
+    }
+  ],
+  "limitations": [
+    "Three names are current official directory/brand-page evidence joined to the exact SFA address unit and postal code.",
+    "No registered business names were substituted for public trading names.",
+    "Foodcourt records are held where the official directory cannot identify the licensed sub-outlet.",
+    "No workbook edits made."
+  ]
+}

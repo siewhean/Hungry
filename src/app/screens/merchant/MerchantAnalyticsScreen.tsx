@@ -1,3 +1,5 @@
+import { useMerchantOperationScope } from "@/features/merchant/useMerchantOperationScope";
+import { useRef as useMerchantRequestRef } from "react";
 import React, { useCallback, useMemo, useState, useEffect } from "react";
 import { Alert, Pressable, View, StyleSheet, ScrollView } from "react-native";
 import { BarChart3, TrendingUp, PieChart, Star, Users, Clock, Flame, X } from "lucide-react-native";
@@ -35,6 +37,8 @@ function formatSaveRate(saves: number, profileVisits: number) {
 }
 
 export function MerchantAnalyticsScreen() {
+  const captureOperation = useMerchantOperationScope();
+
   const { componentRadii, palette, spacing, radii } = useHungryTheme();
   const activeOutlet = useMerchantStore(getActiveOutlet);
 
@@ -44,7 +48,17 @@ export function MerchantAnalyticsScreen() {
   const [error, setError] = useState<string | null>(null);
   const analyticsDisclosure = getDataTrustDisclosure("merchantAnalytics");
 
+  const requestGeneration = useMerchantRequestRef(0);
+  const currentOutlet = useMerchantRequestRef(activeOutlet?.id);
+  currentOutlet.current = activeOutlet?.id;
   const loadAnalytics = useCallback(async () => {
+    const isOperationCurrent = captureOperation();
+    if (!isOperationCurrent()) return;
+
+    const request = ++requestGeneration.current;
+    const outletId = activeOutlet?.id;
+    const isCurrent = () =>
+      request === requestGeneration.current && outletId === currentOutlet.current;
     setError(null);
     setIsLoading(true);
 
@@ -56,12 +70,20 @@ export function MerchantAnalyticsScreen() {
     }
     try {
       const data = await getHungryService().merchant.getAnalytics(activeOutlet.id, range);
+      if (!isOperationCurrent()) return;
+
+      if (!isCurrent()) return;
       setAnalytics(data);
     } catch (e) {
+      if (!isOperationCurrent()) return;
+
+      if (!isCurrent()) return;
       setError(e instanceof Error ? e.message : "Failed to load analytics.");
       console.error(e);
     } finally {
-      setIsLoading(false);
+      if (isOperationCurrent()) {
+        if (isCurrent()) setIsLoading(false);
+      }
     }
   }, [activeOutlet, range]);
 
@@ -230,6 +252,7 @@ export function MerchantAnalyticsScreen() {
                 <AppText variant="bodyBold">Discovery Mix</AppText>
               </View>
               <Pressable
+                accessibilityRole="button"
                 onPress={() =>
                   openDetail(
                     "Discovery mix",
@@ -256,7 +279,7 @@ export function MerchantAnalyticsScreen() {
                   <View
                     key={item.label}
                     style={{
-                      flex: Math.max(item.percentage, 1),
+                      flex: Math.max(item.percentage, 0),
                       backgroundColor: item.color,
                     }}
                   />
@@ -306,6 +329,7 @@ export function MerchantAnalyticsScreen() {
                 <AppText variant="bodyBold">Top Performing Dishes</AppText>
               </View>
               <Pressable
+                accessibilityRole="button"
                 onPress={() =>
                   openDetail(
                     "Dish performance",
@@ -371,6 +395,7 @@ export function MerchantAnalyticsScreen() {
                 <AppText variant="bodyBold">Customer Taste Profile</AppText>
               </View>
               <Pressable
+                accessibilityRole="button"
                 onPress={() =>
                   openDetail(
                     "Customer taste profile",
@@ -445,6 +470,7 @@ export function MerchantAnalyticsScreen() {
                 <AppText variant="bodyBold">Peak Discovery Hours</AppText>
               </View>
               <Pressable
+                accessibilityRole="button"
                 onPress={() =>
                   openDetail(
                     "Peak discovery hours",
@@ -474,7 +500,7 @@ export function MerchantAnalyticsScreen() {
                   }}
                 >
                   <AppText variant="bodySmallBold" style={{ color: palette.info }}>
-                    {hour === 12 ? "12 PM" : hour > 12 ? `${hour - 12} PM` : `${hour} AM`}
+                    {hour === 12 ? "12 PM" : hour > 12 ? `${hour - 12} PM` : `${hour || 12} AM`}
                   </AppText>
                 </View>
               ))}
@@ -537,7 +563,7 @@ function MetricCard({
           >
             {trend}
           </AppText>
-          <Pressable onPress={onSeeMore}>
+          <Pressable accessibilityRole="button" onPress={onSeeMore}>
             <AppText variant="micro" style={{ color: palette.orange, fontWeight: "800" }}>
               See More
             </AppText>

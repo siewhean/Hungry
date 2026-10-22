@@ -2,6 +2,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import type { AuthStackParamList } from "@/app/navigation/navigationTypes";
 import { FeedErrorBoundary } from "@/components/ui";
+import { ChangePasswordScreen } from "./ChangePasswordScreen";
 import { EmailVerificationScreen } from "./EmailVerificationScreen";
 import { ForgotPasswordScreen } from "./ForgotPasswordScreen";
 import { LoginScreen } from "./LoginScreen";
@@ -26,6 +27,7 @@ export function AuthStack() {
         <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
         <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
         <Stack.Screen name="ResetPasswordSuccess" component={ResetPasswordSuccessScreen} />
+        <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
       </Stack.Navigator>
     </FeedErrorBoundary>
   );

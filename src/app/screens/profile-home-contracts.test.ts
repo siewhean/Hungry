@@ -32,12 +32,9 @@ test("profile home contract: profile stats use dynamic profile and social store 
 
   assert.match(domainSource, /followersCount: number/);
   assert.match(domainSource, /followingCount: number/);
-  assert.match(
-    source,
-    /const followedAuthors = useSocialStore\(\(state\) => state\.followedAuthors\)/,
-  );
-  assert.match(source, /followers: profile\.stats\.followersCount/);
-  assert.match(source, /following: profile\.stats\.followingCount \+ followedCount/);
+  assert.match(source, /followers: profileFollowerCount/);
+  assert.match(source, /following: profileFollowingCount/);
+  assert.doesNotMatch(source, /Math\.max\(profile\.stats\.followersCount/);
   assert.match(source, /value=\{profile\.stats\.dishesReviewed\}/);
   assert.match(source, /label="Followers"/);
   assert.match(source, /label="Following"/);

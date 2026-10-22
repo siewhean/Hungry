@@ -1,0 +1,956 @@
+{
+  "snapshot_type": "refresh134_read_only_coordinate_audit",
+  "captured_at_sgt": "2026-10-19",
+  "baseline_workbook": {
+    "path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "sha256": "2e398d1a6c872287c0b093a40cac17a63557293b27471b82832756ba6019a916",
+    "worksheet": "Public F&B Directory",
+    "record_count": 38273,
+    "missing_coordinate_pairs": 2537,
+    "missing_with_exact_six_digit_postal": 2435,
+    "distinct_six_digit_postals_among_missing": 1552,
+    "workbook_modified": false
+  },
+  "scope": {
+    "sample_method": "Fresh disjoint sample of the next 100 distinct postal codes following the first 100 distinct postal codes reviewed in Refresh133; workbook row order.",
+    "sample_size": 100,
+    "records": [
+      {
+        "sfa_licence": "S85212P004",
+        "f_and_b_name": "AK RASOOL BISTRO",
+        "postal_code": "419762",
+        "full_address": "Address: 283 CHANGI ROAD Singapore 419762"
+      },
+      {
+        "sfa_licence": "W03270A004",
+        "f_and_b_name": "AK RASOOL BISTRO",
+        "postal_code": "209596",
+        "full_address": "Address: 73 DESKER ROAD Singapore 209596 BLK 65,67,69,71"
+      },
+      {
+        "sfa_licence": "CE12F61K000",
+        "f_and_b_name": "Akamatsu Dining",
+        "postal_code": "218451",
+        "full_address": "Address: 204 RANGOON ROAD HONG BUILDING,Singapore 218451 (1ST STOREY)"
+      },
+      {
+        "sfa_licence": "W86025E000",
+        "f_and_b_name": "AL AFROSE RESTAURANT PTE LTD",
+        "postal_code": "248320",
+        "full_address": "Address: 421 RIVER VALLEY ROAD Singapore 248320"
+      },
+      {
+        "sfa_licence": "SW07B54J000",
+        "f_and_b_name": "AL AMAAN RESTAURANT",
+        "postal_code": "129742",
+        "full_address": "Address: 12 CLEMENTI ROAD Singapore 129742"
+      },
+      {
+        "sfa_licence": "C00020B001",
+        "f_and_b_name": "Al Azhar Drinks",
+        "postal_code": "599736",
+        "full_address": "Address: 11 CHEONG CHIN NAM ROAD Singapore 599736"
+      },
+      {
+        "sfa_licence": "E50002V000",
+        "f_and_b_name": "Al Bidayahh Restaurant",
+        "postal_code": "389379",
+        "full_address": "Address: 364 GEYLANG ROAD Singapore 389379"
+      },
+      {
+        "sfa_licence": "W45332E000",
+        "f_and_b_name": "AL BISMI AL BISMI FOOD CORNER AL BISMI KITCHEN AL BISMI EATING HOUSE",
+        "postal_code": "209587",
+        "full_address": "Address: 62 DESKER ROAD Singapore 209587 (1ST STOREY)"
+      },
+      {
+        "sfa_licence": "W50002C002",
+        "f_and_b_name": "AL BISMI EATING HOUSE PTE. LTD.",
+        "postal_code": "209513",
+        "full_address": "Address: 41 DICKSON ROAD Singapore 209513"
+      },
+      {
+        "sfa_licence": "W03309C000",
+        "f_and_b_name": "AL BISMI MEAT SUPPLIER",
+        "postal_code": "209407",
+        "full_address": "Address: 80 DUNLOP STREET Singapore 209407"
+      },
+      {
+        "sfa_licence": "CE04135C000",
+        "f_and_b_name": "AL CAPONE'S",
+        "postal_code": "229461",
+        "full_address": "Address: 39/37 CUPPAGE ROAD CUPPAGE TERRACE,Singapore 229461 (1ST STOREY)"
+      },
+      {
+        "sfa_licence": "SE09064N000",
+        "f_and_b_name": "AL CAPONE'S",
+        "postal_code": "455296",
+        "full_address": "Address: 106 UPPER EAST COAST ROAD Singapore 455296"
+      },
+      {
+        "sfa_licence": "NW07327J000",
+        "f_and_b_name": "AL CAPONE'S SPORTS BAR + DINING",
+        "postal_code": "758501",
+        "full_address": "Address: 1030 SEMBAWANG ROAD Singapore 758501"
+      },
+      {
+        "sfa_licence": "E95181A000",
+        "f_and_b_name": "Al Forno",
+        "postal_code": "428996",
+        "full_address": "Address: 400 EAST COAST ROAD Singapore 428996"
+      },
+      {
+        "sfa_licence": "W45333X003",
+        "f_and_b_name": "AL JAHIR CBP PTE. LTD.",
+        "postal_code": "208795",
+        "full_address": "Address: 25/27/29/31 JALAN BESAR Singapore 208795 (1ST STOREY)"
+      },
+      {
+        "sfa_licence": "W83284C000",
+        "f_and_b_name": "al jailani",
+        "postal_code": "189638",
+        "full_address": "Address: 129 BENCOOLEN STREET Singapore 189638"
+      },
+      {
+        "sfa_licence": "C80078X002",
+        "f_and_b_name": "AL KASIM",
+        "postal_code": "276475",
+        "full_address": "Address: 12 SIXTH AVENUE Singapore 276475"
+      },
+      {
+        "sfa_licence": "CE11R74B000",
+        "f_and_b_name": "AL MADINA RESTAURANT",
+        "postal_code": "169339",
+        "full_address": "Address: 1/1A KAMPONG BAHRU ROAD Singapore 169339"
+      },
+      {
+        "sfa_licence": "E89088E000",
+        "f_and_b_name": "Al Majlis Restaurant Serangoon Road",
+        "postal_code": "218140",
+        "full_address": "Address: 452 SERANGOON ROAD Singapore 218140"
+      },
+      {
+        "sfa_licence": "W65012A000",
+        "f_and_b_name": "AL MUBIN EATING HOUSE PTE.LTD.",
+        "postal_code": "207668",
+        "full_address": "Address: 92 SYED ALWI ROAD Singapore 207668"
+      },
+      {
+        "sfa_licence": "W45336P000",
+        "f_and_b_name": "AL MUBIN FOOD & CAFE PTE. LTD.",
+        "postal_code": "209894",
+        "full_address": "Address: 21/21A CAMPBELL LANE LITTLE INDIA CONSERVATION AREA,Singapore 209894 Level 1 and 2"
+      },
+      {
+        "sfa_licence": "SE10645B004",
+        "f_and_b_name": "AL-AMEENA FOOD CORNER PTE. LTD.",
+        "postal_code": "419703",
+        "full_address": "Address: 44 CHANGI ROAD Singapore 419703"
+      },
+      {
+        "sfa_licence": "SW06233N000",
+        "f_and_b_name": "AL-AZHAR MAKAN PLACE",
+        "postal_code": "599737",
+        "full_address": "Address: 12 CHEONG CHIN NAM ROAD Singapore 599737"
+      },
+      {
+        "sfa_licence": "CE24K83P000",
+        "f_and_b_name": "AL-AZRUL RESTAURANT PTE LTD",
+        "postal_code": "389380",
+        "full_address": "Address: 366 GEYLANG ROAD Singapore 389380 (MR3)"
+      },
+      {
+        "sfa_licence": "CE06E71L001",
+        "f_and_b_name": "AL-AZRUL RESTURANT",
+        "postal_code": "389322",
+        "full_address": "Address: 268 GEYLANG ROAD Singapore 389322"
+      },
+      {
+        "sfa_licence": "C90056V000",
+        "f_and_b_name": "AL-HAZIMA RESTAURANT PTE LTD",
+        "postal_code": "599729",
+        "full_address": "Address: 4 CHEONG CHIN NAM ROAD Singapore 599729"
+      },
+      {
+        "sfa_licence": "E74031B003",
+        "f_and_b_name": "Al-Malik Kitchen",
+        "postal_code": "388730",
+        "full_address": "Address: 38 LORONG 11 GEYLANG Singapore 388730"
+      },
+      {
+        "sfa_licence": "E45057C000",
+        "f_and_b_name": "AL-MASHA FRESH GRILL PTE LTD",
+        "postal_code": "389584",
+        "full_address": "Address: 654 GEYLANG ROAD Singapore 389584 (1st storey)"
+      },
+      {
+        "sfa_licence": "S55002J000",
+        "f_and_b_name": "AL-SALAM",
+        "postal_code": "419881",
+        "full_address": "Address: 457/239 CHANGI ROAD Singapore 419881"
+      },
+      {
+        "sfa_licence": "E97032A000",
+        "f_and_b_name": "ALADDINS GEYLANG PTE. LTD.",
+        "postal_code": "389295",
+        "full_address": "Address: 236/238 GEYLANG ROAD GEYLANG CONSERVATION AREA,Singapore 389295 (1ST STOREY, BASEMENT & MEZZ)"
+      },
+      {
+        "sfa_licence": "CE05414K000",
+        "f_and_b_name": "ALATI",
+        "postal_code": "069892",
+        "full_address": "Address: 73 AMOY STREET Singapore 069892"
+      },
+      {
+        "sfa_licence": "E84198A000",
+        "f_and_b_name": "ALFALAH BARAKAH RESTAURANT PTE LTD",
+        "postal_code": "419705",
+        "full_address": "Address: 48A CHANGI ROAD Singapore 419705"
+      },
+      {
+        "sfa_licence": "W96063E000",
+        "f_and_b_name": "All Day Breakfast Cafe 21",
+        "postal_code": "198715",
+        "full_address": "Address: 747 NORTH BRIDGE ROAD Singapore 198715 (1ST STOREY) PART OF"
+      },
+      {
+        "sfa_licence": "B80074K000",
+        "f_and_b_name": "ALMAAS FOODS 3 PTE. LTD.",
+        "postal_code": "758396",
+        "full_address": "Address: 431 SEMBAWANG ROAD SEMBAWANG PARK,Singapore 758396"
+      },
+      {
+        "sfa_licence": "B78159V000",
+        "f_and_b_name": "AMMU'S KITCHEN PTE. LTD",
+        "postal_code": "579514",
+        "full_address": "Address: 126 CASUARINA ROAD SEMBAWANG HILLS ESTATE,Singapore 579514 (LEVEL 1)"
+      },
+      {
+        "sfa_licence": "CE23477V000",
+        "f_and_b_name": "Amrith by The Song of India",
+        "postal_code": "218555",
+        "full_address": "Address: 38A RACE COURSE ROAD Singapore 218555 2nd Storey"
+      },
+      {
+        "sfa_licence": "CE17693J000",
+        "f_and_b_name": "An Acai Affair",
+        "postal_code": "189237",
+        "full_address": "44 HAJI LANE Singapore 189237"
+      },
+      {
+        "sfa_licence": "SE06619L000",
+        "f_and_b_name": "An La Ghien",
+        "postal_code": "388177",
+        "full_address": "Address: 45 LORONG 27 GEYLANG Singapore 388177"
+      },
+      {
+        "sfa_licence": "W95175A000",
+        "f_and_b_name": "AN LA GHIEN-HOTPOT AND BBQ",
+        "postal_code": "059014",
+        "full_address": "Address: 12 SAGO STREET Singapore 059014 (LEVEL 1)"
+      },
+      {
+        "sfa_licence": "W54012K000",
+        "f_and_b_name": "anjapper chettinad restaurant",
+        "postal_code": "218576",
+        "full_address": "Address: 76/78 RACE COURSE ROAD Singapore 218576"
+      },
+      {
+        "sfa_licence": "CE15H39N000",
+        "f_and_b_name": "ANJU",
+        "postal_code": "079001",
+        "full_address": "Address: 62 TRAS STREET #1,Singapore 079001 LEVEL 1"
+      },
+      {
+        "sfa_licence": "CE09112A000",
+        "f_and_b_name": "ANTIDOTE JIU BAR",
+        "postal_code": "208940",
+        "full_address": "Address: 269 JALAN BESAR PETAIN ROAD/TYRWHITT ROAD CONSERVATION AREA,Singapore 208940"
+      },
+      {
+        "sfa_licence": "CE05397A000",
+        "f_and_b_name": "Any1Choco",
+        "postal_code": "068583",
+        "full_address": "Address: 114 TELOK AYER STREET TELOK AYER CONSERVATION AREA,Singapore 068583"
+      },
+      {
+        "sfa_licence": "CE12771K000",
+        "f_and_b_name": "APARTMENT COFFEE",
+        "postal_code": "188309",
+        "full_address": "Address: 139 SELEGIE ROAD Singapore 188309"
+      },
+      {
+        "sfa_licence": "E02051N000",
+        "f_and_b_name": "Apartment Coffee",
+        "postal_code": "358987",
+        "full_address": "Address: 15-9 JALAN RIANG SERANGOON PARK,Singapore 358987 (1ST STOREY)"
+      },
+      {
+        "sfa_licence": "E56006J002",
+        "f_and_b_name": "APM RESTAURANT PTE LTD",
+        "postal_code": "387440",
+        "full_address": "Address: 116 SIMS AVENUE Singapore 387440"
+      },
+      {
+        "sfa_licence": "SE08244X000",
+        "f_and_b_name": "Appa Kade Indian Restaurant",
+        "postal_code": "438735",
+        "full_address": "Address: 26 HAIG ROAD Singapore 438735"
+      },
+      {
+        "sfa_licence": "S87180C000",
+        "f_and_b_name": "Apricus",
+        "postal_code": "799472",
+        "full_address": "Address: 248 JALAN KAYU Singapore 799472 1ST STOREY"
+      },
+      {
+        "sfa_licence": "CE05369J000",
+        "f_and_b_name": "Arc-en-ciel Patisserie",
+        "postal_code": "088822",
+        "full_address": "Address: 37A NEIL ROAD Singapore 088822"
+      },
+      {
+        "sfa_licence": "SCE23037P000",
+        "f_and_b_name": "ARIKI LIVE SEAFOOD",
+        "postal_code": "218456",
+        "full_address": "Address: 215 RANGOON ROAD Singapore 218456"
+      },
+      {
+        "sfa_licence": "SW13O77C000",
+        "f_and_b_name": "ARISE & SHINE",
+        "postal_code": "117583",
+        "full_address": "Address: 4 ENGINEERING DRIVE 3 Singapore 117583"
+      },
+      {
+        "sfa_licence": "SE14032P000",
+        "f_and_b_name": "AROY MAK MOOKATA / KL TRADITIONAL CHILLI BAN MEE - MACPHERSON",
+        "postal_code": "368220",
+        "full_address": "Address: 534 MACPHERSON ROAD Singapore 368220 1ST STOREY"
+      },
+      {
+        "sfa_licence": "CE16M74N000",
+        "f_and_b_name": "ARPANAM PTE LTD",
+        "postal_code": "218151",
+        "full_address": "Address: 486 SERANGOON ROAD Singapore 218151"
+      },
+      {
+        "sfa_licence": "CE22K96A000",
+        "f_and_b_name": "Artisan Boulangerie Co & Alt Pizza",
+        "postal_code": "329748",
+        "full_address": "Address: 321 BALESTIER ROAD Singapore 329748"
+      },
+      {
+        "sfa_licence": "CE06203V000",
+        "f_and_b_name": "ARTISTICK",
+        "postal_code": "058930",
+        "full_address": "Address: 16 SMITH STREET Singapore 058930 (LEVEL 1,2,3)"
+      },
+      {
+        "sfa_licence": "E99080L000",
+        "f_and_b_name": "Asador",
+        "postal_code": "427773",
+        "full_address": "Address: 49/51 JOO CHIAT PLACE Singapore 427773"
+      },
+      {
+        "sfa_licence": "CE18808N006",
+        "f_and_b_name": "ASAM TREE NASI PADANG",
+        "postal_code": "544835",
+        "full_address": "Address: 1 ANCHORVALE STREET #01-21,SENGKANG GENERAL HOSPITAL,Singapore 544835"
+      },
+      {
+        "sfa_licence": "SW05050K000",
+        "f_and_b_name": "ASHMI (S) PTE LTD",
+        "postal_code": "118545",
+        "full_address": "Address: 124 PASIR PANJANG ROAD Singapore 118545"
+      },
+      {
+        "sfa_licence": "CE22N64K000",
+        "f_and_b_name": "ASSAGGI",
+        "postal_code": "088903",
+        "full_address": "Address: 77A NEIL ROAD Singapore 088903"
+      },
+      {
+        "sfa_licence": "C96041J000",
+        "f_and_b_name": "Atlas Coffeehouse",
+        "postal_code": "268886",
+        "full_address": "Address: 6 DUKE'S ROAD Singapore 268886"
+      },
+      {
+        "sfa_licence": "CE20N47J000",
+        "f_and_b_name": "AYASOFYA TURKISH RESTAURANT",
+        "postal_code": "199466",
+        "full_address": "Address: 50 BUSSORAH STREET KAMPONG GLAM CONSERVATION AREA,Singapore 199466 (Level 1 and 2)"
+      },
+      {
+        "sfa_licence": "NE08375X000",
+        "f_and_b_name": "b",
+        "postal_code": "556847",
+        "full_address": "Address: 27 LICHFIELD ROAD SERANGOON GARDEN ESTATE,Singapore 556847"
+      },
+      {
+        "sfa_licence": "W97342L000",
+        "f_and_b_name": "B K EATING HOUSE",
+        "postal_code": "058661",
+        "full_address": "Address: 21 SOUTH BRIDGE ROAD Singapore 058661"
+      },
+      {
+        "sfa_licence": "CE14Q85A000",
+        "f_and_b_name": "B&S MINIMART",
+        "postal_code": "389349",
+        "full_address": "Address: 310 GEYLANG ROAD Singapore 389349"
+      },
+      {
+        "sfa_licence": "CE20H68L000",
+        "f_and_b_name": "B.O.P",
+        "postal_code": "079015",
+        "full_address": "Address: 76 TRAS STREET TANJONG PAGAR CONSERVATION AREA,Singapore 079015 (LEVEL 1)"
+      },
+      {
+        "sfa_licence": "CE08C50X000",
+        "f_and_b_name": "B0JI0",
+        "postal_code": "574388",
+        "full_address": "Address: 261 UPPER THOMSON ROAD SOO CHOW GARDEN,Singapore 574388 1st Storey"
+      },
+      {
+        "sfa_licence": "E50007K001",
+        "f_and_b_name": "B4R! PTE. LTD.",
+        "postal_code": "437122",
+        "full_address": "Address: 362 TANJONG KATONG ROAD Singapore 437122"
+      },
+      {
+        "sfa_licence": "C81041N007",
+        "f_and_b_name": "Ba Wei Ban Mian",
+        "postal_code": "119077",
+        "full_address": "Address: 21 LOWER KENT RIDGE ROAD Faculty of Arts and Social Sciences,Singapore 119077 The Deck Canteen"
+      },
+      {
+        "sfa_licence": "W92299L000",
+        "f_and_b_name": "BADEN SINGAPORE PTE LTD",
+        "postal_code": "277696",
+        "full_address": "Address: 42 LORONG MAMBONG HOLLAND VILLAGE,Singapore 277696"
+      },
+      {
+        "sfa_licence": "W99207J000",
+        "f_and_b_name": "BADGERS",
+        "postal_code": "069709",
+        "full_address": "Address: 29 ANN SIANG ROAD Singapore 069709"
+      },
+      {
+        "sfa_licence": "SSE21053V000",
+        "f_and_b_name": "Baggie's Deli",
+        "postal_code": "427493",
+        "full_address": "Address: 236 JOO CHIAT ROAD Singapore 427493 Level 1"
+      },
+      {
+        "sfa_licence": "W91010E000",
+        "f_and_b_name": "Bago",
+        "postal_code": "089587",
+        "full_address": "Address: 1A DUXTON HILL TANJONG PAGAR CONSERVATION AREA,Singapore 089587"
+      },
+      {
+        "sfa_licence": "SE04043V000",
+        "f_and_b_name": "BAGUS",
+        "postal_code": "419756",
+        "full_address": "Address: 276/278 CHANGI ROAD Singapore 419756"
+      },
+      {
+        "sfa_licence": "W60006C003",
+        "f_and_b_name": "bak kut teh",
+        "postal_code": "218914",
+        "full_address": "Address: 107 OWEN ROAD Singapore 218914"
+      },
+      {
+        "sfa_licence": "NW25980B000",
+        "f_and_b_name": "BAKE ANTHEM",
+        "postal_code": "589831",
+        "full_address": "Address: 29 BINJAI PARK BINJAI PARK,Singapore 589831 (LEVEL 1)"
+      },
+      {
+        "sfa_licence": "B64025A000",
+        "f_and_b_name": "Baker & Cook",
+        "postal_code": "555983",
+        "full_address": "Address: 87 SERANGOON GARDEN WAY SERANGOON GARDEN ESTATE,Singapore 555983"
+      },
+      {
+        "sfa_licence": "C85251K000",
+        "f_and_b_name": "Baker & Cook and Plank Sourdough Pizza",
+        "postal_code": "118164",
+        "full_address": "Address: 38 SOUTH BUONA VISTA ROAD Singapore 118164 (1ST STOREY)"
+      },
+      {
+        "sfa_licence": "SE08255L000",
+        "f_and_b_name": "BAKER & COOK PTE. LTD.",
+        "postal_code": "455700",
+        "full_address": "Address: 1 SWAN LAKE AVENUE OPERA ESTATE,Singapore 455700"
+      },
+      {
+        "sfa_licence": "SE04147E000",
+        "f_and_b_name": "Baker's Well",
+        "postal_code": "428754",
+        "full_address": "Address: 35 EAST COAST ROAD Singapore 428754"
+      },
+      {
+        "sfa_licence": "W83197L000",
+        "f_and_b_name": "BALESTIER BAK KUT TEH (369) PTE LTD",
+        "postal_code": "329787",
+        "full_address": "Address: 369 BALESTIER ROAD Singapore 329787"
+      },
+      {
+        "sfa_licence": "E93012X000",
+        "f_and_b_name": "Bali Nasi Lemak",
+        "postal_code": "387464",
+        "full_address": "Address: 142 SIMS AVENUE Singapore 387464"
+      },
+      {
+        "sfa_licence": "CE08H34K000",
+        "f_and_b_name": "Balina",
+        "postal_code": "188383",
+        "full_address": "Address: 27 SEAH STREET Singapore 188383"
+      },
+      {
+        "sfa_licence": "CE15620N000",
+        "f_and_b_name": "Bamboo king's briyani & kebab",
+        "postal_code": "208529",
+        "full_address": "Address: 157 KITCHENER ROAD Singapore 208529 (1st Storey)"
+      },
+      {
+        "sfa_licence": "C62003P000",
+        "f_and_b_name": "Ban Heng Restaurant",
+        "postal_code": "118515",
+        "full_address": "Address: 97 PASIR PANJANG ROAD Singapore 118515 LEVEL 1"
+      },
+      {
+        "sfa_licence": "B84119K000",
+        "f_and_b_name": "Ban Leong Wah Hoe Seafood Restaurant",
+        "postal_code": "579510",
+        "full_address": "Address: 122/124 CASUARINA ROAD SEMBAWANG HILLS ESTATE,Singapore 579510 (1ST STOREY)"
+      },
+      {
+        "sfa_licence": "W83246K000",
+        "f_and_b_name": "banana leaf",
+        "postal_code": "218565",
+        "full_address": "Address: 56 RACE COURSE ROAD Singapore 218565"
+      },
+      {
+        "sfa_licence": "CE26B25E000",
+        "f_and_b_name": "BANGALA MINI MART PTE. LTD.",
+        "postal_code": "389254",
+        "full_address": "Address: 186 GEYLANG ROAD #01-01,Singapore 389254 (PART OF - LEFT)"
+      },
+      {
+        "sfa_licence": "CE12162C000",
+        "f_and_b_name": "BANGALORE IYENGAR BAKERY & RESTAURANT",
+        "postal_code": "218366",
+        "full_address": "Address: 79 RANGOON ROAD Singapore 218366"
+      },
+      {
+        "sfa_licence": "CE11435A000",
+        "f_and_b_name": "BANGKOK STREET MOOKATA",
+        "postal_code": "577728",
+        "full_address": "Address: 14 JALAN KURAS Singapore 577728"
+      },
+      {
+        "sfa_licence": "CE19N11N000",
+        "f_and_b_name": "Banngkok",
+        "postal_code": "198491",
+        "full_address": "Address: 43 SULTAN GATE Singapore 198491 LEVEL 1 AND 2"
+      },
+      {
+        "sfa_licence": "W00017B000",
+        "f_and_b_name": "BANQUET",
+        "postal_code": "299558",
+        "full_address": "Address: 1 PLYMOUTH AVENUE RAFFLES TOWN CLUB,Singapore 299558 (LEVEL 1)"
+      },
+      {
+        "sfa_licence": "CE26002N000",
+        "f_and_b_name": "BANTING TRADITIONAL CUISINE",
+        "postal_code": "238281",
+        "full_address": "Address: 223 RIVER VALLEY ROAD Singapore 238281 (MR1)"
+      },
+      {
+        "sfa_licence": "CE13X03B000",
+        "f_and_b_name": "Bao Er Cafe",
+        "postal_code": "277683",
+        "full_address": "Address: 24A LORONG MAMBONG HOLLAND VILLAGE,Singapore 277683"
+      },
+      {
+        "sfa_licence": "SE23557K000",
+        "f_and_b_name": "Bao Fa Cha Chaan Teng",
+        "postal_code": "534835",
+        "full_address": "Address: 119 UPPER PAYA LEBAR ROAD Singapore 534835 (1ST STOREY)"
+      },
+      {
+        "sfa_licence": "CE23505B000",
+        "f_and_b_name": "BAO ZHAI",
+        "postal_code": "338816",
+        "full_address": "Address: 312 LAVENDER STREET Singapore 338816 (1ST STOREY)"
+      },
+      {
+        "sfa_licence": "C93017K000",
+        "f_and_b_name": "BAR BAR BLACK SHEEP",
+        "postal_code": "279892",
+        "full_address": "Address: 879 BUKIT TIMAH ROAD Singapore 279892"
+      },
+      {
+        "sfa_licence": "CE11L52E000",
+        "f_and_b_name": "Bar Cicheti",
+        "postal_code": "089264",
+        "full_address": "Address: 10 JIAK CHUAN ROAD Singapore 089264 First Storey"
+      },
+      {
+        "sfa_licence": "CE20R81B000",
+        "f_and_b_name": "Bar NKD",
+        "postal_code": "069463",
+        "full_address": "Address: 95 CLUB STREET Singapore 069463"
+      },
+      {
+        "sfa_licence": "E81138L000",
+        "f_and_b_name": "Bar Room",
+        "postal_code": "459102",
+        "full_address": "Address: 899 EAST COAST ROAD Singapore 459102"
+      },
+      {
+        "sfa_licence": "CE10980L000",
+        "f_and_b_name": "Bar Stories",
+        "postal_code": "189248",
+        "full_address": "Address: 55/55A/57A HAJI LANE KAMPONG GLAM CONSERVATION AREA,Singapore 189248"
+      }
+    ]
+  },
+  "credential_check": {
+    "onemap_api_token_configured_in_this_agent_process": false,
+    "token_value_read_or_printed": false,
+    "onemap_requests_made": false,
+    "mapbox_requests_made": false
+  },
+  "open_source_rechecks": [
+    {
+      "publisher": "National Environment Agency via data.gov.sg",
+      "dataset": "Hawker Centres (GEOJSON)",
+      "url": "https://data.gov.sg/datasets/d_4a086da0a5553be1d89383cd90d07ecd/view",
+      "licence": "Singapore Open Data Licence v1.0; attribution required",
+      "prior_refresh130_result": "129 features; 0 exact six-digit postal + block/street matches to missing public-access rows",
+      "precision_limit": "Hawker centre facility point, not stall-front point",
+      "rebound_to_current_sha": true,
+      "new_download_in_this_audit": false
+    },
+    {
+      "publisher": "Housing & Development Board via data.gov.sg",
+      "dataset": "HDB Existing Building (GEOJSON)",
+      "url": "https://data.gov.sg/datasets/d_16b157c52ed637edd6ba1232e026258d/view",
+      "licence": "Singapore Open Data Licence v1.0; attribution required",
+      "prior_refresh133_result": "13,436 features; 0 exact six-digit postal matches in first 100 distinct-postal sample",
+      "precision_limit": "Building footprint/point, not individual stall",
+      "rebound_to_current_sha": true,
+      "new_download_in_this_audit": false
+    },
+    {
+      "publisher": "OpenStreetMap contributors",
+      "url": "https://www.openstreetmap.org/copyright",
+      "licence": "Open Database Licence (ODbL); attribution and share-alike considerations apply",
+      "result": "No fresh OSM query in this bounded refresh; previous refresh131 independent OSM checks yielded 0 accepted candidates and one rejected postal conflict.",
+      "rebound_to_current_sha": true
+    }
+  ],
+  "same_postal_inherited_coordinate_leads": {
+    "strict_exact_postal_and_normalized_block_street_prefix_matches": 22,
+    "candidate_rows": [
+      {
+        "target_licence": "E53006K004",
+        "target_name": "BASIL KING",
+        "postal_code": "347858",
+        "target_address": "Address: 29 TAI THONG CRESCENT SENNETT ESTATE,Singapore 347858",
+        "candidate_latitude": 1.3290065,
+        "candidate_longitude": 103.8697889,
+        "source_record_licence": "E53006K006",
+        "source_record_name": "MR DUCK",
+        "source_precision_as_stored": "OpenStreetMap node; tier-2 unique exact normalized name and postal code, unit/address incomplete",
+        "disposition": "hold_no_row_level_source_lineage",
+        "reason": "Exact postal and normalized block/street prefix match supports same premises, but source coordinate lineage and rights are not independently proven for this inherited record."
+      },
+      {
+        "target_licence": "E53006K001",
+        "target_name": "drinks",
+        "postal_code": "347858",
+        "target_address": "Address: 29 TAI THONG CRESCENT SENNETT ESTATE,Singapore 347858",
+        "candidate_latitude": 1.3290065,
+        "candidate_longitude": 103.8697889,
+        "source_record_licence": "E53006K006",
+        "source_record_name": "MR DUCK",
+        "source_precision_as_stored": "OpenStreetMap node; tier-2 unique exact normalized name and postal code, unit/address incomplete",
+        "disposition": "hold_no_row_level_source_lineage",
+        "reason": "Exact postal and normalized block/street prefix match supports same premises, but source coordinate lineage and rights are not independently proven for this inherited record."
+      },
+      {
+        "target_licence": "CE25D16J004",
+        "target_name": "Foodelic",
+        "postal_code": "069472",
+        "target_address": "Address: 8 CLUB STREET #B2-34,Singapore 069472",
+        "candidate_latitude": 1.28273713,
+        "candidate_longitude": 103.84653284,
+        "source_record_licence": "CE25D16J003",
+        "source_record_name": "Yelemon",
+        "source_precision_as_stored": "Overture Places point; exact normalized name, postal and unit match; confidence >= 0.80; not surveyed stall-front precision",
+        "disposition": "hold_no_row_level_source_lineage",
+        "reason": "Exact postal and normalized block/street prefix match supports same premises, but source coordinate lineage and rights are not independently proven for this inherited record."
+      },
+      {
+        "target_licence": "W97462V009",
+        "target_name": "green green",
+        "postal_code": "068590",
+        "target_address": "Address: 121 TELOK AYER STREET #01-01,Singapore 068590",
+        "candidate_latitude": 1.2812576,
+        "candidate_longitude": 103.848009,
+        "source_record_licence": "W97462V000",
+        "source_record_name": "TELOK AYER COFFEE SHOP",
+        "source_precision_as_stored": "OpenStreetMap node; tier-2 unique exact normalized name and postal code, unit/address incomplete",
+        "disposition": "hold_no_row_level_source_lineage",
+        "reason": "Exact postal and normalized block/street prefix match supports same premises, but source coordinate lineage and rights are not independently proven for this inherited record."
+      },
+      {
+        "target_licence": "E53006K000",
+        "target_name": "LAO ZHONG ZHONG",
+        "postal_code": "347858",
+        "target_address": "Address: 29 TAI THONG CRESCENT SENNETT ESTATE,Singapore 347858",
+        "candidate_latitude": 1.3290065,
+        "candidate_longitude": 103.8697889,
+        "source_record_licence": "E53006K006",
+        "source_record_name": "MR DUCK",
+        "source_precision_as_stored": "OpenStreetMap node; tier-2 unique exact normalized name and postal code, unit/address incomplete",
+        "disposition": "hold_no_row_level_source_lineage",
+        "reason": "Exact postal and normalized block/street prefix match supports same premises, but source coordinate lineage and rights are not independently proven for this inherited record."
+      },
+      {
+        "target_licence": "E53006K003",
+        "target_name": "LAO ZHONG ZHONG FINE",
+        "postal_code": "347858",
+        "target_address": "Address: 29 TAI THONG CRESCENT SENNETT ESTATE,Singapore 347858",
+        "candidate_latitude": 1.3290065,
+        "candidate_longitude": 103.8697889,
+        "source_record_licence": "E53006K006",
+        "source_record_name": "MR DUCK",
+        "source_precision_as_stored": "OpenStreetMap node; tier-2 unique exact normalized name and postal code, unit/address incomplete",
+        "disposition": "hold_no_row_level_source_lineage",
+        "reason": "Exact postal and normalized block/street prefix match supports same premises, but source coordinate lineage and rights are not independently proven for this inherited record."
+      },
+      {
+        "target_licence": "CE18L23C000",
+        "target_name": "Lobby Lounge",
+        "postal_code": "178906",
+        "target_address": "Address: 15 STAMFORD ROAD THE CAPITOL KEMPINSKI HOTEL SINGAPORE,Singapore 178906 (Part of)",
+        "candidate_latitude": 1.293493,
+        "candidate_longitude": 103.851551,
+        "source_record_licence": "CE18L21J000",
+        "source_record_name": "15 Stamford",
+        "source_precision_as_stored": "Search result is the exact 15 Stamford Road address and postal code, but not the restaurant POI; rooftop building/address coordinates only, not a separate restaurant entrance or unit point.",
+        "disposition": "hold_no_row_level_source_lineage",
+        "reason": "Exact postal and normalized block/street prefix match supports same premises, but source coordinate lineage and rights are not independently proven for this inherited record."
+      },
+      {
+        "target_licence": "W97462V007",
+        "target_name": "RM WARUNG INDONESIA",
+        "postal_code": "068590",
+        "target_address": "Address: 121 TELOK AYER STREET #01-01,Singapore 068590",
+        "candidate_latitude": 1.2812576,
+        "candidate_longitude": 103.848009,
+        "source_record_licence": "W97462V000",
+        "source_record_name": "TELOK AYER COFFEE SHOP",
+        "source_precision_as_stored": "OpenStreetMap node; tier-2 unique exact normalized name and postal code, unit/address incomplete",
+        "disposition": "hold_no_row_level_source_lineage",
+        "reason": "Exact postal and normalized block/street prefix match supports same premises, but source coordinate lineage and rights are not independently proven for this inherited record."
+      },
+      {
+        "target_licence": "W97462V006",
+        "target_name": "SUPERCURRY PTE LTD",
+        "postal_code": "068590",
+        "target_address": "Address: 121 TELOK AYER STREET #01-01,Singapore 068590",
+        "candidate_latitude": 1.2812576,
+        "candidate_longitude": 103.848009,
+        "source_record_licence": "W97462V000",
+        "source_record_name": "TELOK AYER COFFEE SHOP",
+        "source_precision_as_stored": "OpenStreetMap node; tier-2 unique exact normalized name and postal code, unit/address incomplete",
+        "disposition": "hold_no_row_level_source_lineage",
+        "reason": "Exact postal and normalized block/street prefix match supports same premises, but source coordinate lineage and rights are not independently proven for this inherited record."
+      },
+      {
+        "target_licence": "W97462V004",
+        "target_name": "TELOK AYER COFFEE SHOP PTE LTD",
+        "postal_code": "068590",
+        "target_address": "Address: 121 TELOK AYER STREET #01-01,Singapore 068590",
+        "candidate_latitude": 1.2812576,
+        "candidate_longitude": 103.848009,
+        "source_record_licence": "W97462V000",
+        "source_record_name": "TELOK AYER COFFEE SHOP",
+        "source_precision_as_stored": "OpenStreetMap node; tier-2 unique exact normalized name and postal code, unit/address incomplete",
+        "disposition": "hold_no_row_level_source_lineage",
+        "reason": "Exact postal and normalized block/street prefix match supports same premises, but source coordinate lineage and rights are not independently proven for this inherited record."
+      },
+      {
+        "target_licence": "W97462V008",
+        "target_name": "Telok Ayer Juice & Waffle",
+        "postal_code": "068590",
+        "target_address": "Address: 121 TELOK AYER STREET #01-01,Singapore 068590",
+        "candidate_latitude": 1.2812576,
+        "candidate_longitude": 103.848009,
+        "source_record_licence": "W97462V000",
+        "source_record_name": "TELOK AYER COFFEE SHOP",
+        "source_precision_as_stored": "OpenStreetMap node; tier-2 unique exact normalized name and postal code, unit/address incomplete",
+        "disposition": "hold_no_row_level_source_lineage",
+        "reason": "Exact postal and normalized block/street prefix match supports same premises, but source coordinate lineage and rights are not independently proven for this inherited record."
+      },
+      {
+        "target_licence": "W97462V005",
+        "target_name": "VEGGIE121",
+        "postal_code": "068590",
+        "target_address": "Address: 121 TELOK AYER STREET #01-01,Singapore 068590",
+        "candidate_latitude": 1.2812576,
+        "candidate_longitude": 103.848009,
+        "source_record_licence": "W97462V000",
+        "source_record_name": "TELOK AYER COFFEE SHOP",
+        "source_precision_as_stored": "OpenStreetMap node; tier-2 unique exact normalized name and postal code, unit/address incomplete",
+        "disposition": "hold_no_row_level_source_lineage",
+        "reason": "Exact postal and normalized block/street prefix match supports same premises, but source coordinate lineage and rights are not independently proven for this inherited record."
+      },
+      {
+        "target_licence": "W97462V001",
+        "target_name": "WARUNG ITALIA",
+        "postal_code": "068590",
+        "target_address": "Address: 121 TELOK AYER STREET #01-01,Singapore 068590",
+        "candidate_latitude": 1.2812576,
+        "candidate_longitude": 103.848009,
+        "source_record_licence": "W97462V000",
+        "source_record_name": "TELOK AYER COFFEE SHOP",
+        "source_precision_as_stored": "OpenStreetMap node; tier-2 unique exact normalized name and postal code, unit/address incomplete",
+        "disposition": "hold_no_row_level_source_lineage",
+        "reason": "Exact postal and normalized block/street prefix match supports same premises, but source coordinate lineage and rights are not independently proven for this inherited record."
+      },
+      {
+        "target_licence": "CE25D16J001",
+        "target_name": null,
+        "postal_code": "069472",
+        "target_address": "Address: 8 CLUB STREET #B2-34,Singapore 069472",
+        "candidate_latitude": 1.28273713,
+        "candidate_longitude": 103.84653284,
+        "source_record_licence": "CE25D16J003",
+        "source_record_name": "Yelemon",
+        "source_precision_as_stored": "Overture Places point; exact normalized name, postal and unit match; confidence >= 0.80; not surveyed stall-front precision",
+        "disposition": "hold_no_row_level_source_lineage",
+        "reason": "Exact postal and normalized block/street prefix match supports same premises, but source coordinate lineage and rights are not independently proven for this inherited record."
+      },
+      {
+        "target_licence": "CE25N52P000",
+        "target_name": null,
+        "postal_code": "069472",
+        "target_address": "Address: 8 CLUB STREET #B2-34,Singapore 069472 (MR2)",
+        "candidate_latitude": 1.28273713,
+        "candidate_longitude": 103.84653284,
+        "source_record_licence": "CE25D16J003",
+        "source_record_name": "Yelemon",
+        "source_precision_as_stored": "Overture Places point; exact normalized name, postal and unit match; confidence >= 0.80; not surveyed stall-front precision",
+        "disposition": "hold_no_row_level_source_lineage",
+        "reason": "Exact postal and normalized block/street prefix match supports same premises, but source coordinate lineage and rights are not independently proven for this inherited record."
+      },
+      {
+        "target_licence": "E53006K002",
+        "target_name": null,
+        "postal_code": "347858",
+        "target_address": "Address: 29 TAI THONG CRESCENT SENNETT ESTATE,Singapore 347858",
+        "candidate_latitude": 1.3290065,
+        "candidate_longitude": 103.8697889,
+        "source_record_licence": "E53006K006",
+        "source_record_name": "MR DUCK",
+        "source_precision_as_stored": "OpenStreetMap node; tier-2 unique exact normalized name and postal code, unit/address incomplete",
+        "disposition": "hold_no_row_level_source_lineage",
+        "reason": "Exact postal and normalized block/street prefix match supports same premises, but source coordinate lineage and rights are not independently proven for this inherited record."
+      },
+      {
+        "target_licence": "E53006K005",
+        "target_name": null,
+        "postal_code": "347858",
+        "target_address": "Address: 29 TAI THONG CRESCENT SENNETT ESTATE,Singapore 347858",
+        "candidate_latitude": 1.3290065,
+        "candidate_longitude": 103.8697889,
+        "source_record_licence": "E53006K006",
+        "source_record_name": "MR DUCK",
+        "source_precision_as_stored": "OpenStreetMap node; tier-2 unique exact normalized name and postal code, unit/address incomplete",
+        "disposition": "hold_no_row_level_source_lineage",
+        "reason": "Exact postal and normalized block/street prefix match supports same premises, but source coordinate lineage and rights are not independently proven for this inherited record."
+      },
+      {
+        "target_licence": "E53019N000",
+        "target_name": null,
+        "postal_code": "534841",
+        "target_address": "Address: 131 UPPER PAYA LEBAR ROAD Singapore 534841",
+        "candidate_latitude": 1.3386719,
+        "candidate_longitude": 103.8863214,
+        "source_record_licence": "E53019N003",
+        "source_record_name": "JIALE KOPITIAM",
+        "source_precision_as_stored": "OpenStreetMap node; tier-2 unique exact normalized name and postal code, unit/address incomplete",
+        "disposition": "hold_no_row_level_source_lineage",
+        "reason": "Exact postal and normalized block/street prefix match supports same premises, but source coordinate lineage and rights are not independently proven for this inherited record."
+      },
+      {
+        "target_licence": "E53019N001",
+        "target_name": null,
+        "postal_code": "534841",
+        "target_address": "Address: 131 UPPER PAYA LEBAR ROAD Singapore 534841",
+        "candidate_latitude": 1.3386719,
+        "candidate_longitude": 103.8863214,
+        "source_record_licence": "E53019N003",
+        "source_record_name": "JIALE KOPITIAM",
+        "source_precision_as_stored": "OpenStreetMap node; tier-2 unique exact normalized name and postal code, unit/address incomplete",
+        "disposition": "hold_no_row_level_source_lineage",
+        "reason": "Exact postal and normalized block/street prefix match supports same premises, but source coordinate lineage and rights are not independently proven for this inherited record."
+      },
+      {
+        "target_licence": "SE25G30P000",
+        "target_name": null,
+        "postal_code": "534841",
+        "target_address": "Address: 131 UPPER PAYA LEBAR ROAD Singapore 534841 (MR2)",
+        "candidate_latitude": 1.3386719,
+        "candidate_longitude": 103.8863214,
+        "source_record_licence": "E53019N003",
+        "source_record_name": "JIALE KOPITIAM",
+        "source_precision_as_stored": "OpenStreetMap node; tier-2 unique exact normalized name and postal code, unit/address incomplete",
+        "disposition": "hold_no_row_level_source_lineage",
+        "reason": "Exact postal and normalized block/street prefix match supports same premises, but source coordinate lineage and rights are not independently proven for this inherited record."
+      },
+      {
+        "target_licence": "SE25G31N000",
+        "target_name": null,
+        "postal_code": "534841",
+        "target_address": "Address: 131 UPPER PAYA LEBAR ROAD Singapore 534841 (MR1)",
+        "candidate_latitude": 1.3386719,
+        "candidate_longitude": 103.8863214,
+        "source_record_licence": "E53019N003",
+        "source_record_name": "JIALE KOPITIAM",
+        "source_precision_as_stored": "OpenStreetMap node; tier-2 unique exact normalized name and postal code, unit/address incomplete",
+        "disposition": "hold_no_row_level_source_lineage",
+        "reason": "Exact postal and normalized block/street prefix match supports same premises, but source coordinate lineage and rights are not independently proven for this inherited record."
+      },
+      {
+        "target_licence": "W97462V002",
+        "target_name": null,
+        "postal_code": "068590",
+        "target_address": "Address: 121 TELOK AYER STREET #01-01,Singapore 068590",
+        "candidate_latitude": 1.2812576,
+        "candidate_longitude": 103.848009,
+        "source_record_licence": "W97462V000",
+        "source_record_name": "TELOK AYER COFFEE SHOP",
+        "source_precision_as_stored": "OpenStreetMap node; tier-2 unique exact normalized name and postal code, unit/address incomplete",
+        "disposition": "hold_no_row_level_source_lineage",
+        "reason": "Exact postal and normalized block/street prefix match supports same premises, but source coordinate lineage and rights are not independently proven for this inherited record."
+      }
+    ],
+    "disposition": "Held; no candidate promoted because workbook coordinate column lacks independently verifiable row-level source URL/lineage for transfer."
+  },
+  "proposed_coordinate_updates": [],
+  "decision": "No new coordinates proposed. The only current high-confidence path to batch-fill remaining exact postal building points is OneMap, but ONEMAP_API_TOKEN is absent in this agent process. Existing open government datasets rechecked in Refresh130/133 contain no new exact matches under current policies. Mapbox was not used.",
+  "precision_policy": "Do not label building or facility points as stall coordinates; require exact premises identity and source-reusable provenance. Do not infer from postal centroid or unverified workbook coordinate inheritance.",
+  "next_action": "Run the already-authorized, rate-limited OneMap batch in the local process where the user-configured token is available, reuse only exact postal/building matches, preserve per-source precision and attribution, and write a checkpointed proposal first.",
+  "sources_context": [
+    "data/source_snapshots/refresh130_coordinates_20261019.json",
+    "data/source_snapshots/refresh133_coordinates_20261019.json",
+    "data/source_snapshots/refresh131_coordinates_mapbox_20261019.json"
+  ]
+}

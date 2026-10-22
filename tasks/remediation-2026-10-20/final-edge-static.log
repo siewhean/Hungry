@@ -1,0 +1,5 @@
+
+> hungry-mobile@0.1.0 check:edge-functions
+> node scripts/check-edge-functions.mjs
+
+Edge Function static checks passed.

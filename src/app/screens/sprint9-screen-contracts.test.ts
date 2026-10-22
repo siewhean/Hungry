@@ -27,21 +27,21 @@ test("Sprint 9 screen contract: Login screen uses service auth + error boundary"
   assert.match(source, /AUTH_COPY\.login/);
   assert.match(
     source,
-    /<AuthProviderButton[\s\S]*disabled=\{!oauthProvidersEnabled\}[\s\S]*intent="signIn"[\s\S]*provider="google"/,
+    /<AuthProviderButton[\s\S]*disabled=\{busy\}[\s\S]*intent="signIn"[\s\S]*provider="google"/,
   );
   assert.match(
     source,
-    /<AuthProviderButton[\s\S]*disabled=\{!oauthProvidersEnabled\}[\s\S]*intent="signIn"[\s\S]*provider="apple"/,
+    /<AuthProviderButton[\s\S]*disabled=\{busy\}[\s\S]*intent="signIn"[\s\S]*provider="apple"/,
   );
   assert.match(signUpSource, /AUTH_COPY\.signUp/);
   assert.match(signUpSource, /FEATURE_FLAGS\.oauthProvidersEnabled/);
   assert.match(
     signUpSource,
-    /<AuthProviderButton[\s\S]*disabled=\{!oauthProvidersEnabled\}[\s\S]*intent="continue"[\s\S]*provider="google"/,
+    /<AuthProviderButton[\s\S]*disabled=\{busy\}[\s\S]*intent="continue"[\s\S]*provider="google"/,
   );
   assert.match(
     signUpSource,
-    /<AuthProviderButton[\s\S]*disabled=\{!oauthProvidersEnabled\}[\s\S]*intent="continue"[\s\S]*provider="apple"/,
+    /<AuthProviderButton[\s\S]*disabled=\{busy\}[\s\S]*intent="continue"[\s\S]*provider="apple"/,
   );
   assert.match(forgotPasswordSource, /AUTH_COPY\.forgotPassword/);
   assert.match(source, /<FeedErrorBoundary/);
@@ -127,8 +127,8 @@ test("Sprint 9 screen contract: onboarding icon controls and location rows are l
   const tasteProfileResult = read("src/app/screens/onboarding/TasteProfileResultScreen.tsx");
   const tasteQuiz = read("src/app/screens/onboarding/TasteQuizScreen.tsx");
 
-  assert.match(locationPermission, /accessibilityLabel="Back to taste quiz"/);
-  assert.match(locationPermission, /accessibilityHint="Returns to the taste preference questions"/);
+  assert.match(locationPermission, /accessibilityLabel="Back"/);
+  assert.match(locationPermission, /accessibilityHint="Returns to the previous onboarding step"/);
   assert.match(manualLocation, /accessibilityLabel="Back to location permission"/);
   assert.match(manualLocation, /accessibilityLabel="Search Singapore location"/);
   assert.match(manualLocation, /accessibilityLabel=\{`Choose \$\{area\.name\}`\}/);
@@ -145,9 +145,19 @@ test("Sprint 9 screen contract: onboarding icon controls and location rows are l
   );
   // Result is ranked by the quiz taste vector, not a fixed popular list.
   assert.match(tasteProfileResult, /tasteValues: tasteVector/);
-  assert.match(tasteProfileResult, /searchDishes\(getResultFilters\(\), tasteVector\)/);
+  assert.match(tasteProfileResult, /selectOnboardingRecommendations/);
+  assert.match(tasteQuiz, /key=\{currentKey\}/);
+  assert.match(tasteQuiz, /initialScrollIndex=\{snappedIndex\}/);
+  assert.doesNotMatch(
+    tasteQuiz,
+    /style=\{\{ overflow: "visible", width: "100%" \}\}/,
+    "horizontal list must retain ScrollView scrolling overflow",
+  );
   // Supabase has no cached catalog during onboarding, so the screen asks the server.
-  assert.match(tasteProfileResult, /getSearchResultsAsync\(getResultFilters\(\), tasteVector\)/);
+  assert.match(
+    tasteProfileResult,
+    /getSearchResultsAsync\(getResultFilters\(\), profile\.tasteVector\)/,
+  );
   assert.doesNotMatch(tasteProfileResult, /generated food photo/);
   assert.match(
     tasteQuiz,
@@ -347,13 +357,14 @@ test("Sprint 9 screen contract: Home feed interactions are wired for like/save/c
     /accessibilityLabel=\{`\$\{isFollowingAuthor \? "Unfollow" : "Follow"\} \$\{item\.authorName\}`\}/,
   );
   assert.match(source, /style=\{\[\s*styles\.followButton/);
-  assert.match(source, /\{isFollowingAuthor \? "Following" : "Follow"\}/);
+  assert.match(source, /pendingUserIds\[followTargetId\]/);
+  assert.match(source, /"Requested"/);
   assert.match(source, /function formatPostAge\(createdAt: string\)/);
-  assert.match(source, /const COLLAPSED_CAPTION_MAX_CHARS = 118/);
-  assert.match(source, /function formatCollapsedCaption\(caption: string\)/);
-  assert.match(source, /const \[captionOverflowByPostId, setCaptionOverflowByPostId\]/);
-  assert.match(source, /const handleCaptionTextLayout = useCallback/);
-  assert.match(source, /current\[postId\] && !isOverflowing/);
+  assert.match(source, /const \[expandedCaptions, setExpandedCaptions\]/);
+  assert.match(
+    source,
+    /accessibilityState=\{\{ expanded: Boolean\(expandedCaptions\[item\.id\]\) \}\}/,
+  );
   assert.match(source, /const postAgeLabel = formatPostAge\(item\.createdAt\)/);
   assert.doesNotMatch(source, /\{" · "\}\s*\{postAgeLabel\}/);
   assert.match(
@@ -369,15 +380,10 @@ test("Sprint 9 screen contract: Home feed interactions are wired for like/save/c
     /horizontal[\s\S]*pagingEnabled[\s\S]*showsHorizontalScrollIndicator=\{false\}/,
   );
   assert.match(source, /setCarouselIndexByPostId/);
-  assert.match(source, /numberOfLines=\{2\}/);
-  assert.match(source, /onTextLayout=\{\(event\) => handleCaptionTextLayout\(item\.id, event\)\}/);
-  assert.match(source, /accessibilityLabel=\{`Read comments for \$\{item\.authorName\}'s post`\}/);
+  assert.match(source, /numberOfLines=\{expandedCaptions\[item\.id\] \? undefined : 2\}/);
+  assert.match(source, /"Collapse caption" : "Expand caption"/);
   assert.match(source, /onPress=\{\(\) => openComments\(item\)\}/);
-  assert.match(
-    source,
-    /\{captionOverflows \? formatCollapsedCaption\(item\.caption\) : item\.caption\}/,
-  );
-  assert.match(source, /\{" more"\}/);
+  assert.match(source, /setExpandedCaptions\(\(current\) =>/);
   assert.doesNotMatch(source, /Read more comments for/);
   assert.match(source, /styles\.postTag/);
   assert.match(source, /feedItemWrap:[\s\S]*marginBottom: spacing\[6\]/);
@@ -582,7 +588,16 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
   assert.match(source, /Opening Hours/);
   assert.match(source, /Signature Dishes/);
   assert.match(source, /From the Community/);
-  assert.match(source, /const venueDishes = useMemo/);
+  assert.match(
+    source,
+    /const venueContext = useMemo\(\(\) => getDishVenueContext\(dish, repository\)/,
+  );
+  assert.match(source, /const cachedVenue = venueContext\.venue/);
+  assert.match(source, /const venueDishes = venueContext\.dishes/);
+  const venueContextSource = read("src/features/detail/dishVenueContext.ts");
+  assert.match(venueContextSource, /repository\.getVenueById\(dish\.venueId\)/);
+  assert.match(venueContextSource, /repository\s*\.listDishesByVenue\(dish\.venueId\)/);
+  assert.match(venueContextSource, /candidate\.venueId === dish\.venueId/);
   assert.match(source, /getSignatureDishes\(dish, venueDishes\)/);
   assert.doesNotMatch(source, /supplementalDishes/);
   assert.match(source, /const signatureGridItemWidth = width \/ 2/);

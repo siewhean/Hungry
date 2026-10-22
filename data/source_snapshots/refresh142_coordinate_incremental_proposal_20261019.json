@@ -1,0 +1,155 @@
+{
+  "snapshot_type": "read_only_incremental_coordinate_source_recheck",
+  "captured_at_sgt": "2026-10-19T12:54:29+08:00",
+  "canonical_workbook": {
+    "path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "sha256": "bb74665b20d62a711463850a4d5de0648dc0237c4e1d75e96c9eb5f5a89d2d93",
+    "worksheet": "Public F&B Directory",
+    "record_count": 38273,
+    "missing_coordinate_pairs": 2536,
+    "missing_coordinate_pairs_with_exact_six_digit_postal": 2434,
+    "unique_missing_six_digit_postals": 1552,
+    "workbook_modified": false
+  },
+  "credential_check": {
+    "onemap_api_token_present_in_this_process": false,
+    "token_value_read_or_printed": false,
+    "onemap_calls_made": false,
+    "mapbox_calls_made": false
+  },
+  "source_rechecks": [
+    {
+      "source": "BCA Friendly Buildings exact postal",
+      "snapshot_file": "data/source_snapshots/bca_friendly_buildings_exact_postal_coordinate_candidates_20261018.json",
+      "cached_candidate_records": 1012,
+      "same_licence_exact_postal_candidates_still_missing_coordinates": 15,
+      "candidate_match_keys_rechecked": [
+        "SFA Licence",
+        "six-digit Postal Code"
+      ],
+      "application_ready_proposals": 0,
+      "note": "15 stale postal-only candidate rows remain blank, but exact source street-number/address identity does not match (for example, source address 8 Sentosa Gateway versus outlet address 30 Sentosa Gateway).",
+      "exact_normalized_source_address_matches_still_missing": 0
+    },
+    {
+      "source": "BCA Friendly Buildings strict address",
+      "snapshot_file": "data/source_snapshots/bca_friendly_buildings_strict_address_coordinate_candidates_20261018.json",
+      "cached_candidate_records": 977,
+      "same_licence_exact_postal_candidates_still_missing_coordinates": 0,
+      "candidate_match_keys_rechecked": [
+        "SFA Licence",
+        "six-digit Postal Code"
+      ],
+      "application_ready_proposals": 0,
+      "note": "Every strict-address candidate matching the current licence/postal is already populated; no additional blank exact-address row remains.",
+      "exact_normalized_source_address_matches_still_missing": 0
+    },
+    {
+      "source": "BCA Green Mark Buildings",
+      "snapshot_file": "data/source_snapshots/bca_green_mark_blank_coordinate_candidates_20261018.json",
+      "cached_candidate_records": 79,
+      "same_licence_exact_postal_candidates_still_missing_coordinates": 77,
+      "candidate_match_keys_rechecked": [
+        "SFA Licence",
+        "six-digit Postal Code"
+      ],
+      "application_ready_proposals": 0,
+      "note": "77 same-licence/postal candidates remain blank. Dataset source features are Green Mark building records, but candidate rows lack exact source street-address labels to establish target building identity. 68 are restricted/access-review categories; 9 provisional public venues remain facility-level postal overlaps, not exact address matches.",
+      "exact_normalized_source_address_matches_still_missing": 0,
+      "candidate_dispositions_still_blank": {
+        "public_venue_candidate_without_exact_address_point": 9,
+        "hold_access_review": 32,
+        "exclude_institutional_canteen": 26,
+        "exclude_restricted_or_industrial": 7,
+        "exclude_restricted_organisation": 3
+      }
+    },
+    {
+      "source": "HPB Healthier Eateries",
+      "snapshot_file": "data/source_snapshots/hpb_healthier_eateries_exact_address_coordinate_candidates_20261018.json",
+      "cached_candidate_records": 328,
+      "same_licence_exact_postal_candidates_still_missing_coordinates": 0,
+      "candidate_match_keys_rechecked": [
+        "SFA Licence",
+        "six-digit Postal Code"
+      ],
+      "application_ready_proposals": 0,
+      "note": "Previously exact-address candidate records are now already populated for the same licence/postal; no additional blank match remains.",
+      "exact_normalized_source_address_matches_still_missing": 0
+    },
+    {
+      "source": "MOH Dementia Friendly Go-To-Points",
+      "snapshot_file": "data/source_snapshots/moh_dementia_gtp_exact_address_coordinate_candidates_20261018.json",
+      "cached_candidate_records": 41,
+      "same_licence_exact_postal_candidates_still_missing_coordinates": 0,
+      "candidate_match_keys_rechecked": [
+        "SFA Licence",
+        "six-digit Postal Code"
+      ],
+      "application_ready_proposals": 0,
+      "note": "Previously exact-address candidate records are now already populated for the same licence/postal; no additional blank match remains.",
+      "exact_normalized_source_address_matches_still_missing": 0
+    }
+  ],
+  "sources": [
+    {
+      "publisher": "Building and Construction Authority (BCA), via data.gov.sg",
+      "dataset": "Friendly Buildings",
+      "dataset_url": "https://data.gov.sg/datasets/d_f19704cb6ce76309f3ec0c3a513bdeab/view",
+      "license": "Singapore Open Data Licence v1.0",
+      "source_precision": "building/facility point; not outlet/unit point"
+    },
+    {
+      "publisher": "Building and Construction Authority (BCA), via data.gov.sg",
+      "dataset": "Green Mark Buildings",
+      "dataset_url": "https://data.gov.sg/datasets/d_da116ef216e3fb501846e1c9faf7e683/view",
+      "license": "Singapore Open Data Licence",
+      "source_precision": "building/address point; not outlet/unit point"
+    },
+    {
+      "publisher": "Health Promotion Board (HPB), via data.gov.sg",
+      "dataset": "Healthier Eateries",
+      "dataset_url": "https://data.gov.sg/datasets/d_2925c2ccf75d1c135c2d469e0de3cee6/view",
+      "license": "Singapore Open Data Licence v1.0",
+      "source_precision": "building/facility/address point; not outlet/unit point"
+    },
+    {
+      "publisher": "Ministry of Health (MOH), via data.gov.sg",
+      "dataset": "Dementia Friendly Go-To-Points",
+      "dataset_url": "https://data.gov.sg/datasets/d_e2d10e591bc8560b8946a0da24790fa5/view",
+      "license": "Singapore Open Data Licence v1.0",
+      "source_precision": "facility/GTP point; not outlet/unit point"
+    },
+    {
+      "publisher": "Singapore Land Authority",
+      "dataset": "OneMap Search API",
+      "documentation": "https://www.onemap.gov.sg/apidocs/search",
+      "cost": "Free-to-use per official API materials; requires access token",
+      "source_precision": "postal/building address point; not outlet/unit point"
+    }
+  ],
+  "match_policy": {
+    "key": "exact SFA Licence + exact six-digit postal code + current exact source address/building identity",
+    "coordinate_precision": "preserve source coordinate as building/facility/address-level, never as outlet-front or stall point",
+    "exclude": "postal-only overlap, ambiguous building identity, facilities not open to public, coordinates already populated"
+  },
+  "proposal_count": 0,
+  "proposals": [],
+  "decision": "No new application-ready coordinate proposal found. Prior exact-address BCA Friendly, HPB, and MOH candidates with the same licence/postal are already populated. Remaining same-licence/postal BCA Friendly candidates fail exact source street-address identity; Green Mark overlaps do not have exact source address labels and include access-restricted or institution-only facilities. OneMap could not be queried because ONEMAP_API_TOKEN is not configured in this process. No Mapbox calls or spending.",
+  "limitations": [
+    "Cached source snapshots were captured on 2026-10-18 and may not include later dataset changes.",
+    "A OneMap postal lookup could yield additional building points, but its token is unavailable in this process.",
+    "A full manually validated pass across all 2,536 coordinate gaps is not represented by this incremental candidate recheck.",
+    "Building/facility points do not identify a specific F&B stall or shopfront."
+  ],
+  "evidence": {
+    "checked_snapshots": [
+      "data/source_snapshots/bca_friendly_buildings_exact_postal_coordinate_candidates_20261018.json",
+      "data/source_snapshots/bca_friendly_buildings_strict_address_coordinate_candidates_20261018.json",
+      "data/source_snapshots/bca_green_mark_blank_coordinate_candidates_20261018.json",
+      "data/source_snapshots/hpb_healthier_eateries_exact_address_coordinate_candidates_20261018.json",
+      "data/source_snapshots/moh_dementia_gtp_exact_address_coordinate_candidates_20261018.json"
+    ],
+    "sha256_verified": true
+  }
+}

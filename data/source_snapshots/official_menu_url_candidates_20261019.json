@@ -1,0 +1,76 @@
+{
+  "snapshot_id": "official_menu_url_candidates_20261019",
+  "snapshot_type": "read_only_official_menu_source_audit",
+  "workbook_path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256_at_audit": "a70390e62c4b5a9605f8041e4136f92024d93275d99c58f8de7ebaf73c8c96b6",
+  "access_date_local_singapore": "2026-10-19",
+  "sources": [
+    {
+      "url": "https://www.jumboseafood.com.sg/en/menus",
+      "operator": "JUMBO Seafood / JUMBO Group",
+      "evidence": "Official current menu index labels separate Singapore menu sections for The Riverwalk, Jewel Changi Airport, Ion Orchard, Dempsey Hill, and Riverside Point; each has associated menu links. Observed current link destinations for the four selected outlets.",
+      "access_note": "Direct a-la-carte PDF URLs are linked by the official menu page. The browser fetch of large PDFs failed due response size limit; this snapshot proposes the direct official URLs as Directory links, without transcribing additional content."
+    },
+    {
+      "url": "https://www.jumboseafood.com.sg/pdf/JS-Set-Menu.pdf?misc=20261018_233332",
+      "operator": "JUMBO Seafood",
+      "evidence": "Current operator set-menu PDF, observed 2026-10-19, names the four exact outlet postal addresses and includes current set menu pricing. PDF states prices are subject to service charge and prevailing GST and may not be combined with other discounts."
+    }
+  ],
+  "candidate_updates": [
+    {
+      "sfa_licence": "SE19200B000",
+      "directory_name": "JUMBO SEAFOOD",
+      "directory_address": "78 AIRPORT BOULEVARD #03-202,#03-203,#03-204,Singapore 819666",
+      "directory_menu_url_current": null,
+      "menu_item_rows_current": 109,
+      "recommended_directory_field": "Menu URL",
+      "candidate_value": "https://www.jumbogroup.sg/eMenus/JS/JE_ALCMenu.pdf?misc=20261018_233332",
+      "official_outlet_section": "JEWEL CHANGI AIRPORT",
+      "exact_outlet_evidence": "The current operator menu page has a separate JEWEL CHANGI AIRPORT section; the current set-menu PDF names Jewel Changi Airport at 78 Airport Boulevard #03-202/203/204, Singapore 819666. This exactly matches the directory outlet address.",
+      "menu_content_note": "Current licensed menu items already exist in Menu Items, including Set Menu A2 and B2; no duplicate item rows proposed."
+    },
+    {
+      "sfa_licence": "CE07283B000",
+      "directory_name": "JUMBO SEAFOOD DEMPSEY",
+      "directory_address": "11 DEMPSEY ROAD #01-16,Singapore 249673",
+      "directory_menu_url_current": null,
+      "menu_item_rows_current": 40,
+      "recommended_directory_field": "Menu URL",
+      "candidate_value": "https://www.jumbogroup.sg/eMenus/JS/DM_ALCMenu.pdf?misc=20261018_233332",
+      "official_outlet_section": "DEMPSEY HILL",
+      "exact_outlet_evidence": "The current operator menu page has a separate DEMPSEY HILL section; the current set-menu PDF names Block 11 Dempsey Road #01-16, Singapore 249673. This exactly matches the directory outlet address.",
+      "menu_content_note": "Current licensed menu items already exist in Menu Items, including Set Menu A2 and B2; no duplicate item rows proposed."
+    },
+    {
+      "sfa_licence": "W96307C000",
+      "directory_name": "JUMBO SEAFOOD RIVERSIDE",
+      "directory_address": "30 MERCHANT ROAD #02-31,#02-30,#01-01A,#01-02,#01-01,RIVERSIDE POINT,Singapore 058282",
+      "directory_menu_url_current": null,
+      "menu_item_rows_current": 40,
+      "recommended_directory_field": "Menu URL",
+      "candidate_value": "https://www.jumbogroup.sg/eMenus/JS/JR_ALCMenu.pdf?misc=20261018_233332",
+      "official_outlet_section": "RIVERSIDE POINT",
+      "exact_outlet_evidence": "The current operator menu page has a separate RIVERSIDE POINT section; the current set-menu PDF names 30 Merchant Road #01-01/02, Singapore 058282. The directory licence includes #01-01 and #01-02 at that same Riverside Point address.",
+      "menu_content_note": "Current licensed menu items already exist in Menu Items, including Set Menu A2 and B2; no duplicate item rows proposed."
+    },
+    {
+      "sfa_licence": "CE04466P000",
+      "directory_name": "JUMBO SEAFOOD RIVERWALK",
+      "directory_address": "20 UPPER CIRCULAR ROAD #B1-44,#B1-45,#B1-46,#B1-47,#B1-33,#B1-34,#B1-48,THE RIVERWALK,Singapore 058416",
+      "directory_menu_url_current": null,
+      "menu_item_rows_current": 34,
+      "recommended_directory_field": "Menu URL",
+      "candidate_value": "https://www.jumbogroup.sg/eMenus/JS/GA_ALCMenu.pdf?misc=20261018_233332",
+      "official_outlet_section": "THE RIVERWALK",
+      "exact_outlet_evidence": "The current operator menu page has a separate THE RIVERWALK section; the current set-menu PDF names 20 Upper Circular Road #B1-48, Singapore 058416. The directory licence includes #B1-48 at that same address.",
+      "menu_content_note": "Current licensed menu items already exist in Menu Items, including Set Menu A2 and B2; no duplicate item rows proposed."
+    }
+  ],
+  "items_delta": {
+    "new_rows_proposed": 0,
+    "reason": "All four exact SFA licences already have current operator-sourced menu rows, including Set Menu A2 and B2; this pass targets the blank Directory Menu URL fields and does not duplicate existing menu content."
+  },
+  "rights_notes": "Links are external references to the operator’s own public menu PDFs. No PDF images or artwork copied, embedded, cached, or redistributed. Use attribution and verify the live link before writing the Directory field. Factual menu names/prices can remain linked to the operator source; no permission for media reproduction is inferred.",
+  "confidence": "High for exact outlet-to-section association based on operator section label, exact matching Singapore street/postal address and SFA outlet row; medium for direct PDF current-content validation because the linked large PDFs exceeded the browser response size limit. Existing workbook Menu Items rows independently contain exact outlet licences and outlet-specific a-la-carte source URLs."
+}

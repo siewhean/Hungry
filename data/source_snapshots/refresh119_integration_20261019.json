@@ -1,0 +1,148 @@
+{
+  "snapshot_id": "refresh119_integration_20261019",
+  "observed_local_date": "2026-10-19",
+  "canonical_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_sha256": "028e757cf68c3fd6be935a2908484a98ba1865c4318975cfde543d1175bf5475",
+  "installed_sha256": "0e3f6c7cc1594ba701f6fa4de6d11c6db1db9643060907f7292fb8a634d6eb6f",
+  "applied_changes": {
+    "exact_public_facing_name_fills": 1,
+    "directory_field_changes": 38,
+    "seorae_jib_website_hours_menu_url": 3,
+    "jumbo_ion_orchard_menu_url": 1,
+    "dintaifung_official_menu_urls": 26,
+    "collins_official_menu_urls": 7,
+    "new_menu_item_rows": 0,
+    "new_open_license_historical_image_candidates": 2,
+    "approved_image_urls": 0,
+    "rating_review_updates": 0,
+    "coordinate_pairs_added": 0,
+    "exact_permanent_closures_removed": 0,
+    "public_access_status_changes": 0,
+    "directory_sort_inversions": 0
+  },
+  "directory_ids_changed": [
+    "C01095A000",
+    "SE10616L000",
+    "CE09A67C000",
+    "CE04553V000",
+    "CE06B75A000",
+    "CE10I56B000",
+    "CE12069X000",
+    "CE13M19J000",
+    "CE13W73B000",
+    "CE14I30L000",
+    "CE16687L000",
+    "CE16D72E000",
+    "CE19472N000",
+    "CE23O13J000",
+    "CE26E34V000",
+    "NE15781L000",
+    "NE16440X000",
+    "NE25708V000",
+    "NW17993J000",
+    "S96213L000",
+    "SE10629B000",
+    "SE19262X000",
+    "SW06841A000",
+    "SW08939K000",
+    "SW24O07X000",
+    "SW25A52X000",
+    "SW25F83L000",
+    "W03362P000",
+    "W90083B000",
+    "SW13231K000",
+    "NE23140E000",
+    "SE10602B000",
+    "SE19670P000",
+    "NE09054P000",
+    "NW23952C000",
+    "SW23L58E000"
+  ],
+  "image_candidate_ids_added": [
+    "MWF010004",
+    "W84231K002"
+  ],
+  "result_counts": {
+    "Public F&B Directory": 38279,
+    "Menu Items": 12964,
+    "Image Candidates": 2577,
+    "Coverage & Sources": 213
+  },
+  "field_coverage": {
+    "named": 32757,
+    "coordinates": 35735,
+    "contacts": 2692,
+    "websites": 2775,
+    "menu_urls": 1426,
+    "hours": 1459,
+    "ratings": 0,
+    "approved_images": 0,
+    "menus": 460,
+    "unnamed": 5522,
+    "unique_sfa": 38279
+  },
+  "sorting": {
+    "key": "F&B Name, case-insensitive Unicode casefold with collapsed whitespace; blank names last",
+    "sort_inversions": 0
+  },
+  "verified_current_fields": {
+    "C01095A000": {
+      "F&B Name": "BRIO",
+      "Opening Hours / Closed Days": null,
+      "Website": null,
+      "Menu URL": null
+    },
+    "SW13T88L000": {
+      "F&B Name": "DIN TAI FUNG",
+      "Opening Hours / Closed Days": null,
+      "Website": null,
+      "Menu URL": null
+    },
+    "CE09A67C000": {
+      "F&B Name": "JUMBO PREMIUM SEAFOOD",
+      "Opening Hours / Closed Days": null,
+      "Website": null,
+      "Menu URL": "https://jumbogroup.sg/eMenus/JS/IO_ALCMenu.pdf"
+    },
+    "SE10616L000": {
+      "F&B Name": "SEORAE JIB",
+      "Opening Hours / Closed Days": "Mon-Fri 11:30am-10:00pm; Sat, Sun & PH 11:00am-10:00pm. Last order: Sun-Thu 9:00pm; Fri, Sat & PH eve 9:30pm.",
+      "Website": "https://www.seoraejib.com.sg/",
+      "Menu URL": "https://www.seoraejib.com.sg/seorae-menu"
+    }
+  },
+  "source_snapshot_paths": {
+    "refresh119_blank_directory_fields_20261019.json": "data/source_snapshots/refresh119_blank_directory_fields_20261019.json",
+    "refresh119_exact_names_20261019.json": "data/source_snapshots/refresh119_exact_names_20261019.json",
+    "refresh119_official_menu_items_20261019.json": "data/source_snapshots/refresh119_official_menu_items_20261019.json",
+    "refresh119_official_menus_2_20261019.json": "data/source_snapshots/refresh119_official_menus_2_20261019.json",
+    "refresh119_media_rights_20261019.json": "data/source_snapshots/refresh119_media_rights_20261019.json",
+    "refresh119_official_images_20261019.json": "data/source_snapshots/refresh119_official_images_20261019.json",
+    "refresh119_mall_directory_20261019.json": "data/source_snapshots/refresh119_mall_directory_20261019.json",
+    "refresh119_open_coordinates_20261019.json": "data/source_snapshots/refresh119_open_coordinates_20261019.json",
+    "refresh119_closure_delta_20261019.json": "data/source_snapshots/refresh119_closure_delta_20261019.json",
+    "refresh119_platform_terms_20261019.json": "data/source_snapshots/refresh119_platform_terms_20261019.json"
+  },
+  "source_snapshot_sha256s": {
+    "refresh119_blank_directory_fields_20261019.json": "6f26b99eb55d1df91b6fb407a57348ea63ee4d50be93c7a9f379df7370599fa3",
+    "refresh119_exact_names_20261019.json": "ddebf787c113d9d8c1e8980d122bb52a0797e49f8e4049c5f1d049aedb28dab3",
+    "refresh119_official_menu_items_20261019.json": "a68807b9f09a3f82b30b3c0d27abc2456545df989d8e695c3c78eafd621372ce",
+    "refresh119_official_menus_2_20261019.json": "89bcb0ab04850ccc3119dabf26f6d18ec26412982379050b8549c905947ccfff",
+    "refresh119_media_rights_20261019.json": "a056509f7f3e56d9c21db7a0355af6dda8249d0e770877d90e51cf7f4fd08e1e",
+    "refresh119_official_images_20261019.json": "074481b32584ddfa395b824a36f09b8db35a6e1e4e0a34bb941c9b0830fdc5df",
+    "refresh119_mall_directory_20261019.json": "ff694cf8797d7597714f45a9b84af7efd2a0c23a2299534152ac32ab0cca865b",
+    "refresh119_open_coordinates_20261019.json": "5063ea9153d86fefee6fe633a46b54b7b9570ca0c9abb4b1adad4d83c5fb5ec3",
+    "refresh119_closure_delta_20261019.json": "7cfc8ced57a68d9efc9e5d55b4a19fb88a75afb1c157dbb54a719c1c193a7a9e",
+    "refresh119_platform_terms_20261019.json": "436aac784b3a1de70f1443c6b6480ff5cf9c6af12938b3ea426dd23adfdb5db5"
+  },
+  "audit_findings": {
+    "closures": "SFA current result and suspension-history snapshots unchanged; no exact permanent closure supported. Satay by the Bay remains on hold because a venue refurbishment notice does not prove individual tenant permanent cessation; future-dated Lao Liang notice was not actionable yet.",
+    "coordinates": "2,544 coordinate pairs remain blank across 1,557 unique postal codes; no new open-data candidates met exact-premises and precision requirements; OneMap token is absent in the current shell.",
+    "images": "Two Creative Commons historical image references added as review-only. Tian Tian photo dated 2008 and visually matched to unit #010. Hill Street Tai Hwa photo dated 2011, exact file title/location metadata but not visually inspected. Neither is currentness-verified or approved for display.",
+    "menus": "The official-menu batch notes say JEM SW13T88L000 was deliberately excluded, but its proposal ID list also contains that licence. The merge followed the explicit exclusion and did not fill SW13T88L000; 26 other blank Din Tai Fung outlet menu links were applied.",
+    "mall_directory": "365 JUICES BAR has current exact unit listing but no outlet-specific data; ZTP listing classification conflicts with SFA F&B type, so no field written.",
+    "platform_sources": "No Grab/Foodpanda/Oddle content used; public reusable catalogue permission was not established in the current source/terms review.",
+    "mapbox_usage": "User-reported 59/50,000 on 2026-10-19; account total cannot be read through connected tools and was not independently dashboard-verified. No Mapbox Search Box calls made during this refresh."
+  },
+  "status": "Refresh119 installed; nationwide catalogue field completeness remains in progress."
+}

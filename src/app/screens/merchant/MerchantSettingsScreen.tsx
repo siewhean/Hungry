@@ -1,3 +1,4 @@
+import { useMerchantOperationScope } from "@/features/merchant/useMerchantOperationScope";
 import React, { useCallback, useState, useEffect } from "react";
 import { View, StyleSheet, Alert } from "react-native";
 import { Shield, HelpCircle, LogOut, UserPlus, Trash2, X } from "lucide-react-native";
@@ -36,6 +37,8 @@ const TEAM_ROLE_OPTIONS: {
 ];
 
 export function MerchantSettingsScreen() {
+  const captureOperation = useMerchantOperationScope();
+
   const { palette, spacing } = useHungryTheme();
   const navigation = useNavigation();
   const rootNavigation = getRootNavigation(navigation as any);
@@ -63,7 +66,14 @@ export function MerchantSettingsScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const preferenceBusy = React.useRef(false);
+  useEffect(() => {
+    preferenceBusy.current = false;
+  }, [activeOutlet?.id, account?.id]);
   const loadSettingsData = useCallback(async () => {
+    const isOperationCurrent = captureOperation();
+    if (!isOperationCurrent()) return;
+
     setError(null);
     setIsLoading(true);
     if (!account) {
@@ -82,20 +92,28 @@ export function MerchantSettingsScreen() {
           ? service.merchant.getWeeklySummaryStats(activeOutlet.id)
           : Promise.resolve(null),
       ]);
+      if (!isOperationCurrent()) return;
+
       setTeamMembers(members);
       if (prefs) setNotifications(prefs);
       setMerchantNotifications(notes);
       setWeeklySummary(summary);
       if (activeOutlet) {
-        void service.merchant.syncLowRatingNotifications(activeOutlet.id).then(async () => {
-          setMerchantNotifications(await service.merchant.getMerchantNotifications(account.id));
-        });
+        await service.merchant.syncLowRatingNotifications(activeOutlet.id);
+        if (!isOperationCurrent()) return;
+        const refreshedNotes = await service.merchant.getMerchantNotifications(account.id);
+        if (!isOperationCurrent()) return;
+        setMerchantNotifications(refreshedNotes);
       }
     } catch (e) {
+      if (!isOperationCurrent()) return;
+
       console.error(e);
       setError(e instanceof Error ? e.message : "Failed to load merchant settings.");
     } finally {
-      setIsLoading(false);
+      if (isOperationCurrent()) {
+        setIsLoading(false);
+      }
     }
   }, [account, activeOutlet]);
 
@@ -128,17 +146,28 @@ export function MerchantSettingsScreen() {
   }
 
   const handleToggleNotification = async (key: keyof MerchantNotificationPreferences) => {
-    if (!account) return;
+    const isOperationCurrent = captureOperation();
+    if (!isOperationCurrent()) return;
+
+    if (!account || preferenceBusy.current) return;
+    preferenceBusy.current = true;
 
     const nextPrefs = { ...notifications, [key]: !notifications[key] };
     setNotifications(nextPrefs);
 
     try {
       await getHungryService().merchant.updateNotificationPreferences(account.id, nextPrefs);
+      if (!isOperationCurrent()) return;
     } catch (e) {
+      if (!isOperationCurrent()) return;
+
       // Revert on failure
       setNotifications(notifications);
       Alert.alert("Error", "Failed to update preference.");
+    } finally {
+      if (isOperationCurrent()) {
+        preferenceBusy.current = false;
+      }
     }
   };
 
@@ -174,11 +203,18 @@ export function MerchantSettingsScreen() {
           text: "Remove",
           style: "destructive",
           onPress: async () => {
+            const isOperationCurrent = captureOperation();
+            if (!isOperationCurrent()) return;
+
             if (!account) return;
             try {
               await getHungryService().merchant.removeTeamMember(member.id);
+              if (!isOperationCurrent()) return;
+
               setTeamMembers((prev) => prev.filter((m) => m.id !== member.id));
             } catch (e) {
+              if (!isOperationCurrent()) return;
+
               Alert.alert("Error", "Failed to remove team member.");
             }
           },
@@ -188,6 +224,9 @@ export function MerchantSettingsScreen() {
   };
 
   const handleInviteTeamMember = async () => {
+    const isOperationCurrent = captureOperation();
+    if (!isOperationCurrent()) return;
+
     const email = inviteEmail.trim().toLowerCase();
     const name = inviteName.trim();
     setInviteError(null);
@@ -211,24 +250,35 @@ export function MerchantSettingsScreen() {
         inviteRole,
         name,
       );
+      if (!isOperationCurrent()) return;
+
       setTeamMembers((prev) => [...prev, newMember]);
       setInviteName("");
       setInviteEmail("");
       setInviteRole("staff");
       const notes = await getHungryService().merchant.getMerchantNotifications(account.id);
+      if (!isOperationCurrent()) return;
+
       setMerchantNotifications(notes);
-      Alert.alert("Invite sent", `${newMember.email} has a pending ${newMember.role} invite.`);
+      Alert.alert("Invite queued", `${newMember.email} has a pending ${newMember.role} invite.`);
     } catch (e) {
+      if (!isOperationCurrent()) return;
+
       Alert.alert(
         "Invite failed",
         e instanceof Error ? e.message : "Check the details and try again.",
       );
     } finally {
-      setIsInviting(false);
+      if (isOperationCurrent()) {
+        setIsInviting(false);
+      }
     }
   };
 
   const handleSendWeeklySummary = async () => {
+    const isOperationCurrent = captureOperation();
+    if (!isOperationCurrent()) return;
+
     if (!account || !activeOutlet || isSendingWeekly) return;
     setIsSendingWeekly(true);
     try {
@@ -236,13 +286,22 @@ export function MerchantSettingsScreen() {
         getHungryService().merchant.getWeeklySummaryStats(activeOutlet.id),
         getHungryService().merchant.sendWeeklySummaryNotifications(activeOutlet.id),
       ]);
+      if (!isOperationCurrent()) return;
+
       setWeeklySummary(summary);
       setMerchantNotifications((prev) => [...notes, ...prev]);
-      Alert.alert("Weekly summary sent", "Every active team member has been notified.");
+      Alert.alert(
+        "Weekly summary queued",
+        "Summary records were queued for eligible team members. Delivery is not confirmed.",
+      );
     } catch (e) {
+      if (!isOperationCurrent()) return;
+
       Alert.alert("Unable to send summary", e instanceof Error ? e.message : "Try again later.");
     } finally {
-      setIsSendingWeekly(false);
+      if (isOperationCurrent()) {
+        setIsSendingWeekly(false);
+      }
     }
   };
 
@@ -379,18 +438,10 @@ export function MerchantSettingsScreen() {
           />
           <SettingsRow
             label="Weekly Digest"
-            description="Weekly email summary of your analytics"
+            description="Include analytics in queued weekly email summaries"
             type="toggle"
             isEnabled={notifications.weeklyDigest}
             onToggle={() => handleToggleNotification("weeklyDigest")}
-          />
-          <SettingsRow
-            label="AI Insights"
-            description="Notifications when AI finds a menu improvement"
-            type="toggle"
-            isEnabled={notifications.aiInsights}
-            onToggle={() => handleToggleNotification("aiInsights")}
-            isLast
           />
         </SettingsSection>
 
@@ -412,7 +463,8 @@ export function MerchantSettingsScreen() {
               </AppText>
             )}
             <Button
-              label={isSendingWeekly ? "Sending..." : "Send weekly summary"}
+              loading={isSendingWeekly}
+              label={isSendingWeekly ? "Queueing..." : "Queue weekly summary"}
               variant="secondary"
               size="sm"
               disabled={isSendingWeekly || !activeOutlet}

@@ -1,0 +1,540 @@
+{
+  "snapshot_id": "century_square_official_directory_exact_blank_fields_refresh106_20261018",
+  "observed_at_utc": "2026-10-18T10:06:03+00:00",
+  "observed_at_sgt": "2026-10-18T18:06:03+08:00",
+  "source": {
+    "publisher": "Frasers Experience / Century Square",
+    "directory_url": "https://www.frasersexperience.com/stores/cs",
+    "directory_http_status": 200,
+    "directory_response_sha256": "1d265558e024cfe082e169904e8292355ca55a7691182c1f23135a5a5ce2ed41",
+    "feed_url": "https://www.frasersexperience.com/bin/store/storeselect?tags=frasersexperience%3Arestaurant&tags=frasersexperience%3Acafe&tags=frasersexperience%3Afast-food&pagePath=%2Fcontent%2Ffrasersexperience%2Fcs%2Fen%2Fstores&isdialog=true",
+    "feed_http_status": 200,
+    "feed_record_count": 18,
+    "feed_response_sha256": "78f51a5af5d6c855f9bcb0129016c410004556ef244249e14e9fdc0272822436",
+    "data_scope": "Official public mall F&B category feed; tenant names, units, websites, phone fields, hours and detail page paths."
+  },
+  "workbook_reference": {
+    "path": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "sha256": "3ce9c0b79a9dbc4fb8724061754b0f3adfdbbeff56aa9caca71b8c5353fff9b7",
+    "sheet": "Public F&B Directory",
+    "read_only": true,
+    "workbook_edited": false
+  },
+  "method": {
+    "join_keys": [
+      "postal code 529509",
+      "exact floor/unit token overlap",
+      "unique exact normalized name or clear alias"
+    ],
+    "field_policy": "Only blank Website, Contact Details and tenant-specific Opening Hours / Closed Days fields proposed; no overwrites; malformed/placeholder source contacts excluded; mall-wide hours not used. Menu and photo fields are included only if source publishes actual branch/menu references; this directory feed did not."
+  },
+  "dedupe": {
+    "evidence_files_checked": [
+      "data/source_snapshots/breadtalk_live_official_refresh_20261018.json",
+      "data/source_snapshots/breadtalk_refresh106_exact_directory_findings_20261018.json",
+      "data/source_snapshots/closure_sweep_sfa_public_official_20261018.json",
+      "data/source_snapshots/jollibee_live_official_delta_20261018.json",
+      "data/source_snapshots/jollibee_official_followon_20261018.json",
+      "data/source_snapshots/northpoint_city_official_directory_exact_blank_fields_refresh106_20261018.json",
+      "data/source_snapshots/old_chang_kee_blank_links_refresh106_20261018.json",
+      "data/source_snapshots/subway_official_followon_20261018_refresh106.json",
+      "data/source_snapshots/waterway_point_official_directory_blank_fields_refresh106_20261018.json"
+    ],
+    "available_pair_dedupes_or_conflicts_withheld": [],
+    "limitations": "Only proposal evidence files currently present in data/source_snapshots were readable. Dedupe against workbook blank state is exact; reconcile with any external proposal ledger before integration."
+  },
+  "summary": {
+    "feed_records": 18,
+    "unique_exact_sfa_matches": 16,
+    "outlets_with_new_proposals": 11,
+    "proposed_blank_values": 23,
+    "field_counts": {
+      "Website": 6,
+      "Contact Details": 6,
+      "Opening Hours / Closed Days": 11
+    },
+    "same_or_conflicting_prior_pairs_withheld": 0,
+    "ambiguous_matches_withheld": 0,
+    "new_tenant_rows": 0,
+    "menu_url_candidates": 0,
+    "real_official_menu_photo_candidates": 0
+  },
+  "proposals": [
+    {
+      "sfa_licence": "NE23E92K000",
+      "existing_name": "BUTAHAGE HOKKAIDO",
+      "registered_business_name": "BUTAHAGE HOKKAIDO",
+      "existing_address": "Address: 2 TAMPINES CENTRAL 5 #01-11A,CENTURY SQUARE,Singapore 529509",
+      "official_tenant_name": "Butahage",
+      "official_unit": "#01-11A",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact normalized name/alias, postal code 529509, and overlapping unit token in the canonical SFA directory."
+      },
+      "source_detail_url": "https://www.frasersexperience.com/stores/cs/butahage",
+      "http_status": 200,
+      "detail_response_sha256": "f357a4adf0e1073187cd0059cd3435a258921881877829476bd47b8a0ef79ba3",
+      "field_proposals": {
+        "Contact Details": "6025 5680",
+        "Opening Hours / Closed Days": "Monday to Sunday | 11am to 10pm"
+      },
+      "field_evidence": {
+        "Contact Details": {
+          "source_url": "https://www.frasersexperience.com/stores/cs/butahage",
+          "source_type": "official Century Square tenant detail page plus public mall F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Direct tenant detail page identifies current directory tenant and unit; field is tenant-specific. Exact postal/unit/name join to one SFA row."
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/cs/butahage",
+          "source_type": "official Century Square tenant detail page plus public mall F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Direct tenant detail page identifies current directory tenant and unit; field is tenant-specific. Exact postal/unit/name join to one SFA row."
+        }
+      },
+      "source_record_values": {
+        "website": "",
+        "phone1": "6025 5680",
+        "phone2": "",
+        "phone3": "",
+        "opening_hours_text": "Monday to Sunday | 11am to 10pm"
+      }
+    },
+    {
+      "sfa_licence": "NE18447K000",
+      "existing_name": "Eat 3 Bowls",
+      "registered_business_name": "Eat 3 Bowls",
+      "existing_address": "Address: 2 TAMPINES CENTRAL 5 #B1-22,CENTURY SQUARE,Singapore 529509",
+      "official_tenant_name": "Eat 3 Bowls",
+      "official_unit": "#B1-22",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact normalized name/alias, postal code 529509, and overlapping unit token in the canonical SFA directory."
+      },
+      "source_detail_url": "https://www.frasersexperience.com/stores/cs/eat-3-bowls",
+      "http_status": 200,
+      "detail_response_sha256": "2ba312149e931fa8df5c3818b4082e95202c45a9681e94f83035e379398f626f",
+      "field_proposals": {
+        "Website": "https://eat3bowls.oddle.me/en_SG/",
+        "Opening Hours / Closed Days": "Monday to Sunday | 10.30am to 9.30pm"
+      },
+      "field_evidence": {
+        "Website": {
+          "source_url": "https://www.frasersexperience.com/stores/cs/eat-3-bowls",
+          "source_type": "official Century Square tenant detail page plus public mall F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Direct tenant detail page identifies current directory tenant and unit; field is tenant-specific. Exact postal/unit/name join to one SFA row."
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/cs/eat-3-bowls",
+          "source_type": "official Century Square tenant detail page plus public mall F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Direct tenant detail page identifies current directory tenant and unit; field is tenant-specific. Exact postal/unit/name join to one SFA row."
+        }
+      },
+      "source_record_values": {
+        "website": "https://eat3bowls.oddle.me/en_SG/",
+        "phone1": "",
+        "phone2": null,
+        "phone3": null,
+        "opening_hours_text": "Monday to Sunday | 10.30am to 9.30pm"
+      }
+    },
+    {
+      "sfa_licence": "NE18314L000",
+      "existing_name": "ICHIBAN BOSHI",
+      "registered_business_name": "ICHIBAN BOSHI",
+      "existing_address": "Address: 2 TAMPINES CENTRAL 5 #02-18,#02-29,#02-17,CENTURY SQUARE,Singapore 529509",
+      "official_tenant_name": "Ichiban Boshi",
+      "official_unit": "#02-17/18/29",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact normalized name/alias, postal code 529509, and overlapping unit token in the canonical SFA directory."
+      },
+      "source_detail_url": "https://www.frasersexperience.com/stores/cs/ichiban-boshi",
+      "http_status": 200,
+      "detail_response_sha256": "16cda59c88051c7ac273fa5717f8cd440d21d6494666374a989f9a89da3ee8af",
+      "field_proposals": {
+        "Website": "https://www.ichibanboshi.com.sg/en/",
+        "Contact Details": "6260 1273",
+        "Opening Hours / Closed Days": "Monday to Friday | 11.30am to 10pm | Saturday, Sunday & PH | 11am to 10pm"
+      },
+      "field_evidence": {
+        "Website": {
+          "source_url": "https://www.frasersexperience.com/stores/cs/ichiban-boshi",
+          "source_type": "official Century Square tenant detail page plus public mall F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Direct tenant detail page identifies current directory tenant and unit; field is tenant-specific. Exact postal/unit/name join to one SFA row."
+        },
+        "Contact Details": {
+          "source_url": "https://www.frasersexperience.com/stores/cs/ichiban-boshi",
+          "source_type": "official Century Square tenant detail page plus public mall F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Direct tenant detail page identifies current directory tenant and unit; field is tenant-specific. Exact postal/unit/name join to one SFA row."
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/cs/ichiban-boshi",
+          "source_type": "official Century Square tenant detail page plus public mall F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Direct tenant detail page identifies current directory tenant and unit; field is tenant-specific. Exact postal/unit/name join to one SFA row."
+        }
+      },
+      "source_record_values": {
+        "website": "https://www.ichibanboshi.com.sg/en/",
+        "phone1": "6260 1273",
+        "phone2": null,
+        "phone3": null,
+        "opening_hours_text": "Monday to Friday | 11.30am to 10pm | Saturday, Sunday & PH | 11am to 10pm"
+      }
+    },
+    {
+      "sfa_licence": "NE22G33K000",
+      "existing_name": "SAIZERIYA",
+      "registered_business_name": "SAIZERIYA",
+      "existing_address": "Address: 2 TAMPINES CENTRAL 5 #03-32,#03-33,CENTURY SQUARE,Singapore 529509 | Unit: 03-32 | Postal code: 529509",
+      "official_tenant_name": "Saizeriya",
+      "official_unit": "#03-32/33",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact normalized name/alias, postal code 529509, and overlapping unit token in the canonical SFA directory."
+      },
+      "source_detail_url": "https://www.frasersexperience.com/stores/cs/saizeriya",
+      "http_status": 200,
+      "detail_response_sha256": "85bcaf38c21fb20f0fb24de3e12afdabe7d15965c6f525bb9061607342bfe159",
+      "field_proposals": {
+        "Opening Hours / Closed Days": "Monday to Sunday | 11am to 10pm (Last order 9.30PM)"
+      },
+      "field_evidence": {
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/cs/saizeriya",
+          "source_type": "official Century Square tenant detail page plus public mall F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Direct tenant detail page identifies current directory tenant and unit; field is tenant-specific. Exact postal/unit/name join to one SFA row."
+        }
+      },
+      "source_record_values": {
+        "website": "http://www.saizeriya.com.sg/",
+        "phone1": "6513 7732",
+        "phone2": null,
+        "phone3": null,
+        "opening_hours_text": "Monday to Sunday | 11am to 10pm (Last order 9.30PM)"
+      }
+    },
+    {
+      "sfa_licence": "NE18421J000",
+      "existing_name": "Sushi Express",
+      "registered_business_name": "Sushi Express",
+      "existing_address": "Address: 2 TAMPINES CENTRAL 5 #03-20/21,#03-30,CENTURY SQUARE,Singapore 529509",
+      "official_tenant_name": "Sushi Express",
+      "official_unit": "#03-20/21/30",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact normalized name/alias, postal code 529509, and overlapping unit token in the canonical SFA directory."
+      },
+      "source_detail_url": "https://www.frasersexperience.com/stores/cs/sushi-express",
+      "http_status": 200,
+      "detail_response_sha256": "c368f3c318b47081daa6e592c7c08ca87a00e64b8a27e282f6558f5aeb9a9cec",
+      "field_proposals": {
+        "Website": "https://www.sushiexpress.com.sg/",
+        "Contact Details": "6513 5303",
+        "Opening Hours / Closed Days": "Monday to Sunday | 11am to 10pm"
+      },
+      "field_evidence": {
+        "Website": {
+          "source_url": "https://www.frasersexperience.com/stores/cs/sushi-express",
+          "source_type": "official Century Square tenant detail page plus public mall F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Direct tenant detail page identifies current directory tenant and unit; field is tenant-specific. Exact postal/unit/name join to one SFA row."
+        },
+        "Contact Details": {
+          "source_url": "https://www.frasersexperience.com/stores/cs/sushi-express",
+          "source_type": "official Century Square tenant detail page plus public mall F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Direct tenant detail page identifies current directory tenant and unit; field is tenant-specific. Exact postal/unit/name join to one SFA row."
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/cs/sushi-express",
+          "source_type": "official Century Square tenant detail page plus public mall F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Direct tenant detail page identifies current directory tenant and unit; field is tenant-specific. Exact postal/unit/name join to one SFA row."
+        }
+      },
+      "source_record_values": {
+        "website": "https://www.sushiexpress.com.sg/",
+        "phone1": "6513 5303",
+        "phone2": null,
+        "phone3": null,
+        "opening_hours_text": "Monday to Sunday | 11am to 10pm"
+      }
+    },
+    {
+      "sfa_licence": "NE18267N000",
+      "existing_name": "SWEE CHOON (TAMPINES) PTE LTD",
+      "registered_business_name": "SWEE CHOON (TAMPINES) PTE LTD",
+      "existing_address": "Address: 2 TAMPINES CENTRAL 5 #01-01,CENTURY SQUARE,Singapore 529509",
+      "official_tenant_name": "Swee Choon",
+      "official_unit": "#01-01",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact normalized name/alias, postal code 529509, and overlapping unit token in the canonical SFA directory."
+      },
+      "source_detail_url": "https://www.frasersexperience.com/stores/cs/swee-choon",
+      "http_status": 200,
+      "detail_response_sha256": "a0d4b2d9ee30e59b6fd0aa5af504e59dd3dce616c3c4a842b9a0f2fa14e8672f",
+      "field_proposals": {
+        "Website": "https://www.sweechoon.com/",
+        "Contact Details": "8952 5848",
+        "Opening Hours / Closed Days": "Monday to Sunday | 9am to 11pm"
+      },
+      "field_evidence": {
+        "Website": {
+          "source_url": "https://www.frasersexperience.com/stores/cs/swee-choon",
+          "source_type": "official Century Square tenant detail page plus public mall F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Direct tenant detail page identifies current directory tenant and unit; field is tenant-specific. Exact postal/unit/name join to one SFA row."
+        },
+        "Contact Details": {
+          "source_url": "https://www.frasersexperience.com/stores/cs/swee-choon",
+          "source_type": "official Century Square tenant detail page plus public mall F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Direct tenant detail page identifies current directory tenant and unit; field is tenant-specific. Exact postal/unit/name join to one SFA row."
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/cs/swee-choon",
+          "source_type": "official Century Square tenant detail page plus public mall F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Direct tenant detail page identifies current directory tenant and unit; field is tenant-specific. Exact postal/unit/name join to one SFA row."
+        }
+      },
+      "source_record_values": {
+        "website": "https://www.sweechoon.com/",
+        "phone1": "8952 5848",
+        "phone2": null,
+        "phone3": null,
+        "opening_hours_text": "Monday to Sunday | 9am to 11pm"
+      }
+    },
+    {
+      "sfa_licence": "NE18248V000",
+      "existing_name": "TEXAS CHICKEN",
+      "registered_business_name": "TEXAS CHICKEN",
+      "existing_address": "Address: 2 TAMPINES CENTRAL 5 #05-03,CENTURY SQUARE,Singapore 529509",
+      "official_tenant_name": "Texas Chicken",
+      "official_unit": "#05-03",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact normalized name/alias, postal code 529509, and overlapping unit token in the canonical SFA directory."
+      },
+      "source_detail_url": "https://www.frasersexperience.com/stores/cs/texas-chicken",
+      "http_status": 200,
+      "detail_response_sha256": "34be5872ffa5f5ec96fb291ca690ee33f17e6adfdeee3c3cab24d4e2987bd276",
+      "field_proposals": {
+        "Website": "https://sg.texaschicken.com/",
+        "Contact Details": "6260 1680",
+        "Opening Hours / Closed Days": "Monday to Sunday | 24 hours"
+      },
+      "field_evidence": {
+        "Website": {
+          "source_url": "https://www.frasersexperience.com/stores/cs/texas-chicken",
+          "source_type": "official Century Square tenant detail page plus public mall F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Direct tenant detail page identifies current directory tenant and unit; field is tenant-specific. Exact postal/unit/name join to one SFA row."
+        },
+        "Contact Details": {
+          "source_url": "https://www.frasersexperience.com/stores/cs/texas-chicken",
+          "source_type": "official Century Square tenant detail page plus public mall F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Direct tenant detail page identifies current directory tenant and unit; field is tenant-specific. Exact postal/unit/name join to one SFA row."
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/cs/texas-chicken",
+          "source_type": "official Century Square tenant detail page plus public mall F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Direct tenant detail page identifies current directory tenant and unit; field is tenant-specific. Exact postal/unit/name join to one SFA row."
+        }
+      },
+      "source_record_values": {
+        "website": "https://sg.texaschicken.com/",
+        "phone1": "6260 1680",
+        "phone2": "",
+        "phone3": "",
+        "opening_hours_text": "Monday to Sunday | 24 hours"
+      }
+    },
+    {
+      "sfa_licence": "NE22M38V000",
+      "existing_name": "The Tree Cafe",
+      "registered_business_name": "The Tree Cafe",
+      "existing_address": "Address: 2 TAMPINES CENTRAL 5 #03-34,CENTURY SQUARE,Singapore 529509",
+      "official_tenant_name": "The Tree Cafe",
+      "official_unit": "#03-34",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact normalized name/alias, postal code 529509, and overlapping unit token in the canonical SFA directory."
+      },
+      "source_detail_url": "https://www.frasersexperience.com/stores/cs/the-tree-cafe",
+      "http_status": 200,
+      "detail_response_sha256": "116e628300905ec81ffb4a1915ed0dfb81fa99c287864c268a140a184a67328d",
+      "field_proposals": {
+        "Website": "https://www.thetreecafesg.com/",
+        "Opening Hours / Closed Days": "Monday to Sunday | 11.30am to 10pm"
+      },
+      "field_evidence": {
+        "Website": {
+          "source_url": "https://www.frasersexperience.com/stores/cs/the-tree-cafe",
+          "source_type": "official Century Square tenant detail page plus public mall F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Direct tenant detail page identifies current directory tenant and unit; field is tenant-specific. Exact postal/unit/name join to one SFA row."
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/cs/the-tree-cafe",
+          "source_type": "official Century Square tenant detail page plus public mall F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Direct tenant detail page identifies current directory tenant and unit; field is tenant-specific. Exact postal/unit/name join to one SFA row."
+        }
+      },
+      "source_record_values": {
+        "website": "https://www.thetreecafesg.com/",
+        "phone1": "Not available",
+        "phone2": null,
+        "phone3": null,
+        "opening_hours_text": "Monday to Sunday | 11.30am to 10pm"
+      }
+    },
+    {
+      "sfa_licence": "NE18336A000",
+      "existing_name": "Tongue Tip Lanzhou Beef Noodles",
+      "registered_business_name": "Tongue Tip Lanzhou Beef Noodles",
+      "existing_address": "Address: 2 TAMPINES CENTRAL 5 #01-42,CENTURY SQUARE,Singapore 529509",
+      "official_tenant_name": "Tongue Tip Lanzhou Beef Noodles",
+      "official_unit": "#01-42",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact normalized name/alias, postal code 529509, and overlapping unit token in the canonical SFA directory."
+      },
+      "source_detail_url": "https://www.frasersexperience.com/stores/cs/tongue-tip-lanzhou-beef-noodles",
+      "http_status": 200,
+      "detail_response_sha256": "fc1a7073243602d8e1532fa6ee02dde9a84c5baf17f431c5161242826647b8cc",
+      "field_proposals": {
+        "Opening Hours / Closed Days": "Monday to Sunday | 11am - 10pm (last order 9.30pm)"
+      },
+      "field_evidence": {
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/cs/tongue-tip-lanzhou-beef-noodles",
+          "source_type": "official Century Square tenant detail page plus public mall F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Direct tenant detail page identifies current directory tenant and unit; field is tenant-specific. Exact postal/unit/name join to one SFA row."
+        }
+      },
+      "source_record_values": {
+        "website": "",
+        "phone1": "9017 1781",
+        "phone2": "",
+        "phone3": "",
+        "opening_hours_text": "Monday to Sunday | 11am - 10pm (last order 9.30pm)"
+      }
+    },
+    {
+      "sfa_licence": "NE18349L000",
+      "existing_name": "Wok The Fish by A-One Group",
+      "registered_business_name": "Wok The Fish by A-One Group",
+      "existing_address": "Address: 2 TAMPINES CENTRAL 5 #03-05,#03-31,CENTURY SQUARE,Singapore 529509",
+      "official_tenant_name": "Wok The Fish!",
+      "official_unit": "#03-05/31",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact normalized name/alias, postal code 529509, and overlapping unit token in the canonical SFA directory."
+      },
+      "source_detail_url": "https://www.frasersexperience.com/stores/cs/wok-the-fish",
+      "http_status": 200,
+      "detail_response_sha256": "7ead30b1e5098f23fa8d9b373a7f4af77adcd95f8b030aee035142b7484e8cd6",
+      "field_proposals": {
+        "Opening Hours / Closed Days": "Monday to Sunday | 11am - 10pm (Last Order: 9.30pm)"
+      },
+      "field_evidence": {
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/cs/wok-the-fish",
+          "source_type": "official Century Square tenant detail page plus public mall F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Direct tenant detail page identifies current directory tenant and unit; field is tenant-specific. Exact postal/unit/name join to one SFA row."
+        }
+      },
+      "source_record_values": {
+        "website": "",
+        "phone1": "",
+        "phone2": null,
+        "phone3": null,
+        "opening_hours_text": "Monday to Sunday | 11am - 10pm (Last Order: 9.30pm)"
+      }
+    },
+    {
+      "sfa_licence": "NE15490E000",
+      "existing_name": "XW Plus Western Grill",
+      "registered_business_name": "XW Plus Western Grill",
+      "existing_address": "Address: 2 TAMPINES CENTRAL 5 #02-20,#02-27,CENTURY SQUARE,Singapore 529509",
+      "official_tenant_name": "XW Plus Western Grill",
+      "official_unit": "#02-20/27",
+      "join": {
+        "confidence": "high",
+        "basis": "Unique exact normalized name/alias, postal code 529509, and overlapping unit token in the canonical SFA directory."
+      },
+      "source_detail_url": "https://www.frasersexperience.com/stores/cs/xw-western-grill",
+      "http_status": 200,
+      "detail_response_sha256": "169fdf3015fbfbfeab79b98632c04d5ae7f8573ef0956e51e3e56faf25788802",
+      "field_proposals": {
+        "Contact Details": "6470 8217",
+        "Opening Hours / Closed Days": "Monday to Sunday | 11:30am to 10pm"
+      },
+      "field_evidence": {
+        "Contact Details": {
+          "source_url": "https://www.frasersexperience.com/stores/cs/xw-western-grill",
+          "source_type": "official Century Square tenant detail page plus public mall F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Direct tenant detail page identifies current directory tenant and unit; field is tenant-specific. Exact postal/unit/name join to one SFA row."
+        },
+        "Opening Hours / Closed Days": {
+          "source_url": "https://www.frasersexperience.com/stores/cs/xw-western-grill",
+          "source_type": "official Century Square tenant detail page plus public mall F&B feed",
+          "outlet_specific": true,
+          "confidence": "high",
+          "basis": "Direct tenant detail page identifies current directory tenant and unit; field is tenant-specific. Exact postal/unit/name join to one SFA row."
+        }
+      },
+      "source_record_values": {
+        "website": "",
+        "phone1": "6470 8217",
+        "phone2": "",
+        "phone3": "",
+        "opening_hours_text": "Monday to Sunday | 11:30am to 10pm"
+      }
+    }
+  ],
+  "dedupe_withheld": [],
+  "ambiguous": [],
+  "withheld": {
+    "menu_urls": "The official feed did not provide tenant-specific menu URLs in fields inspected.",
+    "images": "Logo assets are not outlet/food photos and were excluded."
+  }
+}

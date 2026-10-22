@@ -108,7 +108,7 @@ test("Story viewer contract: story seen state is deferred until the viewer is op
   assert.match(source, /setCanCommitSeen\(true\)/);
   assert.match(source, /markSeenForDisplayName\(displayName\)/);
   assert.match(source, /currentStory\.hasUnseen/);
-  assert.match(source, /markSeenForDisplayName\(currentStory\.displayName\)/);
+  assert.match(source, /markSeenForDisplayName\(storyAuthorKey\(currentStory\)\)/);
   assert.match(source, /const handleCloseStory = useCallback/);
   assert.match(source, /unsubscribeTransitionEnd\(\)/);
   assert.match(source, /cancelAnimationFrame\(animationFrame\)/);
@@ -135,14 +135,17 @@ test("Story viewer contract: cross-user transitions and footer actions are stand
   assert.doesNotMatch(source, /userTransitionBadge/);
   assert.match(source, /loadStories/);
   assert.match(source, /ActivityIndicator/);
-  assert.match(source, /const handleStoryMessage = \(\) => \{/);
+  assert.match(source, /const handleStoryMessage = async \(\) => \{/);
   assert.match(source, /navigation\.navigate\("ChatDetail", \{/);
   assert.match(source, /navigation\.navigate\("AddStory"\)/);
   assert.match(
     source,
     /accessibilityLabel=\{\s*currentStory\.isOwn \? "Add another story" : `Message \$\{currentStory\.displayName\}`\s*\}/,
   );
-  assert.match(source, /accessibilityLabel="Like story"/);
+  assert.match(
+    source,
+    /accessibilityLabel=\{currentStory\.interaction\.liked \? "Unlike story" : "Like story"\}/,
+  );
   assert.match(source, /accessibilityLabel="Share story"/);
   assert.doesNotMatch(source, /Share feature coming soon/);
   assert.doesNotMatch(source, /accessibilityLabel="Save story"/);
@@ -213,7 +216,7 @@ test("Story viewer contract: cross-user transition is a visible rotating block",
     handleNextStart,
   );
   const handleNextSource = source.slice(handleNextStart, handleNextEnd);
-  assert.match(handleNextSource, /commitSeenIfReady\(currentStory\.displayName\)/);
+  assert.match(handleNextSource, /commitSeenIfReady\(storyAuthorKey\(currentStory\)\)/);
   assert.doesNotMatch(handleNextSource, /markSeenForDisplayName/);
   assert.match(
     source,
@@ -264,10 +267,7 @@ test("Home feed contract: story carousel opens existing own story and separates 
   );
   assert.match(carouselSource, /pointerEvents="none"/);
   assert.match(carouselSource, /importantForAccessibility="no"/);
-  assert.match(
-    carouselSource,
-    /story\.hasUnseen \|\|[\s\S]*story\.id === openingUnseenStoryId[\s\S]*story\.displayName === openingUnseenStoryDisplayName/,
-  );
+  assert.match(carouselSource, /story\.hasUnseen \|\|[\s\S]*story\.id === openingUnseenStoryId/);
   assert.match(carouselSource, /onPressIn=\{\(\) => onStoryPressIn\?\.\(story\)\}/);
   assert.match(carouselSource, /export const CircleStoryCarousel = memo/);
   assert.doesNotMatch(carouselSource, /event\.stopPropagation\(\)/);
@@ -285,12 +285,18 @@ test("Home feed contract: story carousel opens existing own story and separates 
   assert.doesNotMatch(addStorySource, /Select Photo/);
 });
 
-test("Story persistence contract: viewed stories persist and expire after 24 hours", () => {
+test("Story demo contract: viewed memory state expires after 24 hours and never fakes live publication", () => {
   const storeSource = read("src/store/useStoryStore.ts");
   const mockServiceSource = read("src/lib/services/mock/mockService.ts");
   const carouselSource = read("src/components/social/CircleStoryCarousel.tsx");
 
   assert.match(storeSource, /seenStoryIds: Record<string, string>/);
+  assert.doesNotMatch(storeSource, /persist\(/);
+  assert.match(storeSource, /getServiceProvider\(\)\.mode !== "mock"/);
+  assert.match(storeSource, /clearAccountScopedState/);
+  const liveService = read("src/lib/services/supabase/supabaseService.ts");
+  assert.match(liveService, /Stories are local demos only/);
+  assert.doesNotMatch(liveService, /supabaseStoryCache|buildStorySeed/);
   assert.match(storeSource, /const STORY_TTL_MS = 24 \* 60 \* 60 \* 1000/);
   assert.match(storeSource, /pruneExpiredStories\(stories\)/);
   assert.match(storeSource, /function pruneExpiredSeenStoryIds/);

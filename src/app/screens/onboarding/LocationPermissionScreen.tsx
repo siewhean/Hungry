@@ -1,8 +1,8 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Pressable, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft, Clock3, Compass, UtensilsCrossed } from "lucide-react-native";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { AppText, Button, Card } from "@/components/ui";
 import { WordmarkLogoV2 } from "@/components/icons/brand/WordmarkLogoV2";
@@ -27,7 +27,7 @@ const FEATURE_ROWS = [
   {
     key: "nearby",
     title: "Nearby Dish Discovery",
-    description: "Find trending laksa or hidden gem pastries just steps away.",
+    description: "Find dishes near your selected area.",
     icon: UtensilsCrossed,
     iconTone: "orange",
     iconBgTone: "orangeLight",
@@ -35,7 +35,7 @@ const FEATURE_ROWS = [
   {
     key: "navigation",
     title: "Food Navigation",
-    description: "Get precise directions to the exact stall in busy food streets.",
+    description: "See available venue locations and directions.",
     icon: Compass,
     iconTone: "warning",
     iconBgTone: "amberLight",
@@ -43,7 +43,7 @@ const FEATURE_ROWS = [
   {
     key: "wait",
     title: "Local Favorites",
-    description: "Use timing cues to plan around busier nearby stalls and dishes.",
+    description: "Explore dishes and reviews from nearby venues.",
     icon: Clock3,
     iconTone: "error",
     iconBgTone: "errorSoft",
@@ -57,11 +57,22 @@ export function LocationPermissionScreen({ navigation }: Props) {
   const completeOnboarding = useSessionStore((state) => state.completeOnboarding);
   const hasSkippedTasteQuiz = useSessionStore((state) => state.hasSkippedTasteQuiz);
   const showToast = useUIStore((state) => state.showToast);
+  const active = useRef(true);
+  useEffect(() => {
+    active.current = true;
+    return () => {
+      active.current = false;
+    };
+  }, []);
+  const continuing = useRef(false);
+  const finished = useRef(false);
   const [isContinuing, setIsContinuing] = useState(false);
 
   // Last onboarding step: guests and signed-in users both land on Home.
   // Sign-in is asked for later, when someone saves, reviews or posts.
   const finish = () => {
+    if (!active.current || finished.current) return;
+    finished.current = true;
     completeOnboarding(hasSkippedTasteQuiz);
     const rootNav = navigation.getParent();
     if (rootNav && typeof (rootNav as { reset?: (state: object) => void }).reset === "function") {
@@ -73,6 +84,7 @@ export function LocationPermissionScreen({ navigation }: Props) {
   };
 
   const pickAreaInstead = () => {
+    if (!active.current) return;
     showToast({
       message: "We couldn't find your location. Pick your area instead.",
       tone: "warning",
@@ -94,18 +106,21 @@ export function LocationPermissionScreen({ navigation }: Props) {
   };
 
   const onContinue = async () => {
-    if (isContinuing) {
+    if (continuing.current) {
       return;
     }
 
+    continuing.current = true;
     setIsContinuing(true);
     if (manualLocation) {
       finish();
+      continuing.current = false;
       setIsContinuing(false);
       return;
     }
 
     await allowDeviceLocation();
+    continuing.current = false;
     setIsContinuing(false);
   };
 
@@ -114,7 +129,7 @@ export function LocationPermissionScreen({ navigation }: Props) {
       style={{ flex: 1, backgroundColor: palette.bg }}
       edges={["top", "left", "right", "bottom"]}
     >
-      <View style={{ flex: 1 }}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <View
           style={{
             alignItems: "center",
@@ -128,8 +143,8 @@ export function LocationPermissionScreen({ navigation }: Props) {
         >
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Back to taste quiz"
-            accessibilityHint="Returns to the taste preference questions"
+            accessibilityLabel="Back"
+            accessibilityHint="Returns to the previous onboarding step"
             onPress={() => {
               if (navigation.canGoBack()) {
                 navigation.goBack();
@@ -140,9 +155,9 @@ export function LocationPermissionScreen({ navigation }: Props) {
             style={{
               alignItems: "center",
               borderRadius: radii.pill,
-              height: 40,
+              height: 44,
               justifyContent: "center",
-              width: 40,
+              width: 44,
             }}
           >
             <ArrowLeft color={palette.text} size={22} />
@@ -197,7 +212,7 @@ export function LocationPermissionScreen({ navigation }: Props) {
           }}
         >
           <Button
-            label="Continue"
+            label={manualLocation ? "Continue" : "Use my location"}
             onPress={onContinue}
             loading={isContinuing}
             style={shadows.floating}
@@ -205,19 +220,21 @@ export function LocationPermissionScreen({ navigation }: Props) {
           {manualLocation ? (
             <Button
               label={`Selected Location: ${manualLocation}`}
+              disabled={isContinuing}
               variant="secondary"
               onPress={() => navigation.navigate("ManualLocationPicker")}
               accessibilityLabel={`Edit selected location, currently ${manualLocation}`}
             />
           ) : (
             <Button
-              label="Enter Manually"
+              label="Enter manually"
+              disabled={isContinuing}
               variant="secondary"
               onPress={() => navigation.navigate("ManualLocationPicker")}
             />
           )}
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }

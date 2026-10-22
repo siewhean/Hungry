@@ -1,0 +1,244 @@
+{
+  "snapshot_id": "refresh125_directory_field_normalization_audit_20261019",
+  "observed_date_local_singapore": "2026-10-19",
+  "task": "Read-only audit of existing Public F&B Directory field formatting and source inconsistencies. No workbook cells changed.",
+  "canonical_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_sha256": "fe31f2c8926d09ce592189efa8012987f6a3e878ef2977f50fe466873d567a64",
+  "scope": {
+    "sheet": "Public F&B Directory",
+    "rows_including_header": 38279,
+    "data_rows": 38278,
+    "fields_reviewed": [
+      "Full Address",
+      "Contact Details",
+      "Website",
+      "Opening Hours / Closed Days",
+      "Postal Code",
+      "Latitude",
+      "Longitude",
+      "Coordinate Precision"
+    ]
+  },
+  "profile_findings": {
+    "invalid_http_website_syntax_found": 0,
+    "website_missing_scheme_found": 0,
+    "website_whitespace_found": 0,
+    "contact_digit_count_outliers": 28,
+    "contact_values_with_alphabetic_content": 2593,
+    "opening_hours_length_outliers_over_180_chars": 12,
+    "opening_hours_sentinel_candidates": 1,
+    "notes": "Contact alphabetic content is often meaningful labels such as Contact, WhatsApp, email or extension; do not strip it blindly. Long schedules preserve separate day/holiday/last-order details and are not safe to truncate. The lone substring sentinel scan hit was the phrase None shown, not an actual null sentinel. No malformed URL was elevated to a row correction."
+  },
+  "proposals": [
+    {
+      "sfa_licence": "CE14O37E000",
+      "directory_row_1_based": 4635,
+      "record_name": "BURGER KING",
+      "field": "Opening Hours / Closed Days",
+      "observed_value": "Hours: Mon: 12:00 AM - 12:00 AM; Tue: 12:00 AM - 12:00 AM; Wed: 12:00 AM - 12:00 AM; Thu: 12:00 AM - 12:00 AM; Fri: 12:00 AM - 12:00 AM; Sat: 12:00 AM - 12:00 AM; Sun: 12:00 AM - 12:00 AM",
+      "proposed_value": "Hours: Mon–Sun, Eve of PH, PH: Open 24 hours (00:00–24:00); breakfast daily 05:00–11:00.",
+      "action": "lossless_normalization_candidate",
+      "confidence": "high",
+      "rationale": "Exact outlet page matches the address and labels daily 12:00 AM–12:00 AM schedule; official locator search output labels the same schedule Open 24 hours. Keep daily and Eve/PH coverage plus breakfast hours; do not interpret the literal endpoint pair as closed.",
+      "evidence_needed": "Already met for hours/address by the current official exact-outlet locator page; retain retrieval date and source URL in provenance.",
+      "source_urls": [
+        "https://www.burgerking.com.sg/Locator/Details/36"
+      ],
+      "observed_on": "2026-10-19",
+      "note": "This is a display normalization; preserve underlying 00:00–24:00 semantics. Breakfast window is on the official page but absent from current workbook field."
+    },
+    {
+      "sfa_licence": "CE24357C000",
+      "directory_row_1_based": 4642,
+      "record_name": "BURGER KING",
+      "field": "Opening Hours / Closed Days",
+      "observed_value": "Hours: Mon: 12:00 AM - 12:00 AM; Tue: 12:00 AM - 12:00 AM; Wed: 12:00 AM - 12:00 AM; Thu: 12:00 AM - 12:00 AM; Fri: 12:00 AM - 12:00 AM; Sat: 12:00 AM - 12:00 AM; Sun: 12:00 AM - 12:00 AM",
+      "proposed_value": "Hours: Mon–Sun, Eve of PH, PH: Open 24 hours (00:00–24:00); breakfast daily 05:00–11:00.",
+      "action": "lossless_normalization_candidate",
+      "confidence": "high",
+      "rationale": "Exact outlet page matches the address and labels daily 12:00 AM–12:00 AM schedule; official locator search output labels the same schedule Open 24 hours. Keep daily and Eve/PH coverage plus breakfast hours; do not interpret the literal endpoint pair as closed.",
+      "evidence_needed": "Already met for hours/address by the current official exact-outlet locator page; retain retrieval date and source URL in provenance.",
+      "source_urls": [
+        "https://www.burgerking.com.sg/Locator/Details/95"
+      ],
+      "observed_on": "2026-10-19",
+      "note": "This is a display normalization; preserve underlying 00:00–24:00 semantics. Breakfast window is on the official page but absent from current workbook field."
+    },
+    {
+      "sfa_licence": "NE06117A000",
+      "directory_row_1_based": 4644,
+      "record_name": "BURGER KING",
+      "field": "Opening Hours / Closed Days",
+      "observed_value": "Hours: Mon: 12:00 AM - 12:00 AM; Tue: 12:00 AM - 12:00 AM; Wed: 12:00 AM - 12:00 AM; Thu: 12:00 AM - 12:00 AM; Fri: 12:00 AM - 12:00 AM; Sat: 12:00 AM - 12:00 AM; Sun: 12:00 AM - 12:00 AM",
+      "proposed_value": "Hours: Mon–Sun, Eve of PH, PH: Open 24 hours (00:00–24:00); breakfast daily 05:00–11:00.",
+      "action": "lossless_normalization_candidate",
+      "confidence": "high",
+      "rationale": "Exact outlet page matches the address and labels daily 12:00 AM–12:00 AM schedule; official locator search output labels the same schedule Open 24 hours. Keep daily and Eve/PH coverage plus breakfast hours; do not interpret the literal endpoint pair as closed.",
+      "evidence_needed": "Already met for hours/address by the current official exact-outlet locator page; retain retrieval date and source URL in provenance.",
+      "source_urls": [
+        "https://www.burgerking.com.sg/Locator/Details/103"
+      ],
+      "observed_on": "2026-10-19",
+      "note": "This is a display normalization; preserve underlying 00:00–24:00 semantics. Breakfast window is on the official page but absent from current workbook field."
+    },
+    {
+      "sfa_licence": "NW09114N000",
+      "directory_row_1_based": 4654,
+      "record_name": "Burger King",
+      "field": "Opening Hours / Closed Days",
+      "observed_value": "Hours: Mon: 12:00 AM - 12:00 AM; Tue: 12:00 AM - 12:00 AM; Wed: 12:00 AM - 12:00 AM; Thu: 12:00 AM - 12:00 AM; Fri: 12:00 AM - 12:00 AM; Sat: 12:00 AM - 12:00 AM; Sun: 12:00 AM - 12:00 AM",
+      "proposed_value": "Hours: Mon–Sun, Eve of PH, PH: Open 24 hours (00:00–24:00); breakfast daily 05:00–11:00.",
+      "action": "lossless_normalization_candidate",
+      "confidence": "high",
+      "rationale": "Exact outlet page matches the address and labels daily 12:00 AM–12:00 AM schedule; official locator search output labels the same schedule Open 24 hours. Keep daily and Eve/PH coverage plus breakfast hours; do not interpret the literal endpoint pair as closed.",
+      "evidence_needed": "Already met for hours/address by the current official exact-outlet locator page; retain retrieval date and source URL in provenance.",
+      "source_urls": [
+        "https://www.burgerking.com.sg/Locator/Details/76"
+      ],
+      "observed_on": "2026-10-19",
+      "note": "This is a display normalization; preserve underlying 00:00–24:00 semantics. Breakfast window is on the official page but absent from current workbook field."
+    },
+    {
+      "sfa_licence": "S01213V000",
+      "directory_row_1_based": 4665,
+      "record_name": "BURGER KING",
+      "field": "Opening Hours / Closed Days",
+      "observed_value": "Hours: Mon: 12:00 AM - 12:00 AM; Tue: 12:00 AM - 12:00 AM; Wed: 12:00 AM - 12:00 AM; Thu: 12:00 AM - 12:00 AM; Fri: 12:00 AM - 12:00 AM; Sat: 12:00 AM - 12:00 AM; Sun: 12:00 AM - 12:00 AM",
+      "proposed_value": "Hours: Mon–Sun, Eve of PH, PH: Open 24 hours (00:00–24:00); breakfast daily 05:00–11:00.",
+      "action": "lossless_normalization_candidate",
+      "confidence": "high",
+      "rationale": "Exact outlet page matches the address and labels daily 12:00 AM–12:00 AM schedule; official locator search output labels the same schedule Open 24 hours. Keep daily and Eve/PH coverage plus breakfast hours; do not interpret the literal endpoint pair as closed.",
+      "evidence_needed": "Already met for hours/address by the current official exact-outlet locator page; retain retrieval date and source URL in provenance.",
+      "source_urls": [
+        "https://www.burgerking.com.sg/Locator/Details/98"
+      ],
+      "observed_on": "2026-10-19",
+      "note": "This is a display normalization; preserve underlying 00:00–24:00 semantics. Breakfast window is on the official page but absent from current workbook field."
+    },
+    {
+      "sfa_licence": "SE23O34V000",
+      "directory_row_1_based": 4678,
+      "record_name": "BURGER KING",
+      "field": "Opening Hours / Closed Days",
+      "observed_value": "Hours: Mon: 12:00 AM - 12:00 AM; Tue: 12:00 AM - 12:00 AM; Wed: 12:00 AM - 12:00 AM; Thu: 12:00 AM - 12:00 AM; Fri: 12:00 AM - 12:00 AM; Sat: 12:00 AM - 12:00 AM; Sun: 12:00 AM - 12:00 AM",
+      "proposed_value": "Hours: Mon–Sun, Eve of PH, PH: Open 24 hours (00:00–24:00); breakfast daily 04:00–11:00.",
+      "action": "lossless_normalization_candidate",
+      "confidence": "high",
+      "rationale": "Exact outlet page matches the address and labels daily 12:00 AM–12:00 AM schedule; official locator search output labels the same schedule Open 24 hours. Keep daily and Eve/PH coverage plus breakfast hours; do not interpret the literal endpoint pair as closed.",
+      "evidence_needed": "Already met for hours/address by the current official exact-outlet locator page; retain retrieval date and source URL in provenance.",
+      "source_urls": [
+        "https://www.burgerking.com.sg/Locator/Details/105"
+      ],
+      "observed_on": "2026-10-19",
+      "note": "This is a display normalization; preserve underlying 00:00–24:00 semantics. Breakfast window is on the official page but absent from current workbook field."
+    },
+    {
+      "sfa_licence": "CE14O37E000",
+      "directory_row_1_based": 4635,
+      "record_name": "BURGER KING",
+      "field": "Website",
+      "observed_value": "https://burgerking.com.sg/",
+      "proposed_value": "https://www.burgerking.com.sg/Locator/Details/36",
+      "action": "branch_specificity_upgrade",
+      "confidence": "high",
+      "rationale": "Official branch detail URL identifies the exact licensed outlet and gives current address/hours; current root URL remains valid but less specific.",
+      "evidence_needed": "Page identity is matched by exact street/unit/postal code; retain root URL as provenance if replacing the single Website value.",
+      "source_urls": [
+        "https://www.burgerking.com.sg/Locator/Details/36",
+        "https://www.burgerking.com.sg/"
+      ],
+      "observed_on": "2026-10-19"
+    },
+    {
+      "sfa_licence": "NE06117A000",
+      "directory_row_1_based": 4644,
+      "record_name": "BURGER KING",
+      "field": "Website",
+      "observed_value": "https://burgerking.com.sg/",
+      "proposed_value": "https://www.burgerking.com.sg/Locator/Details/103",
+      "action": "branch_specificity_upgrade",
+      "confidence": "high",
+      "rationale": "Official branch detail URL identifies the exact licensed outlet and gives current address/hours; current root URL remains valid but less specific.",
+      "evidence_needed": "Page identity is matched by exact street/unit/postal code; retain root URL as provenance if replacing the single Website value.",
+      "source_urls": [
+        "https://www.burgerking.com.sg/Locator/Details/103",
+        "https://www.burgerking.com.sg/"
+      ],
+      "observed_on": "2026-10-19"
+    },
+    {
+      "sfa_licence": "CE24357C000",
+      "directory_row_1_based": 4642,
+      "record_name": "BURGER KING",
+      "field": "Full Address",
+      "observed_value": "Address: 339 ANCHORVALE ROAD #01-03,Singapore 540339",
+      "proposed_value": "Address: 339 ANCHORVALE ROAD #01-03,Singapore 540339, Anchorvale Village",
+      "action": "append_verified_premises_name",
+      "confidence": "high",
+      "rationale": "Exact official locator listing contains the same street, unit and postal code, and names the venue/building omitted in the workbook.",
+      "evidence_needed": "Already met by matching official outlet page; retain the existing address and append the verified venue label without changing postal code or coordinates.",
+      "source_urls": [
+        "https://www.burgerking.com.sg/Locator/Details/95"
+      ],
+      "observed_on": "2026-10-19"
+    },
+    {
+      "sfa_licence": "S01213V000",
+      "directory_row_1_based": 4665,
+      "record_name": "BURGER KING",
+      "field": "Full Address",
+      "observed_value": "Address: 1 PASIR RIS DRIVE 4 #01-07,Singapore 519457",
+      "proposed_value": "Address: 1 PASIR RIS DRIVE 4 #01-07,Singapore 519457, Pasir Ris East Community Club",
+      "action": "append_verified_premises_name",
+      "confidence": "high",
+      "rationale": "Exact official locator listing contains the same street, unit and postal code, and names the venue/building omitted in the workbook.",
+      "evidence_needed": "Already met by matching official outlet page; retain the existing address and append the verified venue label without changing postal code or coordinates.",
+      "source_urls": [
+        "https://www.burgerking.com.sg/Locator/Details/98"
+      ],
+      "observed_on": "2026-10-19"
+    },
+    {
+      "sfa_licence": "NW09114N000",
+      "directory_row_1_based": 4654,
+      "record_name": "Burger King",
+      "field": "Contact Details",
+      "observed_value": "Contact: +65 6969 9129",
+      "proposed_value": null,
+      "action": "review_current_validity_no_automatic_removal",
+      "confidence": "medium",
+      "rationale": "Current official outlet page matches location and hours but has an empty call field. A third-party result repeats this number and dates its last update to 2023; that is not strong enough to prove the current branch number or prove it false.",
+      "evidence_needed": "Current first-party confirmation from Burger King Singapore or a fresh direct call/listing readback. Remove only if confirmed disconnected/wrong; otherwise retain with source/date.",
+      "source_urls": [
+        "https://www.burgerking.com.sg/Locator/Details/76",
+        "https://eatleh.com/outlet/burger-king-buona-vista-community-club/"
+      ],
+      "observed_on": "2026-10-19",
+      "third_party_source_last_update": "2023-08-16"
+    }
+  ],
+  "summary": {
+    "lossless_hours_normalization_rows": 6,
+    "official_branch_url_upgrades": 2,
+    "verified_address_enrichments": 2,
+    "contacts_held_for_manual_first_party_check": 1,
+    "proposal_rows": 11,
+    "workbook_edited": false
+  },
+  "limitations": [
+    "This is a targeted high-signal audit, not a full live verification of every 38,278 directory record.",
+    "Third-party contact support is historical and does not establish that the number is currently valid.",
+    "No bulk replacements are recommended for labels or long schedules without preserving meaning.",
+    "Ratings, reviews, and approved image values are outside this field-format audit."
+  ],
+  "source_urls": [
+    "https://eatleh.com/outlet/burger-king-buona-vista-community-club/",
+    "https://www.burgerking.com.sg/",
+    "https://www.burgerking.com.sg/Locator/Details/103",
+    "https://www.burgerking.com.sg/Locator/Details/105",
+    "https://www.burgerking.com.sg/Locator/Details/36",
+    "https://www.burgerking.com.sg/Locator/Details/76",
+    "https://www.burgerking.com.sg/Locator/Details/95",
+    "https://www.burgerking.com.sg/Locator/Details/98"
+  ]
+}

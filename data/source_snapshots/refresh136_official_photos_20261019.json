@@ -1,0 +1,61 @@
+{
+  "refresh_id": "refresh136_official_photos_20261019",
+  "observed_at": "2026-10-19",
+  "canonical_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "canonical_workbook_sha256_at_review_start": null,
+  "input_image_snapshot": "data/source_snapshots/refresh136_images_20261019.json",
+  "duplicate_check": "Compared exact SFA licences against current Public F&B Directory, Image Candidates sheet, and Refresh136 image snapshot. No exact-licence candidates existed for the four reviewed Bugis Junction branches.",
+  "method_limits": "Read official mall-page HTML metadata only. No image files were downloaded or visually inspected. No workbook cells were changed.",
+  "proposals": [],
+  "reviewed_but_excluded": [
+    {
+      "sfa_licence": "CE07D29N000",
+      "business": "Yoshinoya",
+      "source_page_url": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/yoshinoya.html",
+      "direct_image_url": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/yoshinoya/_jcr_content.coreimg.85.600.png/content/dam/capitaland/bugis/bugis-junction/BJ_Yoshinoya_Capital%20land%20Website%20images.png",
+      "image_scope": "Unknown; dedicated Bugis Junction store-page asset, but no descriptive alt text or visual inspection available.",
+      "branch_match_evidence": "Official CapitaLand Bugis Junction store page is titled YOSHINOYA and lists unit B1-10; canonical workbook row is 230 Victoria Street #B1-10, Bugis Junction, SFA licence CE07D29N000.",
+      "rights_permission_status": "Hosted on official mall domain; no reuse license or display permission found. Written permission required before display.",
+      "decision": "Excluded: visible subject and photo authenticity cannot be confirmed without image inspection; reuse permission is unstated."
+    },
+    {
+      "sfa_licence": "CE07D85V000",
+      "business": "YA KUN KAYA TOAST",
+      "source_page_url": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/ya-kun-kaya-toast.html",
+      "direct_image_url": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/ya-kun-kaya-toast/_jcr_content.coreimg.85.600.jpeg/content/dam/capitaland-tenants/imported/en/-/media/cma-malls/websites/storefront_560/y/yakun_image_560x560.jpg",
+      "image_scope": "Unknown generic Ya Kun image; asset filename is yakun_image_560x560.jpg and image alt text is empty.",
+      "branch_match_evidence": "Official CapitaLand Bugis Junction store page is titled Ya Kun Kaya Toast and lists unit B1-11; canonical workbook row is 200 Victoria Street #B1-11, Bugis Junction, SFA licence CE07D85V000.",
+      "rights_permission_status": "Hosted on official mall domain; no reuse license or display permission found. Written permission required before display.",
+      "decision": "Excluded: no evidence that image depicts the Bugis Junction outlet or a specific menu item; reuse permission is unstated."
+    },
+    {
+      "sfa_licence": "W00171E000",
+      "business": "Toastbox",
+      "source_page_url": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/toast-box.html",
+      "direct_image_url": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/toast-box/_jcr_content.coreimg.85.600.jpeg/content/dam/capitaland-tenants/imported/en/-/media/cma-malls/websites/storefront_560/t/toastbox_560.jpg",
+      "image_scope": "Unknown generic Toast Box image; asset path categorizes it as storefront_560, but image alt text is empty.",
+      "branch_match_evidence": "Official CapitaLand Bugis Junction store page is titled TOAST BOX and lists unit 01-67; canonical workbook row is 200 Victoria Street #01-67, Parco Bugis Junction, SFA licence W00171E000.",
+      "rights_permission_status": "Hosted on official mall domain; no reuse license or display permission found. Written permission required before display.",
+      "decision": "Excluded: asset metadata does not verify the pictured subject or exact-branch identity; reuse permission is unstated."
+    },
+    {
+      "sfa_licence": "CE08738X000",
+      "business": "PARIS BAGUETTE",
+      "source_page_url": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/paris-baguette-cafe.html",
+      "direct_image_url": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/paris-baguette-cafe/_jcr_content.coreimg.85.600.jpeg/content/dam/capitaland-sites/singapore/shop/malls/bugis-junction/tenants/Paris%20Baguette_CapitaLand%20Website%20Logo%20(002).jpeg",
+      "image_scope": "Logo (explicitly identified in asset filename), not a genuine stall or menu photo.",
+      "branch_match_evidence": "Official CapitaLand Bugis Junction store page is titled PARIS BAGUETTE Cafe and lists unit B1-24 to 25; canonical workbook row is 200 Victoria Street #B1-24/25, Bugis Junction, SFA licence CE08738X000.",
+      "rights_permission_status": "Hosted on official mall domain; no reuse license or display permission found. Written permission required before display.",
+      "decision": "Excluded: logo is outside the requested authentic photo scope; no reuse permission established."
+    }
+  ],
+  "summary": {
+    "records_researched": 4,
+    "eligible_official_photo_proposals": 0,
+    "reason": "No image met the user requirements with verifiable authentic photo scope and established display permission. The Paris Baguette asset is explicitly a logo; other assets lack sufficient visible-subject evidence and stated reuse permission."
+  },
+  "canonical_workbook_sha256_before_refresh136_integration": "dfdd8b9833f249e0c4539c8c8ed861f06df7f40ba842875aa6375b13d3c7e999",
+  "canonical_workbook_sha256_after_refresh136_integration_and_research": "549fc045fc38b3b3ac6f150f09a4f20acfb1f2a7fb5bacf97f6cdb1f8744de03",
+  "workbook_sha_change_note": "The prior hash matched data/README.md. The parent confirmed the workbook changed due to its concurrent Refresh136 integration; this researcher made no workbook edits. The after-integration hash was unchanged at final recheck.",
+  "canonical_workbook_sha256_at_review_start_note": "Research resumed read-only after the parent-confirmed Refresh136 integration; its resulting SHA is recorded as the after-integration hash above."
+}

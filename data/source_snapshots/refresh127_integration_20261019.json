@@ -1,0 +1,158 @@
+{
+  "refresh_id": "refresh127_increment_20261019",
+  "status": "installed",
+  "canonical_workbook": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "candidate_workbook": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "input_sha256": "2c737c77fc2472cb7fcc31af2746e813a1b7779fedc8632f76b19f7fc396a5b3",
+  "candidate_sha256": "1f32e2fe53ca6e82bffab65f1f39e21d197c8d1ea040018933e1b8cb26638081",
+  "updates": {
+    "names": 2,
+    "websites": 2,
+    "menuSummary": 1,
+    "menuUrl": 0,
+    "menuItemsAdded": 10,
+    "coordinates": 6
+  },
+  "changes": [
+    {
+      "sfa_licence": "CE21713E000",
+      "field": "F&B Name",
+      "before": null,
+      "after": "Kopitiam",
+      "source": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/kopitiam.html"
+    },
+    {
+      "sfa_licence": "CE21713E000",
+      "field": "Website",
+      "before": null,
+      "after": "https://www.kopitiam.biz/",
+      "source": "https://www.kopitiam.biz/"
+    },
+    {
+      "sfa_licence": "SW14236N000",
+      "field": "F&B Name",
+      "before": null,
+      "after": "YUN NANS",
+      "source": "https://www.capitaland.com/sg/malls/westgate/en/stores/yun-nans.html"
+    },
+    {
+      "sfa_licence": "SW14236N000",
+      "field": "Website",
+      "before": null,
+      "after": "https://www.capitaland.com/sg/malls/westgate/en/stores/yun-nans.html",
+      "source": "https://www.capitaland.com/sg/malls/westgate/en/stores/yun-nans.html"
+    },
+    {
+      "sfa_licence": "NW18291B000",
+      "field": "Menu / Price",
+      "before": null,
+      "after": "Official KFC Singapore online menu observed 2026-10-19; selected brand-level items and online prices are listed in Menu Items. Outlet availability and dine-in prices may differ.",
+      "source": "https://www.kfc.com.sg/menu/burgers-wraps"
+    },
+    {
+      "sfa_licence": "NW10303C000",
+      "field": "Latitude/Longitude/Coordinate Precision",
+      "before": null,
+      "after": [
+        1.31178711,
+        103.79457527,
+        "Mapbox Search Box returned matching POI name (87 Just Thai), matching street address and exact postal code; POI point coordinates only; coordinate accuracy not provided."
+      ],
+      "source": "Mapbox Search Box; query and exact match recorded in mapbox_coordinate_batch_20261019.json"
+    },
+    {
+      "sfa_licence": "B96175K000",
+      "field": "Latitude/Longitude/Coordinate Precision",
+      "before": null,
+      "after": [
+        1.44083389,
+        103.8248907,
+        "Mapbox Search Box returned matching POI name (13 Miles), matching street address and exact postal code; POI point coordinates only; coordinate accuracy not provided."
+      ],
+      "source": "Mapbox Search Box; query and exact match recorded in mapbox_coordinate_batch_20261019.json"
+    },
+    {
+      "sfa_licence": "CE18L21J000",
+      "field": "Latitude/Longitude/Coordinate Precision",
+      "before": null,
+      "after": [
+        1.293493,
+        103.851551,
+        "Search result is the exact 15 Stamford Road address and postal code, but not the restaurant POI; rooftop building/address coordinates only, not a separate restaurant entrance or unit point."
+      ],
+      "source": "Mapbox Search Box; query and exact match recorded in mapbox_coordinate_batch_20261019.json"
+    },
+    {
+      "sfa_licence": "E87097P000",
+      "field": "Latitude/Longitude/Coordinate Precision",
+      "before": null,
+      "after": [
+        1.307326,
+        103.907357,
+        "Search result is exact 216 East Coast Road address and exact postal code; rooftop building/address coordinates only, not a separate restaurant POI or unit point."
+      ],
+      "source": "Mapbox Search Box; query and exact match recorded in mapbox_coordinate_batch_20261019.json"
+    },
+    {
+      "sfa_licence": "SE23Q59K000",
+      "field": "Latitude/Longitude/Coordinate Precision",
+      "before": null,
+      "after": [
+        1.3083,
+        103.90297,
+        "Search result is exact street address and postal code; Mapbox classifies the coordinate accuracy as proximate, so it is address-level approximate, not unit/POI precise."
+      ],
+      "source": "Mapbox Search Box; query and exact match recorded in mapbox_coordinate_batch_20261019.json"
+    },
+    {
+      "sfa_licence": "W90200J000",
+      "field": "Latitude/Longitude/Coordinate Precision",
+      "before": null,
+      "after": [
+        1.31197017,
+        103.7943032,
+        "Mapbox Search Box returned matching Holland Village branch POI, matching street address and exact postal code; POI point coordinates only; coordinate accuracy not provided."
+      ],
+      "source": "Mapbox Search Box; query and exact match recorded in mapbox_coordinate_batch_20261019.json"
+    }
+  ],
+  "directory_rows_after": 38278,
+  "menu_item_rows_before": 13378,
+  "menu_item_rows_added": 10,
+  "image_candidate_rows_before": 2758,
+  "image_candidate_rows_added": 0,
+  "coverage_metrics": {
+    "Active public-access directory rows": 38278,
+    "Unique SFA licences": 38278,
+    "Rows with a usable F&B name": 32796,
+    "Rows with no usable F&B name": 5482,
+    "Rows with coordinates": 35740,
+    "Rows with contact details": 2704,
+    "Rows with website": 2814,
+    "Rows with menu URL": 1471,
+    "Rows with menu summary": 522,
+    "Rows with rating/review count": 0,
+    "Rows with approved image URL": 0,
+    "Rows with opening hours": 1474,
+    "Image candidates": 2758,
+    "Official and open-license image candidates": 0
+  },
+  "mapbox_search_box_usage": "User-reported 59/50000 before this batch + 20 Search Box requests = 79/50000 estimated; not dashboard verified.",
+  "no_spending": true,
+  "public_access_records_removed": 0,
+  "evidence_files": [
+    "official_directory_next_20261019.json",
+    "official_menus_next_20261019.json",
+    "mapbox_coordinate_batch_20261019.json",
+    "closure_sweep_next_20261019.json",
+    "menu_image_firstparty_20261019.json"
+  ],
+  "limitations": [
+    "OneMap token not available in the worker environment; 2,544 coordinate gaps remain.",
+    "No new SFA-verified closures were found.",
+    "KFC menu prices are brand-level online prices; outlet and dine-in availability are not confirmed.",
+    "No images with verified reuse rights were added.",
+    "Twenty SAFRA/Jewel public-access cases remain unresolved."
+  ],
+  "installed_workbook_sha256": "1f32e2fe53ca6e82bffab65f1f39e21d197c8d1ea040018933e1b8cb26638081"
+}

@@ -1,0 +1,74 @@
+{
+  "schema_version": "1.0",
+  "snapshot_id": "refresh120_open_images_batch_20261019",
+  "observed_at_sgt": "2026-10-19",
+  "canonical_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "workbook_sha256_read_only_baseline": "0e3f6c7cc1594ba701f6fa4de6d11c6db1db9643060907f7292fb8a634d6eb6f",
+  "workbook_edited": false,
+  "scope": "Read-only search for exact-outlet food or storefront photographs with explicit open reuse rights, beyond prior Tian Tian and Hill Street Tai Hwa image candidates. No paid services, image downloads, delivery-platform images, or workbook edits.",
+  "method": {
+    "sources_searched": ["Wikimedia Commons file pages surfaced through web search"],
+    "searches": [
+      "Singapore restaurant official website Creative Commons Attribution food images",
+      "Singapore restaurant storefront Wikimedia Commons Creative Commons",
+      "Singapore hawker stall Wikimedia Commons CC BY",
+      "named Singapore restaurant Wikimedia Commons CC BY-SA storefront"
+    ],
+    "workbook_check": "Read Public F&B Directory by SFA licence and Image Candidates for existing exact-outlet duplicates."
+  },
+  "findings": [
+    {
+      "candidate_id": "commons-hawker-chan-smith-street-2023",
+      "sfa_licence": "SM102126004",
+      "workbook_name": "liao fan hawker chan",
+      "workbook_address": "335 SMITH STREET #02-126, CHINATOWN COMPLEX, Singapore 050335",
+      "image_type": "Hawker Chan / Smith Street photograph; exact image content not visually checked in this pass",
+      "direct_image_url": "https://upload.wikimedia.org/wikipedia/commons/3/36/Singapore_today-Chinatown-Smith_Street-Hawker_Chan-151236.jpg",
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:Singapore_today-Chinatown-Smith_Street-Hawker_Chan-151236.jpg",
+      "creator": "Rainer Halama",
+      "capture_date": "2023-08-24 15:12:38 (source page and EXIF)",
+      "license": "Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "source_page_rights": "The Commons page explicitly grants CC BY-SA 4.0. Attribution, license link, no implied endorsement, and ShareAlike for adaptations are required. Creator additionally requests notice/specimen URL when the image is used.",
+      "recommended_attribution": "Rainer Halama, ‘Singapore today-Chinatown-Smith Street-Hawker Chan-151236.jpg’, via Wikimedia Commons, CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/; no changes made.",
+      "source_page_capture_sha256": "0f3f02161b1d27339abb705a27df882d0ae3f238fc3bcd877e126fb9bd6e955e",
+      "source_capture_method": "SHA-256 of HTML fetched from source_page_url on 2026-10-19 SGT; image bytes not downloaded.",
+      "direct_url_check": "HTTP HEAD returned 200 image/jpeg; Content-Length 5,275,101 bytes; Last-Modified 2024-04-25T20:57:54Z, checked 2026-10-19 SGT.",
+      "match_evidence": "Commons title/description names Hawker Chan and Smith Street, Singapore; Commons camera coordinates are 1.283115, 103.842927. Workbook contains an SFA row named liao fan hawker chan at 335 Smith Street, Chinatown Complex. Image Candidate sheet had no Hawker Chan match when searched by name. This is a named-outlet/street-level association, but source metadata does not establish unit #02-126 or prove the image depicts the current stall frontage.",
+      "freshness_and_currentness": "Photo captured 2023-08-24; currentness not established. Workbook row is present in the SFA export but its coverage status says premises operation is not live confirmed. Do not present as a current appearance or current operating-status signal.",
+      "visual_check": "Not performed; Commons metadata and direct image headers were checked, but no image downloaded or visually inspected.",
+      "rights_status": "explicit_reuse_license_verified",
+      "candidate_status": "review_only_exact_match_not_fully_verified",
+      "recommendation": "May be added only as a dated, attributed Commons candidate with CC BY-SA conditions and review-only status; do not add to Approved Image URL or call it a verified current stall image until a visual and exact-unit match are checked. Notify creator with catalogue URL if ultimately used."
+    }
+  ],
+  "excluded_results": [
+    {
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:Taiwanese_fried_chicken_stall_in_Telok_Blangah,_Singapore.jpg",
+      "reason": "CC BY 2.0 is explicit, but description identifies an unnamed night-market food stall along Telok Blangah Drive. No exact workbook F&B name or SFA licence can be joined without guessing."
+    },
+    {
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:Satay_stall_at_East_Coast_Lagoon_Food_Village.jpg",
+      "reason": "CC BY-SA 4.0 is explicit, but no exact named stall/operator match is provided. Hawker-centre-only association is insufficient for an exact-outlet record."
+    },
+    {
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:Mr._Bean_stall,_Maxwell_Food_Centre,_Singapore_-_20080830.jpg",
+      "reason": "CC BY-SA 1.0 is explicit, but it is a 2008 image and workbook search found no current Mr Bean outlet at Maxwell Food Centre. Do not misapply it to a different branch."
+    },
+    {
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:Customers_at_a_centre_for_food-sellers,_or_hawkers.jpg",
+      "reason": "Licensed Maxwell Food Centre general-scene photo, not an exact outlet or stall match."
+    },
+    {
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:Fruit_stall,_Chinatown,_Singapore_(2914139107).jpg",
+      "reason": "CC BY-SA 2.0 is explicit, but this identifies only an unnamed fruit stall in Chinatown, not an exact workbook outlet."
+    }
+  ],
+  "result": {
+    "new_explicitly_licensed_exact_named_outlet_candidates": 1,
+    "eligible_for_approved_image_url": 0,
+    "new_image_downloads": 0,
+    "reason": "One candidate has explicit CC BY-SA rights and a named Hawker Chan / Smith Street association, but the exact unit and current storefront appearance are unverified. Other results either name no outlet or do not match a current workbook branch.",
+    "next_step": "If the parent workflow accepts dated Commons candidates, add the Hawker Chan image to Image Candidates as review-only with full attribution and ShareAlike terms; retain no-claim caveat. Leave Approved Image URL blank."
+  }
+}

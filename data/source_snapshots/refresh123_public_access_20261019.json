@@ -1,0 +1,162 @@
+{
+  "snapshot_id": "refresh123_public_access_20261019",
+  "snapshot_type": "read_only_public_access_verification_for_menu_candidates",
+  "observed_date_local_singapore": "2026-10-19",
+  "workbook_path": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_workbook_sha256": "2674213d695cbe29ef25cab0ca9535a1dbca6dbf81b5b1ea983561632994e233",
+  "workbook_edited": false,
+  "method": "Checked direct merchant and landlord/venue policy sources for exact current SFA addresses and units. SFA listing alone was not treated as access proof. Conclusions distinguish explicit guest rules from public-dining evidence and inference.",
+  "records": [
+    {
+      "sfa_licence": "CE24907K000",
+      "name": "PUREGEM CHINESE FINE DINING",
+      "sfa_address": "60 Robinson Road #01-00, #02-00, BEA Building, Singapore 068892",
+      "access_conclusion": "likely_public_access; no membership or member sign-in requirement found",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "url": "https://puregem.com.sg/contact-us/",
+          "source": "PureGem official contact and location page",
+          "excerpt": "60 Robinson Road (BEA Building), #01-00, 02-00, Singapore 068892; All Days: Lunch Hours 11.30am–3.00pm; Dinner Hours 6.00pm–10.30pm; Restaurant: 9058 2628.",
+          "supports": "Exact street/building/unit match and regular restaurant dining hours; official parking guide and restaurant contact indicate customer-facing venue. No membership or access restriction stated."
+        },
+        {
+          "url": "https://puregem.com.sg/food-menu/",
+          "source": "PureGem official dine-in menu page",
+          "excerpt": "Official page links the restaurant's dine-in menu.",
+          "supports": "Public-facing dine-in service; does not explicitly state entry policy."
+        }
+      ],
+      "limitation": "No explicit building visitor policy saying membership is not required was located; public access is inferred from the official restaurant's public dining/contact details."
+    },
+    {
+      "sfa_licence": "CE12C17N000",
+      "name": "THE CANTEEN BY ENJOY",
+      "sfa_address": "383 Jalan Besar, Kam Leng Hotel, Singapore 209001",
+      "access_conclusion": "likely_public_access; no membership or member sign-in requirement found",
+      "confidence": "medium_high",
+      "evidence": [
+        {
+          "url": "https://www.enjoyeating.sg/canteen-by-enjoy",
+          "source": "Merchant official outlet page",
+          "excerpt": "The Canteen by Enjoy serves Singaporean comfort food at 383 Jalan Besar, Kam Leng Hotel. ... How do I book a table? Reserve at The Canteen by Enjoy or call +65 9299 1601.",
+          "supports": "Exact address, restaurant dining, and direct public table-reservation path; no membership restriction stated."
+        },
+        {
+          "url": "https://www.enjoyeating.sg/canteen-menu",
+          "source": "Merchant official current menu page",
+          "excerpt": "The Canteen by Enjoy Menu — Jalan Besar; page identifies Kam Leng Hotel, 383 Jalan Besar, Singapore 209001 and provides the restaurant menu.",
+          "supports": "Exact candidate branch and public customer menu; no access restriction stated."
+        }
+      ],
+      "limitation": "Hotel property entry policy is not separately stated. Restaurant's own public reservation and menu pages support ordinary dining access but do not contain an explicit 'non-guests welcome' sentence."
+    },
+    {
+      "sfa_licence": "CE24166N000",
+      "name": "LA TABLE D' EMMA",
+      "sfa_address": "8 Club Street #01-04, Singapore 069472",
+      "access_conclusion": "public_access_supported; no membership or member sign-in requirement found",
+      "confidence": "high",
+      "evidence": [
+        {
+          "url": "https://www.latabledemma.com/contact-us/",
+          "source": "Merchant official contact/reservations page",
+          "excerpt": "Visit Us; 8 CLUB STREET, #01-04, SINGAPORE 069472; 'Secure Your Table Now' / 'Reserve A Table Now'; lunch and dinner hours Monday to Sunday.",
+          "supports": "Exact street-front restaurant unit and normal public reservation invitation; no membership restriction stated."
+        },
+        {
+          "url": "https://www.latabledemma.com/menu/",
+          "source": "Merchant official menu page",
+          "excerpt": "Official restaurant menu page at the same current merchant domain.",
+          "supports": "Public diner-facing menu."
+        }
+      ],
+      "limitation": "The merchant does not publish a formal building-access policy; normal street restaurant reservations support public access."
+    },
+    {
+      "sfa_licence": "CE18M44K000",
+      "name": "NEON PIGEON",
+      "sfa_address": "36 Carpenter Street #01-01, Carpenter Haus, Singapore 059915",
+      "access_conclusion": "public_access_supported; no membership or member sign-in requirement found",
+      "confidence": "high",
+      "evidence": [
+        {
+          "url": "https://www.neonpigeonsg.com/reservations",
+          "source": "Merchant official reservation page",
+          "excerpt": "'BOOK YOUR TABLE AT NEON PIGEON'; reservations are open for dinner and drinks every evening; Address: 36 Carpenter Street, #01-01, Singapore 059915.",
+          "supports": "Exact SFA street/unit match and public consumer reservation flow; no membership restriction stated."
+        },
+        {
+          "url": "https://www.neonpigeonsg.com/",
+          "source": "Merchant official home page",
+          "excerpt": "Public restaurant page links 'VIEW THE MENU' and 'BOOK A TABLE' and gives 36 Carpenter Street, #01-01.",
+          "supports": "Ordinary customer-facing restaurant booking and venue details."
+        }
+      ],
+      "limitation": "No formal building-level access policy was located. Current official reservation invitation at the exact unit is direct evidence for ordinary customer dining."
+    },
+    {
+      "sfa_licence": "CE09E77V000",
+      "name": "OTTO RISTORANTE",
+      "sfa_address_in_workbook": "32 Maxwell Road #01-03, #01-02, WHITE HOUSE, Singapore 069115",
+      "official_venue_address": "32 Maxwell Road #01-02/03, Maxwell Chambers, Singapore 069115",
+      "access_conclusion": "likely_public_access; visitors are contemplated; no membership or member sign-in requirement found",
+      "confidence": "medium_high",
+      "evidence": [
+        {
+          "url": "https://www.ottoristorante.com.sg/reservations/",
+          "source": "Merchant official reservation/location page",
+          "excerpt": "Public 'Reservations' page; gives 32 Maxwell Road #01-02/03 Maxwell Chambers, Singapore 069115 and directions to 'enter Maxwell Chambers'.",
+          "supports": "Exact address/unit match, consumer reservation pathway, and ordinary visitor route."
+        },
+        {
+          "url": "https://www.maxwellchambers.com/frequently-asked-questions/",
+          "source": "Maxwell Chambers official visitor FAQ",
+          "excerpt": "'Maxwell Chambers reserves the right to refuse entry to visitors who do not adhere to our dress code policy.'",
+          "supports": "Building policy explicitly contemplates visitors and states an attire-based entry condition, not membership or member sponsorship."
+        },
+        {
+          "url": "https://www.maxwellchambers.com/directory/otto-ristorante/",
+          "source": "Maxwell Chambers official tenant directory",
+          "excerpt": "Identifies OTTO Ristorante as a restaurant, provides its public dining description, opening hours, website and unit #01-02/03.",
+          "supports": "Landlord directory confirms the restaurant tenant and public dining function."
+        }
+      ],
+      "limitation": "Workbook building label 'White House' conflicts with current merchant and landlord sources identifying Maxwell Chambers; street, postcode, and unit match. Maxwell Chambers visitor dress code applies. No membership rule appears on the visitor FAQ or restaurant booking page."
+    },
+    {
+      "sfa_licence": "SW11408L000",
+      "name": "RASA ISTIMEWA RESTAURANT",
+      "sfa_address": "333 Boon Lay Way #2B-01, SAFRA Jurong Club, Singapore 649848",
+      "access_conclusion": "not_independently_public; requires member accompaniment/sign-in under located SAFRA guest policy; exclude from public-access catalogue pending contrary current policy",
+      "confidence": "high",
+      "evidence": [
+        {
+          "url": "https://safra-resources-h8h9gxh8bhh4cuc9.a01.azurefd.net/media-library/docs/default-source/benefits-at-other-establishments/safra_reciprocalarrangement_htns_nsrcc_1may24.pdf?sfvrsn=f3c9d475_0",
+          "source": "SAFRA reciprocal-arrangement policy for SAFRA facilities, guests, HomeTeamNS and NSRCC members",
+          "excerpt": "'ALL GUESTS MUST BE ACCOMPANIED BY EITHER SAFRA, HOMETEAMNS OR NSRCC MEMBERS.' The SAFRA Jurong table lists Rasa Istimewa Restaurant and says guests pay prevailing rates.",
+          "supports": "Direct guest-entry requirement applies to SAFRA Jurong facilities/vendors, including Rasa Istimewa; a non-member cannot independently enter as an unaccompanied guest under this policy."
+        },
+        {
+          "url": "https://www.safra.sg/amenities-offerings/rasa-istimewa-restaurant",
+          "source": "SAFRA official Rasa Istimewa tenant page",
+          "excerpt": "Lists Rasa Istimewa Restaurant at SAFRA Jurong, its hours, reservation phone, and SAFRA Members' Benefit / Affiliated Members' Benefit.",
+          "supports": "Confirms exact restaurant within SAFRA Jurong and member benefits; does not establish independent public clubhouse entry."
+        },
+        {
+          "url": "https://www.rasaistimewa.sg/safra-jurong-promotions",
+          "source": "Merchant official Rasa Istimewa SAFRA Jurong page",
+          "excerpt": "Identifies 333 Boon Lay Way, SAFRA Jurong Building #2B-01; explains SAFRA and affiliated member-card benefits.",
+          "supports": "Exact SFA unit crosswalk; merchant's membership discount terms do not override SAFRA guest-entry policy."
+        }
+      ],
+      "held_reason": "Although the venue has a public Oddle order page and advertises dine-in reservations, ordering availability does not prove physical independent access into a members' clubhouse. SAFRA's current located policy requires all guests to be accompanied by a member. Hold its Public Access Status and exclude it from the user-requested public-only list unless SAFRA confirms public walk-in entry without member sign-in."
+    }
+  ],
+  "summary": {
+    "likely_or_supported_public": 5,
+    "held_not_independently_public": 1,
+    "explicit_membership_or_guest_restriction": 1,
+    "workbook_rows_changed": 0
+  }
+}

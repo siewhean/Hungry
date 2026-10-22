@@ -1,0 +1,440 @@
+{
+  "snapshot": "refresh136_starbucks_fields_integration_20261019",
+  "workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "baseline_sha256": "51fde2c4bf0308f20e504f7313c0134ee4392ba453f3bf09b332f956df983c1d",
+  "workbook_sha256_after": "27204a078d6cd4bf399e6c9a4a41965f6c042b0b296b713d9cefd91c5507dc29",
+  "records_updated": 30,
+  "fields_updated": 53,
+  "field_counts": {
+    "Opening Hours / Closed Days": 30,
+    "Contact Details": 23
+  },
+  "updates": [
+    {
+      "sfa_licence": "CE07727K000",
+      "field": "Opening Hours / Closed Days",
+      "value": "Hours: Mon-Thu 07:30-22:00; Fri-Sat 07:30-22:30; Sun 07:30-22:00; PH 07:30-22:00; Eve PH 07:30-22:30",
+      "row": 26360,
+      "official_store_name": "Ang Mo Kio Hub",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "CE07727K000",
+      "field": "Contact Details",
+      "value": "Contact: +6569101152",
+      "row": 26360,
+      "official_store_name": "Ang Mo Kio Hub",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "CE09985E000",
+      "field": "Opening Hours / Closed Days",
+      "value": "Hours: Mon-Thu 07:30-22:00; Fri-Sat 07:30-22:30; Sun 07:30-22:00; PH 07:30-22:30; Eve PH 07:30-22:30",
+      "row": 26362,
+      "official_store_name": "ION Orchard",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "CE09985E000",
+      "field": "Contact Details",
+      "value": "Contact: +6569101197",
+      "row": 26362,
+      "official_store_name": "ION Orchard",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "CE10311J000",
+      "field": "Opening Hours / Closed Days",
+      "value": "Hours: Mon-Fri 07:00-19:00; Sat-Sun Closed; PH Closed; Eve PH Closed",
+      "row": 26363,
+      "official_store_name": "Gateway",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "CE12025V000",
+      "field": "Opening Hours / Closed Days",
+      "value": "Hours: Mon-Thu 08:00-22:00; Fri 08:00-22:30; Sat 07:00-23:00; Sun 07:00-22:00; PH 07:00-22:00; Eve PH 07:00-23:00",
+      "row": 26366,
+      "official_store_name": "Gardens by the Bay",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "CE12025V000",
+      "field": "Contact Details",
+      "value": "Contact: +6569933677",
+      "row": 26366,
+      "official_store_name": "Gardens by the Bay",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "CE17D68L000",
+      "field": "Opening Hours / Closed Days",
+      "value": "Hours: Mon-Sun 08:00-22:00; PH 08:00-22:00; Eve PH 08:00-22:00",
+      "row": 26367,
+      "official_store_name": "The Cathay 2",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "CE17D68L000",
+      "field": "Contact Details",
+      "value": "Contact: +6569105455",
+      "row": 26367,
+      "official_store_name": "The Cathay 2",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "CE18N36C000",
+      "field": "Opening Hours / Closed Days",
+      "value": "Hours: Mon-Fri 07:00-21:00; Sat-Sun Closed; PH Closed; Eve PH 07:00-21:00",
+      "row": 26368,
+      "official_store_name": "Frasers Tower",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "CE18N36C000",
+      "field": "Contact Details",
+      "value": "Contact: +6560412695",
+      "row": 26368,
+      "official_store_name": "Frasers Tower",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "CE19014N000",
+      "field": "Opening Hours / Closed Days",
+      "value": "Hours: Mon-Fri 07:00-22:30; Sat-Sun 07:30-22:30; PH 07:30-22:30; Eve PH 07:30-22:30",
+      "row": 26369,
+      "official_store_name": "The Poiz Centre",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "CE19P01E000",
+      "field": "Opening Hours / Closed Days",
+      "value": "Hours: Mon-Fri 07:00-21:30; Sat-Sun 07:30-21:30; PH 07:30-21:30; Eve PH 07:30-21:30",
+      "row": 26370,
+      "official_store_name": "Zhongshan Mall ",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "CE19P01E000",
+      "field": "Contact Details",
+      "value": "Contact: +6568161615",
+      "row": 26370,
+      "official_store_name": "Zhongshan Mall ",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "CE20C91A000",
+      "field": "Opening Hours / Closed Days",
+      "value": "Hours: Mon-Sun 07:30-22:00; PH 07:30-22:00; Eve PH 07:30-22:00",
+      "row": 26372,
+      "official_store_name": "Tekka Place",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "CE20C91A000",
+      "field": "Contact Details",
+      "value": "Contact: +6569748079",
+      "row": 26372,
+      "official_store_name": "Tekka Place",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "CE21488J000",
+      "field": "Opening Hours / Closed Days",
+      "value": "Hours: Mon-Thu 08:00-21:30; Fri-Sat 08:00-22:00; Sun 08:00-21:30; PH 08:00-21:30; Eve PH 08:00-22:00",
+      "row": 26373,
+      "official_store_name": "Thomson Plaza",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "CE21488J000",
+      "field": "Contact Details",
+      "value": "Contact: +6569312877",
+      "row": 26373,
+      "official_store_name": "Thomson Plaza",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "CE22328J000",
+      "field": "Opening Hours / Closed Days",
+      "value": "Hours: Mon-Fri 07:00-21:00; Sat-Sun 09:00-18:00; PH 09:00-18:00; Eve PH 09:00-18:00",
+      "row": 26374,
+      "official_store_name": "6 Battery Road",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "CE22328J000",
+      "field": "Contact Details",
+      "value": "Contact: +6569101214",
+      "row": 26374,
+      "official_store_name": "6 Battery Road",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "CE22369L000",
+      "field": "Opening Hours / Closed Days",
+      "value": "Hours: Mon-Sun 07:30-22:00; PH 07:30-22:00; Eve PH 07:30-22:00",
+      "row": 26375,
+      "official_store_name": "Raffles City (Level 2)",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "CE22369L000",
+      "field": "Contact Details",
+      "value": "Contact: +6569101149",
+      "row": 26375,
+      "official_store_name": "Raffles City (Level 2)",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "CE22384N000",
+      "field": "Opening Hours / Closed Days",
+      "value": "Hours: Mon-Thu 07:00-21:00; Fri 07:00-22:00; Sat 07:30-22:00; Sun 07:30-21:00; PH 07:30-21:00; Eve PH 07:30-22:00",
+      "row": 26376,
+      "official_store_name": "Lazada One",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "CE22933A000",
+      "field": "Opening Hours / Closed Days",
+      "value": "Hours: Mon-Sun 07:30-21:30; PH 07:30-21:30; Eve PH 07:30-21:30",
+      "row": 26377,
+      "official_store_name": "Takashimaya",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "CE22933A000",
+      "field": "Contact Details",
+      "value": "Contact: +6569100971",
+      "row": 26377,
+      "official_store_name": "Takashimaya",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "CE23253C000",
+      "field": "Opening Hours / Closed Days",
+      "value": "Hours: Mon-Fri 06:30-22:00; Sat-Sun 07:00-22:00; PH 07:00-22:00; Eve PH 07:00-22:00",
+      "row": 26379,
+      "official_store_name": "The Woodleigh Mall",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "CE23253C000",
+      "field": "Contact Details",
+      "value": "Contact: +6569101131",
+      "row": 26379,
+      "official_store_name": "The Woodleigh Mall",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "CE23J55N000",
+      "field": "Opening Hours / Closed Days",
+      "value": "Hours: Mon-Thu 07:30-22:00; Fri-Sat 07:30-22:30; Sun 07:30-22:00; PH 07:30-22:00; Eve PH 07:30-22:30",
+      "row": 26381,
+      "official_store_name": "One Holland Village",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "CE23J55N000",
+      "field": "Contact Details",
+      "value": "Contact: +6569740516",
+      "row": 26381,
+      "official_store_name": "One Holland Village",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "CE24365C000",
+      "field": "Opening Hours / Closed Days",
+      "value": "Hours: Mon-Thu 08:00-22:00; Fri 08:00-22:30; Sat 07:00-23:00; Sun 07:30-22:00; PH 07:30-22:00; Eve PH 07:30-23:00",
+      "row": 26382,
+      "official_store_name": "Active Garden",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "CE24365C000",
+      "field": "Contact Details",
+      "value": "Contact: +6569101311",
+      "row": 26382,
+      "official_store_name": "Active Garden",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "CE25F02E000",
+      "field": "Opening Hours / Closed Days",
+      "value": "Hours: Mon-Fri 07:00-21:00; Sat 08:00-17:00; Sun Closed; PH Closed; Eve PH 08:00-17:00",
+      "row": 26384,
+      "official_store_name": "Singapore Land Tower",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "CE25F02E000",
+      "field": "Contact Details",
+      "value": "Contact: +6569101160",
+      "row": 26384,
+      "official_store_name": "Singapore Land Tower",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "NE24O55A000",
+      "field": "Opening Hours / Closed Days",
+      "value": "Hours: Mon-Thu 07:00-21:00; Fri 07:00-22:00; Sat-Sun 07:30-22:00; PH 07:30-22:00; Eve PH 07:30-22:00",
+      "row": 26387,
+      "official_store_name": "Punggol Coast Mall",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "NE24O55A000",
+      "field": "Contact Details",
+      "value": "Contact: +6569101096",
+      "row": 26387,
+      "official_store_name": "Punggol Coast Mall",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "NW20S48P000",
+      "field": "Opening Hours / Closed Days",
+      "value": "Hours: Mon-Thu 07:00-22:00; Fri-Sat 07:00-23:00; Sun 07:00-22:00; PH 07:00-22:00; Eve PH 07:00-23:00",
+      "row": 26389,
+      "official_store_name": "Canberra Plaza",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "NW23328X000",
+      "field": "Opening Hours / Closed Days",
+      "value": "Hours: Mon-Fri 09:00-18:30; Sat-Sun 08:00-19:00; PH 08:00-19:00; Eve PH 08:00-19:00",
+      "row": 26391,
+      "official_store_name": "Bird Paradise",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "NW23328X000",
+      "field": "Contact Details",
+      "value": "Contact: +6560251675",
+      "row": 26391,
+      "official_store_name": "Bird Paradise",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "SE16564V000",
+      "field": "Opening Hours / Closed Days",
+      "value": "Hours: Mon-Sun 07:00-22:00; PH 07:00-22:00; Eve PH 07:00-22:00",
+      "row": 26394,
+      "official_store_name": "Katong Square",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "SE19625C000",
+      "field": "Opening Hours / Closed Days",
+      "value": "Hours: Mon-Thu 07:30-22:00; Fri-Sat 07:30-22:30; Sun 07:30-22:00; PH 07:30-22:30; Eve PH 07:30-22:30",
+      "row": 26397,
+      "official_store_name": "Paya Lebar Quarter",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "SE19625C000",
+      "field": "Contact Details",
+      "value": "Contact: +6569741939",
+      "row": 26397,
+      "official_store_name": "Paya Lebar Quarter",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "SW10755K000",
+      "field": "Opening Hours / Closed Days",
+      "value": "Hours: Mon-Thu 08:00-21:00; Fri-Sat 08:00-22:00; Sun 08:00-21:00; PH 08:00-21:00; Eve PH 08:00-22:00",
+      "row": 26401,
+      "official_store_name": "Starbucks Sentosa Sensoryscape",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "SW10755K000",
+      "field": "Contact Details",
+      "value": "Contact: +6569741330",
+      "row": 26401,
+      "official_store_name": "Starbucks Sentosa Sensoryscape",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "SW14893C000",
+      "field": "Opening Hours / Closed Days",
+      "value": "Hours: Mon-Thu 07:30-21:30; Fri-Sat 07:30-22:00; Sun 07:30-21:30; PH 07:30-21:30; Eve PH 07:30-22:00",
+      "row": 26403,
+      "official_store_name": "HomeTeamNS",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "SW18280X000",
+      "field": "Opening Hours / Closed Days",
+      "value": "Hours: Mon-Fri 07:00-21:00; Sat 08:00-17:30; Sun 08:30-17:30; PH 08:30-17:30; Eve PH 08:00-17:30",
+      "row": 26404,
+      "official_store_name": "Fusionopolis (Connexis)",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "SW18280X000",
+      "field": "Contact Details",
+      "value": "Contact: +6569101215",
+      "row": 26404,
+      "official_store_name": "Fusionopolis (Connexis)",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "SW19A68V000",
+      "field": "Opening Hours / Closed Days",
+      "value": "Hours: Mon-Thu 07:30-22:00; Fri-Sat 07:30-22:30; Sun 07:30-22:00; PH 07:30-22:00; Eve PH 07:30-22:30",
+      "row": 26405,
+      "official_store_name": "VivoCity",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "SW22I58C000",
+      "field": "Opening Hours / Closed Days",
+      "value": "Hours: Mon-Thu 07:30-22:00; Fri 07:30-23:59; Sat 07:00-23:59; Sun 07:00-22:00; PH 07:00-22:00; Eve PH 07:00-23:59",
+      "row": 26408,
+      "official_store_name": "Jurong Lake Gardens (Lakeside House)",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "SW22I58C000",
+      "field": "Contact Details",
+      "value": "Contact: +6569101219",
+      "row": 26408,
+      "official_store_name": "Jurong Lake Gardens (Lakeside House)",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "SW25608B000",
+      "field": "Opening Hours / Closed Days",
+      "value": "Hours: Mon-Fri 07:30-18:00; Sat-Sun Closed; PH Closed; Eve PH Closed",
+      "row": 26409,
+      "official_store_name": "Labrador Tower",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "SW25608B000",
+      "field": "Contact Details",
+      "value": "Contact: +6569101123",
+      "row": 26409,
+      "official_store_name": "Labrador Tower",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "SW26649V000",
+      "field": "Opening Hours / Closed Days",
+      "value": "Hours: Mon-Fri 07:30-16:30; Sat-Sun Closed; PH Closed; Eve PH Closed",
+      "row": 26410,
+      "official_store_name": "Samsung Hub",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    },
+    {
+      "sfa_licence": "SW26649V000",
+      "field": "Contact Details",
+      "value": "Contact: +6569101121",
+      "row": 26410,
+      "official_store_name": "Samsung Hub",
+      "source_url": "https://www.starbucks.com.sg/stores"
+    }
+  ],
+  "source_proposal": "data/source_snapshots/starbucks_branch_fields_20261019.json",
+  "observed_date": "2026-10-19"
+}

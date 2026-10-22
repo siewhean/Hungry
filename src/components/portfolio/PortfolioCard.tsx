@@ -9,12 +9,12 @@ interface PortfolioCardProps {
   onPress: () => void;
 }
 
-function getPortfolioSubtitle(portfolio: Portfolio, itemCount: number): string {
+function getPortfolioSubtitle(portfolio: Portfolio, itemCount: number | undefined): string {
   const visibility = portfolio.visibility === "followers_only" ? "Followers" : portfolio.visibility;
-  return `${portfolio.type} · ${visibility} · ${itemCount} item${itemCount === 1 ? "" : "s"}`;
+  return `${portfolio.type} · ${visibility}${itemCount === undefined ? "" : ` · ${itemCount} item${itemCount === 1 ? "" : "s"}`}`;
 }
 
-export function PortfolioCard({ portfolio, itemCount = 0, onPress }: PortfolioCardProps) {
+export function PortfolioCard({ portfolio, itemCount, onPress }: PortfolioCardProps) {
   return (
     <Pressable
       accessibilityRole="button"
@@ -29,15 +29,6 @@ export function PortfolioCard({ portfolio, itemCount = 0, onPress }: PortfolioCa
               {getPortfolioSubtitle(portfolio, itemCount)}
             </AppText>
           </View>
-          {portfolio.publishedAt ? (
-            <AppText variant="micro" tone="success">
-              Published
-            </AppText>
-          ) : (
-            <AppText variant="micro" tone="muted">
-              Draft
-            </AppText>
-          )}
         </View>
         {portfolio.description ? (
           <AppText variant="bodySmall" tone="secondary" numberOfLines={2}>

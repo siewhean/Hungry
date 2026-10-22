@@ -1,9 +1,12 @@
+import { getAccountGeneration } from "@/lib/security/accountScope";
 import NetInfo from "@react-native-community/netinfo";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { AppState } from "react-native";
 import { hydrateShareAttribution } from "@/features/share/shareAttribution";
 import { setAnalyticsSink, trackAnalyticsEvent } from "@/lib/analytics";
 import {
+  getAuthClientRevision,
+  subscribeAuthClient,
   getConfiguredDataSource,
   getSupabaseClient,
   setConfiguredDataSource,
@@ -97,6 +100,31 @@ function preserveRestoredAuthState(applyAuthStateFromSession: ApplyAuthStateFrom
 }
 
 export function useAppBootstrap() {
+  const authClientRevision = useSyncExternalStore(
+    subscribeAuthClient,
+    getAuthClientRevision,
+    getAuthClientRevision,
+  );
+  const { useOnboardingDraftStore } =
+    require("@/features/onboarding/useOnboardingDraftStore") as typeof import("@/features/onboarding/useOnboardingDraftStore");
+  const { useProfileStore } =
+    require("@/store/useProfileStore") as typeof import("@/store/useProfileStore");
+  const [privateStoresHydrated, setPrivateStoresHydrated] = useState(
+    useOnboardingDraftStore.persist.hasHydrated() && useProfileStore.persist.hasHydrated(),
+  );
+  useEffect(() => {
+    const update = () =>
+      setPrivateStoresHydrated(
+        useOnboardingDraftStore.persist.hasHydrated() && useProfileStore.persist.hasHydrated(),
+      );
+    const offDraft = useOnboardingDraftStore.persist.onFinishHydration(update);
+    const offProfile = useProfileStore.persist.onFinishHydration(update);
+    update();
+    return () => {
+      offDraft();
+      offProfile();
+    };
+  }, [useOnboardingDraftStore, useProfileStore]);
   const hasHydrated = useSessionStore((state) => state.hasHydrated);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const authenticatedUserId = useSessionStore((state) => state.authenticatedUserId);
@@ -133,6 +161,13 @@ export function useAppBootstrap() {
 
     return cancelTask;
   }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated || !authenticatedUserId) return;
+    const { hydrateCommunitySafetyState } =
+      require("@/lib/security/communitySafety") as typeof import("@/lib/security/communitySafety");
+    void hydrateCommunitySafetyState().catch(() => undefined);
+  }, [authenticatedUserId, isAuthenticated]);
 
   useEffect(() => {
     void hydrateShareAttribution();
@@ -186,6 +221,10 @@ export function useAppBootstrap() {
   }, [setOffline]);
 
   useLayoutEffect(() => {
+    if (!hasHydrated || !privateStoresHydrated) {
+      setIsDataSourceReady(false);
+      return;
+    }
     if (!isUserMode) {
       setIsDataSourceReady(false);
       const restoredMockSession =
@@ -236,10 +275,18 @@ export function useAppBootstrap() {
       });
       return cancelWarmup;
     }
-  }, [authDataSource, applyAuthStateFromSession, authenticatedUserId, isAuthenticated, isUserMode]);
+  }, [
+    authDataSource,
+    applyAuthStateFromSession,
+    authenticatedUserId,
+    isAuthenticated,
+    isUserMode,
+    hasHydrated,
+    privateStoresHydrated,
+  ]);
 
   useEffect(() => {
-    if (!hasHydrated) {
+    if (!hasHydrated || !privateStoresHydrated) {
       return;
     }
 
@@ -260,7 +307,7 @@ export function useAppBootstrap() {
     void client.auth
       .getSession()
       .then(({ data, error }) => {
-        if (!active) return;
+        if (!active || getSupabaseClient() !== client) return;
         const user = data.session?.user;
         if (!user) {
           // No session is final (expired or revoked) unless the refresh only
@@ -277,18 +324,25 @@ export function useAppBootstrap() {
           isAuthenticated: true,
           userId: user.id,
         });
+        const profileGeneration = getAccountGeneration();
         const cancelProfileHydration = runAfterIdle(() => {
           void getHungryService()
             .profile.getProfile()
             .then((profile) => {
-              if (active) applyProfile(profile);
+              if (
+                active &&
+                profileGeneration === getAccountGeneration() &&
+                getSupabaseClient() === client &&
+                useSessionStore.getState().authenticatedUserId === profile.id
+              )
+                applyProfile(profile);
             })
             .catch(() => undefined);
         });
         if (!active) cancelProfileHydration();
       })
       .catch(() => {
-        if (!active) return;
+        if (!active || getSupabaseClient() !== client) return;
         // Network/storage failures during bootstrap should not force a logout
         // when a prior local session was already restored. The next successful
         // auth event will reconcile Supabase state; explicit sign-out still
@@ -304,6 +358,7 @@ export function useAppBootstrap() {
       });
 
     const { data: subscription } = client.auth.onAuthStateChange((event, session) => {
+      if (!active || getSupabaseClient() !== client) return;
       const user = session?.user;
       if (!user) {
         // getSession() above settles the startup session (and keeps it on a
@@ -328,10 +383,18 @@ export function useAppBootstrap() {
       active = false;
       subscription.subscription.unsubscribe();
     };
-  }, [applyAuthStateFromSession, hasHydrated, markAuthReady]);
+  }, [
+    applyAuthStateFromSession,
+    hasHydrated,
+    privateStoresHydrated,
+    markAuthReady,
+    authClientRevision,
+  ]);
 
   useEffect(() => {
+    if (!hasHydrated || !privateStoresHydrated) return;
     const profileNeedsRepair =
+      getConfiguredDataSource() === "supabase" &&
       isUserMode &&
       getProfileStoreState().profile &&
       !isUuidLikeAuthUserId(getProfileStoreState().profile.id) &&
@@ -356,7 +419,7 @@ export function useAppBootstrap() {
 
     syncProfile(isAuthenticated, authenticatedUserId);
     previousAuth.current = isAuthenticated;
-  }, [authenticatedUserId, isAuthenticated]);
+  }, [authenticatedUserId, isAuthenticated, hasHydrated, privateStoresHydrated, isUserMode]);
 
-  return isDataSourceReady;
+  return isDataSourceReady && privateStoresHydrated;
 }

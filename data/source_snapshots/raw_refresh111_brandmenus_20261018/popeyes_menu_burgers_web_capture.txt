@@ -1,0 +1,22 @@
+Popeyes Singapore - Menu Burgers (official first-party page)
+Source URL: https://popeyes.com.sg/menu-burgers
+Capture date: 2026-10-18 Asia/Singapore
+Capture method: official page rendered to browser text by web retrieval; curl HTML request returned HTTP 406 (ModSecurity), so this is an extracted-text capture, not raw HTML.
+
+All Menu | Signature Chicken | Signature Burgers | Party Poppin’ Bundles | Sides | Sauces | Beverages
+Cajun Chicken Burger
+Our signature Cajun Burger is marinated 12 hours in onion, garlic, red and black pepper. Served on a soft round bun with lettuce and tomato, and topped with a spicy pepper spread that's seasoned with a blend of red chili peppers.
+Creole Chicken Burger
+Our signature Creole Burger is marinated 12 hours in onion, garlic, red and black pepper. Served on a soft round bun with lettuce and tomato, and topped with a creamy creole sauce that's seasoned with onion, garlic, peppers, tomato and parsley.
+Spicy Chicken Sandwich
+Classic Chicken Sandwich
+All pictures are shown for illustrative purposes only. Actual product may vary due to product enhancement.
+Prices may vary.
+TM & © 2022 Popeyes Louisiana Chicken, Inc.
+
+
+Direct image URLs observed on the same official menu page:
+Cajun Chicken Burger: https://popeyes.com.sg/images/menu-burger-canju.jpg
+Creole Chicken Burger: https://popeyes.com.sg/images/menu-burger-creole.jpg
+Spicy Chicken Sandwich: https://popeyes.com.sg/images/menu-burger-SpicyChicken.jpg
+Classic Chicken Sandwich: https://popeyes.com.sg/images/menu-burger-ClassicChicken.jpg

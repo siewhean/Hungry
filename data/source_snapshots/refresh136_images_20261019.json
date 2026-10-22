@@ -1,0 +1,128 @@
+{
+  "refresh_id": "refresh136_images",
+  "observed_at": "2026-10-19",
+  "basis": {
+    "canonical_workbook": "data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+    "canonical_sha256": "dfdd8b9833f249e0c4539c8c8ed861f06df7f40ba842875aa6375b13d3c7e999",
+    "workbook_edits": false,
+    "method": "Bounded image-candidate review. Pixel findings and exact-branch/source/license evidence are recorded from the canonical Image Candidates sheet; temporary image copies from prior pixel checks were not retained. No new asset pixels were downloaded in this pass because local temporary storage was constrained."
+  },
+  "candidates": [
+    {
+      "sfa_licence": "CE09F38E000",
+      "business": "WAFFLE UP",
+      "image_type": "Exact-outlet storefront",
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/7/75/Waffle_Up_Outlet.jpg",
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:Waffle_Up_Outlet.jpg",
+      "pixels": "Prior recorded inspection of 1600x1200 original: storefront, Waffle Up sign, counter, unit marking D1-12; genuine photo.",
+      "branch_evidence": "Visible D1-12 matches workbook address 3D River Valley Road #01-12; current CapitaLand mall directory also listed the outlet.",
+      "freshness": "Photographed 2026-03-11; recent, but live operation was not rechecked in this pass.",
+      "license_attribution": "CC0 1.0; WaffleUpSG, via Wikimedia Commons. Attribution retained for provenance.",
+      "display_status": "Already present in Approved Image URL; existing workbook marks it approved for current display. No change proposed."
+    },
+    {
+      "sfa_licence": "W03362P000",
+      "business": "Din Tai Fung",
+      "image_type": "Paragon outlet storefront / prep counter",
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/e/ec/Din_Tai_Fung_Paragon.jpg",
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:Din_Tai_Fung_Paragon.jpg",
+      "pixels": "Prior recorded visual check: authentic Paragon Din Tai Fung storefront/prep counter.",
+      "branch_evidence": "Image identifies the specific Paragon outlet; workbook licence W03362P000 is the Paragon branch.",
+      "freshness": "Photographed 2025-12-07; current operation/appearance not independently confirmed.",
+      "license_attribution": "CC0 1.0 as identified by Wikimedia Commons; attribution retained for provenance.",
+      "display_status": "Review-only candidate; not in approved image field. Recent dated outlet photo, but live branch status still needs confirmation."
+    },
+    {
+      "sfa_licence": "SW08730X000",
+      "business": "Ya Kun Kaya Toast",
+      "image_type": "Exact-outlet storefront",
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/d/db/HarbourFront_Centre_shops_04-12-2024%2824%29.jpg",
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:HarbourFront_Centre_shops_04-12-2024(24).jpg",
+      "pixels": "Prior recorded visual inspection of native 8064x6048 image: illuminated Ya Kun sign and #03-59 unit visible.",
+      "branch_evidence": "Visible branch unit #03-59 matches workbook address 1 Maritime Square #03-59, HarbourFront Centre.",
+      "freshness": "Photographed 2024-12-04; current appearance and operation not live confirmed.",
+      "license_attribution": "CC BY-SA 4.0; LN9267 via Wikimedia Commons. Credit creator, link license/source, note changes; adaptations under same/compatible license.",
+      "display_status": "Review-only; not approved. Exact branch and license are supported, but image is dated and current appearance is unverified."
+    },
+    {
+      "sfa_licence": "CE08A64X000",
+      "business": "The Original Katong Laksa Since 1950, Janggut Laksa",
+      "image_type": "Queensway outlet / stall photo",
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/b/bf/Original_Katong_Laksa_since_1950s_-_Janggut_Laksa%2C_Queensway_%282025%29_-_img_02.jpg",
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:Original_Katong_Laksa_since_1950s_-_Janggut_Laksa,_Queensway_(2025)_-_img_02.jpg",
+      "pixels": "Prior visual review is recorded in workbook asset inventory; no stock/generated/placeholder claim was raised.",
+      "branch_evidence": "Commons file identifies Janggut Laksa Queensway outlet; workbook licence CE08A64X000 corresponds to that outlet.",
+      "freshness": "Photo dated 2025; current appearance not independently rechecked.",
+      "license_attribution": "CC BY 4.0; Chainwit. Credit and link license/source; state changes.",
+      "display_status": "Review-only; not approved for display. Freshness/currentness requires branch recheck."
+    },
+    {
+      "sfa_licence": "W84231K002",
+      "business": "Hill Street Tai Hwa Pork Noodle",
+      "image_type": "Exact-branch outlet / food photo",
+      "image_url": "https://live.staticflickr.com/7173/6686264727_2112320896_o.jpg",
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:Hill_Street_Tai_Hwa_Pork_Noodle.jpg",
+      "pixels": "Prior inspection of 4000x3000 original: named sign and counter visible; authentic historical outlet photo.",
+      "branch_evidence": "Commons coordinates near 465 Crawford Lane #01-12 and photographed stall sign align with exact workbook branch.",
+      "freshness": "Photographed 2011; historical, not current appearance.",
+      "license_attribution": "CC BY 2.0; Ken Marshall (kenner116), via Wikimedia Commons. Credit, source/license link, and modification notice required.",
+      "display_status": "Review-only historical reference; not suitable as a current outlet image."
+    },
+    {
+      "sfa_licence": "W84231K002",
+      "business": "Hill Street Tai Hwa Pork Noodle",
+      "image_type": "Branch-specific bak chor mee dish photo",
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/6/6a/Bak-chor-mee.jpg",
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:Bak-chor-mee.jpg",
+      "pixels": "Prior inspection of 1200x800 original: bowl of bak chor mee, soup, and condiments; genuine food photo.",
+      "branch_evidence": "Commons description associates the pictured dish with Hill Street Tai Hwa Pork Noodle in Singapore; exact licence is W84231K002.",
+      "freshness": "Historical image; no current dish presentation claim.",
+      "license_attribution": "CC BY-SA 4.0; JB Macatulad (Foodforflywill), via Wikimedia Commons. Credit and links required; adaptations under same/compatible license.",
+      "display_status": "Review-only dish reference; not an outlet/storefront image and not approved."
+    },
+    {
+      "sfa_licence": "CE16369L000",
+      "business": "SHOUKOUWA RESTAURANT",
+      "image_type": "Exact restaurant entrance / storefront",
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/a/ae/20241226_ShouKouWa_singapore.jpg",
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:20241226_ShouKouWa_singapore.jpg",
+      "pixels": "Prior pixel inspection on 2026-10-19: Shoukouwa-branded entrance visible.",
+      "branch_evidence": "Exact workbook branch CE16369L000, 1 Fullerton Road #02-02A, One Fullerton.",
+      "freshness": "Photographed 2024-12-26; current appearance not confirmed.",
+      "license_attribution": "CC BY-SA 4.0; Earthkingfather via Wikimedia Commons. Attribution/source/license link required; ShareAlike for adaptations.",
+      "display_status": "Review-only; not approved as current appearance."
+    },
+    {
+      "sfa_licence": "SM102126004",
+      "business": "liao fan hawker chan",
+      "image_type": "Exact-branch interior / dish and brand context",
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/3/36/Singapore_today-Chinatown-Smith_Street-Hawker_Chan-151236.jpg",
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:Singapore_today-Chinatown-Smith_Street-Hawker_Chan-151236.jpg",
+      "pixels": "Prior visual inspection: diner, chicken rice, and Hawker Chan sign visible.",
+      "branch_evidence": "Exact unit cross-checked with official location page: 335 Smith Street #02-126.",
+      "freshness": "Captured 2023-08-24; present appearance not established.",
+      "license_attribution": "CC BY-SA 4.0; Rainer Halama via Wikimedia Commons. Credit, source/license link, and ShareAlike for adaptations; creator requests notice/specimen URL if used.",
+      "display_status": "Review-only; not a storefront photo and not approved."
+    },
+    {
+      "sfa_licence": "CE19U03X000",
+      "business": "JOLLIBEE",
+      "image_type": "Suntec City branch venue photograph",
+      "image_url": "https://upload.wikimedia.org/wikipedia/commons/e/eb/Suntec_Singapore_Branch_of_Jollibee.jpg",
+      "source_page_url": "https://commons.wikimedia.org/wiki/File:Suntec_Singapore_Branch_of_Jollibee.jpg",
+      "pixels": "No pixel-level inspection recorded; metadata/title only. Excluded from usable image shortlist.",
+      "branch_evidence": "Commons metadata identifies Suntec branch; branch alignment appears plausible but pixel confirmation is absent.",
+      "freshness": "Photograph date 2022-10-01; current storefront unverified.",
+      "license_attribution": "CC BY-SA 4.0; Exec8 via Wikimedia Commons; credit, source/license link, modification notice, ShareAlike for adaptations.",
+      "display_status": "Review-only; excluded pending pixel check and currentness confirmation."
+    }
+  ],
+  "summary": {
+    "records": 8,
+    "newly_added_to_workbook": 0,
+    "newly_approved_for_display": 0,
+    "already_approved_exact_branch_image": 1,
+    "review_only_or_excluded": 7,
+    "reason": "No new image with both independently confirmed current branch appearance and display reuse rights was established. Existing exact-branch media remain review-only where dated, unconfirmed, or not pixel-checked."
+  }
+}

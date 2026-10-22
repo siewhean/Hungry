@@ -80,15 +80,15 @@ export interface ChecklistItemCreateInput {
   dishId?: string;
   stallId?: string;
   customText?: string;
-  reminderAt?: string;
-  plannedVisitDate?: string;
+  reminderAt?: string | null;
+  plannedVisitDate?: string | null;
 }
 
 // ─── Portfolio Input Types ────────────────────────────────────────────────────
 
 export interface PortfolioCreateInput {
   name: string;
-  description?: string;
+  description?: string | null;
   type: "recommendation" | "ranking" | "trail" | "collection";
   visibility: "private" | "followers_only" | "public";
 }
@@ -98,9 +98,9 @@ export interface PortfolioItemCreateInput {
   itemType: "dish" | "stall";
   dishId?: string;
   stallId?: string;
-  score?: number;
-  publicNotes?: string;
-  privateNotes?: string;
+  score?: number | null;
+  publicNotes?: string | null;
+  privateNotes?: string | null;
 }
 
 export interface PortfolioMutationOptions {
@@ -409,6 +409,8 @@ export interface RankedRecommendation {
 }
 
 export interface RecommendationSlateRequest {
+  maxPrice?: number;
+  preferredCuisineTags?: string[];
   surface: RecommendationSurface;
   tasteProfile: TasteVector;
   dietaryFlags?: DietaryFlag[];
@@ -506,6 +508,11 @@ export interface Session {
   profile: UserProfile;
   /** Resolves after non-critical OAuth profile provisioning and hydration. */
   profileReady?: Promise<UserProfile>;
+  /**
+   * True when the Supabase user was created within the last 60 seconds,
+   * i.e. this sign-in is actually a first-time sign-up.
+   */
+  isNewUser?: boolean;
 }
 
 export type AuthProvider = "email" | "google" | "apple";
@@ -527,6 +534,17 @@ export interface SubmitReviewInput {
   // TODO(api): include upload references (asset ids / signed urls) once media service is wired.
 }
 
+export interface ReviewPublicationReceipt {
+  reviewId: string;
+  publishedAt?: string;
+  attemptVersion?: string;
+  photoCount?: number;
+  pointsEarned?: number;
+}
+
+export type FollowState = "none" | "pending" | "approved";
+export type PublicAccountSummary = { userId: string; displayName: string; avatarUrl?: string };
+
 export interface RecentReviewFeedEntry {
   review: DishDetail["reviews"][number];
   dishId: string;
@@ -536,6 +554,10 @@ export interface RecentReviewFeedEntry {
 }
 
 export interface ListRecentReviewsOptions {
+  query?: string;
+  sort?: "recent" | "top_rated";
+  cursor?: { createdAt: string; id: string; rating?: number };
+  venueId?: string;
   /** Page size (defaults to 50). */
   limit?: number;
   /** Cursor: only return reviews created strictly before this ISO timestamp. */
@@ -560,6 +582,7 @@ export interface AccountDeletionRequest {
 export const ACCOUNT_DELETION_GRACE_DAYS = 30;
 
 export interface PendingAccountDeletion {
+  status?: "requested" | "processing";
   /** ISO timestamp when the deletion worker may process the request. */
   scheduledFor: string;
 }
@@ -702,6 +725,7 @@ export interface HungryService {
   auth: {
     signUp(email: string, password: string, name: string): Promise<Session | null>;
     resendVerificationEmail(email: string): Promise<void>;
+    verifyEmailOtp(email: string, token: string): Promise<Session>;
     signIn(email: string, password: string): Promise<Session>;
     signInWithGoogle(): Promise<Session>;
     signInWithApple(): Promise<Session>;
@@ -713,6 +737,7 @@ export interface HungryService {
     resetPassword(token: string, password: string): Promise<void>;
     getCurrentSession(): Promise<Session | null>;
     refreshSession(): Promise<Session | null>;
+    changePassword(currentPassword: string, newPassword: string): Promise<void>;
   };
 
   // Discovery
@@ -781,7 +806,11 @@ export interface HungryService {
   reviews: {
     getReviewsForDish(dishId: string): Promise<DishDetail["reviews"]>;
     getUserReviews(userId: string): Promise<DishDetail["reviews"]>;
-    submitReview(draft: SubmitReviewInput): Promise<void>;
+    submitReview(draft: SubmitReviewInput): Promise<ReviewPublicationReceipt>;
+    getReviewsForVenue(
+      venueId: string,
+      options?: { limit?: number },
+    ): Promise<DishDetail["reviews"]>;
     /** Newest-first review feed across all dishes, fetched as one paginated query. */
     listRecentReviews(options?: ListRecentReviewsOptions): Promise<RecentReviewFeedEntry[]>;
   };
@@ -793,6 +822,7 @@ export interface HungryService {
     updateDietaryPreferences(flags: DietaryFlag[]): Promise<void>;
     getGuestProfile(): Promise<UserProfile>;
     toggleFavourite(dishId: string): Promise<boolean>;
+    setFavourite(dishId: string, desired: boolean): Promise<boolean>;
     getFavouriteDishIds(): Promise<string[]>;
     /** Follow or unfollow a stall; followers get opt-in alerts when its menu changes. */
     setStallFollow(stallId: string, following: boolean): Promise<void>;
@@ -842,6 +872,10 @@ export interface HungryService {
 
     // Follows
     followUser(userId: string): Promise<void>;
+    getFollowState(userId: string): Promise<FollowState>;
+    listFollowRequests(): Promise<PublicAccountSummary[]>;
+    respondToFollowRequest(requesterId: string, decision: "approved" | "rejected"): Promise<void>;
+    searchUsers(query: string): Promise<PublicAccountSummary[]>;
     unfollowUser(userId: string): Promise<void>;
     listFollowers(
       userId: string,
@@ -960,11 +994,15 @@ export interface HungryService {
     getVerificationStatus(outletId: string): Promise<MerchantOutlet["verification"]>;
     submitVerification(
       outletId: string,
-      evidence: Omit<VerificationEvidence, "id" | "uploadedAt">,
+      evidence:
+        | Omit<VerificationEvidence, "id" | "uploadedAt">
+        | Omit<VerificationEvidence, "id" | "uploadedAt">[],
     ): Promise<void>;
     resubmitVerification(
       outletId: string,
-      evidence: Omit<VerificationEvidence, "id" | "uploadedAt">,
+      evidence:
+        | Omit<VerificationEvidence, "id" | "uploadedAt">
+        | Omit<VerificationEvidence, "id" | "uploadedAt">[],
     ): Promise<void>;
 
     // Profile
@@ -983,7 +1021,11 @@ export interface HungryService {
 
     // OCR Drafts
     getOCRDrafts(outletId: string): Promise<OCRDishDraft[]>;
-    acceptOCRDraft(draftId: string): Promise<DishDetail>;
+    acceptOCRDraft(
+      draftId: string,
+      corrections?: { name: string; price?: number; description?: string },
+      expectedUpdatedAt?: string,
+    ): Promise<DishDetail>;
     rejectOCRDraft(draftId: string): Promise<void>;
 
     // Customer Inbox
@@ -1068,6 +1110,11 @@ export interface HungryService {
     ): Promise<void>;
   };
 
+  collections: {
+    listSavedCollectionIds(): Promise<string[]>;
+    setCollectionSaved(collectionId: string, saved: boolean): Promise<void>;
+  };
+
   // Checklist
   checklist: {
     createChecklist(name: string): Promise<Checklist>;
@@ -1080,6 +1127,7 @@ export interface HungryService {
     getChecklistItems(checklistId: string): Promise<ChecklistItem[]>;
     updateChecklistItem(id: string, updates: Partial<ChecklistItemCreateInput>): Promise<void>;
     markChecklistItemTried(id: string): Promise<void>;
+    setChecklistItemTried(id: string, tried: boolean): Promise<void>;
     deleteChecklistItem(id: string): Promise<void>;
     reorderChecklistItems(checklistId: string, itemIds: string[]): Promise<void>;
   };

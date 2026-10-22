@@ -1,3 +1,5 @@
+import { useMerchantOperationScope } from "@/features/merchant/useMerchantOperationScope";
+import { useRef as useMerchantRequestRef } from "react";
 /**
  * MerchantDashboardScreen
  * Command center for stall owners.
@@ -8,16 +10,14 @@ import { useCallback, useEffect, useState } from "react";
 import { View, ScrollView, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
-  TrendingUp,
   Users,
   Star,
   ClipboardList,
   Utensils,
   MessageSquare,
   Megaphone,
-  Sparkles,
+  BarChart3,
   Settings,
-  QrCode,
   ChevronRight,
   X,
 } from "lucide-react-native";
@@ -67,6 +67,8 @@ function DateRangeSelector({
       {options.map((opt) => (
         <Pressable
           key={opt}
+          accessibilityRole="button"
+          accessibilityState={{ selected: selected === opt }}
           onPress={() => onSelect(opt)}
           style={{
             flex: 1,
@@ -132,7 +134,6 @@ function MetricCard({
         >
           {icon}
         </View>
-        <TrendingUp size={16} color={palette.success} />
       </View>
       <View style={{ marginTop: spacing[3] }}>
         {typeof value === "string" ? (
@@ -179,6 +180,7 @@ function ActionCard({
   const { componentRadii, palette, spacing } = useHungryTheme();
   return (
     <Pressable
+      accessibilityRole="button"
       onPressIn={onPressIn}
       onPress={onPress}
       style={({ pressed }) => [
@@ -230,6 +232,8 @@ function ActionCard({
 // ─── MerchantDashboardScreen ──────────────────────────────────────────────────
 
 export function MerchantDashboardScreen() {
+  const captureOperation = useMerchantOperationScope();
+
   const { componentRadii, palette, spacing, radii } = useHungryTheme();
   const activeOutlet = useMerchantStore(getActiveOutlet);
   const navigation = useNavigation<NativeStackNavigationProp<MerchantTabParamList>>();
@@ -250,7 +254,17 @@ export function MerchantDashboardScreen() {
 
   const mappedRange = dateRange === "Today" ? "today" : dateRange === "7 Days" ? "7d" : "30d";
 
+  const requestGeneration = useMerchantRequestRef(0);
+  const currentOutlet = useMerchantRequestRef(activeOutlet?.id);
+  currentOutlet.current = activeOutlet?.id;
   const loadDashboard = useCallback(async () => {
+    const isOperationCurrent = captureOperation();
+    if (!isOperationCurrent()) return;
+
+    const request = ++requestGeneration.current;
+    const outletId = activeOutlet?.id;
+    const isCurrent = () =>
+      request === requestGeneration.current && outletId === currentOutlet.current;
     setError(null);
     setIsLoading(true);
     if (!activeOutlet) {
@@ -267,6 +281,9 @@ export function MerchantDashboardScreen() {
         service.merchant.getMenu(activeOutlet.id),
         service.merchant.getInbox(activeOutlet.id),
       ]);
+      if (!isOperationCurrent()) return;
+
+      if (!isCurrent()) return;
       setMenu(menuItems);
       setInteractions(inboxItems);
       setAnalytics(buildMerchantDashboardMetrics(data, inboxItems));
@@ -276,10 +293,15 @@ export function MerchantDashboardScreen() {
           console.error("Failed to sync low-rating notifications:", notificationError);
         });
     } catch (err) {
+      if (!isOperationCurrent()) return;
+
+      if (!isCurrent()) return;
       console.error("Failed to fetch analytics:", err);
       setError(err instanceof Error ? err.message : "Failed to load dashboard analytics.");
     } finally {
-      setIsLoading(false);
+      if (isOperationCurrent()) {
+        if (isCurrent()) setIsLoading(false);
+      }
     }
   }, [activeOutlet, mappedRange]);
 
@@ -501,6 +523,7 @@ export function MerchantDashboardScreen() {
           </AppText>
 
           <Pressable
+            accessibilityRole="button"
             onPressIn={() => prefetchMerchantRoute("Menu")}
             onPress={() => navigation.navigate("Menu")}
             style={{
@@ -536,6 +559,7 @@ export function MerchantDashboardScreen() {
           </Pressable>
 
           <Pressable
+            accessibilityRole="button"
             onPressIn={() => prefetchMerchantRoute("CustomerInbox")}
             onPress={() => navigation.navigate("CustomerInbox")}
             style={{
@@ -598,10 +622,10 @@ export function MerchantDashboardScreen() {
           />
 
           <ActionCard
-            title="AI Assistant"
-            description="Review menu, photo, demand, and promotion suggestions."
-            icon={<Sparkles size={20} color={palette.orange} />}
-            actionText="View Insights"
+            title="Business summary"
+            description="Review recorded weekly activity for this outlet."
+            icon={<BarChart3 size={20} color={palette.orange} />}
+            actionText="View Summary"
             onPressIn={() => prefetchMerchantRoute("AIAssistant")}
             onPress={() => navigation.navigate("AIAssistant")}
           />
@@ -614,15 +638,6 @@ export function MerchantDashboardScreen() {
             onPressIn={() => prefetchMerchantRoute("MerchantSettings")}
             onPress={() => navigation.navigate("MerchantSettings")}
           />
-
-          <ActionCard
-            title="In-App Ordering"
-            description="Preview the QR ordering setup before the pilot opens."
-            icon={<QrCode size={20} color={palette.textSecondary} />}
-            actionText="Preview Ordering"
-            onPressIn={() => prefetchMerchantRoute("OrdersComingSoon")}
-            onPress={() => navigation.navigate("OrdersComingSoon")}
-          />
         </View>
 
         {/* Recent Activity */}
@@ -632,6 +647,7 @@ export function MerchantDashboardScreen() {
           </AppText>
           {latestFeedback ? (
             <Pressable
+              accessibilityRole="button"
               onPressIn={() => prefetchMerchantRoute("CustomerInbox")}
               onPress={() => navigation.navigate("CustomerInbox")}
               style={({ pressed }) => [

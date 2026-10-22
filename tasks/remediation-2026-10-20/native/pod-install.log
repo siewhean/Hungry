@@ -1,0 +1,193 @@
+Using Expo modules
+[Expo] Enabling modular headers for pod ExpoModulesCore
+[Expo] Enabling modular headers for pod React-RCTAppDelegate
+[Expo] Enabling modular headers for pod React-RCTFabric
+[Expo] Enabling modular headers for pod ReactAppDependencyProvider
+[Expo] Enabling modular headers for pod React-Core
+[Expo] Enabling modular headers for pod ReactCodegen
+[Expo] Enabling modular headers for pod RCTRequired
+[Expo] Enabling modular headers for pod RCTTypeSafety
+[Expo] Enabling modular headers for pod ReactCommon
+[Expo] Enabling modular headers for pod React-NativeModulesApple
+[Expo] Enabling modular headers for pod Yoga
+[Expo] Enabling modular headers for pod React-Fabric
+[Expo] Enabling modular headers for pod React-graphics
+[Expo] Enabling modular headers for pod React-utils
+[Expo] Enabling modular headers for pod React-featureflags
+[Expo] Enabling modular headers for pod React-debug
+[Expo] Enabling modular headers for pod React-ImageManager
+[Expo] Enabling modular headers for pod React-rendererdebug
+[Expo] Enabling modular headers for pod React-jsi
+[Expo] Enabling modular headers for pod React-renderercss
+[Expo] Enabling modular headers for pod hermes-engine
+[Expo] Enabling modular headers for pod glog
+[Expo] Enabling modular headers for pod boost
+[Expo] Enabling modular headers for pod DoubleConversion
+[Expo] Enabling modular headers for pod fast_float
+[Expo] Enabling modular headers for pod fmt
+[Expo] Enabling modular headers for pod RCT-Folly
+[Expo] Enabling modular headers for pod SocketRocket
+[Expo] Enabling modular headers for pod expo-dev-menu-interface
+[Expo] Enabling modular headers for pod EXManifests
+[Expo] Enabling modular headers for pod EXUpdatesInterface
+[Expo] Enabling modular headers for pod expo-dev-menu
+[Expo] Enabling modular headers for pod React-jsinspector
+[Expo] Enabling modular headers for pod expo-dev-launcher
+[Expo] Enabling modular headers for pod SDWebImage
+[Expo] Enabling modular headers for pod SDWebImageAVIFCoder
+[Expo] Enabling modular headers for pod SDWebImageSVGCoder
+[Expo] Enabling modular headers for pod SDWebImageWebPCoder
+[Expo] Enabling modular headers for pod libavif
+[Expo] Enabling modular headers for pod EXStructuredHeaders
+[Expo] Enabling modular headers for pod EASClient
+[Expo] Enabling modular headers for pod ReachabilitySwift
+-- SK_GRAPHITE detection: no marker file, assuming OFF
+-- SK_GRAPHITE: OFF
+Found 15 modules for target `Hungry`
+link_native_modules! {ios_packages: [{configurations: [], name: "@react-native-async-storage/async-storage", root: "/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/@react-native-async-storage/async-storage", path: "../node_modules/@react-native-async-storage/async-storage", podspec_path: "/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/@react-native-async-storage/async-storage/RNCAsyncStorage.podspec", script_phases: []}, {configurations: [], name: "@react-native-community/datetimepicker", root: "/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/@react-native-community/datetimepicker", path: "../node_modules/@react-native-community/datetimepicker", podspec_path: "/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/@react-native-community/datetimepicker/RNDateTimePicker.podspec", script_phases: []}, {configurations: [], name: "@react-native-community/netinfo", root: "/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/@react-native-community/netinfo", path: "../node_modules/@react-native-community/netinfo", podspec_path: "/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/@react-native-community/netinfo/react-native-netinfo.podspec", script_phases: []}, {configurations: [], name: "@react-native-community/slider", root: "/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/@react-native-community/slider", path: "../node_modules/@react-native-community/slider", podspec_path: "/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/@react-native-community/slider/react-native-slider.podspec", script_phases: []}, {configurations: [], name: "@rnmapbox/maps", root: "/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/@rnmapbox/maps", path: "../node_modules/@rnmapbox/maps", podspec_path: "/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/@rnmapbox/maps/rnmapbox-maps.podspec", script_phases: []}, {configurations: [], name: "@sentry/react-native", root: "/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/@sentry/react-native", path: "../node_modules/@sentry/react-native", podspec_path: "/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/@sentry/react-native/RNSentry.podspec", script_phases: []}, {configurations: [], name: "@shopify/react-native-skia", root: "/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/@shopify/react-native-skia", path: "../node_modules/@shopify/react-native-skia", podspec_path: "/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/@shopify/react-native-skia/react-native-skia.podspec", script_phases: []}, {configurations: [], name: "expo", root: "/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/expo", path: "../node_modules/expo", podspec_path: "/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/expo/Expo.podspec", script_phases: []}, {configurations: [], name: "react-native-gesture-handler", root: "/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/react-native-gesture-handler", path: "../node_modules/react-native-gesture-handler", podspec_path: "/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/react-native-gesture-handler/RNGestureHandler.podspec", script_phases: []}, {configurations: [], name: "react-native-pager-view", root: "/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/react-native-pager-view", path: "../node_modules/react-native-pager-view", podspec_path: "/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/react-native-pager-view/react-native-pager-view.podspec", script_phases: []}, {configurations: [], name: "react-native-reanimated", root: "/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/react-native-reanimated", path: "../node_modules/react-native-reanimated", podspec_path: "/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/react-native-reanimated/RNReanimated.podspec", script_phases: []}, {configurations: [], name: "react-native-safe-area-context", root: "/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/react-native-safe-area-context", path: "../node_modules/react-native-safe-area-context", podspec_path: "/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/react-native-safe-area-context/react-native-safe-area-context.podspec", script_phases: []}, {configurations: [], name: "react-native-screens", root: "/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/react-native-screens", path: "../node_modules/react-native-screens", podspec_path: "/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/react-native-screens/RNScreens.podspec", script_phases: []}, {configurations: [], name: "react-native-svg", root: "/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/react-native-svg", path: "../node_modules/react-native-svg", podspec_path: "/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/react-native-svg/RNSVG.podspec", script_phases: []}, {configurations: [], name: "react-native-worklets", root: "/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/react-native-worklets", path: "../node_modules/react-native-worklets", podspec_path: "/Users/Siew Hean/Documents/GitHub/Hungry/node_modules/react-native-worklets/RNWorklets.podspec", script_phases: []}], ios_project_root_path: "/Users/Siew Hean/Documents/GitHub/Hungry/ios", react_native_path: "../node_modules/react-native"}
+-- SK_GRAPHITE detection: no marker file, assuming OFF
+-- SK_GRAPHITE: OFF
+Auto-linking React Native modules for target `Hungry`: RNCAsyncStorage, RNDateTimePicker, RNGestureHandler, RNReanimated, RNSVG, RNScreens, RNSentry, RNWorklets, react-native-netinfo, react-native-pager-view, react-native-safe-area-context, react-native-skia, react-native-slider, and rnmapbox-maps
+Framework build type is static library
+[ReactNativeDependencies] Setting up ReactNativeDependencies...
+[ReactNativeDependencies] No prebuilt artifacts found, reverting to building from source.
+[ReactNativeDependencies] Building from source: true
+[ReactNativeDependencies] Source: 
+[ReactNativeCore] Setting up ReactNativeCore...
+[ReactNativeCore] No prebuilt artifacts found, reverting to building from source.
+[ReactNativeCore] Building from source: true
+Configuring the target with the New Architecture
+[36m[1m[Codegen][0m Analyzing /Users/Siew Hean/Documents/GitHub/Hungry/package.json[0m
+[36m[1m[Codegen][0m [33mSearching for codegen-enabled libraries in the app.[0m
+[36m[1m[Codegen][0m [33mThe "codegenConfig" field is not defined in package.json. Assuming there is nothing to generate at the app level.[0m
+[36m[1m[Codegen][0m [33mSearching for codegen-enabled libraries in react-native.config.js[0m
+[36m[1m[Codegen][0m Found @react-native-async-storage/async-storage[0m
+[36m[1m[Codegen][0m Found @react-native-community/datetimepicker[0m
+[36m[1m[Codegen][0m Found @react-native-community/netinfo[0m
+[36m[1m[Codegen][0m Found @react-native-community/slider[0m
+[36m[1m[Codegen][0m Found @rnmapbox/maps[0m
+[36m[1m[Codegen][0m Found @sentry/react-native[0m
+[36m[1m[Codegen][0m Found @shopify/react-native-skia[0m
+[36m[1m[Codegen][0m Found react-native-gesture-handler[0m
+[36m[1m[Codegen][0m Found react-native-pager-view[0m
+[36m[1m[Codegen][0m Found react-native-reanimated[0m
+[36m[1m[Codegen][0m Found react-native-safe-area-context[0m
+[36m[1m[Codegen][0m Found react-native-screens[0m
+[36m[1m[Codegen][0m Found react-native-svg[0m
+[36m[1m[Codegen][0m Found react-native-worklets[0m
+[36m[1m[Codegen][0m Processing rnasyncstorage[0m
+[36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+[36m[1m[Codegen][0m Supported Apple platforms: ios, macos, tvos, visionos for rnasyncstorage[0m
+[36m[1m[Codegen][0m Processing RNDateTimePickerCGen[0m
+[36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+[36m[1m[Codegen][0m Supported Apple platforms: ios, visionos for RNDateTimePickerCGen[0m
+[36m[1m[Codegen][0m Processing RNCNetInfoSpec[0m
+[36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+[36m[1m[Codegen][0m Supported Apple platforms: ios, macos, tvos, visionos for RNCNetInfoSpec[0m
+[36m[1m[Codegen][0m Processing RNCSlider[0m
+[36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+[36m[1m[Codegen][0m Supported Apple platforms: ios, visionos for RNCSlider[0m
+[36m[1m[Codegen][0m Processing rnmapbox_maps_specs[0m
+[36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+[36m[1m[Codegen][0m Supported Apple platforms: ios for rnmapbox_maps_specs[0m
+[36m[1m[Codegen][0m Processing RNSentrySpec[0m
+[36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+[36m[1m[Codegen][0m Supported Apple platforms: ios, macos, tvos, visionos for RNSentrySpec[0m
+[36m[1m[Codegen][0m Processing rnskia[0m
+[36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+[36m[1m[Codegen][0m Supported Apple platforms: ios, macos, tvos for rnskia[0m
+[36m[1m[Codegen][0m Processing rngesturehandler_codegen[0m
+[36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+[36m[1m[Codegen][0m Supported Apple platforms: ios, macos, tvos, visionos for rngesturehandler_codegen[0m
+[36m[1m[Codegen][0m Processing pagerview[0m
+[36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+[36m[1m[Codegen][0m Supported Apple platforms: ios, visionos for pagerview[0m
+[36m[1m[Codegen][0m Processing rnreanimated[0m
+[36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+[36m[1m[Codegen][0m Supported Apple platforms: ios, macos, tvos, visionos for rnreanimated[0m
+[36m[1m[Codegen][0m Processing safeareacontext[0m
+[36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+[36m[1m[Codegen][0m Supported Apple platforms: ios, macos, tvos, visionos for safeareacontext[0m
+[36m[1m[Codegen][0m Processing rnscreens[0m
+[36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+[36m[1m[Codegen][0m Supported Apple platforms: ios, tvos, visionos for rnscreens[0m
+[36m[1m[Codegen][0m Processing rnsvg[0m
+[36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+[36m[1m[Codegen][0m Supported Apple platforms: ios, macos, tvos, visionos for rnsvg[0m
+[36m[1m[Codegen][0m Processing rnworklets[0m
+[36m[1m[Codegen][0m [33mSearching for podspec in the project dependencies.[0m
+[36m[1m[Codegen][0m Supported Apple platforms: ios, macos, tvos, visionos for rnworklets[0m
+[36m[1m[Codegen][0m Generating Native Code for rnasyncstorage - ios[0m
+[36m[1m[Codegen][0m Generated artifacts: /Users/Siew Hean/Documents/GitHub/Hungry/ios/build/generated/ios/ReactCodegen[0m
+[36m[1m[Codegen][0m Generating Native Code for RNDateTimePickerCGen - ios[0m
+[36m[1m[Codegen][0m Generated artifacts: /Users/Siew Hean/Documents/GitHub/Hungry/ios/build/generated/ios/ReactCodegen[0m
+[36m[1m[Codegen][0m Generating Native Code for RNCNetInfoSpec - ios[0m
+[36m[1m[Codegen][0m Generated artifacts: /Users/Siew Hean/Documents/GitHub/Hungry/ios/build/generated/ios/ReactCodegen[0m
+[36m[1m[Codegen][0m Generating Native Code for RNCSlider - ios[0m
+[36m[1m[Codegen][0m Generated artifacts: /Users/Siew Hean/Documents/GitHub/Hungry/ios/build/generated/ios/ReactCodegen[0m
+[36m[1m[Codegen][0m Generating Native Code for rnmapbox_maps_specs - ios[0m
+[36m[1m[Codegen][0m Generated artifacts: /Users/Siew Hean/Documents/GitHub/Hungry/ios/build/generated/ios/ReactCodegen[0m
+[36m[1m[Codegen][0m Generating Native Code for RNSentrySpec - ios[0m
+[36m[1m[Codegen][0m Generated artifacts: /Users/Siew Hean/Documents/GitHub/Hungry/ios/build/generated/ios/ReactCodegen[0m
+[36m[1m[Codegen][0m Generating Native Code for rnskia - ios[0m
+[36m[1m[Codegen][0m Generated artifacts: /Users/Siew Hean/Documents/GitHub/Hungry/ios/build/generated/ios/ReactCodegen[0m
+[36m[1m[Codegen][0m Generating Native Code for rngesturehandler_codegen - ios[0m
+[36m[1m[Codegen][0m Generated artifacts: /Users/Siew Hean/Documents/GitHub/Hungry/ios/build/generated/ios/ReactCodegen[0m
+[36m[1m[Codegen][0m Generating Native Code for pagerview - ios[0m
+[36m[1m[Codegen][0m Generated artifacts: /Users/Siew Hean/Documents/GitHub/Hungry/ios/build/generated/ios/ReactCodegen[0m
+[36m[1m[Codegen][0m Generating Native Code for rnreanimated - ios[0m
+[36m[1m[Codegen][0m Generated artifacts: /Users/Siew Hean/Documents/GitHub/Hungry/ios/build/generated/ios/ReactCodegen[0m
+[36m[1m[Codegen][0m Generating Native Code for safeareacontext - ios[0m
+[36m[1m[Codegen][0m Generated artifacts: /Users/Siew Hean/Documents/GitHub/Hungry/ios/build/generated/ios/ReactCodegen[0m
+[36m[1m[Codegen][0m Generating Native Code for rnscreens - ios[0m
+[36m[1m[Codegen][0m Generated artifacts: /Users/Siew Hean/Documents/GitHub/Hungry/ios/build/generated/ios/ReactCodegen[0m
+[36m[1m[Codegen][0m Generating Native Code for rnsvg - ios[0m
+[36m[1m[Codegen][0m Generated artifacts: /Users/Siew Hean/Documents/GitHub/Hungry/ios/build/generated/ios/ReactCodegen[0m
+[36m[1m[Codegen][0m Generating Native Code for rnworklets - ios[0m
+[36m[1m[Codegen][0m Generated artifacts: /Users/Siew Hean/Documents/GitHub/Hungry/ios/build/generated/ios/ReactCodegen[0m
+[36m[1m[Codegen][0m Generating RCTThirdPartyComponentsProvider.h[0m
+[36m[1m[Codegen][0m Generated artifact: /Users/Siew Hean/Documents/GitHub/Hungry/ios/build/generated/ios/ReactCodegen/RCTThirdPartyComponentsProvider.h[0m
+[36m[1m[Codegen][0m Generating RCTThirdPartyComponentsProvider.mm[0m
+[36m[1m[Codegen][0m Generated artifact: /Users/Siew Hean/Documents/GitHub/Hungry/ios/build/generated/ios/ReactCodegen/RCTThirdPartyComponentsProvider.mm[0m
+[36m[1m[Codegen][0m Generating RCTModulesProvider.h[0m
+[36m[1m[Codegen][0m Generated artifact: /Users/Siew Hean/Documents/GitHub/Hungry/ios/build/generated/ios/ReactCodegen/RCTModuleProviders.h[0m
+[36m[1m[Codegen][0m Generating RCTModuleProviders.mm[0m
+[36m[1m[Codegen][0m Generated artifact: /Users/Siew Hean/Documents/GitHub/Hungry/ios/build/generated/ios/ReactCodegen/RCTModuleProviders.mm[0m
+[36m[1m[Codegen][0m Generating RCTAppDependencyProvider[0m
+[36m[1m[Codegen][0m Generated artifact: /Users/Siew Hean/Documents/GitHub/Hungry/ios/build/generated/ios/ReactAppDependencyProvider/RCTAppDependencyProvider.h[0m
+[36m[1m[Codegen][0m Generated artifact: /Users/Siew Hean/Documents/GitHub/Hungry/ios/build/generated/ios/ReactAppDependencyProvider/RCTAppDependencyProvider.mm[0m
+[36m[1m[Codegen][0m Generated podspec: /Users/Siew Hean/Documents/GitHub/Hungry/ios/build/generated/ios/ReactAppDependencyProvider/ReactAppDependencyProvider.podspec[0m
+[36m[1m[Codegen][0m Generated podspec: /Users/Siew Hean/Documents/GitHub/Hungry/ios/build/generated/ios/ReactCodegen/ReactCodegen.podspec[0m
+[36m[1m[Codegen][0m Generating Package.swift[0m
+[36m[1m[Codegen][0m Generated artifact: /Users/Siew Hean/Documents/GitHub/Hungry/ios/build/generated/ios/Package.swift[0m
+[36m[1m[Codegen][0m [33mDone.[0m
+Analyzing dependencies
+-- SK_GRAPHITE detection: no marker file, assuming OFF
+-- SK_GRAPHITE: OFF
+Downloading dependencies
+Installing ExpoSharing (55.0.24)
+Generating Pods project
+Setting USE_HERMES build settings
+Setting REACT_NATIVE_PATH build settings
+Setting SWIFT_ACTIVE_COMPILATION_CONDITIONS build settings
+[Ccache]: Removing Ccache from CC, LD, CXX & LDPLUSPLUS build settings
+[SPM] Cleaning old SPM dependencies from Pods project
+[SPM] Adding SPM dependencies to Pods project
+[Privacy Manifest Aggregation] Appending aggregated reasons to existing PrivacyInfo.xcprivacy file.
+[Privacy Manifest Aggregation] Reading .xcprivacy files to aggregate all used Required Reason APIs.
+Setting CLANG_CXX_LANGUAGE_STANDARD to c++20 on /Users/Siew Hean/Documents/GitHub/Hungry/ios/Hungry.xcodeproj
+
+==================== DEPRECATION NOTICE =====================
+Calling `pod install` directly is deprecated in React Native
+because we are moving away from Cocoapods toward alternative
+solutions to build the project.
+* If you are using Expo, please run:
+`npx expo run:ios`
+* If you are using the Community CLI, please run:
+`yarn ios`
+=============================================================
+
+Pod install took 20 [s] to run
+Integrating client project
+Pod installation complete! There are 130 dependencies from the Podfile and 143 total pods installed.
+[Expo] Adding '[Expo Autolinking] Run Codegen with autolinking' build phase to ReactCodegen

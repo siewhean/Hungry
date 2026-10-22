@@ -28,7 +28,7 @@ test("transitionVerificationStatus blocks invalid transitions", () => {
   );
 });
 
-test("applyVerificationSubmission appends evidence and resets rejection fields", () => {
+test("applyVerificationSubmission appends evidence and preserves rejection history", () => {
   const initial: MerchantVerification = {
     status: "more_info_needed",
     method: "licence_upload",
@@ -55,6 +55,6 @@ test("applyVerificationSubmission appends evidence and resets rejection fields",
   assert.equal(next.evidence[1]?.method, "video_walkaround");
   assert.equal(next.evidence[1]?.fileUrl, "mock://new.mp4");
   assert.equal(typeof next.submittedAt, "string");
-  assert.equal(next.rejectionReason, undefined);
-  assert.equal(next.rejectedAt, undefined);
+  assert.equal(next.rejectionReason, initial.rejectionReason);
+  assert.equal(next.rejectedAt, initial.rejectedAt);
 });

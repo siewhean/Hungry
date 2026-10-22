@@ -1,0 +1,78 @@
+{
+  "snapshot_date": "2026-10-19",
+  "canonical_workbook": "Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "canonical_workbook_sha256": "1f32e2fe53ca6e82bffab65f1f39e21d197c8d1ea040018933e1b8cb26638081",
+  "method": "First-party outlet locator review. Match requires exact SFA licence and matching outlet address/unit; no cross-outlet inference.",
+  "proposal_status": "integrated_refresh128_four_field_fills",
+  "source": {
+    "url": "https://app.yakun.com/find-us",
+    "title": "Ya Kun official Find Us outlet locator",
+    "retrieved_or_observed": "2026-10-19",
+    "evidence_note": "Official outlet entries include address, unit and published hours. Search indexed the locator page as updated within the prior two weeks. No phone number is published for the two exact matched entries in the retrieved page content."
+  },
+  "proposed_field_fills": [
+    {
+      "sfa_licence": "CE19B31L000",
+      "business_name": "YA KUN KAYA TOAST",
+      "current_address": "Address: 109 NORTH BRIDGE ROAD #B2-06,FUNAN,Singapore 179097",
+      "matched_official_outlet": "Funan, 109 North Bridge Rd, #B2-06, Singapore 179105",
+      "fields": [
+        {
+          "field": "Website",
+          "before": null,
+          "after": "https://app.yakun.com/find-us",
+          "source_evidence": "The official locator entry is titled Funan and lists the same street address and #B2-06 unit."
+        },
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "after": "Mon–Sun 08:00–21:00 (last order 30 minutes before closing)",
+          "source_evidence": "Official Funan outlet listing: Mon - Sun 8:00am - 9:00pm (Last Order is half an hour before closing time)."
+        }
+      ]
+    },
+    {
+      "sfa_licence": "CE20K87K000",
+      "business_name": "Ya Kun Kaya Toast",
+      "current_address": "Address: 12 ALEXANDRA VIEW #01-08,ARTRA,Singapore 158736 ARTRA",
+      "matched_official_outlet": "ARTRA Condominium (Redhill), 12 Alexandra View #01-08, Singapore 158745",
+      "fields": [
+        {
+          "field": "Website",
+          "before": null,
+          "after": "https://app.yakun.com/find-us",
+          "source_evidence": "The official locator entry is titled ARTRA Condominium (Redhill) and lists the same street address and #01-08 unit."
+        },
+        {
+          "field": "Opening Hours / Closed Days",
+          "before": null,
+          "after": "Mon–Sun 07:30–20:00 (last order 30 minutes before closing)",
+          "source_evidence": "Official ARTRA outlet listing: Mon - Sun 7:30am - 8:00pm (Last Order is half an hour before closing time)."
+        }
+      ]
+    }
+  ],
+  "rejected_or_unresolved": [
+    {
+      "sfa_licence": "CE24M79A000",
+      "business_name": "% Arabica",
+      "reason": "Official Singapore locator currently lists 18 Cross Street, Cross Street Exchange, Shop 01-23, while the SFA record is #01-11. Exact unit join fails; no field proposed."
+    },
+    {
+      "sfa_licence": "SE23M23L000",
+      "business_name": "Ya Kun Kaya Toast",
+      "reason": "Official locator lists Jewel #01-230/K207; SFA record says #01-K206/#01-K207. Exact unit join fails; no field proposed."
+    },
+    {
+      "sfa_licence": "NW08414C000",
+      "business_name": "YA KUN KAYA TOAST",
+      "reason": "Official locator lists Northpoint #B1-22/23/24; SFA record says #B1-21/#B1-23. Exact unit join fails; no field proposed."
+    }
+  ],
+  "summary": {
+    "valid_exact_location_records": 2,
+    "proposed_field_fills": 4,
+    "contact_fields_filled": 0,
+    "directory_removals": 0
+  }
+}

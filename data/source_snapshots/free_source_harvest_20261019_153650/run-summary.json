@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "status": "completed_no_candidates",
+  "started_at": "2026-10-19T07:36:47+00:00",
+  "finished_at": "2026-10-19T07:36:50+00:00",
+  "workbook": "/Users/Siew Hean/Documents/GitHub/Hungry/data/Hungry F&B Database.Public Access 2026-10-17 Verified Menu Catalogue Refresh 40.xlsx",
+  "mode": "proposal-only; workbook and databases are read-only",
+  "uses_paid_apis": false,
+  "network_policy": {
+    "protocol": "HTTPS GET only",
+    "robots_txt": "required; fail closed when unavailable except HTTP 404/410",
+    "per_host_delay_seconds": 3.0,
+    "max_requests_including_robots": 50,
+    "max_pages": 25,
+    "max_response_bytes": 2000000,
+    "blocked_domains": [
+      "google.com",
+      "google.com.sg",
+      "googleapis.com",
+      "grab.com",
+      "foodpanda.sg",
+      "foodpanda.com",
+      "oddle.me",
+      "deliveroo.com.sg",
+      "mapbox.com",
+      "onemap.gov.sg"
+    ],
+    "reviewed_host_allowlist_required": true,
+    "allowed_source_classes": [
+      "official_website",
+      "open_dataset"
+    ],
+    "each_host_attests_no_request_fee": true,
+    "reviewed_hosts": [],
+    "no_login_or_captcha_bypass": true,
+    "no_google_places_or_maps_requests": true,
+    "no_mapbox_or_onemap_requests": true
+  },
+  "targets_selected": 25,
+  "outlets_with_source_pages": 0,
+  "pages_fetched": 0,
+  "requests_including_robots": 0,
+  "successful_http_requests": 0,
+  "field_candidates": 0,
+  "menu_item_candidates": 0,
+  "image_candidates": 0,
+  "skipped_count": 39,
+  "stopped_reason": null,
+  "artifacts": {
+    "candidates": "/Users/Siew Hean/Documents/GitHub/Hungry/data/source_snapshots/free_source_harvest_20261019_153650/candidates.jsonl",
+    "skipped": "/Users/Siew Hean/Documents/GitHub/Hungry/data/source_snapshots/free_source_harvest_20261019_153650/skipped.jsonl"
+  },
+  "limitations": [
+    "Only existing workbook URLs and exact-licence URLs supplied through --source-map are visited; this script does not search Google or scrape search results.",
+    "Every extracted value remains a candidate until exact outlet identity, freshness, source rights, and field fit are reviewed.",
+    "First-party rating metadata is reported as the source's own rating; no Google/Grab/foodpanda ratings are collected.",
+    "Public image URLs are review-only; public visibility does not establish reuse rights.",
+    "The extractor does not remove closed outlets or modify the workbook."
+  ]
+}
