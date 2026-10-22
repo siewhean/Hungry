@@ -14,6 +14,7 @@ import type {
   CatalogRawDishCard,
   CatalogRawVenueCard,
 } from "@/lib/services/catalog";
+import { reportError } from "@/lib/monitoring/reportError";
 import { CatalogAccessError } from "@/lib/services/catalog";
 import {
   clearCatalogDiagnostics,
@@ -305,6 +306,7 @@ export function CatalogDiscoverHome() {
       });
     } catch (loadError) {
       if (version !== requestVersion.current) return;
+      reportError(loadError, { surface: "catalog_discover_home" });
       setDishes([]);
       setVenues([]);
       setReleaseId(undefined);

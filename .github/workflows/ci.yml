@@ -83,6 +83,9 @@ jobs:
       - name: Edge Function static check
         run: npm run check:edge-functions
 
+      - name: Rate-limit contract
+        run: npm run check:rate-limits
+
       - name: Expo Doctor
         run: npx expo-doctor
 

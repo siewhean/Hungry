@@ -5,6 +5,7 @@ import { CheckCircle2 } from "lucide-react-native";
 
 import { AppText, Button } from "@/components/ui";
 import { applySignedInProfile } from "@/features/auth/applySignedInProfile";
+import { reportError } from "@/lib/monitoring/reportError";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { getConfiguredDataSource } from "@/lib/services/supabase/client";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -70,7 +71,8 @@ export function ResetPasswordSuccessScreen({ navigation }: Props) {
         trackSignInEvent: false,
       });
       setPasswordRecoveryInProgress(false);
-    } catch {
+    } catch (error) {
+      reportError(error, { surface: "reset_password_success" });
       goToLogin();
     } finally {
       setIsContinuing(false);
