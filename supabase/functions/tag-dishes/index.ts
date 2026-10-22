@@ -1,5 +1,6 @@
 // @ts-nocheck
 /* eslint-disable import/no-unresolved */
+import { reportFunctionError, serveWithSentry } from "../_shared/sentry.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.52.0";
 import { timingSafeEqual } from "../_shared/timingSafeEqual.ts";
 import Anthropic from "npm:@anthropic-ai/sdk@0.135.0";
@@ -65,7 +66,7 @@ async function tagDish(anthropic: Anthropic, dish: JsonObject): Promise<JsonObje
   return JSON.parse(text) as JsonObject;
 }
 
-Deno.serve(async (request) => {
+serveWithSentry("tag-dishes", async (request) => {
   if (request.method !== "POST") {
     return toJson(405, { error: "method_not_allowed" });
   }
@@ -150,7 +151,7 @@ Deno.serve(async (request) => {
       }
     } catch (error) {
       summary.failed += 1;
-      console.error("tag-dishes failed", dish.dish_id, String(error?.message ?? error));
+      await reportFunctionError("tag-dishes", error, { dishId: String(dish.dish_id) });
     }
   }
 

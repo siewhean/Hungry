@@ -1,5 +1,6 @@
 // @ts-nocheck
 /* eslint-disable import/no-unresolved */
+import { serveWithSentry } from "../_shared/sentry.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.52.0";
 import { timingSafeEqual } from "../_shared/timingSafeEqual.ts";
 
@@ -117,7 +118,7 @@ function validatePayload(payload: CreateGuestSessionPayload): string | null {
   return null;
 }
 
-Deno.serve(async (request) => {
+serveWithSentry("guest-sessions", async (request) => {
   const allowedOrigins = getAllowedOrigins();
   const allowedOrigin = resolveAllowedOrigin(request, allowedOrigins);
 

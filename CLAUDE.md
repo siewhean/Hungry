@@ -94,6 +94,9 @@ Treat these as high blast-radius. Read before editing, patch narrowly, and run a
 7. Update `tasks/lessons.md` only after a correction or repeated mistake.
 8. Keep final responses short: what changed, what passed, what remains.
 9. Every new Supabase migration (anything after `20261022110000`) needs a matching `supabase/rollbacks/<name>.down.sql`, a `-- smoke:` header, no `begin;`/`commit;`, and staging rehearsal evidence from `scripts/db/rehearse.sh <version>` committed at `supabase/rehearsals/<version>.json`. Prod only via `scripts/db/ship.sh` (it backs up first); never hand-paste migration SQL into prod, and never use a `-- no-down:` / `-- no-rehearsal:` waiver without sh's explicit approval. CI fails otherwise (`npm run audit:supabase:migration-safety`). Runbook: `supabase/manual/safe-migration-runbook.md`.
+10. Rate limits: every new RPC the anon role can execute, every new table or RPC a signed-in user can hit in a loop, and every new Edge Function needs a cap (`app_private.request_rate_rules` row in a migration; Edge Functions call `app_can_make_ip_request` / `app_can_make_user_request`) or an entry with a reason in `supabase/rate-limit-allowlist.json`. `npm run check:rate-limits` fails CI otherwise. Details in `supabase/README.md` (Rate limits).
+
+11. Error tracking is mandatory (enforced by `src/lib/monitoring/error-reporting-contracts.test.ts` in CI): every Edge Function is served with `serveWithSentry("<name>", handler)` from `supabase/functions/_shared/sentry.ts` (never bare `Deno.serve`), handled failures call `reportFunctionError`, and screens that catch errors call `reportError` from `@/lib/monitoring/reportError`. Do not add a screen to `screen-error-reporting-baseline.json`; the list only shrinks.
 
 ---
 
