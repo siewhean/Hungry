@@ -76,6 +76,14 @@ scripts/db/ship.sh <version>
 
 `rehearse.sh` first applies to staging any migration that prod already has (read from prod's ledger, read-only), then rehearses, then runs the down once more so staging ends at prod's state (`KEEP_APPLIED=1` skips that last step). That makes rehearsals independent: two PRs can each be rehearsed without waiting for the other to ship. If prod has a migration your branch lacks, it stops and tells you to merge `origin/main` first.
 
+## Auto-deploy must stay off
+
+Supabase's GitHub integration can deploy migrations and Edge Functions to prod when a PR merges to `main`.
+That skips the backup and the row-loss guard, and it shipped 20261022140000 once. In the dashboard
+(prod project, Settings, Integrations, GitHub) "Deploy to production" must be off. Check the ledger if in
+doubt: a row whose `statements` column is filled was applied by Supabase tooling, not by `ship.sh` or psql.
+With it off, Edge Functions are deployed by hand (`supabase functions deploy <name>`).
+
 ## Undoing
 
 ```bash
