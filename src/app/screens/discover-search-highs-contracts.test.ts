@@ -53,7 +53,7 @@ test("Discover rails no longer claim prep times or curation they do not have", (
   const screen = readRepoFile("src/app/screens/discover/DiscoverHomeScreen.tsx");
 
   assert.doesNotMatch(screen, /&lt; 15 MIN|★ CURATED|MUST ORDER|Editor&apos;s Choice/);
-  assert.match(screen, /Most reviewed in \{discoverLocationLabel\}/);
+  assert.match(screen, /Most reviewed in \{trendingPlaceLabel\}/);
   assert.match(screen, /Top rated/);
 });
 
@@ -142,7 +142,7 @@ test("Search hides empty sections and controls the backend ignores", () => {
   // noodles/rice into a cuisine filter, so the landing offers just those chips.
   assert.doesNotMatch(home, /suggestedDish|collections|TasteFilter|getSearchResultsAsync/);
   assert.match(home, /const CATALOG_CATEGORIES: SearchCategory\[\] = \["noodles", "rice"\]/);
-  assert.match(results, /radiusMeters: query\.trim\(\) \? undefined : 3_000/);
+  assert.match(results, /radiusMeters: query\.trim\(\) \|\| place \? undefined : 3_000/);
   // Only location browsing is radius-bound, and never with a radius past Postgres int range.
   assert.match(
     repository,

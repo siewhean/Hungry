@@ -15,6 +15,8 @@ export interface CatalogPageRequest {
   cuisineTags?: string[];
   dietaryFlags?: string[];
   buildingTypes?: string[];
+  /** Keeps only this building's stalls and dishes (a mall, hawker centre or food court). */
+  buildingId?: string;
   maxPrice?: number;
   openOnly?: boolean;
   sort?: CatalogSort;
@@ -141,7 +143,37 @@ export type CatalogSuggestionKind = "food_type" | "place" | "stall";
 export interface CatalogSuggestion {
   kind: CatalogSuggestionKind;
   label: string;
+  /** Building id, on place suggestions. */
+  placeId?: string;
 }
+
+/** A mall, hawker centre, food court or other building with several stalls. */
+export interface CatalogPlace {
+  id: string;
+  name: string;
+  buildingType?: string;
+  /** Stalls in the building. */
+  venueCount: number;
+  latitude?: number;
+  longitude?: number;
+  /** From the viewer to the nearest stall in the building, when the request had a position. */
+  distanceMeters?: number;
+}
+
+export interface CatalogPlacesRequest {
+  /** Matches the start of the building name or of any word in it. */
+  query?: string;
+  coordinate?: CatalogCoordinate;
+  /** With a coordinate, keeps only places with a stall inside this radius. */
+  radiusMeters?: number;
+  limit?: number;
+  releaseId?: string;
+}
+
+/** A building needs this many stalls to count as a place (also enforced by the RPCs). */
+export const CATALOG_PLACE_MIN_STALLS = 3;
+/** Inside a place when a stall of it is within this many metres of the phone. */
+export const CATALOG_PLACE_ENTER_RADIUS_METERS = 100;
 
 /** Suggestions need at least this many characters; shorter text gets popular food types. */
 export const CATALOG_SUGGEST_MIN_CHARS = 2;
@@ -279,12 +311,33 @@ function mapSuggestions(value: unknown): CatalogSuggestion[] {
     const label = asString(row.label);
     const kind = row.kind;
     if (!label || (kind !== "food_type" && kind !== "place" && kind !== "stall")) return [];
-    return [{ kind, label }];
+    const placeId = kind === "place" ? asString(row.id) : undefined;
+    return [placeId ? { kind, label, placeId } : { kind, label }];
   });
+}
+
+function mapPlace(value: unknown): CatalogPlace[] {
+  const row = asRecord(value);
+  const id = asString(row.id);
+  const name = asString(row.name);
+  if (!id || !name) return [];
+  return [
+    {
+      id,
+      name,
+      buildingType: asString(row.building_type),
+      venueCount: asNumber(row.venue_count) ?? 0,
+      latitude: asNumber(row.latitude),
+      longitude: asNumber(row.longitude),
+      distanceMeters: asNumber(row.distance_meters),
+    },
+  ];
 }
 
 function normaliseRequest(request: CatalogPageRequest): Record<string, unknown> {
   return {
+    // Sent only for a place, so every other read keeps working against the older signature.
+    ...(request.buildingId ? { p_building_id: request.buildingId } : {}),
     p_query: request.query?.trim() || null,
     p_lat: request.coordinate?.latitude ?? null,
     p_lng: request.coordinate?.longitude ?? null,
@@ -394,6 +447,24 @@ export const catalogRawService = {
     if (cached) return cached;
     const items = mapSuggestions(await callRawRpc("catalog_suggest", args));
     return writeCache(pageCache, key, items, PAGE_TTL_MS);
+  },
+
+  /** Malls, hawker centres and food courts by name and/or position. */
+  async listPlaces(request: CatalogPlacesRequest): Promise<CatalogPlace[]> {
+    const args = {
+      p_query: request.query?.trim().slice(0, 64) || null,
+      p_lat: request.coordinate?.latitude ?? null,
+      p_lng: request.coordinate?.longitude ?? null,
+      p_radius_meters: request.radiusMeters ?? null,
+      p_limit: Math.max(1, Math.min(request.limit ?? 8, 20)),
+      p_release_id: request.releaseId ?? null,
+    };
+    const key = catalogRequestKey("places", args);
+    const cached = readCache<CatalogPlace[]>(pageCache, key);
+    if (cached) return cached;
+    const rows = await callRawRpc<unknown>("catalog_raw_places", args);
+    const places = Array.isArray(rows) ? rows.flatMap(mapPlace) : [];
+    return writeCache(pageCache, key, places, PAGE_TTL_MS);
   },
 
   async getDish(id: string, releaseId?: string): Promise<CatalogRawDishDetail> {
