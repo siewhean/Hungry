@@ -30,6 +30,8 @@
     "smoke:database:rls": "node scripts/smoke_rls.mjs",
     "smoke:ocr-staging": "node scripts/supabase-ocr-smoke.mjs",
     "audit:supabase:static": "node scripts/supabase-neutral-audit.mjs",
+    "check:n-plus-one": "node scripts/check-n-plus-one.mjs",
+    "test:n-plus-one": "node --test scripts/__tests__/check_n_plus_one.test.mjs",
     "audit:supabase:migration-safety": "node scripts/check-migration-safety.mjs",
     "test:migration-safety": "node --test scripts/__tests__/check_migration_safety.test.mjs",
     "audit:supabase:advisor-security": "node scripts/supabase-advisor-security-classifier.mjs",
