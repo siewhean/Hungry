@@ -1,5 +1,6 @@
 // @ts-nocheck
 /* eslint-disable import/no-unresolved */
+import { serveWithSentry } from "../_shared/sentry.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.52.0";
 
 type JsonObject = Record<string, unknown>;
@@ -128,7 +129,7 @@ async function writeAuditEvent(
   });
 }
 
-Deno.serve(async (request) => {
+serveWithSentry("ops-dishes-draft", async (request) => {
   const allowedOrigin = resolveAllowedOrigin(request, getAllowedOrigins());
   if (request.method === "OPTIONS") {
     if (allowedOrigin === "") {

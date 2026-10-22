@@ -102,6 +102,27 @@ Headers:
 - Origin-less native/mobile requests are accepted when API key is valid.
 - `deviceId` is required and used for per-device rate limiting (20 session mints/hour).
 
+## Rate limits
+
+REST (PostgREST): `pgrst.db_pre_request` runs `app_private.check_request_rate()` before every request
+(migration `20261022120000_api_request_rate_limits.sql`). It counts POST/PATCH/PUT/DELETE per minute by
+signed-in user id, or by client IP for anon, and answers HTTP 429 over the cap. Caps live in
+`app_private.request_rate_rules` (`route` is `rpc/<function>` or `<table>`; `*` is the shared default for
+every route without a row). `service_role` is never limited, GET on `/rpc/*` is refused (a read-only
+transaction cannot write the counter), and a counter error fails open.
+
+- New anon-callable RPC: insert a rule row with an anon cap in a new migration, or list it in
+  `rate-limit-allowlist.json` with a reason (the `*` default still applies).
+- New table or signed-in RPC that can be abused in a loop: add a rule row with a `user_per_minute` cap.
+- New Edge Function: call `app_can_make_ip_request(ip, action, limit)` before auth and
+  `app_can_make_user_request(user, action, limit)` after it, guard it with a worker token, or list it in
+  `rate-limit-allowlist.json` with a reason.
+- Auth endpoints: `[auth.rate_limit]` in `config.toml`.
+- `npm run check:rate-limits` (CI) fails when an anon RPC or Edge Function is neither limited nor listed.
+- Not covered: GET reads of tables anon can select, and raw Edge Function invocation counts (needs a
+  Cloudflare/WAF rule in front of the project).
+- Roll back: `alter role authenticator reset pgrst.db_pre_request; notify pgrst, 'reload config';`.
+
 ## Notes
 
 - The function stores only a SHA-256 hash of the guest token in `guest_sessions.token_hash`.
