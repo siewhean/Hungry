@@ -141,9 +141,9 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
           contentContainerStyle={{ gap: spacing[2], paddingHorizontal: spacing[4] }}
         >
           {images.length ? (
-            images.map((url) => (
+            images.map((url, index) => (
               <AccessibleImage
-                key={url}
+                key={`${url}-${index}`}
                 source={{ uri: url }}
                 style={{ backgroundColor: palette.bgSoft, height: 250, width: 300 }}
                 contentFit="cover"

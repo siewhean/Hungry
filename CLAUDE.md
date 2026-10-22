@@ -93,6 +93,7 @@ Treat these as high blast-radius. Read before editing, patch narrowly, and run a
 6. Append a short line to `tasks/session-log.md` after focused task work.
 7. Update `tasks/lessons.md` only after a correction or repeated mistake.
 8. Keep final responses short: what changed, what passed, what remains.
+13. Everything ships tested, and CI enforces it. A new screen gets a row in `src/test/render/screenMatrix.ts`; a new store, service, hook, feature module, shared component or Edge Function gets a behaviour test (the guard in `src/app/test-coverage-guard-contracts.test.ts` fails otherwise; never add to its allowlists). Edge Functions use `src/test/edge/harness.ts`, service methods use `src/test/supabase/appClient.ts`. Run `npm run test:coverage` and `npm run test:render` before pushing; after adding tests run `npm run test:coverage:update` and commit `tests/coverage-baseline.json`. See `tasks/test-harness.md` Gate 3a.
 
 ---
 

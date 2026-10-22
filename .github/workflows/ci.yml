@@ -41,8 +41,11 @@ jobs:
       - name: Asset audit
         run: npm run audit:assets
 
-      - name: Test
-        run: npm run test
+      - name: Test with coverage ratchet
+        run: npm run test:coverage
+
+      - name: Screen and component render tests
+        run: npm run test:render
 
       - name: Scaling readiness static contracts
         run: node --import tsx --test src/app/scaling-readiness-contracts.test.ts

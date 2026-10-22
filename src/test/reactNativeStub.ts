@@ -34,3 +34,14 @@ export const Animated = {
 } as any;
 
 export const ActivityIndicator = "ActivityIndicator" as any;
+
+export type StubAlertButton = { text?: string; style?: string; onPress?: () => void };
+export type StubAlertCall = { title: string; message?: string; buttons?: StubAlertButton[] };
+
+/** Records every Alert.alert so tests can assert on it and press its buttons. */
+export const alertCalls: StubAlertCall[] = [];
+export const Alert = {
+  alert(title: string, message?: string, buttons?: StubAlertButton[]) {
+    alertCalls.push({ title, message, buttons });
+  },
+} as const;
