@@ -22,6 +22,9 @@ if [ "$PHASE" = functions ] || [ "$PHASE" = auth ]; then
   cd "$WT"
   if [ "$PHASE" = auth ]; then
     # config.toml pins every Auth key this app relies on; the new project starts from defaults, so nothing is lost.
+    # Free-plan projects cannot change Auth email templates; production sends auth email through the
+    # Send Email hook (Resend) instead, so the template blocks are dropped from this push only.
+    awk '/^\[auth\.email\.template\./ {skip=1; next} /^\[/ {skip=0} !skip' supabase/config.toml > supabase/config.toml.new && mv supabase/config.toml.new supabase/config.toml
     npx --yes supabase config push --project-ref "$DST_REF"
     echo "Edge Function secret NAMES (values are write-only). Old project, then new project:"
     npx --yes supabase secrets list --project-ref "$SRC_REF" | awk -F'|' 'NR>2 {gsub(/ /,"",$1); print "  old: " $1}'
