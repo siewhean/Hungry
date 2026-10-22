@@ -6,6 +6,7 @@ from the environment. Safe to re-run: uploads use x-upsert.
 """
 import json
 import os
+import ssl
 import sys
 import urllib.error
 import urllib.parse
@@ -24,8 +25,22 @@ def path_of(base, kind, bucket, name):
     return f"{base}/storage/v1/object/{kind}{bucket}/{quoted}"
 
 
+def tls_context():
+    """python.org builds of Python on macOS ship no root certificates, so fall back to the system bundle."""
+    ctx = ssl.create_default_context()
+    if ctx.cert_store_stats()["x509_ca"] or ctx.cert_store_stats()["x509"]:
+        return ctx
+    for cafile in ("/etc/ssl/cert.pem", "/private/etc/ssl/cert.pem", "/etc/ssl/certs/ca-certificates.crt"):
+        if os.path.exists(cafile):
+            return ssl.create_default_context(cafile=cafile)
+    return ctx
+
+
+TLS = tls_context()
+
+
 def request(req):
-    with urllib.request.urlopen(req, timeout=120) as resp:
+    with urllib.request.urlopen(req, timeout=120, context=TLS) as resp:
         return resp.read()
 
 
