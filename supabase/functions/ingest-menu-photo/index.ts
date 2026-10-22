@@ -173,7 +173,7 @@ function assertValidOcrImageType(response: Response): void {
 async function runLlmExtraction(apiKey: string, text: string): Promise<ExtractionDish[] | null> {
   if (!apiKey) return null;
   const response = await fetch(
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent",
     {
       method: "POST",
       headers: {
