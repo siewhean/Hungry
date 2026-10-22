@@ -3,7 +3,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { X } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, Card } from "@/components/ui";
+import { AppText, Button, Card } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "MerchantClaimExplainer">;
@@ -82,6 +82,12 @@ export function MerchantClaimExplainerScreen({ navigation }: Props) {
           <AppText variant="bodySmall">- NEA/SFA licence details for stall operators</AppText>
           <AppText variant="bodySmall">- Contact name + contact email/phone for follow-up</AppText>
         </View>
+        <Button
+          label="Find your stall"
+          onPress={() => navigation.replace("SearchResults", { browseMode: "stalls" })}
+          accessibilityHint="Opens stall search so you can open your stall and tap Claim this stall"
+          fullWidth
+        />
       </Card>
     </View>
   );

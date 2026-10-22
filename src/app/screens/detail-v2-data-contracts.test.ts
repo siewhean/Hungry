@@ -14,10 +14,12 @@ test("stall detail uses real venue hours and popular visitors", () => {
 
   assert.match(stall, /PopularVisitorsSection/);
   // A verified merchant's weekly schedule wins; listed text hours are the fallback.
-  assert.match(stall, /getScheduleOpenState\(schedule, venue\.isOpen\)/);
-  assert.match(stall, /: getVenueOpenState\(venue\.operatingHours, venue\.isOpen\)/);
-  assert.match(stall, /parseOperatingHours\(venue\.operatingHours\)/);
-  assert.match(stall, /weeklyOperatingHours\.map/);
+  assert.match(stall, /resolveStallOpenInfo\(\{\s*venue,\s*schedule: openingSchedule,/);
+  const openState = read("src/features/detail/stallOpenState.ts");
+  assert.match(openState, /getScheduleOpenState\(schedule, venue\.isOpen, now\)/);
+  assert.match(openState, /getVenueOpenState\(venue\.operatingHours, venue\.isOpen, now\)/);
+  assert.match(openState, /parseOperatingHours\(venue\.operatingHours\)/);
+  assert.match(stall, /hoursRows\.map/);
   assert.doesNotMatch(stall, /venue\.operatingHours\.split\(" – "\)/);
   assert.doesNotMatch(stall, /Open Now/);
   assert.doesNotMatch(stall, /Check Map/);
@@ -26,8 +28,9 @@ test("stall detail uses real venue hours and popular visitors", () => {
 test("dish detail V2 avoids invented wait times and fake hours", () => {
   const dish = read("src/app/screens/detail/DishDetailScreenV2.tsx");
 
-  assert.match(dish, /const waitTime = formatWaitTime/);
-  assert.match(dish, /\.\.\.\(waitTime/);
+  // The wait card is gone: nothing here is a measured wait (detail-M6).
+  assert.doesNotMatch(dish, /formatWaitTime|waitTime/);
+  assert.match(dish, /resolveStallOpenInfo\(/);
   assert.doesNotMatch(dish, /Mon-Fri/);
   assert.doesNotMatch(dish, /Sat-Sun/);
   assert.doesNotMatch(dish, /signature order/);

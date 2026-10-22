@@ -72,7 +72,10 @@ test("Decide For Me offers backup picks and a Not for me swap", () => {
   assert.match(source, /type: "dismissed"/);
   assert.match(source, /Other picks/);
   assert.match(source, /getOtherPicks\(candidates, resultIndex\)/);
-  assert.match(source, /buildPickReason\(profile\.tasteVector, pick, pickMatch\)/);
+  assert.match(
+    source,
+    /buildPickReason\(\s*profile\.tasteVector,\s*pick,\s*pickMatch,\s*hasTasteProfile\s*\)/,
+  );
 });
 
 test("dish pages can add to a list in production", () => {

@@ -1,5 +1,16 @@
+import { ALLOWED_REVIEW_TAGS, REVIEW_MAX_TAGS } from "@/constants/taste";
 import { REVIEW_TEXT_MAX_LENGTH, sanitizeFreeText } from "@/lib/security/inputSanitization";
 import type { UpdateReviewInput } from "@/lib/services/types";
+
+/**
+ * Review tags as the server accepts them: trimmed, de-duplicated, only the allowed list, at most
+ * REVIEW_MAX_TAGS. Anything else (for example free-form composer tags) is dropped, not sent.
+ */
+export function normalizeReviewTags(tags: readonly string[]): string[] {
+  return Array.from(
+    new Set(tags.map((tag) => tag.trim()).filter((tag) => ALLOWED_REVIEW_TAGS.includes(tag))),
+  ).slice(0, REVIEW_MAX_TAGS);
+}
 
 /**
  * Cleans an author's review edit the same way the composer cleans a new review.
@@ -17,9 +28,7 @@ export function normalizeReviewPatch(patch: UpdateReviewInput): UpdateReviewInpu
     normalized.text = sanitizeFreeText(patch.text, REVIEW_TEXT_MAX_LENGTH);
   }
   if (patch.tags !== undefined) {
-    normalized.tags = Array.from(
-      new Set(patch.tags.map((tag) => tag.trim()).filter((tag) => tag.length > 0)),
-    );
+    normalized.tags = normalizeReviewTags(patch.tags);
   }
   if (patch.wouldRecommend !== undefined) {
     normalized.wouldRecommend = patch.wouldRecommend;

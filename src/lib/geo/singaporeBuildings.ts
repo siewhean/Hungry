@@ -733,10 +733,30 @@ export function getNearestBuildings(
     .map(({ building }) => building);
 }
 
+/** Furthest a point can be from every area anchor and still be called "at" that area. */
+export const SINGAPORE_AREA_LABEL_MAX_KM = 5;
+
+/**
+ * The nearest area anchor's name, or undefined when the point is further than
+ * `maxKm` from every anchor (a phone outside Singapore is not "at Woodlands").
+ */
+export function getNearestSingaporeAreaWithin(
+  lat: number,
+  lng: number,
+  maxKm = SINGAPORE_AREA_LABEL_MAX_KM,
+): string | undefined {
+  const nearest = findNearestSingaporeAreaAnchor(lat, lng);
+  return nearest && nearest.distanceKm <= maxKm ? nearest.area.name : undefined;
+}
+
 /** Resolve a coordinate to a user-facing Singapore area label. */
 export function getNearestSingaporeArea(lat: number, lng: number): string {
+  return findNearestSingaporeAreaAnchor(lat, lng)?.area.name ?? "Singapore";
+}
+
+function findNearestSingaporeAreaAnchor(lat: number, lng: number) {
   const R = 6371;
-  const nearest = singaporeAreaAnchors
+  return singaporeAreaAnchors
     .map((area) => {
       const dLat = ((area.coordinate.latitude - lat) * Math.PI) / 180;
       const dLng = ((area.coordinate.longitude - lng) * Math.PI) / 180;
@@ -749,8 +769,6 @@ export function getNearestSingaporeArea(lat: number, lng: number): string {
       return { area, distanceKm };
     })
     .sort((a, b) => a.distanceKm - b.distanceKm)[0];
-
-  return nearest?.area.name ?? "Singapore";
 }
 
 /** Get building by id */

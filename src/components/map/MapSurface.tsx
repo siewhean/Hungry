@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type PropsWithChildren } from "react";
+import { memo, useEffect, useMemo, useState, type PropsWithChildren } from "react";
 import {
   GestureResponderEvent,
   LayoutChangeEvent,
@@ -42,6 +42,8 @@ function getMapboxGL(): MapboxModule | null {
 export interface MapSurfaceMarker {
   id: string;
   label: string;
+  /** Read by screen readers. Defaults to the label; clusters say how many places they hold. */
+  accessibilityLabel?: string;
   coordinate: Coordinate;
   accent?: string;
   type?: BuildingType;
@@ -226,6 +228,46 @@ function MarkerVisual({
   );
 }
 
+/**
+ * One tappable pin. Memoised so a pan or a selection change redraws only the pins
+ * whose own props changed, not every pin of the viewport (M14).
+ */
+const MapMarkerButton = memo(function MapMarkerButton({
+  marker,
+  selected,
+  zoomLevel,
+  fallbackAccent,
+  onPress,
+  style,
+}: {
+  marker: MapSurfaceMarker;
+  selected: boolean;
+  zoomLevel?: number;
+  fallbackAccent: string;
+  onPress?: (markerId: string) => void;
+  style: StyleProp<ViewStyle>;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={marker.accessibilityLabel ?? marker.label}
+      accessibilityState={{ selected }}
+      onPress={() => onPress?.(marker.id)}
+      style={style}
+    >
+      <MarkerVisual
+        label={marker.label}
+        accent={marker.accent ?? fallbackAccent}
+        selected={selected}
+        type={marker.type}
+        zoomLevel={zoomLevel}
+        isTrending={marker.isTrending}
+        imageUrl={marker.imageUrl}
+      />
+    </Pressable>
+  );
+});
+
 function UserPuck() {
   const { palette, radii } = useHungryTheme();
 
@@ -395,20 +437,14 @@ function FallbackMap({
       {markers?.map((marker) => {
         const position = projectCoordinate(marker.coordinate, bounds);
         return (
-          <Pressable
+          <MapMarkerButton
             key={marker.id}
-            onPress={() => onMarkerPress?.(marker.id)}
+            marker={marker}
+            selected={marker.id === selectedMarkerId}
+            fallbackAccent={palette.orange}
+            onPress={onMarkerPress}
             style={[styles.absoluteMarker, position]}
-          >
-            <MarkerVisual
-              label={marker.label}
-              accent={marker.accent ?? palette.orange}
-              selected={marker.id === selectedMarkerId}
-              type={marker.type}
-              isTrending={marker.isTrending}
-              imageUrl={marker.imageUrl}
-            />
-          </Pressable>
+          />
         );
       })}
 
@@ -539,20 +575,14 @@ export function MapSurface({
             allowOverlap
             anchor={{ x: 0.5, y: 1 }}
           >
-            <Pressable
-              onPress={() => onMarkerPress?.(marker.id)}
-              style={[styles.markerPressable, { minWidth: 44, minHeight: 44 }]}
-            >
-              <MarkerVisual
-                label={marker.label}
-                accent={marker.accent ?? palette.orange}
-                selected={marker.id === selectedMarkerId}
-                type={marker.type}
-                zoomLevel={zoomLevel}
-                isTrending={marker.isTrending}
-                imageUrl={marker.imageUrl}
-              />
-            </Pressable>
+            <MapMarkerButton
+              marker={marker}
+              selected={marker.id === selectedMarkerId}
+              zoomLevel={zoomLevel}
+              fallbackAccent={palette.orange}
+              onPress={onMarkerPress}
+              style={markerPressableStyle}
+            />
           </MapboxGL.MarkerView>
         ))}
 
@@ -570,6 +600,10 @@ export function MapSurface({
   );
 }
 
+const markerPressableStyle: StyleProp<ViewStyle> = [
+  { alignItems: "center", justifyContent: "center", minWidth: 44, minHeight: 44 },
+];
+
 const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
@@ -577,10 +611,6 @@ const styles = StyleSheet.create({
   },
   map: {
     flex: 1,
-  },
-  markerPressable: {
-    alignItems: "center",
-    justifyContent: "center",
   },
   road: {
     position: "absolute",

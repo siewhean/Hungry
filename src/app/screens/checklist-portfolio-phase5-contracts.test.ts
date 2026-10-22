@@ -58,7 +58,8 @@ test("Phase 5 checklist and portfolio stores centralize analytics and edge guard
   assert.match(portfolioStore, /reorder requires every current item exactly once/);
   assert.match(portfolioStore, /matchesPortfolioFilters/);
   assert.match(portfolioStore, /PortfolioEditConflict/);
-  assert.match(portfolioStore, /ensurePortfolioFresh/);
+  assert.match(portfolioStore, /mutatePortfolio/);
+  assert.match(portfolioStore, /loadLatestAfterConflict/);
   assert.match(portfolioStore, /getPortfolioMutationOptions/);
   assert.match(portfolioStore, /expectedUpdatedAt: portfolio\?\.updatedAt/);
   assert.match(portfolioStore, /refreshPortfolio/);
@@ -100,15 +101,17 @@ test("Phase 5 screens handle deleted references and invalid portfolio scores", (
   assert.match(portfolioDetail, /Deleted dish/);
   assert.match(portfolioDetail, /Deleted stall/);
   assert.match(portfolioDetail, /Latest version loaded/);
-  assert.match(portfolioDetail, /showPortfolioError/);
+  assert.match(portfolioDetail, /showListError/);
   assert.match(portfolioItemRow, /PanResponder\.create/);
   assert.match(portfolioItemRow, /GripVertical/);
   assert.match(portfolioItemRow, /accessibilityRole="adjustable"/);
-  assert.match(portfolioItemRow, /Drag to reorder portfolio item/);
+  assert.match(portfolioItemRow, /Drag to reorder list item/);
 
-  assert.match(portfolioItemPicker, /parsePortfolioScore/);
+  const portfolioItemEditSheet = read("src/components/portfolio/PortfolioItemEditSheet.tsx");
+  const listItemScore = read("src/features/checklistPortfolio/listItemScore.ts");
+  assert.match(portfolioItemEditSheet, /parseListItemScore/);
+  assert.match(listItemScore, /Use a whole number from 1 to 10\./);
   assert.match(portfolioItemPicker, /Latest version loaded/);
-  assert.match(portfolioItemPicker, /Use a whole number from 1 to 10\./);
   assert.match(portfolioItemPicker, /disabled=\{!canAddItem\}/);
 
   assert.doesNotMatch(

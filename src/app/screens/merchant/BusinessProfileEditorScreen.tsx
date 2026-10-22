@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { View, StyleSheet, TouchableOpacity, Alert } from "react-native";
+import { View, StyleSheet, TouchableOpacity } from "react-native";
 import { Camera, Image as ImageIcon } from "lucide-react-native";
 import { useForm, Controller } from "react-hook-form";
 import { useNavigation } from "@react-navigation/native";
@@ -22,11 +22,13 @@ import {
 } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
-import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
+import { getHungryService } from "@/lib/services/serviceProvider";
 import type { Coordinate, MerchantOutlet, LocationPrivacy, OpeningSchedule } from "@/types/domain";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
+import { isVerificationCurrent } from "@/features/merchant/merchantGuards";
 import { formatBusinessType } from "@/features/merchant/merchantReadiness";
 import { trackMerchantEvent } from "@/features/merchant/merchantTracking";
+import { useMerchantDialog } from "@/features/merchant/useMerchantDialog";
 import { useUnsavedChangesGuard } from "@/features/merchant/useUnsavedChangesGuard";
 import { lookupPostalCode, SINGAPORE_POSTAL_CODE_PATTERN } from "@/lib/geo/oneMap";
 import {
@@ -131,17 +133,28 @@ const BUSINESS_TYPE_SELECT_OPTIONS = BUSINESS_TYPE_OPTIONS.map((value) => ({
 function BusinessTypeDropdown({
   value,
   onChange,
+  locked,
 }: {
   value: MerchantOutlet["businessType"];
   onChange: (value: MerchantOutlet["businessType"]) => void;
+  locked: boolean;
 }) {
   return (
-    <SelectField
-      label="Business Type"
-      value={value}
-      options={BUSINESS_TYPE_SELECT_OPTIONS}
-      onChange={onChange}
-    />
+    <View style={{ gap: 8 }}>
+      <SelectField
+        label="Business Type"
+        value={value}
+        options={BUSINESS_TYPE_SELECT_OPTIONS}
+        onChange={onChange}
+        disabled={locked}
+      />
+      {locked ? (
+        <AppText variant="bodySmall" tone="muted">
+          The business type is fixed once your stall is verified, because it decides whether the
+          unit can be hidden. Contact Hungry to change it.
+        </AppText>
+      ) : null}
+    </View>
   );
 }
 
@@ -149,8 +162,9 @@ export function BusinessProfileEditorScreen() {
   const { componentRadii, palette, spacing, radii } = useHungryTheme();
   const navigation = useNavigation<NavigationProp>();
   const rootNavigation = getRootNavigation(navigation as any);
-  const repository = getDataRepository();
   const activeOutlet = useMerchantStore(getActiveOutlet);
+  const { showAlert, dialog } = useMerchantDialog();
+  const isOutletVerified = isVerificationCurrent(activeOutlet?.verification);
   const updateOutletProfile = useMerchantStore((state) => state.updateOutletProfile);
   const [isUploadingImages, setIsUploadingImages] = useState(false);
   const [hoursError, setHoursError] = useState<string>();
@@ -229,14 +243,14 @@ export function BusinessProfileEditorScreen() {
   }, [activeOutlet, isDirty, reset]);
 
   const leaveEditor = useCallback(() => navigation.goBack(), [navigation]);
-  const confirmLeave = useUnsavedChangesGuard(isDirty && !isSubmitting, leaveEditor);
+  const confirmLeave = useUnsavedChangesGuard(isDirty && !isSubmitting, leaveEditor, showAlert);
 
   const onSubmit = async (data: FormData) => {
     if (!activeOutlet) return;
     const hoursProblem = validateOpeningSchedule(data.openingSchedule);
     setHoursError(hoursProblem);
     if (hoursProblem) {
-      Alert.alert("Check opening hours", hoursProblem);
+      showAlert("Check opening hours", hoursProblem);
       return;
     }
     try {
@@ -297,42 +311,27 @@ export function BusinessProfileEditorScreen() {
       reset(data);
       updateOutletProfile(activeOutlet.id, updated);
       trackMerchantEvent("merchant_profile_updated", activeOutlet.id, { is_live: data.isLive });
-      Alert.alert(
+      showAlert(
         "Saved",
         !data.isLive
           ? 'Your profile is saved. Turn on "Show on Hungry" when you want diners to see it.'
-          : activeOutlet.verification?.status === "verified"
+          : isOutletVerified
             ? "Your changes are live for diners now."
             : "Your profile is saved. Diners will see it once Hungry verifies your stall.",
+        [{ text: "OK", onPress: () => navigation.goBack() }],
       );
-      navigation.goBack();
     } catch (error) {
       console.error(error);
-      Alert.alert("Error", error instanceof Error ? error.message : "Failed to update profile.");
+      showAlert("Error", error instanceof Error ? error.message : "Failed to update profile.");
     } finally {
       setIsUploadingImages(false);
     }
   };
 
   const handlePreviewAsCustomer = () => {
-    if (!activeOutlet) {
-      return;
-    }
-
-    const signatureDishId = activeOutlet.signatureDishIds[0];
-    const signatureVenueId = signatureDishId
-      ? repository.getDishById(signatureDishId)?.venueId
-      : undefined;
-    const fallbackVenueId = activeOutlet.buildingId
-      ? repository.listVenuesByBuilding(activeOutlet.buildingId)[0]?.id
-      : undefined;
-    const venueId = activeOutlet.venueId ?? signatureVenueId ?? fallbackVenueId;
-
-    if (venueId) {
-      rootNavigation.navigate("StallDetail", { venueId });
-    } else {
-      rootNavigation.navigate("DiscoverMap");
-    }
+    // The outlet's own venue only; guessing from a dish or the building can open another stall.
+    const venueId = activeOutlet?.venueId;
+    if (venueId) rootNavigation.navigate("StallDetail", { venueId });
   };
 
   if (!activeOutlet) {
@@ -356,12 +355,21 @@ export function BusinessProfileEditorScreen() {
       headerRight={
         <TouchableOpacity
           onPress={handlePreviewAsCustomer}
+          disabled={!activeOutlet.venueId}
+          accessibilityRole="button"
+          accessibilityLabel="Preview as customer"
+          accessibilityHint={
+            activeOutlet.venueId ? undefined : "Available once your stall is linked to a listing"
+          }
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           style={[
             styles.previewButton,
             {
-              paddingVertical: spacing[1],
+              minHeight: 44,
+              justifyContent: "center",
               paddingHorizontal: spacing[3],
               borderRadius: radii.pill,
+              opacity: activeOutlet.venueId ? 1 : 0.5,
             },
             { backgroundColor: palette.bgSoft, borderColor: palette.border },
           ]}
@@ -373,7 +381,7 @@ export function BusinessProfileEditorScreen() {
       }
     >
       <View style={{ gap: spacing[6], width: "100%" }}>
-        {activeOutlet.verification?.status === "verified" && (
+        {isOutletVerified && (
           <View
             style={[
               styles.verifiedBadge,
@@ -439,7 +447,7 @@ export function BusinessProfileEditorScreen() {
               control={control}
               name="businessType"
               render={({ field: { onChange, value } }) => (
-                <BusinessTypeDropdown value={value} onChange={onChange} />
+                <BusinessTypeDropdown value={value} onChange={onChange} locked={isOutletVerified} />
               )}
             />
           </View>
@@ -769,6 +777,7 @@ export function BusinessProfileEditorScreen() {
           style={{ marginTop: spacing[4] }}
         />
       </View>
+      {dialog}
     </Screen>
   );
 }

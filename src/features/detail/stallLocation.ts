@@ -22,8 +22,31 @@ export function formatFullStallAddress(
     .join(", ");
 }
 
-export function buildMapsSearchUrl(address: string) {
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+/** Google Maps search by address text, or by "lat,lng" when the stall has its own map pin. */
+export function buildMapsSearchUrl(address: string, pin?: Coordinate) {
+  const query = pin ? `${pin.latitude},${pin.longitude}` : address;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}
+
+/**
+ * The stall's own map pin (a merchant-set pin or stored venue coordinate), when it
+ * sits apart from its building's point. Street-level and home-based stalls can be
+ * far from the building coordinate; a pin equal to the building adds nothing.
+ */
+export function getStallPin(
+  venue: Pick<VenueSummary, "latitude" | "longitude">,
+  buildingCoordinate?: Coordinate,
+): Coordinate | undefined {
+  if (venue.latitude === undefined || venue.longitude === undefined) return undefined;
+  const pin = { latitude: venue.latitude, longitude: venue.longitude };
+  if (
+    buildingCoordinate &&
+    Math.abs(buildingCoordinate.latitude - pin.latitude) < 0.00005 &&
+    Math.abs(buildingCoordinate.longitude - pin.longitude) < 0.00005
+  ) {
+    return undefined;
+  }
+  return pin;
 }
 
 /**

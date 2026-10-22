@@ -421,7 +421,7 @@ export function DetailSaveActionsCard({
         />
         {onAddToPortfolio ? (
           <Button
-            label="Add to Portfolio"
+            label="Add to list"
             variant="secondary"
             size="sm"
             fullWidth={false}

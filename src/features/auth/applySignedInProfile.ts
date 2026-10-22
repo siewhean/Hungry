@@ -27,6 +27,7 @@ type ProfileMigrationOperations = {
   awaitProfile: () => Promise<UserProfile>;
   updateTasteProfile: (profile: TasteProfile) => Promise<void>;
   updateDietaryPreferences: (preferences: UserProfile["dietaryPreferences"]) => Promise<void>;
+  updateMaxDishBudget?: (maxDishBudget: number) => Promise<void>;
 };
 
 function vectorsMatch(left: TasteVector, right: TasteVector) {
@@ -117,6 +118,8 @@ function createProvisionalMigration(
     capturedAt: new Date().toISOString(),
     tasteProfile: hasMeaningfulProvisionalTaste(profile, tasteProfile) ? tasteProfile : undefined,
     dietaryPreferences: [...profile.dietaryPreferences],
+    // A single answer: the new onboarding budget replaces a saved one.
+    ...(profile.maxDishBudget !== undefined ? { maxDishBudget: profile.maxDishBudget } : {}),
     location: copyLocationSnapshot(),
   };
 }
@@ -139,6 +142,7 @@ export function mergeServerProfileWithProvisional(
     tasteVector: tasteProfile?.vector ?? serverProfile.tasteVector,
     tasteProfile: tasteProfile ?? serverProfile.tasteProfile,
     dietaryPreferences: dietaryPreferences ?? serverProfile.dietaryPreferences,
+    maxDishBudget: provisional.maxDishBudget ?? serverProfile.maxDishBudget,
   };
 }
 
@@ -174,6 +178,9 @@ export async function runProvisionalOnboardingMigration(
     dietaryPreferences
       ? operations.updateDietaryPreferences(dietaryPreferences)
       : Promise.resolve(),
+    provisional.maxDishBudget !== undefined && operations.updateMaxDishBudget
+      ? operations.updateMaxDishBudget(provisional.maxDishBudget)
+      : Promise.resolve(),
   ]);
   const rejected = writes.find(
     (result): result is PromiseRejectedResult => result.status === "rejected",
@@ -200,6 +207,8 @@ function profileMigrationOperations(
     updateTasteProfile: (profile) => getHungryService().profile.updateTasteProfile(profile),
     updateDietaryPreferences: (preferences) =>
       getHungryService().profile.updateDietaryPreferences(preferences),
+    updateMaxDishBudget: (maxDishBudget) =>
+      getHungryService().profile.updateMaxDishBudget(maxDishBudget),
   };
 }
 

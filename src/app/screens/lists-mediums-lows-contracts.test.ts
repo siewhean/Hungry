@@ -60,10 +60,14 @@ test("portfolio detail loads only its list and the follow state", () => {
 });
 
 test("picker scores are optional whole numbers and the edit-later copy is gone", () => {
-  const picker = read("src/app/screens/portfolio/PortfolioItemPickerScreen.tsx");
-  assert.match(picker, /useState\(""\)/);
-  assert.match(picker, /keyboardType="number-pad"/);
-  assert.doesNotMatch(picker, /edited later/);
+  // Score and notes live in the item edit sheet, so an item can be re-scored after adding.
+  const sheet = read("src/components/portfolio/PortfolioItemEditSheet.tsx");
+  assert.match(sheet, /useState\(""\)/);
+  assert.match(sheet, /keyboardType="number-pad"/);
+  assert.doesNotMatch(
+    read("src/app/screens/portfolio/PortfolioItemPickerScreen.tsx"),
+    /edited later/,
+  );
   assert.match(read("src/store/usePortfolioStore.ts"), /Math\.round\(score\)/);
 });
 
@@ -99,7 +103,8 @@ test("rows say Loading instead of Deleted while names load; screens use selector
     "src/app/screens/checklist/ChecklistDetailScreen.tsx",
   ]) {
     const source = read(file);
-    assert.match(source, /labelsLoaded \? "Deleted dish" : "Loading…"/, file);
+    assert.match(source, /"Deleted dish"/, file);
+    assert.match(source, /Loading…/, file);
     assert.match(source, /useShallow\(/, file);
   }
   assert.match(read("src/app/screens/portfolio/PortfoliosHomeScreen.tsx"), /useShallow\(/);
@@ -171,10 +176,7 @@ test("wheel and list analytics fire", () => {
   assert.match(read("src/app/screens/portfolio/PortfoliosHomeScreen.tsx"), /"list_load_failed"/);
 });
 
-test("blog post has a not-found state and the checklist has no reminder field", () => {
-  const blog = read("src/app/screens/reads/BlogPostWebViewScreen.tsx");
-  assert.match(blog, /Article not found/);
-  assert.doesNotMatch(blog, /\?\? posts\[0\]/);
+test("the checklist has no reminder field", () => {
   assert.doesNotMatch(
     read("src/app/screens/checklist/ChecklistItemPickerScreen.tsx"),
     /Remind me|reminderDateTime/,

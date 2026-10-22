@@ -98,7 +98,8 @@ begin
 end $$;
 
 -- 3. Home-based: 'exact' is coerced, unit/floor/pin are cleared.
-set local role authenticated;
+-- Changing the type of a verified outlet is ops-only now (merchant-M2), so the setup runs
+-- as the database owner; the privacy coercion below does not depend on the role.
 
 update merchant_outlets
 set business_type = 'home_based', location_privacy = 'exact'

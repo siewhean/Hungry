@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { ChevronLeft, Navigation, Store, Star } from "lucide-react-native";
+import { ChevronLeft, Navigation, Store } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 
@@ -14,7 +14,7 @@ import { trackAnalyticsEvent } from "@/lib/analytics";
 import { openTrustedMapsUrl } from "@/lib/security/safeLinking";
 import { getBuildingById, singaporeBuildings, toSummary } from "@/lib/geo/singaporeBuildings";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
-import { useLocationStore } from "@/store/useLocationStore";
+import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
 import { useHungryTheme } from "@/theme";
 import { isVenueOpenFromHours } from "@/utils/stallStatus";
 
@@ -37,7 +37,16 @@ function resolveBuilding(buildingId?: string, selectedName?: string) {
 export function MapZoomedInScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
   const { palette, radii, spacing, shadows } = useHungryTheme();
-  const currentLocation = useLocationStore((state) => state.currentLocation);
+  const gpsLocation = useLocationStore((state) => state.currentLocation);
+  const manualCoordinate = useLocationStore((state) => state.manualCoordinate);
+  const locationPermission = useLocationStore((state) => state.permission);
+  // The dot only draws for a real position, never the built-in default point.
+  const { coordinate: effectiveLocation, isApproximate: isLocationApproximate } =
+    getEffectiveLocation({
+      permission: locationPermission,
+      currentLocation: gpsLocation,
+      manualCoordinate,
+    });
   const selectedBuilding = useDiscoveryStore((state) => state.selectedBuilding);
   const setSelectedBuilding = useDiscoveryStore((state) => state.setSelectedBuilding);
   const setSelectedFloor = useDiscoveryStore((state) => state.setSelectedFloor);
@@ -109,7 +118,7 @@ export function MapZoomedInScreen({ navigation, route }: Props) {
         zoomLevel={currentZoom}
         markers={markers}
         selectedMarkerId={building.id}
-        currentLocation={currentLocation}
+        currentLocation={isLocationApproximate ? undefined : effectiveLocation}
         onMarkerPress={handleMarkerPress}
         onMapPress={() => bottomSheetRef.current?.snapToIndex(1)}
         onZoomChange={setCurrentZoom}

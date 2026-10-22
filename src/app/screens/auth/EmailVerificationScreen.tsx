@@ -3,11 +3,13 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Pressable, View } from "react-native";
 import { CircleAlert, MailCheck } from "lucide-react-native";
 
-import { AppText, Button, FeedErrorBoundary } from "@/components/ui";
+import { AppText, FeedErrorBoundary } from "@/components/ui";
 import { applySignedInProfile } from "@/features/auth/applySignedInProfile";
 import { trackAuthFailed, trackAuthScreenViewed } from "@/features/auth/authAnalytics";
+import { getAuthErrorCode, getAuthFailureMessage } from "@/features/auth/authErrors";
 import { completeVerifiedSignUp } from "@/features/auth/completeVerifiedSignUp";
 import { EmailCodeField } from "@/features/auth/EmailCodeField";
+import { formatCooldown, useResendCooldown } from "@/features/auth/useResendCooldown";
 import {
   rememberPendingEmailVerification,
   takePendingEmailVerificationCompletesOnboarding,
@@ -22,14 +24,6 @@ import { AuthScreenShell } from "./AuthScreenShell";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "EmailVerification">;
 
-// Server limit is auth.email.max_frequency = 60s (supabase/config.toml); a few
-// seconds of margin keeps the first "Resend now" from hitting the rate limit.
-const RESEND_COOLDOWN_SECONDS = 65;
-
-function secondsUntil(endsAt: number): number {
-  return Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
-}
-
 export function EmailVerificationScreen({ navigation, route }: Props) {
   const showToast = useUIStore((state) => state.showToast);
   const { componentRadii, palette, radii, spacing } = useHungryTheme();
@@ -39,12 +33,8 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
   // Supabase redirects with ?error= when the link expired or was already used.
   const confirmationError = route.params?.error;
   const completedOnboarding = route.params?.completedOnboarding ?? false;
-  // The countdown runs from an end time, so a backgrounded app or a slow timer
-  // cannot make it finish before the server allows another email.
-  const [resendEndsAt, setResendEndsAt] = useState(
-    () => Date.now() + RESEND_COOLDOWN_SECONDS * 1000,
-  );
-  const [resendSeconds, setResendSeconds] = useState(() => secondsUntil(resendEndsAt));
+  // The sign-up that opened this screen just sent an email, so the wait starts now.
+  const { seconds: resendSeconds, restart: restartResendCooldown } = useResendCooldown(true);
   const [isResending, setIsResending] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const exchangedCode = useRef<string | null>(null);
@@ -70,16 +60,6 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
       tone: "error",
     });
   }, [confirmationError, showToast]);
-
-  useEffect(() => {
-    setResendSeconds(secondsUntil(resendEndsAt));
-    const timer = setInterval(() => {
-      const remaining = secondsUntil(resendEndsAt);
-      setResendSeconds(remaining);
-      if (remaining <= 0) clearInterval(timer);
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [resendEndsAt]);
 
   // Signs the verified account in. RootNavigator then routes to onboarding or Home.
   const finishVerifiedSession = useCallback(
@@ -154,22 +134,23 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
         message: `Verification email resent to ${email}.`,
         tone: "success",
       });
-      setResendEndsAt(Date.now() + RESEND_COOLDOWN_SECONDS * 1000);
+      restartResendCooldown();
     } catch (error) {
       trackAuthFailed("email_confirm", "email", error);
-      const code =
-        (error as { error_code?: string; code?: string })?.error_code ??
-        (error as { error_code?: string; code?: string })?.code;
+      const code = getAuthErrorCode(error);
       const isRateLimited =
         code === "over_email_send_rate_limit" || (error as { status?: number })?.status === 429;
       if (isRateLimited) {
         // Restart the wait instead of leaving a button that keeps failing.
-        setResendEndsAt(Date.now() + RESEND_COOLDOWN_SECONDS * 1000);
+        restartResendCooldown();
       }
       showToast({
         message: isRateLimited
           ? "You've requested a few emails already. Please wait a minute, then try again."
-          : "Could not resend verification email. Please try again shortly.",
+          : getAuthFailureMessage(
+              error,
+              "Could not resend verification email. Please try again shortly.",
+            ),
         tone: "error",
       });
     } finally {
@@ -188,11 +169,10 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
       message: "Once you've tapped the link in the email, sign in to continue.",
       tone: "info",
     });
-    navigation.navigate("Login");
+    navigation.navigate("Login", { email });
   };
 
-  const minuteText = Math.floor(resendSeconds / 60);
-  const secondText = String(resendSeconds % 60).padStart(2, "0");
+  const cooldownText = formatCooldown(resendSeconds);
 
   return (
     <FeedErrorBoundary
@@ -202,6 +182,9 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
       <AuthScreenShell
         title="Verify your email"
         subtitle="Tap the link in the email we sent you, or type the code from it below."
+        onBack={() =>
+          navigation.canGoBack() ? navigation.goBack() : navigation.navigate("SignUp")
+        }
       >
         <View style={{ gap: spacing[4] }}>
           <View
@@ -239,7 +222,7 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
               accessibilityRole="button"
               accessibilityLabel={
                 resendSeconds > 0
-                  ? `Resend verification email available in ${minuteText}:${secondText}`
+                  ? `Resend verification email available in ${cooldownText}`
                   : "Resend verification email"
               }
               accessibilityHint="Requests a new verification email"
@@ -257,22 +240,21 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
               <AppText style={{ color: palette.textSecondary, textAlign: "center" }}>
                 Didn&apos;t receive the email?{" "}
                 <AppText style={{ color: palette.orange, fontWeight: "700" }}>
-                  {resendSeconds > 0 ? `Resend in ${minuteText}:${secondText}` : "Resend now"}
+                  {resendSeconds > 0 ? `Resend in ${cooldownText}` : "Resend now"}
                 </AppText>
               </AppText>
             </Pressable>
           ) : null}
 
-          <View style={{ gap: spacing[3] }}>
-            <Button
+          {/* The code field's "Verify email" is the one primary action; the rest are links. */}
+          <View style={{ alignItems: "center", gap: spacing[1] }}>
+            <TextLink
               label="I've confirmed my email"
+              disabled={isConfirming}
               onPress={handleConfirmed}
-              loading={isConfirming}
-              style={{ borderRadius: radii.pill, minHeight: 56 }}
             />
-            <Button
-              label="Change Email Address"
-              variant="secondary"
+            <TextLink
+              label="Change email address"
               disabled={isConfirming}
               onPress={() => {
                 if (navigation.canGoBack()) {
@@ -281,7 +263,30 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
                 }
                 navigation.navigate("SignUp");
               }}
-              style={{ borderRadius: radii.pill, minHeight: 56 }}
+            />
+          </View>
+
+          {/* An address that already has an account gets no email (Supabase answers the same
+              either way), so the code box would wait forever: point to sign in and reset. */}
+          <View
+            style={{
+              alignItems: "center",
+              flexDirection: "row",
+              flexWrap: "wrap",
+              justifyContent: "center",
+            }}
+          >
+            <AppText tone="secondary">Already have an account? </AppText>
+            <TextLink
+              label="Sign in"
+              bold
+              onPress={() => navigation.navigate("Login", { email })}
+            />
+            <AppText tone="secondary"> · </AppText>
+            <TextLink
+              label="Reset password"
+              bold
+              onPress={() => navigation.navigate("ForgotPassword")}
             />
           </View>
 
@@ -302,5 +307,34 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
         </View>
       </AuthScreenShell>
     </FeedErrorBoundary>
+  );
+}
+
+function TextLink({
+  label,
+  onPress,
+  disabled = false,
+  bold = false,
+}: {
+  label: string;
+  onPress: () => void;
+  disabled?: boolean;
+  bold?: boolean;
+}) {
+  const { spacing } = useHungryTheme();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled }}
+      disabled={disabled}
+      onPress={onPress}
+      hitSlop={8}
+      style={{ justifyContent: "center", minHeight: 44, paddingHorizontal: spacing[2] }}
+    >
+      <AppText variant={bold ? "bodyBold" : "body"} tone="accent">
+        {label}
+      </AppText>
+    </Pressable>
   );
 }

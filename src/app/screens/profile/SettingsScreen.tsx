@@ -1,5 +1,6 @@
+import * as Clipboard from "expo-clipboard";
 import Constants from "expo-constants";
-import { File, Paths } from "expo-file-system";
+import * as Updates from "expo-updates";
 import { useEffect, useState } from "react";
 import { Alert, AppState, Linking, Platform, Share, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
@@ -7,6 +8,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
   Accessibility,
   AtSign,
+  Ban,
   Compass,
   Database,
   Download,
@@ -16,6 +18,7 @@ import {
   Hand,
   History,
   Info,
+  KeyRound,
   LocateFixed,
   Lock,
   LogOut,
@@ -26,9 +29,11 @@ import {
   Scale,
   Settings2,
   Shield,
+  Smartphone,
   SunMoon,
   Trash2,
   User,
+  UserX,
   UtensilsCrossed,
   Vibrate,
 } from "lucide-react-native";
@@ -40,6 +45,7 @@ import { Button, Dialog } from "@/components/ui";
 import { SettingsSection, SettingsRow } from "@/components/settings";
 import { StallAlertsSettings } from "@/components/settings/StallAlertsSettings";
 import { AccountDeletionCodeDialog } from "@/components/settings/AccountDeletionCodeDialog";
+import { SettingsChoiceSheet } from "@/components/settings/SettingsChoiceSheet";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { foodOpennessLabel } from "@/constants/taste";
 import { resolveFoodOpenness } from "@/lib/ai/exploration";
@@ -49,11 +55,18 @@ import { getHungryService } from "@/lib/services/serviceProvider";
 import { ACCOUNT_DELETION_GRACE_DAYS } from "@/lib/services/types";
 import { clearImageCache } from "@/features/navigation/prefetch";
 import { buildMyDataExport } from "@/features/profile/exportMyData";
+import {
+  canShareExportAsText,
+  deleteExportFile,
+  writeExportFile,
+} from "@/features/profile/exportFile";
+import { isNoAccountEmailError } from "@/features/auth/accountDeletionErrors";
+import { formatDeletionDate } from "@/features/auth/useAccountDeletionGracePrompt";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useReviewDraftStore } from "@/store/useReviewDraftStore";
 import { useSearchStore } from "@/store/useSearchStore";
-import { useSessionStore } from "@/store/useSessionStore";
+import { expectSignOut, useSessionStore } from "@/store/useSessionStore";
 import { ThemePreference, useUIStore } from "@/store/useUIStore";
 import { hungryPersistStorage } from "@/store/persistStorage";
 import { PendingDeletionBanner } from "@/features/auth/PendingDeletionBanner";
@@ -73,11 +86,17 @@ function isAuthCodeError(error: unknown): boolean {
   return typeof name === "string" && name.startsWith("Auth");
 }
 
-function formatDeletionDate(scheduledFor: string): string {
-  const date = new Date(scheduledFor);
-  if (Number.isNaN(date.getTime())) return `in ${ACCOUNT_DELETION_GRACE_DAYS} days`;
-  return `on ${date.toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" })}`;
+/** "on 14 November 2026", using the same date format as the grace-period prompt. */
+function describeDeletionDate(scheduledFor: string): string {
+  const label = formatDeletionDate(scheduledFor);
+  return label === "soon" ? `in ${ACCOUNT_DELETION_GRACE_DAYS} days` : `on ${label}`;
 }
+
+const THEME_DESCRIPTIONS: Record<ThemePreference, string> = {
+  system: "Follows your phone's setting.",
+  light: "Always light.",
+  dark: "Always dark.",
+};
 
 export function SettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -161,8 +180,35 @@ export function SettingsScreen() {
   const [deletionCodeVisible, setDeletionCodeVisible] = useState(false);
   const [isExportingData, setIsExportingData] = useState(false);
   const [isSavingVisibility, setIsSavingVisibility] = useState(false);
+  const [themeSheetVisible, setThemeSheetVisible] = useState(false);
+  const [visibilitySheetVisible, setVisibilitySheetVisible] = useState(false);
+  const [canChangePassword, setCanChangePassword] = useState(false);
 
-  const appVersion = Constants.expoConfig?.version ?? "0.1.0";
+  // Version, native build and the over-the-air update, so support can tell builds apart.
+  const buildNumber = Constants.nativeBuildVersion;
+  const shortUpdateId = Updates.updateId?.slice(0, 8);
+  const appVersion = [
+    Constants.expoConfig?.version ?? "0.1.0",
+    buildNumber ? `(${buildNumber})` : null,
+    shortUpdateId ? `update ${shortUpdateId}` : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  // Google/Apple-only accounts have no password to change, so that row stays hidden.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    let isActive = true;
+    getHungryService()
+      .auth.canChangePassword()
+      .then((allowed) => {
+        if (isActive) setCanChangePassword(allowed);
+      })
+      .catch(() => undefined);
+    return () => {
+      isActive = false;
+    };
+  }, [isAuthenticated]);
 
   // The OS permission can change in system Settings; re-read it whenever the app comes back.
   useEffect(() => {
@@ -190,15 +236,36 @@ export function SettingsScreen() {
       trackAnalyticsEvent("settings_data_export_requested", { platform: Platform.OS });
       try {
         const exportData = await buildMyDataExport(getHungryService());
-        const exportJson = JSON.stringify(exportData, null, 2);
         if (Platform.OS === "ios") {
-          // Share a .json file; Android keeps the text share until expo-sharing ships natively.
-          const exportFile = new File(Paths.cache, "hungry-data-export.json");
-          exportFile.create({ overwrite: true });
-          exportFile.write(exportJson);
-          await Share.share({ title: "My Hungry data", url: exportFile.uri });
+          // Share a .json file, then remove it: it is a full copy of the person's data.
+          const exportJson = JSON.stringify(exportData, null, 2);
+          try {
+            await Share.share({ title: "My Hungry data", url: writeExportFile(exportJson) });
+          } finally {
+            deleteExportFile();
+          }
         } else {
-          await Share.share({ title: "My Hungry data", message: exportJson });
+          // Android shares text until expo-sharing ships in a native build. An intent over
+          // about 1 MB fails, so a large export is requested by email instead.
+          const exportJson = JSON.stringify(exportData);
+          if (canShareExportAsText(exportJson)) {
+            await Share.share({ title: "My Hungry data", message: exportJson });
+          } else {
+            Alert.alert(
+              "Your export is large",
+              `Your data is too big to share from the app on this phone. Email ${SUPPORT_EMAIL} and we will send you a copy.`,
+              [
+                { text: "Not now", style: "cancel" },
+                {
+                  text: "Email support",
+                  onPress: () =>
+                    void openTrustedExternalUrl(
+                      `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent("My Hungry data export")}`,
+                    ),
+                },
+              ],
+            );
+          }
         }
       } catch {
         trackAnalyticsEvent("settings_data_export_failed", {});
@@ -213,7 +280,13 @@ export function SettingsScreen() {
   };
 
   const [accountDialog, setAccountDialog] = useState<
-    "signOut" | "deleteAccount" | "deleteFailed" | "codeSendFailed" | null
+    | "signOut"
+    | "deleteAccount"
+    | "deleteFailed"
+    | "codeSendFailed"
+    | "ownerBlocked"
+    | "noAccountEmail"
+    | null
   >(null);
 
   const resetToLogin = () => {
@@ -231,10 +304,15 @@ export function SettingsScreen() {
   const sendDeletionCode = async () => {
     setDeletionRequested(true);
     try {
+      // A merchant owner must hand the business over first; say so before any code is sent.
+      if ((await getHungryService().auth.getAccountDeletionBlocker()) !== null) {
+        setAccountDialog("ownerBlocked");
+        return;
+      }
       await getHungryService().auth.sendAccountDeletionCode();
       setDeletionCodeVisible(true);
-    } catch {
-      setAccountDialog("codeSendFailed");
+    } catch (error) {
+      setAccountDialog(isNoAccountEmailError(error) ? "noAccountEmail" : "codeSendFailed");
     } finally {
       setDeletionRequested(false);
     }
@@ -244,6 +322,8 @@ export function SettingsScreen() {
   // A wrong code stays in the code dialog.
   const submitDeletionCode = async (code: string) => {
     let scheduledFor: string;
+    // The service signs out as part of the request; that is not an expired session.
+    expectSignOut();
     try {
       ({ scheduledFor } = await getHungryService().auth.requestAccountDeletion({
         reason: "user_initiated_settings_flow",
@@ -268,36 +348,28 @@ export function SettingsScreen() {
       purgeFailed = true;
     }
 
+    deleteExportFile();
+
     // Shown on Login after sign-out (the Settings screen unmounts on sign-out).
     setAuthNotice({
       message: purgeFailed
         ? "Account deletion requested and you've been signed out. Some data saved on this device could not be cleared; reinstall Hungry to remove it."
-        : `Account deletion requested and you've been signed out. Hungry will delete your account and personal data ${formatDeletionDate(scheduledFor)}. To keep it, sign in before then and choose Keep my account.`,
+        : `Account deletion requested and you've been signed out. Hungry will delete your account and personal data ${describeDeletionDate(scheduledFor)}. To keep it, sign in before then and choose Keep my account.`,
       tone: "success",
     });
+    // Deletion ends every device's session (this one too, below); best effort.
+    await getHungryService()
+      .auth.signOut({ scope: "global" })
+      .catch(() => undefined);
     signOut();
     resetToLogin();
   };
 
+  const resendDeletionCode = () => getHungryService().auth.sendAccountDeletionCode();
+
   const selectTheme = (preference: ThemePreference) => {
     setThemePreference(preference);
     trackAnalyticsEvent("settings_changed", { setting: "theme", value: preference });
-  };
-
-  // Three choices fit Android's three-button limit; tapping outside keeps the current theme.
-  const showThemePicker = () => {
-    Alert.alert(
-      "Theme",
-      "Automatic follows your phone's setting.",
-      (["system", "light", "dark"] as const).map((preference) => ({
-        text:
-          preference === normalizedThemePreference
-            ? `${THEME_LABELS[preference]} ✓`
-            : THEME_LABELS[preference],
-        onPress: () => selectTheme(preference),
-      })),
-      { cancelable: true },
-    );
   };
 
   const changeProfileVisibility = async (visibility: "public" | "private") => {
@@ -323,27 +395,6 @@ export function SettingsScreen() {
       [
         { text: "Cancel", style: "cancel" },
         { text: "Retry", onPress: () => void changeProfileVisibility(visibility) },
-      ],
-    );
-  };
-
-  const showProfileVisibilityDialog = () => {
-    Alert.alert(
-      "Profile visibility",
-      "Private: only approved followers see your posts and the reviews on your profile. Your reviews still show on dish pages.",
-      [
-        {
-          text: "Public",
-          onPress: () => void changeProfileVisibility("public"),
-        },
-        {
-          text: "Private",
-          onPress: () => void changeProfileVisibility("private"),
-        },
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
       ],
     );
   };
@@ -395,7 +446,7 @@ export function SettingsScreen() {
   const handleResetFoodHistory = () => {
     Alert.alert(
       "Reset food history",
-      "Recommendations will forget the dishes you liked, tapped or hid. Your favourites and reviews stay.",
+      "Recommendations will forget your dish history: the dishes you liked, tapped or hid. Your taste profile, favourites and reviews stay.",
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -432,7 +483,7 @@ export function SettingsScreen() {
   const handleClearLocalData = () => {
     Alert.alert(
       "Clear local cache",
-      "This removes recent searches, unsent review drafts and cached images on this device. You stay signed in.",
+      "This removes recent searches, unsent review drafts, cached images and any saved data export on this device. You stay signed in.",
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -445,6 +496,7 @@ export function SettingsScreen() {
                 hungryPersistStorage?.removeItem("hungry-review-draft-v1"),
                 clearImageCache(),
               ]);
+              deleteExportFile();
               resetDraft();
               clearSearchState();
               clearSearchHistory();
@@ -469,25 +521,98 @@ export function SettingsScreen() {
     resetToLogin();
   };
 
+  const handleSignOutEverywhere = () => {
+    Alert.alert(
+      "Sign out of all devices",
+      "This signs you out of Hungry on every phone, including this one.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Sign out everywhere",
+          style: "destructive",
+          onPress: () => {
+            void getHungryService()
+              .auth.signOut({ scope: "global" })
+              .then(() => {
+                signOut();
+                rootNavigation.reset({
+                  index: 0,
+                  routes: [{ name: "AuthStack", params: { screen: "Login" } }],
+                });
+              })
+              .catch(() =>
+                Alert.alert(
+                  "Couldn't sign out everywhere",
+                  "Check your connection and try again. You are still signed in.",
+                ),
+              );
+          },
+        },
+      ],
+    );
+  };
+
+  const handleCopyVersion = () => {
+    void Clipboard.setStringAsync(`Hungry ${appVersion}`)
+      .then(() => showToast({ message: "Version copied.", tone: "success" }))
+      .catch(() => undefined);
+  };
+
   return (
     <ProfileScreenShell title="Settings">
-      <PendingDeletionBanner />
-      <SettingsSection title="Account">
-        <SettingsRow
-          label="Edit profile"
-          icon={<User size={20} color={palette.orange} />}
-          onPress={() => navigation.navigate("EditProfile")}
-          value={profile.displayName}
-          isLast={false}
-        />
-        <SettingsRow
-          label="Email"
-          icon={<AtSign size={20} color={palette.orange} />}
-          type="value"
-          value={profile.email?.trim() || "Not linked"}
-          isLast
-        />
-      </SettingsSection>
+      {isAuthenticated ? <PendingDeletionBanner /> : null}
+      {isAuthenticated ? (
+        <>
+          <SettingsSection title="Account">
+            <SettingsRow
+              label="Edit profile"
+              icon={<User size={20} color={palette.orange} />}
+              onPress={() => navigation.navigate("EditProfile")}
+              value={profile.displayName}
+              isLast
+            />
+          </SettingsSection>
+
+          <SettingsSection title="Sign-in and security">
+            <SettingsRow
+              label="Email"
+              icon={<AtSign size={20} color={palette.orange} />}
+              type="navigation"
+              value={profile.email?.trim() || "Not linked"}
+              description="Change it in Edit profile."
+              onPress={() => navigation.navigate("EditProfile")}
+              isLast={false}
+            />
+            {canChangePassword && isAuthenticated ? (
+              <SettingsRow
+                label="Change password"
+                icon={<KeyRound size={20} color={palette.orange} />}
+                onPress={() => rootNavigation.navigate("ChangePassword")}
+                isLast={false}
+              />
+            ) : null}
+            <SettingsRow
+              label="Sign out of all devices"
+              description="Ends your Hungry session on every phone, including this one."
+              icon={<Smartphone size={20} color={palette.orange} />}
+              onPress={handleSignOutEverywhere}
+              isLast
+            />
+          </SettingsSection>
+        </>
+      ) : (
+        <SettingsSection
+          title="Account"
+          description="You're browsing as a guest. Sign in to save dishes, write reviews and keep your settings."
+        >
+          <SettingsRow
+            label="Sign in or create an account"
+            icon={<User size={20} color={palette.orange} />}
+            onPress={() => rootNavigation.navigate("AuthStack", { screen: "Login" })}
+            isLast
+          />
+        </SettingsSection>
+      )}
 
       <SettingsSection title="Taste and recommendations">
         <SettingsRow
@@ -526,8 +651,17 @@ export function SettingsScreen() {
             }
             type="navigation"
             value={isSavingVisibility ? "Saving…" : isProfilePrivate ? "Private" : "Public"}
-            onPress={showProfileVisibilityDialog}
+            onPress={() => setVisibilitySheetVisible(true)}
             busy={isSavingVisibility}
+            isLast={false}
+          />
+        ) : null}
+        {isAuthenticated ? (
+          <SettingsRow
+            label="Blocked and hidden"
+            icon={<UserX size={20} color={palette.orange} />}
+            type="navigation"
+            onPress={() => rootNavigation.navigate("BlockedAndHidden")}
             isLast={false}
           />
         ) : null}
@@ -545,16 +679,19 @@ export function SettingsScreen() {
           onPress={handleClearLocalData}
           isLast={false}
         />
-        <SettingsRow
-          label={isExportingData ? "Preparing your data…" : "Download my data"}
-          icon={<Download size={20} color={palette.orange} />}
-          onPress={handleExportData}
-          busy={isExportingData}
-          isLast={false}
-        />
+        {isAuthenticated ? (
+          <SettingsRow
+            label={isExportingData ? "Preparing your data…" : "Download my data"}
+            icon={<Download size={20} color={palette.orange} />}
+            onPress={handleExportData}
+            busy={isExportingData}
+            isLast={false}
+          />
+        ) : null}
         <SettingsRow
           label="How account deletion works"
           icon={<Shield size={20} color={palette.orange} />}
+          type="link"
           onPress={() => void openTrustedExternalUrl(WEB_LINKS.accountDeletion)}
           isLast
         />
@@ -582,7 +719,7 @@ export function SettingsScreen() {
               params: { mode: "settings" },
             })
           }
-          value={location || "Use GPS"}
+          value={location || (locationPermission === "granted" ? "Use GPS" : "Not set")}
           isLast={false}
         />
         <SettingsRow
@@ -625,7 +762,7 @@ export function SettingsScreen() {
           icon={<SunMoon size={20} color={palette.orange} />}
           type="navigation"
           value={THEME_LABELS[normalizedThemePreference]}
-          onPress={showThemePicker}
+          onPress={() => setThemeSheetVisible(true)}
           isLast={false}
         />
         <SettingsRow
@@ -646,7 +783,7 @@ export function SettingsScreen() {
         />
         <SettingsRow
           label="Left-handed mode"
-          description="Moves floating buttons to the left side."
+          description="Moves floating buttons, like the add-menu button and the like and save buttons on posts, to the left side."
           icon={<Hand size={20} color={palette.orange} />}
           type="toggle"
           isEnabled={leftHandedMode}
@@ -658,6 +795,7 @@ export function SettingsScreen() {
       <SettingsSection title="Support">
         <SettingsRow
           label="Contact us"
+          type="link"
           icon={<MessageCircle size={20} color={palette.orange} />}
           onPress={() => void openTrustedExternalUrl(WEB_LINKS.help)}
           isLast={false}
@@ -670,12 +808,14 @@ export function SettingsScreen() {
         />
         <SettingsRow
           label="Privacy Policy"
+          type="link"
           icon={<FileText size={20} color={palette.orange} />}
           onPress={() => void openTrustedExternalUrl(WEB_LINKS.privacy)}
           isLast={false}
         />
         <SettingsRow
           label="Terms of Service"
+          type="link"
           icon={<Scale size={20} color={palette.orange} />}
           onPress={() => void openTrustedExternalUrl(WEB_LINKS.terms)}
           isLast
@@ -688,6 +828,8 @@ export function SettingsScreen() {
           icon={<Info size={20} color={palette.orange} />}
           type="value"
           value={appVersion}
+          description="Press and hold to copy."
+          onLongPress={handleCopyVersion}
           isLast={false}
         />
         <SettingsRow
@@ -735,7 +877,7 @@ export function SettingsScreen() {
       <Dialog
         visible={accountDialog === "deleteAccount"}
         title="Delete account"
-        message={`Your account and personal data will be deleted in ${ACCOUNT_DELETION_GRACE_DAYS} days. To keep your account, sign in before then and choose Keep my account. After that, deletion is permanent. Menu photos you shared stay on the stall without your name, and some security, moderation, or legal records may remain in anonymized form.`}
+        message={`Your profile is hidden straight away, and your account and personal data will be deleted in ${ACCOUNT_DELETION_GRACE_DAYS} days. To keep your account, sign in before then and choose Keep my account. After that, deletion is permanent. Menu photos you shared stay on the stall without your name, and some security, moderation, or legal records may remain in anonymized form.`}
         buttons={[
           {
             text: "Email me a code",
@@ -758,17 +900,76 @@ export function SettingsScreen() {
         onClose={() => setAccountDialog(null)}
       />
       <Dialog
+        visible={accountDialog === "noAccountEmail"}
+        title="Couldn't send the code"
+        message={`This account has no email address, so we can't send a code. Email ${SUPPORT_EMAIL} and we will help you delete it.`}
+        buttons={[{ text: "OK", style: "cancel" }]}
+        onClose={() => setAccountDialog(null)}
+      />
+      <Dialog
         visible={accountDialog === "codeSendFailed"}
         title="Couldn't send the code"
         message="Please wait a minute and try again, or contact support."
         buttons={[{ text: "OK", style: "cancel" }]}
         onClose={() => setAccountDialog(null)}
       />
+      <Dialog
+        visible={accountDialog === "ownerBlocked"}
+        title="Transfer your business first"
+        message={`You own a merchant account on Hungry. Deleting your account would leave the stall without an owner. Email ${SUPPORT_EMAIL} to hand it over, then delete your account.`}
+        buttons={[
+          {
+            text: "Email support",
+            onPress: () => void openTrustedExternalUrl(`mailto:${SUPPORT_EMAIL}`),
+          },
+          { text: "Cancel", style: "cancel" },
+        ]}
+        onClose={() => setAccountDialog(null)}
+      />
       <AccountDeletionCodeDialog
         visible={deletionCodeVisible}
         email={profile.email}
         onSubmit={submitDeletionCode}
+        onResend={resendDeletionCode}
         onCancel={() => setDeletionCodeVisible(false)}
+      />
+      <SettingsChoiceSheet
+        visible={themeSheetVisible}
+        title="Theme"
+        options={(["system", "light", "dark"] as const).map((preference) => ({
+          value: preference,
+          label: THEME_LABELS[preference],
+          description: THEME_DESCRIPTIONS[preference],
+        }))}
+        selected={normalizedThemePreference}
+        onSelect={(preference) => {
+          selectTheme(preference);
+          setThemeSheetVisible(false);
+        }}
+        onClose={() => setThemeSheetVisible(false)}
+      />
+      <SettingsChoiceSheet
+        visible={visibilitySheetVisible}
+        title="Profile visibility"
+        message="Private: only approved followers see your posts, Lists and the reviews on your profile. Your reviews still show on dish pages."
+        options={[
+          {
+            value: "public" as const,
+            label: "Public",
+            description: "Anyone can see your profile, posts and Lists.",
+          },
+          {
+            value: "private" as const,
+            label: "Private",
+            description: "Only approved followers see your posts, Lists and profile reviews.",
+          },
+        ]}
+        selected={isProfilePrivate ? "private" : "public"}
+        onSelect={(visibility) => {
+          setVisibilitySheetVisible(false);
+          void changeProfileVisibility(visibility);
+        }}
+        onClose={() => setVisibilitySheetVisible(false)}
       />
     </ProfileScreenShell>
   );

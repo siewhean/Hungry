@@ -357,13 +357,13 @@ test("sign-out clears the stored Supabase session before any restore", () => {
   const service = read("src/lib/services/supabase/supabaseService.ts");
   assert.match(
     service,
-    /async signOut\(\) \{[\s\S]*?if \(!error\) return;\s*const \{ error: localError \} = await client\.auth\.signOut\(\{ scope: "local" \}\);/,
+    /async signOut\(options\) \{[\s\S]*?if \(!error\) return;[\s\S]*?const \{ error: localError \} = await client\.auth\.signOut\(\{ scope: "local" \}\);/,
   );
   const store = read("src/store/useSessionStore.ts");
   assert.match(store, /signOutPending: state\.signOutPending/);
   const bootstrap = read("src/hooks/useAppBootstrap.ts");
   assert.match(
     bootstrap,
-    /\.finishPendingSignOut\(\)\s*\.then\(\(\) => client\.auth\.getSession\(\)\)/,
+    /\.finishPendingSignOut\(\)\s*\.then\(\(\) => getSessionWithTimeout\(client\)\)/,
   );
 });

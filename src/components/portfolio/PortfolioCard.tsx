@@ -29,15 +29,12 @@ export function PortfolioCard({ portfolio, itemCount = 0, onPress }: PortfolioCa
               {getPortfolioSubtitle(portfolio, itemCount)}
             </AppText>
           </View>
+          {/* Who can see the list is in the subtitle; only a live (public) list gets a badge. */}
           {isPortfolioLive(portfolio) ? (
             <AppText variant="micro" tone="success">
               Published
             </AppText>
-          ) : (
-            <AppText variant="micro" tone="muted">
-              Draft
-            </AppText>
-          )}
+          ) : null}
         </View>
         {portfolio.description ? (
           <AppText variant="bodySmall" tone="secondary" numberOfLines={2}>

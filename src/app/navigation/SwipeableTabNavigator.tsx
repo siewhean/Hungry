@@ -45,7 +45,7 @@ function createTabScreenLoader(loadModule: () => TabScreenComponent): TabScreenL
 const homeScreenLoader = createTabScreenLoader(() => {
   const { HomeFeedScreen } =
     require("@/app/screens/home/HomeFeedScreen") as typeof import("@/app/screens/home/HomeFeedScreen");
-  return (() => <HomeFeedScreen mode="social" />) as TabScreenComponent;
+  return HomeFeedScreen as TabScreenComponent;
 });
 
 const discoverScreenLoader = createTabScreenLoader(() => {
@@ -332,9 +332,11 @@ export function SwipeableTabNavigator() {
         lazyPreloadDistance: tabPreloadEnabled ? MAIN_TAB_PRELOAD_DISTANCE : 0,
       }}
     >
+      {/* No pager swipe on Home: its photo carousels own horizontal swipes. */}
       <Tab.Screen
         name="Home"
         component={FEATURE_FLAGS.socialFeedEnabled ? HomeWrapper : ReleaseLandingRedirect}
+        options={{ swipeEnabled: false }}
       />
       <Tab.Screen name="Discover" component={DiscoverWrapper} />
       <Tab.Screen

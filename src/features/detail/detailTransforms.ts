@@ -17,6 +17,8 @@ export interface StallCommunityReview {
   merchantReply?: { text: string; repliedAt: string };
   /** Signed review photo URLs. */
   photos: string[];
+  helpfulCount?: number;
+  viewerFoundHelpful?: boolean;
 }
 
 export const STALL_COMMUNITY_REVIEW_LIMIT = 6;
@@ -52,6 +54,8 @@ export function deriveStallCommunityReviews(
           avatarUrl: review.authorAvatarUrl,
           merchantReply: review.merchantReply,
           photos: review.photos ?? [],
+          helpfulCount: review.helpfulCount,
+          viewerFoundHelpful: review.viewerFoundHelpful,
         }) satisfies StallCommunityReview,
     );
 }

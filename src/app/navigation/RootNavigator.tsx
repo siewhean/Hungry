@@ -59,12 +59,13 @@ const ROOT_ROUTE_NAMES = new Set<RootRouteName>([
   "DecideForMeResult",
   "MapZoomedIn",
   "Post",
-  "BlogPost",
   "ReviewStack",
   "WheelStack",
   "ActivityInbox",
   "ActivityPostDetail",
+  "ReviewDetail",
   "FollowRequests",
+  "BlockedAndHidden",
   "UserFollowers",
   "UserFollowing",
   "ChatDetail",
@@ -99,6 +100,7 @@ const PROTECTED_ROOT_ROUTES = new Set<RootRouteName>([
   "PostComposerV2",
   "ActivityInbox",
   "FollowRequests",
+  "BlockedAndHidden",
   "UserFollowers",
   "UserFollowing",
   "ChatDetail",
@@ -107,7 +109,6 @@ const PROTECTED_ROOT_ROUTES = new Set<RootRouteName>([
   "ChangePassword",
   "Favourites",
   "ReviewHistory",
-  "Settings",
   "ReviewStack",
   "AddStory",
   "MusicSelection",
@@ -276,10 +277,18 @@ const loadActivityPostDetailScreen = () =>
   (
     require("@/app/screens/home/ActivityPostDetailScreen") as typeof import("@/app/screens/home/ActivityPostDetailScreen")
   ).ActivityPostDetailScreen;
+const loadReviewDetailScreen = () =>
+  (
+    require("@/app/screens/review/ReviewDetailScreen") as typeof import("@/app/screens/review/ReviewDetailScreen")
+  ).ReviewDetailScreen;
 const loadFollowRequestsScreen = () =>
   (
     require("@/app/screens/profile/FollowRequestsScreen") as typeof import("@/app/screens/profile/FollowRequestsScreen")
   ).FollowRequestsScreen;
+const loadBlockedAndHiddenScreen = () =>
+  (
+    require("@/app/screens/profile/BlockedAndHiddenScreen") as typeof import("@/app/screens/profile/BlockedAndHiddenScreen")
+  ).BlockedAndHiddenScreen;
 const loadUserFollowersScreen = () =>
   (
     require("@/app/screens/profile/ProfileConnectionsScreen") as typeof import("@/app/screens/profile/ProfileConnectionsScreen")
@@ -360,21 +369,6 @@ const loadAdminPortfolioFlagsScreen = () =>
   (
     require("@/app/screens/portfolio/AdminPortfolioFlagsScreen") as typeof import("@/app/screens/portfolio/AdminPortfolioFlagsScreen")
   ).AdminPortfolioFlagsScreen;
-
-function BlogPostRouteScreen({
-  navigation,
-  route,
-}: NativeStackScreenProps<RootStackParamList, "BlogPost">) {
-  const { BlogPostWebViewScreen } =
-    require("@/app/screens/reads/BlogPostWebViewScreen") as typeof import("@/app/screens/reads/BlogPostWebViewScreen");
-
-  return (
-    <BlogPostWebViewScreen
-      onOpenVenue={(venueId) => navigation.navigate("StallDetail", { venueId })}
-      postId={route.params?.postId}
-    />
-  );
-}
 
 function GlobalScrollBackButton() {
   const insets = useSafeAreaInsets();
@@ -620,7 +614,8 @@ export function RootNavigator({ theme }: { theme: Theme }) {
 
   useEffect(() => {
     if (sessionExpired && navigationRef.isReady()) {
-      // Keep the user's place (a dish, the composer) so sign-in returns there.
+      // Keep the user's place (a dish, the composer) so the next sign-in returns there.
+      // The app is sign-in only, so an expired session goes to Login, which says why.
       setReturnRoute(getActiveReturnRoute() ?? "Home");
       navigationRef.navigate("AuthStack", { screen: "Login" });
     }
@@ -754,26 +749,15 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen component={AuthStack} name="AuthStack" />
           <RootStack.Screen component={OnboardingStack} name="OnboardingStack" />
           <RootStack.Screen component={SwipeableTabNavigator} name="MainTabs" />
+          {/* Search home animates its own entry; the results and browse grids use the default push. */}
           <RootStack.Screen
             getComponent={loadDishSearchScreen}
             name="SearchHome"
             options={{ animation: "none" }}
           />
-          <RootStack.Screen
-            getComponent={loadSearchResultsScreen}
-            name="SearchResults"
-            options={{ animation: "none" }}
-          />
-          <RootStack.Screen
-            getComponent={loadBrowseDishesScreen}
-            name="BrowseDishes"
-            options={{ animation: "none" }}
-          />
-          <RootStack.Screen
-            getComponent={loadBrowseStallsScreen}
-            name="BrowseStalls"
-            options={{ animation: "none" }}
-          />
+          <RootStack.Screen getComponent={loadSearchResultsScreen} name="SearchResults" />
+          <RootStack.Screen getComponent={loadBrowseDishesScreen} name="BrowseDishes" />
+          <RootStack.Screen getComponent={loadBrowseStallsScreen} name="BrowseStalls" />
           {FEATURE_FLAGS.mapEnabled ? (
             <>
               <RootStack.Screen
@@ -813,7 +797,6 @@ export function RootNavigator({ theme }: { theme: Theme }) {
               }}
             />
           ) : null}
-          <RootStack.Screen component={BlogPostRouteScreen} name="BlogPost" />
           {FEATURE_FLAGS.reviewCreationEnabled ? (
             <RootStack.Screen getComponent={loadReviewStack} name="ReviewStack" />
           ) : null}
@@ -829,7 +812,11 @@ export function RootNavigator({ theme }: { theme: Theme }) {
               />
             </>
           ) : null}
+          {FEATURE_FLAGS.reviewCreationEnabled ? (
+            <RootStack.Screen getComponent={loadReviewDetailScreen} name="ReviewDetail" />
+          ) : null}
           <RootStack.Screen getComponent={loadFollowRequestsScreen} name="FollowRequests" />
+          <RootStack.Screen getComponent={loadBlockedAndHiddenScreen} name="BlockedAndHidden" />
           <RootStack.Screen getComponent={loadUserFollowersScreen} name="UserFollowers" />
           <RootStack.Screen getComponent={loadUserFollowingScreen} name="UserFollowing" />
           {FEATURE_FLAGS.directMessagesEnabled ? (

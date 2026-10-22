@@ -29,7 +29,7 @@ export function ListsHomeScreen({ navigation }: Props) {
           body={`${savedCount} saved ${savedCount === 1 ? "dish" : "dishes"}, plus stalls and lists`}
           icon={<Bookmark color={palette.orange} size={20} />}
           onPressIn={() => preloadRoute(navigation, "Favourites")}
-          onPress={() => navigation.navigate("Favourites")}
+          onPress={() => navigation.navigate("Favourites", undefined, { pop: true })}
         />
         {FEATURE_FLAGS.portfoliosEnabled ? (
           <ListsHubRow

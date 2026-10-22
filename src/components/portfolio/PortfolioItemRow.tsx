@@ -5,6 +5,7 @@ import {
   ChevronUp,
   Eye,
   GripVertical,
+  Pencil,
   Star,
   Trash2,
   Users,
@@ -31,6 +32,8 @@ interface PortfolioItemRowProps {
   onOpen: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
+  /** Opens the score and notes editor. */
+  onEdit?: () => void;
   onDelete: () => void;
 }
 
@@ -45,6 +48,7 @@ export function PortfolioItemRow({
   onOpen,
   onMoveUp,
   onMoveDown,
+  onEdit,
   onDelete,
 }: PortfolioItemRowProps) {
   const { palette, radii } = useHungryTheme();
@@ -141,11 +145,11 @@ export function PortfolioItemRow({
             {...dragPanResponder.panHandlers}
             accessible
             accessibilityRole="adjustable"
-            accessibilityLabel="Drag to reorder portfolio item"
+            accessibilityLabel="Drag to reorder list item"
             accessibilityHint="Swipe up or down on this handle to move the item"
             accessibilityActions={[
-              { name: "decrement", label: "Move portfolio item up" },
-              { name: "increment", label: "Move portfolio item down" },
+              { name: "decrement", label: "Move list item up" },
+              { name: "increment", label: "Move list item down" },
             ]}
             onAccessibilityAction={(event) => {
               if (event.nativeEvent.actionName === "decrement" && !isFirst) {
@@ -161,7 +165,7 @@ export function PortfolioItemRow({
           </View>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Move portfolio item up"
+            accessibilityLabel="Move list item up"
             disabled={isFirst}
             onPress={onMoveUp}
             style={[styles.iconButton, { opacity: isFirst ? 0.35 : 1 }]}
@@ -170,16 +174,26 @@ export function PortfolioItemRow({
           </Pressable>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Move portfolio item down"
+            accessibilityLabel="Move list item down"
             disabled={isLast}
             onPress={onMoveDown}
             style={[styles.iconButton, { opacity: isLast ? 0.35 : 1 }]}
           >
             <ChevronDown color={palette.text} size={18} />
           </Pressable>
+          {onEdit ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Edit score and notes for ${label}`}
+              onPress={onEdit}
+              style={styles.iconButton}
+            >
+              <Pencil color={palette.text} size={18} />
+            </Pressable>
+          ) : null}
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Delete portfolio item"
+            accessibilityLabel="Delete list item"
             onPress={onDelete}
             style={styles.iconButton}
           >

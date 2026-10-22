@@ -1,6 +1,7 @@
 import type { PropsWithChildren, ReactNode } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ArrowLeft } from "lucide-react-native";
 
 import { Screen, AppText, HungryLogo } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
@@ -11,8 +12,12 @@ interface AuthScreenShellProps {
   title: string;
   subtitle?: string;
   footer?: ReactNode;
+  /** Overrides the wordmark colour; the default follows the theme's text colour. */
   wordmarkColor?: string;
   compact?: boolean;
+  /** Shows a back chevron on pushed screens (the app is sign-in only: no close control). */
+  onBack?: () => void;
+  backLabel?: string;
 }
 
 /**
@@ -33,15 +38,18 @@ export function AuthScreenShell({
   footer,
   wordmarkColor,
   compact = false,
+  onBack,
+  backLabel = "Back",
 }: PropsWithChildren<AuthScreenShellProps>) {
-  const { palette, spacing } = useHungryTheme();
+  const { componentSizes, palette, spacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const gap = compact ? spacing[3] : spacing[6];
   const titleGap = compact ? spacing[4] : spacing[8];
   const innerGap = compact ? spacing[3] : spacing[4];
   const footerTopGap = compact ? spacing[2] : spacing[3];
   const logoSize = HUNGRY_LOGO_STANDARD_SIZE;
-  const effectiveWordmarkColor = wordmarkColor ?? palette.navy;
+  // The navy token is near-black in dark mode; the text colour follows the theme.
+  const effectiveWordmarkColor = wordmarkColor ?? palette.text;
   const keyboardReveal = useKeyboardRevealFocusedInput();
 
   return (
@@ -67,6 +75,23 @@ export function AuthScreenShell({
             onFocus={keyboardReveal.onFocus}
             style={{ gap, paddingVertical: spacing[3], marginTop: spacing[3] }}
           >
+            {onBack ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={backLabel}
+                onPress={onBack}
+                hitSlop={8}
+                style={{
+                  alignItems: "center",
+                  alignSelf: "flex-start",
+                  justifyContent: "center",
+                  minHeight: componentSizes.touchTarget,
+                  minWidth: componentSizes.touchTarget,
+                }}
+              >
+                <ArrowLeft color={palette.text} size={22} />
+              </Pressable>
+            ) : null}
             <View style={{ alignItems: "center", gap: titleGap, marginBottom: innerGap }}>
               <HungryLogo size={logoSize} showWordmark wordmarkColor={effectiveWordmarkColor} />
               <View style={{ alignItems: "center", gap: spacing[1] }}>

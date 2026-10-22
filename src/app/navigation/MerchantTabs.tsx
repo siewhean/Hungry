@@ -35,7 +35,11 @@ function useMerchantAccessLevel() {
   const activeOutlet = useMerchantStore(getActiveOutlet);
   return developerMerchantMode
     ? "verified"
-    : resolveMerchantAccess(Boolean(account), activeOutlet?.verification.status);
+    : resolveMerchantAccess(
+        Boolean(account),
+        activeOutlet?.verification.status,
+        activeOutlet?.verification.expiresAt,
+      );
 }
 
 /** The single "not a merchant" screen, shared by the navigator and the per-screen gate. */
@@ -47,6 +51,7 @@ function MerchantSignInGate({
   const { spacing } = useHungryTheme();
   const setAccount = useMerchantStore((state) => state.setAccount);
   const completeAuth = useSessionStore((state) => state.completeAuth);
+  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const isMock = getServiceProvider().mode === "mock";
 
   const handleMockLogin = async () => {
@@ -63,14 +68,33 @@ function MerchantSignInGate({
     <Screen title="Merchant Centre" subtitle="Business tools are not available for this account">
       <View style={[styles.accessGate, { padding: spacing[5], gap: spacing[4] }]}>
         <AppText variant="body" tone="muted" style={{ textAlign: "center" }}>
-          Sign in with a merchant account to manage your menu, promotions, and analytics.
+          {isAuthenticated
+            ? "This login has no merchant account yet. Claim your stall from its page in customer mode to get started."
+            : "Sign in with a merchant account to manage your menu, promotions, and analytics."}
         </AppText>
         <View style={{ width: "100%", gap: spacing[2] }}>
-          <Button
-            label="Sign In"
-            onPress={() => rootNavigation?.navigate("AuthStack", { screen: "Login" })}
-            fullWidth
-          />
+          {/* Already signed in: the Login screen would be a dead end, so offer the way out instead. */}
+          {isAuthenticated ? (
+            <Button
+              label="Switch to Customer Mode"
+              onPress={() => {
+                useMerchantStore.getState().setMerchantModeActive(false);
+                rootNavigation?.dispatch(
+                  CommonActions.reset({
+                    index: 0,
+                    routes: [{ name: "MainTabs", params: { screen: "Home" } }],
+                  }),
+                );
+              }}
+              fullWidth
+            />
+          ) : (
+            <Button
+              label="Sign In"
+              onPress={() => rootNavigation?.navigate("AuthStack", { screen: "Login" })}
+              fullWidth
+            />
+          )}
           {isMock && (
             <Button
               label="Sign In as Mock Merchant"
@@ -446,6 +470,9 @@ export function MerchantTabs() {
   }, [navigation, routeKey, setMerchantModeActive]);
 
   const [isSyncingAccount, setIsSyncingAccount] = useState(!account);
+  // A failed first load (offline, server error) is not "you are not a merchant": offer a retry.
+  const [syncFailed, setSyncFailed] = useState(false);
+  const [syncAttempt, setSyncAttempt] = useState(0);
   const access = useMerchantAccessLevel();
 
   useEffect(() => {
@@ -474,10 +501,12 @@ export function MerchantTabs() {
       try {
         const latestAccount = await getHungryService().merchant.getMerchantAccount();
         if (isMounted) {
+          setSyncFailed(false);
           setAccount(latestAccount);
         }
       } catch (error) {
         console.error("Failed to sync merchant account", error);
+        if (isMounted) setSyncFailed(true);
       } finally {
         if (isMounted) {
           setIsSyncingAccount(false);
@@ -498,7 +527,16 @@ export function MerchantTabs() {
       isMounted = false;
       deferredSync?.();
     };
-  }, [account, accountSyncedAt, activeOutlet, developerMerchantMode, setAccount, isAuthenticated]);
+    // syncAttempt re-runs the sync when the merchant taps Retry.
+  }, [
+    account,
+    accountSyncedAt,
+    activeOutlet,
+    developerMerchantMode,
+    setAccount,
+    isAuthenticated,
+    syncAttempt,
+  ]);
 
   if (isSyncingAccount) {
     return (
@@ -518,6 +556,43 @@ export function MerchantTabs() {
   }
 
   // ─── Access Gate ───────────────────────────────────────────────────────────
+
+  if (access === "none" && syncFailed) {
+    return (
+      <Screen title="Merchant Centre" subtitle="Could not load your merchant account">
+        <View style={[styles.accessGate, { padding: spacing[5], gap: spacing[4] }]}>
+          <AppText variant="body" tone="muted" style={{ textAlign: "center" }}>
+            Hungry could not be reached. Check your connection and try again.
+          </AppText>
+          <View style={{ width: "100%", gap: spacing[2] }}>
+            <Button
+              label="Retry"
+              onPress={() => {
+                setSyncFailed(false);
+                setIsSyncingAccount(true);
+                setSyncAttempt((attempt) => attempt + 1);
+              }}
+              fullWidth
+            />
+            <Button
+              label="Switch to Customer Mode"
+              variant="secondary"
+              onPress={() => {
+                setMerchantModeActive(false);
+                rootNavigation?.dispatch(
+                  CommonActions.reset({
+                    index: 0,
+                    routes: [{ name: "MainTabs", params: { screen: "Home" } }],
+                  }),
+                );
+              }}
+              fullWidth
+            />
+          </View>
+        </View>
+      </Screen>
+    );
+  }
 
   if (access === "none") {
     return <MerchantSignInGate rootNavigation={rootNavigation} />;

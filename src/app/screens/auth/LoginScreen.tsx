@@ -8,7 +8,7 @@ import { AppText, Button, FeedErrorBoundary, InlineBanner, Input } from "@/compo
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { applySignedInProfile } from "@/features/auth/applySignedInProfile";
 import { trackAuthFailed, trackAuthScreenViewed } from "@/features/auth/authAnalytics";
-import { getMockLoginFailure } from "@/features/auth/mockAuth";
+import { getAuthErrorCode, getAuthFailureMessage } from "@/features/auth/authErrors";
 import { reportError } from "@/lib/monitoring/reportError";
 import { validateEmail, validateRequired } from "@/features/auth/validation";
 import { getHungryService } from "@/lib/services/serviceProvider";
@@ -19,14 +19,15 @@ import { useHungryTheme } from "@/theme";
 import type { AuthStackParamList } from "./AuthStack";
 import { AuthProviderButton } from "./AuthProviderButton";
 import { AuthScreenShell } from "./AuthScreenShell";
+import { AUTH_EYE_BUTTON_STYLE } from "./authEyeButton";
 import { AUTH_COPY, getProviderErrorMessage, type AuthProvider } from "./authCopy";
-import { getAuthErrorLogContext, getLoginErrorMessage } from "./authErrors";
+import { getAuthErrorLogContext } from "./authErrors";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "Login">;
 type FormValues = { email: string; password: string };
 
-export function LoginScreen({ navigation }: Props) {
-  const { colorScheme, componentRadii, palette, spacing } = useHungryTheme();
+export function LoginScreen({ navigation, route }: Props) {
+  const { componentRadii, palette, spacing } = useHungryTheme();
   const oauthProvidersEnabled = FEATURE_FLAGS.oauthProvidersEnabled;
   const [showPassword, setShowPassword] = useState(false);
   const [providerInFlight, setProviderInFlight] = useState<AuthProvider | null>(null);
@@ -54,7 +55,9 @@ export function LoginScreen({ navigation }: Props) {
     getValues,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<FormValues>({ defaultValues: { email: "", password: "" } });
+  } = useForm<FormValues>({
+    defaultValues: { email: route.params?.email ?? "", password: "" },
+  });
   const isBusy = isSubmitting || providerInFlight !== null;
 
   useEffect(() => {
@@ -72,7 +75,10 @@ export function LoginScreen({ navigation }: Props) {
     } catch (err) {
       trackAuthFailed("email_confirm", "email", err);
       showToast({
-        message: "Could not resend verification email. Please try again shortly.",
+        message: getAuthFailureMessage(
+          err,
+          "Could not resend verification email. Please try again shortly.",
+        ),
         tone: "error",
       });
     } finally {
@@ -84,41 +90,35 @@ export function LoginScreen({ navigation }: Props) {
     setFormError(null);
     setUnconfirmedEmail(null);
     try {
-      if (getConfiguredDataSource() === "supabase") {
-        const session = await getHungryService().auth.signIn(values.email, values.password);
-        const migration = await applySignedInProfile(session.profile, {
-          profileReady: session.profileReady,
-          onSyncWarning: () =>
-            showToast({
-              message: "Signed in, but your taste profile could not sync. Try updating it later.",
-              tone: "warning",
-            }),
-        });
-        if (migration.status === "failed") return;
-      } else {
-        const failure = getMockLoginFailure(values.email, values.password);
-        if (failure) {
-          setFormError(failure.message);
-          showToast({ message: failure.message, tone: "error" });
-          return;
-        }
-      }
-      // An email sign-in is always an existing account, so first-run onboarding
-      // is done; the quiz state is left as the account and device have it.
-      completeAuth({ completedOnboarding: true });
+      const session = await getHungryService().auth.signIn(values.email, values.password);
+      const migration = await applySignedInProfile(session.profile, {
+        profileReady: session.profileReady,
+        onSyncWarning: () =>
+          showToast({
+            message: "Signed in, but your taste profile could not sync. Try updating it later.",
+            tone: "warning",
+          }),
+      });
+      if (migration.status === "failed") return;
+      // With Supabase the auth listener decides from the account whether first-run
+      // onboarding runs (a new account that confirmed elsewhere still gets it); the mock
+      // has no listener, and its accounts always exist.
+      completeAuth({ completedOnboarding: getConfiguredDataSource() !== "supabase" });
       showToast({ message: AUTH_COPY.login.successToast, tone: "success" });
     } catch (err) {
       trackAuthFailed("sign_in", "email", err);
       // Diagnostics only: provider code/status, never the email or password.
       console.warn("[auth] Email sign-in failed", getAuthErrorLogContext(err));
-      const code =
-        (err as { error_code?: string; code?: string })?.error_code ??
-        (err as { error_code?: string; code?: string })?.code;
-      // Covers rate limits and network errors too, not only bad credentials.
-      const message = getLoginErrorMessage(err);
+      const code = getAuthErrorCode(err);
+      const message =
+        code === "email_not_confirmed"
+          ? AUTH_COPY.login.emailNotConfirmedToast
+          : code === "invalid_credentials"
+            ? AUTH_COPY.login.invalidCredentialsToast
+            : getAuthFailureMessage(err, AUTH_COPY.login.genericErrorToast);
       if (code === "email_not_confirmed") setUnconfirmedEmail(values.email);
+      // The inline banner is the one announcement; a toast on top would read twice.
       setFormError(message);
-      showToast({ message, tone: "error" });
     }
   });
 
@@ -158,14 +158,13 @@ export function LoginScreen({ navigation }: Props) {
         cancelled: AUTH_COPY.login.providerCancelledToast,
         failed: AUTH_COPY.login.providerFailedToast,
       });
-      if (message !== AUTH_COPY.login.providerCancelledToast) {
+      if (message === AUTH_COPY.login.providerCancelledToast) {
+        // Cancelling is not an error: a passing toast, no red banner.
+        showToast({ message, tone: "warning" });
+      } else {
         reportError(err, { flow: "sign_in", provider });
         setFormError(message);
       }
-      showToast({
-        message,
-        tone: message === AUTH_COPY.login.providerCancelledToast ? "warning" : "error",
-      });
     } finally {
       setProviderInFlight(null);
     }
@@ -174,19 +173,33 @@ export function LoginScreen({ navigation }: Props) {
   return (
     <FeedErrorBoundary title={AUTH_COPY.login.errorTitle} body={AUTH_COPY.login.errorBody}>
       <AuthScreenShell
-        title={AUTH_COPY.login.title}
+        title={route.params?.title ?? AUTH_COPY.login.title}
         compact
-        wordmarkColor={colorScheme === "dark" ? palette.white : palette.navy}
         footer={
-          <View
-            style={{
-              alignItems: "center",
-              flexDirection: "row",
-              justifyContent: "center",
-              marginTop: spacing[2],
-            }}
-          >
-            <AppText tone="secondary">{AUTH_COPY.login.footerPrompt}</AppText>
+          <View style={{ alignItems: "center", gap: spacing[1] }}>
+            <View
+              style={{
+                alignItems: "center",
+                flexDirection: "row",
+                justifyContent: "center",
+                marginTop: spacing[2],
+              }}
+            >
+              <AppText tone="secondary">{AUTH_COPY.login.footerPrompt}</AppText>
+              <Pressable
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={AUTH_COPY.login.footerAction}
+                accessibilityHint="Opens the account creation screen"
+                onPress={() => navigation.navigate("SignUp")}
+                hitSlop={8}
+                style={{ justifyContent: "center", minHeight: 44 }}
+              >
+                <AppText variant="bodyBold" tone="accent">
+                  {AUTH_COPY.login.footerAction}
+                </AppText>
+              </Pressable>
+            </View>
             <Pressable
               accessible
               accessibilityRole="button"
@@ -251,7 +264,7 @@ export function LoginScreen({ navigation }: Props) {
                   returnKeyType="next"
                   submitBehavior="submit"
                   onSubmitEditing={() => passwordRef.current?.focus()}
-                  placeholder={AUTH_COPY.login.emailPlaceholder}
+                  label={AUTH_COPY.login.emailLabel}
                   value={value}
                   onChangeText={onChange}
                   leftIcon={<Mail color={palette.textMuted} size={18} />}
@@ -272,7 +285,7 @@ export function LoginScreen({ navigation }: Props) {
                 <View style={{ gap: spacing[1] }}>
                   <Input
                     ref={passwordRef}
-                    placeholder={AUTH_COPY.login.passwordPlaceholder}
+                    label={AUTH_COPY.login.passwordLabel}
                     secureTextEntry={!showPassword}
                     textContentType="password"
                     autoComplete="current-password"
@@ -293,6 +306,7 @@ export function LoginScreen({ navigation }: Props) {
                         }
                         onPress={() => setShowPassword((current) => !current)}
                         hitSlop={8}
+                        style={AUTH_EYE_BUTTON_STYLE}
                       >
                         {showPassword ? (
                           <EyeOff color={palette.textMuted} size={18} />

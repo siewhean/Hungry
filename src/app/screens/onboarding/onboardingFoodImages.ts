@@ -8,31 +8,28 @@ export type OnboardingFoodImage = {
   imageSource?: ImageSourcePropType;
 };
 
+// Only photos a question shows are required (and so bundled). Source files are 600 px WebP.
 export const ONBOARDING_FOOD_IMAGES = {
-  chickenRice: require("../../../assets/onboarding/food/chicken-rice.png"),
-  laksa: require("../../../assets/onboarding/food/laksa.png"),
-  satay: require("../../../assets/onboarding/food/satay.png"),
-  charKwayTeow: require("../../../assets/onboarding/food/char-kway-teow.png"),
-  kayaToast: require("../../../assets/onboarding/food/kaya-toast.png"),
-  pandanCake: require("../../../assets/onboarding/food/pandan-cake.png"),
-  kuehTutu: require("../../../assets/onboarding/food/kueh-tutu.png"),
-  fishSoup: require("../../../assets/onboarding/food/fish-soup.png"),
-  yongTauFoo: require("../../../assets/onboarding/food/yong-tau-foo.png"),
-  nasiLemak: require("../../../assets/onboarding/food/nasi-lemak.png"),
-  rotiPrata: require("../../../assets/onboarding/food/roti-prata.png"),
-  nasiBriyani: require("../../../assets/onboarding/food/nasi-briyani.png"),
-  mala: require("../../../assets/onboarding/food/mala-xiang-guo.png"),
-  japaneseCurry: require("../../../assets/onboarding/food/japanese-curry.png"),
-  ramenSet: require("../../../assets/onboarding/food/ramen.png"),
-  bibimbap: require("../../../assets/onboarding/food/bibimbap.png"),
-  budaeJjigae: require("../../../assets/onboarding/food/korean-stew.png"),
-  burger: require("../../../assets/onboarding/food/burger.png"),
-  pasta: require("../../../assets/onboarding/food/pasta.png"),
-  pizza: require("../../../assets/onboarding/food/pizza.png"),
-  carrotCake: require("../../../assets/onboarding/food/carrot-cake.png"),
-  meeSiam: require("../../../assets/onboarding/food/mee-siam.png"),
+  chickenRice: require("../../../assets/onboarding/food/chicken-rice.webp"),
+  laksa: require("../../../assets/onboarding/food/laksa.webp"),
+  satay: require("../../../assets/onboarding/food/satay.webp"),
+  charKwayTeow: require("../../../assets/onboarding/food/char-kway-teow.webp"),
+  kayaToast: require("../../../assets/onboarding/food/kaya-toast.webp"),
+  pandanCake: require("../../../assets/onboarding/food/pandan-cake.webp"),
+  kuehTutu: require("../../../assets/onboarding/food/kueh-tutu.webp"),
+  fishSoup: require("../../../assets/onboarding/food/fish-soup.webp"),
+  nasiLemak: require("../../../assets/onboarding/food/nasi-lemak.webp"),
+  nasiBriyani: require("../../../assets/onboarding/food/nasi-briyani.webp"),
+  mala: require("../../../assets/onboarding/food/mala-xiang-guo.webp"),
+  japaneseCurry: require("../../../assets/onboarding/food/japanese-curry.webp"),
+  ramenSet: require("../../../assets/onboarding/food/ramen.webp"),
+  budaeJjigae: require("../../../assets/onboarding/food/korean-stew.webp"),
+  carrotCake: require("../../../assets/onboarding/food/carrot-cake.webp"),
+  meeSiam: require("../../../assets/onboarding/food/mee-siam.webp"),
 } as const;
 
+// Each question lists its three dishes from the lightest answer to the strongest, so the
+// example under a label matches the label.
 export const TASTE_QUESTION_FOODS: Record<TasteKey, readonly OnboardingFoodImage[]> = {
   sweet: [
     { label: "Kueh tutu", imageSource: ONBOARDING_FOOD_IMAGES.kuehTutu },
@@ -40,14 +37,14 @@ export const TASTE_QUESTION_FOODS: Record<TasteKey, readonly OnboardingFoodImage
     { label: "Pandan cake", imageSource: ONBOARDING_FOOD_IMAGES.pandanCake },
   ],
   spicy: [
-    { label: "Laksa", imageSource: ONBOARDING_FOOD_IMAGES.laksa },
     { label: "Korean stew", imageSource: ONBOARDING_FOOD_IMAGES.budaeJjigae },
+    { label: "Laksa", imageSource: ONBOARDING_FOOD_IMAGES.laksa },
     { label: "Mala xiang guo", imageSource: ONBOARDING_FOOD_IMAGES.mala },
   ],
   sour: [
-    { label: "Asam laksa" },
-    { label: "Rojak" },
     { label: "Mee siam", imageSource: ONBOARDING_FOOD_IMAGES.meeSiam },
+    { label: "Rojak" },
+    { label: "Asam laksa" },
   ],
   salty: [
     { label: "Fish soup", imageSource: ONBOARDING_FOOD_IMAGES.fishSoup },

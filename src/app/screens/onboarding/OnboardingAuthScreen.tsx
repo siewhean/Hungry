@@ -20,7 +20,7 @@ import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { applySignedInProfile } from "@/features/auth/applySignedInProfile";
 import { trackAuthFailed, trackAuthScreenViewed } from "@/features/auth/authAnalytics";
-import { getMockSignUpFailure } from "@/features/auth/mockAuth";
+import { getAuthErrorCode, getAuthFailureMessage } from "@/features/auth/authErrors";
 import {
   isWeakPasswordError,
   PASSWORD_RULES,
@@ -52,14 +52,17 @@ type Tab = "signup" | "login";
 type SignUpValues = { displayName: string; email: string; password: string };
 type LoginValues = { email: string; password: string };
 
-export function OnboardingAuthScreen({ navigation }: Props) {
-  const { palette, spacing } = useHungryTheme();
+export function OnboardingAuthScreen({ navigation, route }: Props) {
+  const { componentRadii, palette, spacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const oauthEnabled = FEATURE_FLAGS.oauthProvidersEnabled;
 
   const [tab, setTab] = useState<Tab>("signup");
   const [showPassword, setShowPassword] = useState(false);
   const [providerInFlight, setProviderInFlight] = useState<AuthProvider | null>(null);
+  // Inline copy of the last server error (a toast alone passes before it can be read, and
+  // has no red border or screen-reader role), as on the shared sign-in screens.
+  const [formError, setFormError] = useState<string | null>(null);
   const signUpEmailRef = useRef<TextInput>(null);
   const signUpPasswordRef = useRef<TextInput>(null);
   const loginPasswordRef = useRef<TextInput>(null);
@@ -133,62 +136,51 @@ export function OnboardingAuthScreen({ navigation }: Props) {
 
   const handleSignUp = signUpForm.handleSubmit(async (values) => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setFormError(null);
     try {
-      const dataSource = getConfiguredDataSource();
-      if (dataSource === "supabase") {
-        const session = await getHungryService().auth.signUp(
-          values.email,
-          values.password,
-          values.displayName,
-        );
-        if (!session) {
-          showToast({ message: AUTH_COPY.signUp.emailVerificationToast, tone: "success" });
-          navigation.getParent<NavigationProp<RootStackParamList>>()?.reset({
-            index: 0,
-            routes: [
-              {
-                name: "AuthStack",
-                params: {
-                  screen: "EmailVerification",
-                  params: { email: values.email, completedOnboarding: true },
-                },
+      const session = await getHungryService().auth.signUp(
+        values.email,
+        values.password,
+        values.displayName,
+      );
+      if (!session) {
+        showToast({ message: AUTH_COPY.signUp.emailVerificationToast, tone: "success" });
+        navigation.getParent<NavigationProp<RootStackParamList>>()?.reset({
+          index: 0,
+          routes: [
+            {
+              name: "AuthStack",
+              params: {
+                screen: "EmailVerification",
+                params: { email: values.email, completedOnboarding: true },
               },
-            ],
-          });
-          return;
-        }
-        const migration = await applySessionProfile(session.profile, session.profileReady);
-        if (migration.status === "failed") return;
-        completeAuth({ authProvider: "email", completedOnboarding: true, isNewUser: true });
-        finishOnboarding();
+            },
+          ],
+        });
         return;
       }
-      const failure = getMockSignUpFailure(values.email);
-      if (failure) {
-        showToast({ message: failure.message, tone: "error" });
-        return;
-      }
+      const migration = await applySessionProfile(session.profile, session.profileReady);
+      if (migration.status === "failed") return;
       completeAuth({ authProvider: "email", completedOnboarding: true, isNewUser: true });
       finishOnboarding();
     } catch (err) {
       trackAuthFailed("sign_up", "email", err);
-      const code =
-        (err as { error_code?: string; code?: string })?.error_code ??
-        (err as { error_code?: string; code?: string })?.code;
-      if (isWeakPasswordError(err)) {
-        showToast({ message: WEAK_PASSWORD_MESSAGE, tone: "error" });
-      } else if (code === "over_email_send_rate_limit") {
-        showToast({ message: AUTH_COPY.signUp.tooManyAttemptsToast, tone: "error" });
-      } else if (code === "email_address_invalid") {
-        showToast({ message: AUTH_COPY.signUp.invalidEmailToast, tone: "error" });
-      } else {
-        showToast({ message: AUTH_COPY.signUp.genericErrorToast, tone: "error" });
-      }
+      const code = getAuthErrorCode(err);
+      setFormError(
+        isWeakPasswordError(err)
+          ? WEAK_PASSWORD_MESSAGE
+          : code === "email_address_invalid"
+            ? AUTH_COPY.signUp.invalidEmailToast
+            : code === "user_already_exists" || code === "email_exists"
+              ? AUTH_COPY.signUp.emailTakenToast
+              : getAuthFailureMessage(err, AUTH_COPY.signUp.genericErrorToast),
+      );
     }
   });
 
   const handleLogin = loginForm.handleSubmit(async (values) => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setFormError(null);
     try {
       const dataSource = getConfiguredDataSource();
       if (dataSource === "supabase") {
@@ -203,22 +195,21 @@ export function OnboardingAuthScreen({ navigation }: Props) {
       finishOnboarding();
     } catch (err) {
       trackAuthFailed("sign_in", "email", err);
-      const code =
-        (err as { error_code?: string; code?: string })?.error_code ??
-        (err as { error_code?: string; code?: string })?.code;
-      const message =
+      const code = getAuthErrorCode(err);
+      setFormError(
         code === "invalid_credentials"
           ? AUTH_COPY.login.invalidCredentialsToast
           : code === "email_not_confirmed"
             ? AUTH_COPY.login.emailNotConfirmedToast
-            : AUTH_COPY.login.genericErrorToast;
-      showToast({ message, tone: "error" });
+            : getAuthFailureMessage(err, AUTH_COPY.login.genericErrorToast),
+      );
     }
   });
 
   const handleProvider = async (provider: AuthProvider) => {
     if (isBusy) return;
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setFormError(null);
     setProviderInFlight(provider);
     try {
       if (getConfiguredDataSource() === "supabase") {
@@ -239,10 +230,12 @@ export function OnboardingAuthScreen({ navigation }: Props) {
         cancelled: AUTH_COPY.signUp.providerCancelledToast,
         failed: AUTH_COPY.signUp.genericErrorToast,
       });
-      showToast({
-        message,
-        tone: message === AUTH_COPY.signUp.providerCancelledToast ? "warning" : "error",
-      });
+      if (message === AUTH_COPY.signUp.providerCancelledToast) {
+        // Cancelling is not an error: a passing toast, no red banner.
+        showToast({ message, tone: "warning" });
+      } else {
+        setFormError(message);
+      }
     } finally {
       setProviderInFlight(null);
     }
@@ -471,6 +464,22 @@ export function OnboardingAuthScreen({ navigation }: Props) {
                     </View>
                   )}
                 />
+                {formError ? (
+                  <View
+                    accessible
+                    accessibilityRole="alert"
+                    accessibilityLiveRegion="polite"
+                    style={{
+                      backgroundColor: palette.errorSoft,
+                      borderRadius: componentRadii.card,
+                      padding: spacing[3],
+                    }}
+                  >
+                    <AppText variant="bodySmall" style={{ color: palette.error }}>
+                      {formError}
+                    </AppText>
+                  </View>
+                ) : null}
                 <Button
                   label="Create account"
                   onPress={handleSignUp}
@@ -557,6 +566,22 @@ export function OnboardingAuthScreen({ navigation }: Props) {
                     {AUTH_COPY.login.forgotPasswordLink}
                   </AppText>
                 </Pressable>
+                {formError ? (
+                  <View
+                    accessible
+                    accessibilityRole="alert"
+                    accessibilityLiveRegion="polite"
+                    style={{
+                      backgroundColor: palette.errorSoft,
+                      borderRadius: componentRadii.card,
+                      padding: spacing[3],
+                    }}
+                  >
+                    <AppText variant="bodySmall" style={{ color: palette.error }}>
+                      {formError}
+                    </AppText>
+                  </View>
+                ) : null}
                 <Button
                   label="Sign in"
                   onPress={handleLogin}

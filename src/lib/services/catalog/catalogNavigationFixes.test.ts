@@ -265,7 +265,7 @@ test("catalog detail pushes nested records and never dead-ends", () => {
   assert.match(dishDetail, /navigation\.push\("DishDetail", \{ dishId: item\.id \}\)/);
 
   // Loading and error states keep a back control; Back works without history.
-  assert.equal((detail.match(/<DetailHeader onBack=\{goBack\} \/>/g) ?? []).length, 2);
+  assert.equal((detail.match(/<DetailHeader onBack=\{goBackOrHome\} \/>/g) ?? []).length, 2);
   assert.match(detail, /navigation\.canGoBack\(\)[\s\S]*?navigation\.navigate\("MainTabs"/);
   assert.match(detail, /ctaLabel="Retry"/);
 
@@ -316,6 +316,6 @@ test("Discover header hides the area count when no in-area venues are known", ()
   const discover = read("src/app/screens/discover/DiscoverHomeScreen.tsx");
   assert.match(
     discover,
-    /discoverAreaCountLabel !== "0" \? \([\s\S]{0,200}places to eat in this area[\s\S]{0,80}\) : null/,
+    /discoverAreaCountLabel !== "0" \? \([\s\S]{0,200}places to eat \$\{[\s\S]{0,160}\) : null/,
   );
 });

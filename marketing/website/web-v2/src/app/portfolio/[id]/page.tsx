@@ -40,6 +40,7 @@ export default async function SharedPortfolioPage({ params, searchParams }: Page
   if (!portfolio) notFound();
 
   const updated = formatUpdated(portfolio.updatedAt);
+  const isRanking = portfolio.type === "ranking";
   const facts = [
     { label: "Picks", value: String(portfolio.items.length) },
     ...(portfolio.ownerDisplayName ? [{ label: "By", value: portfolio.ownerDisplayName }] : []),
@@ -86,7 +87,10 @@ export default async function SharedPortfolioPage({ params, searchParams }: Page
                         }}
                       />
                     ) : null}
-                    <h3>{href ? <a href={href}>{item.name ?? "Untitled"}</a> : item.name}</h3>
+                    <h3>
+                      {isRanking ? `#${index + 1} ` : null}
+                      {href ? <a href={href}>{item.name ?? "Untitled"}</a> : item.name}
+                    </h3>
                     {item.itemType === "dish" ? (
                       <p>
                         {[item.stallName, item.price !== null ? formatPrice(item.price) : null]
@@ -94,6 +98,7 @@ export default async function SharedPortfolioPage({ params, searchParams }: Page
                           .join(" · ")}
                       </p>
                     ) : null}
+                    {isRanking && item.score !== null ? <p>Score: {item.score}/10</p> : null}
                     {item.publicNotes ? <p>{item.publicNotes}</p> : null}
                     {item.mapsUrl ? (
                       <a

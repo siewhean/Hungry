@@ -164,6 +164,7 @@ All P0 blockers resolved. All static predeploy gates pass.
 | `/singapore/[area]/[dish]` | Public SEO | Public | No | Conditional | Supabase/public fallback content | Medium | No fake ratings/hours |
 | `/singapore/[area]/food` | Public SEO | Public | No | Conditional | Supabase/public fallback content | Medium | Noindex if thin |
 | `/singapore/mrt/[station]/food` | Public SEO | Public | No | Conditional | Supabase/public fallback content | Medium | Noindex if thin |
+| `/review/[id]` | Public share preview | Public | No | No (noindex) | Supabase anon REST (RLS) | Low | Shared review links; shows only the public review text and dish |
 | `/stall/[id]` | Public share preview | Public | No | No (noindex) | Supabase anon REST (RLS) | Medium | Shared app links; no private data |
 | `/stalls/[stallSlug]` | Public SEO | Public | No | Conditional | Supabase/public fallback content | Medium | No fake verification |
 | `/terms` | Public legal | Public | No | Yes | Legal copy | Medium | Keep legal copy reviewed |

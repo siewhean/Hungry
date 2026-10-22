@@ -2,11 +2,23 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pressable, View } from "react-native";
 import { ArrowDown, ArrowUp, Pin, PinOff, RefreshCw, Users } from "lucide-react-native";
 
-import { AppText, Avatar, Button, Card, EmptyState, Screen, Skeleton } from "@/components/ui";
+import {
+  AppText,
+  Avatar,
+  Button,
+  Card,
+  EmptyState,
+  InlineBanner,
+  Screen,
+  Skeleton,
+} from "@/components/ui";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { useHungryTheme } from "@/theme";
 import type { PopularVisitorCandidate, PopularVisitorPin } from "@/types/domain";
+
+/** Review candidates per page; "Load older reviews" fetches the next page. */
+const CANDIDATE_PAGE_SIZE = 30;
 
 export function FeaturedVisitorsScreen() {
   const { componentRadii, palette, spacing } = useHungryTheme();
@@ -15,7 +27,11 @@ export function FeaturedVisitorsScreen() {
   const [candidates, setCandidates] = useState<PopularVisitorCandidate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
+  // A failed load replaces the screen; a failed pin, unpin or reorder only shows a banner.
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [hasMoreCandidates, setHasMoreCandidates] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   const pinnedReviewIds = useMemo(() => new Set(pins.map((pin) => pin.reviewId)), [pins]);
 
@@ -28,14 +44,16 @@ export function FeaturedVisitorsScreen() {
     }
     setIsLoading(true);
     setError(null);
+    setActionError(null);
     try {
       const merchant = getHungryService().merchant;
       const [activePins, reviewCandidates] = await Promise.all([
         merchant.listPopularVisitorPins(activeOutlet.id),
-        merchant.listPopularVisitorCandidates(activeOutlet.id),
+        merchant.listPopularVisitorCandidates(activeOutlet.id, { limit: CANDIDATE_PAGE_SIZE }),
       ]);
       setPins(activePins);
       setCandidates(reviewCandidates);
+      setHasMoreCandidates(reviewCandidates.length >= CANDIDATE_PAGE_SIZE);
     } catch (caughtError) {
       setError(
         caughtError instanceof Error ? caughtError.message : "Unable to load featured visitors.",
@@ -49,11 +67,35 @@ export function FeaturedVisitorsScreen() {
     void loadVisitors();
   }, [loadVisitors]);
 
+  const loadMoreCandidates = useCallback(async () => {
+    const oldest = candidates[candidates.length - 1];
+    if (!activeOutlet || !oldest || isLoadingMore) return;
+    setIsLoadingMore(true);
+    setActionError(null);
+    try {
+      const older = await getHungryService().merchant.listPopularVisitorCandidates(
+        activeOutlet.id,
+        { limit: CANDIDATE_PAGE_SIZE, before: oldest.visitedAt },
+      );
+      setCandidates((current) => {
+        const known = new Set(current.map((item) => item.reviewId));
+        return [...current, ...older.filter((item) => !known.has(item.reviewId))];
+      });
+      setHasMoreCandidates(older.length >= CANDIDATE_PAGE_SIZE);
+    } catch (caughtError) {
+      setActionError(
+        caughtError instanceof Error ? caughtError.message : "Unable to load older reviews.",
+      );
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [activeOutlet, candidates, isLoadingMore]);
+
   const handlePin = useCallback(
     async (candidate: PopularVisitorCandidate) => {
       if (!activeOutlet || pins.length >= 6) return;
       setBusyId(candidate.reviewId);
-      setError(null);
+      setActionError(null);
       try {
         const pin = await getHungryService().merchant.pinPopularVisitor(
           activeOutlet.id,
@@ -62,7 +104,9 @@ export function FeaturedVisitorsScreen() {
         // Update from the mutation result instead of refetching both lists.
         setPins((current) => [...current.filter((item) => item.id !== pin.id), pin]);
       } catch (caughtError) {
-        setError(caughtError instanceof Error ? caughtError.message : "Unable to pin visitor.");
+        setActionError(
+          caughtError instanceof Error ? caughtError.message : "Unable to pin visitor.",
+        );
       } finally {
         setBusyId(null);
       }
@@ -72,12 +116,14 @@ export function FeaturedVisitorsScreen() {
 
   const handleUnpin = useCallback(async (pinId: string) => {
     setBusyId(pinId);
-    setError(null);
+    setActionError(null);
     try {
       await getHungryService().merchant.unpinPopularVisitor(pinId);
       setPins((current) => current.filter((pin) => pin.id !== pinId));
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : "Unable to unpin visitor.");
+      setActionError(
+        caughtError instanceof Error ? caughtError.message : "Unable to unpin visitor.",
+      );
     } finally {
       setBusyId(null);
     }
@@ -95,7 +141,7 @@ export function FeaturedVisitorsScreen() {
       reordered.splice(targetIndex, 0, current);
       setPins(reordered.map((pin, sortOrder) => ({ ...pin, sortOrder })));
       setBusyId(pinId);
-      setError(null);
+      setActionError(null);
       try {
         const updated = await getHungryService().merchant.reorderPopularVisitorPins(
           activeOutlet.id,
@@ -104,7 +150,7 @@ export function FeaturedVisitorsScreen() {
         setPins(updated);
       } catch (caughtError) {
         setPins(previousPins);
-        setError(
+        setActionError(
           caughtError instanceof Error ? caughtError.message : "Unable to reorder visitors.",
         );
       } finally {
@@ -168,6 +214,7 @@ export function FeaturedVisitorsScreen() {
           />
         ) : (
           <>
+            {actionError ? <InlineBanner tone="error" message={actionError} /> : null}
             <View style={{ gap: spacing[3] }}>
               <View>
                 <AppText variant="h3">Pinned visitors</AppText>
@@ -185,7 +232,8 @@ export function FeaturedVisitorsScreen() {
                 pins.map((pin, index) => (
                   <Card key={pin.id} style={{ padding: spacing[4], gap: spacing[3] }}>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[3] }}>
-                      <Avatar uri={pin.authorAvatarUrl} name={pin.authorName} size={44} />
+                      {/* Names only: a diner's profile photo is not copied onto the stall page. */}
+                      <Avatar name={pin.authorName} size={44} />
                       <View style={{ flex: 1 }}>
                         <AppText variant="bodyBold">{pin.authorName}</AppText>
                         <AppText variant="bodySmall" tone="muted">
@@ -242,11 +290,7 @@ export function FeaturedVisitorsScreen() {
                 return (
                   <Card key={candidate.reviewId} style={{ padding: spacing[4], gap: spacing[3] }}>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[3] }}>
-                      <Avatar
-                        uri={candidate.authorAvatarUrl}
-                        name={candidate.authorName}
-                        size={44}
-                      />
+                      <Avatar name={candidate.authorName} size={44} />
                       <View style={{ flex: 1 }}>
                         <AppText variant="bodyBold">{candidate.authorName}</AppText>
                         <AppText variant="bodySmall" tone="muted">
@@ -275,6 +319,15 @@ export function FeaturedVisitorsScreen() {
                   </Card>
                 );
               })}
+              {hasMoreCandidates ? (
+                <Button
+                  label={isLoadingMore ? "Loading..." : "Load older reviews"}
+                  variant="secondary"
+                  loading={isLoadingMore}
+                  disabled={isLoadingMore}
+                  onPress={() => void loadMoreCandidates()}
+                />
+              ) : null}
             </View>
           </>
         )}

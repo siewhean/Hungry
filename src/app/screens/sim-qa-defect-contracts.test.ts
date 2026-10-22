@@ -76,6 +76,6 @@ test("D6: release search inputs expose an accessible clear button and results he
   const dishSearch = read("src/app/screens/search/DishSearchScreen.tsx");
 
   assert.match(results, /accessibilityLabel="Clear search"/);
-  assert.match(results, /onPress=\{\(\) => \{\s*setSearchQuery\(""\);/);
+  assert.match(results, /onPress=\{\(\) => \{\s*setSearchText\(""\);/);
   assert.match(dishSearch, /accessibilityLabel="Clear search"/);
 });

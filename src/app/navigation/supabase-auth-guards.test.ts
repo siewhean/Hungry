@@ -128,6 +128,6 @@ test("Supabase null-session bootstrap events clear stale persisted app metadata"
   assert.match(bootstrap, /client\.auth\.onAuthStateChange\(\(event, session\) =>/);
   assert.match(
     bootstrap,
-    /if \(event === "INITIAL_SESSION"\) \{\s*return;\s*\}\s*applyAuthStateFromSession\(\{ isAuthenticated: false, userId: null \}\);/,
+    /if \(event === "INITIAL_SESSION"\) \{\s*return;\s*\}[\s\S]*?applyAuthStateFromSession\(\{\s*isAuthenticated: false,\s*userId: null,\s*sessionExpired: event === "SIGNED_OUT",\s*\}\);/,
   );
 });

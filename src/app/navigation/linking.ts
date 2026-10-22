@@ -1,5 +1,6 @@
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { WEB_BASE_URL } from "@/constants/links";
+import { parseFilterIds } from "@/features/search/browseFilters";
 import { MERCHANT_LINK_SCREENS } from "@/features/merchant/merchantDeepLinks";
 import { parseShareSource, rememberShareAttribution } from "@/features/share/shareAttribution";
 import { trackAnalyticsEvent } from "@/lib/analytics";
@@ -50,6 +51,9 @@ function sanitizeRouteParams(name: string, params: unknown): Record<string, unkn
     return undefined;
   }
 
+  if (name === "ReviewDetail" && !isSafeDeepLinkId(next.reviewId)) {
+    return undefined;
+  }
   if (
     name === "CatalogRawDetail" &&
     (!isSafeDeepLinkId(next.id) || (next.kind !== "dish" && next.kind !== "venue"))
@@ -174,10 +178,15 @@ function buildStateFromPath(rawPath: string): LinkingState | undefined {
       Object.keys(callback).length > 0 ? callback : undefined,
     );
   }
+  // The confirmation link of a sign-in email change (the user is already signed in).
+  // It has its own path so it never runs the sign-up path ("Email verified. Welcome").
+  if (path === "auth/email-change") {
+    const { code } = parseAuthCallbackParams(rawPath);
+    return createAuthState("EmailChange", code ? { code } : undefined);
+  }
   // OAuth returns are consumed by WebBrowser.openAuthSessionAsync.
   if (path === "auth/oauth") return undefined;
-  if (path === "auth/reset/success") return createAuthState("ResetPasswordSuccess");
-  // Weekly picks push opens https://usehungry.com/home (signed-in users only).
+  // Weekly picks push opens https://usehungry.com/home.
   if (path === "home") return createState("MainTabs", { screen: "Home" });
   if (parts[0] === "catalog") {
     const kind = parts[1];
@@ -185,7 +194,7 @@ function buildStateFromPath(rawPath: string): LinkingState | undefined {
     return id ? createState("CatalogRawDetail", { kind, id }) : undefined;
   }
   // Lunch and dinner suggestion pushes open https://usehungry.com/decide.
-  if (path === "decide") return createStateOverHome("DecideForMeResult", { surface: "home" });
+  if (path === "decide") return createStateOverHome("DecideForMeResult", { surface: "push" });
   if (parts[0] === "dish") {
     const dishId = decodePathSegment(parts[1]);
     if (!dishId) return undefined;
@@ -200,6 +209,15 @@ function buildStateFromPath(rawPath: string): LinkingState | undefined {
       ? createStateOverHome("CatalogRawDetail", { kind: "venue", id: venueId })
       : createStateOverHome("StallDetail", { venueId });
   }
+  // Shared reviews: https://usehungry.com/review/:id
+  if (FEATURE_FLAGS.reviewCreationEnabled && parts[0] === "review") {
+    const reviewId = decodePathSegment(parts[1]);
+    return reviewId ? createStateOverHome("ReviewDetail", { reviewId }) : undefined;
+  }
+  // The post composer, named for what it does. /order is the older name, kept as an alias.
+  if (FEATURE_FLAGS.postCreationEnabled && (path === "post" || path === "order")) {
+    return createState("Post", parseOrderDeepLinkQuery(rawPath));
+  }
   if (FEATURE_FLAGS.activityEnabled && parts[0] === "post") {
     const postId = decodePathSegment(parts[1]);
     return postId ? createStateOverHome("ActivityPostDetail", { postId }) : undefined;
@@ -208,9 +226,6 @@ function buildStateFromPath(rawPath: string): LinkingState | undefined {
   if (FEATURE_FLAGS.socialFeedEnabled && parts[0] === "user") {
     const authorId = decodePathSegment(parts[1]);
     return authorId ? createStateOverHome("UserProfile", { authorId }) : undefined;
-  }
-  if (FEATURE_FLAGS.postCreationEnabled && path === "order") {
-    return createState("Post", parseOrderDeepLinkQuery(rawPath));
   }
   // Shared searches: https://usehungry.com/search?q=laksa&filter=Halal&mode=stalls
   if (path === "search") {
@@ -226,7 +241,10 @@ function buildStateFromPath(rawPath: string): LinkingState | undefined {
       parts[1] && Object.prototype.hasOwnProperty.call(MERCHANT_LINK_SCREENS, parts[1])
         ? MERCHANT_LINK_SCREENS[parts[1]]
         : undefined;
-    return screen ? createState("MerchantTabs", { screen }) : createState("MerchantTabs");
+    // Over Home so a cold start has a way back to customer mode instead of stranding the user.
+    return screen
+      ? createStateOverHome("MerchantTabs", { screen })
+      : createStateOverHome("MerchantTabs");
   }
   if (FEATURE_FLAGS.hungryWheelEnabled && parts[0] === "join") {
     const code = decodePathSegment(parts[1]);
@@ -256,6 +274,7 @@ const SHARED_LINK_ROUTES = new Set([
   "StallDetail",
   "CatalogRawDetail",
   "ActivityPostDetail",
+  "ReviewDetail",
   "PortfolioPublicView",
   "UserProfile",
   "WheelStack",
@@ -309,7 +328,7 @@ export function createRootLinking(
             // verification screen never writes /auth/confirm into the web URL
             // (which would re-open AuthStack when the signed-in navigator mounts).
             ResetPassword: "auth/reset",
-            ResetPasswordSuccess: "auth/reset/success",
+            EmailChange: "auth/email-change",
           },
         },
         MainTabs: {
@@ -323,7 +342,11 @@ export function createRootLinking(
         StallDetail: "venue/:venueId",
         CatalogRawDetail: "catalog/:kind/:id",
         ...(FEATURE_FLAGS.activityEnabled ? { ActivityPostDetail: "post/:postId" } : {}),
-        ...(FEATURE_FLAGS.postCreationEnabled ? { Post: "order" } : {}),
+        ...(FEATURE_FLAGS.postCreationEnabled ? { Post: "post" } : {}),
+        ...(FEATURE_FLAGS.reviewCreationEnabled ? { ReviewDetail: "review/:reviewId" } : {}),
+        // Social push notifications open the inbox or the follow requests (sign-in required).
+        ...(FEATURE_FLAGS.activityEnabled ? { ActivityInbox: "activity" } : {}),
+        FollowRequests: "follow-requests",
         ...(FEATURE_FLAGS.socialFeedEnabled ? { UserProfile: "user/:authorId" } : {}),
         SearchResults: "search",
         ...(FEATURE_FLAGS.portfoliosEnabled
@@ -387,28 +410,21 @@ export function createRootLinking(
   };
 }
 
-const SEARCH_LINK_FILTERS = new Set([
-  "All",
-  "Local",
-  "Halal",
-  "Japanese",
-  "Western",
-  "Noodles",
-  "Rice",
-  "Spicy",
-]);
-
-/** Reads q, filter and mode from a search link; anything unexpected is dropped. */
+/**
+ * Reads q, filter and mode from a search link; anything unexpected is dropped. The filter
+ * allowlist is the set of filter chips on the results screen (one or several, comma
+ * separated), so every chip state can be linked and nothing that is not a chip is accepted.
+ */
 export function parseSearchDeepLinkQuery(rawPath: string): Record<string, unknown> {
   const queryIndex = rawPath.indexOf("?");
   if (queryIndex < 0) return {};
   const params = new URLSearchParams(rawPath.slice(queryIndex + 1).split("#")[0]);
   const query = sanitizeSearchQuery(params.get("q") ?? "", 80);
-  const filter = params.get("filter") ?? "";
+  const filters = parseFilterIds(params.get("filter") ?? "");
   const mode = params.get("mode");
   return {
     ...(query ? { initialQuery: query } : {}),
-    ...(SEARCH_LINK_FILTERS.has(filter) ? { initialFilter: filter } : {}),
+    ...(filters.length ? { initialFilter: filters.join(",") } : {}),
     ...(mode === "stalls" || mode === "dishes" ? { browseMode: mode } : {}),
   };
 }

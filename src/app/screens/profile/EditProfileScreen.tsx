@@ -2,12 +2,17 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, View, Pressable } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { ChevronRight, Camera } from "lucide-react-native";
+import { Camera } from "lucide-react-native";
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { AccessibleImage, AppText, Button, Card, Input } from "@/components/ui";
 import { validateEmail } from "@/features/auth/validation";
 import { PROFILE_BIO_MAX_LENGTH } from "@/features/profile/profileBio";
+import {
+  PROFILE_DISPLAY_NAME_MAX_LENGTH,
+  profileTextRefusalHint,
+  validateDisplayName,
+} from "@/features/profile/profileName";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -49,9 +54,11 @@ export function EditProfileScreen({ navigation }: Props) {
   const [bioDraft, setBioDraft] = useState<string | null>(null);
   const bio = bioDraft ?? profile.bio ?? "";
   const [avatarUri, setAvatarUri] = useState<string | undefined>(undefined);
+  const [removeAvatar, setRemoveAvatar] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [canChangePassword, setCanChangePassword] = useState(false);
-  const avatarPreviewUri = avatarUri ?? profile.avatarUrl;
+  // New address of an email change still waiting for its confirmation links.
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const avatarPreviewUri = removeAvatar ? undefined : (avatarUri ?? profile.avatarUrl);
   const avatarSize = spacing[20];
   const avatarInitials = useMemo(
     () =>
@@ -66,14 +73,15 @@ export function EditProfileScreen({ navigation }: Props) {
   );
 
   const trimmedName = displayName.trim();
-  const nameError = trimmedName ? undefined : "Enter a display name.";
+  const nameError = validateDisplayName(displayName);
   const trimmedBio = bio.trim();
   const bioChanged = trimmedBio !== (profile.bio ?? "").trim();
   const isDirty =
     trimmedName !== profile.displayName.trim() ||
     bioChanged ||
     email.trim().toLowerCase() !== (profile.email ?? "").trim().toLowerCase() ||
-    avatarUri !== undefined;
+    avatarUri !== undefined ||
+    removeAvatar;
   // Saving (or leaving after a save) must not trigger the unsaved-changes prompt.
   const allowLeaveRef = useRef(false);
   useFocusEffect(
@@ -125,16 +133,16 @@ export function EditProfileScreen({ navigation }: Props) {
     }
 
     setAvatarUri(result.assets[0].uri);
+    setRemoveAvatar(false);
     showToast({ message: "Photo selected. Tap Save changes to use it.", tone: "info" });
   };
 
   useEffect(() => {
     let isActive = true;
-    // Google/Apple-only accounts have no password to change, so the row stays hidden.
     getHungryService()
-      .auth.canChangePassword()
-      .then((allowed) => {
-        if (isActive) setCanChangePassword(allowed);
+      .auth.getPendingEmailChange()
+      .then((pending) => {
+        if (isActive) setPendingEmail(pending);
       })
       .catch(() => undefined);
     return () => {
@@ -142,8 +150,10 @@ export function EditProfileScreen({ navigation }: Props) {
     };
   }, []);
 
-  const handleChangePassword = () => {
-    getRootNavigation(navigation).navigate("ChangePassword");
+  const handleRemovePhoto = () => {
+    setAvatarUri(undefined);
+    setRemoveAvatar(true);
+    showToast({ message: "Photo removed. Tap Save changes to confirm.", tone: "info" });
   };
 
   return (
@@ -210,6 +220,18 @@ export function EditProfileScreen({ navigation }: Props) {
             <Camera size={16} color={palette.surface} />
           </View>
         </Pressable>
+        {avatarPreviewUri ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Remove profile photo"
+            onPress={handleRemovePhoto}
+            style={{ minHeight: 44, justifyContent: "center", marginTop: spacing[1] }}
+          >
+            <AppText variant="bodySmall" style={{ color: palette.error, fontWeight: "600" }}>
+              Remove photo
+            </AppText>
+          </Pressable>
+        ) : null}
       </View>
 
       <Card>
@@ -218,6 +240,7 @@ export function EditProfileScreen({ navigation }: Props) {
             label="Display name"
             value={displayName}
             onChangeText={setDisplayNameDraft}
+            maxLength={PROFILE_DISPLAY_NAME_MAX_LENGTH}
             errorText={nameError}
             error={Boolean(nameError)}
           />
@@ -242,21 +265,11 @@ export function EditProfileScreen({ navigation }: Props) {
             Changing your email sends confirmation links to your current and new addresses. Your
             sign-in email stays the same until both are opened.
           </AppText>
-          {canChangePassword ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Change password"
-              onPress={handleChangePassword}
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                paddingVertical: spacing[2],
-              }}
-            >
-              <AppText style={{ fontWeight: "600" }}>Change Password</AppText>
-              <ChevronRight size={18} color={palette.textMuted} />
-            </Pressable>
+          {pendingEmail ? (
+            <AppText variant="micro" tone="muted">
+              Waiting for confirmation: {pendingEmail}. Open the links we emailed to both addresses
+              to finish.
+            </AppText>
           ) : null}
         </View>
       </Card>
@@ -284,7 +297,8 @@ export function EditProfileScreen({ navigation }: Props) {
               const savedProfile = await getHungryService().profile.updateProfile({
                 displayName: trimmedName,
                 ...(bioChanged ? { bio: trimmedBio } : {}),
-                ...(avatarUri ? { avatarUrl: avatarUri } : {}),
+                // An empty avatarUrl removes the photo; no new photo leaves it unchanged.
+                ...(removeAvatar ? { avatarUrl: "" } : avatarUri ? { avatarUrl: avatarUri } : {}),
                 dietaryPreferences: profile.dietaryPreferences,
               });
               applySavedProfileEdits(savedProfile);
@@ -292,7 +306,7 @@ export function EditProfileScreen({ navigation }: Props) {
               trackAnalyticsEvent("profile_updated", {
                 name_changed: trimmedName !== profile.displayName.trim(),
                 bio_changed: bioChanged,
-                avatar_changed: avatarUri !== undefined,
+                avatar_changed: avatarUri !== undefined || removeAvatar,
                 email_change_requested: emailChanged,
               });
               if (emailChanged) {
@@ -313,9 +327,19 @@ export function EditProfileScreen({ navigation }: Props) {
                 showToast({ message: "Profile updated.", tone: "success" });
               }
               navigation.goBack();
-            } catch {
+            } catch (error) {
+              const refusal = profileTextRefusalHint(error);
               showToast({
-                message: "Could not save profile right now.",
+                message:
+                  refusal === "display_name_reserved"
+                    ? "That display name is reserved. Please choose another."
+                    : refusal === "display_name_too_long"
+                      ? `Use ${PROFILE_DISPLAY_NAME_MAX_LENGTH} characters or fewer for your name.`
+                      : refusal === "display_name_blocked_term"
+                        ? "That display name contains words we don't allow."
+                        : refusal === "bio_text_not_allowed"
+                          ? "Your bio contains words or links we don't allow. Please edit it."
+                          : "Could not save profile right now.",
                 tone: "warning",
               });
             } finally {

@@ -63,13 +63,31 @@ export function recordQuizResponse(
   ).catch(() => undefined);
 }
 
-/** Saves answers a guest gave before signing in. Safe to call on every sign-in. */
-export async function flushPendingQuizResponse(now: number = Date.now()): Promise<void> {
-  const saved = await readPending();
-  if (!saved) return;
-  clearPending();
-  if (now - saved.savedAt > PENDING_MAX_AGE_MS) return;
-  await getHungryService()
-    .profile.recordQuizResponse(saved.responses, saved.tasteVector)
-    .catch(() => undefined);
+let flushInFlight: Promise<void> | null = null;
+
+/**
+ * Saves answers a guest gave before signing in. Safe to call on every sign-in.
+ * The stored answers are cleared only after the server accepted them, so an offline
+ * sign-in keeps them for the next one; one write runs at a time so they cannot double-insert.
+ */
+export function flushPendingQuizResponse(now: number = Date.now()): Promise<void> {
+  if (flushInFlight) return flushInFlight;
+  flushInFlight = (async () => {
+    const saved = await readPending();
+    if (!saved) return;
+    if (now - saved.savedAt > PENDING_MAX_AGE_MS) {
+      clearPending();
+      return;
+    }
+    try {
+      await getHungryService().profile.recordQuizResponse(saved.responses, saved.tasteVector);
+      // A newer quiz taken while this one was in flight stays pending.
+      if (pending === saved) clearPending();
+    } catch {
+      // Kept on the device; the next sign-in tries again.
+    }
+  })().finally(() => {
+    flushInFlight = null;
+  });
+  return flushInFlight;
 }

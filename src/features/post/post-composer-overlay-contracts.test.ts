@@ -17,7 +17,7 @@ test("post composer controls the bottom-left food context overlay", () => {
   const preview = read("src/features/post/components/LivePreviewSheet.tsx");
   const publishing = read("src/features/post/publishing.ts");
   const transforms = read("src/lib/services/postTransforms.ts");
-  const homeFeed = read("src/app/screens/home/HomeFeedScreen.tsx");
+  const homeFeed = read("src/components/social/FeedPostCard.tsx");
 
   assert.match(domain, /showFoodContextOverlay\?: boolean/);
   assert.match(serviceTypes, /showFoodContextOverlay\?: boolean/);

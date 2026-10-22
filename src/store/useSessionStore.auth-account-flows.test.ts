@@ -83,12 +83,15 @@ test("password recovery hold is session-only state", () => {
 
 test("password reset exchanges the deep-link code without the auth swap unmounting the form", () => {
   const reset = read("src/app/screens/auth/ResetPasswordScreen.tsx");
-  assert.match(reset, /const recoveryCode = route\.params\?\.code \?\? ""/);
   assert.match(
     reset,
-    /setPasswordRecoveryInProgress\(true\);[\s\S]*auth\.exchangeRecoveryCode\(recoveryCode\)[\s\S]*auth\.updatePassword\(password\)/,
+    /setPasswordRecoveryInProgress\(true\);[\s\S]*auth\.exchangeRecoveryCode\(route\.params\?\.code \?\? ""\)[\s\S]*auth\.updatePassword\(password\)/,
   );
-  assert.match(reset, /if \(recoveryCodeExchangedRef\.current\) session\.signOut\(\);/);
+  // Leaving with a recovery session (no new password set) signs it out again.
+  assert.match(
+    reset,
+    /if \(hasRecoverySession && getConfiguredDataSource\(\) === "supabase"\) \{\s*useSessionStore\.getState\(\)\.signOut\(\);/,
+  );
 
   const appBody = read("src/app/AppBody.tsx");
   assert.match(appBody, /passwordRecoveryInProgress\s*\?\s*mountedNavigatorIsRoot\.current/);

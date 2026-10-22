@@ -6,6 +6,7 @@ const APP_PATHS = [
   "/stall/*",
   "/venue/*",
   "/post/*",
+  "/review/*",
   "/portfolio/*",
   "/user/*",
   "/join/*",

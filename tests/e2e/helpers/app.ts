@@ -147,9 +147,9 @@ export async function createEmailAccountFromScratch(page: Page, prefix: string) 
   await expect(page.getByRole("button", { name: "Get started" })).toBeVisible({ timeout: 60_000 });
   await page.getByRole("button", { name: "Sign in to existing account" }).click();
   await page.getByRole("button", { name: "Create account" }).click();
-  await page.getByPlaceholder("Full name").fill(user.name);
-  await page.getByRole("textbox", { name: "Email address" }).fill(user.email);
-  await page.getByPlaceholder("Create password").fill(user.password);
+  await page.getByLabel("Name shown on your reviews").fill(user.name);
+  await page.getByLabel("Email address", { exact: true }).fill(user.email);
+  await page.getByLabel("Create password", { exact: true }).fill(user.password);
   await page.getByRole("button", { name: "Create account", exact: true }).click();
   await expect(page.getByText("Verify your email", { exact: true }).first()).toBeVisible();
   await expect(page.getByText(user.email)).toBeVisible();

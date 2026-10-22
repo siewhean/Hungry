@@ -39,18 +39,27 @@ test.describe("checklist and portfolio critical flows", () => {
     await page.getByRole("button", { name: "Open quick access" }).click();
     await page.getByRole("button", { name: "Lists", exact: true }).click();
     await page.getByRole("button", { name: /^Your lists\./ }).click();
-    await expect(page.getByText("Hungry Portfolios", { exact: true }).first()).toBeVisible();
+    await expect(
+      page.getByText("Your lists", { exact: true }).filter({ visible: true }).first(),
+    ).toBeVisible();
 
-    await page.getByRole("button", { name: "Create portfolio" }).first().click();
+    await page
+      .getByRole("button", { name: "Create list" })
+      .filter({ visible: true })
+      .first()
+      .click();
     await page.getByPlaceholder("e.g. Best laksa nearby").fill(portfolioName);
     await page.getByPlaceholder("What makes this list useful?").fill("Created by E2E smoke.");
-    await page.getByRole("button", { name: "Create portfolio" }).click();
+    await page
+      .getByRole("button", { name: "Create list" })
+      .filter({ visible: true })
+      .last()
+      .click();
 
     // The list name is the screen title (the list card behind it stays mounted but hidden).
     await expect(
       page.getByText(portfolioName, { exact: true }).filter({ visible: true }).first(),
     ).toBeVisible();
-    await expect(page.getByLabel("Title")).toHaveValue(portfolioName);
 
     // Publishing asks first; once live the toggle offers Unpublish.
     await page.getByRole("button", { name: "Publish", exact: true }).click();

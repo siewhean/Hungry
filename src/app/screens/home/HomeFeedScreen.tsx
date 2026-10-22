@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Animated,
+  AppState,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -67,13 +67,18 @@ import {
 import { DishCard } from "@/components/dish/DishCard";
 import { WeeklyPicksRail } from "@/components/dish/WeeklyPicksRail";
 import { WelcomeBackCard } from "@/components/home/WelcomeBackCard";
+import { CircleStoryCarousel, FloatingShareSendButton, InAppShareCard } from "@/components/social";
 import {
-  CircleStoryCarousel,
-  FloatingShareSendButton,
-  InAppShareCard,
-  ZoomableMedia,
-} from "@/components/social";
-import { getHomeFeedBundle, type HomeFeedItem, type HomeFeedSection } from "@/features/home/feed";
+  FeedPostCard,
+  formatPostAge,
+  type FeedPostCardActions,
+} from "@/components/social/FeedPostCard";
+import {
+  getHomeFeedBundle,
+  getHomeFeedNextPage,
+  type HomeFeedCursor,
+  type HomeFeedItem,
+} from "@/features/home/feed";
 import { toChatShareRecipient, type ChatShareRecipient } from "@/features/home/chatShare";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 import { getActivityUnreadCount, selectActivitySourceUpdates } from "@/features/home/activity";
@@ -88,6 +93,7 @@ import {
 import { useScrollToRevealBack } from "@/hooks/useScrollToRevealBack";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 import { getBuildingById, toSummary } from "@/lib/geo/singaporeBuildings";
+import { formatDistanceFromUser } from "@/features/detail/stallLocation";
 import {
   isContentHiddenForSession,
   promptCommentSafetyActions,
@@ -100,7 +106,6 @@ import { withShareSource } from "@/features/share/shareAttribution";
 import { useActivityStore } from "@/store/useActivityStore";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { isMerchantModeActive, useMerchantStore } from "@/store/useMerchantStore";
-import { useFoodHistory } from "@/hooks/useFoodHistory";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useRequireAccount } from "@/features/auth/useRequireAccount";
@@ -118,45 +123,7 @@ import { useLocationStore } from "@/store/useLocationStore";
 import { useHungryTheme, type HungryTheme } from "@/theme";
 import type { DishDetail, StoryItem } from "@/types/domain";
 
-type HapticsModule = typeof import("@/lib/haptics");
-
-let hapticsModule: HapticsModule | null | undefined;
-
-async function triggerDoubleTapHaptic() {
-  try {
-    if (hapticsModule === undefined) {
-      hapticsModule = await import("@/lib/haptics");
-    }
-    await hapticsModule?.impactAsync(hapticsModule.ImpactFeedbackStyle.Light);
-  } catch {
-    hapticsModule = null;
-  }
-}
-
 const CommentIcon = MessageCircle ?? MessageCircleMore;
-
-function FeedSkeleton() {
-  const { spacing, semanticSpacing, radii, palette } = useHungryTheme();
-  return (
-    <View
-      style={{
-        gap: spacing[6],
-        paddingHorizontal: semanticSpacing.screenEdge,
-        paddingVertical: semanticSpacing.screenEdge,
-      }}
-    >
-      <Skeleton width="60%" height={24} />
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ gap: spacing[4] }}
-      >
-        <Skeleton width={280} height={200} borderRadius={radii.lg} />
-        <Skeleton width={280} height={200} borderRadius={radii.lg} />
-      </ScrollView>
-    </View>
-  );
-}
 
 /** Post-shaped placeholder: author row, square media, two caption lines. */
 function PostSkeleton() {
@@ -233,7 +200,9 @@ function HomeEmptyFeed({ title, body, ctaLabel, onCtaPress, onOpenDish }: HomeEm
         body={
           body ??
           (dishes.length
-            ? "While it fills up, here are the top-rated dishes near you."
+            ? coordinate
+              ? "While it fills up, here are the top-rated dishes near you."
+              : "While it fills up, here are the top-rated dishes on Hungry."
             : "Share a dish you loved to get things going.")
         }
         ctaLabel={ctaLabel}
@@ -241,9 +210,19 @@ function HomeEmptyFeed({ title, body, ctaLabel, onCtaPress, onOpenDish }: HomeEm
       />
       {dishes.length ? (
         <View style={{ gap: spacing[3], paddingHorizontal: semanticSpacing.screenEdge }}>
-          <AppText variant="h3">Top rated near you</AppText>
+          <AppText variant="h3">
+            {coordinate ? "Top rated near you" : "Top rated on Hungry"}
+          </AppText>
           {dishes.map((dish) => (
-            <DishCard key={dish.id} dish={dish} onPress={() => onOpenDish(dish.id)} />
+            <DishCard
+              key={dish.id}
+              dish={dish}
+              distanceLabel={formatDistanceFromUser(
+                coordinate,
+                getBuildingById(dish.buildingId)?.coordinate,
+              )}
+              onPress={() => onOpenDish(dish.id)}
+            />
           ))}
         </View>
       ) : null}
@@ -256,15 +235,9 @@ type RootNavigation = CompositeNavigationProp<
   NativeStackNavigationProp<RootStackParamList>
 >;
 
-type HomeFeedMode = "social" | "review";
-
-type HomeFeedScreenProps = {
-  mode?: HomeFeedMode;
-};
-
-const DOUBLE_TAP_DELAY_MS = 280;
-const COLLAPSED_CAPTION_MAX_CHARS = 118;
 const FEED_LOAD_DEDUPE_MS = 1500;
+const POST_IMPRESSION_DWELL_MS = 800;
+const MAX_EMPTY_PAGE_SKIPS = 3;
 const STORY_OPENING_RING_HOLD_MS = 2200;
 const MAP_BUILDING_ID_ALIASES: Record<string, string> = {
   "building-amoy": "hc-amoy",
@@ -272,30 +245,7 @@ const MAP_BUILDING_ID_ALIASES: Record<string, string> = {
   "building-maxwell": "hc-maxwell",
 };
 
-function formatPostAge(createdAt: string) {
-  const timestamp = new Date(createdAt).getTime();
-  if (!Number.isFinite(timestamp)) return createdAt;
-
-  const ageMs = Date.now() - timestamp;
-  if (ageMs >= 0 && ageMs < 24 * 60 * 60 * 1000) {
-    return formatTimeAgo(createdAt);
-  }
-
-  return new Intl.DateTimeFormat("en-SG", {
-    day: "numeric",
-    month: "short",
-  }).format(new Date(timestamp));
-}
-
-function formatCollapsedCaption(caption: string) {
-  if (caption.length <= COLLAPSED_CAPTION_MAX_CHARS) {
-    return caption;
-  }
-
-  return `${caption.slice(0, COLLAPSED_CAPTION_MAX_CHARS).trimEnd()}...`;
-}
-
-export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
+export function HomeFeedScreen() {
   const navigation = useNavigation<RootNavigation>();
   const route = useRoute();
   const { width: screenWidth } = useWindowDimensions();
@@ -305,17 +255,9 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const headerActionSize = spacing[8] + spacing[2.5];
   const insets = useSafeAreaInsets();
   const profile = useProfileStore((state) => state.profile);
-  const personalisation = useFoodHistory();
-  // Read at load time so a tap or save does not reload the feed; openness changes do (feed key).
-  const personalisationRef = useRef(personalisation);
-  useEffect(() => {
-    personalisationRef.current = personalisation;
-  }, [personalisation]);
-  const leftHandedMode = useUIStore((state) => state.leftHandedMode);
   const publishedPostsVersion = usePublishedPostStore((state) => state.version);
   const stories = useStoryStore((state) => state.stories);
   const loadStories = useStoryStore((state) => state.loadStories);
-  const interactions = useSocialStore((state) => state.interactions);
   const initializeInteractions = useSocialStore((state) => state.initializeInteractions);
   const togglePostLike = useSocialStore((state) => state.toggleLike);
   const togglePostSave = useSocialStore((state) => state.toggleSave);
@@ -398,10 +340,18 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     [navigation],
   );
 
-  useEffect(() => {
-    if (serviceProviderMode === "mock") return;
-    void fetchActivityEvents();
-  }, [fetchActivityEvents, serviceProviderMode]);
+  // The bell count is read from the server: refresh it when Home is shown and when the
+  // app returns to the foreground, not only once at mount.
+  useFocusEffect(
+    useCallback(() => {
+      if (serviceProviderMode === "mock") return undefined;
+      void fetchActivityEvents();
+      const subscription = AppState.addEventListener("change", (nextState) => {
+        if (nextState === "active") void fetchActivityEvents();
+      });
+      return () => subscription.remove();
+    }, [fetchActivityEvents, serviceProviderMode]),
+  );
   const storyCarouselItems = useMemo<StoryItem[]>(() => {
     if (!storiesEnabled) {
       return [];
@@ -431,7 +381,6 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const [feedState, setFeedState] = useState<"loading" | "ready" | "error">("loading");
   const [feedError, setFeedError] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [sections, setSections] = useState<HomeFeedSection[]>([]);
   const [socialFeed, setSocialFeed] = useState<HomeFeedItem[]>([]);
   const [activeCommentItem, setActiveCommentItem] = useState<HomeFeedItem | null>(null);
   const [activeShareItem, setActiveShareItem] = useState<HomeFeedItem | null>(null);
@@ -439,23 +388,15 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const [selectedShareChatIds, setSelectedShareChatIds] = useState<string[]>([]);
   const [draftComment, setDraftComment] = useState("");
   const [activeReplyCommentId, setActiveReplyCommentId] = useState<string | null>(null);
-  const [captionOverflowByPostId, setCaptionOverflowByPostId] = useState<Record<string, boolean>>(
-    {},
-  );
-  const [expandedCaptionByPostId, setExpandedCaptionByPostId] = useState<Record<string, boolean>>(
-    {},
-  );
   // The one video that may play: the most visible video card.
   const [activeVideoPostId, setActiveVideoPostId] = useState<string | null>(null);
   // Home stays mounted under pushed screens and other tabs; videos pause there.
   const isFocused = useIsFocused();
-  const [carouselIndexByPostId, setCarouselIndexByPostId] = useState<Record<string, number>>({});
   const [openingUnseenStoryId, setOpeningUnseenStoryId] = useState<string | null>(null);
   const [openingUnseenStoryDisplayName, setOpeningUnseenStoryDisplayName] = useState<string | null>(
     null,
   );
   const feedRefreshSeedRef = useRef(0);
-  const carouselScrollRefs = useRef<Record<string, ScrollView | null>>({});
   const commentsSheetRef = useRef<BottomSheetModal>(null);
   const shareSheetRef = useRef<BottomSheetModal>(null);
   const commentInputRef = useRef<any>(null);
@@ -470,34 +411,60 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     });
   }, []);
   const shareSnapPoints = useMemo(() => ["45%"], []);
-  const lastImageTapRef = useRef<{ postId: string; at: number } | null>(null);
-  const singleTapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const openingStoryRingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const openingUnseenStoryIdRef = useRef<string | null>(null);
   const openingUnseenStoryDisplayNameRef = useRef<string | null>(null);
-  const heartBurstAnim = useRef(new Animated.Value(0)).current;
-  const [heartBurst, setHeartBurst] = useState<{
-    postId: string;
-    key: number;
-    originX: number;
-    originY: number;
-  } | null>(null);
+  // Paging: where the next page starts (null when the feed has no more pages).
+  const nextCursorRef = useRef<HomeFeedCursor | null>(null);
+  const isLoadingMoreRef = useRef(false);
+  const [hasMoreFeed, setHasMoreFeed] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const socialFeedRef = useRef<HomeFeedItem[]>([]);
   const activeFeedLoadIdRef = useRef(0);
   const lastLoadedFeedAtRef = useRef(0);
   const lastLoadedFeedKeyRef = useRef<string | null>(null);
   // home_feed_viewed fires once per focus, not on every reload.
   const feedViewTrackedRef = useRef(false);
   const socialFeedListRef = useRef<FlashListRef<HomeFeedItem> | null>(null);
+  // A post counts as seen after it stays on screen for a moment; once per post per visit.
+  const impressionTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const impressionTrackedRef = useRef<Set<string>>(new Set());
   const handleViewableItemsChanged = useCallback(
     ({ viewableItems }: { viewableItems: { item?: HomeFeedItem; isViewable: boolean }[] }) => {
       const firstVideo = viewableItems.find(
         (token) => token.isViewable && token.item?.mediaType === "video",
       );
       setActiveVideoPostId(firstVideo?.item?.id ?? null);
+
+      const timers = impressionTimersRef.current;
+      for (const token of viewableItems) {
+        const postId = token.item?.id;
+        if (!postId) continue;
+        if (!token.isViewable) {
+          const pending = timers.get(postId);
+          if (pending) clearTimeout(pending);
+          timers.delete(postId);
+        } else if (!impressionTrackedRef.current.has(postId) && !timers.has(postId)) {
+          timers.set(
+            postId,
+            setTimeout(() => {
+              timers.delete(postId);
+              impressionTrackedRef.current.add(postId);
+              trackAnalyticsEvent("post_impression", { post_id: postId });
+            }, POST_IMPRESSION_DWELL_MS),
+          );
+        }
+      }
     },
     [],
   );
-  const reviewFeedScrollRef = useRef<ScrollView | null>(null);
+  useEffect(() => {
+    const timers = impressionTimersRef.current;
+    return () => {
+      timers.forEach((timer) => clearTimeout(timer));
+      timers.clear();
+    };
+  }, []);
   // Taste changes on every like, save, comment or share tap; read it at load time
   // so a tap does not reload the feed. The key holds only what changes content.
   const profileRef = useRef(profile);
@@ -507,9 +474,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const profileFeedKey = useMemo(() => {
     return [
       profile.id,
-      profile.dietaryPreferences.join(","),
       publishedPostsVersion,
-      personalisation.openness,
       Object.entries(followedAuthors)
         .filter(([, isFollowing]) => isFollowing)
         .map(([authorName]) => authorName)
@@ -521,21 +486,10 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         .sort()
         .join(","),
     ].join("|");
-  }, [
-    followedAuthors,
-    followedUserIds,
-    personalisation.openness,
-    profile.dietaryPreferences,
-    profile.id,
-    publishedPostsVersion,
-  ]);
+  }, [followedAuthors, followedUserIds, profile.id, publishedPostsVersion]);
 
   const loadFeed = useCallback(
-    async (options?: {
-      force?: boolean;
-      preserveReadyOnError?: boolean;
-      showLoading?: boolean;
-    }) => {
+    async (options?: { force?: boolean; showLoading?: boolean }): Promise<boolean> => {
       const requestKey = profileFeedKey;
       const now = Date.now();
       if (
@@ -543,7 +497,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         lastLoadedFeedKeyRef.current === requestKey &&
         now - lastLoadedFeedAtRef.current < FEED_LOAD_DEDUPE_MS
       ) {
-        return;
+        return true;
       }
 
       const loadId = activeFeedLoadIdRef.current + 1;
@@ -556,17 +510,15 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
           followedAuthors,
           followedUserIds,
           refreshSeed: feedRefreshSeedRef.current,
-          personalisation: personalisationRef.current,
         });
         if (activeFeedLoadIdRef.current !== loadId) {
-          return;
+          return true;
         }
-        setSections(bundle.sections);
+        socialFeedRef.current = bundle.socialFeed;
+        nextCursorRef.current = bundle.nextCursor;
+        setHasMoreFeed(Boolean(bundle.nextCursor));
         setSocialFeed(bundle.socialFeed);
-        initializeInteractions(
-          [...bundle.socialFeed, ...bundle.sections.flatMap((section) => section.items)],
-          now,
-        );
+        initializeInteractions(bundle.socialFeed, now);
         lastLoadedFeedKeyRef.current = requestKey;
         lastLoadedFeedAtRef.current = Date.now();
         setFeedError("");
@@ -575,40 +527,75 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
           feedViewTrackedRef.current = true;
           trackAnalyticsEvent("home_feed_viewed", { post_count: bundle.socialFeed.length });
         }
+        return true;
       } catch (error) {
         setFeedError(error instanceof Error ? error.message : "Unable to load home feed.");
         if (activeFeedLoadIdRef.current !== loadId) {
-          return;
+          return false;
         }
-        setFeedState((current) =>
-          options?.preserveReadyOnError && current === "ready" ? current : "error",
-        );
+        // Posts already on screen stay; only an empty feed becomes the error card.
+        if (socialFeedRef.current.length > 0) {
+          setFeedState("ready");
+          useUIStore.getState().showToast({
+            message: "Could not refresh your feed. Check your connection.",
+            tone: "error",
+          });
+        } else {
+          setFeedState("error");
+        }
+        return false;
       }
     },
     [followedAuthors, followedUserIds, initializeInteractions, profileFeedKey],
   );
 
+  const loadMoreFeed = useCallback(async () => {
+    if (isLoadingMoreRef.current || !nextCursorRef.current) return;
+    isLoadingMoreRef.current = true;
+    setIsLoadingMore(true);
+    const loadId = activeFeedLoadIdRef.current;
+    try {
+      // A page can hold only posts that were hidden or blocked; skip to the next one.
+      for (
+        let attempt = 0;
+        attempt <= MAX_EMPTY_PAGE_SKIPS && nextCursorRef.current;
+        attempt += 1
+      ) {
+        const page = await getHomeFeedNextPage(nextCursorRef.current, {
+          followedAuthors,
+          followedUserIds,
+        });
+        if (activeFeedLoadIdRef.current !== loadId) return;
+        nextCursorRef.current = page.nextCursor;
+        setHasMoreFeed(Boolean(page.nextCursor));
+        const knownIds = new Set(socialFeedRef.current.map((item) => item.id));
+        const fresh = page.socialFeed.filter((item) => !knownIds.has(item.id));
+        if (fresh.length) {
+          socialFeedRef.current = [...socialFeedRef.current, ...fresh];
+          setSocialFeed(socialFeedRef.current);
+          initializeInteractions(fresh, Date.now());
+          break;
+        }
+      }
+    } catch {
+      // Keep the cursor: reaching the end again retries the same page.
+    } finally {
+      isLoadingMoreRef.current = false;
+      setIsLoadingMore(false);
+    }
+  }, [followedAuthors, followedUserIds, initializeInteractions]);
+
   const hidePostFromCurrentFeed = useCallback((postId: string) => {
-    setSocialFeed((current) => current.filter((item) => item.id !== postId));
-    setSections((current) =>
-      current.map((section) => ({
-        ...section,
-        items: section.items.filter((item) => item.id !== postId),
-      })),
-    );
+    socialFeedRef.current = socialFeedRef.current.filter((item) => item.id !== postId);
+    setSocialFeed(socialFeedRef.current);
   }, []);
 
   // Bumped after a block so comment lists re-run the session block filter.
   const [blockedAuthorsVersion, setBlockedAuthorsVersion] = useState(0);
   const hideAuthorFromCurrentFeed = useCallback((blockedAuthorId: string) => {
     const isAllowedPost = (item: HomeFeedItem) => item.authorId?.trim() !== blockedAuthorId;
-    setSocialFeed((current) => current.filter(isAllowedPost));
-    setSections((current) =>
-      current.map((section) => ({
-        ...section,
-        items: section.items.filter(isAllowedPost),
-      })),
-    );
+    socialFeedRef.current = socialFeedRef.current.filter(isAllowedPost);
+    setSocialFeed(socialFeedRef.current);
     setBlockedAuthorsVersion((current) => current + 1);
   }, []);
 
@@ -616,7 +603,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     setIsRefreshing(true);
     try {
       feedRefreshSeedRef.current += 1;
-      await loadFeed({ force: true, preserveReadyOnError: true, showLoading: false });
+      await loadFeed({ force: true, showLoading: false });
     } finally {
       setIsRefreshing(false);
     }
@@ -687,19 +674,23 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     }, [loadFeed]),
   );
 
-  // Tab press-to-top behavior intentionally disabled for bottom navigation.
+  // Pressing the Home tab while Home is showing scrolls the feed back to the top.
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("tabPress", () => {
+      if (!navigation.isFocused()) return;
+      socialFeedListRef.current?.scrollToOffset({ offset: 0, animated: true });
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   useEffect(() => {
-    const leadingItems = [
-      ...socialFeed.slice(0, 4),
-      ...sections.flatMap((section) => section.items).slice(0, 4),
-    ];
+    const leadingItems = socialFeed.slice(0, 4);
     leadingItems.forEach((item) => prefetchPostDetail(item));
     prefetchImages(
       leadingItems.map((item) => item.mediaUrls?.[0] ?? item.mediaUrl),
       8,
     );
-  }, [sections, socialFeed]);
+  }, [socialFeed]);
 
   const recordPostDishInteraction = useCallback(
     (item: HomeFeedItem, buttonId: string, type: "dish_like" | "food_button_click") => {
@@ -931,6 +922,10 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         return;
       const wasSaved = Boolean(useSocialStore.getState().interactions[item.id]?.saved);
       void togglePostSave(item.id);
+      // Saving a post also saves its dish: say so, since unsaving the post keeps the dish.
+      if (!wasSaved && primaryDish?.name) {
+        showToast({ message: `Saved ${primaryDish.name} to your dishes`, tone: "success" });
+      }
       // Saving a post also saves its dish, but never un-saves a dish the user
       // already had, and unsaving the post leaves the dish alone.
       if (
@@ -943,19 +938,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         });
       }
     },
-    [requireAuthForPostAction, toggleFavourite, togglePostSave],
-  );
-
-  const handleCaptionTextLayout = useCallback(
-    (postId: string, event: NativeSyntheticEvent<TextLayoutEventData>) => {
-      const isOverflowing = event.nativeEvent.lines.length > 2;
-      setCaptionOverflowByPostId((current) =>
-        current[postId] === isOverflowing || (current[postId] && !isOverflowing)
-          ? current
-          : { ...current, [postId]: isOverflowing },
-      );
-    },
-    [],
+    [requireAuthForPostAction, showToast, toggleFavourite, togglePostSave],
   );
 
   const commentsForActiveItem = useMemo(() => {
@@ -1072,105 +1055,6 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     [navigation, recordTasteInteraction],
   );
 
-  const runDoubleTapHeartAnimation = useCallback(
-    (postId: string, origin: { x: number; y: number }) => {
-      setHeartBurst({
-        postId,
-        key: Date.now(),
-        originX: origin.x,
-        originY: origin.y,
-      });
-      heartBurstAnim.stopAnimation();
-      heartBurstAnim.setValue(0);
-      Animated.timing(heartBurstAnim, {
-        toValue: 1,
-        duration: 980,
-        useNativeDriver: true,
-      }).start(() => {
-        setHeartBurst((current) => (current?.postId === postId ? null : current));
-      });
-    },
-    [heartBurstAnim],
-  );
-
-  const handlePostImagePress = useCallback(
-    (
-      item: HomeFeedItem,
-      event: GestureResponderEvent,
-      options?: {
-        isCarousel?: boolean;
-        carouselPostKey?: string;
-        slideCount?: number;
-      },
-    ) => {
-      const tapOrigin = {
-        x: event.nativeEvent.locationX,
-        y: event.nativeEvent.locationY,
-      };
-      const now = Date.now();
-      const lastTap = lastImageTapRef.current;
-
-      if (lastTap?.postId === item.id && now - lastTap.at <= DOUBLE_TAP_DELAY_MS) {
-        lastImageTapRef.current = null;
-        if (singleTapTimerRef.current) {
-          clearTimeout(singleTapTimerRef.current);
-          singleTapTimerRef.current = null;
-        }
-        if (!interactions[item.id]?.liked) {
-          handlePostLike(item);
-        } else {
-          void triggerDoubleTapHaptic();
-        }
-        runDoubleTapHeartAnimation(item.id, tapOrigin);
-        return;
-      }
-
-      lastImageTapRef.current = { postId: item.id, at: now };
-      if (singleTapTimerRef.current) {
-        clearTimeout(singleTapTimerRef.current);
-      }
-      singleTapTimerRef.current = setTimeout(() => {
-        if (options?.isCarousel && options.carouselPostKey && (options.slideCount ?? 0) > 1) {
-          const slideCount = options.slideCount ?? 0;
-          const currentIndex = carouselIndexByPostId[options.carouselPostKey] ?? 0;
-          const roundedIndex = Math.round(currentIndex);
-          const isRightTap = tapOrigin.x >= screenWidth / 2;
-          const nextIndex = isRightTap
-            ? Math.min(roundedIndex + 1, slideCount - 1)
-            : Math.max(roundedIndex - 1, 0);
-          const clampedIndex = Math.max(0, Math.min(nextIndex, slideCount - 1));
-
-          if (clampedIndex !== roundedIndex) {
-            setCarouselIndexByPostId((current) => {
-              const isAlreadyAtTarget =
-                Math.abs((current[options.carouselPostKey!] ?? 0) - clampedIndex) < 0.0005;
-
-              if (isAlreadyAtTarget) {
-                return current;
-              }
-
-              return {
-                ...current,
-                [options.carouselPostKey!]: clampedIndex,
-              };
-            });
-
-            const carouselScrollRef = carouselScrollRefs.current[options.carouselPostKey];
-            if (carouselScrollRef) {
-              carouselScrollRef.scrollTo({
-                x: clampedIndex * screenWidth,
-                animated: true,
-              });
-            }
-          }
-        }
-        lastImageTapRef.current = null;
-        singleTapTimerRef.current = null;
-      }, DOUBLE_TAP_DELAY_MS);
-    },
-    [carouselIndexByPostId, handlePostLike, interactions, runDoubleTapHeartAnimation, screenWidth],
-  );
-
   const handleStoryPress = useCallback(
     (story: StoryItem) => {
       if (!shouldShowStories) return;
@@ -1208,9 +1092,6 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
 
   useEffect(
     () => () => {
-      if (singleTapTimerRef.current) {
-        clearTimeout(singleTapTimerRef.current);
-      }
       if (openingStoryRingTimerRef.current) {
         clearTimeout(openingStoryRingTimerRef.current);
       }
@@ -1225,8 +1106,14 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     () => (
       <View style={styles.activityButtonWrap}>
         <IconButton
-          accessibilityLabel="Open activity inbox"
-          accessibilityHint="Shows messages, comments, likes, and shares"
+          accessibilityLabel={
+            activityUnreadCount > 0 ? `Activity, ${activityUnreadCount} unread` : "Activity"
+          }
+          accessibilityHint={
+            directMessagesEnabled
+              ? "Opens your messages and updates"
+              : "Opens who liked, followed or asked to follow you"
+          }
           icon={<Bell color={palette.text} size={22} />}
           onPress={() => navigation.navigate("ActivityInbox", { initialTab: activityInitialTab })}
           onPressIn={() =>
@@ -1248,6 +1135,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     [
       activityUnreadCount,
       activityInitialTab,
+      directMessagesEnabled,
       navigation,
       palette.error,
       palette.text,
@@ -1309,868 +1197,115 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   );
   const listHeader = useMemo(() => renderHeader(), [renderHeader]);
 
-  const renderFeedCard = useCallback(
-    (item: HomeFeedItem, cardMode: HomeFeedMode, postPosition = 0) => {
-      const interaction = interactions[item.id] ?? {
-        liked: false,
-        saved: false,
-        likeCount: 0,
-        saveCount: 0,
-        shareCount: 0,
-        commentCount: 0,
-      };
-      const isLiked = interaction.liked;
-      const isSaved = interaction.saved;
+  const canUseAuthorFallbackFollow =
+    serviceProviderMode === "mock" || (typeof __DEV__ !== "undefined" && __DEV__);
 
-      if (cardMode === "social") {
-        const imageHeight = Math.min(Math.max(screenWidth * 1.12, 360), 460);
-        const authorRowHeight = spacing[3] * 2 + 32;
-        const heartOriginX = heartBurst?.postId === item.id ? heartBurst.originX : screenWidth / 2;
-        const heartOriginY = heartBurst?.postId === item.id ? heartBurst.originY : imageHeight / 2;
-        const likeIconTargetTranslateX = screenWidth - spacing[3] - 12 - heartOriginX;
-        const likeIconTargetTranslateY =
-          imageHeight + spacing[3] + 32 + spacing[2] + 12 - heartOriginY;
-        const followTargetId = item.authorId;
-        const isOwnAuthor = Boolean(followTargetId && followTargetId === profile.id);
-        const canUseAuthorFallbackFollow =
-          serviceProviderMode === "mock" || (typeof __DEV__ !== "undefined" && __DEV__);
-        const canShowFollowButton = Boolean(followTargetId) || canUseAuthorFallbackFollow;
-        const isFollowingAuthor = followTargetId
-          ? Boolean(followedUserIds[followTargetId])
-          : canUseAuthorFallbackFollow && Boolean(followedAuthors[item.authorName]);
-        // Pending request to a private account: tapping again cancels it.
-        const isFollowRequested = Boolean(
-          followTargetId && !isFollowingAuthor && requestedUserIds[followTargetId],
-        );
-        const isFollowMuted = isFollowingAuthor || isFollowRequested;
-        const postAgeLabel = formatPostAge(item.createdAt);
-        const mediaUrls =
-          item.mediaType === "photo" && item.mediaUrls?.length ? item.mediaUrls : [item.mediaUrl];
-        const isCarousel = item.mediaType === "photo" && mediaUrls.length > 1;
-        const carouselPostKey = `${cardMode}-${postPosition}-${item.id}`;
-        const carouselSlideOptions = mediaUrls.map((uri, index) => ({
-          key: `${carouselPostKey}-slide-${index}`,
-          uri,
-          index,
-        }));
-        const activeCarouselIndex = Math.min(
-          carouselIndexByPostId[carouselPostKey] ?? 0,
-          Math.max(carouselSlideOptions.length - 1, 0),
-        );
-        const postTags =
-          (item.tags?.length ? item.tags : item.dishes[0]?.tasteTags)?.slice(0, 4) ?? [];
-        // onTextLayout may not report lines on Android: length is the fallback signal.
-        const captionOverflows =
-          Boolean(captionOverflowByPostId[item.id]) ||
-          item.caption.length > COLLAPSED_CAPTION_MAX_CHARS;
-        const isCaptionExpanded = Boolean(expandedCaptionByPostId[item.id]);
-        const actionTargetName = item.dishes[0]?.name ?? item.venue.name;
-        const shouldShowFoodContextOverlay = item.showFoodContextOverlay !== false;
-
-        return (
-          <View key={item.id} style={[styles.feedItemWrap, { backgroundColor: themeTints.bg }]}>
-            {/* Row 1: Profile & Follow */}
-            <View
-              style={{
-                alignItems: "center",
-                flexDirection: "row",
-                justifyContent: "space-between",
-                paddingHorizontal: spacing[3],
-                paddingVertical: spacing[3],
-              }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Open ${item.authorName} profile photo`}
-                  hitSlop={8}
-                  onPressIn={() => prefetchUserProfileRoute(item)}
-                  onPress={() =>
-                    openUserProfile(
-                      item.authorName,
-                      item.authorAvatarUrl,
-                      item.authorLocation,
-                      item.authorId,
-                    )
-                  }
-                >
-                  <Avatar uri={item.authorAvatarUrl} name={item.authorName} size={32} />
-                </Pressable>
-                <View>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={`Open ${item.authorName} profile`}
-                    hitSlop={8}
-                    onPressIn={() => prefetchUserProfileRoute(item)}
-                    onPress={() =>
-                      openUserProfile(
-                        item.authorName,
-                        item.authorAvatarUrl,
-                        item.authorLocation,
-                        item.authorId,
-                      )
-                    }
-                  >
-                    <AppText variant="bodySmallBold" style={{ color: themeTints.text }}>
-                      {item.authorName}
-                    </AppText>
-                  </Pressable>
-                  <View style={{ alignItems: "center", flexDirection: "row" }}>
-                    {canAccessMap ? (
-                      <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel={`Show ${item.authorLocation} on map`}
-                        hitSlop={8}
-                        onPressIn={() => prefetchMapRoute(item)}
-                        onPress={() => openVenueOnMap(item)}
-                      >
-                        <AppText variant="micro" tone="secondary">
-                          {item.authorLocation}
-                        </AppText>
-                      </Pressable>
-                    ) : (
-                      <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel={`Open ${item.authorLocation}`}
-                        hitSlop={8}
-                        onPress={() =>
-                          navigation.navigate("StallDetail", { venueId: item.venueId })
-                        }
-                      >
-                        <AppText variant="micro" tone="secondary">
-                          {item.authorLocation}
-                        </AppText>
-                      </Pressable>
-                    )}
-                  </View>
-                </View>
-              </View>
-
-              <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
-                {!isOwnAuthor && canShowFollowButton ? (
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={`${isFollowRequested ? "Cancel follow request to" : isFollowingAuthor ? "Unfollow" : "Follow"} ${item.authorName}`}
-                    hitSlop={8}
-                    onPress={() => {
-                      if (
-                        !requireAuthForFollow(
-                          followTargetId ? () => followUserAfterSignIn(followTargetId) : undefined,
-                        )
-                      )
-                        return;
-                      void (followTargetId
-                        ? toggleFollow(followTargetId)
-                        : toggleAuthorFollow(item.authorName));
-                    }}
-                    style={[
-                      styles.followButton,
-                      {
-                        // orangeControl keeps the white micro label above 4.5:1.
-                        backgroundColor: isFollowMuted ? themeTints.cardBg : palette.orangeControl,
-                        borderColor: isFollowMuted ? palette.border : palette.orangeControl,
-                      },
-                    ]}
-                  >
-                    <AppText
-                      variant="micro"
-                      style={{
-                        color: isFollowMuted ? themeTints.text : palette.white,
-                        fontWeight: "800",
-                      }}
-                    >
-                      {isFollowRequested ? "Requested" : isFollowingAuthor ? "Following" : "Follow"}
-                    </AppText>
-                  </Pressable>
-                ) : null}
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Manage ${item.authorName}'s post`}
-                  hitSlop={10}
-                  onPress={() =>
-                    promptPostSafetyActions({
-                      postId: item.id,
-                      authorName: item.authorName,
-                      authorId: item.authorId,
-                      label: "post",
-                      onHidden: hidePostFromCurrentFeed,
-                      onBlocked: hideAuthorFromCurrentFeed,
-                    })
-                  }
-                  style={styles.moreAction}
-                >
-                  <MoreHorizontal color={themeTints.text} size={20} />
-                </Pressable>
-              </View>
-            </View>
-
-            {/* Image Container */}
-            <View style={[styles.imageContainer, { height: imageHeight }]}>
-              {isCarousel ? (
-                <ScrollView
-                  horizontal
-                  pagingEnabled
-                  bounces={false}
-                  showsHorizontalScrollIndicator={false}
-                  ref={(ref) => {
-                    if (ref) {
-                      carouselScrollRefs.current[carouselPostKey] = ref;
-                    } else {
-                      delete carouselScrollRefs.current[carouselPostKey];
-                    }
-                  }}
-                  // State is written only when the rounded page index changes,
-                  // not every scroll frame: each write re-renders every mounted
-                  // feed card. onScroll (not onMomentumScrollEnd) so web updates too.
-                  scrollEventThrottle={16}
-                  onScroll={(event) => {
-                    const viewportWidth = Math.max(event.nativeEvent.layoutMeasurement.width, 1);
-                    const nextIndex = Math.round(event.nativeEvent.contentOffset.x / viewportWidth);
-                    const clampedIndex = Math.max(
-                      0,
-                      Math.min(nextIndex, carouselSlideOptions.length - 1),
-                    );
-                    setCarouselIndexByPostId((current) => {
-                      if (current[carouselPostKey] === clampedIndex) {
-                        return current;
-                      }
-
-                      return {
-                        ...current,
-                        [carouselPostKey]: clampedIndex,
-                      };
-                    });
-                  }}
-                  style={StyleSheet.absoluteFill}
-                >
-                  {carouselSlideOptions.map(({ key, uri, index }) => (
-                    <View
-                      key={key}
-                      style={[styles.carouselPage, { width: screenWidth, height: imageHeight }]}
-                    >
-                      <ZoomableMedia
-                        uri={uri}
-                        type="image"
-                        accessibilityLabel={`${actionTargetName} post image ${index + 1} of ${
-                          carouselSlideOptions.length
-                        }`}
-                        accessibilityHint="Opens this image and supports double tap to like"
-                        onPress={(event) =>
-                          handlePostImagePress(item, event, {
-                            isCarousel: true,
-                            carouselPostKey,
-                            slideCount: carouselSlideOptions.length,
-                          })
-                        }
-                        style={styles.heroImage}
-                      />
-                    </View>
-                  ))}
-                </ScrollView>
-              ) : (
-                <ZoomableMedia
-                  uri={mediaUrls[0]}
-                  type={item.mediaType === "video" ? "video" : "image"}
-                  accessibilityLabel={`${actionTargetName} post ${
-                    item.mediaType === "video" ? "video" : "image"
-                  }`}
-                  accessibilityHint="Opens this media and supports double tap to like"
-                  onPress={(event) => handlePostImagePress(item, event)}
-                  isActive={isFocused && activeVideoPostId === item.id}
-                  onDoubleTap={(origin) => {
-                    if (!interactions[item.id]?.liked) {
-                      handlePostLike(item);
-                    } else {
-                      void triggerDoubleTapHaptic();
-                    }
-                    runDoubleTapHeartAnimation(item.id, origin);
-                  }}
-                  style={styles.heroImage}
-                />
-              )}
-
-              {isCarousel ? (
-                <View pointerEvents="none" style={styles.carouselDots}>
-                  {carouselSlideOptions.map(({ key }, index) => {
-                    const activeDelta = Math.abs(activeCarouselIndex - index);
-                    const dotWidth = activeDelta <= 1 ? 6 + (18 - 6) * (1 - activeDelta) : 6;
-                    const dotOpacity = Math.max(0.35, 1 - activeDelta);
-
-                    return (
-                      <View
-                        key={`${key}-dot-${index}`}
-                        style={[
-                          styles.carouselDot,
-                          { opacity: dotOpacity, width: dotWidth },
-                          activeDelta < 0.01 ? styles.carouselDotActive : null,
-                        ]}
-                      />
-                    );
-                  })}
-                </View>
-              ) : null}
-
-              {shouldShowFoodContextOverlay ? (
-                <>
-                  <LinearGradient
-                    colors={["transparent", palette.mediaScrimStrong]}
-                    style={[styles.gradientScrim, { height: "40%", top: "60%" }]}
-                    pointerEvents="none"
-                  />
-
-                  <View
-                    style={{
-                      position: "absolute",
-                      bottom: spacing[3],
-                      left: spacing[3],
-                      right: spacing[3],
-                      gap: spacing[0.5],
-                    }}
-                    pointerEvents="box-none"
-                  >
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel={
-                        item.dishes[0]?.id
-                          ? `Open ${item.dishes[0]?.name ?? "dish"}`
-                          : `Open ${item.venue.name}`
-                      }
-                      hitSlop={8}
-                      onPressIn={() => prefetchFeedCardRoute(item)}
-                      onPress={() => navigateToDish(item)}
-                    >
-                      <AppText variant="h3" style={{ color: palette.white }}>
-                        {item.dishes[0]?.name ?? item.venue.name}
-                      </AppText>
-                    </Pressable>
-                    {canAccessMap ? (
-                      <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel={`Show ${item.venue.name} on map`}
-                        hitSlop={8}
-                        onPressIn={() => prefetchMapRoute(item)}
-                        onPress={() => openVenueOnMap(item)}
-                      >
-                        <AppText variant="micro" style={{ color: palette.inverseTextSecondary }}>
-                          {item.venue.name} · {item.venue.floor} {item.venue.unitNumber}
-                        </AppText>
-                      </Pressable>
-                    ) : (
-                      <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel={`Open ${item.venue.name}`}
-                        hitSlop={8}
-                        onPress={() =>
-                          navigation.navigate("StallDetail", { venueId: item.venueId })
-                        }
-                      >
-                        <AppText variant="micro" style={{ color: palette.inverseTextSecondary }}>
-                          {item.venue.name} · {item.venue.floor} {item.venue.unitNumber}
-                        </AppText>
-                      </Pressable>
-                    )}
-                  </View>
-                </>
-              ) : null}
-            </View>
-
-            {heartBurst?.postId === item.id ? (
-              <Animated.View
-                key={heartBurst.key}
-                pointerEvents="none"
-                style={[
-                  styles.doubleTapHeart,
-                  {
-                    top: authorRowHeight + heartBurst.originY - 42,
-                    left: heartBurst.originX - 42,
-                    opacity: heartBurstAnim.interpolate({
-                      inputRange: [0, 0.12, 0.86, 1],
-                      outputRange: [0, 1, 1, 0],
-                    }),
-                    transform: [
-                      {
-                        translateX: heartBurstAnim.interpolate({
-                          inputRange: [0, 0.38, 0.55, 1],
-                          outputRange: [
-                            0,
-                            0,
-                            likeIconTargetTranslateX * 0.35,
-                            likeIconTargetTranslateX,
-                          ],
-                        }),
-                      },
-                      {
-                        translateY: heartBurstAnim.interpolate({
-                          inputRange: [0, 0.24, 0.42, 1],
-                          outputRange: [0, -76, -58, likeIconTargetTranslateY],
-                        }),
-                      },
-                      {
-                        scale: heartBurstAnim.interpolate({
-                          inputRange: [0, 0.18, 0.34, 0.72, 1],
-                          outputRange: [0.7, 1.28, 1.05, 0.82, 0.42],
-                        }),
-                      },
-                    ],
-                  },
-                ]}
-              >
-                <Heart color={palette.error} fill={palette.error} size={84} strokeWidth={1.5} />
-              </Animated.View>
-            ) : null}
-
-            {/* Post Details (Below Image) */}
-            <View
-              style={{
-                paddingHorizontal: spacing[3],
-                paddingVertical: spacing[3],
-                gap: spacing[2],
-              }}
-            >
-              {/* Row 1: Icons */}
-              <View style={{ flexDirection: "row", justifyContent: "flex-end" }}>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "flex-end",
-                    alignItems: "center",
-                    gap: spacing[4],
-                  }}
-                >
-                  <Pressable
-                    hitSlop={10}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Share ${actionTargetName} in Hungry`}
-                    accessibilityHint="Opens sharing options for this post"
-                    onPress={() => openShareSheet(item)}
-                    style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
-                  >
-                    <Send color={themeTints.text} size={24} />
-                    {interaction.shareCount > 0 && (
-                      <AppText
-                        variant="micro"
-                        style={{ color: themeTints.text, fontWeight: "600" }}
-                      >
-                        {interaction.shareCount}
-                      </AppText>
-                    )}
-                  </Pressable>
-                  <Pressable
-                    hitSlop={10}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${isSaved ? "Unsave" : "Save"} ${actionTargetName}`}
-                    accessibilityHint={
-                      isSaved
-                        ? "Removes this post from your saved items"
-                        : "Adds this post to your saved items"
-                    }
-                    accessibilityState={{ selected: isSaved }}
-                    onPress={() => handlePostSave(item)}
-                    style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
-                  >
-                    <Bookmark
-                      color={isSaved ? palette.orange : themeTints.text}
-                      fill={isSaved ? palette.orange : "transparent"}
-                      size={24}
-                    />
-                  </Pressable>
-                  {commentsEnabled ? (
-                    <Pressable
-                      hitSlop={10}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Comment on ${actionTargetName}`}
-                      accessibilityHint="Opens the comments for this post"
-                      onPress={() => openComments(item)}
-                      style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
-                    >
-                      {CommentIcon ? <CommentIcon color={themeTints.text} size={24} /> : null}
-                      {interaction.commentCount > 0 && (
-                        <AppText
-                          variant="micro"
-                          style={{ color: themeTints.text, fontWeight: "600" }}
-                        >
-                          {interaction.commentCount}
-                        </AppText>
-                      )}
-                    </Pressable>
-                  ) : null}
-                  <Pressable
-                    hitSlop={10}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${isLiked ? "Unlike" : "Like"} ${actionTargetName}`}
-                    accessibilityHint={
-                      isLiked ? "Removes your like from this post" : "Adds a like to this post"
-                    }
-                    accessibilityState={{ selected: isLiked }}
-                    onPress={() => handlePostLike(item)}
-                    style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
-                  >
-                    <Heart
-                      color={isLiked ? palette.error : themeTints.text}
-                      fill={isLiked ? palette.error : "transparent"}
-                      size={24}
-                    />
-                    {interaction.likeCount > 0 && (
-                      <AppText
-                        variant="micro"
-                        style={{ color: themeTints.text, fontWeight: "600" }}
-                      >
-                        {interaction.likeCount}
-                      </AppText>
-                    )}
-                  </Pressable>
-                </View>
-              </View>
-
-              {/* Row 2: Caption */}
-              <View style={{ gap: spacing[1] }}>
-                {/* A collapsed caption expands in place; comments stay on the comment button. */}
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={
-                    captionOverflows && !isCaptionExpanded
-                      ? `Show the full caption of ${item.authorName}'s post`
-                      : `Open ${item.authorName}'s post`
-                  }
-                  accessibilityState={
-                    captionOverflows ? { expanded: isCaptionExpanded } : undefined
-                  }
-                  onPress={() => {
-                    if (captionOverflows && !isCaptionExpanded) {
-                      setExpandedCaptionByPostId((current) => ({ ...current, [item.id]: true }));
-                      return;
-                    }
-                    navigation.navigate("ActivityPostDetail", { postId: item.id });
-                  }}
-                  hitSlop={6}
-                >
-                  <AppText
-                    variant="bodySmall"
-                    numberOfLines={isCaptionExpanded ? undefined : 2}
-                    onTextLayout={(event) => handleCaptionTextLayout(item.id, event)}
-                    style={{
-                      color: themeTints.text,
-                      textAlign: leftHandedMode ? "right" : "left",
-                      marginTop: spacing[1],
-                    }}
-                  >
-                    {captionOverflows && !isCaptionExpanded
-                      ? formatCollapsedCaption(item.caption)
-                      : item.caption}
-                    {captionOverflows && !isCaptionExpanded ? (
-                      <AppText
-                        variant="bodySmall"
-                        style={{ color: palette.orangeText, fontWeight: "900" }}
-                      >
-                        {" more"}
-                      </AppText>
-                    ) : null}
-                  </AppText>
-                </Pressable>
-                <AppText
-                  variant="micro"
-                  tone="secondary"
-                  style={{ alignSelf: leftHandedMode ? "flex-end" : "flex-start" }}
-                >
-                  {postAgeLabel}
-                </AppText>
-              </View>
-
-              {postTags.length ? (
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[1] }}>
-                  {postTags.map((tag) => (
-                    <View
-                      key={`${item.id}-${tag}`}
-                      style={[
-                        styles.postTag,
-                        { backgroundColor: palette.bgSoft, borderColor: palette.border },
-                      ]}
-                    >
-                      <AppText variant="micro" tone="secondary" style={{ fontWeight: "800" }}>
-                        {tag}
-                      </AppText>
-                    </View>
-                  ))}
-                </View>
-              ) : null}
-            </View>
-          </View>
-        );
-      }
-
-      return (
-        <Pressable
-          key={item.id}
-          accessibilityRole="button"
-          accessibilityLabel={
-            item.dishes[0]?.id
-              ? `Open details for ${item.dishes[0]?.name ?? "dish"}`
-              : `Open stall details for ${item.venue.name}`
-          }
-          accessibilityHint="Opens the related dish or stall detail page"
-          onPressIn={() => prefetchFeedCardRoute(item)}
-          onPress={() => {
-            navigateToDish(item);
-          }}
-          style={[
-            shadows.card,
-            {
-              backgroundColor: themeTints.cardBg,
-              borderRadius: componentRadii.card,
-              width: 300,
-              overflow: "hidden",
-              borderWidth: themeTints.isDark ? 0 : 1,
-              borderColor: palette.border,
-            },
-          ]}
-        >
-          <AccessibleImage
-            source={{ uri: item.mediaUrls?.[0] ?? item.mediaUrl }}
-            style={{ width: "100%", height: 180 }}
-            contentFit="cover"
-            decorative
-          />
-
-          {/* Interaction Overlay */}
-          <View
-            style={{
-              position: "absolute",
-              top: spacing[3],
-              left: leftHandedMode ? spacing[3] : undefined,
-              right: leftHandedMode ? undefined : spacing[3],
-              gap: spacing[2],
-            }}
-          >
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`${isLiked ? "Unlike" : "Like"} ${item.dishes[0]?.name ?? item.venue.name}`}
-              accessibilityHint={
-                isLiked ? "Removes your like from this post" : "Adds a like to this post"
-              }
-              accessibilityState={{ selected: isLiked }}
-              onPress={(event) => {
-                event.stopPropagation();
-                handlePostLike(item);
-              }}
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: componentRadii.iconButton,
-                backgroundColor: themeTints.actionOverlayBg,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Heart
-                color={isLiked ? palette.error : themeTints.text}
-                fill={isLiked ? palette.error : "transparent"}
-                size={18}
-              />
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`${isSaved ? "Unsave" : "Save"} ${item.dishes[0]?.name ?? item.venue.name}`}
-              accessibilityHint={
-                isSaved
-                  ? "Removes this post from your saved items"
-                  : "Adds this post to your saved items"
-              }
-              accessibilityState={{ selected: isSaved }}
-              onPress={(event) => {
-                event.stopPropagation();
-                handlePostSave(item);
-              }}
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: componentRadii.iconButton,
-                backgroundColor: themeTints.actionOverlayBg,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Bookmark
-                color={isSaved ? palette.orange : themeTints.text}
-                fill={isSaved ? palette.orange : "transparent"}
-                size={18}
-              />
-            </Pressable>
-          </View>
-
-          <View style={{ padding: spacing[3], gap: spacing[1] }}>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <AppText
-                style={{
-                  fontWeight: "800",
-                  fontSize: 16,
-                  flex: 1,
-                  color: themeTints.text,
-                }}
-                numberOfLines={1}
-              >
-                {item.dishes[0]?.name ?? item.caption}
-              </AppText>
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: spacing[1],
-                }}
-              >
-                <Star color={palette.amber} fill={palette.amber} size={14} />
-                <AppText
-                  style={{
-                    fontWeight: "700",
-                    fontSize: 14,
-                    color: themeTints.text,
-                  }}
-                >
-                  {(item.dishes[0]?.rating ?? 4.5).toFixed(1)}
-                </AppText>
-              </View>
-            </View>
-            <View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap" }}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Open ${item.authorName} profile`}
-                onPressIn={() => prefetchUserProfileRoute(item)}
-                onPress={() =>
-                  openUserProfile(
-                    item.authorName,
-                    item.authorAvatarUrl,
-                    item.authorLocation,
-                    item.authorId,
-                  )
-                }
-              >
-                <AppText
-                  variant="micro"
-                  style={{ color: themeTints.secondaryText }}
-                  numberOfLines={1}
-                >
-                  {item.authorName}
-                </AppText>
-              </Pressable>
-              <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
-                {" · "}
-              </AppText>
-              {canAccessMap ? (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Show ${item.authorLocation} on map`}
-                  onPressIn={() => prefetchMapRoute(item)}
-                  onPress={() => openVenueOnMap(item)}
-                >
-                  <AppText
-                    variant="micro"
-                    style={{ color: themeTints.secondaryText }}
-                    numberOfLines={1}
-                  >
-                    {item.authorLocation}
-                  </AppText>
-                </Pressable>
-              ) : (
-                <AppText
-                  variant="micro"
-                  style={{ color: themeTints.secondaryText }}
-                  numberOfLines={1}
-                >
-                  {item.authorLocation}
-                </AppText>
-              )}
-            </View>
-
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: spacing[2],
-                marginTop: spacing[2],
-              }}
-            >
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: spacing[1],
-                  backgroundColor: themeTints.badgeBg,
-                  paddingHorizontal: spacing[2],
-                  paddingVertical: spacing[1],
-                  borderRadius: radii.sm,
-                }}
-              >
-                {CommentIcon ? <CommentIcon color={themeTints.secondaryText} size={12} /> : null}
-                <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
-                  {interaction.commentCount}
-                </AppText>
-              </View>
-              {item.dishes[0]?.price && (
-                <AppText variant="price" style={{ color: palette.orangeText, fontSize: 14 }}>
-                  S${item.dishes[0].price.toFixed(2)}
-                </AppText>
-              )}
-            </View>
-          </View>
-        </Pressable>
-      );
+  const handleToggleFollow = useCallback(
+    (item: HomeFeedItem) => {
+      const followTargetId = item.authorId;
+      if (
+        !requireAuthForFollow(
+          followTargetId ? () => followUserAfterSignIn(followTargetId) : undefined,
+        )
+      )
+        return;
+      void (followTargetId ? toggleFollow(followTargetId) : toggleAuthorFollow(item.authorName));
     },
+    [requireAuthForFollow, toggleAuthorFollow, toggleFollow],
+  );
+
+  const handleOpenPostMenu = useCallback(
+    (item: HomeFeedItem) => {
+      // Report, hide and block all need an account; guests get the sign-in sheet.
+      if (!requireAuthForPostAction("Sign in to report or block.")) return;
+      promptPostSafetyActions({
+        postId: item.id,
+        authorName: item.authorName,
+        authorId: item.authorId,
+        label: "post",
+        onHidden: hidePostFromCurrentFeed,
+        onBlocked: hideAuthorFromCurrentFeed,
+      });
+    },
+    [hideAuthorFromCurrentFeed, hidePostFromCurrentFeed, requireAuthForPostAction],
+  );
+
+  const feedCardActions = useMemo<FeedPostCardActions>(
+    () => ({
+      like: handlePostLike,
+      save: handlePostSave,
+      share: openShareSheet,
+      openComments,
+      openMenu: handleOpenPostMenu,
+      toggleFollow: handleToggleFollow,
+      openProfile: (item) =>
+        openUserProfile(item.authorName, item.authorAvatarUrl, item.authorLocation, item.authorId),
+      openDish: navigateToDish,
+      openVenue: (item) =>
+        canAccessMap
+          ? openVenueOnMap(item)
+          : navigation.navigate("StallDetail", { venueId: item.venueId }),
+      prefetchProfile: prefetchUserProfileRoute,
+      prefetchVenue: prefetchMapRoute,
+      prefetchDish: prefetchFeedCardRoute,
+      openPost: (item) => navigation.navigate("ActivityPostDetail", { postId: item.id }),
+    }),
     [
-      interactions,
-      captionOverflowByPostId,
-      expandedCaptionByPostId,
-      activeVideoPostId,
-      isFocused,
-      requireAuthForPostAction,
-      runDoubleTapHeartAnimation,
-      handleCaptionTextLayout,
-      handlePostImagePress,
-      heartBurst,
-      heartBurstAnim,
-      followedAuthors,
-      followedUserIds,
-      requestedUserIds,
-      navigateToDish,
-      shadows.card,
-      themeTints,
-      radii,
-      palette.border,
-      palette.error,
-      palette.text,
-      palette.orange,
-      palette.orangeControl,
-      palette.orangeText,
-      palette.amber,
-      palette.bgSoft,
-      spacing,
+      canAccessMap,
+      handleOpenPostMenu,
       handlePostLike,
       handlePostSave,
-      toggleAuthorFollow,
-      toggleFollow,
-      requireAuthForFollow,
-      serviceProviderMode,
-      incrementPostShare,
-      openShareSheet,
+      handleToggleFollow,
+      navigateToDish,
       navigation,
-      screenWidth,
       openComments,
-      openVenueOnMap,
+      openShareSheet,
       openUserProfile,
+      openVenueOnMap,
       prefetchFeedCardRoute,
       prefetchMapRoute,
       prefetchUserProfileRoute,
-      profile.id,
-      leftHandedMode,
-      palette.white,
-      carouselIndexByPostId,
-      commentsEnabled,
     ],
   );
+
+  const renderFeedItem = useCallback(
+    ({ item }: { item: HomeFeedItem }) => (
+      <FeedPostCard
+        item={item}
+        actions={feedCardActions}
+        isVideoActive={isFocused && activeVideoPostId === item.id}
+        canAccessMap={canAccessMap}
+        canShowFollow={Boolean(item.authorId) || canUseAuthorFallbackFollow}
+        commentsEnabled={commentsEnabled}
+        viewerId={profile.id}
+      />
+    ),
+    [
+      activeVideoPostId,
+      canAccessMap,
+      canUseAuthorFallbackFollow,
+      commentsEnabled,
+      feedCardActions,
+      isFocused,
+      profile.id,
+    ],
+  );
+
+  const retryFeed = useCallback(() => {
+    void loadFeed({ force: true });
+  }, [loadFeed]);
+
+  const feedFooter = isLoadingMore ? (
+    <View style={{ alignItems: "center", paddingVertical: spacing[4] }}>
+      <ActivityIndicator color={palette.orange} />
+    </View>
+  ) : socialFeed.length > 0 && !hasMoreFeed ? (
+    <View style={{ alignItems: "center", paddingVertical: spacing[4] }}>
+      <AppText variant="bodySmall" tone="muted">
+        You&apos;re all caught up
+      </AppText>
+    </View>
+  ) : null;
 
   if (feedState === "loading") {
     return (
@@ -2178,55 +1313,16 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         style={{ flex: 1, backgroundColor: themeTints.bg }}
         edges={["top", "left", "right"]}
       >
-        <FeedErrorBoundary
-          onRetry={() => {
-            void loadFeed({ force: true });
-          }}
-        >
-          {mode === "social" ? (
-            <ScrollView
-              scrollEnabled={false}
-              accessibilityLabel="Loading your food feed"
-              accessibilityState={{ busy: true }}
-            >
-              {listHeader}
-              <PostSkeleton />
-              <PostSkeleton />
-            </ScrollView>
-          ) : (
-            <ScrollView scrollEnabled={false}>
-              {renderHeader()}
-              <FeedSkeleton />
-              <FeedSkeleton />
-            </ScrollView>
-          )}
-        </FeedErrorBoundary>
-      </SafeAreaView>
-    );
-  }
-
-  if (feedState === "error") {
-    return (
-      <SafeAreaView
-        style={{ flex: 1, backgroundColor: themeTints.bg }}
-        edges={["top", "left", "right"]}
-      >
-        <FeedErrorBoundary
-          onRetry={() => {
-            void loadFeed({ force: true });
-          }}
-        >
-          <FeedStateView
-            state="error"
-            title="Something went wrong"
-            body="We couldn't load your feed right now. Please check your connection and try again."
-            errorMessage={feedError}
-            errorContext="Home feed"
-            ctaLabel="Retry"
-            onPress={() => {
-              void loadFeed({ force: true });
-            }}
-          />
+        <FeedErrorBoundary onRetry={retryFeed}>
+          <ScrollView
+            scrollEnabled={false}
+            accessibilityLabel="Loading your food feed"
+            accessibilityState={{ busy: true }}
+          >
+            {listHeader}
+            <PostSkeleton />
+            <PostSkeleton />
+          </ScrollView>
         </FeedErrorBoundary>
       </SafeAreaView>
     );
@@ -2238,67 +1334,56 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       edges={["top", "left", "right"]}
     >
       <FeedErrorBoundary
-        onRetry={() => {
-          void loadFeed({ force: true });
-        }}
+        onRetry={retryFeed}
         title="Feed temporarily unavailable"
         body="A display issue occurred while rendering this feed. Please retry."
       >
-        {mode === "social" ? (
-          <View testID="home-social-feed" style={{ flex: 1 }}>
-            <FlashList
-              ref={socialFeedListRef}
-              accessibilityLabel="Home food feed"
-              accessibilityHint="Swipe vertically to browse food posts and pull down to refresh"
-              data={socialFeed}
-              keyExtractor={keyExtractor}
-              ListHeaderComponent={listHeader}
-              renderItem={({ item, index }) => renderFeedCard(item, "social", index)}
-              viewabilityConfig={VIDEO_VIEWABILITY_CONFIG}
-              onViewableItemsChanged={handleViewableItemsChanged}
-              ListEmptyComponent={
-                isAuthenticated ? (
-                  <HomeEmptyFeed
-                    title="No posts yet"
-                    ctaLabel="Share a dish"
-                    onCtaPress={openComposerFromEmptyFeed}
-                    onOpenDish={openDishFromEmptyFeed}
-                  />
-                ) : (
-                  <HomeEmptyFeed
-                    title="Sign in to see your feed"
-                    body="Follow foodies to see what they eat. Until then, here are top-rated dishes near you."
-                    ctaLabel="Sign in"
-                    onCtaPress={openSignInFromEmptyFeed}
-                    onOpenDish={openDishFromEmptyFeed}
-                  />
-                )
-              }
-              contentContainerStyle={{
-                gap: spacing[2],
-                paddingBottom: spacing[16] + insets.bottom + spacing[6],
-              }}
-              onScroll={onScroll}
-              refreshControl={
-                <RefreshControl
-                  colors={[palette.orange]}
-                  onRefresh={refreshHomeFeed}
-                  refreshing={isRefreshing}
-                  tintColor={palette.orange}
+        <View testID="home-social-feed" style={{ flex: 1 }}>
+          <FlashList
+            ref={socialFeedListRef}
+            accessibilityLabel="Home food feed"
+            accessibilityHint="Swipe vertically to browse food posts and pull down to refresh"
+            data={socialFeed}
+            keyExtractor={keyExtractor}
+            ListHeaderComponent={listHeader}
+            ListFooterComponent={feedFooter}
+            renderItem={renderFeedItem}
+            onEndReached={() => void loadMoreFeed()}
+            onEndReachedThreshold={1.5}
+            viewabilityConfig={VIDEO_VIEWABILITY_CONFIG}
+            onViewableItemsChanged={handleViewableItemsChanged}
+            ListEmptyComponent={
+              feedState === "error" ? (
+                // The header (bell, picks, Decide for me) stays; only the posts failed.
+                <FeedStateView
+                  state="error"
+                  title="Something went wrong"
+                  body="We couldn't load your feed right now. Please check your connection and try again."
+                  errorMessage={feedError}
+                  errorContext="Home feed"
+                  ctaLabel="Retry"
+                  onPress={retryFeed}
                 />
-              }
-              scrollEventThrottle={scrollEventThrottle}
-              showsVerticalScrollIndicator={false}
-            />
-          </View>
-        ) : (
-          <Animated.ScrollView
-            ref={reviewFeedScrollRef}
-            accessibilityLabel="Home review feed"
-            accessibilityHint="Swipe vertically to browse review posts and pull down to refresh"
-            showsVerticalScrollIndicator={false}
+              ) : isAuthenticated ? (
+                <HomeEmptyFeed
+                  title="No posts yet"
+                  ctaLabel="Share a dish"
+                  onCtaPress={openComposerFromEmptyFeed}
+                  onOpenDish={openDishFromEmptyFeed}
+                />
+              ) : (
+                <HomeEmptyFeed
+                  title="Sign in to see your feed"
+                  body="Follow foodies to see what they eat. Until then, here are top-rated dishes on Hungry."
+                  ctaLabel="Sign in"
+                  onCtaPress={openSignInFromEmptyFeed}
+                  onOpenDish={openDishFromEmptyFeed}
+                />
+              )
+            }
             contentContainerStyle={{
-              paddingBottom: insets.bottom + spacing[24],
+              gap: spacing[2],
+              paddingBottom: spacing[16] + insets.bottom + spacing[6],
             }}
             onScroll={onScroll}
             refreshControl={
@@ -2309,369 +1394,326 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                 tintColor={palette.orange}
               />
             }
-            scrollEventThrottle={16}
-          >
-            <AppHeader
-              title="Hungry"
-              showBack={false}
-              right={renderActivityButton()}
-              horizontalPadding={semanticSpacing.screenEdge}
-              titleStyle={{ color: palette.orange }}
+            scrollEventThrottle={scrollEventThrottle}
+            showsVerticalScrollIndicator={false}
+          />
+        </View>
+
+        <BottomSheetModal
+          ref={commentsSheetRef}
+          snapPoints={commentSnapPoints}
+          index={1}
+          enablePanDownToClose
+          accessibilityLabel="Post comments"
+          accessibilityViewIsModal
+          onDismiss={() => {
+            setActiveCommentItem(null);
+            setActiveReplyCommentId(null);
+            setDraftComment("");
+          }}
+          backdropComponent={(props) => (
+            <BottomSheetBackdrop
+              {...props}
+              appearsOnIndex={0}
+              disappearsOnIndex={-1}
+              opacity={0.5}
+              pressBehavior="close"
+              accessibilityRole="button"
+              accessibilityLabel="Close comments"
+              accessibilityHint="Dismisses the comments sheet"
             />
-            <View style={{ paddingTop: 0 }}>
-              {sections.map((section) => (
-                <View key={section.title} style={{ marginBottom: spacing[4] }}>
+          )}
+          backgroundStyle={{ backgroundColor: palette.surface }}
+          handleIndicatorStyle={{ backgroundColor: palette.border }}
+          footerComponent={(props) => (
+            <BottomSheetFooter {...props}>
+              <View
+                style={{
+                  backgroundColor: palette.surface,
+                  borderTopWidth: 1,
+                  borderTopColor: palette.border,
+                  paddingHorizontal: spacing[3],
+                  paddingTop: spacing[2],
+                  paddingBottom: Math.max(insets.bottom, spacing[4]),
+                  gap: spacing[2],
+                }}
+              >
+                {activeReplyCommentId ? (
                   <View
                     style={{
-                      paddingHorizontal: spacing[3],
-                      paddingVertical: spacing[3],
-                    }}
-                  >
-                    <AppText variant="h2" style={{ color: themeTints.text }}>
-                      {section.title}
-                    </AppText>
-                  </View>
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={{
-                      gap: spacing[4],
-                      paddingHorizontal: spacing[3],
-                      paddingBottom: spacing[2],
-                    }}
-                  >
-                    {section.items.map((item, index) => renderFeedCard(item, "review", index))}
-                  </ScrollView>
-                </View>
-              ))}
-            </View>
-
-            {sections.length === 0 && (
-              <HomeEmptyFeed
-                title="No reviews yet"
-                ctaLabel="Share a dish"
-                onCtaPress={openComposerFromEmptyFeed}
-                onOpenDish={openDishFromEmptyFeed}
-              />
-            )}
-          </Animated.ScrollView>
-        )}
-
-        {mode === "social" ? (
-          <BottomSheetModal
-            ref={commentsSheetRef}
-            snapPoints={commentSnapPoints}
-            index={1}
-            enablePanDownToClose
-            accessibilityLabel="Post comments"
-            accessibilityViewIsModal
-            onDismiss={() => {
-              setActiveCommentItem(null);
-              setActiveReplyCommentId(null);
-              setDraftComment("");
-            }}
-            backdropComponent={(props) => (
-              <BottomSheetBackdrop
-                {...props}
-                appearsOnIndex={0}
-                disappearsOnIndex={-1}
-                opacity={0.5}
-                pressBehavior="close"
-                accessibilityRole="button"
-                accessibilityLabel="Close comments"
-                accessibilityHint="Dismisses the comments sheet"
-              />
-            )}
-            backgroundStyle={{ backgroundColor: palette.surface }}
-            handleIndicatorStyle={{ backgroundColor: palette.border }}
-            footerComponent={(props) => (
-              <BottomSheetFooter {...props}>
-                <View
-                  style={{
-                    backgroundColor: palette.surface,
-                    borderTopWidth: 1,
-                    borderTopColor: palette.border,
-                    paddingHorizontal: spacing[3],
-                    paddingTop: spacing[2],
-                    paddingBottom: Math.max(insets.bottom, spacing[4]),
-                    gap: spacing[2],
-                  }}
-                >
-                  {activeReplyCommentId ? (
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        backgroundColor: palette.bgSoft,
-                        paddingHorizontal: spacing[3],
-                        paddingVertical: spacing[1.5],
-                        borderRadius: radii.md,
-                      }}
-                    >
-                      <AppText variant="micro" tone="secondary">
-                        Replying to{" "}
-                        <AppText variant="micro" style={{ fontWeight: "700" }}>
-                          {
-                            commentsForActiveItem.find((c) => c.id === activeReplyCommentId)
-                              ?.authorName
-                          }
-                        </AppText>
-                      </AppText>
-                      <Pressable
-                        onPress={() => setActiveReplyCommentId(null)}
-                        hitSlop={15}
-                        accessibilityRole="button"
-                        accessibilityLabel="Cancel reply"
-                        accessibilityHint="Stops replying to the selected comment"
-                      >
-                        <X size={14} color={palette.textMuted} />
-                      </Pressable>
-                    </View>
-                  ) : null}
-                  <View
-                    style={{
-                      alignItems: "center",
                       flexDirection: "row",
-                      gap: spacing[2],
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      backgroundColor: palette.bgSoft,
+                      paddingHorizontal: spacing[3],
+                      paddingVertical: spacing[1.5],
+                      borderRadius: radii.md,
                     }}
                   >
-                    <View style={{ flex: 1 }}>
-                      <Input
-                        ref={commentInputRef}
-                        placeholder={activeReplyCommentId ? "Write a reply..." : "Add a comment..."}
-                        value={draftComment}
-                        onChangeText={setDraftComment}
-                        multiline={false}
-                        numberOfLines={1}
-                        textAlignVertical="center"
-                        style={{ minHeight: 44, maxHeight: 44 }}
-                      />
-                    </View>
-                    <Pressable
-                      onPress={handlePostCommentOrReply}
-                      disabled={!draftComment.trim().length}
-                      accessibilityRole="button"
-                      accessibilityLabel={activeReplyCommentId ? "Post reply" : "Post comment"}
-                      accessibilityState={{ disabled: !draftComment.trim().length }}
-                      style={{
-                        minHeight: 44,
-                        paddingHorizontal: spacing[3],
-                        paddingVertical: spacing[3],
-                        opacity: draftComment.trim().length ? 1 : 0.5,
-                      }}
-                    >
-                      <AppText variant="bodyBold" style={{ color: palette.orangeText }}>
-                        Post
+                    <AppText variant="micro" tone="secondary">
+                      Replying to{" "}
+                      <AppText variant="micro" style={{ fontWeight: "700" }}>
+                        {
+                          commentsForActiveItem.find((c) => c.id === activeReplyCommentId)
+                            ?.authorName
+                        }
                       </AppText>
+                    </AppText>
+                    <Pressable
+                      onPress={() => setActiveReplyCommentId(null)}
+                      hitSlop={15}
+                      accessibilityRole="button"
+                      accessibilityLabel="Cancel reply"
+                      accessibilityHint="Stops replying to the selected comment"
+                    >
+                      <X size={14} color={palette.textMuted} />
                     </Pressable>
                   </View>
-                </View>
-              </BottomSheetFooter>
-            )}
-          >
-            <BottomSheetScrollView
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{
-                paddingHorizontal: spacing[3],
-                paddingTop: spacing[0.5],
-                paddingBottom: spacing[24] + spacing[8] + insets.bottom,
-              }}
-            >
-              {activeCommentItem ? (
+                ) : null}
                 <View
                   style={{
-                    backgroundColor: palette.bgSoft,
-                    borderColor: palette.border,
-                    borderRadius: componentRadii.card,
-                    borderWidth: 1,
+                    alignItems: "center",
+                    flexDirection: "row",
                     gap: spacing[2],
-                    marginBottom: spacing[5],
-                    padding: spacing[3],
                   }}
                 >
-                  <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
-                    <Avatar
-                      uri={activeCommentItem.authorAvatarUrl}
-                      name={activeCommentItem.authorName}
-                      size={28}
+                  <View style={{ flex: 1 }}>
+                    <Input
+                      ref={commentInputRef}
+                      placeholder={activeReplyCommentId ? "Write a reply..." : "Add a comment..."}
+                      value={draftComment}
+                      onChangeText={setDraftComment}
+                      multiline={false}
+                      numberOfLines={1}
+                      textAlignVertical="center"
+                      style={{ minHeight: 44, maxHeight: 44 }}
                     />
-                    <View style={{ flex: 1 }}>
-                      <AppText variant="bodySmallBold">{activeCommentItem.authorName}</AppText>
-                      <AppText variant="micro" tone="secondary">
-                        {formatPostAge(activeCommentItem.createdAt)}
-                      </AppText>
-                    </View>
                   </View>
-                  <AppText variant="bodySmall" style={styles.commentText}>
-                    {activeCommentItem.caption}
-                  </AppText>
+                  <Pressable
+                    onPress={handlePostCommentOrReply}
+                    disabled={!draftComment.trim().length}
+                    accessibilityRole="button"
+                    accessibilityLabel={activeReplyCommentId ? "Post reply" : "Post comment"}
+                    accessibilityState={{ disabled: !draftComment.trim().length }}
+                    style={{
+                      minHeight: 44,
+                      paddingHorizontal: spacing[3],
+                      paddingVertical: spacing[3],
+                      opacity: draftComment.trim().length ? 1 : 0.5,
+                    }}
+                  >
+                    <AppText variant="bodyBold" style={{ color: palette.orangeText }}>
+                      Post
+                    </AppText>
+                  </Pressable>
                 </View>
-              ) : null}
+              </View>
+            </BottomSheetFooter>
+          )}
+        >
+          <BottomSheetScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{
+              paddingHorizontal: spacing[3],
+              paddingTop: spacing[0.5],
+              paddingBottom: spacing[24] + spacing[8] + insets.bottom,
+            }}
+          >
+            {activeCommentItem ? (
+              <View
+                style={{
+                  backgroundColor: palette.bgSoft,
+                  borderColor: palette.border,
+                  borderRadius: componentRadii.card,
+                  borderWidth: 1,
+                  gap: spacing[2],
+                  marginBottom: spacing[5],
+                  padding: spacing[3],
+                }}
+              >
+                <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
+                  <Avatar
+                    uri={activeCommentItem.authorAvatarUrl}
+                    name={activeCommentItem.authorName}
+                    size={28}
+                  />
+                  <View style={{ flex: 1 }}>
+                    <AppText variant="bodySmallBold">{activeCommentItem.authorName}</AppText>
+                    <AppText variant="micro" tone="secondary">
+                      {formatPostAge(activeCommentItem.createdAt)}
+                    </AppText>
+                  </View>
+                </View>
+                <AppText variant="bodySmall" style={styles.commentText}>
+                  {activeCommentItem.caption}
+                </AppText>
+              </View>
+            ) : null}
 
-              {commentsForActiveItem.length ? (
-                commentsForActiveItem.map((comment) => (
-                  <View key={comment.id} style={{ gap: spacing[3], marginBottom: spacing[5] }}>
-                    <View style={{ flexDirection: "row", gap: spacing[3] }}>
-                      <Pressable
-                        onPress={() =>
-                          openUserProfile(
-                            comment.authorName,
-                            comment.authorAvatarUrl,
-                            activeCommentItem?.authorLocation,
-                            comment.userId,
-                          )
-                        }
+            {commentsForActiveItem.length ? (
+              commentsForActiveItem.map((comment) => (
+                <View key={comment.id} style={{ gap: spacing[3], marginBottom: spacing[5] }}>
+                  <View style={{ flexDirection: "row", gap: spacing[3] }}>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Open ${comment.authorName} profile`}
+                      onPress={() =>
+                        openUserProfile(
+                          comment.authorName,
+                          comment.authorAvatarUrl,
+                          activeCommentItem?.authorLocation,
+                          comment.userId,
+                        )
+                      }
+                    >
+                      <Avatar uri={comment.authorAvatarUrl} name={comment.authorName} size={36} />
+                    </Pressable>
+                    <View style={{ flex: 1, gap: 2 }}>
+                      <View
+                        style={{
+                          alignItems: "center",
+                          flexDirection: "row",
+                          gap: spacing[2],
+                          justifyContent: "space-between",
+                        }}
                       >
-                        <Avatar uri={comment.authorAvatarUrl} name={comment.authorName} size={36} />
-                      </Pressable>
-                      <View style={{ flex: 1, gap: 2 }}>
                         <View
-                          style={{
-                            alignItems: "center",
-                            flexDirection: "row",
-                            gap: spacing[2],
-                            justifyContent: "space-between",
-                          }}
+                          style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}
                         >
-                          <View
-                            style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}
-                          >
-                            <AppText variant="bodySmallBold">{comment.authorName}</AppText>
-                            <AppText variant="micro" tone="muted">
-                              {formatTimeAgo(comment.createdAt)}
-                            </AppText>
-                          </View>
-                          <Pressable
-                            accessibilityRole="button"
-                            accessibilityLabel={`Manage comment by ${comment.authorName}`}
-                            hitSlop={8}
-                            onPress={() =>
-                              promptCommentSafetyActions({
-                                commentId: comment.id,
-                                authorName: comment.authorName,
-                                authorId: comment.userId,
-                                postId: activeCommentItem?.id,
-                                label: "comment",
-                                onBlocked: hideAuthorFromCurrentFeed,
-                              })
-                            }
-                          >
-                            <MoreHorizontal color={palette.textMuted} size={18} />
-                          </Pressable>
-                        </View>
-                        <AppText variant="bodySmall" style={styles.commentText}>
-                          {comment.text}
-                        </AppText>
-                        <Pressable
-                          onPress={() => {
-                            setActiveReplyCommentId(comment.id);
-                            commentInputRef.current?.focus();
-                          }}
-                          accessibilityRole="button"
-                          accessibilityLabel={`Reply to ${comment.authorName}`}
-                          hitSlop={12}
-                          style={{ marginTop: 4 }}
-                        >
-                          <AppText
-                            variant="micro"
-                            style={{
-                              fontWeight: "700",
-                              color: palette.textMuted,
-                            }}
-                          >
-                            Reply
+                          <AppText variant="bodySmallBold">{comment.authorName}</AppText>
+                          <AppText variant="micro" tone="muted">
+                            {formatTimeAgo(comment.createdAt)}
                           </AppText>
+                        </View>
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel={`Manage comment by ${comment.authorName}`}
+                          hitSlop={8}
+                          onPress={() =>
+                            promptCommentSafetyActions({
+                              commentId: comment.id,
+                              authorName: comment.authorName,
+                              authorId: comment.userId,
+                              postId: activeCommentItem?.id,
+                              label: "comment",
+                              onBlocked: hideAuthorFromCurrentFeed,
+                            })
+                          }
+                        >
+                          <MoreHorizontal color={palette.textMuted} size={18} />
                         </Pressable>
+                      </View>
+                      <AppText variant="bodySmall" style={styles.commentText}>
+                        {comment.text}
+                      </AppText>
+                      <Pressable
+                        onPress={() => {
+                          setActiveReplyCommentId(comment.id);
+                          commentInputRef.current?.focus();
+                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Reply to ${comment.authorName}`}
+                        hitSlop={12}
+                        style={{ marginTop: 4 }}
+                      >
+                        <AppText
+                          variant="micro"
+                          style={{
+                            fontWeight: "700",
+                            color: palette.textMuted,
+                          }}
+                        >
+                          Reply
+                        </AppText>
+                      </Pressable>
 
-                        {/* Replies */}
-                        {visibleRepliesFor(comment.id).length > 0 && (
-                          <View style={{ gap: spacing[3], marginTop: spacing[3] }}>
-                            {visibleRepliesFor(comment.id).map((reply) => (
-                              <View
-                                key={reply.id}
-                                style={{
-                                  flexDirection: "row",
-                                  gap: spacing[3],
-                                }}
-                              >
-                                <Avatar
-                                  uri={reply.authorAvatarUrl}
-                                  name={reply.authorName}
-                                  size={24}
-                                />
-                                <View style={{ flex: 1, gap: 2 }}>
+                      {/* Replies */}
+                      {visibleRepliesFor(comment.id).length > 0 && (
+                        <View style={{ gap: spacing[3], marginTop: spacing[3] }}>
+                          {visibleRepliesFor(comment.id).map((reply) => (
+                            <View
+                              key={reply.id}
+                              style={{
+                                flexDirection: "row",
+                                gap: spacing[3],
+                              }}
+                            >
+                              <Avatar
+                                uri={reply.authorAvatarUrl}
+                                name={reply.authorName}
+                                size={24}
+                              />
+                              <View style={{ flex: 1, gap: 2 }}>
+                                <View
+                                  style={{
+                                    alignItems: "center",
+                                    flexDirection: "row",
+                                    gap: spacing[2],
+                                    justifyContent: "space-between",
+                                  }}
+                                >
                                   <View
                                     style={{
                                       alignItems: "center",
                                       flexDirection: "row",
                                       gap: spacing[2],
-                                      justifyContent: "space-between",
                                     }}
                                   >
-                                    <View
-                                      style={{
-                                        alignItems: "center",
-                                        flexDirection: "row",
-                                        gap: spacing[2],
-                                      }}
-                                    >
-                                      <AppText variant="micro" style={{ fontWeight: "700" }}>
-                                        {reply.authorName}
-                                      </AppText>
-                                      <AppText variant="micro" tone="muted">
-                                        {formatTimeAgo(reply.createdAt)}
-                                      </AppText>
-                                    </View>
-                                    <Pressable
-                                      accessibilityRole="button"
-                                      accessibilityLabel={`Manage reply by ${reply.authorName}`}
-                                      hitSlop={8}
-                                      onPress={() =>
-                                        promptCommentSafetyActions({
-                                          commentId: reply.id,
-                                          authorName: reply.authorName,
-                                          authorId: reply.userId,
-                                          postId: activeCommentItem?.id,
-                                          label: "reply",
-                                          onBlocked: hideAuthorFromCurrentFeed,
-                                        })
-                                      }
-                                    >
-                                      <MoreHorizontal color={palette.textMuted} size={16} />
-                                    </Pressable>
+                                    <AppText variant="micro" style={{ fontWeight: "700" }}>
+                                      {reply.authorName}
+                                    </AppText>
+                                    <AppText variant="micro" tone="muted">
+                                      {formatTimeAgo(reply.createdAt)}
+                                    </AppText>
                                   </View>
-                                  <AppText variant="bodySmall" style={styles.replyText}>
-                                    {reply.text}
-                                  </AppText>
+                                  <Pressable
+                                    accessibilityRole="button"
+                                    accessibilityLabel={`Manage reply by ${reply.authorName}`}
+                                    hitSlop={8}
+                                    onPress={() =>
+                                      promptCommentSafetyActions({
+                                        commentId: reply.id,
+                                        authorName: reply.authorName,
+                                        authorId: reply.userId,
+                                        postId: activeCommentItem?.id,
+                                        label: "reply",
+                                        onBlocked: hideAuthorFromCurrentFeed,
+                                      })
+                                    }
+                                  >
+                                    <MoreHorizontal color={palette.textMuted} size={16} />
+                                  </Pressable>
                                 </View>
+                                <AppText variant="bodySmall" style={styles.replyText}>
+                                  {reply.text}
+                                </AppText>
                               </View>
-                            ))}
-                          </View>
-                        )}
-                      </View>
+                            </View>
+                          ))}
+                        </View>
+                      )}
                     </View>
                   </View>
-                ))
-              ) : (
-                <View
-                  style={{
-                    alignItems: "center",
-                    paddingTop: spacing[4],
-                  }}
-                >
-                  <EmptyState
-                    title="No comments yet"
-                    body="Be the first to share your review!"
-                    icon={
-                      CommentIcon ? <CommentIcon size={42} color={palette.textMuted} /> : undefined
-                    }
-                  />
                 </View>
-              )}
-            </BottomSheetScrollView>
-          </BottomSheetModal>
-        ) : null}
+              ))
+            ) : (
+              <View
+                style={{
+                  alignItems: "center",
+                  paddingTop: spacing[4],
+                }}
+              >
+                <EmptyState
+                  title="No comments yet"
+                  body="Be the first to comment."
+                  icon={
+                    CommentIcon ? <CommentIcon size={42} color={palette.textMuted} /> : undefined
+                  }
+                />
+              </View>
+            )}
+          </BottomSheetScrollView>
+        </BottomSheetModal>
 
         <BottomSheetModal
           ref={shareSheetRef}
@@ -2761,32 +1803,8 @@ function keyExtractor(item: HomeFeedItem) {
   return item.id;
 }
 
-function VerticalActionMetric({
-  icon,
-  count,
-  palette,
-}: {
-  icon: ReactNode;
-  count?: number;
-  palette: HungryTheme["palette"];
-}) {
-  return (
-    <View style={{ alignItems: "center", gap: 4 }}>
-      {icon}
-      {count !== undefined && (
-        <AppText variant="micro" style={{ color: palette.white, fontWeight: "600" }}>
-          {count}
-        </AppText>
-      )}
-    </View>
-  );
-}
-
-const createStyles = ({ palette, spacing, radii }: ReturnType<typeof useHungryTheme>) =>
+const createStyles = ({ spacing, radii }: ReturnType<typeof useHungryTheme>) =>
   StyleSheet.create({
-    safeArea: {
-      flex: 1,
-    },
     activityButtonWrap: {
       minHeight: 42,
       minWidth: 42,
@@ -2802,139 +1820,6 @@ const createStyles = ({ palette, spacing, radii }: ReturnType<typeof useHungryTh
       right: 0,
       top: 0,
     },
-    feedItemWrap: {
-      backgroundColor: palette.navy,
-      marginBottom: spacing[6],
-      overflow: "visible",
-      position: "relative",
-    },
-    followButton: {
-      alignItems: "center",
-      borderRadius: radii.pill,
-      borderWidth: 1,
-      justifyContent: "center",
-      minHeight: 44,
-      minWidth: 78,
-      paddingHorizontal: spacing[3],
-    },
-    moreAction: {
-      alignItems: "center",
-      borderRadius: radii.pill,
-      height: 44,
-      justifyContent: "center",
-      width: 44,
-    },
-    carouselPage: {
-      overflow: "hidden",
-      position: "relative",
-    },
-    carouselDots: {
-      alignItems: "center",
-      flexDirection: "row",
-      gap: spacing[1],
-      justifyContent: "center",
-      left: 0,
-      position: "absolute",
-      right: 0,
-      top: spacing[3],
-    },
-    carouselDot: {
-      backgroundColor: palette.inverseIndicator,
-      borderRadius: radii.pill,
-      height: 6,
-      width: 6,
-    },
-    carouselDotActive: {
-      backgroundColor: palette.white,
-      width: 18,
-    },
-    postTag: {
-      borderRadius: radii.pill,
-      borderWidth: 1,
-      paddingHorizontal: spacing[2],
-      paddingVertical: spacing[1],
-    },
-    imageContainer: {
-      width: "100%",
-      position: "relative",
-      backgroundColor: palette.navy,
-    },
-    heroImage: {
-      position: "absolute",
-      top: 0,
-      right: 0,
-      bottom: 0,
-      left: 0,
-    },
-    doubleTapHeart: {
-      alignItems: "center",
-      height: 84,
-      justifyContent: "center",
-      position: "absolute",
-      width: 84,
-      zIndex: 30,
-    },
-    gradientScrim: {
-      position: "absolute",
-      top: 0,
-      right: 0,
-      bottom: 0,
-      left: 0,
-      height: "100%",
-    },
-    overlayContent: {
-      position: "absolute",
-      top: 0,
-      right: 0,
-      bottom: 0,
-      left: 0,
-      justifyContent: "flex-end",
-    },
-    overlayTopRow: {
-      flexDirection: "row",
-      alignItems: "flex-end",
-      justifyContent: "space-between",
-    },
-    textOverlay: {
-      flex: 1,
-      marginRight: 12,
-    },
-    sideActions: {
-      alignItems: "center",
-    },
-    verticalActionMetric: {
-      alignItems: "center",
-      gap: 4,
-    },
-    captionOverlay: {
-      marginTop: 8,
-    },
-    playButtonContainer: {
-      position: "absolute",
-      top: 0,
-      right: 0,
-      bottom: 0,
-      left: 0,
-      alignItems: "center",
-      justifyContent: "center",
-      zIndex: 1,
-    },
-    playButtonBackdrop: {
-      width: 68,
-      height: 68,
-      borderRadius: radii.pill,
-      backgroundColor: palette.mediaScrimSoft,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    quickPostRow: {
-      flexDirection: "row",
-      alignItems: "center",
-    },
-    quickPostButton: {
-      borderWidth: 1,
-      minHeight: 36,
-    },
     commentText: {
       flexShrink: 1,
       lineHeight: 20,
@@ -2944,16 +1829,5 @@ const createStyles = ({ palette, spacing, radii }: ReturnType<typeof useHungryTh
       flexShrink: 1,
       lineHeight: 18,
       width: "100%",
-    },
-    storyRing: {
-      backgroundColor: palette.surface,
-      borderWidth: 2,
-    },
-    storyLabel: {
-      textAlign: "center",
-    },
-    sectionEyebrow: {
-      letterSpacing: 0.8,
-      textTransform: "uppercase",
     },
   });

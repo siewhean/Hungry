@@ -4,7 +4,15 @@ export function sortAreasByName<T extends { name: string }>(areas: readonly T[])
   return [...areas].sort((a, b) => a.name.localeCompare(b.name, "en", { sensitivity: "base" }));
 }
 
-const SINGAPORE_AREAS = [
+export type SingaporeArea = {
+  id: string;
+  name: string;
+  /** Other names people search by (a neighbourhood inside the area, or the planning-area name). */
+  keywords?: string[];
+  coordinate: Coordinate;
+};
+
+const SINGAPORE_AREAS: readonly SingaporeArea[] = [
   { id: "ang-mo-kio", name: "Ang Mo Kio", coordinate: { latitude: 1.3691, longitude: 103.8454 } },
   { id: "bedok", name: "Bedok", coordinate: { latitude: 1.3236, longitude: 103.9273 } },
   { id: "bishan", name: "Bishan", coordinate: { latitude: 1.3509, longitude: 103.835 } },
@@ -28,7 +36,12 @@ const SINGAPORE_AREAS = [
     coordinate: { latitude: 1.3844, longitude: 103.7479 },
   },
   { id: "changi", name: "Changi", coordinate: { latitude: 1.3566, longitude: 103.9897 } },
-  { id: "chinatown", name: "Chinatown", coordinate: { latitude: 1.2836, longitude: 103.8436 } },
+  {
+    id: "chinatown",
+    name: "Chinatown",
+    keywords: ["outram", "tanjong pagar"],
+    coordinate: { latitude: 1.2836, longitude: 103.8436 },
+  },
   { id: "clementi", name: "Clementi", coordinate: { latitude: 1.3151, longitude: 103.7652 } },
   { id: "geylang", name: "Geylang", coordinate: { latitude: 1.3182, longitude: 103.8871 } },
   { id: "hougang", name: "Hougang", coordinate: { latitude: 1.3712, longitude: 103.8922 } },
@@ -63,14 +76,21 @@ const SINGAPORE_AREAS = [
   { id: "rochor", name: "Rochor", coordinate: { latitude: 1.3047, longitude: 103.8519 } },
   { id: "seletar", name: "Seletar", coordinate: { latitude: 1.4149, longitude: 103.8778 } },
   { id: "serangoon", name: "Serangoon", coordinate: { latitude: 1.3508, longitude: 103.8723 } },
+  { id: "sembawang", name: "Sembawang", coordinate: { latitude: 1.4491, longitude: 103.8185 } },
   { id: "sengkang", name: "Sengkang", coordinate: { latitude: 1.3868, longitude: 103.8935 } },
   { id: "sentosa", name: "Sentosa", coordinate: { latitude: 1.2494, longitude: 103.8303 } },
-  { id: "sungei-road", name: "Sungei Road", coordinate: { latitude: 1.319, longitude: 103.8637 } },
+  {
+    id: "sungei-road",
+    name: "Sungei Road",
+    keywords: ["jalan besar", "rochor"],
+    coordinate: { latitude: 1.319, longitude: 103.8637 },
+  },
   { id: "tampines", name: "Tampines", coordinate: { latitude: 1.3526, longitude: 103.9448 } },
   { id: "tanglin", name: "Tanglin", coordinate: { latitude: 1.3039, longitude: 103.8168 } },
+  { id: "tengah", name: "Tengah", coordinate: { latitude: 1.368, longitude: 103.728 } },
   { id: "toa-payoh", name: "Toa Payoh", coordinate: { latitude: 1.3343, longitude: 103.8563 } },
   { id: "woodlands", name: "Woodlands", coordinate: { latitude: 1.4389, longitude: 103.7861 } },
   { id: "yishun", name: "Yishun", coordinate: { latitude: 1.4294, longitude: 103.8393 } },
-] satisfies readonly { id: string; name: string; coordinate: Coordinate }[];
+];
 
 export const SORTED_SINGAPORE_AREAS = sortAreasByName(SINGAPORE_AREAS);

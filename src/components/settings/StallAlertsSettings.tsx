@@ -1,9 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
-import { Alert, Linking } from "react-native";
-import { BellRing, RefreshCw, Sparkles, Store, UtensilsCrossed } from "lucide-react-native";
+import { Alert, AppState, Linking } from "react-native";
+import {
+  BellOff,
+  BellRing,
+  RefreshCw,
+  Sparkles,
+  Store,
+  UtensilsCrossed,
+} from "lucide-react-native";
 
 import { trackAnalyticsEvent } from "@/lib/analytics";
-import { registerForStallAlerts } from "@/lib/notifications/push";
+import { getNotificationPermissionState, registerForStallAlerts } from "@/lib/notifications/push";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -61,6 +68,28 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
     };
   }, [loadPreferences]);
 
+  // The phone's permission can be off or revoked later; read it on open and when the app
+  // comes back from system settings, so a switch never shows "on" while nothing can arrive.
+  const [permissionDenied, setPermissionDenied] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    const checkPermission = () => {
+      getNotificationPermissionState()
+        .then((state) => {
+          if (!cancelled) setPermissionDenied(state === "denied");
+        })
+        .catch(() => undefined);
+    };
+    checkPermission();
+    const subscription = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "active") checkPermission();
+    });
+    return () => {
+      cancelled = true;
+      subscription.remove();
+    };
+  }, []);
+
   const isBusy = loadState !== "loaded" || isSaving;
 
   const handleToggle = async (
@@ -95,6 +124,15 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
 
   return (
     <SettingsSection title="Notifications">
+      {permissionDenied ? (
+        <SettingsRow
+          label="Notifications are off for Hungry"
+          description="Open settings to turn them on. Until then these alerts can't reach you."
+          icon={<BellOff size={20} color={palette.orange} />}
+          onPress={() => void Linking.openSettings().catch(() => {})}
+          isLast={false}
+        />
+      ) : null}
       {loadState === "error" ? (
         <SettingsRow
           label="Couldn't load your alert settings"
@@ -111,7 +149,8 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
         )} to ${formatHour(preferences.quietEndHour)}, at most ${preferences.weeklyCap} a week.`}
         icon={<BellRing size={20} color={palette.orange} />}
         type="toggle"
-        isEnabled={preferences.stallUpdates}
+        isEnabled={preferences.stallUpdates && !permissionDenied}
+        dimmed={permissionDenied}
         busy={isBusy}
         onToggle={(value) => void handleToggle("stallUpdates", value)}
         isLast={false}
@@ -121,7 +160,8 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
         description="A Monday nudge when your new dish picks are ready on Home."
         icon={<Sparkles size={20} color={palette.orange} />}
         type="toggle"
-        isEnabled={preferences.weeklyPicks}
+        isEnabled={preferences.weeklyPicks && !permissionDenied}
+        dimmed={permissionDenied}
         busy={isBusy}
         onToggle={(value) => void handleToggle("weeklyPicks", value)}
         isLast={false}
@@ -131,7 +171,8 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
         description="Three picks at 11:30am or 5:30pm, only on days you haven't opened Hungry yet."
         icon={<UtensilsCrossed size={20} color={palette.orange} />}
         type="toggle"
-        isEnabled={preferences.mealtimeSuggestions}
+        isEnabled={preferences.mealtimeSuggestions && !permissionDenied}
+        dimmed={permissionDenied}
         busy={isBusy}
         onToggle={(value) => void handleToggle("mealtimeSuggestions", value)}
         isLast={false}

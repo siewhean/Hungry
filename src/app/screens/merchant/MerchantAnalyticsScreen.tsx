@@ -1,14 +1,19 @@
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { Pressable, View, StyleSheet, ScrollView } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { BarChart3, TrendingUp, PieChart, Star, Users, Clock, Flame, X } from "lucide-react-native";
+import { BarChart3, TrendingUp, Star, Users, Clock, Flame, X } from "lucide-react-native";
 
 import { AppText, Screen, FilterChipRail, Skeleton, EmptyState } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { getDataTrustDisclosure } from "@/lib/services/dataTrustDisclosure";
-import { formatPeakHour } from "@/features/merchant/merchantReadiness";
+import {
+  formatAverageRating,
+  formatPeakHour,
+  formatRatingChange,
+  formatReviewCountLabel,
+} from "@/features/merchant/merchantReadiness";
 import { trackMerchantEvent } from "@/features/merchant/merchantTracking";
 import type { MerchantAnalytics } from "@/types/domain";
 
@@ -23,13 +28,13 @@ const ANALYTICS_RANGE_OPTIONS: { id: AnalyticsRange; label: string }[] = [
   { id: "30d", label: "30 Days" },
 ];
 
-function formatDelta(current: number, previous: number, options: { decimals?: number } = {}) {
+function formatDelta(current: number, previous: number) {
   if (previous <= 0) {
     return current > 0 ? "New" : "0%";
   }
 
   const change = ((current - previous) / previous) * 100;
-  const value = Math.abs(change).toFixed(options.decimals ?? 0);
+  const value = Math.abs(change).toFixed(0);
   if (change > 0) return `+${value}%`;
   if (change < 0) return `-${value}%`;
   return "0%";
@@ -42,9 +47,10 @@ function formatSaveRate(saves: number, profileVisits: number) {
 
 /** Spoken form of a trend label, so the change is not carried by colour alone. */
 function describeTrend(trend: string): string {
-  if (trend.startsWith("+")) return `up ${trend.slice(1)}`;
-  if (trend.startsWith("-")) return `down ${trend.slice(1)}`;
-  return trend;
+  const spoken = trend.replace("★", " stars");
+  if (spoken.startsWith("+")) return `up ${spoken.slice(1)}`;
+  if (spoken.startsWith("-")) return `down ${spoken.slice(1)}`;
+  return spoken;
 }
 
 function SeeMoreButton({
@@ -207,7 +213,7 @@ export function MerchantAnalyticsScreen() {
           selectedId={range}
           onSelect={(next) => {
             setRange(next);
-            trackMerchantEvent("merchant_dashboard_viewed", activeOutletId, {
+            trackMerchantEvent("merchant_analytics_range_changed", activeOutletId, {
               surface: "performance",
               range: next,
             });
@@ -223,7 +229,7 @@ export function MerchantAnalyticsScreen() {
           {/* Key Metrics Grid */}
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[3] }}>
             <MetricCard
-              label="Visits"
+              label="Profile visits"
               value={analytics.profileVisits.toString()}
               trend={formatDelta(
                 analytics.profileVisits,
@@ -245,16 +251,17 @@ export function MerchantAnalyticsScreen() {
             />
             <MetricCard
               label="Avg Rating"
-              value={analytics.averageRating.toFixed(1)}
-              trend={formatDelta(
+              value={formatAverageRating(analytics.averageRating, analytics.reviewCount)}
+              trend={formatRatingChange(
                 analytics.averageRating,
                 analytics.previousPeriodComparison.averageRating,
-                { decimals: 1 },
+                analytics.reviewCount,
+                analytics.previousPeriodComparison.reviewCount,
               )}
               icon={<Star size={16} color={palette.amber} />}
               expanded={expanded === "rating"}
               onSeeMore={() => toggleDetail("rating")}
-              detail={`From ${analytics.reviewCount} ${analytics.reviewCount === 1 ? "review" : "reviews"} in this range (${analytics.previousPeriodComparison.reviewCount} the period before).`}
+              detail={`${formatReviewCountLabel(analytics.reviewCount, "in this range")} (${analytics.previousPeriodComparison.reviewCount} the period before).`}
             />
             <MetricCard
               label="Saves"
@@ -271,7 +278,7 @@ export function MerchantAnalyticsScreen() {
           <View style={cardStyle}>
             <View style={cardHeaderStyle}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                <PieChart size={20} color={palette.amber} />
+                <BarChart3 size={20} color={palette.ratingStar} />
                 <AppText variant="bodyBold" accessibilityRole="header">
                   Discovery Funnel
                 </AppText>

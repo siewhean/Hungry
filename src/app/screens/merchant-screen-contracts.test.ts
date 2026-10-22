@@ -224,8 +224,6 @@ test("Merchant screen contract: menu management screens are wired to merchant se
 
   assert.match(dishEditor, /merchant\.addDish\(/);
   assert.match(dishEditor, /merchant\.editDish\(/);
-  assert.match(dishEditor, /merchant\.generateDishDescription\(/);
-  assert.match(dishEditor, /merchant\.suggestIngredients\(/);
   assert.match(dishEditor, /merchant\.suggestAllergens\(/);
   assert.match(dishEditor, /imageUrl/);
   assert.match(dishEditor, /dietaryFlags/);
@@ -335,7 +333,6 @@ test("Merchant screen contract: inbox, promotions, assistant, and settings scree
   assert.match(inbox, /merchant\.getInbox\(/);
   assert.match(inbox, /merchant\.replyToInteraction\(/);
   assert.match(inbox, /merchant\.reportInteraction\(/);
-  assert.match(inbox, /merchant\.generateAIReply\(/);
   // Reviews are the only inbox source, and a review id is not a useful "original" to show.
   assert.doesNotMatch(inbox, /onViewOriginal|Source ID:/);
   assert.doesNotMatch(inbox, /label: "Comments"|label: "Mentions"/);

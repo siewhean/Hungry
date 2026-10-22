@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { AccessibilityInfo, Alert, Pressable, Share, View } from "react-native";
+import { AccessibilityInfo, Alert, Pressable, Share, StyleSheet, View } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { useIsFocused } from "@react-navigation/native";
 import {
@@ -7,13 +7,13 @@ import {
   Settings,
   Utensils,
   Heart,
-  Edit2,
   Menu,
   PencilLine,
   Send,
   Copy,
   Share2,
   BarChart3,
+  List,
   LogOut,
   Store,
   Bookmark,
@@ -25,6 +25,7 @@ import {
   Users,
 } from "lucide-react-native";
 
+import { ReviewModerationNotice } from "@/components/review";
 import { AccessibleImage, AppText, Button, Card, EmptyState, Skeleton } from "@/components/ui";
 import { FloatingShareSendButton, InAppShareCard } from "@/components/social";
 import { MissionBanner } from "@/components/gamification/MissionBanner";
@@ -34,6 +35,12 @@ import { toChatShareRecipient, type ChatShareRecipient } from "@/features/home/c
 import { prefetchMerchantTab, preloadRoute } from "@/features/navigation/prefetch";
 import { listSharedStallPosts, mergeStallPosts } from "@/features/social/sharedStallPosts";
 import { useVisitedStallIds } from "@/features/profile/visitedStalls";
+import {
+  buildTastePersonaSummary,
+  buildTasteShareMessage,
+  hasTasteSignal,
+} from "@/features/profile/tasteFingerprint";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import { OwnReviewMenuButton, useOwnReviewEditor } from "@/features/profile/useOwnReviewEditor";
 import { profileShareUrl, shareProfileLink } from "@/features/share/profileShare";
 import { biteToStallPost } from "@/lib/services/postTransforms";
@@ -45,7 +52,7 @@ import { PendingDeletionBanner } from "@/features/auth/PendingDeletionBanner";
 import { useHungryTheme } from "@/theme";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useStoryStore } from "@/store/useStoryStore";
-import { useSocialStore } from "@/store/useSocialStore";
+import { ProfileGridSkeleton, ProfileReviewsSkeleton } from "./ProfileGridSkeleton";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 import { useMerchantStore } from "@/store/useMerchantStore";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
@@ -65,23 +72,13 @@ import {
 } from "@gorhom/bottom-sheet";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Review, StallPost } from "@/types/domain";
-import { UserProfileContent } from "./UserProfileContent";
-
-type ProfileRouteParams = {
-  params?: {
-    authorName?: string;
-    authorAvatarUrl?: string;
-    reviewSignalLabel?: string;
-    authorId?: string;
-  };
-};
-
-function normalizePersonName(name: string) {
-  return name.trim().toLowerCase();
-}
 
 /** Own posts per server page; matches listUserPosts' default page size. */
 const OWN_POSTS_PAGE_SIZE = 60;
+/** Review cards shown inline; the rest are one tap away in Review History. */
+const OWN_REVIEWS_INLINE_LIMIT = 20;
+/** Coming back to the tab within this window reuses the reviews already loaded. */
+const OWN_REVIEWS_STALE_MS = 60_000;
 
 function haveEqualPosts(left: StallPost[], right: StallPost[]) {
   if (left.length !== right.length) return false;
@@ -106,31 +103,10 @@ function haveEqualPosts(left: StallPost[], right: StallPost[]) {
 
 type ProfileHomeProps = {
   navigation: any;
-  route?: ProfileRouteParams;
-  mode?: "self" | "other";
-  authorName?: string;
-  authorAvatarUrl?: string;
-  reviewSignalLabel?: string;
-  authorId?: string;
 };
 
-export function ProfileHomeScreen({
-  navigation,
-  route,
-  mode = "self",
-  authorName,
-  authorAvatarUrl,
-  reviewSignalLabel,
-  authorId,
-}: ProfileHomeProps) {
-  const resolvedReviewSignalLabel =
-    reviewSignalLabel ?? route?.params?.reviewSignalLabel ?? "Reviews";
-  const viewerAuthorName = mode === "other" ? (authorName ?? route?.params?.authorName) : undefined;
-  const viewerAuthorAvatarUrl =
-    mode === "other" ? (authorAvatarUrl ?? route?.params?.authorAvatarUrl) : undefined;
-  const viewerAuthorId = mode === "other" ? (authorId ?? route?.params?.authorId) : undefined;
-  const isOtherUserProfile = mode === "other";
-
+/** Your own profile. Other people's profiles are UserProfileScreen / UserProfileContent. */
+export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
   const { colorScheme, componentRadii, palette, spacing, radii, shadows } = useHungryTheme();
   const headerActionSize = spacing[8] + spacing[2.5];
   const tasteBarColors = {
@@ -195,7 +171,9 @@ export function ProfileHomeScreen({
   /** Own server reviews; null until the first load finishes. */
   const [ownReviews, setOwnReviews] = useState<Review[] | null>(null);
   const [ownReviewsFailed, setOwnReviewsFailed] = useState(false);
+  /** The first page was full, so Review history holds more than the list shows. */
   const [ownReviewsReloadKey, setOwnReviewsReloadKey] = useState(0);
+  const ownReviewsLoadedRef = useRef<{ at: number; key: string } | null>(null);
   const ownReviewEditor = useOwnReviewEditor({
     onUpdated: (updated) =>
       setOwnReviews((current) =>
@@ -225,14 +203,9 @@ export function ProfileHomeScreen({
   );
   const [activeShareTab, setActiveShareTab] = useState<"posts" | "reviews">("posts");
   const handleReviewsCardPress = useCallback(() => {
-    if (isOtherUserProfile) {
-      setActiveShareTab((current) => (current === "reviews" ? current : "reviews"));
-      return;
-    }
-
     preloadRoute(navigation, "ReviewHistory");
     navigation.navigate("ReviewHistory");
-  }, [isOtherUserProfile, navigation]);
+  }, [navigation]);
   const avatarSize = spacing[20];
   const avatarInitials = useMemo(
     () =>
@@ -265,23 +238,16 @@ export function ProfileHomeScreen({
     preloadRoute(rootNavigation, "MerchantTabs");
   }, [merchantAccount, rootNavigation]);
 
-  // The tab navigator preloads Profile in the background; only redirect a guest who actually opened it.
   const isFocused = useIsFocused();
+  // One event per visit to the tab, not per re-render.
   useEffect(() => {
-    if (mode !== "self" || isAuthenticated || !isFocused) {
-      return;
-    }
-
-    setReturnRoute("Profile");
-    rootNavigation.reset({
-      index: 0,
-      routes: [{ name: "AuthStack", params: { screen: "Login" } }],
-    });
-  }, [isAuthenticated, isFocused, mode, rootNavigation, setReturnRoute]);
+    if (!isAuthenticated || !isFocused) return;
+    trackAnalyticsEvent("profile_viewed", { self: true, source: "tab" });
+  }, [isAuthenticated, isFocused]);
 
   // Load merchant membership on sign-in so the Business entry shows without a deep link.
   useEffect(() => {
-    if (mode !== "self" || !isAuthenticated || !FEATURE_FLAGS.merchantCentreEnabled) {
+    if (!isAuthenticated || !FEATURE_FLAGS.merchantCentreEnabled) {
       return;
     }
 
@@ -298,7 +264,7 @@ export function ProfileHomeScreen({
     return () => {
       isMounted = false;
     };
-  }, [isAuthenticated, mode, profile.id, setMerchantAccount]);
+  }, [isAuthenticated, profile.id, setMerchantAccount]);
 
   // Loads run once per account; tried-stall changes only recompute progress (effect below).
   useEffect(() => {
@@ -413,14 +379,21 @@ export function ProfileHomeScreen({
   }, [profilePosts]);
 
   // Own reviews come from the reviews read, not reviewedDishIds (which also holds "tried" taps).
+  // Refetched on focus only when stale, or when a review was added or removed since the last read.
+  const reviewedDishKey = profile.reviewedDishIds.join(",");
   useEffect(() => {
     if (!isAuthenticated || !isFocused) return;
+    const loadKey = `${profile.id}:${reviewedDishKey}:${ownReviewsReloadKey}`;
+    const loaded = ownReviewsLoadedRef.current;
+    if (loaded && loaded.key === loadKey && Date.now() - loaded.at < OWN_REVIEWS_STALE_MS) return;
     let isActive = true;
     setOwnReviewsFailed(false);
     void getHungryService()
       .reviews.getUserReviews(profile.id)
       .then((rows) => {
-        if (isActive) setOwnReviews(rows);
+        if (!isActive) return;
+        ownReviewsLoadedRef.current = { at: Date.now(), key: loadKey };
+        setOwnReviews(rows);
       })
       .catch((error) => {
         console.error("Failed to load own reviews:", error);
@@ -431,7 +404,7 @@ export function ProfileHomeScreen({
     return () => {
       isActive = false;
     };
-  }, [isAuthenticated, isFocused, profile.id, ownReviewsReloadKey]);
+  }, [isAuthenticated, isFocused, profile.id, reviewedDishKey, ownReviewsReloadKey]);
 
   const profileStatSummary = useMemo(
     () => ({
@@ -478,7 +451,7 @@ export function ProfileHomeScreen({
 
   useEffect(() => {
     // Refetch on focus so approving/declining on Follow Requests updates the row.
-    if (!isAuthenticated || isOtherUserProfile || !isFocused) return;
+    if (!isAuthenticated || !isFocused) return;
 
     let isActive = true;
 
@@ -494,23 +467,25 @@ export function ProfileHomeScreen({
     return () => {
       isActive = false;
     };
-  }, [isAuthenticated, isFocused, isOtherUserProfile, profile.id]);
+  }, [isAuthenticated, isFocused, profile.id]);
+
+  // A skipped quiz leaves every taste at neutral: that is "not built yet", not a result.
+  const hasTasteFingerprint = useMemo(
+    () => hasTasteSignal(profile.tasteVector),
+    [profile.tasteVector],
+  );
 
   const handleShareTaste = useCallback(async () => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !hasTasteFingerprint) return;
     setIsTasteShareSheetOpen(true);
     await loadChatConversations();
     shareSheetRef.current?.present();
-  }, [isAuthenticated, loadChatConversations]);
+  }, [hasTasteFingerprint, isAuthenticated, loadChatConversations]);
 
-  const tasteShareMessage = useMemo(() => {
-    const topTastes = Object.entries(profile.tasteVector)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 3)
-      .map(([key, val]) => `${key} ${Math.round((val / 10) * 100)}%`);
-
-    return `Check out my Taste Fingerprint on Hungry!\n\nTop taste traits: ${topTastes.join(", ")}`;
-  }, [profile.tasteVector]);
+  const tasteShareMessage = useMemo(
+    () => buildTasteShareMessage(profile.tasteVector),
+    [profile.tasteVector],
+  );
 
   // Copies the summary with a link to your profile (usehungry.com/user/:id).
   const copyTasteFingerprintLink = useCallback(async () => {
@@ -518,6 +493,7 @@ export function ProfileHomeScreen({
       await Clipboard.setStringAsync(
         `${tasteShareMessage}\n\n${profileShareUrl(profile.id, "copy_link")}`,
       );
+      trackAnalyticsEvent("taste_fingerprint_shared", { channel: "copy_link" });
       AccessibilityInfo.announceForAccessibility("Taste Fingerprint link copied");
       Alert.alert("Copied", "Your Taste Fingerprint and profile link are on the clipboard.");
     } catch {
@@ -528,28 +504,28 @@ export function ProfileHomeScreen({
   const handleShareProfile = useCallback(async () => {
     try {
       await shareProfileLink(profile.id, profile.displayName);
+      trackAnalyticsEvent("profile_shared", { channel: "system_share" });
     } catch (error) {
       console.error("Error sharing profile:", error);
     }
   }, [profile.displayName, profile.id]);
 
-  const tastePersonaSummary = useMemo(() => {
-    const ranked = TASTE_DIMENSIONS.map((dimension) => ({
-      label: dimension.label,
-      value: profile.tasteVector[dimension.key] ?? 0,
-    })).sort((a, b) => b.value - a.value);
-    const top = ranked.filter((entry) => entry.value > 0).slice(0, 2);
-    if (top.length === 0) return "Rate and save dishes to build your Taste Fingerprint.";
-    return `You lean ${top.map((entry) => entry.label.toLowerCase()).join(" and ")}.`;
-  }, [profile.tasteVector]);
+  const tastePersonaSummary = useMemo(
+    () => buildTastePersonaSummary(profile.tasteVector),
+    [profile.tasteVector],
+  );
 
   const shareTasteProfileOutsideApp = useCallback(async () => {
     try {
-      await Share.share({ message: tasteShareMessage });
+      // The link goes with the text so whoever receives it has something to tap.
+      await Share.share({
+        message: `${tasteShareMessage}\n\n${profileShareUrl(profile.id, "system_share")}`,
+      });
+      trackAnalyticsEvent("taste_fingerprint_shared", { channel: "system_share" });
     } catch (error) {
       console.error("Error sharing taste fingerprint outside app:", error);
     }
-  }, [tasteShareMessage]);
+  }, [profile.id, tasteShareMessage]);
 
   const sendTasteProfileToHungryUsers = useCallback(async () => {
     if (!FEATURE_FLAGS.directMessagesEnabled) return;
@@ -592,19 +568,22 @@ export function ProfileHomeScreen({
     setMenuOpen((current) => !current);
   }, []);
 
-  if (mode === "other" && viewerAuthorName) {
-    return (
-      <UserProfileContent
-        navigation={navigation as any}
-        authorName={viewerAuthorName}
-        authorAvatarUrl={viewerAuthorAvatarUrl}
-        authorId={viewerAuthorId}
-      />
-    );
-  }
-
   if (!isAuthenticated) {
-    return null;
+    // A guest keeps their place: Sign in opens Login on top, and Back or "Not now" returns here.
+    return (
+      <ProfileScreenShell title="Profile" showBack={false} testID="profile-signed-out">
+        <EmptyState
+          title="Your Hungry profile"
+          body="Sign in to save dishes, follow people and build your Taste Fingerprint."
+          icon={<UserCheck size={36} color={palette.textSecondary} />}
+          ctaLabel="Sign in"
+          onPress={() => {
+            setReturnRoute("Profile");
+            rootNavigation.navigate("AuthStack", { screen: "Login" });
+          }}
+        />
+      </ProfileScreenShell>
+    );
   }
 
   return (
@@ -637,7 +616,7 @@ export function ProfileHomeScreen({
                 position: "absolute",
                 top: spacing[8] + spacing[0.5],
                 right: 0,
-                gap: spacing[1],
+                gap: StyleSheet.hairlineWidth,
                 ...shadows.floating,
                 ...(colorScheme === "dark"
                   ? {
@@ -648,7 +627,9 @@ export function ProfileHomeScreen({
                       elevation: 18,
                     }
                   : {}),
-                paddingVertical: spacing[1],
+                backgroundColor: palette.border,
+                borderRadius: componentRadii.card,
+                overflow: "hidden",
                 minWidth: 230,
                 alignItems: "stretch",
                 zIndex: 20,
@@ -690,7 +671,7 @@ export function ProfileHomeScreen({
               )}
               {isAuthenticated && (
                 <MenuRow
-                  label="Add Discovered Stall"
+                  label="Add a stall"
                   icon={<ImagePlus size={20} color={palette.orange} />}
                   onPressIn={() => preloadRoute(navigation, "AddStall")}
                   onPress={() => {
@@ -703,7 +684,7 @@ export function ProfileHomeScreen({
                 // Saved, lists (portfolios) and checklists live in one Lists area.
                 <MenuRow
                   label="Lists"
-                  icon={<BarChart3 size={20} color={palette.orange} />}
+                  icon={<List size={20} color={palette.orange} />}
                   onPressIn={() => preloadRoute(navigation, "ListsHome")}
                   onPress={() => {
                     setMenuOpen(false);
@@ -769,7 +750,7 @@ export function ProfileHomeScreen({
       }
     >
       <View style={{ gap: spacing[1], paddingBottom: spacing[8], position: "relative" }}>
-        {mode === "self" ? <PendingDeletionBanner /> : null}
+        <PendingDeletionBanner />
         {menuOpen && (
           <Pressable
             accessibilityRole="button"
@@ -824,31 +805,6 @@ export function ProfileHomeScreen({
                 </AppText>
               )}
             </View>
-            {isAuthenticated && (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Edit profile"
-                accessibilityHint="Opens profile editing"
-                hitSlop={8}
-                onPressIn={() => preloadRoute(navigation, "EditProfile")}
-                onPress={() => navigation.navigate("EditProfile")}
-                style={{
-                  position: "absolute",
-                  bottom: -spacing[0.5],
-                  right: -spacing[0.5],
-                  backgroundColor: palette.orange,
-                  width: spacing[6] + spacing[1],
-                  height: spacing[6] + spacing[1],
-                  borderRadius: radii.pill,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  borderWidth: 2,
-                  borderColor: palette.surface,
-                }}
-              >
-                <Edit2 color={palette.white} size={14} />
-              </Pressable>
-            )}
           </View>
 
           <View style={{ flex: 1, gap: spacing[1] }}>
@@ -877,19 +833,23 @@ export function ProfileHomeScreen({
                 onPress={() => navigation.navigate("EditProfile")}
                 style={{ alignSelf: "flex-start", minHeight: 44 }}
               />
-              {isAuthenticated ? (
-                <Button
-                  label="Share profile"
-                  variant="secondary"
-                  size="sm"
-                  fullWidth={false}
-                  leftIcon={<Share2 size={16} color={palette.text} />}
-                  accessibilityHint="Shares a link to your Hungry profile"
-                  onPress={() => void handleShareProfile()}
-                  style={{ alignSelf: "flex-start", minHeight: 44 }}
-                />
-              ) : null}
+              <Button
+                label="Share profile"
+                variant="secondary"
+                size="sm"
+                fullWidth={false}
+                leftIcon={<Share2 size={16} color={palette.text} />}
+                accessibilityHint="Shares a link to your Hungry profile"
+                onPress={() => void handleShareProfile()}
+                style={{ alignSelf: "flex-start", minHeight: 44 }}
+              />
             </View>
+            {profile.profileVisibility === "private" ? (
+              // The shared link opens "Profile not found" for anyone who does not follow you.
+              <AppText variant="micro" tone="muted" testID="profile-share-private-note">
+                Only approved followers can see your profile through the link.
+              </AppText>
+            ) : null}
           </View>
         </View>
 
@@ -918,8 +878,7 @@ export function ProfileHomeScreen({
               }
             />
           </View>
-          {!isOtherUserProfile &&
-          ((followRequestCount ?? 0) > 0 || profile.profileVisibility === "private") ? (
+          {(followRequestCount ?? 0) > 0 || profile.profileVisibility === "private" ? (
             <FollowRequestsRow
               count={followRequestCount}
               onPress={() => rootNavigation.navigate("FollowRequests")}
@@ -929,11 +888,9 @@ export function ProfileHomeScreen({
             {FEATURE_FLAGS.reviewCreationEnabled ? (
               <StatBlock
                 label="Reviews"
-                value={ownReviews?.length ?? null}
+                value={ownReviews === null ? null : ownReviews.length}
                 icon={<PencilLine size={14} color={palette.orange} />}
-                onPressIn={() =>
-                  !isOtherUserProfile ? preloadRoute(navigation, "ReviewHistory") : undefined
-                }
+                onPressIn={() => preloadRoute(navigation, "ReviewHistory")}
                 onPress={handleReviewsCardPress}
               />
             ) : null}
@@ -944,7 +901,7 @@ export function ProfileHomeScreen({
               onPressIn={() => preloadRoute(navigation, "VisitedStalls")}
               onPress={() => navigation.navigate("VisitedStalls")}
             />
-            {!isOtherUserProfile && FEATURE_FLAGS.favouritesEnabled ? (
+            {FEATURE_FLAGS.favouritesEnabled ? (
               <StatBlock
                 label="Saved"
                 value={profileStatSummary.saved}
@@ -968,8 +925,12 @@ export function ProfileHomeScreen({
             menuSubmissionCount={
               stallSubmissions.filter((submission) => submission.menuItems.length > 0).length
             }
+            acceptedCount={
+              stallSubmissions.filter((submission) => submission.status === "accepted").length
+            }
             onPressIn={() => preloadRoute(navigation, "AddStall")}
             onPress={() => navigation.navigate("AddStall")}
+            onOpenSubmissions={() => navigation.navigate("StallSubmissions")}
           />
           {/* Taste Fingerprint Section */}
           <View style={{ gap: spacing[4], marginTop: spacing[4] }}>
@@ -982,19 +943,21 @@ export function ProfileHomeScreen({
               }}
             >
               <AppText variant="h2">Taste Fingerprint</AppText>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Share Taste Fingerprint"
-                accessibilityHint="Opens sharing options for your Taste Fingerprint"
-                onPress={handleShareTaste}
-                hitSlop={{ top: 14, bottom: 14, left: 8, right: 8 }}
-                style={{ flexDirection: "row", alignItems: "center", gap: 4, minHeight: 44 }}
-              >
-                <Send size={16} color={palette.orange} />
-                <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
-                  SHARE
-                </AppText>
-              </Pressable>
+              {hasTasteFingerprint ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Share Taste Fingerprint"
+                  accessibilityHint="Opens sharing options for your Taste Fingerprint"
+                  onPress={handleShareTaste}
+                  hitSlop={{ top: 14, bottom: 14, left: 8, right: 8 }}
+                  style={{ flexDirection: "row", alignItems: "center", gap: 4, minHeight: 44 }}
+                >
+                  <Send size={16} color={palette.orange} />
+                  <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
+                    Share
+                  </AppText>
+                </Pressable>
+              ) : null}
             </View>
 
             <View
@@ -1032,23 +995,37 @@ export function ProfileHomeScreen({
                 <AppText style={{ flex: 1, fontWeight: "600" }}>{tastePersonaSummary}</AppText>
               </View>
 
-              <View style={{ gap: spacing[2] }}>
-                {TASTE_DIMENSIONS.map((dimension) => (
-                  <TasteBar
-                    key={dimension.key}
-                    label={dimension.label}
-                    value={profile.tasteVector[dimension.key]}
-                    max={10}
-                    color={tasteBarColors[dimension.key]}
-                  />
-                ))}
-              </View>
+              {hasTasteFingerprint ? (
+                <View style={{ gap: spacing[2] }}>
+                  {TASTE_DIMENSIONS.map((dimension) => (
+                    <TasteBar
+                      key={dimension.key}
+                      label={dimension.label}
+                      value={profile.tasteVector[dimension.key]}
+                      max={10}
+                      color={tasteBarColors[dimension.key]}
+                    />
+                  ))}
+                </View>
+              ) : (
+                <Button
+                  label="Take the taste quiz"
+                  variant="secondary"
+                  size="sm"
+                  fullWidth={false}
+                  onPress={() =>
+                    rootNavigation.navigate("OnboardingStack", {
+                      screen: "TasteQuiz",
+                      params: { mode: "profile" },
+                    })
+                  }
+                  style={{ alignSelf: "flex-start", minHeight: 44 }}
+                />
+              )}
             </View>
           </View>
           <View style={{ gap: spacing[4], marginTop: spacing[5] }}>
-            <AppText variant="h2">
-              {activeShareTab === "posts" ? "Posts" : resolvedReviewSignalLabel}
-            </AppText>
+            <AppText variant="h2">{activeShareTab === "posts" ? "Posts" : "Reviews"}</AppText>
             <View
               style={{
                 alignSelf: "stretch",
@@ -1083,7 +1060,7 @@ export function ProfileHomeScreen({
               </Pressable>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={`Show profile ${resolvedReviewSignalLabel.toLowerCase()}`}
+                accessibilityLabel="Show profile reviews"
                 accessibilityState={{ selected: activeShareTab === "reviews" }}
                 onPress={() => setActiveShareTab("reviews")}
                 style={{
@@ -1099,7 +1076,7 @@ export function ProfileHomeScreen({
                     color: activeShareTab === "reviews" ? palette.textOnOrange : palette.text,
                   }}
                 >
-                  {resolvedReviewSignalLabel}
+                  Reviews
                 </AppText>
               </Pressable>
             </View>
@@ -1159,13 +1136,10 @@ export function ProfileHomeScreen({
                 />
               )
             ) : ownReviews === null ? (
-              <View style={{ gap: spacing[3] }}>
-                <Skeleton height={spacing[16]} borderRadius={componentRadii.card} />
-                <Skeleton height={spacing[16]} borderRadius={componentRadii.card} />
-              </View>
+              <ProfileReviewsSkeleton />
             ) : ownReviews.length ? (
               <View style={{ gap: spacing[3] }}>
-                {ownReviews.map((review) => {
+                {ownReviews.slice(0, OWN_REVIEWS_INLINE_LIMIT).map((review) => {
                   const dishName = review.dishId
                     ? getDataRepository().getDishById(review.dishId)?.name
                     : undefined;
@@ -1198,6 +1172,13 @@ export function ProfileHomeScreen({
                             />
                           ) : null}
                         </View>
+                        {review.moderationState ? (
+                          <ReviewModerationNotice
+                            state={review.moderationState}
+                            reviewId={review.id}
+                            dishName={dishName}
+                          />
+                        ) : null}
                         <AppText variant="micro" tone="secondary">
                           {`Rated ${review.rating}/5`}
                         </AppText>
@@ -1206,6 +1187,14 @@ export function ProfileHomeScreen({
                     </Pressable>
                   );
                 })}
+                {ownReviews.length > OWN_REVIEWS_INLINE_LIMIT ? (
+                  <Button
+                    label="See all reviews"
+                    variant="ghost"
+                    size="sm"
+                    onPress={handleReviewsCardPress}
+                  />
+                ) : null}
                 {ownReviewEditor.dialog}
               </View>
             ) : ownReviewsFailed ? (
@@ -1324,25 +1313,26 @@ export function ProfileHomeScreen({
 function StallContributionCard({
   submissionCount,
   menuSubmissionCount,
+  acceptedCount,
   onPressIn,
   onPress,
+  onOpenSubmissions,
 }: {
   submissionCount: number;
   menuSubmissionCount: number;
+  acceptedCount: number;
   onPressIn?: () => void;
   onPress: () => void;
+  onOpenSubmissions: () => void;
 }) {
   const { componentRadii, palette, shadows, spacing } = useHungryTheme();
   const nextScoutTarget = submissionCount >= 5 ? 10 : 5;
   const scoutProgress = Math.min(submissionCount, nextScoutTarget);
+  // The Scout target belongs to the Passport and FoodCred system; without it, show what happened.
+  const showScout = FEATURE_FLAGS.gamificationEnabled;
 
   return (
-    <Pressable
-      accessibilityRole="button"
-      onPressIn={onPressIn}
-      onPress={onPress}
-      accessibilityLabel="Add a stall you discovered online"
-      accessibilityHint="Opens the stall contribution form"
+    <View
       style={{
         ...shadows.card,
         backgroundColor: palette.surface,
@@ -1353,46 +1343,73 @@ function StallContributionCard({
         padding: spacing[4],
       }}
     >
-      <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[3] }}>
-        <View
-          style={{
-            alignItems: "center",
-            backgroundColor: palette.orangeLight,
-            borderRadius: componentRadii.iconButton,
-            height: 44,
-            justifyContent: "center",
-            width: 44,
-          }}
-        >
-          <ImagePlus color={palette.orange} size={22} />
+      <Pressable
+        accessibilityRole="button"
+        onPressIn={onPressIn}
+        onPress={onPress}
+        accessibilityLabel="Add a stall"
+        accessibilityHint="Opens the stall contribution form"
+        style={{ gap: spacing[4] }}
+      >
+        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[3] }}>
+          <View
+            style={{
+              alignItems: "center",
+              backgroundColor: palette.orangeLight,
+              borderRadius: componentRadii.iconButton,
+              height: 44,
+              justifyContent: "center",
+              width: 44,
+            }}
+          >
+            <ImagePlus color={palette.orange} size={22} />
+          </View>
+          <View style={{ flex: 1, gap: spacing[0.5] }}>
+            <AppText variant="h3">Add a stall</AppText>
+            <AppText variant="bodySmall" tone="muted">
+              Submit a stall name, photos, menu notes, hours and an ordering link for review.
+            </AppText>
+          </View>
+          <ChevronRight color={palette.textMuted} size={18} />
         </View>
-        <View style={{ flex: 1, gap: spacing[0.5] }}>
-          <AppText variant="h3">Add stalls from online finds</AppText>
-          <AppText variant="bodySmall" tone="muted">
-            Submit a stall name, image, menu notes, hours, and source link for review.
-          </AppText>
-        </View>
-        <ChevronRight color={palette.textMuted} size={18} />
-      </View>
 
-      <View style={{ flexDirection: "row", gap: spacing[2] }}>
-        <ScoutMetric
-          icon={<Store size={14} color={palette.orange} />}
-          label="Submitted"
-          value={submissionCount}
+        <View style={{ flexDirection: "row", gap: spacing[2] }}>
+          <ScoutMetric
+            icon={<Store size={14} color={palette.orange} />}
+            label="Submitted"
+            value={submissionCount}
+          />
+          <ScoutMetric
+            icon={<Utensils size={14} color={palette.orange} />}
+            label="With menu"
+            value={menuSubmissionCount}
+          />
+          {showScout ? (
+            <ScoutMetric
+              icon={<Trophy size={14} color={palette.orange} />}
+              label="Scout"
+              value={`${scoutProgress}/${nextScoutTarget}`}
+            />
+          ) : (
+            <ScoutMetric
+              icon={<UserCheck size={14} color={palette.orange} />}
+              label="Approved"
+              value={acceptedCount}
+            />
+          )}
+        </View>
+      </Pressable>
+      {submissionCount > 0 ? (
+        <Button
+          label="See my submissions"
+          variant="ghost"
+          size="sm"
+          fullWidth={false}
+          onPress={onOpenSubmissions}
+          style={{ alignSelf: "flex-start", minHeight: 44 }}
         />
-        <ScoutMetric
-          icon={<Utensils size={14} color={palette.orange} />}
-          label="With menu"
-          value={menuSubmissionCount}
-        />
-        <ScoutMetric
-          icon={<Trophy size={14} color={palette.orange} />}
-          label="Scout"
-          value={`${scoutProgress}/${nextScoutTarget}`}
-        />
-      </View>
-    </Pressable>
+      ) : null}
+    </View>
   );
 }
 
@@ -1484,23 +1501,6 @@ function TasteBar({
   );
 }
 
-/** Placeholder tiles while the first page of posts loads, so "No posts yet" does not flash. */
-function ProfileGridSkeleton() {
-  const { spacing } = useHungryTheme();
-  return (
-    <View
-      accessibilityLabel="Loading posts"
-      style={{ flexDirection: "row", flexWrap: "wrap", marginHorizontal: -spacing[4] }}
-    >
-      {Array.from({ length: 6 }, (_, index) => (
-        <View key={index} style={{ width: "33.333%", aspectRatio: 1, padding: 1 }}>
-          <Skeleton height="100%" borderRadius={0} />
-        </View>
-      ))}
-    </View>
-  );
-}
-
 function StatBlock({
   label,
   value,
@@ -1509,8 +1509,8 @@ function StatBlock({
   onPress,
 }: {
   label: string;
-  /** null while loading. */
-  value: number | null;
+  /** null while loading; text such as "20+" when only the first page is counted. */
+  value: number | string | null;
   icon: ReactNode;
   onPressIn?: () => void;
   onPress?: () => void;
@@ -1622,7 +1622,7 @@ function FollowRequestsRow({
             alignItems: "center",
           }}
         >
-          <AppText variant="micro" style={{ color: palette.white, fontWeight: "800" }}>
+          <AppText variant="micro" style={{ color: palette.textOnOrange, fontWeight: "800" }}>
             {pendingCount > 99 ? "99+" : pendingCount}
           </AppText>
         </View>
@@ -1643,7 +1643,7 @@ function MenuRow({
   onPressIn?: () => void;
   onPress: () => void;
 }) {
-  const { componentRadii, palette, spacing } = useHungryTheme();
+  const { palette, spacing } = useHungryTheme();
   return (
     <Pressable
       accessibilityRole="button"
@@ -1656,11 +1656,8 @@ function MenuRow({
           alignItems: "center",
           width: "100%",
           backgroundColor: pressed ? palette.bgSoft : palette.surface,
-          borderRadius: componentRadii.button,
           padding: spacing[4],
           gap: spacing[3],
-          borderWidth: 1,
-          borderColor: palette.border,
         },
       ]}
     >

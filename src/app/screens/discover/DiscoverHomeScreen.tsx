@@ -7,6 +7,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type ReactNode,
 } from "react";
 import {
   Pressable,
@@ -24,6 +25,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "@/lib/haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import {
+  ChevronDown,
   ChevronRight,
   Compass,
   Search,
@@ -56,11 +58,16 @@ import {
 import { DiscoverViewToggle } from "@/components/discover/DiscoverViewToggle";
 import { StallLogoMark } from "@/components/stall/StallLogoMark";
 import {
+  DISCOVER_FEED_LIMIT,
   getDiscoverBiteCollections,
   getDiscoverBites,
   getDiscoverCardImage,
   getDishImageCandidates,
+  isLateNightDish,
+  isLateNightHour,
+  searchResultToDiscoverBite,
   type DiscoverCardImageCandidate,
+  type DiscoverCollection,
 } from "@/features/discover/bites";
 import { getDiscoverAreaCountLabel } from "@/features/discover/areaCount";
 import { dedupeNearestVenueCandidates } from "@/features/search/venueDedupe";
@@ -72,18 +79,13 @@ import {
   preloadRoute,
 } from "@/features/navigation/prefetch";
 import { trackAnalyticsEvent } from "@/lib/analytics";
-import { getNearestBuildings, getNearestSingaporeArea } from "@/lib/geo/singaporeBuildings";
+import { getNearestBuildings, getNearestSingaporeAreaWithin } from "@/lib/geo/singaporeBuildings";
 import {
   getDataRepository,
   getHungryService,
   getServiceProvider,
 } from "@/lib/services/serviceProvider";
-import type {
-  Bite,
-  DataRepository,
-  DiscoveryLocationFeed,
-  SearchResult,
-} from "@/lib/services/types";
+import type { Bite, DataRepository, DiscoveryLocationFeed } from "@/lib/services/types";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { useDelayedLoadingSkeleton } from "@/hooks/useDelayedLoadingSkeleton";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
@@ -91,13 +93,13 @@ import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useCurrentPlace } from "@/features/discover/currentPlace";
 import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useUIStore } from "@/store/useUIStore";
+import { DECIDE_INITIAL_RADIUS_METERS } from "@/features/discovery/decideForMeCandidates";
 import { isMerchantModeActive, useMerchantStore } from "@/store/useMerchantStore";
-import { useSearchStore } from "@/store/useSearchStore";
 import { useMovingSearchPlaceholder } from "@/features/search/useMovingSearchPlaceholder";
 import { useHungryTheme } from "@/theme";
 import type { BuildingSummary, DietaryFlag, DishDetail, VenueSummary } from "@/types/domain";
-import { getVenueOpenState } from "@/utils/operatingHours";
-import { isVenueOpenFromHours } from "@/utils/stallStatus";
+import { getSingaporeHour, getVenueOpenState } from "@/utils/operatingHours";
 
 type DiscoverChipId = "dietary" | "spicy" | "halal" | "late" | "cheap";
 
@@ -128,7 +130,6 @@ type PopularFoodStyle = {
   query: string;
   dishId?: string;
   imageSource?: number;
-  trending?: boolean;
 };
 
 type PopularFoodStyleItemData = PopularFoodStyle & {
@@ -157,7 +158,6 @@ const DISCOVER_TEXT_LINK_HIT_SLOP = { top: 16, bottom: 16, left: 12, right: 12 }
 const EMPTY_FEED_VENUES: DiscoveryLocationFeed["venues"] = [];
 const EMPTY_FEED_RESULTS: DiscoveryLocationFeed["results"] = [];
 const DISCOVER_AREA_RADIUS_METERS = 3000;
-const DISCOVER_FEED_LIMIT = 100;
 /** 500 steps per degree ≈ a 220m grid: small GPS moves keep the same Discover read. */
 const DISCOVER_GEOCELL_STEPS_PER_DEGREE = 500;
 const STALL_SHOWCASE_FALLBACK_IMAGES = [
@@ -212,39 +212,6 @@ function buildStallShowcaseCardsFromVenues(
   });
 }
 
-function searchResultToDiscoverBite(result: SearchResult, index: number): Bite {
-  const { dish, score } = result;
-  const createdAt = new Date(Date.now() - (index + 1) * 15 * 60_000).toISOString();
-  const normalizedRating = Number.isFinite(dish.rating) ? dish.rating : 0;
-  const reviewCount = Number.isFinite(dish.reviewCount) ? dish.reviewCount : 0;
-  const image = getDiscoverCardImage(getDishImageCandidates(dish));
-
-  return {
-    id: `discover-${dish.id}`,
-    authorId: `venue-${dish.venueId}`,
-    authorName: dish.venueName,
-    authorAvatar: image.imageUrl,
-    dishId: dish.id,
-    dishName: dish.name,
-    venueId: dish.venueId,
-    venueName: dish.venueName,
-    unitNumber: dish.unitNumber,
-    buildingId: dish.buildingId,
-    buildingName: dish.venueName,
-    photoUrl: image.imageUrl,
-    mediaUrls: image.candidateUrls,
-    imageSourceType: image.imageSourceType,
-    caption: dish.description ?? dish.name,
-    tasteStamp: dish.tasteVector,
-    cravingCount: Math.max(reviewCount, Math.round((score || normalizedRating) * 10)),
-    savedCount: Math.max(0, Math.floor(reviewCount / 4)),
-    rating: normalizedRating,
-    price: dish.price,
-    expiresAt: new Date(new Date(createdAt).getTime() + 24 * 60 * 60 * 1000).toISOString(),
-    createdAt,
-  };
-}
-
 const POPULAR_FOOD_STYLES: readonly PopularFoodStyle[] = [
   {
     id: "laksa",
@@ -252,7 +219,6 @@ const POPULAR_FOOD_STYLES: readonly PopularFoodStyle[] = [
     query: "Laksa",
     dishId: "dish-laksa",
     imageSource: POPULAR_LAKSA_GRAPHIC,
-    trending: true,
   },
   {
     id: "chicken-rice",
@@ -266,7 +232,6 @@ const POPULAR_FOOD_STYLES: readonly PopularFoodStyle[] = [
     label: "Char Kway Teow",
     query: "Char Kway Teow",
     imageSource: POPULAR_CHAR_KWAY_TEOW_GRAPHIC,
-    trending: true,
   },
   {
     id: "bak-chor-mee",
@@ -402,7 +367,6 @@ function DiscoverStallThumbnail({ venue }: { venue: VenueSummary }) {
   );
 }
 
-const POPULAR_FOOD_FILTER_SKELETON_MIN_MS = 1200;
 type RootNavigation = CompositeNavigationProp<
   MaterialTopTabNavigationProp<MainTabParamList, "Discover">,
   NativeStackNavigationProp<RootStackParamList>
@@ -432,13 +396,11 @@ function DiscoverSkeleton() {
 function FoodStyleButton({
   imageSource,
   label,
-  trending,
   onPressIn,
   onPress,
 }: {
   imageSource: ImageSourcePropType;
   label: string;
-  trending?: boolean;
   onPressIn?: () => void;
   onPress: () => void;
 }) {
@@ -454,7 +416,7 @@ function FoodStyleButton({
       accessibilityLabel={`Search for ${label}`}
       onPressIn={onPressIn}
       onPress={onPress}
-      style={{ alignItems: "center", height: buttonHeight, width: 88 }}
+      style={{ alignItems: "center", minHeight: buttonHeight, width: 88 }}
     >
       <View
         style={[
@@ -463,8 +425,8 @@ function FoodStyleButton({
             width: bowlSize,
             height: bowlSize,
             borderRadius: radii.pill,
-            borderWidth: trending ? 3 : 1,
-            borderColor: trending ? palette.orange : palette.border,
+            borderWidth: 1,
+            borderColor: palette.border,
             backgroundColor: palette.surfaceRaised,
             overflow: "hidden",
           },
@@ -520,7 +482,6 @@ const PopularFoodStyleItem = memo(function PopularFoodStyleItem({
     <MemoFoodStyleButton
       imageSource={item.imageSource}
       label={item.label}
-      trending={item.trending}
       onPressIn={handlePressIn}
       onPress={handlePress}
     />
@@ -690,16 +651,268 @@ function FilteredResultsEmptyState({
   );
 }
 
+type DiscoverRailLayout = {
+  cardWidth: number;
+  contentGap: number;
+  imageHeight: number;
+  reservedHeight: number;
+  screenWidth: number;
+};
+
+type DiscoverBiteCardVariant = "rating" | "topRated" | "price";
+
+const getQuickBiteLabel = (bite: Bite) => `Dish near you: ${bite.dishName} at ${bite.venueName}`;
+const getMostReviewedLabel = (bite: Bite) => `Open ${bite.dishName} at ${bite.venueName}`;
+const getTopRatedLabel = (bite: Bite) => `Top rated: ${bite.dishName} at ${bite.venueName}`;
+const getBudgetLabel = (bite: Bite) =>
+  `Budget meal: ${bite.dishName} at S$${bite.price.toFixed(2)}`;
+const getLateNightLabel = (bite: Bite) => `Late night eats: ${bite.dishName} at ${bite.venueName}`;
+
+function DiscoverRailBadge({ label, tone }: { label: string; tone: "accent" | "success" }) {
+  const { colorScheme, palette, radii, spacing } = useHungryTheme();
+  const isAccent = tone === "accent";
+  return (
+    <View
+      style={{
+        backgroundColor: isAccent ? palette.orange : palette.success,
+        borderRadius: radii.sm,
+        paddingHorizontal: spacing[2],
+        paddingVertical: spacing[0.5],
+      }}
+    >
+      <AppText
+        variant="micro"
+        style={{
+          color: isAccent
+            ? palette.textOnOrange
+            : colorScheme === "dark"
+              ? palette.textOnOrange
+              : palette.white,
+          fontWeight: "800",
+        }}
+      >
+        {label}
+      </AppText>
+    </View>
+  );
+}
+
+/** One dish card, shared by every rail. A rating shows only when reviews stand behind it. */
+const DiscoverBiteCard = memo(function DiscoverBiteCard({
+  bite,
+  buttonId,
+  cardWidth,
+  getCardLabel,
+  imageHeight,
+  onOpen,
+  onPrefetch,
+  variant,
+}: {
+  bite: Bite;
+  buttonId: string;
+  cardWidth: number;
+  getCardLabel: (bite: Bite) => string;
+  imageHeight: number;
+  onOpen: (bite: Bite, buttonId: string) => void;
+  onPrefetch: (bite: Bite) => void;
+  variant: DiscoverBiteCardVariant;
+}) {
+  const { colorScheme, componentRadii, palette, radii, shadows, spacing } = useHungryTheme();
+  const isDark = colorScheme === "dark";
+  const hasRating = bite.cravingCount > 0 && bite.rating > 0;
+  const handlePressIn = useCallback(() => onPrefetch(bite), [bite, onPrefetch]);
+  const handlePress = useCallback(() => onOpen(bite, buttonId), [bite, buttonId, onOpen]);
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={getCardLabel(bite)}
+      onPressIn={handlePressIn}
+      onPress={handlePress}
+      style={[
+        shadows.card,
+        {
+          backgroundColor: palette.surface,
+          borderColor: palette.border,
+          borderRadius: componentRadii.card,
+          borderWidth: isDark ? 0 : 1,
+          overflow: "hidden",
+          width: cardWidth,
+        },
+      ]}
+    >
+      <DiscoverBiteImage bite={bite} height={imageHeight} />
+      {/* Rating badge overlay: the rail is rating-based, not curated */}
+      {variant === "topRated" && hasRating ? (
+        <View
+          style={{
+            backgroundColor: palette.orange,
+            borderRadius: radii.sm,
+            left: spacing[2],
+            paddingHorizontal: spacing[2],
+            paddingVertical: spacing[0.5],
+            position: "absolute",
+            top: spacing[2],
+          }}
+        >
+          <AppText variant="micro" style={{ color: palette.textOnOrange, fontWeight: "800" }}>
+            {`★ ${bite.rating.toFixed(1)}`}
+          </AppText>
+        </View>
+      ) : null}
+      <View style={{ gap: spacing[1], padding: spacing[3] }}>
+        <AppText variant="bodySmallBold" numberOfLines={1} style={{ color: palette.text }}>
+          {bite.dishName}
+        </AppText>
+        <AppText variant="micro" style={{ color: palette.textSecondary }} numberOfLines={1}>
+          {bite.venueName}
+        </AppText>
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            marginTop: spacing[1],
+          }}
+        >
+          <AppText variant="price" style={{ color: palette.accentText }}>
+            S${bite.price.toFixed(2)}
+          </AppText>
+          {variant !== "price" && hasRating ? (
+            <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
+              <Star color={palette.amber} size={12} fill={palette.amber} />
+              <AppText variant="micro" style={{ color: palette.text, fontWeight: "700" }}>
+                {bite.rating.toFixed(1)}
+              </AppText>
+            </View>
+          ) : null}
+        </View>
+      </View>
+    </Pressable>
+  );
+});
+
+/** A titled horizontal rail of dish cards with "SEE ALL", a loading state and a filter-empty state. */
+const DiscoverBiteRail = memo(function DiscoverBiteRail({
+  buttonId,
+  cards,
+  getCardLabel,
+  isFiltering,
+  isLoading,
+  layout,
+  onOpenBite,
+  onPrefetchBite,
+  onPrefetchCollection,
+  onSeeAll,
+  rail,
+  seeAllLabel,
+  title,
+  titleBadge,
+  variant,
+}: {
+  buttonId: string;
+  cards: Bite[];
+  getCardLabel: (bite: Bite) => string;
+  isFiltering: boolean;
+  isLoading: boolean;
+  layout: DiscoverRailLayout;
+  onOpenBite: (bite: Bite, buttonId: string) => void;
+  onPrefetchBite: (bite: Bite) => void;
+  onPrefetchCollection: (collection: DiscoverCollection) => void;
+  onSeeAll: (collection: DiscoverCollection) => void;
+  rail: DiscoverCollection;
+  seeAllLabel: string;
+  title: string;
+  titleBadge?: ReactNode;
+  variant: DiscoverBiteCardVariant;
+}) {
+  const { palette, spacing } = useHungryTheme();
+  const impressionSentRef = useRef(false);
+  const scrollStyle = useMemo(() => ({ width: layout.screenWidth }), [layout.screenWidth]);
+
+  // Once per visit, when the rail first shows dishes (not on every filter change).
+  useEffect(() => {
+    if (isLoading || cards.length === 0 || impressionSentRef.current) return;
+    impressionSentRef.current = true;
+    trackAnalyticsEvent("discover_rail_impression", { rail, count: cards.length });
+  }, [cards.length, isLoading, rail]);
+
+  return (
+    <View style={{ gap: layout.contentGap }}>
+      <View
+        style={{
+          alignItems: "center",
+          flexDirection: "row",
+          justifyContent: "space-between",
+        }}
+      >
+        <View style={{ alignItems: "center", flex: 1, flexDirection: "row", gap: spacing[2] }}>
+          <AppText variant="h2" style={{ color: palette.text, flexShrink: 1 }}>
+            {title}
+          </AppText>
+          {titleBadge}
+        </View>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={seeAllLabel}
+          hitSlop={DISCOVER_TEXT_LINK_HIT_SLOP}
+          onPressIn={() => onPrefetchCollection(rail)}
+          onPress={() => onSeeAll(rail)}
+        >
+          <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
+            SEE ALL
+          </AppText>
+        </Pressable>
+      </View>
+      {isLoading ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={scrollStyle}
+          contentContainerStyle={{ gap: spacing[4] }}
+        >
+          <DiscoverFoodRailLoadingSkeleton
+            cardWidth={layout.cardWidth}
+            imageHeight={layout.imageHeight}
+          />
+        </ScrollView>
+      ) : cards.length ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={scrollStyle}
+          contentContainerStyle={{ gap: spacing[4] }}
+        >
+          {cards.map((bite) => (
+            <DiscoverBiteCard
+              key={`${rail}-${bite.id}`}
+              bite={bite}
+              buttonId={buttonId}
+              cardWidth={layout.cardWidth}
+              getCardLabel={getCardLabel}
+              imageHeight={layout.imageHeight}
+              onOpen={onOpenBite}
+              onPrefetch={onPrefetchBite}
+              variant={variant}
+            />
+          ))}
+        </ScrollView>
+      ) : isFiltering ? (
+        <FilteredResultsEmptyState preserveHeight minHeight={layout.reservedHeight} />
+      ) : null}
+    </View>
+  );
+});
+
 function VerticalStallShowcaseSection({
   cards,
-  locationLabel,
+  areaPhrase,
   pageHeight,
   cardWidth,
   onOpenCard,
   onPrefetchCard,
 }: {
   cards: DiscoverStallShowcaseCard[];
-  locationLabel: string;
+  areaPhrase: string;
   pageHeight: number;
   cardWidth: number;
   onOpenCard: (card: DiscoverStallShowcaseCard) => void;
@@ -736,7 +949,7 @@ function VerticalStallShowcaseSection({
         }}
       >
         <AppText variant="h2" numberOfLines={1} style={{ color: palette.text, flex: 1 }}>
-          More from {locationLabel}
+          More {areaPhrase}
         </AppText>
         <AppText
           variant="micro"
@@ -752,163 +965,166 @@ function VerticalStallShowcaseSection({
             style={{
               flexDirection: "row",
               gap: columnGap,
-              height: tallCardHeight,
+              minHeight: tallCardHeight,
               width: cardWidth,
             }}
           >
-            {rowCards.map((card) => (
-              <Pressable
-                key={card.id}
-                accessibilityRole="button"
-                accessibilityLabel={`Open ${card.venue.name} details`}
-                onPressIn={() => onPrefetchCard(card)}
-                onPress={() => onOpenCard(card)}
-                style={[
-                  shadows.card,
-                  {
-                    backgroundColor: palette.surface,
-                    borderColor: palette.border,
-                    borderRadius: componentRadii.card,
-                    borderWidth: 1,
-                    height: tallCardHeight,
-                    overflow: "hidden",
-                    width: columnCardWidth,
-                  },
-                ]}
-              >
-                <View
-                  style={{
-                    backgroundColor: palette.surfaceRaised,
-                    height: cardImageHeight,
-                    overflow: "hidden",
-                    width: "100%",
-                  }}
+            {rowCards.map((card) => {
+              const openLabel = getStallRowOpenLabel(card.venue);
+              return (
+                <Pressable
+                  key={card.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open ${card.venue.name} details`}
+                  onPressIn={() => onPrefetchCard(card)}
+                  onPress={() => onOpenCard(card)}
+                  style={[
+                    shadows.card,
+                    {
+                      backgroundColor: palette.surface,
+                      borderColor: palette.border,
+                      borderRadius: componentRadii.card,
+                      borderWidth: 1,
+                      minHeight: tallCardHeight,
+                      overflow: "hidden",
+                      width: columnCardWidth,
+                    },
+                  ]}
                 >
-                  <AccessibleImage
-                    source={card.imageSource}
-                    style={{ height: "100%", width: "100%" }}
-                    contentFit="cover"
-                    cachePolicy="memory-disk"
-                    transition={120}
-                    decorative
-                  />
                   <View
                     style={{
-                      backgroundColor: palette.imageLabelSurface,
-                      borderColor: palette.imageLabelBorder,
-                      borderRadius: radii.pill,
-                      borderWidth: 1,
-                      left: spacing[2],
-                      paddingHorizontal: spacing[1.5],
-                      paddingVertical: spacing[0.5],
-                      position: "absolute",
-                      top: spacing[2],
+                      backgroundColor: palette.surfaceRaised,
+                      height: cardImageHeight,
+                      overflow: "hidden",
+                      width: "100%",
                     }}
                   >
-                    <AppText
-                      variant="micro"
-                      style={{ color: palette.textOnDark, fontWeight: "900" }}
-                    >
-                      {isVenueOpenFromHours(card.venue.operatingHours, card.venue.isOpen)
-                        ? "OPEN"
-                        : "CLOSED"}
-                    </AppText>
-                  </View>
-                  {card.heroDish.reviewCount > 0 ? (
-                    <View
-                      style={{
-                        alignItems: "center",
-                        backgroundColor: palette.imageLabelSurface,
-                        borderColor: palette.imageLabelBorder,
-                        borderRadius: radii.pill,
-                        borderWidth: 1,
-                        bottom: spacing[2],
-                        flexDirection: "row",
-                        gap: spacing[0.5],
-                        paddingHorizontal: spacing[1.5],
-                        paddingVertical: spacing[0.5],
-                        position: "absolute",
-                        right: spacing[2],
-                      }}
-                    >
-                      <Star color={palette.amber} size={11} fill={palette.amber} />
-                      <AppText
-                        variant="micro"
-                        style={{ color: palette.textOnDark, fontWeight: "900" }}
+                    <AccessibleImage
+                      source={card.imageSource}
+                      style={{ height: "100%", width: "100%" }}
+                      contentFit="cover"
+                      cachePolicy="memory-disk"
+                      transition={120}
+                      decorative
+                    />
+                    {openLabel ? (
+                      <View
+                        style={{
+                          backgroundColor: palette.imageLabelSurface,
+                          borderColor: palette.imageLabelBorder,
+                          borderRadius: radii.pill,
+                          borderWidth: 1,
+                          left: spacing[2],
+                          paddingHorizontal: spacing[1.5],
+                          paddingVertical: spacing[0.5],
+                          position: "absolute",
+                          top: spacing[2],
+                        }}
                       >
-                        {card.heroDish.rating.toFixed(1)}
-                      </AppText>
+                        <AppText
+                          variant="micro"
+                          style={{ color: palette.textOnDark, fontWeight: "900" }}
+                        >
+                          {openLabel.startsWith("Open") ? "OPEN" : "CLOSED"}
+                        </AppText>
+                      </View>
+                    ) : null}
+                    {card.heroDish.reviewCount > 0 ? (
+                      <View
+                        style={{
+                          alignItems: "center",
+                          backgroundColor: palette.imageLabelSurface,
+                          borderColor: palette.imageLabelBorder,
+                          borderRadius: radii.pill,
+                          borderWidth: 1,
+                          bottom: spacing[2],
+                          flexDirection: "row",
+                          gap: spacing[0.5],
+                          paddingHorizontal: spacing[1.5],
+                          paddingVertical: spacing[0.5],
+                          position: "absolute",
+                          right: spacing[2],
+                        }}
+                      >
+                        <Star color={palette.amber} size={11} fill={palette.amber} />
+                        <AppText
+                          variant="micro"
+                          style={{ color: palette.textOnDark, fontWeight: "900" }}
+                        >
+                          {card.heroDish.rating.toFixed(1)}
+                        </AppText>
+                      </View>
+                    ) : null}
+                  </View>
+                  <View
+                    style={{
+                      flex: 1,
+                      gap: spacing[0.5],
+                      justifyContent: "center",
+                      paddingHorizontal: spacing[2],
+                      paddingVertical: spacing[0.5],
+                    }}
+                  >
+                    <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
+                      <View
+                        style={{
+                          alignItems: "center",
+                          flex: 1,
+                          flexDirection: "row",
+                          gap: spacing[1],
+                        }}
+                      >
+                        <AppText
+                          variant="bodySmall"
+                          numberOfLines={1}
+                          style={{ color: palette.text, flex: 1, fontWeight: "900" }}
+                        >
+                          {card.venue.name}
+                        </AppText>
+                        <AppText
+                          variant="micro"
+                          numberOfLines={1}
+                          style={{ color: palette.textSecondary, flexShrink: 0 }}
+                        >
+                          {card.venue.planningArea ? `${card.venue.planningArea} · ` : ""}
+                          {card.venue.unitNumber}
+                        </AppText>
+                      </View>
+                      <ChevronRight color={palette.textMuted} size={16} />
                     </View>
-                  ) : null}
-                </View>
-                <View
-                  style={{
-                    flex: 1,
-                    gap: spacing[0.5],
-                    justifyContent: "center",
-                    paddingHorizontal: spacing[2],
-                    paddingVertical: spacing[0.5],
-                  }}
-                >
-                  <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
                     <View
                       style={{
                         alignItems: "center",
-                        flex: 1,
                         flexDirection: "row",
-                        gap: spacing[1],
+                        justifyContent: "space-between",
                       }}
                     >
                       <AppText
                         variant="bodySmall"
                         numberOfLines={1}
-                        style={{ color: palette.text, flex: 1, fontWeight: "900" }}
+                        style={{ color: palette.text, flex: 1, fontWeight: "800" }}
                       >
-                        {card.venue.name}
+                        {card.heroDish.name}
                       </AppText>
-                      <AppText
-                        variant="micro"
-                        numberOfLines={1}
-                        style={{ color: palette.textSecondary, flexShrink: 0 }}
-                      >
-                        {card.venue.planningArea ? `${card.venue.planningArea} · ` : ""}
-                        {card.venue.unitNumber}
-                      </AppText>
+                      {card.heroDish.price > 0 ? (
+                        <AppText
+                          variant="price"
+                          style={{
+                            color: palette.accentText,
+                            fontSize: typography.bodySmallBold.fontSize,
+                            fontWeight: "800",
+                            lineHeight: typography.bodySmallBold.lineHeight,
+                            marginLeft: spacing[1],
+                          }}
+                        >
+                          S${card.heroDish.price.toFixed(2)}
+                        </AppText>
+                      ) : null}
                     </View>
-                    <ChevronRight color={palette.textMuted} size={16} />
                   </View>
-                  <View
-                    style={{
-                      alignItems: "center",
-                      flexDirection: "row",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <AppText
-                      variant="bodySmall"
-                      numberOfLines={1}
-                      style={{ color: palette.text, flex: 1, fontWeight: "800" }}
-                    >
-                      {card.heroDish.name}
-                    </AppText>
-                    {card.heroDish.price > 0 ? (
-                      <AppText
-                        variant="price"
-                        style={{
-                          color: palette.orange,
-                          fontSize: typography.bodySmallBold.fontSize,
-                          fontWeight: "800",
-                          lineHeight: typography.bodySmallBold.lineHeight,
-                          marginLeft: spacing[1],
-                        }}
-                      >
-                        S${card.heroDish.price.toFixed(2)}
-                      </AppText>
-                    ) : null}
-                  </View>
-                </View>
-              </Pressable>
-            ))}
+                </Pressable>
+              );
+            })}
           </View>
         ))}
       </View>
@@ -935,7 +1151,6 @@ export function DiscoverHomeScreen() {
   const navigation = useNavigation<RootNavigation>();
   const route = useRoute();
   const isTabSwipeLockedRef = useRef(false);
-  const popularFoodFilterSkeletonTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const repository = getDataRepository();
   const repositoryLookup = useMemo<DiscoverRepositoryLookup>(() => {
     const dishById = new Map<string, DishDetail | undefined>();
@@ -1041,20 +1256,15 @@ export function DiscoverHomeScreen() {
     },
     [navigation],
   );
-  const clearPopularFoodFilterSkeletonTimer = useCallback(() => {
-    if (!popularFoodFilterSkeletonTimerRef.current) {
-      return;
-    }
-
-    clearTimeout(popularFoodFilterSkeletonTimerRef.current);
-    popularFoodFilterSkeletonTimerRef.current = null;
-  }, []);
   const profile = useProfileStore((state) => state.profile);
   const recordTasteInteraction = useProfileStore((state) => state.recordTasteInteraction);
   const locationPermission = useLocationStore((state) => state.permission);
   const currentLocation = useLocationStore((state) => state.currentLocation);
   const manualLocation = useLocationStore((state) => state.manualLocation);
   const manualCoordinate = useLocationStore((state) => state.manualCoordinate);
+  const grantLocation = useLocationStore((state) => state.grantLocation);
+  const clearManualLocation = useLocationStore((state) => state.clearManualLocation);
+  const showToast = useUIStore((state) => state.showToast);
   const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
   const isMerchantMode = useMerchantStore(isMerchantModeActive);
   const isUserMode = !isDeveloperMode && !isMerchantMode;
@@ -1072,16 +1282,14 @@ export function DiscoverHomeScreen() {
 
   useEffect(
     () => () => {
-      clearPopularFoodFilterSkeletonTimer();
       if (isTabSwipeLockedRef.current) {
         navigation.setOptions({ swipeEnabled: true });
       }
     },
-    [clearPopularFoodFilterSkeletonTimer, navigation],
+    [navigation],
   );
 
   const setDecideForMe = useDiscoveryStore((state) => state.setDecideForMe);
-  const rememberSearch = useSearchStore((state) => state.rememberSearch);
   const searchBarWidth = useMemo(
     () => Math.max(screenWidth - spacing[4] * 2, 240),
     [screenWidth, spacing],
@@ -1092,8 +1300,6 @@ export function DiscoverHomeScreen() {
   }, [navigation]);
 
   const [activeDiscoverChipIds, setActiveDiscoverChipIds] = useState<DiscoverChipId[]>([]);
-  const [isPopularFoodFilterSkeletonPending, setIsPopularFoodFilterSkeletonPending] =
-    useState(false);
   const [visibleAreaStallCount, setVisibleAreaStallCount] = useState(
     DISCOVER_STALL_INITIAL_VISIBLE_COUNT,
   );
@@ -1103,6 +1309,20 @@ export function DiscoverHomeScreen() {
     () => supabaseFeedResults.map(searchResultToDiscoverBite),
     [supabaseFeedResults],
   );
+  const feedVenueHoursById = useMemo(
+    () => new Map(supabaseFeedVenues.map((venue) => [venue.id, venue.operatingHours] as const)),
+    [supabaseFeedVenues],
+  );
+  // Hours for the late-night rail and chip: the live feed first, then the local cache.
+  const getVenueHours = useCallback(
+    (venueId?: string) =>
+      venueId
+        ? feedVenueHoursById.get(venueId) ||
+          repository.getVenueById(venueId)?.operatingHours ||
+          undefined
+        : undefined,
+    [feedVenueHoursById, repository],
+  );
   const deferredDiscoverChipIds = useDeferredValue(activeDiscoverChipIds);
   const deferredDiscoverChipSet = useMemo(
     () => new Set<DiscoverChipId>(deferredDiscoverChipIds),
@@ -1110,9 +1330,8 @@ export function DiscoverHomeScreen() {
   );
   const activeDiscoverChipSignature = activeDiscoverChipIds.join("|");
   const deferredDiscoverChipSignature = deferredDiscoverChipIds.join("|");
-  const isPopularFoodFilterPending =
-    activeDiscoverChipSignature !== deferredDiscoverChipSignature ||
-    isPopularFoodFilterSkeletonPending;
+  // Filtering is local and instant: the skeleton only covers the deferred re-render.
+  const isPopularFoodFilterPending = activeDiscoverChipSignature !== deferredDiscoverChipSignature;
   const isDiscoverFiltering = deferredDiscoverChipIds.length > 0;
   const handleDiscoverViewportLayout = useCallback((event: LayoutChangeEvent) => {
     const nextHeight = event.nativeEvent.layout.height;
@@ -1147,8 +1366,33 @@ export function DiscoverHomeScreen() {
     () => getNearestBuildings(discoverLocationLatitude, discoverLocationLongitude, 3, 14),
     [discoverLocationLatitude, discoverLocationLongitude],
   );
-  const discoverLocationLabel =
-    manualLocation ?? getNearestSingaporeArea(discoverLocationLatitude, discoverLocationLongitude);
+  // Only a manual area pick asks the server for that planning area. A GPS fix reads
+  // the radius around the diner, so a stall 300 m away over an area line is not dropped.
+  const discoverAreaRequest = manualLocation;
+  // The nearest named area, only when the phone is within ~5 km of one (not in Woodlands
+  // when it is overseas). Without a name the screen says "near you".
+  const discoverAreaName =
+    manualLocation ??
+    getNearestSingaporeAreaWithin(discoverLocationLatitude, discoverLocationLongitude);
+  const discoverLocationLabel = discoverAreaName ?? "Near you";
+  const discoverAreaPhrase = discoverAreaName ? `in ${discoverAreaName}` : "near you";
+  const hasManualAreaPick = Boolean(manualLocation || manualCoordinate);
+  const handleChangeArea = useCallback(() => {
+    navigation.navigate("OnboardingStack", { screen: "ManualLocationPicker" });
+  }, [navigation]);
+  const handleUseCurrentLocation = useCallback(async () => {
+    if (locationPermission === "granted") {
+      await clearManualLocation();
+      return;
+    }
+    const granted = await grantLocation({ manualLocation });
+    if (!granted) {
+      showToast({
+        message: "Location access is off. Turn it on in Settings to use your location.",
+        tone: "info",
+      });
+    }
+  }, [clearManualLocation, grantLocation, locationPermission, manualLocation, showToast]);
   // Inside a mall, hawker centre or food court the header names it instead of the area. Only a
   // real GPS fix counts: a picked area or the built-in default point is never "inside" a place.
   const { place: currentPlace, isResolving: isCurrentPlaceResolving } = useCurrentPlace(
@@ -1187,10 +1431,10 @@ export function DiscoverHomeScreen() {
         discoverGeoCellLatitude,
         discoverGeoCellLongitude,
         DISCOVER_AREA_RADIUS_METERS,
-        discoverLocationLabel,
+        discoverAreaRequest,
       ),
       discoveryService.listDiscoveryFeedByLocation({
-        areaName: discoverLocationLabel,
+        areaName: discoverAreaRequest,
         lat: discoverGeoCellLatitude,
         lng: discoverGeoCellLongitude,
         radiusMeters: DISCOVER_AREA_RADIUS_METERS,
@@ -1218,7 +1462,7 @@ export function DiscoverHomeScreen() {
       isActive = false;
     };
   }, [
-    discoverLocationLabel,
+    discoverAreaRequest,
     discoverGeoCellLatitude,
     discoverGeoCellLongitude,
     discoverReloadKey,
@@ -1246,16 +1490,16 @@ export function DiscoverHomeScreen() {
     };
   }, [palette, colorScheme]);
 
-  // One hour value for the chip order and the late-night rail, refreshed on focus.
-  const [currentHour, setCurrentHour] = useState(() => new Date().getHours());
+  // One Singapore-time hour for the chip order and the late-night rail, refreshed on focus.
+  const [currentHour, setCurrentHour] = useState(() => getSingaporeHour());
   useFocusEffect(
     useCallback(() => {
-      setCurrentHour(new Date().getHours());
+      setCurrentHour(getSingaporeHour());
     }, []),
   );
   const sortedChips = useMemo(() => {
     const baseChips = [{ id: "dietary" as const, label: "Dietary Needs" }, ...INTENT_CHIPS];
-    const prioritizeLateNight = currentHour >= 22 || currentHour < 4;
+    const prioritizeLateNight = isLateNightHour(currentHour);
     if (prioritizeLateNight) {
       return baseChips.sort((a, b) => (a.id === "late" ? -1 : b.id === "late" ? 1 : 0));
     }
@@ -1329,7 +1573,7 @@ export function DiscoverHomeScreen() {
     );
     return image.imageUrl ? { uri: image.imageUrl } : DISHES_CARD_GRAPHIC;
   }, [areaDishPool]);
-  const isLateNightMakanVisible = currentHour >= 21 || currentHour < 4;
+  const isLateNightMakanVisible = isLateNightHour(currentHour);
   const discoverDietaryFlags = useMemo(
     () =>
       profile.dietaryPreferences.length ? profile.dietaryPreferences : DISCOVER_DIETARY_FALLBACKS,
@@ -1343,16 +1587,6 @@ export function DiscoverHomeScreen() {
         : [...activeDiscoverChipIds, chipId];
 
       trackAnalyticsEvent("discover_chip_tapped", { chip: chipId, selected: !wasActive });
-      clearPopularFoodFilterSkeletonTimer();
-      if (nextChipIds.length > 0) {
-        setIsPopularFoodFilterSkeletonPending(true);
-        popularFoodFilterSkeletonTimerRef.current = setTimeout(() => {
-          popularFoodFilterSkeletonTimerRef.current = null;
-          setIsPopularFoodFilterSkeletonPending(false);
-        }, POPULAR_FOOD_FILTER_SKELETON_MIN_MS);
-      } else {
-        setIsPopularFoodFilterSkeletonPending(false);
-      }
 
       if (!wasActive && chipId !== "dietary") {
         scheduleIdleWork(
@@ -1370,7 +1604,7 @@ export function DiscoverHomeScreen() {
 
       setActiveDiscoverChipIds(nextChipIds);
     },
-    [activeDiscoverChipIds, clearPopularFoodFilterSkeletonTimer, recordTasteInteraction],
+    [activeDiscoverChipIds, recordTasteInteraction],
   );
   const matchesDiscoverChipSelection = useCallback(
     (dish?: DishDetail, textParts: string[] = []) => {
@@ -1414,10 +1648,8 @@ export function DiscoverHomeScreen() {
           );
         }
         if (chipId === "late") {
-          const haystack = getLateNightHaystack();
-          return (
-            haystack.includes("late") || haystack.includes("satay") || haystack.includes("mala")
-          );
+          // Same rule as the late-night rail: the stall's hours run past 22:00.
+          return isLateNightDish(dish, getVenueHours(dish?.venueId));
         }
         if (chipId === "cheap") {
           return Boolean(dish && dish.price < 8);
@@ -1425,7 +1657,12 @@ export function DiscoverHomeScreen() {
         return true;
       });
     },
-    [deferredDiscoverChipSet, discoverDietaryFlags, profile.dietaryPreferences.length],
+    [
+      deferredDiscoverChipSet,
+      discoverDietaryFlags,
+      getVenueHours,
+      profile.dietaryPreferences.length,
+    ],
   );
   const areaVenueIds = useMemo(() => new Set(areaVenues.map((venue) => venue.id)), [areaVenues]);
   const discoverBaseBites = useMemo(() => {
@@ -1441,10 +1678,10 @@ export function DiscoverHomeScreen() {
   }, [areaVenueIds, isSupabaseDataSource, repository, supabaseDiscoverBites]);
   const discoverBiteCollections = useMemo(
     () =>
-      getDiscoverBiteCollections(discoverBaseBites, repository, {
+      getDiscoverBiteCollections(discoverBaseBites, repository, getVenueHours, {
         preferBuildingId: currentPlaceId,
       }),
-    [currentPlaceId, discoverBaseBites, repository],
+    [currentPlaceId, discoverBaseBites, getVenueHours, repository],
   );
   const discoverDishById = useMemo(() => {
     const dishById = new Map<string, DishDetail>();
@@ -1651,10 +1888,17 @@ export function DiscoverHomeScreen() {
       Math.min(count + DISCOVER_STALL_SHOW_MORE_COUNT, allAreaStallCards.length),
     );
   }, [allAreaStallCards.length]);
+  // "More from" never repeats "Stalls in": stalls already in that list are left out.
+  const listedStallIds = useMemo(
+    () => new Set(unfilteredAreaStallCards.map((card) => card.venue.id)),
+    [unfilteredAreaStallCards],
+  );
   const unfilteredStallShowcaseCards = useMemo(() => {
-    const showcaseVenuePool = [...areaVenues, ...allDiscoverVenues];
+    const showcaseVenuePool = [...areaVenues, ...allDiscoverVenues].filter(
+      (venue) => !listedStallIds.has(venue.id),
+    );
     return buildStallShowcaseCardsFromVenues(showcaseVenuePool, repositoryLookup);
-  }, [allDiscoverVenues, areaVenues, repositoryLookup]);
+  }, [allDiscoverVenues, areaVenues, listedStallIds, repositoryLookup]);
   const stallShowcaseCards = useMemo(() => {
     const filteredCards = isDiscoverFiltering
       ? unfilteredStallShowcaseCards.filter(({ venue, heroDish, products }) =>
@@ -1670,8 +1914,12 @@ export function DiscoverHomeScreen() {
 
     return filteredCards.slice(0, STALL_SHOWCASE_CARD_LIMIT);
   }, [isDiscoverFiltering, matchesDiscoverChipSelection, unfilteredStallShowcaseCards]);
+  // The live read failed and the saved cache is empty too: that is an error, not "0 places".
+  const isFeedFallbackEmpty =
+    Boolean(supabaseDiscoveryFeed?.isFallback) && supabaseFeedVenues.length === 0;
   const discoverAreaCountLabel = isSupabaseDataSource
     ? getDiscoverAreaCountLabel({
+        isFallback: Boolean(supabaseDiscoveryFeed?.isFallback),
         isFeedLoaded: supabaseDiscoveryFeed !== null,
         feedVenueCount: supabaseFeedVenues.length,
         feedLimit: DISCOVER_FEED_LIMIT,
@@ -1682,16 +1930,16 @@ export function DiscoverHomeScreen() {
   const placeStallCardCount = currentPlaceId
     ? areaStallCards.filter(({ venue }) => venue.buildingId === currentPlaceId).length
     : 0;
-  const trendingPlaceLabel =
+  const trendingAreaPhrase =
     currentPlace && trendingCards.some((bite) => bite.buildingId === currentPlace.id)
-      ? currentPlace.name
-      : discoverLocationLabel;
+      ? `in ${currentPlace.name}`
+      : discoverAreaPhrase;
   const handleDecideForMe = () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     trackAnalyticsEvent("decide_for_me_triggered", {
       surface: "discover",
       location_granted: locationPermission === "granted",
-      radius_m: 500,
+      radius_m: DECIDE_INITIAL_RADIUS_METERS,
     });
     // The result screen is the single place that picks the dish and logs it, using the
     // same effective location as this feed. Clear any earlier pick so it starts fresh.
@@ -1704,6 +1952,9 @@ export function DiscoverHomeScreen() {
       navigation.navigate("SearchResults", {
         browseMode: "stalls",
         initialQuery: item.query,
+        // Discover records the taste signal below; the results grid must not repeat it or
+        // save a chip tap as a recent search.
+        source: "discover_chip",
       });
 
       scheduleIdleWork(
@@ -1717,12 +1968,11 @@ export function DiscoverHomeScreen() {
             chipId: item.id,
             buttonId: "popular_right_now",
           });
-          rememberSearch(item.query);
         },
         { timeout: 500, fallbackDelayMs: 80 },
       );
     },
-    [navigation, recordTasteInteraction, rememberSearch],
+    [navigation, recordTasteInteraction],
   );
 
   const prefetchFoodStyle = useCallback(
@@ -1868,6 +2118,32 @@ export function DiscoverHomeScreen() {
     };
   }, [prefetchStallShowcaseCard, stallShowcaseCards]);
 
+  const discoverRailLayout = useMemo<DiscoverRailLayout>(
+    () => ({
+      cardWidth: discoverRailCardWidth,
+      contentGap: discoverContentGap,
+      imageHeight: discoverRailImageHeight,
+      reservedHeight: discoverRailReservedHeight,
+      screenWidth,
+    }),
+    [
+      discoverContentGap,
+      discoverRailCardWidth,
+      discoverRailImageHeight,
+      discoverRailReservedHeight,
+      screenWidth,
+    ],
+  );
+  const discoverRailProps = {
+    isFiltering: isDiscoverFiltering,
+    isLoading: showDiscoverFilterRailSkeleton,
+    layout: discoverRailLayout,
+    onOpenBite: openBiteDish,
+    onPrefetchBite: prefetchBiteCard,
+    onPrefetchCollection: prefetchBiteCollectionRoute,
+    onSeeAll: openDiscoverCollection,
+  };
+
   return (
     <Screen scroll={false} fullWidth style={{ backgroundColor: themeTints.bg }}>
       <ScrollView
@@ -1893,13 +2169,17 @@ export function DiscoverHomeScreen() {
           <AppText
             variant="micro"
             style={{
-              color: themeTints.isDark ? palette.white : palette.orange,
+              color: themeTints.isDark ? palette.white : palette.accentText,
               letterSpacing: 1,
               marginBottom: 0,
               opacity: 0.8,
             }}
           >
-            {needsDiscoverAreaChoice ? "WHERE ARE YOU?" : "YOU ARE AT"}
+            {needsDiscoverAreaChoice
+              ? "WHERE ARE YOU?"
+              : hasManualAreaPick || !discoverAreaName
+                ? "SHOWING"
+                : "YOU ARE AT"}
           </AppText>
           <View
             style={{
@@ -1914,9 +2194,7 @@ export function DiscoverHomeScreen() {
                   accessibilityRole="button"
                   accessibilityLabel="Choose your area"
                   accessibilityHint="Pick the area to show food near you"
-                  onPress={() =>
-                    navigation.navigate("OnboardingStack", { screen: "ManualLocationPicker" })
-                  }
+                  onPress={handleChangeArea}
                 >
                   <AppText variant="h1" style={{ color: themeTints.text }} numberOfLines={1}>
                     Choose your area
@@ -1927,24 +2205,53 @@ export function DiscoverHomeScreen() {
                 </Pressable>
               ) : (
                 <>
-                  <AppText variant="h1" style={{ color: themeTints.text }} numberOfLines={1}>
-                    {discoverHeaderLabel}
-                  </AppText>
+                  {/* The area is always one tap from the picker. */}
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Area: ${discoverHeaderLabel}. Change area`}
+                    accessibilityHint="Pick a different area"
+                    hitSlop={DISCOVER_TEXT_LINK_HIT_SLOP}
+                    onPress={handleChangeArea}
+                    style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}
+                  >
+                    <AppText
+                      variant="h1"
+                      style={{ color: themeTints.text, flexShrink: 1 }}
+                      numberOfLines={1}
+                    >
+                      {discoverHeaderLabel}
+                    </AppText>
+                    <ChevronDown color={themeTints.secondaryText} size={22} />
+                  </Pressable>
                   {
                     currentPlace ? (
                       <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
                         {`${currentPlace.venueCount} stalls here · ${discoverLocationLabel}`}
                       </AppText>
-                    ) : discoverAreaCountLabel === null ? (
+                    ) : isFeedFallbackEmpty || discoverAreaCountLabel === null ? (
                       isSupabaseDiscoveryFeedLoading ? (
                         <Skeleton width={150} height={14} borderRadius={radii.sm} />
                       ) : null
                     ) : discoverAreaCountLabel !== "0" ? (
                       <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
-                        {`${discoverAreaCountLabel} places to eat in this area`}
+                        {`${discoverAreaCountLabel} places to eat ${
+                          discoverAreaName ? "in this area" : "near you"
+                        }`}
                       </AppText>
                     ) : null /* 0 in-area venues: the page shows city-wide fallbacks, so "0 places" misleads. */
                   }
+                  {hasManualAreaPick ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Use current location"
+                      hitSlop={DISCOVER_TEXT_LINK_HIT_SLOP}
+                      onPress={() => void handleUseCurrentLocation()}
+                    >
+                      <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
+                        Use current location
+                      </AppText>
+                    </Pressable>
+                  ) : null}
                 </>
               )}
             </View>
@@ -1995,7 +2302,7 @@ export function DiscoverHomeScreen() {
           </Pressable>
         </View>
 
-        {discoverLoadError ? (
+        {discoverLoadError || isFeedFallbackEmpty ? (
           <EmptyState
             title="Couldn't load Discover"
             body="Check your connection and try again."
@@ -2052,7 +2359,7 @@ export function DiscoverHomeScreen() {
         {/* Popular food style buttons */}
         <View style={{ gap: discoverContentGap }}>
           <AppText variant="h2" style={{ color: themeTints.text }}>
-            Popular right now
+            Hawker classics
           </AppText>
           {shouldShowPopularFoodSkeleton ? (
             <ScrollView
@@ -2094,7 +2401,7 @@ export function DiscoverHomeScreen() {
               shadows.card,
               {
                 borderRadius: componentRadii.button,
-                height: 72,
+                minHeight: 72,
                 opacity: pressed ? 0.92 : 1,
                 overflow: "hidden",
                 width: decisionCardWidth,
@@ -2110,7 +2417,7 @@ export function DiscoverHomeScreen() {
                 borderRadius: componentRadii.button,
                 flexDirection: "row",
                 gap: decisionCardInnerGap,
-                height: "100%",
+                minHeight: 72,
                 justifyContent: "center",
                 padding: decisionCardPadding,
               }}
@@ -2128,11 +2435,9 @@ export function DiscoverHomeScreen() {
                 <Dices color={palette.white} size={decisionCardIconGraphicSize} />
               </View>
               <AppText
-                adjustsFontSizeToFit
-                minimumFontScale={0.88}
                 variant="bodyBold"
                 tone="inverse"
-                numberOfLines={1}
+                numberOfLines={2}
                 style={{
                   includeFontPadding: false,
                   flexShrink: 1,
@@ -2163,7 +2468,7 @@ export function DiscoverHomeScreen() {
                 borderRadius: componentRadii.button,
                 flexDirection: "row",
                 gap: decisionCardInnerGap,
-                height: 72,
+                minHeight: 72,
                 justifyContent: "center",
                 opacity: pressed ? 0.92 : 1,
                 padding: decisionCardPadding,
@@ -2184,11 +2489,9 @@ export function DiscoverHomeScreen() {
               <Users color={palette.white} size={decisionCardIconGraphicSize} />
             </View>
             <AppText
-              adjustsFontSizeToFit
-              minimumFontScale={0.88}
               variant="bodyBold"
               tone="inverse"
-              numberOfLines={1}
+              numberOfLines={2}
               style={{
                 includeFontPadding: false,
                 flexShrink: 1,
@@ -2378,592 +2681,72 @@ export function DiscoverHomeScreen() {
           ) : null}
         </View>
 
-        {/* Quick Bites */}
+        {/* Rails: each is the same memoised rail over its own collection. */}
         {shouldRenderDiscoverRail(quickBiteCards.length) ? (
-          <View style={{ gap: discoverContentGap }}>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
-                <AppText variant="h2" style={{ color: themeTints.text }}>
-                  Quick Bites
-                </AppText>
-              </View>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="See all quick bites"
-                hitSlop={DISCOVER_TEXT_LINK_HIT_SLOP}
-                onPressIn={() => prefetchBiteCollectionRoute("quickBites")}
-                onPress={() => openDiscoverCollection("quickBites")}
-              >
-                <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
-                  SEE ALL
-                </AppText>
-              </Pressable>
-            </View>
-            {showDiscoverFilterRailSkeleton ? (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={edgeToEdgeHorizontalScrollStyle}
-                contentContainerStyle={{ gap: spacing[4] }}
-              >
-                <DiscoverFoodRailLoadingSkeleton
-                  cardWidth={discoverRailCardWidth}
-                  imageHeight={discoverRailImageHeight}
-                />
-              </ScrollView>
-            ) : quickBiteCards.length ? (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={edgeToEdgeHorizontalScrollStyle}
-                contentContainerStyle={{ gap: spacing[4] }}
-              >
-                {quickBiteCards.map((bite) => (
-                  <Pressable
-                    key={`quick-${bite.id}`}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Quick bite: ${bite.dishName}`}
-                    onPressIn={() => prefetchBiteCard(bite)}
-                    onPress={() => openBiteDish(bite, "quick_bite_card")}
-                    style={[
-                      shadows.card,
-                      {
-                        backgroundColor: themeTints.cardBg,
-                        borderRadius: componentRadii.card,
-                        overflow: "hidden",
-                        width: discoverRailCardWidth,
-                        borderWidth: themeTints.isDark ? 0 : 1,
-                        borderColor: palette.border,
-                      },
-                    ]}
-                  >
-                    <DiscoverBiteImage bite={bite} height={discoverRailImageHeight} />
-                    <View style={{ padding: spacing[3], gap: spacing[1] }}>
-                      <AppText
-                        variant="bodySmallBold"
-                        numberOfLines={1}
-                        style={{ color: themeTints.text }}
-                      >
-                        {bite.dishName}
-                      </AppText>
-                      <AppText
-                        variant="micro"
-                        style={{ color: themeTints.secondaryText }}
-                        numberOfLines={1}
-                      >
-                        {bite.venueName}
-                      </AppText>
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          justifyContent: "space-between",
-                          marginTop: spacing[1],
-                        }}
-                      >
-                        <AppText variant="price" style={{ color: palette.orange }}>
-                          S${bite.price.toFixed(2)}
-                        </AppText>
-                        <View
-                          style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
-                        >
-                          <Star color={palette.amber} size={12} fill={palette.amber} />
-                          <AppText
-                            variant="micro"
-                            style={{ fontWeight: "700", color: themeTints.text }}
-                          >
-                            {bite.rating.toFixed(1)}
-                          </AppText>
-                        </View>
-                      </View>
-                    </View>
-                  </Pressable>
-                ))}
-              </ScrollView>
-            ) : isDiscoverFiltering ? (
-              <FilteredResultsEmptyState preserveHeight minHeight={discoverRailReservedHeight} />
-            ) : null}
-          </View>
+          <DiscoverBiteRail
+            {...discoverRailProps}
+            rail="quickBites"
+            title="Dishes near you"
+            seeAllLabel="See all dishes near you"
+            cards={quickBiteCards}
+            variant="rating"
+            buttonId="quick_bite_card"
+            getCardLabel={getQuickBiteLabel}
+          />
         ) : null}
 
-        {/* Recommended Dishes (Carousel) */}
         {shouldRenderDiscoverRail(trendingCards.length) ? (
-          <View style={{ gap: discoverContentGap }}>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <AppText variant="h2">Most reviewed in {trendingPlaceLabel}</AppText>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`See all most reviewed dishes in ${trendingPlaceLabel}`}
-                hitSlop={DISCOVER_TEXT_LINK_HIT_SLOP}
-                onPressIn={() => prefetchBiteCollectionRoute("trending")}
-                onPress={() => openDiscoverCollection("trending")}
-              >
-                <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
-                  SEE ALL
-                </AppText>
-              </Pressable>
-            </View>
-            {showDiscoverFilterRailSkeleton ? (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={edgeToEdgeHorizontalScrollStyle}
-                contentContainerStyle={{ gap: spacing[4] }}
-              >
-                <DiscoverFoodRailLoadingSkeleton
-                  cardWidth={discoverRailCardWidth}
-                  imageHeight={discoverRailImageHeight}
-                />
-              </ScrollView>
-            ) : trendingCards.length ? (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={edgeToEdgeHorizontalScrollStyle}
-                contentContainerStyle={{ gap: spacing[4] }}
-              >
-                {trendingCards.map((bite) => (
-                  <Pressable
-                    key={`trending-${bite.id}`}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Open ${bite.dishName} at ${bite.venueName}`}
-                    onPressIn={() => prefetchBiteCard(bite)}
-                    onPress={() => openBiteDish(bite, "trending_bite_card")}
-                    style={[
-                      shadows.card,
-                      {
-                        backgroundColor: themeTints.cardBg,
-                        borderRadius: componentRadii.card,
-                        overflow: "hidden",
-                        width: discoverRailCardWidth,
-                        borderWidth: themeTints.isDark ? 0 : 1,
-                        borderColor: palette.border,
-                      },
-                    ]}
-                  >
-                    <DiscoverBiteImage bite={bite} height={discoverRailImageHeight} />
-                    <View style={{ padding: spacing[3], gap: spacing[1] }}>
-                      <AppText
-                        variant="bodySmallBold"
-                        numberOfLines={1}
-                        style={{ color: themeTints.text }}
-                      >
-                        {bite.dishName}
-                      </AppText>
-                      <AppText
-                        variant="micro"
-                        style={{ color: themeTints.secondaryText }}
-                        numberOfLines={1}
-                      >
-                        {bite.venueName}
-                      </AppText>
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          justifyContent: "space-between",
-                          marginTop: spacing[1],
-                        }}
-                      >
-                        <AppText variant="price" style={{ color: palette.orange }}>
-                          S${bite.price.toFixed(2)}
-                        </AppText>
-                        <View
-                          style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            gap: spacing[1],
-                          }}
-                        >
-                          <Star color={palette.amber} size={12} fill={palette.amber} />
-                          <AppText
-                            variant="micro"
-                            style={{ fontWeight: "700", color: themeTints.text }}
-                          >
-                            {bite.rating.toFixed(1)}
-                          </AppText>
-                        </View>
-                      </View>
-                    </View>
-                  </Pressable>
-                ))}
-              </ScrollView>
-            ) : isDiscoverFiltering ? (
-              <FilteredResultsEmptyState preserveHeight minHeight={discoverRailReservedHeight} />
-            ) : null}
-          </View>
+          <DiscoverBiteRail
+            {...discoverRailProps}
+            rail="trending"
+            title={`Most reviewed ${trendingAreaPhrase}`}
+            seeAllLabel={`See all most reviewed dishes ${trendingAreaPhrase}`}
+            cards={trendingCards}
+            variant="rating"
+            buttonId="trending_bite_card"
+            getCardLabel={getMostReviewedLabel}
+          />
         ) : null}
 
-        {/* Editor's Choice Carousel */}
         {shouldRenderDiscoverRail(editorChoiceCards.length) ? (
-          <View style={{ gap: discoverContentGap }}>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
-                <AppText variant="h2" style={{ color: themeTints.text }}>
-                  Top rated
-                </AppText>
-                <View
-                  style={{
-                    backgroundColor: palette.orange,
-                    paddingHorizontal: spacing[2],
-                    paddingVertical: spacing[0.5],
-                    borderRadius: radii.sm,
-                  }}
-                >
-                  <AppText
-                    variant="micro"
-                    style={{ color: palette.textOnOrange, fontWeight: "800" }}
-                  >
-                    ★ 4.4+
-                  </AppText>
-                </View>
-              </View>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="See all top rated dishes"
-                hitSlop={DISCOVER_TEXT_LINK_HIT_SLOP}
-                onPressIn={() => prefetchBiteCollectionRoute("editorChoice")}
-                onPress={() => openDiscoverCollection("editorChoice")}
-              >
-                <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
-                  SEE ALL
-                </AppText>
-              </Pressable>
-            </View>
-            {showDiscoverFilterRailSkeleton ? (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={edgeToEdgeHorizontalScrollStyle}
-                contentContainerStyle={{ gap: spacing[4] }}
-              >
-                <DiscoverFoodRailLoadingSkeleton
-                  cardWidth={discoverRailCardWidth}
-                  imageHeight={discoverRailImageHeight}
-                />
-              </ScrollView>
-            ) : editorChoiceCards.length ? (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={edgeToEdgeHorizontalScrollStyle}
-                contentContainerStyle={{ gap: spacing[4] }}
-              >
-                {editorChoiceCards.map((bite) => (
-                  <Pressable
-                    key={`ec-${bite.id}`}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Top rated: ${bite.dishName}`}
-                    onPressIn={() => prefetchBiteCard(bite)}
-                    onPress={() => openBiteDish(bite, "editor_choice_bite_card")}
-                    style={[
-                      shadows.card,
-                      {
-                        backgroundColor: themeTints.cardBg,
-                        borderRadius: componentRadii.card,
-                        overflow: "hidden",
-                        width: discoverRailCardWidth,
-                        borderWidth: themeTints.isDark ? 0 : 1,
-                        borderColor: palette.border,
-                      },
-                    ]}
-                  >
-                    <DiscoverBiteImage bite={bite} height={discoverRailImageHeight} />
-                    {/* Rating badge overlay: the rail is rating-based, not curated */}
-                    {bite.rating > 0 ? (
-                      <View
-                        style={{
-                          position: "absolute",
-                          top: spacing[2],
-                          left: spacing[2],
-                          backgroundColor: palette.orange,
-                          paddingHorizontal: spacing[2],
-                          paddingVertical: spacing[0.5],
-                          borderRadius: radii.sm,
-                        }}
-                      >
-                        <AppText
-                          variant="micro"
-                          style={{ color: palette.textOnOrange, fontWeight: "800" }}
-                        >
-                          {`★ ${bite.rating.toFixed(1)}`}
-                        </AppText>
-                      </View>
-                    ) : null}
-                    <View style={{ padding: spacing[3], gap: spacing[1] }}>
-                      <AppText
-                        variant="bodySmallBold"
-                        numberOfLines={1}
-                        style={{ color: themeTints.text }}
-                      >
-                        {bite.dishName}
-                      </AppText>
-                      <AppText
-                        variant="micro"
-                        style={{ color: themeTints.secondaryText }}
-                        numberOfLines={1}
-                      >
-                        {bite.venueName}
-                      </AppText>
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          justifyContent: "space-between",
-                          marginTop: spacing[1],
-                        }}
-                      >
-                        <AppText variant="price" style={{ color: palette.orange }}>
-                          S${bite.price.toFixed(2)}
-                        </AppText>
-                        <View
-                          style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
-                        >
-                          <Star color={palette.amber} size={12} fill={palette.amber} />
-                          <AppText
-                            variant="micro"
-                            style={{ fontWeight: "700", color: themeTints.text }}
-                          >
-                            {bite.rating.toFixed(1)}
-                          </AppText>
-                        </View>
-                      </View>
-                    </View>
-                  </Pressable>
-                ))}
-              </ScrollView>
-            ) : isDiscoverFiltering ? (
-              <FilteredResultsEmptyState preserveHeight minHeight={discoverRailReservedHeight} />
-            ) : null}
-          </View>
+          <DiscoverBiteRail
+            {...discoverRailProps}
+            rail="editorChoice"
+            title="Top rated"
+            titleBadge={<DiscoverRailBadge label="★ 4.4+" tone="accent" />}
+            seeAllLabel="See all top rated dishes"
+            cards={editorChoiceCards}
+            variant="topRated"
+            buttonId="editor_choice_bite_card"
+            getCardLabel={getTopRatedLabel}
+          />
         ) : null}
 
-        {/* Budget < S$8 Dish Carousel */}
         {shouldRenderDiscoverRail(budgetCards.length) ? (
-          <View style={{ gap: discoverContentGap }}>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
-                <AppText variant="h2" style={{ color: themeTints.text }}>
-                  Budget &lt; S$8
-                </AppText>
-                <View
-                  style={{
-                    backgroundColor: palette.success,
-                    paddingHorizontal: spacing[2],
-                    paddingVertical: spacing[0.5],
-                    borderRadius: radii.sm,
-                  }}
-                >
-                  <AppText
-                    variant="micro"
-                    style={{
-                      color: themeTints.isDark ? palette.textOnOrange : palette.white,
-                      fontWeight: "800",
-                    }}
-                  >
-                    VALUE
-                  </AppText>
-                </View>
-              </View>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="See all budget dishes under $8"
-                hitSlop={DISCOVER_TEXT_LINK_HIT_SLOP}
-                onPressIn={() => prefetchBiteCollectionRoute("budget")}
-                onPress={() => openDiscoverCollection("budget")}
-              >
-                <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
-                  SEE ALL
-                </AppText>
-              </Pressable>
-            </View>
-            {showDiscoverFilterRailSkeleton ? (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={edgeToEdgeHorizontalScrollStyle}
-                contentContainerStyle={{ gap: spacing[4] }}
-              >
-                <DiscoverFoodRailLoadingSkeleton
-                  cardWidth={discoverRailCardWidth}
-                  imageHeight={discoverRailImageHeight}
-                />
-              </ScrollView>
-            ) : budgetCards.length ? (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={edgeToEdgeHorizontalScrollStyle}
-                contentContainerStyle={{ gap: spacing[4] }}
-              >
-                {budgetCards.map((bite) => (
-                  <Pressable
-                    key={`budget-${bite.id}`}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Budget meal: ${bite.dishName} at S$${bite.price.toFixed(2)}`}
-                    onPressIn={() => prefetchBiteCard(bite)}
-                    onPress={() => openBiteDish(bite, "budget_bite_card")}
-                    style={[
-                      shadows.card,
-                      {
-                        backgroundColor: themeTints.cardBg,
-                        borderRadius: componentRadii.card,
-                        overflow: "hidden",
-                        width: discoverRailCardWidth,
-                        borderWidth: themeTints.isDark ? 0 : 1,
-                        borderColor: palette.border,
-                      },
-                    ]}
-                  >
-                    <DiscoverBiteImage bite={bite} height={discoverRailImageHeight} />
-                    <View style={{ padding: spacing[3], gap: spacing[1] }}>
-                      <AppText
-                        variant="bodySmallBold"
-                        numberOfLines={1}
-                        style={{ color: themeTints.text }}
-                      >
-                        {bite.dishName}
-                      </AppText>
-                      <AppText
-                        variant="micro"
-                        style={{ color: themeTints.secondaryText }}
-                        numberOfLines={1}
-                      >
-                        {bite.venueName}
-                      </AppText>
-                      <AppText
-                        variant="price"
-                        style={{
-                          color: palette.orange,
-                          fontWeight: "700",
-                          marginTop: spacing[0.5],
-                        }}
-                      >
-                        S${bite.price.toFixed(2)}
-                      </AppText>
-                    </View>
-                  </Pressable>
-                ))}
-              </ScrollView>
-            ) : isDiscoverFiltering ? (
-              <FilteredResultsEmptyState preserveHeight minHeight={discoverRailReservedHeight} />
-            ) : null}
-          </View>
+          <DiscoverBiteRail
+            {...discoverRailProps}
+            rail="budget"
+            title="Budget < S$8"
+            titleBadge={<DiscoverRailBadge label="VALUE" tone="success" />}
+            seeAllLabel="See all budget dishes under 8 dollars"
+            cards={budgetCards}
+            variant="price"
+            buttonId="budget_bite_card"
+            getCardLabel={getBudgetLabel}
+          />
         ) : null}
 
-        {/* Late Night Makan */}
         {isLateNightMakanVisible && shouldRenderDiscoverRail(lateNightCards.length) ? (
-          <View style={{ gap: discoverContentGap }}>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
-                <AppText variant="h2" style={{ color: themeTints.text }}>
-                  Dinner favourites
-                </AppText>
-              </View>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="See all late night stalls"
-                hitSlop={DISCOVER_TEXT_LINK_HIT_SLOP}
-                onPressIn={() => prefetchBiteCollectionRoute("lateNight")}
-                onPress={() => openDiscoverCollection("lateNight")}
-              >
-                <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
-                  SEE ALL
-                </AppText>
-              </Pressable>
-            </View>
-            {showDiscoverFilterRailSkeleton ? (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={edgeToEdgeHorizontalScrollStyle}
-                contentContainerStyle={{ gap: spacing[4] }}
-              >
-                <DiscoverFoodRailLoadingSkeleton
-                  cardWidth={discoverRailCardWidth}
-                  imageHeight={discoverRailImageHeight}
-                />
-              </ScrollView>
-            ) : lateNightCards.length ? (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={edgeToEdgeHorizontalScrollStyle}
-                contentContainerStyle={{ gap: spacing[4] }}
-              >
-                {lateNightCards.map((bite) => (
-                  <Pressable
-                    key={`night-${bite.id}`}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Late night option: ${bite.dishName}`}
-                    onPressIn={() => prefetchBiteCard(bite)}
-                    onPress={() => openBiteDish(bite, "late_night_bite_card")}
-                    style={[
-                      shadows.card,
-                      {
-                        backgroundColor: themeTints.cardBg,
-                        borderRadius: componentRadii.card,
-                        borderWidth: themeTints.isDark ? 0 : 1,
-                        borderColor: palette.border,
-                        overflow: "hidden",
-                        width: discoverRailCardWidth,
-                      },
-                    ]}
-                  >
-                    <DiscoverBiteImage bite={bite} height={discoverRailImageHeight} />
-                    <View style={{ padding: spacing[3], gap: spacing[1] }}>
-                      <AppText
-                        variant="bodySmallBold"
-                        numberOfLines={1}
-                        style={{ color: themeTints.text }}
-                      >
-                        {bite.dishName}
-                      </AppText>
-                      <AppText
-                        variant="micro"
-                        style={{ color: themeTints.secondaryText }}
-                        numberOfLines={1}
-                      >
-                        {bite.venueName}
-                      </AppText>
-                      <AppText variant="price" style={{ color: palette.orange, fontWeight: "700" }}>
-                        S${bite.price.toFixed(2)}
-                      </AppText>
-                    </View>
-                  </Pressable>
-                ))}
-              </ScrollView>
-            ) : isDiscoverFiltering ? (
-              <FilteredResultsEmptyState preserveHeight minHeight={discoverRailReservedHeight} />
-            ) : null}
-          </View>
+          <DiscoverBiteRail
+            {...discoverRailProps}
+            rail="lateNight"
+            title="Late night eats"
+            seeAllLabel="See all late night eats"
+            cards={lateNightCards}
+            variant="price"
+            buttonId="late_night_bite_card"
+            getCardLabel={getLateNightLabel}
+          />
         ) : null}
 
         {/* Hawker Centres Near You (Horizontal Selection) */}
@@ -2977,11 +2760,9 @@ export function DiscoverHomeScreen() {
               }}
             >
               <AppText variant="h2" style={{ color: themeTints.text }}>
-                {placeStallCardCount > 0 && currentPlace ? (
-                  `Stalls at ${currentPlace.name}`
-                ) : (
-                  <>Stalls in {discoverLocationLabel}</>
-                )}
+                {placeStallCardCount > 0 && currentPlace
+                  ? `Stalls at ${currentPlace.name}`
+                  : `Stalls ${discoverAreaPhrase}`}
               </AppText>
               {isUserMode && currentPlace ? (
                 <Pressable
@@ -3000,12 +2781,12 @@ export function DiscoverHomeScreen() {
                     SEE ALL
                   </AppText>
                 </Pressable>
-              ) : isUserMode ? null : (
+              ) : (
+                /* Every diner can open the map from here, like the List/Map toggle. */
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="View hawker centres on map"
+                  accessibilityLabel="View stalls on map"
                   hitSlop={DISCOVER_TEXT_LINK_HIT_SLOP}
-                  onPressIn={() => preloadRoute(navigation, "DiscoverMap")}
                   onPress={() => navigation.navigate("DiscoverMap")}
                 >
                   <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
@@ -3107,7 +2888,7 @@ export function DiscoverHomeScreen() {
               {hasMoreAreaStalls ? (
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel={`Show ${nextAreaStallRevealCount} more stalls in ${discoverLocationLabel}`}
+                  accessibilityLabel={`Show ${nextAreaStallRevealCount} more stalls ${discoverAreaPhrase}`}
                   onPress={handleShowMoreAreaStalls}
                   style={[
                     shadows.card,
@@ -3138,7 +2919,7 @@ export function DiscoverHomeScreen() {
         {stallShowcaseCards.length ? (
           <VerticalStallShowcaseSection
             cards={stallShowcaseCards}
-            locationLabel={discoverLocationLabel}
+            areaPhrase={discoverAreaPhrase}
             pageHeight={stallShowcasePageHeight}
             cardWidth={stallShowcaseCardWidth}
             onOpenCard={openStallShowcaseCard}

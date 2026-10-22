@@ -151,10 +151,10 @@ begin
   if not has_function_privilege('anon', 'public.catalog_suggest(text,integer)', 'execute') then
     raise exception 'guests must be able to call catalog_suggest';
   end if;
-  if not has_function_privilege('anon', 'public.catalog_raw_dishes_page(text,double precision,double precision,integer,text[],text[],numeric,boolean,text,text,uuid,integer,text,text[],text)', 'execute') then
+  if not has_function_privilege('anon', 'public.catalog_raw_dishes_page(text,double precision,double precision,integer,text[],text[],numeric,boolean,text,text,uuid,integer,text,text[],text[],text)', 'execute') then
     raise exception 'anon must execute catalog_raw_dishes_page';
   end if;
-  if not has_function_privilege('anon', 'public.catalog_raw_venues_page(text,double precision,double precision,integer,text[],text[],numeric,boolean,text,text,uuid,integer,text[],text)', 'execute') then
+  if not has_function_privilege('anon', 'public.catalog_raw_venues_page(text,double precision,double precision,integer,text[],text[],numeric,boolean,text,text,uuid,integer,text[],text[],text)', 'execute') then
     raise exception 'anon must execute catalog_raw_venues_page';
   end if;
   if has_function_privilege('anon', 'app_private.catalog_dish_display_image(text)', 'execute') then

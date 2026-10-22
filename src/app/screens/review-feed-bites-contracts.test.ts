@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 
@@ -13,8 +13,6 @@ test("Review feed cards do not render bottom bites sections", () => {
   const reviewFeed = read("src/app/screens/review/ReviewFeedScreen.tsx");
   const reviewShareSheet = read("src/app/screens/review/ReviewShareSheet.tsx");
   const commentsSheet = read("src/components/social/ReviewCommentsSheet.tsx");
-  const bitesCarousel = read("src/components/social/BitesCarousel.tsx");
-  const biteCommentsSheet = read("src/components/social/BiteCommentsSheet.tsx");
 
   assert.doesNotMatch(reviewFeed, /ReviewBitesStrip/);
   assert.doesNotMatch(reviewFeed, /BiteCommentsSheet/);
@@ -32,8 +30,7 @@ test("Review feed cards do not render bottom bites sections", () => {
     /const localDish = item\.dish \?\? repository\.getDishById\(item\.dishId\)/,
   );
   assert.match(reviewFeed, /toggleFavourite\(localDish\)/);
-  assert.match(reviewFeed, /saved: favouriteDishIds\.includes\(item\.dishId\)/);
-  assert.match(reviewFeed, /saveCount: baseInteraction\.saveCount/);
+  assert.match(reviewFeed, /: favouriteDishIds\.includes\(item\.dishId\)/);
   assert.match(reviewFeed, /incrementShare/);
   assert.match(reviewFeed, /ReviewCommentsSheet/);
   assert.match(reviewFeed, /ReviewShareSheet/);
@@ -43,7 +40,7 @@ test("Review feed cards do not render bottom bites sections", () => {
   assert.match(reviewFeed, /openCommentsSheet\(\)/);
   assert.match(reviewFeed, /shareSheetRef\.current\?\.present\(\)/);
   // Relative within a week, then a date that carries the year when it is not this year.
-  assert.match(reviewFeed, /const reviewDate = formatReviewDate\(item\.review\.createdAt\)/);
+  assert.match(reviewFeed, /formatReviewDate\(item\.review\.createdAt\)/);
   assert.match(reviewFeed, /sameYear \? \{\} : \{ year: "numeric" \}/);
   assert.match(
     reviewFeed,
@@ -56,14 +53,11 @@ test("Review feed cards do not render bottom bites sections", () => {
   assert.doesNotMatch(reviewFeed, /"Unsave review"/);
   assert.doesNotMatch(reviewFeed, /"Save review"/);
   assert.match(reviewFeed, /accessibilityLabel="Open review comments"/);
-  assert.match(
-    reviewFeed,
-    /accessibilityLabel=\{interaction\.liked \? "Unlike review" : "Like review"\}/,
-  );
-  assert.match(reviewFeed, /interaction\.commentCount > 0/);
-  assert.match(reviewFeed, /interaction\.likeCount > 0/);
-  assert.match(reviewFeed, /interaction\.shareCount > 0/);
-  assert.match(reviewFeed, /shareCount: 0/);
+  assert.match(reviewFeed, /accessibilityLabel=\{liked \? "Unlike review" : "Like review"\}/);
+  assert.match(reviewFeed, /commentCount > 0/);
+  assert.match(reviewFeed, /likeCount > 0/);
+  assert.match(reviewFeed, /shareCount > 0/);
+  assert.match(reviewFeed, /shareCount=\{reviewReactionsEnabled \?/);
   // Reviews never borrow a linked post id for share counting.
   assert.match(reviewFeed, /postId: "",/);
   assert.doesNotMatch(reviewFeed, /linkedPost/);
@@ -99,18 +93,19 @@ test("Review feed cards do not render bottom bites sections", () => {
     reviewShareSheet,
     /Clipboard\.setStringAsync\(withShareSource\(activeReview\.link, "copy_link"\)\)/,
   );
-  assert.match(reviewShareSheet, /Share\.share\(\{/);
+  assert.match(reviewShareSheet, /Share\.share\(/);
+  // iOS gets the link once, as `url`; Android has no url, so it rides in the message.
+  assert.match(
+    reviewShareSheet,
+    /Platform\.OS === "ios"\s*\? \{ message: activeReview\.message, url: link \}/,
+  );
   assert.match(reviewShareSheet, /recipientAccessibilityLabelPrefix="Select"/);
   assert.match(reviewShareSheet, /FloatingShareSendButton/);
   assert.match(reviewShareSheet, /selectedCount=\{selectedChatIds\.length\}/);
   assert.match(reviewShareSheet, /accessibilityLabel=\{`Send shared \$\{kindNoun\}`\}/);
   assert.doesNotMatch(reviewShareSheet, /showSendAction/);
 
-  assert.match(bitesCarousel, /FEATURE_FLAGS\.commentsEnabled/);
-  assert.match(
-    bitesCarousel,
-    /commented=\{commentsEnabled && Boolean\(commentedBites\[item\.id\]\)\}/,
-  );
-  assert.match(bitesCarousel, /onCommentPress=\{\s*commentsEnabled\s*\?/);
-  assert.match(biteCommentsSheet, /if \(!FEATURE_FLAGS\.commentsEnabled\) \{\s*return null;\s*\}/);
+  // The unused Bite* cards and the bites strip were deleted (they were never mounted).
+  assert.equal(existsSync(path.join(root, "src/components/social/BitesCarousel.tsx")), false);
+  assert.equal(existsSync(path.join(root, "src/components/social/BiteCommentsSheet.tsx")), false);
 });

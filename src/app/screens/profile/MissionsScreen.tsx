@@ -49,7 +49,7 @@ export function MissionsScreen({ navigation: _nav }: Props) {
   return (
     <ProfileScreenShell
       title="Weekly Missions"
-      subtitle={`${completedCount}/${missions.length} completed · ${weekLabel} · ${disclosure}`}
+      subtitle={`${completedCount}/${missions.length} completed · ${weekLabel}`}
     >
       {missions.length === 0 ? (
         <EmptyState title="No missions this week" body="Check back on Monday for new missions." />
@@ -79,6 +79,9 @@ export function MissionsScreen({ navigation: _nav }: Props) {
           )}
         </View>
       )}
+      <AppText variant="micro" tone="muted" testID="missions-disclosure">
+        {disclosure}
+      </AppText>
     </ProfileScreenShell>
   );
 }

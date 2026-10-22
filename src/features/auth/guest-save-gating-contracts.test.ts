@@ -17,7 +17,10 @@ test("useRequireAccount asks a guest to sign in and returns them afterwards", ()
 
 test("one sign-in sheet opens the shared Login and finishes the guest's action once", () => {
   const sheet = read("src/features/auth/SignInPromptSheet.tsx");
-  assert.match(sheet, /navigationRef\.navigate\("AuthStack", \{ screen: "Login" \}\)/);
+  assert.match(
+    sheet,
+    /navigationRef\.navigate\("AuthStack", \{ screen: "Login", params: \{ title \} \}\)/,
+  );
   assert.match(
     sheet,
     /if \(!isAuthenticated\) return;\s*const action = useUIStore\.getState\(\)\.takePendingAuthAction\(\);/,
@@ -67,9 +70,11 @@ test("guest-reachable follow, like and comment taps prompt sign-in first", () =>
   assert.match(commentsSheet, /if \(onBeforeSend && !onBeforeSend\(\)\) return;/);
 
   const userProfile = read("src/app/screens/profile/UserProfileContent.tsx");
+  assert.match(userProfile, /followPress\(\{ userId: resolvedAuthorId, name: authorName/);
+  // The shared follow press (profile and follower lists) holds the sign-in gate.
   assert.match(
-    userProfile,
-    /requireAccount\(\s*`Sign in to follow \$\{authorName\}`[\s\S]*?followUserAfterSignIn\(resolvedAuthorId\)[\s\S]*?toggleFollow\(resolvedAuthorId\)/,
+    read("src/features/profile/useFollowPress.ts"),
+    /requireAccount\(\s*`Sign in to follow \$\{name\}`[\s\S]*?followUserAfterSignIn\(userId\)[\s\S]*?toggleFollow\(userId\)/,
   );
 });
 
@@ -138,7 +143,8 @@ test("a guest's taste quiz stays on the device and uploads on sign-in", () => {
 test("search and browse load only for a signed-in user; the taste signal too", () => {
   const search = read("src/app/screens/search/SearchResultsScreen.tsx");
   assert.match(search, /if \(!isAuthenticated\) return;\s*const startedAt = Date\.now\(\);/);
-  assert.match(search, /if \(!isAuthenticated \|\| initialQueryRecordedRef\.current\) return;/);
+  assert.match(search, /if \(initialQueryRecordedRef\.current\) return;/);
+  assert.match(search, /recordTaste: isAuthenticated && !fromDiscoverChip/);
 });
 
 test("a guest swipe-right on Crave asks to sign in instead of saving", () => {

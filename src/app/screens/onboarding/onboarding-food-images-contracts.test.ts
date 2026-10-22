@@ -13,13 +13,16 @@ const tasteQuizPath = path.join(repoRoot, "src/lib/ai/tasteQuiz.ts");
 const assetDir = path.join(repoRoot, "src/assets/onboarding/food");
 const provenancePath = path.join(repoRoot, "tasks/release-evidence/asset-provenance.md");
 
-function readPngSize(filePath: string): { width: number; height: number } {
+/** Lossy WebP (VP8) only: the onboarding photos are converted at 600 px, quality 80. */
+function readWebpSize(filePath: string): { width: number; height: number } {
   const buffer = fs.readFileSync(filePath);
-  assert.equal(buffer.toString("ascii", 1, 4), "PNG", `${filePath} must be a PNG file`);
+  assert.equal(buffer.toString("ascii", 0, 4), "RIFF", `${filePath} must be a WebP file`);
+  assert.equal(buffer.toString("ascii", 8, 12), "WEBP", `${filePath} must be a WebP file`);
+  assert.equal(buffer.toString("ascii", 12, 16), "VP8 ", `${filePath} must be lossy WebP`);
 
   return {
-    width: buffer.readUInt32BE(16),
-    height: buffer.readUInt32BE(20),
+    width: buffer.readUInt16LE(26) & 0x3fff,
+    height: buffer.readUInt16LE(28) & 0x3fff,
   };
 }
 
@@ -79,28 +82,37 @@ test("onboarding food visuals use generated local food assets", () => {
   );
 
   const referencedAssets = [
-    ...source.matchAll(/require\("(\.\.\/\.\.\/\.\.\/assets\/onboarding\/food\/[^"]+\.png)"\)/g),
+    ...source.matchAll(/require\("(\.\.\/\.\.\/\.\.\/assets\/onboarding\/food\/[^"]+\.webp)"\)/g),
   ].map(([, relativeAsset]) =>
     path.normalize(path.join(path.dirname(registryPath), relativeAsset)),
   );
   const uniqueReferencedAssets = new Set(referencedAssets);
   const filesOnDisk = fs
     .readdirSync(assetDir)
-    .filter((fileName) => fileName.endsWith(".png"))
+    .filter((fileName) => fileName.endsWith(".webp"))
     .map((fileName) => path.join(assetDir, fileName));
   const generatedScenarioAssets = [
-    ...tasteQuizSource.matchAll(/generatedImageAsset:\s*"([^"]+\.png)"/g),
+    ...tasteQuizSource.matchAll(/generatedImageAsset:\s*"([^"]+\.webp)"/g),
   ].map(([, fileName]) => fileName);
+  const legacyOnlyAssets = [...new Set(generatedScenarioAssets)]
+    .map((fileName) => path.join(assetDir, fileName))
+    .filter((filePath) => !uniqueReferencedAssets.has(filePath));
 
+  // r2 onboarding-M7: only photos a question shows are bundled; nothing else is required().
   assert.equal(
     uniqueReferencedAssets.size,
-    22,
-    "all onboarding food choices should use generated local assets",
+    16,
+    "every bundled onboarding food photo is one a taste question shows",
   );
   assert.deepEqual(
-    [...uniqueReferencedAssets].sort(),
+    [...uniqueReferencedAssets, ...legacyOnlyAssets].sort(),
     filesOnDisk.sort(),
-    "every onboarding food asset on disk should be referenced exactly by the registry",
+    "every onboarding food asset on disk is either bundled by the registry or named by the legacy scenario quiz",
+  );
+  assert.deepEqual(
+    fs.readdirSync(assetDir).filter((fileName) => !fileName.endsWith(".webp")),
+    [],
+    "the onboarding photos are WebP only; a PNG would bring back ~600 KB per photo",
   );
   assert.ok(
     generatedScenarioAssets.length > 0,
@@ -113,9 +125,9 @@ test("onboarding food visuals use generated local food assets", () => {
     );
   }
 
-  for (const assetPath of uniqueReferencedAssets) {
+  for (const assetPath of [...uniqueReferencedAssets, ...legacyOnlyAssets]) {
     const stats = fs.statSync(assetPath);
-    const size = readPngSize(assetPath);
+    const size = readWebpSize(assetPath);
     const fileName = path.basename(assetPath);
     const escapedFileName = fileName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const manifestRow = new RegExp(
@@ -138,8 +150,8 @@ test("onboarding food visuals use generated local food assets", () => {
       `${path.basename(assetPath)} must keep a high-resolution generated-photo source`,
     );
     assert.ok(
-      stats.size > 400_000,
-      `${path.basename(assetPath)} should not be replaced with a tiny placeholder`,
+      stats.size > 10_000 && stats.size < 150_000,
+      `${path.basename(assetPath)} should be a real photo at web size, not a placeholder or a raw export`,
     );
   }
 });
@@ -151,7 +163,9 @@ test("taste questions show each dish once with sour and salty hawker examples", 
 
   assert.equal(labels.length, 18, "six taste questions should show three dishes each");
   assert.equal(new Set(labels).size, labels.length, "each dish should appear in one question only");
-  assert.match(block, /sour: \[[^\]]*"Asam laksa"[^\]]*"Rojak"[^\]]*"Mee siam"/);
+  // Lightest answer first, so the example under each label matches the label.
+  assert.match(block, /sour: \[[^\]]*"Mee siam"[^\]]*"Rojak"[^\]]*"Asam laksa"/);
+  assert.match(block, /spicy: \[[^\]]*"Korean stew"[^\]]*"Laksa"[^\]]*"Mala xiang guo"/);
   assert.match(block, /salty: \[[^\]]*"Fish soup"[^\]]*"Chai tow kway"[^\]]*"Char kway teow"/);
 
   const quizScreen = fs.readFileSync(

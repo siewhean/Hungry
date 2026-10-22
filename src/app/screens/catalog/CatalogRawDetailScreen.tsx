@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { ArrowLeft, ExternalLink, Heart, MapPin } from "lucide-react-native";
+import { ArrowLeft, Clock, ExternalLink, Heart, MapPin } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AccessibleImage, AppText, Button, EmptyState, Screen, Skeleton } from "@/components/ui";
@@ -59,6 +59,15 @@ function DetailHeader({ title, onBack }: { title?: string; onBack: () => void })
   );
 }
 
+/** "example.com" from a source URL; the full address is long and not useful to read. */
+function sourceHost(url: string) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "") || url;
+  } catch {
+    return url;
+  }
+}
+
 function statusLabel(status: Detail["verificationStatus"]) {
   return status === "approved"
     ? "Approved source"
@@ -87,7 +96,7 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
   const [menuError, setMenuError] = useState<string | null>(null);
 
   // Deep links can open this screen with no history; never leave a dead end.
-  const goBack = useCallback(() => {
+  const goBackOrHome = useCallback(() => {
     if (navigation.canGoBack()) {
       navigation.goBack();
       return;
@@ -247,7 +256,7 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
   if (isLoading) {
     return (
       <Screen scroll={false}>
-        <DetailHeader onBack={goBack} />
+        <DetailHeader onBack={goBackOrHome} />
         <View
           accessibilityLabel="Loading catalog record"
           style={{ gap: spacing[4], padding: spacing[4] }}
@@ -263,7 +272,7 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
   if (!detail || error) {
     return (
       <Screen scroll={false}>
-        <DetailHeader onBack={goBack} />
+        <DetailHeader onBack={goBackOrHome} />
         <EmptyState
           title={error ? "Couldn't load this listing" : "Listing not found"}
           body={
@@ -286,11 +295,16 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
         .filter(Boolean)
     : [detail.imageUrl].filter((value): value is string => Boolean(value));
   const sourceUrl = detail.menuSourceUrl ?? detail.mediaSourceUrl;
+  const venueDetail = isDish ? null : (detail as CatalogRawVenueDetail);
+  const venueAddress = venueDetail
+    ? [venueDetail.address, venueDetail.postalCode].filter(Boolean).join(" ")
+    : "";
+  const venueHours = venueDetail?.operatingHours;
 
   return (
     <Screen scroll={false} fullWidth style={{ backgroundColor: palette.bg }}>
       <ScrollView contentContainerStyle={{ gap: spacing[4], paddingBottom: spacing[8] }}>
-        <DetailHeader title={detail.name} onBack={goBack} />
+        <DetailHeader title={detail.name} onBack={goBackOrHome} />
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -365,14 +379,9 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
               ) : null}
             </>
           ) : (
-            <>
-              <AppText tone="secondary">
-                {(detail as CatalogRawVenueDetail).buildingName ?? "Singapore"}
-              </AppText>
-              <AppText tone="secondary">
-                {(detail as CatalogRawVenueDetail).menuCount} listed dishes
-              </AppText>
-            </>
+            <AppText tone="secondary">
+              {(detail as CatalogRawVenueDetail).menuCount} listed dishes
+            </AppText>
           )}
           {isDish && FEATURE_FLAGS.favouritesEnabled ? (
             <Button
@@ -429,12 +438,28 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
               ) : null}
             </View>
           ) : null}
+          {/* The building appears once, with the address under it when the catalog has one. */}
           <View style={{ flexDirection: "row", gap: spacing[2] }}>
             <MapPin color={palette.textMuted} size={18} />
-            <AppText tone="muted" variant="bodySmall">
-              {detail.buildingName ?? "Singapore"}
-            </AppText>
+            <View style={{ flex: 1, gap: spacing[0.5] }}>
+              <AppText tone="muted" variant="bodySmall">
+                {detail.buildingName ?? "Singapore"}
+              </AppText>
+              {venueAddress ? (
+                <AppText tone="muted" variant="bodySmall">
+                  {venueAddress}
+                </AppText>
+              ) : null}
+            </View>
           </View>
+          {venueHours ? (
+            <View style={{ flexDirection: "row", gap: spacing[2] }}>
+              <Clock color={palette.textMuted} size={18} />
+              <AppText tone="muted" variant="bodySmall" style={{ flex: 1 }}>
+                {venueHours}
+              </AppText>
+            </View>
+          ) : null}
           {sourceUrl ? (
             <Pressable
               accessibilityRole="link"
@@ -444,9 +469,25 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
             >
               <ExternalLink color={palette.textMuted} size={18} />
               <AppText tone="accent" variant="bodySmall" numberOfLines={1} style={{ flex: 1 }}>
-                {sourceUrl}
+                Source: {sourceHost(sourceUrl)}
               </AppText>
             </Pressable>
+          ) : null}
+          <Button
+            label="Open stall page"
+            variant="secondary"
+            onPress={() =>
+              navigation.navigate("StallDetail", {
+                venueId: isDish ? (detail as CatalogRawDishDetail).venueId : detail.id,
+              })
+            }
+          />
+          {isDish && detail.verificationStatus === "approved" ? (
+            <Button
+              label="Open dish page"
+              variant="secondary"
+              onPress={() => navigation.navigate("DishDetail", { dishId: detail.id })}
+            />
           ) : null}
         </View>
       </ScrollView>

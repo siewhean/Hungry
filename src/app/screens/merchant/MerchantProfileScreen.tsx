@@ -23,6 +23,9 @@ import { useSessionStore } from "@/store/useSessionStore";
 import { getActiveOutlet, useMerchantStore } from "@/store/useMerchantStore";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { prefetchMerchantTab } from "@/features/navigation/prefetch";
+import { isVerificationCurrent } from "@/features/merchant/merchantGuards";
+import { getVerificationStatusInfo } from "@/features/merchant/merchantReadiness";
+import { useMerchantDialog } from "@/features/merchant/useMerchantDialog";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type ProfileItemProps = {
@@ -89,6 +92,7 @@ export function MerchantProfileScreen() {
   const signOut = useSessionStore((state) => state.signOut);
   const account = useMerchantStore((state) => state.account);
   const activeOutlet = useMerchantStore(getActiveOutlet);
+  const { showAlert, dialog } = useMerchantDialog();
   const repository = getDataRepository();
   const outletBuilding = activeOutlet?.buildingId
     ? repository.listBuildings().find((building) => building.id === activeOutlet.buildingId)
@@ -100,8 +104,9 @@ export function MerchantProfileScreen() {
     .join(" ");
   const outletContact =
     activeOutlet?.contactPhone ?? activeOutlet?.contactEmail ?? "No contact added";
-  const isVerified = activeOutlet?.verification.status === "verified";
-  const verificationLabel = isVerified ? "Verified Merchant" : "Verification pending";
+  const isVerified = isVerificationCurrent(activeOutlet?.verification);
+  const verificationInfo = getVerificationStatusInfo(activeOutlet?.verification);
+  const verificationLabel = verificationInfo.profileLabel;
   const verificationColor = isVerified ? palette.success : palette.warningText;
   const openMerchantRoute = (route: string) => navigation.navigate(route as any);
   const prefetchRoute = (route: string) =>
@@ -171,7 +176,7 @@ export function MerchantProfileScreen() {
           <ProfileItem
             icon={ShieldCheck}
             label="Verification"
-            value={verificationLabel}
+            value={verificationInfo.nextStep || verificationInfo.label}
             onPressIn={() => prefetchRoute("VerificationCentre")}
             onPress={() => openMerchantRoute("VerificationCentre")}
           />
@@ -216,17 +221,27 @@ export function MerchantProfileScreen() {
           <Button
             label="Sign Out"
             variant="destructive"
-            onPress={() => {
-              signOut();
-              rootNavigation.reset({
-                index: 0,
-                routes: [{ name: "AuthStack", params: { screen: "Login" } }],
-              });
-            }}
-            leftIcon={<LogOut size={20} color="white" />}
+            onPress={() =>
+              showAlert("Sign out?", "You will need to sign in again to use Hungry.", [
+                { text: "Cancel", style: "cancel" },
+                {
+                  text: "Sign Out",
+                  style: "destructive",
+                  onPress: () => {
+                    signOut();
+                    rootNavigation.reset({
+                      index: 0,
+                      routes: [{ name: "AuthStack", params: { screen: "Login" } }],
+                    });
+                  },
+                },
+              ])
+            }
+            leftIcon={<LogOut size={20} color={palette.textOnDark} />}
           />
         </View>
       </View>
+      {dialog}
     </Screen>
   );
 }

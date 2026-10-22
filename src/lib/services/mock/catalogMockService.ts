@@ -1,6 +1,8 @@
 import { calculateDistanceMeters } from "@/lib/geo/distance";
 import {
+  CATALOG_MATCH_COUNT_CAP,
   CATALOG_PLACE_MIN_STALLS,
+  CATALOG_QUERY_MIN_CHARS,
   CATALOG_SUGGEST_LIMIT,
   CATALOG_SUGGEST_MIN_CHARS,
   CatalogAccessError,
@@ -159,6 +161,12 @@ function matchesDishFilters(dish: DishDetail, request: CatalogPageRequest, build
   if (request.cuisineTags?.length && !request.cuisineTags.some((tag) => tags.includes(tag))) {
     return false;
   }
+  if (request.foodKeywords?.length) {
+    const text = `${dish.name} ${dish.foodTypeTag ?? ""}`.toLowerCase();
+    if (!request.foodKeywords.some((keyword) => text.includes(keyword.trim().toLowerCase()))) {
+      return false;
+    }
+  }
   if (
     request.dietaryFlags?.length &&
     !request.dietaryFlags.every((flag) => (dish.dietaryFlags as string[]).includes(flag))
@@ -168,14 +176,25 @@ function matchesDishFilters(dish: DishDetail, request: CatalogPageRequest, build
   return request.maxPrice === undefined || dish.price <= request.maxPrice;
 }
 
+interface SortableCard {
+  name: string;
+  distanceMeters?: number;
+  rating?: number;
+  reviewCount?: number;
+  price?: number;
+}
+
 function compareCards(
   sort: CatalogPageRequest["sort"],
   query: string,
-  left: { name: string; distanceMeters?: number; rating?: number; reviewCount?: number },
-  right: { name: string; distanceMeters?: number; rating?: number; reviewCount?: number },
+  left: SortableCard,
+  right: SortableCard,
 ) {
   if (sort === "nearby") {
     return (left.distanceMeters ?? Infinity) - (right.distanceMeters ?? Infinity);
+  }
+  if (sort === "price") {
+    return (left.price ?? Infinity) - (right.price ?? Infinity);
   }
   if (sort === "relevance" && query) {
     const leftStarts = left.name.toLowerCase().startsWith(query) ? 0 : 1;
@@ -207,8 +226,15 @@ function paginate<T>(
     items: items.slice(offset, end),
     nextCursor: end < items.length ? String(end) : undefined,
     releaseId: MOCK_RELEASE_ID,
+    matchCount: Math.min(items.length, CATALOG_MATCH_COUNT_CAP),
     totals,
   };
+}
+
+/** Like the RPCs, text under the minimum length searches nothing. */
+function isTooShortQuery(request: CatalogPageRequest) {
+  const query = request.query?.trim() ?? "";
+  return query.length > 0 && query.length < CATALOG_QUERY_MIN_CHARS;
 }
 
 export function createLocalCatalogService(repository: DataRepository): CatalogRawService {
@@ -239,14 +265,19 @@ export function createLocalCatalogService(repository: DataRepository): CatalogRa
 
     async listDishes(request) {
       const catalog = loadCatalog(repository);
+      if (isTooShortQuery(request)) return paginate([], request, totals(catalog));
       return paginate(listDishCards(catalog, request), request, totals(catalog));
     },
 
     async listVenues(request) {
       const catalog = loadCatalog(repository);
+      if (isTooShortQuery(request)) return paginate([], request, totals(catalog));
       const query = request.query?.trim().toLowerCase() ?? "";
       const hasDishFilters = Boolean(
-        request.cuisineTags?.length || request.dietaryFlags?.length || request.maxPrice,
+        request.cuisineTags?.length ||
+        request.dietaryFlags?.length ||
+        request.foodKeywords?.length ||
+        request.maxPrice,
       );
       const cards = catalog
         .filter((entry) => matchesVenueFilters(entry, request))
@@ -272,6 +303,9 @@ export function createLocalCatalogService(repository: DataRepository): CatalogRa
               : undefined,
             rating: topDish?.rating,
             reviewCount: topDish?.reviewCount,
+            price: entry.dishes.length
+              ? Math.min(...entry.dishes.map((dish) => dish.price))
+              : undefined,
           };
         })
         .sort((left, right) => compareCards(request.sort, query, left, right))
@@ -429,6 +463,16 @@ export function createLocalCatalogService(repository: DataRepository): CatalogRa
           return false;
         }
         if (!matchesVenueFilters(entry, request)) return false;
+        const query = request.query?.trim().toLowerCase();
+        if (
+          query &&
+          ![entry.venue.name, entry.building.name].some((value) =>
+            value.toLowerCase().includes(query),
+          ) &&
+          !entry.dishes.some((dish) => matchesDishFilters(dish, { query }, entry.building.name))
+        ) {
+          return false;
+        }
         if (
           request.cuisineTags?.length &&
           !entry.dishes.some((dish) =>
@@ -468,6 +512,7 @@ export function createLocalCatalogService(repository: DataRepository): CatalogRa
           latitude: first.coordinate.latitude,
           longitude: first.coordinate.longitude,
           verificationStatus: verification(first.venue),
+          buildingType: first.building.type,
         };
       });
       return { releaseId: MOCK_RELEASE_ID, items };

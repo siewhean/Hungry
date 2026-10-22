@@ -39,7 +39,6 @@ const SAFE_ROOT_RETURNS = new Set<keyof RootStackParamList>([
   "DecideForMeResult",
   "MapZoomedIn",
   "Post",
-  "BlogPost",
   "ReviewStack",
   "WheelStack",
   "ActivityInbox",

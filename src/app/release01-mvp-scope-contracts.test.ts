@@ -99,7 +99,7 @@ test("R01-WRITE-01: favourite toasts follow the write result, never an optimisti
 
   assert.match(
     dishDetail,
-    /const result = await toggleFavourite\(dish\);\s*if \(result\.status === "failed"\) \{\s*showToast\(\{ message: result\.message, tone: "error" \}\);/,
+    /const result = await toggleFavourite\(dish\);\s*if \(result\.status === "failed"\) \{[\s\S]*?showToast\(\{ message: result\.message, tone: "error" \}\);/,
   );
   assert.doesNotMatch(dishDetail, /Saved to favourites!/);
 

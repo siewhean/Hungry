@@ -41,7 +41,7 @@ test("MVP profile identity uses Supabase storage and public profile sync", () =>
   assert.match(service, /async function uploadAvatarIfNeeded/);
   assert.match(service, /bucket: "avatars"/);
   assert.match(service, /path: `\$\{userId\}\/avatar-\$\{Date\.now\(\)\}\.\$\{extension\}`/);
-  assert.match(service, /payload\.avatar_url = await uploadAvatarIfNeeded/);
+  assert.match(service, /: await uploadAvatarIfNeeded\(client, userId, updates\.avatarUrl\)/);
   assert.match(service, /from\("privacy_settings"\)\.upsert/);
   assert.match(avatarMigration, /\('avatars', 'avatars', true/);
   assert.match(avatarMigration, /avatars_insert_authenticated_own_prefix/);
@@ -67,7 +67,7 @@ test("MVP settings split keeps device-only preferences in local UI storage", () 
   assert.match(settingsScreen, /hapticFeedbackEnabled: state\.hapticFeedbackEnabled/);
   assert.match(settingsScreen, /reducedMotionEnabled: state\.reducedMotionEnabled/);
   assert.match(settingsScreen, /leftHandedMode: state\.leftHandedMode/);
-  assert.match(settingsScreen, /changeProfileVisibility\("private"\)/);
+  assert.match(settingsScreen, /value: "private" as const/);
   assert.match(settingsScreen, /label="Reduce motion"/);
   assert.doesNotMatch(settingsScreen, /label="Analytics sharing"/);
 });
@@ -121,16 +121,14 @@ test("Allow search history gates recording and clears history when turned off", 
   assert.match(searchStore, /useUIStore\.getState\(\)\.allowSearchHistory/);
   assert.match(
     searchStore,
-    /rememberSearch:[\s\S]*?if \(!isSearchHistoryAllowed\(\)\) \{\s*return state;/,
+    /rememberSearch:[\s\S]*?!isSearchHistoryAllowed\(\)\) \{\s*return state;/,
   );
-  assert.match(
+  // The unused filters and history are gone from the store; only recent searches are kept.
+  assert.doesNotMatch(
     searchStore,
-    /addHistoryEntry:[\s\S]*?if \(!isSearchHistoryAllowed\(\)\) \{\s*return state;/,
+    /addHistoryEntry|removeHistoryEntry|clearHistory|toggleCategory/,
   );
-  assert.match(
-    searchStore,
-    /clearSearchHistory: \(\) => set\(\{ recentSearches: \[\], history: \[\] \}\)/,
-  );
+  assert.match(searchStore, /clearSearchHistory: \(\) => set\(\{ recentSearches: \[\] \}\)/);
   assert.match(settingsScreen, /onToggle=\{handleSearchHistoryToggle\}/);
   assert.match(
     settingsScreen,
@@ -147,9 +145,11 @@ test("Change Password re-authenticates instead of exchanging a fake recovery cod
 
   assert.doesNotMatch(editProfile, /profile-settings/);
   assert.doesNotMatch(editProfile, /screen: "ResetPassword"/);
-  assert.match(editProfile, /navigate\("ChangePassword"\)/);
-  assert.match(editProfile, /auth\.canChangePassword\(\)/);
-  assert.match(editProfile, /\{canChangePassword \? \(/);
+  // The Change password row moved to Settings > Sign-in and security.
+  const settingsScreen = read("src/app/screens/profile/SettingsScreen.tsx");
+  assert.match(settingsScreen, /navigate\("ChangePassword"\)/);
+  assert.match(settingsScreen, /auth\.canChangePassword\(\)/);
+  assert.match(settingsScreen, /\{canChangePassword && isAuthenticated \? \(/);
   assert.match(changePassword, /auth\.changePassword\(currentPassword, newPassword\)/);
   assert.match(rootNavigator, /name="ChangePassword"/);
 
@@ -193,7 +193,8 @@ test("post composer remains isolated behind the Release 0.1 post flag", () => {
   assert.doesNotMatch(swipeTabs, /PostComposerV2/);
   assert.match(postScreen, /import \{ publishComposerPost \}/);
   assert.match(postScreen, /useComposerStore\.getState\(\)/);
-  assert.match(postScreen, /confirmGalleryAccess/);
+  // Camera or library, asked for only when chosen.
+  assert.match(postScreen, /askMediaSource\("Add media"\)/);
   assert.match(postScreen, /import \* as ImagePicker from "expo-image-picker"/);
   assert.match(postScreen, /mediaTypes: \["images", "videos"\]/);
   assert.match(postScreen, /launchImageLibraryAsync/);
@@ -315,19 +316,19 @@ test("Supabase review reads hydrate review_photos and public profile names and a
     /getReviewsForDish\(dishId\) \{\s*return supabaseRepository\.getDishById\(dishId\)\?\.reviews/,
   );
   // The stall reads its newest reviews in one query scoped to its menu, not one per dish.
-  assert.match(stallDetail, /reviews\.listRecentReviews\(\{\s*dishIds: dishIdsKey\.split\("\|"\)/);
+  assert.match(stallDetail, /reviews\.listRecentReviews\(\{\s*venueId: sideLoadVenueId,/);
   assert.doesNotMatch(stallDetail, /getReviewsForDish/);
   assert.match(stallDetail, /<Avatar uri=\{review\.avatarUrl\}/);
-  assert.match(reviewFeed, /getHungryService\(\)\.reviews\.listRecentReviews\(\{/);
+  assert.match(reviewFeed, /getHungryService\(\)\.reviews\.listRecentReviewsPage\(\{/);
   assert.doesNotMatch(reviewFeed, /reviews\.getReviewsForDish\(dish\.id\)/);
   assert.match(
     service,
-    /async listRecentReviews\(options\)[\s\S]*\.order\("created_at", \{ ascending: false \}\)[\s\S]*\.limit\(limit\)/,
+    /async function fetchRecentReviewsPage[\s\S]*\.order\("created_at", \{ ascending: false \}\)[\s\S]*\.limit\(limit\)/,
   );
   // Owner replies must come back with the rows or detail screens drop them in Supabase mode.
   assert.match(
     service,
-    /async listRecentReviews\(options\)[\s\S]{0,400}\.select\(\s*"[^"]*merchant_reply_text,merchant_replied_at,helpful_count"/,
+    /const REVIEW_FEED_COLUMNS =\s*"[^"]*merchant_reply_text,merchant_replied_at,helpful_count[^"]*"/,
   );
   assert.match(
     reviewFeed,
@@ -354,7 +355,7 @@ test("Supabase review feed does not send review ids through post reaction writes
     /const localDish = item\.dish \?\? repository\.getDishById\(item\.dishId\)/,
   );
   assert.match(reviewFeed, /toggleFavourite\(localDish\)/);
-  assert.match(reviewFeed, /saved: favouriteDishIds\.includes\(item\.dishId\)/);
+  assert.match(reviewFeed, /: favouriteDishIds\.includes\(item\.dishId\)/);
   assert.doesNotMatch(reviewFeed, /void toggleSave\(item\.review\.id\);\s*const dish/);
 });
 
@@ -405,7 +406,7 @@ test("Supabase social feed/profile history do not treat persisted local posts as
   assert.match(sharedPosts, /getServiceProvider\(\)\.mode === "supabase"/);
   assert.match(
     sharedPosts,
-    /return mergeStallPosts\(bitePosts, servicePosts, repository\.listStallPosts\(\)\)/,
+    /mergeStallPosts\(bitePosts, servicePosts, repository\.listStallPosts\(\)\)/,
   );
   assert.match(
     sharedPosts,
@@ -418,14 +419,13 @@ test("MVP browse surfaces do not show obvious fake trust claims", () => {
   const searchScreen = read("src/app/screens/search/SearchResultsScreen.tsx");
   const supabaseRepository = read("src/lib/services/supabase/supabaseRepository.ts");
 
-  assert.match(feed, /title: "Nearby picks"/);
+  // The Home feed no longer builds taste or "nearby" sections it never showed.
+  assert.doesNotMatch(feed, /Nearby picks/);
   assert.doesNotMatch(feed, /Fastest Near You|Mock distance logic/);
   assert.doesNotMatch(searchScreen, /fallbackPost|Heart\b|likeCount/);
-  // Only positive verification is badged; unverified rows carry no pill.
-  assert.match(
-    searchScreen,
-    /item\.verificationStatus === "approved" \? "Verified" : "Source verified"/,
-  );
+  // Only positive verification is badged, with one label; unverified rows carry no pill.
+  assert.match(searchScreen, /item\.verificationStatus === "approved"/);
+  assert.doesNotMatch(searchScreen, /Source verified/);
   assert.doesNotMatch(searchScreen, /"Unverified"/);
   assert.match(supabaseRepository, /isOpen: toBool\(row\.is_open, false\)/);
 });

@@ -12,6 +12,15 @@ import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 
 /**
+ * Alerts for followed stalls come only from a signed-in merchant editing the menu
+ * (Merchant Centre), and catalog imports never alert. Until Merchant Centre ships
+ * to production, Follow just feeds Home and Following: no alert promise and no
+ * push-permission prompt.
+ */
+const STALL_ALERTS_CAN_FIRE =
+  FEATURE_FLAGS.stallAlertsEnabled && FEATURE_FLAGS.merchantCentreEnabled;
+
+/**
  * On a first follow, turn stall alerts on right away: ask for push permission
  * (only prompts if not yet granted), register this device and save the
  * preference. Returns whether alerts are on.
@@ -38,7 +47,7 @@ interface FollowStallButtonProps {
   onOpenAppSettings?: () => void;
 }
 
-/** Follow a stall to get opt-in alerts when its menu changes. Guests are sent to sign in. */
+/** Follow a stall (alerts when its menu changes, once owners can edit menus). Guests are sent to sign in. */
 export function FollowStallButton({
   stallId,
   stallName,
@@ -74,7 +83,11 @@ export function FollowStallButton({
         showToast({ message: `Stopped following ${stallName}.`, tone: "success" });
         return;
       }
-      if (FEATURE_FLAGS.stallAlertsEnabled && isFirstFollow) {
+      if (!STALL_ALERTS_CAN_FIRE) {
+        showToast({ message: `Following ${stallName}.`, tone: "success" });
+        return;
+      }
+      if (STALL_ALERTS_CAN_FIRE && isFirstFollow) {
         const alertsOn = await enableStallAlertsOnFirstFollow().catch(() => false);
         if (alertsOn) {
           showToast({
@@ -118,7 +131,9 @@ export function FollowStallButton({
 
   return (
     <Button
-      label={isFollowing ? "Following" : "Follow for menu updates"}
+      label={
+        isFollowing ? "Following" : STALL_ALERTS_CAN_FIRE ? "Follow for menu updates" : "Follow"
+      }
       variant={isFollowing ? "ghost" : "secondary"}
       accessibilityLabel={isFollowing ? `Unfollow ${stallName}` : `Follow ${stallName}`}
       leftIcon={

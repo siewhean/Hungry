@@ -23,16 +23,19 @@ test("search and browse read only the paged catalog (no legacy path or flag)", (
     /export function BrowseStallsScreen\(\)[\s\S]*<RawCatalogBrowseGrid mode="stalls"/,
   );
   // Results read only route params: a persisted query or category never leaks into a new search.
-  assert.doesNotMatch(source, /useSearchStore|storedQuery/);
+  // (The grid only writes: a submitted query is saved as a recent search; it never reads one.)
+  assert.doesNotMatch(source, /storedQuery|recentSearches|state\.filters/);
+  assert.equal(source.match(/useSearchStore\(/g)?.length, 1);
+  assert.match(source, /useSearchStore\(\(state\) => state\.rememberSearch\)/);
   assert.match(source, /initialSearchQuery=\{route\.params\?\.initialQuery \?\? ""\}/);
   assert.match(
     source,
     /initialFilter=\{route\.params\?\.initialFilter \?\? route\.params\?\.foodTypeTag\}/,
   );
-  assert.match(source, /request\.releaseId = cursor \? releaseIdRef\.current : undefined/);
+  assert.match(source, /releaseId: releaseIdRef\.current/);
   assert.match(
-    source,
-    /useEffect\(\(\) => \{[\s\S]*?requestVersion\.current \+= 1;[\s\S]*?releaseIdRef\.current = undefined;[\s\S]*?setReleaseId\(undefined\);[\s\S]*?void loadPage\(\);/,
+    read("src/features/search/browseGrid.ts"),
+    /releaseId: input\.cursor \? input\.releaseId : undefined/,
   );
 
   const flags = read("src/constants/featureFlags.ts");
@@ -122,7 +125,7 @@ test("discovery entry points never warm a local catalog index and map passes vie
   assert.doesNotMatch(discoverHome, /catalogReadV2|refreshPopularNearby/);
   assert.match(map, /onViewportChange/);
   assert.match(map, /buildingTypes/);
-  assert.match(map, /openOnly: mapFilters\.openNow/);
+  assert.match(map, /minRating: mapFilters\.topRated \? TOP_RATED_MIN_RATING : undefined/);
   assert.match(map, /onMarkerPress=\{handleRawMarkerPress\}/);
   assert.doesNotMatch(map, /catalogReadV2|handleLegacyMarkerPress|getDataRepository/);
   assert.match(map, /candidate\.kind === "venue" \? "stall" : candidate\.kind/);

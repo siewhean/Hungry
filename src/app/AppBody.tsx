@@ -12,6 +12,7 @@ import { getReleasedSupabaseConfigurationError } from "@/lib/services/supabase/c
 import { isE2eDeveloperLauncherRequested } from "@/lib/runtime/e2eDeveloperLauncher";
 import { useSessionStore } from "@/store/useSessionStore";
 import { SignInPromptSheet } from "@/features/auth/SignInPromptSheet";
+import { SafetyActionsSheet } from "@/features/safety/SafetyActionsSheet";
 
 const APP_SHELL_FONT_GRACE_MS = 900;
 
@@ -88,6 +89,7 @@ export function AppBody() {
         {showRootNavigator ? <RootNavigator theme={theme} /> : <PreAuthNavigator theme={theme} />}
         {/* Backstop only: the app is sign-in only, but a session can expire mid-use. */}
         <SignInPromptSheet />
+        <SafetyActionsSheet />
       </BottomSheetModalProvider>
     </View>
   );

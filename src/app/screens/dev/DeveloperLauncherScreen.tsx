@@ -270,7 +270,6 @@ function DataInspectorContent() {
       venues: repository
         .listBuildings()
         .flatMap((building) => repository.listVenuesByBuilding(building.id)).length,
-      articles: repository.listBlogPosts().length,
       dishes: repository.listPopularNearby().length,
     };
   }, []);
@@ -280,7 +279,6 @@ function DataInspectorContent() {
       {[
         { label: "Buildings", value: stats.buildings },
         { label: "Venues", value: stats.venues },
-        { label: "Articles", value: stats.articles },
         { label: "Dishes", value: stats.dishes },
       ].map(({ label, value }) => (
         <View
@@ -838,15 +836,6 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
               label="Review"
               onPressIn={() => preloadRoute(navigation, "MainTabs", { screen: "Review" })}
               onPress={() => navigation.navigate("MainTabs", { screen: "Review" })}
-            />
-            <DevButton
-              label="Article"
-              onPress={() => {
-                const sampleArticle = getLauncherRepository().listBlogPosts()[0];
-                if (sampleArticle) {
-                  navigation.navigate("BlogPost", { postId: sampleArticle.id });
-                }
-              }}
             />
             <DevButton
               label="Composer"

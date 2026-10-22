@@ -15,8 +15,11 @@ test("search grid: load-more retry, stable location, analytics and labelled cont
   assert.match(grid, /setLoadMoreFailed\(true\)/);
   assert.match(grid, /Couldn't load more\./);
   assert.match(grid, /roundCoordinate\(effectiveCoordinate\.latitude\)/);
-  // Guests browse the grid too (PR #83), so loading does not depend on isAuthenticated.
-  assert.match(grid, /\[coordinate, mode, place, searchQuery, selectedFilter, service\]/);
+  // Sign-in only: the grid loads for a signed-in user, so loading depends on isAuthenticated.
+  assert.match(
+    grid,
+    /\[\s*coordinate,\s*filters,\s*isAuthenticated,\s*mode,\s*place,\s*query,\s*requestKey,\s*service,\s*sort,\s*widenRadius,\s*\]/,
+  );
   assert.doesNotMatch(grid, /\[currentLocation, (isAuthenticated, )?mode/);
   for (const event of [
     "search_query",
@@ -34,7 +37,10 @@ test("search grid: load-more retry, stable location, analytics and labelled cont
   assert.match(grid, /if \(navigation\.canGoBack\(\)\)/);
   // No "Open now" chip until open status comes from opening hours (r2 H22).
   assert.doesNotMatch(grid, /OPEN_NOW_FILTER|openOnly:/);
-  assert.match(grid, /maxPrice: selectedFilter === BUDGET_FILTER \? BUDGET_MAX_PRICE : undefined/);
+  assert.match(
+    read("src/features/search/browseGrid.ts"),
+    /maxPrice: input\.filters\.includes\(BUDGET_FILTER\) \? BUDGET_MAX_PRICE : undefined/,
+  );
   assert.match(grid, /Location is off, so distances are from central Singapore\./);
   assert.doesNotMatch(grid, /fontSize: 10/);
 });
@@ -51,7 +57,8 @@ test("search home: params instead of persisted query, recents, autofocus, reduce
   assert.match(home, /useNativeDriver: true/);
   assert.doesNotMatch(home, /useNativeDriver: false/);
   assert.match(home, /useReduceMotion\(\)/);
-  assert.match(store, /filters: \{ \.\.\.state\.filters, query: "", categories: \[\] \}/);
+  // Only recent searches are persisted; the typed query and filters never are.
+  assert.match(store, /partialize: \(state\) => \(\{ recentSearches: state\.recentSearches \}\)/);
 });
 
 test("search history off stops search_query taste signals and query text", () => {
@@ -87,7 +94,8 @@ test("settings: device left-handed mode, deletion via RPC, alerts states, haptic
   assert.doesNotMatch(service, /from\("account_deletion_requests"\)\.insert/);
   assert.match(settings, /formatDeletionDate\(scheduledFor\)/);
   assert.doesNotMatch(settings, /label="Profile ID"|label="Display name"/);
-  assert.match(settings, /showThemePicker/);
+  assert.match(settings, /SettingsChoiceSheet/);
+  assert.match(settings, /title="Theme"/);
   assert.match(alerts, /busy=\{isBusy\}/);
   assert.match(alerts, /Linking\.openSettings\(\)/);
   assert.match(section, /accessibilityRole="header"/);
@@ -103,9 +111,10 @@ test("edit profile: no pre-prompt, honest toast, unsaved-changes guard, labelled
   assert.doesNotMatch(edit, /confirmGalleryAccess|requestMediaLibraryPermissionsAsync/);
   assert.match(edit, /Photo selected\. Tap Save changes to use it\./);
   assert.match(edit, /addListener\("beforeRemove"/);
-  assert.match(edit, /Enter a display name\./);
+  assert.match(edit, /validateDisplayName\(displayName\)/);
+  assert.match(read("src/features/profile/profileName.ts"), /Enter a display name\./);
   assert.match(edit, /accessibilityLabel="Change profile photo"/);
-  assert.match(edit, /accessibilityLabel="Change password"/);
+  assert.match(read("src/app/screens/profile/SettingsScreen.tsx"), /label="Change password"/);
   assert.match(read("src/lib/permissions/gallery.ts"), /onDismiss: \(\) => resolve\(false\)/);
 });
 

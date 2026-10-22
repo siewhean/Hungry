@@ -9,20 +9,34 @@
  *   4. Favourites — from profile favourite dish IDs
  */
 
-import { useDeferredValue, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { FlatList, Modal, Pressable, ScrollView, View, Alert } from "react-native";
-import { X, Search, Compass, Heart, Plus, ShieldAlert, Sparkles } from "lucide-react-native";
+import { X, Search, Compass, Heart, Plus, ShieldAlert, Sparkles, Check } from "lucide-react-native";
 import * as Haptics from "@/lib/haptics";
 
 import { AccessibleImage, AppText, Badge, Card, EmptyState, Input } from "@/components/ui";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { searchPickerVenues } from "@/features/checklistPortfolio/pickerSearch";
+import {
+  BEST_MATCH_PERCENT,
+  bestDishMatchPercent,
+  joinVenueSubtitle,
+} from "@/features/wheel/venueRow";
+import { hasDishTasteSignal } from "@/lib/ai/tasteEngine";
 import { dishMatchesSearchCategory } from "@/lib/services/searchCategoryMatch";
 import { pickSurpriseCandidate } from "@/features/wheel/surprisePick";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
-import { useProfileStore } from "@/store/useProfileStore";
+import { getTasteSimilarityWithDish, useProfileStore } from "@/store/useProfileStore";
 import { useWheelStore } from "@/store/useWheelStore";
 import { useHungryTheme } from "@/theme";
-import type { SearchCategory, VenueSummary, DishDetail, DietaryFlag } from "@/types/domain";
+import type {
+  SearchCategory,
+  VenueSummary,
+  DishDetail,
+  DietaryFlag,
+  UserProfile,
+} from "@/types/domain";
 
 const CATEGORIES: SearchCategory[] = [
   "local favourites",
@@ -37,21 +51,24 @@ type Tab = "search" | "random" | "category" | "favourites";
 /** More slices than this makes labels unreadable on the wheel. */
 const MAX_WHEEL_ENTRIES = 12;
 
+// Without parties (production) the wheel is solo: no "party" or "group" wording.
+const PARTY_ENABLED = FEATURE_FLAGS.wheelPartyEnabled;
+
+/** Stalls the server search returns for the Search tab. */
+const SEARCH_RESULT_LIMIT = 30;
+
 interface Props {
   visible: boolean;
   onClose: () => void;
 }
 
-function calculateMatchScore(dish: DishDetail | undefined, userTaste: any): number {
-  if (!dish || !userTaste) return 0;
-  let score = 0;
-  const keys = Object.keys(userTaste) as (keyof typeof userTaste)[];
-  keys.forEach((key) => {
-    const dishVal = (dish.tasteVector as any)[key] || 0;
-    const userVal = userTaste[key] || 0;
-    score += dishVal * userVal;
-  });
-  return score;
+/** Taste match (0-100) of a stall's best dish, using the same match as the dish page. */
+function calculateMatchScore(dishes: DishDetail[], profile: UserProfile): number {
+  return bestDishMatchPercent(
+    dishes,
+    (dish) => getTasteSimilarityWithDish(profile, dish),
+    hasDishTasteSignal,
+  );
 }
 
 function VenueRow({
@@ -59,20 +76,28 @@ function VenueRow({
   hero,
   onAdd,
   matchScore = 0,
+  added = false,
 }: {
   venue: VenueSummary;
   /** First dish of the venue, looked up once when the venue list is built. */
   hero?: DishDetail;
   onAdd: () => void;
+  /** Taste match percentage (0-100) of the stall's best dish. */
   matchScore?: number;
+  /** Already on the wheel: a second slice would double its odds. */
+  added?: boolean;
 }) {
   const { palette, spacing, radii } = useHungryTheme();
-  const isHighMatch = matchScore > 120;
+  const isHighMatch = matchScore >= BEST_MATCH_PERCENT;
 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Add ${venue.name} to wheel`}
+      accessibilityLabel={
+        added ? `${venue.name} is already on the wheel` : `Add ${venue.name} to wheel`
+      }
+      accessibilityState={{ disabled: added }}
+      disabled={added}
       onPress={onAdd}
       style={({ pressed }) => [
         {
@@ -83,6 +108,7 @@ function VenueRow({
           borderBottomWidth: 1,
           borderBottomColor: palette.border,
           backgroundColor: pressed ? palette.bgSoft : palette.surface,
+          opacity: added ? 0.6 : 1,
         },
       ]}
     >
@@ -147,7 +173,11 @@ function VenueRow({
           {isHighMatch && <Badge label="BEST MATCH" tone="orange" />}
         </View>
         <AppText variant="micro" tone="secondary">
-          {venue.floor} {venue.unitNumber} • {hero?.tasteTags.slice(0, 2).join(", ")}
+          {joinVenueSubtitle([
+            venue.floor,
+            venue.unitNumber,
+            hero?.tasteTags?.slice(0, 2).join(", "),
+          ])}
         </AppText>
       </View>
       <View
@@ -160,7 +190,11 @@ function VenueRow({
           justifyContent: "center",
         }}
       >
-        <Plus size={16} color={palette.orange} />
+        {added ? (
+          <Check size={16} color={palette.orange} />
+        ) : (
+          <Plus size={16} color={palette.orange} />
+        )}
       </View>
     </Pressable>
   );
@@ -199,6 +233,10 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
   const atEntryCap = entries.filter((e) => !e.isEliminated).length >= MAX_WHEEL_ENTRIES;
 
   function addVenue(venue: VenueSummary) {
+    if (addedVenueIds.has(venue.id)) {
+      Alert.alert("Already on the wheel", `${venue.name} is already one of the options.`);
+      return;
+    }
     if (atEntryCap) {
       Alert.alert("The wheel is full", `Remove an option first (up to ${MAX_WHEEL_ENTRIES}).`);
       return;
@@ -215,7 +253,9 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
       if (conflicts.length > 0) {
         Alert.alert(
           "Dietary Warning",
-          `This stall may not accommodate: ${conflicts.join(", ")}. Someone in your party has these restrictions. Add anyway?`,
+          `This stall may not accommodate: ${conflicts.join(", ")}. ${
+            PARTY_ENABLED ? "Someone in your party has" : "You have"
+          } these restrictions. Add anyway?`,
           [
             { text: "Pick Something Else", style: "cancel" },
             {
@@ -269,21 +309,56 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
             buildingId: b.id,
             dishes,
             hero: dishes[0] as DishDetail | undefined,
-            matchScore: calculateMatchScore(dishes[0], profile.tasteVector),
+            matchScore: calculateMatchScore(dishes, profile),
           };
         }),
       )
       .sort((a, b) => b.matchScore - a.matchScore);
-  }, [profile.tasteVector, repository, visible]);
+  }, [profile, repository, visible]);
 
   // Typing stays responsive: filtering runs on the deferred query.
   const deferredQuery = useDeferredValue(query);
+  // The Search tab asks the server, which sees the whole catalog; the local cache is
+  // capped by the API's row limit. If the server call fails it falls back to the cache.
+  const [remoteVenues, setRemoteVenues] = useState<VenueSummary[] | null>(null);
+  useEffect(() => {
+    const normalizedQuery = deferredQuery.trim();
+    if (!visible || tab !== "search" || !normalizedQuery) {
+      setRemoteVenues(null);
+      return;
+    }
+    let mounted = true;
+    const timer = setTimeout(() => {
+      searchPickerVenues(normalizedQuery, SEARCH_RESULT_LIMIT)
+        .then((venues) => {
+          if (mounted) setRemoteVenues(venues);
+        })
+        .catch(() => {
+          if (mounted) setRemoteVenues(null);
+        });
+    }, 250);
+    return () => {
+      mounted = false;
+      clearTimeout(timer);
+    };
+  }, [visible, tab, deferredQuery]);
+
   const searchResults = useMemo(() => {
     const normalizedQuery = deferredQuery.trim().toLowerCase();
-    return tab === "search" && normalizedQuery
-      ? allVenues.filter((v) => v.name.toLowerCase().includes(normalizedQuery))
-      : [];
-  }, [allVenues, tab, deferredQuery]);
+    if (tab !== "search" || !normalizedQuery) return [];
+    if (remoteVenues) {
+      return remoteVenues.map((venue) => {
+        const dishes = repository.listDishesByVenue(venue.id);
+        return {
+          ...venue,
+          dishes,
+          hero: dishes[0] as DishDetail | undefined,
+          matchScore: calculateMatchScore(dishes, profile),
+        };
+      });
+    }
+    return allVenues.filter((v) => v.name.toLowerCase().includes(normalizedQuery));
+  }, [allVenues, tab, deferredQuery, remoteVenues, repository, profile]);
 
   const categoryResults = useMemo(
     () =>
@@ -308,11 +383,11 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
     [allVenues, tab, profile, repository],
   );
 
-  const tabs: { id: Tab; label: string; icon: any }[] = [
-    { id: "search", label: "Search", icon: <Search size={14} /> },
-    { id: "random", label: "Surprise", icon: <Compass size={14} /> },
-    { id: "category", label: "Browse", icon: <Plus size={14} /> },
-    { id: "favourites", label: "Faves", icon: <Heart size={14} /> },
+  const tabs: { id: Tab; label: string }[] = [
+    { id: "search", label: "Search" },
+    { id: "random", label: "Surprise" },
+    { id: "category", label: "Browse" },
+    { id: "favourites", label: "Faves" },
   ];
 
   return (
@@ -364,7 +439,8 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
               >
                 <ShieldAlert size={12} color={palette.error} />
                 <AppText variant="micro" style={{ color: palette.error, fontWeight: "700" }}>
-                  GROUP NEEDS: {groupDietaryRestrictions.join(", ").toUpperCase()}
+                  {PARTY_ENABLED ? "GROUP NEEDS" : "YOUR NEEDS"}:{" "}
+                  {groupDietaryRestrictions.join(", ").toUpperCase()}
                 </AppText>
               </View>
             )}
@@ -401,8 +477,9 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
             {tabs.map((t) => (
               <Pressable
                 key={t.id}
-                accessibilityRole="button"
-                accessibilityLabel={`Switch to ${t.label} tab`}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: tab === t.id }}
+                accessibilityLabel={`${t.label} tab`}
                 onPress={() => {
                   setTab(t.id);
                   void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -474,6 +551,7 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
                     hero={item.hero}
                     onAdd={() => addVenue(item)}
                     matchScore={item.matchScore}
+                    added={addedVenueIds.has(item.id)}
                   />
                 )}
                 contentContainerStyle={{ paddingBottom: 40 }}
@@ -587,6 +665,7 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
                     <Pressable
                       key={cat}
                       accessibilityRole="button"
+                      accessibilityState={{ selected: selectedCategory === cat }}
                       accessibilityLabel={`${cat} category`}
                       onPress={() => {
                         setSelectedCategory(selectedCategory === cat ? null : cat);
@@ -624,6 +703,7 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
                     hero={item.hero}
                     onAdd={() => addVenue(item)}
                     matchScore={item.matchScore}
+                    added={addedVenueIds.has(item.id)}
                   />
                 )}
                 contentContainerStyle={{ paddingBottom: 40 }}
@@ -652,6 +732,7 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
                   hero={item.hero}
                   onAdd={() => addVenue(item)}
                   matchScore={item.matchScore}
+                  added={addedVenueIds.has(item.id)}
                 />
               )}
               contentContainerStyle={{ paddingBottom: 40 }}

@@ -9,7 +9,7 @@ function read(relativePath: string): string {
   return readFileSync(path.join(root, relativePath), "utf8");
 }
 
-test("onboarding is five short steps: welcome, location, optional taste quiz, food openness, done", () => {
+test("onboarding is welcome, then four counted steps: location, optional taste quiz, food openness, done", () => {
   const types = read("src/app/navigation/navigationTypes.ts");
   const stack = read("src/app/screens/onboarding/OnboardingStack.tsx");
   const progress = read("src/app/screens/onboarding/OnboardingProgress.tsx");
@@ -66,17 +66,24 @@ test("onboarding is five short steps: welcome, location, optional taste quiz, fo
     /isAuthenticated && !hasCompletedOnboarding[\s\S]*screen: "OnboardingWelcome"/,
   );
 
-  // One progress component, "Step x of N", on every step.
+  // One progress component, "Step x of 4" from Location to Done. Welcome has no counter
+  // (r2 onboarding-L14) and the quiz shows its own "Question x of 7" instead of a second bar
+  // (r2 onboarding-M1).
   assert.match(
     progress,
     /ONBOARDING_STEPS = \["welcome", "location", "taste", "openness", "done"\] as const/,
   );
+  assert.match(
+    progress,
+    /PROGRESS_STEPS = ONBOARDING_STEPS\.filter\(\(name\) => name !== "welcome"\)/,
+  );
   assert.match(progress, /Step \{current\} of \{total\}/);
   assert.match(progress, /accessibilityRole="progressbar"/);
-  assert.match(welcome, /<OnboardingProgress step="welcome" \/>/);
+  assert.doesNotMatch(welcome, /<OnboardingProgress/);
   assert.match(location, /<OnboardingProgress step="location" \/>/);
   assert.match(picker, /\{isOnboarding \? <OnboardingProgress step="location" \/> : null\}/);
-  assert.match(quiz, /flowMode === "onboarding" \? \([\s\S]*?<OnboardingProgress step="taste" \/>/);
+  assert.doesNotMatch(quiz, /<OnboardingProgress/);
+  assert.match(quiz, /Question \{inDietaryStep \? totalSteps : step \+ 1\} of \{totalSteps\}/);
   assert.match(done, /<OnboardingProgress step="done" \/>/);
   assert.match(openness, /\{isSettings \? null : <OnboardingProgress step="openness" \/>\}/);
   // The quiz no longer draws its own progress bar.
@@ -96,7 +103,7 @@ test("onboarding is five short steps: welcome, location, optional taste quiz, fo
   // carried over, and a missing draft must never reset the vector to neutral.
   assert.match(
     quiz,
-    /navigation\.navigate\("DietaryPreferences", \{[\s\S]*answers: values,[\s\S]*\}\)/,
+    /navigation\.navigate\("DietaryPreferences", \{[\s\S]*\.\.\.\(answeredAny \? \{ answers: values \} : \{\}\),[\s\S]*\}\)/,
   );
   assert.match(
     quiz,
@@ -107,15 +114,17 @@ test("onboarding is five short steps: welcome, location, optional taste quiz, fo
   assert.equal(quiz.match(/setTasteVector\(/g)?.length, 1);
   assert.match(types, /DietaryPreferences:[\s\S]*answers\?: TasteVector;/);
   assert.match(quiz, /navigation\.navigate\("FoodOpenness", \{ mode: "onboarding" \}\)/);
-  // Openness: Continue saves the choice, Skip saves the default "mix"; both go to done.
+  // Openness: Continue saves the choice; Skip saves nothing (the default applies); both go to done.
   assert.match(openness, /navigation\.navigate\("TasteProfileResult"\)/);
-  assert.match(openness, /finish\(DEFAULT_FOOD_OPENNESS\)/);
+  assert.doesNotMatch(openness, /finish\(DEFAULT_FOOD_OPENNESS\)/);
   // The taste questions are optional, but Skip still asks about dietary needs
   // (without taste answers), and the quiz stays marked as skipped.
   assert.match(
     quiz,
     /setSkippedTasteQuiz\(true\);\s*navigation\.navigate\("DietaryPreferences", \{\s*mode: flowMode,\s*initialPhase: "dietary",\s*\}\)/,
   );
+  // Next through every question without answering is also a skip, not an all-balanced taste.
+  assert.match(quiz, /const answeredAny = hasAnsweredAnyQuestion\(answeredKeys\)/);
   assert.match(
     quiz,
     /setSkippedTasteQuiz\(!hasTasteAnswers\);\s*navigation\.navigate\("FoodOpenness", \{ mode: "onboarding" \}\)/,
@@ -169,6 +178,10 @@ test("onboarding is five short steps: welcome, location, optional taste quiz, fo
   assert.doesNotMatch(
     done,
     /rememberPendingDishSave\(dish\);\s*navigation\.navigate\("OnboardingAuth"\)/,
+  );
+  assert.match(
+    read("src/features/auth/applySignedInProfile.ts"),
+    /void flushPendingDishSave\(\)\.catch\(\(\) => undefined\);/,
   );
   assert.match(read("src/features/auth/applySignedInProfile.ts"), /flushPendingDishSave\(\)/);
 });

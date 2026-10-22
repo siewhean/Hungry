@@ -21,21 +21,37 @@ test("image uploads are re-encoded to strip EXIF/GPS after validating the origin
 
   const imageUpload = functionBody("uploadImageFromUri");
   const validateAt = imageUpload.indexOf("assertValidImageBlob(originalBlob");
-  const reencodeAt = imageUpload.indexOf("reencodeImageWithoutMetadata(uri");
+  const reencodeAt = imageUpload.search(/reencodeImageWithoutMetadata\(\s*uri/);
   const uploadAt = imageUpload.indexOf("uploadViaSignedUrl(");
   assert.ok(validateAt >= 0 && validateAt < reencodeAt && reencodeAt < uploadAt);
 });
 
-test("post media re-encodes photos but leaves videos untouched", () => {
+test("post media re-encodes photos and strips location atoms from videos", () => {
   const postUpload = functionBody("uploadPostMediaFromUri");
-  assert.match(
-    postUpload,
-    /originalContentType\.startsWith\("image\/"\)\s*\?\s*await reencodeImageWithoutMetadata/,
-  );
+  assert.match(postUpload, /originalContentType\.startsWith\("image\/"\)/);
+  assert.match(postUpload, /await reencodeImageWithoutMetadata\(uri, originalContentType\)/);
+  assert.match(postUpload, /await stripVideoMetadata\(originalBlob, originalContentType\)/);
   assert.ok(
     postUpload.indexOf("assertValidPostMediaBlob(originalBlob") <
       postUpload.indexOf("reencodeImageWithoutMetadata("),
   );
+});
+
+test("a failed metadata strip refuses the upload instead of sending the original", () => {
+  const reencode = source.slice(
+    source.indexOf("async function reencodeImageWithoutMetadata("),
+    source.indexOf("async function readBlobBytes("),
+  );
+  assert.doesNotMatch(reencode, /return null/);
+  assert.match(reencode, /throw new MediaUploadError\("metadata_strip_failed"/);
+  // One retry before giving up.
+  assert.match(reencode, /tries < 2/);
+
+  for (const name of ["uploadImageFromUri", "uploadPostMediaFromUri"]) {
+    assert.doesNotMatch(functionBody(name), /\?\?\s*originalBlob|stripped\?\./, name);
+  }
+  const video = source.slice(source.indexOf("async function stripVideoMetadata("));
+  assert.match(video, /catch \{\s*throw new MediaUploadError\("metadata_strip_failed"/);
 });
 
 test("HEIC photos re-encoded to JPEG are stored under a .jpg path", async () => {

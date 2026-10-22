@@ -8,10 +8,10 @@ import { useLocationStore } from "@/store/useLocationStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
-import { OnboardingProgress } from "./OnboardingProgress";
+import { OnboardingProgress, trackOnboardingAreaPickerViewed } from "./OnboardingProgress";
 import type { OnboardingStackParamList } from "./OnboardingStack";
 import { SORTED_SINGAPORE_AREAS } from "./singaporeAreas";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ONBOARDING_ACTIONS_BOTTOM_PADDING,
   ONBOARDING_ACTIONS_GAP,
@@ -39,14 +39,21 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
     () =>
       normalizedQuery.length === 0
         ? SORTED_SINGAPORE_AREAS
-        : SORTED_SINGAPORE_AREAS.filter((area) =>
-            area.name.toLowerCase().includes(normalizedQuery),
+        : SORTED_SINGAPORE_AREAS.filter(
+            (area) =>
+              area.name.toLowerCase().includes(normalizedQuery) ||
+              area.keywords?.some((keyword) => keyword.includes(normalizedQuery)),
           ),
     [normalizedQuery],
   );
   const selectedArea = SORTED_SINGAPORE_AREAS.find((area) => area.id === selectedAreaId) ?? null;
   const showNoResults = normalizedQuery.length > 0 && filteredAreas.length === 0;
   const isOnboarding = !isSettingsMode && !hasCompletedOnboarding;
+
+  // The picker is a detour inside the Location step; the funnel should see it.
+  useEffect(() => {
+    if (isOnboarding) trackOnboardingAreaPickerViewed();
+  }, [isOnboarding]);
 
   const handleSubmit = () => {
     if (!selectedArea) return;
@@ -79,9 +86,9 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
               style={{
                 alignItems: "center",
                 borderRadius: radii.pill,
-                height: 40,
+                height: 44,
                 justifyContent: "center",
-                width: 40,
+                width: 44,
               }}
             >
               <ArrowLeft color={palette.text} size={22} />
@@ -123,6 +130,7 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
 
         <View style={{ flex: 1, gap: spacing[2], paddingTop: spacing[3] }}>
           <ScrollView
+            accessibilityRole="radiogroup"
             contentContainerStyle={{ gap: spacing[2], paddingBottom: spacing[1] }}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
@@ -136,10 +144,10 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
               ? filteredAreas.map((area) => (
                   <Pressable
                     key={area.id}
-                    accessibilityRole="button"
+                    accessibilityRole="radio"
                     accessibilityLabel={`Choose ${area.name}`}
                     accessibilityHint="Sets this as your Hungry discovery location"
-                    accessibilityState={{ selected: area.id === selectedAreaId }}
+                    accessibilityState={{ checked: area.id === selectedAreaId }}
                     onPress={() => {
                       setSelectedAreaId(area.id);
                     }}
@@ -147,6 +155,8 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
                     <Card
                       style={{
                         borderRadius: radii.md,
+                        justifyContent: "center",
+                        minHeight: 48,
                         padding: spacing[2],
                         borderColor: area.id === selectedAreaId ? palette.orange : "transparent",
                         borderWidth: area.id === selectedAreaId ? 1.5 : 0,
@@ -175,7 +185,7 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
           }}
         >
           <Button
-            label="Continue"
+            label={isOnboarding ? "Continue" : "Save location"}
             onPress={handleSubmit}
             disabled={!selectedArea}
             loading={false}

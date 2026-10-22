@@ -155,7 +155,7 @@ test("activity routes remain feature-gated with direct messages separately gated
   assert.match(activity, /<UnreadCountBadge/);
   assert.match(activity, /accessibilityLabel=\{`\$\{unreadCount\} unread messages`\}/);
   assert.match(activity, /stylesInline\.unreadCountBadge/);
-  assert.match(activity, /markActivityRead\("update", update\.id\)/);
+  assert.match(activity, /markActivityRead\("update", memberId\)/);
   assert.match(activity, /stylesInline\.updateMediaSlot/);
   assert.match(activity, /stylesInline\.updateUnreadSlot/);
   assert.match(activity, /stylesInline\.unreadDot/);
@@ -169,11 +169,13 @@ test("activity routes remain feature-gated with direct messages separately gated
     activityStore,
     /getActivityUnreadCount\(get\(\)\.readActivityIds, \[[\s\S]*\.\.\.get\(\)\.dbActivityEvents,[\s\S]*\.\.\.get\(\)\.activityUpdates/,
   );
-  assert.match(activityStore, /notifications\.listActivityEvents\(\)/);
+  assert.match(activityStore, /notifications\.listActivityEvents\(/);
   assert.match(activityStore, /notifications\.markActivityRead\(id\)/);
   assert.doesNotMatch(activityStore, /console\.error\("Failed to fetch activity events"/);
   assert.match(activityStore, /console\.warn\("Failed to fetch activity events"/);
-  assert.match(activityStore, /set\(\{ dbActivityEvents: \[\] \}\)/);
+  // A failed fetch keeps the last list and flags the error; it never shows as "No updates yet".
+  assert.doesNotMatch(activityStore, /set\(\{ dbActivityEvents: \[\] \}\)/);
+  assert.match(activityStore, /activityLoadFailed: true/);
   assert.match(supabaseService, /function isMissingActivityEventsSchemaError/);
   assert.match(supabaseService, /if \(isMissingActivityEventsSchemaError\(error\)\) return \[\]/);
   assert.match(supabaseService, /if \(isMissingMarkActivityReadRpcError\(error\)\) return/);
@@ -240,10 +242,12 @@ test("activity messages and update posts are functional routes, not static mocku
   assert.match(detail, /\{commentsEnabled \? \(/);
   assert.match(detail, /commentsSheetRef\.current\?\.present\(\)/);
   assert.match(detail, /setActiveCommentReview/);
-  assert.match(detail, /accessibilityLabel="Open comments"/);
+  // The detail screen reuses the Home feed card (its comment button opens the sheet).
+  assert.match(detail, /<FeedPostCard/);
+  assert.match(detail, /openComments: \(\) => \{/);
   assert.match(detail, /seededCommentsForActiveReview/);
-  assert.match(detail, /likeCount: 0/);
-  assert.match(detail, /commentCount: 0/);
+  assert.match(read("src/components/social/FeedPostCard.tsx"), /likeCount: 0/);
+  assert.match(read("src/components/social/FeedPostCard.tsx"), /commentCount: 0/);
   assert.match(detail, /ReviewShareSheet/);
   assert.match(detail, /onShared=\{\(postId, channel\) => \{/);
   assert.match(detail, /incrementShare\(postId, channel\)/);

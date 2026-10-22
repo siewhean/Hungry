@@ -52,6 +52,7 @@ export function DishSearchScreen() {
   const rememberSearch = useSearchStore((state) => state.rememberSearch);
   const recentSearches = useSearchStore((state) => state.recentSearches);
   const clearSearchHistory = useSearchStore((state) => state.clearSearchHistory);
+  const removeRecentSearch = useSearchStore((state) => state.removeRecentSearch);
   const allowSearchHistory = useUIStore((state) => state.allowSearchHistory);
   // Query and category live here and travel as route params, so nothing stale is persisted.
   const [searchText, setSearchText] = useState("");
@@ -125,10 +126,8 @@ export function DishSearchScreen() {
   }, [entryOpacity, entryY, motion.screenTransition, reduceMotion]);
 
   const openResults = (query: string, browseMode?: BrowseMode) => {
+    // The results grid saves a submitted query as a recent search, once it commits it.
     const trimmedQuery = query.trim();
-    if (trimmedQuery) {
-      rememberSearch(trimmedQuery);
-    }
     navigation.navigate("SearchResults", {
       browseMode,
       initialQuery: trimmedQuery || undefined,
@@ -282,26 +281,40 @@ export function DishSearchScreen() {
               </Pressable>
             </View>
             {recentSearches.map((query) => (
-              <Pressable
+              <View
                 key={query}
-                accessibilityRole="button"
-                accessibilityLabel={`Search ${query} again`}
-                onPress={() => {
-                  setSearchText(query);
-                  openResults(query);
-                }}
-                style={{
-                  alignItems: "center",
-                  flexDirection: "row",
-                  gap: spacing[3],
-                  minHeight: 44,
-                }}
+                style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}
               >
-                <History color={palette.textMuted} size={18} />
-                <AppText numberOfLines={1} style={{ flex: 1 }}>
-                  {query}
-                </AppText>
-              </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Search ${query} again`}
+                  onPress={() => {
+                    setSearchText(query);
+                    openResults(query);
+                  }}
+                  style={{
+                    alignItems: "center",
+                    flex: 1,
+                    flexDirection: "row",
+                    gap: spacing[3],
+                    minHeight: 44,
+                  }}
+                >
+                  <History color={palette.textMuted} size={18} />
+                  <AppText numberOfLines={1} style={{ flex: 1 }}>
+                    {query}
+                  </AppText>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Remove ${query} from recent searches`}
+                  hitSlop={4}
+                  onPress={() => removeRecentSearch(query)}
+                  style={{ alignItems: "center", height: 44, justifyContent: "center", width: 44 }}
+                >
+                  <X color={palette.textMuted} size={16} />
+                </Pressable>
+              </View>
             ))}
           </View>
         ) : null}
@@ -320,7 +333,7 @@ export function DishSearchScreen() {
           </View>
         ) : null}
         <Button
-          label={trimmedSearchText ? "See all results" : "View search results"}
+          label={trimmedSearchText ? "See all results" : "Browse dishes near you"}
           onPress={() => openResults(searchText)}
         />
       </Animated.View>
