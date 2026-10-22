@@ -93,6 +93,7 @@ Treat these as high blast-radius. Read before editing, patch narrowly, and run a
 6. Append a short line to `tasks/session-log.md` after focused task work.
 7. Update `tasks/lessons.md` only after a correction or repeated mistake.
 8. Keep final responses short: what changed, what passed, what remains.
+10. Rate limits: every new RPC the anon role can execute, every new table or RPC a signed-in user can hit in a loop, and every new Edge Function needs a cap (`app_private.request_rate_rules` row in a migration; Edge Functions call `app_can_make_ip_request` / `app_can_make_user_request`) or an entry with a reason in `supabase/rate-limit-allowlist.json`. `npm run check:rate-limits` fails CI otherwise. Details in `supabase/README.md` (Rate limits).
 
 ---
 
