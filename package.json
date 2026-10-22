@@ -30,6 +30,8 @@
     "smoke:database:rls": "node scripts/smoke_rls.mjs",
     "smoke:ocr-staging": "node scripts/supabase-ocr-smoke.mjs",
     "audit:supabase:static": "node scripts/supabase-neutral-audit.mjs",
+    "audit:supabase:migration-safety": "node scripts/check-migration-safety.mjs",
+    "test:migration-safety": "node --test scripts/__tests__/check_migration_safety.test.mjs",
     "audit:supabase:advisor-security": "node scripts/supabase-advisor-security-classifier.mjs",
     "audit:supabase:advisor-security:non-password": "node scripts/supabase-advisor-security-classifier.mjs --fail-on-external --ignore-leaked-password",
     "audit:supabase:advisor-support-snapshot": "node scripts/supabase-advisor-support-snapshot.mjs",

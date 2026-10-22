@@ -93,6 +93,7 @@ Treat these as high blast-radius. Read before editing, patch narrowly, and run a
 6. Append a short line to `tasks/session-log.md` after focused task work.
 7. Update `tasks/lessons.md` only after a correction or repeated mistake.
 8. Keep final responses short: what changed, what passed, what remains.
+9. Every new Supabase migration (anything after `20261022110000`) needs a matching `supabase/rollbacks/<name>.down.sql`, a `-- smoke:` header, no `begin;`/`commit;`, and staging rehearsal evidence from `scripts/db/rehearse.sh <version>` committed at `supabase/rehearsals/<version>.json`. Prod only via `scripts/db/ship.sh` (it backs up first); never hand-paste migration SQL into prod, and never use a `-- no-down:` / `-- no-rehearsal:` waiver without sh's explicit approval. CI fails otherwise (`npm run audit:supabase:migration-safety`). Runbook: `supabase/manual/safe-migration-runbook.md`.
 
 ---
 
