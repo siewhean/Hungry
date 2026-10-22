@@ -1,10 +1,11 @@
 // Runs a Supabase Edge Function (Deno) under Node for tests.
 //
 // The function's index.ts is bundled with esbuild, its remote imports (supabase-js on esm.sh,
-// the Anthropic SDK on npm:) are swapped for fakes, and `Deno.serve` is captured so a test can
+// Sentry and standardwebhooks on npm:) are swapped for fakes, and `Deno.serve` is captured so a test can
 // call the handler with a `Request` and read the `Response`. Nothing touches the network.
 
 import { build } from "esbuild";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import path from "node:path";
 
 const FUNCTIONS_DIR = path.join(process.cwd(), "supabase", "functions");
@@ -121,19 +122,50 @@ export interface SentryEvent {
   extras: Record<string, unknown>;
 }
 
-export interface FakeAnthropic {
-  messages: { create: (params: unknown) => Promise<unknown> };
-}
-
 export interface LoadOptions {
   env?: Record<string, string>;
   supabase?: FakeSupabase;
-  anthropic?: FakeAnthropic;
   fetch?: typeof fetch;
   /** Freezes `new Date()` and `Date.now()` inside the function. */
   now?: Date;
   /** Collects what the function sends to Sentry (set `SENTRY_DSN` in `env` to switch reporting on). */
   sentryEvents?: SentryEvent[];
+}
+
+const WEBHOOK_TOLERANCE_SECONDS = 5 * 60;
+
+/** Standard Webhooks signature: base64 HMAC-SHA256 of `id.timestamp.body` under the base64 secret. */
+function webhookSignature(secret: string, id: string, timestamp: string, body: string): string {
+  return createHmac("sha256", Buffer.from(secret, "base64"))
+    .update(`${id}.${timestamp}.${body}`)
+    .digest("base64");
+}
+
+/** Headers a sender such as Supabase Auth would attach to a signed hook body. */
+export function signWebhook(secret: string, body: string, id = "msg_1", at = new Date()) {
+  const timestamp = String(Math.floor(at.getTime() / 1000));
+  return {
+    "webhook-id": id,
+    "webhook-timestamp": timestamp,
+    "webhook-signature": `v1,${webhookSignature(secret, id, timestamp, body)}`,
+  };
+}
+
+function verifyWebhook(secret: string, body: string, headers: Record<string, string>) {
+  const id = headers["webhook-id"];
+  const timestamp = headers["webhook-timestamp"];
+  const signatures = (headers["webhook-signature"] ?? "").split(" ");
+  if (!id || !timestamp || !signatures[0]) throw new Error("Missing required headers");
+  if (Math.abs(Date.now() / 1000 - Number(timestamp)) > WEBHOOK_TOLERANCE_SECONDS) {
+    throw new Error("Message timestamp outside tolerance");
+  }
+  const expected = Buffer.from(webhookSignature(secret, id, timestamp, body));
+  const matches = signatures.some((entry) => {
+    const received = Buffer.from(entry.split(",")[1] ?? "");
+    return received.length === expected.length && timingSafeEqual(received, expected);
+  });
+  if (!matches) throw new Error("No matching signature found");
+  return JSON.parse(body);
 }
 
 const bundles = new Map<string, Promise<string>>();
@@ -157,9 +189,18 @@ function bundle(name: string): Promise<string> {
               path: "supabase-js",
               namespace: "fake",
             }));
-            b.onResolve({ filter: /^npm:@anthropic-ai\/sdk/ }, () => ({
-              path: "anthropic",
+            b.onResolve({ filter: /^npm:standardwebhooks/ }, () => ({
+              path: "webhook",
               namespace: "fake",
+            }));
+            b.onLoad({ filter: /^webhook$/, namespace: "fake" }, () => ({
+              contents: [
+                "export class Webhook {",
+                "  constructor(secret) { this.secret = secret; }",
+                "  verify(body, headers) { return __edge.verifyWebhook(this.secret, body, headers); }",
+                "}",
+              ].join("\n"),
+              loader: "js",
             }));
             b.onResolve({ filter: /^npm:@sentry\/deno/ }, () => ({
               path: "sentry",
@@ -177,11 +218,6 @@ function bundle(name: string): Promise<string> {
             }));
             b.onLoad({ filter: /^supabase-js$/, namespace: "fake" }, () => ({
               contents: "export const createClient = (...args) => __edge.createClient(...args);",
-              loader: "js",
-            }));
-            b.onLoad({ filter: /^anthropic$/, namespace: "fake" }, () => ({
-              contents:
-                "export default class Anthropic { constructor(options) { return __edge.anthropic(options); } }",
               loader: "js",
             }));
           },
@@ -210,6 +246,7 @@ export async function loadEdgeFunction(
       supabase.clientsCreated.push({ url, key, options: clientOptions });
       return supabase.client();
     },
+    verifyWebhook,
     sentry: (() => {
       const events = options.sentryEvents ?? [];
       let scope = { tags: {} as Record<string, unknown>, extras: {} as Record<string, unknown> };
@@ -230,11 +267,6 @@ export async function loadEdgeFunction(
         flush: async () => true,
       };
     })(),
-    anthropic: () => {
-      if (!options.anthropic)
-        throw new Error(`${name} created an Anthropic client but the test gave none`);
-      return options.anthropic;
-    },
   };
   const Deno = {
     env: { get: (key: string) => env[key] },
@@ -290,4 +322,47 @@ export function post(body?: unknown, token?: string, extra: Record<string, strin
 
 export async function json(response: Response): Promise<any> {
   return response.json();
+}
+
+export interface GeminiCall {
+  model: string;
+  apiKey: string | null;
+  system: string;
+  user: string;
+  schema: any;
+  generationConfig: any;
+}
+
+/** A Gemini `generateContent` body: `finishReason` other than STOP means the answer was cut off. */
+export function geminiReply(answer: unknown, finishReason = "STOP") {
+  const text = typeof answer === "string" ? answer : JSON.stringify(answer);
+  return { candidates: [{ finishReason, content: { parts: [{ text }] } }] };
+}
+
+/**
+ * A `fetch` that answers the Gemini API through `shared/gemini.ts`. `reply` gets the decoded call
+ * and returns a response body (see `geminiReply`), an `Error` to throw, or a `Response` to return.
+ */
+export function fakeGemini(reply: (call: GeminiCall) => unknown) {
+  const calls: GeminiCall[] = [];
+  const fakeFetch = (async (input: unknown, init?: RequestInit) => {
+    const url = String(input);
+    const model = url.match(/models\/([^:]+):generateContent/)?.[1];
+    if (!model) throw new Error(`unexpected fetch to ${url}`);
+    const body = JSON.parse(String(init?.body));
+    const call: GeminiCall = {
+      model,
+      apiKey: new Headers(init?.headers).get("x-goog-api-key"),
+      system: body.systemInstruction.parts[0].text,
+      user: body.contents[0].parts[0].text,
+      schema: body.generationConfig.responseSchema,
+      generationConfig: body.generationConfig,
+    };
+    calls.push(call);
+    const result = reply(call);
+    if (result instanceof Error) throw result;
+    if (result instanceof Response) return result;
+    return new Response(JSON.stringify(result), { status: 200 });
+  }) as typeof fetch;
+  return { calls, fetch: fakeFetch };
 }

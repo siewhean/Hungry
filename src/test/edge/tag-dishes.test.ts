@@ -2,38 +2,31 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { MODEL, SYSTEM_PROMPT, TASTE_AXES } from "../../../supabase/functions/_shared/tasteTagging";
-import { FakeSupabase, json, loadEdgeFunction, post, type FakeAnthropic } from "./harness";
+import {
+  FakeSupabase,
+  fakeGemini,
+  geminiReply,
+  json,
+  loadEdgeFunction,
+  post,
+  type GeminiCall,
+} from "./harness";
 
 const TOKEN = "tag-secret";
 const ENV = {
   TASTE_TAGGING_WORKER_TOKEN: TOKEN,
-  ANTHROPIC_API_KEY: "sk-test",
+  GEMINI_API_KEY: "gemini-test",
   SUPABASE_URL: "https://project.supabase.co",
   SUPABASE_SERVICE_ROLE_KEY: "service-role",
 };
 const DISH = { dish_id: "dish-1", dish_name: "Laksa", venue_name: "Katong Laksa", price: 6.5 };
 
-function claude(reply: (params: any) => unknown): FakeAnthropic & { calls: any[] } {
-  const calls: any[] = [];
-  return {
-    calls,
-    messages: {
-      create: async (params: unknown) => {
-        calls.push(params);
-        const result = reply(params);
-        if (result instanceof Error) throw result;
-        return result;
-      },
-    },
-  };
-}
-
+type Gemini = ReturnType<typeof fakeGemini>;
+const gemini = (reply: (call: GeminiCall) => unknown) => fakeGemini(reply);
 const answer =
-  (scores: Record<string, unknown>, stop = "end_turn") =>
-  () => ({
-    stop_reason: stop,
-    content: [{ type: "text", text: JSON.stringify(scores) }],
-  });
+  (scores: Record<string, unknown>, finishReason = "STOP") =>
+  () =>
+    geminiReply(scores, finishReason);
 
 const SCORES = {
   sweet: 2.34,
@@ -51,7 +44,7 @@ const SCORES = {
 async function load(
   options: {
     dishes?: unknown[];
-    anthropic?: FakeAnthropic;
+    gemini?: Gemini;
     env?: Record<string, string>;
     upsertError?: boolean;
     applyError?: boolean;
@@ -63,13 +56,13 @@ async function load(
     options.upsertError ? { error: { message: "unique violation" } } : { data: { id: "tag-1" } };
   if (options.applyError)
     supabase.rpc.apply_dish_flavor_tag = () => ({ error: { message: "bad vector" } });
-  const anthropic = options.anthropic ?? claude(answer(SCORES));
+  const model = options.gemini ?? gemini(answer(SCORES));
   const handler = await loadEdgeFunction("tag-dishes", {
     env: { ...ENV, ...options.env },
     supabase,
-    anthropic,
+    fetch: model.fetch,
   });
-  return { supabase, anthropic, handler };
+  return { supabase, gemini: model, handler };
 }
 
 test("tag-dishes rejects other methods and bad tokens, and needs its secrets", async () => {
@@ -79,11 +72,11 @@ test("tag-dishes rejects other methods and bad tokens, and needs its secrets", a
 
   const noSupabase = await load({ env: { SUPABASE_URL: "" } });
   assert.equal((await noSupabase.handler(post({}, TOKEN))).status, 500);
-  const noClaude = await load({ env: { ANTHROPIC_API_KEY: "" } });
-  const response = await noClaude.handler(post({}, TOKEN));
+  const noGemini = await load({ env: { GEMINI_API_KEY: "" } });
+  const response = await noGemini.handler(post({}, TOKEN));
   assert.deepEqual(
     [response.status, (await json(response)).error],
-    [500, "missing_anthropic_api_key"],
+    [500, "missing_gemini_api_key"],
   );
 });
 
@@ -107,7 +100,7 @@ test("tag-dishes reports a failed dish lookup", async () => {
   const handler = await loadEdgeFunction("tag-dishes", {
     env: ENV,
     supabase,
-    anthropic: claude(answer(SCORES)),
+    fetch: gemini(answer(SCORES)).fetch,
   });
   const response = await handler(post({}, TOKEN));
   assert.deepEqual(
@@ -116,16 +109,16 @@ test("tag-dishes reports a failed dish lookup", async () => {
   );
 });
 
-test("tag-dishes describes the dish to Claude with the shared prompt and model", async () => {
-  const { handler, anthropic } = await load({
+test("tag-dishes describes the dish to Gemini with the shared prompt and model", async () => {
+  const { handler, gemini: model } = await load({
     dishes: [{ ...DISH, description: "Spicy coconut noodle soup", taste_tags: ["spicy", "rich"] }],
   });
   await handler(post({}, TOKEN));
-  const [call] = (anthropic as any).calls;
+  const [call] = model.calls;
   assert.equal(call.model, MODEL);
   assert.equal(call.system, SYSTEM_PROMPT);
   assert.equal(
-    call.messages[0].content,
+    call.user,
     [
       "Dish: Laksa",
       "Stall: Katong Laksa",
@@ -134,7 +127,8 @@ test("tag-dishes describes the dish to Claude with the shared prompt and model",
       "Price: SGD 6.50",
     ].join("\n"),
   );
-  assert.equal(call.output_config.format.type, "json_schema");
+  assert.equal(call.schema.type, "OBJECT");
+  assert.equal(call.apiKey, "gemini-test");
 });
 
 test("tag-dishes saves a confident answer, drops unknown tags, rounds scores, and applies it", async () => {
@@ -171,13 +165,13 @@ test("tag-dishes saves a confident answer, drops unknown tags, rounds scores, an
 
 test("tag-dishes leaves a low-confidence answer for review instead of applying it", async () => {
   const { handler, supabase } = await load({
-    anthropic: claude(answer({ ...SCORES, confidence: 0.69 })),
+    gemini: gemini(answer({ ...SCORES, confidence: 0.69 })),
   });
   const body = await json(await handler(post({}, TOKEN)));
   assert.deepEqual([body.tagged, body.auto_applied, body.needs_review], [1, 0, 1]);
   assert.equal(supabase.callsTo("apply_dish_flavor_tag").length, 0);
 
-  const boundary = await load({ anthropic: claude(answer({ ...SCORES, confidence: 0.7 })) });
+  const boundary = await load({ gemini: gemini(answer({ ...SCORES, confidence: 0.7 })) });
   assert.equal(
     (await json(await boundary.handler(post({}, TOKEN)))).auto_applied,
     1,
@@ -187,7 +181,7 @@ test("tag-dishes leaves a low-confidence answer for review instead of applying i
 
 test("tag-dishes clamps wild scores into range", async () => {
   const wild = { ...SCORES, sweet: -4, spicy: 99, sour: "abc", confidence: 7 };
-  const { handler, supabase } = await load({ anthropic: claude(answer(wild)) });
+  const { handler, supabase } = await load({ gemini: gemini(answer(wild)) });
   await handler(post({}, TOKEN));
   const row = supabase
     .queriesOn("dish_flavor_tags")[0]
@@ -199,15 +193,15 @@ test("tag-dishes clamps wild scores into range", async () => {
 
 test("tag-dishes skips a truncated answer and counts failures without stopping the batch", async () => {
   const replies = [
-    answer(SCORES, "max_tokens")(),
+    answer(SCORES, "MAX_TOKENS")(),
     new Error("overloaded"),
-    { stop_reason: "end_turn", content: [{ type: "text", text: "not json" }] },
+    geminiReply("not json"),
     answer(SCORES)(),
   ];
   let index = 0;
   const { handler, supabase } = await load({
     dishes: [DISH, DISH, DISH, { ...DISH, dish_id: "dish-4" }],
-    anthropic: claude(() => replies[index++]),
+    gemini: gemini(() => replies[index++]),
   });
   const body = await json(await handler(post({}, TOKEN)));
   assert.deepEqual([body.skipped, body.failed, body.tagged, body.auto_applied], [1, 2, 1, 1]);

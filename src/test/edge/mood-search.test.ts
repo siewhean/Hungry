@@ -4,10 +4,12 @@ import test from "node:test";
 import { MODEL } from "../../../supabase/functions/_shared/tasteTagging";
 import {
   FakeSupabase,
+  fakeGemini,
+  geminiReply,
   json,
   loadEdgeFunction,
   post,
-  type FakeAnthropic,
+  type GeminiCall,
   type QueryCall,
 } from "./harness";
 
@@ -15,7 +17,7 @@ const ENV = {
   SUPABASE_URL: "https://project.supabase.co",
   SUPABASE_ANON_KEY: "anon",
   SUPABASE_SERVICE_ROLE_KEY: "service-role",
-  ANTHROPIC_API_KEY: "sk-test",
+  GEMINI_API_KEY: "gemini-test",
 };
 const NOW = new Date("2026-10-22T04:00:00Z");
 
@@ -32,24 +34,9 @@ const MOOD = {
   summary: "soupy, mild, under $8",
 };
 
-function claude(reply: () => unknown): FakeAnthropic & { calls: unknown[] } {
-  const calls: unknown[] = [];
-  return {
-    calls,
-    messages: {
-      create: async (params: unknown) => {
-        calls.push(params);
-        const result = reply();
-        if (result instanceof Error) throw result;
-        return result;
-      },
-    },
-  };
-}
-const ok = (scores: unknown) => () => ({
-  stop_reason: "end_turn",
-  content: [{ type: "text", text: JSON.stringify(scores) }],
-});
+type Gemini = ReturnType<typeof fakeGemini>;
+const gemini = (reply: (call: GeminiCall) => unknown) => fakeGemini(reply);
+const ok = (scores: unknown) => () => geminiReply(scores);
 
 interface Options {
   user?: string | null;
@@ -57,7 +44,10 @@ interface Options {
   cacheError?: boolean;
   slot?: unknown;
   slotError?: boolean;
-  anthropic?: FakeAnthropic;
+  gemini?: Gemini;
+  ipAllowed?: boolean | null;
+  userAllowed?: boolean | null;
+  headers?: Record<string, string>;
   env?: Record<string, string>;
 }
 
@@ -77,17 +67,27 @@ async function load(options: Options = {}) {
     options.slotError
       ? { error: { message: "down" } }
       : { data: "slot" in options ? options.slot : "slot-1" };
-  const anthropic = options.anthropic ?? claude(ok(MOOD));
+  supabase.rpc.app_can_make_ip_request = () => ({
+    data: "ipAllowed" in options ? options.ipAllowed : true,
+  });
+  supabase.rpc.app_can_make_user_request = () => ({
+    data: "userAllowed" in options ? options.userAllowed : true,
+  });
+  const model = options.gemini ?? gemini(ok(MOOD));
   const handler = await loadEdgeFunction("mood-search", {
     env: { ...ENV, ...options.env },
     supabase,
-    anthropic,
+    fetch: model.fetch,
     now: NOW,
   });
-  return { supabase, anthropic, handler };
+  return { supabase, gemini: model, handler };
 }
 
-const search = (query: unknown, token: string | undefined = "user-jwt") => post({ query }, token);
+const search = (
+  query: unknown,
+  token: string | undefined = "user-jwt",
+  headers: Record<string, string> = {},
+) => post({ query }, token, headers);
 
 test("mood-search needs POST, Supabase env, and a bearer token that resolves to a user", async () => {
   const { handler, supabase } = await load();
@@ -100,17 +100,18 @@ test("mood-search needs POST, Supabase env, and a bearer token that resolves to 
   const badJwt = await load({ user: null });
   const response = await badJwt.handler(search("spicy"));
   assert.deepEqual([response.status, (await json(response)).error], [401, "unauthorized"]);
-  assert.equal(supabase.rpcCalls.length, 0);
+  assert.equal(supabase.callsTo("reserve_mood_search_slot").length, 0);
+  assert.equal(supabase.callsTo("app_can_make_user_request").length, 0);
 });
 
 test("mood-search reads the user from the caller's own token, not the service role", async () => {
   const { handler, supabase } = await load();
   await handler(search("spicy"));
-  assert.equal(supabase.clientsCreated[0].key, "anon");
-  assert.deepEqual((supabase.clientsCreated[0].options as any).global.headers, {
+  const userClient = supabase.clientsCreated.find((client) => client.key === "anon")!;
+  assert.deepEqual((userClient.options as any).global.headers, {
     Authorization: "Bearer user-jwt",
   });
-  assert.equal(supabase.clientsCreated[1].key, "service-role");
+  assert.ok(supabase.clientsCreated.some((client) => client.key === "service-role"));
 });
 
 test("mood-search rejects a search that is too short once normalised", async () => {
@@ -132,12 +133,12 @@ test("mood-search normalises the query: lower case, single spaces, 200 character
   assert.equal(normalised.length, 200);
 });
 
-test("mood-search answers a repeated search from the 30-day cache without calling Claude or using the daily slot", async () => {
+test("mood-search answers a repeated search from the 30-day cache without calling Gemini or using the daily slot", async () => {
   const intent = { tasteShift: { spicy: -3 }, summary: "mild" };
-  const { handler, supabase, anthropic } = await load({ cached: [{ intent }] });
+  const { handler, supabase, gemini: model } = await load({ cached: [{ intent }] });
   const body = await json(await handler(search("not too spicy")));
   assert.deepEqual(body, { ok: true, cached: true, intent });
-  assert.equal((anthropic as any).calls.length, 0);
+  assert.equal(model.calls.length, 0);
   assert.equal(supabase.callsTo("reserve_mood_search_slot").length, 0);
 
   const lookup = supabase.queriesOn("mood_search_queries")[0].ops;
@@ -160,12 +161,12 @@ test("mood-search reports a failed cache lookup", async () => {
   assert.deepEqual([response.status, (await json(response)).error], [500, "cache_lookup_failed"]);
 });
 
-test("mood-search stops before reserving anything when Claude is not configured", async () => {
-  const { handler, supabase } = await load({ env: { ANTHROPIC_API_KEY: "" } });
+test("mood-search stops before reserving anything when Gemini is not configured", async () => {
+  const { handler, supabase } = await load({ env: { GEMINI_API_KEY: "" } });
   const response = await handler(search("not too spicy"));
   assert.deepEqual(
     [response.status, (await json(response)).error],
-    [500, "missing_anthropic_api_key"],
+    [500, "missing_gemini_api_key"],
   );
   assert.equal(supabase.callsTo("reserve_mood_search_slot").length, 0);
 });
@@ -185,7 +186,7 @@ test("mood-search reserves a daily slot in one locked rpc, and answers 429 once 
   assert.deepEqual([failed.status, (await json(failed)).error], [500, "usage_lookup_failed"]);
 });
 
-test("mood-search turns Claude's answer into a bounded intent and records it on the slot", async () => {
+test("mood-search turns Gemini's answer into a bounded intent and records it on the slot", async () => {
   const { handler, supabase } = await load();
   const body = await json(await handler(search("soupy and mild, under $8")));
   assert.equal(body.cached, false);
@@ -205,7 +206,7 @@ test("mood-search turns Claude's answer into a bounded intent and records it on 
 
 test("mood-search turns a zero or missing budget into no price limit and caps absurd ones", async () => {
   const intentFor = async (maxPrice: unknown) => {
-    const { handler } = await load({ anthropic: claude(ok({ ...MOOD, max_price: maxPrice })) });
+    const { handler } = await load({ gemini: gemini(ok({ ...MOOD, max_price: maxPrice })) });
     return (await json(await handler(search("anything")))).intent.maxPrice;
   };
   assert.equal(await intentFor(0), null);
@@ -214,13 +215,14 @@ test("mood-search turns a zero or missing budget into no price limit and caps ab
   assert.equal(await intentFor(9999), 500);
 });
 
-test("mood-search gives the slot back when Claude cannot answer", async () => {
+test("mood-search gives the slot back when Gemini cannot answer", async () => {
   for (const reply of [
-    () => ({ stop_reason: "max_tokens", content: [] }),
+    () => geminiReply({}, "MAX_TOKENS"),
     () => new Error("overloaded"),
-    () => ({ stop_reason: "end_turn", content: [{ type: "text", text: "{broken" }] }),
+    () => geminiReply("{broken"),
+    () => new Response("quota", { status: 429 }),
   ]) {
-    const { handler, supabase } = await load({ anthropic: claude(reply) });
+    const { handler, supabase } = await load({ gemini: gemini(reply) });
     const response = await handler(search("anything"));
     assert.deepEqual([response.status, (await json(response)).error], [502, "parse_failed"]);
     const deletion = supabase
@@ -234,8 +236,56 @@ test("mood-search gives the slot back when Claude cannot answer", async () => {
   }
 });
 
-test("mood-search uses the shared tagging model", async () => {
-  const { handler, anthropic } = await load();
+test("mood-search sends the shared model, the question and a Gemini-shaped schema", async () => {
+  const { handler, gemini: model } = await load();
   await handler(search("anything"));
-  assert.equal((anthropic as any).calls[0].model, MODEL);
+  const [call] = model.calls;
+  assert.equal(call.model, MODEL);
+  assert.equal(call.apiKey, "gemini-test");
+  assert.equal(call.user, "anything");
+  assert.equal(call.schema.type, "OBJECT", "Gemini wants upper-case types");
+  assert.equal("additionalProperties" in call.schema, false);
+  assert.equal(call.generationConfig.responseMimeType, "application/json");
+});
+
+test("mood-search counts calls per client address before looking at the token", async () => {
+  const { handler, supabase } = await load();
+  await handler(search("spicy", "user-jwt", { "x-forwarded-for": "203.0.113.9, 10.0.0.1" }));
+  assert.deepEqual(supabase.callsTo("app_can_make_ip_request")[0].args, {
+    p_ip: "203.0.113.9",
+    p_action: "mood-search",
+    p_limit: 30,
+  });
+
+  const cloudflare = await load();
+  await cloudflare.handler(
+    search("spicy", "user-jwt", {
+      "cf-connecting-ip": "198.51.100.4",
+      "x-forwarded-for": "1.1.1.1",
+    }),
+  );
+  assert.equal(cloudflare.supabase.callsTo("app_can_make_ip_request")[0].args.p_ip, "198.51.100.4");
+
+  const blocked = await load({ ipAllowed: false });
+  const response = await blocked.handler(search("spicy", ""));
+  assert.deepEqual([response.status, (await json(response)).error], [429, "rate_limited"]);
+  assert.equal(
+    blocked.supabase.clientsCreated.some((client) => client.key === "anon"),
+    false,
+  );
+});
+
+test("mood-search also caps each signed-in user per minute, and fails open if the counter is down", async () => {
+  const { handler, supabase } = await load({ userAllowed: false });
+  const response = await handler(search("spicy"));
+  assert.deepEqual([response.status, (await json(response)).error], [429, "rate_limited"]);
+  assert.deepEqual(supabase.callsTo("app_can_make_user_request")[0].args, {
+    p_actor_user_id: "u1",
+    p_action: "mood-search",
+    p_limit: 10,
+  });
+  assert.equal(supabase.callsTo("reserve_mood_search_slot").length, 0);
+
+  const down = await load({ ipAllowed: null, userAllowed: null });
+  assert.equal((await down.handler(search("spicy"))).status, 200);
 });

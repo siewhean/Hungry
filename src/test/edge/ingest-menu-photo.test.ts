@@ -235,6 +235,11 @@ test("ingest-menu-photo is rate limited per user and claims the submission atomi
     "u1",
   ]);
   assert.equal((claim[0][1][0] as { ocr_attempts: number }).ocr_attempts, 1);
+  assert.deepEqual(
+    claim.find(([op, args]) => op === "eq" && args[0] === "ocr_attempts")![1],
+    ["ocr_attempts", Number(SUBMISSION.ocr_attempts ?? 0)],
+    "the claim only matches the attempt count that was just read, so two callers cannot both win",
+  );
 });
 
 test("ingest-menu-photo reads the photo, runs OCR, and saves each line as a pending draft dish (fallback parser)", async () => {
@@ -248,8 +253,10 @@ test("ingest-menu-photo reads the photo, runs OCR, and saves each line as a pend
 
   const inserts = supabase
     .queriesOn("dishes_draft")
-    .map((query) => query.ops.find(([op]) => op === "insert")?.[1][0])
-    .filter(Boolean) as Record<string, unknown>[];
+    .flatMap((query) => [query.ops.find(([op]) => op === "insert")?.[1][0] ?? []].flat()) as Record<
+    string,
+    unknown
+  >[];
   assert.equal(inserts.length, 2);
   assert.deepEqual(
     [
@@ -287,8 +294,10 @@ test("ingest-menu-photo prefers the Gemini extraction, cleans it, and falls back
   assert.equal((await json(await handler(ingest()))).extracted, 2);
   const inserts = supabase
     .queriesOn("dishes_draft")
-    .map((query) => query.ops.find(([op]) => op === "insert")?.[1][0])
-    .filter(Boolean) as Record<string, unknown>[];
+    .flatMap((query) => [query.ops.find(([op]) => op === "insert")?.[1][0] ?? []].flat()) as Record<
+    string,
+    unknown
+  >[];
   assert.deepEqual(
     [inserts[0].name, inserts[0].modifiers, inserts[0].extraction_confidence],
     ["Bak Chor Mee", ["extra vinegar"], 1],
@@ -327,13 +336,45 @@ test("ingest-menu-photo merges a near-duplicate dish into the existing draft ins
   assert.equal(body.extracted, 1);
   const draftQueries = supabase.queriesOn("dishes_draft");
   assert.ok(!draftQueries.some((query) => query.ops.some(([op]) => op === "insert")));
-  const update = draftQueries.find((query) => query.ops.some(([op]) => op === "update"))!.ops;
-  assert.deepEqual(update[0][1][0], {
-    extraction_confidence: 0.9,
-    confidence_bumps: 3,
-    updated_at: NOW.toISOString(),
+  assert.ok(!draftQueries.some((query) => query.ops.some(([op]) => op === "update")));
+  assert.deepEqual(
+    supabase.callsTo("apply_menu_draft_matches").map((call) => call.args),
+    [{ p_matches: [{ id: "draft-9", confidence: 0.9, bumps: 1 }] }],
+  );
+});
+
+test("ingest-menu-photo folds repeated lines for one draft into a single match", async () => {
+  const { handler, supabase } = await load({
+    gemini: [
+      { name: "Laksa", price: 6.5, extraction_confidence: 0.9 },
+      { name: "Laksa", price: 6.5, extraction_confidence: 0.4 },
+    ],
+    existing: [{ id: "draft-9", name: "Laksa", price_cents: 650, extraction_confidence: 0.6 }],
   });
-  assert.deepEqual(update[1], ["eq", ["id", "draft-9"]]);
+  assert.equal((await json(await handler(ingest()))).extracted, 2);
+  assert.deepEqual(
+    supabase.callsTo("apply_menu_draft_matches").map((call) => call.args),
+    [{ p_matches: [{ id: "draft-9", confidence: 0.9, bumps: 2 }] }],
+    "one rpc, the best confidence, two bumps",
+  );
+});
+
+test("ingest-menu-photo writes every new draft in one insert and fails the photo if it is refused", async () => {
+  const { handler, supabase } = await load({ gemini: [] });
+  await handler(ingest());
+  const inserts = supabase
+    .queriesOn("dishes_draft")
+    .filter((query) => query.ops.some(([op]) => op === "insert"));
+  assert.equal(inserts.length, 1, "one insert for both lines, not one per dish");
+  assert.equal((inserts[0].ops.find(([op]) => op === "insert")![1][0] as unknown[]).length, 2);
+  assert.equal(supabase.callsTo("apply_menu_draft_matches").length, 0);
+
+  const refused = await load({ gemini: [] });
+  refused.supabase.tables.dishes_draft = (query) =>
+    query.ops.some(([op]) => op === "insert") ? { error: { message: "rls" } } : { data: [] };
+  const response = await refused.handler(ingest());
+  assert.equal(response.status, 500);
+  assert.equal(finalUpdate(refused.supabase)?.ocr_status, "failed");
 });
 
 test("ingest-menu-photo marks a photo with no readable dishes as skipped", async () => {

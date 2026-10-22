@@ -77,7 +77,7 @@ test("itemLabelTargetsKey is stable and order-independent", () => {
   assert.equal(itemLabelTargetsKey([{ dishId: "a" }, { stallId: "s" }]), "d:a,s:s");
 });
 
-test("useItemLabels looks dishes and venues up one by one and finishes loading", async () => {
+test("useItemLabels looks dishes and venues up in one call and finishes loading", async () => {
   setMockServiceProvider();
   const items = [{ dishId: "does-not-exist" }, { stallId: "no-such-venue" }];
   const { box } = await renderHook(() => useItemLabelsState(items));
@@ -88,14 +88,16 @@ test("useItemLabels looks dishes and venues up one by one and finishes loading",
 test("useItemDetailsState reports lookup errors as failed ids and retry looks them up again", async () => {
   setMockServiceProvider();
   const discovery = getHungryService().discovery;
-  const original = discovery.getDish;
+  const original = discovery.getItemDetails;
   let calls = 0;
   let fail = true;
-  discovery.getDish = (async (id: string) => {
+  discovery.getItemDetails = (async () => {
     calls += 1;
     if (fail) throw new Error("timeout");
-    return { id, name: "Chicken Rice", venueName: "Tian Tian", price: 5, imageUrl: "" } as never;
-  }) as typeof discovery.getDish;
+    return [
+      { dishId: "d1", name: "Chicken Rice", stallName: "Tian Tian", price: 5, imageUrl: "" },
+    ] as never;
+  }) as typeof discovery.getItemDetails;
   try {
     const items = [{ dishId: "d1" }];
     const { box, view } = await renderHook(() => useItemDetailsState(items));
@@ -112,7 +114,7 @@ test("useItemDetailsState reports lookup errors as failed ids and retry looks th
     assert.equal(box.current.details.d1.price, 5);
     assert.ok(calls >= 2);
   } finally {
-    discovery.getDish = original;
+    discovery.getItemDetails = original;
   }
 });
 
@@ -153,20 +155,22 @@ test("useItemDetailsState reads a whole portfolio in one call and marks everythi
 test("useItemLabels returns just the names and keeps the same object while nothing changes", async () => {
   setMockServiceProvider();
   const discovery = getHungryService().discovery;
-  const original = discovery.getVenue;
-  discovery.getVenue = (async (id: string) => ({
-    id,
-    name: "Hill Street Char Kway Teow",
-  })) as never;
+  const original = discovery.getItemDetails;
+  let asked: unknown;
+  discovery.getItemDetails = (async (input: unknown) => {
+    asked = input;
+    return [{ stallId: "s9", name: "Hill Street Char Kway Teow", imageUrl: "" }];
+  }) as never;
   try {
     const items = [{ stallId: "s9" }];
     const { box, again } = await renderHook(() => useItemLabels(items));
     assert.deepEqual(box.current, { s9: "Hill Street Char Kway Teow" });
+    assert.deepEqual(asked, { dishIds: [], stallIds: ["s9"] });
     const first = box.current;
     await again();
     assert.equal(box.current, first);
   } finally {
-    discovery.getVenue = original;
+    discovery.getItemDetails = original;
   }
 });
 

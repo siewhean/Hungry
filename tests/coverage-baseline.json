@@ -1,7 +1,7 @@
 {
   "global": {
     "lines": 78.1,
-    "branches": 84.4,
+    "branches": 84.5,
     "functions": 73.9
   },
   "files": {
@@ -126,7 +126,7 @@
     "src/lib/services/excel/repositories.ts": 92.8,
     "src/lib/services/mock/catalogMockService.ts": 94.4,
     "src/lib/services/mock/data.ts": 99.3,
-    "src/lib/services/mock/mockService.ts": 80.8,
+    "src/lib/services/mock/mockService.ts": 81.4,
     "src/lib/services/mock/persistence.ts": 71.6,
     "src/lib/services/mock/repositories.ts": 82.5,
     "src/lib/services/mock/stallPostState.ts": 100,
@@ -140,7 +140,7 @@
     "src/lib/services/supabase/client.ts": 97.1,
     "src/lib/services/supabase/mediaUpload.ts": 60.8,
     "src/lib/services/supabase/pkceCryptoPolyfill.ts": 76.7,
-    "src/lib/services/supabase/supabaseRepository.ts": 39.9,
+    "src/lib/services/supabase/supabaseRepository.ts": 40.3,
     "src/lib/services/supabase/supabaseService.ts": 37.5,
     "src/lib/services/supabase/videoMetadata.ts": 95.5,
     "src/lib/services/types.ts": 99.9,

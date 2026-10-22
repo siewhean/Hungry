@@ -86,15 +86,15 @@ async function run(scenario: Scenario, body: unknown = {}) {
   return { response, body: await json(response), supabase, pushes };
 }
 
-/** What each job was finally updated to, in order. */
+/** What each job was finally updated to, one entry per job (grouped updates are expanded). */
 function outcomes(supabase: FakeSupabase): Record<string, unknown>[] {
   return supabase
     .queriesOn("notification_jobs")
     .filter((query) => query.ops.some(([op]) => op === "update"))
-    .map((query) => {
+    .flatMap((query) => {
       const fields = query.ops.find(([op]) => op === "update")![1][0] as Record<string, unknown>;
-      const id = query.ops.find(([op]) => op === "eq")![1][1];
-      return { id, ...fields };
+      const ids = query.ops.find(([op]) => op === "eq" || op === "in")![1][1];
+      return (Array.isArray(ids) ? ids : [ids]).map((id) => ({ id, ...fields }));
     });
 }
 
@@ -375,6 +375,50 @@ test("send-notifications removes device tokens Expo reports as unregistered", as
     "token",
     ["ExponentPushToken[dead]"],
   ]);
+});
+
+test("send-notifications writes skipped and deferred jobs in one update per distinct outcome", async () => {
+  const { body, supabase } = await run({
+    jobs: [job({ id: "a" }), job({ id: "b" }), job({ id: "c", user_id: "u2" })],
+    prefs: [
+      { user_id: "u1", stall_updates: false },
+      { user_id: "u2", stall_updates: true },
+    ],
+    tokens: [{ user_id: "u1", token: "t1" }],
+  });
+  assert.deepEqual([body.skipped], [3]);
+  const updates = supabase
+    .queriesOn("notification_jobs")
+    .filter((query) => query.ops.some(([op]) => op === "update"));
+  assert.equal(updates.length, 2, "opted_out and no_device are two groups, not three updates");
+  const grouped = updates.map((query) => ({
+    reason: (query.ops.find(([op]) => op === "update")![1][0] as any).skip_reason,
+    ids: query.ops.find(([op]) => op === "in")![1][1],
+    unlocked: (query.ops.find(([op]) => op === "update")![1][0] as any).locked_at,
+  }));
+  assert.deepEqual(
+    grouped.sort((x, y) => x.reason.localeCompare(y.reason)),
+    [
+      { reason: "no_device", ids: ["c"], unlocked: null },
+      { reason: "opted_out", ids: ["a", "b"], unlocked: null },
+    ],
+  );
+});
+
+test("send-notifications removes a dead token once even when several jobs report it", async () => {
+  const { supabase } = await run({
+    jobs: [job({ id: "a" }), job({ id: "b", dish_id: "dish-2" })],
+    dishes: [
+      { id: "dish-1", availability_flags: [] },
+      { id: "dish-2", availability_flags: [] },
+    ],
+    expo: () => ({ data: [{ status: "error", details: { error: "DeviceNotRegistered" } }] }),
+  });
+  const deletions = supabase
+    .queriesOn("user_push_tokens")
+    .filter((query) => query.ops.some(([op]) => op === "delete"));
+  assert.equal(deletions.length, 1);
+  assert.deepEqual(deletions[0].ops.find(([op]) => op === "in")![1][1], ["ExponentPushToken[a]"]);
 });
 
 test("send-notifications retries a failed send until the third attempt, then gives up", async () => {
