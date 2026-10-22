@@ -23,7 +23,7 @@ npx supabase secrets set ACCOUNT_DELETION_WORKER_TOKEN=<token> \
   GUEST_SESSION_API_KEY=<random> GUEST_SESSION_ALLOWED_ORIGINS=<origins> \
   INGEST_MENU_PHOTO_ALLOWED_ORIGINS=<origins> OPS_DISHES_DRAFT_ALLOWED_ORIGINS=<origins> \
   GOOGLE_CLOUD_VISION_API_KEY=<key> \
-  ANTHROPIC_API_KEY=<key> TASTE_TAGGING_WORKER_TOKEN=<random> \
+  GEMINI_API_KEY=<key> TASTE_TAGGING_WORKER_TOKEN=<random> \
   NOTIFICATION_WORKER_TOKEN=<random> EXPO_ACCESS_TOKEN=<optional> \
   MERCHANT_ALERTS_ENABLED=<"true" only once Merchant Centre is enabled in production>
 npx supabase functions deploy process-account-deletions --no-verify-jwt

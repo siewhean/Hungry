@@ -44,8 +44,8 @@ test("tag-dishes auto-applies only at confidence 0.7 or higher and never suggest
   assert.doesNotMatch(dietary, /halal/);
 });
 
-test("tag-dishes keeps the Anthropic key server-side behind a worker token", () => {
+test("tag-dishes keeps the Gemini key server-side behind a worker token", () => {
   assert.match(edgeFunction, /TASTE_TAGGING_WORKER_TOKEN/);
-  assert.match(edgeFunction, /new Anthropic\(\)/);
-  assert.doesNotMatch(edgeFunction, /sk-ant-/);
+  assert.match(edgeFunction, /GEMINI_API_KEY/);
+  assert.doesNotMatch(edgeFunction, /AIza/);
 });
