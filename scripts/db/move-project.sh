@@ -54,7 +54,7 @@ cmd_data() {
     # psql -1 wraps the file in one transaction. Triggers and FK checks off for it, so rows land exactly as they were.
     echo "set local session_replication_role = replica;"
     dst -At -c "select 'truncate table ' || string_agg(format('%I.%I', schemaname, tablename), ', ') || ' restart identity cascade;' from pg_tables t where schemaname in ('public','app_private') and not exists (select 1 from pg_depend d where d.objid = (quote_ident(t.schemaname) || '.' || quote_ident(t.tablename))::regclass and d.deptype = 'e')"
-    echo "truncate table auth.users, auth.identities restart identity cascade;"
+    echo "truncate table auth.users, auth.identities cascade;"
     PGPASSWORD="${SRC_PGPASSWORD:-}" pg_dump "$SRC_DB_URL" --data-only --no-owner --no-privileges --quote-all-identifiers -n public -n app_private -T public.spatial_ref_sys
     PGPASSWORD="${SRC_PGPASSWORD:-}" pg_dump "$SRC_DB_URL" --data-only --no-owner --no-privileges --quote-all-identifiers -t auth.users -t auth.identities
     if [ -n "${SRC_API_URL:-}" ] && [ -n "${DST_API_URL:-}" ]; then
