@@ -2,14 +2,14 @@
 /* eslint-disable import/no-unresolved */
 import { reportFunctionError, serveWithSentry } from "../_shared/sentry.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.52.0";
-import Anthropic from "npm:@anthropic-ai/sdk@0.135.0";
+import { generateJson } from "../_shared/gemini.ts";
 import { MODEL, TASTE_AXES } from "../_shared/tasteTagging.ts";
 
 type JsonObject = Record<string, unknown>;
 
 const MAX_QUERY_LENGTH = 200;
 const DAILY_LIMIT = 20;
-// Per-minute burst caps. The daily cap only counts searches that reach Claude, so these also bound
+// Per-minute burst caps. The daily cap only counts searches that reach Gemini, so these also bound
 // cached answers and rejected calls (each still costs a database or Auth call).
 const MAX_CALLS_PER_IP_PER_MINUTE = 30;
 const MAX_CALLS_PER_USER_PER_MINUTE = 10;
@@ -84,17 +84,16 @@ function toIntent(result: JsonObject): JsonObject {
   };
 }
 
-async function parseMood(anthropic: Anthropic, query: string): Promise<JsonObject | null> {
-  const response = await anthropic.messages.create({
+async function parseMood(apiKey: string, query: string): Promise<JsonObject | null> {
+  const result = await generateJson({
+    apiKey,
     model: MODEL,
-    max_tokens: 1000,
-    output_config: { effort: "low", format: { type: "json_schema", schema: OUTPUT_SCHEMA } },
     system: SYSTEM_PROMPT,
-    messages: [{ role: "user", content: query }],
+    user: query,
+    schema: OUTPUT_SCHEMA,
+    maxOutputTokens: 4000,
   });
-  if (response.stop_reason !== "end_turn") return null;
-  const text = response.content.find((block) => block.type === "text")?.text ?? "";
-  return toIntent(JSON.parse(text) as JsonObject);
+  return result ? toIntent(result) : null;
 }
 
 serveWithSentry("mood-search", async (request) => {
@@ -156,7 +155,7 @@ serveWithSentry("mood-search", async (request) => {
     return toJson(400, { error: "query_too_short" });
   }
 
-  // Common searches reuse an earlier answer, so they don't call Claude or count toward the cap.
+  // Common searches reuse an earlier answer, so they don't call Gemini or count toward the cap.
   const cacheSince = new Date(Date.now() - CACHE_DAYS * 24 * 60 * 60 * 1000).toISOString();
   const { data: cachedRows, error: cacheError } = await client
     .from("mood_search_queries")
@@ -178,8 +177,9 @@ serveWithSentry("mood-search", async (request) => {
     return toJson(200, { ok: true, cached: true, intent });
   }
 
-  if (!Deno.env.get("ANTHROPIC_API_KEY")) {
-    return toJson(500, { error: "missing_anthropic_api_key" });
+  const geminiApiKey = Deno.env.get("GEMINI_API_KEY") ?? "";
+  if (!geminiApiKey) {
+    return toJson(500, { error: "missing_gemini_api_key" });
   }
 
   // Check the daily cap and claim a slot in one locked step, so parallel calls
@@ -197,7 +197,7 @@ serveWithSentry("mood-search", async (request) => {
   }
 
   try {
-    const intent = await parseMood(new Anthropic(), query);
+    const intent = await parseMood(geminiApiKey, query);
     if (!intent) {
       await client.from("mood_search_queries").delete().eq("id", slotId);
       return toJson(502, { error: "parse_failed" });
