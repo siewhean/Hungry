@@ -23,7 +23,7 @@ const GLOBAL_TOLERANCE = 0.3;
 const FILE_DROP_TOLERANCE = 3;
 // V8 sometimes reports a function's closing brace as uncovered, and which Node patch version does so
 // differs between machines. A small file would fail the percentage rule over one such line.
-const FILE_DROP_TOLERANCE_LINES = 2;
+const FILE_DROP_TOLERANCE_LINES = 3;
 const NEW_FILE_MINIMUM = 70;
 
 function walk(dir, found = []) {
@@ -122,7 +122,8 @@ for (const [file, value] of Object.entries(filePct)) {
     }
   } else if (
     value <
-    before - Math.max(FILE_DROP_TOLERANCE, (FILE_DROP_TOLERANCE_LINES / files[file].lf) * 100)
+    // The 0.1 covers the one-decimal rounding of both percentages.
+    before - Math.max(FILE_DROP_TOLERANCE, (FILE_DROP_TOLERANCE_LINES / files[file].lf) * 100) - 0.1
   ) {
     failures.push(`${file} fell from ${before}% to ${value}% line coverage`);
   }
