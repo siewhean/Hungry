@@ -1005,6 +1005,8 @@ export async function listDiscoveryFeedByLocationViaRpc(
     p_lng: request.lng ?? null,
     p_radius_meters: request.radiusMeters ?? null,
     p_limit: request.limit ?? null,
+    // Sent only inside a place, so everyone else keeps working against the older signature.
+    ...(request.buildingId ? { p_building_id: request.buildingId } : {}),
   });
   if (!rows) return undefined;
 

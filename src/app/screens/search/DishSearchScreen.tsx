@@ -35,7 +35,7 @@ type BrowseMode = "dishes" | "stalls";
 
 const SUGGESTION_KIND_LABELS: Record<CatalogSuggestion["kind"], string> = {
   food_type: "Dish type",
-  place: "Hawker centre or mall",
+  place: "Mall, hawker centre or food court",
   stall: "Stall",
 };
 const SUGGEST_DEBOUNCE_MS = 200;
@@ -139,6 +139,16 @@ export function DishSearchScreen() {
   const openSuggestion = (suggestion: CatalogSuggestion, surface: "typeahead" | "popular") => {
     trackAnalyticsEvent("search_suggestion_opened", { kind: suggestion.kind, surface });
     setSearchText(suggestion.label);
+    if (suggestion.kind === "place" && suggestion.placeId) {
+      // A place shows only the stalls inside that building, not every fuzzy name match.
+      rememberSearch(suggestion.label);
+      navigation.navigate("SearchResults", {
+        browseMode: "stalls",
+        placeId: suggestion.placeId,
+        placeName: suggestion.label,
+      });
+      return;
+    }
     openResults(suggestion.label, suggestionMode(suggestion));
   };
 

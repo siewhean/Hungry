@@ -124,6 +124,9 @@ export type RootStackParamList = {
         browseMode?: "dishes" | "stalls";
         initialQuery?: string;
         foodTypeTag?: string;
+        /** Scopes the results to one mall, hawker centre or food court (a catalog building id). */
+        placeId?: string;
+        placeName?: string;
         initialFilter?:
           | "All"
           | "Local"

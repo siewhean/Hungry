@@ -108,8 +108,9 @@ begin
     raise exception 'catalog_suggest(la) should offer the Laksa food type: %', v_suggest;
   end if;
   v_suggest := public.catalog_suggest('zeph');
-  if not v_suggest @> '[{"kind": "place", "label": "Zephyr Food Centre"}]' then
-    raise exception 'catalog_suggest(zeph) should offer the place: %', v_suggest;
+  -- Places are buildings with 3+ stalls; this one has two.
+  if v_suggest @> '[{"kind": "place"}]' then
+    raise exception 'catalog_suggest(zeph) must not offer a two-stall building as a place: %', v_suggest;
   end if;
   v_suggest := public.catalog_suggest('wombat');
   if not v_suggest @> '[{"kind": "stall", "label": "Wombat Rice Stall"}]' then

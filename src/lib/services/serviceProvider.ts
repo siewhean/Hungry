@@ -406,6 +406,10 @@ export function createResilientCatalogReadService(
     async suggest(prefix) {
       return primary.suggest(prefix).catch(() => fallback.suggest(prefix));
     },
+    // Place search is best effort too: an unavailable live catalog finds no places.
+    async listPlaces(request) {
+      return primary.listPlaces(request).catch(() => fallback.listPlaces(request));
+    },
   };
 }
 

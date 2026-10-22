@@ -16,6 +16,8 @@ import type {
   CatalogRawMedia,
   CatalogRawVenueCard,
   CatalogRawVenueDetail,
+  CatalogPlace,
+  CatalogPlacesRequest,
   CatalogSuggestion,
 } from "@/lib/services/catalog";
 import { CatalogContractError } from "@/lib/services/catalog";
@@ -430,6 +432,11 @@ export const excelCatalogFallbackService = {
 
   // The offline catalog has no typeahead index; Search home shows no suggestions.
   async suggest(): Promise<CatalogSuggestion[]> {
+    return [];
+  },
+
+  // Place search (malls, hawker centres) needs the live catalog; offline it finds none.
+  async listPlaces(_request: CatalogPlacesRequest): Promise<CatalogPlace[]> {
     return [];
   },
 } satisfies CatalogReadService;

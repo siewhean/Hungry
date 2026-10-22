@@ -16,7 +16,7 @@ test("search grid: load-more retry, stable location, analytics and labelled cont
   assert.match(grid, /Couldn't load more\./);
   assert.match(grid, /roundCoordinate\(effectiveCoordinate\.latitude\)/);
   // Guests browse the grid too (PR #83), so loading does not depend on isAuthenticated.
-  assert.match(grid, /\[coordinate, mode, searchQuery, selectedFilter, service\]/);
+  assert.match(grid, /\[coordinate, mode, place, searchQuery, selectedFilter, service\]/);
   assert.doesNotMatch(grid, /\[currentLocation, (isAuthenticated, )?mode/);
   for (const event of [
     "search_query",

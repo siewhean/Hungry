@@ -10,7 +10,7 @@ import {
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { ArrowLeft, MapPinOff, X } from "lucide-react-native";
+import { ArrowLeft, MapPin, MapPinOff, X } from "lucide-react-native";
 import { FlashList } from "@shopify/flash-list";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
@@ -28,10 +28,12 @@ import {
 import { appendUniqueById } from "@/lib/services/catalog/paging";
 import { StallLogoMark } from "@/components/stall/StallLogoMark";
 import { getCatalogRawService } from "@/lib/services/serviceProvider";
-import type {
-  CatalogPageRequest,
-  CatalogRawDishCard,
-  CatalogRawVenueCard,
+import {
+  CATALOG_SUGGEST_MIN_CHARS,
+  type CatalogPageRequest,
+  type CatalogPlace,
+  type CatalogRawDishCard,
+  type CatalogRawVenueCard,
 } from "@/lib/services/catalog";
 import { CatalogAccessError } from "@/lib/services/catalog";
 import {
@@ -116,21 +118,26 @@ function BrowseGridLoadingState({
 
 type RawCatalogItem = CatalogRawDishCard | CatalogRawVenueCard;
 
+type BrowsePlace = { id: string; name: string };
+
 function rawCatalogRequest(
   mode: "dishes" | "stalls",
   query: string,
   selectedFilter: string,
   coordinate: { latitude: number; longitude: number },
   cursor?: string,
+  place?: BrowsePlace,
 ): CatalogPageRequest {
   const filter = selectedFilter.toLowerCase();
   return {
     query: query.trim() || undefined,
     coordinate,
-    radiusMeters: query.trim() ? undefined : 3_000,
+    // A place lists its whole building, however far away it is; its best-rated stalls lead.
+    buildingId: place?.id,
+    radiusMeters: query.trim() || place ? undefined : 3_000,
     cursor,
     limit: 24,
-    sort: query.trim() ? "relevance" : "nearby",
+    sort: query.trim() ? "relevance" : place ? "quality" : "nearby",
     dietaryFlags: filter === "halal" ? ["halal"] : [],
     cuisineTags: ["japanese", "western", "noodles", "rice"].includes(filter) ? [filter] : [],
     maxPrice: selectedFilter === BUDGET_FILTER ? BUDGET_MAX_PRICE : undefined,
@@ -239,11 +246,13 @@ const MODE_LABELS = { dishes: "Dishes", stalls: "Stalls" } as const;
 function RawCatalogBrowseGrid({
   allowModeSwitch = false,
   initialFilter,
+  initialPlace,
   initialSearchQuery = "",
   mode: initialMode,
 }: {
   allowModeSwitch?: boolean;
   initialFilter?: string;
+  initialPlace?: BrowsePlace;
   initialSearchQuery?: string;
   mode: "dishes" | "stalls";
 }) {
@@ -257,6 +266,14 @@ function RawCatalogBrowseGrid({
   const recordTasteInteraction = useProfileStore((state) => state.recordTasteInteraction);
   const [mode, setMode] = useState(initialMode);
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
+  // A picked mall, hawker centre or food court: only its stalls and dishes are listed.
+  const [place, setPlace] = useState<BrowsePlace | undefined>(initialPlace);
+  const initialPlaceId = initialPlace?.id;
+  const initialPlaceName = initialPlace?.name;
+  const [placeMatches, setPlaceMatches] = useState<{ query: string; items: CatalogPlace[] }>({
+    query: "",
+    items: [],
+  });
   const lastRecordedQueryRef = useRef("");
   const [selectedFilter, setSelectedFilter] = useState(
     () => resolveInitialFilter(initialFilter) ?? "All",
@@ -283,6 +300,9 @@ function RawCatalogBrowseGrid({
     setSearchQuery(initialSearchQuery);
   }, [initialSearchQuery]);
   useEffect(() => {
+    setPlace(initialPlaceId ? { id: initialPlaceId, name: initialPlaceName ?? "" } : undefined);
+  }, [initialPlaceId, initialPlaceName]);
+  useEffect(() => {
     setSelectedFilter(resolveInitialFilter(initialFilter) ?? "All");
   }, [initialFilter]);
 
@@ -303,7 +323,14 @@ function RawCatalogBrowseGrid({
       setError(null);
       setLoadMoreFailed(false);
       try {
-        const request = rawCatalogRequest(mode, searchQuery, selectedFilter, coordinate, cursor);
+        const request = rawCatalogRequest(
+          mode,
+          searchQuery,
+          selectedFilter,
+          coordinate,
+          cursor,
+          place,
+        );
         request.releaseId = cursor ? releaseIdRef.current : undefined;
         const page =
           mode === "dishes" ? await service.listDishes(request) : await service.listVenues(request);
@@ -384,7 +411,7 @@ function RawCatalogBrowseGrid({
         }
       }
     },
-    [coordinate, mode, searchQuery, selectedFilter, service],
+    [coordinate, mode, place, searchQuery, selectedFilter, service],
   );
 
   // Only a submitted query is a committed search: one taste signal each, not one per typing pause.
@@ -428,6 +455,46 @@ function RawCatalogBrowseGrid({
     );
     return () => clearTimeout(timer);
   }, [loadPage]);
+
+  // Typing a mall or hawker centre name offers the place itself, so its stalls can be listed
+  // without the fuzzy name matches from other buildings.
+  const trimmedQuery = searchQuery.trim();
+  useEffect(() => {
+    if (place || trimmedQuery.length < CATALOG_SUGGEST_MIN_CHARS) return;
+    let active = true;
+    const timer = setTimeout(() => {
+      service
+        .listPlaces({ query: trimmedQuery, coordinate, limit: 3 })
+        .then((items) => {
+          if (active) setPlaceMatches({ query: trimmedQuery, items });
+        })
+        .catch(() => undefined);
+    }, 300);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [coordinate, place, service, trimmedQuery]);
+  const offeredPlaces =
+    !place &&
+    placeMatches.query === trimmedQuery &&
+    trimmedQuery.length >= CATALOG_SUGGEST_MIN_CHARS
+      ? placeMatches.items
+      : [];
+
+  const selectPlace = useCallback(
+    (next: BrowsePlace) => {
+      trackAnalyticsEvent("search_place_selected", { mode });
+      setItems([]);
+      setSearchQuery("");
+      setPlace(next);
+    },
+    [mode],
+  );
+  const clearPlace = useCallback(() => {
+    setItems([]);
+    setPlace(undefined);
+  }, []);
 
   const handleSelectFilter = useCallback(
     (filter: string) => {
@@ -494,7 +561,13 @@ function RawCatalogBrowseGrid({
                 autoCorrect={false}
                 onChangeText={setSearchQuery}
                 onSubmitEditing={() => recordCommittedQuery(searchQuery)}
-                placeholder={mode === "dishes" ? "Search all dishes" : "Search all stalls"}
+                placeholder={
+                  place
+                    ? `Search ${mode} at ${place.name}`
+                    : mode === "dishes"
+                      ? "Search all dishes"
+                      : "Search all stalls"
+                }
                 placeholderTextColor={palette.textMuted}
                 returnKeyType="search"
                 testID="browse-results-search-input"
@@ -529,6 +602,65 @@ function RawCatalogBrowseGrid({
               ) : null}
             </View>
           </View>
+          {place ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Showing only ${place.name}. Tap to show everywhere`}
+              onPress={clearPlace}
+              style={{
+                alignItems: "center",
+                alignSelf: "flex-start",
+                backgroundColor: palette.surface,
+                borderColor: palette.orange,
+                borderRadius: 18,
+                borderWidth: 1,
+                flexDirection: "row",
+                gap: spacing[2],
+                minHeight: 36,
+                paddingHorizontal: spacing[3],
+              }}
+            >
+              <MapPin color={palette.orange} size={16} />
+              <AppText numberOfLines={1} variant="bodySmall" style={{ flexShrink: 1 }}>
+                {place.name}
+              </AppText>
+              <X color={palette.textMuted} size={16} />
+            </Pressable>
+          ) : null}
+          {offeredPlaces.length > 0 ? (
+            <View accessibilityLabel="Places" style={{ gap: spacing[1] }}>
+              <AppText tone="secondary" variant="micro">
+                Malls, hawker centres and food courts
+              </AppText>
+              {offeredPlaces.map((offered) => (
+                <Pressable
+                  key={offered.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Show stalls at ${offered.name}`}
+                  onPress={() => selectPlace({ id: offered.id, name: offered.name })}
+                  style={{
+                    alignItems: "center",
+                    flexDirection: "row",
+                    gap: spacing[2],
+                    minHeight: 44,
+                  }}
+                >
+                  <MapPin color={palette.orange} size={18} />
+                  <View style={{ flex: 1 }}>
+                    <AppText numberOfLines={1} variant="bodyBold">
+                      {offered.name}
+                    </AppText>
+                    <AppText tone="secondary" variant="micro">
+                      {`${offered.venueCount} stalls`}
+                      {offered.distanceMeters !== undefined
+                        ? ` · ${formatBrowseDistance(offered.distanceMeters)}`
+                        : ""}
+                    </AppText>
+                  </View>
+                </Pressable>
+              ))}
+            </View>
+          ) : null}
           {allowModeSwitch ? (
             <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: spacing[2] }}>
               {(["dishes", "stalls"] as const).map((option) => (
@@ -650,6 +782,11 @@ export function SearchResultsScreen() {
       allowModeSwitch
       mode={route.params?.browseMode ?? "dishes"}
       initialFilter={route.params?.initialFilter ?? route.params?.foodTypeTag}
+      initialPlace={
+        route.params?.placeId
+          ? { id: route.params.placeId, name: route.params.placeName ?? "this place" }
+          : undefined
+      }
       initialSearchQuery={route.params?.initialQuery ?? ""}
     />
   );
