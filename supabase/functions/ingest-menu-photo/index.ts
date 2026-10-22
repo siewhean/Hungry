@@ -1,5 +1,6 @@
 // @ts-nocheck
 /* eslint-disable import/no-unresolved */
+import { reportFunctionError, serveWithSentry } from "../_shared/sentry.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.52.0";
 
 type JsonObject = Record<string, unknown>;
@@ -227,7 +228,7 @@ async function runLlmExtraction(apiKey: string, text: string): Promise<Extractio
   }
 }
 
-Deno.serve(async (request) => {
+serveWithSentry("ingest-menu-photo", async (request) => {
   const allowedOrigin = resolveAllowedOrigin(request, getAllowedOrigins());
   if (request.method === "OPTIONS") {
     if (!allowedOrigin) {
@@ -438,7 +439,7 @@ Deno.serve(async (request) => {
 
     return toJson(200, { ok: true, submissionId, extracted: extracted.length }, allowedOrigin);
   } catch (error) {
-    console.error("OCR pipeline error", error);
+    await reportFunctionError("ingest-menu-photo", error, { stage: "ocr_pipeline" }, request);
     await client
       .from("menu_photo_submissions")
       .update({

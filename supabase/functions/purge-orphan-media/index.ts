@@ -1,5 +1,6 @@
 // @ts-nocheck
 /* eslint-disable import/no-unresolved */
+import { serveWithSentry } from "../_shared/sentry.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.52.0";
 import { timingSafeEqual } from "../_shared/timingSafeEqual.ts";
 
@@ -23,7 +24,7 @@ function getBearerToken(request: Request): string {
   return header.toLowerCase().startsWith("bearer ") ? header.slice(7).trim() : "";
 }
 
-Deno.serve(async (request) => {
+serveWithSentry("purge-orphan-media", async (request) => {
   if (request.method !== "POST") {
     return toJson(405, { error: "method_not_allowed" });
   }

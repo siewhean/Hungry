@@ -1,0 +1,20 @@
+{
+  "_readme": "Endpoints exempt from a tuned rate limit, each with the reason. `npm run check:rate-limits` fails when an anon-callable RPC or an Edge Function is neither limited nor listed here. Prefer adding a rule to app_private.request_rate_rules. Note: PostgREST runs POST on a STABLE or IMMUTABLE function read-only, where the counter cannot be written, so only VOLATILE functions are ever counted (the shared * default included).",
+  "anonRpcs": {
+    "can_read_author_content": "Row-level-security helper; cheap indexed lookup. Too cheap to need its own cap.",
+    "catalog_display_image_url": "Immutable string helper used by views; no table access. Too cheap to need its own cap.",
+    "catalog_menu_is_displayable": "Immutable boolean helper used by views; no table access. Too cheap to need its own cap.",
+    "catalog_raw_cursor": "Immutable cursor encoder used by the paged reads; no table access. Too cheap to need its own cap.",
+    "catalog_raw_cursor_value": "Immutable cursor decoder used by the paged reads; no table access. Too cheap to need its own cap.",
+    "catalog_url_is_delivery_app": "Immutable string helper; no table access. Too cheap to need its own cap.",
+    "catalog_venue_menu_priority_score": "Pure scoring helper used by search ordering; no table access. Too cheap to need its own cap.",
+    "dish_is_sold_out": "Row-level-security / view helper; cheap lookup. Too cheap to need its own cap.",
+    "food_cred_daily_cap": "Immutable lookup of a configured number; no table access. Too cheap to need its own cap.",
+    "food_cred_default_points": "Immutable lookup of a configured number; no table access. Too cheap to need its own cap.",
+    "food_cred_level_index": "Immutable lookup of a configured number; no table access. Too cheap to need its own cap.",
+    "merchant_can_manage_venue": "Row-level-security helper that returns false for anon; cheap. Too cheap to need its own cap.",
+    "merchant_normalize_availability_flag": "Immutable string helper; no table access. Too cheap to need its own cap.",
+    "merchant_outlet_matches_catalog_link": "Row-level-security helper; cheap indexed lookup. Too cheap to need its own cap."
+  },
+  "edgeFunctions": {}
+}

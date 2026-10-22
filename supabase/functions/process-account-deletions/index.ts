@@ -1,5 +1,6 @@
 // @ts-nocheck
 /* eslint-disable import/no-unresolved */
+import { reportFunctionError, serveWithSentry } from "../_shared/sentry.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.52.0";
 import { timingSafeEqual } from "../_shared/timingSafeEqual.ts";
 
@@ -98,7 +99,7 @@ async function markFailure(
   });
 }
 
-Deno.serve(async (request) => {
+serveWithSentry("process-account-deletions", async (request) => {
   if (request.method !== "POST") {
     return toJson(405, { error: "method_not_allowed" });
   }
@@ -173,6 +174,7 @@ Deno.serve(async (request) => {
 
       results.push({ requestId, userId, status: "completed", removedMedia });
     } catch (error) {
+      await reportFunctionError("process-account-deletions", error, { requestId });
       await markFailure(client, requestId, userId, workerId, error);
       results.push({
         requestId,

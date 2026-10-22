@@ -32,7 +32,7 @@ returns table (
   image_url text
 )
 language sql
-stable
+volatile
 security invoker
 set search_path = public
 as $$
@@ -86,7 +86,7 @@ returns table (
   longitude double precision
 )
 language sql
-stable
+volatile
 security invoker
 set search_path = public, extensions
 as $$
@@ -242,3 +242,16 @@ $$;
 
 revoke all on function public.reorder_popular_visitor_pins(uuid, uuid[]) from public, anon;
 grant execute on function public.reorder_popular_visitor_pins(uuid, uuid[]) to authenticated, service_role;
+
+-- Rate limits (CLAUDE.md rule 10). Volatile read RPCs above so the limiter can count them.
+insert into app_private.request_rate_rules (route, anon_per_minute, user_per_minute, note) values
+  ('rpc/get_venue_summaries', 120, 180, 'stall summaries for open-now checks'),
+  ('rpc/get_item_details', null, 120, 'names and photos for list items'),
+  ('rpc/merchant_set_dishes_availability_flag', null, 60, 'bulk sold-out toggle'),
+  ('rpc/reorder_popular_visitor_pins', null, 30, 'featured visitor reorder')
+on conflict (route) do update
+  set anon_per_minute = excluded.anon_per_minute,
+      user_per_minute = excluded.user_per_minute,
+      note = excluded.note;
+
+notify pgrst, 'reload schema';
