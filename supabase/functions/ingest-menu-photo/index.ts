@@ -315,6 +315,7 @@ serveWithSentry("ingest-menu-photo", async (request) => {
   }
 
   const ocrJobId = crypto.randomUUID();
+  // race-ok: compare-and-set below, the UPDATE only matches the status and attempt count just read
   const { data: processingSubmission, error: claimError } = await client
     .from("menu_photo_submissions")
     .update({
@@ -326,6 +327,7 @@ serveWithSentry("ingest-menu-photo", async (request) => {
     .eq("id", submissionId)
     .eq("submitted_by", callerUserId)
     .in("ocr_status", ["pending", "failed"])
+    .eq("ocr_attempts", Number(submission.ocr_attempts ?? 0))
     .lt("ocr_attempts", 3)
     .select(
       "id, venue_id, building_id, submitted_by, storage_bucket, storage_path, ocr_attempts, ocr_status",

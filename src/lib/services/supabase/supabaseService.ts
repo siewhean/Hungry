@@ -5541,53 +5541,12 @@ export const supabaseService: HungryService = {
       const client = requireSupabaseClient();
       const currentUserId = await getCurrentSupabaseUserId();
       if (!currentUserId) return;
-      const now = new Date().toISOString();
-      const { error: participantError } = await client
-        .from("conversation_participants")
-        .update({ last_read_at: now })
-        .eq("conversation_id", conversationId)
-        .eq("participant_user_id", currentUserId);
-      if (participantError) throw participantError;
-
-      const { data, error } = await client
-        .from("messages")
-        .select("id,conversation_id,sender_user_id")
-        .eq("conversation_id", conversationId)
-        .is("deleted_at", null);
+      // One statement on the server: two tabs marking the same chat read cannot race
+      // into the unique receipt index.
+      const { error } = await client.rpc("mark_conversation_read", {
+        p_conversation_id: conversationId,
+      });
       if (error) throw error;
-      const receiptRows = (Array.isArray(data) ? (data as Row[]) : [])
-        .filter((row) => asString(row.sender_user_id) !== currentUserId)
-        .map((row) => ({
-          message_id: asString(row.id),
-          conversation_id: conversationId,
-          reader_user_id: currentUserId,
-          read_at: now,
-        }))
-        .filter((row) => Boolean(row.message_id));
-      if (receiptRows.length === 0) return;
-      const messageIds = receiptRows
-        .map((row) => row.message_id)
-        .filter((messageId): messageId is string => Boolean(messageId));
-      const { data: existingReceipts, error: existingError } = await client
-        .from("read_receipts")
-        .select("message_id")
-        .eq("conversation_id", conversationId)
-        .eq("reader_user_id", currentUserId)
-        .in("message_id", messageIds);
-      if (existingError) throw existingError;
-
-      const existingMessageIds = new Set(
-        (Array.isArray(existingReceipts) ? (existingReceipts as Row[]) : [])
-          .map((row) => asString(row.message_id))
-          .filter((messageId): messageId is string => Boolean(messageId)),
-      );
-      const missingReceiptRows = receiptRows.filter(
-        (row) => row.message_id && !existingMessageIds.has(row.message_id),
-      );
-      if (missingReceiptRows.length === 0) return;
-
-      const { error: receiptError } = await client.from("read_receipts").insert(missingReceiptRows);
-      if (receiptError) throw receiptError;
     },
 
     subscribeToConversation(conversationId, handlers: ChatSubscriptionHandlers) {
