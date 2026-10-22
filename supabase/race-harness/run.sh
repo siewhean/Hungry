@@ -32,7 +32,7 @@ as_pg() { if [ "$(id -u)" = 0 ]; then su postgres -c "$*"; else bash -c "$*"; fi
 rm -rf "$WORK"
 mkdir -p "$WORK"
 [ "$(id -u)" = 0 ] && chown postgres "$WORK"
-as_pg "$PGBIN/initdb -D '$WORK/data' -A trust >/dev/null"
+as_pg "$PGBIN/initdb -D '$WORK/data' -U postgres -A trust >/dev/null"
 as_pg "$PGBIN/pg_ctl -D '$WORK/data' -o '-p $PORT -k $WORK' -l '$WORK/log' -w start >/dev/null"
 trap 'as_pg "$PGBIN/pg_ctl -D '"'$WORK/data'"' -m immediate stop >/dev/null 2>&1"' EXIT
 
