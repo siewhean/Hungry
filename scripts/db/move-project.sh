@@ -5,6 +5,7 @@
 #   scripts/db/move-project.sh bootstrap   apply every migration to the new project (empty project only)
 #   scripts/db/move-project.sh data        copy rows: public, app_private, auth.users, auth.identities
 #   scripts/db/move-project.sh storage     copy every storage file (needs both service_role keys)
+#   scripts/db/move-project.sh verify-storage   compare storage object counts per bucket, old vs new
 #   scripts/db/move-project.sh secrets     create the account-deletion Vault secrets on the new project
 #   scripts/db/move-project.sh verify      compare row counts and hashes, old vs new
 #
@@ -80,8 +81,8 @@ cmd_storage() {
 
 verify_storage() {
   local a b
-  a="$(src -At -c "select bucket_id || ' ' || count(*) from storage.objects group by 1 order by 1")"
-  b="$(dst -At -c "select bucket_id || ' ' || count(*) from storage.objects group by 1 order by 1")"
+  a="$(src -At -c "select bucket_id || ' ' || count(*) from storage.objects group by bucket_id order by bucket_id")"
+  b="$(dst -At -c "select bucket_id || ' ' || count(*) from storage.objects group by bucket_id order by bucket_id")"
   if [ "$a" = "$b" ]; then say "storage object counts match per bucket ($(echo "$a" | wc -l | tr -d ' ') buckets)"
   else echo "OLD:"; echo "$a"; echo "NEW:"; echo "$b"; die "storage counts differ"; fi
 }
@@ -119,6 +120,7 @@ case "${1:-}" in
   data) cmd_data ;;
   storage) cmd_storage ;;
   secrets) cmd_secrets ;;
+  verify-storage) verify_storage ;;
   verify) cmd_verify ;;
-  *) die "usage: move-project.sh bootstrap|data|storage|secrets|verify" ;;
+  *) die "usage: move-project.sh bootstrap|data|storage|verify-storage|secrets|verify" ;;
 esac

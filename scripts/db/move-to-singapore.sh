@@ -4,6 +4,7 @@
 #   bash ~/move-to-singapore.sh functions    # deploy the 9 Edge Functions to Singapore (needs SUPABASE_ACCESS_TOKEN)
 #   bash ~/move-to-singapore.sh auth         # push Auth settings + email templates from supabase/config.toml, list secret names (needs SUPABASE_ACCESS_TOKEN)
 #   bash ~/move-to-singapore.sh cutover      # phase 2: copy rows + photos, create Vault secrets, verify
+#   bash ~/move-to-singapore.sh finish       # only the photo count check, Vault secrets and verify (after a cutover that copied everything but stopped early)
 # Seoul is only read. Needs, loaded first with `read -s` lines in zsh:
 #   SRC_PGPASSWORD   Seoul prod DB password
 #   DST_PGPASSWORD   Singapore DB password (the one you reset in the dashboard)
@@ -64,5 +65,7 @@ S=scripts/db/move-project.sh
 case "$PHASE" in
   bootstrap) bash $S bootstrap ;;
   cutover) bash $S data && bash $S storage && bash $S secrets && bash $S verify && echo "CUTOVER_COPY_OK" ;;
+  # After a cutover that stopped at the storage count check: rows and photos are already copied.
+  finish) bash $S verify-storage && bash $S secrets && bash $S verify && echo "CUTOVER_COPY_OK" ;;
   *) echo "unknown phase"; exit 1 ;;
 esac
