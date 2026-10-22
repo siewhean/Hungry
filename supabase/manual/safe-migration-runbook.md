@@ -84,6 +84,18 @@ That skips the backup and the row-loss guard, and it shipped 20261022140000 once
 doubt: a row whose `statements` column is filled was applied by Supabase tooling, not by `ship.sh` or psql.
 With it off, Edge Functions are deployed by hand (`supabase functions deploy <name>`).
 
+## Moving to another project or region
+
+Use `scripts/db/move-project.sh` to move production to a new, empty Supabase project (for example Seoul to Singapore). The old project is only read, so it stays a working fallback until you delete it. Set `SRC_*` (old) and `DST_*` (new) as the script header describes, then run in order:
+
+1. `bootstrap` applies every migration to the new project (about 35 minutes over the pooler; no seed data).
+2. `data` copies public, app_private, auth.users and auth.identities in one transaction and rewrites logo URLs to the new project. Run it at cutover, because it replaces whatever the new project holds.
+3. `storage` copies every storage file with both service_role keys, then compares counts per bucket.
+4. `secrets` creates the account-deletion Vault secrets and prints the matching Edge Function secret.
+5. `verify` compares row counts and hashes, old versus new.
+
+By hand, in the dashboard or CLI: deploy the Edge Functions, set their secrets (they are write-only, so copy them from the password manager), recreate the Send Email hook and the Auth settings from `supabase/config.toml`, then point the app's `EXPO_PUBLIC_SUPABASE_URL` and key at the new project and ship a build. Sessions are not copied: everyone signs in again. After cutover, change `PROD_REF` in `scripts/db/common.sh` and `scripts/check-migration-safety.mjs`, and re-run `scripts/db/backup.sh prod`.
+
 ## Undoing
 
 ```bash
