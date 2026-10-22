@@ -1,3 +1,4 @@
+-- smoke: supabase/smoke/api_request_rate_limits.sql
 -- Endpoint rate limiting for the REST API (PostgREST) and the Edge Functions.
 --
 -- Supabase has no per-caller limit on /rest/v1, so before this anyone with the public anon key
@@ -27,16 +28,10 @@
 -- app_private.request_rate_rules ... on conflict). `npm run check:rate-limits` fails CI when an
 -- anon-callable RPC has neither a rule nor an entry in supabase/rate-limit-allowlist.json.
 --
--- ROLLBACK (instant, no data loss):
+-- Rollback: supabase/rollbacks/20261022120000_api_request_rate_limits.down.sql. To switch only the
+-- limiter off at once (nothing else changes):
 --   alter role authenticator reset pgrst.db_pre_request;
 --   notify pgrst, 'reload config';
---   -- then, to remove completely:
---   -- drop function public.app_can_make_ip_request(text, text, integer);
---   -- drop function app_private.check_request_rate();
---   -- drop table app_private.request_rate_counters, app_private.request_rate_rules;
---   -- select cron.unschedule('prune-request-rate-counters');
-
-begin;
 
 create schema if not exists app_private;
 grant usage on schema app_private to anon, authenticated, service_role;
@@ -331,5 +326,3 @@ $$;
 -- Switch it on. PostgREST reads this setting when it reloads its config.
 alter role authenticator set pgrst.db_pre_request = 'app_private.check_request_rate';
 notify pgrst, 'reload config';
-
-commit;
