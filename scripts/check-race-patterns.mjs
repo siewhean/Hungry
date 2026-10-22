@@ -15,7 +15,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
-export const CUTOFF_VERSION = "20261022124500";
+export const CUTOFF_VERSION = "20261022150000";
 
 const LOCKS =
   /pg_advisory_xact_lock|pg_advisory_lock|\bfor\s+(no\s+key\s+)?update\b|\bfor\s+share\b|skip\s+locked|\bon\s+conflict\b/i;

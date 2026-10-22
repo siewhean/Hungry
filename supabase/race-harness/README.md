@@ -9,7 +9,7 @@ RACE_SHOW_BEFORE=1 npm run test:races                # also shows the old bodies
 ```
 
 How it works: `extract_functions.py` pulls the function bodies from `supabase/migrations`
-as they were before `20261022124500_race_condition_fixes.sql`, `stubs.sql` supplies minimal
+as they were before `20261022150000_race_condition_fixes.sql`, `stubs.sql` supplies minimal
 stand-in tables, then `run.sh` applies the migration, runs each scenario (session A holds its
 transaction open, session B starts half a second later), and checks the outcome. It also
 applies the down migration and checks every function body is restored, then re-applies up.

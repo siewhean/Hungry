@@ -1,4 +1,4 @@
--- Down for 20261022124500_race_condition_fixes.sql.
+-- Down for 20261022150000_race_condition_fixes.sql.
 -- Takes the locks out again (each patch is reverted to the text it replaced) and drops the
 -- objects the up migration added. No data is touched. The app and the menu OCR function now
 -- call public.mark_conversation_read and public.bump_dish_draft_confidence, so roll back the

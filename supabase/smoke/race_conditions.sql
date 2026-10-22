@@ -1,4 +1,4 @@
--- Smoke checks for 20261022124500_race_condition_fixes.sql.
+-- Smoke checks for 20261022150000_race_condition_fixes.sql.
 -- Structural checks that the live database carries every lock added by the migration
 -- (the patched functions keep their `race:` marker comments), plus grants on the new RPCs.
 -- Two-session behaviour is covered by supabase/race-harness/run.sh. Read only.

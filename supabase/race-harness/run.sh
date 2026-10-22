@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Two-session concurrency checks for supabase/migrations/20261022124500_race_condition_fixes.sql.
+# Two-session concurrency checks for supabase/migrations/20261022150000_race_condition_fixes.sql.
 #
 # Builds a throwaway Postgres cluster with minimal stand-in tables, loads the function bodies
 # as they were BEFORE the fix migration, then replays each race with two overlapping
@@ -16,7 +16,7 @@
 set -uo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-MIGRATION=20261022124500_race_condition_fixes.sql
+MIGRATION=20261022150000_race_condition_fixes.sql
 WORK="${RACE_HARNESS_DIR:-/var/tmp/hungry-race-harness}"
 PORT="${RACE_HARNESS_PORT:-5544}"
 PGBIN="${PGBIN:-$(ls -d /usr/lib/postgresql/*/bin 2>/dev/null | sort -V | tail -1)}"
