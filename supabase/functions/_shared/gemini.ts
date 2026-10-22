@@ -1,6 +1,11 @@
 // Shared by the tag-dishes and mood-search Edge Functions and scripts/taste-answer-key-eval.mjs.
 type JsonObject = Record<string, unknown>;
 
+// Busy models answer 429 or 503 for a moment; a short wait and retry usually gets through.
+const RETRY_STATUSES = new Set([429, 500, 502, 503, 504]);
+const MAX_ATTEMPTS = 4;
+const RETRY_DELAYS_MS = [1000, 2500, 5000];
+
 // Gemini wants upper-case type names and rejects additionalProperties, so convert a plain JSON schema.
 function toGeminiSchema(schema: unknown): unknown {
   if (Array.isArray(schema)) return schema.map(toGeminiSchema);
@@ -23,25 +28,31 @@ export async function generateJson(options: {
   schema: unknown;
   maxOutputTokens: number;
 }): Promise<JsonObject | null> {
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${options.model}:generateContent`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": options.apiKey },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: options.system }] },
-        contents: [{ role: "user", parts: [{ text: options.user }] }],
-        generationConfig: {
-          responseMimeType: "application/json",
-          responseSchema: toGeminiSchema(options.schema),
-          maxOutputTokens: options.maxOutputTokens,
-          temperature: 0,
-        },
-      }),
-    },
-  );
-  if (!response.ok) {
-    throw new Error(`Gemini request failed with status ${response.status}`);
+  let response: Response | undefined;
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
+    response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${options.model}:generateContent`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": options.apiKey },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: options.system }] },
+          contents: [{ role: "user", parts: [{ text: options.user }] }],
+          generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: toGeminiSchema(options.schema),
+            maxOutputTokens: options.maxOutputTokens,
+            temperature: 0,
+          },
+        }),
+      },
+    );
+    if (response.ok || !RETRY_STATUSES.has(response.status) || attempt === MAX_ATTEMPTS - 1) break;
+    await new Promise((resolve) => setTimeout(resolve, RETRY_DELAYS_MS[attempt]));
+  }
+  if (!response || !response.ok) {
+    const detail = response ? (await response.text().catch(() => "")).slice(0, 200) : "";
+    throw new Error(`Gemini request failed with status ${response?.status}: ${detail}`);
   }
   const body = (await response.json()) as JsonObject;
   const candidate = (body.candidates as JsonObject[] | undefined)?.[0];
