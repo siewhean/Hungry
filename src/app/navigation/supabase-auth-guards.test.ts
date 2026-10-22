@@ -72,7 +72,7 @@ test("Supabase auth responses hydrate the app profile store", () => {
   );
 });
 
-test("Supabase auth bootstrap fails closed when persisted metadata cannot verify a session", () => {
+test("Supabase auth bootstrap preserves restored sessions across transient startup failures", () => {
   const bootstrap = read("src/hooks/useAppBootstrap.ts");
   const sessionStore = read("src/store/useSessionStore.ts");
 
@@ -80,14 +80,20 @@ test("Supabase auth bootstrap fails closed when persisted metadata cannot verify
     sessionStore,
     /partialize: \(state\) => \(\{[\s\S]*isAuthenticated: state\.isAuthenticated[\s\S]*authenticatedUserId: state\.authenticatedUserId[\s\S]*authDataSource: state\.authDataSource/,
   );
-  assert.doesNotMatch(bootstrap, /preserveRestoredAuthState/);
+  assert.match(bootstrap, /const restoredSession = useSessionStore\.getState\(\)/);
+  assert.match(bootstrap, /function preserveRestoredAuthState/);
   assert.match(
     bootstrap,
-    /if \(!client\) \{\s*applyAuthStateFromSession\(\{ isAuthenticated: false, userId: null \}\);/,
+    /restoredSession\.isAuthenticated && restoredSession\.authenticatedUserId/,
   );
   assert.match(
     bootstrap,
-    /\.catch\(\(\) => \{[\s\S]*applyAuthStateFromSession\(\{ isAuthenticated: false, userId: null \}\);/,
+    /applyAuthStateFromSession\(\{\s*isAuthenticated: true,\s*userId: restoredSession\.authenticatedUserId,\s*\}\)/,
+  );
+  // No Supabase client means no stored session to keep.
+  assert.match(
+    bootstrap,
+    /if \(!client\) \{\s*applyAuthStateFromSession\(\{ isAuthenticated: false, userId: null \}\);/,
   );
 });
 
@@ -115,19 +121,54 @@ test("explicit mock data source keeps user-mode bootstrap on mock services for d
   assert.match(bootstrap, /setSupabaseServiceProvider\(\)/);
 });
 
-test("Supabase null-session bootstrap events clear stale persisted app metadata", () => {
+test("Supabase null-session bootstrap keeps a restored session only on a network failure", () => {
   const bootstrap = read("src/hooks/useAppBootstrap.ts");
 
-  // A missing, expired or revoked session fails closed (no "zombie" signed-in state).
+  // An expired/revoked session clears local auth (no "zombie" signed-in state);
+  // only a retryable network failure keeps the restored session.
   assert.match(bootstrap, /\.then\(\(\{ data, error \}\) =>/);
-  assert.doesNotMatch(bootstrap, /preserveRestoredAuthState/);
+  assert.match(bootstrap, /name === "AuthRetryableFetchError"/);
   assert.match(
     bootstrap,
-    /const user = data\.session\?\.user;\s*if \(!user\) \{\s*applyAuthStateFromSession\(\{ isAuthenticated: false, userId: null \}\);/,
+    /const user = data\.session\?\.user;\s*if \(!user\) \{[\s\S]*?if \(isRetryableAuthError\(error\) && preserveRestoredAuthState\(applyAuthStateFromSession\)\) \{\s*return;\s*\}\s*applyAuthStateFromSession\(\{ isAuthenticated: false, userId: null \}\);/,
+  );
+  assert.match(
+    bootstrap,
+    /\.catch\(\(\) => \{[\s\S]*?if \(preserveRestoredAuthState\(applyAuthStateFromSession\)\) \{\s*return;\s*\}/,
   );
   assert.match(bootstrap, /client\.auth\.onAuthStateChange\(\(event, session\) =>/);
   assert.match(
     bootstrap,
     /if \(event === "INITIAL_SESSION"\) \{\s*return;\s*\}[\s\S]*?applyAuthStateFromSession\(\{\s*isAuthenticated: false,\s*userId: null,\s*sessionExpired: event === "SIGNED_OUT",\s*\}\);/,
+  );
+});
+
+test("launch restore: offline and timeout keep the session, a definite auth failure signs out", () => {
+  const bootstrap = read("src/hooks/useAppBootstrap.ts");
+  const restore = bootstrap.slice(
+    bootstrap.indexOf(".finishPendingSignOut()"),
+    bootstrap.indexOf("client.auth.onAuthStateChange"),
+  );
+
+  // Offline: a refresh that failed for network reasons (status 0) is retryable.
+  assert.match(bootstrap, /return name === "AuthRetryableFetchError" \|\| status === 0;/);
+  // Timeout: after 5 s the race resolves as that same retryable network error.
+  assert.match(bootstrap, /const AUTH_RESTORE_TIMEOUT_MS = 5000;/);
+  assert.match(
+    bootstrap,
+    /error: \{ name: "AuthRetryableFetchError", status: 0 \}[\s\S]*?AUTH_RESTORE_TIMEOUT_MS/,
+  );
+  assert.match(restore, /\.then\(\(\) => getSessionWithTimeout\(client\)\)/);
+  // A definite failure (invalid/expired/revoked refresh token, 400/401) is not retryable:
+  // the user is signed out, and RootNavigator sends a signed-out user to Login.
+  assert.doesNotMatch(restore, /if \(error\) throw error;/);
+  assert.match(
+    restore,
+    /isRetryableAuthError\(error\) && preserveRestoredAuthState[\s\S]*?\}\s*applyAuthStateFromSession\(\{ isAuthenticated: false, userId: null \}\);/,
+  );
+  // A sign-out the user started is finished first and never undone by a restore.
+  assert.ok(
+    restore.indexOf("signOutPending") < restore.indexOf("preserveRestoredAuthState"),
+    "the pending sign-out check runs before any restored session is kept",
   );
 });

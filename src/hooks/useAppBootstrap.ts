@@ -77,6 +77,9 @@ async function syncMerchantAccountForSession(isCurrent: () => boolean): Promise<
 }
 
 type BrowserIdleHandle = number;
+type ApplyAuthStateFromSession = ReturnType<
+  typeof useSessionStore.getState
+>["applyAuthStateFromSession"];
 
 function isUuidLikeAuthUserId(value?: string | null): value is string {
   return Boolean(
@@ -102,9 +105,17 @@ function shouldWarmLegacyRepositoryCache() {
   return process.env.EXPO_PUBLIC_HUNGRY_LEGACY_CACHE_WARMUP === "1";
 }
 
+// supabase-js reports a refresh that failed for network reasons as
+// AuthRetryableFetchError (status 0). Only then is "no session" not final.
+function isRetryableAuthError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const { name, status } = error as { name?: unknown; status?: unknown };
+  return name === "AuthRetryableFetchError" || status === 0;
+}
+
 // getSession() may try a token refresh, and offline that can hang long after Splash should
-// have moved on. After this long the restore fails closed (no unverified signed-in state),
-// and the auth listener corrects it when the answer arrives.
+// have moved on. After this long the restored state is kept as if the refresh had failed
+// for network reasons, and the auth listener corrects it when the answer arrives.
 const AUTH_RESTORE_TIMEOUT_MS = 5000;
 
 function getSessionWithTimeout(client: NonNullable<ReturnType<typeof getSupabaseClient>>) {
@@ -123,6 +134,22 @@ function getSessionWithTimeout(client: NonNullable<ReturnType<typeof getSupabase
     );
   });
   return Promise.race([client.auth.getSession(), timeout]).finally(() => clearTimeout(timer));
+}
+
+function preserveRestoredAuthState(applyAuthStateFromSession: ApplyAuthStateFromSession): boolean {
+  const restoredSession = useSessionStore.getState();
+  const userId = restoredSession.authenticatedUserId;
+  const isValidUuid = isUuidLikeAuthUserId(userId);
+
+  if (restoredSession.isAuthenticated && restoredSession.authenticatedUserId && isValidUuid) {
+    applyAuthStateFromSession({
+      isAuthenticated: true,
+      userId: restoredSession.authenticatedUserId,
+    });
+    return true;
+  }
+
+  return false;
 }
 
 export function useAppBootstrap() {
@@ -285,7 +312,6 @@ export function useAppBootstrap() {
       .then(() => getSessionWithTimeout(client))
       .then(({ data, error }) => {
         if (!active) return;
-        if (error) throw error;
         if (useSessionStore.getState().signOutPending) {
           // The stored session could not be cleared; stay signed out in the app.
           applyAuthStateFromSession({ isAuthenticated: false, userId: null });
@@ -293,6 +319,12 @@ export function useAppBootstrap() {
         }
         const user = data.session?.user;
         if (!user) {
+          // No session is final (expired or revoked) unless the refresh only
+          // failed for network reasons; otherwise a stale local session would
+          // look signed in while every write fails.
+          if (isRetryableAuthError(error) && preserveRestoredAuthState(applyAuthStateFromSession)) {
+            return;
+          }
           applyAuthStateFromSession({ isAuthenticated: false, userId: null });
           return;
         }
@@ -319,9 +351,18 @@ export function useAppBootstrap() {
       })
       .catch(() => {
         if (!active) return;
-        // A storage/session read failure is not proof of a valid session. Fail
-        // closed instead of trusting the separately persisted metadata store.
-        applyAuthStateFromSession({ isAuthenticated: false, userId: null });
+        // Network/storage failures during bootstrap should not force a logout
+        // when a prior local session was already restored. The next successful
+        // auth event will reconcile Supabase state; explicit sign-out still
+        // clears both Supabase tokens and the local session store.
+        if (preserveRestoredAuthState(applyAuthStateFromSession)) {
+          return;
+        }
+
+        applyAuthStateFromSession({
+          isAuthenticated: false,
+          userId: null,
+        });
       });
 
     const { data: subscription } = client.auth.onAuthStateChange((event, session) => {
