@@ -9,7 +9,7 @@ The free Supabase plan has **no managed backups or point-in-time restore**, so t
 
 ## One-time setup (owner)
 
-1. The staging project exists: `hungry-staging`, ref `uuylnktiipkmcweyqnpd`, Free plan, same region as production (ap-northeast-2). Reset its database password in the dashboard (Project Settings > Database) before first use.
+1. The staging project exists: `hungry-staging`, ref `uuylnktiipkmcweyqnpd`, Free plan, in ap-northeast-2 (Seoul); production moved to Singapore (ap-southeast-1) on 2026-10-22. Reset its database password in the dashboard (Project Settings > Database) before first use.
    Never copy production keys, secrets or user data into it.
 2. In a Terminal, from the Hungry repo, set the connection details for this shell (zsh). Use the
    session/transaction pooler URL from Project Settings > Database; the URL has no password.
@@ -17,7 +17,7 @@ The free Supabase plan has **no managed backups or point-in-time restore**, so t
 
    ```bash
    export STAGING_DB_URL='postgresql://postgres.uuylnktiipkmcweyqnpd@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres?sslmode=require&connect_timeout=15'
-   export PROD_DB_URL='postgresql://postgres.yrlxjeovwslirseajomz@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres?sslmode=require&connect_timeout=15'
+   export PROD_DB_URL='postgresql://postgres.frluxwpqqyomiqmjzavd@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?sslmode=require&connect_timeout=15'
    ```
 
    Then, each on its own line (pasting them in a block swallows the next line):
