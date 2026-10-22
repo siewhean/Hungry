@@ -4,6 +4,7 @@ Called by move-project.sh storage with the path to a JSON list of
 {bucket, name, type, cache}. Reads SRC_API_URL, SRC_SERVICE_KEY, DST_API_URL, DST_SERVICE_KEY
 from the environment. Safe to re-run: uploads use x-upsert.
 """
+import base64
 import json
 import os
 import ssl
@@ -15,8 +16,8 @@ from concurrent.futures import ThreadPoolExecutor
 
 SRC = os.environ["SRC_API_URL"].rstrip("/")
 DST = os.environ["DST_API_URL"].rstrip("/")
-SRC_KEY = os.environ["SRC_SERVICE_KEY"]
-DST_KEY = os.environ["DST_SERVICE_KEY"]
+SRC_KEY = os.environ["SRC_SERVICE_KEY"].strip()
+DST_KEY = os.environ["DST_SERVICE_KEY"].strip()
 TRIES = 3
 
 
@@ -40,8 +41,23 @@ TLS = tls_context()
 
 
 def request(req):
-    with urllib.request.urlopen(req, timeout=120, context=TLS) as resp:
-        return resp.read()
+    try:
+        with urllib.request.urlopen(req, timeout=120, context=TLS) as resp:
+            return resp.read()
+    except urllib.error.HTTPError as err:
+        raise RuntimeError(f"HTTP {err.code} from {req.full_url}: {err.read()[:300].decode('utf-8', 'replace')}") from None
+
+
+def check_key(label, base, key):
+    """Stop early, with a plain message, when a pasted service_role key is not this project's (never prints the key)."""
+    parts = key.split(".")
+    try:
+        claims = json.loads(base64.urlsafe_b64decode(parts[1] + "=" * (-len(parts[1]) % 4)))
+    except (IndexError, ValueError):
+        sys.exit(f"{label} is not a legacy service_role key (a JWT starting eyJ, three parts). Copy it again from Project Settings > API Keys > Legacy; it is {len(key)} characters long here.")
+    ref = urllib.parse.urlparse(base).hostname.split(".")[0]
+    if claims.get("role") != "service_role" or claims.get("ref") != ref:
+        sys.exit(f"{label} is a {claims.get('role')} key for project {claims.get('ref')}, but this step needs the service_role key for {ref}.")
 
 
 def copy_one(obj):
@@ -67,7 +83,7 @@ def copy_one(obj):
                 },
             ))
             return None
-        except (urllib.error.URLError, TimeoutError) as err:
+        except (urllib.error.URLError, TimeoutError, RuntimeError) as err:
             last = err
     return f"{bucket}/{name}: {last}"
 
@@ -98,6 +114,8 @@ def ensure_buckets():
 
 
 def main():
+    check_key("SRC_SERVICE_KEY", SRC, SRC_KEY)
+    check_key("DST_SERVICE_KEY", DST, DST_KEY)
     ensure_buckets()
     with open(sys.argv[1], encoding="utf-8") as f:
         objects = json.load(f)
