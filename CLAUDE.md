@@ -95,6 +95,8 @@ Treat these as high blast-radius. Read before editing, patch narrowly, and run a
 8. Keep final responses short: what changed, what passed, what remains.
 10. Rate limits: every new RPC the anon role can execute, every new table or RPC a signed-in user can hit in a loop, and every new Edge Function needs a cap (`app_private.request_rate_rules` row in a migration; Edge Functions call `app_can_make_ip_request` / `app_can_make_user_request`) or an entry with a reason in `supabase/rate-limit-allowlist.json`. `npm run check:rate-limits` fails CI otherwise. Details in `supabase/README.md` (Rate limits).
 
+11. Error tracking is mandatory (enforced by `src/lib/monitoring/error-reporting-contracts.test.ts` in CI): every Edge Function is served with `serveWithSentry("<name>", handler)` from `supabase/functions/_shared/sentry.ts` (never bare `Deno.serve`), handled failures call `reportFunctionError`, and screens that catch errors call `reportError` from `@/lib/monitoring/reportError`. Do not add a screen to `screen-error-reporting-baseline.json`; the list only shrinks.
+
 ---
 
 ## 5. Verification Budget

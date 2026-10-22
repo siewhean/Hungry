@@ -199,7 +199,7 @@ test("ingest-menu-photo requires auth and verifies submission ownership", () => 
   assert.match(source, /ALLOWED_OCR_IMAGE_TYPES/);
   assert.match(source, /assertValidOcrImageType\(imageResponse\)/);
   assert.match(source, /Processing failed\. Please try again\./);
-  assert.match(source, /console\.error\("OCR pipeline error"/);
+  assert.match(source, /reportFunctionError\("ingest-menu-photo", error/);
   assert.doesNotMatch(source, /ocr_error: message\.slice/);
   assert.match(source, /function bytesToBase64\(bytes: Uint8Array\)/);
   assert.match(source, /bytesToBase64\(imageBytes\)/);
