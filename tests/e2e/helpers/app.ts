@@ -147,10 +147,20 @@ export async function createEmailAccountFromScratch(page: Page, prefix: string) 
   await expect(page.getByRole("button", { name: "Get started" })).toBeVisible({ timeout: 60_000 });
   await page.getByRole("button", { name: "Sign in to existing account" }).click();
   await page.getByRole("button", { name: "Create account" }).click();
-  await page.getByLabel("Name shown on your reviews").fill(user.name);
-  await page.getByLabel("Email address", { exact: true }).fill(user.email);
-  await page.getByLabel("Create password", { exact: true }).fill(user.password);
-  await page.getByRole("button", { name: "Create account", exact: true }).click();
+  // Login stays mounted (hidden) under SignUp, so pick the visible fields.
+  await page.getByLabel("Name shown on your reviews").filter({ visible: true }).fill(user.name);
+  await page
+    .getByLabel("Email address", { exact: true })
+    .filter({ visible: true })
+    .fill(user.email);
+  await page
+    .getByLabel("Create password", { exact: true })
+    .filter({ visible: true })
+    .fill(user.password);
+  await page
+    .getByRole("button", { name: "Create account", exact: true })
+    .filter({ visible: true })
+    .click();
   await expect(page.getByText("Verify your email", { exact: true }).first()).toBeVisible();
   await expect(page.getByText(user.email)).toBeVisible();
   await page.getByRole("button", { name: "I've confirmed my email" }).click();

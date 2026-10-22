@@ -176,36 +176,23 @@ export function LoginScreen({ navigation, route }: Props) {
         title={route.params?.title ?? AUTH_COPY.login.title}
         compact
         footer={
-          <View style={{ alignItems: "center", gap: spacing[1] }}>
-            <View
-              style={{
-                alignItems: "center",
-                flexDirection: "row",
-                justifyContent: "center",
-                marginTop: spacing[2],
-              }}
-            >
-              <AppText tone="secondary">{AUTH_COPY.login.footerPrompt}</AppText>
-              <Pressable
-                accessible
-                accessibilityRole="button"
-                accessibilityLabel={AUTH_COPY.login.footerAction}
-                accessibilityHint="Opens the account creation screen"
-                onPress={() => navigation.navigate("SignUp")}
-                hitSlop={8}
-                style={{ justifyContent: "center", minHeight: 44 }}
-              >
-                <AppText variant="bodyBold" tone="accent">
-                  {AUTH_COPY.login.footerAction}
-                </AppText>
-              </Pressable>
-            </View>
+          <View
+            style={{
+              alignItems: "center",
+              flexDirection: "row",
+              justifyContent: "center",
+              marginTop: spacing[2],
+            }}
+          >
+            <AppText tone="secondary">{AUTH_COPY.login.footerPrompt}</AppText>
             <Pressable
               accessible
               accessibilityRole="button"
               accessibilityLabel={AUTH_COPY.login.footerAction}
               accessibilityHint="Opens the account creation screen"
               onPress={() => navigation.navigate("SignUp")}
+              hitSlop={8}
+              style={{ justifyContent: "center", minHeight: 44 }}
             >
               <AppText variant="bodyBold" tone="accent">
                 {AUTH_COPY.login.footerAction}

@@ -14,7 +14,7 @@ test.describe("chat", () => {
     await startOnboardedMockSession(page);
     await clickDevButton(page, "Home", "Core app flow");
 
-    await page.getByRole("button", { name: "Open activity inbox" }).click();
+    await page.getByTestId("home-activity-inbox-button").filter({ visible: true }).click();
     await expect(page.getByTestId("activity-tab-updates").first()).toBeVisible();
     await page.getByRole("tab", { name: "Messages" }).click();
     await expect(page.getByRole("button", { name: /Open chat with/i }).first()).toBeVisible();

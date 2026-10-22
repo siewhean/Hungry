@@ -1087,7 +1087,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     borderColor: headerButtonBorderColor,
                   }}
                 />
-              ) : null}{" "}
+              ) : null}
             </View>
           </View>
           <ScrollView
@@ -1208,7 +1208,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   }
                   isAddingToList={detailSaveActions.isAddingToPortfolio}
                 />
-              ) : null}{" "}
+              ) : null}
               {/* Follow: a guest's tap goes through sign-in. */}
               {showDeferredDetailControls && venue ? (
                 <FollowStallButton
@@ -1788,7 +1788,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
               }}
               onShareCompleted={recordMerchantShare}
             />
-          ) : null}{" "}
+          ) : null}
           {detailSaveActions.saveToListSheet}
         </View>
       </SafeAreaView>

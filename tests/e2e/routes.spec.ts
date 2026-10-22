@@ -8,7 +8,7 @@ import {
 
 const ROUTE_SMOKES = [
   { label: "Home", expectedText: "Chicken Rice" },
-  { label: "Discover", expectedText: "Popular right now" },
+  { label: "Discover", expectedText: "Dishes near you" },
   { label: "Search", expectedPlaceholder: "Laksa, satay, Tian Tian..." },
   { label: "Dish", expectedText: "Chicken Rice" },
   { label: "Stall", expectedText: "Tian Tian Chicken Rice" },
