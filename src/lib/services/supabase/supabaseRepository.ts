@@ -1128,6 +1128,30 @@ export async function getVenueByIdViaRpc(venueId: string): Promise<VenueSummary 
   return rows?.[0] ? mapRpcVenue(rows[0]) : undefined;
 }
 
+/**
+ * Stall summaries for many ids in one get_venue_summaries call (no menus). Undefined when the
+ * RPC is unavailable, so the caller can fall back to one get_venue_detail per stall.
+ */
+export async function getVenuesByIdsViaRpc(
+  venueIds: string[],
+): Promise<VenueSummary[] | undefined> {
+  const ids = [...new Set(venueIds)].slice(0, 50);
+  if (ids.length === 0) return [];
+  const rows = await rpcRows("get_venue_summaries", { p_venue_ids: ids });
+  return rows?.map(mapRpcVenue);
+}
+
+/** Name, photo, stall and price for many dishes and stalls in one get_item_details call. */
+export async function getItemDetailsViaRpc(input: {
+  dishIds: string[];
+  stallIds: string[];
+}): Promise<Row[] | undefined> {
+  const dishIds = [...new Set(input.dishIds)].slice(0, 200);
+  const stallIds = [...new Set(input.stallIds)].slice(0, 200);
+  if (dishIds.length === 0 && stallIds.length === 0) return [];
+  return rpcRows("get_item_details", { p_dish_ids: dishIds, p_stall_ids: stallIds });
+}
+
 export async function listBuildingsViaRpc(
   lat?: number,
   lng?: number,

@@ -101,6 +101,7 @@ serveWithSentry("tag-dishes", async (request) => {
   }
 
   const summary = { tagged: 0, auto_applied: 0, needs_review: 0, skipped: 0, failed: 0 };
+  // n-plus-one-ok: the model call per dish dominates; writing each result as it arrives keeps progress if the function times out.
   for (const dish of (dishes ?? []) as JsonObject[]) {
     try {
       const result = await tagDish(anthropic, dish);

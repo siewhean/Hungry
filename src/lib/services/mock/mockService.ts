@@ -1747,6 +1747,35 @@ export const hungryService: HungryService = {
       return resolve(venues.filter((v) => v.buildingId === buildingId));
     },
 
+    async getVenuesByIds(ids) {
+      const wanted = new Set(ids);
+      return resolve(venues.filter((v) => wanted.has(v.id)));
+    },
+
+    async getItemDetails({ dishIds, stallIds }) {
+      const dishRows = dishIds.flatMap((id) => {
+        const dish = mockRepository.getDishById(id);
+        return dish
+          ? [
+              {
+                dishId: id,
+                name: dish.name,
+                stallName: dish.venueName,
+                price: dish.price,
+                imageUrl: dish.imageUrl || undefined,
+              },
+            ]
+          : [];
+      });
+      const stallRows = stallIds.flatMap((id) => {
+        const venue = mockRepository.getVenueById(id);
+        return venue
+          ? [{ stallId: id, name: venue.name, stallName: venue.name, imageUrl: venue.imageUrl }]
+          : [];
+      });
+      return resolve([...dishRows, ...stallRows]);
+    },
+
     async getDish(id) {
       const dish = dishes.find((d) => d.id === id);
       if (!dish) return resolve(undefined);
@@ -3191,6 +3220,18 @@ export const hungryService: HungryService = {
       return resolve(isSoldOut);
     },
 
+    async setDishesSoldOut(outletId, dishIds, soldOut) {
+      const menu = getMerchantMenu(outletId);
+      const changed: string[] = [];
+      for (const dish of menu) {
+        if (!dishIds.includes(dish.id)) continue;
+        dish.availabilityFlags = mergeAvailabilityFlag(dish.availabilityFlags, "Sold out", soldOut);
+        syncMerchantDishToUserCatalog(outletId, dish);
+        changed.push(dish.id);
+      }
+      return resolve(changed);
+    },
+
     async toggleFeatured(outletId, dishId) {
       const menu = getMerchantMenu(outletId);
       const dish = menu.find((menuDish) => menuDish.id === dishId);
@@ -3243,6 +3284,20 @@ export const hungryService: HungryService = {
       syncMerchantDishToUserCatalog(draft.outletId, acceptedDish);
       draft.status = "accepted";
       return resolve(clone(acceptedDish));
+    },
+
+    async acceptOCRDrafts(draftIds) {
+      const acceptedIds: string[] = [];
+      const failedIds: string[] = [];
+      for (const draftId of draftIds) {
+        try {
+          await this.acceptOCRDraft(draftId);
+          acceptedIds.push(draftId);
+        } catch {
+          failedIds.push(draftId);
+        }
+      }
+      return { acceptedIds, failedIds };
     },
 
     async rejectOCRDraft(draftId) {
