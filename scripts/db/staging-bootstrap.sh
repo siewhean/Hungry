@@ -8,7 +8,9 @@ set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 load_env staging
 
-n="$(psql_db -At -c "select count(*) from supabase_migrations.schema_migrations" 2>/dev/null || echo 0)"
+# A fresh Supabase project has no migration ledger yet; create it the way the CLI does.
+psql_db -q -c "create schema if not exists supabase_migrations; create table if not exists supabase_migrations.schema_migrations (version text not null primary key, statements text[], name text);" >/dev/null
+n="$(psql_db -At -c "select count(*) from supabase_migrations.schema_migrations")"
 [ "$n" = 0 ] || die "staging already has $n migrations recorded. Bootstrap is for an empty project."
 
 for f in "$REPO_ROOT"/supabase/migrations/*.sql; do

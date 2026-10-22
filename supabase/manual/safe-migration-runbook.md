@@ -9,14 +9,14 @@ The free Supabase plan has **no managed backups or point-in-time restore**, so t
 
 ## One-time setup (owner)
 
-1. Create a second Supabase project, `hungry-staging`, on the Free plan in the same region as production.
+1. The staging project exists: `hungry-staging`, ref `uuylnktiipkmcweyqnpd`, Free plan, same region as production (ap-northeast-2). Reset its database password in the dashboard (Project Settings > Database) before first use.
    Never copy production keys, secrets or user data into it.
 2. In a Terminal, from the Hungry repo, set the connection details for this shell (zsh). Use the
    session/transaction pooler URL from Project Settings > Database; the URL has no password.
    Port 6543 worked from your network, 5432 timed out.
 
    ```bash
-   export STAGING_DB_URL='postgresql://postgres.<staging-ref>@aws-0-<region>.pooler.supabase.com:6543/postgres?sslmode=require&connect_timeout=15'
+   export STAGING_DB_URL='postgresql://postgres.uuylnktiipkmcweyqnpd@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres?sslmode=require&connect_timeout=15'
    export PROD_DB_URL='postgresql://postgres.yrlxjeovwslirseajomz@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres?sslmode=require&connect_timeout=15'
    ```
 
@@ -72,7 +72,7 @@ scripts/db/ship.sh <version>
 #    - prints the backup folder and the undo command
 ```
 
-`rehearse.sh` leaves staging with the migration applied, which is what prod will look like after `ship.sh`.
+`rehearse.sh` first applies to staging any migration that prod already has (read from prod's ledger, read-only), then rehearses, then runs the down once more so staging ends at prod's state (`KEEP_APPLIED=1` skips that last step). That makes rehearsals independent: two PRs can each be rehearsed without waiting for the other to ship. If prod has a migration your branch lacks, it stops and tells you to merge `origin/main` first.
 
 ## Undoing
 
