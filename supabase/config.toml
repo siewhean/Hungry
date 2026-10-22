@@ -22,10 +22,8 @@ additional_redirect_urls = [
   "hungry://auth/reset",
   "hungry://auth/oauth",
   "hungry://auth/callback",
-  # Website. The Vercel preview wildcards (hungry-*-...) are gone: production sign-in
-  # must not redirect to a preview deployment (medium-low decision 2).
-  "https://hungry-siewheans-projects.vercel.app/",
-  "https://hungry-siewheans-projects.vercel.app/**",
+  # No hungry-*.vercel.app addresses: production sign-in must not redirect to a Vercel
+  # deployment (medium-low decision 2). Add usehungry.com URLs here if the website needs them.
 ]
 # Matches MIN_PASSWORD_LENGTH in src/features/auth/validation.ts. Leaked-password
 # (HIBP) protection has no config.toml key; it is a dashboard setting.
