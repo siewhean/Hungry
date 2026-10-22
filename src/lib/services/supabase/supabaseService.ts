@@ -4057,6 +4057,8 @@ export const supabaseService: HungryService = {
 
     async getUserReviews(userId, page) {
       const client = requireSupabaseClient();
+      // Placeholder ids such as the local "guest-user" are not profile rows (and fail the uuid cast).
+      if (!UUID_PATTERN.test(userId)) return [];
       const viewerId = await getCurrentSupabaseUserId();
       const limit = Math.min(Math.max(page?.limit ?? USER_REVIEWS_PAGE_SIZE, 1), 500);
       const offset = Math.max(page?.offset ?? 0, 0);
@@ -4708,6 +4710,8 @@ export const supabaseService: HungryService = {
 
     async listUserPosts(userId: string, page?: { limit?: number; offset?: number }) {
       const client = requireSupabaseClient();
+      // Placeholder ids such as the local "guest-user" are not author rows (and fail the uuid cast).
+      if (!UUID_PATTERN.test(userId)) return [];
       return fetchPublishedPostBites(client, page?.limit ?? USER_POSTS_PAGE_SIZE, {
         authorId: userId,
         offset: page?.offset ?? 0,
@@ -5213,6 +5217,8 @@ export const supabaseService: HungryService = {
 
     async listFollowing(userId: string, page?: { limit?: number; offset?: number }) {
       const client = requireSupabaseClient();
+      // The RPC is authenticated-only: a guest, or the local "guest-user" id, has no Following list.
+      if (!UUID_PATTERN.test(userId) || !(await getCurrentSupabaseUserId())) return [];
       const { data, error } = await client.rpc("list_user_following", {
         p_user_id: userId,
         p_limit: page?.limit ?? 100,
@@ -5301,6 +5307,8 @@ export const supabaseService: HungryService = {
 
     async getFollowRequestCount() {
       const client = requireSupabaseClient();
+      // Authenticated-only RPC: a guest has no incoming follow requests.
+      if (!(await getCurrentSupabaseUserId())) return 0;
       const { data, error } = await client.rpc("count_incoming_follow_requests");
       if (error) throw error;
       return asNumber(data) ?? 0;

@@ -179,6 +179,8 @@ function syncFollowStateFromServer(
   options?: { oncePerLaunch?: boolean },
 ): void {
   if (!userId) return;
+  // Following list is authenticated-only; skip placeholder ids such as the local "guest-user".
+  if (getConfiguredDataSource() === "supabase" && !isUuidLike(userId)) return;
   if (options?.oncePerLaunch && followStateSyncedUserId === userId) return;
   followStateSyncedUserId = userId;
   const { useSocialStore } = require("./useSocialStore") as typeof import("./useSocialStore");

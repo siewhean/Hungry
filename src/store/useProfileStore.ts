@@ -405,6 +405,8 @@ export const useProfileStore = create<ProfileState>()(
       foodHistory: [],
       loadFoodHistory: async () => {
         const userId = get().profile.id;
+        // The history RPC is authenticated-only; the local "guest-user" profile has none.
+        if (getConfiguredDataSource() === "supabase" && !isUuidLikeProfileId(userId)) return;
         try {
           const rows = await getHungryService().recommendations.getFoodHistory();
           if (get().profile.id !== userId) return;
