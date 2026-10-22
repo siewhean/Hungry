@@ -21,8 +21,14 @@ fi
 sql_header_all "$UP" smoke | grep -q . || die "$MIG_NAME has no '-- smoke: supabase/smoke/<file>.sql' header (use '-- smoke: none <reason>' if a smoke is truly not possible)"
 
 WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT
+# GRANT/REVOKE order inside a block follows grant history, not schema content (prod and staging can differ
+# only in that order), so each run of consecutive GRANT/REVOKE lines is sorted before comparing.
+sort_acl_runs() {
+  awk 'function flush(  i, j, t) { for (i = 2; i <= n; i++) { t = buf[i]; j = i - 1; while (j >= 1 && buf[j] > t) { buf[j + 1] = buf[j]; j-- } buf[j + 1] = t } for (i = 1; i <= n; i++) print buf[i]; n = 0 }
+       /^(GRANT|REVOKE) / { buf[++n] = $0; next } { flush(); print } END { flush() }'
+}
 dump_schema() { # dump_schema <url> <password> <out>
-  PGPASSWORD="$2" pg_dump "$1" --schema-only --no-owner -n public $(PGPASSWORD="$2" psql "$1" -X -At -c "select '-n app_private' where exists (select 1 from pg_namespace where nspname = 'app_private')") | grep -Ev '^\\(un)?restrict ' >"$3"
+  PGPASSWORD="$2" pg_dump "$1" --schema-only --no-owner -n public $(PGPASSWORD="$2" psql "$1" -X -At -c "select '-n app_private' where exists (select 1 from pg_namespace where nspname = 'app_private')") | grep -Ev '^\\(un)?restrict ' | sort_acl_runs >"$3"
 }
 stats() { psql_db -X -At -F $'\t' -f "$DB_DIR/sql/rowstats.sql" -c "select tbl, n, h from pg_temp.hungry_rowstats(true) order by 1" >"$1"; }
 
@@ -57,8 +63,10 @@ if [ -n "${PROD_DB_URL:-}" ]; then
   dump_schema "$DB_URL" "${PGPASSWORD:-}" "$WORK/schema.staging"
   dump_schema "$PROD_DB_URL" "${PROD_PGPASSWORD:-}" "$WORK/schema.prod"
   if ! diff -u "$WORK/schema.prod" "$WORK/schema.staging" >"$WORK/schema.prodstaging.diff"; then
+    mkdir -p "$BACKUP_ROOT"; DIFF_FILE="$BACKUP_ROOT/schema-diff-prod-vs-staging-$(date -u +%Y%m%dT%H%M%SZ).diff"
+    cp "$WORK/schema.prodstaging.diff" "$DIFF_FILE"
     head -60 "$WORK/schema.prodstaging.diff"
-    die "staging's schema differs from production's (diff above, truncated). Bring staging level with prod first; recreating the staging project and running staging-bootstrap.sh is the quickest fix."
+    die "staging's schema differs from production's ($(grep -c '^[-+][^-+]' "$DIFF_FILE") changed lines; first 60 shown above, full diff: $DIFF_FILE). Bring staging level with prod first."
   fi
   PROD_MATCHED=true
 elif [ -z "${SKIP_PROD_COMPARE:-}" ]; then
