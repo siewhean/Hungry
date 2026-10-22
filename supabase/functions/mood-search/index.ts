@@ -2,11 +2,11 @@
 /* eslint-disable import/no-unresolved */
 import { reportFunctionError, serveWithSentry } from "../_shared/sentry.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.52.0";
-import { TASTE_AXES } from "../_shared/tasteTagging.ts";
+import { generateJson } from "../_shared/gemini.ts";
+import { MODEL, TASTE_AXES } from "../_shared/tasteTagging.ts";
 
 type JsonObject = Record<string, unknown>;
 
-const GEMINI_MODEL = "gemini-2.5-flash";
 const MAX_QUERY_LENGTH = 200;
 const DAILY_LIMIT = 20;
 // Per-minute burst caps. The daily cap only counts searches that reach Gemini, so these also bound
@@ -29,15 +29,16 @@ Return:
 - summary: a short phrase saying what you understood, for example "soupy, mild, under $8".`;
 
 const OUTPUT_SCHEMA = {
-  type: "OBJECT",
+  type: "object",
   properties: {
-    ...Object.fromEntries(TASTE_AXES.map((axis) => [axis, { type: "NUMBER" }])),
-    max_price: { type: "NUMBER" },
-    dietary_flags: { type: "ARRAY", items: { type: "STRING", enum: DIETARY_FLAGS } },
-    keywords: { type: "ARRAY", items: { type: "STRING" } },
-    summary: { type: "STRING" },
+    ...Object.fromEntries(TASTE_AXES.map((axis) => [axis, { type: "number" }])),
+    max_price: { type: "number" },
+    dietary_flags: { type: "array", items: { type: "string", enum: DIETARY_FLAGS } },
+    keywords: { type: "array", items: { type: "string" } },
+    summary: { type: "string" },
   },
   required: [...TASTE_AXES, "max_price", "dietary_flags", "keywords", "summary"],
+  additionalProperties: false,
 };
 
 function toJson(status: number, body: JsonObject): Response {
@@ -84,33 +85,15 @@ function toIntent(result: JsonObject): JsonObject {
 }
 
 async function parseMood(apiKey: string, query: string): Promise<JsonObject | null> {
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-        contents: [{ role: "user", parts: [{ text: query }] }],
-        generationConfig: {
-          responseMimeType: "application/json",
-          responseSchema: OUTPUT_SCHEMA,
-          maxOutputTokens: 1000,
-          temperature: 0,
-          thinkingConfig: { thinkingBudget: 0 },
-        },
-      }),
-    },
-  );
-  if (!response.ok) {
-    throw new Error(`Gemini request failed with status ${response.status}`);
-  }
-  const body = (await response.json()) as JsonObject;
-  const candidate = (body.candidates as JsonObject[] | undefined)?.[0];
-  if (!candidate || candidate.finishReason !== "STOP") return null;
-  const parts = ((candidate.content as JsonObject | undefined)?.parts ?? []) as JsonObject[];
-  const text = parts.map((part) => String(part.text ?? "")).join("");
-  return toIntent(JSON.parse(text) as JsonObject);
+  const result = await generateJson({
+    apiKey,
+    model: MODEL,
+    system: SYSTEM_PROMPT,
+    user: query,
+    schema: OUTPUT_SCHEMA,
+    maxOutputTokens: 1000,
+  });
+  return result ? toIntent(result) : null;
 }
 
 serveWithSentry("mood-search", async (request) => {

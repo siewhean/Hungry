@@ -1,10 +1,10 @@
 // Compares the tag-dishes prompt against sh's hand-scored answer key.
-// Usage: ANTHROPIC_API_KEY=... npx tsx scripts/taste-answer-key-eval.mjs [data/taste-answer-key.xlsx]
-import Anthropic from "@anthropic-ai/sdk";
+// Usage: GEMINI_API_KEY=... npx tsx scripts/taste-answer-key-eval.mjs [data/taste-answer-key.xlsx]
 import ExcelJS from "exceljs";
 // Dynamic import: tsx loads this .ts module as CommonJS, which static named imports can't read.
 const { MODEL, OUTPUT_SCHEMA, SYSTEM_PROMPT, TASTE_AXES } =
   await import("../supabase/functions/_shared/tasteTagging.ts");
+const { generateJson } = await import("../supabase/functions/_shared/gemini.ts");
 
 const TOLERANCE = 1.5;
 // These dishes are the worked examples inside SYSTEM_PROMPT, so they are reported apart.
@@ -29,21 +29,19 @@ async function readAnswerKey(filePath) {
   return rows;
 }
 
-async function scoreDish(anthropic, { dish, description }) {
+async function scoreDish(apiKey, { dish, description }) {
   const lines = [`Dish: ${dish}`];
   if (description) lines.push(`Description: ${description}`);
-  const response = await anthropic.messages.create({
+  const result = await generateJson({
+    apiKey,
     model: MODEL,
-    max_tokens: 2000,
-    output_config: { effort: "low", format: { type: "json_schema", schema: OUTPUT_SCHEMA } },
     system: SYSTEM_PROMPT,
-    messages: [{ role: "user", content: lines.join("\n") }],
+    user: lines.join("\n"),
+    schema: OUTPUT_SCHEMA,
+    maxOutputTokens: 2000,
   });
-  if (response.stop_reason !== "end_turn") {
-    throw new Error(`stopped with ${response.stop_reason}`);
-  }
-  const text = response.content.find((block) => block.type === "text")?.text ?? "";
-  return JSON.parse(text);
+  if (!result) throw new Error("stopped before finishing");
+  return result;
 }
 
 function summarise(label, results) {
@@ -62,8 +60,8 @@ function summarise(label, results) {
 }
 
 async function main() {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.error("Set ANTHROPIC_API_KEY in your shell first.");
+  if (!process.env.GEMINI_API_KEY) {
+    console.error("Set GEMINI_API_KEY in your shell first.");
     process.exit(1);
   }
   const filePath = process.argv[2] ?? "data/taste-answer-key.xlsx";
@@ -73,11 +71,10 @@ async function main() {
     process.exit(1);
   }
 
-  const anthropic = new Anthropic();
   const results = [];
   for (const row of key) {
     try {
-      const ai = await scoreDish(anthropic, row);
+      const ai = await scoreDish(process.env.GEMINI_API_KEY, row);
       const aiScores = TASTE_AXES.map((axis) => Number(ai[axis]));
       const diffs = aiScores.map((score, index) => Math.abs(score - row.scores[index]));
       results.push({ ...row, aiScores, diffs, confidence: Number(ai.confidence) });
