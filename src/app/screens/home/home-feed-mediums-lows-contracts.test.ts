@@ -180,7 +180,10 @@ test("M1 and L3 and M11: the rail reads saved picks, says Popular on Hungry, and
   assert.match(rail, /resolveStoredWeeklyPicks\(/);
   assert.match(rail, /savePicks\(/);
   assert.doesNotMatch(rail, /Popular near you/);
-  assert.match(rail, /<Button label="Decide for me" size="sm" onPress=\{onDecideForMe\} \/>/);
+  assert.match(
+    rail,
+    /<Button label="Decide for me" size="sm" fullWidth=\{false\} onPress=\{onDecideForMe\} \/>/,
+  );
   const store = read("src/store/useWeeklyPicksStore.ts");
   assert.match(store, /name: "hungry-weekly-picks-v1"/);
 });
