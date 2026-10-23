@@ -111,7 +111,7 @@ test("syncProfile clears the rehydration error flag after a successful load", as
   assert.equal(useProfileStore.getState().favouritesRehydrationFailed, false);
 });
 
-test("toggleFavourite rolls back and shows an error toast when sync fails", async () => {
+test("toggleFavourite rolls back and returns a failed result when sync fails", async () => {
   const originalError = console.error;
   console.error = () => undefined;
   setServiceProvider({
@@ -135,12 +135,13 @@ test("toggleFavourite rolls back and shows an error toast when sync fails", asyn
   const dish = dishes[0];
 
   try {
-    useProfileStore.getState().toggleFavourite(dish);
+    const pending = useProfileStore.getState().toggleFavourite(dish);
     assert.deepEqual(useProfileStore.getState().profile.favouriteDishIds, [dish.id]);
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    const result = await pending;
 
     assert.deepEqual(useProfileStore.getState().profile.favouriteDishIds, []);
-    assert.equal(useUIStore.getState().toast?.tone, "error");
+    // Callers surface the failure (toast) from the result; the store never guesses.
+    assert.equal(result.status, "failed");
   } finally {
     console.error = originalError;
   }

@@ -21,8 +21,22 @@ const MAPBOX_ACCESS_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN;
 
 let hasConfiguredMapboxToken = false;
 
-function getMapboxGL() {
-  return require("@rnmapbox/maps") as typeof import("@rnmapbox/maps");
+type MapboxModule = typeof import("@rnmapbox/maps");
+
+let cachedMapboxGL: MapboxModule | null | undefined;
+
+// Lazy, guarded require: if the native module is missing from the binary (plugin
+// stripped, Expo Go, web), render the fallback map instead of crashing.
+function getMapboxGL(): MapboxModule | null {
+  if (cachedMapboxGL !== undefined) return cachedMapboxGL;
+  try {
+    const mod = require("@rnmapbox/maps") as MapboxModule & { default?: MapboxModule };
+    const resolved = mod?.MapView ? mod : (mod?.default ?? null);
+    cachedMapboxGL = resolved?.MapView ? resolved : null;
+  } catch {
+    cachedMapboxGL = null;
+  }
+  return cachedMapboxGL;
 }
 
 export interface MapSurfaceMarker {
@@ -457,17 +471,17 @@ export function MapSurface({
   cameraPadding,
 }: MapSurfaceProps) {
   const { palette } = useHungryTheme();
-  const shouldUseFallback = FEATURE_FLAGS.mockMapboxEnabled || !MAPBOX_ACCESS_TOKEN;
+  const MapboxGL = FEATURE_FLAGS.mockMapboxEnabled || !MAPBOX_ACCESS_TOKEN ? null : getMapboxGL();
+  const shouldUseFallback = !MapboxGL;
 
   useEffect(() => {
-    if (shouldUseFallback || !MAPBOX_ACCESS_TOKEN || hasConfiguredMapboxToken) {
+    if (!MapboxGL || !MAPBOX_ACCESS_TOKEN || hasConfiguredMapboxToken) {
       return;
     }
 
-    const MapboxGL = getMapboxGL();
     MapboxGL.setAccessToken(MAPBOX_ACCESS_TOKEN);
     hasConfiguredMapboxToken = true;
-  }, [shouldUseFallback]);
+  }, [MapboxGL]);
 
   if (shouldUseFallback) {
     return (
@@ -504,8 +518,6 @@ export function MapSurface({
       </View>
     );
   }
-
-  const MapboxGL = getMapboxGL();
 
   return (
     <View

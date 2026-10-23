@@ -26,6 +26,7 @@ import { useHungryTheme } from "@/theme";
 import type { AuthStackParamList } from "./AuthStack";
 import { AuthProviderButton } from "./AuthProviderButton";
 import { AuthScreenShell } from "./AuthScreenShell";
+import { PasswordRequirements } from "./PasswordRequirements";
 import { AUTH_EYE_BUTTON_STYLE } from "./authEyeButton";
 import { AuthTermsNotice } from "./AuthTermsNotice";
 import {
@@ -47,6 +48,7 @@ export function SignUpScreen({ navigation }: Props) {
   const passwordRef = useRef<TextInput>(null);
   const showToast = useUIStore((state) => state.showToast);
   const completeAuth = useSessionStore((state) => state.completeAuth);
+  const hasCompletedOnboarding = useSessionStore((state) => state.hasCompletedOnboarding);
   // Inline copy of the last server error, so it is not only a passing toast.
   const [formError, setFormError] = useState<string | null>(null);
   const {
@@ -76,10 +78,14 @@ export function SignUpScreen({ navigation }: Props) {
         // Not "Account created": an address that already has an account also lands here
         // (Supabase answers the same and sends nothing), so the verify screen offers sign-in.
         showToast({ message: AUTH_COPY.signUp.emailVerificationToast, tone: "success" });
-        navigation.navigate("EmailVerification", { email: values.email });
+        navigation.navigate("EmailVerification", {
+          email: values.email,
+          // Onboarding usually finished before this account step; verification completes it.
+          completedOnboarding: hasCompletedOnboarding,
+        });
         return;
       }
-      await applySignedInProfile(session.profile, {
+      const migration = await applySignedInProfile(session.profile, {
         profileReady: session.profileReady,
         onSyncWarning: () =>
           showToast({
@@ -88,13 +94,19 @@ export function SignUpScreen({ navigation }: Props) {
             tone: "warning",
           }),
       });
+      if (migration.status === "failed") return;
       // When project auth is auto-confirm, Supabase returns an active session immediately.
       completeAuth({
         authProvider: "email",
-        completedOnboarding: false,
+        completedOnboarding: hasCompletedOnboarding,
         isNewUser: true,
       });
-      showToast({ message: AUTH_COPY.signUp.continueOnboardingToast, tone: "success" });
+      showToast({
+        message: hasCompletedOnboarding
+          ? "Account created. Welcome to Hungry."
+          : AUTH_COPY.signUp.continueOnboardingToast,
+        tone: "success",
+      });
     } catch (err) {
       trackAuthFailed("sign_up", "email", err);
       const code = getAuthErrorCode(err);
@@ -119,13 +131,11 @@ export function SignUpScreen({ navigation }: Props) {
     try {
       if (isSupabase) {
         const service = getHungryService();
-        let session;
-        if (provider === "google") {
-          session = await service.auth.signInWithGoogle();
-        } else {
-          session = await service.auth.signInWithApple();
-        }
-        await applySignedInProfile(session.profile, {
+        const session =
+          provider === "google"
+            ? await service.auth.signInWithGoogle()
+            : await service.auth.signInWithApple();
+        const migration = await applySignedInProfile(session.profile, {
           profileReady: session.profileReady,
           onSyncWarning: () =>
             showToast({
@@ -133,6 +143,7 @@ export function SignUpScreen({ navigation }: Props) {
               tone: "warning",
             }),
         });
+        if (migration.status === "failed") return;
       }
       showToast({
         message: getSignUpProviderSuccessMessage(provider),
@@ -143,7 +154,7 @@ export function SignUpScreen({ navigation }: Props) {
       // onboarding already finished on this device stays done.
       completeAuth({
         authProvider: provider,
-        completedOnboarding: false,
+        completedOnboarding: hasCompletedOnboarding,
         trackSignInEvent: false,
       });
     } catch (err) {
@@ -183,11 +194,8 @@ export function SignUpScreen({ navigation }: Props) {
                 accessibilityLabel={AUTH_COPY.signUp.footerAction}
                 accessibilityHint="Returns to the sign in screen"
                 onPress={() => {
-                  if (navigation.canGoBack()) {
-                    navigation.goBack();
-                  } else {
-                    navigation.navigate("Login");
-                  }
+                  if (navigation.canGoBack()) navigation.goBack();
+                  else navigation.navigate("Login");
                 }}
                 hitSlop={8}
                 style={{ justifyContent: "center", minHeight: 44 }}
@@ -287,44 +295,46 @@ export function SignUpScreen({ navigation }: Props) {
               name="password"
               rules={{ validate: (value) => validatePassword(value) }}
               render={({ field: { onChange, value } }) => (
-                <Input
-                  ref={passwordRef}
-                  label={AUTH_COPY.signUp.passwordLabel}
-                  value={value}
-                  onChangeText={onChange}
-                  secureTextEntry={!showPassword}
-                  textContentType="newPassword"
-                  autoComplete="new-password"
-                  passwordRules={PASSWORD_RULES}
-                  returnKeyType="go"
-                  onSubmitEditing={() => void handleSignUp()}
-                  accessibilityHint={AUTH_COPY.signUp.passwordRules}
-                  leftIcon={<Lock color={palette.textMuted} size={18} />}
-                  rightIcon={
-                    <Pressable
-                      accessible
-                      accessibilityRole="button"
-                      accessibilityLabel={showPassword ? "Hide password" : "Show password"}
-                      accessibilityHint={
-                        showPassword
-                          ? "Hides the password characters"
-                          : "Shows the password characters"
-                      }
-                      onPress={() => setShowPassword((current) => !current)}
-                      hitSlop={8}
-                      style={AUTH_EYE_BUTTON_STYLE}
-                    >
-                      {showPassword ? (
-                        <EyeOff color={palette.textMuted} size={18} />
-                      ) : (
-                        <Eye color={palette.textMuted} size={18} />
-                      )}
-                    </Pressable>
-                  }
-                  error={!!errors.password}
-                  errorText={errors.password?.message}
-                  helperText={AUTH_COPY.signUp.passwordRules}
-                />
+                <View style={{ gap: spacing[1] }}>
+                  <Input
+                    ref={passwordRef}
+                    label={AUTH_COPY.signUp.passwordLabel}
+                    value={value}
+                    onChangeText={onChange}
+                    secureTextEntry={!showPassword}
+                    textContentType="newPassword"
+                    autoComplete="new-password"
+                    passwordRules={PASSWORD_RULES}
+                    returnKeyType="go"
+                    onSubmitEditing={() => void handleSignUp()}
+                    accessibilityHint={AUTH_COPY.signUp.passwordRules}
+                    leftIcon={<Lock color={palette.textMuted} size={18} />}
+                    rightIcon={
+                      <Pressable
+                        accessible
+                        accessibilityRole="button"
+                        accessibilityLabel={showPassword ? "Hide password" : "Show password"}
+                        accessibilityHint={
+                          showPassword
+                            ? "Hides the password characters"
+                            : "Shows the password characters"
+                        }
+                        onPress={() => setShowPassword((current) => !current)}
+                        hitSlop={8}
+                        style={AUTH_EYE_BUTTON_STYLE}
+                      >
+                        {showPassword ? (
+                          <EyeOff color={palette.textMuted} size={18} />
+                        ) : (
+                          <Eye color={palette.textMuted} size={18} />
+                        )}
+                      </Pressable>
+                    }
+                    error={!!errors.password}
+                    errorText={errors.password?.message}
+                  />
+                  <PasswordRequirements password={value} />
+                </View>
               )}
             />
           </View>

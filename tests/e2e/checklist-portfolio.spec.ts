@@ -14,11 +14,16 @@ test.describe("checklist and portfolio critical flows", () => {
     await startOnboardedMockSession(page);
     await clickDevButton(page, "Profile", "Profile & Review");
 
+    // Saved, lists and checklists share one Lists area (main #91).
     await page.getByRole("button", { name: "Open quick access" }).click();
-    await page.getByRole("button", { name: "My Checklists" }).click();
+    await page.getByRole("button", { name: "Lists", exact: true }).click();
+    await page.getByRole("button", { name: /^Checklists\./ }).click();
     await expect(page.getByText("My Checklists", { exact: true }).first()).toBeVisible();
 
-    await page.getByRole("button", { name: /Create Checklist|Create/ }).first().click();
+    await page
+      .getByRole("button", { name: /Create Checklist|Create/ })
+      .first()
+      .click();
     await expect(page.getByText("Checklist", { exact: true }).first()).toBeVisible();
     await expect(page.getByText("Checklist name", { exact: true }).first()).toBeVisible();
     await expect(page.getByLabel("Checklist name")).toHaveValue("New Checklist");
@@ -32,18 +37,36 @@ test.describe("checklist and portfolio critical flows", () => {
     await clickDevButton(page, "Profile", "Profile & Review");
 
     await page.getByRole("button", { name: "Open quick access" }).click();
-    await page.getByRole("button", { name: "Hungry Portfolios" }).click();
-    await expect(page.getByText("Hungry Portfolios", { exact: true }).first()).toBeVisible();
+    await page.getByRole("button", { name: "Lists", exact: true }).click();
+    await page.getByRole("button", { name: /^Your lists\./ }).click();
+    await expect(
+      page.getByText("Your lists", { exact: true }).filter({ visible: true }).first(),
+    ).toBeVisible();
 
-    await page.getByRole("button", { name: "Create portfolio" }).first().click();
+    await page
+      .getByRole("button", { name: "Create list" })
+      .filter({ visible: true })
+      .first()
+      .click();
     await page.getByPlaceholder("e.g. Best laksa nearby").fill(portfolioName);
     await page.getByPlaceholder("What makes this list useful?").fill("Created by E2E smoke.");
-    await page.getByRole("button", { name: "Create portfolio" }).click();
+    await page
+      .getByRole("button", { name: "Create list" })
+      .filter({ visible: true })
+      .last()
+      .click();
 
-    await expect(page.getByText("Hungry Portfolio", { exact: true }).first()).toBeVisible();
-    await expect(page.getByLabel("Title")).toHaveValue(portfolioName);
+    // The list name is the screen title (the list card behind it stays mounted but hidden).
+    await expect(
+      page.getByText(portfolioName, { exact: true }).filter({ visible: true }).first(),
+    ).toBeVisible();
 
-    await page.getByRole("button", { name: "Publish" }).click();
-    await expect(page.getByRole("button", { name: "Published" }).first()).toBeVisible();
+    // Publishing asks first; once live the toggle offers Unpublish.
+    await page.getByRole("button", { name: "Publish", exact: true }).click();
+    await expect(page.getByText("Publish this list?", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Publish", exact: true }).last().click();
+    await expect(
+      page.getByRole("button", { name: "Unpublish", exact: true }).first(),
+    ).toBeVisible();
   });
 });

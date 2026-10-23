@@ -305,9 +305,11 @@ test("visible sign-out actions reset to login instead of onboarding", () => {
   const profileHomeScreen = read("src/app/screens/profile/ProfileHomeScreen.tsx");
   const merchantProfileScreen = read("src/app/screens/merchant/MerchantProfileScreen.tsx");
 
-  // Signed-out cold starts open the app as a guest (sign-in is on demand).
-  assert.doesNotMatch(splashScreen, /name: "AuthStack"/);
-  assert.match(splashScreen, /name: "MainTabs"[\s\S]*params: \{ screen: "Home" \}/);
+  // Mandatory sign-in: signed-out cold starts open Login, never MainTabs.
+  assert.match(
+    splashScreen,
+    /if \(!isAuthenticated\) \{[\s\S]*name: "AuthStack"[\s\S]*screen: "Login"/,
+  );
 
   [settingsScreen, profileHomeScreen, merchantProfileScreen].forEach((source) => {
     assert.match(source, /signOut\(\)/);

@@ -1,7 +1,7 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Controller, useForm } from "react-hook-form";
 import { Pressable, View, type TextInput } from "react-native";
-import { ArrowLeft, CheckCircle2, Circle, Eye, EyeOff } from "lucide-react-native";
+import { ArrowLeft, Eye, EyeOff } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 
 import { AppText, Button, FeedErrorBoundary, Input } from "@/components/ui";
@@ -9,7 +9,6 @@ import { trackAuthFailed, trackAuthScreenViewed } from "@/features/auth/authAnal
 import { getAuthErrorKind, getAuthFailureMessage } from "@/features/auth/authErrors";
 import {
   getPasswordUpdateErrorMessage,
-  MIN_PASSWORD_LENGTH,
   PASSWORD_RULES,
   validateConfirmPassword,
   validatePassword,
@@ -21,18 +20,11 @@ import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { AuthStackParamList } from "./AuthStack";
 import { AuthScreenShell } from "./AuthScreenShell";
+import { PasswordRequirements } from "./PasswordRequirements";
 import { AUTH_EYE_BUTTON_STYLE } from "./authEyeButton";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "ResetPassword">;
 type FormValues = { password: string; confirmPassword: string };
-
-// Mirrors validatePassword so the checklist ticks as the user types.
-const PASSWORD_CHECKS = [
-  {
-    label: `At least ${MIN_PASSWORD_LENGTH} characters`,
-    test: (value: string) => value.length >= MIN_PASSWORD_LENGTH,
-  },
-] as const;
 
 export function ResetPasswordScreen({ navigation, route }: Props) {
   const { componentRadii, palette, spacing } = useHungryTheme();
@@ -107,7 +99,8 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
   // types two passwords.
   useEffect(() => {
     if (getConfiguredDataSource() !== "supabase" || recoveryCodeExchangedRef.current) return;
-    if (route.params?.linkError) {
+    // The deep link passes `error`; older callers pass `linkError`.
+    if (route.params?.linkError ?? route.params?.error) {
       setLinkProblem("expired");
       return;
     }
@@ -312,26 +305,7 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
                   padding: spacing[4],
                 }}
               >
-                {PASSWORD_CHECKS.map((check) => {
-                  const met = check.test(passwordValue ?? "");
-                  return (
-                    <View
-                      key={check.label}
-                      accessible
-                      accessibilityLabel={`${check.label}, ${met ? "met" : "not met yet"}`}
-                      style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}
-                    >
-                      {met ? (
-                        <CheckCircle2 color={palette.success} size={14} />
-                      ) : (
-                        <Circle color={palette.textMuted} size={14} />
-                      )}
-                      <AppText variant="bodySmall" tone={met ? "default" : "muted"}>
-                        {check.label}
-                      </AppText>
-                    </View>
-                  );
-                })}
+                <PasswordRequirements password={passwordValue ?? ""} />
               </View>
 
               <Button

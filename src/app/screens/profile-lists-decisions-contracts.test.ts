@@ -43,15 +43,25 @@ test("19: user/:id links open UserProfile and share URLs use usehungry.com/user"
   assert.equal(webShareUrl("user", "abc-123"), "https://usehungry.com/user/abc-123");
   const linking = createRootLinking("exp://127.0.0.1:8081/--/", () => ({
     isAuthReady: true,
-    isAuthenticated: false,
+    isAuthenticated: true,
   }));
   const screens = linking.config.screens as Record<string, unknown>;
   assert.equal(screens.UserProfile, "user/:authorId");
-  // Guests can open a shared profile; unsafe ids are dropped.
+  // Signed-in users open a shared profile; unsafe ids are dropped.
   assert.deepEqual(linking.getStateFromPath("user/11111111-2222-3333-4444-555555555555")?.routes, [
     { name: "MainTabs", params: { screen: "Home" } },
     { name: "UserProfile", params: { authorId: "11111111-2222-3333-4444-555555555555" } },
   ]);
+  // The app is sign-in only: a signed-out visitor is sent to sign in, not the profile.
+  const signedOut = createRootLinking("exp://127.0.0.1:8081/--/", () => ({
+    isAuthReady: true,
+    isAuthenticated: false,
+    hasCompletedOnboarding: true,
+  }));
+  assert.notEqual(
+    signedOut.getStateFromPath("user/11111111-2222-3333-4444-555555555555")?.routes?.[0]?.name,
+    "UserProfile",
+  );
   assert.equal(linking.getStateFromPath("user/%3Cscript%3E"), undefined);
 
   assert.match(read("app.json"), /"pathPrefix": "\/user\/"/);

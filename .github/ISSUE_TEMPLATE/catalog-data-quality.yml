@@ -1,0 +1,117 @@
+name: Catalog or data-quality issue
+description: Report incorrect, missing, duplicate, unsafe, or stale dish/stall data.
+title: "[Catalog] "
+labels:
+  - data-quality
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for catalog accuracy, images, locations, menus and duplicate records. Do not include private user data or credentials.
+  - type: input
+    id: implementation_sha
+    attributes:
+      label: Implementation SHA
+      placeholder: 40-character commit SHA
+    validations:
+      required: true
+  - type: input
+    id: build_id
+    attributes:
+      label: Build ID and platform
+      placeholder: EAS build ID / iOS or Android
+    validations:
+      required: true
+  - type: dropdown
+    id: entity_type
+    attributes:
+      label: Entity type
+      options:
+        - Dish
+        - Stall or venue
+        - Building or food centre
+        - Menu
+        - Image or logo
+        - Search/location result
+        - Duplicate or non-consumer listing
+    validations:
+      required: true
+  - type: input
+    id: entity_id
+    attributes:
+      label: Stable entity ID
+      description: Obtain from diagnostics or the detail route when available.
+    validations:
+      required: true
+  - type: input
+    id: entity_name
+    attributes:
+      label: Displayed name
+    validations:
+      required: true
+  - type: dropdown
+    id: source
+    attributes:
+      label: Catalog source
+      options:
+        - Supabase live catalog
+        - Excel offline catalog
+        - Both sources
+        - Unknown
+    validations:
+      required: true
+  - type: input
+    id: release_id
+    attributes:
+      label: Catalog release ID
+      placeholder: Release UUID or excel-fallback-v1
+  - type: dropdown
+    id: issue_type
+    attributes:
+      label: Issue type
+      options:
+        - Missing record
+        - Wrong name
+        - Wrong stall/dish relationship
+        - Wrong address, unit or coordinates
+        - Wrong price or menu data
+        - Wrong or stale opening hours
+        - Missing, broken or incorrect image
+        - Unapproved or placeholder image
+        - Duplicate listing
+        - Non-consumer or restricted listing
+        - Search/location ranking issue
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Correct/expected data
+      description: Include a public source URL when appropriate. Do not paste copyrighted menu text beyond what is necessary to identify the correction.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Data currently shown
+    validations:
+      required: true
+  - type: input
+    id: public_source
+    attributes:
+      label: Public verification source
+      placeholder: Merchant/menu/location URL
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Redacted screenshots or diagnostic evidence
+  - type: checkboxes
+    id: rights
+    attributes:
+      label: Image and privacy confirmation
+      options:
+        - label: Any attached image is mine, licensed for reporting, or a limited screenshot used only to identify the issue.
+          required: true
+        - label: I removed passwords, tokens and personal data.
+          required: true

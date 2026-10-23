@@ -491,12 +491,33 @@ test("store policy controls cover account deletion, UGC moderation, and location
   assert.match(worker, /auth\.admin\.deleteUser/);
   assert.match(worker, /from\("menu_photo_submissions"\)\s*\.update\(\{ submitted_by: null \}\)/);
   assert.match(worker, /complete_account_deletion_request/);
+  assert.match(worker, /purge_account_deletion_residual_data/);
+  assert.match(worker, /\.storage[\s\S]*\.remove\(/);
+  assert.doesNotMatch(worker, /getBearerToken\(request\) !== workerToken/);
+  assert.match(worker, /timingSafeEqual\(getBearerToken\(request\), workerToken\)/);
+  const residualPurge = readRepoFile(
+    "supabase/migrations/20261018180000_account_deletion_residual_purge.sql",
+  );
+  assert.match(residualPurge, /set avatar_url = null/);
+  assert.match(
+    residualPurge,
+    /revoke all on function public\.purge_account_deletion_residual_data[\s\S]*from public, anon, authenticated/,
+  );
+  assert.match(residualPurge, /processing_attempts < 10/);
+  assert.match(supabaseService, /error\.code !== "23505"/);
+  const deletionRunner = readRepoFile("scripts/run-account-deletion-worker.mjs");
+  assert.match(deletionRunner, /ACCOUNT_DELETION_WORKER_TOKEN/);
+  assert.match(deletionRunner, /\/functions\/v1\/process-account-deletions/);
   assert.match(settingsScreen, /getHungryService\(\)\.auth\.requestAccountDeletion/);
   assert.match(settingsScreen, /WEB_LINKS\.accountDeletion/);
   assert.match(settingsScreen, /ACCOUNT_DELETION_GRACE_DAYS/);
   assert.match(gracePeriod, /scheduled_for <= now\(\)/);
   assert.match(gracePeriod, /cancel_my_account_deletion/);
   assert.match(supabaseService, /cancel_my_account_deletion/);
+  // The re-timestamped residual purge migration redefines the claim RPC after the
+  // grace-period migration, so it must keep the scheduled_for gate.
+  assert.match(residualPurge, /scheduled_for <= now\(\)/);
+  assert.doesNotMatch(worker, /"menu-photos",/);
   assert.match(webV2Footer, /Account Deletion/);
   assert.match(webFooter, /Account Deletion/);
   assert.match(webV2DeletePage, /Delete your Hungry account/);

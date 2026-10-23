@@ -385,9 +385,8 @@ test("merchant Playwright and native smoke coverage entry points stay registered
   assertSourceIncludes(
     nativeContracts,
     [
-      /native media picker smoke reaches the post composer gallery entry point/,
-      /native activity smoke exposes the audited direct-message tab/,
-      /native source-smoke coverage includes gestures, bottom sheets, media, and keyboard-sensitive entry points/,
+      /native media and interaction flows remain available as explicit authenticated targets/,
+      /native source-smoke coverage still includes gestures and keyboard-aware sheets/,
     ],
     "native smoke coverage contract",
   );

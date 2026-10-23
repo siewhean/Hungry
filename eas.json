@@ -1,6 +1,6 @@
 {
   "cli": {
-    "version": ">= 18.5.0",
+    "version": ">= 21.1.0",
     "appVersionSource": "remote"
   },
   "build": {
@@ -8,6 +8,7 @@
       "developmentClient": true,
       "distribution": "internal",
       "channel": "development",
+      "environment": "development",
       "ios": {
         "image": "macos-tahoe-26.4-xcode-26.4"
       },
@@ -18,9 +19,33 @@
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZybHV4d3BxcXlvbWlxbWp6YXZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI2NTIwMDEsImV4cCI6MjEwODIyODAwMX0.ZZCy_SsRdlG-SSJWDqaioOg8rdruXExVwH8lgO3Mil0"
       }
     },
+    "internal-alpha": {
+      "distribution": "internal",
+      "channel": "internal-alpha",
+      "environment": "preview",
+      "ios": {
+        "image": "macos-sequoia-15.6-xcode-26.2"
+      },
+      "env": {
+        "EXPO_PUBLIC_APP_ENV": "staging",
+        "EXPO_PUBLIC_HUNGRY_DATA_SOURCE": "supabase",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://frluxwpqqyomiqmjzavd.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZybHV4d3BxcXlvbWlxbWp6YXZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI2NTIwMDEsImV4cCI6MjEwODIyODAwMX0.ZZCy_SsRdlG-SSJWDqaioOg8rdruXExVwH8lgO3Mil0",
+        "EXPO_PUBLIC_RELEASE_01_CORE_ONLY": "1",
+        "EXPO_PUBLIC_ENABLE_SOCIAL_FEED": "0",
+        "EXPO_PUBLIC_ENABLE_POSTS": "0",
+        "EXPO_PUBLIC_ENABLE_REVIEWS": "0",
+        "EXPO_PUBLIC_ENABLE_ACTIVITY": "0",
+        "EXPO_PUBLIC_ENABLE_READS": "0",
+        "EXPO_PUBLIC_ENABLE_MAP": "0",
+        "EXPO_PUBLIC_ENABLE_WHEEL": "0",
+        "EXPO_PUBLIC_ENABLE_CRAVE": "0"
+      }
+    },
     "preview": {
       "distribution": "internal",
-      "channel": "staging",
+      "channel": "preview",
+      "environment": "preview",
       "ios": {
         "image": "macos-tahoe-26.4-xcode-26.4"
       },
@@ -40,6 +65,7 @@
     },
     "production": {
       "channel": "production",
+      "environment": "production",
       "ios": {
         "image": "macos-tahoe-26.4-xcode-26.4"
       },

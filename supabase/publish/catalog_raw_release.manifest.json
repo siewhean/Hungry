@@ -1,0 +1,8 @@
+{
+  "manifestVersion": "release-0.1-workbook-2026-07-24",
+  "sourceKind": "excel-workbook",
+  "sourceWorkbook": "data/Hungry F&B Database.xlsx",
+  "sourceChecksumSha256": "192d02f33ac2c2f14e179a9a66d2f970c45c3ed0cc90679e81f01d99c6856fb8",
+  "expectedVenueTotal": 119232,
+  "expectedDishTotal": 156010
+}

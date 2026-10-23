@@ -30,6 +30,8 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
   const isSupabaseMode = getConfiguredDataSource() === "supabase";
   const email = route.params?.email;
   const confirmationCode = route.params?.code;
+  // Supabase redirects with ?error= when the link expired or was already used.
+  const confirmationError = route.params?.error;
   const completedOnboarding = route.params?.completedOnboarding ?? false;
   // The sign-up that opened this screen just sent an email, so the wait starts now.
   const { seconds: resendSeconds, restart: restartResendCooldown } = useResendCooldown(true);
@@ -48,11 +50,22 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
     if (email) rememberPendingEmailVerification(completedOnboarding);
   }, [completedOnboarding, email]);
 
+  useEffect(() => {
+    if (!confirmationError) return;
+    showToast({
+      message:
+        confirmationError === "expired"
+          ? "That verification link has expired. Resend a new one or sign in."
+          : "That verification link is invalid. Resend a new one or sign in.",
+      tone: "error",
+    });
+  }, [confirmationError, showToast]);
+
   // Signs the verified account in. RootNavigator then routes to onboarding or Home.
   const finishVerifiedSession = useCallback(
     async (session: Session) => {
       const shouldCompleteOnboarding = await takePendingEmailVerificationCompletesOnboarding();
-      await applySignedInProfile(session.profile, {
+      const migration = await applySignedInProfile(session.profile, {
         profileReady: session.profileReady,
         onSyncWarning: () => {
           showToast({
@@ -62,6 +75,7 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
           });
         },
       });
+      if (migration.status === "failed") return;
       completeVerifiedSignUp(shouldCompleteOnboarding);
       showToast({ message: "Email verified. Welcome to Hungry.", tone: "success" });
     },

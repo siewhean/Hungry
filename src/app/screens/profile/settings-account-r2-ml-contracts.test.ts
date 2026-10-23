@@ -57,7 +57,10 @@ test("edit profile caps the name, maps server refusals, and can remove the photo
   assert.match(edit, /profileTextRefusalHint\(error\)/);
   assert.match(edit, /display_name_reserved/);
   assert.match(edit, /accessibilityLabel="Remove profile photo"/);
-  assert.match(edit, /avatarUrl: removeAvatar \? "" : avatarUri/);
+  assert.match(
+    edit,
+    /removeAvatar \? \{ avatarUrl: "" \} : avatarUri \? \{ avatarUrl: avatarUri \} : \{\}/,
+  );
   assert.match(edit, /getPendingEmailChange\(\)/);
   assert.match(edit, /Waiting for confirmation: \{pendingEmail\}/);
   // Password now lives under Settings > Sign-in and security.

@@ -35,7 +35,7 @@ test("root route type inventory matches registered root routes except documented
   assert.match(profileStack, /FEATURE_FLAGS\.collectionsEnabled \? \(/);
 });
 
-test("launch-visible root routes have explicit release classification", () => {
+test("deferred root routes have explicit release classification and release gates", () => {
   const audit = readRepoFile("tasks/Roadmap/app-production-readiness-audit.md");
   const rootNavigator = readRepoFile("src/app/navigation/RootNavigator.tsx");
   const linking = readRepoFile("src/app/navigation/linking.ts");
@@ -44,8 +44,9 @@ test("launch-visible root routes have explicit release classification", () => {
   assert.match(audit, /\| `Crave` \| Crave \| public browse/);
   assert.match(audit, /\| `ActivityInbox` \| Activity updates \| private/);
   assert.match(audit, /\| `MusicSelection` \| MusicSelection \| private flow/);
-  assert.match(rootNavigator, /"ActivityInbox"/);
-  assert.match(rootNavigator, /"MusicSelection"/);
-  assert.match(linking, /"ActivityInbox"/);
-  assert.match(linking, /"MusicSelection"/);
+  assert.match(rootNavigator, /FEATURE_FLAGS\.activityEnabled \? \(/);
+  assert.match(rootNavigator, /FEATURE_FLAGS\.hungryWheelEnabled \? \(/);
+  assert.match(rootNavigator, /FEATURE_FLAGS\.mapEnabled \? \(/);
+  assert.doesNotMatch(linking, /"ActivityInbox"/);
+  assert.doesNotMatch(linking, /"MusicSelection"/);
 });

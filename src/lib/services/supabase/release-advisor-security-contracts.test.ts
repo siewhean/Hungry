@@ -6,6 +6,9 @@ import { readRepoFile } from "@/test/sourceContracts";
 const migration = readRepoFile(
   "supabase/migrations/20260619110000_release_advisor_security_cleanup.sql",
 );
+const releaseHardening = readRepoFile(
+  "supabase/migrations/20260724090000_release_01_advisor_hardening.sql",
+);
 
 test("release advisor cleanup fixes catalog helper search paths", () => {
   for (const signature of [
@@ -19,6 +22,13 @@ test("release advisor cleanup fixes catalog helper search paths", () => {
     );
   }
   assert.match(migration, /set\s+search_path\s+=\s+public,\s*pg_catalog/i);
+});
+
+test("release advisor hardening fails closed when the raw catalog prerequisite chain is absent", () => {
+  assert.match(releaseHardening, /release advisor hardening prerequisites are absent/i);
+  assert.match(releaseHardening, /to_regprocedure\(function_signature\)/i);
+  assert.match(releaseHardening, /catalog_raw_dishes_page/i);
+  assert.match(releaseHardening, /catalog_raw_map_view/i);
 });
 
 test("customer promotion reads are RLS-backed invoker calls", () => {

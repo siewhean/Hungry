@@ -55,7 +55,10 @@ test.describe("buttons and interactions", () => {
     await openComposerFromLauncher(page, { seedMedia: true });
 
     await page.getByRole("tab", { name: "Review tab" }).click();
-    await page.getByPlaceholder("What did you think of the food?").first().fill("Runtime review only.");
+    await page
+      .getByPlaceholder("What did you think of the food?")
+      .first()
+      .fill("Runtime review only.");
     await page.getByTestId("star-4").first().click();
     await page.getByRole("button", { name: "Open publish options" }).click();
     await page.getByRole("button", { name: "Select Review Only publish mode" }).click();

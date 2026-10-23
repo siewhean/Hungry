@@ -703,15 +703,17 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                   navigation.navigate("FollowedStalls");
                 }}
               />
-              <MenuRow
-                label="Review History"
-                icon={<PencilLine size={20} color={palette.text} />}
-                onPressIn={() => preloadRoute(navigation, "ReviewHistory")}
-                onPress={() => {
-                  setMenuOpen(false);
-                  navigation.navigate("ReviewHistory");
-                }}
-              />
+              {FEATURE_FLAGS.reviewCreationEnabled ? (
+                <MenuRow
+                  label="Review History"
+                  icon={<PencilLine size={20} color={palette.text} />}
+                  onPressIn={() => preloadRoute(navigation, "ReviewHistory")}
+                  onPress={() => {
+                    setMenuOpen(false);
+                    navigation.navigate("ReviewHistory");
+                  }}
+                />
+              ) : null}
               <MenuRow
                 label="Settings"
                 icon={<Settings size={20} color={palette.text} />}
@@ -885,13 +887,15 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
             />
           ) : null}
           <View style={{ flexDirection: "row", gap: spacing[2] }}>
-            <StatBlock
-              label="Reviews"
-              value={ownReviews === null ? null : ownReviews.length}
-              icon={<PencilLine size={14} color={palette.orange} />}
-              onPressIn={() => preloadRoute(navigation, "ReviewHistory")}
-              onPress={handleReviewsCardPress}
-            />
+            {FEATURE_FLAGS.reviewCreationEnabled ? (
+              <StatBlock
+                label="Reviews"
+                value={ownReviews === null ? null : ownReviews.length}
+                icon={<PencilLine size={14} color={palette.orange} />}
+                onPressIn={() => preloadRoute(navigation, "ReviewHistory")}
+                onPress={handleReviewsCardPress}
+              />
+            ) : null}
             <StatBlock
               label="Stalls"
               value={visitedStallIds.length}
@@ -899,13 +903,15 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
               onPressIn={() => preloadRoute(navigation, "VisitedStalls")}
               onPress={() => navigation.navigate("VisitedStalls")}
             />
-            <StatBlock
-              label="Saved"
-              value={profileStatSummary.saved}
-              icon={<Bookmark size={14} color={palette.orange} />}
-              onPressIn={() => preloadRoute(navigation, "Favourites")}
-              onPress={() => navigation.navigate("Favourites")}
-            />
+            {FEATURE_FLAGS.favouritesEnabled ? (
+              <StatBlock
+                label="Saved"
+                value={profileStatSummary.saved}
+                icon={<Bookmark size={14} color={palette.orange} />}
+                onPressIn={() => preloadRoute(navigation, "Favourites")}
+                onPress={() => navigation.navigate("Favourites")}
+              />
+            ) : null}
           </View>
           {isAuthenticated && gamificationEnabled ? (
             <>

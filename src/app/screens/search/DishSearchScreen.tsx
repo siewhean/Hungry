@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Animated, Easing, Pressable, View } from "react-native";
+import { Animated, Easing, Pressable, TextInput, View } from "react-native";
 import {
   ArrowLeft,
   History,
@@ -56,6 +56,7 @@ export function DishSearchScreen() {
   const allowSearchHistory = useUIStore((state) => state.allowSearchHistory);
   // Query and category live here and travel as route params, so nothing stale is persisted.
   const [searchText, setSearchText] = useState("");
+  const searchInputRef = useRef<TextInput | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<SearchCategory | undefined>();
   // Search results own the paged catalog request; this landing screen stays
   // free of local recommendations so it never hydrates the whole catalog.
@@ -153,6 +154,7 @@ export function DishSearchScreen() {
   const showRecents = allowSearchHistory && recentSearches.length > 0;
 
   return (
+    // "handled" lets the clear (x) work on the first tap while the keyboard is up.
     <Screen>
       <Animated.View
         style={{
@@ -186,6 +188,7 @@ export function DishSearchScreen() {
         </View>
 
         <Input
+          ref={searchInputRef}
           autoFocus
           leftIcon={<SearchIcon color={palette.textMuted} size={18} />}
           rightIcon={
@@ -194,7 +197,11 @@ export function DishSearchScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Clear search"
                 hitSlop={12}
-                onPress={() => setSearchText("")}
+                onPress={() => {
+                  setSearchText("");
+                  // Keep the user typing: clearing should not drop focus/keyboard.
+                  searchInputRef.current?.focus();
+                }}
               >
                 <X color={palette.textMuted} size={18} />
               </Pressable>

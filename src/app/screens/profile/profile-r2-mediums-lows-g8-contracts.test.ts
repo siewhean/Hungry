@@ -233,7 +233,10 @@ test("G8 edit profile: display name is capped and the photo can be removed", () 
   assert.match(edit, /label="Display name"[\s\S]*?maxLength=\{PROFILE_DISPLAY_NAME_MAX_LENGTH\}/);
   assert.match(edit, /accessibilityLabel="Remove profile photo"/);
   assert.match(edit, /setRemoveAvatar\(true\)/);
-  assert.match(edit, /avatarUrl: removeAvatar \? "" : avatarUri,/);
+  assert.match(
+    edit,
+    /removeAvatar \? \{ avatarUrl: "" \} : avatarUri \? \{ avatarUrl: avatarUri \} : \{\}/,
+  );
 });
 
 test("G8 missions: the data disclosure is a footnote, not part of the subtitle", () => {

@@ -3,7 +3,8 @@ import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
 
-// Product rule: guests can browse stall data, but anything that saves needs an account.
+// The app is sign-in only. These guards stay as defence in depth (a session can
+// expire mid-use), and save actions keep their sign-in prompts.
 const root = path.resolve(__dirname, "../../..");
 const read = (file: string) => fs.readFileSync(path.join(root, file), "utf8");
 
@@ -27,7 +28,8 @@ test("one sign-in sheet opens the shared Login and finishes the guest's action o
   // "Not now" drops the action and the return route.
   assert.match(sheet, /if \(!goingToSignIn\.current\) \{\s*ui\.takePendingAuthAction\(\);/);
   assert.match(read("src/app/AppBody.tsx"), /<SignInPromptSheet \/>/);
-  assert.match(read("src/app/screens/auth/LoginScreen.tsx"), /takePendingAuthAction\(\)/);
+  // Login has no guest "Not now" exit: the app is sign-in only.
+  assert.doesNotMatch(read("src/app/screens/auth/LoginScreen.tsx"), /continueAsGuest/);
 
   const ui = read("src/store/useUIStore.ts");
   assert.match(ui, /pendingAuthAction: \(\(\) => void\) \| null;/);
@@ -97,9 +99,10 @@ test("social writes and taste signals never reach the server for a guest", () =>
     profile,
     /function persistTasteInteraction[\s\S]*?!getSessionStoreState\(\)\.isAuthenticated\s*\) \{\s*return;/,
   );
+  // Favourites refuse a signed-out caller (for example after session expiry).
   assert.match(
     profile,
-    /toggleFavourite: \(dish\) => \{[\s\S]*?if \(!getSessionStoreState\(\)\.isAuthenticated\) \{/,
+    /toggleFavourite: async \(dish\) => \{[\s\S]*?if \(!session\.isAuthenticated\) \{[\s\S]*?reason: "signed_out"/,
   );
 });
 
@@ -112,9 +115,21 @@ test("a guest's taste quiz stays on the device and uploads on sign-in", () => {
   );
   assert.match(profile, /partialize: \(state\) => \(\{\s*profile: state\.profile,\s*tasteProfile:/);
 
+  // Onboarding taste is held as a provisional migration and written to the
+  // account once it signs in (the app is sign-in only, so this is the pre-auth quiz).
+  // An account with saved taste is recalibrated toward the answers, never
+  // overwritten or ignored; diet restrictions and allergies are unioned.
   const apply = read("src/features/auth/applySignedInProfile.ts");
-  assert.match(apply, /profile\.id !== "guest-user"/);
-  assert.match(apply, /getHungryService\(\)\.profile\.updateTasteProfile\(guestTasteProfile\)/);
+  assert.match(apply, /return profile\.id === "guest-user";/);
+  assert.match(
+    apply,
+    /if \(hasNoSavedTaste\(serverProfile\)\) return provisional\.tasteProfile;\s*return recalibrateTasteProfile\(savedTasteProfile\(serverProfile\), provisional\.tasteProfile\);/,
+  );
+  assert.match(
+    apply,
+    /mergeDietaryPreferences\(serverProfile\.dietaryPreferences, provisional\.dietaryPreferences\)/,
+  );
+  assert.match(apply, /operations\.updateTasteProfile\(resolvedTasteProfile\)/);
   for (const screen of [
     "src/app/screens/auth/LoginScreen.tsx",
     "src/app/screens/auth/SignUpScreen.tsx",
@@ -125,11 +140,9 @@ test("a guest's taste quiz stays on the device and uploads on sign-in", () => {
   }
 });
 
-test("guests can search and browse the catalog; only the search taste signal needs a session", () => {
+test("search and browse load only for a signed-in user; the taste signal too", () => {
   const search = read("src/app/screens/search/SearchResultsScreen.tsx");
-  assert.doesNotMatch(search, /Sign in to browse the full directory/);
-  assert.doesNotMatch(search, /if \(!isAuthenticated\) return;\s*const version/);
-  // Guests and members log the same search event; the taste signal needs a session.
+  assert.match(search, /if \(!isAuthenticated\) return;\s*const startedAt = Date\.now\(\);/);
   assert.match(search, /if \(initialQueryRecordedRef\.current\) return;/);
   assert.match(search, /recordTaste: isAuthenticated && !fromDiscoverChip/);
 });

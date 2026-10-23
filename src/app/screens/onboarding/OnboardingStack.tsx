@@ -4,7 +4,7 @@ import type { OnboardingStackParamList } from "@/app/navigation/navigationTypes"
 import { FoodOpennessScreen } from "./FoodOpennessScreen";
 import { LocationPermissionScreen } from "./LocationPermissionScreen";
 import { ManualLocationPickerScreen } from "./ManualLocationPickerScreen";
-import { OnboardingAuthScreen } from "./OnboardingAuthScreen";
+import { MandatoryOnboardingAuthScreen } from "./MandatoryOnboardingAuthScreen";
 import { TasteQuizScreen } from "./TasteQuizScreen";
 import { TasteProfileResultScreen } from "./TasteProfileResultScreen";
 import { WelcomeScreen } from "./WelcomeScreen";
@@ -13,7 +13,7 @@ export type { OnboardingStackParamList } from "@/app/navigation/navigationTypes"
 const Stack = createNativeStackNavigator<OnboardingStackParamList>();
 
 // Welcome -> Location (GPS or pick an area) -> optional taste quiz -> food openness -> done -> Home.
-// Sign-in is not a step: OnboardingAuth opens only when an action needs an account.
+// Sign-in is required: a signed-out user finishes on the OnboardingAuth account step.
 export function OnboardingStack() {
   return (
     <Stack.Navigator initialRouteName="OnboardingWelcome" screenOptions={{ headerShown: false }}>
@@ -24,7 +24,7 @@ export function OnboardingStack() {
       <Stack.Screen name="DietaryPreferences" component={TasteQuizScreen} />
       <Stack.Screen name="FoodOpenness" component={FoodOpennessScreen} />
       <Stack.Screen name="TasteProfileResult" component={TasteProfileResultScreen} />
-      <Stack.Screen name="OnboardingAuth" component={OnboardingAuthScreen} />
+      <Stack.Screen name="OnboardingAuth" component={MandatoryOnboardingAuthScreen} />
     </Stack.Navigator>
   );
 }

@@ -23,6 +23,7 @@ import {
 import { OPENNESS_NEOPHILIA_INDEX } from "@/lib/ai/exploration";
 import type {
   DietaryFlag,
+  Coordinate,
   DishDetail,
   FoodOpenness,
   RecommendationSurface,
@@ -56,6 +57,34 @@ const SUPABASE_USER_GUEST_PROFILE: UserProfile = {
     followingCount: 0,
   },
 };
+
+/**
+ * A durable snapshot of onboarding choices that have not yet been confirmed
+ * by the authenticated profile write. Device location intentionally remains a
+ * device preference, but it is captured alongside the shared choices so a
+ * failed profile migration never loses the completed onboarding state.
+ */
+export interface ProvisionalOnboardingMigration {
+  userId: string;
+  onboardingVersion: 1;
+  capturedAt: string;
+  tasteProfile?: TasteProfile;
+  /**
+   * The blended profile computed once against the saved account profile, so a
+   * retry after a partial failure writes the same result instead of blending twice.
+   */
+  resolvedTasteProfile?: TasteProfile;
+  dietaryPreferences: DietaryFlag[];
+  /** The onboarding dish budget (S$); a single answer, so it replaces a saved budget. */
+  maxDishBudget?: number;
+  location: {
+    permission: "unknown" | "granted" | "denied";
+    currentLocation: Coordinate;
+    manualLocation?: string;
+    manualCoordinate?: Coordinate;
+    gpsBadgeState: "live" | "manual" | "denied";
+  };
+}
 
 function isUuidLikeProfileId(value: unknown): value is string {
   return (
@@ -113,6 +142,7 @@ interface ProfileState {
     string,
     { rating: number; text: string; tags: string[]; createdAt: string }
   >;
+  provisionalOnboardingMigration?: ProvisionalOnboardingMigration;
   /** True when the last attempt to load favourites from the backend failed. Not persisted. */
   favouritesRehydrationFailed: boolean;
   /** Per-dish food history: server rows plus this device's not-yet-synced signals. */
@@ -122,8 +152,16 @@ interface ProfileState {
   /** Onboarding / Settings: how open the user is to new food. Also sets neophiliaIndex. */
   setFoodOpenness: (openness: FoodOpenness, surface: "onboarding" | "settings") => void;
   applyProfile: (profile: UserProfile) => void;
+  /**
+   * Merge a profile returned by `profile.updateProfile` after an Edit Profile save.
+   * Only identity fields are adopted; favourites, stats and taste state stay with their
+   * own sources of truth (the mock backend never receives favourite toggles).
+   */
+  applySavedProfileEdits: (savedProfile: UserProfile) => void;
+  setProvisionalOnboardingMigration: (migration: ProvisionalOnboardingMigration) => void;
+  clearProvisionalOnboardingMigration: (userId: string) => void;
   syncProfile: (isAuthenticated: boolean, userId?: string | null) => void;
-  toggleFavourite: (dish: DishDetail) => void;
+  toggleFavourite: (dish: FavouriteDishInput) => Promise<FavouriteToggleResult>;
   updateProfile: (next: Partial<Pick<UserProfile, "displayName" | "email" | "avatarUrl">>) => void;
   /** Resolves false when the server rejected the change and the old value was restored. */
   setProfileVisibility: (profileVisibility: ProfileVisibility) => Promise<boolean>;
@@ -199,6 +237,62 @@ function trackActivationOnce(previous: UserProfile, trigger: "tried" | "saved", 
   if (activatedProfileIds.has(previous.id)) return;
   activatedProfileIds.add(previous.id);
   trackAnalyticsEvent("activated", { trigger, dish_id: dishId }, { userId: previous.id });
+}
+
+/**
+ * Bumped whenever the in-memory profile is cleared or replaced by another account.
+ * Async writes capture it before awaiting and drop their result if it changed, so a
+ * slow response for user A can never mutate (or persist into) user B's profile.
+ */
+let profileAccountEpoch = 0;
+
+function bumpProfileAccountEpoch() {
+  profileAccountEpoch += 1;
+}
+
+/** Legacy screens pass a full dish; Release 0.1 catalog screens pass only ids. */
+export type FavouriteDishInput = DishDetail | Pick<DishDetail, "id" | "venueId">;
+
+/** Resolved only after the authenticated write settles, so UI never claims an unsaved write. */
+export type FavouriteToggleResult =
+  | { status: "saved" | "removed" }
+  | {
+      status: "failed";
+      reason: "pending" | "signed_out" | "sync_failed" | "stale";
+      message: string;
+    };
+
+function staleFavouriteResult(): FavouriteToggleResult {
+  return {
+    status: "failed",
+    reason: "stale",
+    message: "Your account changed before this favourite finished saving.",
+  };
+}
+
+function isFullFavouriteDish(dish: FavouriteDishInput): dish is DishDetail {
+  return "tasteVector" in dish && Boolean(dish.tasteVector);
+}
+
+function setFavouriteMembership(
+  set: (fn: (state: ProfileState) => Partial<ProfileState>) => void,
+  dishId: string,
+  isFavourite: boolean,
+) {
+  set((state) => {
+    const hasDish = state.profile.favouriteDishIds.includes(dishId);
+    if (hasDish === isFavourite) return {};
+    const nextIds = isFavourite
+      ? [...state.profile.favouriteDishIds, dishId]
+      : state.profile.favouriteDishIds.filter((id) => id !== dishId);
+    return {
+      profile: {
+        ...state.profile,
+        favouriteDishIds: nextIds,
+        stats: { ...state.profile.stats, favouritesCount: nextIds.length },
+      },
+    };
+  });
 }
 
 function clampConfidence(value: number) {
@@ -401,6 +495,7 @@ export const useProfileStore = create<ProfileState>()(
       tasteProfile: NEUTRAL_TASTE_PROFILE,
       tasteInteractionEvents: [],
       reviewEntries: {},
+      provisionalOnboardingMigration: undefined,
       favouritesRehydrationFailed: false,
       foodHistory: [],
       loadFoodHistory: async () => {
@@ -454,6 +549,29 @@ export const useProfileStore = create<ProfileState>()(
             vector: profile.tasteVector,
           },
         }),
+      applySavedProfileEdits: (savedProfile) =>
+        set((state) => {
+          // Ignore a late save result for an account that is no longer active.
+          if (savedProfile.id !== state.profile.id) return {};
+          return {
+            profile: {
+              ...state.profile,
+              displayName: savedProfile.displayName,
+              email: savedProfile.email ?? state.profile.email,
+              avatarUrl: savedProfile.avatarUrl ?? state.profile.avatarUrl,
+              dietaryPreferences:
+                savedProfile.dietaryPreferences ?? state.profile.dietaryPreferences,
+            },
+          };
+        }),
+      setProvisionalOnboardingMigration: (migration) =>
+        set({ provisionalOnboardingMigration: migration }),
+      clearProvisionalOnboardingMigration: (userId) =>
+        set((state) =>
+          state.provisionalOnboardingMigration?.userId === userId
+            ? { provisionalOnboardingMigration: undefined }
+            : {},
+        ),
       syncProfile: (isAuthenticated, userId) => {
         const currentProfile = get().profile;
         const authenticatedUserId =
@@ -495,6 +613,7 @@ export const useProfileStore = create<ProfileState>()(
           return;
         }
 
+        bumpProfileAccountEpoch();
         guestSnapshotBeforeSignIn =
           isAuthenticated && userId && currentProfile.id === "guest-user"
             ? { userId, profile: currentProfile, tasteProfile: get().tasteProfile }
@@ -511,21 +630,40 @@ export const useProfileStore = create<ProfileState>()(
         rehydrateFavouriteDishIds();
         if (authenticatedUserId) void get().loadFoodHistory();
       },
-      toggleFavourite: (dish) => {
+      toggleFavourite: async (dish) => {
         const dishId = dish.id;
         if (pendingFavouriteDishToggles.has(dishId)) {
-          return;
+          return {
+            status: "failed",
+            reason: "pending",
+            message: "Still saving your last change. Try again in a moment.",
+          };
         }
-        if (!getSessionStoreState().isAuthenticated) {
+        const session = getSessionStoreState();
+        if (!session.isAuthenticated) {
           console.warn("Favourite toggle ignored because the user is signed out.");
-          return;
+          return { status: "failed", reason: "signed_out", message: "Sign in to save favourites." };
         }
+        // Capture the owning account before any await; never re-read it afterwards.
+        const ownerUserId = session.authenticatedUserId ?? undefined;
+        const ownerEpoch = profileAccountEpoch;
+        const isStillOwner = () => {
+          const current = getSessionStoreState();
+          return (
+            profileAccountEpoch === ownerEpoch &&
+            current.isAuthenticated &&
+            (current.authenticatedUserId ?? undefined) === ownerUserId
+          );
+        };
         pendingFavouriteDishToggles.add(dishId);
         const previousSnapshot = {
           profile: get().profile,
           tasteProfile: get().tasteProfile,
           tasteInteractionEvents: get().tasteInteractionEvents,
         };
+        const wasFavourite = previousSnapshot.profile.favouriteDishIds.includes(dishId);
+        // Catalog (release) dishes carry no taste vector; they only toggle membership.
+        const tasteDish = isFullFavouriteDish(dish) ? dish : undefined;
         let recordedEvent: TasteInteractionEvent | undefined;
         let interactionInput: RecordTasteInteractionInput | undefined;
         set((state) => {
@@ -534,20 +672,6 @@ export const useProfileStore = create<ProfileState>()(
             ? state.profile.favouriteDishIds.filter((id) => id !== dishId)
             : [...state.profile.favouriteDishIds, dishId];
           const feedbackType: ExplicitFeedbackEvent["type"] = isFavourite ? "unsaved" : "saved";
-          const updatedTasteVector = processExplicitFeedback(state.profile.tasteVector, {
-            type: feedbackType,
-            dishVector: dish.tasteVector,
-            dishConfidence: dish.tasteConfidence,
-            timestamp: Date.now(),
-          });
-          interactionInput = { type: isFavourite ? "unsaved" : "saved", surface: "profile", dish };
-          const event = createTasteEvent(
-            interactionInput,
-            state.profile.tasteVector,
-            updatedTasteVector,
-            true,
-          );
-          recordedEvent = event;
 
           trackAnalyticsEvent(isFavourite ? "dish_unfavourited" : "dish_favourited", {
             dish_id: dish.id,
@@ -556,6 +680,35 @@ export const useProfileStore = create<ProfileState>()(
           if (!isFavourite) {
             trackActivationOnce(state.profile, "saved", dish.id);
           }
+
+          if (!tasteDish) {
+            return {
+              profile: {
+                ...state.profile,
+                favouriteDishIds: nextIds,
+                stats: { ...state.profile.stats, favouritesCount: nextIds.length },
+              },
+            };
+          }
+
+          const updatedTasteVector = processExplicitFeedback(state.profile.tasteVector, {
+            type: feedbackType,
+            dishVector: tasteDish.tasteVector,
+            dishConfidence: tasteDish.tasteConfidence,
+            timestamp: Date.now(),
+          });
+          interactionInput = {
+            type: isFavourite ? "unsaved" : "saved",
+            surface: "profile",
+            dish: tasteDish,
+          };
+          const event = createTasteEvent(
+            interactionInput,
+            state.profile.tasteVector,
+            updatedTasteVector,
+            true,
+          );
+          recordedEvent = event;
 
           const nextProfile = {
             ...state.profile,
@@ -580,23 +733,32 @@ export const useProfileStore = create<ProfileState>()(
         if (interactionInput) {
           persistTasteInteraction(interactionInput, recordedEvent);
         }
-        if (getServiceProvider().mode !== "mock") {
-          const optimisticProfile = get().profile;
-          void getHungryService()
-            .profile.toggleFavourite(dishId)
-            .catch((error) => {
-              console.error("Failed to sync favourite toggle", error);
-              if (get().profile !== optimisticProfile) return;
-              set(previousSnapshot);
-              useUIStore.getState().showToast({
-                message: "Couldn't update your favourites. Please try again.",
-                tone: "error",
-              });
-            })
-            .finally(() => {
-              pendingFavouriteDishToggles.delete(dishId);
-            });
-        } else {
+        if (getServiceProvider().mode === "mock") {
+          pendingFavouriteDishToggles.delete(dishId);
+          return { status: wasFavourite ? "removed" : "saved" };
+        }
+
+        const optimisticProfile = get().profile;
+        try {
+          const saved = await getHungryService().profile.toggleFavourite(dishId, ownerUserId);
+          if (!isStillOwner()) return staleFavouriteResult();
+          // The server toggles its own row; if local state was stale, adopt the server result.
+          setFavouriteMembership(set, dishId, saved);
+          return { status: saved ? "saved" : "removed" };
+        } catch (error) {
+          if (!isStillOwner()) return staleFavouriteResult();
+          console.error("Failed to sync favourite toggle", error);
+          if (get().profile === optimisticProfile) {
+            set(previousSnapshot);
+          } else {
+            setFavouriteMembership(set, dishId, wasFavourite);
+          }
+          return {
+            status: "failed",
+            reason: "sync_failed",
+            message: "Couldn't update your favourites. Check your connection and try again.",
+          };
+        } finally {
           pendingFavouriteDishToggles.delete(dishId);
         }
       },
@@ -977,7 +1139,8 @@ export const useProfileStore = create<ProfileState>()(
         persistTasteInteraction(input, recordedEvent);
         return recordedEvent;
       },
-      clearProfile: () =>
+      clearProfile: () => {
+        bumpProfileAccountEpoch();
         set({
           profile: withNeutralTasteProfile(
             ensureSupabaseCompatibleProfile(getDataRepository().getProfile(false)),
@@ -985,9 +1148,11 @@ export const useProfileStore = create<ProfileState>()(
           tasteProfile: NEUTRAL_TASTE_PROFILE,
           tasteInteractionEvents: [],
           reviewEntries: {},
+          provisionalOnboardingMigration: undefined,
           favouritesRehydrationFailed: false,
           foodHistory: [],
-        }),
+        });
+      },
     }),
     {
       name: "hungry-profile-v1",
@@ -1012,6 +1177,7 @@ export const useProfileStore = create<ProfileState>()(
         tasteProfile: state.tasteProfile,
         tasteInteractionEvents: state.tasteInteractionEvents,
         reviewEntries: state.reviewEntries,
+        provisionalOnboardingMigration: state.provisionalOnboardingMigration,
         foodHistory: state.foodHistory,
       }),
     },

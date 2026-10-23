@@ -990,7 +990,11 @@ export interface HungryService {
     /** Saves the usual max price per dish (SGD); null clears it ("Any price"). */
     updateMaxDishBudget(maxDishBudget: number | null): Promise<void>;
     getGuestProfile(): Promise<UserProfile>;
-    toggleFavourite(dishId: string): Promise<boolean>;
+    /**
+     * `expectedUserId` pins the write to the account that initiated it; the
+     * implementation must refuse to write if the live session belongs to anyone else.
+     */
+    toggleFavourite(dishId: string, expectedUserId?: string): Promise<boolean>;
     /**
      * Saves the dish "Tried" mark on the server and resolves to the updated Tried list.
      * A dish the user reviewed stays in the list when un-ticked.

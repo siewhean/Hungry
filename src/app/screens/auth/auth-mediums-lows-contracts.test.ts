@@ -165,14 +165,14 @@ test("auth-M6: reset links report errors, and a dead link is shown before any ty
     linking.getStateFromPath("auth/reset?error=access_denied&error_code=otp_expired")?.routes?.[0],
     {
       name: "AuthStack",
-      params: { screen: "ResetPassword", params: { linkError: "expired" }, pop: true },
+      params: { screen: "ResetPassword", params: { error: "expired" }, pop: true },
     },
   );
   assert.deepEqual(
     linking.getStateFromPath("auth/reset#error=access_denied&error_code=other")?.routes?.[0],
     {
       name: "AuthStack",
-      params: { screen: "ResetPassword", params: { linkError: "invalid" }, pop: true },
+      params: { screen: "ResetPassword", params: { error: "invalid" }, pop: true },
     },
   );
   const reset = read("src/app/screens/auth/ResetPasswordScreen.tsx");
@@ -368,7 +368,8 @@ test("auth-L8: an unrequested sign-out is reported as an expired session", () =>
 
   assert.match(
     read("src/app/navigation/RootNavigator.tsx"),
-    /if \(sessionExpired && navigationRef\.isReady\(\)\) \{[\s\S]*?showToast\(\{[\s\S]*?dismissSessionExpiry\(\)/,
+    // Sign-in only: an expired session goes to Login, which shows the notice.
+    /if \(sessionExpired && navigationRef\.isReady\(\)\) \{[\s\S]*?navigationRef\.navigate\("AuthStack", \{ screen: "Login" \}\)/,
   );
   assert.match(read("src/app/screens/profile/SettingsScreen.tsx"), /expectSignOut\(\);/);
 });

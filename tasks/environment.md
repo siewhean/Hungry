@@ -140,16 +140,50 @@ Configured in: `tsconfig.json` + `babel.config.js`
 
 ## Environment Constraints
 
-| Constraint             | Detail                                                                                                                                                                                            |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Mock-first local data  | Default local app mode uses `src/lib/services/mock/data.ts`; Supabase-backed integrations are staged behind `HUNGRY_DATA_SOURCE=supabase` and release smoke gates                                 |
-| Service boundary       | App screens/features must use `getDataRepository()` or `getHungryService()`; do not call Supabase, fixtures, or network clients directly from UI code                                             |
-| Backend posture        | Supabase schema, RLS, storage, Edge Functions, and smoke scripts exist for staged/release integrations; production behavior still requires the documented live smoke credentials and device gates |
-| Web posture            | Consumer app target is iOS + Android; marketing website work lives under `marketing/website/web-v2/` and should remain separate from mobile release claims                                        |
-| No new state libraries | Zustand only                                                                                                                                                                                      |
-| No new nav libraries   | React Navigation only                                                                                                                                                                             |
-| TypeScript strict      | `any` requires a comment justification                                                                                                                                                            |
-| Mock map               | `mockMapboxEnabled: false` → real Mapbox SDK; set `true` for CI/test env                                                                                                                          |
+| Constraint             | Detail                                                                                                                                                                                                                                                                     |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Mock-first local data  | Default local app mode uses `src/lib/services/mock/data.ts`; Supabase-backed integrations are staged behind `HUNGRY_DATA_SOURCE=supabase` and release smoke gates                                                                                                          |
+| Service boundary       | App screens/features must use `getDataRepository()` or `getHungryService()`; do not call Supabase, fixtures, or network clients directly from UI code                                                                                                                      |
+| Backend posture        | Supabase schema, RLS, storage, Edge Functions, and smoke scripts exist for staged/release integrations; production behavior still requires the documented live smoke credentials and device gates                                                                          |
+| Web posture            | Consumer app target is iOS + Android; marketing website work lives under `marketing/website/web-v2/` and should remain separate from mobile release claims                                                                                                                 |
+| No new state libraries | Zustand only                                                                                                                                                                                                                                                               |
+| No new nav libraries   | React Navigation only                                                                                                                                                                                                                                                      |
+| TypeScript strict      | `any` requires a comment justification                                                                                                                                                                                                                                     |
+| Mock map               | `mockMapboxEnabled: false` → real Mapbox SDK; set `true` for CI/test env                                                                                                                                                                                                   |
+| Secrets in env files   | Tracked `.env.development/.staging/.production` hold public/build config only; server secrets go in untracked `.env.local`, EAS/CI secrets, or Supabase function secrets (`.env.example` lists names)                                                                      |
+| iOS EAS build image    | Every `eas.json` build profile pins `ios.image` to `macos-sequoia-15.6-xcode-26.2` (Xcode 26.2, the `sdk-55` image) until UIScene lifecycle adoption via Expo SDK 57.0.23+/58; iOS 27 SDK (Xcode 27) builds crash at launch without UIScene, Xcode 26 builds run on iOS 27 |
+
+## Account Deletion Worker (ACCDEL-01)
+
+Nothing inside Supabase schedules `process-account-deletions`; the host must. No pg_cron dependency.
+
+- Function secrets (Supabase secret store / self-hosted edge-runtime env): `ACCOUNT_DELETION_WORKER_TOKEN`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`.
+- `supabase/config.toml` sets `verify_jwt = false` for this function (the bearer is the worker token, not a JWT). On self-hosted, the edge-runtime main router must not enforce JWT for it (global `VERIFY_JWT=false`, or exempt this function).
+- Runner: `scripts/run-account-deletion-worker.mjs` (Node 22, no deps). Env file on the VM, root-owned `chmod 600`, e.g. `/etc/hungry/account-deletion-worker.env`, with names only from `.env.example`: `ACCOUNT_DELETION_WORKER_TOKEN`, `SUPABASE_URL` (or `ACCOUNT_DELETION_WORKER_URL`), optional `ACCOUNT_DELETION_WORKER_LIMIT`, `ACCOUNT_DELETION_WORKER_MAX_BATCHES`.
+- VM crontab (every 15 min; well inside the 30-day promise on `/account/delete`):
+  `*/15 * * * * /usr/bin/node --env-file=/etc/hungry/account-deletion-worker.env /opt/hungry/scripts/run-account-deletion-worker.mjs >> /var/log/hungry/account-deletion.log 2>&1`
+- Exit codes: `0` ok/empty queue, `1` a request or the call failed (alert on this), `2` missing config. Logs carry request ids only.
+- Per request: anonymize (0040 RPC) -> `purge_account_deletion_residual_data` (post-0040 tables, avatar URL) -> delete `<uid>/` objects in avatars, review-media, bites-media, post-media, menu-photos, user-stall-submission-images (accepted stall-submission images kept) -> `auth.admin.deleteUser` -> complete. Idempotent; failures retry next run; after 10 attempts a request stops auto-claiming and needs manual review (`last_error`, `account_deletion_processing_events`).
+
+## Self-Hosted Supabase Targets
+
+Hungry's Supabase runs self-hosted (docker compose); there is no linked Supabase Cloud project or Management API. Set values locally or as CI secrets only, never in the repo.
+
+| Env var                         | Used by                                                                                                                                                                        |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `SUPABASE_DB_URL`               | Postgres connection string for `supabase db query/advisors/push --db-url` (DB smokes, Advisor classifier/snapshot, catalog publish, staging chunks, release-candidate dry run) |
+| `HUNGRY_SUPABASE_ALLOWED_HOSTS` | Comma-separated API hostnames that service-role smoke/import scripts may target; `*_PROJECT_REF` is still honoured only for `*.supabase.co` URLs                               |
+
+Leaked-password protection is a self-host auth setting (`GOTRUE_PASSWORD_HIBP_ENABLED`); `npm run security:supabase:enable-leaked-password` is retired.
+
+### Auth email redirect URLs
+
+Self-hosted GoTrue must allow both app deep links in `ADDITIONAL_REDIRECT_URLS` (`GOTRUE_URI_ALLOW_LIST`), or confirmation/reset emails fall back to `SITE_URL`:
+
+| Deep link                | Client env override (optional)          | Purpose                                                        |
+| ------------------------ | --------------------------------------- | -------------------------------------------------------------- |
+| `hungry://auth/callback` | `EXPO_PUBLIC_AUTH_REDIRECT_URL`         | Password reset (and OAuth) PKCE callback → `ResetPassword`     |
+| `hungry://auth/confirm`  | `EXPO_PUBLIC_AUTH_CONFIRM_REDIRECT_URL` | Sign-up email confirmation PKCE callback → `EmailVerification` |
 
 ---
 

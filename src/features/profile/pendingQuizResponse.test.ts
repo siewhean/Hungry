@@ -10,7 +10,7 @@ import { flushPendingQuizResponse, recordQuizResponse } from "./pendingQuizRespo
 test("a failed write keeps the queued quiz answers; the next flush saves them once", async () => {
   const service = getHungryService();
   const original = service.profile.recordQuizResponse;
-  const writes: Array<Record<string, unknown>> = [];
+  const writes: Record<string, unknown>[] = [];
   let failNext = true;
   service.profile.recordQuizResponse = async (responses) => {
     if (failNext) {

@@ -347,7 +347,7 @@ test("M8: the deep links the pushes use open the inbox and the follow requests s
   const linking = read("src/app/navigation/linking.ts");
   assert.match(linking, /ActivityInbox: "activity"/);
   assert.match(linking, /FollowRequests: "follow-requests"/);
-  assert.match(linking, /"FollowRequests",/);
+  // Every route needs a session (sign-in only), so there is no protected-route list.
 });
 
 // ---------------------------------------------------------------------------
@@ -508,10 +508,7 @@ test("L13: stories and direct messages stay behind their flags in production", (
 
 test("L14: the Home tab does not take pager swipes, so the photo carousel keeps them", () => {
   const tabs = read("src/app/navigation/SwipeableTabNavigator.tsx");
-  assert.match(
-    tabs,
-    /<Tab\.Screen name="Home" component=\{HomeWrapper\} options=\{\{ swipeEnabled: false \}\} \/>/,
-  );
+  assert.match(tabs, /name="Home"[\s\S]{0,120}options=\{\{ swipeEnabled: false \}\}/);
 });
 
 test("L15: the empty comments copy says comment, not review", () => {

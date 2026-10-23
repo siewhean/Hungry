@@ -7,14 +7,24 @@ import { deleteExportFile } from "@/features/profile/exportFile";
 import type { AuthProvider } from "@/lib/services/types";
 import { getConfiguredDataSource, type HungryDataSource } from "@/lib/services/supabase/client";
 import { getHungryService } from "@/lib/services/serviceProvider";
+import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 import { useLocationStore } from "./useLocationStore";
 import { hungryPersistStorage } from "./persistStorage";
-import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 
 export interface PendingRoute {
   name: string;
   params?: Record<string, unknown>;
 }
+
+export interface AuthNotice {
+  message: string;
+  tone: "info" | "success" | "warning" | "error";
+}
+
+export const SESSION_EXPIRED_NOTICE: AuthNotice = {
+  message: "Your session expired. Sign in again to continue.",
+  tone: "warning",
+};
 
 interface SessionState {
   hasHydrated: boolean;
@@ -26,8 +36,15 @@ interface SessionState {
   authDataSource?: HungryDataSource | null;
   returnRoute?: string | PendingRoute;
   sessionExpired: boolean;
-  /** True while a password-recovery session finishes; the auth redirect waits for it. */
+  /**
+   * True while a password-recovery code exchange + password update is running.
+   * The exchange emits SIGNED_IN/PASSWORD_RECOVERY; AppBody holds the current
+   * navigator while this is set so the reset form is not unmounted mid-flow.
+   * Never persisted.
+   */
   passwordRecoveryInProgress: boolean;
+  /** One-shot message shown on the Login screen after a signed-out transition. */
+  authNotice?: AuthNotice | null;
   /** Persisted: a sign-out whose Supabase session may still be stored on this device. */
   signOutPending: boolean;
   completeAuth: (options?: {
@@ -42,6 +59,9 @@ interface SessionState {
   expireSession: () => void;
   dismissSessionExpiry: () => void;
   setReturnRoute: (route?: string | PendingRoute) => void;
+  setAuthNotice: (notice: AuthNotice | null) => void;
+  /** Returns the pending sign-in notice (session expiry first) and clears it. */
+  consumeAuthNotice: () => AuthNotice | null;
   setSkippedTasteQuiz: (skipped: boolean) => void;
   setPasswordRecoveryInProgress: (inProgress: boolean) => void;
   signOut: () => void;
@@ -73,6 +93,7 @@ const initialState = {
   returnRoute: undefined,
   sessionExpired: false,
   passwordRecoveryInProgress: false,
+  authNotice: null,
   signOutPending: false,
 } as const;
 
@@ -87,12 +108,12 @@ function getMerchantStoreState() {
 }
 
 function getSafeProfileId(): string {
-  return getProfileStoreState().profile?.id ?? "guest-user";
+  return getProfileStoreState().profile?.id ?? "anonymous-session";
 }
 
 function isUuidLike(value?: string | null): value is string {
   return Boolean(
-    value?.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i),
+    value?.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i),
   );
 }
 
@@ -153,6 +174,11 @@ function clearAccountScopedStores(): void {
   clearCommunitySafetySessionState();
 }
 
+function clearAuthenticatedProfile(): void {
+  getProfileStoreState().clearProfile();
+  getProfileStoreState().syncProfile(false);
+}
+
 /**
  * Recent searches and unsent review drafts belong to the account that wrote them. Cleared on a
  * deliberate sign-out or an account switch, not on session expiry (the same user signs back in).
@@ -198,20 +224,14 @@ function shouldEnablePostHogIdentity() {
 }
 
 function identifyPostHogUser(userId: string, properties: Record<string, unknown>): void {
-  if (!shouldEnablePostHogIdentity()) {
-    return;
-  }
-
+  if (!shouldEnablePostHogIdentity()) return;
   const { identifyPostHogUser: identify } =
     require("@/lib/analytics/posthogSink") as typeof import("@/lib/analytics/posthogSink");
   identify(userId, properties);
 }
 
 function resetPostHogUser(): void {
-  if (!shouldEnablePostHogIdentity()) {
-    return;
-  }
-
+  if (!shouldEnablePostHogIdentity()) return;
   const { resetPostHogUser: reset } =
     require("@/lib/analytics/posthogSink") as typeof import("@/lib/analytics/posthogSink");
   reset();
@@ -354,7 +374,7 @@ export const useSessionStore = create<SessionState>()(
         }
         markAccountOnboarded();
         const syncedProfile = getProfileStoreState().profile;
-        const profileId = syncedProfile?.id ?? "guest-user";
+        const profileId = syncedProfile?.id ?? nextUserId ?? "authenticated-user";
         scheduleIdleWork(
           () => {
             identifyPostHogUser(profileId, buildPostHogIdentityProperties());
@@ -388,26 +408,43 @@ export const useSessionStore = create<SessionState>()(
       },
       expireSession: () => {
         const profileId = getSafeProfileId();
-        set({ sessionExpired: true, isAuthenticated: false });
+        set({
+          isAuthenticated: false,
+          isAuthReady: true,
+          authenticatedUserId: null,
+          authDataSource: null,
+          returnRoute: undefined,
+          sessionExpired: true,
+        });
         clearAccountScopedStores();
+        clearAuthenticatedProfile();
         resetPostHogUser();
         resetSignInTracking();
         trackAnalyticsEvent("sign_out", { reason: "session_expired" }, { userId: profileId });
       },
       dismissSessionExpiry: () => set({ sessionExpired: false }),
       setReturnRoute: (returnRoute) => set({ returnRoute }),
+      setAuthNotice: (authNotice) => set({ authNotice }),
+      consumeAuthNotice: (): AuthNotice | null => {
+        const { sessionExpired, authNotice }: SessionState = useSessionStore.getState();
+        const notice = sessionExpired ? SESSION_EXPIRED_NOTICE : (authNotice ?? null);
+        if (sessionExpired || authNotice) set({ sessionExpired: false, authNotice: null });
+        return notice;
+      },
       setSkippedTasteQuiz: (hasSkippedTasteQuiz) => set({ hasSkippedTasteQuiz }),
       setPasswordRecoveryInProgress: (passwordRecoveryInProgress) =>
         set({ passwordRecoveryInProgress }),
       signOut: () => {
         const profileId = getSafeProfileId();
-        const hasSkippedTasteQuiz = useSessionStore.getState().hasSkippedTasteQuiz;
+        const { hasCompletedOnboarding, hasSkippedTasteQuiz, authNotice }: SessionState =
+          useSessionStore.getState();
         const isSupabase = getConfiguredDataSource() === "supabase";
         set({
           ...initialState,
           isAuthReady: true,
-          hasCompletedOnboarding: true,
+          hasCompletedOnboarding,
           hasSkippedTasteQuiz,
+          authNotice,
           signOutPending: isSupabase,
         });
         if (isSupabase) {
@@ -415,8 +452,7 @@ export const useSessionStore = create<SessionState>()(
         }
         clearAccountScopedStores();
         clearAccountLocalHistory();
-        getProfileStoreState().clearProfile();
-        getProfileStoreState().syncProfile(false);
+        clearAuthenticatedProfile();
         resetPostHogUser();
         resetSignInTracking();
         trackAnalyticsEvent("sign_out", { reason: "manual" }, { userId: profileId });
@@ -427,10 +463,15 @@ export const useSessionStore = create<SessionState>()(
           : Promise.resolve(),
       clearSession: () => {
         const profileId = getSafeProfileId();
-        set({ ...initialState, isAuthReady: true });
+        const { hasCompletedOnboarding, hasSkippedTasteQuiz } = useSessionStore.getState();
+        set({
+          ...initialState,
+          isAuthReady: true,
+          hasCompletedOnboarding,
+          hasSkippedTasteQuiz,
+        });
         clearAccountScopedStores();
-        getProfileStoreState().clearProfile();
-        getProfileStoreState().syncProfile(false);
+        clearAuthenticatedProfile();
         resetPostHogUser();
         resetSignInTracking();
         trackAnalyticsEvent("sign_out", { reason: "clear_session" }, { userId: profileId });
@@ -445,17 +486,17 @@ export const useSessionStore = create<SessionState>()(
           !isUuidLike(session.userId);
 
         if (isInvalidSupabaseAuthState) {
-          if (currentlyAuthenticated) {
-            clearAccountScopedStores();
-          }
+          if (currentlyAuthenticated) clearAccountScopedStores();
           set({
             isAuthenticated: false,
             isAuthReady: true,
             authenticatedUserId: null,
             authDataSource: null,
-            sessionExpired: false,
+            returnRoute: undefined,
+            sessionExpired: true,
           });
-          syncProfileForAuthState(false, null);
+          clearAuthenticatedProfile();
+          resetPostHogUser();
           return;
         }
 
@@ -481,7 +522,7 @@ export const useSessionStore = create<SessionState>()(
           markAccountOnboarded();
 
           const profile = getProfileStoreState().profile;
-          const profileId = session.userId ?? profile?.id ?? "guest-user";
+          const profileId = session.userId ?? profile?.id ?? "authenticated-user";
           scheduleIdleWork(
             () => {
               identifyPostHogUser(profileId, buildPostHogIdentityProperties());
@@ -503,16 +544,14 @@ export const useSessionStore = create<SessionState>()(
           return;
         }
 
-        if (!currentlyAuthenticated) {
-          set({ isAuthReady: true });
-          return;
-        }
-
         const profileId = getSafeProfileId();
+        // Supabase emits SIGNED_OUT right after expireSession(); keep a notice that is
+        // already set so the Login screen still shows it.
         const expired =
-          (session.sessionExpired ?? false) &&
-          !useSessionStore.getState().signOutPending &&
-          Date.now() >= expectedSignOutUntil;
+          useSessionStore.getState().sessionExpired ||
+          ((session.sessionExpired ?? false) &&
+            !useSessionStore.getState().signOutPending &&
+            Date.now() >= expectedSignOutUntil);
         set({
           isAuthenticated: false,
           isAuthReady: true,
@@ -521,7 +560,8 @@ export const useSessionStore = create<SessionState>()(
           sessionExpired: expired,
         });
         clearAccountScopedStores();
-        getProfileStoreState().syncProfile(false);
+        // Sign-in only: never leave the previous account's profile on screen.
+        clearAuthenticatedProfile();
         resetPostHogUser();
         resetSignInTracking();
         trackAnalyticsEvent(

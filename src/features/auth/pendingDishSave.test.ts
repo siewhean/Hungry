@@ -12,7 +12,12 @@ const dish = { id: "dish-chicken-rice", name: "Chicken Rice" } as DishDetail;
 function stubToggleAndServer(serverIds: string[]) {
   const calls: string[] = [];
   const originalToggle = useProfileStore.getState().toggleFavourite;
-  useProfileStore.setState({ toggleFavourite: (target) => void calls.push(target.id) });
+  useProfileStore.setState({
+    toggleFavourite: async (target) => {
+      calls.push(target.id);
+      return { status: "saved" };
+    },
+  });
   const current = useProfileStore.getState().profile;
   useProfileStore.setState({ profile: { ...current, favouriteDishIds: [] } });
   const profileService = getHungryService().profile;

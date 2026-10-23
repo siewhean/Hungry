@@ -122,7 +122,12 @@ test("H111/H112/H113/H114/H120/H121: auth forms hide disabled OAuth, autofill, s
   assert.match(screen, /keyboardShouldPersistTaps="handled"/);
   assert.match(screen, /keyboardAvoiding \? \(\s*<KeyboardAvoidingView/);
   const shell = read("src/app/screens/auth/AuthScreenShell.tsx");
-  assert.match(shell, /<Screen keyboardAvoiding>/);
+  // The auth shell avoids the keyboard itself and also reveals the focused field.
+  assert.match(
+    shell,
+    /<KeyboardAvoidingView\s+behavior=\{Platform\.OS === "ios" \? "padding" : undefined\}/,
+  );
+  assert.match(shell, /keyboardShouldPersistTaps="handled"/);
   assert.doesNotMatch(shell, /contentOffsetTop|scroll=\{scroll\}/);
 
   const onboardingAuth = read("src/app/screens/onboarding/OnboardingAuthScreen.tsx");

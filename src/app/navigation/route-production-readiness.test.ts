@@ -23,15 +23,22 @@ test("production route gates keep advanced surfaces behind MVP-safe flags", () =
   const linking = read("src/app/navigation/linking.ts");
 
   assert.match(flags, /prototypeRoutesEnabled/);
-  assert.match(flags, /directMessagesEnabled: nonProductionSurfaceEnabled/);
-  assert.match(flags, /gamificationEnabled: nonProductionSurfaceEnabled/);
-  assert.match(flags, /collectionsEnabled: nonProductionSurfaceEnabled/);
-  assert.match(flags, /storiesEnabled: nonProductionSurfaceEnabled/);
-  assert.match(flags, /commentsEnabled: nonProductionSurfaceEnabled/);
-  assert.match(flags, /const merchantCentreEnabled = nonProductionSurfaceEnabled/);
-  assert.match(flags, /const merchantClaimCtaEnabled = nonProductionSurfaceEnabled/);
-  assert.match(flags, /oauthProvidersEnabled: nonProductionSurfaceEnabled/);
+  // Advanced surfaces follow main: available outside production only.
+  assert.match(flags, /const nonProductionSurfaceEnabled = prototypeRoutesEnabled/);
+  for (const flag of [
+    "directMessagesEnabled",
+    "gamificationEnabled",
+    "collectionsEnabled",
+    "storiesEnabled",
+    "commentsEnabled",
+    "merchantCentreEnabled",
+    "merchantClaimCtaEnabled",
+    "oauthProvidersEnabled",
+  ]) {
+    assert.match(flags, new RegExp(`${flag}: nonProductionSurfaceEnabled`));
+  }
   assert.match(flags, /floorplansEnabled: false/);
+  assert.match(flags, /favouritesEnabled: true,/);
   assert.match(flags, /appEnv !== "production"/);
   assert.match(rootNavigator, /FEATURE_FLAGS\.prototypeRoutesEnabled \? \(/);
   for (const routeName of ["DesignGallery", "PostComposerV2"]) {
@@ -79,6 +86,29 @@ test("production route gates keep advanced surfaces behind MVP-safe flags", () =
   assert.match(linking, /FEATURE_FLAGS\.portfoliosEnabled/);
   assert.match(linking, /PortfolioPublicView/);
   assert.match(linking, /MerchantTabs/);
+  for (const [flag, routeName] of [
+    ["mapEnabled", "DiscoverMap"],
+    ["mapEnabled", "MapZoomedIn"],
+    ["postCreationEnabled", "Post"],
+    ["reviewCreationEnabled", "ReviewStack"],
+    ["hungryWheelEnabled", "WheelStack"],
+    ["activityEnabled", "ActivityInbox"],
+    ["activityEnabled", "ActivityPostDetail"],
+  ]) {
+    assert.match(
+      rootNavigator,
+      new RegExp(`FEATURE_FLAGS\\.${flag} \\? \\([\\s\\S]*name="${routeName}"`),
+      `${routeName} should be registered only when ${flag} is enabled`,
+    );
+  }
+  assert.match(rootNavigator, /!FEATURE_FLAGS\.release01CoreOnly \? \([\s\S]*name="QuickBites"/);
+  assert.match(rootNavigator, /FEATURE_FLAGS\.favouritesEnabled \? \([\s\S]*name="Favourites"/);
+  assert.match(
+    rootNavigator,
+    /FEATURE_FLAGS\.reviewCreationEnabled \? \([\s\S]*name="ReviewHistory"/,
+  );
+  assert.match(rootNavigator, /FEATURE_FLAGS\.socialFeedEnabled \? \([\s\S]*name="UserProfile"/);
+  assert.match(rootNavigator, /function isReleaseRouteAvailable/);
 });
 
 test("floorplan screens are removed while floorplans stay hard-off", () => {
@@ -89,7 +119,7 @@ test("floorplan screens are removed while floorplans stay hard-off", () => {
   assert.doesNotMatch(developerLauncher, /BuildingDrillDown/);
 });
 
-test("signed-out app entry opens the app as a guest while public routes stay unprotected", () => {
+test("signed-out app entry requires an account (no guest mode)", () => {
   const rootNavigator = read("src/app/navigation/RootNavigator.tsx");
   const splash = read("src/app/screens/SplashScreen.tsx");
   const developerLauncher = read("src/app/screens/dev/DeveloperLauncherScreen.tsx");
@@ -118,8 +148,9 @@ test("signed-out app entry opens the app as a guest while public routes stay unp
     rootNavigator,
     /const PROTECTED_MAIN_TAB_ROUTES = new Set<MainTabRouteName>\(\["Profile"\]\)/,
   );
-  // No login wall: new users go to onboarding, returning signed-out users browse as guests.
-  assert.doesNotMatch(splash, /name: "AuthStack"/);
+  // Mandatory sign-in: new users go to onboarding (which ends at the account step),
+  // returning signed-out users go to Login; MainTabs opens only with a session.
+  assert.match(splash, /if \(!isAuthenticated\) \{[\s\S]*name: "AuthStack"[\s\S]*screen: "Login"/);
   assert.match(
     splash,
     /if \(!hasCompletedOnboarding\) \{[\s\S]*name: "OnboardingStack"[\s\S]*screen: "OnboardingWelcome"/,
@@ -133,13 +164,14 @@ test("signed-out app entry opens the app as a guest while public routes stay unp
   assert.doesNotMatch(profileHome, /Unlock your taste profile|Sign In \/ Create Account/);
   assert.match(
     rootNavigator,
-    /if \(currentTopRoute === "OnboardingStack" && hasCompletedOnboarding\) \{\s*navigateHome\(\);\s*\}/,
+    /if \(currentTopRoute === "OnboardingStack" && hasCompletedOnboarding\) \{[\s\S]*if \(isAuthenticated\) \{[\s\S]*navigateHome\(\);[\s\S]*name: "AuthStack"[\s\S]*screen: "Login"/,
   );
   assert.match(rootNavigator, /const isDeveloperMode = useMerchantStore/);
   assert.match(rootNavigator, /const isMerchantMode = useMerchantStore/);
+  assert.match(rootNavigator, /const authDataSource = useSessionStore/);
   assert.match(
     rootNavigator,
-    /currentTopRoute === "DeveloperLauncher"[\s\S]*isAuthenticated[\s\S]*hasCompletedOnboarding[\s\S]*!isDeveloperMode[\s\S]*!isMerchantMode[\s\S]*navigateHome\(\)/,
+    /currentTopRoute === "DeveloperLauncher"[\s\S]*isAuthenticated[\s\S]*hasCompletedOnboarding[\s\S]*authDataSource === "supabase"[\s\S]*!isDeveloperMode[\s\S]*!isMerchantMode[\s\S]*navigateHome\(\)/,
   );
   assert.match(
     developerLauncher,
@@ -177,20 +209,28 @@ test("protected actions preserve return routes before auth", () => {
   assert.match(rootNavigator, /setReturnRoute\(/);
   assert.match(rootNavigator, /navigationRef\.resetRoot\(\{[\s\S]*name: "AuthStack"/);
   const rootReturnRestore = rootNavigator.slice(
-    rootNavigator.indexOf("else if (isRootRouteName(returnRoute))"),
+    rootNavigator.indexOf(
+      "else if (isRootRouteName(returnRoute) && isReleaseRouteAvailable(returnRoute))",
+    ),
     rootNavigator.indexOf(
       "} else {",
-      rootNavigator.indexOf("else if (isRootRouteName(returnRoute))"),
+      rootNavigator.indexOf(
+        "else if (isRootRouteName(returnRoute) && isReleaseRouteAvailable(returnRoute))",
+      ),
     ),
   );
   assert.match(rootReturnRestore, /index: 1/);
   assert.match(rootReturnRestore, /name: "MainTabs", params: \{ screen: "Home" \}/);
   assert.match(rootReturnRestore, /name: returnRoute/);
   const parameterizedRootReturnRestore = rootNavigator.slice(
-    rootNavigator.indexOf("else if (isRootRouteName(returnRoute.name))"),
+    rootNavigator.indexOf(
+      "else if (isRootRouteName(returnRoute.name) && isReleaseRouteAvailable(returnRoute.name))",
+    ),
     rootNavigator.indexOf(
       "} else {",
-      rootNavigator.indexOf("else if (isRootRouteName(returnRoute.name))"),
+      rootNavigator.indexOf(
+        "else if (isRootRouteName(returnRoute.name) && isReleaseRouteAvailable(returnRoute.name))",
+      ),
     ),
   );
   assert.match(parameterizedRootReturnRestore, /index: 1/);
@@ -199,5 +239,7 @@ test("protected actions preserve return routes before auth", () => {
     parameterizedRootReturnRestore,
     /name: returnRoute\.name, params: returnRoute\.params/,
   );
+  assert.match(tabs, /FEATURE_FLAGS\.postCreationEnabled/);
+  assert.match(tabs, /rootNavigation\?\.navigate\("Post"\)/);
   assert.match(tabs, /setReturnRoute\(\{ name: "Post" \}\)/);
 });

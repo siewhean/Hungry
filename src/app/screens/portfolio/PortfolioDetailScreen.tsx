@@ -111,6 +111,8 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
   const rootNavigation = getRootNavigation(navigation as any);
   const isFollowing = follows[portfolioId] === true;
   const [isSaving, setIsSaving] = useState(false);
+  // Cross-platform confirm (Alert.alert is a no-op on web, so E2E can't drive it).
+  const [visibilityDialog, setVisibilityDialog] = useState<"publish" | "unpublish" | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
@@ -311,32 +313,7 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
                 fullWidth={false}
                 variant="secondary"
                 disabled={isSaving}
-                onPress={() => {
-                  if (isLive) {
-                    Alert.alert("Unpublish this list?", "It goes back to private.", [
-                      { text: "Cancel", style: "cancel" },
-                      {
-                        text: "Unpublish",
-                        onPress: () =>
-                          void runOwnerAction(() =>
-                            updatePortfolio(portfolio.id, { visibility: "private" }),
-                          ),
-                      },
-                    ]);
-                    return;
-                  }
-                  Alert.alert(
-                    "Publish this list?",
-                    "It becomes public: anyone with the link can see it.",
-                    [
-                      { text: "Cancel", style: "cancel" },
-                      {
-                        text: "Publish",
-                        onPress: () => void runOwnerAction(() => publishPortfolio(portfolio.id)),
-                      },
-                    ],
-                  );
-                }}
+                onPress={() => setVisibilityDialog(isLive ? "unpublish" : "publish")}
               />
               <Button
                 label="More"
@@ -522,6 +499,34 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
           </View>
         ) : null}
       </Card>
+
+      <Dialog
+        visible={visibilityDialog === "publish"}
+        title="Publish this list?"
+        message="It becomes public: anyone with the link can see it."
+        buttons={[
+          {
+            text: "Publish",
+            onPress: () => void runOwnerAction(() => publishPortfolio(portfolio.id)),
+          },
+          { text: "Cancel", style: "cancel" },
+        ]}
+        onClose={() => setVisibilityDialog(null)}
+      />
+      <Dialog
+        visible={visibilityDialog === "unpublish"}
+        title="Unpublish this list?"
+        message="It goes back to private."
+        buttons={[
+          {
+            text: "Unpublish",
+            onPress: () =>
+              void runOwnerAction(() => updatePortfolio(portfolio.id, { visibility: "private" })),
+          },
+          { text: "Cancel", style: "cancel" },
+        ]}
+        onClose={() => setVisibilityDialog(null)}
+      />
 
       <Dialog
         visible={addOpen}
