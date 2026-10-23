@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { AccessibilityInfo, Alert, Pressable, Share, StyleSheet, View } from "react-native";
+import {
+  AccessibilityInfo,
+  Alert,
+  Platform,
+  Pressable,
+  Share,
+  StyleSheet,
+  View,
+} from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { useIsFocused } from "@react-navigation/native";
 import {
@@ -1283,17 +1291,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                     : undefined;
                   const dishName = dish?.name;
                   return (
-                    <Pressable
-                      key={review.id}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Review of ${dishName ?? "dish"}, rated ${review.rating} out of 5`}
-                      accessibilityHint="Opens the dish"
-                      disabled={!review.dishId}
-                      onPress={() =>
-                        review.dishId &&
-                        rootNavigation.navigate("DishDetail", { dishId: review.dishId })
-                      }
-                    >
+                    <View key={review.id}>
                       <Card style={{ gap: spacing[3] }}>
                         <View
                           style={{
@@ -1302,31 +1300,48 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                             gap: spacing[2],
                           }}
                         >
-                          {dish?.imageUrl ? (
-                            <AccessibleImage
-                              source={{ uri: dish.imageUrl }}
-                              accessibilityLabel={dishName ?? "Reviewed dish"}
-                              contentFit="cover"
-                              style={{
-                                borderRadius: radii.md,
-                                height: spacing[20],
-                                width: spacing[20],
-                              }}
-                            />
-                          ) : null}
-                          <View style={{ flex: 1, gap: spacing[1] }}>
-                            <AppText variant="bodyBold" numberOfLines={1}>
-                              {dishName ?? "Reviewed dish"}
-                            </AppText>
-                            {dish?.venueName ? (
-                              <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
-                                {dish.venueName}
-                              </AppText>
+                          <Pressable
+                            accessibilityRole="button"
+                            accessibilityLabel={`Review of ${dishName ?? "dish"}, rated ${review.rating} out of 5`}
+                            accessibilityHint="Opens the dish"
+                            disabled={!review.dishId}
+                            onPress={() =>
+                              review.dishId &&
+                              rootNavigation.navigate("DishDetail", { dishId: review.dishId })
+                            }
+                            style={{
+                              flex: 1,
+                              flexDirection: "row",
+                              alignItems: "center",
+                              gap: spacing[2],
+                            }}
+                          >
+                            {dish?.imageUrl ? (
+                              <AccessibleImage
+                                source={{ uri: dish.imageUrl }}
+                                accessibilityLabel={dishName ?? "Reviewed dish"}
+                                contentFit="cover"
+                                style={{
+                                  borderRadius: radii.md,
+                                  height: spacing[20],
+                                  width: spacing[20],
+                                }}
+                              />
                             ) : null}
-                            <AppText variant="bodySmall" style={{ color: palette.ratingStar }}>
-                              ★ {review.rating.toFixed(1)} / 5
-                            </AppText>
-                          </View>
+                            <View style={{ flex: 1, gap: spacing[1] }}>
+                              <AppText variant="bodyBold" numberOfLines={1}>
+                                {dishName ?? "Reviewed dish"}
+                              </AppText>
+                              {dish?.venueName ? (
+                                <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
+                                  {dish.venueName}
+                                </AppText>
+                              ) : null}
+                              <AppText variant="bodySmall" style={{ color: palette.ratingStar }}>
+                                ★ {review.rating.toFixed(1)} / 5
+                              </AppText>
+                            </View>
+                          </Pressable>
                           {ownReviewEditor.enabled ? (
                             <OwnReviewMenuButton
                               onPress={() => ownReviewEditor.openActions(review)}
@@ -1354,7 +1369,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                           </View>
                         ) : null}
                       </Card>
-                    </Pressable>
+                    </View>
                   );
                 })}
                 {ownReviews.length > OWN_REVIEWS_INLINE_LIMIT ? (
@@ -1635,7 +1650,7 @@ function TasteRadar({ vector }: { vector: TasteVector }) {
   return (
     <View style={{ alignItems: "center", width: "100%", gap: spacing[3] }}>
       <Svg
-        accessible
+        accessible={Platform.OS === "web" ? undefined : true}
         accessibilityRole="image"
         accessibilityLabel={`Taste vector: ${axes.map((axis) => `${axis} ${vector[axis].toFixed(1)} out of 10`).join(", ")}`}
         width={260}

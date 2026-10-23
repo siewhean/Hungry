@@ -832,3 +832,5 @@ All 9 required audit documents updated in `tasks/Roadmap/`:
 - 2026-10-23 | Codex | PR #116 merge CI follow-up: resolved three source-contract failures while preserving the keyed Supabase saved-dish remount and gating account-only Settings controls for guests. Focused affected tests passed 33/33; merged current `main` after PR #118. Clean CI rerun pending; no local build or simulator run.
 
 - 2026-10-23 | Codex | PR #116 CI render follow-up: clean CI passed 1,787 coverage tests and the ratchet, then failed four render-heading assertions left from the pre-Stitch labels. Updated the render matrix to the approved Stitch headings; local reused dependencies lack `jsdom`, so clean CI will rerun the render suite. No build or simulator run.
+
+- 2026-10-23 | Codex | PR #116 browser CI follow-up: clean CI passed 140 render checks, then found nested Profile review buttons, an SVG web accessibility warning, and Profile/Search browser tests selecting the old UI. Separated the review/menu buttons, kept radar accessibility native-only, and updated the E2E actions. Focused contracts pass 24/24; browser CI rerun pending, with no local Expo build or simulator run.

@@ -78,6 +78,22 @@ test("profile home contract: Palate Fingerprint plots all six dimensions and kee
   assert.doesNotMatch(source, /label="Favourites"|>Favourites</);
 });
 
+test("profile home contract: web review actions remain separate and radar SVG is accessible", () => {
+  const source = read("src/app/screens/profile/ProfileHomeScreen.tsx");
+  const reviewCard = source
+    .split("ownReviews.slice(0, OWN_REVIEWS_INLINE_LIMIT).map((review) => {")[1]
+    ?.split("ownReviews.length > OWN_REVIEWS_INLINE_LIMIT")[0];
+
+  assert.ok(reviewCard);
+  assert.match(reviewCard, /<View key=\{review\.id\}>[\s\S]*?<Card/);
+  assert.match(
+    reviewCard,
+    /<Pressable[\s\S]*?accessibilityLabel=\{`Review of[\s\S]*?<\/Pressable>\s*\{ownReviewEditor\.enabled \? \(/,
+  );
+  assert.match(reviewCard, /<OwnReviewMenuButton/);
+  assert.match(source, /accessible=\{Platform\.OS === "web" \? undefined : true\}/);
+});
+
 test("Stitch profile surfaces use account data and preserve their destinations", () => {
   const source = read("src/app/screens/profile/ProfileHomeScreen.tsx");
   assert.match(source, /SINGAPORE FOODIE PASSPORT/);
