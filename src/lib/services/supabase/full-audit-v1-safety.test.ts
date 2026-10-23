@@ -171,6 +171,10 @@ test("Full Audit V1 smoke command is skip-safe for local network gaps", () => {
   assert.match(readinessSmokeScript, /isSkippableEnvironmentError/);
   assert.match(readinessSmokeScript, /readiness findings returned/);
   assert.match(readinessSmokeScript, /full_audit_v1_readiness\.sql/);
+  assert.match(readinessSmokeScript, /SUPABASE_DB_URL/);
+  assert.match(readinessSmokeScript, /"--db-url", dbUrl/);
+  assert.match(readinessSmokeScript, /skipped; \$\{DB_URL_ENV\} is not set/);
+  assert.doesNotMatch(readinessSmokeScript, /--linked/);
 });
 
 test("Full Audit V1 live behavior smoke covers social safety and gamification", () => {
@@ -180,6 +184,12 @@ test("Full Audit V1 live behavior smoke covers social safety and gamification", 
   );
   assert.match(socialGamificationSmokeScript, /HUNGRY_ALLOW_SERVICE_ROLE_SMOKE/);
   assert.match(socialGamificationSmokeScript, /HUNGRY_SUPABASE_SMOKE_PROJECT_REF/);
+  assert.match(socialGamificationSmokeScript, /HUNGRY_SUPABASE_ALLOWED_HOSTS/);
+  assert.match(socialGamificationSmokeScript, /getAllowedHosts\(\)\.includes\(hostname\)/);
+  assert.match(
+    socialGamificationSmokeScript,
+    /hostname\.endsWith\("\.supabase\.co"\) && expectedProjectRef/,
+  );
   assert.match(socialGamificationSmokeScript, /\.rpc\("report_content"/);
   assert.match(socialGamificationSmokeScript, /\.rpc\("list_content_moderation_queue"/);
   assert.match(socialGamificationSmokeScript, /\.from\("user_blocks"\)\.upsert/);
@@ -210,12 +220,17 @@ test("Supabase Security Advisor classifier fails new app-owned findings only", (
   assert.match(advisorSecurityClassifierScript, /postgis/);
   assert.match(advisorSecurityClassifierScript, /st_estimatedextent/);
   assert.match(advisorSecurityClassifierScript, /auth_leaked_password_protection/);
+  assert.match(advisorSecurityClassifierScript, /expectedAppReason/);
+  assert.match(advisorSecurityClassifierScript, /AUTHENTICATED_RAW_CATALOG_RPCS/);
   assert.match(advisorSecurityClassifierScript, /release_reserved_order/);
   assert.match(advisorSecurityClassifierScript, /submit_payment_proof/);
   assert.match(advisorSecurityClassifierScript, /legacy linked Supabase payment RPC/);
   assert.match(advisorSecurityClassifierScript, /unexpected app-owned Advisor findings/);
   assert.match(advisorSecurityClassifierScript, /--fail-on-external/);
   assert.match(advisorSecurityClassifierScript, /--ignore-leaked-password/);
+  assert.match(advisorSecurityClassifierScript, /SUPABASE_DB_URL/);
+  assert.match(advisorSecurityClassifierScript, /"advisors",\s*"--db-url",\s*dbUrl/);
+  assert.doesNotMatch(advisorSecurityClassifierScript, /--linked/);
 });
 
 test("legacy payment/order Advisor blocker has an owner-approved cleanup runbook", () => {
@@ -261,4 +276,28 @@ test("Supabase Security Advisor support snapshot captures owner-blocker evidence
   assert.match(advisorSupportSnapshotScript, /geo_rpc_search_paths/);
   assert.match(advisorSupportSnapshotScript, /pg_has_role\(current_user, 'supabase_admin'/);
   assert.match(advisorSupportSnapshotScript, /format_type\(a\.atttypid, a\.atttypmod\)/);
+  assert.match(advisorSupportSnapshotScript, /"--db-url", dbUrl/);
+  assert.match(advisorSupportSnapshotScript, /'database', current_database\(\)/);
+  assert.doesNotMatch(advisorSupportSnapshotScript, /--linked|vlqfgmrsprbrgzteixsj/);
+});
+
+test("Supabase tooling targets the self-hosted database explicitly", () => {
+  const leakedPasswordScript = read("scripts/supabase-enable-leaked-password-protection.mjs");
+  const supabaseConfig = read("supabase/config.toml");
+
+  for (const scriptName of ["smoke:database:provenance", "smoke:database:catalog-raw"]) {
+    assert.match(
+      packageJson.scripts?.[scriptName] ?? "",
+      /^npx supabase db query --db-url "\$\{SUPABASE_DB_URL:\?[^}]+\}" -f supabase\/smoke\//,
+    );
+  }
+  assert.doesNotMatch(JSON.stringify(packageJson.scripts), /--linked/);
+
+  // The app now targets a Supabase Cloud project (main): the Management API
+  // script needs an explicit project ref and never falls back to a hardcoded one.
+  assert.match(leakedPasswordScript, /SUPABASE_PROJECT_REF is required/);
+  assert.match(leakedPasswordScript, /process\.exit\(1\)/);
+  assert.doesNotMatch(leakedPasswordScript, /vlqfgmrsprbrgzteixsj/);
+
+  assert.match(supabaseConfig, /^project_id = "hungry"$/m);
 });

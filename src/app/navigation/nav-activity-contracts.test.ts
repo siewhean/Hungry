@@ -9,15 +9,15 @@ function read(relativePath: string): string {
   return readFileSync(path.join(root, relativePath), "utf8");
 }
 
-test("bottom navigation puts create post in the center and review fourth", () => {
+test("Release 0.1 bottom navigation gates social, post, and review actions", () => {
   const tabs = read("src/app/navigation/SwipeableTabNavigator.tsx");
   const tabItem = read("src/components/ui/AppBottomTabItem.tsx");
   const types = read("src/app/navigation/navigationTypes.ts");
 
-  assert.match(tabs, /import \{ House, Compass, BookOpenText, Plus, User \}/);
+  assert.match(tabs, /import \{ BookOpenText, Compass, House, Plus, User \}/);
   assert.match(
     tabs,
-    /key: "Home"[\s\S]*key: "Discover"[\s\S]*key: "Create"[\s\S]*key: "Review"[\s\S]*key: "Profile"/,
+    /FEATURE_FLAGS\.socialFeedEnabled[\s\S]*key: "Home"[\s\S]*key: "Discover"[\s\S]*FEATURE_FLAGS\.postCreationEnabled[\s\S]*key: "Create"[\s\S]*FEATURE_FLAGS\.reviewCreationEnabled[\s\S]*key: "Review"[\s\S]*key: "Profile"/,
   );
   // Every environment opens the shipping composer (V1) from the create tab.
   assert.match(tabs, /isCreateAction[\s\S]*rootNavigation\?\.navigate\("Post"\)/);
@@ -66,7 +66,7 @@ test("bottom navigation puts create post in the center and review fourth", () =>
   assert.doesNotMatch(types, /^\s+Create: undefined;/m);
 });
 
-test("home bell opens activity inbox and gates messages by feature flag", () => {
+test("activity routes remain feature-gated with direct messages separately gated", () => {
   const home = read("src/app/screens/home/HomeFeedScreen.tsx");
   const rootNavigator = read("src/app/navigation/RootNavigator.tsx");
   const activity = read("src/app/screens/home/ActivityInboxScreen.tsx");
@@ -107,10 +107,13 @@ test("home bell opens activity inbox and gates messages by feature flag", () => 
   assert.match(home, /if \(!FEATURE_FLAGS\.directMessagesEnabled\)/);
   assert.match(home, /recipients=\{directMessagesEnabled \? shareRecipients : \[\]\}/);
   assert.doesNotMatch(home, /ACTIVITY_MESSAGES/);
-  assert.match(rootNavigator, /getComponent=\{loadActivityInboxScreen\} name="ActivityInbox"/);
   assert.match(
     rootNavigator,
-    /getComponent=\{loadActivityPostDetailScreen\} name="ActivityPostDetail"/,
+    /FEATURE_FLAGS\.activityEnabled \? \([\s\S]*getComponent=\{loadActivityInboxScreen\} name="ActivityInbox"/,
+  );
+  assert.match(
+    rootNavigator,
+    /getComponent=\{loadActivityPostDetailScreen\}\s*name="ActivityPostDetail"/,
   );
   assert.match(rootNavigator, /FEATURE_FLAGS\.directMessagesEnabled \? \(/);
   assert.match(rootNavigator, /getComponent=\{loadChatDetailScreen\} name="ChatDetail"/);

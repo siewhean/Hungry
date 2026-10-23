@@ -6,6 +6,9 @@ import { existsSync } from "node:fs";
 const REQUIRED_ENV = "HUNGRY_SUPABASE_ADVISOR_SNAPSHOT_REQUIRED";
 const npxCommand = process.env.SUPABASE_NPX_COMMAND || "npx";
 const npxInstallArgs = process.env.SUPABASE_NPX_ALLOW_INSTALL === "1" ? [] : ["--no-install"];
+// Self-hosted Supabase: target the database explicitly instead of a CLI-linked cloud project.
+const DB_URL_ENV = "SUPABASE_DB_URL";
+const dbUrl = process.env[DB_URL_ENV]?.trim() ?? "";
 const installedSupabaseCli =
   process.env.SUPABASE_CLI_COMMAND ||
   ["/opt/homebrew/bin/supabase", "/usr/local/bin/supabase"].find((candidate) =>
@@ -109,7 +112,7 @@ geo_rpc_search_paths as (
     ])
 )
 select jsonb_build_object(
-  'project_ref', '${(process.env.SUPABASE_PROJECT_REF || "linked").replace(/'/g, "''")}',
+  'database', current_database(),
   'generated_at', clock_timestamp(),
   'role_state', role_state.data,
   'spatial_ref_sys_state', spatial_ref_sys_state.data,
@@ -121,7 +124,7 @@ select jsonb_build_object(
 from role_state, spatial_ref_sys_state, postgis_state, st_estimatedextent_state, postgis_typed_columns, geo_rpc_search_paths;
 `;
 
-const args = ["db", "query", "--linked", "-o", "json", SNAPSHOT_SQL];
+const args = ["db", "query", "--db-url", dbUrl, "-o", "json", SNAPSHOT_SQL];
 const command = installedSupabaseCli || npxCommand;
 const commandArgs = installedSupabaseCli ? args : [...npxInstallArgs, "supabase", ...args];
 
@@ -179,32 +182,42 @@ function fail(message, details) {
   process.exit(1);
 }
 
+if (!dbUrl) {
+  if (isRequired()) {
+    console.error(
+      `[supabase-advisor-support-snapshot] ${DB_URL_ENV} is required (Postgres connection string for the target Supabase database).`,
+    );
+    process.exit(1);
+  }
+  console.log(
+    `[supabase-advisor-support-snapshot] skipped; ${DB_URL_ENV} is not set. Set ${REQUIRED_ENV}=1 to make this a hard failure.`,
+  );
+  process.exit(0);
+}
+
 const result = await runSnapshotQuery();
 
 if (result.code !== 0) {
   if (!isRequired() && isSkippableEnvironmentError(result.stderr)) {
     console.log(
-      `[supabase-advisor-support-snapshot] skipped; linked Supabase is not reachable from this environment. Set ${REQUIRED_ENV}=1 to make this a hard failure.`,
+      `[supabase-advisor-support-snapshot] skipped; target Supabase database is not reachable from this environment. Set ${REQUIRED_ENV}=1 to make this a hard failure.`,
     );
     process.exit(0);
   }
 
-  fail(
-    "failed to capture linked Supabase Advisor support snapshot.",
-    result.stderr || result.stdout,
-  );
+  fail("failed to capture Supabase Advisor support snapshot.", result.stderr || result.stdout);
 }
 
 let payload;
 try {
   payload = JSON.parse(result.stdout);
 } catch (error) {
-  fail("failed to parse linked Supabase query JSON output.", String(error));
+  fail("failed to parse Supabase query JSON output.", String(error));
 }
 
 const snapshot = payload?.rows?.[0]?.support_snapshot;
 if (!snapshot) {
-  fail("linked Supabase query did not return support_snapshot.");
+  fail("Supabase query did not return support_snapshot.");
 }
 
 console.log(JSON.stringify(snapshot, null, 2));

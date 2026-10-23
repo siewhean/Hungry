@@ -227,6 +227,8 @@ test("repo wiring exposes validation, import, smoke checks, and app discovery RP
   for (const envName of [
     "HUNGRY_SUPABASE_IMPORT_URL",
     "HUNGRY_SUPABASE_IMPORT_PROJECT_REF",
+    "HUNGRY_SUPABASE_ALLOWED_HOSTS",
+    "SUPABASE_DB_URL",
     "HUNGRY_SUPABASE_IMPORT_SERVICE_ROLE_KEY",
     "HUNGRY_ALLOW_SERVICE_ROLE_IMPORT",
   ]) {

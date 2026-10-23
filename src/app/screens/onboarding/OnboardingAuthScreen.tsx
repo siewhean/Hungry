@@ -35,7 +35,7 @@ import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { AuthProviderButton } from "../auth/AuthProviderButton";
-import { AUTH_EYE_BUTTON_STYLE } from "../auth/authEyeButton";
+import { PasswordRequirements } from "../auth/PasswordRequirements";
 import { AuthTermsNotice } from "../auth/AuthTermsNotice";
 import {
   AUTH_COPY,
@@ -44,6 +44,7 @@ import {
   type AuthProvider,
 } from "../auth/authCopy";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
+import { useKeyboardRevealFocusedInput } from "@/hooks/useKeyboardRevealFocusedInput";
 import type { OnboardingStackParamList } from "./OnboardingStack";
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, "OnboardingAuth">;
@@ -52,7 +53,6 @@ type SignUpValues = { displayName: string; email: string; password: string };
 type LoginValues = { email: string; password: string };
 
 export function OnboardingAuthScreen({ navigation, route }: Props) {
-  const dishName = route.params?.dishName;
   const { componentRadii, palette, spacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const oauthEnabled = FEATURE_FLAGS.oauthProvidersEnabled;
@@ -69,6 +69,7 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
 
   const showToast = useUIStore((s) => s.showToast);
   const completeAuth = useSessionStore((s) => s.completeAuth);
+  const completeOnboarding = useSessionStore((s) => s.completeOnboarding);
   const reduceMotion = useReduceMotion();
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -108,10 +109,8 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
     loginForm.formState.isSubmitting ||
     providerInFlight !== null;
 
-  // Opened just-in-time when an onboarding action needs an account (e.g. saving a
-  // dish on the last step). Return there; that step still completes onboarding.
   const finishOnboarding = () => {
-    navigation.goBack();
+    completeOnboarding();
   };
 
   const openForgotPassword = () => {
@@ -120,12 +119,12 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
       ?.navigate("AuthStack", { screen: "ForgotPassword" });
   };
 
-  const applySessionProfile = async (session: {
-    profile: Parameters<typeof applySignedInProfile>[0];
-    profileReady?: Promise<Parameters<typeof applySignedInProfile>[0]>;
-  }) => {
-    await applySignedInProfile(session.profile, {
-      profileReady: session.profileReady,
+  const applySessionProfile = async (
+    sessionProfile: Parameters<typeof applySignedInProfile>[0],
+    profileReady?: Promise<Parameters<typeof applySignedInProfile>[0]>,
+  ) => {
+    return applySignedInProfile(sessionProfile, {
+      profileReady,
       onSyncWarning: () => {
         showToast({
           message: "Signed in, but your taste profile could not sync. Try updating it again later.",
@@ -160,8 +159,9 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
         });
         return;
       }
-      await applySessionProfile(session);
-      completeAuth({ authProvider: "email", isNewUser: true });
+      const migration = await applySessionProfile(session.profile, session.profileReady);
+      if (migration.status === "failed") return;
+      completeAuth({ authProvider: "email", completedOnboarding: true, isNewUser: true });
       finishOnboarding();
     } catch (err) {
       trackAuthFailed("sign_up", "email", err);
@@ -182,9 +182,16 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setFormError(null);
     try {
-      const session = await getHungryService().auth.signIn(values.email, values.password);
-      await applySessionProfile(session);
-      completeAuth({ authProvider: "email", trackSignInEvent: false });
+      const dataSource = getConfiguredDataSource();
+      if (dataSource === "supabase") {
+        const session = await getHungryService().auth.signIn(values.email, values.password);
+        const migration = await applySessionProfile(session.profile, session.profileReady);
+        if (migration.status === "failed") return;
+        completeAuth({ authProvider: "email", completedOnboarding: true, trackSignInEvent: false });
+        finishOnboarding();
+        return;
+      }
+      completeAuth({ authProvider: "email", completedOnboarding: true, trackSignInEvent: false });
       finishOnboarding();
     } catch (err) {
       trackAuthFailed("sign_in", "email", err);
@@ -211,10 +218,11 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
           provider === "google"
             ? await service.auth.signInWithGoogle()
             : await service.auth.signInWithApple();
-        await applySessionProfile(session);
+        const migration = await applySessionProfile(session.profile, session.profileReady);
+        if (migration.status === "failed") return;
       }
       showToast({ message: getSignUpProviderSuccessMessage(provider), tone: "success" });
-      completeAuth({ authProvider: provider, trackSignInEvent: false });
+      completeAuth({ authProvider: provider, completedOnboarding: true, trackSignInEvent: false });
       finishOnboarding();
     } catch (err) {
       trackAuthFailed("sign_up", provider, err);
@@ -236,367 +244,357 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
   const signUpErrors = signUpForm.formState.errors;
   const loginErrors = loginForm.formState.errors;
 
+  const keyboardReveal = useKeyboardRevealFocusedInput();
+
   return (
-    <View style={{ flex: 1, backgroundColor: palette.bg }}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        style={{ flex: 1 }}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      // The top inset lives on the container (not the scroll content) so content
+      // lifted for the keyboard is clipped below the status bar / Dynamic Island.
+      style={{ flex: 1, backgroundColor: palette.bg, paddingTop: insets.top }}
+    >
+      <ScrollView
+        ref={keyboardReveal.scrollRef}
+        onScroll={keyboardReveal.onScroll}
+        scrollEventThrottle={keyboardReveal.scrollEventThrottle}
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <ScrollView
-          contentContainerStyle={{ flexGrow: 1 }}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
+        <Animated.View
+          onFocus={keyboardReveal.onFocus}
+          style={{
+            flex: 1,
+            paddingTop: 20,
+            paddingBottom: insets.bottom + 24,
+            paddingHorizontal: 24,
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }],
+          }}
         >
-          <Animated.View
+          {/* Header */}
+          <View style={{ marginBottom: spacing[6] }}>
+            <AppText
+              variant="display"
+              accessibilityRole="header"
+              style={{ marginBottom: spacing[1] }}
+            >
+              {"Save your\ntaste profile"}
+            </AppText>
+            <AppText variant="bodySmall" tone="secondary">
+              Create an account to keep your preferences and discover more.
+            </AppText>
+          </View>
+
+          {/* Tab switcher */}
+          <View
             style={{
-              flexGrow: 1,
-              paddingTop: insets.top + 20,
-              paddingBottom: insets.bottom + 24,
-              paddingHorizontal: 24,
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }],
+              flexDirection: "row",
+              backgroundColor: palette.bgSoft,
+              borderRadius: 12,
+              padding: 4,
+              marginBottom: 24,
             }}
           >
-            {/* Header */}
-            <View style={{ marginBottom: spacing[6] }}>
-              <AppText
-                variant="display"
-                accessibilityRole="header"
-                style={{ marginBottom: spacing[1] }}
+            {(["signup", "login"] as Tab[]).map((t) => (
+              <Pressable
+                key={t}
+                onPress={() => setTab(t)}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: tab === t }}
+                style={{
+                  flex: 1,
+                  justifyContent: "center",
+                  minHeight: 44,
+                  borderRadius: 9,
+                  alignItems: "center",
+                  backgroundColor: tab === t ? palette.surface : "transparent",
+                }}
               >
-                {dishName ? `Sign in to save ${dishName}` : "Save your\ntaste profile"}
-              </AppText>
-              <AppText variant="bodySmall" tone="secondary">
-                {dishName
-                  ? "Create an account or sign in, and we'll save it for you."
-                  : "Create an account to keep your preferences and discover more."}
-              </AppText>
-            </View>
-
-            {/* Tab switcher */}
-            <View
-              style={{
-                flexDirection: "row",
-                backgroundColor: palette.bgSoft,
-                borderRadius: 12,
-                padding: 4,
-                marginBottom: 24,
-              }}
-            >
-              {(["signup", "login"] as Tab[]).map((t) => (
-                <Pressable
-                  key={t}
-                  onPress={() => {
-                    setFormError(null);
-                    setTab(t);
-                  }}
-                  accessibilityRole="tab"
-                  accessibilityState={{ selected: tab === t }}
-                  style={{
-                    flex: 1,
-                    justifyContent: "center",
-                    minHeight: 44,
-                    borderRadius: 9,
-                    alignItems: "center",
-                    backgroundColor: tab === t ? palette.surface : "transparent",
-                  }}
+                <AppText
+                  variant={tab === t ? "bodyBold" : "body"}
+                  tone={tab === t ? "default" : "secondary"}
                 >
-                  <AppText
-                    variant={tab === t ? "bodyBold" : "body"}
-                    tone={tab === t ? "default" : "secondary"}
+                  {t === "signup" ? "Create account" : "Sign in"}
+                </AppText>
+              </Pressable>
+            ))}
+          </View>
+
+          {/* OAuth buttons stay hidden until Google/Apple are enabled for this build. */}
+          {oauthEnabled ? (
+            <>
+              <View style={{ gap: spacing[3], marginBottom: 20 }}>
+                <AuthProviderButton
+                  disabled={isBusy}
+                  intent="continue"
+                  provider="google"
+                  onPress={() => void handleProvider("google")}
+                />
+                <AuthProviderButton
+                  disabled={isBusy}
+                  intent="continue"
+                  provider="apple"
+                  onPress={() => void handleProvider("apple")}
+                />
+              </View>
+
+              {/* Divider */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: spacing[3],
+                  marginBottom: 20,
+                }}
+              >
+                <View style={{ flex: 1, height: 1, backgroundColor: palette.border }} />
+                <AppText variant="micro" tone="muted">
+                  or
+                </AppText>
+                <View style={{ flex: 1, height: 1, backgroundColor: palette.border }} />
+              </View>
+            </>
+          ) : null}
+
+          {/* Form */}
+          <Animated.View
+            style={{
+              gap: spacing[2],
+              opacity: tabAnim,
+              transform: [
+                {
+                  translateY: tabAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [6, 0],
+                  }),
+                },
+              ],
+            }}
+          >
+            {tab === "signup" ? (
+              <>
+                <Controller
+                  control={signUpForm.control}
+                  name="displayName"
+                  rules={{
+                    validate: (v) => validateRequired(v, "Name"),
+                  }}
+                  render={({ field: { onChange, value } }) => (
+                    <View style={{ gap: spacing[1] }}>
+                      <Input
+                        placeholder="Your name"
+                        value={value}
+                        onChangeText={onChange}
+                        textContentType="name"
+                        autoComplete="name"
+                        returnKeyType="next"
+                        submitBehavior="submit"
+                        onSubmitEditing={() => signUpEmailRef.current?.focus()}
+                        leftIcon={<User color={palette.textMuted} size={18} />}
+                        error={!!signUpErrors.displayName}
+                        errorText={signUpErrors.displayName?.message}
+                      />
+                    </View>
+                  )}
+                />
+                <Controller
+                  control={signUpForm.control}
+                  name="email"
+                  rules={{ validate: validateEmail }}
+                  render={({ field: { onChange, value } }) => (
+                    <View style={{ gap: spacing[1] }}>
+                      <Input
+                        ref={signUpEmailRef}
+                        placeholder="Email address"
+                        value={value}
+                        onChangeText={onChange}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        keyboardType="email-address"
+                        textContentType="emailAddress"
+                        autoComplete="email"
+                        returnKeyType="next"
+                        submitBehavior="submit"
+                        onSubmitEditing={() => signUpPasswordRef.current?.focus()}
+                        leftIcon={<Mail color={palette.textMuted} size={18} />}
+                        error={!!signUpErrors.email}
+                        errorText={signUpErrors.email?.message}
+                      />
+                    </View>
+                  )}
+                />
+                <Controller
+                  control={signUpForm.control}
+                  name="password"
+                  rules={{ validate: (value) => validatePassword(value) }}
+                  render={({ field: { onChange, value } }) => (
+                    <View style={{ gap: spacing[1] }}>
+                      <Input
+                        ref={signUpPasswordRef}
+                        placeholder="Password"
+                        value={value}
+                        onChangeText={onChange}
+                        secureTextEntry={!showPassword}
+                        textContentType="newPassword"
+                        autoComplete="new-password"
+                        passwordRules={PASSWORD_RULES}
+                        returnKeyType="go"
+                        onSubmitEditing={() => void handleSignUp()}
+                        leftIcon={<Lock color={palette.textMuted} size={18} />}
+                        rightIcon={
+                          <Pressable
+                            accessibilityRole="button"
+                            accessibilityLabel={showPassword ? "Hide password" : "Show password"}
+                            onPress={() => setShowPassword((p) => !p)}
+                            hitSlop={8}
+                          >
+                            {showPassword ? (
+                              <EyeOff color={palette.textMuted} size={18} />
+                            ) : (
+                              <Eye color={palette.textMuted} size={18} />
+                            )}
+                          </Pressable>
+                        }
+                        error={!!signUpErrors.password}
+                        errorText={signUpErrors.password?.message}
+                      />
+                      <PasswordRequirements password={value} />
+                    </View>
+                  )}
+                />
+                {formError ? (
+                  <View
+                    accessible
+                    accessibilityRole="alert"
+                    accessibilityLiveRegion="polite"
+                    style={{
+                      backgroundColor: palette.errorSoft,
+                      borderRadius: componentRadii.card,
+                      padding: spacing[3],
+                    }}
                   >
-                    {t === "signup" ? "Create account" : "Sign in"}
+                    <AppText variant="bodySmall" style={{ color: palette.error }}>
+                      {formError}
+                    </AppText>
+                  </View>
+                ) : null}
+                <Button
+                  label="Create account"
+                  onPress={handleSignUp}
+                  loading={signUpForm.formState.isSubmitting}
+                  disabled={isBusy}
+                  variant="primary"
+                  style={{ marginTop: spacing[2] }}
+                />
+                <AuthTermsNotice />
+              </>
+            ) : (
+              <>
+                <Controller
+                  control={loginForm.control}
+                  name="email"
+                  rules={{ validate: validateEmail }}
+                  render={({ field: { onChange, value } }) => (
+                    <View style={{ gap: spacing[1] }}>
+                      <Input
+                        placeholder="Email address"
+                        value={value}
+                        onChangeText={onChange}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        keyboardType="email-address"
+                        textContentType="emailAddress"
+                        autoComplete="email"
+                        returnKeyType="next"
+                        submitBehavior="submit"
+                        onSubmitEditing={() => loginPasswordRef.current?.focus()}
+                        leftIcon={<Mail color={palette.textMuted} size={18} />}
+                        error={!!loginErrors.email}
+                        errorText={loginErrors.email?.message}
+                      />
+                    </View>
+                  )}
+                />
+                <Controller
+                  control={loginForm.control}
+                  name="password"
+                  rules={{ validate: (v) => validateRequired(v, "Password") }}
+                  render={({ field: { onChange, value } }) => (
+                    <View style={{ gap: spacing[1] }}>
+                      <Input
+                        ref={loginPasswordRef}
+                        placeholder="Password"
+                        value={value}
+                        onChangeText={onChange}
+                        secureTextEntry={!showPassword}
+                        textContentType="password"
+                        autoComplete="current-password"
+                        returnKeyType="go"
+                        onSubmitEditing={() => void handleLogin()}
+                        leftIcon={<Lock color={palette.textMuted} size={18} />}
+                        rightIcon={
+                          <Pressable
+                            accessibilityRole="button"
+                            accessibilityLabel={showPassword ? "Hide password" : "Show password"}
+                            onPress={() => setShowPassword((p) => !p)}
+                            hitSlop={8}
+                          >
+                            {showPassword ? (
+                              <EyeOff color={palette.textMuted} size={18} />
+                            ) : (
+                              <Eye color={palette.textMuted} size={18} />
+                            )}
+                          </Pressable>
+                        }
+                        error={!!loginErrors.password}
+                        errorText={loginErrors.password?.message}
+                      />
+                    </View>
+                  )}
+                />
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={AUTH_COPY.login.forgotPasswordLink}
+                  accessibilityHint="Opens password reset"
+                  onPress={openForgotPassword}
+                  hitSlop={8}
+                  style={{ alignSelf: "flex-end", justifyContent: "center", minHeight: 44 }}
+                >
+                  <AppText variant="bodySmall" tone="accent">
+                    {AUTH_COPY.login.forgotPasswordLink}
                   </AppText>
                 </Pressable>
-              ))}
-            </View>
-
-            {/* OAuth buttons stay hidden until Google/Apple are enabled for this build. */}
-            {oauthEnabled ? (
-              <>
-                <View style={{ gap: spacing[3], marginBottom: 20 }}>
-                  <AuthProviderButton
-                    disabled={isBusy}
-                    intent="continue"
-                    provider="google"
-                    onPress={() => void handleProvider("google")}
-                  />
-                  <AuthProviderButton
-                    disabled={isBusy}
-                    intent="continue"
-                    provider="apple"
-                    onPress={() => void handleProvider("apple")}
-                  />
-                </View>
-
-                {/* Divider */}
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: spacing[3],
-                    marginBottom: 20,
-                  }}
-                >
-                  <View style={{ flex: 1, height: 1, backgroundColor: palette.border }} />
-                  <AppText variant="micro" tone="muted">
-                    or
-                  </AppText>
-                  <View style={{ flex: 1, height: 1, backgroundColor: palette.border }} />
-                </View>
-              </>
-            ) : null}
-
-            {/* Form */}
-            <Animated.View
-              style={{
-                gap: spacing[2],
-                opacity: tabAnim,
-                transform: [
-                  {
-                    translateY: tabAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [6, 0],
-                    }),
-                  },
-                ],
-              }}
-            >
-              {tab === "signup" ? (
-                <>
-                  <Controller
-                    control={signUpForm.control}
-                    name="displayName"
-                    rules={{
-                      validate: (v) => validateRequired(v, "Name"),
+                {formError ? (
+                  <View
+                    accessible
+                    accessibilityRole="alert"
+                    accessibilityLiveRegion="polite"
+                    style={{
+                      backgroundColor: palette.errorSoft,
+                      borderRadius: componentRadii.card,
+                      padding: spacing[3],
                     }}
-                    render={({ field: { onChange, value } }) => (
-                      <View style={{ gap: spacing[1] }}>
-                        <Input
-                          label={AUTH_COPY.signUp.displayNameLabel}
-                          helperText={AUTH_COPY.signUp.displayNameHelper}
-                          value={value}
-                          onChangeText={onChange}
-                          textContentType="name"
-                          autoComplete="name"
-                          returnKeyType="next"
-                          submitBehavior="submit"
-                          onSubmitEditing={() => signUpEmailRef.current?.focus()}
-                          error={!!signUpErrors.displayName}
-                          errorText={signUpErrors.displayName?.message}
-                          leftIcon={<User color={palette.textMuted} size={18} />}
-                        />
-                      </View>
-                    )}
-                  />
-                  <Controller
-                    control={signUpForm.control}
-                    name="email"
-                    rules={{ validate: validateEmail }}
-                    render={({ field: { onChange, value } }) => (
-                      <View style={{ gap: spacing[1] }}>
-                        <Input
-                          ref={signUpEmailRef}
-                          label={AUTH_COPY.login.emailLabel}
-                          value={value}
-                          onChangeText={onChange}
-                          autoCapitalize="none"
-                          autoCorrect={false}
-                          keyboardType="email-address"
-                          textContentType="emailAddress"
-                          autoComplete="email"
-                          returnKeyType="next"
-                          submitBehavior="submit"
-                          onSubmitEditing={() => signUpPasswordRef.current?.focus()}
-                          error={!!signUpErrors.email}
-                          errorText={signUpErrors.email?.message}
-                          leftIcon={<Mail color={palette.textMuted} size={18} />}
-                        />
-                      </View>
-                    )}
-                  />
-                  <Controller
-                    control={signUpForm.control}
-                    name="password"
-                    rules={{ validate: (value) => validatePassword(value) }}
-                    render={({ field: { onChange, value } }) => (
-                      <View style={{ gap: spacing[1] }}>
-                        <Input
-                          ref={signUpPasswordRef}
-                          label={AUTH_COPY.signUp.passwordLabel}
-                          helperText={AUTH_COPY.signUp.passwordRules}
-                          value={value}
-                          onChangeText={onChange}
-                          secureTextEntry={!showPassword}
-                          textContentType="newPassword"
-                          autoComplete="new-password"
-                          passwordRules={PASSWORD_RULES}
-                          returnKeyType="go"
-                          onSubmitEditing={() => void handleSignUp()}
-                          error={!!signUpErrors.password}
-                          errorText={signUpErrors.password?.message}
-                          leftIcon={<Lock color={palette.textMuted} size={18} />}
-                          rightIcon={
-                            <Pressable
-                              accessibilityRole="button"
-                              accessibilityLabel={showPassword ? "Hide password" : "Show password"}
-                              onPress={() => setShowPassword((p) => !p)}
-                              hitSlop={8}
-                              style={AUTH_EYE_BUTTON_STYLE}
-                            >
-                              {showPassword ? (
-                                <EyeOff color={palette.textMuted} size={18} />
-                              ) : (
-                                <Eye color={palette.textMuted} size={18} />
-                              )}
-                            </Pressable>
-                          }
-                        />
-                      </View>
-                    )}
-                  />
-                  {formError ? (
-                    <View
-                      accessible
-                      accessibilityRole="alert"
-                      accessibilityLiveRegion="polite"
-                      style={{
-                        backgroundColor: palette.errorSoft,
-                        borderRadius: componentRadii.card,
-                        padding: spacing[3],
-                      }}
-                    >
-                      <AppText variant="bodySmall" style={{ color: palette.error }}>
-                        {formError}
-                      </AppText>
-                    </View>
-                  ) : null}
-                  <Button
-                    label="Create account"
-                    onPress={handleSignUp}
-                    loading={signUpForm.formState.isSubmitting}
-                    disabled={isBusy}
-                    variant="primary"
-                    style={{ marginTop: spacing[2] }}
-                  />
-                  <AuthTermsNotice />
-                </>
-              ) : (
-                <>
-                  <Controller
-                    control={loginForm.control}
-                    name="email"
-                    rules={{ validate: validateEmail }}
-                    render={({ field: { onChange, value } }) => (
-                      <View style={{ gap: spacing[1] }}>
-                        <Input
-                          label={AUTH_COPY.login.emailLabel}
-                          value={value}
-                          onChangeText={onChange}
-                          autoCapitalize="none"
-                          autoCorrect={false}
-                          keyboardType="email-address"
-                          textContentType="emailAddress"
-                          autoComplete="email"
-                          returnKeyType="next"
-                          submitBehavior="submit"
-                          onSubmitEditing={() => loginPasswordRef.current?.focus()}
-                          error={!!loginErrors.email}
-                          errorText={loginErrors.email?.message}
-                          leftIcon={<Mail color={palette.textMuted} size={18} />}
-                        />
-                      </View>
-                    )}
-                  />
-                  <Controller
-                    control={loginForm.control}
-                    name="password"
-                    rules={{ validate: (v) => validateRequired(v, "Password") }}
-                    render={({ field: { onChange, value } }) => (
-                      <View style={{ gap: spacing[1] }}>
-                        <Input
-                          ref={loginPasswordRef}
-                          label={AUTH_COPY.login.passwordLabel}
-                          value={value}
-                          onChangeText={onChange}
-                          secureTextEntry={!showPassword}
-                          textContentType="password"
-                          autoComplete="current-password"
-                          returnKeyType="go"
-                          onSubmitEditing={() => void handleLogin()}
-                          error={!!loginErrors.password}
-                          errorText={loginErrors.password?.message}
-                          leftIcon={<Lock color={palette.textMuted} size={18} />}
-                          rightIcon={
-                            <Pressable
-                              accessibilityRole="button"
-                              accessibilityLabel={showPassword ? "Hide password" : "Show password"}
-                              onPress={() => setShowPassword((p) => !p)}
-                              hitSlop={8}
-                              style={AUTH_EYE_BUTTON_STYLE}
-                            >
-                              {showPassword ? (
-                                <EyeOff color={palette.textMuted} size={18} />
-                              ) : (
-                                <Eye color={palette.textMuted} size={18} />
-                              )}
-                            </Pressable>
-                          }
-                        />
-                      </View>
-                    )}
-                  />
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={AUTH_COPY.login.forgotPasswordLink}
-                    accessibilityHint="Opens password reset"
-                    onPress={openForgotPassword}
-                    hitSlop={8}
-                    style={{ alignSelf: "flex-end", justifyContent: "center", minHeight: 44 }}
                   >
-                    <AppText variant="bodySmall" tone="accent">
-                      {AUTH_COPY.login.forgotPasswordLink}
+                    <AppText variant="bodySmall" style={{ color: palette.error }}>
+                      {formError}
                     </AppText>
-                  </Pressable>
-                  {formError ? (
-                    <View
-                      accessible
-                      accessibilityRole="alert"
-                      accessibilityLiveRegion="polite"
-                      style={{
-                        backgroundColor: palette.errorSoft,
-                        borderRadius: componentRadii.card,
-                        padding: spacing[3],
-                      }}
-                    >
-                      <AppText variant="bodySmall" style={{ color: palette.error }}>
-                        {formError}
-                      </AppText>
-                    </View>
-                  ) : null}
-                  <Button
-                    label="Sign in"
-                    onPress={handleLogin}
-                    loading={loginForm.formState.isSubmitting}
-                    disabled={isBusy}
-                    variant="primary"
-                    style={{ marginTop: spacing[2] }}
-                  />
-                </>
-              )}
-            </Animated.View>
-
-            {/* Sign-in is optional here: return to the last step without an account. */}
-            <Button
-              label="Not now"
-              variant="ghost"
-              disabled={isBusy}
-              onPress={() => navigation.goBack()}
-              style={{ marginTop: spacing[4] }}
-            />
+                  </View>
+                ) : null}
+                <Button
+                  label="Sign in"
+                  onPress={handleLogin}
+                  loading={loginForm.formState.isSubmitting}
+                  disabled={isBusy}
+                  variant="primary"
+                  style={{ marginTop: spacing[2] }}
+                />
+              </>
+            )}
           </Animated.View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </View>
+        </Animated.View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }

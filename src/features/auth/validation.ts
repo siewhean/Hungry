@@ -54,17 +54,57 @@ export function validateEmail(value: string): true | string {
   return true;
 }
 
+/** Kept for callers of the shared checklist; equals MIN_PASSWORD_LENGTH. */
+export const PASSWORD_MIN_LENGTH = MIN_PASSWORD_LENGTH;
+
+export type PasswordRuleId = "length";
+
+export type PasswordRule = {
+  id: PasswordRuleId;
+  /** Short checklist label shown up front under new-password fields. */
+  label: string;
+  /** Submit-time error returned by validatePassword when this rule fails. */
+  error: string;
+  test: (value: string) => boolean;
+};
+
+/**
+ * Single source of truth for new-password rules. Length is the only client rule
+ * (Supabase rejects leaked passwords), and validatePassword plus the upfront
+ * checklist both read this list so they never drift.
+ */
+export function getPasswordRules(minLength = MIN_PASSWORD_LENGTH): PasswordRule[] {
+  return [
+    {
+      id: "length",
+      label: `At least ${minLength} characters`,
+      error: `Password must be at least ${minLength} characters`,
+      test: (value) => value.length >= minLength,
+    },
+  ];
+}
+
+export type PasswordRuleStatus = { id: PasswordRuleId; label: string; met: boolean };
+
+export function getPasswordRuleStatuses(
+  value: string,
+  minLength = MIN_PASSWORD_LENGTH,
+): PasswordRuleStatus[] {
+  return getPasswordRules(minLength).map((rule) => ({
+    id: rule.id,
+    label: rule.label,
+    met: rule.test(value),
+  }));
+}
+
 export function validatePassword(value: string, minLength = MIN_PASSWORD_LENGTH): true | string {
   const required = validateRequired(value, "Password");
   if (required !== true) {
     return required;
   }
 
-  if (value.length < minLength) {
-    return `Password must be at least ${minLength} characters`;
-  }
-
-  return true;
+  const failed = getPasswordRules(minLength).find((rule) => !rule.test(value));
+  return failed ? failed.error : true;
 }
 
 export function validateConfirmPassword(password: string, confirmPassword: string): true | string {

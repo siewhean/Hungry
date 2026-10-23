@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, View, Pressable } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Camera } from "lucide-react-native";
 
@@ -39,12 +40,19 @@ function loadImagePickerModule() {
 
 export function EditProfileScreen({ navigation }: Props) {
   const profile = useProfileStore((state) => state.profile);
-  const applyProfile = useProfileStore((state) => state.applyProfile);
+  const applySavedProfileEdits = useProfileStore((state) => state.applySavedProfileEdits);
   const showToast = useUIStore((state) => state.showToast);
   const { palette, spacing, radii } = useHungryTheme();
-  const [displayName, setDisplayName] = useState(profile.displayName);
-  const [email, setEmail] = useState(profile.email);
-  const [bio, setBio] = useState(profile.bio ?? "");
+  // The store is the source of truth. A local draft exists only while the user
+  // is typing; it is cleared on every focus, so a screen instance mounted early
+  // (ProfileHome preloads this route on press-in) or reopened after a save never
+  // shows a stale snapshot.
+  const [displayNameDraft, setDisplayNameDraft] = useState<string | null>(null);
+  const displayName = displayNameDraft ?? profile.displayName;
+  const [emailDraft, setEmailDraft] = useState<string | null>(null);
+  const email = emailDraft ?? profile.email ?? "";
+  const [bioDraft, setBioDraft] = useState<string | null>(null);
+  const bio = bioDraft ?? profile.bio ?? "";
   const [avatarUri, setAvatarUri] = useState<string | undefined>(undefined);
   const [removeAvatar, setRemoveAvatar] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -76,6 +84,15 @@ export function EditProfileScreen({ navigation }: Props) {
     removeAvatar;
   // Saving (or leaving after a save) must not trigger the unsaved-changes prompt.
   const allowLeaveRef = useRef(false);
+  useFocusEffect(
+    useCallback(() => {
+      setDisplayNameDraft(null);
+      setEmailDraft(null);
+      setBioDraft(null);
+      setAvatarUri(undefined);
+      allowLeaveRef.current = false;
+    }, []),
+  );
 
   useEffect(() => {
     const unsubscribe = navigation.addListener("beforeRemove", (event) => {
@@ -222,7 +239,7 @@ export function EditProfileScreen({ navigation }: Props) {
           <Input
             label="Display name"
             value={displayName}
-            onChangeText={setDisplayName}
+            onChangeText={setDisplayNameDraft}
             maxLength={PROFILE_DISPLAY_NAME_MAX_LENGTH}
             errorText={nameError}
             error={Boolean(nameError)}
@@ -231,7 +248,7 @@ export function EditProfileScreen({ navigation }: Props) {
             label="Bio"
             placeholder="A line about what you love to eat"
             value={bio}
-            onChangeText={setBio}
+            onChangeText={setBioDraft}
             multiline
             maxLength={PROFILE_BIO_MAX_LENGTH}
             accessibilityHint={`Up to ${PROFILE_BIO_MAX_LENGTH} characters`}
@@ -242,7 +259,7 @@ export function EditProfileScreen({ navigation }: Props) {
             autoCapitalize="none"
             keyboardType="email-address"
             value={email}
-            onChangeText={setEmail}
+            onChangeText={setEmailDraft}
           />
           <AppText variant="micro" tone="muted">
             Changing your email sends confirmation links to your current and new addresses. Your
@@ -280,11 +297,11 @@ export function EditProfileScreen({ navigation }: Props) {
               const savedProfile = await getHungryService().profile.updateProfile({
                 displayName: trimmedName,
                 ...(bioChanged ? { bio: trimmedBio } : {}),
-                // An empty avatarUrl removes the photo.
-                avatarUrl: removeAvatar ? "" : avatarUri,
+                // An empty avatarUrl removes the photo; no new photo leaves it unchanged.
+                ...(removeAvatar ? { avatarUrl: "" } : avatarUri ? { avatarUrl: avatarUri } : {}),
                 dietaryPreferences: profile.dietaryPreferences,
               });
-              applyProfile(savedProfile);
+              applySavedProfileEdits(savedProfile);
               allowLeaveRef.current = true;
               trackAnalyticsEvent("profile_updated", {
                 name_changed: trimmedName !== profile.displayName.trim(),

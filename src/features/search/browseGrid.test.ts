@@ -48,6 +48,7 @@ function dish(overrides: Partial<CatalogRawDishCard> = {}): CatalogRawDishCard {
     reviewCount: 120,
     cuisineTags: [],
     dietaryFlags: [],
+    sectionTags: [],
     verificationStatus: "raw",
     menuRightsStatus: "unverified",
     mediaRightsStatus: "unverified",

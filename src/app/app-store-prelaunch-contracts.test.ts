@@ -27,13 +27,13 @@ const REQUIRED_PRELAUNCH_REPORTS = [
 
 const REQUIRED_MAESTRO_FLOWS = [
   ".maestro/ios-app-launch-smoke.yaml",
-  ".maestro/ios-auth-smoke.yaml",
-  ".maestro/ios-guest-browse-smoke.yaml",
+  ".maestro/ios-mandatory-auth-smoke.yaml",
+  ".maestro/ios-authenticated-fallback-smoke.yaml",
   ".maestro/ios-location-denied-smoke.yaml",
   ".maestro/ios-media-picker-permission.yaml",
   ".maestro/ios-review-post-smoke.yaml",
   ".maestro/android-app-launch-smoke.yaml",
-  ".maestro/android-guest-browse-smoke.yaml",
+  ".maestro/android-mandatory-auth-smoke.yaml",
   ".maestro/android-media-permission-smoke.yaml",
 ] as const;
 
@@ -131,7 +131,7 @@ test("development Expo config keeps dev-client support for local simulator work"
   assert.equal(pluginNames.includes("expo-dev-client"), true);
 });
 
-test("native smoke runner exposes iOS and Android prelaunch flows", () => {
+test("native smoke runner exposes mandatory-auth and authenticated-fallback prelaunch flows", () => {
   for (const flowPath of REQUIRED_MAESTRO_FLOWS) {
     assertRepoFileExists(flowPath);
   }
@@ -141,20 +141,24 @@ test("native smoke runner exposes iOS and Android prelaunch flows", () => {
 
   for (const scriptName of [
     "smoke:native:ios:launch",
-    "smoke:native:ios:guest",
+    "smoke:native:ios:mandatory-auth",
+    "smoke:native:ios:authenticated-fallback",
     "smoke:native:ios:auth",
     "smoke:native:ios:location-denied",
     "smoke:native:ios:review-post",
     "smoke:native:android",
     "smoke:native:android:launch",
-    "smoke:native:android:guest",
+    "smoke:native:android:mandatory-auth",
     "smoke:native:android:media",
   ]) {
     assert.match(packageJson, new RegExp(`"${scriptName}"`));
   }
 
-  assert.match(runner, /"ios-launch"/);
-  assert.match(runner, /"android-launch"/);
+  assert.doesNotMatch(packageJson, /smoke:native:(ios|android):guest/);
+  assert.match(runner, /"ios-mandatory-auth"/);
+  assert.match(runner, /"ios-authenticated-fallback"/);
+  assert.match(runner, /"android-mandatory-auth"/);
+  assert.doesNotMatch(runner, /guest-browse-smoke/);
   assert.match(runner, /target\.startsWith\("android"\)/);
   assert.match(runner, /appJson\.expo\?\.android\?\.package/);
 });

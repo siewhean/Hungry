@@ -1,0 +1,53 @@
+appId: ${APP_ID}
+---
+# Prerequisite: run with an authenticated staging account and make only the
+# catalog RPC unavailable (network proxy, RPC fault injection, or staging rule).
+# Authentication must remain valid throughout this flow.
+- launchApp
+- tapOn:
+    text: "Hungry, http://.*:8081"
+    optional: true
+- tapOn:
+    text: "Hungry"
+    optional: true
+- tapOn:
+    text: "Continue"
+    optional: true
+- tapOn:
+    text: "Close"
+    optional: true
+- runFlow:
+    when:
+      visible: "Enter URL manually"
+    commands:
+      - tapOn: "Enter URL manually"
+      - tapOn:
+          point: "50%,34%"
+      - inputText: "${METRO_URL}"
+      - tapOn: "Connect"
+- runFlow:
+    when:
+      visible: "Welcome back"
+    commands:
+      - tapOn: "Email address"
+      - inputText: "${STAGING_EMAIL}"
+      - tapOn: "Password"
+      - inputText: "${STAGING_PASSWORD}"
+      - tapOn:
+          text: "Sign in"
+- extendedWaitUntil:
+    visible: "Discover"
+    timeout: 60000
+- tapOn:
+    text: "Discover"
+- extendedWaitUntil:
+    visible:
+      id: "catalog-source-excel"
+    timeout: 60000
+- assertVisible:
+    id: "catalog-source-excel"
+- assertVisible: "Offline catalog"
+- assertVisible: "Nearby dishes"
+- assertVisible: "Stalls near you"
+- assertVisible: "Browse the full directory"
+- takeScreenshot: "ios-authenticated-excel-fallback"

@@ -9,10 +9,18 @@ const offlineScreen = readFileSync(
   "utf8",
 );
 
-test("app bootstrap derives offline state from NetInfo and cleans up its subscription", () => {
+test("app bootstrap keeps authenticated catalog routes mounted during NetInfo outages", () => {
   assert.match(source, /import NetInfo from "@react-native-community\/netinfo"/);
   assert.match(source, /const unsubscribe = NetInfo\.addEventListener/);
+  // Offline is a non-blocking banner; the RootNavigator no longer swaps the
+  // current (authenticated catalog) route for the Offline screen.
   assert.match(source, /setOffline\(isNetworkOffline\(state\)\)/);
+  const rootNavigator = readFileSync(
+    path.join(process.cwd(), "src/app/navigation/RootNavigator.tsx"),
+    "utf8",
+  );
+  assert.match(rootNavigator, /function OfflineBanner\(\)/);
+  assert.doesNotMatch(rootNavigator, /navigationRef\.navigate\("Offline"\)/);
   assert.match(source, /return unsubscribe;/);
   assert.doesNotMatch(source, /setOffline\(false\);/);
 });

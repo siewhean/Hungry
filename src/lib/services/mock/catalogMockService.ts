@@ -87,6 +87,8 @@ function toDishCard(
     rating: dish.rating,
     reviewCount: dish.reviewCount,
     cuisineTags: dishTags(dish),
+    // Local data has no curated Discover sections.
+    sectionTags: [],
     dietaryFlags: [...dish.dietaryFlags],
     isOpen: entry.venue.isOpen,
     verificationStatus: verification(entry.venue),

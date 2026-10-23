@@ -202,7 +202,7 @@ test("public profile does not expose the current user's saved card", () => {
   const profileHome = read("src/app/screens/profile/ProfileHomeScreen.tsx");
   const profileContent = read("src/app/screens/profile/UserProfileContent.tsx");
 
-  assert.match(profileHome, /label="Saved"/);
+  assert.match(profileHome, /FEATURE_FLAGS\.favouritesEnabled \? \([\s\S]*label="Saved"/);
   assert.doesNotMatch(profileHome, /isOtherUserProfile|import \{ UserProfileContent/);
   assert.doesNotMatch(profileContent, /label="Saved"/);
   assert.doesNotMatch(profileContent, /navigation\.navigate\("Favourites"\)/);

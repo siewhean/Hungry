@@ -8,18 +8,28 @@ export type AuthStackParamList = {
    */
   Login: { title?: string; email?: string } | undefined;
   SignUp: undefined;
-  EmailVerification: { email?: string; completedOnboarding?: boolean; code?: string } | undefined;
+  // `code` / `error` arrive from the hungry://auth/confirm and
+  // hungry://auth/callback Supabase PKCE deep links (see linking.ts).
+  EmailVerification:
+    | {
+        email?: string;
+        completedOnboarding?: boolean;
+        code?: string;
+        error?: "expired" | "invalid";
+      }
+    | undefined;
   /** The link a signed-in user opens to confirm a new sign-in email (hungry://auth/email-change). */
   EmailChange: { code?: string } | undefined;
   ForgotPassword: undefined;
   /**
    * recoveryVerified: the emailed code was already verified (ForgotPassword).
-   * linkError: the reset link came back with an error (expired, already used).
+   * error / linkError: the reset link came back with an error (expired, already used).
    */
   ResetPassword:
     | {
         email?: string;
         code?: string;
+        error?: "expired" | "invalid";
         recoveryVerified?: boolean;
         linkError?: "expired" | "invalid";
       }

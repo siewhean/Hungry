@@ -6,13 +6,16 @@ import { existsSync } from "node:fs";
 const REQUIRED_ENV = "HUNGRY_SUPABASE_SMOKE_REQUIRED";
 const smokeSqlPath = "supabase/smoke/full_audit_v1_readiness.sql";
 
+// Self-hosted Supabase: target the database explicitly instead of a CLI-linked cloud project.
+const DB_URL_ENV = "SUPABASE_DB_URL";
+const dbUrl = process.env[DB_URL_ENV]?.trim() ?? "";
 const installedSupabaseCli =
   process.env.SUPABASE_CLI_COMMAND ||
   ["/opt/homebrew/bin/supabase", "/usr/local/bin/supabase"].find((candidate) =>
     existsSync(candidate),
   );
 const npxCommand = process.platform === "win32" ? "npx.cmd" : "npx";
-const args = ["db", "query", "--linked", "-f", smokeSqlPath, "-o", "table"];
+const args = ["db", "query", "--db-url", dbUrl, "-f", smokeSqlPath, "-o", "table"];
 const command = installedSupabaseCli || npxCommand;
 const commandArgs = installedSupabaseCli ? args : ["--no-install", "supabase", ...args];
 
@@ -72,12 +75,25 @@ function writeIfPresent(text, stream) {
   if (text.trim()) stream.write(text.endsWith("\n") ? text : `${text}\n`);
 }
 
+if (!dbUrl) {
+  if (isRequired()) {
+    console.error(
+      `[supabase-full-audit-v1-smoke] ${DB_URL_ENV} is required (Postgres connection string for the target Supabase database).`,
+    );
+    process.exit(1);
+  }
+  console.log(
+    `[supabase-full-audit-v1-smoke] skipped; ${DB_URL_ENV} is not set. Set ${REQUIRED_ENV}=1 to make this a hard failure.`,
+  );
+  process.exit(0);
+}
+
 const result = await runSupabaseQuery();
 
 if (result.code !== 0) {
   if (!isRequired() && isSkippableEnvironmentError(result.stderr)) {
     console.log(
-      `[supabase-full-audit-v1-smoke] skipped; linked Supabase is not reachable from this environment. Set ${REQUIRED_ENV}=1 to make this a hard failure.`,
+      `[supabase-full-audit-v1-smoke] skipped; target Supabase database is not reachable from this environment. Set ${REQUIRED_ENV}=1 to make this a hard failure.`,
     );
     process.exit(0);
   }

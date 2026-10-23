@@ -92,7 +92,7 @@ test("Screen header contract: live Discover, Review, and New Post headers use Ap
     /getNearestSingaporeAreaWithin\(discoverLocationLatitude, discoverLocationLongitude\)/,
   );
   assert.match(tabs, /<Tab\.Screen name="Discover" component=\{DiscoverWrapper\}/);
-  assert.match(tabs, /require\("@\/app\/screens\/discover\/DiscoverHomeScreen"\)/);
+  assert.match(tabs, /require\("@\/app\/screens\/discover\/DiscoverEntryScreen"\)/);
   assert.doesNotMatch(tabs, /DiscoverHomeScreenV2/);
   assert.match(home, /<AppHeader[\s\S]*title="Home"/);
   assert.match(home, /horizontalPadding=\{semanticSpacing\.screenEdge\}/);

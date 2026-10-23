@@ -7,6 +7,21 @@ import { timingSafeEqual } from "../_shared/timingSafeEqual.ts";
 type JsonObject = Record<string, unknown>;
 
 const MAX_BATCH_SIZE = 25;
+const STORAGE_LIST_PAGE_SIZE = 100;
+const STORAGE_REMOVE_CHUNK_SIZE = 100;
+
+// Buckets whose objects are written under a `<auth uid>/` prefix by storage RLS
+// (0014, 0016, 0023, 20260527113000). merchant-verification-evidence is excluded on
+// purpose: verification evidence is retained for fraud/legal review.
+const USER_PREFIXED_BUCKETS = [
+  "avatars",
+  "review-media",
+  "bites-media",
+  "post-media",
+  // "menu-photos" is deliberately excluded: menu photos stay on the stall page for
+  // other diners after deletion; only menu_photo_submissions.submitted_by is cleared.
+  "user-stall-submission-images",
+];
 
 function toJson(status: number, body: JsonObject): Response {
   return new Response(JSON.stringify(body), {
@@ -31,48 +46,74 @@ function isAlreadyDeletedAuthError(error: unknown): boolean {
   return message.includes("not found") || message.includes("no user");
 }
 
-// Buckets whose objects live under the owner's `{userId}/` folder. Menu photos are
-// kept on purpose (they stay on the stall page without the uploader's name).
-const USER_MEDIA_BUCKETS = ["avatars", "review-media", "post-media", "bites-media"];
-
-async function listStoragePaths(
-  client: ReturnType<typeof createClient>,
-  bucket: string,
-  prefix: string,
-  depth = 0,
-): Promise<string[]> {
-  const paths: string[] = [];
-  // n-plus-one-ok: paged storage listing, 1000 entries per call; folders recurse.
-  for (let offset = 0; ; offset += 1000) {
-    const { data, error } = await client.storage.from(bucket).list(prefix, { limit: 1000, offset });
-    if (error) throw error;
-    const entries = Array.isArray(data) ? data : [];
-    for (const entry of entries) {
-      const path = `${prefix}/${entry.name}`;
-      // Folders come back without an id.
-      if (entry.id) paths.push(path);
-      else if (depth < 4) paths.push(...(await listStoragePaths(client, bucket, path, depth + 1)));
-    }
-    if (entries.length < 1000) return paths;
-  }
+function isMissingBucketError(error: unknown): boolean {
+  const message = String((error as { message?: unknown } | null)?.message ?? error).toLowerCase();
+  return message.includes("bucket not found");
 }
 
-async function removeUserMedia(
+async function listUserObjectPaths(
   client: ReturnType<typeof createClient>,
+  bucket: string,
   userId: string,
-): Promise<number> {
-  let removed = 0;
-  for (const bucket of USER_MEDIA_BUCKETS) {
-    const paths = await listStoragePaths(client, bucket, userId);
-    // n-plus-one-ok: removes 100 paths per call, not one per file.
-    for (let index = 0; index < paths.length; index += 100) {
-      const chunk = paths.slice(index, index + 100);
-      const { error } = await client.storage.from(bucket).remove(chunk);
-      if (error) throw error;
-      removed += chunk.length;
+): Promise<string[]> {
+  const files: string[] = [];
+  const folders = [userId];
+  while (folders.length > 0) {
+    const folder = folders.pop() as string;
+    // n-plus-one-ok: paged storage listing, one call per page of a folder; folders are walked.
+    for (let offset = 0; ; offset += STORAGE_LIST_PAGE_SIZE) {
+      const { data, error } = await client.storage
+        .from(bucket)
+        .list(folder, { limit: STORAGE_LIST_PAGE_SIZE, offset });
+      if (error) {
+        if (isMissingBucketError(error)) return [];
+        throw error;
+      }
+      const entries = Array.isArray(data) ? data : [];
+      for (const entry of entries) {
+        const fullPath = `${folder}/${entry.name}`;
+        // Storage list() returns folders as entries with a null id.
+        if (entry.id === null || entry.id === undefined) folders.push(fullPath);
+        else files.push(fullPath);
+      }
+      if (entries.length < STORAGE_LIST_PAGE_SIZE) break;
     }
   }
-  return removed;
+  return files;
+}
+
+async function deleteUserStorageObjects(
+  client: ReturnType<typeof createClient>,
+  userId: string,
+  retained: Set<string>,
+): Promise<Record<string, number>> {
+  const removedByBucket: Record<string, number> = {};
+  for (const bucket of USER_PREFIXED_BUCKETS) {
+    const paths = (await listUserObjectPaths(client, bucket, userId)).filter(
+      (path) => !retained.has(`${bucket}/${path}`),
+    );
+    // n-plus-one-ok: removes a chunk of paths per call, not one per file.
+    for (let index = 0; index < paths.length; index += STORAGE_REMOVE_CHUNK_SIZE) {
+      const { error } = await client.storage
+        .from(bucket)
+        .remove(paths.slice(index, index + STORAGE_REMOVE_CHUNK_SIZE));
+      if (error) throw error;
+    }
+    removedByBucket[bucket] = paths.length;
+  }
+  return removedByBucket;
+}
+
+function toRetainedObjectKeys(purgeResult: unknown): Set<string> {
+  const retained = (purgeResult as { retained_storage_objects?: unknown } | null)
+    ?.retained_storage_objects;
+  const keys = new Set<string>();
+  for (const item of Array.isArray(retained) ? retained : []) {
+    const bucket = String((item as { bucket?: unknown })?.bucket ?? "");
+    const path = String((item as { path?: unknown })?.path ?? "");
+    if (bucket && path) keys.add(`${bucket}/${path}`);
+  }
+  return keys;
 }
 
 async function markFailure(
@@ -152,13 +193,26 @@ serveWithSentry("process-account-deletions", async (request) => {
         .eq("submitted_by", userId);
       if (menuPhotoError) throw menuPhotoError;
 
-      // The anonymized profile row stays, so drop its avatar link and the files behind it.
+      const { data: purgeResult, error: purgeError } = await client.rpc(
+        "purge_account_deletion_residual_data",
+        { p_request_id: requestId, p_worker_id: workerId },
+      );
+      if (purgeError) throw purgeError;
+
+      // The anonymized profile row stays, so drop its avatar link (files are removed below).
       const { error: avatarError } = await client
         .from("user_profiles")
         .update({ avatar_url: null })
         .eq("id", userId);
       if (avatarError) throw avatarError;
-      const removedMedia = await removeUserMedia(client, userId);
+
+      // Every step is idempotent, so a failure here leaves the request claimable and
+      // the next run safely repeats anonymize/purge before retrying auth deletion.
+      const storageRemoved = await deleteUserStorageObjects(
+        client,
+        userId,
+        toRetainedObjectKeys(purgeResult),
+      );
 
       const { error: deleteError } = await client.auth.admin.deleteUser(userId);
       if (deleteError && !isAlreadyDeletedAuthError(deleteError)) {
@@ -172,7 +226,7 @@ serveWithSentry("process-account-deletions", async (request) => {
       });
       if (completeError) throw completeError;
 
-      results.push({ requestId, userId, status: "completed", removedMedia });
+      results.push({ requestId, userId, status: "completed", storageRemoved });
     } catch (error) {
       await reportFunctionError("process-account-deletions", error, { requestId });
       await markFailure(client, requestId, userId, workerId, error);

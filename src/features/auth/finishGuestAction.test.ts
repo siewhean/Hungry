@@ -11,7 +11,12 @@ const dish = { id: "dish-already-saved" } as DishDetail;
 function stubToggle() {
   const calls: string[] = [];
   const original = useProfileStore.getState().toggleFavourite;
-  useProfileStore.setState({ toggleFavourite: (target) => void calls.push(target.id) });
+  useProfileStore.setState({
+    toggleFavourite: async (target) => {
+      calls.push(target.id);
+      return { status: "saved" };
+    },
+  });
   return { calls, restore: () => useProfileStore.setState({ toggleFavourite: original }) };
 }
 

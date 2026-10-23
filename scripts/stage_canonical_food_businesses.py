@@ -33,6 +33,7 @@ IMPORT_UUID_NAMESPACE = uuid.uuid5(uuid.NAMESPACE_URL, "hungry.sg/imports")
 IMPORT_URL_ENV = "HUNGRY_SUPABASE_IMPORT_URL"
 IMPORT_SERVICE_ROLE_ENV = "HUNGRY_SUPABASE_IMPORT_SERVICE_ROLE_KEY"
 IMPORT_PROJECT_REF_ENV = "HUNGRY_SUPABASE_IMPORT_PROJECT_REF"
+ALLOWED_HOSTS_ENV = "HUNGRY_SUPABASE_ALLOWED_HOSTS"
 IMPORT_OPT_IN_ENV = "HUNGRY_ALLOW_SERVICE_ROLE_IMPORT"
 
 EXPECTED_COLUMNS = [
@@ -520,20 +521,30 @@ def assert_import_target_is_allowed(url_text: str) -> None:
     if is_local_supabase_url(url_text):
         return
 
-    hostname = parse.urlparse(url_text).hostname
+    hostname = (parse.urlparse(url_text).hostname or "").lower()
     if not hostname or "." not in hostname:
         raise SystemExit(f"{IMPORT_URL_ENV} must be a valid Supabase project URL.")
 
-    project_ref = hostname.split(".")[0]
+    allowed_hosts = {
+        host.strip().lower() for host in (os_environ(ALLOWED_HOSTS_ENV) or "").split(",") if host.strip()
+    }
+    if hostname in allowed_hosts:
+        return
+
+    # Backward compatibility: Supabase Cloud URLs may still be confirmed by project ref.
     expected_project_ref = clean(os_environ(IMPORT_PROJECT_REF_ENV))
-    if not expected_project_ref:
-        raise SystemExit(
-            f"Cloud imports require {IMPORT_PROJECT_REF_ENV} to confirm the intended staging project."
-        )
-    if project_ref != expected_project_ref:
-        raise SystemExit(
-            f"{IMPORT_PROJECT_REF_ENV}={expected_project_ref} does not match Supabase URL project ref {project_ref}."
-        )
+    if hostname.endswith(".supabase.co") and expected_project_ref:
+        project_ref = hostname.split(".")[0]
+        if project_ref != expected_project_ref:
+            raise SystemExit(
+                f"{IMPORT_PROJECT_REF_ENV}={expected_project_ref} does not match Supabase URL project ref {project_ref}."
+            )
+        return
+
+    raise SystemExit(
+        f"{IMPORT_URL_ENV} host {hostname} is not in {ALLOWED_HOSTS_ENV}; "
+        "add it (comma-separated) to confirm the intended staging target."
+    )
 
 
 def os_environ(name: str) -> str | None:
