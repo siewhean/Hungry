@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { MODEL, SYSTEM_PROMPT, TASTE_AXES } from "../../../supabase/functions/_shared/tasteTagging";
+import { resolveAi } from "../../../supabase/functions/_shared/aiProvider";
+import { SYSTEM_PROMPT, TASTE_AXES } from "../../../supabase/functions/_shared/tasteTagging";
 import {
   FakeSupabase,
   fakeGemini,
@@ -19,6 +20,8 @@ const ENV = {
   SUPABASE_URL: "https://project.supabase.co",
   SUPABASE_SERVICE_ROLE_KEY: "service-role",
 };
+// The default model, as resolved from the secrets above.
+const MODEL = resolveAi((name) => (ENV as Record<string, string>)[name]).model;
 const DISH = { dish_id: "dish-1", dish_name: "Laksa", venue_name: "Katong Laksa", price: 6.5 };
 
 type Gemini = ReturnType<typeof fakeGemini>;
@@ -74,10 +77,10 @@ test("tag-dishes rejects other methods and bad tokens, and needs its secrets", a
   assert.equal((await noSupabase.handler(post({}, TOKEN))).status, 500);
   const noGemini = await load({ env: { GEMINI_API_KEY: "" } });
   const response = await noGemini.handler(post({}, TOKEN));
-  assert.deepEqual(
-    [response.status, (await json(response)).error],
-    [500, "missing_gemini_api_key"],
-  );
+  assert.deepEqual([response.status, (await json(response)).error], [500, "missing_ai_api_key"]);
+  const badProvider = await load({ env: { AI_PROVIDER: "openai" } });
+  const wrong = await badProvider.handler(post({}, TOKEN));
+  assert.deepEqual([wrong.status, (await json(wrong)).error], [500, "invalid_ai_provider"]);
 });
 
 test("tag-dishes asks for the clamped batch of untagged dishes", async () => {

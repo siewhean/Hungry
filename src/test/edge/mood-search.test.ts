@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { MODEL } from "../../../supabase/functions/_shared/tasteTagging";
+import { resolveAi } from "../../../supabase/functions/_shared/aiProvider";
 import {
   FakeSupabase,
   fakeGemini,
@@ -20,6 +20,8 @@ const ENV = {
   GEMINI_API_KEY: "gemini-test",
 };
 const NOW = new Date("2026-10-22T04:00:00Z");
+// The default model, as resolved from the secrets above.
+const MODEL = resolveAi((name) => (ENV as Record<string, string>)[name]).model;
 
 const MOOD = {
   sweet: 0,
@@ -163,14 +165,24 @@ test("mood-search reports a failed cache lookup", async () => {
   assert.deepEqual([response.status, (await json(response)).error], [500, "cache_lookup_failed"]);
 });
 
-test("mood-search stops before reserving anything when Gemini is not configured", async () => {
+test("mood-search stops before reserving anything when the AI key is not configured", async () => {
   const { handler, supabase } = await load({ env: { GEMINI_API_KEY: "" } });
   const response = await handler(search("not too spicy"));
-  assert.deepEqual(
-    [response.status, (await json(response)).error],
-    [500, "missing_gemini_api_key"],
-  );
+  assert.deepEqual([response.status, (await json(response)).error], [500, "missing_ai_api_key"]);
   assert.equal(supabase.callsTo("reserve_mood_search_slot").length, 0);
+});
+
+test("mood-search stops before reserving anything when AI_PROVIDER is not a known provider", async () => {
+  const { handler, supabase } = await load({ env: { AI_PROVIDER: "openai" } });
+  const response = await handler(search("not too spicy"));
+  assert.deepEqual([response.status, (await json(response)).error], [500, "invalid_ai_provider"]);
+  assert.equal(supabase.callsTo("reserve_mood_search_slot").length, 0);
+});
+
+test("mood-search sends the AI_MODEL secret to Gemini when it is set", async () => {
+  const { handler, gemini: model } = await load({ env: { AI_MODEL: "gemini-3.1-flash-lite" } });
+  await handler(search("anything"));
+  assert.equal(model.calls[0].model, "gemini-3.1-flash-lite");
 });
 
 test("mood-search reserves a daily slot in one locked rpc, and answers 429 once the cap is used", async () => {
