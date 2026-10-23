@@ -32,6 +32,7 @@ import { ReportProblemLink } from "@/components/stall/ReportProblemLink";
 import { buildDishGallery } from "@/features/detail/detailTransforms";
 import { formatDishUpdated } from "@/features/detail/dishFreshness";
 import { formatDishPrice } from "@/features/detail/dishPrice";
+import { isPopularDish } from "@/features/detail/popularDish";
 import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
 import { DietaryFlagChips } from "@/components/dish/DietaryFlagChips";
 import { OwnReviewActions, ReviewPhotoStrip, ReviewReaderActions } from "@/components/review";
@@ -140,7 +141,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const markTried = useStallInteractionStore((state) => state.markTried);
   const loadStallInteractions = useStallInteractionStore((state) => state.loadInteractions);
   const incrementShare = useSocialStore((state) => state.incrementShare);
-  const [tasteProfileOpen, setTasteProfileOpen] = useState(true);
+  const [tasteProfileOpen, setTasteProfileOpen] = useState(false);
   const [operatingHoursOpen, setOperatingHoursOpen] = useState(false);
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
   const shareSheetRef = useRef<BottomSheetModal>(null);
@@ -823,7 +824,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
               }}
             >
               <View style={{ gap: spacing[4] }}>
-                {dish.mustOrder ? (
+                {isPopularDish(dish) ? (
                   <View
                     style={{
                       alignSelf: "flex-start",
@@ -834,7 +835,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                     }}
                   >
                     <AppText variant="bodySmallBold" style={{ color: palette.warningText }}>
-                      MUST ORDER
+                      POPULAR
                     </AppText>
                   </View>
                 ) : null}
@@ -1056,6 +1057,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
               {hasTasteSignal ? (
                 <View style={{ gap: spacing[3] }}>
                   <Button
+                    variant="secondary"
                     label={tasteProfileOpen ? "Hide Taste Profile" : "View Taste Profile"}
                     onPress={() => setTasteProfileOpen((current) => !current)}
                   />
@@ -1498,6 +1500,30 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                 right: 0,
               }}
             >
+              {stallAddress ? (
+                // The one filled control in the dock: the next real-world step for a nearby dish.
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Directions to ${venueName}`}
+                  onPress={openStallMaps}
+                  style={{
+                    alignItems: "center",
+                    backgroundColor: palette.orange,
+                    borderRadius: componentRadii.button,
+                    flex: 1,
+                    flexDirection: "row",
+                    gap: spacing[1.5],
+                    height: dockTargetSize,
+                    justifyContent: "center",
+                    paddingHorizontal: spacing[3],
+                  }}
+                >
+                  <Navigation color={palette.textOnOrange} size={reviewIconSize} />
+                  <AppText variant="bodyBold" style={{ color: palette.textOnOrange }}>
+                    Directions
+                  </AppText>
+                </Pressable>
+              ) : null}
               {FEATURE_FLAGS.portfoliosEnabled ? (
                 <Pressable
                   accessibilityRole="button"
@@ -1576,22 +1602,40 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                   accessibilityRole="button"
                   accessibilityLabel="Write a review"
                   onPress={handleReview}
-                  style={{
-                    alignItems: "center",
-                    backgroundColor: palette.orange,
-                    borderRadius: componentRadii.button,
-                    flexDirection: "row",
-                    gap: spacing[1.5],
-                    height: dockTargetSize,
-                    justifyContent: "center",
-                    paddingHorizontal: spacing[4],
-                  }}
+                  style={
+                    stallAddress
+                      ? {
+                          alignItems: "center",
+                          borderColor: palette.border,
+                          borderRadius: componentRadii.iconButton,
+                          borderWidth: 1,
+                          height: dockTargetSize,
+                          justifyContent: "center",
+                          minWidth: dockTargetSize,
+                        }
+                      : {
+                          alignItems: "center",
+                          backgroundColor: palette.orange,
+                          borderRadius: componentRadii.button,
+                          flexDirection: "row",
+                          gap: spacing[1.5],
+                          height: dockTargetSize,
+                          justifyContent: "center",
+                          paddingHorizontal: spacing[4],
+                        }
+                  }
                 >
-                  {/* Dark ink on orange: white on brand orange fails AA in both themes. */}
-                  <CommentIcon color={palette.textOnOrange} size={reviewIconSize} />
-                  <AppText variant="bodyBold" style={{ color: palette.textOnOrange }}>
-                    Review
-                  </AppText>
+                  {stallAddress ? (
+                    <CommentIcon color={palette.text} size={reviewIconSize} />
+                  ) : (
+                    <>
+                      {/* Dark ink on orange: white on brand orange fails AA in both themes. */}
+                      <CommentIcon color={palette.textOnOrange} size={reviewIconSize} />
+                      <AppText variant="bodyBold" style={{ color: palette.textOnOrange }}>
+                        Review
+                      </AppText>
+                    </>
+                  )}
                 </Pressable>
               ) : null}
             </View>

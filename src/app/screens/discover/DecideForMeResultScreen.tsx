@@ -22,6 +22,7 @@ import { firstDishTimingProps } from "@/lib/analytics/firstDishTiming";
 import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
 import { AccessibleImage, AppText, Badge, Button, Card, EmptyState, Screen } from "@/components/ui";
 import { formatDishUpdated } from "@/features/detail/dishFreshness";
+import { isPopularDish } from "@/features/detail/popularDish";
 import { findBuildingById } from "@/features/discovery/discovery";
 import {
   DECIDE_INITIAL_RADIUS_METERS,
@@ -712,9 +713,9 @@ export function DecideForMeResultScreen() {
         <View style={{ paddingHorizontal: spacing[4], gap: spacing[6], marginTop: -40 }}>
           {hasTasteProfile ? (
             <AnimatedMatchBadge percent={match} />
-          ) : (
+          ) : isPopularDish(dish) ? (
             <Badge label="Popular nearby" tone="neutral" />
-          )}
+          ) : null}
 
           <View style={{ gap: spacing[2] }}>
             <View style={{ flexDirection: "row", gap: spacing[2] }}>
@@ -725,7 +726,7 @@ export function DecideForMeResultScreen() {
                   tone={openState?.status === "open" ? "success" : "warning"}
                 />
               ) : null}
-              {dish.mustOrder && <Badge label="Must order" tone="amber" />}
+              {isPopularDish(dish) && <Badge label="Popular" tone="amber" />}
             </View>
             <AppText variant="displayBold">{dish.name}</AppText>
             <AppText variant="h2" tone="secondary" style={{ color: palette.accentText }}>

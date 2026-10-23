@@ -27,12 +27,14 @@ import {
 } from "@/components/ui";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { reportError } from "@/lib/monitoring/reportError";
 import {
   CATALOG_SUGGEST_MIN_CHARS,
   type CatalogRawDishCard,
   type CatalogSuggestion,
 } from "@/lib/services/catalog";
 import { getCatalogRawService } from "@/lib/services/serviceProvider";
+import { useLocationStore } from "@/store/useLocationStore";
 import { useSearchStore } from "@/store/useSearchStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -71,6 +73,7 @@ export function DishSearchScreen() {
   const removeRecentSearch = useSearchStore((state) => state.removeRecentSearch);
   const allowSearchHistory = useUIStore((state) => state.allowSearchHistory);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const manualLocation = useLocationStore((state) => state.manualLocation);
   // Query and category live here and travel as route params, so nothing stale is persisted.
   const [searchText, setSearchText] = useState("");
   const searchInputRef = useRef<TextInput | null>(null);
@@ -98,7 +101,9 @@ export function DishSearchScreen() {
       .then((items) => {
         if (active) setPopularFoodTypes(items);
       })
-      .catch(() => undefined);
+      .catch((error) =>
+        reportError(error, { surface: "search_landing", step: "popular_food_types" }),
+      );
     return () => {
       active = false;
     };
@@ -111,7 +116,7 @@ export function DishSearchScreen() {
       .then((page) => {
         if (active) setFeaturedDishes(page.items);
       })
-      .catch(() => undefined);
+      .catch((error) => reportError(error, { surface: "search_landing", step: "featured_dishes" }));
     return () => {
       active = false;
     };
@@ -126,7 +131,7 @@ export function DishSearchScreen() {
         .then((items) => {
           if (active) setSuggestionResult({ query: trimmedSearchText, items });
         })
-        .catch(() => undefined);
+        .catch((error) => reportError(error, { surface: "search_landing", step: "suggest" }));
     }, SUGGEST_DEBOUNCE_MS);
     return () => {
       active = false;
@@ -225,7 +230,7 @@ export function DishSearchScreen() {
             }}
           >
             <MapPin color={palette.orange} size={14} />
-            <AppText variant="bodySmall">Singapore</AppText>
+            <AppText variant="bodySmall">{manualLocation ?? "Singapore"}</AppText>
           </View>
         </View>
 
@@ -266,8 +271,7 @@ export function DishSearchScreen() {
               {
                 label: "Near Me",
                 filter: undefined,
-                icon: <MapPin color={palette.textOnPrimary} size={16} />,
-                primary: true,
+                icon: <MapPin color={palette.orange} size={16} />,
               },
               {
                 label: "Rice",
@@ -303,7 +307,7 @@ export function DishSearchScreen() {
                   shadows.card,
                   {
                     alignItems: "center",
-                    backgroundColor: item.primary ? palette.orange : palette.surface,
+                    backgroundColor: palette.surface,
                     borderRadius: radii.pill,
                     flexDirection: "row",
                     gap: spacing[2],
@@ -313,9 +317,7 @@ export function DishSearchScreen() {
                 ]}
               >
                 {item.icon}
-                <AppText style={{ color: item.primary ? palette.textOnPrimary : palette.text }}>
-                  {item.label}
-                </AppText>
+                <AppText>{item.label}</AppText>
               </Pressable>
             ))}
           </ScrollView>
@@ -381,36 +383,35 @@ export function DishSearchScreen() {
                 params: { screen: "ProfileHome" },
               });
             }}
-            style={[
-              shadows.card,
-              {
-                alignItems: "center",
-                backgroundColor: palette.text,
-                borderRadius: componentRadii.card,
-                flexDirection: "row",
-                gap: spacing[3],
-                padding: spacing[4],
-              },
-            ]}
+            // Tertiary: tuning the six-axis profile is advanced, so it stays a quiet row.
+            style={{
+              alignItems: "center",
+              backgroundColor: palette.surface,
+              borderColor: palette.border,
+              borderRadius: componentRadii.card,
+              borderWidth: 1,
+              flexDirection: "row",
+              gap: spacing[3],
+              minHeight: 56,
+              padding: spacing[3],
+            }}
           >
             <View
               style={{
-                backgroundColor: palette.inverseSurfaceSoft,
+                backgroundColor: palette.orangeLight,
                 borderRadius: radii.md,
-                padding: spacing[3],
+                padding: spacing[2],
               }}
             >
-              <SlidersHorizontal color={palette.orange} size={24} />
+              <SlidersHorizontal color={palette.orange} size={20} />
             </View>
             <View style={{ flex: 1 }}>
-              <AppText variant="h3" style={{ color: palette.textOnDark }}>
-                Tune Palate Vector
-              </AppText>
-              <AppText variant="bodySmall" style={{ color: palette.inverseTextSecondary }}>
+              <AppText variant="bodyBold">Tune Palate Vector</AppText>
+              <AppText variant="bodySmall" tone="secondary">
                 Your six-axis taste profile
               </AppText>
             </View>
-            <ChevronRight color={palette.textOnDark} size={20} />
+            <ChevronRight color={palette.textMuted} size={20} />
           </Pressable>
         )}
         {showRecents ? (

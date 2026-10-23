@@ -113,7 +113,7 @@ export function WeeklyPicksRail({
         ) : (
           <View style={{ flex: 1 }} />
         )}
-        <Button label="Decide for me" size="sm" onPress={onDecideForMe} />
+        <Button label="Decide for me" size="sm" fullWidth={false} onPress={onDecideForMe} />
       </View>
       {picks.length ? (
         <>
