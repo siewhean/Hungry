@@ -3,11 +3,10 @@
 import { reportFunctionError, serveWithSentry } from "../_shared/sentry.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.52.0";
 import { timingSafeEqual } from "../_shared/timingSafeEqual.ts";
-import { generateJson } from "../_shared/gemini.ts";
+import { type AiSettings, generateJson, resolveAi } from "../_shared/aiProvider.ts";
 import {
   DIETARY_FLAGS,
   FLAVOR_TAGS,
-  MODEL,
   OUTPUT_SCHEMA,
   SYSTEM_PROMPT,
   TASTE_AXES,
@@ -54,10 +53,8 @@ function describeDish(dish: JsonObject): string {
   return lines.join("\n");
 }
 
-function tagDish(apiKey: string, dish: JsonObject): Promise<JsonObject | null> {
-  return generateJson({
-    apiKey,
-    model: MODEL,
+function tagDish(ai: AiSettings, dish: JsonObject): Promise<JsonObject | null> {
+  return generateJson(ai, {
     system: SYSTEM_PROMPT,
     user: describeDish(dish),
     schema: OUTPUT_SCHEMA,
@@ -80,9 +77,9 @@ serveWithSentry("tag-dishes", async (request) => {
   if (!supabaseUrl || !serviceRoleKey) {
     return toJson(500, { error: "missing_supabase_env" });
   }
-  const geminiApiKey = Deno.env.get("GEMINI_API_KEY") ?? "";
-  if (!geminiApiKey) {
-    return toJson(500, { error: "missing_gemini_api_key" });
+  const ai = resolveAi((name) => Deno.env.get(name));
+  if (ai.problem) {
+    return toJson(500, { error: ai.problem });
   }
 
   const payload = (await request.json().catch(() => ({}))) as JsonObject;
@@ -103,7 +100,7 @@ serveWithSentry("tag-dishes", async (request) => {
   // n-plus-one-ok: the model call per dish dominates; writing each result as it arrives keeps progress if the function times out.
   for (const dish of (dishes ?? []) as JsonObject[]) {
     try {
-      const result = await tagDish(geminiApiKey, dish);
+      const result = await tagDish(ai, dish);
       if (!result) {
         summary.skipped += 1;
         continue;
@@ -124,7 +121,7 @@ serveWithSentry("tag-dishes", async (request) => {
             dish_id: dish.dish_id,
             tag_slug: "taste_profile",
             source: SOURCE,
-            model: MODEL,
+            model: ai.model,
             suggested_vector: `[${vector.join(",")}]`,
             suggested_flavor_tags: flavorTags,
             suggested_dietary_flags: dietaryFlags,
@@ -155,5 +152,5 @@ serveWithSentry("tag-dishes", async (request) => {
     }
   }
 
-  return toJson(200, { ok: true, model: MODEL, ...summary });
+  return toJson(200, { ok: true, model: ai.model, ...summary });
 });

@@ -1,6 +1,6 @@
 // Shared by the tag-dishes Edge Function and scripts/taste-answer-key-eval.mjs,
 // so the answer-key eval always tests the prompt that runs in production.
-export const MODEL = "gemini-3.8-flash";
+// The provider and model come from aiProvider.ts (AI_PROVIDER / AI_MODEL secrets).
 export const TASTE_AXES = ["sweet", "spicy", "sour", "salty", "rich", "aromatic"] as const;
 export const FLAVOR_TAGS = [
   "wok_hei",
