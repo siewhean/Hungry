@@ -140,7 +140,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const markTried = useStallInteractionStore((state) => state.markTried);
   const loadStallInteractions = useStallInteractionStore((state) => state.loadInteractions);
   const incrementShare = useSocialStore((state) => state.incrementShare);
-  const [tasteProfileOpen, setTasteProfileOpen] = useState(false);
+  const [tasteProfileOpen, setTasteProfileOpen] = useState(true);
   const [operatingHoursOpen, setOperatingHoursOpen] = useState(false);
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
   const shareSheetRef = useRef<BottomSheetModal>(null);
@@ -551,10 +551,9 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const heroPhotos = Array.from(
     new Set([...gallery, ...(dish.imageUrl ? [dish.imageUrl] : []), ...reviewPhotos]),
   ).slice(0, 8);
-  const heroHeight = Math.min(Math.max(width * 1.12, 420), 530);
+  const heroHeight = Math.min(Math.max(width * 0.8, 280), 380);
   const cardWidth = (width - spacing[4] * 2 - spacing[3]) / 2;
-  const signatureGridItemWidth = width / 2;
-  const signatureGridItemHeight = signatureGridItemWidth * 1.5;
+  const signatureGridItemWidth = Math.min(width * 0.56, 220);
   const reviewIconSize = 22;
   /** Minimum touch target for the action dock and header buttons. */
   const dockTargetSize = 44;
@@ -764,6 +763,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
           <ScrollView
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{
+              paddingTop: insets.top + 56,
               paddingBottom: insets.bottom + (showDeferredDetailControls ? 104 : spacing[6]),
             }}
           >
@@ -818,11 +818,26 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
             <View
               style={{
                 gap: spacing[5],
-                marginTop: -spacing[12],
+                marginTop: spacing[4],
                 paddingHorizontal: spacing[4],
               }}
             >
               <View style={{ gap: spacing[4] }}>
+                {dish.mustOrder ? (
+                  <View
+                    style={{
+                      alignSelf: "flex-start",
+                      backgroundColor: palette.amberLight,
+                      borderRadius: radii.pill,
+                      paddingHorizontal: spacing[3],
+                      paddingVertical: spacing[1],
+                    }}
+                  >
+                    <AppText variant="bodySmallBold" style={{ color: palette.warningText }}>
+                      MUST ORDER
+                    </AppText>
+                  </View>
+                ) : null}
                 <View
                   style={{
                     alignItems: "center",
@@ -1055,6 +1070,10 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                         padding: spacing[4],
                       }}
                     >
+                      <AppText variant="h3">Taste Matrix &amp; Palate Profile</AppText>
+                      <AppText variant="micro" tone="secondary">
+                        Taste profile from available dish data
+                      </AppText>
                       {TASTE_DIMENSIONS.map((dimension) => {
                         const score = dish.tasteVector[dimension.key] ?? 0;
                         const progressWidth =
@@ -1190,12 +1209,13 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                       More from {venueName}
                     </AppText>
                   </View>
-                  <View
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
                     style={{
-                      flexDirection: "row",
-                      flexWrap: "wrap",
                       marginHorizontal: -spacing[4],
                     }}
+                    contentContainerStyle={{ gap: spacing[3], paddingHorizontal: spacing[4] }}
                   >
                     {moreFromStall.map((item) => (
                       <Pressable
@@ -1209,7 +1229,10 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                         // push, not navigate: each dish gets its own screen, so Back returns here.
                         onPress={() => navigation.push("DishDetail", { dishId: item.id })}
                         style={{
-                          height: signatureGridItemHeight,
+                          backgroundColor: palette.surface,
+                          borderColor: palette.border,
+                          borderRadius: componentRadii.card,
+                          borderWidth: 1,
                           overflow: "hidden",
                           width: signatureGridItemWidth,
                         }}
@@ -1218,69 +1241,44 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                           <AccessibleImage
                             source={{ uri: sanitizeCatalogImageUrl(item.imageUrl) }}
                             contentFit="cover"
-                            style={{ flex: 1 }}
+                            style={{ width: "100%", height: signatureGridItemWidth * 0.62 }}
                             decorative
                           />
                         ) : (
-                          <NoDishPhoto dishName={item.name} style={{ flex: 1 }} />
+                          <NoDishPhoto
+                            dishName={item.name}
+                            style={{ width: "100%", height: signatureGridItemWidth * 0.62 }}
+                          />
                         )}
-                        <LinearGradient
-                          colors={["transparent", palette.detailImageOverlay]}
-                          style={{
-                            bottom: 0,
-                            left: 0,
-                            padding: spacing[3],
-                            position: "absolute",
-                            right: 0,
-                          }}
-                        >
-                          <View
-                            style={{
-                              alignSelf: "flex-start",
-                              backgroundColor: palette.detailImageBadgeSurface,
-                              borderColor: palette.detailImageBadgeBorder,
-                              borderRadius: radii.md,
-                              borderWidth: 1,
-                              paddingHorizontal: spacing[2],
-                              paddingVertical: spacing[1],
-                              shadowColor: palette.navy,
-                              shadowOffset: { width: 0, height: 4 },
-                              shadowOpacity: 0.24,
-                              shadowRadius: 12,
-                            }}
-                          >
-                            <AppText
-                              style={{
-                                color: palette.white,
-                                fontWeight: "900",
-                                textShadowColor: palette.detailImageTextShadow,
-                                textShadowOffset: { width: 0, height: 1 },
-                                textShadowRadius: 3,
-                              }}
-                            >
-                              {item.name}
-                            </AppText>
-                            <AppText
-                              variant="price"
-                              style={{
-                                color: palette.white,
-                                textShadowColor: palette.detailImageTextShadow,
-                                textShadowOffset: { width: 0, height: 1 },
-                                textShadowRadius: 3,
-                              }}
-                            >
-                              {formatDishPrice(item)}
-                            </AppText>
-                          </View>
-                        </LinearGradient>
+                        <View style={{ gap: spacing[1], padding: spacing[3] }}>
+                          <AppText variant="bodyBold" numberOfLines={1}>
+                            {item.name}
+                          </AppText>
+                          <AppText variant="price" style={{ color: palette.orange }}>
+                            {formatDishPrice(item)}
+                          </AppText>
+                        </View>
                       </Pressable>
                     ))}
-                  </View>
+                  </ScrollView>
                 </View>
               ) : null}
 
               <View style={{ gap: spacing[3] }}>
-                <AppText variant="h2">Reviews</AppText>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <AppText variant="h2">Community Palate Feedback</AppText>
+                  {dish.reviewCount > 0 ? (
+                    <AppText variant="bodySmall" tone="secondary">
+                      ★ {dish.rating.toFixed(1)} ({dish.reviewCount})
+                    </AppText>
+                  ) : null}
+                </View>
                 {reviewsStatus === "loading" ? (
                   <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
                     <ActivityIndicator color={palette.orange} />
@@ -1456,8 +1454,16 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                         : "Reviews from diners will appear here when available."
                     }
                     icon={<Star size={36} color={palette.textMuted} />}
-                    ctaLabel="Write a review"
-                    onPress={handleReview}
+                    ctaLabel={
+                      showDeferredDetailControls && FEATURE_FLAGS.reviewCreationEnabled
+                        ? "Write a review"
+                        : undefined
+                    }
+                    onPress={
+                      showDeferredDetailControls && FEATURE_FLAGS.reviewCreationEnabled
+                        ? handleReview
+                        : undefined
+                    }
                   />
                 ) : (
                   <AppText variant="bodySmall" tone="secondary">
@@ -1477,7 +1483,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
           {showDeferredDetailControls ? (
             <View
               style={{
-                backgroundColor: palette.bg,
+                backgroundColor: palette.surface,
                 borderTopColor: palette.border,
                 borderTopWidth: 1,
                 bottom: 0,
@@ -1594,13 +1600,17 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
           <View
             style={{
               alignItems: "center",
+              backgroundColor: palette.surface,
+              borderBottomColor: palette.border,
+              borderBottomWidth: 1,
               flexDirection: "row",
-              justifyContent: "space-between",
+              height: insets.top + 56,
               left: 0,
               paddingHorizontal: spacing[4],
+              paddingTop: insets.top,
               position: "absolute",
               right: 0,
-              top: insets.top + spacing[2],
+              top: 0,
             }}
           >
             <Pressable
@@ -1620,6 +1630,9 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
             >
               <ArrowLeft color={palette.text} size={22} />
             </Pressable>
+            <AppText variant="h3" style={{ flex: 1, marginLeft: spacing[3] }}>
+              Dish Details
+            </AppText>
             {showDeferredDetailControls ? (
               <Pressable
                 accessibilityRole="button"

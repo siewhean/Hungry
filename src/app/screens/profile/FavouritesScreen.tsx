@@ -1,7 +1,7 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, View } from "react-native";
-import { BellRing, Bookmark, Heart, Star } from "lucide-react-native";
+import { BellRing, Bookmark, CircleCheck, Navigation, Star, Store } from "lucide-react-native";
 
 import { PortfolioCard } from "@/components/portfolio";
 import { AccessibleImage, AppText, Button, Card, Chip, EmptyState } from "@/components/ui";
@@ -9,6 +9,12 @@ import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { resolveListItemCount } from "@/features/checklistPortfolio/listLabels";
 import { prefetchDishDetail, preloadRoute } from "@/features/navigation/prefetch";
+import {
+  buildMapsSearchUrl,
+  formatFullStallAddress,
+  getStallPin,
+} from "@/features/detail/stallLocation";
+import { useRetryableLoad } from "@/features/profile/useRetryableLoad";
 import type { CatalogRawDishDetail } from "@/lib/services/catalog";
 import { loadCatalogFavourites } from "@/lib/services/catalog/favourites";
 import {
@@ -17,7 +23,7 @@ import {
   getHungryService,
   getServiceProvider,
 } from "@/lib/services/serviceProvider";
-import { useRetryableLoad } from "@/features/profile/useRetryableLoad";
+import { openTrustedMapsUrl } from "@/lib/security/safeLinking";
 import { usePortfolioStore } from "@/store/usePortfolioStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -43,6 +49,7 @@ const SECTION_LABELS: Record<SavedSection, string> = {
 
 export function FavouritesScreen({ navigation }: Props) {
   const profile = useProfileStore((state) => state.profile);
+  const authenticatedUserId = useSessionStore((state) => state.authenticatedUserId);
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
   const showToast = useUIStore((state) => state.showToast);
   const { componentRadii, palette, spacing, shadows } = useHungryTheme();
@@ -54,10 +61,13 @@ export function FavouritesScreen({ navigation }: Props) {
   const rootNavigation = getRootNavigation(navigation as any);
 
   return (
-    <ProfileScreenShell
-      title="Saved"
-      subtitle="Dishes, stalls, posts and lists you've kept for later."
-    >
+    <ProfileScreenShell title="Saved">
+      <View style={{ gap: spacing[1] }}>
+        <AppText variant="h1">Saved Dishes</AppText>
+        <AppText variant="bodySmall" tone="secondary">
+          {profile.favouriteDishIds.length} cravings saved for later
+        </AppText>
+      </View>
       <View
         accessibilityRole="tablist"
         style={{ flexDirection: "row", gap: spacing[2], marginBottom: spacing[3] }}
@@ -86,7 +96,9 @@ export function FavouritesScreen({ navigation }: Props) {
           onOpenAllLists={() => navigation.navigate("ListsHome", undefined, { pop: true })}
         />
       ) : getServiceProvider().mode === "supabase" ? (
-        <CatalogSavedDishes navigation={navigation} />
+        <Fragment key={`${authenticatedUserId ?? "guest"}:${profile.id}`}>
+          <CatalogSavedDishes navigation={navigation} />
+        </Fragment>
       ) : (
         <>
           <View style={{ flexDirection: "row", gap: spacing[2], marginBottom: spacing[4] }}>
@@ -102,23 +114,22 @@ export function FavouritesScreen({ navigation }: Props) {
             />
           </View>
           {dishes.length ? (
-            <View
-              style={{
-                flexDirection: "row",
-                flexWrap: "wrap",
-                justifyContent: "space-between",
-                gap: spacing[4],
-              }}
-            >
+            <View style={{ gap: spacing[4] }}>
               {dishes.map((dish) => {
                 const venue = repository.getVenueById(dish.venueId);
+                const destination =
+                  venue &&
+                  formatFullStallAddress(venue, {
+                    name: venue.buildingName,
+                    address: venue.address,
+                    postalCode: venue.postalCode,
+                  });
                 return (
                   <View
                     key={dish.id}
                     style={[
                       shadows.card,
                       {
-                        width: "47%",
                         backgroundColor: palette.surface,
                         borderRadius: componentRadii.card,
                         overflow: "hidden",
@@ -127,90 +138,123 @@ export function FavouritesScreen({ navigation }: Props) {
                       },
                     ]}
                   >
-                    {/* Open and Remove are sibling controls: no nested interactive elements. */}
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel={`Open ${dish.name}${venue?.name ? ` at ${venue.name}` : ""}`}
-                      onPressIn={() => {
-                        prefetchDishDetail(dish.id, repository);
-                        preloadRoute(rootNavigation, "DishDetail", { dishId: dish.id });
-                      }}
-                      onPress={() => rootNavigation.navigate("DishDetail", { dishId: dish.id })}
-                    >
-                      <View style={{ height: 120, width: "100%" }}>
+                    <View style={{ height: 180, width: "100%", position: "relative" }}>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`Open ${dish.name}${venue?.name ? ` at ${venue.name}` : ""}`}
+                        onPressIn={() => {
+                          prefetchDishDetail(dish.id, repository);
+                          preloadRoute(rootNavigation, "DishDetail", { dishId: dish.id });
+                        }}
+                        onPress={() => rootNavigation.navigate("DishDetail", { dishId: dish.id })}
+                        style={{ width: "100%", height: "100%" }}
+                      >
                         <AccessibleImage
                           source={{ uri: dish.imageUrl }}
                           style={{ width: "100%", height: "100%" }}
                           contentFit="cover"
                           decorative
                         />
-                      </View>
-                      <View style={{ padding: spacing[3], gap: spacing[1] }}>
-                        <AppText variant="bodyBold" numberOfLines={1}>
-                          {dish.name}
-                        </AppText>
-                        <AppText variant="micro" tone="secondary" numberOfLines={1}>
-                          {venue?.name}
-                        </AppText>
-                        <View
+                      </Pressable>
+                      {tab === "want" ? (
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel={`Remove ${dish.name} from saved`}
+                          hitSlop={6}
+                          onPress={() =>
+                            void toggleFavourite(dish).then((result) => {
+                              if (result.status === "failed") {
+                                showToast({ message: result.message, tone: "error" });
+                              }
+                            })
+                          }
                           style={{
-                            flexDirection: "row",
-                            justifyContent: "space-between",
+                            position: "absolute",
+                            top: spacing[2],
+                            right: spacing[2],
+                            width: 36,
+                            height: 36,
+                            borderRadius: componentRadii.iconButton,
+                            backgroundColor: palette.surfaceTranslucent,
                             alignItems: "center",
-                            marginTop: spacing[1],
+                            justifyContent: "center",
                           }}
                         >
-                          <AppText
-                            style={{
-                              color: palette.orange,
-                              fontWeight: "800",
-                              fontSize: 13,
-                            }}
-                          >
-                            S${dish.price.toFixed(2)}
-                          </AppText>
-                          <View
-                            style={{
-                              flexDirection: "row",
-                              alignItems: "center",
-                              gap: spacing[1],
-                            }}
-                          >
-                            <Star color={palette.amber} fill={palette.amber} size={10} />
-                            <AppText variant="micro" style={{ fontWeight: "700" }}>
-                              {dish.rating.toFixed(1)}
-                            </AppText>
-                          </View>
-                        </View>
-                      </View>
-                    </Pressable>
-                    {tab === "want" ? (
-                      <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel={`Remove ${dish.name} from saved`}
-                        hitSlop={6}
-                        onPress={() =>
-                          void toggleFavourite(dish).then((result) => {
-                            if (result.status === "failed") {
-                              showToast({ message: result.message, tone: "error" });
-                            }
-                          })
-                        }
+                          <Bookmark size={16} color={palette.orange} fill={palette.orange} />
+                        </Pressable>
+                      ) : null}
+                    </View>
+                    <View style={{ padding: spacing[4], gap: spacing[3] }}>
+                      <View
                         style={{
-                          position: "absolute",
-                          top: spacing[2],
-                          right: spacing[2],
-                          width: 36,
-                          height: 36,
-                          borderRadius: componentRadii.iconButton,
-                          backgroundColor: palette.surfaceTranslucent,
-                          alignItems: "center",
-                          justifyContent: "center",
+                          flexDirection: "row",
+                          justifyContent: "space-between",
+                          gap: spacing[2],
                         }}
                       >
-                        <Bookmark size={16} color={palette.orange} fill={palette.orange} />
+                        <AppText variant="h2" style={{ flex: 1 }} numberOfLines={2}>
+                          {dish.name}
+                        </AppText>
+                        <AppText variant="price" style={{ color: palette.orange }}>
+                          S${dish.price.toFixed(2)}
+                        </AppText>
+                      </View>
+                      {venue ? (
+                        <View
+                          style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
+                        >
+                          <Store color={palette.orange} size={15} />
+                          <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
+                            {venue.buildingName ?? venue.name}
+                            {venue.unitNumber ? ` · ${venue.unitNumber}` : ""}
+                          </AppText>
+                        </View>
+                      ) : null}
+                      {dish.reviewCount > 0 ? (
+                        <View
+                          style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
+                        >
+                          <Star color={palette.ratingStar} fill={palette.ratingStar} size={15} />
+                          <AppText variant="bodySmallBold">{dish.rating.toFixed(1)}</AppText>
+                          <AppText variant="bodySmall" tone="secondary">
+                            ({dish.reviewCount})
+                          </AppText>
+                        </View>
+                      ) : null}
+                      {destination ? (
+                        <Button
+                          label="Get Directions"
+                          leftIcon={<Navigation size={18} color={palette.textOnPrimary} />}
+                          onPress={() =>
+                            void openTrustedMapsUrl(
+                              buildMapsSearchUrl(destination, getStallPin(venue)),
+                            )
+                          }
+                        />
+                      ) : (
+                        <Button
+                          label="View dish"
+                          onPress={() => rootNavigation.navigate("DishDetail", { dishId: dish.id })}
+                        />
+                      )}
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`Open ${dish.name} to mark as eaten or add a review`}
+                        onPress={() => rootNavigation.navigate("DishDetail", { dishId: dish.id })}
+                        style={{
+                          alignSelf: "center",
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: spacing[1],
+                          padding: spacing[1],
+                        }}
+                      >
+                        <CircleCheck color={palette.textSecondary} size={15} />
+                        <AppText variant="bodySmallBold" tone="secondary">
+                          View dish to mark as eaten or review
+                        </AppText>
                       </Pressable>
-                    ) : null}
+                    </View>
                   </View>
                 );
               })}
@@ -289,7 +333,6 @@ function SavedPostsSection({ onOpenPost }: { onOpenPost: (postId: string) => voi
   );
 }
 
-/** Stalls you follow: the stall-level "save" (Follow on a stall page). */
 /** Supabase: saved dish ids are catalog ids, so they resolve through the release catalog. */
 function CatalogSavedDishes({ navigation }: Pick<Props, "navigation">) {
   const favouriteDishIds = useProfileStore((state) => state.profile.favouriteDishIds);
@@ -371,55 +414,109 @@ function CatalogSavedDishes({ navigation }: Pick<Props, "navigation">) {
           onPress={() => void load()}
         />
       ) : dishes.length ? (
-        <View style={{ gap: spacing[3] }}>
+        <View style={{ gap: spacing[4] }}>
           {dishes.map((dish) => (
             <View
               key={dish.id}
               style={{
-                alignItems: "center",
                 backgroundColor: palette.surface,
                 borderColor: palette.border,
                 borderRadius: componentRadii.card,
                 borderWidth: 1,
-                flexDirection: "row",
-                gap: spacing[3],
-                padding: spacing[3],
+                overflow: "hidden",
               }}
             >
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Open ${dish.name} at ${dish.venueName}`}
-                onPress={() =>
-                  rootNavigation.navigate("CatalogRawDetail", { kind: "dish", id: dish.id })
-                }
-                style={{ flex: 1, gap: spacing[1] }}
-              >
-                <AppText variant="bodyBold" numberOfLines={1}>
-                  {dish.name}
-                </AppText>
-                <AppText variant="micro" tone="secondary" numberOfLines={1}>
-                  {dish.venueName}
-                </AppText>
-                {dish.price !== undefined ? (
-                  <AppText style={{ color: palette.orange, fontWeight: "800", fontSize: 13 }}>
-                    S${dish.price.toFixed(2)}
+              {dish.imageUrl ? (
+                <View style={{ height: 180, position: "relative" }}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Open ${dish.name} at ${dish.venueName}`}
+                    onPress={() =>
+                      rootNavigation.navigate("CatalogRawDetail", { kind: "dish", id: dish.id })
+                    }
+                    style={{ height: "100%" }}
+                  >
+                    <AccessibleImage
+                      source={{ uri: dish.imageUrl }}
+                      style={{ width: "100%", height: "100%" }}
+                      contentFit="cover"
+                      decorative
+                    />
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Remove ${dish.name} from favourites`}
+                    accessibilityState={{ busy: pendingDishId === dish.id }}
+                    disabled={pendingDishId === dish.id}
+                    onPress={() => void removeFavourite(dish)}
+                    style={{
+                      position: "absolute",
+                      top: spacing[2],
+                      right: spacing[2],
+                      alignItems: "center",
+                      height: 44,
+                      justifyContent: "center",
+                      width: 44,
+                      borderRadius: componentRadii.iconButton,
+                      backgroundColor: palette.surfaceTranslucent,
+                    }}
+                  >
+                    {pendingDishId === dish.id ? (
+                      <ActivityIndicator color={palette.orange} />
+                    ) : (
+                      <Bookmark size={18} color={palette.orange} fill={palette.orange} />
+                    )}
+                  </Pressable>
+                </View>
+              ) : null}
+              <View style={{ padding: spacing[4], gap: spacing[3] }}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "flex-start",
+                    justifyContent: "space-between",
+                    gap: spacing[2],
+                  }}
+                >
+                  <AppText variant="h2" style={{ flex: 1 }} numberOfLines={2}>
+                    {dish.name}
                   </AppText>
+                  {dish.price !== undefined ? (
+                    <AppText variant="price" style={{ color: palette.orange }}>
+                      S${dish.price.toFixed(2)}
+                    </AppText>
+                  ) : null}
+                </View>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
+                  <Store color={palette.orange} size={15} />
+                  <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
+                    {dish.venueName}
+                  </AppText>
+                </View>
+                {dish.reviewCount && dish.rating ? (
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
+                    <Star color={palette.ratingStar} fill={palette.ratingStar} size={15} />
+                    <AppText variant="bodySmallBold">{dish.rating.toFixed(1)}</AppText>
+                    <AppText variant="bodySmall" tone="secondary">
+                      ({dish.reviewCount})
+                    </AppText>
+                  </View>
                 ) : null}
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Remove ${dish.name} from favourites`}
-                accessibilityState={{ busy: pendingDishId === dish.id }}
-                disabled={pendingDishId === dish.id}
-                onPress={() => void removeFavourite(dish)}
-                style={{ alignItems: "center", height: 44, justifyContent: "center", width: 44 }}
-              >
-                {pendingDishId === dish.id ? (
-                  <ActivityIndicator color={palette.error} />
-                ) : (
-                  <Heart size={18} color={palette.error} fill={palette.error} />
-                )}
-              </Pressable>
+                <Button
+                  label="View dish"
+                  onPress={() =>
+                    rootNavigation.navigate("CatalogRawDetail", { kind: "dish", id: dish.id })
+                  }
+                />
+                {!dish.imageUrl ? (
+                  <Button
+                    label={pendingDishId === dish.id ? "Removing..." : "Remove from saved"}
+                    variant="secondary"
+                    loading={pendingDishId === dish.id}
+                    onPress={() => void removeFavourite(dish)}
+                  />
+                ) : null}
+              </View>
             </View>
           ))}
           {unavailableCount > 0 ? (
@@ -446,6 +543,7 @@ function CatalogSavedDishes({ navigation }: Pick<Props, "navigation">) {
   );
 }
 
+/** Stalls you follow: the stall-level "save" (Follow on a stall page). */
 function SavedStallsSection({ onOpenStall }: { onOpenStall: (venueId: string) => void }) {
   const { palette, spacing } = useHungryTheme();
   const followedStallIds = useStallFollowStore((state) => state.followedStallIds);

@@ -10,14 +10,13 @@ import * as Haptics from "@/lib/haptics";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { ProfileScreenShell } from "@/app/screens/profile/ProfileScreenShell";
-import { PassportBook } from "@/components/gamification/PassportBook";
 import { PassportPageFlip } from "@/components/gamification/PassportPageFlip";
+import { PassportStampBadge } from "@/components/gamification/PassportStampBadge";
 import { PassportStampCard } from "@/components/gamification/PassportStampCard";
 import { WeeklyGoalCard } from "@/components/gamification/WeeklyGoalCard";
 import { AppText, EmptyState } from "@/components/ui";
 import {
   ALL_PASSPORT_CATEGORIES,
-  PASSPORT_BADGE_DEFINITIONS,
   PASSPORT_STAMP_DEFINITIONS,
   createPassportCelebrateMarker,
   getEarnedPassportStamps,
@@ -163,6 +162,18 @@ export function PassportScreen({ navigation: _nav }: Props) {
   );
 
   const totalStamps = earnedStamps.length;
+  const stampPreview = ALL_PASSPORT_CATEGORIES.map((category) => {
+    const earned = earnedStamps.filter((stamp) => stamp.categoryId === category.id);
+    return {
+      category,
+      stamp:
+        earned.at(-1) ??
+        PASSPORT_STAMP_DEFINITIONS.find(
+          (stamp) => stamp.categoryId === category.id && stamp.index === 0,
+        ),
+      earned: earned.length > 0,
+    };
+  }).filter((item) => item.stamp !== undefined);
 
   // Mark the stamp celebrated as soon as the celebration starts, so it never re-fires;
   // the visual flag is local state cleared by its own timer below.
@@ -231,20 +242,66 @@ export function PassportScreen({ navigation: _nav }: Props) {
   );
 
   return (
-    <ProfileScreenShell
-      title="Hungry Passport"
-      subtitle={`${totalStamps} ${totalStamps === 1 ? "stamp" : "stamps"} earned`}
-    >
+    <ProfileScreenShell title="Achievements">
       <View style={{ gap: spacing[5], paddingBottom: spacing[8] }}>
         <PassportPageFlip
           pageKey={`${totalStamps}-${celebratingStampId ?? "idle"}`}
           reduceMotion={reduceMotion}
         >
-          <PassportBook
-            badges={PASSPORT_BADGE_DEFINITIONS}
-            earnedStamps={earnedStamps}
-            nextStamp={nextStamp}
-          />
+          <View
+            style={{
+              backgroundColor: palette.navy,
+              borderRadius: componentRadii.card,
+              gap: spacing[4],
+              padding: spacing[5],
+            }}
+          >
+            <AppText variant="micro" style={{ color: palette.amber }}>
+              HUNGRY PASSPORT
+            </AppText>
+            <View style={{ gap: spacing[1] }}>
+              <AppText variant="h2" style={{ color: palette.textOnDark }}>
+                Your Singapore food trail
+              </AppText>
+              <AppText variant="bodySmall" style={{ color: palette.inverseTextSecondary }}>
+                Try stalls and share discoveries to collect stamps.
+              </AppText>
+            </View>
+            <View
+              style={{
+                backgroundColor: palette.inverseSurfaceSubtle,
+                borderRadius: radii.md,
+                gap: spacing[2],
+                padding: spacing[3],
+              }}
+            >
+              <AppText variant="h3" style={{ color: palette.textOnDark }}>
+                {totalStamps} / {PASSPORT_STAMP_DEFINITIONS.length} stamps
+              </AppText>
+              <View
+                accessibilityLabel={`${totalStamps} of ${PASSPORT_STAMP_DEFINITIONS.length} stamps earned`}
+                style={{
+                  backgroundColor: palette.inverseIndicator,
+                  borderRadius: radii.pill,
+                  height: spacing[2],
+                  overflow: "hidden",
+                }}
+              >
+                <View
+                  style={{
+                    backgroundColor: palette.orange,
+                    height: "100%",
+                    width: `${(totalStamps / PASSPORT_STAMP_DEFINITIONS.length) * 100}%`,
+                  }}
+                />
+              </View>
+              <AppText variant="bodySmall" style={{ color: palette.inverseTextSecondary }}>
+                {nextStamp
+                  ? `${nextStamp.remainingCount} more to earn ${nextStamp.stamp.title}`
+                  : "All available stamps collected"}
+              </AppText>
+            </View>
+          </View>
         </PassportPageFlip>
 
         <WeeklyGoalCard
@@ -253,6 +310,49 @@ export function PassportScreen({ navigation: _nav }: Props) {
           reduceMotion={reduceMotion}
         />
 
+        {earnedStamps.length === 0 && !nextStamp ? (
+          <EmptyState
+            title="Nothing yet"
+            body="Mark stalls as tried to earn your first passport stamp."
+          />
+        ) : null}
+
+        <View style={{ gap: spacing[3] }}>
+          <AppText variant="h2">Heritage stamps ({totalStamps})</AppText>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+            {stampPreview.map(({ category, stamp, earned }) =>
+              stamp ? (
+                <View
+                  key={category.id}
+                  style={{
+                    alignItems: "center",
+                    backgroundColor: palette.surface,
+                    borderColor: palette.border,
+                    borderRadius: componentRadii.card,
+                    borderWidth: 1,
+                    flexBasis: "48%",
+                    flexGrow: 1,
+                    gap: spacing[1],
+                    padding: spacing[3],
+                  }}
+                >
+                  <PassportStampBadge stamp={stamp} earned={earned} size="sm" />
+                  <AppText
+                    variant="bodySmallBold"
+                    numberOfLines={2}
+                    style={{ textAlign: "center" }}
+                  >
+                    {stamp.title}
+                  </AppText>
+                  <AppText tone="muted" variant="micro" numberOfLines={1}>
+                    {earned ? "Earned" : "Locked"}
+                  </AppText>
+                </View>
+              ) : null,
+            )}
+          </View>
+        </View>
+
         <PortfolioContributionPanel
           componentRadii={componentRadii}
           contributionStats={contributionStats}
@@ -260,13 +360,6 @@ export function PassportScreen({ navigation: _nav }: Props) {
           radii={radii}
           spacing={spacing}
         />
-
-        {earnedStamps.length === 0 && !nextStamp ? (
-          <EmptyState
-            title="Nothing yet"
-            body="Mark stalls as tried to earn your first passport stamp."
-          />
-        ) : null}
 
         {nextStamp ? (
           <View style={{ gap: spacing[2] }}>

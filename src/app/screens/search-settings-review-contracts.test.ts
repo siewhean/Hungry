@@ -45,14 +45,17 @@ test("search grid: load-more retry, stable location, analytics and labelled cont
   assert.doesNotMatch(grid, /fontSize: 10/);
 });
 
-test("search home: params instead of persisted query, recents, autofocus, reduce motion", () => {
+test("search home: params instead of persisted query, recents, landing view, reduce motion", () => {
   const home = read("src/app/screens/search/DishSearchScreen.tsx");
   const store = read("src/store/useSearchStore.ts");
 
   assert.doesNotMatch(home, /updateQuery/);
-  assert.match(home, /autoFocus/);
+  // Search is ready for immediate typing while the Stitch quick filters and dish cards remain available.
+  assert.match(home, /\bautoFocus\b/);
+  assert.match(home, /Hawker Classics/);
+  assert.match(home, /Dishes to Discover/);
   assert.match(home, /returnKeyType="search"/);
-  assert.match(home, /Recent searches/);
+  assert.match(home, /Recent Searches/);
   assert.match(home, /allowSearchHistory && recentSearches\.length > 0/);
   assert.match(home, /useNativeDriver: true/);
   assert.doesNotMatch(home, /useNativeDriver: false/);

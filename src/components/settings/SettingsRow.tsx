@@ -22,6 +22,7 @@ interface SettingsRowProps {
   busy?: boolean;
   /** Fades the row when what it controls is currently unavailable. */
   dimmed?: boolean;
+  editorial?: boolean;
 }
 
 export const SettingsRow = memo(function SettingsRow({
@@ -38,8 +39,9 @@ export const SettingsRow = memo(function SettingsRow({
   destructive = false,
   busy = false,
   dimmed = false,
+  editorial = false,
 }: SettingsRowProps) {
-  const { palette, spacing } = useHungryTheme();
+  const { palette, radii, spacing } = useHungryTheme();
   const isToggle = type === "toggle";
   const isLink = type === "link";
   // Rows without an action only show a value, so they are not buttons.
@@ -58,40 +60,73 @@ export const SettingsRow = memo(function SettingsRow({
     flexDirection: "row" as const,
     alignItems: "center" as const,
     justifyContent: "space-between" as const,
-    minHeight: 56,
+    minHeight: editorial ? 72 : 56,
     paddingVertical: spacing[4],
     paddingHorizontal: spacing[4],
     borderBottomWidth: isLast ? 0 : 1,
-    borderBottomColor: palette.border,
+    borderBottomColor: editorial ? palette.bgSoft : palette.border,
     opacity: dimmed ? 0.55 : 1,
   };
 
   const content = (
     <>
-      <View style={styles.left}>
-        {icon ? <View style={styles.iconWrap}>{icon}</View> : null}
-        <AppText
-          variant="body"
-          style={{
-            color: destructive ? palette.error : palette.text,
-            fontWeight: "500",
-            flexShrink: 1,
-            flex: 1,
-            flexWrap: "wrap",
-          }}
-        >
-          {label}
-        </AppText>
-        {description ? (
+      {editorial ? (
+        <View style={[styles.left, { flexWrap: "nowrap" }]}>
+          {icon ? (
+            <View
+              style={{
+                alignItems: "center",
+                backgroundColor: palette.surfaceRaised,
+                borderRadius: radii.pill,
+                height: 40,
+                justifyContent: "center",
+                marginRight: spacing[3],
+                width: 40,
+              }}
+            >
+              {icon}
+            </View>
+          ) : null}
+          <View style={{ flex: 1, gap: spacing[1] }}>
+            <AppText
+              variant="bodyLarge"
+              style={{ color: destructive ? palette.error : palette.text, fontWeight: "500" }}
+            >
+              {label}
+            </AppText>
+            {description ? (
+              <AppText variant="bodySmall" tone="muted">
+                {description}
+              </AppText>
+            ) : null}
+          </View>
+        </View>
+      ) : (
+        <View style={styles.left}>
+          {icon ? <View style={styles.iconWrap}>{icon}</View> : null}
           <AppText
-            variant="bodySmall"
-            tone="muted"
-            style={[styles.description, { marginLeft: icon ? 36 : 0 }]}
+            variant="body"
+            style={{
+              color: destructive ? palette.error : palette.text,
+              fontWeight: "500",
+              flexShrink: 1,
+              flex: 1,
+              flexWrap: "wrap",
+            }}
           >
-            {description}
+            {label}
           </AppText>
-        ) : null}
-      </View>
+          {description ? (
+            <AppText
+              variant="bodySmall"
+              tone="muted"
+              style={[styles.description, { marginLeft: icon ? 36 : 0 }]}
+            >
+              {description}
+            </AppText>
+          ) : null}
+        </View>
+      )}
 
       <View style={styles.right}>
         {type === "value" && value ? (

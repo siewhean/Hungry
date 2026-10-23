@@ -524,7 +524,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "PassportScreen",
     file: "src/app/screens/profile/PassportScreen.tsx",
     scenario: "user",
-    expect: /Hungry Passport/,
+    expect: /HUNGRY PASSPORT/,
   },
   {
     name: "FollowersScreen",
@@ -542,7 +542,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "ProfileHomeScreen",
     file: "src/app/screens/profile/ProfileHomeScreen.tsx",
     scenario: "user",
-    expect: /Profile/,
+    expect: /SINGAPORE FOODIE PASSPORT/,
   },
   {
     name: "ReleaseProfileScreen",
@@ -554,7 +554,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "ReviewHistoryScreen",
     file: "src/app/screens/profile/ReviewHistoryScreen.tsx",
     scenario: "user",
-    expect: /Review history/,
+    expect: /Taste Journal/,
   },
   {
     name: "SettingsScreen",
@@ -624,7 +624,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "DishSearchScreen",
     file: "src/app/screens/search/DishSearchScreen.tsx",
     scenario: "user",
-    expect: /Search/,
+    expect: /Dishes to Discover/,
   },
   {
     name: "BrowseDishesScreen",

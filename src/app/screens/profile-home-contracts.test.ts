@@ -45,7 +45,7 @@ test("profile home contract: profile stats use dynamic profile and social store 
   assert.match(source, /label="Following"/);
   assert.match(source, /label="Reviews"[\s\S]*<PencilLine size=\{14\}/);
   assert.match(source, /label="Stalls"[\s\S]*<Utensils size=\{14\}/);
-  assert.match(source, /label="Saved"[\s\S]*<Bookmark size=\{14\}/);
+  assert.match(source, /label="Saved Dishes"[\s\S]*<Bookmark size=\{14\}/);
   assert.match(source, /<AppText variant="h1" style=\{\{ color: palette\.orange \}\}>/);
   assert.match(
     source,
@@ -68,13 +68,47 @@ test("profile home contract: profile stats use dynamic profile and social store 
   assert.doesNotMatch(source, /last 5 reviews/);
 });
 
-test("profile home contract: Taste Fingerprint shows all six dimensions and Saved naming", () => {
+test("profile home contract: Palate Fingerprint plots all six dimensions and keeps saved dishes linked", () => {
   const source = read("src/app/screens/profile/ProfileHomeScreen.tsx");
 
-  assert.match(source, /TASTE_DIMENSIONS\.map\(\(dimension\) => \(\s*<TasteBar/);
-  assert.match(source, /value=\{profile\.tasteVector\[dimension\.key\]\}/);
-  assert.match(source, /label="Saved"/);
+  assert.match(source, /<TasteRadar vector=\{profile\.tasteVector\}/);
+  assert.match(source, /TASTE_DIMENSIONS\.map\(\(\{ key, label \}\) => \(/);
+  assert.match(source, /Math\.max\(0, Math\.min\(10, vector\[axis\]\)\)/);
+  assert.match(source, /label="Saved Dishes"/);
   assert.doesNotMatch(source, /label="Favourites"|>Favourites</);
+});
+
+test("profile home contract: web review actions remain separate and radar SVG is accessible", () => {
+  const source = read("src/app/screens/profile/ProfileHomeScreen.tsx");
+  const reviewCard = source
+    .split("ownReviews.slice(0, OWN_REVIEWS_INLINE_LIMIT).map((review) => {")[1]
+    ?.split("ownReviews.length > OWN_REVIEWS_INLINE_LIMIT")[0];
+
+  assert.ok(reviewCard);
+  assert.match(reviewCard, /<View key=\{review\.id\}>[\s\S]*?<Card/);
+  assert.match(
+    reviewCard,
+    /<Pressable[\s\S]*?accessibilityLabel=\{`Review of[\s\S]*?<\/Pressable>\s*\{ownReviewEditor\.enabled \? \(/,
+  );
+  assert.match(reviewCard, /<OwnReviewMenuButton/);
+  assert.match(source, /accessible=\{Platform\.OS === "web" \? undefined : true\}/);
+});
+
+test("Stitch profile surfaces use account data and preserve their destinations", () => {
+  const source = read("src/app/screens/profile/ProfileHomeScreen.tsx");
+  assert.match(source, /SINGAPORE FOODIE PASSPORT/);
+  assert.match(source, /value=\{earnedBadgeCount\}/);
+  assert.match(source, /getEarnedStamps\(\)\.length/);
+  assert.match(
+    source,
+    /accessibilityLabel="Account settings"[\s\S]*navigation\.navigate\("Settings"\)/,
+  );
+  assert.match(source, /Recent Hawker Log/);
+  assert.match(source, /onPress=\{handleReviewsCardPress\}/);
+  assert.match(
+    source,
+    /const hasAccountProfile = isAuthenticated && profile\.id !== "guest-user";/,
+  );
 });
 
 test("profile home contract: a signed-out Profile tab shows a sign-in view instead of bouncing to Login", () => {

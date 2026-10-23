@@ -1,11 +1,7 @@
 import type { Page } from "@playwright/test";
 
 import { test, expect } from "./fixtures";
-import {
-  expectPostCaptionVisible,
-  publishPostFromComposer,
-  uniqueCaption,
-} from "./helpers/app";
+import { expectPostCaptionVisible, publishPostFromComposer, uniqueCaption } from "./helpers/app";
 
 async function getPublishedPostIdByCaption(page: Page, caption: string) {
   return page.evaluate((expectedCaption) => {
@@ -64,7 +60,11 @@ test.describe("feed/profile sync", () => {
     const publishedPostId = await getPublishedPostIdByCaption(page, caption);
     expect(publishedPostId).toBeTruthy();
 
-    await page.getByRole("button", { name: /^Open Wei Ming profile$/ }).first().click();
+    await page
+      .getByRole("button", { name: /^Open Wei Ming profile$/ })
+      .first()
+      .click();
+    await page.getByRole("button", { name: "Show profile posts" }).click();
     await expect(page.getByRole("button", { name: `Open post ${caption}` }).first()).toBeVisible();
   });
 });

@@ -60,8 +60,11 @@ test("profile home shows real reviews, loading skeletons, retry, and a confirmed
   );
   assert.match(source, /accessibilityViewIsModal/);
   assert.doesNotMatch(source, /Guest User/);
-  assert.match(source, /label="Edit profile"/);
-  assert.match(source, /accessibilityRole="progressbar"/);
+  assert.match(
+    source,
+    /label="Edit"[\s\S]*onPress=\{\(\) => navigation\.navigate\("EditProfile"\)\}/,
+  );
+  assert.match(source, /accessibilityRole="image"[\s\S]*accessibilityLabel=\{`Taste vector:/);
   assert.match(source, /tastePersonaSummary/);
 });
 

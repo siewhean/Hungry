@@ -6,6 +6,21 @@
 
 ## Current Focus
 
+- `STITCH-8-SCREENS-01` — Implemented on `codex/stitch-eight-screens` from
+  `main`, updated after PR #119 merged. Eight Stitch HTML exports
+  and full-resolution screenshots are in `design/stitch/iterations-11940609752387078506/`.
+  Search, Profile, Achievements/Passport, Settings, Reviews, Saved Dishes, Stall,
+  and Dish screens now use the design hierarchy with service-backed data and
+  supported actions. Focused screen contracts pass 30/30. Local typecheck is
+  blocked by the worktree's reused `node_modules` missing declared
+  `expo-clipboard`; independent QA passed 28/28 focused contracts, export
+  integrity, formatting, and diff checks. The three merge-CI source-contract
+  failures are repaired (33/33 affected tests pass locally). Clean CI passed the
+  coverage and render gates, then exposed Profile web accessibility errors and
+  stale Profile/Search browser selectors. These are repaired with 24/24 focused
+  contracts passing. PR #116 CI, Security, and merge compatibility pass on
+  `a1ba4c863`; native visual smoke remains pending.
+
 - `SG-FNB-REGISTRY-01` — SFA-backed Singapore-wide public-access register plus alphabetized enrichment output. Regenerate base with `python3 scripts/refresh_sfa_verified_fnb_catalog.py` and enriched list with `python3 scripts/enrich_public_access_fnb_catalog.py`. The enriched CSV preserves the base 38,584 records, all 55 backup workbook headers, and exact-licence joins. Its 16,769 upstream menu rows carry approval/rights flags that deeper review found insufficient to prove reuse or freshness; the current Excel export filters platform/unavailable sources and keeps 509 dated-as-unknown historical candidates. Backup details remain dated 2026-04-04; they are not relabelled current. Permanent-closure proof and fresh verification of every menu/rating remain unclaimed.
 - `SG-FNB-WEB-REVIEW-01` — Review-only official-site scrape launched 2026-10-15. Three batches checked 75 candidate websites with zero catalogue writes; closure scan reviewed 7 extracted-source venues and found zero explicit permanent/temporary closure signals. Menu/image candidates require exact venue/menu review and image reuse permission before cataloguing. Google photos are not cached; fresh attributed Places display requires compliant live API usage. Not a Singapore-wide verification.
 - `SG-FNB-VERIFIED-XLSX-01` — In progress. Generated `data/Hungry F&B Database.Public Access 2026-10-16.xlsx` with 38,584 alphabetized SFA public-access records. SFA export refreshed 2026-10-16 and matched the prior licence/name/address set exactly. Main sheet has 1,307 coordinate pairs, 693 opening-hours values, 432 contacts, 375 websites, 563 cuisine values, 19 menu URLs, and 2 exact-venue menus. OSM contributes 132 strict + 694 tier-2 labelled one-to-one joins (ODbL attribution/share-alike included). Eleven operator snapshots add 246 exact outlet joins, 461 branch-unconfirmed brand menu items (67 priced), and 553 unapproved operator/exact-venue image candidates. Added review-only tabs from a fresh crawl of 294 catalogue-linked OSM website URLs: 507 menu candidates and 2,682 unioned same-host image URL candidates; 259 pages were checked, 109 robots-blocked, and 130 records had no checked page. No closure signal was found; this is not proof of current operation. No delivery-platform content or paid APIs used. Continue broad menu, ratings, genuine image rights, operation/closure verification; task remains incomplete.

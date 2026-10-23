@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { AccessibilityInfo, Alert, Pressable, Share, StyleSheet, View } from "react-native";
+import {
+  AccessibilityInfo,
+  Alert,
+  Platform,
+  Pressable,
+  Share,
+  StyleSheet,
+  View,
+} from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { useIsFocused } from "@react-navigation/native";
 import {
@@ -23,7 +31,10 @@ import {
   UserPlus,
   UserCheck,
   Users,
+  Flame,
+  FlaskConical,
 } from "lucide-react-native";
+import Svg, { Circle, Line, Polygon } from "react-native-svg";
 
 import { ReviewModerationNotice } from "@/components/review";
 import { AccessibleImage, AppText, Button, Card, EmptyState, Skeleton } from "@/components/ui";
@@ -71,7 +82,7 @@ import {
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import type { Review, StallPost } from "@/types/domain";
+import type { Review, StallPost, TasteVector } from "@/types/domain";
 
 /** Own posts per server page; matches listUserPosts' default page size. */
 const OWN_POSTS_PAGE_SIZE = 60;
@@ -109,14 +120,6 @@ type ProfileHomeProps = {
 export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
   const { colorScheme, componentRadii, palette, spacing, radii, shadows } = useHungryTheme();
   const headerActionSize = spacing[8] + spacing[2.5];
-  const tasteBarColors = {
-    sweet: palette.statusFast,
-    spicy: palette.orange,
-    sour: palette.warning,
-    salty: palette.info,
-    rich: palette.amber,
-    aromatic: palette.teal,
-  };
   const profile = useProfileStore((state) => state.profile);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   // A restored session can be signed in before its profile loads; the placeholder id is not a uuid.
@@ -134,6 +137,11 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
   const loadStallInteractions = useStallInteractionStore((s) => s.loadInteractions);
   const stallInteractions = useStallInteractionStore((state) => state.interactions);
   const computePassportProgress = usePassportStore((s) => s.computeProgress);
+  const passportProgressMap = usePassportStore((s) => s.progressMap);
+  const earnedBadgeCount = useMemo(
+    () => usePassportStore.getState().getEarnedStamps().length,
+    [passportProgressMap],
+  );
   const visitedStallIds = useVisitedStallIds();
   const insets = useSafeAreaInsets();
   const shareSheetRef = useRef<BottomSheetModal>(null);
@@ -203,7 +211,9 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
     },
     [navigation, rootNavigation],
   );
-  const [activeShareTab, setActiveShareTab] = useState<"posts" | "reviews">("posts");
+  const [activeShareTab, setActiveShareTab] = useState<"posts" | "reviews">(
+    FEATURE_FLAGS.reviewCreationEnabled ? "reviews" : "posts",
+  );
   const handleReviewsCardPress = useCallback(() => {
     preloadRoute(navigation, "ReviewHistory");
     navigation.navigate("ReviewHistory");
@@ -590,7 +600,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
 
   return (
     <ProfileScreenShell
-      title="Profile"
+      title="Hungry"
       showBack={false}
       testID="profile-home-screen"
       headerRight={
@@ -765,94 +775,213 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
             }}
           />
         )}
-        {/* Profile Header Block */}
         <View
           style={{
-            flexDirection: "row",
             alignItems: "center",
-            gap: spacing[4],
-            marginBottom: spacing[4],
+            flexDirection: "row",
+            justifyContent: "space-between",
+            marginBottom: spacing[2],
           }}
         >
-          <View style={{ position: "relative" }}>
+          <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
             <View
-              style={[
-                shadows.card,
-                {
-                  alignItems: "center",
-                  backgroundColor: palette.orangeLight,
-                  borderRadius: radii.pill,
-                  height: spacing[20],
-                  justifyContent: "center",
-                  width: spacing[20],
-                  borderWidth: 2,
-                  borderColor: palette.surface,
-                },
-              ]}
+              style={{
+                alignItems: "center",
+                backgroundColor: palette.orangeLight,
+                borderRadius: radii.pill,
+                height: spacing[8],
+                justifyContent: "center",
+                width: spacing[8],
+              }}
             >
-              {profile.avatarUrl ? (
-                <AccessibleImage
-                  source={{ uri: profile.avatarUrl }}
-                  accessibilityLabel={`${profile.displayName} profile photo`}
-                  style={{
+              <Flame color={palette.orange} size={18} />
+            </View>
+            <AppText
+              variant="micro"
+              tone="secondary"
+              style={{ fontWeight: "700", letterSpacing: 1 }}
+            >
+              SINGAPORE FOODIE PASSPORT
+            </AppText>
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Account settings"
+            onPressIn={() => preloadRoute(navigation, "Settings")}
+            onPress={() => navigation.navigate("Settings")}
+            style={[
+              shadows.card,
+              {
+                alignItems: "center",
+                backgroundColor: palette.surface,
+                borderRadius: radii.pill,
+                height: 44,
+                justifyContent: "center",
+                width: 44,
+              },
+            ]}
+          >
+            <Settings color={palette.text} size={20} />
+          </Pressable>
+        </View>
+        <View
+          style={[
+            shadows.card,
+            {
+              backgroundColor: palette.surface,
+              borderRadius: componentRadii.card,
+              gap: spacing[4],
+              padding: spacing[4],
+            },
+          ]}
+        >
+          {/* Profile Header Block */}
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: spacing[4],
+              marginBottom: 0,
+            }}
+          >
+            <View style={{ position: "relative" }}>
+              <View
+                style={[
+                  shadows.card,
+                  {
+                    alignItems: "center",
+                    backgroundColor: palette.orangeLight,
                     borderRadius: radii.pill,
-                    height: avatarSize,
-                    width: avatarSize,
-                  }}
-                  contentFit="cover"
-                />
-              ) : (
-                <AppText variant="h1" style={{ color: palette.orange }}>
-                  {avatarInitials}
+                    height: spacing[20],
+                    justifyContent: "center",
+                    width: spacing[20],
+                    borderWidth: 2,
+                    borderColor: palette.surface,
+                  },
+                ]}
+              >
+                {profile.avatarUrl ? (
+                  <AccessibleImage
+                    source={{ uri: profile.avatarUrl }}
+                    accessibilityLabel={`${profile.displayName} profile photo`}
+                    style={{
+                      borderRadius: radii.pill,
+                      height: avatarSize,
+                      width: avatarSize,
+                    }}
+                    contentFit="cover"
+                  />
+                ) : (
+                  <AppText variant="h1" style={{ color: palette.orange }}>
+                    {avatarInitials}
+                  </AppText>
+                )}
+              </View>
+            </View>
+
+            <View style={{ flex: 1, gap: spacing[1] }}>
+              <AppText
+                variant="h1"
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.78}
+                style={{ color: palette.text }}
+              >
+                {profile.displayName}
+              </AppText>
+              {profile.bio ? (
+                <AppText variant="bodySmall" tone="secondary" testID="profile-bio">
+                  {profile.bio}
                 </AppText>
-              )}
+              ) : null}
+              {gamificationEnabled ? <FoodCredBadge size="sm" /> : null}
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+                <Button
+                  label="Edit"
+                  variant="secondary"
+                  size="sm"
+                  fullWidth={false}
+                  onPressIn={() => preloadRoute(navigation, "EditProfile")}
+                  onPress={() => navigation.navigate("EditProfile")}
+                  style={{ alignSelf: "flex-start", minHeight: 44 }}
+                />
+                <Button
+                  label="Share profile"
+                  variant="secondary"
+                  size="sm"
+                  fullWidth={false}
+                  leftIcon={<Share2 size={16} color={palette.text} />}
+                  accessibilityHint="Shares a link to your Hungry profile"
+                  onPress={() => void handleShareProfile()}
+                  style={{ alignSelf: "flex-start", minHeight: 44 }}
+                />
+              </View>
+              {profile.profileVisibility === "private" ? (
+                // The shared link opens "Profile not found" for anyone who does not follow you.
+                <AppText variant="micro" tone="muted" testID="profile-share-private-note">
+                  Only approved followers can see your profile through the link.
+                </AppText>
+              ) : null}
             </View>
           </View>
 
-          <View style={{ flex: 1, gap: spacing[1] }}>
-            <AppText
-              variant="h1"
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.78}
-              style={{ color: palette.text }}
-            >
-              {profile.displayName}
-            </AppText>
-            {profile.bio ? (
-              <AppText variant="bodySmall" tone="secondary" testID="profile-bio">
-                {profile.bio}
-              </AppText>
-            ) : null}
-            {gamificationEnabled ? <FoodCredBadge size="sm" /> : null}
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-              <Button
-                label="Edit profile"
-                variant="secondary"
-                size="sm"
-                fullWidth={false}
-                onPressIn={() => preloadRoute(navigation, "EditProfile")}
-                onPress={() => navigation.navigate("EditProfile")}
-                style={{ alignSelf: "flex-start", minHeight: 44 }}
+          <View
+            style={{
+              backgroundColor: palette.bgSoft,
+              borderRadius: radii.md,
+              flexDirection: "row",
+              padding: spacing[2],
+            }}
+          >
+            {FEATURE_FLAGS.favouritesEnabled ? (
+              <StatBlock
+                label="Saved Dishes"
+                value={profileStatSummary.saved}
+                icon={<Bookmark size={14} color={palette.orange} />}
+                onPressIn={() => preloadRoute(navigation, "Favourites")}
+                onPress={() => navigation.navigate("Favourites")}
               />
-              <Button
-                label="Share profile"
-                variant="secondary"
-                size="sm"
-                fullWidth={false}
-                leftIcon={<Share2 size={16} color={palette.text} />}
-                accessibilityHint="Shares a link to your Hungry profile"
-                onPress={() => void handleShareProfile()}
-                style={{ alignSelf: "flex-start", minHeight: 44 }}
-              />
-            </View>
-            {profile.profileVisibility === "private" ? (
-              // The shared link opens "Profile not found" for anyone who does not follow you.
-              <AppText variant="micro" tone="muted" testID="profile-share-private-note">
-                Only approved followers can see your profile through the link.
-              </AppText>
             ) : null}
+            {FEATURE_FLAGS.reviewCreationEnabled ? (
+              <StatBlock
+                label="Reviews"
+                value={ownReviews === null ? null : ownReviews.length}
+                icon={<PencilLine size={14} color={palette.orange} />}
+                onPressIn={() => preloadRoute(navigation, "ReviewHistory")}
+                onPress={handleReviewsCardPress}
+              />
+            ) : null}
+            <StatBlock
+              label="Badges"
+              value={earnedBadgeCount}
+              icon={<Trophy size={14} color={palette.success} />}
+              onPressIn={() => preloadRoute(rootNavigation, "PassportScreen")}
+              onPress={() => rootNavigation.navigate("PassportScreen")}
+            />
           </View>
+          {gamificationEnabled ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Open passport and badges"
+              onPress={() => rootNavigation.navigate("PassportScreen")}
+              style={{
+                alignItems: "center",
+                flexDirection: "row",
+                justifyContent: "space-between",
+                minHeight: 44,
+              }}
+            >
+              <AppText variant="bodySmall" tone="secondary">
+                Explore your hawker passport
+              </AppText>
+              <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
+                <AppText variant="bodySmall" style={{ color: palette.orange, fontWeight: "700" }}>
+                  Passport &amp; Badges
+                </AppText>
+                <ChevronRight color={palette.orange} size={16} />
+              </View>
+            </Pressable>
+          ) : null}
         </View>
 
         <View style={{ gap: spacing[4] }}>
@@ -879,23 +1008,6 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                 })
               }
             />
-          </View>
-          {(followRequestCount ?? 0) > 0 || profile.profileVisibility === "private" ? (
-            <FollowRequestsRow
-              count={followRequestCount}
-              onPress={() => rootNavigation.navigate("FollowRequests")}
-            />
-          ) : null}
-          <View style={{ flexDirection: "row", gap: spacing[2] }}>
-            {FEATURE_FLAGS.reviewCreationEnabled ? (
-              <StatBlock
-                label="Reviews"
-                value={ownReviews === null ? null : ownReviews.length}
-                icon={<PencilLine size={14} color={palette.orange} />}
-                onPressIn={() => preloadRoute(navigation, "ReviewHistory")}
-                onPress={handleReviewsCardPress}
-              />
-            ) : null}
             <StatBlock
               label="Stalls"
               value={visitedStallIds.length}
@@ -903,16 +1015,13 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
               onPressIn={() => preloadRoute(navigation, "VisitedStalls")}
               onPress={() => navigation.navigate("VisitedStalls")}
             />
-            {FEATURE_FLAGS.favouritesEnabled ? (
-              <StatBlock
-                label="Saved"
-                value={profileStatSummary.saved}
-                icon={<Bookmark size={14} color={palette.orange} />}
-                onPressIn={() => preloadRoute(navigation, "Favourites")}
-                onPress={() => navigation.navigate("Favourites")}
-              />
-            ) : null}
           </View>
+          {(followRequestCount ?? 0) > 0 || profile.profileVisibility === "private" ? (
+            <FollowRequestsRow
+              count={followRequestCount}
+              onPress={() => rootNavigation.navigate("FollowRequests")}
+            />
+          ) : null}
           {isAuthenticated && gamificationEnabled ? (
             <>
               <PassportCard
@@ -935,7 +1044,17 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
             onOpenSubmissions={() => navigation.navigate("StallSubmissions")}
           />
           {/* Taste Fingerprint Section */}
-          <View style={{ gap: spacing[4], marginTop: spacing[4] }}>
+          <View
+            style={[
+              shadows.card,
+              {
+                backgroundColor: palette.surface,
+                borderRadius: componentRadii.card,
+                gap: spacing[4],
+                padding: spacing[4],
+              },
+            ]}
+          >
             <View
               style={{
                 flexDirection: "row",
@@ -944,7 +1063,10 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                 paddingHorizontal: spacing[1],
               }}
             >
-              <AppText variant="h2">Taste Fingerprint</AppText>
+              <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
+                <FlaskConical color={palette.orange} size={20} />
+                <AppText variant="h2">Palate Fingerprint</AppText>
+              </View>
               {hasTasteFingerprint ? (
                 <Pressable
                   accessibilityRole="button"
@@ -998,16 +1120,17 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
               </View>
 
               {hasTasteFingerprint ? (
-                <View style={{ gap: spacing[2] }}>
-                  {TASTE_DIMENSIONS.map((dimension) => (
-                    <TasteBar
-                      key={dimension.key}
-                      label={dimension.label}
-                      value={profile.tasteVector[dimension.key]}
-                      max={10}
-                      color={tasteBarColors[dimension.key]}
-                    />
-                  ))}
+                <View style={{ alignItems: "center", gap: spacing[3] }}>
+                  <TasteRadar vector={profile.tasteVector} />
+                  <Button
+                    label="Recalibrate Taste Vector"
+                    onPress={() =>
+                      rootNavigation.navigate("OnboardingStack", {
+                        screen: "TasteQuiz",
+                        params: { mode: "profile" },
+                      })
+                    }
+                  />
                 </View>
               ) : (
                 <Button
@@ -1027,7 +1150,26 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
             </View>
           </View>
           <View style={{ gap: spacing[4], marginTop: spacing[5] }}>
-            <AppText variant="h2">{activeShareTab === "posts" ? "Posts" : "Reviews"}</AppText>
+            <View
+              style={{
+                alignItems: "center",
+                flexDirection: "row",
+                justifyContent: "space-between",
+              }}
+            >
+              <AppText variant="h2">Recent Hawker Log</AppText>
+              {FEATURE_FLAGS.reviewCreationEnabled ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="View all reviews"
+                  onPress={handleReviewsCardPress}
+                >
+                  <AppText variant="bodySmall" style={{ color: palette.orange }}>
+                    View All{ownReviews ? ` (${ownReviews.length})` : ""}
+                  </AppText>
+                </Pressable>
+              ) : null}
+            </View>
             <View
               style={{
                 alignSelf: "stretch",
@@ -1060,27 +1202,29 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                   Posts
                 </AppText>
               </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Show profile reviews"
-                accessibilityState={{ selected: activeShareTab === "reviews" }}
-                onPress={() => setActiveShareTab("reviews")}
-                style={{
-                  flex: 1,
-                  paddingVertical: spacing[2],
-                  alignItems: "center",
-                  backgroundColor: activeShareTab === "reviews" ? palette.orange : "transparent",
-                }}
-              >
-                <AppText
+              {FEATURE_FLAGS.reviewCreationEnabled ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Show profile reviews"
+                  accessibilityState={{ selected: activeShareTab === "reviews" }}
+                  onPress={() => setActiveShareTab("reviews")}
                   style={{
-                    fontWeight: activeShareTab === "reviews" ? 700 : 500,
-                    color: activeShareTab === "reviews" ? palette.textOnOrange : palette.text,
+                    flex: 1,
+                    paddingVertical: spacing[2],
+                    alignItems: "center",
+                    backgroundColor: activeShareTab === "reviews" ? palette.orange : "transparent",
                   }}
                 >
-                  Reviews
-                </AppText>
-              </Pressable>
+                  <AppText
+                    style={{
+                      fontWeight: activeShareTab === "reviews" ? 700 : 500,
+                      color: activeShareTab === "reviews" ? palette.textOnOrange : palette.text,
+                    }}
+                  >
+                    Reviews
+                  </AppText>
+                </Pressable>
+              ) : null}
             </View>
             {activeShareTab === "posts" ? (
               sortedProfilePosts.length ? (
@@ -1142,22 +1286,13 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
             ) : ownReviews.length ? (
               <View style={{ gap: spacing[3] }}>
                 {ownReviews.slice(0, OWN_REVIEWS_INLINE_LIMIT).map((review) => {
-                  const dishName = review.dishId
-                    ? getDataRepository().getDishById(review.dishId)?.name
+                  const dish = review.dishId
+                    ? getDataRepository().getDishById(review.dishId)
                     : undefined;
+                  const dishName = dish?.name;
                   return (
-                    <Pressable
-                      key={review.id}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Review of ${dishName ?? "dish"}, rated ${review.rating} out of 5`}
-                      accessibilityHint="Opens the dish"
-                      disabled={!review.dishId}
-                      onPress={() =>
-                        review.dishId &&
-                        rootNavigation.navigate("DishDetail", { dishId: review.dishId })
-                      }
-                    >
-                      <Card style={{ gap: spacing[2] }}>
+                    <View key={review.id}>
+                      <Card style={{ gap: spacing[3] }}>
                         <View
                           style={{
                             alignItems: "center",
@@ -1165,9 +1300,48 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                             gap: spacing[2],
                           }}
                         >
-                          <AppText variant="bodyBold" style={{ flex: 1 }}>
-                            {dishName ?? "Reviewed dish"}
-                          </AppText>
+                          <Pressable
+                            accessibilityRole="button"
+                            accessibilityLabel={`Review of ${dishName ?? "dish"}, rated ${review.rating} out of 5`}
+                            accessibilityHint="Opens the dish"
+                            disabled={!review.dishId}
+                            onPress={() =>
+                              review.dishId &&
+                              rootNavigation.navigate("DishDetail", { dishId: review.dishId })
+                            }
+                            style={{
+                              flex: 1,
+                              flexDirection: "row",
+                              alignItems: "center",
+                              gap: spacing[2],
+                            }}
+                          >
+                            {dish?.imageUrl ? (
+                              <AccessibleImage
+                                source={{ uri: dish.imageUrl }}
+                                accessibilityLabel={dishName ?? "Reviewed dish"}
+                                contentFit="cover"
+                                style={{
+                                  borderRadius: radii.md,
+                                  height: spacing[20],
+                                  width: spacing[20],
+                                }}
+                              />
+                            ) : null}
+                            <View style={{ flex: 1, gap: spacing[1] }}>
+                              <AppText variant="bodyBold" numberOfLines={1}>
+                                {dishName ?? "Reviewed dish"}
+                              </AppText>
+                              {dish?.venueName ? (
+                                <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
+                                  {dish.venueName}
+                                </AppText>
+                              ) : null}
+                              <AppText variant="bodySmall" style={{ color: palette.ratingStar }}>
+                                ★ {review.rating.toFixed(1)} / 5
+                              </AppText>
+                            </View>
+                          </Pressable>
                           {ownReviewEditor.enabled ? (
                             <OwnReviewMenuButton
                               onPress={() => ownReviewEditor.openActions(review)}
@@ -1181,12 +1355,21 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                             dishName={dishName}
                           />
                         ) : null}
-                        <AppText variant="micro" tone="secondary">
-                          {`Rated ${review.rating}/5`}
-                        </AppText>
-                        {review.text ? <AppText numberOfLines={3}>{review.text}</AppText> : null}
+                        {review.text ? (
+                          <View
+                            style={{
+                              backgroundColor: palette.bgSoft,
+                              borderRadius: radii.md,
+                              padding: spacing[3],
+                            }}
+                          >
+                            <AppText numberOfLines={4} style={{ fontStyle: "italic" }}>
+                              {review.text}
+                            </AppText>
+                          </View>
+                        ) : null}
                       </Card>
-                    </Pressable>
+                    </View>
                   );
                 })}
                 {ownReviews.length > OWN_REVIEWS_INLINE_LIMIT ? (
@@ -1446,58 +1629,93 @@ function ScoutMetric({
   );
 }
 
-function TasteBar({
-  label,
-  value,
-  max,
-  color,
-}: {
-  label: string;
-  value: number;
-  max: number;
-  color: string;
-}) {
-  const { palette, spacing, radii } = useHungryTheme();
-  const width = `${(value / max) * 100}%` as any;
+function TasteRadar({ vector }: { vector: TasteVector }) {
+  const { palette, radii, spacing } = useHungryTheme();
+  const axes = ["spicy", "rich", "salty", "sweet", "sour", "aromatic"] as const;
+  const point = (index: number, radius: number) => {
+    const angle = -Math.PI / 2 + (index * Math.PI) / 3;
+    return { x: 130 + Math.cos(angle) * radius, y: 130 + Math.sin(angle) * radius };
+  };
+  const polygon = (radius: number) =>
+    axes
+      .map((_, index) => {
+        const { x, y } = point(index, radius);
+        return `${x},${y}`;
+      })
+      .join(" ");
+  const values = axes.map((axis, index) =>
+    point(index, (Math.max(0, Math.min(10, vector[axis])) / 10) * 92),
+  );
 
   return (
-    <View
-      accessible
-      accessibilityRole="progressbar"
-      accessibilityLabel={label}
-      accessibilityValue={{ min: 0, max, now: value, text: `${value.toFixed(1)} out of ${max}` }}
-      style={{ gap: spacing[1] }}
-    >
+    <View style={{ alignItems: "center", width: "100%", gap: spacing[3] }}>
+      <Svg
+        accessible={Platform.OS === "web" ? undefined : true}
+        accessibilityRole="image"
+        accessibilityLabel={`Taste vector: ${axes.map((axis) => `${axis} ${vector[axis].toFixed(1)} out of 10`).join(", ")}`}
+        width={260}
+        height={260}
+        viewBox="0 0 260 260"
+      >
+        {[92, 62, 31].map((radius) => (
+          <Polygon
+            key={radius}
+            points={polygon(radius)}
+            fill="none"
+            stroke={palette.border}
+            strokeWidth={1}
+          />
+        ))}
+        {axes.map((axis, index) => {
+          const end = point(index, 92);
+          return (
+            <Line
+              key={axis}
+              x1={130}
+              y1={130}
+              x2={end.x}
+              y2={end.y}
+              stroke={palette.border}
+              strokeWidth={1}
+            />
+          );
+        })}
+        <Polygon
+          points={values.map(({ x, y }) => `${x},${y}`).join(" ")}
+          fill={palette.orangeLight}
+          stroke={palette.orange}
+          strokeWidth={2.5}
+        />
+        {values.map(({ x, y }, index) => (
+          <Circle key={axes[index]} cx={x} cy={y} r={4} fill={palette.orange} />
+        ))}
+      </Svg>
       <View
         style={{
           flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
+          flexWrap: "wrap",
+          gap: spacing[2],
+          justifyContent: "center",
         }}
       >
-        <AppText variant="micro" style={{ fontWeight: "700" }}>
-          {label}
-        </AppText>
-        <AppText variant="micro" tone="secondary">
-          {value.toFixed(1)}
-        </AppText>
-      </View>
-      <View
-        style={{
-          height: 6,
-          backgroundColor: palette.border,
-          borderRadius: radii.pill,
-          overflow: "hidden",
-        }}
-      >
-        <View
-          style={{
-            height: "100%",
-            width,
-            backgroundColor: color,
-            borderRadius: radii.pill,
-          }}
-        />
+        {TASTE_DIMENSIONS.map(({ key, label }) => (
+          <View
+            key={key}
+            style={{
+              alignItems: "center",
+              backgroundColor: palette.bgSoft,
+              borderRadius: radii.pill,
+              flexDirection: "row",
+              gap: spacing[1],
+              paddingHorizontal: spacing[2],
+              paddingVertical: spacing[1],
+            }}
+          >
+            <AppText variant="micro" style={{ color: palette.text }}>
+              {label} {Math.round(vector[key] * 10)}%
+            </AppText>
+          </View>
+        ))}
       </View>
     </View>
   );

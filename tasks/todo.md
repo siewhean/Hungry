@@ -1,6 +1,11 @@
 # Hungry — Master Task Contract
 
-> **Last updated:** 2026-06-06 | **Phase:** MVP Basic Features Production Gating
+2026-10-23 — `STITCH-8-SCREENS-01`: eight Stitch HTML and full-resolution PNG
+exports saved; corresponding app screens updated on `codex/stitch-eight-screens`.
+Focused contracts 30/30 pass. PR CI and native visual acceptance pending; no
+build/simulator was run with approximately 5–6 GB free.
+
+> **Last updated:** 2026-10-23 | **Phase:** MVP Basic Features Production Gating
 > Shared execution contract between Claude, Codex, and all agents.
 > Read `tasks/lessons.md` before any implementation session.
 > **Roadmap:** `tasks/Roadmap/Archive/roadmap-2026-04-18.md` — single entry point for phase/sprint sequencing.

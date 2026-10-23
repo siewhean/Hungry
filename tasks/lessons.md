@@ -1,5 +1,7 @@
 # Lessons
 
+- When a Stitch screen replaces a root-level page whose native header is hidden, preserve an explicit back control and test its fallback destination; a visual reference without a back icon does not prove the app has another exit path.
+
 - Figma is the visual source of truth for any screen that already exists there; do not preserve an older in-app layout when it conflicts with the approved design.
 - Do not leave guest browsing branches in the runtime once product direction changes to auth-first; remove them from the session model, soft-gate copy, and debug presets together.
 - Avoid colored pills and emoji-driven UI copy in Hungry. Use warm neutral surfaces, restrained semantic color, and icon/text hierarchy instead.
@@ -136,3 +138,6 @@
 - For EAS CLI 21.1.0, choose the build environment in the EAS profile; `eas update` accepts `--environment`, but `eas build` rejects that flag.
 - EAS applies `.easignore` after cloning the repository. Use it to reduce upload payload, but reserve a separate temporary volume for the clone rather than presenting it as a low-disk workaround.
 - Re-check generated native manifests as well as Expo config: removing a released permission only from the config is insufficient when the EAS pre-install hook can preserve it in Android output.
+- After merging screen layouts, run the full source-contract coverage gate before treating focused screen tests as sufficient; keep account-only Settings rows behind authentication while preserving keyed saved-dish remounts across account changes.
+- When a screen's approved heading changes, update the render matrix expectation in the same branch; source contracts and coverage can pass while a render smoke still asserts the prior title.
+- In React Native Web, a Pressable rendered as a button cannot contain another button, and native-only `accessible` props should not reach raw SVG DOM nodes. Browser smoke should select the visible Stitch tab before asserting content in a non-default tab.

@@ -560,62 +560,56 @@ export function SettingsScreen() {
 
   return (
     <ProfileScreenShell title="Settings">
-      {isAuthenticated ? <PendingDeletionBanner /> : null}
-      {isAuthenticated ? (
-        <>
-          <SettingsSection title="Account">
-            <SettingsRow
-              label="Edit profile"
-              icon={<User size={20} color={palette.orange} />}
-              onPress={() => navigation.navigate("EditProfile")}
-              value={profile.displayName}
-              isLast
-            />
-          </SettingsSection>
-
-          <SettingsSection title="Sign-in and security">
-            <SettingsRow
-              label="Email"
-              icon={<AtSign size={20} color={palette.orange} />}
-              type="navigation"
-              value={profile.email?.trim() || "Not linked"}
-              description="Change it in Edit profile."
-              onPress={() => navigation.navigate("EditProfile")}
-              isLast={false}
-            />
-            {canChangePassword && isAuthenticated ? (
-              <SettingsRow
-                label="Change password"
-                icon={<KeyRound size={20} color={palette.orange} />}
-                onPress={() => rootNavigation.navigate("ChangePassword")}
-                isLast={false}
-              />
-            ) : null}
-            <SettingsRow
-              label="Sign out of all devices"
-              description="Ends your Hungry session on every phone, including this one."
-              icon={<Smartphone size={20} color={palette.orange} />}
-              onPress={handleSignOutEverywhere}
-              isLast
-            />
-          </SettingsSection>
-        </>
-      ) : (
-        <SettingsSection
-          title="Account"
-          description="You're browsing as a guest. Sign in to save dishes, write reviews and keep your settings."
-        >
-          <SettingsRow
-            label="Sign in or create an account"
-            icon={<User size={20} color={palette.orange} />}
-            onPress={() => rootNavigation.navigate("AuthStack", { screen: "Login" })}
-            isLast
-          />
-        </SettingsSection>
-      )}
-
-      <SettingsSection title="Taste and recommendations">
+      <SettingsSection editorial title="Dining preferences">
         <SettingsRow
+          editorial
+          label="Dietary preferences"
+          description="Choose the dietary flags used for your recommendations."
+          icon={<UtensilsCrossed size={20} color={palette.orange} />}
+          type="navigation"
+          value={
+            profile.dietaryPreferences.length
+              ? `${profile.dietaryPreferences.length} selected`
+              : "None selected"
+          }
+          onPress={() =>
+            rootNavigation.navigate("OnboardingStack", {
+              screen: "TasteQuiz",
+              params: { mode: "profile", initialPhase: "dietary" },
+            })
+          }
+          isLast={false}
+        />
+        <SettingsRow
+          editorial
+          label="Flavour profile"
+          description="Review the taste answers behind your recommendations."
+          icon={<Compass size={20} color={palette.orange} />}
+          type="navigation"
+          onPress={() =>
+            rootNavigation.navigate("OnboardingStack", {
+              screen: "TasteQuiz",
+              params: { mode: "profile", initialPhase: "taste" },
+            })
+          }
+          isLast={false}
+        />
+        <SettingsRow
+          editorial
+          label="Meal budget"
+          icon={<UtensilsCrossed size={20} color={palette.orange} />}
+          type="navigation"
+          value={profile.maxDishBudget ? `Up to S$${profile.maxDishBudget}` : "Not set"}
+          onPress={() =>
+            rootNavigation.navigate("OnboardingStack", {
+              screen: "TasteQuiz",
+              params: { mode: "profile", initialPhase: "dietary" },
+            })
+          }
+          isLast={false}
+        />
+        <SettingsRow
+          editorial
           label="Trying new food"
           icon={<Compass size={20} color={palette.orange} />}
           type="navigation"
@@ -630,6 +624,7 @@ export function SettingsScreen() {
         />
         {isAuthenticated ? (
           <SettingsRow
+            editorial
             label="Reset food history"
             icon={<UtensilsCrossed size={20} color={palette.orange} />}
             onPress={handleResetFoodHistory}
@@ -638,79 +633,9 @@ export function SettingsScreen() {
         ) : null}
       </SettingsSection>
 
-      <SettingsSection title="Privacy and data">
-        {showSocialPrivacySettings ? (
-          <SettingsRow
-            label="Profile visibility"
-            icon={
-              isProfilePrivate ? (
-                <Lock size={20} color={palette.orange} />
-              ) : (
-                <Eye size={20} color={palette.orange} />
-              )
-            }
-            type="navigation"
-            value={isSavingVisibility ? "Saving…" : isProfilePrivate ? "Private" : "Public"}
-            onPress={() => setVisibilitySheetVisible(true)}
-            busy={isSavingVisibility}
-            isLast={false}
-          />
-        ) : null}
-        {isAuthenticated ? (
-          <SettingsRow
-            label="Blocked and hidden"
-            icon={<UserX size={20} color={palette.orange} />}
-            type="navigation"
-            onPress={() => rootNavigation.navigate("BlockedAndHidden")}
-            isLast={false}
-          />
-        ) : null}
+      <SettingsSection editorial title="Location & notifications">
         <SettingsRow
-          label="Allow search history"
-          icon={<History size={20} color={palette.orange} />}
-          type="toggle"
-          isEnabled={allowSearchHistory}
-          onToggle={handleSearchHistoryToggle}
-          isLast={false}
-        />
-        <SettingsRow
-          label="Clear local cache"
-          icon={<Eraser size={20} color={palette.orange} />}
-          onPress={handleClearLocalData}
-          isLast={false}
-        />
-        {isAuthenticated ? (
-          <SettingsRow
-            label={isExportingData ? "Preparing your data…" : "Download my data"}
-            icon={<Download size={20} color={palette.orange} />}
-            onPress={handleExportData}
-            busy={isExportingData}
-            isLast={false}
-          />
-        ) : null}
-        <SettingsRow
-          label="How account deletion works"
-          icon={<Shield size={20} color={palette.orange} />}
-          type="link"
-          onPress={() => void openTrustedExternalUrl(WEB_LINKS.accountDeletion)}
-          isLast
-        />
-      </SettingsSection>
-
-      {FEATURE_FLAGS.stallAlertsEnabled && isAuthenticated ? (
-        <StallAlertsSettings
-          onOpenFollowedStalls={() =>
-            // Settings is also a root route, where FollowedStalls is not a sibling.
-            rootNavigation.navigate("MainTabs", {
-              screen: "Profile",
-              params: { screen: "FollowedStalls" },
-            })
-          }
-        />
-      ) : null}
-
-      <SettingsSection title="Location">
-        <SettingsRow
+          editorial
           label="Location"
           icon={<MapPin size={20} color={palette.orange} />}
           onPress={() =>
@@ -723,6 +648,7 @@ export function SettingsScreen() {
           isLast={false}
         />
         <SettingsRow
+          editorial
           label="Location permission"
           icon={<LocateFixed size={20} color={palette.orange} />}
           type="navigation"
@@ -742,12 +668,14 @@ export function SettingsScreen() {
           isLast={false}
         />
         <SettingsRow
+          editorial
           label="Reset selected location"
           icon={<RotateCcw size={20} color={palette.orange} />}
           onPress={handleResetLocation}
           isLast={false}
         />
         <SettingsRow
+          editorial
           label="Phone permissions"
           icon={<Settings2 size={20} color={palette.orange} />}
           onPress={openAppSettings}
@@ -756,8 +684,150 @@ export function SettingsScreen() {
         />
       </SettingsSection>
 
-      <SettingsSection title="Accessibility and display">
+      {FEATURE_FLAGS.stallAlertsEnabled && isAuthenticated ? (
+        <StallAlertsSettings
+          onOpenFollowedStalls={() =>
+            // Settings is also a root route, where FollowedStalls is not a sibling.
+            rootNavigation.navigate("MainTabs", {
+              screen: "Profile",
+              params: { screen: "FollowedStalls" },
+            })
+          }
+        />
+      ) : null}
+
+      {isAuthenticated ? <PendingDeletionBanner /> : null}
+      {isAuthenticated ? (
+        <>
+          <SettingsSection editorial title="Account & sync">
+            <SettingsRow
+              editorial
+              label="Edit profile"
+              icon={<User size={20} color={palette.orange} />}
+              onPress={() => navigation.navigate("EditProfile")}
+              value={profile.displayName}
+              isLast
+            />
+          </SettingsSection>
+
+          <SettingsSection editorial title="Sign-in and security">
+            <SettingsRow
+              editorial
+              label="Email"
+              icon={<AtSign size={20} color={palette.orange} />}
+              type="navigation"
+              value={profile.email?.trim() || "Not linked"}
+              description="Change it in Edit profile."
+              onPress={() => navigation.navigate("EditProfile")}
+              isLast={false}
+            />
+            {canChangePassword && isAuthenticated ? (
+              <SettingsRow
+                editorial
+                label="Change password"
+                icon={<KeyRound size={20} color={palette.orange} />}
+                onPress={() => rootNavigation.navigate("ChangePassword")}
+                isLast={false}
+              />
+            ) : null}
+            <SettingsRow
+              editorial
+              label="Sign out of all devices"
+              description="Ends your Hungry session on every phone, including this one."
+              icon={<Smartphone size={20} color={palette.orange} />}
+              onPress={handleSignOutEverywhere}
+              isLast
+            />
+          </SettingsSection>
+        </>
+      ) : (
+        <SettingsSection
+          editorial
+          title="Account"
+          description="You're browsing as a guest. Sign in to save dishes, write reviews and keep your settings."
+        >
+          <SettingsRow
+            editorial
+            label="Sign in or create an account"
+            icon={<User size={20} color={palette.orange} />}
+            onPress={() => rootNavigation.navigate("AuthStack", { screen: "Login" })}
+            isLast
+          />
+        </SettingsSection>
+      )}
+
+      <SettingsSection editorial title="Data & privacy">
+        {isAuthenticated ? (
+          <>
+            {showSocialPrivacySettings ? (
+              <SettingsRow
+                label="Profile visibility"
+                editorial
+                icon={
+                  isProfilePrivate ? (
+                    <Lock size={20} color={palette.orange} />
+                  ) : (
+                    <Eye size={20} color={palette.orange} />
+                  )
+                }
+                type="navigation"
+                value={isSavingVisibility ? "Saving…" : isProfilePrivate ? "Private" : "Public"}
+                onPress={() => setVisibilitySheetVisible(true)}
+                busy={isSavingVisibility}
+                isLast={false}
+              />
+            ) : null}
+          </>
+        ) : null}
+        {isAuthenticated ? (
+          <SettingsRow
+            editorial
+            label="Blocked and hidden"
+            icon={<UserX size={20} color={palette.orange} />}
+            type="navigation"
+            onPress={() => rootNavigation.navigate("BlockedAndHidden")}
+            isLast={false}
+          />
+        ) : null}
         <SettingsRow
+          editorial
+          label="Allow search history"
+          icon={<History size={20} color={palette.orange} />}
+          type="toggle"
+          isEnabled={allowSearchHistory}
+          onToggle={handleSearchHistoryToggle}
+          isLast={false}
+        />
+        <SettingsRow
+          editorial
+          label="Clear local cache"
+          icon={<Eraser size={20} color={palette.orange} />}
+          onPress={handleClearLocalData}
+          isLast={false}
+        />
+        {isAuthenticated ? (
+          <SettingsRow
+            editorial
+            label={isExportingData ? "Preparing your data…" : "Download my data"}
+            icon={<Download size={20} color={palette.orange} />}
+            onPress={handleExportData}
+            busy={isExportingData}
+            isLast={false}
+          />
+        ) : null}
+        <SettingsRow
+          editorial
+          label="How account deletion works"
+          icon={<Shield size={20} color={palette.orange} />}
+          type="link"
+          onPress={() => void openTrustedExternalUrl(WEB_LINKS.accountDeletion)}
+          isLast
+        />
+      </SettingsSection>
+
+      <SettingsSection editorial title="Accessibility and display">
+        <SettingsRow
+          editorial
           label="Theme"
           icon={<SunMoon size={20} color={palette.orange} />}
           type="navigation"
@@ -766,6 +836,7 @@ export function SettingsScreen() {
           isLast={false}
         />
         <SettingsRow
+          editorial
           label="Reduce motion"
           icon={<Accessibility size={20} color={palette.orange} />}
           type="toggle"
@@ -774,6 +845,7 @@ export function SettingsScreen() {
           isLast={false}
         />
         <SettingsRow
+          editorial
           label="Haptic feedback"
           icon={<Vibrate size={20} color={palette.orange} />}
           type="toggle"
@@ -782,6 +854,7 @@ export function SettingsScreen() {
           isLast={false}
         />
         <SettingsRow
+          editorial
           label="Left-handed mode"
           description="Moves floating buttons, like the add-menu button and the like and save buttons on posts, to the left side."
           icon={<Hand size={20} color={palette.orange} />}
@@ -792,8 +865,9 @@ export function SettingsScreen() {
         />
       </SettingsSection>
 
-      <SettingsSection title="Support">
+      <SettingsSection editorial title="Support">
         <SettingsRow
+          editorial
           label="Contact us"
           type="link"
           icon={<MessageCircle size={20} color={palette.orange} />}
@@ -801,12 +875,14 @@ export function SettingsScreen() {
           isLast={false}
         />
         <SettingsRow
+          editorial
           label="Email support"
           icon={<Mail size={20} color={palette.orange} />}
           onPress={() => void openTrustedExternalUrl(`mailto:${SUPPORT_EMAIL}`)}
           isLast={false}
         />
         <SettingsRow
+          editorial
           label="Privacy Policy"
           type="link"
           icon={<FileText size={20} color={palette.orange} />}
@@ -814,6 +890,7 @@ export function SettingsScreen() {
           isLast={false}
         />
         <SettingsRow
+          editorial
           label="Terms of Service"
           type="link"
           icon={<Scale size={20} color={palette.orange} />}
@@ -822,8 +899,9 @@ export function SettingsScreen() {
         />
       </SettingsSection>
 
-      <SettingsSection title="About">
+      <SettingsSection editorial title="About">
         <SettingsRow
+          editorial
           label="Version"
           icon={<Info size={20} color={palette.orange} />}
           type="value"
@@ -833,6 +911,7 @@ export function SettingsScreen() {
           isLast={false}
         />
         <SettingsRow
+          editorial
           label="Data sources"
           icon={<Database size={20} color={palette.orange} />}
           type="value"
@@ -842,8 +921,9 @@ export function SettingsScreen() {
       </SettingsSection>
 
       {isAuthenticated ? (
-        <SettingsSection>
+        <SettingsSection editorial>
           <SettingsRow
+            editorial
             label="Sign out"
             icon={<LogOut size={20} color={palette.error} />}
             onPress={handleSignOut}
@@ -853,15 +933,17 @@ export function SettingsScreen() {
         </SettingsSection>
       ) : null}
 
-      <View style={{ gap: spacing[3], marginBottom: spacing[4], marginTop: spacing[1] }}>
-        <Button
-          label="Delete account"
-          variant="destructive"
-          onPress={handleDeleteAccount}
-          loading={deletionRequested}
-          leftIcon={<Trash2 size={20} color={palette.white} />}
-        />
-      </View>
+      {isAuthenticated ? (
+        <View style={{ gap: spacing[3], marginBottom: spacing[4], marginTop: spacing[1] }}>
+          <Button
+            label="Delete account"
+            variant="destructive"
+            onPress={handleDeleteAccount}
+            loading={deletionRequested}
+            leftIcon={<Trash2 size={20} color={palette.white} />}
+          />
+        </View>
+      ) : null}
 
       {/* Cross-platform confirm (Alert.alert is a no-op on web, so E2E can't drive it). */}
       <Dialog
@@ -949,7 +1031,7 @@ export function SettingsScreen() {
         onClose={() => setThemeSheetVisible(false)}
       />
       <SettingsChoiceSheet
-        visible={visibilitySheetVisible}
+        visible={isAuthenticated && showSocialPrivacySettings && visibilitySheetVisible}
         title="Profile visibility"
         message="Private: only approved followers see your posts, Lists and the reviews on your profile. Your reviews still show on dish pages."
         options={[

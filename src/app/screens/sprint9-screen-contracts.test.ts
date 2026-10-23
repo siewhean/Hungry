@@ -593,21 +593,19 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
   assert.match(source, /View Taste Profile/);
   assert.match(source, /Opening hours/);
   assert.match(source, /More from \{venueName\}/);
-  assert.match(source, /<AppText variant="h2">Reviews<\/AppText>/);
+  assert.match(source, /<AppText variant="h2">Community Palate Feedback<\/AppText>/);
   assert.match(source, /const cachedVenueDishes = useMemo/);
   // Never repeats the dish being viewed.
   assert.match(source, /getMoreFromStall\(dish, venueDishes\)/);
   assert.match(source, /if \(dish\.id !== currentDish\.id\)/);
   assert.doesNotMatch(source, /supplementalDishes/);
-  assert.match(source, /const signatureGridItemWidth = width \/ 2/);
-  assert.match(source, /const signatureGridItemHeight = signatureGridItemWidth \* 1\.5/);
+  assert.match(source, /const signatureGridItemWidth = Math\.min\(width \* 0\.56, 220\)/);
   assert.match(source, /marginHorizontal: -spacing\[4\]/);
   assert.match(source, /moreFromStall\.map/);
-  assert.match(source, /height: signatureGridItemHeight/);
+  assert.match(source, /horizontal\s+showsHorizontalScrollIndicator=\{false\}/);
+  assert.match(source, /height: signatureGridItemWidth \* 0\.62/);
   assert.match(source, /width: signatureGridItemWidth/);
-  assert.match(source, /palette\.detailImageBadgeSurface/);
-  assert.match(source, /shadowRadius: 12/);
-  assert.match(source, /textShadowRadius: 3/);
+  assert.match(source, /backgroundColor: palette\.surface/);
   assert.match(source, /formatDishPrice\(item\)/);
   assert.doesNotMatch(source, /\{dish\.priceRange\}/);
   assert.doesNotMatch(source, /\{item\.priceRange\}/);
