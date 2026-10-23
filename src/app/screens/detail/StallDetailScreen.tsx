@@ -70,6 +70,7 @@ import {
 } from "@/lib/services/serviceProvider";
 import { getBuildingById } from "@/lib/geo/singaporeBuildings";
 import { formatDishPrice } from "@/features/detail/dishPrice";
+import { isPopularDish } from "@/features/detail/popularDish";
 import type { MerchantClaimStatus, RecentReviewFeedEntry } from "@/lib/services/types";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { openMerchantProfileLink, openTrustedMapsUrl } from "@/lib/security/safeLinking";
@@ -188,7 +189,7 @@ function inferDishCategory(dish: DishDetail) {
   const merchantSection = getDishSection(dish.availabilityFlags);
   if (merchantSection) return merchantSection;
   const name = dish.name.toLowerCase();
-  if (dish.mustOrder) return "Popular";
+  if (isPopularDish(dish)) return "Popular";
   // Whole words only: "Steak" is not tea, "Watercress soup" is not water.
   if (/\b(rice|nasi|biryani|donburi|porridge|congee)\b/.test(name)) return "Rice";
   if (/\b(noodles?|mee|hor fun|kway teow|ramen|pasta|spaghetti|bee hoon|udon|soba)\b/.test(name)) {
@@ -289,9 +290,9 @@ function StallMenuDishCard({
           <NoDishPhoto dishName={dish.name} style={imageStyle} />
         )}
         <View style={{ gap: spacing[1], padding: spacing[3] }}>
-          {dish.mustOrder ? (
+          {isPopularDish(dish) ? (
             <AppText variant="micro" style={{ color: palette.orangeText }}>
-              MUST ORDER
+              POPULAR
             </AppText>
           ) : null}
           <AppText variant="bodyBold" numberOfLines={2}>
@@ -1285,14 +1286,6 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   onOpenAppSettings={() => navigation.navigate("Settings")}
                 />
               ) : null}
-              {showDeferredDetailControls && FEATURE_FLAGS.collectionsEnabled ? (
-                <DetailSaveActionsCard
-                  title="Save this stall"
-                  body="Add this stall to your trying list."
-                  onAddToChecklist={detailSaveActions.addToChecklist}
-                  isAddingToChecklist={detailSaveActions.isAddingToChecklist}
-                />
-              ) : null}
               {/* Menu */}
               <View onLayout={handleMenuSectionLayout} style={{ gap: spacing[4] }}>
                 <View style={{ gap: spacing[1] }}>
@@ -1457,6 +1450,15 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     />
                   ))}
                 </View>
+              ) : null}
+              {/* Below the menu so the menu is what a stall visit opens on. */}
+              {showDeferredDetailControls && FEATURE_FLAGS.collectionsEnabled ? (
+                <DetailSaveActionsCard
+                  title="Save this stall"
+                  body="Add this stall to your trying list."
+                  onAddToChecklist={detailSaveActions.addToChecklist}
+                  isAddingToChecklist={detailSaveActions.isAddingToChecklist}
+                />
               ) : null}
               {/* Info: hours, address and the owner's words in one compact card */}
               <Card style={{ gap: spacing[4], padding: spacing[4] }}>

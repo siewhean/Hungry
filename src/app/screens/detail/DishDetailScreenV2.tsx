@@ -32,6 +32,7 @@ import { ReportProblemLink } from "@/components/stall/ReportProblemLink";
 import { buildDishGallery } from "@/features/detail/detailTransforms";
 import { formatDishUpdated } from "@/features/detail/dishFreshness";
 import { formatDishPrice } from "@/features/detail/dishPrice";
+import { isPopularDish } from "@/features/detail/popularDish";
 import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
 import { DietaryFlagChips } from "@/components/dish/DietaryFlagChips";
 import { OwnReviewActions, ReviewPhotoStrip, ReviewReaderActions } from "@/components/review";
@@ -823,7 +824,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
               }}
             >
               <View style={{ gap: spacing[4] }}>
-                {dish.mustOrder ? (
+                {isPopularDish(dish) ? (
                   <View
                     style={{
                       alignSelf: "flex-start",
@@ -834,7 +835,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                     }}
                   >
                     <AppText variant="bodySmallBold" style={{ color: palette.warningText }}>
-                      MUST ORDER
+                      POPULAR
                     </AppText>
                   </View>
                 ) : null}

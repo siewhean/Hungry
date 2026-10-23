@@ -47,3 +47,17 @@ test("review history shows its write button only with history and keeps the visi
   assert.match(reviewHistory, /variant="secondary"/);
   assert.doesNotMatch(reviewHistory, /accessibilityLabel="Write Review"/);
 });
+
+test("stall detail opens on the menu: the save-to-list card sits after it", () => {
+  assert.ok(
+    stall.indexOf("{/* Menu */}") < stall.indexOf("<DetailSaveActionsCard"),
+    "Save this stall must come after the menu",
+  );
+});
+
+test("Popular badges come from reviews, not the editorial must-order flag", () => {
+  const decide = readRepoFile("src/app/screens/discover/DecideForMeResultScreen.tsx");
+  assert.doesNotMatch(decide, /dish\.mustOrder/);
+  assert.match(decide, /isPopularDish\(dish\)\s*\?\s*\(\s*<Badge label="Popular nearby"/);
+  assert.doesNotMatch(dish, /MUST ORDER/);
+});

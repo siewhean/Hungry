@@ -12,7 +12,8 @@ test("Stitch stall layout keeps catalogue and review evidence dynamic", () => {
   assert.match(stall, /Community Highlights/);
   assert.match(stall, /ratingSummary\s*\?/);
   assert.match(stall, /dish\.reviewCount > 0/);
-  assert.match(stall, /dish\.mustOrder\s*\?/);
+  assert.match(stall, /isPopularDish\(dish\)\s*\?/);
+  assert.doesNotMatch(stall, /dish\.mustOrder/);
   assert.match(stall, /openInfo\.closureNotice/);
   assert.match(stall, /<PhotoPager/);
   assert.doesNotMatch(stall, /Michelin Bib Gourmand|NEA Grade A|2,410 reviews/);
@@ -22,7 +23,8 @@ test("Stitch dish layout keeps taste, rating, price, and menu data dynamic", () 
   assert.match(dish, /Dish Details/);
   assert.match(dish, /Taste Matrix &amp; Palate Profile/);
   assert.match(dish, /Community Palate Feedback/);
-  assert.match(dish, /dish\.mustOrder\s*\?/);
+  assert.match(dish, /isPopularDish\(dish\)\s*\?/);
+  assert.doesNotMatch(dish, /dish\.mustOrder/);
   assert.match(dish, /hasTasteSignal\s*\?/);
   assert.match(dish, /dish\.tasteVector\[dimension\.key\]/);
   assert.match(dish, /formatDishPrice\(item\)/);
