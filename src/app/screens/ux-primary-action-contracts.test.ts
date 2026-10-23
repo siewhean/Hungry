@@ -61,3 +61,8 @@ test("Popular badges come from reviews, not the editorial must-order flag", () =
   assert.match(decide, /isPopularDish\(dish\)\s*\?\s*\(\s*<Badge label="Popular nearby"/);
   assert.doesNotMatch(dish, /MUST ORDER/);
 });
+
+test("the weekly picks button does not squeeze its heading to nothing", () => {
+  const rail = readRepoFile("src/components/dish/WeeklyPicksRail.tsx");
+  assert.match(rail, /<Button label="Decide for me" size="sm" fullWidth=\{false\}/);
+});
