@@ -72,7 +72,11 @@ test("resolveAi switches to Claude and lets AI_MODEL override the default", asyn
   assert.equal(defaults.model, "claude-haiku-5-5");
   assert.equal(defaults.apiKey, "a-key");
   const custom = resolveAi(
-    envOf({ AI_PROVIDER: " Anthropic ", ANTHROPIC_API_KEY: "a-key", AI_MODEL: "claude-sonnet-5-5" }),
+    envOf({
+      AI_PROVIDER: " Anthropic ",
+      ANTHROPIC_API_KEY: "a-key",
+      AI_MODEL: "claude-sonnet-5-5",
+    }),
   );
   assert.equal(custom.provider, "anthropic");
   assert.equal(custom.model, "claude-sonnet-5-5");
@@ -89,7 +93,9 @@ test("resolveAi reports a wrong provider and a missing key for the chosen provid
 test("generateJson sends Claude the schema, key and version, and no temperature", async () => {
   const { resolveAi, generateJson } = await loadProvider();
   const ai = resolveAi(envOf({ AI_PROVIDER: "anthropic", ANTHROPIC_API_KEY: "a-key" }));
-  let seen: { url: string; headers: Record<string, string>; body: Record<string, unknown> } | undefined;
+  let seen:
+    | { url: string; headers: Record<string, string>; body: Record<string, unknown> }
+    | undefined;
   const result = await withFetch(
     (url, init) => {
       seen = {
@@ -133,7 +139,9 @@ test("generateJson retries Claude when overloaded, then reports the status", asy
   const result = await withFetch(
     () => {
       calls += 1;
-      return calls < 3 ? new Response("overloaded", { status: 529 }) : claudeAnswer("end_turn", '{"a":2}');
+      return calls < 3
+        ? new Response("overloaded", { status: 529 })
+        : claudeAnswer("end_turn", '{"a":2}');
     },
     () => generateJson(ai, OPTIONS),
   );
