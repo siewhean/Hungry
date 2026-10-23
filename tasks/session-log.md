@@ -828,9 +828,9 @@ All 9 required audit documents updated in `tasks/Roadmap/`:
 
 - 2026-10-23 | Codex | PR #116 CI follow-up: clean CI dependency install passed typecheck, lint, formatting, and asset audit, but seven full-suite source contracts still asserted the pre-Stitch screen text/layout. Updated those assertions against preserved controls; 59 affected tests pass locally. No build/simulator run on the low-disk Mac; CI rerun pending.
 - 2026-10-23: Fixed a variable clash in scripts/taste-answer-key-eval.mjs (every dish failed with 'Cannot access ai before initialization'); eval run end to end with a stubbed fetch for gemini, gemini-3.1-flash-lite and anthropic.
-
 - 2026-10-23 | Codex | PR #116 merge CI follow-up: resolved three source-contract failures while preserving the keyed Supabase saved-dish remount and gating account-only Settings controls for guests. Focused affected tests passed 33/33; merged current `main` after PR #118. Clean CI rerun pending; no local build or simulator run.
 
 - 2026-10-23 | Codex | PR #116 CI render follow-up: clean CI passed 1,787 coverage tests and the ratchet, then failed four render-heading assertions left from the pre-Stitch labels. Updated the render matrix to the approved Stitch headings; local reused dependencies lack `jsdom`, so clean CI will rerun the render suite. No build or simulator run.
 
 - 2026-10-23 | Codex | PR #116 browser CI follow-up: clean CI passed 140 render checks, then found nested Profile review buttons, an SVG web accessibility warning, and Profile/Search browser tests selecting the old UI. Separated the review/menu buttons, kept radar accessibility native-only, and updated the E2E actions. Focused contracts pass 24/24; browser CI rerun pending, with no local Expo build or simulator run.
+- 2026-10-23: Optional ANTHROPIC_WORKSPACE_ID secret sent as the anthropic-workspace-id header (for Anthropic keys not tied to a Console workspace); test in src/lib/ai/aiProvider.test.ts.
