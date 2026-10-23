@@ -1,3 +1,5 @@
+// @ts-nocheck
+/* eslint-disable import/no-unresolved */
 // Picks the AI provider and model for mood-search, tag-dishes and scripts/taste-answer-key-eval.mjs.
 // Set the Supabase secrets AI_PROVIDER ("gemini" or "anthropic") and AI_MODEL to switch without a deploy;
 // each provider reads its own key (GEMINI_API_KEY or ANTHROPIC_API_KEY).

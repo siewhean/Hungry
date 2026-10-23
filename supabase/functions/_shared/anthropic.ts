@@ -1,3 +1,5 @@
+// @ts-nocheck
+/* eslint-disable import/no-unresolved */
 // Same contract as gemini.ts, for Claude models. Plain fetch, like gemini.ts, so the Edge Functions
 // and scripts/taste-answer-key-eval.mjs (Node) can load the same file.
 import { failureMessage, fetchWithRetry } from "./aiRetry.ts";

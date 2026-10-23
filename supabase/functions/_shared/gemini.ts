@@ -1,3 +1,5 @@
+// @ts-nocheck
+/* eslint-disable import/no-unresolved */
 // Shared by the tag-dishes and mood-search Edge Functions and scripts/taste-answer-key-eval.mjs.
 import { failureMessage, fetchWithRetry } from "./aiRetry.ts";
 
