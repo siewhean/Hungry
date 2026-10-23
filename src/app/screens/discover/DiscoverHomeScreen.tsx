@@ -25,7 +25,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "@/lib/haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import {
-  ChevronDown,
   ChevronRight,
   Compass,
   Search,
@@ -84,7 +83,11 @@ import {
   preloadRoute,
 } from "@/features/navigation/prefetch";
 import { trackAnalyticsEvent } from "@/lib/analytics";
-import { getNearestBuildings, getNearestSingaporeAreaWithin } from "@/lib/geo/singaporeBuildings";
+import {
+  getNearestBuildings,
+  getNearestSingaporeArea,
+  getNearestSingaporeAreaWithin,
+} from "@/lib/geo/singaporeBuildings";
 import {
   getDataRepository,
   getHungryService,
@@ -1416,10 +1419,13 @@ export function DiscoverHomeScreen() {
       : null,
   );
   const currentPlaceId = currentPlace?.id;
-  // Without a GPS fix or a searched area the header names the city, not a guessed area.
-  const discoverHeaderLabel = needsDiscoverAreaChoice
-    ? "Singapore"
-    : (currentPlace?.name ?? manualPlaceName ?? discoverLocationLabel);
+  // Always an area (never just "Singapore"): without a GPS fix or a searched area it is the
+  // area Discover is showing, and one tap opens the area search to change it.
+  const discoverHeaderLabel =
+    currentPlace?.name ??
+    manualPlaceName ??
+    discoverAreaName ??
+    getNearestSingaporeArea(discoverLocationLatitude, discoverLocationLongitude);
 
   useEffect(() => {
     setVisibleAreaStallCount(DISCOVER_STALL_INITIAL_VISIBLE_COUNT);
@@ -2213,16 +2219,14 @@ export function DiscoverHomeScreen() {
               accessibilityHint="Search for an area, mall, hawker centre or food court"
               hitSlop={DISCOVER_TEXT_LINK_HIT_SLOP}
               onPress={handleChangeArea}
-              style={{ alignItems: "center", flex: 1, flexDirection: "row", gap: spacing[1] }}
+              style={({ pressed }) => ({ flex: 1, opacity: pressed ? 0.7 : 1 })}
             >
-              <AppText
-                variant="h2"
-                style={{ color: themeTints.text, flexShrink: 1 }}
-                numberOfLines={2}
-              >
-                {`You are at ${discoverHeaderLabel}`}
+              <AppText variant="bodySmall" style={{ color: themeTints.secondaryText }}>
+                You are at
               </AppText>
-              <ChevronDown color={themeTints.secondaryText} size={22} />
+              <AppText variant="h2" style={{ color: palette.orange }} numberOfLines={1}>
+                {discoverHeaderLabel}
+              </AppText>
             </Pressable>
             {/* Every signed-in diner can switch Discover to the map (when the map ships). */}
             {FEATURE_FLAGS.mapEnabled ? (

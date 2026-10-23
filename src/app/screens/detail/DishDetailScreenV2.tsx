@@ -8,19 +8,26 @@ import {
   ArrowLeft,
   Bookmark,
   ChevronRight,
+  Circle,
+  Copy,
   Heart,
   FolderPlus,
   CheckCircle,
   MapPin,
+  MessageCircle,
   Navigation,
   PenLine,
   Send,
+  Share2,
   Star,
   Utensils,
 } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
+import * as Clipboard from "expo-clipboard";
 import { useDetailSaveActions } from "@/features/checklistPortfolio/DetailSaveActions";
+import { shareLink } from "@/features/share/messagingShare";
+import { withShareSource } from "@/features/share/shareAttribution";
 import { resolveStallOpenInfo } from "@/features/detail/stallOpenState";
 import {
   perceivedTasteAxes,
@@ -156,7 +163,15 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const [showAllReviews, setShowAllReviews] = useState(false);
   const [hasMoreReviews, setHasMoreReviews] = useState(false);
   const [isLoadingMoreReviews, setIsLoadingMoreReviews] = useState(false);
-  const { addToPortfolio, isAddingToPortfolio, saveToListSheet } = useDetailSaveActions({
+  const {
+    addToPortfolio,
+    collectionOptions,
+    collectionsLoading,
+    isAddingToPortfolio,
+    loadCollections,
+    saveToListSheet,
+    togglePortfolio,
+  } = useDetailSaveActions({
     navigation,
     target: {
       itemType: "dish",
@@ -747,9 +762,129 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     showToast({ message: liked ? "Liked." : "Like removed.", tone: "success" });
   };
 
-  // Bottom bar: directions and like as icons, Review as the orange button. Holding an icon (or
-  // tapping More) opens share, mark tried and save to a collection.
-  const barActions: DetailAction[] = [
+  const shareTo = (channel: "whatsapp" | "telegram" | "system_share") => {
+    void shareLink(
+      { kind: "dish", id: dish.id, message: shareReviewTarget.message, url: canonicalDishUrl },
+      channel,
+    )
+      .then(recordMerchantShare)
+      .catch(() => showToast({ message: "Couldn't open sharing. Try again.", tone: "error" }));
+  };
+  const copyDishLink = async () => {
+    await Clipboard.setStringAsync(withShareSource(canonicalDishUrl, "copy_link"));
+    trackAnalyticsEvent("dish_shared", { dish_id: dish.id, channel: "copy_link" });
+    showToast({ message: "Link copied.", tone: "success" });
+  };
+  const setTried = (tried: boolean) => {
+    if (tried !== isDishTried) void handleTryFood();
+  };
+
+  // Bottom bar: Review on the left; Share, Tried and Save on the right, each with its own hold
+  // menu (share apps, tried / not tried, collections). More holds Directions and Like.
+  const barActions: DetailAction[] = showDeferredDetailControls
+    ? [
+        {
+          id: "share",
+          label: "Share",
+          icon: Send,
+          onPress: openShareSheet,
+          accessibilityLabel: `Share ${dish.name}`,
+          holdTitle: "Share to",
+          holdOptions: [
+            {
+              id: "whatsapp",
+              label: "WhatsApp",
+              icon: MessageCircle,
+              onPress: () => shareTo("whatsapp"),
+            },
+            { id: "telegram", label: "Telegram", icon: Send, onPress: () => shareTo("telegram") },
+            { id: "copy", label: "Copy link", icon: Copy, onPress: () => void copyDishLink() },
+            {
+              id: "more",
+              label: "More apps",
+              icon: Share2,
+              onPress: () => shareTo("system_share"),
+            },
+          ],
+        },
+        {
+          id: "tried",
+          label: isDishTried ? "Tried" : "Mark tried",
+          icon: CheckCircle,
+          active: isDishTried,
+          role: "checkbox" as const,
+          loading: isTryingFood,
+          onPress: () => void handleTryFood(),
+          accessibilityLabel: "Tried",
+          holdTitle: "Have you tried it?",
+          holdOptions: [
+            {
+              id: "tried",
+              label: "Tried",
+              icon: CheckCircle,
+              selected: isDishTried,
+              onPress: () => setTried(true),
+            },
+            {
+              id: "not-tried",
+              label: "Not tried",
+              icon: Circle,
+              selected: !isDishTried,
+              onPress: () => setTried(false),
+            },
+          ],
+        },
+        ...(FEATURE_FLAGS.favouritesEnabled
+          ? [
+              {
+                id: "save",
+                label: isSaved ? "Saved" : "Save",
+                icon: Bookmark,
+                active: isSaved,
+                fillWhenActive: true,
+                onPress: () => void handleSave(),
+                accessibilityLabel: isSaved ? "Saved" : "Save",
+                accessibilityHint: isSaved
+                  ? "Removes this dish from Want to try. Hold to pick a collection"
+                  : "Hold to pick a collection",
+                ...(FEATURE_FLAGS.portfoliosEnabled
+                  ? {
+                      holdTitle: "Save to",
+                      onHoldOpen: () => void loadCollections(),
+                      holdLoading: collectionsLoading,
+                      holdOptions: [
+                        {
+                          id: "want-to-try",
+                          label: "Want to try",
+                          icon: Bookmark,
+                          selected: isSaved,
+                          onPress: () => void handleSave(),
+                        },
+                        ...(collectionsLoading
+                          ? []
+                          : collectionOptions.map(({ option, selected }) => ({
+                              id: option.key,
+                              label: option.name,
+                              icon: FolderPlus,
+                              selected,
+                              onPress: () => void togglePortfolio(option),
+                            }))),
+                        {
+                          id: "all-lists",
+                          label: isAddingToPortfolio ? "Adding..." : "New collection",
+                          icon: FolderPlus,
+                          onPress: () => void addToPortfolio(),
+                          accessibilityLabel: "Save to a new collection",
+                        },
+                      ],
+                    }
+                  : {}),
+              },
+            ]
+          : []),
+      ]
+    : [];
+  const secondaryBarActions: DetailAction[] = [
     ...(stallAddress
       ? [
           {
@@ -772,56 +907,9 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
             onPress: handleLike,
             accessibilityLabel: isLiked ? "Unlike this dish" : "Like this dish",
           },
-          ...(FEATURE_FLAGS.favouritesEnabled
-            ? [
-                {
-                  id: "save",
-                  label: isSaved ? "Saved" : "Save",
-                  icon: Bookmark,
-                  active: isSaved,
-                  fillWhenActive: true,
-                  onPress: () => void handleSave(),
-                  accessibilityLabel: isSaved ? "Saved" : "Save",
-                  accessibilityHint: isSaved ? "Removes this dish from Want to try" : undefined,
-                },
-              ]
-            : []),
         ]
       : []),
   ];
-  const secondaryBarActions: DetailAction[] = showDeferredDetailControls
-    ? [
-        {
-          id: "share",
-          label: "Share",
-          icon: Send,
-          onPress: openShareSheet,
-          accessibilityLabel: `Share ${dish.name}`,
-        },
-        {
-          id: "tried",
-          label: isDishTried ? "Tried" : "Mark tried",
-          icon: CheckCircle,
-          active: isDishTried,
-          role: "checkbox" as const,
-          loading: isTryingFood,
-          onPress: () => void handleTryFood(),
-          accessibilityLabel: "Tried",
-        },
-        ...(FEATURE_FLAGS.portfoliosEnabled
-          ? [
-              {
-                id: "collection",
-                label: isAddingToPortfolio ? "Adding..." : "Save to a collection",
-                icon: FolderPlus,
-                loading: isAddingToPortfolio,
-                onPress: () => void addToPortfolio(),
-                accessibilityLabel: "Save this dish to a collection",
-              },
-            ]
-          : []),
-      ]
-    : [];
 
   return (
     <FeedErrorBoundary title="Dish details unavailable" body="Couldn't load this dish — try again.">
@@ -1071,11 +1159,6 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                 <View style={{ gap: spacing[3] }}>
                   <View style={{ gap: spacing[1] }}>
                     <AppText variant="h2">How it tastes to you</AppText>
-                    <AppText variant="bodySmall" tone="secondary">
-                      {hasPersonalPalate
-                        ? "The standard level is the same for everyone. Your level is adjusted to your taste palette."
-                        : "Set up your taste palette to see how this dish will taste to you."}
-                    </AppText>
                   </View>
                   <View
                     style={{
@@ -1104,18 +1187,6 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                             </AppText>
                           ))
                       : null}
-                    {!hasPersonalPalate ? (
-                      <Button
-                        label="Set up my taste palette"
-                        variant="secondary"
-                        onPress={() =>
-                          navigation.navigate("OnboardingStack", {
-                            screen: "TasteQuiz",
-                            params: { mode: "profile" },
-                          })
-                        }
-                      />
-                    ) : null}
                   </View>
                   {dish.tasteTags.length > 0 ? (
                     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
@@ -1324,22 +1395,8 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                     alignItems: "center",
                   }}
                 >
-                  <AppText variant="h2">Community Palate Feedback</AppText>
-                  {showDeferredDetailControls && FEATURE_FLAGS.reviewCreationEnabled ? (
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel="Write a review"
-                      hitSlop={8}
-                      onPress={() => {
-                        tapHaptic();
-                        handleReview();
-                      }}
-                    >
-                      <AppText variant="bodySmallBold" tone="accent">
-                        Write a review
-                      </AppText>
-                    </Pressable>
-                  ) : dish.reviewCount > 0 ? (
+                  <AppText variant="h2">Reviews</AppText>
+                  {dish.reviewCount > 0 ? (
                     <AppText variant="bodySmall" tone="secondary">
                       ★ {dish.rating.toFixed(1)} ({dish.reviewCount})
                     </AppText>

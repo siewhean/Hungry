@@ -7,10 +7,10 @@ import { useHungryTheme } from "@/theme";
 export type TasteRadarAxis = {
   key: string;
   label: string;
-  /** The dish's standard level, 0-10. */
+  /** The dish's standard level from its reviews, 0-10. */
   standard: number;
-  /** How strong it feels to this diner, 0-10; omitted when the diner has no palette. */
-  perceived?: number;
+  /** The diner's own taste palette on this axis, 0-10; omitted when they have none. */
+  yours?: number;
 };
 
 type Props = {
@@ -21,15 +21,15 @@ type Props = {
 const clamp = (value: number) => Math.max(0, Math.min(10, value));
 
 /**
- * A radar (spider) chart of a dish's taste: a grey outline for the standard level everyone
- * shares and an orange shape for how it tastes to this diner.
+ * A radar (spider) chart of a dish's taste: the standard level from everyone's reviews and,
+ * when the diner has a palette, their own taste on top so the two shapes can be compared.
  */
 export function TasteRadarChart({ axes, size = 260 }: Props) {
-  const { palette, spacing } = useHungryTheme();
+  const { palette, spacing, typography } = useHungryTheme();
   const center = size / 2;
   // Room around the shape for the axis labels.
   const radius = size / 2 - 34;
-  const showPerceived = axes.some((axis) => axis.perceived !== undefined);
+  const showYours = axes.some((axis) => axis.yours !== undefined);
 
   const point = (index: number, distance: number) => {
     const angle = -Math.PI / 2 + (index * 2 * Math.PI) / axes.length;
@@ -54,7 +54,7 @@ export function TasteRadarChart({ axes, size = 260 }: Props) {
     .map(
       (axis) =>
         `${axis.label} ${axis.standard} out of 10` +
-        (axis.perceived !== undefined ? `, ${axis.perceived} for you` : ""),
+        (axis.yours !== undefined ? `, your taste ${axis.yours}` : ""),
     )
     .join("; ");
 
@@ -95,42 +95,47 @@ export function TasteRadarChart({ axes, size = 260 }: Props) {
               x={label.x}
               y={label.y + 4}
               fill={palette.textSecondary}
-              fontSize={12}
-              fontWeight="600"
+              fontFamily={typography.bodySmallBold.fontFamily}
+              fontSize={13}
               textAnchor="middle"
             >
               {axis.label}
             </SvgText>,
           ];
         })}
-        <Polygon
-          points={shape((axis) => axis.standard)}
-          fill={showPerceived ? "none" : palette.orangeLight}
-          stroke={showPerceived ? palette.textMuted : palette.orange}
-          strokeDasharray={showPerceived ? "4 3" : undefined}
-          strokeWidth={showPerceived ? 1.5 : 2.5}
-        />
-        {showPerceived ? (
+        {showYours ? (
           <Polygon
-            points={shape((axis) => axis.perceived ?? axis.standard)}
-            fill={palette.orange}
-            fillOpacity={0.18}
-            stroke={palette.orange}
-            strokeWidth={2.5}
+            points={shape((axis) => axis.yours ?? 0)}
+            fill={palette.text}
+            fillOpacity={0.06}
+            stroke={palette.textSecondary}
+            strokeDasharray="5 4"
+            strokeWidth={2}
           />
         ) : null}
+        <Polygon
+          points={shape((axis) => axis.standard)}
+          fill={palette.orange}
+          fillOpacity={0.16}
+          stroke={palette.orange}
+          strokeWidth={2.5}
+        />
         {axes.map((axis, index) => {
-          const value = showPerceived ? (axis.perceived ?? axis.standard) : axis.standard;
-          const { x, y } = point(index, (clamp(value) / 10) * radius);
+          const { x, y } = point(index, (clamp(axis.standard) / 10) * radius);
           return <Circle key={`${axis.key}-dot`} cx={x} cy={y} r={3.5} fill={palette.orange} />;
         })}
       </Svg>
-      {showPerceived ? (
-        <View style={{ flexDirection: "row", gap: spacing[4] }}>
-          <LegendItem color={palette.orange} label="For you" />
-          <LegendItem color={palette.textMuted} label="Standard" dashed />
-        </View>
-      ) : null}
+      <View
+        style={{
+          flexDirection: "row",
+          flexWrap: "wrap",
+          gap: spacing[4],
+          justifyContent: "center",
+        }}
+      >
+        <LegendItem color={palette.orange} label="This dish, from reviews" />
+        {showYours ? <LegendItem color={palette.textSecondary} label="Your taste" dashed /> : null}
+      </View>
     </View>
   );
 }

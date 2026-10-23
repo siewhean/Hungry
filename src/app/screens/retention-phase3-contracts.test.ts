@@ -80,8 +80,9 @@ test("Decide For Me offers backup picks and a Not for me swap", () => {
 
 test("dish pages can add to a list in production", () => {
   const source = read("src/app/screens/detail/DishDetailScreenV2.tsx");
-  // Saving to a collection lives in the action bar's hold menu.
-  assert.match(source, /FEATURE_FLAGS\.portfoliosEnabled\s*\?\s*\[/);
-  assert.match(source, /accessibilityLabel: "Save this dish to a collection"/);
+  // Saving to a collection lives in the Save button's hold menu: your collections plus New.
+  assert.match(source, /FEATURE_FLAGS\.portfoliosEnabled\s*\?\s*\{[\s\S]*?holdTitle: "Save to"/);
+  assert.match(source, /onPress: \(\) => void togglePortfolio\(option\)/);
+  assert.match(source, /accessibilityLabel: "Save to a new collection"/);
   assert.match(source, /addToPortfolio\(\)/);
 });

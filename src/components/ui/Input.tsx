@@ -6,11 +6,14 @@ import {
   TextInput,
   View,
   type TextInputProps,
+  type TextStyle,
 } from "react-native";
 
 import { useHungryTheme } from "@/theme";
 import { AppText } from "./AppText";
 import { useMovingSearchPlaceholder } from "@/features/search/useMovingSearchPlaceholder";
+
+const WEB_NO_OUTLINE = { outlineStyle: "none", outlineWidth: 0 } as unknown as TextStyle;
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -49,6 +52,8 @@ export const Input = forwardRef<TextInput, InputProps>(
       autoComplete,
       allowFontScaling,
       maxFontSizeMultiplier,
+      onFocus,
+      onBlur,
       ...props
     },
     ref,
@@ -67,6 +72,7 @@ export const Input = forwardRef<TextInput, InputProps>(
     const resolvedAutoCorrect = autoCorrect ?? !isSecureField;
     const resolvedSpellCheck = spellCheck ?? !isSecureField;
     const [isScreenReaderEnabled, setIsScreenReaderEnabled] = useState(false);
+    const [isFocused, setIsFocused] = useState(false);
     useEffect(() => {
       let mounted = true;
       void AccessibilityInfo.isScreenReaderEnabled().then((enabled) => {
@@ -109,7 +115,7 @@ export const Input = forwardRef<TextInput, InputProps>(
             styles.field,
             {
               backgroundColor: palette.surface,
-              borderColor: error ? palette.error : palette.border,
+              borderColor: error ? palette.error : isFocused ? palette.orange : palette.border,
               borderRadius: componentRadii.input,
               borderCurve: componentCornerCurve.borderCurve,
               gap: spacing[2],
@@ -142,9 +148,19 @@ export const Input = forwardRef<TextInput, InputProps>(
                 minHeight: componentSizes.inputMinHeight,
                 paddingVertical: spacing[3],
               },
+              // The field's own rounded border already shows focus; drop the browser's square outline.
+              Platform.OS === "web" ? WEB_NO_OUTLINE : null,
               style,
             ]}
             {...props}
+            onFocus={(event) => {
+              setIsFocused(true);
+              onFocus?.(event);
+            }}
+            onBlur={(event) => {
+              setIsFocused(false);
+              onBlur?.(event);
+            }}
           />
           {rightIcon ? (
             <View style={[styles.iconWrap, { minHeight: componentSizes.touchTarget }]}>

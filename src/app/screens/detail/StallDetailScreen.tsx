@@ -93,10 +93,8 @@ import { useProfileStore } from "@/store/useProfileStore";
 import { useSocialStore } from "@/store/useSocialStore";
 import { PopularVisitorsSection } from "@/components/stall/PopularVisitorsSection";
 import { StallInteractionBar } from "@/components/stall/StallInteractionBar";
-import { FollowStallButton } from "@/components/stall/FollowStallButton";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useSessionStore } from "@/store/useSessionStore";
-import { followStallAfterSignIn } from "@/features/auth/finishGuestAction";
 import { useRequireAccount } from "@/features/auth/useRequireAccount";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -1261,25 +1259,152 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     {openInfo.closureNotice}
                   </AppText>
                 ) : null}
-                {deliveryLinks.length > 0 ? (
-                  <DeliveryButtonRow links={deliveryLinks} venueId={venue.id} />
-                ) : null}
               </View>
-              {/* Follow: a guest's tap goes through sign-in. */}
-              {showDeferredDetailControls && venue ? (
-                <FollowStallButton
-                  stallId={venue.id}
-                  stallName={venue.name}
-                  isAuthenticated={isAuthenticated}
-                  onRequireAuth={() =>
-                    requireAuthForProtectedAction(
-                      `Sign in to follow ${venue.name}`,
-                      () => void followStallAfterSignIn(venue.id),
-                    )
-                  }
-                  onOpenAppSettings={() => navigation.navigate("Settings")}
-                />
-              ) : null}
+              {/* About first: the owner's words, then hours and address, above the menu. */}
+              <Card style={{ gap: spacing[4], padding: spacing[4] }}>
+                {merchantProfile &&
+                (merchantProfile.description ||
+                  merchantProfile.cuisineCategories.length > 0 ||
+                  merchantWebLinks.length > 0) ? (
+                  <View
+                    style={{
+                      borderBottomColor: palette.border,
+                      borderBottomWidth: 1,
+                      gap: spacing[2],
+                      paddingBottom: spacing[3],
+                    }}
+                  >
+                    <AppText variant="bodyBold">From the owner</AppText>
+                    {merchantProfile.isVerified ? (
+                      <AppText variant="micro" style={{ color: palette.success }}>
+                        ✓ Verified by Hungry
+                      </AppText>
+                    ) : null}
+                    {merchantProfile.description ? (
+                      <AppText variant="body" tone="secondary">
+                        {merchantProfile.description}
+                      </AppText>
+                    ) : null}
+                    {merchantProfile.cuisineCategories.length > 0 ? (
+                      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+                        {merchantProfile.cuisineCategories.map((category) => (
+                          <Chip key={category} label={category} />
+                        ))}
+                      </View>
+                    ) : null}
+                    {merchantWebLinks.map((link) => (
+                      <Pressable
+                        key={`${link.platform}:${link.url}`}
+                        accessibilityRole="link"
+                        accessibilityLabel={`Open ${venue.name} ${link.platform}`}
+                        onPress={() => openMerchantWebLink(link.platform, link.url)}
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: spacing[2],
+                          minHeight: 44,
+                        }}
+                      >
+                        <Globe color={palette.orange} size={16} />
+                        <AppText variant="body" numberOfLines={1} style={{ flex: 1 }}>
+                          {formatMenuCategoryLabel(link.platform)}
+                        </AppText>
+                      </Pressable>
+                    ))}
+                  </View>
+                ) : null}
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Opening hours, ${operatingStatusLabel}`}
+                  accessibilityHint={hoursExpanded ? "Hides the week" : "Shows every day's hours"}
+                  accessibilityState={{ expanded: hoursExpanded }}
+                  disabled={hoursRows.length === 0}
+                  onPress={() => setHoursExpanded((open) => !open)}
+                  style={({ pressed }) => ({ gap: spacing[1.5], opacity: pressed ? 0.75 : 1 })}
+                >
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
+                    <Clock3 color={palette.orange} size={18} />
+                    <View style={{ flex: 1, gap: spacing[0.5] }}>
+                      <AppText variant="bodyBold" tone={openInfo.isOpen ? "success" : "default"}>
+                        {operatingStatusLabel}
+                      </AppText>
+                      {openInfo.todayRows.length > 0 ? (
+                        <AppText variant="bodySmall" tone="secondary">
+                          {openInfo.todayRows[0].label}: {openInfo.todayRows[0].text}
+                        </AppText>
+                      ) : null}
+                    </View>
+                    {hoursRows.length > 0 ? (
+                      <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
+                        <AppText variant="bodySmallBold" tone="accent">
+                          {hoursExpanded ? "Hide" : "All hours"}
+                        </AppText>
+                        {hoursExpanded ? (
+                          <ChevronUp color={palette.orange} size={16} />
+                        ) : (
+                          <ChevronDown color={palette.orange} size={16} />
+                        )}
+                      </View>
+                    ) : null}
+                  </View>
+                  {hoursExpanded
+                    ? hoursRows.map((row) => {
+                        const isToday = openInfo.todayRows.some(
+                          (today) => today.label === row.label,
+                        );
+                        return (
+                          <View
+                            key={`${row.label}-${row.text}`}
+                            style={{
+                              flexDirection: "row",
+                              justifyContent: "space-between",
+                              paddingLeft: spacing[6],
+                            }}
+                          >
+                            <AppText
+                              variant={isToday ? "bodySmallBold" : "bodySmall"}
+                              tone={isToday ? "default" : "secondary"}
+                            >
+                              {row.label}
+                            </AppText>
+                            <AppText
+                              variant={isToday ? "bodySmallBold" : "bodySmall"}
+                              tone={isToday ? "default" : "secondary"}
+                            >
+                              {row.text}
+                            </AppText>
+                          </View>
+                        );
+                      })
+                    : null}
+                </Pressable>
+
+                <View
+                  style={{
+                    borderTopColor: palette.border,
+                    borderTopWidth: 1,
+                    gap: spacing[1.5],
+                    paddingTop: spacing[3],
+                  }}
+                >
+                  <AppText variant="bodyBold">Address</AppText>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Open maps for ${stallAddress}`}
+                    onPress={openStallMaps}
+                    style={({ pressed }) => [{ minHeight: 44, opacity: pressed ? 0.8 : 1 }]}
+                  >
+                    <View
+                      style={{ alignItems: "flex-start", flexDirection: "row", gap: spacing[2] }}
+                    >
+                      <MapPin color={palette.orange} size={18} />
+                      <AppText variant="body" tone="secondary" style={{ flex: 1 }}>
+                        {stallAddress}
+                      </AppText>
+                    </View>
+                  </Pressable>
+                </View>
+              </Card>
               {/* Menu */}
               <View onLayout={handleMenuSectionLayout} style={{ gap: spacing[4] }}>
                 <View style={{ gap: spacing[1] }}>
@@ -1425,152 +1550,6 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   ))}
                 </View>
               ) : null}
-              {/* Info: hours, address and the owner's words in one compact card */}
-              <Card style={{ gap: spacing[4], padding: spacing[4] }}>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Opening hours, ${operatingStatusLabel}`}
-                  accessibilityHint={hoursExpanded ? "Hides the week" : "Shows every day's hours"}
-                  accessibilityState={{ expanded: hoursExpanded }}
-                  disabled={hoursRows.length === 0}
-                  onPress={() => setHoursExpanded((open) => !open)}
-                  style={({ pressed }) => ({ gap: spacing[1.5], opacity: pressed ? 0.75 : 1 })}
-                >
-                  <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
-                    <Clock3 color={palette.orange} size={18} />
-                    <View style={{ flex: 1, gap: spacing[0.5] }}>
-                      <AppText variant="bodyBold" tone={openInfo.isOpen ? "success" : "default"}>
-                        {operatingStatusLabel}
-                      </AppText>
-                      {openInfo.todayRows.length > 0 ? (
-                        <AppText variant="bodySmall" tone="secondary">
-                          {openInfo.todayRows[0].label}: {openInfo.todayRows[0].text}
-                        </AppText>
-                      ) : null}
-                    </View>
-                    {hoursRows.length > 0 ? (
-                      <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
-                        <AppText variant="bodySmallBold" tone="accent">
-                          {hoursExpanded ? "Hide" : "All hours"}
-                        </AppText>
-                        {hoursExpanded ? (
-                          <ChevronUp color={palette.orange} size={16} />
-                        ) : (
-                          <ChevronDown color={palette.orange} size={16} />
-                        )}
-                      </View>
-                    ) : null}
-                  </View>
-                  {hoursExpanded
-                    ? hoursRows.map((row) => {
-                        const isToday = openInfo.todayRows.some(
-                          (today) => today.label === row.label,
-                        );
-                        return (
-                          <View
-                            key={`${row.label}-${row.text}`}
-                            style={{
-                              flexDirection: "row",
-                              justifyContent: "space-between",
-                              paddingLeft: spacing[6],
-                            }}
-                          >
-                            <AppText
-                              variant={isToday ? "bodySmallBold" : "bodySmall"}
-                              tone={isToday ? "default" : "secondary"}
-                            >
-                              {row.label}
-                            </AppText>
-                            <AppText
-                              variant={isToday ? "bodySmallBold" : "bodySmall"}
-                              tone={isToday ? "default" : "secondary"}
-                            >
-                              {row.text}
-                            </AppText>
-                          </View>
-                        );
-                      })
-                    : null}
-                </Pressable>
-
-                <View
-                  style={{
-                    borderTopColor: palette.border,
-                    borderTopWidth: 1,
-                    gap: spacing[1.5],
-                    paddingTop: spacing[3],
-                  }}
-                >
-                  <AppText variant="bodyBold">Address</AppText>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={`Open maps for ${stallAddress}`}
-                    onPress={openStallMaps}
-                    style={({ pressed }) => [{ minHeight: 44, opacity: pressed ? 0.8 : 1 }]}
-                  >
-                    <View
-                      style={{ alignItems: "flex-start", flexDirection: "row", gap: spacing[2] }}
-                    >
-                      <MapPin color={palette.orange} size={18} />
-                      <AppText variant="body" tone="secondary" style={{ flex: 1 }}>
-                        {stallAddress}
-                      </AppText>
-                    </View>
-                  </Pressable>
-                </View>
-
-                {merchantProfile &&
-                (merchantProfile.description ||
-                  merchantProfile.cuisineCategories.length > 0 ||
-                  merchantWebLinks.length > 0) ? (
-                  <View
-                    style={{
-                      borderTopColor: palette.border,
-                      borderTopWidth: 1,
-                      gap: spacing[2],
-                      paddingTop: spacing[3],
-                    }}
-                  >
-                    <AppText variant="bodyBold">From the owner</AppText>
-                    {merchantProfile.isVerified ? (
-                      <AppText variant="micro" style={{ color: palette.success }}>
-                        ✓ Verified by Hungry
-                      </AppText>
-                    ) : null}
-                    {merchantProfile.description ? (
-                      <AppText variant="body" tone="secondary">
-                        {merchantProfile.description}
-                      </AppText>
-                    ) : null}
-                    {merchantProfile.cuisineCategories.length > 0 ? (
-                      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-                        {merchantProfile.cuisineCategories.map((category) => (
-                          <Chip key={category} label={category} />
-                        ))}
-                      </View>
-                    ) : null}
-                    {merchantWebLinks.map((link) => (
-                      <Pressable
-                        key={`${link.platform}:${link.url}`}
-                        accessibilityRole="link"
-                        accessibilityLabel={`Open ${venue.name} ${link.platform}`}
-                        onPress={() => openMerchantWebLink(link.platform, link.url)}
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          gap: spacing[2],
-                          minHeight: 44,
-                        }}
-                      >
-                        <Globe color={palette.orange} size={16} />
-                        <AppText variant="body" numberOfLines={1} style={{ flex: 1 }}>
-                          {formatMenuCategoryLabel(link.platform)}
-                        </AppText>
-                      </Pressable>
-                    ))}
-                  </View>
-                ) : null}
-              </Card>
               {merchantProfile?.contactPhone || merchantProfile?.contactEmail ? (
                 <Card style={{ gap: spacing[1], padding: spacing[4] }}>
                   <AppText variant="bodyBold">Contact details</AppText>
@@ -1597,6 +1576,14 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     />
                   ) : null}
                 </Card>
+              ) : null}
+              {deliveryLinks.length > 0 ? (
+                <View style={{ gap: spacing[2] }}>
+                  <AppText variant="bodySmallBold" tone="secondary">
+                    ORDER ON
+                  </AppText>
+                  <DeliveryButtonRow links={deliveryLinks} venueId={venue.id} />
+                </View>
               ) : null}
               {showDeferredDetailControls && FEATURE_FLAGS.socialFeedEnabled ? (
                 <PopularVisitorsSection venueId={venue.id} horizontalPadding={0} />

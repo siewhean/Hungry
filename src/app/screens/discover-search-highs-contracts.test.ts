@@ -29,8 +29,17 @@ test("Discover asks for an area instead of asserting the default location", () =
   // No OS permission prompt on mount; only the "Use current location" press asks.
   assert.doesNotMatch(screen, /useEffect\(\(\) => \{[^}]*grantLocation\(/);
   assert.match(screen, /const handleUseCurrentLocation = useCallback\(async \(\) => \{/);
-  assert.match(screen, /needsDiscoverAreaChoice\s*\?\s*"Singapore"/);
-  assert.match(screen, /`You are at \$\{discoverHeaderLabel\}`/);
+  // Owner decision (round 3): always an area, never just "Singapore"; the area is in orange.
+  assert.doesNotMatch(screen, /needsDiscoverAreaChoice\s*\?\s*"Singapore"/);
+  assert.match(
+    screen,
+    /getNearestSingaporeArea\(discoverLocationLatitude, discoverLocationLongitude\)/,
+  );
+  assert.match(screen, /You are at\s*<\/AppText>/);
+  assert.match(
+    screen,
+    /style=\{\{ color: palette\.orange \}\} numberOfLines=\{1\}>\s*\{discoverHeaderLabel\}/,
+  );
   assert.match(
     screen,
     /navigation\.navigate\("OnboardingStack", \{ screen: "ManualLocationPicker" \}\)/,

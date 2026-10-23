@@ -7,6 +7,7 @@ import { openTrustedDeliveryUrl } from "@/lib/security/safeLinking";
 import type { DeliveryLink } from "@/types/domain";
 import { useHungryTheme } from "@/theme";
 import { AppText } from "../ui";
+import { DeliveryBrandLogo, hasDeliveryBrandLogo } from "./DeliveryBrandLogo";
 
 interface DeliveryPlatformButtonProps {
   link: DeliveryLink;
@@ -79,7 +80,11 @@ export function DeliveryPlatformButton({
           },
         ]}
       >
-        <View style={[styles.dot, { backgroundColor: meta.color }]} />
+        {hasDeliveryBrandLogo(link.platform) ? (
+          <DeliveryBrandLogo platform={link.platform} color={meta.color} size={16} />
+        ) : (
+          <View style={[styles.dot, { backgroundColor: meta.color }]} />
+        )}
         <AppText variant="bodySmallBold" numberOfLines={1}>
           {meta.label.replace("Order on ", "")}
         </AppText>
@@ -109,6 +114,9 @@ export function DeliveryPlatformButton({
       ]}
     >
       <View style={styles.row}>
+        {knownPlatform ? (
+          <DeliveryBrandLogo platform={link.platform} color={knownPlatform.textColor} size={22} />
+        ) : null}
         <AppText
           variant="bodyBold"
           tone={knownPlatform ? undefined : "default"}

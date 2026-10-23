@@ -70,8 +70,10 @@ test("detail-M8: stall and dish heroes are swipeable photo pagers with a full-sc
 test("detail-M10/L1/L19: reviews can be reported, blocked and open their author", () => {
   const actions = readRepoFile("src/components/review/ReviewReaderActions.tsx");
 
-  // Owner decision (round 2): no Helpful vote on review cards.
-  assert.doesNotMatch(actions, /setReviewHelpful|ThumbsUp/);
+  // Owner decision (round 3): a heart like (stored as the helpful vote); hold it to report.
+  assert.doesNotMatch(actions, /ThumbsUp|MoreHorizontal/);
+  assert.match(actions, /setReviewHelpful/);
+  assert.match(actions, /onLongPress=\{openSafetyActions\}/);
   assert.match(actions, /promptReviewSafetyActions/);
   assert.match(readRepoFile("src/components/review/index.ts"), /ReviewReaderActions/);
   for (const source of [stall, dish]) {
@@ -189,6 +191,6 @@ test("detail-L15/L22/L23: copy and dead ends", () => {
   assert.doesNotMatch(offline, /queued|will be sent when/i);
   assert.match(raw, /goBackOrHome/);
   assert.match(raw, /Open stall page/);
-  assert.match(dish, /<AppText variant="h2">Community Palate Feedback<\/AppText>/);
+  assert.match(dish, /<AppText variant="h2">Reviews<\/AppText>/);
   assert.match(stall, /<AppText variant="h2">Community Highlights<\/AppText>/);
 });

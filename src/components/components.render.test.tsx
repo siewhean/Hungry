@@ -13,6 +13,8 @@ import { TrendingList } from "@/components/discover/TrendingList";
 import { WhatsHerePanel } from "@/components/discover/WhatsHerePanel";
 import { DetailActionBar } from "@/components/detail/DetailActionBar";
 import { FloatingBackButton } from "@/components/detail/FloatingBackButton";
+import { DeliveryBrandLogo, hasDeliveryBrandLogo } from "@/components/dish/DeliveryBrandLogo";
+import { SingaporeAreaMap } from "@/components/location/SingaporeAreaMap";
 import { HeritageStampTile } from "@/components/gamification/HeritageStampTile";
 import {
   CollectionAlbumCard,
@@ -494,25 +496,79 @@ test("DetailActionBar presses the right action and marks the active one", async 
   assert.deepEqual(pressed, ["save", "tried"]);
 });
 
-test("DetailActionBar opens the secondary menu and runs the orange call to action", async () => {
+async function holdDown(view: Awaited<ReturnType<typeof render>>, target: HTMLElement | null) {
+  assert.ok(target, "hold target not found");
+  const init = { bubbles: true, cancelable: true, button: 0 };
+  const PointerCtor = (window as unknown as { PointerEvent?: typeof MouseEvent }).PointerEvent;
+  const down = PointerCtor
+    ? new PointerCtor("pointerdown", init)
+    : new window.MouseEvent("mousedown", init);
+  target.dispatchEvent(down);
+  await new Promise((resolve) => setTimeout(resolve, 600));
+  const up = PointerCtor
+    ? new PointerCtor("pointerup", init)
+    : new window.MouseEvent("mouseup", init);
+  target.dispatchEvent(up);
+  await view.settle();
+}
+
+test("DetailActionBar opens More, a held button's own menu, and the call to action", async () => {
   const pressed: string[] = [];
   const view = await render(
     createElement(DetailActionBar, {
       actions: [
-        { id: "like", label: "Like", icon: () => null, onPress: () => pressed.push("like") },
+        {
+          id: "tried",
+          label: "Tried",
+          icon: () => null,
+          onPress: () => pressed.push("tried"),
+          holdTitle: "Have you tried it?",
+          holdOptions: [
+            { id: "yes", label: "Tried", selected: true, onPress: () => pressed.push("yes") },
+            { id: "no", label: "Not tried", onPress: () => pressed.push("no") },
+          ],
+        },
       ],
       secondaryActions: [
-        { id: "share", label: "Share", icon: () => null, onPress: () => pressed.push("share") },
+        { id: "like", label: "Like", icon: () => null, onPress: () => pressed.push("like") },
       ],
       cta: { label: "Review", onPress: () => pressed.push("review") },
     }),
   );
   assert.match(view.text(), /Review/);
+  // Nothing extra shows until a button is held or More is tapped.
+  assert.doesNotMatch(view.text(), /Not tried|Like/);
   await view.press(view.findByLabel("More actions"));
-  assert.match(view.text(), /Share/);
-  await view.press(view.findByLabel("Share"));
+  assert.match(view.text(), /Like/);
+  await view.press(view.findByLabel("Like"));
+
+  await holdDown(view, view.findByLabel("Tried"));
+  assert.match(view.text(), /Have you tried it\?/);
+  await view.press(view.findByLabel("Not tried"));
   await view.press(view.findByLabel("Review"));
-  assert.deepEqual(pressed, ["share", "review"]);
+  assert.deepEqual(pressed, ["like", "no", "review"]);
+});
+
+test("SingaporeAreaMap names the highlighted area for screen readers", async () => {
+  const view = await render(
+    createElement(SingaporeAreaMap, {
+      width: 320,
+      highlighted: ["Bedok"],
+      pin: { latitude: 1.3236, longitude: 103.9273 },
+    }),
+  );
+  assert.ok(view.findByLabel("Map of Singapore with Bedok highlighted"));
+  await view.unmount();
+  const plain = await render(createElement(SingaporeAreaMap, { width: 320 }));
+  assert.ok(plain.findByLabel("Map of Singapore by area"));
+});
+
+test("DeliveryBrandLogo draws Grab and foodpanda marks only", async () => {
+  assert.equal(hasDeliveryBrandLogo("grabfood"), true);
+  assert.equal(hasDeliveryBrandLogo("foodpanda"), true);
+  assert.equal(hasDeliveryBrandLogo("deliveroo"), false);
+  assert.equal(DeliveryBrandLogo({ platform: "deliveroo", color: "#000" }), null);
+  assert.notEqual(DeliveryBrandLogo({ platform: "grabfood", color: "#000" }), null);
 });
 
 test("FloatingBackButton is a labelled back button", async () => {
@@ -522,22 +578,23 @@ test("FloatingBackButton is a labelled back button", async () => {
   assert.equal(backs, 1);
 });
 
-test("TasteRadarChart describes every axis and shows the legend only with a palette", async () => {
+test("TasteRadarChart shows the dish from reviews and adds your taste only with a palette", async () => {
   const axes = [
-    { key: "spicy", label: "Spicy", standard: 7, perceived: 9 },
-    { key: "sweet", label: "Sweet", standard: 2, perceived: 1 },
-    { key: "rich", label: "Rich", standard: 5, perceived: 5 },
+    { key: "spicy", label: "Spicy", standard: 7, yours: 9 },
+    { key: "sweet", label: "Sweet", standard: 2, yours: 1 },
+    { key: "rich", label: "Rich", standard: 5, yours: 5 },
   ];
   const withPalette = await render(createElement(TasteRadarChart, { axes }));
 
-  assert.match(withPalette.text(), /For you/);
+  assert.match(withPalette.text(), /Your taste/);
+  assert.match(withPalette.text(), /This dish, from reviews/);
   await withPalette.unmount();
   const plain = await render(
     createElement(TasteRadarChart, {
       axes: axes.map(({ key, label, standard }) => ({ key, label, standard })),
     }),
   );
-  assert.doesNotMatch(plain.text(), /For you/);
+  assert.doesNotMatch(plain.text(), /Your taste/);
 });
 
 test("CaptionPreview folds a long caption to a preview with ...more", async () => {

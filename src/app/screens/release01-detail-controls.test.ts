@@ -28,15 +28,12 @@ test("core-only builds keep detail controls read-only despite targeted feature o
   const stall = read("src/app/screens/detail/StallDetailScreen.tsx");
 
   assert.match(dish, /const showDeferredDetailControls = !FEATURE_FLAGS\.release01CoreOnly/);
-  // Like, Save, Share and Tried are added to the bottom bar only when deferred controls are on.
+  // Share, Tried, Save and Like are added to the bottom bar only when deferred controls are on.
   assert.match(
     dish,
-    /\.\.\.\(showDeferredDetailControls\s*\? \[[\s\S]*?accessibilityLabel: "Tried"/,
+    /const barActions: DetailAction\[\] = showDeferredDetailControls\s*\? \[[\s\S]*?accessibilityLabel: `Share \$\{dish\.name\}`[\s\S]*?accessibilityLabel: "Tried"/,
   );
-  assert.match(
-    dish,
-    /\.\.\.\(showDeferredDetailControls\s*\? \[[\s\S]*?accessibilityLabel: `Share \$\{dish\.name\}`/,
-  );
+  assert.match(dish, /\.\.\.\(showDeferredDetailControls\s*\? \[[\s\S]*?id: "like"/);
   assert.match(dish, /\{showDeferredDetailControls \? \([\s\S]*?<ReviewShareSheet/);
   assert.match(
     dish,

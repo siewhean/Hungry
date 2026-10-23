@@ -1,10 +1,20 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { ActivityIndicator, Pressable, ScrollView, TextInput, View } from "react-native";
+import {
+  ActivityIndicator,
+  Platform,
+  Pressable,
+  ScrollView,
+  TextInput,
+  View,
+  useWindowDimensions,
+  type TextStyle,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ArrowLeft, Building2, LocateFixed, MapPin, Search, X } from "lucide-react-native";
+import { ArrowLeft, Building2, Check, LocateFixed, MapPin, Search, X } from "lucide-react-native";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 
-import { AppText } from "@/components/ui";
+import { SingaporeAreaMap } from "@/components/location/SingaporeAreaMap";
+import { AppText, Button } from "@/components/ui";
 import {
   AREA_SEARCH_MIN_CHARS,
   buildAreaSearchResults,
@@ -12,6 +22,7 @@ import {
   type AreaSearchPlace,
   type AreaSearchResult,
 } from "@/features/location/areaSearch";
+import { planningAreasFor } from "@/features/location/singaporeAreaMap";
 import { selectHaptic } from "@/lib/haptics";
 import { searchOneMapAddresses, type OneMapAddress } from "@/lib/geo/oneMap";
 import { reportError } from "@/lib/monitoring/reportError";
@@ -27,6 +38,8 @@ import { SORTED_SINGAPORE_AREAS } from "./singaporeAreas";
 type Props = NativeStackScreenProps<OnboardingStackParamList, "ManualLocationPicker">;
 
 const SEARCH_DEBOUNCE_MS = 300;
+// The field's rounded border already frames it; drop the browser's square focus outline.
+const WEB_NO_OUTLINE = { outlineStyle: "none", outlineWidth: 0 } as unknown as TextStyle;
 
 /**
  * Where the diner is, by search only: an area, a mall / hawker centre / food court, or an
@@ -51,6 +64,11 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
     items: [],
   });
   const [isSearching, setIsSearching] = useState(false);
+  const [selected, setSelected] = useState<AreaSearchResult | null>(null);
+  const manualLocation = useLocationStore((state) => state.manualLocation);
+  const manualCoordinate = useLocationStore((state) => state.manualCoordinate);
+  const { width: windowWidth } = useWindowDimensions();
+  const mapWidth = Math.min(windowWidth, 560) - spacing[4] * 2;
   const isOnboarding = !isSettingsMode && !hasCompletedOnboarding;
   const trimmedQuery = query.trim();
 
@@ -115,11 +133,23 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
     navigation.navigate("TasteQuiz");
   };
 
+  // A tap shows the choice on the map first; "Set as my location" saves it.
   const choose = (result: AreaSearchResult) => {
     selectHaptic();
-    setManualSelection(result.areaName, result.coordinate, result.placeName);
-    finish(`You are at ${result.placeName ?? result.areaName}.`);
+    setSelected(result);
   };
+  const confirm = () => {
+    if (!selected) return;
+    selectHaptic();
+    setManualSelection(selected.areaName, selected.coordinate, selected.placeName);
+    finish(`You are at ${selected.placeName ?? selected.areaName}.`);
+  };
+  const mapArea = selected
+    ? planningAreasFor(selected.areaName, selected.coordinate)
+    : manualLocation
+      ? planningAreasFor(manualLocation, manualCoordinate ?? undefined)
+      : [];
+  const mapPin = selected && selected.kind !== "area" ? selected.coordinate : undefined;
 
   const chooseCurrentLocation = async () => {
     selectHaptic();
@@ -196,7 +226,10 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
               placeholder="Area, mall, hawker centre or address"
               placeholderTextColor={palette.textMuted}
               returnKeyType="search"
-              style={{ color: palette.text, flex: 1, fontSize: 16, height: 46 }}
+              style={[
+                { color: palette.text, flex: 1, fontSize: 16, height: 46 },
+                Platform.OS === "web" ? WEB_NO_OUTLINE : null,
+              ]}
               value={query}
             />
             {isSearching ? <ActivityIndicator color={palette.orange} size="small" /> : null}
@@ -231,17 +264,6 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
             onPress={() => void chooseCurrentLocation()}
           />
 
-          {trimmedQuery.length < AREA_SEARCH_MIN_CHARS ? (
-            <AppText
-              variant="bodySmall"
-              tone="secondary"
-              style={{ paddingHorizontal: spacing[1], paddingTop: spacing[4] }}
-            >
-              Search for a neighbourhood like Tiong Bahru, a place like Maxwell Food Centre or JEM,
-              or a street or postal code. An address shows the area it is in.
-            </AppText>
-          ) : null}
-
           {results.map((result) => (
             <ResultRow
               key={result.key}
@@ -255,6 +277,7 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
               title={result.title}
               subtitle={result.subtitle}
               accessibilityLabel={`Choose ${result.title}`}
+              selected={selected?.key === result.key}
               onPress={() => choose(result)}
             />
           ))}
@@ -265,6 +288,20 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
             </AppText>
           ) : null}
         </ScrollView>
+
+        <View style={{ alignItems: "center", gap: spacing[3], paddingBottom: spacing[3] }}>
+          <SingaporeAreaMap width={mapWidth} highlighted={mapArea} pin={mapPin} />
+          {selected ? (
+            <View style={{ alignSelf: "stretch", gap: spacing[1] }}>
+              <AppText variant="bodySmall" tone="secondary" style={{ textAlign: "center" }}>
+                {selected.placeName
+                  ? `${selected.placeName}, ${selected.areaName}`
+                  : selected.areaName}
+              </AppText>
+              <Button label="Set as my location" onPress={confirm} />
+            </View>
+          ) : null}
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -275,12 +312,14 @@ function ResultRow({
   title,
   subtitle,
   accessibilityLabel,
+  selected = false,
   onPress,
 }: {
   icon: ReactNode;
   title: string;
   subtitle: string;
   accessibilityLabel: string;
+  selected?: boolean;
   onPress: () => void;
 }) {
   const { palette, radii, spacing } = useHungryTheme();
@@ -288,10 +327,11 @@ function ResultRow({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
+      accessibilityState={{ selected }}
       onPress={onPress}
       style={({ pressed }) => ({
         alignItems: "center",
-        backgroundColor: pressed ? palette.bgSoft : "transparent",
+        backgroundColor: selected ? palette.orangeLight : pressed ? palette.bgSoft : "transparent",
         borderRadius: radii.md,
         flexDirection: "row",
         gap: spacing[3],
@@ -320,6 +360,7 @@ function ResultRow({
           {subtitle}
         </AppText>
       </View>
+      {selected ? <Check color={palette.orange} size={18} /> : null}
     </Pressable>
   );
 }

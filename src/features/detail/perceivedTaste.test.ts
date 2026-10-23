@@ -83,11 +83,12 @@ test("radar axes cover every taste and add the diner's level only with a palette
   const dish = { ...NEUTRAL_TASTE_VECTOR, spicy: 8, sweet: 2 };
   const plain = perceivedTasteAxes(dish, undefined);
   assert.equal(plain.length, Object.keys(NEUTRAL_TASTE_VECTOR).length);
-  assert.ok(plain.every((axis) => axis.perceived === undefined));
+  assert.ok(plain.every((axis) => axis.yours === undefined));
   assert.equal(plain.find((axis) => axis.key === "spicy")?.standard, 8);
   const forDiner = perceivedTasteAxes(dish, { ...NEUTRAL_TASTE_VECTOR, spicy: 2 });
   const spicy = forDiner.find((axis) => axis.key === "spicy");
-  assert.ok(spicy?.perceived !== undefined && spicy.perceived > 8);
+  assert.equal(spicy?.yours, 2);
+  assert.equal(spicy?.standard, 8);
   assert.equal(
     perceivedTasteSentence({
       key: "sweet",

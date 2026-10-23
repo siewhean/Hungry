@@ -21,7 +21,7 @@ test("Stitch stall layout keeps catalogue and review evidence dynamic", () => {
 test("Stitch dish layout keeps taste, rating, price, and menu data dynamic", () => {
   assert.match(dish, /<FloatingBackButton/);
   assert.match(dish, /How it tastes to you/);
-  assert.match(dish, /Community Palate Feedback/);
+  assert.match(dish, /<AppText variant="h2">Reviews<\/AppText>/);
   assert.match(dish, /dish\.mustOrder\s*\?/);
   assert.match(dish, /hasTasteSignal\s*\?/);
   assert.match(dish, /perceivedTasteRows\(dish\.tasteVector, profile\.tasteVector\)/);
