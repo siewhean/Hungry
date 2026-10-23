@@ -25,7 +25,7 @@ export function DeliveryBrandLogo({
   const d = BRAND_LOGO_PATHS[platform];
   if (!d) return null;
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" accessible={false}>
+    <Svg width={size} height={size} viewBox="0 0 24 24">
       <Path d={d} fill={color} />
     </Svg>
   );
