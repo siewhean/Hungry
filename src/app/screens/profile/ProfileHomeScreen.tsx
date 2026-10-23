@@ -801,7 +801,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
               tone="secondary"
               style={{ fontWeight: "700", letterSpacing: 1 }}
             >
-              SINGAPORE FOODIE PASSPORT
+              {gamificationEnabled ? "SINGAPORE FOODIE PASSPORT" : "MY PROFILE"}
             </AppText>
           </View>
           <Pressable
@@ -951,13 +951,16 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                 onPress={handleReviewsCardPress}
               />
             ) : null}
-            <StatBlock
-              label="Badges"
-              value={earnedBadgeCount}
-              icon={<Trophy size={14} color={palette.success} />}
-              onPressIn={() => preloadRoute(rootNavigation, "PassportScreen")}
-              onPress={() => rootNavigation.navigate("PassportScreen")}
-            />
+            {/* PassportScreen is only registered while gamification is on. */}
+            {gamificationEnabled ? (
+              <StatBlock
+                label="Badges"
+                value={earnedBadgeCount}
+                icon={<Trophy size={14} color={palette.success} />}
+                onPressIn={() => preloadRoute(rootNavigation, "PassportScreen")}
+                onPress={() => rootNavigation.navigate("PassportScreen")}
+              />
+            ) : null}
           </View>
           {gamificationEnabled ? (
             <Pressable
@@ -1124,6 +1127,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                   <TasteRadar vector={profile.tasteVector} />
                   <Button
                     label="Recalibrate Taste Vector"
+                    variant="secondary"
                     onPress={() =>
                       rootNavigation.navigate("OnboardingStack", {
                         screen: "TasteQuiz",

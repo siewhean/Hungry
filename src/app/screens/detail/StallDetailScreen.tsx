@@ -1210,11 +1210,15 @@ export function StallDetailScreen({ navigation, route }: Props) {
                 ) : null}
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
                   {stallAddress || stallPin ? (
-                    <Chip
+                    // Primary: the one filled control above the menu; Call, Follow and Save stay quiet.
+                    <Button
                       label="Directions"
                       accessibilityLabel={`Directions to ${venue.name}`}
-                      leftIcon={<Navigation color={palette.orange} size={14} />}
+                      leftIcon={<Navigation color={palette.textOnOrange} size={16} />}
+                      size="sm"
+                      fullWidth={false}
                       onPress={openStallMaps}
+                      style={{ minHeight: 44 }}
                     />
                   ) : null}
                   {merchantProfile?.contactPhone ? (

@@ -152,15 +152,17 @@ export function ReviewHistoryScreen({ navigation }: Props) {
           </AppText>
           <AppText variant="h2">Foodie Footprint</AppText>
         </View>
-        <Button
-          label="Write another review"
-          accessibilityLabel="Write Review"
-          leftIcon={<Star size={14} color={palette.textOnPrimary} />}
-          variant="primary"
-          size="sm"
-          fullWidth={false}
-          onPress={openReviewFlow}
-        />
+        {/* Past reviews are the point of this screen; the empty state carries the primary CTA. */}
+        {hasHistory ? (
+          <Button
+            label="Write another review"
+            leftIcon={<Star size={14} color={palette.text} />}
+            variant="secondary"
+            size="sm"
+            fullWidth={false}
+            onPress={openReviewFlow}
+          />
+        ) : null}
       </View>
       {hasHistory ? (
         <View

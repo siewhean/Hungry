@@ -1934,6 +1934,9 @@ export function DiscoverHomeScreen() {
     currentPlace && trendingCards.some((bite) => bite.buildingId === currentPlace.id)
       ? `in ${currentPlace.name}`
       : discoverAreaPhrase;
+  // Group parties are a mock outside non-production, so production only offers the solo wheel.
+  const wheelLabel = FEATURE_FLAGS.wheelPartyEnabled ? "Pick with friends" : "Spin the wheel";
+
   const handleDecideForMe = () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     trackAnalyticsEvent("decide_for_me_triggered", {
@@ -2456,16 +2459,23 @@ export function DiscoverHomeScreen() {
 
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Pick with friends"
-            accessibilityHint="Opens the Hungry Wheel to spin together with your group"
+            accessibilityLabel={wheelLabel}
+            accessibilityHint={
+              FEATURE_FLAGS.wheelPartyEnabled
+                ? "Opens the Hungry Wheel to spin together with your group"
+                : "Opens the Hungry Wheel"
+            }
             onPressIn={() => preloadRoute(navigation, "WheelStack", { screen: "WheelHome" })}
             onPress={() => navigation.navigate("WheelStack", { screen: "WheelHome" })}
             style={({ pressed }) => [
               shadows.card,
               {
                 alignItems: "center",
-                backgroundColor: themeTints.isDark ? palette.inverseSurfaceFaint : palette.navy,
+                // Secondary to Decide for Me: the two must not read as equal primaries.
+                backgroundColor: palette.surface,
+                borderColor: palette.border,
                 borderRadius: componentRadii.button,
+                borderWidth: 1,
                 flexDirection: "row",
                 gap: decisionCardInnerGap,
                 minHeight: 72,
@@ -2479,18 +2489,17 @@ export function DiscoverHomeScreen() {
             <View
               style={{
                 alignItems: "center",
-                backgroundColor: palette.inverseSurfaceSoft,
+                backgroundColor: palette.orangeLight,
                 borderRadius: radii.pill,
                 height: decisionCardIconSize,
                 justifyContent: "center",
                 width: decisionCardIconSize,
               }}
             >
-              <Users color={palette.white} size={decisionCardIconGraphicSize} />
+              <Users color={palette.orange} size={decisionCardIconGraphicSize} />
             </View>
             <AppText
               variant="bodyBold"
-              tone="inverse"
               numberOfLines={2}
               style={{
                 includeFontPadding: false,
@@ -2503,7 +2512,7 @@ export function DiscoverHomeScreen() {
                 textAlignVertical: "center",
               }}
             >
-              Pick with friends
+              {wheelLabel}
             </AppText>
           </Pressable>
         </View>
