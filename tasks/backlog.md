@@ -6,6 +6,8 @@
 
 ## Current Focus
 
+- `STITCH-BUILD-02` — Built on `claude/project-thread-gt0f4d` (images 2-8 of the Stitch review). Perceived-taste model, mall-mode Discover (What's here / For you), Decide for Me questionnaire, dish and stall bottom bars with save counts, Achievements, Profile/Settings/Reviews/Saved restyle, and app-wide gentle haptics. Not done: Saved distance/sort, Passport "Active mission" restyle, mall mode in `CatalogDiscoverHome` (release builds), server-side likes and save counts (PR2 migration).
+
 - `STITCH-8-SCREENS-01` — Implemented on `codex/stitch-eight-screens` from
   `main`, updated after PR #119 merged. Eight Stitch HTML exports
   and full-resolution screenshots are in `design/stitch/iterations-11940609752387078506/`.

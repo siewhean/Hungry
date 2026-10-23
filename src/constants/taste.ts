@@ -191,7 +191,10 @@ export const EXTENDED_REVIEW_TAGS = [
 ];
 
 /** Value tags that matter most for hawker reviews. */
-export const REVIEW_VALUE_TAGS = ["Worth the queue", "Good value"];
+export const REVIEW_VALUE_TAGS = ["Good value"];
+
+/** No longer offered in the editor (the app does not talk about queues) but the server still accepts it. */
+const RETIRED_REVIEW_TAGS = ["Worth the queue"];
 
 /**
  * Tags the review editor offers: a short, hawker-flavoured set. The basic English tags and the
@@ -220,4 +223,5 @@ export const REVIEW_MAX_TAGS = 8;
 export const ALLOWED_REVIEW_TAGS: readonly string[] = [
   ...EXTENDED_REVIEW_TAGS,
   ...REVIEW_VALUE_TAGS,
+  ...RETIRED_REVIEW_TAGS,
 ];

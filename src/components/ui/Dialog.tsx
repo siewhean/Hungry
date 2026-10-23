@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { AccessibilityInfo, View, StyleSheet, Modal, Pressable } from "react-native";
 import { AppText } from "./AppText";
 import { Button } from "./Button";
+import { warnHaptic } from "@/lib/haptics";
 import { useHungryTheme } from "@/theme";
 
 interface DialogButton {
@@ -27,11 +28,14 @@ interface DialogProps {
 export function Dialog({ visible, title, message, buttons, onClose }: DialogProps) {
   const { componentCornerCurve, componentRadii, palette, spacing, shadows } = useHungryTheme();
 
+  const hasDestructiveButton = buttons.some((button) => button.style === "destructive");
   useEffect(() => {
     if (visible) {
       AccessibilityInfo.announceForAccessibility(title);
+      // A dialog that asks before something is deleted gets one warning tap as it opens.
+      if (hasDestructiveButton) warnHaptic();
     }
-  }, [title, visible]);
+  }, [hasDestructiveButton, title, visible]);
 
   if (!visible) {
     return null;

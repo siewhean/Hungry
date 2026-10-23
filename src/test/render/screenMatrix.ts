@@ -173,6 +173,12 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     expect: /CRAVE/,
   },
   {
+    name: "DecideForMeQuizScreen",
+    file: "src/app/screens/discover/DecideForMeQuizScreen.tsx",
+    scenario: "user",
+    expect: /What kind of food\?/,
+  },
+  {
     name: "DecideForMeResultScreen",
     file: "src/app/screens/discover/DecideForMeResultScreen.tsx",
     scenario: "user",
@@ -182,13 +188,13 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "DiscoverHomeScreen",
     file: "src/app/screens/discover/DiscoverHomeScreen.tsx",
     scenario: "user",
-    expect: /WHERE ARE YOU/,
+    expect: /Choose where you are|You are at/,
   },
   {
     name: "DiscoverEntryScreen",
     file: "src/app/screens/discover/DiscoverEntryScreen.tsx",
     scenario: "user",
-    expect: /WHERE ARE YOU/,
+    expect: /Choose where you are|You are at/,
   },
   {
     name: "HomeMapScreen",
@@ -554,7 +560,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "ReviewHistoryScreen",
     file: "src/app/screens/profile/ReviewHistoryScreen.tsx",
     scenario: "user",
-    expect: /Taste Journal/,
+    expect: /REVIEWED/,
   },
   {
     name: "SettingsScreen",

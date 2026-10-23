@@ -1,4 +1,5 @@
 import type { NavigatorScreenParams } from "@react-navigation/native";
+import type { DecideAnswers } from "@/features/discovery/decideQuiz";
 import type { TasteVector } from "@/types/domain";
 
 export type AuthStackParamList = {
@@ -154,7 +155,10 @@ export type RootStackParamList = {
   BrowseDishes: undefined;
   BrowseStalls: undefined;
   DiscoverMap: undefined;
-  DecideForMeResult: { surface?: "home" | "discover" | "push" } | undefined;
+  DecideForMeQuiz: undefined;
+  DecideForMeResult:
+    | { surface?: "home" | "discover" | "push"; answers?: DecideAnswers }
+    | undefined;
   MapZoomedIn: { buildingId: string };
   ReviewStack: NavigatorScreenParams<ReviewStackParamList>;
   WheelStack: NavigatorScreenParams<WheelStackParamList>;

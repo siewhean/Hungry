@@ -29,8 +29,8 @@ test("Discover asks for an area instead of asserting the default location", () =
   // No OS permission prompt on mount; only the "Use current location" press asks.
   assert.doesNotMatch(screen, /useEffect\(\(\) => \{[^}]*grantLocation\(/);
   assert.match(screen, /const handleUseCurrentLocation = useCallback\(async \(\) => \{/);
-  assert.match(screen, /needsDiscoverAreaChoice\s*\? "WHERE ARE YOU\?"/);
-  assert.match(screen, /: "YOU ARE AT"/);
+  assert.match(screen, /needsDiscoverAreaChoice\s*\? "Choose where you are"/);
+  assert.match(screen, /`You are at \$\{discoverHeaderLabel\}`/);
   assert.match(
     screen,
     /navigation\.navigate\("OnboardingStack", \{ screen: "ManualLocationPicker" \}\)/,
@@ -55,7 +55,7 @@ test("Discover rails no longer claim prep times or curation they do not have", (
   const screen = readRepoFile("src/app/screens/discover/DiscoverHomeScreen.tsx");
 
   assert.doesNotMatch(screen, /&lt; 15 MIN|★ CURATED|MUST ORDER|Editor&apos;s Choice/);
-  assert.match(screen, /title=\{`Most reviewed \$\{trendingAreaPhrase\}`\}/);
+  assert.match(screen, /title=\{`Trending \$\{trendingAreaPhrase\}`\}/);
   assert.match(screen, /Top rated/);
 });
 

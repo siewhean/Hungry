@@ -2,7 +2,8 @@
  * PassportScreen — branded Hungry Passport progress and stamp collection.
  */
 
-import { AccessibilityInfo, View } from "react-native";
+import { AccessibilityInfo, Pressable, View } from "react-native";
+import { ChevronRight } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -10,6 +11,7 @@ import * as Haptics from "@/lib/haptics";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { ProfileScreenShell } from "@/app/screens/profile/ProfileScreenShell";
+import { AchievementsSection } from "@/components/gamification/AchievementsSection";
 import { PassportPageFlip } from "@/components/gamification/PassportPageFlip";
 import { PassportStampBadge } from "@/components/gamification/PassportStampBadge";
 import { PassportStampCard } from "@/components/gamification/PassportStampCard";
@@ -23,6 +25,8 @@ import {
   getNewlyEarnedUncelebratedStamp,
   getNextPassportStamp,
 } from "@/constants/passportConfig";
+import { computeAchievements } from "@/features/achievements/achievements";
+import { useAchievementInput } from "@/features/achievements/useAchievementInput";
 import { computeWeeklyGoal, milestoneReachedThisWeek } from "@/features/passport/weeklyGoal";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { trackPassportViewed } from "@/lib/analytics/gamificationEvents";
@@ -68,7 +72,7 @@ function formatContributionDate(value: string): string {
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-export function PassportScreen({ navigation: _nav }: Props) {
+export function PassportScreen({ navigation }: Props) {
   const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const progressMap = usePassportStore((s) => s.progressMap);
   const celebratedStampIds = usePassportStore((s) => s.celebratedStampIds);
@@ -86,6 +90,8 @@ export function PassportScreen({ navigation: _nav }: Props) {
   const checklistItems = useChecklistStore((state) => state.items);
   const celebratedGoalWeeks = usePassportStore((s) => s.celebratedGoalWeeks);
   const markGoalWeekCelebrated = usePassportStore((s) => s.markGoalWeekCelebrated);
+  const achievementInput = useAchievementInput();
+  const achievements = useMemo(() => computeAchievements(achievementInput), [achievementInput]);
   const [reduceMotion, setReduceMotion] = useState(false);
   const [celebratingStampId, setCelebratingStampId] = useState<string | null>(null);
   const [celebratingGoal, setCelebratingGoal] = useState(false);
@@ -309,6 +315,38 @@ export function PassportScreen({ navigation: _nav }: Props) {
           celebrating={celebratingGoal}
           reduceMotion={reduceMotion}
         />
+
+        <AchievementsSection rows={achievements} />
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Visited stalls, ${achievementInput.stallsVisited}`}
+          onPress={() =>
+            navigation.navigate("MainTabs", {
+              screen: "Profile",
+              params: { screen: "VisitedStalls" },
+            })
+          }
+          style={{
+            alignItems: "center",
+            backgroundColor: palette.surface,
+            borderColor: palette.border,
+            borderRadius: componentRadii.card,
+            borderWidth: 1,
+            flexDirection: "row",
+            justifyContent: "space-between",
+            minHeight: 56,
+            paddingHorizontal: spacing[4],
+          }}
+        >
+          <AppText variant="bodyBold">Visited stalls</AppText>
+          <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
+            <AppText tone="secondary" variant="bodySmall">
+              {achievementInput.stallsVisited}
+            </AppText>
+            <ChevronRight size={18} color={palette.textMuted} />
+          </View>
+        </Pressable>
 
         {earnedStamps.length === 0 && !nextStamp ? (
           <EmptyState

@@ -38,23 +38,29 @@ test("dish detail V2 avoids invented wait times and fake hours", () => {
   assert.doesNotMatch(dish, /Dine-in only/);
 });
 
-test("dish detail V2 action dock is labelled, stateful and meets 44px targets", () => {
+test("dish detail V2 bottom bar is labelled, stateful and meets 44px targets", () => {
   const dish = read("src/app/screens/detail/DishDetailScreenV2.tsx");
+  const bar = read("src/components/detail/DetailActionBar.tsx");
 
   assert.match(dish, /const dockTargetSize = 44;/);
   assert.doesNotMatch(dish, /height: (40|42),/);
   assert.doesNotMatch(dish, /Missing dish data for ID/);
   assert.doesNotMatch(dish, /Sparkles/);
   assert.match(dish, /We can't find this dish/);
-  assert.match(
-    dish,
-    /accessibilityLabel=\{isSaved \? "Saved" : "Save"\}[\s\S]*accessibilityState=\{\{ selected: isSaved \}\}/,
-  );
-  assert.match(dish, /color=\{isSaved \? palette\.orange : palette\.text\}/);
-  assert.doesNotMatch(dish, /isSaved \? palette\.white/);
-  assert.match(
-    dish,
-    /accessibilityRole="checkbox"\s*accessibilityLabel="Tried"\s*accessibilityState=\{\{ checked: isDishTried/,
-  );
-  assert.match(dish, /accessibilityLabel="Write a review"[\s\S]*?>\s*Review\s*<\/AppText>/);
+  // Directions, Like, Save, Share and Tried sit in one bar of icon-over-label buttons.
+  assert.match(dish, /<DetailActionBar actions=\{barActions\} testID="dish-action-bar" \/>/);
+  for (const label of ["Directions", "Like", "Share", "Tried"]) {
+    assert.match(dish, new RegExp(`label: [^\\n]*"${label}`));
+  }
+  assert.match(dish, /label: isSaved \? "Saved" : "Save"/);
+  assert.match(dish, /active: isSaved/);
+  assert.match(dish, /role: "checkbox"/);
+  assert.match(dish, /active: isDishTried/);
+  // The bar itself: 44px or taller targets, brand colour when on, never white on the white bar.
+  assert.match(bar, /minHeight: 48/);
+  assert.match(bar, /action\.active \? palette\.orange : palette\.text/);
+  assert.match(bar, /accessibilityRole=\{action\.role \?\? "button"\}/);
+  assert.match(bar, /checked: Boolean\(action\.active\)/);
+  assert.doesNotMatch(bar, /palette\.white/);
+  assert.match(dish, /accessibilityLabel="Write a review"/);
 });

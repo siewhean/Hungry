@@ -313,6 +313,10 @@ const loadMusicSelectionScreen = () =>
   (
     require("@/app/screens/review/MusicSelectionScreen") as typeof import("@/app/screens/review/MusicSelectionScreen")
   ).MusicSelectionScreen;
+const loadDecideForMeQuizScreen = () =>
+  (
+    require("@/app/screens/discover/DecideForMeQuizScreen") as typeof import("@/app/screens/discover/DecideForMeQuizScreen")
+  ).DecideForMeQuizScreen;
 const loadDecideForMeResultScreen = () =>
   (
     require("@/app/screens/discover/DecideForMeResultScreen") as typeof import("@/app/screens/discover/DecideForMeResultScreen")
@@ -832,6 +836,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           {FEATURE_FLAGS.prototypeRoutesEnabled ? (
             <RootStack.Screen getComponent={loadMusicSelectionScreen} name="MusicSelection" />
           ) : null}
+          <RootStack.Screen getComponent={loadDecideForMeQuizScreen} name="DecideForMeQuiz" />
           <RootStack.Screen getComponent={loadDecideForMeResultScreen} name="DecideForMeResult" />
           <RootStack.Screen getComponent={loadOfflineStateScreen} name="Offline" />
           <RootStack.Screen getComponent={loadNotFoundScreen} name="NotFound" />

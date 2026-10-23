@@ -77,7 +77,10 @@ test("stall header shows rating, price, status, actions and delivery links", () 
   assert.doesNotMatch(stallDetail, /ChevronRight/);
   assert.match(stallDetail, /summarizeStallRating\(dishes\)/);
   assert.match(stallDetail, /formatStallPriceBand\(dishes\)/);
-  assert.match(stallDetail, /label="Directions"/);
+  // Directions, Save and Share live in the sticky bottom bar, not in the header.
+  assert.match(stallDetail, /<StallInteractionBar[\s\S]*?layout="sticky"/);
+  assert.match(stallDetail, /onDirections=/);
+  assert.match(read("src/components/stall/StallInteractionBar.tsx"), /label: "Directions"/);
   assert.match(stallDetail, /label="Call"/);
   assert.match(stallDetail, /<DeliveryPlatformButton/);
   assert.match(stallDetail, /cachedVenue && serviceProviderMode !== "supabase"/);
@@ -133,7 +136,9 @@ test("dish attributes never present placeholder taste data as fact", () => {
   assert.match(dishDetail, /hasDishTasteSignal\(dish\)/);
   assert.doesNotMatch(dishDetail, /"Signature"|"House style"/);
   assert.doesNotMatch(dishDetail, /% taste match/);
-  assert.match(dishDetail, /\.\.\.\(showTasteMatch/);
+  // The taste matrix box is gone; the "how it tastes to you" rows come from the dish's own vector.
+  assert.doesNotMatch(dishDetail, /showTasteMatch|tasteMatch/);
+  assert.match(dishDetail, /perceivedTasteRows\(dish\.tasteVector, profile\.tasteVector\)/);
   const disclosure = read("src/lib/services/dataTrustDisclosure.ts");
   assert.doesNotMatch(disclosure, /Live wait estimate/);
 });

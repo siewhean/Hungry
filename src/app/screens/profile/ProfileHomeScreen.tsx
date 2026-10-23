@@ -30,7 +30,6 @@ import {
   Trophy,
   UserPlus,
   UserCheck,
-  Users,
   Flame,
   FlaskConical,
 } from "lucide-react-native";
@@ -45,7 +44,6 @@ import { FoodCredBadge } from "@/components/gamification/FoodCredBadge";
 import { toChatShareRecipient, type ChatShareRecipient } from "@/features/home/chatShare";
 import { prefetchMerchantTab, preloadRoute } from "@/features/navigation/prefetch";
 import { listSharedStallPosts, mergeStallPosts } from "@/features/social/sharedStallPosts";
-import { useVisitedStallIds } from "@/features/profile/visitedStalls";
 import {
   buildTastePersonaSummary,
   buildTasteShareMessage,
@@ -66,6 +64,7 @@ import { useStoryStore } from "@/store/useStoryStore";
 import { ProfileGridSkeleton, ProfileReviewsSkeleton } from "./ProfileGridSkeleton";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 import { useMerchantStore } from "@/store/useMerchantStore";
+import { palateSummary } from "@/features/detail/perceivedTaste";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { TASTE_DIMENSIONS } from "@/constants/taste";
 import { useActivityStore } from "@/store/useActivityStore";
@@ -142,15 +141,9 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
     () => usePassportStore.getState().getEarnedStamps().length,
     [passportProgressMap],
   );
-  const visitedStallIds = useVisitedStallIds();
   const insets = useSafeAreaInsets();
   const shareSheetRef = useRef<BottomSheetModal>(null);
   const shareSnapPoints = useMemo(() => ["45%"], []);
-  // Server counts only; null while loading (shows a skeleton).
-  const [profileFollowCounts, setProfileFollowCounts] = useState<{
-    followersCount: number;
-    followingCount: number;
-  } | null>(null);
   /** Incoming pending follow requests; null until loaded. */
   const [followRequestCount, setFollowRequestCount] = useState<number | null>(null);
   const triedStallIds = useMemo(
@@ -196,21 +189,6 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
   });
   const rootNavigation = getRootNavigation(navigation as any);
 
-  const openProfileConnections = useCallback(
-    (target: "Followers" | "Following", params: { userId?: string; userDisplayName?: string }) => {
-      const routeNames = navigation?.getState?.()?.routeNames ?? [];
-      if (routeNames.includes(target)) {
-        navigation.navigate(target, params);
-        return;
-      }
-
-      rootNavigation.navigate("MainTabs", {
-        screen: "Profile",
-        params: { screen: target, params },
-      });
-    },
-    [navigation, rootNavigation],
-  );
   const [activeShareTab, setActiveShareTab] = useState<"posts" | "reviews">(
     FEATURE_FLAGS.reviewCreationEnabled ? "reviews" : "posts",
   );
@@ -426,42 +404,6 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
   );
 
   useEffect(() => {
-    if (!hasAccountProfile) {
-      setProfileFollowCounts({
-        followersCount: profile.stats.followersCount,
-        followingCount: profile.stats.followingCount,
-      });
-      return;
-    }
-    // Refetch on focus so follows made on other screens show up here.
-    if (!isFocused) return;
-
-    let isActive = true;
-
-    void getHungryService()
-      .social.getFollowCounts(profile.id)
-      .then((counts) => {
-        if (!isActive) return;
-        setProfileFollowCounts(counts ?? { followersCount: 0, followingCount: 0 });
-      })
-      .catch((error) => {
-        console.error("Failed to load follow counts:", error);
-        if (!isActive) return;
-        setProfileFollowCounts((current) => current ?? { followersCount: 0, followingCount: 0 });
-      });
-
-    return () => {
-      isActive = false;
-    };
-  }, [
-    hasAccountProfile,
-    isFocused,
-    profile.id,
-    profile.stats.followersCount,
-    profile.stats.followingCount,
-  ]);
-
-  useEffect(() => {
     // Refetch on focus so approving/declining on Follow Requests updates the row.
     if (!hasAccountProfile || !isFocused) return;
 
@@ -522,6 +464,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
     }
   }, [profile.displayName, profile.id]);
 
+  const palate = useMemo(() => palateSummary(profile.tasteVector), [profile.tasteVector]);
   const tastePersonaSummary = useMemo(
     () => buildTastePersonaSummary(profile.tasteVector),
     [profile.tasteVector],
@@ -927,8 +870,10 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
 
           <View
             style={{
-              backgroundColor: palette.bgSoft,
+              backgroundColor: palette.surface,
+              borderColor: palette.border,
               borderRadius: radii.md,
+              borderWidth: 1,
               flexDirection: "row",
               padding: spacing[2],
             }}
@@ -954,68 +899,21 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
             <StatBlock
               label="Badges"
               value={earnedBadgeCount}
-              icon={<Trophy size={14} color={palette.success} />}
+              icon={<Trophy size={14} color={palette.orange} />}
               onPressIn={() => preloadRoute(rootNavigation, "PassportScreen")}
               onPress={() => rootNavigation.navigate("PassportScreen")}
             />
           </View>
-          {gamificationEnabled ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Open passport and badges"
-              onPress={() => rootNavigation.navigate("PassportScreen")}
-              style={{
-                alignItems: "center",
-                flexDirection: "row",
-                justifyContent: "space-between",
-                minHeight: 44,
-              }}
-            >
-              <AppText variant="bodySmall" tone="secondary">
-                Explore your hawker passport
-              </AppText>
-              <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
-                <AppText variant="bodySmall" style={{ color: palette.orange, fontWeight: "700" }}>
-                  Passport &amp; Badges
-                </AppText>
-                <ChevronRight color={palette.orange} size={16} />
-              </View>
-            </Pressable>
-          ) : null}
         </View>
 
+        {isAuthenticated && gamificationEnabled ? (
+          <PassportCard
+            onPressIn={() => preloadRoute(rootNavigation, "PassportScreen")}
+            onPress={() => rootNavigation.navigate("PassportScreen")}
+          />
+        ) : null}
+
         <View style={{ gap: spacing[4] }}>
-          <View style={{ flexDirection: "row", gap: spacing[2] }}>
-            <StatBlock
-              label="Followers"
-              value={profileFollowCounts?.followersCount ?? null}
-              icon={<Users size={14} color={palette.orange} />}
-              onPress={() =>
-                openProfileConnections("Followers", {
-                  userId: profile.id,
-                  userDisplayName: profile.displayName,
-                })
-              }
-            />
-            <StatBlock
-              label="Following"
-              value={profileFollowCounts?.followingCount ?? null}
-              icon={<UserCheck size={14} color={palette.orange} />}
-              onPress={() =>
-                openProfileConnections("Following", {
-                  userId: profile.id,
-                  userDisplayName: profile.displayName,
-                })
-              }
-            />
-            <StatBlock
-              label="Stalls"
-              value={visitedStallIds.length}
-              icon={<Utensils size={14} color={palette.orange} />}
-              onPressIn={() => preloadRoute(navigation, "VisitedStalls")}
-              onPress={() => navigation.navigate("VisitedStalls")}
-            />
-          </View>
           {(followRequestCount ?? 0) > 0 || profile.profileVisibility === "private" ? (
             <FollowRequestsRow
               count={followRequestCount}
@@ -1023,13 +921,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
             />
           ) : null}
           {isAuthenticated && gamificationEnabled ? (
-            <>
-              <PassportCard
-                onPressIn={() => preloadRoute(rootNavigation, "PassportScreen")}
-                onPress={() => rootNavigation.navigate("PassportScreen")}
-              />
-              <MissionBanner onPress={() => navigation.navigate("MissionsScreen" as any)} />
-            </>
+            <MissionBanner onPress={() => navigation.navigate("MissionsScreen" as any)} />
           ) : null}
           <StallContributionCard
             submissionCount={stallSubmissions.length}
@@ -1118,6 +1010,26 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                 </View>
                 <AppText style={{ flex: 1, fontWeight: "600" }}>{tastePersonaSummary}</AppText>
               </View>
+              {hasTasteFingerprint ? (
+                <View style={{ gap: spacing[1] }} testID="profile-palate-summary">
+                  {palate.loves.length > 0 ? (
+                    <AppText variant="bodySmall">
+                      <AppText variant="bodySmallBold">You enjoy strong: </AppText>
+                      {palate.loves.join(", ")}
+                    </AppText>
+                  ) : null}
+                  {palate.mild.length > 0 ? (
+                    <AppText variant="bodySmall">
+                      <AppText variant="bodySmallBold">You prefer mild: </AppText>
+                      {palate.mild.join(", ")}
+                    </AppText>
+                  ) : null}
+                  <AppText variant="micro" tone="secondary">
+                    A dish has one standard level for everyone. Your palate decides how strong it
+                    tastes to you, and dish pages show that.
+                  </AppText>
+                </View>
+              ) : null}
 
               {hasTasteFingerprint ? (
                 <View style={{ alignItems: "center", gap: spacing[3] }}>
@@ -1611,8 +1523,10 @@ function ScoutMetric({
   return (
     <View
       style={{
-        backgroundColor: palette.bgSoft,
+        backgroundColor: palette.surface,
+        borderColor: palette.border,
         borderRadius: radii.lg,
+        borderWidth: 1,
         flex: 1,
         gap: spacing[1],
         padding: spacing[3],
@@ -1739,28 +1653,29 @@ function StatBlock({
 
   const row = (
     <>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
+      {value === null ? (
+        <Skeleton width={spacing[6]} height={spacing[5]} borderRadius={4} />
+      ) : (
+        <AppText variant="h2" style={{ color: palette.text }}>
+          {value}
+        </AppText>
+      )}
+      <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
         {icon}
-        {value === null ? (
-          <Skeleton width={spacing[6]} height={spacing[5]} borderRadius={4} />
-        ) : (
-          <AppText variant="h3" style={{ color: palette.text }}>
-            {value}
-          </AppText>
-        )}
+        <AppText
+          variant="micro"
+          style={{ color: palette.textSecondary, letterSpacing: 0.5, textTransform: "uppercase" }}
+        >
+          {label}
+        </AppText>
       </View>
-      <AppText
-        variant="micro"
-        tone="secondary"
-        style={{ textTransform: "uppercase", letterSpacing: 0.5 }}
-      >
-        {label}
-      </AppText>
     </>
   );
 
   const baseStyle = {
-    backgroundColor: colorScheme === "dark" ? palette.surfaceRaised : palette.bgSoft,
+    backgroundColor: palette.surface,
+    borderColor: palette.border,
+    borderWidth: 1,
     borderRadius: componentRadii.card,
     paddingVertical: spacing[3],
     paddingHorizontal: spacing[3],

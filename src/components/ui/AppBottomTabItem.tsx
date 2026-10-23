@@ -2,6 +2,7 @@ import { type ComponentType } from "react";
 import { Pressable, View } from "react-native";
 import type { LucideProps } from "lucide-react-native";
 
+import { selectHaptic } from "@/lib/haptics";
 import { useHungryTheme } from "@/theme";
 import { AppText } from "./AppText";
 
@@ -36,7 +37,11 @@ export function AppBottomTabItem({
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => {
+        // Going to a tab you are already on stays quiet.
+        if (!focused || createAction) selectHaptic();
+        onPress();
+      }}
       onPressIn={onPressIn}
       style={{
         alignItems: "center",

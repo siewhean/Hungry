@@ -22,6 +22,7 @@ import { firstDishTimingProps } from "@/lib/analytics/firstDishTiming";
 import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
 import { AccessibleImage, AppText, Badge, Button, Card, EmptyState, Screen } from "@/components/ui";
 import { formatDishUpdated } from "@/features/detail/dishFreshness";
+import { filterByDecideAnswers } from "@/features/discovery/decideQuiz";
 import { findBuildingById } from "@/features/discovery/discovery";
 import {
   DECIDE_INITIAL_RADIUS_METERS,
@@ -356,15 +357,22 @@ export function DecideForMeResultScreen() {
     repository,
     searchRadius,
   ]);
+  const answers = route.params?.answers;
   const candidates = useMemo(
     () =>
       // Openness sets how often a pick is a dish they know versus something new.
-      mixByFoodHistory(candidatePool?.candidates ?? [], {
-        history: foodHistory,
-        openness,
-        lookup: (dishId) => repository.getDishById(dishId),
-      }),
-    [candidatePool, foodHistory, openness, repository],
+      mixByFoodHistory(
+        // The quiz answers narrow the taste-ranked pool; a question that would empty it is skipped.
+        answers
+          ? filterByDecideAnswers(candidatePool?.candidates ?? [], answers)
+          : (candidatePool?.candidates ?? []),
+        {
+          history: foodHistory,
+          openness,
+          lookup: (dishId) => repository.getDishById(dishId),
+        },
+      ),
+    [answers, candidatePool, foodHistory, openness, repository],
   );
 
   useEffect(() => {

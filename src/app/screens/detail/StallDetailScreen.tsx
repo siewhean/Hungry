@@ -16,6 +16,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useState, useRef, useMemo } from "react";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import {
+  Bookmark,
   ChevronLeft,
   CircleHelp,
   Globe,
@@ -24,8 +25,6 @@ import {
   MessageCircle,
   Phone,
   MessageCircleMore,
-  Navigation,
-  Send,
   Star,
   Utensils,
 } from "lucide-react-native";
@@ -849,6 +848,11 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const stallPin = getStallPin(venue, buildingCoordinate);
   const distanceLabel = formatDistanceFromUser(userOrigin, stallPin ?? buildingCoordinate);
   const ratingSummary = summarizeStallRating(dishes);
+  const stallSavedCount = venue.savedCount ?? 0;
+  const savedCountLabel =
+    stallSavedCount > 0
+      ? `${stallSavedCount} ${stallSavedCount === 1 ? "person" : "people"} saved this`
+      : null;
   const priceBand = formatStallPriceBand(dishes);
   const deliveryLinks = venue.deliveryLinks ?? [];
   // Owner cover, then the stall photo, then each dish's photo, then review photos.
@@ -1088,20 +1092,6 @@ export function StallDetailScreen({ navigation, route }: Props) {
               Stall Profile
             </AppText>
             <View style={{ flex: 1 }} />
-            <View style={{ flexDirection: "row", gap: spacing[2] }}>
-              {showDeferredDetailControls ? (
-                <IconButton
-                  variant="floating"
-                  accessibilityLabel="Share stall"
-                  onPress={openShareSheet}
-                  icon={<Send color={palette.text} size={20} />}
-                  style={{
-                    backgroundColor: headerButtonColor,
-                    borderColor: headerButtonBorderColor,
-                  }}
-                />
-              ) : null}
-            </View>
           </View>
           <ScrollView
             showsVerticalScrollIndicator={false}
@@ -1109,7 +1099,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
             scrollEventThrottle={120}
             contentContainerStyle={{
               paddingTop: insets.top + 56,
-              paddingBottom: insets.bottom + spacing[8],
+              paddingBottom: insets.bottom + 96,
             }}
           >
             {/* Hero: swipeable photos (owner cover, stall, dishes, reviews), else a short branded header */}
@@ -1182,6 +1172,26 @@ export function StallDetailScreen({ navigation, route }: Props) {
                       </AppText>
                     </View>
                   ) : null}
+                  {savedCountLabel ? (
+                    <View
+                      accessible
+                      accessibilityLabel={savedCountLabel}
+                      style={{
+                        alignItems: "center",
+                        backgroundColor: palette.bgSoft,
+                        borderRadius: radii.pill,
+                        flexDirection: "row",
+                        gap: spacing[1],
+                        paddingHorizontal: spacing[3],
+                        paddingVertical: spacing[1],
+                      }}
+                    >
+                      <Bookmark color={palette.textSecondary} size={14} />
+                      <AppText variant="bodySmallBold" tone="secondary">
+                        {savedCountLabel}
+                      </AppText>
+                    </View>
+                  ) : null}
                   <View
                     style={{
                       backgroundColor: palette.bgSoft,
@@ -1209,14 +1219,6 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   </AppText>
                 ) : null}
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-                  {stallAddress || stallPin ? (
-                    <Chip
-                      label="Directions"
-                      accessibilityLabel={`Directions to ${venue.name}`}
-                      leftIcon={<Navigation color={palette.orange} size={14} />}
-                      onPress={openStallMaps}
-                    />
-                  ) : null}
                   {merchantProfile?.contactPhone ? (
                     <Chip
                       label="Call"
@@ -1229,7 +1231,17 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   ) : null}
                 </View>
                 {deliveryLinks.length > 0 ? (
-                  <View style={{ gap: spacing[2] }}>
+                  <View
+                    style={{
+                      alignItems: "center",
+                      flexDirection: "row",
+                      flexWrap: "wrap",
+                      gap: spacing[2],
+                    }}
+                  >
+                    <AppText variant="bodySmallBold" tone="secondary">
+                      ORDER ON
+                    </AppText>
                     {deliveryLinks.map((link) => (
                       <DeliveryPlatformButton
                         key={`${link.platform}:${link.webUrl}`}
@@ -1244,6 +1256,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
               {/* Save / Visited / Add-to-List: the same row for guests and signed-in users */}
               {showDeferredDetailControls && isAuthenticated && venue ? (
                 <StallInteractionBar
+                  hideSave
                   stallId={venue.id}
                   userId={profile.id}
                   isAuthenticated={isAuthenticated}
@@ -1847,6 +1860,25 @@ export function StallDetailScreen({ navigation, route }: Props) {
               />
             </View>
           </ScrollView>
+          {venue ? (
+            <StallInteractionBar
+              layout="sticky"
+              stallId={venue.id}
+              userId={profile.id}
+              isAuthenticated={isAuthenticated}
+              onRequireAuth={(message) => requireAuthForProtectedAction(message)}
+              onSaved={() =>
+                void getHungryService().discovery.recordMerchantActionEvent({
+                  eventType: "save",
+                  venueId: venue.id,
+                  userId: profile.id,
+                })
+              }
+              onShare={showDeferredDetailControls ? openShareSheet : undefined}
+              onDirections={stallAddress || stallPin ? openStallMaps : undefined}
+            />
+          ) : null}
+
           {showDeferredDetailControls ? (
             <ReviewShareSheet
               activeReview={activeShareReview}

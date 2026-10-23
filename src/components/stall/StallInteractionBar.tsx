@@ -10,10 +10,11 @@
 
 import { View, Pressable, StyleSheet, ActivityIndicator } from "react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Bookmark, CheckCircle, ListPlus } from "lucide-react-native";
-import * as Haptics from "@/lib/haptics";
+import { Bookmark, CheckCircle, ListPlus, Navigation, Send } from "lucide-react-native";
+import { confirmHaptic, tapHaptic } from "@/lib/haptics";
 
 import { useHungryTheme } from "@/theme";
+import { DetailActionBar, type DetailAction } from "@/components/detail/DetailActionBar";
 import { AppText } from "@/components/ui/AppText";
 import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -33,6 +34,15 @@ interface StallInteractionBarProps {
   /** Called when user taps "Add to List" — saves the stall to the user's Lists (portfolios). */
   onAddToList?: () => void;
   isAddingToList?: boolean;
+  /**
+   * "card" is the in-page row (Save, Visited, Add to List). "sticky" is the bottom bar with
+   * Save, Share and Directions; it needs onShare and, when the stall has an address, onDirections.
+   */
+  layout?: "card" | "sticky";
+  /** Card layout only: leave Save out when the sticky bar already carries it. */
+  hideSave?: boolean;
+  onShare?: () => void;
+  onDirections?: () => void;
 }
 
 export function StallInteractionBar({
@@ -46,6 +56,10 @@ export function StallInteractionBar({
   onSaved,
   onAddToList,
   isAddingToList = false,
+  layout = "card",
+  hideSave = false,
+  onShare,
+  onDirections,
 }: StallInteractionBarProps) {
   const { componentRadii, palette, spacing, typography } = useHungryTheme();
   const interactions = useStallInteractionStore((state) => state.interactions);
@@ -110,8 +124,9 @@ export function StallInteractionBar({
     if (savingInProgress) return;
     setSavingInProgress(true);
     try {
-      Haptics.selectionAsync();
       await toggleSaved(userId, stallId);
+      // The sticky bar plays its own confirm; the in-page card needs one here.
+      if (layout === "card" && !isSaved) confirmHaptic();
       if (!isSaved) {
         // Just saved (not unsaved) — count toward missions
         onSaved?.();
@@ -159,12 +174,51 @@ export function StallInteractionBar({
         showToast({ message: "Removed from visited", tone: "info", duration: 3000 });
       }
 
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      if (triedResult.isTried) confirmHaptic();
+      else tapHaptic();
     } catch {
       showToast({ message: "Couldn't update your visited stalls. Try again.", tone: "error" });
     } finally {
       if (isMounted.current) setTryingInProgress(false);
     }
+  }
+
+  if (layout === "sticky") {
+    const stickyActions: DetailAction[] = [
+      {
+        id: "save",
+        label: isSaved ? "Saved" : "Save",
+        icon: Bookmark,
+        active: isSaved,
+        fillWhenActive: true,
+        loading: savingInProgress || (!isLoaded && isLoadingInteractions),
+        onPress: () => void handleSave(),
+        accessibilityLabel: isSaved ? "Saved" : "Save this stall",
+      },
+      ...(onShare
+        ? [
+            {
+              id: "share",
+              label: "Share",
+              icon: Send,
+              onPress: onShare,
+              accessibilityLabel: "Share stall",
+            },
+          ]
+        : []),
+      ...(onDirections
+        ? [
+            {
+              id: "directions",
+              label: "Directions",
+              icon: Navigation,
+              onPress: onDirections,
+              accessibilityLabel: "Directions to this stall",
+            },
+          ]
+        : []),
+    ];
+    return <DetailActionBar actions={stickyActions} testID="stall-action-bar" />;
   }
 
   const actions: {
@@ -176,14 +230,18 @@ export function StallInteractionBar({
     loading?: boolean;
     disabled?: boolean;
   }[] = [
-    {
-      id: "save",
-      label: isSaved ? "Saved" : "Save",
-      icon: Bookmark,
-      active: isSaved,
-      onPress: handleSave,
-      loading: savingInProgress || (!isLoaded && isLoadingInteractions),
-    },
+    ...(hideSave
+      ? []
+      : [
+          {
+            id: "save",
+            label: isSaved ? "Saved" : "Save",
+            icon: Bookmark,
+            active: isSaved,
+            onPress: handleSave,
+            loading: savingInProgress || (!isLoaded && isLoadingInteractions),
+          },
+        ]),
     {
       id: "tried",
       label: isTried ? "Visited" : "Mark Visited",

@@ -2,6 +2,7 @@ import { memo, type ReactNode } from "react";
 import { Pressable, StyleSheet, View, Switch } from "react-native";
 import { ChevronRight, ExternalLink } from "lucide-react-native";
 import { AppText } from "../ui";
+import { selectHaptic } from "@/lib/haptics";
 import { useHungryTheme } from "@/theme";
 
 interface SettingsRowProps {
@@ -50,6 +51,7 @@ export const SettingsRow = memo(function SettingsRow({
   // Handle row press even for toggle types
   const handlePress = () => {
     if (type === "toggle" && onToggle) {
+      selectHaptic();
       onToggle(!isEnabled);
     } else if (onPress) {
       onPress();
@@ -64,7 +66,7 @@ export const SettingsRow = memo(function SettingsRow({
     paddingVertical: spacing[4],
     paddingHorizontal: spacing[4],
     borderBottomWidth: isLast ? 0 : 1,
-    borderBottomColor: editorial ? palette.bgSoft : palette.border,
+    borderBottomColor: palette.border,
     opacity: dimmed ? 0.55 : 1,
   };
 
@@ -76,7 +78,7 @@ export const SettingsRow = memo(function SettingsRow({
             <View
               style={{
                 alignItems: "center",
-                backgroundColor: palette.surfaceRaised,
+                backgroundColor: palette.orangeLight,
                 borderRadius: radii.pill,
                 height: 40,
                 justifyContent: "center",
@@ -90,6 +92,7 @@ export const SettingsRow = memo(function SettingsRow({
           <View style={{ flex: 1, gap: spacing[1] }}>
             <AppText
               variant="bodyLarge"
+              numberOfLines={1}
               style={{ color: destructive ? palette.error : palette.text, fontWeight: "500" }}
             >
               {label}

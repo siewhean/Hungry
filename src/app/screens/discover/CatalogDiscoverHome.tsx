@@ -478,7 +478,7 @@ export function CatalogDiscoverHome() {
         <Pressable
           accessibilityLabel="Search dishes and stalls"
           accessibilityRole="button"
-          onPress={() => openBrowse("dishes")}
+          onPress={() => navigation.navigate("SearchHome")}
           style={{
             alignItems: "center",
             backgroundColor: palette.surface,

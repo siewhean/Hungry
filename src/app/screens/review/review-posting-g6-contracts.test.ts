@@ -211,7 +211,9 @@ test("M8/M13/L6/L7: editor waits for the saved draft, searches dishes, offers ha
   assert.match(screen, /showDescriptor/);
   const taste = read("src/constants/taste.ts");
   assert.match(taste, /REVIEW_EDITOR_TAGS/);
-  assert.match(taste, /Worth the queue/);
+  // Queue wording is retired from the editor; the server list still accepts the old tag.
+  assert.match(taste, /RETIRED_REVIEW_TAGS = \["Worth the queue"\]/);
+  assert.doesNotMatch(taste, /REVIEW_VALUE_TAGS = \[[^\]]*queue/);
   assert.match(taste, /Good value/);
   assert.match(taste, /REVIEW_MAX_TAGS = 8/);
 });

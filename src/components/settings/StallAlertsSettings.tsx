@@ -123,9 +123,10 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
   };
 
   return (
-    <SettingsSection title="Notifications">
+    <SettingsSection editorial title="Notifications">
       {permissionDenied ? (
         <SettingsRow
+          editorial
           label="Notifications are off for Hungry"
           description="Open settings to turn them on. Until then these alerts can't reach you."
           icon={<BellOff size={20} color={palette.orange} />}
@@ -135,6 +136,7 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
       ) : null}
       {loadState === "error" ? (
         <SettingsRow
+          editorial
           label="Couldn't load your alert settings"
           description="Tap to try again."
           icon={<RefreshCw size={20} color={palette.orange} />}
@@ -143,6 +145,7 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
         />
       ) : null}
       <SettingsRow
+        editorial
         label="Menu changes at followed stalls"
         description={`New dishes, price changes and restocks. Quiet ${formatHour(
           preferences.quietStartHour,
@@ -156,6 +159,7 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
         isLast={false}
       />
       <SettingsRow
+        editorial
         label="Weekly picks"
         description="A Monday nudge when your new dish picks are ready on Home."
         icon={<Sparkles size={20} color={palette.orange} />}
@@ -167,6 +171,7 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
         isLast={false}
       />
       <SettingsRow
+        editorial
         label="Lunch and dinner ideas"
         description="Three picks at 11:30am or 5:30pm, only on days you haven't opened Hungry yet."
         icon={<UtensilsCrossed size={20} color={palette.orange} />}
@@ -178,6 +183,7 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
         isLast={false}
       />
       <SettingsRow
+        editorial
         label="Followed stalls"
         icon={<Store size={20} color={palette.orange} />}
         type="navigation"

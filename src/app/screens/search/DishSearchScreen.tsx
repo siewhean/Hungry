@@ -385,8 +385,10 @@ export function DishSearchScreen() {
               shadows.card,
               {
                 alignItems: "center",
-                backgroundColor: palette.text,
+                backgroundColor: palette.surface,
+                borderColor: palette.border,
                 borderRadius: componentRadii.card,
+                borderWidth: 1,
                 flexDirection: "row",
                 gap: spacing[3],
                 padding: spacing[4],
@@ -395,7 +397,7 @@ export function DishSearchScreen() {
           >
             <View
               style={{
-                backgroundColor: palette.inverseSurfaceSoft,
+                backgroundColor: palette.orangeLight,
                 borderRadius: radii.md,
                 padding: spacing[3],
               }}
@@ -403,14 +405,12 @@ export function DishSearchScreen() {
               <SlidersHorizontal color={palette.orange} size={24} />
             </View>
             <View style={{ flex: 1 }}>
-              <AppText variant="h3" style={{ color: palette.textOnDark }}>
-                Tune Palate Vector
-              </AppText>
-              <AppText variant="bodySmall" style={{ color: palette.inverseTextSecondary }}>
-                Your six-axis taste profile
+              <AppText variant="h3">Tune your palate</AppText>
+              <AppText variant="bodySmall" tone="secondary">
+                Set how much spice, sweetness and richness you enjoy
               </AppText>
             </View>
-            <ChevronRight color={palette.textOnDark} size={20} />
+            <ChevronRight color={palette.textMuted} size={20} />
           </Pressable>
         )}
         {showRecents ? (

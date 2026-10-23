@@ -590,7 +590,7 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
   assert.match(source, /locations=\{\[0, 0\.58, 1\]\}/);
   assert.doesNotMatch(source, /Epicurean Discovery/);
   assert.doesNotMatch(source, /borderBottomWidth: 1,[\s\S]*Epicurean Discovery/);
-  assert.match(source, /View Taste Profile/);
+  assert.match(source, /How it tastes to you/);
   assert.match(source, /Opening hours/);
   assert.match(source, /More from \{venueName\}/);
   assert.match(source, /<AppText variant="h2">Community Palate Feedback<\/AppText>/);

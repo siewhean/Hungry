@@ -1,8 +1,17 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, View } from "react-native";
-import { BellRing, Bookmark, CircleCheck, Navigation, Star, Store } from "lucide-react-native";
+import {
+  BellRing,
+  Bookmark,
+  CircleCheck,
+  Navigation,
+  PenLine,
+  Star,
+  Store,
+} from "lucide-react-native";
 
+import { confirmHaptic } from "@/lib/haptics";
 import { PortfolioCard } from "@/components/portfolio";
 import { AccessibleImage, AppText, Button, Card, Chip, EmptyState } from "@/components/ui";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
@@ -59,6 +68,20 @@ export function FavouritesScreen({ navigation }: Props) {
   const dishIds = tab === "want" ? profile.favouriteDishIds : profile.reviewedDishIds;
   const dishes = dishIds.map((dishId) => repository.getDishById(dishId)).filter(isDishDetail);
   const rootNavigation = getRootNavigation(navigation as any);
+  const setDishTried = useProfileStore((state) => state.setDishTried);
+  const toggleEaten = async (dishId: string) => {
+    const eaten = profile.reviewedDishIds.includes(dishId);
+    const saved = await setDishTried(dishId, !eaten);
+    if (saved) confirmHaptic();
+    showToast(
+      saved
+        ? {
+            message: eaten ? "Removed from your tried dishes." : "Marked as eaten.",
+            tone: "success",
+          }
+        : { message: "Couldn't update your tried dishes. Try again.", tone: "error" },
+    );
+  };
 
   return (
     <ProfileScreenShell title="Saved">
@@ -237,23 +260,33 @@ export function FavouritesScreen({ navigation }: Props) {
                           onPress={() => rootNavigation.navigate("DishDetail", { dishId: dish.id })}
                         />
                       )}
-                      <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel={`Open ${dish.name} to mark as eaten or add a review`}
-                        onPress={() => rootNavigation.navigate("DishDetail", { dishId: dish.id })}
-                        style={{
-                          alignSelf: "center",
-                          flexDirection: "row",
-                          alignItems: "center",
-                          gap: spacing[1],
-                          padding: spacing[1],
-                        }}
-                      >
-                        <CircleCheck color={palette.textSecondary} size={15} />
-                        <AppText variant="bodySmallBold" tone="secondary">
-                          View dish to mark as eaten or review
-                        </AppText>
-                      </Pressable>
+                      <View style={{ flexDirection: "row", gap: spacing[2] }}>
+                        <Button
+                          label={
+                            profile.reviewedDishIds.includes(dish.id) ? "Eaten" : "Mark as eaten"
+                          }
+                          variant="secondary"
+                          size="sm"
+                          fullWidth={false}
+                          leftIcon={<CircleCheck color={palette.textSecondary} size={15} />}
+                          onPress={() => void toggleEaten(dish.id)}
+                          style={{ flex: 1 }}
+                        />
+                        <Button
+                          label="Add review"
+                          variant="secondary"
+                          size="sm"
+                          fullWidth={false}
+                          leftIcon={<PenLine color={palette.textSecondary} size={15} />}
+                          onPress={() =>
+                            rootNavigation.navigate("ReviewStack", {
+                              screen: "ReviewMain",
+                              params: { venueId: dish.venueId, dishId: dish.id },
+                            })
+                          }
+                          style={{ flex: 1 }}
+                        />
+                      </View>
                     </View>
                   </View>
                 );

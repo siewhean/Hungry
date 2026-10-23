@@ -58,6 +58,34 @@ export function DeliveryPlatformButton({
     await openTrustedDeliveryUrl(link.platform, link.nativeUrl, link.webUrl);
   };
 
+  if (compact && knownPlatform) {
+    // The compact chip is a quiet outlined pill so delivery apps never outshout the page's own
+    // actions: white fill, brand dot, plain label.
+    return (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={meta.label}
+        onPress={handlePress}
+        style={({ pressed }) => [
+          styles.chip,
+          {
+            backgroundColor: palette.surface,
+            borderColor: palette.border,
+            borderRadius: radii.pill,
+            opacity: pressed ? 0.8 : 1,
+            paddingHorizontal: spacing[3],
+          },
+        ]}
+      >
+        <View style={[styles.dot, { backgroundColor: meta.color }]} />
+        <AppText variant="bodySmallBold" numberOfLines={1}>
+          {meta.label.replace("Order on ", "")}
+        </AppText>
+        <ExternalLink size={14} color={palette.textSecondary} />
+      </Pressable>
+    );
+  }
+
   return (
     <Pressable
       accessibilityRole="button"
@@ -91,6 +119,18 @@ export function DeliveryPlatformButton({
 }
 
 const styles = StyleSheet.create({
+  chip: {
+    alignItems: "center",
+    borderWidth: 1,
+    flexDirection: "row",
+    gap: 8,
+    minHeight: 44,
+  },
+  dot: {
+    borderRadius: 5,
+    height: 10,
+    width: 10,
+  },
   button: {
     minHeight: 48,
   },

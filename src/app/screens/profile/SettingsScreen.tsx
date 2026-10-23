@@ -560,7 +560,14 @@ export function SettingsScreen() {
 
   return (
     <ProfileScreenShell title="Settings">
-      <SettingsSection editorial title="Dining preferences">
+      <SettingsSection
+        editorial
+        collapsible
+        title="Dining preferences"
+        collapsedSummary={
+          profile.dietaryPreferences.length ? `${profile.dietaryPreferences.length} selected` : ""
+        }
+      >
         <SettingsRow
           editorial
           label="Dietary preferences"

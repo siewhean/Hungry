@@ -20,11 +20,11 @@ test("Stitch stall layout keeps catalogue and review evidence dynamic", () => {
 
 test("Stitch dish layout keeps taste, rating, price, and menu data dynamic", () => {
   assert.match(dish, /Dish Details/);
-  assert.match(dish, /Taste Matrix &amp; Palate Profile/);
+  assert.match(dish, /How it tastes to you/);
   assert.match(dish, /Community Palate Feedback/);
   assert.match(dish, /dish\.mustOrder\s*\?/);
   assert.match(dish, /hasTasteSignal\s*\?/);
-  assert.match(dish, /dish\.tasteVector\[dimension\.key\]/);
+  assert.match(dish, /perceivedTasteRows\(dish\.tasteVector, profile\.tasteVector\)/);
   assert.match(dish, /formatDishPrice\(item\)/);
   assert.match(dish, /dish\.reviewCount > 0/);
   assert.match(dish, /<PhotoPager/);
