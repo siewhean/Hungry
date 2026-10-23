@@ -119,6 +119,8 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
   };
   const profile = useProfileStore((state) => state.profile);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  // A restored session can be signed in before its profile loads; the placeholder id is not a uuid.
+  const hasAccountProfile = isAuthenticated && profile.id !== "guest-user";
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const signOut = useSessionStore((state) => state.signOut);
   const merchantAccount = useMerchantStore((state) => state.account);
@@ -317,7 +319,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
   );
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!hasAccountProfile) {
       setProfilePosts([]);
       setHasMorePosts(false);
       setPostsLoadFailed(false);
@@ -354,7 +356,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
     return () => {
       isMounted = false;
     };
-  }, [isAuthenticated, loadOwnPostsPage, profile.id, postsReloadKey, publishedPostsVersion]);
+  }, [hasAccountProfile, loadOwnPostsPage, profile.id, postsReloadKey, publishedPostsVersion]);
 
   const loadMoreProfilePosts = () => {
     if (isLoadingMorePosts || !hasMorePosts) return;
@@ -382,7 +384,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
   // Refetched on focus only when stale, or when a review was added or removed since the last read.
   const reviewedDishKey = profile.reviewedDishIds.join(",");
   useEffect(() => {
-    if (!isAuthenticated || !isFocused) return;
+    if (!hasAccountProfile || !isFocused) return;
     const loadKey = `${profile.id}:${reviewedDishKey}:${ownReviewsReloadKey}`;
     const loaded = ownReviewsLoadedRef.current;
     if (loaded && loaded.key === loadKey && Date.now() - loaded.at < OWN_REVIEWS_STALE_MS) return;
@@ -404,7 +406,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
     return () => {
       isActive = false;
     };
-  }, [isAuthenticated, isFocused, profile.id, reviewedDishKey, ownReviewsReloadKey]);
+  }, [hasAccountProfile, isFocused, profile.id, reviewedDishKey, ownReviewsReloadKey]);
 
   const profileStatSummary = useMemo(
     () => ({
@@ -414,7 +416,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
   );
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!hasAccountProfile) {
       setProfileFollowCounts({
         followersCount: profile.stats.followersCount,
         followingCount: profile.stats.followingCount,
@@ -442,7 +444,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
       isActive = false;
     };
   }, [
-    isAuthenticated,
+    hasAccountProfile,
     isFocused,
     profile.id,
     profile.stats.followersCount,
@@ -451,7 +453,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
 
   useEffect(() => {
     // Refetch on focus so approving/declining on Follow Requests updates the row.
-    if (!isAuthenticated || !isFocused) return;
+    if (!hasAccountProfile || !isFocused) return;
 
     let isActive = true;
 
@@ -467,7 +469,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
     return () => {
       isActive = false;
     };
-  }, [isAuthenticated, isFocused, profile.id]);
+  }, [hasAccountProfile, isFocused, profile.id]);
 
   // A skipped quiz leaves every taste at neutral: that is "not built yet", not a result.
   const hasTasteFingerprint = useMemo(
