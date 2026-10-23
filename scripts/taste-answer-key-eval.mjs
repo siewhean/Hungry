@@ -1,10 +1,11 @@
 // Compares the tag-dishes prompt against sh's hand-scored answer key.
 // Usage: GEMINI_API_KEY=... npx tsx scripts/taste-answer-key-eval.mjs [data/taste-answer-key.xlsx]
+// To try another model, set AI_MODEL (and AI_PROVIDER=anthropic with ANTHROPIC_API_KEY for Claude).
 import ExcelJS from "exceljs";
 // Dynamic import: tsx loads this .ts module as CommonJS, which static named imports can't read.
-const { MODEL, OUTPUT_SCHEMA, SYSTEM_PROMPT, TASTE_AXES } =
+const { OUTPUT_SCHEMA, SYSTEM_PROMPT, TASTE_AXES } =
   await import("../supabase/functions/_shared/tasteTagging.ts");
-const { generateJson } = await import("../supabase/functions/_shared/gemini.ts");
+const { generateJson, resolveAi } = await import("../supabase/functions/_shared/aiProvider.ts");
 
 const TOLERANCE = 1.5;
 // These dishes are the worked examples inside SYSTEM_PROMPT, so they are reported apart.
@@ -29,12 +30,10 @@ async function readAnswerKey(filePath) {
   return rows;
 }
 
-async function scoreDish(apiKey, { dish, description }) {
+async function scoreDish(ai, { dish, description }) {
   const lines = [`Dish: ${dish}`];
   if (description) lines.push(`Description: ${description}`);
-  const result = await generateJson({
-    apiKey,
-    model: MODEL,
+  const result = await generateJson(ai, {
     system: SYSTEM_PROMPT,
     user: lines.join("\n"),
     schema: OUTPUT_SCHEMA,
@@ -60,10 +59,17 @@ function summarise(label, results) {
 }
 
 async function main() {
-  if (!process.env.GEMINI_API_KEY) {
-    console.error("Set GEMINI_API_KEY in your shell first.");
+  const settings = resolveAi((name) => process.env[name]);
+  if (settings.problem === "invalid_ai_provider") {
+    console.error('AI_PROVIDER must be "gemini" or "anthropic".');
     process.exit(1);
   }
+  if (settings.problem) {
+    const keyName = settings.provider === "gemini" ? "GEMINI_API_KEY" : "ANTHROPIC_API_KEY";
+    console.error(`Set ${keyName} in your shell first.`);
+    process.exit(1);
+  }
+  console.log(`Scoring with ${settings.provider} / ${settings.model}`);
   const filePath = process.argv[2] ?? "data/taste-answer-key.xlsx";
   const key = await readAnswerKey(filePath);
   if (key.length === 0) {
@@ -74,7 +80,7 @@ async function main() {
   const results = [];
   for (const row of key) {
     try {
-      const ai = await scoreDish(process.env.GEMINI_API_KEY, row);
+      const ai = await scoreDish(settings, row);
       const aiScores = TASTE_AXES.map((axis) => Number(ai[axis]));
       const diffs = aiScores.map((score, index) => Math.abs(score - row.scores[index]));
       results.push({ ...row, aiScores, diffs, confidence: Number(ai.confidence) });

@@ -1,5 +1,5 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, View } from "react-native";
 import { BellRing, Bookmark, CircleCheck, Navigation, Star, Store } from "lucide-react-native";
 
@@ -96,10 +96,9 @@ export function FavouritesScreen({ navigation }: Props) {
           onOpenAllLists={() => navigation.navigate("ListsHome", undefined, { pop: true })}
         />
       ) : getServiceProvider().mode === "supabase" ? (
-        <CatalogSavedDishes
-          key={`${authenticatedUserId ?? "guest"}:${profile.id}`}
-          navigation={navigation}
-        />
+        <Fragment key={`${authenticatedUserId ?? "guest"}:${profile.id}`}>
+          <CatalogSavedDishes navigation={navigation} />
+        </Fragment>
       ) : (
         <>
           <View style={{ flexDirection: "row", gap: spacing[2], marginBottom: spacing[4] }}>

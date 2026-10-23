@@ -757,23 +757,27 @@ export function SettingsScreen() {
       )}
 
       <SettingsSection editorial title="Data & privacy">
-        {showSocialPrivacySettings ? (
-          <SettingsRow
-            editorial
-            label="Profile visibility"
-            icon={
-              isProfilePrivate ? (
-                <Lock size={20} color={palette.orange} />
-              ) : (
-                <Eye size={20} color={palette.orange} />
-              )
-            }
-            type="navigation"
-            value={isSavingVisibility ? "Saving…" : isProfilePrivate ? "Private" : "Public"}
-            onPress={() => setVisibilitySheetVisible(true)}
-            busy={isSavingVisibility}
-            isLast={false}
-          />
+        {isAuthenticated ? (
+          <>
+            {showSocialPrivacySettings ? (
+              <SettingsRow
+                label="Profile visibility"
+                editorial
+                icon={
+                  isProfilePrivate ? (
+                    <Lock size={20} color={palette.orange} />
+                  ) : (
+                    <Eye size={20} color={palette.orange} />
+                  )
+                }
+                type="navigation"
+                value={isSavingVisibility ? "Saving…" : isProfilePrivate ? "Private" : "Public"}
+                onPress={() => setVisibilitySheetVisible(true)}
+                busy={isSavingVisibility}
+                isLast={false}
+              />
+            ) : null}
+          </>
         ) : null}
         {isAuthenticated ? (
           <SettingsRow
@@ -929,15 +933,17 @@ export function SettingsScreen() {
         </SettingsSection>
       ) : null}
 
-      <View style={{ gap: spacing[3], marginBottom: spacing[4], marginTop: spacing[1] }}>
-        <Button
-          label="Delete account"
-          variant="destructive"
-          onPress={handleDeleteAccount}
-          loading={deletionRequested}
-          leftIcon={<Trash2 size={20} color={palette.white} />}
-        />
-      </View>
+      {isAuthenticated ? (
+        <View style={{ gap: spacing[3], marginBottom: spacing[4], marginTop: spacing[1] }}>
+          <Button
+            label="Delete account"
+            variant="destructive"
+            onPress={handleDeleteAccount}
+            loading={deletionRequested}
+            leftIcon={<Trash2 size={20} color={palette.white} />}
+          />
+        </View>
+      ) : null}
 
       {/* Cross-platform confirm (Alert.alert is a no-op on web, so E2E can't drive it). */}
       <Dialog
@@ -1025,7 +1031,7 @@ export function SettingsScreen() {
         onClose={() => setThemeSheetVisible(false)}
       />
       <SettingsChoiceSheet
-        visible={showSocialPrivacySettings && visibilitySheetVisible}
+        visible={isAuthenticated && showSocialPrivacySettings && visibilitySheetVisible}
         title="Profile visibility"
         message="Private: only approved followers see your posts, Lists and the reviews on your profile. Your reviews still show on dish pages."
         options={[

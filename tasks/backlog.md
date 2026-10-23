@@ -7,14 +7,16 @@
 ## Current Focus
 
 - `STITCH-8-SCREENS-01` — Implemented on `codex/stitch-eight-screens` from
-  `main`, rebased after PR #114 merged. Eight Stitch HTML exports
+  `main`, updated after PR #118 merged. Eight Stitch HTML exports
   and full-resolution screenshots are in `design/stitch/iterations-11940609752387078506/`.
   Search, Profile, Achievements/Passport, Settings, Reviews, Saved Dishes, Stall,
   and Dish screens now use the design hierarchy with service-backed data and
   supported actions. Focused screen contracts pass 30/30. Local typecheck is
   blocked by the worktree's reused `node_modules` missing declared
   `expo-clipboard`; independent QA passed 28/28 focused contracts, export
-  integrity, formatting, and diff checks. CI and native visual smoke remain pending.
+  integrity, formatting, and diff checks. The three merge-CI source-contract
+  failures are repaired (33/33 affected tests pass locally); fresh CI and native
+  visual smoke remain pending.
 
 - `SG-FNB-REGISTRY-01` — SFA-backed Singapore-wide public-access register plus alphabetized enrichment output. Regenerate base with `python3 scripts/refresh_sfa_verified_fnb_catalog.py` and enriched list with `python3 scripts/enrich_public_access_fnb_catalog.py`. The enriched CSV preserves the base 38,584 records, all 55 backup workbook headers, and exact-licence joins. Its 16,769 upstream menu rows carry approval/rights flags that deeper review found insufficient to prove reuse or freshness; the current Excel export filters platform/unavailable sources and keeps 509 dated-as-unknown historical candidates. Backup details remain dated 2026-04-04; they are not relabelled current. Permanent-closure proof and fresh verification of every menu/rating remain unclaimed.
 - `SG-FNB-WEB-REVIEW-01` — Review-only official-site scrape launched 2026-10-15. Three batches checked 75 candidate websites with zero catalogue writes; closure scan reviewed 7 extracted-source venues and found zero explicit permanent/temporary closure signals. Menu/image candidates require exact venue/menu review and image reuse permission before cataloguing. Google photos are not cached; fresh attributed Places display requires compliant live API usage. Not a Singapore-wide verification.
