@@ -5,6 +5,7 @@ type Ai = {
   provider: "gemini" | "anthropic";
   model: string;
   apiKey: string;
+  workspaceId: string;
   problem: string | null;
 };
 type Provider = {
@@ -62,6 +63,7 @@ test("resolveAi defaults to Gemini with its own key and model", async () => {
     provider: "gemini",
     model: "gemini-3.8-flash",
     apiKey: "g-key",
+    workspaceId: "",
     problem: null,
   });
 });
@@ -118,6 +120,24 @@ test("generateJson sends Claude the schema, key and version, and no temperature"
     effort: "low",
     format: { type: "json_schema", schema: OPTIONS.schema },
   });
+});
+
+test("generateJson sends the workspace header only when ANTHROPIC_WORKSPACE_ID is set", async () => {
+  const { resolveAi, generateJson } = await loadProvider();
+  const headerFor = async (extra: Record<string, string>) => {
+    const ai = resolveAi(envOf({ AI_PROVIDER: "anthropic", ANTHROPIC_API_KEY: "a-key", ...extra }));
+    let headers: Record<string, string> = {};
+    await withFetch(
+      (_url, init) => {
+        headers = init.headers as Record<string, string>;
+        return claudeAnswer("end_turn", '{"a":1}');
+      },
+      () => generateJson(ai, OPTIONS),
+    );
+    return headers["anthropic-workspace-id"];
+  };
+  assert.equal(await headerFor({}), undefined);
+  assert.equal(await headerFor({ ANTHROPIC_WORKSPACE_ID: " wrkspc_123 " }), "wrkspc_123");
 });
 
 test("generateJson returns null when Claude stops before finishing", async () => {

@@ -9,6 +9,8 @@ type JsonObject = Record<string, unknown>;
 /** Returns the parsed JSON answer, or null when the model stopped before finishing it. */
 export async function generateJson(options: {
   apiKey: string;
+  /** Needed only when the key is not tied to a Console workspace. */
+  workspaceId?: string;
   model: string;
   system: string;
   user: string;
@@ -21,6 +23,7 @@ export async function generateJson(options: {
       "Content-Type": "application/json",
       "x-api-key": options.apiKey,
       "anthropic-version": "2023-06-01",
+      ...(options.workspaceId ? { "anthropic-workspace-id": options.workspaceId } : {}),
     },
     // No temperature: current Claude models reject non-default sampling values.
     body: JSON.stringify({

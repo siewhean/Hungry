@@ -1,6 +1,7 @@
 // Compares the tag-dishes prompt against sh's hand-scored answer key.
 // Usage: GEMINI_API_KEY=... npx tsx scripts/taste-answer-key-eval.mjs [data/taste-answer-key.xlsx]
-// To try another model, set AI_MODEL (and AI_PROVIDER=anthropic with ANTHROPIC_API_KEY for Claude).
+// To try another model, set AI_MODEL (and AI_PROVIDER=anthropic with ANTHROPIC_API_KEY for Claude;
+// add ANTHROPIC_WORKSPACE_ID if that key is not tied to a Console workspace).
 import ExcelJS from "exceljs";
 // Dynamic import: tsx loads this .ts module as CommonJS, which static named imports can't read.
 const { OUTPUT_SCHEMA, SYSTEM_PROMPT, TASTE_AXES } =
