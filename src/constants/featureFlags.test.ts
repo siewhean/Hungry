@@ -3,99 +3,113 @@ import test from "node:test";
 
 import { resolveFeatureFlags } from "@/constants/featureFlags";
 
-test("merchantClaimCtaEnabled is true in staging", () => {
-  const flags = resolveFeatureFlags("staging");
-  assert.equal(flags.merchantClaimCtaEnabled, true);
-});
+// Core surfaces that ship in every environment (main's product decisions).
+const SHIPPED_SURFACE_FLAGS = [
+  "socialFeedEnabled",
+  "postCreationEnabled",
+  "reviewCreationEnabled",
+  "activityEnabled",
+  "mapEnabled",
+  "hungryWheelEnabled",
+  "favouritesEnabled",
+  "portfoliosEnabled",
+  "stallAlertsEnabled",
+] as const;
 
-test("merchantClaimCtaEnabled is false in production", () => {
-  const flags = resolveFeatureFlags("production");
-  assert.equal(flags.merchantClaimCtaEnabled, false);
-});
+// Surfaces that stay out of production (mock-backed or not launch-ready).
+const NON_PRODUCTION_FLAGS = [
+  "craveEnabled",
+  "wheelPartyEnabled",
+  "directMessagesEnabled",
+  "commentsEnabled",
+  "oauthProvidersEnabled",
+  "gamificationEnabled",
+  "collectionsEnabled",
+  "storiesEnabled",
+  "merchantCentreEnabled",
+  "merchantClaimCtaEnabled",
+  "prototypeRoutesEnabled",
+] as const;
 
-test("merchantClaimCtaEnabled is available only outside production", () => {
-  assert.equal(resolveFeatureFlags("development").merchantClaimCtaEnabled, true);
-  assert.equal(resolveFeatureFlags(undefined, "test").merchantClaimCtaEnabled, false);
-  assert.equal(resolveFeatureFlags("qa", "test").merchantClaimCtaEnabled, false);
-  assert.equal(resolveFeatureFlags(undefined, "development").merchantClaimCtaEnabled, true);
-  assert.equal(resolveFeatureFlags("production").merchantClaimCtaEnabled, false);
-});
+test("production ships main's core surfaces and keeps advanced surfaces closed", () => {
+  const flags = resolveFeatureFlags("production", "production", {});
 
-test("merchantCentreEnabled is available only outside production", () => {
-  assert.equal(resolveFeatureFlags("development").merchantCentreEnabled, true);
-  assert.equal(resolveFeatureFlags("staging").merchantCentreEnabled, true);
-  assert.equal(resolveFeatureFlags("production").merchantCentreEnabled, false);
-  assert.equal(resolveFeatureFlags(undefined, "test").merchantCentreEnabled, false);
-  assert.equal(resolveFeatureFlags("qa", "test").merchantCentreEnabled, false);
-  assert.equal(resolveFeatureFlags(undefined, "development").merchantCentreEnabled, true);
-});
-
-test("prototypeRoutesEnabled is available outside production only", () => {
-  assert.equal(resolveFeatureFlags("development").prototypeRoutesEnabled, true);
-  assert.equal(resolveFeatureFlags("staging").prototypeRoutesEnabled, true);
-  assert.equal(resolveFeatureFlags(undefined, "test").prototypeRoutesEnabled, false);
-  assert.equal(resolveFeatureFlags("qa", "test").prototypeRoutesEnabled, false);
-  assert.equal(resolveFeatureFlags(undefined, "development").prototypeRoutesEnabled, true);
-  assert.equal(resolveFeatureFlags("production").prototypeRoutesEnabled, false);
-});
-
-test("advanced social and gamification surfaces are disabled in production", () => {
-  const flags = resolveFeatureFlags("production");
-
-  assert.equal(flags.directMessagesEnabled, false);
-  assert.equal(flags.commentsEnabled, false);
-  assert.equal(flags.gamificationEnabled, false);
-  assert.equal(flags.collectionsEnabled, false);
-  assert.equal(flags.storiesEnabled, false);
-  assert.equal(flags.merchantCentreEnabled, false);
-  assert.equal(flags.merchantClaimCtaEnabled, false);
-  assert.equal(flags.oauthProvidersEnabled, false);
-  assert.equal(flags.floorplansEnabled, false);
-});
-
-test("audited social and gamification surfaces are available in explicit non-production environments", () => {
-  for (const env of ["development", "staging"]) {
-    const flags = resolveFeatureFlags(env);
-
-    assert.equal(flags.directMessagesEnabled, true);
-    assert.equal(flags.commentsEnabled, true);
-    assert.equal(flags.oauthProvidersEnabled, true);
-    assert.equal(flags.gamificationEnabled, true);
-    assert.equal(flags.collectionsEnabled, true);
-    assert.equal(flags.storiesEnabled, true);
+  assert.equal(flags.release01CoreOnly, false);
+  for (const flag of SHIPPED_SURFACE_FLAGS) {
+    assert.equal(flags[flag], true, `${flag} must ship in production`);
+  }
+  for (const flag of NON_PRODUCTION_FLAGS) {
+    assert.equal(flags[flag], false, `${flag} must stay out of production`);
   }
 });
 
-test("unknown or missing environments fail closed outside local development", () => {
-  for (const env of [undefined, "qa"]) {
-    const flags = resolveFeatureFlags(env, "test");
+test("development and staging retain the wider implementation surface", () => {
+  for (const appEnv of ["development", "staging"] as const) {
+    const flags = resolveFeatureFlags(
+      appEnv,
+      appEnv === "development" ? "development" : "production",
+      {},
+    );
 
-    assert.equal(flags.directMessagesEnabled, false);
-    assert.equal(flags.commentsEnabled, false);
-    assert.equal(flags.oauthProvidersEnabled, false);
-    assert.equal(flags.gamificationEnabled, false);
-    assert.equal(flags.collectionsEnabled, false);
-    assert.equal(flags.storiesEnabled, false);
-    assert.equal(flags.merchantCentreEnabled, false);
-    assert.equal(flags.merchantClaimCtaEnabled, false);
-    assert.equal(flags.prototypeRoutesEnabled, false);
+    assert.equal(flags.release01CoreOnly, false);
+    for (const flag of [...SHIPPED_SURFACE_FLAGS, ...NON_PRODUCTION_FLAGS]) {
+      assert.equal(flags[flag], true, `${flag} must be available in ${appEnv}`);
+    }
+    assert.equal(flags.catalogDiagnosticsEnabled, true);
+  }
+});
+
+test("build profiles can narrow surfaces one at a time and opt into core-only mode", () => {
+  const flags = resolveFeatureFlags("staging", "production", {
+    EXPO_PUBLIC_ENABLE_MAP: "0",
+    EXPO_PUBLIC_ENABLE_REVIEWS: "0",
+    EXPO_PUBLIC_RELEASE_01_CORE_ONLY: "1",
+  });
+
+  assert.equal(flags.mapEnabled, false);
+  assert.equal(flags.reviewCreationEnabled, false);
+  assert.equal(flags.socialFeedEnabled, true);
+  assert.equal(flags.release01CoreOnly, true);
+  assert.equal(flags.favouritesEnabled, true);
+});
+
+test("catalog diagnostics remain unavailable in public production", () => {
+  assert.equal(
+    resolveFeatureFlags("development", "development", {}).catalogDiagnosticsEnabled,
+    true,
+  );
+  assert.equal(resolveFeatureFlags("staging", "production", {}).catalogDiagnosticsEnabled, true);
+  assert.equal(
+    resolveFeatureFlags("production", "production", {}).catalogDiagnosticsEnabled,
+    false,
+  );
+});
+
+test("unknown or missing environments resolve to production outside local development", () => {
+  for (const appEnv of [undefined, "qa"]) {
+    const flags = resolveFeatureFlags(appEnv, "test", {});
+
+    assert.equal(flags.appEnv, "production");
+    for (const flag of NON_PRODUCTION_FLAGS) {
+      assert.equal(flags[flag], false, `${flag} must fail closed when the environment is unknown`);
+    }
   }
 });
 
 test("indoor floorplans stay disabled in every environment until launch gates pass", () => {
-  for (const env of ["development", "staging", "production", undefined, "qa"]) {
-    assert.equal(resolveFeatureFlags(env, "test").floorplansEnabled, false);
+  for (const appEnv of ["development", "staging", "production", undefined, "qa"]) {
+    assert.equal(resolveFeatureFlags(appEnv, "test", {}).floorplansEnabled, false);
   }
 });
 
-test("wheel parties and Crave stay out of production", () => {
-  const production = resolveFeatureFlags("production");
+test("wheel solo spin ships everywhere; wheel parties and Crave stay out of production", () => {
+  const production = resolveFeatureFlags("production", "production", {});
+  assert.equal(production.hungryWheelEnabled, true);
   assert.equal(production.wheelPartyEnabled, false);
   assert.equal(production.craveEnabled, false);
-  assert.equal("hungryWheelEnabled" in production, false);
 
   for (const env of ["development", "staging"]) {
-    const flags = resolveFeatureFlags(env);
+    const flags = resolveFeatureFlags(env, "production", {});
     assert.equal(flags.wheelPartyEnabled, true);
     assert.equal(flags.craveEnabled, true);
   }

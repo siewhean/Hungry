@@ -3648,13 +3648,11 @@ export const supabaseService: HungryService = {
       const scheduledFor = asString(data);
       if (!scheduledFor) throw new Error("The deletion request did not return a date.");
 
-      // The request is queued; a failed token unbind or sign-out must not report
-      // the deletion itself as failed. The caller clears the local session.
+      // The request is queued; a failed token unbind must not report the deletion
+      // itself as failed. No sign-out here: the caller purges local data first,
+      // records a confirmation notice, then signs out through the session store.
       await unregisterStoredPushToken(client).catch(() => undefined);
-      // Deletion ends every device's session; fall back to this device if that fails.
-      await this.signOut({ scope: "global" })
-        .catch(() => this.signOut())
-        .catch(() => undefined);
+      // Ending every device's session happens in the caller, after its local purge.
       return { scheduledFor };
     },
 
@@ -4432,10 +4430,13 @@ export const supabaseService: HungryService = {
       return DEFAULT_GUEST_PROFILE;
     },
 
-    async toggleFavourite(dishId: string) {
+    async toggleFavourite(dishId: string, expectedUserId?: string) {
       const client = requireSupabaseClient();
       const userId = await getCurrentSupabaseUserId();
       if (!userId) throw new Error("You must be signed in to favourite dishes.");
+      if (expectedUserId && userId !== expectedUserId) {
+        throw new Error("Account changed before the favourite could be saved.");
+      }
 
       const { data } = await client
         .from("user_favourite_dishes")

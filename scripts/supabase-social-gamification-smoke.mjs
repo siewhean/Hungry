@@ -7,6 +7,7 @@ const SMOKE_URL_ENV = "HUNGRY_SUPABASE_SMOKE_URL";
 const SMOKE_ANON_ENV = "HUNGRY_SUPABASE_SMOKE_ANON_KEY";
 const SMOKE_SERVICE_ENV = "HUNGRY_SUPABASE_SMOKE_SERVICE_ROLE_KEY";
 const SMOKE_PROJECT_REF_ENV = "HUNGRY_SUPABASE_SMOKE_PROJECT_REF";
+const ALLOWED_HOSTS_ENV = "HUNGRY_SUPABASE_ALLOWED_HOSTS";
 const SERVICE_ROLE_OPT_IN_ENV = "HUNGRY_ALLOW_SERVICE_ROLE_SMOKE";
 
 function getAnonKey() {
@@ -27,8 +28,13 @@ function getMissingEnv() {
   const smokeUrl = process.env[SMOKE_URL_ENV]?.trim();
 
   if (!getAnonKey()) missing.push(SMOKE_ANON_ENV);
-  if (smokeUrl && !isLocalSmokeUrl(smokeUrl) && !process.env[SMOKE_PROJECT_REF_ENV]?.trim()) {
-    missing.push(SMOKE_PROJECT_REF_ENV);
+  if (
+    smokeUrl &&
+    !isLocalSmokeUrl(smokeUrl) &&
+    !process.env[ALLOWED_HOSTS_ENV]?.trim() &&
+    !process.env[SMOKE_PROJECT_REF_ENV]?.trim()
+  ) {
+    missing.push(`${ALLOWED_HOSTS_ENV} (or ${SMOKE_PROJECT_REF_ENV} for *.supabase.co)`);
   }
   if (process.env[SERVICE_ROLE_OPT_IN_ENV] !== "1") {
     missing.push(`${SERVICE_ROLE_OPT_IN_ENV}=1`);
@@ -50,24 +56,33 @@ function createSupabaseClient(key) {
   });
 }
 
+function getAllowedHosts() {
+  return (process.env[ALLOWED_HOSTS_ENV] ?? "")
+    .split(",")
+    .map((host) => host.trim().toLowerCase())
+    .filter(Boolean);
+}
+
 function assertSmokeTargetIsAllowed() {
   const smokeUrl = process.env[SMOKE_URL_ENV].trim();
   if (isLocalSmokeUrl(smokeUrl)) return;
 
-  const { hostname } = new URL(smokeUrl);
-  const actualProjectRef = hostname.split(".")[0] ?? "";
-  const expectedProjectRef = process.env[SMOKE_PROJECT_REF_ENV]?.trim() ?? "";
+  const hostname = new URL(smokeUrl).hostname.toLowerCase();
+  if (getAllowedHosts().includes(hostname)) return;
 
-  if (!expectedProjectRef) {
-    fail(
-      `cloud smoke target requires ${SMOKE_PROJECT_REF_ENV} to confirm the intended dev project`,
-    );
-  }
-  if (actualProjectRef !== expectedProjectRef) {
+  // Backward compatibility: Supabase Cloud URLs may still be confirmed by project ref.
+  const expectedProjectRef = process.env[SMOKE_PROJECT_REF_ENV]?.trim() ?? "";
+  if (hostname.endsWith(".supabase.co") && expectedProjectRef) {
+    const actualProjectRef = hostname.split(".")[0] ?? "";
+    if (actualProjectRef === expectedProjectRef) return;
     fail(
       `${SMOKE_PROJECT_REF_ENV}=${expectedProjectRef} does not match the Supabase URL project ref ${actualProjectRef}`,
     );
   }
+
+  fail(
+    `smoke target host ${hostname} is not in ${ALLOWED_HOSTS_ENV}; add it (comma-separated) to confirm the intended dev/staging Supabase`,
+  );
 }
 
 async function expectNoError(result, label) {

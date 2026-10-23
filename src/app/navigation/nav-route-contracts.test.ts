@@ -57,6 +57,8 @@ test("onboarding is welcome, then four counted steps: location, optional taste q
   ]) {
     assert.ok(!existsSync(path.join(root, "src/app/screens/onboarding", removedFile)), removedFile);
   }
+  // After sign-up the signed-in app runs onboarding via Splash/RootNavigator.
+  assert.doesNotMatch(read("src/app/screens/auth/SignUpScreen.tsx"), /continueAsGuest/);
   // Only RootNavigator routes after auth; SignUp no longer resets into onboarding itself.
   assert.doesNotMatch(read("src/app/screens/auth/SignUpScreen.tsx"), /screen: "OnboardingWelcome"/);
   assert.match(
@@ -129,12 +131,22 @@ test("onboarding is welcome, then four counted steps: location, optional taste q
   );
   assert.doesNotMatch(quiz, /navigation\.navigate\("LocationPermission"\)/);
 
-  // The done step completes onboarding, then resets to Home. The only other exit is
-  // a guest who signs up from OnboardingAuth and confirms their email: the stack is
-  // reset to EmailVerification, which completes onboarding (completeVerifiedSignUp).
-  for (const source of [welcome, location, picker, quiz, openness, onboardingAuth]) {
+  // Sign-in is required. The done step completes onboarding and resets to Home for a
+  // signed-in user; a signed-out user goes to the account step, whose mandatory
+  // wrapper completes onboarding (with the quiz-skip choice) before auth.
+  for (const source of [location, picker, quiz, openness]) {
     assert.doesNotMatch(source, /completeOnboarding/);
   }
+  // Welcome completes onboarding only for an existing account going to Login.
+  assert.equal(welcome.match(/completeOnboarding\(\)/g)?.length, 1);
+  assert.match(
+    welcome,
+    /const handleExistingAccountSignIn = \(\) => \{[\s\S]*?completeOnboarding\(\);[\s\S]*?screen: "Login"/,
+  );
+  assert.match(
+    done,
+    /if \(!isAuthenticated\) \{\s*navigation\.navigate\("OnboardingAuth"\);\s*return;\s*\}/,
+  );
   // RootNavigator owns the transition Home once onboarding completes (one navigation).
   assert.match(
     done,
@@ -144,6 +156,13 @@ test("onboarding is welcome, then four counted steps: location, optional taste q
     read("src/app/navigation/RootNavigator.tsx"),
     /currentTopRoute === "OnboardingStack" && hasCompletedOnboarding[\s\S]*?navigateHome\(\)/,
   );
+  // Saving a dish as a guest never opens the account step early.
+  assert.doesNotMatch(done, /setPendingSaveDish/);
+  assert.match(
+    read("src/app/screens/onboarding/MandatoryOnboardingAuthScreen.tsx"),
+    /completeOnboarding\(hasSkippedTasteQuiz\)/,
+  );
+  assert.match(onboardingAuth, /const finishOnboarding = \(\) => \{\s*completeOnboarding\(\);/);
   assert.match(
     onboardingAuth,
     /screen: "EmailVerification",\s*params: \{ email: values\.email, completedOnboarding: true \}/,
@@ -153,19 +172,18 @@ test("onboarding is welcome, then four counted steps: location, optional taste q
     /completeVerifiedSignUp\(shouldCompleteOnboarding\)/,
   );
 
-  // Sign-in is not a step: OnboardingAuth opens just-in-time (saving a dish as a
-  // guest) and returns to where the user was. The dish is kept on the device and saved
-  // after sign-in or email verification, even once this screen has unmounted.
-  assert.match(
+  // A signed-out save on the done step is kept on the device and saved after the
+  // required account step finishes; it never opens the account step early.
+  assert.match(done, /rememberPendingDishSave\(dish\);/);
+  assert.doesNotMatch(
     done,
-    /rememberPendingDishSave\(dish\);\s*navigation\.navigate\("OnboardingAuth", \{ dishName: dish\.name \}\)/,
+    /rememberPendingDishSave\(dish\);\s*navigation\.navigate\("OnboardingAuth"\)/,
   );
   assert.match(
     read("src/features/auth/applySignedInProfile.ts"),
-    /\.then\(\(\) => flushPendingDishSave\(\)\)/,
+    /void flushPendingDishSave\(\)\.catch\(\(\) => undefined\);/,
   );
-  assert.match(onboardingAuth, /const finishOnboarding = \(\) => \{\s*navigation\.goBack\(\);/);
-  assert.doesNotMatch(onboardingAuth, /navigation\.navigate\("LocationPermission"\)/);
+  assert.match(read("src/features/auth/applySignedInProfile.ts"), /flushPendingDishSave\(\)/);
 });
 
 test("root and nested route targets avoid stale or unregistered screens", () => {
@@ -190,18 +208,18 @@ test("root and nested route targets avoid stale or unregistered screens", () => 
   assert.doesNotMatch(merchantSettings, /navigation\.navigate\("Profile" as never\)/);
 });
 
-test("synthetic create tab targets root routes without registering a fake tab route", () => {
+test("synthetic post action stays behind the Release 0.1 post flag", () => {
   const tabs = read("src/app/navigation/SwipeableTabNavigator.tsx");
   const types = read("src/app/navigation/navigationTypes.ts");
 
   assert.doesNotMatch(tabs, /<Tab\.Screen name="Create"/);
   assert.doesNotMatch(types, /^\s+Create: undefined;/m);
   assert.match(tabs, /navigation\.getParent<NavigationProp<RootStackParamList>>\(\)/);
+  assert.match(tabs, /FEATURE_FLAGS\.postCreationEnabled[\s\S]*key: "Create"/);
   assert.match(tabs, /rootNavigation\?\.navigate\("Post"\)/);
-  assert.doesNotMatch(tabs, /composerRoute|PostComposerV2/);
+  assert.match(tabs, /preloadRoute\(rootNavigation, "Post"\)/);
+  assert.doesNotMatch(tabs, /PostComposerV2/);
   assert.match(tabs, /rootNavigation\?\.navigate\("AuthStack", \{ screen: "Login" \}\)/);
-  assert.doesNotMatch(tabs, /navigation\.getParent\(\)\?\.navigate\("PostComposerV2"\)/);
-  assert.doesNotMatch(tabs, /navigation\.navigate\("AuthStack", \{ screen: "Login" \}\)/);
 });
 
 test("going offline shows a banner instead of taking over navigation", () => {

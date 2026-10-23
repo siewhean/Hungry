@@ -62,6 +62,7 @@ import {
 } from "@/features/merchantClaim/submitClaimFromStall";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { sanitizeCatalogImageUrl } from "@/lib/services/catalog/media";
 import {
   getDataRepository,
   getHungryService,
@@ -223,9 +224,14 @@ function inferDishCategory(dish: DishDetail) {
 
 /** The first photo of the dish's own: a menu tile shows one still image, never the stall's. */
 function getStallDishPhotos(dish: DishDetail) {
+  // A menu tile only ever cycles the dish's own photos, so the image, name,
+  // price and tap target always describe the same dish. URLs go through the
+  // shared catalog sanitizer so unsafe or placeholder hosts fall back to NoDishPhoto.
   return Array.from(
     new Set(
-      [dish.imageUrl, ...(dish.gallery ?? [])].filter((url): url is string => Boolean(url?.trim())),
+      [dish.imageUrl, ...(dish.gallery ?? [])]
+        .map((url) => sanitizeCatalogImageUrl(url))
+        .filter((url): url is string => Boolean(url?.trim())),
     ),
   );
 }
@@ -392,6 +398,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const [isSubmittingMenuPhoto, setIsSubmittingMenuPhoto] = useState(false);
   // Menu photos upload from a device file (supply.submitMenuPhoto), so not on web.
   const canSubmitMenuPhoto = isAuthenticated && Platform.OS !== "web";
+  const showDeferredDetailControls = !FEATURE_FLAGS.release01CoreOnly;
 
   const submitMenuPhotoFrom = useCallback(
     async (source: "camera" | "library") => {
@@ -583,6 +590,12 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const sideLoadVenueId = venue?.id;
   useEffect(() => {
     let active = true;
+    if (!showDeferredDetailControls) {
+      setActivePromotions([]);
+      return () => {
+        active = false;
+      };
+    }
     if (!sideLoadVenueId) {
       setActivePromotions([]);
       return () => {
@@ -620,7 +633,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
     return () => {
       active = false;
     };
-  }, [sideLoadVenueId]);
+  }, [showDeferredDetailControls, sideLoadVenueId]);
 
   useEffect(() => {
     if (!venue || activePromotions.length === 0) return;
@@ -846,7 +859,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
         venue.imageUrl,
         ...dishes.map((dish) => getStallDishPhotos(dish)[0]),
         ...stallReviewPhotos,
-      ].filter((url): url is string => Boolean(url?.trim())),
+      ]
+        .map((url) => sanitizeCatalogImageUrl(url))
+        .filter((url): url is string => Boolean(url?.trim())),
     ),
   ).slice(0, HERO_PHOTO_LIMIT);
   // One shared helper so the stall page and the dish page always agree: the owner's
@@ -1074,19 +1089,20 @@ export function StallDetailScreen({ navigation, route }: Props) {
             </AppText>
             <View style={{ flex: 1 }} />
             <View style={{ flexDirection: "row", gap: spacing[2] }}>
-              <IconButton
-                variant="floating"
-                accessibilityLabel="Share stall"
-                onPress={openShareSheet}
-                icon={<Send color={palette.text} size={20} />}
-                style={{
-                  backgroundColor: headerButtonColor,
-                  borderColor: headerButtonBorderColor,
-                }}
-              />
+              {showDeferredDetailControls ? (
+                <IconButton
+                  variant="floating"
+                  accessibilityLabel="Share stall"
+                  onPress={openShareSheet}
+                  icon={<Send color={palette.text} size={20} />}
+                  style={{
+                    backgroundColor: headerButtonColor,
+                    borderColor: headerButtonBorderColor,
+                  }}
+                />
+              ) : null}
             </View>
           </View>
-
           <ScrollView
             showsVerticalScrollIndicator={false}
             onScroll={handleScroll}
@@ -1107,7 +1123,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
             ) : (
               <View
                 accessibilityRole="image"
-                accessibilityLabel={`${venue.name} has no photos yet`}
+                accessibilityLabel={`${venue.name} photo unavailable`}
                 style={{
                   alignItems: "center",
                   backgroundColor: palette.surfaceRaised,
@@ -1132,8 +1148,11 @@ export function StallDetailScreen({ navigation, route }: Props) {
               {/* Header Content */}
               <View style={{ gap: spacing[3] }}>
                 <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[3] }}>
-                  {venue.logoUrl ? (
-                    <StallLogoMark logoUrl={venue.logoUrl} name={venue.name} />
+                  {sanitizeCatalogImageUrl(venue.logoUrl) ? (
+                    <StallLogoMark
+                      logoUrl={sanitizeCatalogImageUrl(venue.logoUrl)}
+                      name={venue.name}
+                    />
                   ) : null}
                   <View style={{ flex: 1, gap: spacing[1] }}>
                     <AppText variant="h1">{venue.name}</AppText>
@@ -1222,45 +1241,47 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   </View>
                 ) : null}
               </View>
-
               {/* Save / Visited / Add-to-List: the same row for guests and signed-in users */}
-              <StallInteractionBar
-                stallId={venue.id}
-                userId={profile.id}
-                isAuthenticated={isAuthenticated}
-                onRequireAuth={(message) => requireAuthForProtectedAction(message)}
-                hasReviewedDishAtVenue={hasReviewedDishAtVenue}
-                reviewPromptText="Try or review a dish here first, then mark this stall visited."
-                onReviewRequired={handleReviewRequiredForTried}
-                onSaved={() =>
-                  void getHungryService().discovery.recordMerchantActionEvent({
-                    eventType: "save",
-                    venueId: venue.id,
-                    userId: profile.id,
-                  })
-                }
-                onAddToList={
-                  FEATURE_FLAGS.portfoliosEnabled
-                    ? () => void detailSaveActions.addToPortfolio()
-                    : undefined
-                }
-                isAddingToList={detailSaveActions.isAddingToPortfolio}
-              />
+              {showDeferredDetailControls && isAuthenticated && venue ? (
+                <StallInteractionBar
+                  stallId={venue.id}
+                  userId={profile.id}
+                  isAuthenticated={isAuthenticated}
+                  onRequireAuth={(message) => requireAuthForProtectedAction(message)}
+                  hasReviewedDishAtVenue={hasReviewedDishAtVenue}
+                  reviewPromptText="Try or review a dish here first, then mark this stall visited."
+                  onReviewRequired={handleReviewRequiredForTried}
+                  onSaved={() =>
+                    void getHungryService().discovery.recordMerchantActionEvent({
+                      eventType: "save",
+                      venueId: venue.id,
+                      userId: profile.id,
+                    })
+                  }
+                  onAddToList={
+                    FEATURE_FLAGS.portfoliosEnabled
+                      ? () => void detailSaveActions.addToPortfolio()
+                      : undefined
+                  }
+                  isAddingToList={detailSaveActions.isAddingToPortfolio}
+                />
+              ) : null}
               {/* Follow: a guest's tap goes through sign-in. */}
-              <FollowStallButton
-                stallId={venue.id}
-                stallName={venue.name}
-                isAuthenticated={isAuthenticated}
-                onRequireAuth={() =>
-                  requireAuthForProtectedAction(
-                    `Sign in to follow ${venue.name}`,
-                    () => void followStallAfterSignIn(venue.id),
-                  )
-                }
-                onOpenAppSettings={() => navigation.navigate("Settings")}
-              />
-
-              {FEATURE_FLAGS.collectionsEnabled ? (
+              {showDeferredDetailControls && venue ? (
+                <FollowStallButton
+                  stallId={venue.id}
+                  stallName={venue.name}
+                  isAuthenticated={isAuthenticated}
+                  onRequireAuth={() =>
+                    requireAuthForProtectedAction(
+                      `Sign in to follow ${venue.name}`,
+                      () => void followStallAfterSignIn(venue.id),
+                    )
+                  }
+                  onOpenAppSettings={() => navigation.navigate("Settings")}
+                />
+              ) : null}
+              {showDeferredDetailControls && FEATURE_FLAGS.collectionsEnabled ? (
                 <DetailSaveActionsCard
                   title="Save this stall"
                   body="Add this stall to your trying list."
@@ -1268,7 +1289,6 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   isAddingToChecklist={detailSaveActions.isAddingToChecklist}
                 />
               ) : null}
-
               {/* Menu */}
               <View onLayout={handleMenuSectionLayout} style={{ gap: spacing[4] }}>
                 <View style={{ gap: spacing[1] }}>
@@ -1397,19 +1417,18 @@ export function StallDetailScreen({ navigation, route }: Props) {
                       No menu available for this stall yet.
                     </AppText>
                     {/* Uploads a menu photo for the team to add the menu from. */}
-                    {canSubmitMenuPhoto && (
+                    {showDeferredDetailControls && canSubmitMenuPhoto ? (
                       <Button
                         label={isSubmittingMenuPhoto ? "Uploading..." : "Add a menu photo"}
                         variant="secondary"
                         disabled={isSubmittingMenuPhoto}
                         onPress={promptMenuPhoto}
                       />
-                    )}
+                    ) : null}
                   </Card>
                 )}
               </View>
-
-              {activePromotions.length > 0 ? (
+              {showDeferredDetailControls && activePromotions.length > 0 ? (
                 <View style={{ gap: spacing[3] }}>
                   <AppText variant="h2">Active promotions</AppText>
                   {activePromotions.map((promotion) => (
@@ -1435,7 +1454,6 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   ))}
                 </View>
               ) : null}
-
               {/* Info: hours, address and the owner's words in one compact card */}
               <Card style={{ gap: spacing[4], padding: spacing[4] }}>
                 <View style={{ gap: spacing[1.5] }}>
@@ -1552,96 +1570,81 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   </View>
                 ) : null}
               </Card>
-
-              <PopularVisitorsSection venueId={venue.id} horizontalPadding={0} />
-
+              {showDeferredDetailControls && FEATURE_FLAGS.socialFeedEnabled ? (
+                <PopularVisitorsSection venueId={venue.id} horizontalPadding={0} />
+              ) : null}
               {/* Reviews */}
-              <View style={{ gap: spacing[4] }}>
-                <View
-                  style={{
-                    alignItems: "center",
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <AppText variant="h2">Community Highlights</AppText>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={`Write a review for ${venue.name}`}
-                    onPress={openWriteReview}
-                    hitSlop={8}
-                    style={{ justifyContent: "center", minHeight: 44 }}
+              {showDeferredDetailControls && FEATURE_FLAGS.reviewCreationEnabled ? (
+                <View style={{ gap: spacing[4] }}>
+                  <View
+                    style={{
+                      alignItems: "center",
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                    }}
                   >
-                    <AppText variant="bodySmallBold" tone="accent">
-                      Write a review
-                    </AppText>
-                  </Pressable>
-                </View>
-                {reviewsStatus === "loading" ? (
-                  <Skeleton width="100%" height={72} borderRadius={radii.lg} />
-                ) : reviewsStatus === "error" ? (
-                  <Card style={{ padding: spacing[4], alignItems: "center", gap: spacing[2] }}>
-                    <AppText variant="body" tone="secondary" style={{ textAlign: "center" }}>
-                      Couldn&apos;t load reviews for this stall.
-                    </AppText>
-                    <Button
-                      label="Retry"
-                      variant="secondary"
-                      onPress={() => setReviewsReloadKey((key) => key + 1)}
-                    />
-                  </Card>
-                ) : communityReviews.length > 0 ? (
-                  <>
-                    {stallReviewPhotos.length > 0 ? (
-                      <View style={{ gap: spacing[2] }}>
-                        <AppText variant="bodySmall" style={{ fontWeight: "800" }}>
-                          Photos from reviews
-                        </AppText>
-                        <ReviewPhotoStrip
-                          photos={stallReviewPhotos}
-                          subject={`${venue.name}, from reviews`}
-                          size={96}
-                        />
-                      </View>
-                    ) : null}
-                    {communityReviews.map((review) => (
-                      <View
-                        key={review.id}
-                        style={{
-                          padding: spacing[4],
-                          borderRadius: componentRadii.card,
-                          backgroundColor: palette.surface,
-                          borderWidth: 1,
-                          borderColor: palette.border,
-                        }}
-                      >
+                    <AppText variant="h2">Community Highlights</AppText>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Write a review for ${venue.name}`}
+                      onPress={openWriteReview}
+                      hitSlop={8}
+                      style={{ justifyContent: "center", minHeight: 44 }}
+                    >
+                      <AppText variant="bodySmallBold" tone="accent">
+                        Write a review
+                      </AppText>
+                    </Pressable>
+                  </View>
+                  {reviewsStatus === "loading" ? (
+                    <Skeleton width="100%" height={72} borderRadius={radii.lg} />
+                  ) : reviewsStatus === "error" ? (
+                    <Card style={{ padding: spacing[4], alignItems: "center", gap: spacing[2] }}>
+                      <AppText variant="body" tone="secondary" style={{ textAlign: "center" }}>
+                        Couldn&apos;t load reviews for this stall.
+                      </AppText>
+                      <Button
+                        label="Retry"
+                        variant="secondary"
+                        onPress={() => setReviewsReloadKey((key) => key + 1)}
+                      />
+                    </Card>
+                  ) : communityReviews.length > 0 ? (
+                    <>
+                      {stallReviewPhotos.length > 0 ? (
+                        <View style={{ gap: spacing[2] }}>
+                          <AppText variant="bodySmall" style={{ fontWeight: "800" }}>
+                            Photos from reviews
+                          </AppText>
+                          <ReviewPhotoStrip
+                            photos={stallReviewPhotos}
+                            subject={`${venue.name}, from reviews`}
+                            size={96}
+                          />
+                        </View>
+                      ) : null}
+                      {communityReviews.map((review) => (
                         <View
+                          key={review.id}
                           style={{
-                            alignItems: "center",
-                            flexDirection: "row",
-                            gap: spacing[3],
+                            padding: spacing[4],
+                            borderRadius: componentRadii.card,
+                            backgroundColor: palette.surface,
+                            borderWidth: 1,
+                            borderColor: palette.border,
                           }}
                         >
-                          <Pressable
-                            accessibilityRole={review.authorId ? "link" : undefined}
-                            accessibilityLabel={`Open ${review.authorName}'s profile`}
-                            disabled={!review.authorId}
-                            onPress={() =>
-                              navigation.navigate("UserProfile", {
-                                authorId: review.authorId,
-                                authorName: review.authorName,
-                                authorAvatarUrl: review.avatarUrl,
-                              })
-                            }
+                          <View
+                            style={{
+                              alignItems: "center",
+                              flexDirection: "row",
+                              gap: spacing[3],
+                            }}
                           >
-                            <Avatar uri={review.avatarUrl} name={review.authorName} size={40} />
-                          </Pressable>
-                          <View style={{ flex: 1 }}>
                             <Pressable
                               accessibilityRole={review.authorId ? "link" : undefined}
                               accessibilityLabel={`Open ${review.authorName}'s profile`}
                               disabled={!review.authorId}
-                              hitSlop={{ top: 8, bottom: 4, left: 8, right: 8 }}
                               onPress={() =>
                                 navigation.navigate("UserProfile", {
                                   authorId: review.authorId,
@@ -1650,145 +1653,161 @@ export function StallDetailScreen({ navigation, route }: Props) {
                                 })
                               }
                             >
-                              <AppText style={{ fontWeight: "700" }}>{review.authorName}</AppText>
+                              <Avatar uri={review.avatarUrl} name={review.authorName} size={40} />
                             </Pressable>
-                            <Pressable
-                              accessibilityRole="link"
-                              accessibilityLabel={`Open ${review.dishName}`}
-                              hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
-                              onPress={() =>
-                                navigation.navigate("DishDetail", { dishId: review.dishId })
-                              }
-                            >
-                              <AppText variant="bodySmall" tone="accent" numberOfLines={1}>
-                                on {review.dishName}
-                              </AppText>
-                            </Pressable>
-                            <View
-                              accessible
-                              accessibilityRole="text"
-                              accessibilityLabel={`Rated ${review.rating} out of 5`}
-                              style={{
-                                flexDirection: "row",
-                                gap: spacing[0.5],
-                              }}
-                            >
-                              {Array.from({ length: 5 }).map((_, i) => (
-                                <Star
-                                  key={i}
-                                  size={12}
-                                  color={i < review.rating ? palette.ratingStar : palette.border}
-                                  fill={i < review.rating ? palette.ratingStar : "transparent"}
-                                />
-                              ))}
+                            <View style={{ flex: 1 }}>
+                              <Pressable
+                                accessibilityRole={review.authorId ? "link" : undefined}
+                                accessibilityLabel={`Open ${review.authorName}'s profile`}
+                                disabled={!review.authorId}
+                                hitSlop={{ top: 8, bottom: 4, left: 8, right: 8 }}
+                                onPress={() =>
+                                  navigation.navigate("UserProfile", {
+                                    authorId: review.authorId,
+                                    authorName: review.authorName,
+                                    authorAvatarUrl: review.avatarUrl,
+                                  })
+                                }
+                              >
+                                <AppText style={{ fontWeight: "700" }}>{review.authorName}</AppText>
+                              </Pressable>
+                              <Pressable
+                                accessibilityRole="link"
+                                accessibilityLabel={`Open ${review.dishName}`}
+                                hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
+                                onPress={() =>
+                                  navigation.navigate("DishDetail", { dishId: review.dishId })
+                                }
+                              >
+                                <AppText variant="bodySmall" tone="accent" numberOfLines={1}>
+                                  on {review.dishName}
+                                </AppText>
+                              </Pressable>
+                              <View
+                                accessible
+                                accessibilityRole="text"
+                                accessibilityLabel={`Rated ${review.rating} out of 5`}
+                                style={{
+                                  flexDirection: "row",
+                                  gap: spacing[0.5],
+                                }}
+                              >
+                                {Array.from({ length: 5 }).map((_, i) => (
+                                  <Star
+                                    key={i}
+                                    size={12}
+                                    color={i < review.rating ? palette.ratingStar : palette.border}
+                                    fill={i < review.rating ? palette.ratingStar : "transparent"}
+                                  />
+                                ))}
+                              </View>
                             </View>
+                            <AppText variant="micro" tone="muted">
+                              {formatTimeAgo(review.createdAt)}
+                            </AppText>
                           </View>
-                          <AppText variant="micro" tone="muted">
-                            {formatTimeAgo(review.createdAt)}
-                          </AppText>
-                        </View>
-                        <AppText
-                          variant="bodySmall"
-                          tone="secondary"
-                          style={{ marginTop: spacing[2] }}
-                        >
-                          {review.text}
-                        </AppText>
-
-                        {review.photos.length > 0 ? (
-                          <View style={{ marginTop: spacing[2] }}>
-                            <ReviewPhotoStrip
-                              photos={review.photos}
-                              subject={`${review.dishName}, review by ${review.authorName}`}
-                            />
-                          </View>
-                        ) : null}
-
-                        {isOwnReview(review, isAuthenticated ? profile.id : undefined) ? (
-                          <View style={{ marginTop: spacing[2] }}>
-                            <OwnReviewActions
-                              review={{
-                                id: review.reviewId,
-                                rating: review.rating,
-                                text: review.text,
-                              }}
-                              onUpdated={(patch) =>
-                                setReviewEntries((current) =>
-                                  current.map((entry) =>
-                                    entry.review.id === review.reviewId
-                                      ? { ...entry, review: { ...entry.review, ...patch } }
-                                      : entry,
-                                  ),
-                                )
-                              }
-                              onDeleted={() =>
-                                setReviewEntries((current) =>
-                                  current.filter((entry) => entry.review.id !== review.reviewId),
-                                )
-                              }
-                            />
-                          </View>
-                        ) : null}
-
-                        {review.merchantReply ? (
-                          <View
-                            style={{
-                              marginTop: spacing[2],
-                              padding: spacing[3],
-                              borderRadius: componentRadii.card,
-                              backgroundColor: palette.bgSoft,
-                              gap: spacing[1],
-                            }}
+                          <AppText
+                            variant="bodySmall"
+                            tone="secondary"
+                            style={{ marginTop: spacing[2] }}
                           >
-                            <AppText variant="micro" style={{ fontWeight: "700" }}>
-                              Reply from the owner
-                            </AppText>
-                            <AppText variant="bodySmall" tone="secondary">
-                              {review.merchantReply.text}
-                            </AppText>
-                          </View>
-                        ) : null}
+                            {review.text}
+                          </AppText>
 
-                        <ReviewReaderActions
-                          key={review.reviewId}
-                          review={{
-                            id: review.reviewId,
-                            authorId: review.authorId,
-                            authorName: review.authorName,
-                            helpfulCount: review.helpfulCount,
-                            viewerFoundHelpful: review.viewerFoundHelpful,
-                          }}
-                          isOwn={isOwnReview(review, isAuthenticated ? profile.id : undefined)}
-                          returnRoute={{ name: "StallDetail", params: { venueId: venue.id } }}
-                          onRemoved={() =>
-                            setReviewEntries((current) =>
-                              current.filter((entry) => entry.review.id !== review.reviewId),
-                            )
-                          }
+                          {review.photos.length > 0 ? (
+                            <View style={{ marginTop: spacing[2] }}>
+                              <ReviewPhotoStrip
+                                photos={review.photos}
+                                subject={`${review.dishName}, review by ${review.authorName}`}
+                              />
+                            </View>
+                          ) : null}
+
+                          {isOwnReview(review, isAuthenticated ? profile.id : undefined) ? (
+                            <View style={{ marginTop: spacing[2] }}>
+                              <OwnReviewActions
+                                review={{
+                                  id: review.reviewId,
+                                  rating: review.rating,
+                                  text: review.text,
+                                }}
+                                onUpdated={(patch) =>
+                                  setReviewEntries((current) =>
+                                    current.map((entry) =>
+                                      entry.review.id === review.reviewId
+                                        ? { ...entry, review: { ...entry.review, ...patch } }
+                                        : entry,
+                                    ),
+                                  )
+                                }
+                                onDeleted={() =>
+                                  setReviewEntries((current) =>
+                                    current.filter((entry) => entry.review.id !== review.reviewId),
+                                  )
+                                }
+                              />
+                            </View>
+                          ) : null}
+
+                          {review.merchantReply ? (
+                            <View
+                              style={{
+                                marginTop: spacing[2],
+                                padding: spacing[3],
+                                borderRadius: componentRadii.card,
+                                backgroundColor: palette.bgSoft,
+                                gap: spacing[1],
+                              }}
+                            >
+                              <AppText variant="micro" style={{ fontWeight: "700" }}>
+                                Reply from the owner
+                              </AppText>
+                              <AppText variant="bodySmall" tone="secondary">
+                                {review.merchantReply.text}
+                              </AppText>
+                            </View>
+                          ) : null}
+
+                          <ReviewReaderActions
+                            key={review.reviewId}
+                            review={{
+                              id: review.reviewId,
+                              authorId: review.authorId,
+                              authorName: review.authorName,
+                              helpfulCount: review.helpfulCount,
+                              viewerFoundHelpful: review.viewerFoundHelpful,
+                            }}
+                            isOwn={isOwnReview(review, isAuthenticated ? profile.id : undefined)}
+                            returnRoute={{ name: "StallDetail", params: { venueId: venue.id } }}
+                            onRemoved={() =>
+                              setReviewEntries((current) =>
+                                current.filter((entry) => entry.review.id !== review.reviewId),
+                              )
+                            }
+                          />
+                        </View>
+                      ))}
+                      {hasMoreReviews ? (
+                        <Button
+                          label="See more reviews"
+                          variant="secondary"
+                          loading={isLoadingMoreReviews}
+                          onPress={loadMoreReviews}
                         />
-                      </View>
-                    ))}
-                    {hasMoreReviews ? (
-                      <Button
-                        label="See more reviews"
-                        variant="secondary"
-                        loading={isLoadingMoreReviews}
-                        onPress={loadMoreReviews}
-                      />
-                    ) : null}
-                  </>
-                ) : (
-                  <EmptyState
-                    title="No community reviews yet"
-                    body="Write your first review for this stall."
-                    icon={<CommentIcon size={36} color={palette.textMuted} />}
-                    ctaLabel="Write a review"
-                    onPress={openWriteReview}
-                  />
-                )}
-              </View>
-
-              {FEATURE_FLAGS.merchantClaimCtaEnabled ? (
+                      ) : null}
+                    </>
+                  ) : (
+                    <EmptyState
+                      title="No community reviews yet"
+                      body="Write your first review for this stall."
+                      icon={<CommentIcon size={36} color={palette.textMuted} />}
+                      ctaLabel="Write a review"
+                      onPress={openWriteReview}
+                    />
+                  )}
+                </View>
+              ) : null}
+              {showDeferredDetailControls && FEATURE_FLAGS.merchantClaimCtaEnabled ? (
                 <Card style={{ padding: spacing[4], gap: spacing[4] }}>
                   <View
                     style={{
@@ -1822,26 +1841,26 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   />
                 </Card>
               ) : null}
-
               <ReportProblemLink
                 venueId={venue.id}
                 returnRoute={{ name: "StallDetail", params: { venueId: venue.id } }}
               />
             </View>
           </ScrollView>
-
-          <ReviewShareSheet
-            activeReview={activeShareReview}
-            innerRef={shareSheetRef}
-            bottomInset={insets.bottom}
-            onDismiss={() => {
-              setActiveShareReview(null);
-            }}
-            onShared={(postId, channel) => {
-              incrementShare(postId, channel);
-            }}
-            onShareCompleted={recordMerchantShare}
-          />
+          {showDeferredDetailControls ? (
+            <ReviewShareSheet
+              activeReview={activeShareReview}
+              innerRef={shareSheetRef}
+              bottomInset={insets.bottom}
+              onDismiss={() => {
+                setActiveShareReview(null);
+              }}
+              onShared={(postId, channel) => {
+                incrementShare(postId, channel);
+              }}
+              onShareCompleted={recordMerchantShare}
+            />
+          ) : null}
           {detailSaveActions.saveToListSheet}
         </View>
       </SafeAreaView>

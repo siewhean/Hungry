@@ -37,6 +37,7 @@ import { DietaryFlagChips } from "@/components/dish/DietaryFlagChips";
 import { OwnReviewActions, ReviewPhotoStrip, ReviewReaderActions } from "@/components/review";
 import { isOwnReview } from "@/features/review/reviewEdit";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { sanitizeCatalogImageUrl } from "@/lib/services/catalog/media";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore, getTasteSimilarityWithDish } from "@/store/useProfileStore";
 import { useStallInteractionStore } from "@/store/useStallInteractionStore";
@@ -61,6 +62,14 @@ import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/R
 import type { DishDetail, OpeningSchedule, PublicMerchantProfile, Review } from "@/types/domain";
 import { hasDishTasteSignal, isNeutralTasteVector } from "@/lib/ai/tasteEngine";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
+import { openStallFromDish } from "./stallNavigation";
+import {
+  formatHoursRows,
+  getHoursForDay,
+  getSingaporeDay,
+  getVenueOpenState,
+  parseOperatingHours,
+} from "@/utils/operatingHours";
 import { webShareUrl } from "@/constants/links";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { firstDishTimingProps } from "@/lib/analytics/firstDishTiming";
@@ -165,10 +174,24 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const [venueReloadKey, setVenueReloadKey] = useState(0);
   const venue = hydratedVenue ?? cachedVenue;
 
-  const gallery = useMemo(() => (dish ? buildDishGallery(dish) : []), [dish]);
+  const gallery = useMemo(
+    () =>
+      dish
+        ? buildDishGallery(dish)
+            .map((imageUrl) => sanitizeCatalogImageUrl(imageUrl))
+            .filter((imageUrl): imageUrl is string => Boolean(imageUrl))
+        : [],
+    [dish],
+  );
+  const heroImage = gallery[0] ?? sanitizeCatalogImageUrl(dish?.imageUrl);
   // "Photos from reviews" rail: newest reviews first, at most 12 photos.
   const reviewPhotos = useMemo(
-    () => dishReviews.flatMap((review) => review.photos ?? []).slice(0, 12),
+    () =>
+      dishReviews
+        .flatMap((review) => review.photos ?? [])
+        .map((photo) => sanitizeCatalogImageUrl(photo))
+        .filter((photo): photo is string => Boolean(photo))
+        .slice(0, 12),
     [dishReviews],
   );
   const tasteMatch = useMemo(
@@ -386,6 +409,15 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     });
   }, [dish, isAuthenticated, profile.id]);
 
+  // Deep links can open a missing dish with no history; never leave a dead end.
+  const leaveDetail = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+    navigation.navigate("MainTabs", { screen: "Discover" });
+  };
+
   // The dish renders as soon as it arrives; stall-only sections fill in when the venue read lands.
   const isDetailLoading = Boolean(dishId) && !dish && !hasLoadedDishDetail;
 
@@ -425,6 +457,17 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
         body="Couldn't load this dish — try again."
       >
         <SafeAreaView style={{ backgroundColor: palette.bg, flex: 1 }} edges={["top"]}>
+          <View style={{ paddingHorizontal: spacing[4], paddingTop: spacing[3] }}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+              hitSlop={12}
+              onPress={leaveDetail}
+              style={{ alignSelf: "flex-start" }}
+            >
+              <ArrowLeft color={palette.text} size={24} />
+            </Pressable>
+          </View>
           {dishLoadFailed ? (
             <EmptyState
               title="Couldn't load this dish"
@@ -529,7 +572,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     postId: "",
     title: dish.name,
     subtitle: [venueName, venueUnit].filter(Boolean).join(" · "),
-    imageUrl: gallery[0] ?? dish.imageUrl,
+    imageUrl: heroImage ?? "",
     authorName: profile.displayName,
     message: `${dish.name} at ${venueName}.${dish.price > 0 ? ` ${dishPrice}.` : ""}`,
     link: canonicalDishUrl,
@@ -572,9 +615,8 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     });
   };
 
-  const handleSave = () => {
-    // Also kept on the device: a sign-up that goes out to the email app and returns through a
-    // cold-start link has lost the closure below, but still finishes the save.
+  const handleSave = async () => {
+    // Backstop (the app is sign-in only): kept on the device if a sign-in has to finish it.
     if (!isAuthenticated) rememberPendingDishSave(dish);
     if (
       !requireAccount(
@@ -586,11 +628,13 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
       return;
     }
 
-    toggleFavourite(dish);
-    // toggleFavourite ignores a tap while a toggle is pending: toast only when the save changed.
-    const nowSaved = useProfileStore.getState().profile.favouriteDishIds.includes(dish.id);
-    if (nowSaved === isSaved) return;
-    if (!isSaved) {
+    const result = await toggleFavourite(dish);
+    if (result.status === "failed") {
+      // A tap while a toggle is pending changes nothing: no toast for it.
+      if (result.reason !== "pending") showToast({ message: result.message, tone: "error" });
+      return;
+    }
+    if (result.status === "saved") {
       void getHungryService().discovery.recordMerchantActionEvent({
         eventType: "save",
         venueId: dish.venueId,
@@ -599,7 +643,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
       });
     }
     showToast({
-      message: isSaved ? "Removed from Want to try." : "Saved to Want to try.",
+      message: result.status === "saved" ? "Saved to Want to try." : "Removed from Want to try.",
       tone: "success",
     });
   };
@@ -706,6 +750,12 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     }
   };
 
+  // Staging and production are a read-only Release 0.1 catalog experience.
+  // Keep deferred write and social controls available for local development,
+  // but never render them from a released build even when an unrelated flag
+  // is accidentally enabled for targeted QA.
+  const showDeferredDetailControls = !FEATURE_FLAGS.release01CoreOnly;
+
   return (
     <FeedErrorBoundary title="Dish details unavailable" body="Couldn't load this dish — try again.">
       <SafeAreaView style={{ backgroundColor: palette.bg, flex: 1 }} edges={["left", "right"]}>
@@ -714,7 +764,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{
               paddingTop: insets.top + 56,
-              paddingBottom: insets.bottom + 104,
+              paddingBottom: insets.bottom + (showDeferredDetailControls ? 104 : spacing[6]),
             }}
           >
             <View style={{ height: heroHeight }}>
@@ -799,7 +849,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={`Open ${venueName} stall details`}
-                    onPress={() => navigation.navigate("StallDetail", { venueId: dish.venueId })}
+                    onPress={() => openStallFromDish(navigation, dish.venueId)}
                     hitSlop={8}
                     style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
                   >
@@ -1187,9 +1237,9 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                           width: signatureGridItemWidth,
                         }}
                       >
-                        {item.imageUrl ? (
+                        {sanitizeCatalogImageUrl(item.imageUrl) ? (
                           <AccessibleImage
-                            source={{ uri: item.imageUrl }}
+                            source={{ uri: sanitizeCatalogImageUrl(item.imageUrl) }}
                             contentFit="cover"
                             style={{ width: "100%", height: signatureGridItemWidth * 0.62 }}
                             decorative
@@ -1398,10 +1448,22 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                 ) : dish.reviewCount === 0 ? (
                   <EmptyState
                     title="No reviews yet"
-                    body="Be the first to add one."
+                    body={
+                      showDeferredDetailControls
+                        ? "Be the first to add one."
+                        : "Reviews from diners will appear here when available."
+                    }
                     icon={<Star size={36} color={palette.textMuted} />}
-                    ctaLabel="Write a review"
-                    onPress={handleReview}
+                    ctaLabel={
+                      showDeferredDetailControls && FEATURE_FLAGS.reviewCreationEnabled
+                        ? "Write a review"
+                        : undefined
+                    }
+                    onPress={
+                      showDeferredDetailControls && FEATURE_FLAGS.reviewCreationEnabled
+                        ? handleReview
+                        : undefined
+                    }
                   />
                 ) : (
                   <AppText variant="bodySmall" tone="secondary">
@@ -1418,116 +1480,122 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
             </View>
           </ScrollView>
 
-          <View
-            style={{
-              backgroundColor: palette.surface,
-              borderTopColor: palette.border,
-              borderTopWidth: 1,
-              bottom: 0,
-              flexDirection: "row",
-              justifyContent: "flex-end",
-              gap: spacing[3],
-              left: 0,
-              paddingBottom: Math.max(insets.bottom, spacing[4]),
-              paddingHorizontal: spacing[4],
-              paddingTop: spacing[3],
-              position: "absolute",
-              right: 0,
-            }}
-          >
-            {FEATURE_FLAGS.portfoliosEnabled ? (
+          {showDeferredDetailControls ? (
+            <View
+              style={{
+                backgroundColor: palette.surface,
+                borderTopColor: palette.border,
+                borderTopWidth: 1,
+                bottom: 0,
+                flexDirection: "row",
+                justifyContent: "flex-end",
+                gap: spacing[3],
+                left: 0,
+                paddingBottom: Math.max(insets.bottom, spacing[4]),
+                paddingHorizontal: spacing[4],
+                paddingTop: spacing[3],
+                position: "absolute",
+                right: 0,
+              }}
+            >
+              {FEATURE_FLAGS.portfoliosEnabled ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Add this dish to a list"
+                  accessibilityState={{ disabled: isAddingToPortfolio }}
+                  onPress={() => void addToPortfolio()}
+                  disabled={isAddingToPortfolio}
+                  style={{
+                    alignItems: "center",
+                    height: dockTargetSize,
+                    justifyContent: "center",
+                    minWidth: dockTargetSize,
+                  }}
+                >
+                  <ListPlus color={palette.text} size={reviewIconSize} />
+                </Pressable>
+              ) : null}
+              {FEATURE_FLAGS.favouritesEnabled ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={isSaved ? "Saved" : "Save"}
+                  accessibilityHint={isSaved ? "Removes this dish from Want to try" : undefined}
+                  accessibilityState={{ selected: isSaved }}
+                  onPress={() => void handleSave()}
+                  style={{
+                    alignItems: "center",
+                    height: dockTargetSize,
+                    justifyContent: "center",
+                    minWidth: dockTargetSize,
+                  }}
+                >
+                  <Bookmark
+                    color={isSaved ? palette.orange : palette.text}
+                    size={reviewIconSize}
+                    fill={isSaved ? palette.orange : "none"}
+                  />
+                </Pressable>
+              ) : null}
               <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Add this dish to a list"
-                accessibilityState={{ disabled: isAddingToPortfolio }}
-                onPress={() => void addToPortfolio()}
-                disabled={isAddingToPortfolio}
-                style={{
-                  alignItems: "center",
-                  height: dockTargetSize,
-                  justifyContent: "center",
-                  minWidth: dockTargetSize,
+                accessibilityRole="checkbox"
+                accessibilityLabel="Tried"
+                accessibilityState={{ checked: isDishTried, disabled: isTryingFood }}
+                onPress={handleTryFood}
+                disabled={isTryingFood}
+                style={({ pressed }) => {
+                  const backgroundColor = isDishTried
+                    ? palette.surface
+                    : pressed
+                      ? palette.bg
+                      : palette.bgSoft;
+                  const normalizedBackgroundColor = backgroundColor.toLowerCase().replace("#", "");
+                  const isWhiteOrBlackBackground =
+                    !isDishTried &&
+                    (normalizedBackgroundColor === "ffffff" ||
+                      normalizedBackgroundColor === "000000");
+                  return {
+                    alignItems: "center",
+                    backgroundColor,
+                    borderColor: isWhiteOrBlackBackground ? palette.orange : "transparent",
+                    borderWidth: isWhiteOrBlackBackground ? 1 : 0,
+                    borderRadius: componentRadii.iconButton,
+                    height: dockTargetSize,
+                    justifyContent: "center",
+                    minWidth: dockTargetSize,
+                  };
                 }}
               >
-                <ListPlus color={palette.text} size={reviewIconSize} />
+                <CheckCircle
+                  color={isDishTried ? palette.orange : palette.text}
+                  fill="none"
+                  size={reviewIconSize}
+                />
               </Pressable>
-            ) : null}
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={isSaved ? "Saved" : "Save"}
-              accessibilityHint={isSaved ? "Removes this dish from Want to try" : undefined}
-              accessibilityState={{ selected: isSaved }}
-              onPress={handleSave}
-              style={{
-                alignItems: "center",
-                height: dockTargetSize,
-                justifyContent: "center",
-                minWidth: dockTargetSize,
-              }}
-            >
-              <Bookmark
-                color={isSaved ? palette.orange : palette.text}
-                size={reviewIconSize}
-                fill={isSaved ? palette.orange : "none"}
-              />
-            </Pressable>
-            <Pressable
-              accessibilityRole="checkbox"
-              accessibilityLabel="Tried"
-              accessibilityState={{ checked: isDishTried, disabled: isTryingFood }}
-              onPress={handleTryFood}
-              disabled={isTryingFood}
-              style={({ pressed }) => {
-                const backgroundColor = isDishTried
-                  ? palette.surface
-                  : pressed
-                    ? palette.bg
-                    : palette.bgSoft;
-                const normalizedBackgroundColor = backgroundColor.toLowerCase().replace("#", "");
-                const isWhiteOrBlackBackground =
-                  !isDishTried &&
-                  (normalizedBackgroundColor === "ffffff" ||
-                    normalizedBackgroundColor === "000000");
-                return {
-                  alignItems: "center",
-                  backgroundColor,
-                  borderColor: isWhiteOrBlackBackground ? palette.orange : "transparent",
-                  borderWidth: isWhiteOrBlackBackground ? 1 : 0,
-                  borderRadius: componentRadii.iconButton,
-                  height: dockTargetSize,
-                  justifyContent: "center",
-                  minWidth: dockTargetSize,
-                };
-              }}
-            >
-              <CheckCircle
-                color={isDishTried ? palette.orange : palette.text}
-                fill="none"
-                size={reviewIconSize}
-              />
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Write a review"
-              onPress={handleReview}
-              style={{
-                alignItems: "center",
-                backgroundColor: palette.orange,
-                borderRadius: componentRadii.button,
-                flexDirection: "row",
-                gap: spacing[1.5],
-                height: dockTargetSize,
-                justifyContent: "center",
-                paddingHorizontal: spacing[4],
-              }}
-            >
-              {/* Dark ink on orange: white on brand orange fails AA in both themes. */}
-              <CommentIcon color={palette.textOnOrange} size={reviewIconSize} />
-              <AppText variant="bodyBold" style={{ color: palette.textOnOrange }}>
-                Review
-              </AppText>
-            </Pressable>
-          </View>
+              {FEATURE_FLAGS.reviewCreationEnabled ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Write a review"
+                  onPress={handleReview}
+                  style={{
+                    alignItems: "center",
+                    backgroundColor: palette.orange,
+                    borderRadius: componentRadii.button,
+                    flexDirection: "row",
+                    gap: spacing[1.5],
+                    height: dockTargetSize,
+                    justifyContent: "center",
+                    paddingHorizontal: spacing[4],
+                  }}
+                >
+                  {/* Dark ink on orange: white on brand orange fails AA in both themes. */}
+                  <CommentIcon color={palette.textOnOrange} size={reviewIconSize} />
+                  <AppText variant="bodyBold" style={{ color: palette.textOnOrange }}>
+                    Review
+                  </AppText>
+                </Pressable>
+              ) : null}
+            </View>
+          ) : null}
 
           <View
             style={{
@@ -1565,37 +1633,41 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
             <AppText variant="h3" style={{ flex: 1, marginLeft: spacing[3] }}>
               Dish Details
             </AppText>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`Share ${dish.name}`}
-              onPress={openShareSheet}
-              style={{
-                alignItems: "center",
-                backgroundColor: headerButtonBackground,
-                borderColor: headerButtonBorder,
-                borderRadius: componentRadii.iconButton,
-                borderWidth: 1,
-                height: dockTargetSize,
-                justifyContent: "center",
-                width: dockTargetSize,
-              }}
-            >
-              <Send color={palette.text} size={21} />
-            </Pressable>
+            {showDeferredDetailControls ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Share ${dish.name}`}
+                onPress={openShareSheet}
+                style={{
+                  alignItems: "center",
+                  backgroundColor: headerButtonBackground,
+                  borderColor: headerButtonBorder,
+                  borderRadius: componentRadii.iconButton,
+                  borderWidth: 1,
+                  height: dockTargetSize,
+                  justifyContent: "center",
+                  width: dockTargetSize,
+                }}
+              >
+                <Send color={palette.text} size={21} />
+              </Pressable>
+            ) : null}
           </View>
 
-          <ReviewShareSheet
-            activeReview={activeShareReview}
-            innerRef={shareSheetRef}
-            bottomInset={insets.bottom}
-            onDismiss={() => {
-              setActiveShareReview(null);
-            }}
-            onShared={(postId, channel) => {
-              incrementShare(postId, channel);
-            }}
-            onShareCompleted={recordMerchantShare}
-          />
+          {showDeferredDetailControls ? (
+            <ReviewShareSheet
+              activeReview={activeShareReview}
+              innerRef={shareSheetRef}
+              bottomInset={insets.bottom}
+              onDismiss={() => {
+                setActiveShareReview(null);
+              }}
+              onShared={(postId, channel) => {
+                incrementShare(postId, channel);
+              }}
+              onShareCompleted={recordMerchantShare}
+            />
+          ) : null}
           {saveToListSheet}
         </View>
       </SafeAreaView>

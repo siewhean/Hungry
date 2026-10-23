@@ -89,6 +89,8 @@ export function Dialog({ visible, title, message, buttons, onClose }: DialogProp
                 key={index}
                 label={btn.text}
                 variant={
+                  // Destructive uses the AA-checked destructive fill + light label
+                  // (was primary + red override: dark text on red, ~3.3:1).
                   btn.style === "destructive"
                     ? "destructive"
                     : btn.style === "cancel"

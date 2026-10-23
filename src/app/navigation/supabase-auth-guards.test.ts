@@ -18,11 +18,11 @@ test("Supabase auth bootstrap gates protected-route redirects until session rest
   assert.match(sessionStore, /isAuthReady: false/);
   assert.match(sessionStore, /markAuthReady: \(\) => set\(\{ isAuthReady: true \}\)/);
   assert.match(bootstrap, /const hasHydrated = useSessionStore/);
-  assert.match(bootstrap, /if \(!hasHydrated\) \{\s*return;\s*\}/);
+  assert.match(bootstrap, /if \(!hasHydrated\) return;/);
   assert.match(bootstrap, /client\.auth\s*\.\s*getSession\(\)/);
   assert.match(bootstrap, /client\.auth\.onAuthStateChange/);
   assert.match(rootNavigator, /const isAuthReady = useSessionStore/);
-  assert.match(rootNavigator, /if \(!isAuthReady\) \{\s*return;\s*\}/);
+  assert.match(rootNavigator, /if \(!isAuthReady\) \{/);
   assert.match(splash, /if \(!isAuthReady\) \{\s*return;\s*\}/);
 });
 
@@ -35,13 +35,15 @@ test("Supabase auth responses hydrate the app profile store", () => {
   const supabaseService = read("src/lib/services/supabase/supabaseService.ts");
 
   assert.match(profileStore, /applyProfile: \(profile: UserProfile\) => void/);
-  assert.match(profileHelper, /useProfileStore\.getState\(\)\.applyProfile\(mergedProfile\)/);
+  assert.match(profileHelper, /useProfileStore\.getState\(\)\.applyProfile\(result\.profile\)/);
+  assert.match(profileHelper, /runProvisionalOnboardingMigration/);
   assert.match(loginScreen, /applySignedInProfile\(session\.profile/);
   assert.match(signUpScreen, /applySignedInProfile\(session\.profile/);
   assert.match(
     bootstrap,
     /runAfterIdle\(\(\) => \{[\s\S]*getHungryService\(\)\s*\.profile\.getProfile\(\)/,
   );
+  assert.match(bootstrap, /await applySignedInProfile\(profile\)/);
   assert.match(
     bootstrap,
     /applyAuthStateFromSession\(\{[\s\S]*isAuthenticated: true,[\s\S]*userId: user\.id,[\s\S]*\}\);[\s\S]*runAfterIdle/,
@@ -88,6 +90,11 @@ test("Supabase auth bootstrap preserves restored sessions across transient start
     bootstrap,
     /applyAuthStateFromSession\(\{\s*isAuthenticated: true,\s*userId: restoredSession\.authenticatedUserId,\s*\}\)/,
   );
+  // No Supabase client means no stored session to keep.
+  assert.match(
+    bootstrap,
+    /if \(!client\) \{\s*applyAuthStateFromSession\(\{ isAuthenticated: false, userId: null \}\);/,
+  );
 });
 
 test("restored mock sessions keep the mock provider instead of being rejected as Supabase sessions", () => {
@@ -133,5 +140,35 @@ test("Supabase null-session bootstrap keeps a restored session only on a network
   assert.match(
     bootstrap,
     /if \(event === "INITIAL_SESSION"\) \{\s*return;\s*\}[\s\S]*?applyAuthStateFromSession\(\{\s*isAuthenticated: false,\s*userId: null,\s*sessionExpired: event === "SIGNED_OUT",\s*\}\);/,
+  );
+});
+
+test("launch restore: offline and timeout keep the session, a definite auth failure signs out", () => {
+  const bootstrap = read("src/hooks/useAppBootstrap.ts");
+  const restore = bootstrap.slice(
+    bootstrap.indexOf(".finishPendingSignOut()"),
+    bootstrap.indexOf("client.auth.onAuthStateChange"),
+  );
+
+  // Offline: a refresh that failed for network reasons (status 0) is retryable.
+  assert.match(bootstrap, /return name === "AuthRetryableFetchError" \|\| status === 0;/);
+  // Timeout: after 5 s the race resolves as that same retryable network error.
+  assert.match(bootstrap, /const AUTH_RESTORE_TIMEOUT_MS = 5000;/);
+  assert.match(
+    bootstrap,
+    /error: \{ name: "AuthRetryableFetchError", status: 0 \}[\s\S]*?AUTH_RESTORE_TIMEOUT_MS/,
+  );
+  assert.match(restore, /\.then\(\(\) => getSessionWithTimeout\(client\)\)/);
+  // A definite failure (invalid/expired/revoked refresh token, 400/401) is not retryable:
+  // the user is signed out, and RootNavigator sends a signed-out user to Login.
+  assert.doesNotMatch(restore, /if \(error\) throw error;/);
+  assert.match(
+    restore,
+    /isRetryableAuthError\(error\) && preserveRestoredAuthState[\s\S]*?\}\s*applyAuthStateFromSession\(\{ isAuthenticated: false, userId: null \}\);/,
+  );
+  // A sign-out the user started is finished first and never undone by a restore.
+  assert.ok(
+    restore.indexOf("signOutPending") < restore.indexOf("preserveRestoredAuthState"),
+    "the pending sign-out check runs before any restored session is kept",
   );
 });

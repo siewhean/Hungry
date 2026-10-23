@@ -41,7 +41,7 @@ import { useShallow } from "zustand/react/shallow";
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { Button } from "@/components/ui";
+import { Button, Dialog } from "@/components/ui";
 import { SettingsSection, SettingsRow } from "@/components/settings";
 import { StallAlertsSettings } from "@/components/settings/StallAlertsSettings";
 import { AccountDeletionCodeDialog } from "@/components/settings/AccountDeletionCodeDialog";
@@ -103,16 +103,15 @@ export function SettingsScreen() {
   const rootNavigation = getRootNavigation(navigation);
   const { palette, spacing } = useHungryTheme();
 
-  const { clearSession, signOut, isAuthenticated } = useSessionStore(
+  const setAuthNotice = useSessionStore((state) => state.setAuthNotice);
+  const { signOut, isAuthenticated } = useSessionStore(
     useShallow((state) => ({
-      clearSession: state.clearSession,
       signOut: state.signOut,
       isAuthenticated: state.isAuthenticated,
     })),
   );
-  const { clearProfile, setProfileVisibility, profile, resetFoodHistory } = useProfileStore(
+  const { setProfileVisibility, profile, resetFoodHistory } = useProfileStore(
     useShallow((state) => ({
-      clearProfile: state.clearProfile,
       setProfileVisibility: state.setProfileVisibility,
       profile: state.profile,
       resetFoodHistory: state.resetFoodHistory,
@@ -126,7 +125,6 @@ export function SettingsScreen() {
     })),
   );
   const {
-    resetLocationState,
     grantLocation,
     clearManualLocation,
     syncLocationPermission,
@@ -134,7 +132,6 @@ export function SettingsScreen() {
     locationPermission,
   } = useLocationStore(
     useShallow((state) => ({
-      resetLocationState: state.resetLocationState,
       grantLocation: state.grantLocation,
       clearManualLocation: state.clearManualLocation,
       syncLocationPermission: state.syncLocationPermission,
@@ -171,6 +168,8 @@ export function SettingsScreen() {
   );
 
   const isProfilePrivate = profile.profileVisibility === "private";
+  // Profile visibility only matters when social surfaces ship.
+  const showSocialPrivacySettings = FEATURE_FLAGS.socialFeedEnabled;
 
   const normalizedThemePreference: ThemePreference =
     themePreference === "system" || themePreference === "light" || themePreference === "dark"
@@ -280,8 +279,47 @@ export function SettingsScreen() {
     })();
   };
 
-  // Step 2: the emailed code (any sign-in method, Google and Apple included) proves the
-  // person deleting can read the account's email. A wrong code stays in the dialog.
+  const [accountDialog, setAccountDialog] = useState<
+    | "signOut"
+    | "deleteAccount"
+    | "deleteFailed"
+    | "codeSendFailed"
+    | "ownerBlocked"
+    | "noAccountEmail"
+    | null
+  >(null);
+
+  const resetToLogin = () => {
+    // Only matters when the signed-in navigator stays mounted (E2E launcher);
+    // otherwise AppBody swaps to the pre-auth navigator on sign-out.
+    rootNavigation.reset({
+      index: 0,
+      routes: [{ name: "AuthStack", params: { screen: "Login" } }],
+    });
+  };
+
+  const handleDeleteAccount = () => setAccountDialog("deleteAccount");
+
+  // Step 1: email a code (works for Google and Apple accounts too).
+  const sendDeletionCode = async () => {
+    setDeletionRequested(true);
+    try {
+      // A merchant owner must hand the business over first; say so before any code is sent.
+      if ((await getHungryService().auth.getAccountDeletionBlocker()) !== null) {
+        setAccountDialog("ownerBlocked");
+        return;
+      }
+      await getHungryService().auth.sendAccountDeletionCode();
+      setDeletionCodeVisible(true);
+    } catch (error) {
+      setAccountDialog(isNoAccountEmailError(error) ? "noAccountEmail" : "codeSendFailed");
+    } finally {
+      setDeletionRequested(false);
+    }
+  };
+
+  // Step 2: the emailed code proves the person deleting can read the account's email.
+  // A wrong code stays in the code dialog.
   const submitDeletionCode = async (code: string) => {
     let scheduledFor: string;
     // The service signs out as part of the request; that is not an expired session.
@@ -291,81 +329,40 @@ export function SettingsScreen() {
         reason: "user_initiated_settings_flow",
         code,
       }));
+      trackAnalyticsEvent("account_deletion_requested", { surface: "settings" });
     } catch (error) {
       if (isAuthCodeError(error)) throw error;
       setDeletionCodeVisible(false);
-      Alert.alert(
-        "Deletion request failed",
-        "We could not queue your account deletion request. Please try again or contact support.",
-      );
+      setAccountDialog("deleteFailed");
       return;
     }
     setDeletionCodeVisible(false);
     setDeletionRequested(true);
-    trackAnalyticsEvent("account_deletion_requested", { surface: "settings" });
-    await purgePersistedAccountData();
-    deleteExportFile();
-    clearSession();
-    clearProfile();
-    clearSearchState();
-    resetDraft();
-    resetLocationState();
-    // Replace the whole stack so Back cannot return to the signed-in screens.
-    rootNavigation.reset({
-      index: 0,
-      routes: [{ name: "AuthStack", params: { screen: "Login" } }],
-    });
-    Alert.alert(
-      "Deletion scheduled",
-      `Your account will be deleted ${describeDeletionDate(scheduledFor)}. To keep it, sign in before then and choose Keep my account.`,
-    );
-  };
 
-  const handleDeleteAccount = () => {
-    Alert.alert(
-      "Delete account",
-      `Your profile is hidden straight away, and your account and personal data will be deleted in ${ACCOUNT_DELETION_GRACE_DAYS} days. To keep your account, sign in before then and choose Keep my account. After that, deletion is permanent. Menu photos you shared stay on the stall without your name, and some security, moderation, or legal records may remain in anonymized form.`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Email me a code",
-          style: "destructive",
-          onPress: () => {
-            void (async () => {
-              try {
-                setDeletionRequested(true);
-                // A merchant owner must hand the business over first; say so before any code is sent.
-                if ((await getHungryService().auth.getAccountDeletionBlocker()) !== null) {
-                  Alert.alert(
-                    "Transfer your business first",
-                    `You own a merchant account on Hungry. Deleting your account would leave the stall without an owner. Email ${SUPPORT_EMAIL} to hand it over, then delete your account.`,
-                    [
-                      { text: "Cancel", style: "cancel" },
-                      {
-                        text: "Email support",
-                        onPress: () => void openTrustedExternalUrl(`mailto:${SUPPORT_EMAIL}`),
-                      },
-                    ],
-                  );
-                  return;
-                }
-                await getHungryService().auth.sendAccountDeletionCode();
-                setDeletionCodeVisible(true);
-              } catch (error) {
-                Alert.alert(
-                  "Couldn't send the code",
-                  isNoAccountEmailError(error)
-                    ? `This account has no email address, so we can't send a code. Email ${SUPPORT_EMAIL} and we will help you delete it.`
-                    : "Please wait a minute and try again, or contact support.",
-                );
-              } finally {
-                setDeletionRequested(false);
-              }
-            })();
-          },
-        },
-      ],
-    );
+    // The deletion request is queued at this point. A local purge failure must
+    // not be reported as a failed deletion request.
+    let purgeFailed = false;
+    try {
+      await purgePersistedAccountData();
+    } catch {
+      purgeFailed = true;
+    }
+
+    deleteExportFile();
+
+    // Shown on Login after sign-out (the Settings screen unmounts on sign-out).
+    setAuthNotice({
+      message: purgeFailed
+        ? "Account deletion requested and you've been signed out. Some data saved on this device could not be cleared; reinstall Hungry to remove it."
+        : `Account deletion requested and you've been signed out. Hungry will delete your account and personal data ${describeDeletionDate(scheduledFor)}. To keep it, sign in before then and choose Keep my account.`,
+      tone: "success",
+    });
+    // Deletion ends every device's session (this one too, below); best effort.
+    await getHungryService()
+      .auth.signOut({ scope: "global" })
+      .catch(() => undefined);
+    signOut();
+    resetToLogin();
   };
 
   const resendDeletionCode = () => getHungryService().auth.sendAccountDeletionCode();
@@ -515,21 +512,13 @@ export function SettingsScreen() {
     );
   };
 
-  const handleSignOut = () => {
-    Alert.alert("Sign out", "You will be signed out from Hungry on this device.", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Sign out",
-        style: "destructive",
-        onPress: () => {
-          signOut();
-          rootNavigation.reset({
-            index: 0,
-            routes: [{ name: "AuthStack", params: { screen: "Login" } }],
-          });
-        },
-      },
-    ]);
+  const handleSignOut = () => setAccountDialog("signOut");
+
+  const runSignOut = () => {
+    // useSessionStore.signOut clears every account-scoped store (search, review
+    // draft, location, social, profile) so all sign-out entry points match.
+    signOut();
+    resetToLogin();
   };
 
   const handleSignOutEverywhere = () => {
@@ -768,33 +757,33 @@ export function SettingsScreen() {
       )}
 
       <SettingsSection editorial title="Data & privacy">
+        {showSocialPrivacySettings ? (
+          <SettingsRow
+            editorial
+            label="Profile visibility"
+            icon={
+              isProfilePrivate ? (
+                <Lock size={20} color={palette.orange} />
+              ) : (
+                <Eye size={20} color={palette.orange} />
+              )
+            }
+            type="navigation"
+            value={isSavingVisibility ? "Saving…" : isProfilePrivate ? "Private" : "Public"}
+            onPress={() => setVisibilitySheetVisible(true)}
+            busy={isSavingVisibility}
+            isLast={false}
+          />
+        ) : null}
         {isAuthenticated ? (
-          <>
-            <SettingsRow
-              editorial
-              label="Profile visibility"
-              icon={
-                isProfilePrivate ? (
-                  <Lock size={20} color={palette.orange} />
-                ) : (
-                  <Eye size={20} color={palette.orange} />
-                )
-              }
-              type="navigation"
-              value={isSavingVisibility ? "Saving…" : isProfilePrivate ? "Private" : "Public"}
-              onPress={() => setVisibilitySheetVisible(true)}
-              busy={isSavingVisibility}
-              isLast={false}
-            />
-            <SettingsRow
-              editorial
-              label="Blocked and hidden"
-              icon={<UserX size={20} color={palette.orange} />}
-              type="navigation"
-              onPress={() => rootNavigation.navigate("BlockedAndHidden")}
-              isLast={false}
-            />
-          </>
+          <SettingsRow
+            editorial
+            label="Blocked and hidden"
+            icon={<UserX size={20} color={palette.orange} />}
+            type="navigation"
+            onPress={() => rootNavigation.navigate("BlockedAndHidden")}
+            isLast={false}
+          />
         ) : null}
         <SettingsRow
           editorial
@@ -940,17 +929,79 @@ export function SettingsScreen() {
         </SettingsSection>
       ) : null}
 
-      {isAuthenticated ? (
-        <View style={{ gap: spacing[3], marginBottom: spacing[4], marginTop: spacing[1] }}>
-          <Button
-            label="Delete account"
-            variant="destructive"
-            onPress={handleDeleteAccount}
-            loading={deletionRequested}
-            leftIcon={<Trash2 size={20} color={palette.white} />}
-          />
-        </View>
-      ) : null}
+      <View style={{ gap: spacing[3], marginBottom: spacing[4], marginTop: spacing[1] }}>
+        <Button
+          label="Delete account"
+          variant="destructive"
+          onPress={handleDeleteAccount}
+          loading={deletionRequested}
+          leftIcon={<Trash2 size={20} color={palette.white} />}
+        />
+      </View>
+
+      {/* Cross-platform confirm (Alert.alert is a no-op on web, so E2E can't drive it). */}
+      <Dialog
+        visible={accountDialog === "signOut"}
+        title="Sign out"
+        message="You will be signed out from Hungry on this device."
+        buttons={[
+          { text: "Sign out", style: "destructive", onPress: runSignOut },
+          { text: "Cancel", style: "cancel" },
+        ]}
+        onClose={() => setAccountDialog(null)}
+      />
+      <Dialog
+        visible={accountDialog === "deleteAccount"}
+        title="Delete account"
+        message={`Your profile is hidden straight away, and your account and personal data will be deleted in ${ACCOUNT_DELETION_GRACE_DAYS} days. To keep your account, sign in before then and choose Keep my account. After that, deletion is permanent. Menu photos you shared stay on the stall without your name, and some security, moderation, or legal records may remain in anonymized form.`}
+        buttons={[
+          {
+            text: "Email me a code",
+            style: "destructive",
+            onPress: () => {
+              void sendDeletionCode();
+            },
+          },
+          { text: "Cancel", style: "cancel" },
+        ]}
+        onClose={() =>
+          setAccountDialog((current) => (current === "deleteAccount" ? null : current))
+        }
+      />
+      <Dialog
+        visible={accountDialog === "deleteFailed"}
+        title="Deletion request failed"
+        message="We could not queue your account deletion request. Please try again or contact support."
+        buttons={[{ text: "OK", style: "cancel" }]}
+        onClose={() => setAccountDialog(null)}
+      />
+      <Dialog
+        visible={accountDialog === "noAccountEmail"}
+        title="Couldn't send the code"
+        message={`This account has no email address, so we can't send a code. Email ${SUPPORT_EMAIL} and we will help you delete it.`}
+        buttons={[{ text: "OK", style: "cancel" }]}
+        onClose={() => setAccountDialog(null)}
+      />
+      <Dialog
+        visible={accountDialog === "codeSendFailed"}
+        title="Couldn't send the code"
+        message="Please wait a minute and try again, or contact support."
+        buttons={[{ text: "OK", style: "cancel" }]}
+        onClose={() => setAccountDialog(null)}
+      />
+      <Dialog
+        visible={accountDialog === "ownerBlocked"}
+        title="Transfer your business first"
+        message={`You own a merchant account on Hungry. Deleting your account would leave the stall without an owner. Email ${SUPPORT_EMAIL} to hand it over, then delete your account.`}
+        buttons={[
+          {
+            text: "Email support",
+            onPress: () => void openTrustedExternalUrl(`mailto:${SUPPORT_EMAIL}`),
+          },
+          { text: "Cancel", style: "cancel" },
+        ]}
+        onClose={() => setAccountDialog(null)}
+      />
       <AccountDeletionCodeDialog
         visible={deletionCodeVisible}
         email={profile.email}
@@ -974,7 +1025,7 @@ export function SettingsScreen() {
         onClose={() => setThemeSheetVisible(false)}
       />
       <SettingsChoiceSheet
-        visible={visibilitySheetVisible}
+        visible={showSocialPrivacySettings && visibilitySheetVisible}
         title="Profile visibility"
         message="Private: only approved followers see your posts, Lists and the reviews on your profile. Your reviews still show on dish pages."
         options={[

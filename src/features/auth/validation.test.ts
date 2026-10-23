@@ -2,6 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  getPasswordRuleStatuses,
+  getPasswordRules,
+  PASSWORD_MIN_LENGTH,
   getPasswordUpdateErrorMessage,
   isWeakPasswordError,
   MIN_PASSWORD_LENGTH,
@@ -37,6 +40,22 @@ test("validateConfirmPassword requires matching values", () => {
   assert.equal(validateConfirmPassword("abcdefgh", ""), "Confirm password is required");
   assert.equal(validateConfirmPassword("abcdefgh", "abcdefgz"), "Passwords do not match");
   assert.equal(validateConfirmPassword("abcdefgh", "abcdefgh"), true);
+});
+
+test("password rule checklist is driven by the same rules as validatePassword", () => {
+  // Length is the only client rule; Supabase rejects leaked or weak passwords.
+  const rules = getPasswordRules();
+  assert.deepEqual(
+    rules.map((rule) => rule.id),
+    ["length"],
+  );
+  assert.equal(PASSWORD_MIN_LENGTH, 10);
+  assert.equal(rules[0].label, `At least ${PASSWORD_MIN_LENGTH} characters`);
+
+  assert.ok(getPasswordRuleStatuses("").every((status) => !status.met));
+  assert.ok(getPasswordRuleStatuses("abcdefghij").every((status) => status.met));
+  assert.equal(validatePassword("short"), rules[0].error);
+  assert.equal(validatePassword("abcdefghij"), true);
 });
 
 test("getPasswordUpdateErrorMessage explains rejected new passwords", () => {

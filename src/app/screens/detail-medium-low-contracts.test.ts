@@ -44,7 +44,7 @@ test("detail-M6/L18/L20: dish page has no wait card, shows the exact score and O
   assert.doesNotMatch(dish, /Math\.round\(dish\.rating\)/);
   assert.match(dish, /DeliveryPlatformButton/);
   assert.match(dish, /deliveryLinks\.map/);
-  assert.match(dish, /nowSaved === isSaved/);
+  assert.match(dish, /if \(result\.reason !== "pending"\) showToast/);
 });
 
 test("detail-M7/M9/L9: stall reviews page by venue and the menu can be searched", () => {

@@ -182,11 +182,12 @@ test("EAS release profiles set explicit MVP feature-flag environments", () => {
   }
 });
 
-test("production Post route publishes through the canonical composer service path", () => {
+test("post composer remains isolated behind the Release 0.1 post flag", () => {
   const postScreen = read("src/app/screens/post/PostComposerScreen.tsx");
   const publishing = read("src/features/post/publishing.ts");
   const swipeTabs = read("src/app/navigation/SwipeableTabNavigator.tsx");
 
+  assert.match(swipeTabs, /FEATURE_FLAGS\.postCreationEnabled[\s\S]*key: "Create"/);
   // QA tests what ships: every environment opens the V1 Post composer.
   assert.match(swipeTabs, /rootNavigation\?\.navigate\("Post"\)/);
   assert.doesNotMatch(swipeTabs, /PostComposerV2/);
@@ -228,7 +229,7 @@ test("production Post route publishes through the canonical composer service pat
   );
 });
 
-test("signed-in onboarding merges guest taste and dietary choices into the Supabase profile", () => {
+test("signed-in onboarding persists and awaits provisional preference migration", () => {
   const onboardingAuth = read("src/app/screens/onboarding/OnboardingAuthScreen.tsx");
   const emailVerification = read("src/app/screens/auth/EmailVerificationScreen.tsx");
   const login = read("src/app/screens/auth/LoginScreen.tsx");
@@ -243,26 +244,26 @@ test("signed-in onboarding merges guest taste and dietary choices into the Supab
   assert.match(emailVerification, /completeVerifiedSignUp\(shouldCompleteOnboarding\)/);
   assert.match(login, /import \{ applySignedInProfile \}/);
   assert.match(signUp, /import \{ applySignedInProfile \}/);
-  assert.match(mergeHelper, /function hasMeaningfulGuestTaste/);
-  assert.match(mergeHelper, /profile\.id !== "guest-user"[\s\S]*return false/);
+  for (const caller of [onboardingAuth, emailVerification, login, signUp]) {
+    assert.match(caller, /migration\.status === "failed"/);
+  }
+  assert.match(
+    mergeHelper,
+    /export type ProfileMigrationStatus = "synced" \| "partial_retry_queued" \| "failed"/,
+  );
+  assert.match(mergeHelper, /function createProvisionalMigration/);
+  assert.match(mergeHelper, /function isProvisionalOnboardingProfile/);
   assert.match(mergeHelper, /recommendationSignals\?\.signalCount/);
-  assert.match(mergeHelper, /function hasMeaningfulGuestDietaryPreferences/);
-  assert.match(
-    mergeHelper,
-    /profile\.id === "guest-user" && profile\.dietaryPreferences\.length > 0/,
-  );
-  assert.match(mergeHelper, /tasteVector: shouldMergeTaste \? guestProfile\.tasteVector/);
-  assert.match(mergeHelper, /tasteProfile: shouldMergeTaste \? guestTasteProfile/);
-  assert.match(mergeHelper, /dietaryPreferences: shouldMergeDietary/);
-  assert.match(mergeHelper, /shouldMergeTaste[\s\S]*updateTasteProfile\(guestTasteProfile\)/);
-  assert.match(
-    mergeHelper,
-    /shouldMergeDietary[\s\S]*updateDietaryPreferences\(guestProfile\.dietaryPreferences\)/,
-  );
+  assert.match(mergeHelper, /await operations\.awaitProfile\(\)/);
+  assert.match(mergeHelper, /Promise\.allSettled/);
+  assert.match(mergeHelper, /mergeServerProfileWithProvisional/);
+  assert.match(mergeHelper, /clearProvisionalOnboardingMigration/);
+  assert.match(mergeHelper, /setProvisionalOnboardingMigration/);
   assert.match(profileStore, /function shouldSyncAuthenticatedProfile\(profile: UserProfile\)/);
   assert.match(profileStore, /session\.isAuthenticated/);
   assert.match(profileStore, /profile\.id === session\.authenticatedUserId/);
   assert.match(profileStore, /setTasteProfile: \(tasteProfile\) => \{/);
+  assert.match(profileStore, /provisionalOnboardingMigration/);
   assert.match(
     profileStore,
     /if \(!shouldSyncAuthenticatedProfile\(optimisticProfile\)\) \{\s*return;\s*\}/,

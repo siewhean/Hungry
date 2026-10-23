@@ -1,0 +1,58 @@
+{
+  "identity": {
+    "implementationSha": "0000000000000000000000000000000000000000",
+    "evidenceSha": "0000000000000000000000000000000000000000",
+    "iosBuildId": "",
+    "androidBuildId": "",
+    "catalogReleaseId": "",
+    "supabaseMigrationHead": "",
+    "ciUrl": "",
+    "securityUrl": "",
+    "releaseOwner": "",
+    "releaseCandidateTag": "release-0.1.0-rc.1"
+  },
+  "gates": {
+    "cleanWorktree": false,
+    "localChecks": false,
+    "ci": false,
+    "security": false,
+    "mergeCompatibility": false,
+    "supabaseCapacity": false,
+    "migrationReconciled": false,
+    "supabaseAdvisor": false,
+    "supabaseRls": false,
+    "catalogPilot": false,
+    "catalogPaging": false,
+    "catalogImages": false,
+    "stagingFallback": false,
+    "stagingNoResults": false,
+    "iosArtifactInstalled": false,
+    "androidArtifactInstalled": false,
+    "iosQa": false,
+    "androidQa": false,
+    "accessibility": false,
+    "privacyAndDeletion": false,
+    "monitoringAndSourceMaps": false,
+    "rollbackRehearsed": false,
+    "betaExit": false,
+    "noOpenP0": false,
+    "noUnownedP1": false,
+    "storeMetadataReviewed": false
+  },
+  "metrics": {
+    "startupSuccessPercent": 0,
+    "crashFreeSessionsPercent": 0,
+    "primaryJourneyCompletionPercent": 0,
+    "exactPilotPassPercent": 0,
+    "initialDiscoverApprovedImagePercent": 0,
+    "completedTesterJourneys": 0
+  },
+  "rollback": {
+    "nativeBuild": "",
+    "easUpdate": "",
+    "catalogRelease": "",
+    "featureFlags": ""
+  },
+  "knownLimitations": [],
+  "acceptedRisks": []
+}

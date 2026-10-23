@@ -26,6 +26,7 @@ import { isMerchantModeActive, useMerchantStore } from "@/store/useMerchantStore
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { isE2eDeveloperLauncherBuild } from "@/lib/runtime/e2eDeveloperLauncher";
 import type { MainTabParamList, RootStackParamList } from "./navigationTypes";
 import { SwipeableTabNavigator } from "./SwipeableTabNavigator";
 import { useAccountDeletionGracePrompt } from "@/features/auth/useAccountDeletionGracePrompt";
@@ -34,7 +35,6 @@ import { getInitialNotificationUrl, subscribeToNotificationOpens } from "@/lib/n
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
-const isMockE2eDataSource = process.env.EXPO_PUBLIC_HUNGRY_E2E_DATA_SOURCE === "mock";
 
 type RootRouteName = keyof RootStackParamList;
 type MainTabRouteName = keyof MainTabParamList;
@@ -124,6 +124,36 @@ function isMainTabRouteName(value: string): value is MainTabRouteName {
 
 function isRootRouteName(value: string): value is RootRouteName {
   return ROOT_ROUTE_NAMES.has(value as RootRouteName);
+}
+
+function isReleaseRouteAvailable(routeName: RootRouteName | MainTabRouteName): boolean {
+  switch (routeName) {
+    case "Review":
+    case "ReviewHistory":
+    case "ReviewStack":
+      return FEATURE_FLAGS.reviewCreationEnabled;
+    case "Favourites":
+      return FEATURE_FLAGS.favouritesEnabled;
+    case "UserProfile":
+      return FEATURE_FLAGS.socialFeedEnabled;
+    case "DiscoverMap":
+    case "MapZoomedIn":
+      return FEATURE_FLAGS.mapEnabled;
+    case "Post":
+      return FEATURE_FLAGS.postCreationEnabled;
+    case "WheelStack":
+      return FEATURE_FLAGS.hungryWheelEnabled;
+    case "ActivityInbox":
+    case "ActivityPostDetail":
+      return FEATURE_FLAGS.activityEnabled;
+    case "ChatDetail":
+    case "DirectMessages":
+      return FEATURE_FLAGS.directMessagesEnabled;
+    case "Crave":
+      return FEATURE_FLAGS.craveEnabled;
+    default:
+      return true;
+  }
 }
 
 function getMainTabScreen(params: unknown): MainTabRouteName {
@@ -471,12 +501,13 @@ function CredEarnedToastHost() {
 }
 
 export function RootNavigator({ theme }: { theme: Theme }) {
+  const isDeveloperLauncherAvailable = __DEV__ || isE2eDeveloperLauncherBuild();
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const isAuthReady = useSessionStore((state) => state.isAuthReady);
   const hasCompletedOnboarding = useSessionStore((state) => state.hasCompletedOnboarding);
+  const authDataSource = useSessionStore((state) => state.authDataSource);
   const sessionExpired = useSessionStore((state) => state.sessionExpired);
   const passwordRecoveryInProgress = useSessionStore((state) => state.passwordRecoveryInProgress);
-  const dismissSessionExpiry = useSessionStore((state) => state.dismissSessionExpiry);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
   const isMerchantMode = useMerchantStore(isMerchantModeActive);
@@ -493,6 +524,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
         return {
           isAuthReady: state.isAuthReady,
           isAuthenticated: state.isAuthenticated,
+          hasCompletedOnboarding: state.hasCompletedOnboarding,
           onAuthRedirect: (route) => {
             state.setReturnRoute({ name: route.name, params: route.params });
           },
@@ -525,12 +557,12 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     }
 
     if (typeof returnRoute === "string") {
-      if (isMainTabRouteName(returnRoute)) {
+      if (isMainTabRouteName(returnRoute) && isReleaseRouteAvailable(returnRoute)) {
         navigationRef.resetRoot({
           index: 0,
           routes: [{ name: "MainTabs", params: { screen: returnRoute } }],
         });
-      } else if (isRootRouteName(returnRoute)) {
+      } else if (isRootRouteName(returnRoute) && isReleaseRouteAvailable(returnRoute)) {
         navigationRef.resetRoot({
           index: 1,
           routes: [{ name: "MainTabs", params: { screen: "Home" } }, { name: returnRoute }],
@@ -548,7 +580,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
         index: 0,
         routes: [{ name: "MainTabs", params: { screen: getMainTabScreen(params) } }],
       });
-    } else if (isRootRouteName(returnRoute.name)) {
+    } else if (isRootRouteName(returnRoute.name) && isReleaseRouteAvailable(returnRoute.name)) {
       navigationRef.resetRoot({
         index: 1,
         routes: [
@@ -582,17 +614,12 @@ export function RootNavigator({ theme }: { theme: Theme }) {
 
   useEffect(() => {
     if (sessionExpired && navigationRef.isReady()) {
-      // Keep the user's place (a dish, the composer) so the next sign-in returns there. Guests
-      // can browse, so say what happened instead of pulling them out of what they were doing;
-      // a screen that needs an account sends them to sign in by itself.
+      // Keep the user's place (a dish, the composer) so the next sign-in returns there.
+      // The app is sign-in only, so an expired session goes to Login, which says why.
       setReturnRoute(getActiveReturnRoute() ?? "Home");
-      useUIStore.getState().showToast({
-        message: "You were signed out. Sign in again to continue.",
-        tone: "warning",
-      });
-      dismissSessionExpiry();
+      navigationRef.navigate("AuthStack", { screen: "Login" });
     }
-  }, [dismissSessionExpiry, sessionExpired, setReturnRoute]);
+  }, [sessionExpired, setReturnRoute]);
 
   useEffect(() => {
     if (!navigationRef.isReady()) {
@@ -601,17 +628,21 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     if (!isAuthReady) {
       return;
     }
+    // Keep a signed-in user on the reset form while a recovery update is running.
+    if (passwordRecoveryInProgress) {
+      return;
+    }
 
     const rootState = navigationRef.getRootState();
     const currentTopRoute = rootState?.routes[rootState.index]?.name;
     if (
-      __DEV__ &&
+      isDeveloperLauncherAvailable &&
       currentTopRoute === "DeveloperLauncher" &&
       isAuthenticated &&
       hasCompletedOnboarding &&
+      authDataSource === "supabase" &&
       !isDeveloperMode &&
-      !isMerchantMode &&
-      !isMockE2eDataSource
+      !isMerchantMode
     ) {
       // Same launch rule as Splash: a remembered Merchant mode reopens the Merchant Centre.
       if (merchantModeRestore === "checking") return;
@@ -645,10 +676,18 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     }
 
     if (currentTopRoute === "OnboardingStack" && hasCompletedOnboarding) {
-      navigateHome();
+      if (isAuthenticated) {
+        navigateHome();
+      } else {
+        navigationRef.resetRoot({
+          index: 0,
+          routes: [{ name: "AuthStack", params: { screen: "Login" } }],
+        });
+      }
     }
   }, [
     hasCompletedOnboarding,
+    authDataSource,
     isAuthenticated,
     isAuthReady,
     isDeveloperMode,
@@ -700,10 +739,10 @@ export function RootNavigator({ theme }: { theme: Theme }) {
       >
         <RootStack.Navigator
           id="Root"
-          initialRouteName={__DEV__ ? "DeveloperLauncher" : "Splash"}
+          initialRouteName={isDeveloperLauncherAvailable ? "DeveloperLauncher" : "Splash"}
           screenOptions={{ headerShown: false }}
         >
-          {__DEV__ ? (
+          {isDeveloperLauncherAvailable ? (
             <RootStack.Screen getComponent={loadDeveloperLauncherScreen} name="DeveloperLauncher" />
           ) : null}
           <RootStack.Screen component={SplashScreen} name="Splash" />
@@ -719,19 +758,31 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen getComponent={loadSearchResultsScreen} name="SearchResults" />
           <RootStack.Screen getComponent={loadBrowseDishesScreen} name="BrowseDishes" />
           <RootStack.Screen getComponent={loadBrowseStallsScreen} name="BrowseStalls" />
-          <RootStack.Screen
-            getComponent={loadHomeMapScreen}
-            name="DiscoverMap"
-            options={{ gestureEnabled: true }}
-          />
-          <RootStack.Screen getComponent={loadMapZoomedInScreen} name="MapZoomedIn" />
-          <RootStack.Screen getComponent={loadPostComposerScreen} name="Post" />
+          {FEATURE_FLAGS.mapEnabled ? (
+            <>
+              <RootStack.Screen
+                getComponent={loadHomeMapScreen}
+                name="DiscoverMap"
+                options={{ gestureEnabled: true }}
+              />
+              <RootStack.Screen getComponent={loadMapZoomedInScreen} name="MapZoomedIn" />
+            </>
+          ) : null}
+          {FEATURE_FLAGS.postCreationEnabled ? (
+            <RootStack.Screen getComponent={loadPostComposerScreen} name="Post" />
+          ) : null}
           <RootStack.Screen getComponent={loadEditProfileScreen} name="EditProfile" />
           <RootStack.Screen getComponent={loadChangePasswordScreen} name="ChangePassword" />
-          <RootStack.Screen getComponent={loadFavouritesScreen} name="Favourites" />
-          <RootStack.Screen getComponent={loadReviewHistoryScreen} name="ReviewHistory" />
+          {FEATURE_FLAGS.favouritesEnabled ? (
+            <RootStack.Screen getComponent={loadFavouritesScreen} name="Favourites" />
+          ) : null}
+          {FEATURE_FLAGS.reviewCreationEnabled ? (
+            <RootStack.Screen getComponent={loadReviewHistoryScreen} name="ReviewHistory" />
+          ) : null}
           <RootStack.Screen getComponent={loadSettingsScreen} name="Settings" />
-          <RootStack.Screen component={UserProfileScreen} name="UserProfile" />
+          {FEATURE_FLAGS.socialFeedEnabled ? (
+            <RootStack.Screen component={UserProfileScreen} name="UserProfile" />
+          ) : null}
           <RootStack.Screen getComponent={loadDishDetailScreenV2} name="DishDetail" />
           <RootStack.Screen getComponent={loadCatalogRawDetailScreen} name="CatalogRawDetail" />
           <RootStack.Screen getComponent={loadStallDetailScreen} name="StallDetail" />
@@ -746,11 +797,24 @@ export function RootNavigator({ theme }: { theme: Theme }) {
               }}
             />
           ) : null}
-          <RootStack.Screen getComponent={loadReviewStack} name="ReviewStack" />
-          <RootStack.Screen getComponent={loadWheelStack} name="WheelStack" />
-          <RootStack.Screen getComponent={loadActivityInboxScreen} name="ActivityInbox" />
-          <RootStack.Screen getComponent={loadActivityPostDetailScreen} name="ActivityPostDetail" />
-          <RootStack.Screen getComponent={loadReviewDetailScreen} name="ReviewDetail" />
+          {FEATURE_FLAGS.reviewCreationEnabled ? (
+            <RootStack.Screen getComponent={loadReviewStack} name="ReviewStack" />
+          ) : null}
+          {FEATURE_FLAGS.hungryWheelEnabled ? (
+            <RootStack.Screen getComponent={loadWheelStack} name="WheelStack" />
+          ) : null}
+          {FEATURE_FLAGS.activityEnabled ? (
+            <>
+              <RootStack.Screen getComponent={loadActivityInboxScreen} name="ActivityInbox" />
+              <RootStack.Screen
+                getComponent={loadActivityPostDetailScreen}
+                name="ActivityPostDetail"
+              />
+            </>
+          ) : null}
+          {FEATURE_FLAGS.reviewCreationEnabled ? (
+            <RootStack.Screen getComponent={loadReviewDetailScreen} name="ReviewDetail" />
+          ) : null}
           <RootStack.Screen getComponent={loadFollowRequestsScreen} name="FollowRequests" />
           <RootStack.Screen getComponent={loadBlockedAndHiddenScreen} name="BlockedAndHidden" />
           <RootStack.Screen getComponent={loadUserFollowersScreen} name="UserFollowers" />
@@ -771,7 +835,9 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen getComponent={loadDecideForMeResultScreen} name="DecideForMeResult" />
           <RootStack.Screen getComponent={loadOfflineStateScreen} name="Offline" />
           <RootStack.Screen getComponent={loadNotFoundScreen} name="NotFound" />
-          <RootStack.Screen getComponent={loadQuickBitesScreen} name="QuickBites" />
+          {!FEATURE_FLAGS.release01CoreOnly ? (
+            <RootStack.Screen getComponent={loadQuickBitesScreen} name="QuickBites" />
+          ) : null}
           {FEATURE_FLAGS.prototypeRoutesEnabled ? (
             <>
               <RootStack.Screen getComponent={loadDesignGalleryScreen} name="DesignGallery" />
@@ -823,7 +889,9 @@ export function RootNavigator({ theme }: { theme: Theme }) {
       </NavigationContainer>
       <GlobalScrollBackButton />
       <OfflineBanner />
-      <ReviewSuccessModalHost onOpenHistory={() => navigationRef.navigate("ReviewHistory")} />
+      {FEATURE_FLAGS.reviewCreationEnabled ? (
+        <ReviewSuccessModalHost onOpenHistory={() => navigationRef.navigate("ReviewHistory")} />
+      ) : null}
       <FloatingToast />
       <CredEarnedToastHost />
     </>

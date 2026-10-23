@@ -273,20 +273,24 @@ export function TasteProfileResultScreen({ navigation }: Props) {
                       accessibilityHint={
                         isAuthenticated
                           ? undefined
-                          : "Create or sign in to an account before saving this dish"
+                          : "Saved once you create your account at the end of setup"
                       }
                       onPress={() => {
                         if (isAuthenticated) {
-                          toggleFavourite(dish);
+                          void toggleFavourite(dish).then((result) => {
+                            if (result.status === "failed") {
+                              showToast({ message: result.message, tone: "error" });
+                            }
+                          });
                           return;
                         }
-                        // Sign-in is asked for only when an action needs an account.
-                        showToast({
-                          message: "Create or sign in to an account before saving dishes.",
-                          tone: "warning",
-                        });
+                        // Account creation is the step after this one. The dish is kept
+                        // on the device and saved once sign-in finishes (main H6).
                         rememberPendingDishSave(dish);
-                        navigation.navigate("OnboardingAuth", { dishName: dish.name });
+                        showToast({
+                          message: `We'll save ${dish.name} once you create your account.`,
+                          tone: "info",
+                        });
                       }}
                       style={{
                         alignItems: "center",
@@ -313,6 +317,12 @@ export function TasteProfileResultScreen({ navigation }: Props) {
         <Button
           label="Start exploring"
           onPress={() => {
+            // Sign-in is required: a signed-out user finishes on the account step,
+            // which completes onboarding (with this quiz-skip choice) before auth.
+            if (!isAuthenticated) {
+              navigation.navigate("OnboardingAuth");
+              return;
+            }
             // Last step: the only place first-run onboarding completes. RootNavigator
             // then routes Home (or to a pending return route) once, by itself.
             const alreadyCompleted = useSessionStore.getState().hasCompletedOnboarding;

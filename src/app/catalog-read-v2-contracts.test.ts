@@ -52,11 +52,14 @@ test("every data source serves the catalog contract (no null service, no Supabas
   assert.doesNotMatch(detail, /getServiceProvider\(\)\.mode !== "supabase"/);
 });
 
-test("raw catalog service is guest-readable, cursor-paged, and non-persistent", () => {
+test("raw catalog service is authenticated, typed, cursor-paged, and non-persistent", () => {
   const source = read("src/lib/services/catalog/index.ts");
-  // Guests browse with the anon key; no signed-in session is required to read.
-  assert.doesNotMatch(source, /client\.auth\.getSession\(\)/);
-  assert.doesNotMatch(source, /Sign in to browse/);
+  assert.match(source, /client\.auth\.getSession\(\)/);
+  assert.match(source, /CatalogAuthenticationRequiredError/);
+  assert.match(source, /CatalogSessionInvalidError/);
+  assert.match(source, /CatalogConfigurationError/);
+  assert.match(source, /CatalogNetworkError/);
+  assert.match(source, /CatalogRpcError/);
   assert.match(source, /catalog_raw_dishes_page/);
   assert.match(source, /catalog_raw_venues_page/);
   assert.match(source, /catalog_raw_map_view/);
@@ -128,9 +131,16 @@ test("discovery entry points never warm a local catalog index and map passes vie
   assert.match(map, /candidate\.kind === "venue" \? "stall" : candidate\.kind/);
 });
 
+test("raw map excludes non-consumer venues at the RPC boundary", () => {
+  const migration = read("supabase/migrations/20260715020000_catalog_raw_map_exclusion.sql");
+  assert.match(migration, /catalog_raw_map_view/);
+  assert.match(migration, /catalog_raw_excluded_venues/);
+  assert.match(migration, /where e\.venue_id = id/);
+});
+
 test("catalog release publisher fails when count validation does not activate a release", () => {
   const publisher = read("scripts/publish-catalog-raw-release.mjs");
-  assert.match(publisher, /result\.rows\?\.\[0\]\?\.status !== "active"/);
+  assert.match(publisher, /release\?\.status !== "active"/);
   assert.match(publisher, /process\.exitCode = 1/);
 });
 
@@ -165,16 +175,25 @@ test("guest catalog migration opens only the read RPCs to anon", () => {
   assert.match(smoke, /select 'guest_catalog_raw_reads_smoke_passed' as result;\s*rollback;\s*$/);
 });
 
-test("guests see map pins and open the read-only catalog detail", () => {
+test("signed-out users never reach map pins or catalog detail (sign-in required)", () => {
+  // The database also allows anon catalog reads (20261019210000), but the app
+  // stays sign-in only: the signed-in navigator mounts only with a session.
+  const appBody = read("src/app/AppBody.tsx");
+  assert.match(appBody, /const wantsRootNavigator = isAuthenticated \|\|/);
   const map = read("src/app/screens/discover/HomeMapScreen.tsx");
-  assert.doesNotMatch(map, /GuestMapPrompt|isAuthenticated/);
   assert.match(map, /catalogRawService\.getMapViewport\(/);
-  const navigator = read("src/app/navigation/RootNavigator.tsx");
-  const protectedRoutes = navigator.match(/const PROTECTED_ROOT_ROUTES[\s\S]*?\]\);/)?.[0] ?? "";
-  assert.ok(protectedRoutes);
-  assert.doesNotMatch(protectedRoutes, /"CatalogRawDetail"/);
+  assert.doesNotMatch(map, /GuestMapPrompt/);
+  const service = read("src/lib/services/catalog/index.ts");
+  assert.match(
+    service,
+    /if \(!result\.data\.session\?\.user\) throw new CatalogAuthenticationRequiredError\(\);/,
+  );
   const detail = read("src/app/screens/catalog/CatalogRawDetailScreen.tsx");
-  assert.doesNotMatch(detail, /isAuthenticated|Sign in to view/);
-  // The catalog detail is read-only; if a save action is added it must use the sign-in gate.
-  assert.doesNotMatch(detail, /toggleFavourite|toggleSave|toggleLike|addItem\(/);
+  assert.match(
+    detail,
+    /if \(!isAuthenticated\) \{\s*setError\("Sign in to view this catalog record\."\);/,
+  );
+  // Its only save action is the favourites store, which refuses a signed-out caller.
+  assert.doesNotMatch(detail, /toggleSave|toggleLike|addItem\(/);
+  assert.match(detail, /useProfileStore\(\(state\) => state\.toggleFavourite\)/);
 });

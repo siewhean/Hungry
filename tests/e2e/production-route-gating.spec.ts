@@ -26,8 +26,8 @@ test.describe("production route gating", () => {
     expect(flags).toContain("storiesEnabled");
     expect(flags).toContain("commentsEnabled: nonProductionSurfaceEnabled");
     expect(flags).toContain("directMessagesEnabled: nonProductionSurfaceEnabled");
-    expect(flags).toContain("const merchantCentreEnabled = nonProductionSurfaceEnabled");
-    expect(flags).toContain("const merchantClaimCtaEnabled = nonProductionSurfaceEnabled");
+    expect(flags).toContain("merchantCentreEnabled: nonProductionSurfaceEnabled");
+    expect(flags).toContain("merchantClaimCtaEnabled: nonProductionSurfaceEnabled");
     expect(flags).toContain('appEnv !== "production"');
     expect(rootNavigator).toContain("FEATURE_FLAGS.prototypeRoutesEnabled ? (");
     expect(rootNavigator).toContain("FEATURE_FLAGS.merchantCentreEnabled ? (");

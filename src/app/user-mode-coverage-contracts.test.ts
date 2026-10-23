@@ -27,9 +27,9 @@ test("user auth and onboarding flows cover account, taste, dietary, and location
     [
       /Login: \{ title\?: string; email\?: string \} \| undefined/,
       /SignUp: undefined/,
-      /EmailVerification:\s*\|?\s*\{ email\?: string; completedOnboarding\?: boolean; code\?: string \}\s*\|\s*undefined/,
+      /EmailVerification:\s*\|\s*\{\s*email\?: string;\s*completedOnboarding\?: boolean;\s*code\?: string;/,
       /ForgotPassword: undefined/,
-      /ResetPassword:\s*\|\s*\{\s*email\?: string;\s*code\?: string;\s*recoveryVerified\?: boolean;\s*linkError\?: "expired" \| "invalid";\s*\}\s*\|\s*undefined/,
+      /ResetPassword:\s*\|\s*\{\s*email\?: string;\s*code\?: string;\s*error\?: "expired" \| "invalid";\s*recoveryVerified\?: boolean;\s*linkError\?: "expired" \| "invalid";\s*\}\s*\|\s*undefined/,
       /TasteQuiz: \{ mode\?: "onboarding" \| "profile"; initialPhase\?: "taste" \| "dietary" \} \| undefined/,
       /LocationPermission: undefined/,
       /ManualLocationPicker: \{ mode\?: "settings" \} \| undefined/,
@@ -73,7 +73,8 @@ test("user auth and onboarding flows cover account, taste, dietary, and location
     [
       /getHungryService\(\)\.auth\.signUp\(/,
       /navigation\.navigate\("EmailVerification"/,
-      /completeAuth\(\{[\s\S]*completedOnboarding: false/,
+      /completeAuth\(\{[\s\S]*completedOnboarding: hasCompletedOnboarding/,
+      /navigation\.navigate\("EmailVerification", \{[\s\S]*completedOnboarding: hasCompletedOnboarding/,
     ],
     "SignUpScreen",
   );
@@ -84,10 +85,10 @@ test("user auth and onboarding flows cover account, taste, dietary, and location
     [
       /const handleDeleteAccount = \(\) =>/,
       /purgePersistedAccountData\(\)/,
-      /clearSession\(\)/,
-      /clearProfile\(\)/,
-      /rootNavigation\.reset\(\{[\s\S]*name: "AuthStack", params: \{ screen: "Login" \}/,
-      /Deletion scheduled/,
+      // signOut() clears session, profile and every account-scoped store and
+      // signs out of Supabase; Login then shows the deletion confirmation.
+      /setAuthNotice\(/,
+      /signOut\(\);\s*resetToLogin\(\);/,
     ],
     "SettingsScreen delete account",
   );
@@ -112,6 +113,11 @@ test("user auth and onboarding flows cover account, taste, dietary, and location
     manualLocation,
     [/setManualSelection/, /navigation\.navigate\("TasteQuiz"\)/],
     "ManualLocationPickerScreen",
+  );
+  assertSourceIncludes(
+    readRepoFile("src/app/screens/onboarding/MandatoryOnboardingAuthScreen.tsx"),
+    [/completeOnboarding\(hasSkippedTasteQuiz\)/, /<OnboardingAuthScreen/],
+    "MandatoryOnboardingAuthScreen",
   );
 });
 
@@ -254,7 +260,7 @@ test("dish and stall details expose correct detail surfaces without user-mode ma
   assertSourceIncludes(
     dishDetail,
     [
-      /const gallery = useMemo\(\(\) => \(dish \? buildDishGallery\(dish\) : \[\]\), \[dish\]\)/,
+      /const gallery = useMemo\([\s\S]*?dish\s*\? buildDishGallery\(dish\)[\s\S]*?sanitizeCatalogImageUrl/,
       /dish\.tasteVector\[dimension\.key\]/,
       /ReviewShareSheet/,
       /toggleFavourite\(dish\)/,
@@ -267,7 +273,7 @@ test("dish and stall details expose correct detail surfaces without user-mode ma
       /height=\{screenWidth \* 0\.72\}/,
       /const stallAddress =/,
       /import \{ StallLogoMark \} from "@\/components\/stall\/StallLogoMark"/,
-      /logoUrl=\{venue\.logoUrl\}/,
+      /logoUrl=\{sanitizeCatalogImageUrl\(venue\.logoUrl\)\}/,
       /<AppText variant="bodyBold">Address<\/AppText>/,
       /\{stallAddress\}/,
       /Loading stall/,

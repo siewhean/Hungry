@@ -1,16 +1,10 @@
 /**
- * SplashScreen — animated brand intro
- *
- * Sequence:
- *  0ms  – screen appears (dark bg)
- *  200ms – logo scales in
- *  700ms – tagline fades in
- *  ~600ms – orange dot pulses
+ * SplashScreen — animated brand intro and mandatory-auth entry router.
  *
  * The splash only stays up until auth/bootstrap is ready, with a short
  * minimum (motion.splashTotal) so the logo animation does not flash.
- * New users go to onboarding; everyone else lands in the app (as a guest when
- * signed out). Sign-in is asked for on demand (Profile, save, post, review).
+ * New users go to onboarding (which ends at sign-up/sign-in); signed-out
+ * returning users go to Login. Main app screens never mount without a session.
  * A signed-in merchant who left the app in Merchant mode reopens in the Merchant Centre.
  */
 
@@ -19,13 +13,45 @@ import { View, Animated, StyleSheet } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import Constants from "expo-constants";
 
-import type { RootStackParamList } from "@/app/navigation/navigationTypes";
+import type { MainTabParamList, RootStackParamList } from "@/app/navigation/navigationTypes";
 import { HUNGRY_LOGO_ICON, HUNGRY_LOGO_STANDARD_SIZE } from "@/constants/brandAssets";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { useMerchantStore } from "@/store/useMerchantStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme, type HungryTheme } from "@/theme";
 import { AppText } from "@/components/ui";
+
+const SAFE_MAIN_TAB_RETURNS = new Set<keyof MainTabParamList>([
+  "Home",
+  "Discover",
+  "Review",
+  "Profile",
+]);
+const SAFE_ROOT_RETURNS = new Set<keyof RootStackParamList>([
+  "StallDetail",
+  "DishDetail",
+  "CatalogRawDetail",
+  "SearchHome",
+  "SearchResults",
+  "BrowseDishes",
+  "BrowseStalls",
+  "DiscoverMap",
+  "DecideForMeResult",
+  "MapZoomedIn",
+  "Post",
+  "ReviewStack",
+  "WheelStack",
+  "ActivityInbox",
+  "ActivityPostDetail",
+  "Crave",
+  "PortfolioPublicView",
+  "QuickBites",
+  "Favourites",
+  "ReviewHistory",
+  "Settings",
+  "EditProfile",
+  "UserProfile",
+]);
 
 type Props = NativeStackScreenProps<RootStackParamList, "Splash">;
 
@@ -34,7 +60,10 @@ const HYDRATION_FALLBACK_MS = 5000;
 
 export function SplashScreen({ navigation }: Props) {
   const hasCompletedOnboarding = useSessionStore((state) => state.hasCompletedOnboarding);
+  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const isAuthReady = useSessionStore((state) => state.isAuthReady);
+  const returnRoute = useSessionStore((state) => state.returnRoute);
+  const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const merchantModeRestore = useMerchantStore((state) => state.merchantModeRestore);
   const dismissMerchantModeRestore = useMerchantStore((state) => state.dismissMerchantModeRestore);
   const { palette, motion, spacing, radii, typography } = useHungryTheme();
@@ -133,6 +162,8 @@ export function SplashScreen({ navigation }: Props) {
 
     const remaining = Math.max(0, motion.splashTotal - (Date.now() - mountedAt));
     const timer = setTimeout(() => {
+      // Fresh users complete local onboarding before they are offered account
+      // creation/sign-in. Main app screens never mount during either step.
       if (!hasCompletedOnboarding) {
         // Onboarding comes first; a remembered Merchant mode is forgotten, not kept for later.
         dismissMerchantModeRestore();
@@ -143,6 +174,16 @@ export function SplashScreen({ navigation }: Props) {
         return;
       }
 
+      if (!isAuthenticated) {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "AuthStack", params: { screen: "Login" } }],
+        });
+        return;
+      }
+
+      const pending = returnRoute;
+      setReturnRoute(undefined);
       if (merchantModeRestore === "restore") {
         navigation.reset({
           index: 0,
@@ -151,14 +192,43 @@ export function SplashScreen({ navigation }: Props) {
         return;
       }
 
+      if (
+        typeof pending === "string" &&
+        SAFE_MAIN_TAB_RETURNS.has(pending as keyof MainTabParamList)
+      ) {
+        navigation.reset({
+          index: 0,
+          routes: [
+            {
+              name: "MainTabs",
+              params: { screen: pending as keyof MainTabParamList },
+            },
+          ],
+        });
+        return;
+      }
+
+      if (
+        pending &&
+        typeof pending === "object" &&
+        SAFE_ROOT_RETURNS.has(pending.name as keyof RootStackParamList)
+      ) {
+        navigation.reset({
+          index: 1,
+          routes: [
+            { name: "MainTabs", params: { screen: "Home" } },
+            {
+              name: pending.name as keyof RootStackParamList,
+              params: pending.params,
+            } as never,
+          ],
+        });
+        return;
+      }
+
       navigation.reset({
         index: 0,
-        routes: [
-          {
-            name: "MainTabs",
-            params: { screen: "Home" },
-          },
-        ],
+        routes: [{ name: "MainTabs", params: { screen: "Home" } }],
       });
     }, remaining);
 
@@ -166,11 +236,14 @@ export function SplashScreen({ navigation }: Props) {
   }, [
     dismissMerchantModeRestore,
     hasCompletedOnboarding,
+    isAuthenticated,
     isAuthReady,
     merchantModeRestore,
     motion.splashTotal,
     mountedAt,
     navigation,
+    returnRoute,
+    setReturnRoute,
   ]);
 
   return (

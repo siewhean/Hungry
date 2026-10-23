@@ -146,11 +146,17 @@ test("Sprint 9 screen contract: onboarding icon controls and location rows are l
     tasteProfileResult,
     /accessibilityLabel=\{`\$\{isSaved \? "Unsave" : "Save"\} \$\{dish\.name\}`\}/,
   );
-  assert.match(tasteProfileResult, /"Create or sign in to an account before saving this dish"/);
-  // Signed-in users save for real; only guests are sent to the auth prompt.
+  assert.match(tasteProfileResult, /"Saved once you create your account at the end of setup"/);
+  // Signed-in users save for real; signed-out users are told the account step comes last.
   assert.match(
     tasteProfileResult,
-    /if \(isAuthenticated\) \{\s*toggleFavourite\(dish\);\s*return;\s*\}[\s\S]*navigation\.navigate\("OnboardingAuth", \{ dishName: dish\.name \}\)/,
+    /if \(isAuthenticated\) \{\s*void toggleFavourite\(dish\)[\s\S]*return;\s*\}/,
+  );
+  // Saving a dish never opens the account step early; it is the step after Done.
+  assert.doesNotMatch(tasteProfileResult, /setPendingSaveDish/);
+  assert.match(
+    tasteProfileResult,
+    /if \(!isAuthenticated\) \{\s*navigation\.navigate\("OnboardingAuth"\);\s*return;/,
   );
   // Result is ranked by the quiz taste vector, not a fixed popular list.
   assert.match(tasteProfileResult, /tasteValues: tasteVector/);

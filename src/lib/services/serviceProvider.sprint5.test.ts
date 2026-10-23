@@ -71,7 +71,7 @@ test("service provider can be forced into mock mode for developer shortcuts", ()
   resetServiceProvider();
 });
 
-test("released builds reject forced mock and Excel provider switches", () => {
+test("released builds stay Supabase-first while catalog reads can fall back to Excel", () => {
   const previousEnvironment = process.env.EXPO_PUBLIC_APP_ENV;
   process.env.EXPO_PUBLIC_APP_ENV = "production";
   resetServiceProvider();
@@ -82,11 +82,8 @@ test("released builds reject forced mock and Excel provider switches", () => {
   setExcelServiceProvider();
   assert.equal(getServiceProvider().mode, "supabase");
 
-  if (previousEnvironment === undefined) {
-    delete process.env.EXPO_PUBLIC_APP_ENV;
-  } else {
-    process.env.EXPO_PUBLIC_APP_ENV = previousEnvironment;
-  }
+  if (previousEnvironment === undefined) delete process.env.EXPO_PUBLIC_APP_ENV;
+  else process.env.EXPO_PUBLIC_APP_ENV = previousEnvironment;
   resetServiceProvider();
 });
 

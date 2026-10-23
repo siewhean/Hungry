@@ -61,6 +61,7 @@ export default defineConfig({
           HUNGRY_DATA_SOURCE: "mock",
           EXPO_PUBLIC_HUNGRY_DATA_SOURCE: "mock",
           EXPO_PUBLIC_HUNGRY_E2E_DATA_SOURCE: "mock",
+          EXPO_PUBLIC_APP_ENV: "development",
           EXPO_PUBLIC_MOCK_MAPBOX_ENABLED: "1",
           EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN: "",
           EXPO_PUBLIC_DISABLE_POSTHOG: "1",

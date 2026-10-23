@@ -39,6 +39,7 @@ import {
   Screen,
   Skeleton,
 } from "@/components/ui";
+import { appendUniqueById } from "@/lib/services/catalog/paging";
 import { StallLogoMark } from "@/components/stall/StallLogoMark";
 import {
   BROWSE_ALL_FILTER,
@@ -71,6 +72,11 @@ import {
   type CatalogRawDishCard,
   type CatalogRawVenueCard,
 } from "@/lib/services/catalog";
+import { CatalogAccessError } from "@/lib/services/catalog";
+import {
+  recordCatalogDiagnostic,
+  summarizeCatalogRequest,
+} from "@/lib/services/catalog/diagnostics";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { reportError } from "@/lib/monitoring/reportError";
 import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
@@ -315,6 +321,7 @@ function RawCatalogBrowseGrid({
   const [loadedKey, setLoadedKey] = useState<string | null>(null);
   const [didYouMean, setDidYouMean] = useState<{ query: string; label: string } | null>(null);
   const requestVersion = useRef(0);
+  const rawSearchInputRef = useRef<TextInput | null>(null);
   const releaseIdRef = useRef<string | undefined>(undefined);
   const listRef = useRef<FlashListRef<BrowseItem>>(null);
   const sortSheetRef = useRef<BottomSheetModal>(null);
@@ -354,6 +361,8 @@ function RawCatalogBrowseGrid({
 
   const loadPage = useCallback(
     async (cursor?: string, append = false) => {
+      if (!isAuthenticated) return;
+      const startedAt = Date.now();
       const version = requestVersion.current;
       if (append) setIsLoadingMore(true);
       else setIsLoading(true);
@@ -373,9 +382,26 @@ function RawCatalogBrowseGrid({
         const page =
           mode === "dishes" ? await service.listDishes(request) : await service.listVenues(request);
         if (requestVersion.current !== version) return;
-        setItems((current) => (append ? [...current, ...page.items] : page.items));
+        // Defensive dedupe: FlashList keys must stay unique even if a source
+        // repeats a row across pages.
+        setItems((current) => (append ? appendUniqueById(current, page.items) : page.items));
         setNextCursor(page.nextCursor);
         releaseIdRef.current = page.releaseId || undefined;
+        recordCatalogDiagnostic({
+          operation:
+            mode === "dishes"
+              ? query.trim()
+                ? "search-dishes"
+                : "browse-dishes"
+              : query.trim()
+                ? "search-stalls"
+                : "browse-stalls",
+          durationMs: Date.now() - startedAt,
+          releaseId: page.releaseId,
+          request: summarizeCatalogRequest(request),
+          resultCount: page.items.length,
+          succeeded: true,
+        });
         if (append) {
           trackAnalyticsEvent("search_load_more", { mode, count: page.items.length });
         } else {
@@ -398,6 +424,35 @@ function RawCatalogBrowseGrid({
             );
             setItems([]);
           }
+          const request = buildBrowseRequest({
+            query,
+            filters,
+            sort,
+            coordinate,
+            cursor,
+            releaseId: releaseIdRef.current,
+            buildingId: place?.id,
+          });
+          recordCatalogDiagnostic({
+            operation:
+              mode === "dishes"
+                ? query.trim()
+                  ? "search-dishes"
+                  : "browse-dishes"
+                : query.trim()
+                  ? "search-stalls"
+                  : "browse-stalls",
+            durationMs: Date.now() - startedAt,
+            errorKind:
+              loadError instanceof CatalogAccessError
+                ? loadError.kind
+                : loadError instanceof Error
+                  ? loadError.name
+                  : "unknown",
+            request: summarizeCatalogRequest(request),
+            resultCount: 0,
+            succeeded: false,
+          });
         }
       } finally {
         if (requestVersion.current === version) {
@@ -406,7 +461,18 @@ function RawCatalogBrowseGrid({
         }
       }
     },
-    [coordinate, filters, mode, place, query, requestKey, service, sort, widenRadius],
+    [
+      coordinate,
+      filters,
+      isAuthenticated,
+      mode,
+      place,
+      query,
+      requestKey,
+      service,
+      sort,
+      widenRadius,
+    ],
   );
 
   // A search is committed by Enter, a suggestion or a link, not by typing pauses: one search
@@ -653,6 +719,7 @@ function RawCatalogBrowseGrid({
             />
             <View style={{ flex: 1, justifyContent: "center" }}>
               <TextInput
+                ref={rawSearchInputRef}
                 accessibilityLabel={`Search ${mode}`}
                 autoCorrect={false}
                 maxLength={CATALOG_QUERY_MAX_CHARS}
@@ -696,7 +763,10 @@ function RawCatalogBrowseGrid({
                   accessibilityRole="button"
                   accessibilityLabel="Clear search"
                   hitSlop={8}
-                  onPress={() => setSearchText("")}
+                  onPress={() => {
+                    setSearchText("");
+                    rawSearchInputRef.current?.focus();
+                  }}
                   style={browseStyles.clearButton}
                 >
                   <X color={palette.textMuted} size={18} />

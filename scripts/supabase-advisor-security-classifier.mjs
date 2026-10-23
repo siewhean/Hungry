@@ -8,14 +8,36 @@ const FAIL_ON_EXTERNAL_ENV = "HUNGRY_SUPABASE_ADVISOR_FAIL_ON_EXTERNAL";
 const IGNORE_LEAKED_PASSWORD_ENV = "HUNGRY_SUPABASE_ADVISOR_IGNORE_LEAKED_PASSWORD";
 const npxCommand = process.env.SUPABASE_NPX_COMMAND || "npx";
 const npxInstallArgs = process.env.SUPABASE_NPX_ALLOW_INSTALL === "1" ? [] : ["--no-install"];
+// Self-hosted Supabase: target the database explicitly instead of a CLI-linked cloud project.
+const DB_URL_ENV = "SUPABASE_DB_URL";
+const dbUrl = process.env[DB_URL_ENV]?.trim() ?? "";
 const installedSupabaseCli =
   process.env.SUPABASE_CLI_COMMAND ||
   ["/opt/homebrew/bin/supabase", "/usr/local/bin/supabase"].find((candidate) =>
     existsSync(candidate),
   );
-const args = ["db", "advisors", "--linked", "--type", "security", "--level", "warn", "-o", "json"];
+const args = [
+  "db",
+  "advisors",
+  "--db-url",
+  dbUrl,
+  "--type",
+  "security",
+  "--level",
+  "warn",
+  "-o",
+  "json",
+];
 const command = installedSupabaseCli || npxCommand;
 const commandArgs = installedSupabaseCli ? args : [...npxInstallArgs, "supabase", ...args];
+const AUTHENTICATED_RAW_CATALOG_RPCS = new Set([
+  "catalog_raw_dishes_page",
+  "catalog_raw_venue_menu_page",
+  "catalog_raw_venues_page",
+  "catalog_raw_dish_detail",
+  "catalog_raw_venue_detail",
+  "catalog_raw_map_view",
+]);
 
 function isRequired() {
   return process.argv.includes("--require-network") || process.env[REQUIRED_ENV] === "1";
@@ -82,6 +104,20 @@ function fail(message, details) {
   console.error(`[supabase-advisor-security-classifier] ${message}`);
   if (details?.trim()) console.error(details.trim());
   process.exit(1);
+}
+
+function expectedAppReason(finding) {
+  const metadata = finding.metadata || {};
+
+  if (
+    finding.name === "authenticated_security_definer_function_executable" &&
+    metadata.schema === "public" &&
+    AUTHENTICATED_RAW_CATALOG_RPCS.has(metadata.name)
+  ) {
+    return "intentional authenticated catalog raw-read RPC; body requires auth.uid() and projection tables deny direct reads";
+  }
+
+  return null;
 }
 
 function externalReason(finding) {
@@ -196,36 +232,55 @@ function summarizeFinding(finding) {
   return `${finding.level || "UNKNOWN"} ${finding.name || "unknown"} ${finding.cache_key || ""}`.trim();
 }
 
+if (!dbUrl) {
+  if (isRequired()) {
+    console.error(
+      `[supabase-advisor-security-classifier] ${DB_URL_ENV} is required (Postgres connection string for the target Supabase database).`,
+    );
+    process.exit(1);
+  }
+  console.log(
+    `[supabase-advisor-security-classifier] skipped; ${DB_URL_ENV} is not set. Set ${REQUIRED_ENV}=1 to make this a hard failure.`,
+  );
+  process.exit(0);
+}
+
 const result = await runAdvisor();
 
 if (result.code !== 0) {
   if (!isRequired() && isSkippableEnvironmentError(result.stderr)) {
     console.log(
-      `[supabase-advisor-security-classifier] skipped; linked Supabase Advisor is not reachable from this environment. Set ${REQUIRED_ENV}=1 to make this a hard failure.`,
+      `[supabase-advisor-security-classifier] skipped; Supabase Advisor target database is not reachable from this environment. Set ${REQUIRED_ENV}=1 to make this a hard failure.`,
     );
     process.exit(0);
   }
 
-  fail("failed to fetch linked Supabase Security Advisor output.", result.stderr || result.stdout);
+  fail("failed to fetch Supabase Security Advisor output.", result.stderr || result.stdout);
 }
 
 let findings;
 try {
   findings = JSON.parse(result.stdout);
 } catch (error) {
-  fail("failed to parse linked Supabase Security Advisor JSON output.", String(error));
+  fail("failed to parse Supabase Security Advisor JSON output.", String(error));
 }
 
 if (!Array.isArray(findings)) {
-  fail("linked Supabase Security Advisor output was not an array.");
+  fail("Supabase Security Advisor output was not an array.");
 }
 
 const classified = findings.map((finding) => ({
   finding,
+  expectedAppReason: expectedAppReason(finding),
   externalReason: externalReason(finding),
   intendedReason: intendedReason(finding),
 }));
-const unexpected = classified.filter((item) => !item.externalReason && !item.intendedReason);
+const unexpected = classified.filter(
+  (item) => !item.externalReason && !item.expectedAppReason && !item.intendedReason,
+);
+const expectedAppFindings = classified.filter(
+  (item) => item.expectedAppReason || item.intendedReason,
+);
 const ignoredExternal = shouldIgnoreLeakedPassword()
   ? classified.filter((item) => item.finding.name === "auth_leaked_password_protection")
   : [];
@@ -243,9 +298,9 @@ if (unexpected.length > 0) {
 }
 
 if (external.length === 0) {
-  if (ignoredExternal.length > 0) {
+  if (ignoredExternal.length > 0 || expectedAppFindings.length > 0) {
     console.log(
-      `[supabase-advisor-security-classifier] passed; ignored leaked-password protection findings: ${ignoredExternal.length}`,
+      `[supabase-advisor-security-classifier] passed; expected authenticated catalog RPC findings: ${expectedAppFindings.length}; ignored leaked-password protection findings: ${ignoredExternal.length}`,
     );
   } else {
     console.log("[supabase-advisor-security-classifier] passed; no Security Advisor findings.");

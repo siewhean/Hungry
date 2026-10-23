@@ -1,0 +1,87 @@
+name: Release incident
+description: Track an active Hungry beta or production incident.
+title: "[Incident][SEV-?] "
+labels:
+  - incident
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Never paste credentials, access tokens, verification codes, private user content, or unredacted personal data into this issue.
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - SEV-0 — security, credential exposure, destructive data loss or auth bypass
+        - SEV-1 — core journey unavailable or unsafe for most users
+        - SEV-2 — major degradation with a safe workaround
+        - SEV-3 — minor issue or isolated data-quality defect
+    validations:
+      required: true
+  - type: input
+    id: started
+    attributes:
+      label: Start time and timezone
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: staging, closed beta or production
+    validations:
+      required: true
+  - type: input
+    id: implementation_sha
+    attributes:
+      label: Implementation SHA
+    validations:
+      required: true
+  - type: input
+    id: artifacts
+    attributes:
+      label: Build, update and catalog release IDs
+      placeholder: iOS/Android EAS build ID, update ID, catalog release ID
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Current impact
+      description: Affected users, platforms, routes and data. Use aggregate counts and redact personal data.
+    validations:
+      required: true
+  - type: textarea
+    id: detection
+    attributes:
+      label: Detection and evidence
+      description: Alert, tester report, Sentry issue or operational observation.
+    validations:
+      required: true
+  - type: textarea
+    id: containment
+    attributes:
+      label: Containment taken
+      placeholder: Rollout paused, feature disabled, catalog reverted, update rolled back...
+    validations:
+      required: true
+  - type: input
+    id: commander
+    attributes:
+      label: Incident commander
+    validations:
+      required: true
+  - type: input
+    id: next_update
+    attributes:
+      label: Next update deadline
+    validations:
+      required: true
+  - type: checkboxes
+    id: security
+    attributes:
+      label: Safety confirmation
+      options:
+        - label: Evidence is redacted and contains no credentials or personal data.
+          required: true

@@ -1,6 +1,6 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Pressable, View } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Pressable, View } from "react-native";
 import { BellRing, Bookmark, CircleCheck, Navigation, Star, Store } from "lucide-react-native";
 
 import { PortfolioCard } from "@/components/portfolio";
@@ -15,12 +15,20 @@ import {
   getStallPin,
 } from "@/features/detail/stallLocation";
 import { useRetryableLoad } from "@/features/profile/useRetryableLoad";
-import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
+import type { CatalogRawDishDetail } from "@/lib/services/catalog";
+import { loadCatalogFavourites } from "@/lib/services/catalog/favourites";
+import {
+  getCatalogRawService,
+  getDataRepository,
+  getHungryService,
+  getServiceProvider,
+} from "@/lib/services/serviceProvider";
 import { openTrustedMapsUrl } from "@/lib/security/safeLinking";
 import { usePortfolioStore } from "@/store/usePortfolioStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useStallFollowStore } from "@/store/useStallFollowStore";
+import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { Bite } from "@/lib/services/types";
 import type { Portfolio } from "@/types/domain";
@@ -41,7 +49,9 @@ const SECTION_LABELS: Record<SavedSection, string> = {
 
 export function FavouritesScreen({ navigation }: Props) {
   const profile = useProfileStore((state) => state.profile);
+  const authenticatedUserId = useSessionStore((state) => state.authenticatedUserId);
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
+  const showToast = useUIStore((state) => state.showToast);
   const { componentRadii, palette, spacing, shadows } = useHungryTheme();
   const repository = getDataRepository();
   const [section, setSection] = useState<SavedSection>("dishes");
@@ -84,6 +94,11 @@ export function FavouritesScreen({ navigation }: Props) {
         <SavedListsSection
           onOpenList={(portfolioId) => navigation.navigate("PortfolioDetail", { portfolioId })}
           onOpenAllLists={() => navigation.navigate("ListsHome", undefined, { pop: true })}
+        />
+      ) : getServiceProvider().mode === "supabase" ? (
+        <CatalogSavedDishes
+          key={`${authenticatedUserId ?? "guest"}:${profile.id}`}
+          navigation={navigation}
         />
       ) : (
         <>
@@ -147,7 +162,13 @@ export function FavouritesScreen({ navigation }: Props) {
                           accessibilityRole="button"
                           accessibilityLabel={`Remove ${dish.name} from saved`}
                           hitSlop={6}
-                          onPress={() => toggleFavourite(dish)}
+                          onPress={() =>
+                            void toggleFavourite(dish).then((result) => {
+                              if (result.status === "failed") {
+                                showToast({ message: result.message, tone: "error" });
+                              }
+                            })
+                          }
                           style={{
                             position: "absolute",
                             top: spacing[2],
@@ -310,6 +331,216 @@ function SavedPostsSection({ onOpenPost }: { onOpenPost: (postId: string) => voi
         </Pressable>
       ))}
     </View>
+  );
+}
+
+/** Supabase: saved dish ids are catalog ids, so they resolve through the release catalog. */
+function CatalogSavedDishes({ navigation }: Pick<Props, "navigation">) {
+  const favouriteDishIds = useProfileStore((state) => state.profile.favouriteDishIds);
+  const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
+  const showToast = useUIStore((state) => state.showToast);
+  const { componentRadii, palette, spacing } = useHungryTheme();
+  const rootNavigation = getRootNavigation(navigation as any);
+  const [dishes, setDishes] = useState<CatalogRawDishDetail[]>([]);
+  const [unavailableCount, setUnavailableCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [pendingDishId, setPendingDishId] = useState<string | null>(null);
+  const loadVersion = useRef(0);
+  const hasLoadedRef = useRef(false);
+  const favouriteKey = favouriteDishIds.join(",");
+
+  const load = useCallback(async () => {
+    const version = ++loadVersion.current;
+    const service = getCatalogRawService();
+    if (!service) {
+      setDishes([]);
+      setUnavailableCount(0);
+      setLoadError(null);
+      setIsLoading(false);
+      return;
+    }
+    // Only the first load shows the spinner; refreshes keep the list visible.
+    if (!hasLoadedRef.current) setIsLoading(true);
+    setLoadError(null);
+    const result = await loadCatalogFavourites({
+      getFavouriteDishIds: () => getHungryService().profile.getFavouriteDishIds(),
+      getDish: (id) => service.getDish(id),
+    });
+    if (loadVersion.current !== version) return;
+    if (result.status === "error") {
+      setLoadError(result.message);
+    } else {
+      hasLoadedRef.current = true;
+      setDishes(result.dishes);
+      setUnavailableCount(result.unavailableCount);
+    }
+    setIsLoading(false);
+  }, []);
+
+  // Re-resolve when the saved set changes (e.g. a dish saved elsewhere).
+  useEffect(() => {
+    void load();
+    return () => {
+      loadVersion.current += 1;
+    };
+  }, [favouriteKey, load]);
+
+  const removeFavourite = async (dish: CatalogRawDishDetail) => {
+    setPendingDishId(dish.id);
+    try {
+      const result = await toggleFavourite({ id: dish.id, venueId: dish.venueId });
+      showToast(
+        result.status === "failed"
+          ? { message: result.message, tone: "error" }
+          : { message: "Removed from favourites.", tone: "success" },
+      );
+      if (result.status === "removed") {
+        setDishes((current) => current.filter((item) => item.id !== dish.id));
+      }
+    } finally {
+      setPendingDishId(null);
+    }
+  };
+
+  return (
+    <>
+      {isLoading ? (
+        <ActivityIndicator accessibilityLabel="Loading favourites" color={palette.orange} />
+      ) : loadError ? (
+        <EmptyState
+          title="Couldn't load favourites"
+          body={`${loadError} Check your connection and try again.`}
+          ctaLabel="Retry"
+          onPress={() => void load()}
+        />
+      ) : dishes.length ? (
+        <View style={{ gap: spacing[4] }}>
+          {dishes.map((dish) => (
+            <View
+              key={dish.id}
+              style={{
+                backgroundColor: palette.surface,
+                borderColor: palette.border,
+                borderRadius: componentRadii.card,
+                borderWidth: 1,
+                overflow: "hidden",
+              }}
+            >
+              {dish.imageUrl ? (
+                <View style={{ height: 180, position: "relative" }}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Open ${dish.name} at ${dish.venueName}`}
+                    onPress={() =>
+                      rootNavigation.navigate("CatalogRawDetail", { kind: "dish", id: dish.id })
+                    }
+                    style={{ height: "100%" }}
+                  >
+                    <AccessibleImage
+                      source={{ uri: dish.imageUrl }}
+                      style={{ width: "100%", height: "100%" }}
+                      contentFit="cover"
+                      decorative
+                    />
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Remove ${dish.name} from favourites`}
+                    accessibilityState={{ busy: pendingDishId === dish.id }}
+                    disabled={pendingDishId === dish.id}
+                    onPress={() => void removeFavourite(dish)}
+                    style={{
+                      position: "absolute",
+                      top: spacing[2],
+                      right: spacing[2],
+                      alignItems: "center",
+                      height: 44,
+                      justifyContent: "center",
+                      width: 44,
+                      borderRadius: componentRadii.iconButton,
+                      backgroundColor: palette.surfaceTranslucent,
+                    }}
+                  >
+                    {pendingDishId === dish.id ? (
+                      <ActivityIndicator color={palette.orange} />
+                    ) : (
+                      <Bookmark size={18} color={palette.orange} fill={palette.orange} />
+                    )}
+                  </Pressable>
+                </View>
+              ) : null}
+              <View style={{ padding: spacing[4], gap: spacing[3] }}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "flex-start",
+                    justifyContent: "space-between",
+                    gap: spacing[2],
+                  }}
+                >
+                  <AppText variant="h2" style={{ flex: 1 }} numberOfLines={2}>
+                    {dish.name}
+                  </AppText>
+                  {dish.price !== undefined ? (
+                    <AppText variant="price" style={{ color: palette.orange }}>
+                      S${dish.price.toFixed(2)}
+                    </AppText>
+                  ) : null}
+                </View>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
+                  <Store color={palette.orange} size={15} />
+                  <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
+                    {dish.venueName}
+                  </AppText>
+                </View>
+                {dish.reviewCount && dish.rating ? (
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
+                    <Star color={palette.ratingStar} fill={palette.ratingStar} size={15} />
+                    <AppText variant="bodySmallBold">{dish.rating.toFixed(1)}</AppText>
+                    <AppText variant="bodySmall" tone="secondary">
+                      ({dish.reviewCount})
+                    </AppText>
+                  </View>
+                ) : null}
+                <Button
+                  label="View dish"
+                  onPress={() =>
+                    rootNavigation.navigate("CatalogRawDetail", { kind: "dish", id: dish.id })
+                  }
+                />
+                {!dish.imageUrl ? (
+                  <Button
+                    label={pendingDishId === dish.id ? "Removing..." : "Remove from saved"}
+                    variant="secondary"
+                    loading={pendingDishId === dish.id}
+                    onPress={() => void removeFavourite(dish)}
+                  />
+                ) : null}
+              </View>
+            </View>
+          ))}
+          {unavailableCount > 0 ? (
+            <AppText tone="muted" variant="micro">
+              {unavailableCount === 1
+                ? "1 saved dish is not in the current catalog."
+                : `${unavailableCount} saved dishes are not in the current catalog.`}
+            </AppText>
+          ) : null}
+        </View>
+      ) : (
+        <EmptyState
+          title={unavailableCount > 0 ? "Saved dishes unavailable" : "No favourites yet"}
+          body={
+            unavailableCount > 0
+              ? "Your saved dishes are not in the current catalog."
+              : "Tap Save to favourites on any dish to keep it here."
+          }
+          ctaLabel="Discover Dishes"
+          onPress={() => rootNavigation.navigate("MainTabs", { screen: "Discover" })}
+        />
+      )}
+    </>
   );
 }
 

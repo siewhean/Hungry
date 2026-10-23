@@ -203,7 +203,9 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
     },
     [navigation, rootNavigation],
   );
-  const [activeShareTab, setActiveShareTab] = useState<"posts" | "reviews">("reviews");
+  const [activeShareTab, setActiveShareTab] = useState<"posts" | "reviews">(
+    FEATURE_FLAGS.reviewCreationEnabled ? "reviews" : "posts",
+  );
   const handleReviewsCardPress = useCallback(() => {
     preloadRoute(navigation, "ReviewHistory");
     navigation.navigate("ReviewHistory");
@@ -703,15 +705,17 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                   navigation.navigate("FollowedStalls");
                 }}
               />
-              <MenuRow
-                label="Review History"
-                icon={<PencilLine size={20} color={palette.text} />}
-                onPressIn={() => preloadRoute(navigation, "ReviewHistory")}
-                onPress={() => {
-                  setMenuOpen(false);
-                  navigation.navigate("ReviewHistory");
-                }}
-              />
+              {FEATURE_FLAGS.reviewCreationEnabled ? (
+                <MenuRow
+                  label="Review History"
+                  icon={<PencilLine size={20} color={palette.text} />}
+                  onPressIn={() => preloadRoute(navigation, "ReviewHistory")}
+                  onPress={() => {
+                    setMenuOpen(false);
+                    navigation.navigate("ReviewHistory");
+                  }}
+                />
+              ) : null}
               <MenuRow
                 label="Settings"
                 icon={<Settings size={20} color={palette.text} />}
@@ -921,20 +925,24 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
               padding: spacing[2],
             }}
           >
-            <StatBlock
-              label="Saved Dishes"
-              value={profileStatSummary.saved}
-              icon={<Bookmark size={14} color={palette.orange} />}
-              onPressIn={() => preloadRoute(navigation, "Favourites")}
-              onPress={() => navigation.navigate("Favourites")}
-            />
-            <StatBlock
-              label="Reviews"
-              value={ownReviews === null ? null : ownReviews.length}
-              icon={<PencilLine size={14} color={palette.orange} />}
-              onPressIn={() => preloadRoute(navigation, "ReviewHistory")}
-              onPress={handleReviewsCardPress}
-            />
+            {FEATURE_FLAGS.favouritesEnabled ? (
+              <StatBlock
+                label="Saved Dishes"
+                value={profileStatSummary.saved}
+                icon={<Bookmark size={14} color={palette.orange} />}
+                onPressIn={() => preloadRoute(navigation, "Favourites")}
+                onPress={() => navigation.navigate("Favourites")}
+              />
+            ) : null}
+            {FEATURE_FLAGS.reviewCreationEnabled ? (
+              <StatBlock
+                label="Reviews"
+                value={ownReviews === null ? null : ownReviews.length}
+                icon={<PencilLine size={14} color={palette.orange} />}
+                onPressIn={() => preloadRoute(navigation, "ReviewHistory")}
+                onPress={handleReviewsCardPress}
+              />
+            ) : null}
             <StatBlock
               label="Badges"
               value={earnedBadgeCount}
@@ -1142,15 +1150,17 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
               }}
             >
               <AppText variant="h2">Recent Hawker Log</AppText>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="View all reviews"
-                onPress={handleReviewsCardPress}
-              >
-                <AppText variant="bodySmall" style={{ color: palette.orange }}>
-                  View All{ownReviews ? ` (${ownReviews.length})` : ""}
-                </AppText>
-              </Pressable>
+              {FEATURE_FLAGS.reviewCreationEnabled ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="View all reviews"
+                  onPress={handleReviewsCardPress}
+                >
+                  <AppText variant="bodySmall" style={{ color: palette.orange }}>
+                    View All{ownReviews ? ` (${ownReviews.length})` : ""}
+                  </AppText>
+                </Pressable>
+              ) : null}
             </View>
             <View
               style={{
@@ -1184,27 +1194,29 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                   Posts
                 </AppText>
               </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Show profile reviews"
-                accessibilityState={{ selected: activeShareTab === "reviews" }}
-                onPress={() => setActiveShareTab("reviews")}
-                style={{
-                  flex: 1,
-                  paddingVertical: spacing[2],
-                  alignItems: "center",
-                  backgroundColor: activeShareTab === "reviews" ? palette.orange : "transparent",
-                }}
-              >
-                <AppText
+              {FEATURE_FLAGS.reviewCreationEnabled ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Show profile reviews"
+                  accessibilityState={{ selected: activeShareTab === "reviews" }}
+                  onPress={() => setActiveShareTab("reviews")}
                   style={{
-                    fontWeight: activeShareTab === "reviews" ? 700 : 500,
-                    color: activeShareTab === "reviews" ? palette.textOnOrange : palette.text,
+                    flex: 1,
+                    paddingVertical: spacing[2],
+                    alignItems: "center",
+                    backgroundColor: activeShareTab === "reviews" ? palette.orange : "transparent",
                   }}
                 >
-                  Reviews
-                </AppText>
-              </Pressable>
+                  <AppText
+                    style={{
+                      fontWeight: activeShareTab === "reviews" ? 700 : 500,
+                      color: activeShareTab === "reviews" ? palette.textOnOrange : palette.text,
+                    }}
+                  >
+                    Reviews
+                  </AppText>
+                </Pressable>
+              ) : null}
             </View>
             {activeShareTab === "posts" ? (
               sortedProfilePosts.length ? (

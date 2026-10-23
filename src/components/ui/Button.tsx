@@ -76,8 +76,8 @@ export function Button({
       borderWidth: 1,
     },
     destructive: {
-      backgroundColor: palette.error,
-      borderColor: palette.error,
+      backgroundColor: palette.destructive,
+      borderColor: palette.destructive,
       borderWidth: 1,
     },
     glass: {
@@ -107,9 +107,11 @@ export function Button({
   const foregroundColor =
     variant === "primary"
       ? palette.textOnOrange
-      : variant === "destructive" || variant === "glass"
-        ? palette.textOnDark
-        : undefined;
+      : variant === "destructive"
+        ? palette.textOnDestructive
+        : variant === "glass"
+          ? palette.textOnDark
+          : undefined;
   const labelTextStyle: TextStyle[] = [];
   if (foregroundColor) {
     labelTextStyle.push({ color: foregroundColor });
@@ -156,9 +158,9 @@ export function Button({
         <ActivityIndicator
           color={
             variant === "primary"
-              ? palette.white
+              ? palette.textOnOrange
               : variant === "destructive"
-                ? palette.white
+                ? palette.textOnDestructive
                 : palette.text
           }
         />

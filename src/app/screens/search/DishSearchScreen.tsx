@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Animated, Easing, Pressable, ScrollView, View } from "react-native";
+import { Animated, Easing, Pressable, ScrollView, TextInput, View } from "react-native";
 import {
   ArrowLeft,
   ChevronRight,
@@ -73,6 +73,7 @@ export function DishSearchScreen() {
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   // Query and category live here and travel as route params, so nothing stale is persisted.
   const [searchText, setSearchText] = useState("");
+  const searchInputRef = useRef<TextInput | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<SearchCategory | undefined>();
   // Search results own the paged catalog request; this landing screen stays
   // free of local recommendations so it never hydrates the whole catalog.
@@ -187,6 +188,7 @@ export function DishSearchScreen() {
     navigation.navigate("SearchResults", { browseMode: "dishes", initialFilter: filter });
 
   return (
+    // "handled" lets the clear (x) work on the first tap while the keyboard is up.
     <Screen contentContainerStyle={{ paddingTop: spacing[2] }}>
       <Animated.View
         style={{
@@ -228,6 +230,8 @@ export function DishSearchScreen() {
         </View>
 
         <Input
+          ref={searchInputRef}
+          autoFocus
           leftIcon={<SearchIcon color={palette.textMuted} size={18} />}
           rightIcon={
             searchText ? (
@@ -235,7 +239,11 @@ export function DishSearchScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Clear search"
                 hitSlop={12}
-                onPress={() => setSearchText("")}
+                onPress={() => {
+                  setSearchText("");
+                  // Keep the user typing: clearing should not drop focus/keyboard.
+                  searchInputRef.current?.focus();
+                }}
               >
                 <X color={palette.textMuted} size={18} />
               </Pressable>

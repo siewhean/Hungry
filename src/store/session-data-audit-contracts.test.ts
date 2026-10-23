@@ -66,9 +66,13 @@ test("sign_in_completed is logged once per sign-in and identity flags are accura
 
 test("account deletion reports success once queued, and the grace prompt can't be dismissed", () => {
   const service = read("src/lib/services/supabase/supabaseService.ts");
+  // Queued deletion is success even if the push-token unbind fails; the caller
+  // (Settings) purges local data, records the notice, then signs out.
+  assert.match(service, /error\.code !== "23505"/);
+  assert.match(service, /await unregisterStoredPushToken\(client\)\.catch\(\(\) => undefined\);/);
   assert.match(
-    service,
-    /await this\.signOut\(\{ scope: "global" \}\)\s*\.catch\(\(\) => this\.signOut\(\)\)\s*\.catch\(\(\) => undefined\);/,
+    read("src/app/screens/profile/SettingsScreen.tsx"),
+    /signOut\(\);\s*resetToLogin\(\);/,
   );
   assert.match(
     read("src/features/auth/useAccountDeletionGracePrompt.ts"),

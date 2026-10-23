@@ -2223,21 +2223,23 @@ export function DiscoverHomeScreen() {
                     </AppText>
                     <ChevronDown color={themeTints.secondaryText} size={22} />
                   </Pressable>
-                  {currentPlace ? (
-                    <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
-                      {`${currentPlace.venueCount} stalls here · ${discoverLocationLabel}`}
-                    </AppText>
-                  ) : isFeedFallbackEmpty || discoverAreaCountLabel === null ? (
-                    isSupabaseDiscoveryFeedLoading ? (
-                      <Skeleton width={150} height={14} borderRadius={radii.sm} />
-                    ) : null
-                  ) : (
-                    <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
-                      {`${discoverAreaCountLabel} places to eat ${
-                        discoverAreaName ? "in this area" : "near you"
-                      }`}
-                    </AppText>
-                  )}
+                  {
+                    currentPlace ? (
+                      <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
+                        {`${currentPlace.venueCount} stalls here · ${discoverLocationLabel}`}
+                      </AppText>
+                    ) : isFeedFallbackEmpty || discoverAreaCountLabel === null ? (
+                      isSupabaseDiscoveryFeedLoading ? (
+                        <Skeleton width={150} height={14} borderRadius={radii.sm} />
+                      ) : null
+                    ) : discoverAreaCountLabel !== "0" ? (
+                      <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
+                        {`${discoverAreaCountLabel} places to eat ${
+                          discoverAreaName ? "in this area" : "near you"
+                        }`}
+                      </AppText>
+                    ) : null /* 0 in-area venues: the page shows city-wide fallbacks, so "0 places" misleads. */
+                  }
                   {hasManualAreaPick ? (
                     <Pressable
                       accessibilityRole="button"
@@ -2253,8 +2255,14 @@ export function DiscoverHomeScreen() {
                 </>
               )}
             </View>
-            {/* Every diner, guests included, can switch Discover to the map. */}
-            <DiscoverViewToggle value="list" onChange={() => navigation.navigate("DiscoverMap")} />
+            {/* Every signed-in diner can switch Discover to the map (when the map ships). */}
+            {FEATURE_FLAGS.mapEnabled ? (
+              <DiscoverViewToggle
+                value="list"
+                onPressInMap={() => preloadRoute(navigation, "DiscoverMap")}
+                onChange={() => navigation.navigate("DiscoverMap")}
+              />
+            ) : null}
           </View>
         </View>
 

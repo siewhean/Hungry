@@ -1,40 +1,30 @@
-import type { NavigationProp } from "@react-navigation/native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Controller, useForm } from "react-hook-form";
 import { Pressable, View, type TextInput } from "react-native";
 import { Eye, EyeOff, Lock, Mail, ArrowRight } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 
-import { AppText, Button, FeedErrorBoundary, Input } from "@/components/ui";
+import { AppText, Button, FeedErrorBoundary, InlineBanner, Input } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { applySignedInProfile } from "@/features/auth/applySignedInProfile";
-import {
-  trackAuthFailed,
-  trackAuthScreenViewed,
-  trackGuestContinued,
-} from "@/features/auth/authAnalytics";
+import { trackAuthFailed, trackAuthScreenViewed } from "@/features/auth/authAnalytics";
 import { getAuthErrorCode, getAuthFailureMessage } from "@/features/auth/authErrors";
-import { clearPendingDishSave } from "@/features/auth/pendingDishSave";
 import { reportError } from "@/lib/monitoring/reportError";
 import { validateEmail, validateRequired } from "@/features/auth/validation";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { getConfiguredDataSource } from "@/lib/services/supabase/client";
-import { useSessionStore } from "@/store/useSessionStore";
+import { useSessionStore, type AuthNotice } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
-import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import type { AuthStackParamList } from "./AuthStack";
 import { AuthProviderButton } from "./AuthProviderButton";
 import { AuthScreenShell } from "./AuthScreenShell";
 import { AUTH_EYE_BUTTON_STYLE } from "./authEyeButton";
 import { AUTH_COPY, getProviderErrorMessage, type AuthProvider } from "./authCopy";
+import { getAuthErrorLogContext } from "./authErrors";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "Login">;
-
-type FormValues = {
-  email: string;
-  password: string;
-};
+type FormValues = { email: string; password: string };
 
 export function LoginScreen({ navigation, route }: Props) {
   const { componentRadii, palette, spacing } = useHungryTheme();
@@ -43,8 +33,18 @@ export function LoginScreen({ navigation, route }: Props) {
   const [providerInFlight, setProviderInFlight] = useState<AuthProvider | null>(null);
   const passwordRef = useRef<TextInput>(null);
   const completeAuth = useSessionStore((state) => state.completeAuth);
-  const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
+  const sessionExpired = useSessionStore((state) => state.sessionExpired);
+  const pendingAuthNotice = useSessionStore((state) => state.authNotice);
   const showToast = useUIStore((state) => state.showToast);
+  const [authNotice, setAuthNotice] = useState<AuthNotice | null>(null);
+
+  // One-shot notices (session expiry, account deletion confirmation) are set
+  // before the signed-out navigator mounts; show them here, then clear them.
+  useEffect(() => {
+    if (!sessionExpired && !pendingAuthNotice) return;
+    const notice = useSessionStore.getState().consumeAuthNotice();
+    if (notice) setAuthNotice(notice);
+  }, [pendingAuthNotice, sessionExpired]);
   // Inline copy of the last server error, so it is not only a passing toast.
   const [formError, setFormError] = useState<string | null>(null);
   const [unconfirmedEmail, setUnconfirmedEmail] = useState<string | null>(null);
@@ -63,25 +63,6 @@ export function LoginScreen({ navigation, route }: Props) {
   useEffect(() => {
     trackAuthScreenViewed("login");
   }, []);
-
-  // Sign-in is optional: guests can browse and are asked to sign in on demand.
-  // "Not now" returns to where the gate opened (a dish, a tab) when it can, and
-  // drops the pending return route so a later sign-in does not jump there.
-  const continueAsGuest = () => {
-    trackGuestContinued("login");
-    setReturnRoute(undefined);
-    useUIStore.getState().takePendingAuthAction();
-    clearPendingDishSave();
-    const root = navigation.getParent<NavigationProp<RootStackParamList>>();
-    if (root?.canGoBack()) {
-      root.goBack();
-      return;
-    }
-    root?.reset({
-      index: 0,
-      routes: [{ name: "MainTabs", params: { screen: "Home" } }],
-    });
-  };
 
   const resendVerification = async () => {
     const email = unconfirmedEmail ?? getValues("email");
@@ -110,7 +91,7 @@ export function LoginScreen({ navigation, route }: Props) {
     setUnconfirmedEmail(null);
     try {
       const session = await getHungryService().auth.signIn(values.email, values.password);
-      await applySignedInProfile(session.profile, {
+      const migration = await applySignedInProfile(session.profile, {
         profileReady: session.profileReady,
         onSyncWarning: () =>
           showToast({
@@ -118,6 +99,7 @@ export function LoginScreen({ navigation, route }: Props) {
             tone: "warning",
           }),
       });
+      if (migration.status === "failed") return;
       // With Supabase the auth listener decides from the account whether first-run
       // onboarding runs (a new account that confirmed elsewhere still gets it); the mock
       // has no listener, and its accounts always exist.
@@ -125,6 +107,8 @@ export function LoginScreen({ navigation, route }: Props) {
       showToast({ message: AUTH_COPY.login.successToast, tone: "success" });
     } catch (err) {
       trackAuthFailed("sign_in", "email", err);
+      // Diagnostics only: provider code/status, never the email or password.
+      console.warn("[auth] Email sign-in failed", getAuthErrorLogContext(err));
       const code = getAuthErrorCode(err);
       const message =
         code === "email_not_confirmed"
@@ -146,13 +130,11 @@ export function LoginScreen({ navigation, route }: Props) {
     try {
       if (isSupabase) {
         const service = getHungryService();
-        let session;
-        if (provider === "google") {
-          session = await service.auth.signInWithGoogle();
-        } else {
-          session = await service.auth.signInWithApple();
-        }
-        await applySignedInProfile(session.profile, {
+        const session =
+          provider === "google"
+            ? await service.auth.signInWithGoogle()
+            : await service.auth.signInWithApple();
+        const migration = await applySignedInProfile(session.profile, {
           profileReady: session.profileReady,
           onSyncWarning: () =>
             showToast({
@@ -160,6 +142,7 @@ export function LoginScreen({ navigation, route }: Props) {
               tone: "warning",
             }),
         });
+        if (migration.status === "failed") return;
       }
       // With Supabase the auth listener already decided from the account whether
       // onboarding runs (a new Google/Apple account still gets it).
@@ -192,49 +175,34 @@ export function LoginScreen({ navigation, route }: Props) {
       <AuthScreenShell
         title={route.params?.title ?? AUTH_COPY.login.title}
         compact
-        onClose={continueAsGuest}
-        closeLabel={AUTH_COPY.login.closeLabel}
         footer={
-          <View style={{ alignItems: "center", gap: spacing[1] }}>
-            <View
-              style={{
-                alignItems: "center",
-                flexDirection: "row",
-                justifyContent: "center",
-                marginTop: spacing[2],
-              }}
-            >
-              <AppText tone="secondary">{AUTH_COPY.login.footerPrompt}</AppText>
-              <Pressable
-                accessible
-                accessibilityRole="button"
-                accessibilityLabel={AUTH_COPY.login.footerAction}
-                accessibilityHint="Opens the account creation screen"
-                onPress={() => navigation.navigate("SignUp")}
-                hitSlop={8}
-                style={{ justifyContent: "center", minHeight: 44 }}
-              >
-                <AppText variant="bodyBold" tone="accent">
-                  {AUTH_COPY.login.footerAction}
-                </AppText>
-              </Pressable>
-            </View>
+          <View
+            style={{
+              alignItems: "center",
+              flexDirection: "row",
+              justifyContent: "center",
+              marginTop: spacing[2],
+            }}
+          >
+            <AppText tone="secondary">{AUTH_COPY.login.footerPrompt}</AppText>
             <Pressable
               accessible
               accessibilityRole="button"
-              accessibilityLabel={AUTH_COPY.login.continueAsGuest}
-              accessibilityHint="Opens Hungry without signing in"
-              onPress={continueAsGuest}
-              style={{ justifyContent: "center", minHeight: 44, paddingHorizontal: spacing[3] }}
+              accessibilityLabel={AUTH_COPY.login.footerAction}
+              accessibilityHint="Opens the account creation screen"
+              onPress={() => navigation.navigate("SignUp")}
+              hitSlop={8}
+              style={{ justifyContent: "center", minHeight: 44 }}
             >
-              <AppText tone="secondary" style={{ textDecorationLine: "underline" }}>
-                {AUTH_COPY.login.continueAsGuest}
+              <AppText variant="bodyBold" tone="accent">
+                {AUTH_COPY.login.footerAction}
               </AppText>
             </Pressable>
           </View>
         }
       >
         <View style={{ gap: spacing[4] }}>
+          {authNotice ? <InlineBanner message={authNotice.message} tone={authNotice.tone} /> : null}
           {/* One layout on every auth screen: Apple, Google, then email.
               Google/Apple stay hidden until they are enabled for this build. */}
           {oauthProvidersEnabled ? (
@@ -394,8 +362,7 @@ export function LoginScreen({ navigation, route }: Props) {
             onPress={handleLogin}
             loading={isSubmitting}
             disabled={isBusy}
-            rightIcon={<ArrowRight size={18} color={palette.white} />}
-            labelColor={palette.white}
+            rightIcon={<ArrowRight size={18} color={palette.textOnOrange} />}
           />
         </View>
       </AuthScreenShell>

@@ -115,7 +115,8 @@ test("M4: the budget answer is saved on the account and merged at sign-in", () =
   assert.match(service, /upsert\(\{ id: userId, max_dish_budget: maxDishBudget \}/);
   assert.match(
     read("src/features/auth/applySignedInProfile.ts"),
-    /mergeBudget && guestProfile\.maxDishBudget !== undefined/,
+    // Re-onboarding: the new single-choice answer (budget) replaces the saved one.
+    /maxDishBudget: provisional\.maxDishBudget \?\? serverProfile\.maxDishBudget/,
   );
   const sql = read("supabase/migrations/20261022020000_profile_max_dish_budget.sql");
   assert.match(sql, /add column if not exists max_dish_budget numeric\(6, 2\)/);
@@ -174,13 +175,9 @@ test("L2: opening a dish from the result screen completes onboarding after navig
   );
 });
 
-test("L4: the sign-in screen names the dish the guest tried to save", () => {
-  assert.match(auth(), /Sign in to save \$\{dishName\}/);
-  assert.match(result(), /navigate\("OnboardingAuth", \{ dishName: dish\.name \}\)/);
-  assert.match(
-    read("src/app/navigation/navigationTypes.ts"),
-    /OnboardingAuth: \{ dishName\?: string \} \| undefined;/,
-  );
+test("L4 (not adopted): sign-in is the step after Done, never opened early by a save", () => {
+  assert.doesNotMatch(result(), /navigate\("OnboardingAuth", \{ dishName: dish\.name \}\)/);
+  assert.match(result(), /rememberPendingDishSave\(dish\);/);
 });
 
 test("L5, L6: location copy is honest, the icon is neutral, and a blocked permission stays on screen", () => {
@@ -227,7 +224,7 @@ test("L10: OnboardingAuth field errors use the shared Input error props", () => 
 });
 
 test("L11: the area list has Sembawang and Tengah, and finds areas by their common names", () => {
-  const source = picker();
+  const source = `${read(`${DIR}/singaporeAreas.ts`)}\n${picker()}`;
   assert.match(source, /id: "sembawang", name: "Sembawang"/);
   assert.match(source, /id: "tengah", name: "Tengah"/);
   assert.match(source, /keywords: \["outram", "tanjong pagar"\]/);

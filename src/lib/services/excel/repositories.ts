@@ -3,6 +3,7 @@ import { runRecommendationPipeline } from "@/lib/ai/tasteEngine";
 import { calculateDistanceMeters } from "@/lib/geo/distance";
 import type { DecideForMeOptions, DataRepository } from "@/lib/services/types";
 import { dataRepositoryMock } from "@/lib/services/mock/repositories";
+import { sanitizeCatalogImageUrl } from "@/lib/services/catalog/media";
 import type {
   BuildingSummary,
   Coordinate,
@@ -47,16 +48,10 @@ function asString(value: unknown): string {
 }
 
 function sanitizeExcelImageUrl(value: unknown): string | undefined {
-  const imageUrl = asString(value).trim();
-  if (!imageUrl) return undefined;
-
-  try {
-    const url = new URL(imageUrl);
-    if (url.protocol !== "https:" && url.protocol !== "http:") return undefined;
-    return url.toString();
-  } catch {
-    return undefined;
-  }
+  return sanitizeCatalogImageUrl(asString(value), {
+    rightsStatus: "approved",
+    approvedForDisplay: true,
+  });
 }
 
 function sanitizeExcelLogoUrl(value: unknown): string | undefined {

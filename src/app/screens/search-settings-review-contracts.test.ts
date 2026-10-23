@@ -15,10 +15,10 @@ test("search grid: load-more retry, stable location, analytics and labelled cont
   assert.match(grid, /setLoadMoreFailed\(true\)/);
   assert.match(grid, /Couldn't load more\./);
   assert.match(grid, /roundCoordinate\(effectiveCoordinate\.latitude\)/);
-  // Guests browse the grid too (PR #83), so loading does not depend on isAuthenticated.
+  // Sign-in only: the grid loads for a signed-in user, so loading depends on isAuthenticated.
   assert.match(
     grid,
-    /\[coordinate, filters, mode, place, query, requestKey, service, sort, widenRadius\]/,
+    /\[\s*coordinate,\s*filters,\s*isAuthenticated,\s*mode,\s*place,\s*query,\s*requestKey,\s*service,\s*sort,\s*widenRadius,\s*\]/,
   );
   assert.doesNotMatch(grid, /\[currentLocation, (isAuthenticated, )?mode/);
   for (const event of [
@@ -50,8 +50,8 @@ test("search home: params instead of persisted query, recents, landing view, red
   const store = read("src/store/useSearchStore.ts");
 
   assert.doesNotMatch(home, /updateQuery/);
-  // The Stitch landing screen keeps its quick filters and dish cards visible until the input is tapped.
-  assert.doesNotMatch(home, /\bautoFocus\b/);
+  // Search is ready for immediate typing while the Stitch quick filters and dish cards remain available.
+  assert.match(home, /\bautoFocus\b/);
   assert.match(home, /Hawker Classics/);
   assert.match(home, /Dishes to Discover/);
   assert.match(home, /returnKeyType="search"/);
@@ -123,10 +123,10 @@ test("edit profile: no pre-prompt, honest toast, unsaved-changes guard, labelled
 
 test("account deletion worker removes the user's media and avatar link", () => {
   const worker = read("supabase/functions/process-account-deletions/index.ts");
-  assert.match(
-    worker,
-    /USER_MEDIA_BUCKETS = \["avatars", "review-media", "post-media", "bites-media"\]/,
-  );
+  // Owner-prefixed buckets (menu photos are kept on purpose) are emptied after the purge.
+  for (const bucket of ["avatars", "review-media", "bites-media", "post-media"]) {
+    assert.match(worker, new RegExp(`const USER_PREFIXED_BUCKETS = \\[[\\s\\S]*?"${bucket}"`));
+  }
   assert.match(worker, /\.update\(\{ avatar_url: null \}\)/);
-  assert.match(worker, /removeUserMedia\(client, userId\)/);
+  assert.match(worker, /deleteUserStorageObjects\(\s*client,\s*userId,/);
 });

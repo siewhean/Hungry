@@ -122,10 +122,11 @@ export const useStallInteractionStore = create<StallInteractionState>()((set, ge
     }
 
     if (!wasSaved) {
-      // Rate-limit: count today's saves
-      const todaySaveCount = Object.values(get().interactions).filter(
-        (i) => i.isSaved && i.savedAt && isToday(i.savedAt),
-      ).length;
+      // Rate-limit: today's saves before this one (the new row is already in the map).
+      const todaySaveCount =
+        Object.values(get().interactions).filter(
+          (i) => i.isSaved && i.savedAt && isToday(i.savedAt),
+        ).length - 1;
       if (withinCredCutoff("stall_saved", todaySaveCount)) {
         await useFoodCredStore.getState().awardPoints("stall_saved", stallId);
       }
@@ -173,10 +174,11 @@ export const useStallInteractionStore = create<StallInteractionState>()((set, ge
 
     let pointsAwarded = 0;
     if (!shouldUnmark) {
-      // Rate-limit: count today's tried marks
-      const todayTriedCount = Object.values(get().interactions).filter(
-        (i) => i.isTried && i.triedAt && isToday(i.triedAt),
-      ).length;
+      // Rate-limit: today's tried marks before this one (the new row is already in the map).
+      const todayTriedCount =
+        Object.values(get().interactions).filter(
+          (i) => i.isTried && i.triedAt && isToday(i.triedAt),
+        ).length - 1;
       if (withinCredCutoff("stall_marked_tried", todayTriedCount)) {
         // Report what was actually credited: the server can award 0 (daily cap, repeat).
         await useFoodCredStore.getState().awardPoints("stall_marked_tried", stallId);

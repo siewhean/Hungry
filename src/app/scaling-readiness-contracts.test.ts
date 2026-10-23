@@ -73,10 +73,9 @@ test("production feature flags remain MVP-safe and documented in the release mat
   const flags = read("src/constants/featureFlags.ts");
   const matrix = read("tasks/Roadmap/Scaling/feature-flag-release-matrix.md");
 
+  // Advanced surfaces stay out of production (main's nonProductionSurfaceEnabled).
   assert.match(flags, /const prototypeRoutesEnabled = appEnv !== "production"/);
-  assert.match(flags, /const nonProductionSurfaceEnabled = prototypeRoutesEnabled/);
-  assert.match(flags, /const merchantCentreEnabled = nonProductionSurfaceEnabled/);
-  assert.match(flags, /const merchantClaimCtaEnabled = nonProductionSurfaceEnabled/);
+  assert.match(flags, /release01CoreOnly: enabled\(env, "EXPO_PUBLIC_RELEASE_01_CORE_ONLY"\)/);
   for (const flag of [
     "directMessagesEnabled",
     "commentsEnabled",
@@ -87,6 +86,18 @@ test("production feature flags remain MVP-safe and documented in the release mat
   ]) {
     assert.match(flags, new RegExp(`${flag}: nonProductionSurfaceEnabled`));
     assert.match(matrix, new RegExp(`\\\`${flag}\\\`[\\s\\S]*false`));
+  }
+  // Core surfaces keep a per-surface env gate (EXPO_PUBLIC_ENABLE_*=0 narrows a build).
+  for (const flag of [
+    "socialFeedEnabled",
+    "postCreationEnabled",
+    "reviewCreationEnabled",
+    "activityEnabled",
+    "mapEnabled",
+    "hungryWheelEnabled",
+    "craveEnabled",
+  ]) {
+    assert.match(flags, new RegExp(`const ${flag} = surface\\(`));
   }
   assert.match(flags, /floorplansEnabled: false/);
   assert.match(matrix, /Production defaults must stay MVP-safe/);
