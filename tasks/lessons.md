@@ -139,3 +139,4 @@
 - EAS applies `.easignore` after cloning the repository. Use it to reduce upload payload, but reserve a separate temporary volume for the clone rather than presenting it as a low-disk workaround.
 - Re-check generated native manifests as well as Expo config: removing a released permission only from the config is insufficient when the EAS pre-install hook can preserve it in Android output.
 - After merging screen layouts, run the full source-contract coverage gate before treating focused screen tests as sufficient; keep account-only Settings rows behind authentication while preserving keyed saved-dish remounts across account changes.
+- When a screen's approved heading changes, update the render matrix expectation in the same branch; source contracts and coverage can pass while a render smoke still asserts the prior title.
