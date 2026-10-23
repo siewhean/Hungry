@@ -59,17 +59,17 @@ function summarise(label, results) {
 }
 
 async function main() {
-  const ai = resolveAi((name) => process.env[name]);
-  if (ai.problem === "invalid_ai_provider") {
+  const settings = resolveAi((name) => process.env[name]);
+  if (settings.problem === "invalid_ai_provider") {
     console.error('AI_PROVIDER must be "gemini" or "anthropic".');
     process.exit(1);
   }
-  if (ai.problem) {
-    const keyName = ai.provider === "gemini" ? "GEMINI_API_KEY" : "ANTHROPIC_API_KEY";
+  if (settings.problem) {
+    const keyName = settings.provider === "gemini" ? "GEMINI_API_KEY" : "ANTHROPIC_API_KEY";
     console.error(`Set ${keyName} in your shell first.`);
     process.exit(1);
   }
-  console.log(`Scoring with ${ai.provider} / ${ai.model}`);
+  console.log(`Scoring with ${settings.provider} / ${settings.model}`);
   const filePath = process.argv[2] ?? "data/taste-answer-key.xlsx";
   const key = await readAnswerKey(filePath);
   if (key.length === 0) {
@@ -80,7 +80,7 @@ async function main() {
   const results = [];
   for (const row of key) {
     try {
-      const ai = await scoreDish(ai, row);
+      const ai = await scoreDish(settings, row);
       const aiScores = TASTE_AXES.map((axis) => Number(ai[axis]));
       const diffs = aiScores.map((score, index) => Math.abs(score - row.scores[index]));
       results.push({ ...row, aiScores, diffs, confidence: Number(ai.confidence) });

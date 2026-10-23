@@ -824,3 +824,4 @@ All 9 required audit documents updated in `tasks/Roadmap/`:
 - 2026-10-22: Gemini helper retries 429/5xx with backoff (4 attempts) and reports the response body; tests in src/lib/ai/geminiHelper.test.ts.
 - 2026-10-23: mood-search and tag-dishes read AI_PROVIDER / AI_MODEL secrets (gemini default, or anthropic with ANTHROPIC_API_KEY); shared retry in _shared/aiRetry.ts; tests in src/lib/ai/aiProvider.test.ts.
 - 2026-10-23: Merged main into the test-coverage PR (#106); updated tests for the Gemini/purge/no-sign-out account deletion, render env (EXPO_PUBLIC_APP_ENV), three new screens, mandatory login, keyboard hook and discovery fallback. Coverage, render (140), lint, typecheck and static gates pass.
+- 2026-10-23: Fixed a variable clash in scripts/taste-answer-key-eval.mjs (every dish failed with 'Cannot access ai before initialization'); eval run end to end with a stubbed fetch for gemini, gemini-3.1-flash-lite and anthropic.
