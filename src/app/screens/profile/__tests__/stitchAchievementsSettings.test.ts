@@ -12,7 +12,8 @@ test("Achievements uses real passport progress in the Stitch layout", () => {
   assert.match(screen, /getNextPassportStamp\(progressMap\)/);
   assert.match(screen, /\{totalStamps\} \/ \{PASSPORT_STAMP_DEFINITIONS\.length\} stamps/);
   assert.match(screen, /<WeeklyGoalCard[\s\S]*progress=\{weeklyGoal\}/);
-  assert.match(screen, /<PassportStampBadge stamp=\{stamp\} earned=\{earned\}/);
+  assert.match(screen, /<HeritageStampTile[\s\S]*?earned=\{earned\}/);
+  assert.match(screen, /passportRankTitle\(totalStamps\)/);
   assert.doesNotMatch(screen, /voucher|rank #|Secret Queue Tips/i);
 });
 

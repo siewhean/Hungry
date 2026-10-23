@@ -103,7 +103,7 @@ test("R01-WRITE-01: favourite toasts follow the write result, never an optimisti
   );
   assert.doesNotMatch(dishDetail, /Saved to favourites!/);
 
-  assert.match(favourites, /<CatalogSavedDishes navigation=\{navigation\} \/>/);
+  assert.match(favourites, /<CatalogSavedDishes navigation=\{navigation\} query=\{dishQuery\} \/>/);
   assert.match(
     favourites,
     /rootNavigation\.navigate\("CatalogRawDetail", \{ kind: "dish", id: dish\.id \}\)/,

@@ -42,8 +42,7 @@ test("detail-M3/M17/L17/L24: sold-out dishes and prices read the same everywhere
 test("detail-M6/L18/L20: dish page has no wait card, shows the exact score and Order buttons", () => {
   assert.doesNotMatch(dish, /formatWaitTime|getDataTrustDisclosure/);
   assert.doesNotMatch(dish, /Math\.round\(dish\.rating\)/);
-  assert.match(dish, /DeliveryPlatformButton/);
-  assert.match(dish, /deliveryLinks\.map/);
+  assert.match(dish, /<DeliveryButtonRow/);
   assert.match(dish, /if \(result\.reason !== "pending"\) showToast/);
 });
 
@@ -68,10 +67,11 @@ test("detail-M8: stall and dish heroes are swipeable photo pagers with a full-sc
   assert.match(dish, /\.\.\.reviewPhotos/);
 });
 
-test("detail-M10/L1/L19: reviews can be voted helpful, reported, blocked and open their author", () => {
+test("detail-M10/L1/L19: reviews can be reported, blocked and open their author", () => {
   const actions = readRepoFile("src/components/review/ReviewReaderActions.tsx");
 
-  assert.match(actions, /setReviewHelpful/);
+  // Owner decision (round 2): no Helpful vote on review cards.
+  assert.doesNotMatch(actions, /setReviewHelpful|ThumbsUp/);
   assert.match(actions, /promptReviewSafetyActions/);
   assert.match(readRepoFile("src/components/review/index.ts"), /ReviewReaderActions/);
   for (const source of [stall, dish]) {

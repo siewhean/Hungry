@@ -41,7 +41,7 @@ test("Settings location rows respect the OS permission and return from the picke
   assert.doesNotMatch(settings, /denyLocation\(\)/);
   assert.doesNotMatch(settings, /label="Location permission"[\s\S]{0,120}type="toggle"/);
 
-  const submit = segmentBetween(picker, "const handleSubmit", "return (");
+  const submit = segmentBetween(picker, "const finish", "const choose");
   assert.ok(
     submit.indexOf("navigation.goBack()") < submit.indexOf('navigation.navigate("TasteQuiz")'),
     "settings mode must go back before the onboarding path continues to the quiz",
@@ -81,7 +81,7 @@ test("SettingsRow exposes role, state and label to assistive tech", () => {
   assert.match(row, /accessibilityRole=\{isToggle \? "switch" : isLink \? "link" : "button"\}/);
   assert.match(row, /checked: Boolean\(isEnabled\), busy/);
   assert.match(row, /accessibilityValue=/);
-  assert.match(row, /importantForAccessibility="no-hide-descendants"/);
+  assert.match(row, /<AnimatedSwitch[\s\S]*?accessible=\{false\}/);
   // Value-only rows are not pressable buttons.
   assert.match(row, /if \(!isInteractive\) \{\s*return \(\s*<View/);
   assert.match(read("src/app/screens/profile/SettingsScreen.tsx"), /busy=\{isExportingData\}/);

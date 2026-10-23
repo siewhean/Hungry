@@ -131,7 +131,10 @@ test("locked passport stamps use their own category count", () => {
   const screen = read("src/app/screens/profile/PassportScreen.tsx");
 
   assert.match(card, /stamp\.threshold - triedInCategory/);
-  assert.match(screen, /triedInCategory=\{progress\?\.triedCount \?\? 0\}/);
+  assert.match(
+    screen,
+    /triedInCategory=\{progressMap\[nextStamp\.category\.id\]\?\.triedCount \?\? 0\}/,
+  );
   assert.match(screen, /trackPassportViewed\("profile"\)/);
 });
 

@@ -7,14 +7,13 @@ import { LinearGradient } from "expo-linear-gradient";
 import {
   ArrowLeft,
   Bookmark,
-  ChevronDown,
   ChevronRight,
-  ChevronUp,
   Heart,
-  Clock3,
+  FolderPlus,
   CheckCircle,
   MapPin,
   Navigation,
+  PenLine,
   Send,
   Star,
   Utensils,
@@ -23,10 +22,21 @@ import {
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { useDetailSaveActions } from "@/features/checklistPortfolio/DetailSaveActions";
 import { resolveStallOpenInfo } from "@/features/detail/stallOpenState";
-import { perceivedTasteRows, perceivedTasteSentence } from "@/features/detail/perceivedTaste";
+import {
+  perceivedTasteAxes,
+  perceivedTasteRows,
+  perceivedTasteSentence,
+} from "@/features/detail/perceivedTaste";
+import {
+  formatAwayLabel,
+  similarDishQuery,
+  useSimilarDishesNearby,
+} from "@/features/detail/similarDishes";
 import { isSoldOut } from "@/features/merchant/menuSections";
-import { DeliveryPlatformButton } from "@/components/dish/DeliveryPlatformButton";
+import { DeliveryButtonRow } from "@/components/dish/DeliveryPlatformButton";
 import { DetailActionBar, type DetailAction } from "@/components/detail/DetailActionBar";
+import { FloatingBackButton } from "@/components/detail/FloatingBackButton";
+import { TasteRadarChart } from "@/components/taste/TasteRadarChart";
 import { PhotoPager } from "@/components/dish/PhotoPager";
 import { ReportProblemLink } from "@/components/stall/ReportProblemLink";
 import { buildDishGallery } from "@/features/detail/detailTransforms";
@@ -34,7 +44,12 @@ import { formatDishUpdated } from "@/features/detail/dishFreshness";
 import { formatDishPrice } from "@/features/detail/dishPrice";
 import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
 import { DietaryFlagChips } from "@/components/dish/DietaryFlagChips";
-import { OwnReviewActions, ReviewPhotoStrip, ReviewReaderActions } from "@/components/review";
+import {
+  CaptionPreview,
+  OwnReviewActions,
+  ReviewPhotoStrip,
+  ReviewReaderActions,
+} from "@/components/review";
 import { isOwnReview } from "@/features/review/reviewEdit";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { sanitizeCatalogImageUrl } from "@/lib/services/catalog/media";
@@ -129,7 +144,6 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const markTried = useStallInteractionStore((state) => state.markTried);
   const loadStallInteractions = useStallInteractionStore((state) => state.loadInteractions);
   const incrementShare = useSocialStore((state) => state.incrementShare);
-  const [operatingHoursOpen, setOperatingHoursOpen] = useState(false);
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
   const shareSheetRef = useRef<BottomSheetModal>(null);
   const lastRecordedDishViewId = useRef<string | null>(null);
@@ -192,6 +206,15 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     () => (dish ? getMoreFromStall(dish, venueDishes) : []),
     [dish, venueDishes],
   );
+  // "Similar <dish> nearby": the same kind of dish at other stalls around this one.
+  const similarSearchPoint = useMemo(() => {
+    if (!venue) return undefined;
+    const buildingPoint = getBuildingById(venue.buildingId)?.coordinate;
+    return getStallPin(venue, buildingPoint) ?? buildingPoint;
+  }, [venue]);
+  const similarNearby = useSimilarDishesNearby(dish, similarSearchPoint);
+  const similarDishHeading = dish ? similarDishQuery(dish.name) || dish.name : "dishes";
+
   // One shared helper decides open/closed for both pages: the owner's temporary closure,
   // then the weekly schedule with special hours, then the listed hours text.
   const openInfo = useMemo(
@@ -205,8 +228,6 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
         : undefined,
     [merchantProfile?.temporaryClosure, openingSchedule, venue],
   );
-  const listedHours = openInfo?.weekRows ?? [];
-  const currentDayRows = openInfo?.todayRows ?? [];
 
   useEffect(() => {
     let active = true;
@@ -513,16 +534,12 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   ).slice(0, 8);
   const heroHeight = Math.min(Math.max(width * 0.8, 280), 380);
   const signatureGridItemWidth = Math.min(width * 0.56, 220);
-  /** Minimum touch target for the action dock and header buttons. */
-  const dockTargetSize = 44;
   const canonicalDishUrl = webShareUrl("dish", dish.id);
   const heroGradientColors: readonly [ColorValue, ColorValue, ColorValue] = [
     palette.detailHeroGradientStart,
     palette.detailHeroGradientMid,
     palette.bg,
   ];
-  const headerButtonBackground = palette.detailHeaderSurface;
-  const headerButtonBorder = palette.detailHeaderBorder;
   const dishPrice = formatDishPrice(dish);
   const shareReviewTarget: ReviewShareTarget = {
     kind: "dish",
@@ -730,7 +747,8 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     showToast({ message: liked ? "Liked." : "Like removed.", tone: "success" });
   };
 
-  // Bottom bar: directions, like, save, share, tried. Only directions survives a core-only build.
+  // Bottom bar: directions and like as icons, Review as the orange button. Holding an icon (or
+  // tapping More) opens share, mark tried and save to a collection.
   const barActions: DetailAction[] = [
     ...(stallAddress
       ? [
@@ -768,26 +786,42 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                 },
               ]
             : []),
-          {
-            id: "share",
-            label: "Share",
-            icon: Send,
-            onPress: openShareSheet,
-            accessibilityLabel: `Share ${dish.name}`,
-          },
-          {
-            id: "tried",
-            label: isDishTried ? "Tried" : "Mark tried",
-            icon: CheckCircle,
-            active: isDishTried,
-            role: "checkbox" as const,
-            loading: isTryingFood,
-            onPress: () => void handleTryFood(),
-            accessibilityLabel: "Tried",
-          },
         ]
       : []),
   ];
+  const secondaryBarActions: DetailAction[] = showDeferredDetailControls
+    ? [
+        {
+          id: "share",
+          label: "Share",
+          icon: Send,
+          onPress: openShareSheet,
+          accessibilityLabel: `Share ${dish.name}`,
+        },
+        {
+          id: "tried",
+          label: isDishTried ? "Tried" : "Mark tried",
+          icon: CheckCircle,
+          active: isDishTried,
+          role: "checkbox" as const,
+          loading: isTryingFood,
+          onPress: () => void handleTryFood(),
+          accessibilityLabel: "Tried",
+        },
+        ...(FEATURE_FLAGS.portfoliosEnabled
+          ? [
+              {
+                id: "collection",
+                label: isAddingToPortfolio ? "Adding..." : "Save to a collection",
+                icon: FolderPlus,
+                loading: isAddingToPortfolio,
+                onPress: () => void addToPortfolio(),
+                accessibilityLabel: "Save this dish to a collection",
+              },
+            ]
+          : []),
+      ]
+    : [];
 
   return (
     <FeedErrorBoundary title="Dish details unavailable" body="Couldn't load this dish — try again.">
@@ -796,7 +830,6 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
           <ScrollView
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{
-              paddingTop: insets.top + 56,
               paddingBottom: insets.bottom + 96,
             }}
           >
@@ -1054,43 +1087,23 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                       padding: spacing[4],
                     }}
                   >
-                    {perceivedRows.map((row) => (
-                      <View key={row.key} style={{ gap: spacing[1.5] }}>
-                        <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                          <AppText variant="bodyBold">{row.label}</AppText>
-                          <AppText variant="bodySmall" tone="secondary">
-                            Standard {row.standard}/10
-                            {hasPersonalPalate ? ` · For you ${row.perceived}/10` : ""}
-                          </AppText>
-                        </View>
-                        <View
-                          style={{
-                            backgroundColor: palette.bgSoft,
-                            borderRadius: radii.pill,
-                            height: 8,
-                            overflow: "hidden",
-                          }}
-                        >
-                          <View
-                            style={{
-                              backgroundColor: hasPersonalPalate
-                                ? palette.orange
-                                : palette.textMuted,
-                              borderRadius: radii.pill,
-                              height: "100%",
-                              width: `${Math.round(
-                                (hasPersonalPalate ? row.perceived : row.standard) * 10,
-                              )}%`,
-                            }}
-                          />
-                        </View>
-                        {hasPersonalPalate ? (
-                          <AppText variant="micro" tone="secondary">
-                            {perceivedTasteSentence(row)}
-                          </AppText>
-                        ) : null}
-                      </View>
-                    ))}
+                    <TasteRadarChart
+                      axes={perceivedTasteAxes(
+                        dish.tasteVector,
+                        hasPersonalPalate ? profile.tasteVector : undefined,
+                      )}
+                      size={Math.min(width - spacing[4] * 4, 300)}
+                    />
+                    {hasPersonalPalate
+                      ? perceivedRows
+                          .filter((row) => row.direction !== "same")
+                          .slice(0, 2)
+                          .map((row) => (
+                            <AppText key={row.key} variant="bodySmall" tone="secondary">
+                              {perceivedTasteSentence(row)}
+                            </AppText>
+                          ))
+                      : null}
                     {!hasPersonalPalate ? (
                       <Button
                         label="Set up my taste palette"
@@ -1129,27 +1142,8 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                   <AppText variant="bodySmallBold" tone="secondary">
                     ORDER ON
                   </AppText>
-                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-                    {deliveryLinks.map((link) => (
-                      <DeliveryPlatformButton
-                        key={`${link.platform}:${link.webUrl}`}
-                        link={link}
-                        compact
-                        venueId={venue.id}
-                      />
-                    ))}
-                  </View>
+                  <DeliveryButtonRow links={deliveryLinks} dishId={dish.id} venueId={venue.id} />
                 </View>
-              ) : null}
-
-              {showDeferredDetailControls && FEATURE_FLAGS.portfoliosEnabled ? (
-                <Button
-                  accessibilityLabel="Add this dish to a list"
-                  label={isAddingToPortfolio ? "Adding to a list..." : "Add to a list"}
-                  variant="secondary"
-                  disabled={isAddingToPortfolio}
-                  onPress={() => void addToPortfolio()}
-                />
               ) : null}
 
               {!venue && venueLoadFailed ? (
@@ -1165,71 +1159,91 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                 </Pressable>
               ) : null}
 
-              {venue ? (
-                <Pressable
-                  onPress={() => setOperatingHoursOpen((current) => !current)}
-                  accessibilityRole="button"
-                  accessibilityLabel="Opening hours"
-                  accessibilityHint={
-                    operatingHoursOpen ? "Shows today's hours only" : "Shows the full week"
-                  }
-                  accessibilityState={{ expanded: operatingHoursOpen }}
-                  style={({ pressed }) => [
-                    {
-                      gap: spacing[3],
-                      opacity: pressed ? 0.95 : 1,
-                    },
-                  ]}
-                >
-                  <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
-                    <Clock3 color={palette.orange} size={20} />
-                    <AppText variant="h2" style={{ flex: 1 }}>
-                      Opening hours
-                    </AppText>
-                    {operatingHoursOpen ? (
-                      <ChevronUp color={palette.textSecondary} size={22} />
-                    ) : (
-                      <ChevronDown color={palette.textSecondary} size={22} />
-                    )}
-                  </View>
-                  <View
-                    style={{
-                      backgroundColor: palette.surface,
-                      borderColor: palette.border,
-                      borderRadius: componentRadii.card,
-                      borderWidth: 1,
-                      gap: spacing[3],
-                      padding: spacing[4],
-                    }}
+              {similarNearby.length > 0 ? (
+                <View style={{ gap: spacing[3] }}>
+                  <AppText variant="h2" numberOfLines={2}>
+                    {`Similar ${similarDishHeading} nearby`}
+                  </AppText>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={{ marginHorizontal: -spacing[4] }}
+                    contentContainerStyle={{ gap: spacing[3], paddingHorizontal: spacing[4] }}
                   >
-                    {listedHours.length ? (
-                      <View style={{ gap: spacing[2], marginTop: spacing[1] }}>
-                        {(operatingHoursOpen ? listedHours : currentDayRows).map((row) => (
-                          <View
-                            key={`${row.label}-${row.text}`}
-                            style={{
-                              flexDirection: "row",
-                              gap: spacing[2],
-                              justifyContent: "space-between",
-                            }}
-                          >
-                            <AppText tone="secondary" style={{ width: 104 }}>
-                              {row.label}
-                            </AppText>
-                            <AppText tone="secondary" style={{ flex: 1, textAlign: "right" }}>
-                              {row.text}
-                            </AppText>
+                    {similarNearby.map((item) => {
+                      const imageUrl = sanitizeCatalogImageUrl(item.imageUrl);
+                      const away = formatAwayLabel(item.distanceMeters);
+                      return (
+                        <Pressable
+                          key={item.id}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Open ${item.name} at ${item.venueName}${
+                            away ? `, ${away}` : ""
+                          }`}
+                          onPress={() => {
+                            tapHaptic();
+                            navigation.push("DishDetail", { dishId: item.id });
+                          }}
+                          style={({ pressed }) => ({
+                            backgroundColor: palette.surface,
+                            borderColor: palette.border,
+                            borderRadius: componentRadii.card,
+                            borderWidth: 1,
+                            overflow: "hidden",
+                            transform: [{ scale: pressed ? 0.98 : 1 }],
+                            width: signatureGridItemWidth,
+                          })}
+                        >
+                          <View>
+                            {imageUrl ? (
+                              <AccessibleImage
+                                source={{ uri: imageUrl }}
+                                contentFit="cover"
+                                style={{ width: "100%", height: signatureGridItemWidth * 0.62 }}
+                                decorative
+                              />
+                            ) : (
+                              <NoDishPhoto
+                                dishName={item.name}
+                                style={{ width: "100%", height: signatureGridItemWidth * 0.62 }}
+                              />
+                            )}
+                            {away ? (
+                              <View
+                                style={{
+                                  backgroundColor: palette.surface,
+                                  borderRadius: radii.pill,
+                                  bottom: spacing[2],
+                                  left: spacing[2],
+                                  paddingHorizontal: spacing[2],
+                                  paddingVertical: 2,
+                                  position: "absolute",
+                                }}
+                              >
+                                <AppText variant="micro" style={{ fontWeight: "700" }}>
+                                  {away}
+                                </AppText>
+                              </View>
+                            ) : null}
                           </View>
-                        ))}
-                      </View>
-                    ) : (
-                      <AppText tone="secondary">Hours not listed.</AppText>
-                    )}
-                    {openInfo?.closureNotice ? (
-                      <AppText tone="secondary">{openInfo.closureNotice}</AppText>
-                    ) : null}
-                  </View>
-                </Pressable>
+                          <View style={{ gap: spacing[0.5], padding: spacing[3] }}>
+                            <AppText variant="bodyBold" numberOfLines={1}>
+                              {item.venueName}
+                            </AppText>
+                            <AppText variant="micro" tone="secondary" numberOfLines={1}>
+                              {[item.name, item.buildingName].filter(Boolean).join(" · ")}
+                            </AppText>
+                            {item.price ? (
+                              <AppText variant="price" style={{ color: palette.orange }}>
+                                {`S$${item.price.toFixed(2)}`}
+                              </AppText>
+                            ) : null}
+                          </View>
+                        </Pressable>
+                      );
+                    })}
+                  </ScrollView>
+                </View>
               ) : null}
 
               {moreFromStall.length > 0 ? (
@@ -1421,9 +1435,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                             </AppText>
                           </View>
                         </View>
-                        <AppText variant="bodySmall" tone="secondary">
-                          {review.text}
-                        </AppText>
+                        <CaptionPreview text={review.text} />
                         <ReviewPhotoStrip
                           photos={review.photos}
                           subject={`${dish.name}, review by ${review.authorName}`}
@@ -1532,45 +1544,23 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
             </View>
           </ScrollView>
 
-          <DetailActionBar actions={barActions} testID="dish-action-bar" />
+          <DetailActionBar
+            actions={barActions}
+            secondaryActions={secondaryBarActions}
+            cta={
+              showDeferredDetailControls && FEATURE_FLAGS.reviewCreationEnabled
+                ? {
+                    label: "Review",
+                    icon: PenLine,
+                    onPress: handleReview,
+                    accessibilityLabel: "Write a review",
+                  }
+                : undefined
+            }
+            testID="dish-action-bar"
+          />
 
-          <View
-            style={{
-              alignItems: "center",
-              backgroundColor: palette.surface,
-              borderBottomColor: palette.border,
-              borderBottomWidth: 1,
-              flexDirection: "row",
-              height: insets.top + 56,
-              left: 0,
-              paddingHorizontal: spacing[4],
-              paddingTop: insets.top,
-              position: "absolute",
-              right: 0,
-              top: 0,
-            }}
-          >
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Go back"
-              onPress={goBackOrHome}
-              style={{
-                alignItems: "center",
-                backgroundColor: headerButtonBackground,
-                borderColor: headerButtonBorder,
-                borderRadius: componentRadii.iconButton,
-                borderWidth: 1,
-                height: dockTargetSize,
-                justifyContent: "center",
-                width: dockTargetSize,
-              }}
-            >
-              <ArrowLeft color={palette.text} size={22} />
-            </Pressable>
-            <AppText variant="h3" style={{ flex: 1, marginLeft: spacing[3] }}>
-              Dish Details
-            </AppText>
-          </View>
+          <FloatingBackButton onPress={goBackOrHome} />
 
           {showDeferredDetailControls ? (
             <ReviewShareSheet

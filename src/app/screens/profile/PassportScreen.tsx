@@ -2,8 +2,8 @@
  * PassportScreen — branded Hungry Passport progress and stamp collection.
  */
 
-import { AccessibilityInfo, Pressable, View } from "react-native";
-import { ChevronRight } from "lucide-react-native";
+import { AccessibilityInfo, Pressable, View, useWindowDimensions } from "react-native";
+import { Award, ChevronRight, Flag, Star } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -13,7 +13,7 @@ import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { ProfileScreenShell } from "@/app/screens/profile/ProfileScreenShell";
 import { AchievementsSection } from "@/components/gamification/AchievementsSection";
 import { PassportPageFlip } from "@/components/gamification/PassportPageFlip";
-import { PassportStampBadge } from "@/components/gamification/PassportStampBadge";
+import { HeritageStampTile } from "@/components/gamification/HeritageStampTile";
 import { PassportStampCard } from "@/components/gamification/PassportStampCard";
 import { WeeklyGoalCard } from "@/components/gamification/WeeklyGoalCard";
 import { AppText, EmptyState } from "@/components/ui";
@@ -38,21 +38,6 @@ import type { PassportContributionStats, PassportProgressEvent } from "@/types/d
 
 type Props = NativeStackScreenProps<RootStackParamList, "PassportScreen">;
 
-const CATEGORY_LABELS: Record<string, string> = {
-  cuisine: "Cuisine Explorer",
-  neighbourhood: "Neighbourhood Trails",
-  classic: "Singapore Classics",
-  dietary: "Dietary Trails",
-  contributor: "Contributor Marks",
-};
-
-const CATEGORIES_BY_ID = ALL_PASSPORT_CATEGORIES.reduce<
-  Record<string, (typeof ALL_PASSPORT_CATEGORIES)[number]>
->((map, category) => {
-  map[category.id] = category;
-  return map;
-}, {});
-
 const CONTRIBUTION_EVENT_LABELS: Record<PassportProgressEvent["eventType"], string> = {
   dish_tried: "Tried a dish",
   stall_visited: "Visited a stall",
@@ -72,8 +57,29 @@ function formatContributionDate(value: string): string {
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
+const PASSPORT_RANKS = [
+  { min: 0, title: "New Taster" },
+  { min: 1, title: "Hawker Explorer" },
+  { min: 5, title: "Food Trailblazer" },
+  { min: 12, title: "Master Foodie" },
+  { min: 25, title: "Hawker Legend" },
+] as const;
+
+/** The hero's rank title for a stamp count. */
+export function passportRankTitle(stamps: number): string {
+  return [...PASSPORT_RANKS].reverse().find((rank) => stamps >= rank.min)?.title ?? "New Taster";
+}
+
+/** "Level 1" for no stamps, then one level per rank reached. */
+export function passportLevelLabel(stamps: number): string {
+  return `Level ${PASSPORT_RANKS.filter((rank) => stamps >= rank.min).length}`;
+}
+
 export function PassportScreen({ navigation }: Props) {
   const { componentRadii, palette, radii, spacing } = useHungryTheme();
+  const { width: screenWidth } = useWindowDimensions();
+  // Three stamps per row inside the screen's spacing[4] gutters.
+  const stampTileWidth = (screenWidth - spacing[4] * 2 - spacing[2] * 2) / 3;
   const progressMap = usePassportStore((s) => s.progressMap);
   const celebratedStampIds = usePassportStore((s) => s.celebratedStampIds);
   // Celebrated ids load asynchronously; celebrating before then would replay old stamps.
@@ -229,24 +235,6 @@ export function PassportScreen({ navigation }: Props) {
     return () => clearTimeout(timeout);
   }, [celebratingStampId, reduceMotion]);
 
-  const sections = useMemo(
-    () =>
-      ALL_PASSPORT_CATEGORIES.reduce<{ title: string; data: typeof ALL_PASSPORT_CATEGORIES }[]>(
-        (acc, category) => {
-          const title = CATEGORY_LABELS[category.type] ?? category.type;
-          const existing = acc.find((section) => section.title === title);
-          if (existing) {
-            existing.data.push(category);
-          } else {
-            acc.push({ title, data: [category] });
-          }
-          return acc;
-        },
-        [],
-      ),
-    [],
-  );
-
   return (
     <ProfileScreenShell title="Achievements">
       <View style={{ gap: spacing[5], paddingBottom: spacing[8] }}>
@@ -259,12 +247,40 @@ export function PassportScreen({ navigation }: Props) {
               backgroundColor: palette.navy,
               borderRadius: componentRadii.card,
               gap: spacing[4],
+              overflow: "hidden",
               padding: spacing[5],
             }}
           >
-            <AppText variant="micro" style={{ color: palette.amber }}>
-              HUNGRY PASSPORT
-            </AppText>
+            {/* Watermark star, like a passport seal */}
+            <View pointerEvents="none" style={{ bottom: -36, position: "absolute", right: -28 }}>
+              <Star color={palette.inverseIndicator} size={170} strokeWidth={1} />
+            </View>
+            <View
+              style={{
+                alignItems: "center",
+                flexDirection: "row",
+                justifyContent: "space-between",
+              }}
+            >
+              <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1.5] }}>
+                <Award color={palette.amber} size={16} />
+                <AppText variant="micro" style={{ color: palette.amber, fontWeight: "700" }}>
+                  HUNGRY PASSPORT
+                </AppText>
+              </View>
+              <View
+                style={{
+                  backgroundColor: palette.inverseSurfaceSubtle,
+                  borderRadius: radii.pill,
+                  paddingHorizontal: spacing[2.5],
+                  paddingVertical: spacing[0.5],
+                }}
+              >
+                <AppText variant="micro" style={{ color: palette.textOnDark, fontWeight: "700" }}>
+                  {passportLevelLabel(totalStamps)}
+                </AppText>
+              </View>
+            </View>
             <View style={{ gap: spacing[1] }}>
               <AppText variant="h2" style={{ color: palette.textOnDark }}>
                 Your Singapore food trail
@@ -281,9 +297,20 @@ export function PassportScreen({ navigation }: Props) {
                 padding: spacing[3],
               }}
             >
-              <AppText variant="h3" style={{ color: palette.textOnDark }}>
-                {totalStamps} / {PASSPORT_STAMP_DEFINITIONS.length} stamps
-              </AppText>
+              <View
+                style={{
+                  alignItems: "baseline",
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                }}
+              >
+                <AppText variant="h3" style={{ color: palette.textOnDark }}>
+                  {totalStamps} / {PASSPORT_STAMP_DEFINITIONS.length} stamps
+                </AppText>
+                <AppText variant="bodySmallBold" style={{ color: palette.amber }}>
+                  {passportRankTitle(totalStamps)}
+                </AppText>
+              </View>
               <View
                 accessibilityLabel={`${totalStamps} of ${PASSPORT_STAMP_DEFINITIONS.length} stamps earned`}
                 style={{
@@ -310,13 +337,20 @@ export function PassportScreen({ navigation }: Props) {
           </View>
         </PassportPageFlip>
 
+        <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
+          <Flag color={palette.orange} size={18} />
+          <AppText variant="h2" style={{ flex: 1 }}>
+            Active missions
+          </AppText>
+          <AppText variant="bodySmall" tone="muted">
+            {weeklyGoal.completed ? "Done this week" : "1 in progress"}
+          </AppText>
+        </View>
         <WeeklyGoalCard
           progress={weeklyGoal}
           celebrating={celebratingGoal}
           reduceMotion={reduceMotion}
         />
-
-        <AchievementsSection rows={achievements} />
 
         <Pressable
           accessibilityRole="button"
@@ -356,40 +390,27 @@ export function PassportScreen({ navigation }: Props) {
         ) : null}
 
         <View style={{ gap: spacing[3] }}>
-          <AppText variant="h2">Heritage stamps ({totalStamps})</AppText>
+          <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
+            <Award color={palette.orange} size={18} />
+            <AppText variant="h2">Heritage stamps ({totalStamps})</AppText>
+          </View>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
             {stampPreview.map(({ category, stamp, earned }) =>
               stamp ? (
-                <View
+                <HeritageStampTile
                   key={category.id}
-                  style={{
-                    alignItems: "center",
-                    backgroundColor: palette.surface,
-                    borderColor: palette.border,
-                    borderRadius: componentRadii.card,
-                    borderWidth: 1,
-                    flexBasis: "48%",
-                    flexGrow: 1,
-                    gap: spacing[1],
-                    padding: spacing[3],
-                  }}
-                >
-                  <PassportStampBadge stamp={stamp} earned={earned} size="sm" />
-                  <AppText
-                    variant="bodySmallBold"
-                    numberOfLines={2}
-                    style={{ textAlign: "center" }}
-                  >
-                    {stamp.title}
-                  </AppText>
-                  <AppText tone="muted" variant="micro" numberOfLines={1}>
-                    {earned ? "Earned" : "Locked"}
-                  </AppText>
-                </View>
+                  title={stamp.title}
+                  subtitle={stamp.subtitle}
+                  detail={`${progressMap[category.id]?.triedCount ?? 0} tried`}
+                  earned={earned}
+                  width={stampTileWidth}
+                />
               ) : null,
             )}
           </View>
         </View>
+
+        <AchievementsSection rows={achievements} />
 
         <PortfolioContributionPanel
           componentRadii={componentRadii}
@@ -405,51 +426,12 @@ export function PassportScreen({ navigation }: Props) {
             <PassportStampCard
               category={nextStamp.category}
               nextStamp={nextStamp}
+              triedInCategory={progressMap[nextStamp.category.id]?.triedCount ?? 0}
               reduceMotion={reduceMotion}
               stamp={nextStamp.stamp}
             />
           </View>
         ) : null}
-
-        {sections.map((section) => (
-          <View key={section.title} style={{ gap: spacing[3] }}>
-            <AppText variant="h3">{section.title}</AppText>
-            {section.data.map((category) => {
-              const progress = progressMap[category.id];
-              const earnedForCategory = earnedStamps.filter(
-                (stamp) => stamp.categoryId === category.id,
-              );
-              const stamps =
-                earnedForCategory.length > 0
-                  ? earnedForCategory
-                  : PASSPORT_STAMP_DEFINITIONS.filter(
-                      (stamp) => stamp.categoryId === category.id && stamp.index === 0,
-                    );
-
-              return (
-                <View key={category.id} style={{ gap: spacing[2] }}>
-                  {stamps.map((stamp) => (
-                    <PassportStampCard
-                      key={stamp.id}
-                      category={CATEGORIES_BY_ID[stamp.categoryId] ?? category}
-                      celebrating={celebratingStampId === stamp.id}
-                      earned={earnedForCategory.some((earned) => earned.id === stamp.id)}
-                      nextStamp={nextStamp}
-                      triedInCategory={progress?.triedCount ?? 0}
-                      reduceMotion={reduceMotion}
-                      stamp={stamp}
-                    />
-                  ))}
-                  {!progress || progress.triedCount === 0 ? (
-                    <AppText tone="muted" variant="micro">
-                      Try a matching stall to start this page.
-                    </AppText>
-                  ) : null}
-                </View>
-              );
-            })}
-          </View>
-        ))}
       </View>
     </ProfileScreenShell>
   );

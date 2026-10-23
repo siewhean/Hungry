@@ -379,7 +379,9 @@ export function ReviewScreen({ navigation, route }: Props) {
     ? "Choose a dish to review."
     : !draft.rating
       ? "Add a star rating to publish."
-      : null;
+      : draft.photos.length === 0
+        ? "Add a photo of the dish to publish."
+        : null;
 
   return (
     <Screen

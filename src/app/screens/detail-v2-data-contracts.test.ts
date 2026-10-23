@@ -42,13 +42,16 @@ test("dish detail V2 bottom bar is labelled, stateful and meets 44px targets", (
   const dish = read("src/app/screens/detail/DishDetailScreenV2.tsx");
   const bar = read("src/components/detail/DetailActionBar.tsx");
 
-  assert.match(dish, /const dockTargetSize = 44;/);
   assert.doesNotMatch(dish, /height: (40|42),/);
   assert.doesNotMatch(dish, /Missing dish data for ID/);
   assert.doesNotMatch(dish, /Sparkles/);
   assert.match(dish, /We can't find this dish/);
   // Directions, Like, Save, Share and Tried sit in one bar of icon-over-label buttons.
-  assert.match(dish, /<DetailActionBar actions=\{barActions\} testID="dish-action-bar" \/>/);
+  assert.match(
+    dish,
+    /<DetailActionBar\s+actions=\{barActions\}\s+secondaryActions=\{secondaryBarActions\}/,
+  );
+  assert.match(dish, /testID="dish-action-bar"/);
   for (const label of ["Directions", "Like", "Share", "Tried"]) {
     assert.match(dish, new RegExp(`label: [^\\n]*"${label}`));
   }
@@ -57,7 +60,7 @@ test("dish detail V2 bottom bar is labelled, stateful and meets 44px targets", (
   assert.match(dish, /role: "checkbox"/);
   assert.match(dish, /active: isDishTried/);
   // The bar itself: 44px or taller targets, brand colour when on, never white on the white bar.
-  assert.match(bar, /minHeight: 48/);
+  assert.match(bar, /const TARGET_SIZE = 48;/);
   assert.match(bar, /action\.active \? palette\.orange : palette\.text/);
   assert.match(bar, /accessibilityRole=\{action\.role \?\? "button"\}/);
   assert.match(bar, /checked: Boolean\(action\.active\)/);

@@ -11,22 +11,11 @@ import {
   Keyboard,
   Pressable,
   RefreshControl,
-  type TextInput,
   View,
   useWindowDimensions,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import {
-  Bookmark,
-  Heart,
-  MessageCircle,
-  MessageCircleMore,
-  MoreHorizontal,
-  Pencil,
-  Send,
-  Star,
-  ThumbsUp,
-} from "lucide-react-native";
+import { Bookmark, Heart, MoreHorizontal, Pencil, Send, Star } from "lucide-react-native";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import {
   useFocusEffect,
@@ -39,8 +28,7 @@ import type { MaterialTopTabNavigationProp } from "@react-navigation/material-to
 
 import type { MainTabParamList, RootStackParamList } from "@/app/navigation/navigationTypes";
 import type { RecentReviewFeedEntry } from "@/lib/services/types";
-import { ReviewCommentsSheet, type ActiveReviewCommentTarget } from "@/components/social";
-import { ReviewModerationNotice, ReviewPhotoViewer } from "@/components/review";
+import { CaptionPreview, ReviewModerationNotice, ReviewPhotoViewer } from "@/components/review";
 import {
   AccessibleImage,
   AppHeader,
@@ -76,15 +64,7 @@ import {
   makeReviewInteractionId,
   type ReviewFeedItem,
 } from "@/features/review/reviewFeed";
-import {
-  createHelpfulVoteQueue,
-  helpfulStateFor,
-  reviewHelpfulState,
-  toggleReviewHelpful,
-  type ReviewHelpfulState,
-} from "@/features/review/reviewHelpful";
 import { openTrustedExternalUrl } from "@/lib/security/safeLinking";
-import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { SUPPORT_EMAIL, webShareUrl } from "@/constants/links";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
@@ -192,7 +172,7 @@ function ReviewSearchQuerySummary({ query }: { query: string }) {
 
 // ─── ReviewCard ───────────────────────────────────────────────────────────────
 
-// The card takes primitives (not the interaction map or helpful objects) so that one helpful
+// The card takes primitives (not the interaction map) so that one like
 // tap or save re-renders that card only, and `memo` keeps every other card as it is.
 const ReviewCard = memo(function ReviewCard({
   item,
@@ -200,17 +180,11 @@ const ReviewCard = memo(function ReviewCard({
   likeCount,
   saved,
   shareCount,
-  commentCount,
-  helpfulActive,
-  helpfulCount,
   isOwnReview,
-  commentsEnabled,
-  onCommentPress,
   onPressDish,
   onSavePress,
   onSharePress,
   onLikePress,
-  onHelpfulPress,
   onSafetyPress,
   onPhotoPress,
   onAuthorPress,
@@ -221,15 +195,8 @@ const ReviewCard = memo(function ReviewCard({
   likeCount: number;
   saved: boolean;
   shareCount: number;
-  commentCount: number;
-  /** The viewer's "Helpful" vote, with any optimistic change applied. */
-  helpfulActive: boolean;
-  helpfulCount: number;
-  onHelpfulPress: (item: ReviewFeedItem) => void;
   /** The viewer wrote this review: no Report/Block on it. */
   isOwnReview: boolean;
-  commentsEnabled: boolean;
-  onCommentPress: (item: ReviewFeedItem) => void;
   onPressDish: (dishId: string) => void;
   onSavePress: (item: ReviewFeedItem) => void;
   onSharePress: (item: ReviewFeedItem) => void;
@@ -239,8 +206,7 @@ const ReviewCard = memo(function ReviewCard({
   onAuthorPress: (item: ReviewFeedItem) => void;
   reviewReactionsEnabled: boolean;
 }) {
-  const { componentRadii, palette, radii, spacing, shadows, typography } = useHungryTheme();
-  const CommentIcon = MessageCircle ?? MessageCircleMore;
+  const { componentRadii, palette, radii, spacing, shadows } = useHungryTheme();
   const { width } = useWindowDimensions();
   const hasPhoto = item.review.photos.length > 0;
   const reviewDate = `${formatReviewDate(item.review.createdAt)}${item.review.editedAt ? " · edited" : ""}`;
@@ -380,13 +346,8 @@ const ReviewCard = memo(function ReviewCard({
           </AppText>
         </Pressable>
 
-        {/* Review text */}
-        <AppText
-          variant="body"
-          style={{ color: palette.text, lineHeight: typography.body.lineHeight }}
-        >
-          {item.review.text}
-        </AppText>
+        {/* Caption: a two-line preview that opens on tap */}
+        <CaptionPreview text={item.review.text} />
 
         {item.review.merchantReply?.text ? (
           <View
@@ -497,128 +458,70 @@ const ReviewCard = memo(function ReviewCard({
           </View>
         )}
 
+        {/* Actions: right-aligned, all inside the card */}
         <View
           style={{
             alignItems: "center",
             flexDirection: "row",
-            justifyContent: "space-between",
-            paddingTop: spacing[1],
+            gap: spacing[1],
+            justifyContent: "flex-end",
           }}
         >
-          {isOwnReview ? (
-            <View />
-          ) : (
+          {reviewReactionsEnabled ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={liked ? "Unlike review" : "Like review"}
+              onPress={() => onLikePress(item)}
+              style={({ pressed }) => [actionStyle, { transform: [{ scale: pressed ? 0.9 : 1 }] }]}
+            >
+              <Heart
+                color={liked ? palette.error : palette.text}
+                fill={liked ? palette.error : "transparent"}
+                size={22}
+              />
+              {likeCount > 0 ? (
+                <AppText variant="micro" style={{ color: palette.text, fontWeight: "600" }}>
+                  {likeCount}
+                </AppText>
+              ) : null}
+            </Pressable>
+          ) : null}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Share review"
+            onPress={() => onSharePress(item)}
+            style={({ pressed }) => [actionStyle, { transform: [{ scale: pressed ? 0.9 : 1 }] }]}
+          >
+            <Send color={palette.text} size={22} />
+            {shareCount > 0 ? (
+              <AppText variant="micro" style={{ color: palette.text, fontWeight: "600" }}>
+                {shareCount}
+              </AppText>
+            ) : null}
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={saved ? "Remove saved dish" : "Save dish"}
+            onPress={() => onSavePress(item)}
+            style={({ pressed }) => [actionStyle, { transform: [{ scale: pressed ? 0.9 : 1 }] }]}
+          >
+            <Bookmark
+              color={saved ? palette.orange : palette.text}
+              fill={saved ? palette.orange : "transparent"}
+              size={22}
+            />
+          </Pressable>
+          {isOwnReview ? null : (
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={`More options for ${item.review.authorName}'s review`}
               accessibilityHint="Report this review or block its author"
               onPress={() => onSafetyPress(item)}
-              style={{ alignItems: "center", height: 44, justifyContent: "center", width: 44 }}
+              style={actionStyle}
             >
               <MoreHorizontal color={palette.textMuted} size={20} />
             </Pressable>
           )}
-
-          <View style={{ alignItems: "flex-end", gap: spacing[1.5] }}>
-            <View
-              style={{
-                alignItems: "center",
-                flexDirection: "row",
-                gap: spacing[4],
-                justifyContent: "flex-end",
-              }}
-            >
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={
-                  helpfulCount === 1
-                    ? "Helpful, 1 person found this helpful"
-                    : `Helpful, ${helpfulCount} people found this helpful`
-                }
-                accessibilityState={{ disabled: isOwnReview, selected: helpfulActive }}
-                disabled={isOwnReview}
-                hitSlop={8}
-                onPress={() => onHelpfulPress(item)}
-                style={actionStyle}
-              >
-                <ThumbsUp
-                  color={helpfulActive ? palette.orange : palette.text}
-                  fill={helpfulActive ? palette.orange : "transparent"}
-                  size={20}
-                />
-                <AppText
-                  variant="micro"
-                  style={{
-                    color: helpfulActive ? palette.orange : palette.text,
-                    fontWeight: "600",
-                  }}
-                >
-                  {helpfulCount > 0 ? `Helpful · ${helpfulCount}` : "Helpful"}
-                </AppText>
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Share review"
-                hitSlop={8}
-                onPress={() => onSharePress(item)}
-                style={actionStyle}
-              >
-                <Send color={palette.text} size={22} />
-                {shareCount > 0 ? (
-                  <AppText variant="micro" style={{ color: palette.text, fontWeight: "600" }}>
-                    {shareCount}
-                  </AppText>
-                ) : null}
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={saved ? "Remove saved dish" : "Save dish"}
-                hitSlop={8}
-                onPress={() => onSavePress(item)}
-                style={actionStyle}
-              >
-                <Bookmark
-                  color={saved ? palette.orange : palette.text}
-                  fill={saved ? palette.orange : "transparent"}
-                  size={22}
-                />
-              </Pressable>
-              {commentsEnabled ? (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Open review comments"
-                  onPress={() => onCommentPress(item)}
-                  style={actionStyle}
-                >
-                  <CommentIcon color={palette.text} size={22} />
-                  {commentCount > 0 ? (
-                    <AppText variant="micro" style={{ color: palette.text, fontWeight: "600" }}>
-                      {commentCount}
-                    </AppText>
-                  ) : null}
-                </Pressable>
-              ) : null}
-              {reviewReactionsEnabled ? (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={liked ? "Unlike review" : "Like review"}
-                  onPress={() => onLikePress(item)}
-                  style={actionStyle}
-                >
-                  <Heart
-                    color={liked ? palette.error : palette.text}
-                    fill={liked ? palette.error : "transparent"}
-                    size={22}
-                  />
-                  {likeCount > 0 ? (
-                    <AppText variant="micro" style={{ color: palette.text, fontWeight: "600" }}>
-                      {likeCount}
-                    </AppText>
-                  ) : null}
-                </Pressable>
-              ) : null}
-            </View>
-          </View>
         </View>
       </View>
     </View>
@@ -637,10 +540,7 @@ export function ReviewFeedScreen() {
   const insets = useSafeAreaInsets();
   const repository = getDataRepository();
   const serviceProviderMode = getServiceProvider().mode;
-  const commentsEnabled = FEATURE_FLAGS.commentsEnabled;
   const interactions = useSocialStore((state) => state.interactions);
-  const commentsByPostId = useSocialStore((state) => state.commentsByPostId);
-  const repliesByCommentId = useSocialStore((state) => state.repliesByCommentId);
   const initializeInteractions = useSocialStore((state) => state.initializeInteractions);
   const toggleLike = useSocialStore((state) => state.toggleLike);
   const toggleSave = useSocialStore((state) => state.toggleSave);
@@ -654,18 +554,9 @@ export function ReviewFeedScreen() {
 
   const [filterMode, setFilterMode] = useState<FilterMode>("recent");
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeCommentReview, setActiveCommentReview] = useState<ActiveReviewCommentTarget | null>(
-    null,
-  );
-  const commentsSheetRef = useRef<BottomSheetModal>(null);
   const shareSheetRef = useRef<BottomSheetModal>(null);
-  const commentInputRef = useRef<TextInput>(null);
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
   const [serviceReviewItems, setServiceReviewItems] = useState<ReviewFeedItem[] | null>(null);
-  /** Helpful votes changed on this screen, by review id, until the next full reload. */
-  const [helpfulByReviewId, setHelpfulByReviewId] = useState<Record<string, ReviewHelpfulState>>(
-    {},
-  );
   const [photoViewer, setPhotoViewer] = useState<{
     photos: string[];
     label: string;
@@ -684,25 +575,7 @@ export function ReviewFeedScreen() {
   const feedCursorRef = useRef<{ before: string; beforeId: string } | undefined>(undefined);
   /** Newest created_at loaded, so a refocus asks only for newer reviews. */
   const newestCreatedAtRef = useRef<string | undefined>(undefined);
-  /** The latest helpful state per review (the state value lags a render behind rapid taps). */
-  const helpfulStateRef = useRef<Record<string, ReviewHelpfulState>>({});
-  const submitHelpfulVote = useMemo(
-    () =>
-      createHelpfulVoteQueue((reviewId, helpful) =>
-        getHungryService().reviews.setReviewHelpful(reviewId, helpful),
-      ),
-    [],
-  );
   const reviewReactionsEnabled = serviceProviderMode === "mock";
-  const openCommentsSheet = useCallback(() => {
-    const commentSheet = commentsSheetRef.current;
-    if (!commentSheet) return;
-
-    void commentSheet.present?.();
-    requestAnimationFrame(() => {
-      commentSheet.snapToIndex(0);
-    });
-  }, []);
   const searchBarWidth = screenWidth - spacing[8];
   const setTabSwipeLocked = useCallback(
     (isLocked: boolean) => {
@@ -784,9 +657,6 @@ export function ReviewFeedScreen() {
         // A full page of new rows may leave a gap before the loaded ones: start over from it.
         const startsOver = mode === "replace" || (mode === "prepend" && page.hasMore);
         if (startsOver) {
-          // A full reload carries the server's helpful counts and votes.
-          helpfulStateRef.current = {};
-          setHelpfulByReviewId({});
           feedCursorRef.current = page.nextCursor;
           newestCreatedAtRef.current = items[0]?.review.createdAt;
           setHasMoreServiceReviews(page.hasMore);
@@ -929,21 +799,6 @@ export function ReviewFeedScreen() {
     );
   }, [allReviews, searchQuery]);
 
-  const openReviewComments = useCallback(
-    (item: ReviewFeedItem) => {
-      if (!commentsEnabled) return;
-
-      setActiveCommentReview({
-        id: item.review.id,
-        authorName: item.review.authorName,
-        dishName: item.dishName,
-        caption: item.review.text,
-      });
-      openCommentsSheet();
-    },
-    [commentsEnabled, openCommentsSheet],
-  );
-
   // Tab press-to-top behavior intentionally disabled for bottom navigation.
 
   const openShareReview = useCallback(
@@ -967,13 +822,6 @@ export function ReviewFeedScreen() {
     },
     [repository],
   );
-
-  const requireAccountForComment = useCallback(() => {
-    if (isAuthenticated) return true;
-    // Close the sheet first so it does not stay on top of the sign-in screen.
-    commentsSheetRef.current?.dismiss();
-    return requireAccountForReviewAction("Sign in to comment.");
-  }, [isAuthenticated, requireAccountForReviewAction]);
 
   const handleSavePress = useCallback(
     (item: ReviewFeedItem) => {
@@ -1019,23 +867,6 @@ export function ReviewFeedScreen() {
     ],
   );
 
-  // Comment + reply counts per review, computed once per store change instead of per row.
-  const threadCountByReviewId = useMemo(() => {
-    const reviewIdByCommentId = new Map<string, string>();
-    const counts = new Map<string, number>();
-    Object.entries(commentsByPostId).forEach(([reviewId, comments]) => {
-      comments.forEach((comment) => reviewIdByCommentId.set(comment.id, reviewId));
-      counts.set(reviewId, comments.length);
-    });
-    Object.values(repliesByCommentId).forEach((replies) => {
-      replies.forEach((reply) => {
-        const reviewId = reviewIdByCommentId.get(reply.parentCommentId);
-        if (reviewId) counts.set(reviewId, (counts.get(reviewId) ?? 0) + 1);
-      });
-    });
-    return counts;
-  }, [commentsByPostId, repliesByCommentId]);
-
   const handleLikePress = useCallback(
     (targetItem: ReviewFeedItem) => {
       if (
@@ -1048,30 +879,6 @@ export function ReviewFeedScreen() {
       }
     },
     [requireAccountForReviewAction, reviewReactionsEnabled, toggleLike],
-  );
-  const handleHelpfulPress = useCallback(
-    (targetItem: ReviewFeedItem) => {
-      if (!requireAccountForReviewAction("Sign in to mark reviews helpful.")) return;
-      const reviewId = targetItem.review.id;
-      const base = reviewHelpfulState(targetItem.review);
-      const previous = helpfulStateRef.current[reviewId] ?? base;
-      const next = toggleReviewHelpful(previous);
-      const setHelpful = (state: ReviewHelpfulState) => {
-        helpfulStateRef.current = { ...helpfulStateRef.current, [reviewId]: state };
-        setHelpfulByReviewId(helpfulStateRef.current);
-      };
-      setHelpful(next);
-      trackAnalyticsEvent("review_helpful_toggled", {
-        review_id: reviewId,
-        helpful: next.helpful,
-      });
-      // One request at a time per review: quick taps cannot arrive out of order.
-      void submitHelpfulVote(reviewId, next.helpful, previous.helpful, (confirmed) => {
-        setHelpful(helpfulStateFor(base, confirmed));
-        showToast({ message: "Could not save your helpful vote.", tone: "warning" });
-      });
-    },
-    [requireAccountForReviewAction, showToast, submitHelpfulVote],
   );
   const handleSafetyPress = useCallback(
     (targetItem: ReviewFeedItem) => {
@@ -1144,7 +951,6 @@ export function ReviewFeedScreen() {
   const renderItem = useCallback(
     ({ item }: { item: ReviewFeedItem }) => {
       const baseInteraction = interactions[item.interactionId];
-      const helpful = helpfulByReviewId[item.review.id] ?? reviewHelpfulState(item.review);
       return (
         <ReviewCard
           item={item}
@@ -1156,17 +962,8 @@ export function ReviewFeedScreen() {
               : favouriteDishIds.includes(item.dishId)
           }
           shareCount={reviewReactionsEnabled ? (baseInteraction?.shareCount ?? 0) : 0}
-          commentCount={Math.max(
-            baseInteraction?.commentCount ?? 0,
-            threadCountByReviewId.get(item.review.id) ?? 0,
-          )}
           isOwnReview={Boolean(item.review.authorId && item.review.authorId === viewerId)}
-          commentsEnabled={commentsEnabled}
-          onCommentPress={openReviewComments}
           onLikePress={handleLikePress}
-          helpfulActive={helpful.helpful}
-          helpfulCount={helpful.count}
-          onHelpfulPress={handleHelpfulPress}
           onPressDish={handlePressDish}
           onSavePress={handleSavePress}
           onSharePress={openShareReview}
@@ -1182,16 +979,11 @@ export function ReviewFeedScreen() {
       favouriteDishIds,
       handleAuthorPress,
       handleLikePress,
-      handleHelpfulPress,
-      helpfulByReviewId,
       handlePhotoPress,
       handlePressDish,
       handleSafetyPress,
-      openReviewComments,
       openShareReview,
       handleSavePress,
-      commentsEnabled,
-      threadCountByReviewId,
       reviewReactionsEnabled,
       viewerId,
     ],
@@ -1337,15 +1129,6 @@ export function ReviewFeedScreen() {
           initialIndex={photoViewer.index}
           label={photoViewer.label}
           onClose={() => setPhotoViewer(null)}
-        />
-      ) : null}
-      {commentsEnabled ? (
-        <ReviewCommentsSheet
-          activeReview={activeCommentReview}
-          inputRef={commentInputRef}
-          innerRef={commentsSheetRef}
-          onDismiss={() => setActiveCommentReview(null)}
-          onBeforeSend={requireAccountForComment}
         />
       ) : null}
       <ReviewShareSheet

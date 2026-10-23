@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import { ExternalLink } from "lucide-react-native";
 
 import { BRAND_COLORS, BRAND_BUTTON_TEXT_COLORS } from "@/constants/brandColors";
@@ -13,6 +13,7 @@ interface DeliveryPlatformButtonProps {
   compact?: boolean;
   dishId?: string;
   venueId?: string;
+  style?: StyleProp<ViewStyle>;
 }
 
 // textColor keeps label contrast at 4.5:1 or better on each brand colour (white fails on
@@ -40,6 +41,7 @@ export function DeliveryPlatformButton({
   compact = false,
   dishId,
   venueId,
+  style,
 }: DeliveryPlatformButtonProps) {
   const { palette, radii, spacing, shadows } = useHungryTheme();
   const knownPlatform = platformMeta[link.platform];
@@ -97,20 +99,23 @@ export function DeliveryPlatformButton({
           ...shadows.card,
           backgroundColor: meta.color,
           borderRadius: radii.pill,
+          justifyContent: "center",
           opacity: pressed ? 0.9 : 1,
           paddingHorizontal: spacing[3],
           paddingVertical: compact ? spacing[2] : spacing[3],
+          transform: [{ scale: pressed ? 0.98 : 1 }],
         },
+        style,
       ]}
     >
       <View style={styles.row}>
         <AppText
-          variant="body"
+          variant="bodyBold"
           tone={knownPlatform ? undefined : "default"}
           style={knownPlatform ? { color: knownPlatform.textColor } : undefined}
           numberOfLines={1}
         >
-          {meta.label}
+          {meta.label.replace("Order on ", "")}
         </AppText>
         <ExternalLink size={16} color={knownPlatform ? knownPlatform.textColor : palette.text} />
       </View>
@@ -132,7 +137,7 @@ const styles = StyleSheet.create({
     width: 10,
   },
   button: {
-    minHeight: 48,
+    minHeight: 52,
   },
   row: {
     alignItems: "center",
@@ -141,3 +146,33 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 });
+
+/**
+ * Delivery apps as big brand buttons across the page: two share the width, a single one takes
+ * half of it (so it never reads as the page's main action).
+ */
+export function DeliveryButtonRow({
+  links,
+  dishId,
+  venueId,
+}: {
+  links: DeliveryLink[];
+  dishId?: string;
+  venueId?: string;
+}) {
+  const { spacing } = useHungryTheme();
+  if (links.length === 0) return null;
+  return (
+    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[3] }}>
+      {links.map((link) => (
+        <DeliveryPlatformButton
+          key={`${link.platform}:${link.webUrl}`}
+          link={link}
+          dishId={dishId}
+          venueId={venueId}
+          style={links.length === 1 ? { width: "48%" } : { flexBasis: "45%", flexGrow: 1 }}
+        />
+      ))}
+    </View>
+  );
+}

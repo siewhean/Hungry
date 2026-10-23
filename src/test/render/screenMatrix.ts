@@ -369,7 +369,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "ManualLocationPickerScreen",
     file: "src/app/screens/onboarding/ManualLocationPickerScreen.tsx",
     scenario: "user",
-    expect: /Pick a location/,
+    expect: /Use my current location/,
   },
   {
     name: "OnboardingAuthScreen",

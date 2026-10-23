@@ -16,6 +16,7 @@ export * from "./FeedStateView";
 export * from "./FilterChipRail";
 export * from "./FloatingToast";
 export * from "./FormSwitchRow";
+export * from "./AnimatedSwitch";
 export * from "./HungryLogo";
 export * from "./IconButton";
 export * from "./InlineSearchField";

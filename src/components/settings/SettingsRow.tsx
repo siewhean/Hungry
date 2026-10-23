@@ -1,9 +1,10 @@
 import { memo, type ReactNode } from "react";
-import { Pressable, StyleSheet, View, Switch } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { ChevronRight, ExternalLink } from "lucide-react-native";
 import { AppText } from "../ui";
 import { selectHaptic } from "@/lib/haptics";
 import { useHungryTheme } from "@/theme";
+import { AnimatedSwitch } from "@/components/ui/AnimatedSwitch";
 
 interface SettingsRowProps {
   label: string;
@@ -174,18 +175,14 @@ export const SettingsRow = memo(function SettingsRow({
         ) : null}
 
         {type === "toggle" ? (
-          <Switch
-            value={isEnabled}
+          <AnimatedSwitch
+            value={Boolean(isEnabled)}
             onValueChange={onToggle}
             disabled={busy}
             // The off track uses textMuted so it keeps 3:1 against the row (WCAG 1.4.11).
-            trackColor={{ false: palette.textMuted, true: palette.orange }}
-            thumbColor={palette.white}
-            ios_backgroundColor={palette.textMuted}
+            offTrackColor={palette.textMuted}
             // The row itself is the accessible switch; avoid a second, unlabeled control.
             accessible={false}
-            accessibilityElementsHidden
-            importantForAccessibility="no-hide-descendants"
           />
         ) : null}
       </View>

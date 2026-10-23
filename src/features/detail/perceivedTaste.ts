@@ -97,3 +97,21 @@ export function palateSummary(vector: TasteVector | undefined): {
       .map((entry) => entry.label),
   };
 }
+
+/** Every taste axis for the radar chart: the standard level, plus the diner's when they have a palette. */
+export function perceivedTasteAxes(
+  dishVector: TasteVector,
+  userVector: TasteVector | undefined,
+): { key: TasteKey; label: string; standard: number; perceived?: number }[] {
+  return TASTE_DIMENSIONS.map((dimension) => {
+    const standard = clampLevel(dishVector[dimension.key] ?? 0);
+    return {
+      key: dimension.key,
+      label: dimension.label,
+      standard,
+      ...(userVector
+        ? { perceived: perceivedTasteLevel(standard, userVector[dimension.key]) }
+        : {}),
+    };
+  });
+}

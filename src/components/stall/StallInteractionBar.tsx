@@ -10,7 +10,7 @@
 
 import { View, Pressable, StyleSheet, ActivityIndicator } from "react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Bookmark, CheckCircle, ListPlus, Navigation, Send } from "lucide-react-native";
+import { Bookmark, CheckCircle, ListPlus, Navigation, PenLine, Send } from "lucide-react-native";
 import { confirmHaptic, tapHaptic } from "@/lib/haptics";
 
 import { useHungryTheme } from "@/theme";
@@ -36,13 +36,17 @@ interface StallInteractionBarProps {
   isAddingToList?: boolean;
   /**
    * "card" is the in-page row (Save, Visited, Add to List). "sticky" is the bottom bar with
-   * Save, Share and Directions; it needs onShare and, when the stall has an address, onDirections.
+   * Directions and Save; holding an icon offers Share, Mark visited and Save to a collection.
    */
   layout?: "card" | "sticky";
   /** Card layout only: leave Save out when the sticky bar already carries it. */
   hideSave?: boolean;
   onShare?: () => void;
   onDirections?: () => void;
+  /** Sticky layout only: the orange "Review" button. */
+  onReview?: () => void;
+  /** Sticky layout only: offer "Mark visited" in the hold menu. */
+  showVisited?: boolean;
 }
 
 export function StallInteractionBar({
@@ -60,6 +64,8 @@ export function StallInteractionBar({
   hideSave = false,
   onShare,
   onDirections,
+  onReview,
+  showVisited = true,
 }: StallInteractionBarProps) {
   const { componentRadii, palette, spacing, typography } = useHungryTheme();
   const interactions = useStallInteractionStore((state) => state.interactions);
@@ -184,28 +190,8 @@ export function StallInteractionBar({
   }
 
   if (layout === "sticky") {
+    const interactionLoading = !isLoaded && isLoadingInteractions;
     const stickyActions: DetailAction[] = [
-      {
-        id: "save",
-        label: isSaved ? "Saved" : "Save",
-        icon: Bookmark,
-        active: isSaved,
-        fillWhenActive: true,
-        loading: savingInProgress || (!isLoaded && isLoadingInteractions),
-        onPress: () => void handleSave(),
-        accessibilityLabel: isSaved ? "Saved" : "Save this stall",
-      },
-      ...(onShare
-        ? [
-            {
-              id: "share",
-              label: "Share",
-              icon: Send,
-              onPress: onShare,
-              accessibilityLabel: "Share stall",
-            },
-          ]
-        : []),
       ...(onDirections
         ? [
             {
@@ -217,8 +203,64 @@ export function StallInteractionBar({
             },
           ]
         : []),
+      {
+        id: "save",
+        label: isSaved ? "Saved" : "Save",
+        icon: Bookmark,
+        active: isSaved,
+        fillWhenActive: true,
+        loading: savingInProgress || interactionLoading,
+        onPress: () => void handleSave(),
+        accessibilityLabel: isSaved ? "Saved" : "Save this stall",
+      },
     ];
-    return <DetailActionBar actions={stickyActions} testID="stall-action-bar" />;
+    // Held icons (or "More") open these: share, mark visited, save to a collection.
+    const secondaryActions: DetailAction[] = [
+      ...(onShare
+        ? [
+            {
+              id: "share",
+              label: "Share",
+              icon: Send,
+              onPress: onShare,
+              accessibilityLabel: "Share stall",
+            },
+          ]
+        : []),
+      ...(showVisited
+        ? [
+            {
+              id: "tried",
+              label: isTried ? "Visited" : "Mark visited",
+              icon: CheckCircle,
+              active: isTried,
+              role: "checkbox" as const,
+              loading: tryingInProgress || interactionLoading,
+              onPress: () => void handleTried(),
+              accessibilityLabel: isTried ? "Visited" : "Mark this stall visited",
+            },
+          ]
+        : []),
+      ...(onAddToList
+        ? [
+            {
+              id: "collection",
+              label: "Save to a collection",
+              icon: ListPlus,
+              loading: isAddingToList,
+              onPress: onAddToList,
+            },
+          ]
+        : []),
+    ];
+    return (
+      <DetailActionBar
+        actions={stickyActions}
+        secondaryActions={secondaryActions}
+        cta={onReview ? { label: "Review", icon: PenLine, onPress: onReview } : undefined}
+        testID="stall-action-bar"
+      />
+    );
   }
 
   const actions: {

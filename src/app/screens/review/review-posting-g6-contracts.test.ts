@@ -150,14 +150,13 @@ test("M12: guests are sent to sign in or email support instead of a failing repo
   assert.match(feed, /text: "Email support"/);
 });
 
-test("L1/L9/L10: cards take primitives, 44pt targets, one helpful request at a time", () => {
+test("L1/L9/L10: cards take primitives and 44pt targets, with no Helpful vote", () => {
   const feed = read("src/app/screens/review/ReviewFeedScreen.tsx");
-  assert.match(feed, /helpfulActive: boolean;/);
+  assert.match(feed, /likeCount: number;/);
+  assert.doesNotMatch(feed, /helpfulActive|createHelpfulVoteQueue|review_helpful_toggled/);
   assert.doesNotMatch(feed, /interaction: InteractionState/);
   assert.match(feed, /minHeight: 44,\s*minWidth: 44,/);
   assert.match(feed, /if \(serviceProviderMode !== "mock"\) return;\s*initializeInteractions\(/);
-  assert.match(feed, /createHelpfulVoteQueue\(/);
-  assert.match(feed, /trackAnalyticsEvent\("review_helpful_toggled"/);
 });
 
 test("L8: the success modal offers to share the new review", () => {

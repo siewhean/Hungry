@@ -29,7 +29,7 @@ test("Discover asks for an area instead of asserting the default location", () =
   // No OS permission prompt on mount; only the "Use current location" press asks.
   assert.doesNotMatch(screen, /useEffect\(\(\) => \{[^}]*grantLocation\(/);
   assert.match(screen, /const handleUseCurrentLocation = useCallback\(async \(\) => \{/);
-  assert.match(screen, /needsDiscoverAreaChoice\s*\? "Choose where you are"/);
+  assert.match(screen, /needsDiscoverAreaChoice\s*\?\s*"Singapore"/);
   assert.match(screen, /`You are at \$\{discoverHeaderLabel\}`/);
   assert.match(
     screen,
@@ -131,7 +131,7 @@ test("Collections are folded into Lists: no Collection screens, store or routes 
   assert.doesNotMatch(bar, /onAddToCollection/);
   assert.match(
     stallDetail,
-    /onAddToList=\{\s*FEATURE_FLAGS\.portfoliosEnabled\s*\? \(\) => void detailSaveActions\.addToPortfolio\(\)/,
+    /onAddToList=\{\s*showDeferredDetailControls && FEATURE_FLAGS\.portfoliosEnabled\s*\? \(\) => void detailSaveActions\.addToPortfolio\(\)/,
   );
 });
 
@@ -175,9 +175,10 @@ test("Search browse: guests can browse, chips never show everything, errors stay
 
 test("Area picker returns already-onboarded users without re-completing onboarding", () => {
   const picker = readRepoFile("src/app/screens/onboarding/ManualLocationPickerScreen.tsx");
-  const submit = picker.match(/const handleSubmit = \(\) => \{[\s\S]*?\n {2}\};/)?.[0] ?? "";
+  const submit =
+    picker.match(/const finish = \(message: string\) => \{[\s\S]*?\n {2}\};/)?.[0] ?? "";
 
-  assert.ok(submit, "handleSubmit should exist");
+  assert.ok(submit, "finish should exist");
   assert.match(
     submit,
     /if \(!isOnboarding\) \{[\s\S]*?navigation\.goBack\(\);\s*return;\s*\}[\s\S]*?navigation\.navigate\("TasteQuiz"\)/,

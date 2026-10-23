@@ -11,7 +11,8 @@ export const colors = {
     white: "#FFFFFF",
     textOnPrimary: "#FFFFFF",
     textOnDark: "#FFFFFF",
-    textOnOrange: "#0D0F14",
+    // White on brand orange (owner decision 2026-10-23): 3.69:1, passes AA for bold/large labels.
+    textOnOrange: "#FFFFFF",
     statusFast: "#047857",
     statusModerate: "#8A4D00",
     statusBusy: "#CD0302",
@@ -170,7 +171,7 @@ export const contrastRatios = {
     accentTextOnBg: 5.87,
     accentTextOnOrangeLight: 5.48,
     textOnOrangeControl: 5.87,
-    textOnBrandOrange: 5.19,
+    textOnBrandOrange: 3.69,
     textOnDestructive: 5.82,
     statusFastOnBg: 5.48,
     statusModerateOnBg: 6.68,

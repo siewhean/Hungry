@@ -111,7 +111,10 @@ test("21: one Lists area, and Saved has Dishes, Stalls and Lists tabs", () => {
   assert.match(lists, /navigation\.navigate\("PortfoliosHome"\)/);
   assert.match(lists, /FEATURE_FLAGS\.collectionsEnabled \?/);
   const saved = read("src/app/screens/profile/FavouritesScreen.tsx");
-  assert.match(saved, /dishes: "Dishes",\s*stalls: "Stalls",\s*posts: "Posts",\s*lists: "Lists"/);
+  assert.match(
+    saved,
+    /dishes: "Dishes",\s*stalls: "Stalls",\s*posts: "Posts",\s*lists: "Collections"/,
+  );
   assert.match(saved, /useStallFollowStore/);
   assert.match(saved, /navigation\.navigate\("ListsHome", undefined, \{ pop: true \}\)/);
 });

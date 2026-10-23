@@ -103,7 +103,7 @@ test("settings: device left-handed mode, deletion via RPC, alerts states, haptic
   assert.match(alerts, /Linking\.openSettings\(\)/);
   assert.match(section, /accessibilityRole="header"/);
   assert.doesNotMatch(section, /toUpperCase\(\)/);
-  assert.match(row, /trackColor=\{\{ false: palette\.textMuted/);
+  assert.match(row, /offTrackColor=\{palette\.textMuted\}/);
   assert.match(eslint, /name: "expo-haptics"/);
   assert.match(read("src/lib/haptics.ts"), /hapticFeedbackEnabled/);
 });

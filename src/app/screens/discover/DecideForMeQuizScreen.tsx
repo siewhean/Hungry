@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { Pressable, View } from "react-native";
+import { Pressable, View, useWindowDimensions } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Check, Dices } from "lucide-react-native";
+import { Check, Dices, Utensils } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, Button, Screen } from "@/components/ui";
+import { AccessibleImage, AppText, Button, Screen } from "@/components/ui";
 import {
   DECIDE_FOR_ME_OPTION_ID,
   DECIDE_QUESTIONS,
@@ -15,6 +15,7 @@ import { trackAnalyticsEvent } from "@/lib/analytics";
 import { selectHaptic, tapHaptic } from "@/lib/haptics";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useHungryTheme } from "@/theme";
+import { DECIDE_OPTION_IMAGES } from "./decideOptionImages";
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
@@ -25,6 +26,9 @@ type Navigation = NativeStackNavigationProp<RootStackParamList>;
 export function DecideForMeQuizScreen() {
   const navigation = useNavigation<Navigation>();
   const { componentRadii, palette, radii, spacing } = useHungryTheme();
+  const { width } = useWindowDimensions();
+  // Three cards per row inside the screen's spacing[4] gutters.
+  const tileWidth = Math.floor((width - spacing[4] * 2 - spacing[2] * 2) / 3);
   const setDecideForMe = useDiscoveryStore((state) => state.setDecideForMe);
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<DecideAnswers>({});
@@ -92,10 +96,11 @@ export function DecideForMeQuizScreen() {
           {question.title}
         </AppText>
 
-        <View style={{ gap: spacing[2] }}>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
           {question.options.map((option) => {
             const isDecide = option.id === DECIDE_FOR_ME_OPTION_ID;
             const selected = answers[question.id] === option.id;
+            const image = DECIDE_OPTION_IMAGES[option.id];
             return (
               <Pressable
                 key={option.id}
@@ -104,29 +109,66 @@ export function DecideForMeQuizScreen() {
                 accessibilityState={{ selected }}
                 onPress={() => choose(option.id)}
                 style={({ pressed }) => ({
-                  alignItems: "center",
-                  backgroundColor: isDecide
-                    ? palette.orangeLight
-                    : pressed
-                      ? palette.bgSoft
-                      : palette.surface,
+                  backgroundColor: isDecide ? palette.orangeLight : palette.surface,
                   borderColor: selected || isDecide ? palette.orange : palette.border,
                   borderRadius: componentRadii.card,
-                  borderWidth: 1,
-                  flexDirection: "row",
-                  gap: spacing[3],
-                  minHeight: 56,
-                  paddingHorizontal: spacing[4],
+                  borderWidth: selected ? 2 : 1,
+                  overflow: "hidden",
+                  transform: [{ scale: pressed ? 0.95 : 1 }],
+                  width: tileWidth,
                 })}
               >
-                {isDecide ? <Dices color={palette.orange} size={20} /> : null}
+                <View
+                  style={{
+                    alignItems: "center",
+                    backgroundColor: isDecide ? palette.orangeLight : palette.bgSoft,
+                    height: tileWidth - 2,
+                    justifyContent: "center",
+                  }}
+                >
+                  {image ? (
+                    <AccessibleImage
+                      source={image}
+                      decorative
+                      contentFit="cover"
+                      style={{ height: "100%", width: "100%" }}
+                    />
+                  ) : isDecide ? (
+                    <Dices color={palette.orange} size={32} />
+                  ) : (
+                    <Utensils color={palette.textMuted} size={28} />
+                  )}
+                  {selected ? (
+                    <View
+                      style={{
+                        alignItems: "center",
+                        backgroundColor: palette.orange,
+                        borderRadius: radii.pill,
+                        height: 24,
+                        justifyContent: "center",
+                        position: "absolute",
+                        right: spacing[1.5],
+                        top: spacing[1.5],
+                        width: 24,
+                      }}
+                    >
+                      <Check color={palette.textOnOrange} size={14} />
+                    </View>
+                  ) : null}
+                </View>
                 <AppText
-                  variant="bodyBold"
-                  style={{ color: isDecide ? palette.orangeDark : palette.text, flex: 1 }}
+                  variant="bodySmallBold"
+                  numberOfLines={2}
+                  style={{
+                    color: isDecide ? palette.orangeDark : palette.text,
+                    minHeight: 40,
+                    paddingHorizontal: spacing[2],
+                    paddingVertical: spacing[2],
+                    textAlign: "center",
+                  }}
                 >
                   {option.label}
                 </AppText>
-                {selected ? <Check color={palette.orange} size={20} /> : null}
               </Pressable>
             );
           })}

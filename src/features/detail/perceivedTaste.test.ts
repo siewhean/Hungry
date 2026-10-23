@@ -4,6 +4,7 @@ import test from "node:test";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import {
   palateSummary,
+  perceivedTasteAxes,
   perceivedDirection,
   perceivedTasteLevel,
   perceivedTasteRows,
@@ -75,5 +76,27 @@ test("palate summary splits strong likes from mild ones", () => {
   const summary = palateSummary({ ...NEUTRAL_TASTE_VECTOR, spicy: 9, sweet: 2, rich: 8 });
   assert.deepEqual(summary.loves, ["Spicy", "Rich"]);
   assert.deepEqual(summary.mild, ["Sweet"]);
+  assert.deepEqual(palateSummary(undefined), { loves: [], mild: [] });
+});
+
+test("radar axes cover every taste and add the diner's level only with a palette", () => {
+  const dish = { ...NEUTRAL_TASTE_VECTOR, spicy: 8, sweet: 2 };
+  const plain = perceivedTasteAxes(dish, undefined);
+  assert.equal(plain.length, Object.keys(NEUTRAL_TASTE_VECTOR).length);
+  assert.ok(plain.every((axis) => axis.perceived === undefined));
+  assert.equal(plain.find((axis) => axis.key === "spicy")?.standard, 8);
+  const forDiner = perceivedTasteAxes(dish, { ...NEUTRAL_TASTE_VECTOR, spicy: 2 });
+  const spicy = forDiner.find((axis) => axis.key === "spicy");
+  assert.ok(spicy?.perceived !== undefined && spicy.perceived > 8);
+  assert.equal(
+    perceivedTasteSentence({
+      key: "sweet",
+      label: "Sweet",
+      standard: 4,
+      perceived: 4,
+      direction: "same",
+    }),
+    "About as sweet as it is for most people",
+  );
   assert.deepEqual(palateSummary(undefined), { loves: [], mild: [] });
 });

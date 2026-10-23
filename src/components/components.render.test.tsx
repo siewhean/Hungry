@@ -3,15 +3,26 @@
 
 import assert from "node:assert/strict";
 import { createElement } from "react";
+import { View } from "react-native";
 import test, { afterEach, beforeEach } from "node:test";
 
 import { cleanup, render } from "@/test/render";
 import { DiscoverModeTabs } from "@/components/discover/DiscoverModeTabs";
 import { ForYouCard } from "@/components/discover/ForYouCard";
-import { RecentSearchChips } from "@/components/discover/RecentSearchChips";
 import { TrendingList } from "@/components/discover/TrendingList";
 import { WhatsHerePanel } from "@/components/discover/WhatsHerePanel";
 import { DetailActionBar } from "@/components/detail/DetailActionBar";
+import { FloatingBackButton } from "@/components/detail/FloatingBackButton";
+import { HeritageStampTile } from "@/components/gamification/HeritageStampTile";
+import {
+  CollectionAlbumCard,
+  NewCollectionTile,
+  collectionCountLabel,
+} from "@/components/portfolio/CollectionAlbumCard";
+import { CaptionPreview, captionNeedsMore } from "@/components/review/CaptionPreview";
+import { MenuFilterDropdown, menuFilterSummary } from "@/components/stall/MenuFilterDropdown";
+import { TasteRadarChart } from "@/components/taste/TasteRadarChart";
+import { AnimatedSwitch } from "@/components/ui/AnimatedSwitch";
 import { AchievementsSection } from "@/components/gamification/AchievementsSection";
 import { MissionCard } from "@/components/gamification/MissionCard";
 import { PassportBook } from "@/components/gamification/PassportBook";
@@ -476,11 +487,149 @@ test("DetailActionBar presses the right action and marks the active one", async 
       ],
     }),
   );
-  assert.match(view.text(), /Save/);
-  assert.match(view.text(), /Tried/);
+  // Icon-only buttons: the label is for assistive tech, not printed under the icon.
+  assert.doesNotMatch(view.text(), /Save|Tried/);
   await view.press(view.findByLabel("Save"));
   await view.press(view.findByLabel("Tried"));
   assert.deepEqual(pressed, ["save", "tried"]);
+});
+
+test("DetailActionBar opens the secondary menu and runs the orange call to action", async () => {
+  const pressed: string[] = [];
+  const view = await render(
+    createElement(DetailActionBar, {
+      actions: [
+        { id: "like", label: "Like", icon: () => null, onPress: () => pressed.push("like") },
+      ],
+      secondaryActions: [
+        { id: "share", label: "Share", icon: () => null, onPress: () => pressed.push("share") },
+      ],
+      cta: { label: "Review", onPress: () => pressed.push("review") },
+    }),
+  );
+  assert.match(view.text(), /Review/);
+  await view.press(view.findByLabel("More actions"));
+  assert.match(view.text(), /Share/);
+  await view.press(view.findByLabel("Share"));
+  await view.press(view.findByLabel("Review"));
+  assert.deepEqual(pressed, ["share", "review"]);
+});
+
+test("FloatingBackButton is a labelled back button", async () => {
+  let backs = 0;
+  const view = await render(createElement(FloatingBackButton, { onPress: () => (backs += 1) }));
+  await view.press(view.findByLabel("Go back"));
+  assert.equal(backs, 1);
+});
+
+test("TasteRadarChart describes every axis and shows the legend only with a palette", async () => {
+  const axes = [
+    { key: "spicy", label: "Spicy", standard: 7, perceived: 9 },
+    { key: "sweet", label: "Sweet", standard: 2, perceived: 1 },
+    { key: "rich", label: "Rich", standard: 5, perceived: 5 },
+  ];
+  const withPalette = await render(createElement(TasteRadarChart, { axes }));
+
+  assert.match(withPalette.text(), /For you/);
+  await withPalette.unmount();
+  const plain = await render(
+    createElement(TasteRadarChart, {
+      axes: axes.map(({ key, label, standard }) => ({ key, label, standard })),
+    }),
+  );
+  assert.doesNotMatch(plain.text(), /For you/);
+});
+
+test("CaptionPreview folds a long caption to a preview with ...more", async () => {
+  const long = "The broth is deep and peppery. ".repeat(6);
+  const view = await render(createElement(CaptionPreview, { text: long }));
+  assert.match(view.text(), /\.\.\.more/);
+  await view.press(view.findByLabel(long.trim()));
+  assert.match(view.text(), /Show less/);
+  await view.unmount();
+  const short = await render(createElement(CaptionPreview, { text: "Great rice." }));
+  assert.doesNotMatch(short.text(), /more/);
+  assert.equal(captionNeedsMore("Great rice."), false);
+  assert.equal(captionNeedsMore(long), true);
+});
+
+test("AnimatedSwitch is a switch that flips its value", async () => {
+  const values: boolean[] = [];
+  const view = await render(
+    createElement(AnimatedSwitch, {
+      value: false,
+      accessibilityLabel: "Push alerts",
+      onValueChange: (next: boolean) => values.push(next),
+    }),
+  );
+  await view.press(view.findByLabel("Push alerts"));
+  assert.deepEqual(values, [true]);
+});
+
+test("Collection album tiles open their collection and the new tile starts one", async () => {
+  const opened: string[] = [];
+  const view = await render(
+    createElement(
+      View,
+      null,
+      createElement(NewCollectionTile, { width: 150, onPress: () => opened.push("new") }),
+      createElement(CollectionAlbumCard, {
+        name: "Supper spots",
+        itemCount: 3,
+        coverPhotos: [],
+        width: 150,
+        onPress: () => opened.push("supper"),
+      }),
+    ),
+  );
+  assert.match(view.text(), /3 saved/);
+  await view.press(view.findByLabel("New collection"));
+  await view.press(view.findByLabel("Open collection Supper spots, 3 saved"));
+  assert.deepEqual(opened, ["new", "supper"]);
+  assert.equal(collectionCountLabel(1), "1 saved");
+});
+
+test("HeritageStampTile shows the detail when earned and Locked otherwise", async () => {
+  const earned = await render(
+    createElement(HeritageStampTile, {
+      title: "Laksa Lover",
+      subtitle: "Cuisine",
+      detail: "3 tried",
+      earned: true,
+      width: 110,
+    }),
+  );
+  assert.match(earned.text(), /3 tried/);
+  await earned.unmount();
+  const locked = await render(
+    createElement(HeritageStampTile, {
+      title: "Durian King",
+      subtitle: "Classic",
+      detail: "0 tried",
+      earned: false,
+      width: 110,
+    }),
+  );
+  assert.match(locked.text(), /Locked/);
+});
+
+test("MenuFilterDropdown summarises the filters and clears them", async () => {
+  assert.equal(menuFilterSummary("All", "All", []), "All dishes");
+  assert.equal(menuFilterSummary("Noodles", "All", ["Vegetarian"]), "Noodles · Vegetarian");
+  assert.equal(menuFilterSummary("Noodles", "All", ["Vegetarian", "Halal"]), "Noodles +2");
+  const view = await render(
+    createElement(MenuFilterDropdown, {
+      categories: ["All", "Noodles"],
+      activeCategory: "All",
+      onCategoryChange: () => undefined,
+      allCategory: "All",
+      dietaryOptions: [{ flag: "vegetarian", label: "Vegetarian", dishCount: 2 }],
+      activeDietaryFlags: [],
+      onDietaryFlagsChange: () => undefined,
+      resultCount: 4,
+    }),
+  );
+  assert.ok(view.findByLabel("Filter menu, All dishes"));
 });
 
 test("DiscoverModeTabs switches between What's here and For you", async () => {
@@ -577,23 +726,6 @@ test("WhatsHerePanel filters stalls by food type and price, and clears the filte
   assert.match(view.text(), /2 stalls/);
   await view.press(view.findByLabel("Open Stall rice"));
   assert.deepEqual(opened, ["rice"]);
-});
-
-test("RecentSearchChips lists searches, repeats one, and renders nothing when empty", async () => {
-  const chosen: string[] = [];
-  const view = await render(
-    createElement(RecentSearchChips, {
-      searches: ["laksa", "chicken rice"],
-      onSelect: (query: string) => chosen.push(query),
-    }),
-  );
-  assert.match(view.text(), /Recent searches/);
-  await view.press(view.findByLabel("Search chicken rice again"));
-  assert.deepEqual(chosen, ["chicken rice"]);
-  await view.rerender(
-    createElement(RecentSearchChips, { searches: [], onSelect: () => undefined }),
-  );
-  assert.doesNotMatch(view.text(), /Recent searches/);
 });
 
 test("TrendingList shows rich rows, opens one, and hides when there are none", async () => {

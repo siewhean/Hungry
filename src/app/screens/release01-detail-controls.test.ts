@@ -44,8 +44,12 @@ test("core-only builds keep detail controls read-only despite targeted feature o
   );
 
   assert.match(stall, /const showDeferredDetailControls = !FEATURE_FLAGS\.release01CoreOnly/);
-  assert.match(stall, /\{showDeferredDetailControls && isAuthenticated && venue \? \(/);
-  assert.match(stall, /\{showDeferredDetailControls && FEATURE_FLAGS\.collectionsEnabled \? \(/);
+  assert.match(stall, /showVisited=\{showDeferredDetailControls && isAuthenticated\}/);
+  assert.match(stall, /showDeferredDetailControls && FEATURE_FLAGS\.portfoliosEnabled/);
+  assert.match(
+    stall,
+    /showDeferredDetailControls && FEATURE_FLAGS\.reviewCreationEnabled\s*\? openWriteReview/,
+  );
   assert.match(
     stall,
     /\{showDeferredDetailControls && FEATURE_FLAGS\.merchantClaimCtaEnabled \? \(/,

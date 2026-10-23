@@ -7,7 +7,7 @@ const stall = readRepoFile("src/app/screens/detail/StallDetailScreen.tsx");
 const dish = readRepoFile("src/app/screens/detail/DishDetailScreenV2.tsx");
 
 test("Stitch stall layout keeps catalogue and review evidence dynamic", () => {
-  assert.match(stall, /Stall Profile/);
+  assert.match(stall, /<FloatingBackButton/);
   assert.match(stall, /Signature Dishes/);
   assert.match(stall, /Community Highlights/);
   assert.match(stall, /ratingSummary\s*\?/);
@@ -19,7 +19,7 @@ test("Stitch stall layout keeps catalogue and review evidence dynamic", () => {
 });
 
 test("Stitch dish layout keeps taste, rating, price, and menu data dynamic", () => {
-  assert.match(dish, /Dish Details/);
+  assert.match(dish, /<FloatingBackButton/);
   assert.match(dish, /How it tastes to you/);
   assert.match(dish, /Community Palate Feedback/);
   assert.match(dish, /dish\.mustOrder\s*\?/);

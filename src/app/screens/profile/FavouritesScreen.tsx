@@ -1,6 +1,6 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, View } from "react-native";
+import { ActivityIndicator, Pressable, View, useWindowDimensions } from "react-native";
 import {
   BellRing,
   Bookmark,
@@ -8,12 +8,14 @@ import {
   Navigation,
   PenLine,
   Star,
+  Search,
   Store,
+  X,
 } from "lucide-react-native";
 
 import { confirmHaptic } from "@/lib/haptics";
-import { PortfolioCard } from "@/components/portfolio";
-import { AccessibleImage, AppText, Button, Card, Chip, EmptyState } from "@/components/ui";
+import { CollectionAlbumCard, NewCollectionTile } from "@/components/portfolio";
+import { AccessibleImage, AppText, Button, Card, Chip, EmptyState, Input } from "@/components/ui";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { resolveListItemCount } from "@/features/checklistPortfolio/listLabels";
@@ -53,8 +55,21 @@ const SECTION_LABELS: Record<SavedSection, string> = {
   dishes: "Dishes",
   stalls: "Stalls",
   posts: "Posts",
-  lists: "Lists",
+  lists: "Collections",
 };
+
+/** Case-insensitive match on the dish or its stall, for the saved-dishes search box. */
+export function matchesSavedDishQuery(
+  dish: { name: string; venueName?: string },
+  query: string,
+): boolean {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return true;
+  return (
+    dish.name.toLowerCase().includes(needle) ||
+    (dish.venueName ?? "").toLowerCase().includes(needle)
+  );
+}
 
 export function FavouritesScreen({ navigation }: Props) {
   const profile = useProfileStore((state) => state.profile);
@@ -65,8 +80,38 @@ export function FavouritesScreen({ navigation }: Props) {
   const repository = getDataRepository();
   const [section, setSection] = useState<SavedSection>("dishes");
   const [tab, setTab] = useState<"want" | "tried">("want");
+  const [dishQuery, setDishQuery] = useState("");
   const dishIds = tab === "want" ? profile.favouriteDishIds : profile.reviewedDishIds;
-  const dishes = dishIds.map((dishId) => repository.getDishById(dishId)).filter(isDishDetail);
+  const allDishes = dishIds.map((dishId) => repository.getDishById(dishId)).filter(isDishDetail);
+  const dishes = allDishes.filter((dish) =>
+    matchesSavedDishQuery(
+      { name: dish.name, venueName: repository.getVenueById(dish.venueId)?.name },
+      dishQuery,
+    ),
+  );
+  const dishSearch = (
+    <Input
+      placeholder="Search your saved dishes"
+      accessibilityLabel="Search your saved dishes"
+      value={dishQuery}
+      onChangeText={setDishQuery}
+      returnKeyType="search"
+      autoCorrect={false}
+      leftIcon={<Search color={palette.textMuted} size={18} />}
+      rightIcon={
+        dishQuery ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Clear search"
+            hitSlop={12}
+            onPress={() => setDishQuery("")}
+          >
+            <X color={palette.textMuted} size={18} />
+          </Pressable>
+        ) : undefined
+      }
+    />
+  );
   const rootNavigation = getRootNavigation(navigation as any);
   const setDishTried = useProfileStore((state) => state.setDishTried);
   const toggleEaten = async (dishId: string) => {
@@ -116,11 +161,13 @@ export function FavouritesScreen({ navigation }: Props) {
       ) : section === "lists" ? (
         <SavedListsSection
           onOpenList={(portfolioId) => navigation.navigate("PortfolioDetail", { portfolioId })}
+          onCreateList={() => navigation.navigate("PortfolioCreate")}
           onOpenAllLists={() => navigation.navigate("ListsHome", undefined, { pop: true })}
         />
       ) : getServiceProvider().mode === "supabase" ? (
         <Fragment key={`${authenticatedUserId ?? "guest"}:${profile.id}`}>
-          <CatalogSavedDishes navigation={navigation} />
+          {dishSearch}
+          <CatalogSavedDishes navigation={navigation} query={dishQuery} />
         </Fragment>
       ) : (
         <>
@@ -136,6 +183,9 @@ export function FavouritesScreen({ navigation }: Props) {
               onPress={() => setTab("tried")}
             />
           </View>
+          {allDishes.length > 0 ? (
+            <View style={{ marginBottom: spacing[3] }}>{dishSearch}</View>
+          ) : null}
           {dishes.length ? (
             <View style={{ gap: spacing[4] }}>
               {dishes.map((dish) => {
@@ -292,6 +342,13 @@ export function FavouritesScreen({ navigation }: Props) {
                 );
               })}
             </View>
+          ) : allDishes.length > 0 ? (
+            <EmptyState
+              title="No matches"
+              body={`No saved dish matches "${dishQuery.trim()}".`}
+              ctaLabel="Clear search"
+              onPress={() => setDishQuery("")}
+            />
           ) : (
             <EmptyState
               title={tab === "want" ? "Nothing saved yet" : "No dishes tried yet"}
@@ -367,7 +424,7 @@ function SavedPostsSection({ onOpenPost }: { onOpenPost: (postId: string) => voi
 }
 
 /** Supabase: saved dish ids are catalog ids, so they resolve through the release catalog. */
-function CatalogSavedDishes({ navigation }: Pick<Props, "navigation">) {
+function CatalogSavedDishes({ navigation, query }: Pick<Props, "navigation"> & { query: string }) {
   const favouriteDishIds = useProfileStore((state) => state.profile.favouriteDishIds);
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
   const showToast = useUIStore((state) => state.showToast);
@@ -446,112 +503,116 @@ function CatalogSavedDishes({ navigation }: Pick<Props, "navigation">) {
           ctaLabel="Retry"
           onPress={() => void load()}
         />
+      ) : dishes.length && !dishes.some((dish) => matchesSavedDishQuery(dish, query)) ? (
+        <EmptyState title="No matches" body={`No saved dish matches "${query.trim()}".`} />
       ) : dishes.length ? (
         <View style={{ gap: spacing[4] }}>
-          {dishes.map((dish) => (
-            <View
-              key={dish.id}
-              style={{
-                backgroundColor: palette.surface,
-                borderColor: palette.border,
-                borderRadius: componentRadii.card,
-                borderWidth: 1,
-                overflow: "hidden",
-              }}
-            >
-              {dish.imageUrl ? (
-                <View style={{ height: 180, position: "relative" }}>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={`Open ${dish.name} at ${dish.venueName}`}
+          {dishes
+            .filter((dish) => matchesSavedDishQuery(dish, query))
+            .map((dish) => (
+              <View
+                key={dish.id}
+                style={{
+                  backgroundColor: palette.surface,
+                  borderColor: palette.border,
+                  borderRadius: componentRadii.card,
+                  borderWidth: 1,
+                  overflow: "hidden",
+                }}
+              >
+                {dish.imageUrl ? (
+                  <View style={{ height: 180, position: "relative" }}>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Open ${dish.name} at ${dish.venueName}`}
+                      onPress={() =>
+                        rootNavigation.navigate("CatalogRawDetail", { kind: "dish", id: dish.id })
+                      }
+                      style={{ height: "100%" }}
+                    >
+                      <AccessibleImage
+                        source={{ uri: dish.imageUrl }}
+                        style={{ width: "100%", height: "100%" }}
+                        contentFit="cover"
+                        decorative
+                      />
+                    </Pressable>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Remove ${dish.name} from favourites`}
+                      accessibilityState={{ busy: pendingDishId === dish.id }}
+                      disabled={pendingDishId === dish.id}
+                      onPress={() => void removeFavourite(dish)}
+                      style={{
+                        position: "absolute",
+                        top: spacing[2],
+                        right: spacing[2],
+                        alignItems: "center",
+                        height: 44,
+                        justifyContent: "center",
+                        width: 44,
+                        borderRadius: componentRadii.iconButton,
+                        backgroundColor: palette.surfaceTranslucent,
+                      }}
+                    >
+                      {pendingDishId === dish.id ? (
+                        <ActivityIndicator color={palette.orange} />
+                      ) : (
+                        <Bookmark size={18} color={palette.orange} fill={palette.orange} />
+                      )}
+                    </Pressable>
+                  </View>
+                ) : null}
+                <View style={{ padding: spacing[4], gap: spacing[3] }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "flex-start",
+                      justifyContent: "space-between",
+                      gap: spacing[2],
+                    }}
+                  >
+                    <AppText variant="h2" style={{ flex: 1 }} numberOfLines={2}>
+                      {dish.name}
+                    </AppText>
+                    {dish.price !== undefined ? (
+                      <AppText variant="price" style={{ color: palette.orange }}>
+                        S${dish.price.toFixed(2)}
+                      </AppText>
+                    ) : null}
+                  </View>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
+                    <Store color={palette.orange} size={15} />
+                    <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
+                      {dish.venueName}
+                    </AppText>
+                  </View>
+                  {dish.reviewCount && dish.rating ? (
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
+                      <Star color={palette.ratingStar} fill={palette.ratingStar} size={15} />
+                      <AppText variant="bodySmallBold">{dish.rating.toFixed(1)}</AppText>
+                      <AppText variant="bodySmall" tone="secondary">
+                        ({dish.reviewCount})
+                      </AppText>
+                    </View>
+                  ) : null}
+                  <Button
+                    label="View dish"
                     onPress={() =>
                       rootNavigation.navigate("CatalogRawDetail", { kind: "dish", id: dish.id })
                     }
-                    style={{ height: "100%" }}
-                  >
-                    <AccessibleImage
-                      source={{ uri: dish.imageUrl }}
-                      style={{ width: "100%", height: "100%" }}
-                      contentFit="cover"
-                      decorative
+                  />
+                  {!dish.imageUrl ? (
+                    <Button
+                      label={pendingDishId === dish.id ? "Removing..." : "Remove from saved"}
+                      variant="secondary"
+                      loading={pendingDishId === dish.id}
+                      onPress={() => void removeFavourite(dish)}
                     />
-                  </Pressable>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={`Remove ${dish.name} from favourites`}
-                    accessibilityState={{ busy: pendingDishId === dish.id }}
-                    disabled={pendingDishId === dish.id}
-                    onPress={() => void removeFavourite(dish)}
-                    style={{
-                      position: "absolute",
-                      top: spacing[2],
-                      right: spacing[2],
-                      alignItems: "center",
-                      height: 44,
-                      justifyContent: "center",
-                      width: 44,
-                      borderRadius: componentRadii.iconButton,
-                      backgroundColor: palette.surfaceTranslucent,
-                    }}
-                  >
-                    {pendingDishId === dish.id ? (
-                      <ActivityIndicator color={palette.orange} />
-                    ) : (
-                      <Bookmark size={18} color={palette.orange} fill={palette.orange} />
-                    )}
-                  </Pressable>
-                </View>
-              ) : null}
-              <View style={{ padding: spacing[4], gap: spacing[3] }}>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "flex-start",
-                    justifyContent: "space-between",
-                    gap: spacing[2],
-                  }}
-                >
-                  <AppText variant="h2" style={{ flex: 1 }} numberOfLines={2}>
-                    {dish.name}
-                  </AppText>
-                  {dish.price !== undefined ? (
-                    <AppText variant="price" style={{ color: palette.orange }}>
-                      S${dish.price.toFixed(2)}
-                    </AppText>
                   ) : null}
                 </View>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
-                  <Store color={palette.orange} size={15} />
-                  <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
-                    {dish.venueName}
-                  </AppText>
-                </View>
-                {dish.reviewCount && dish.rating ? (
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
-                    <Star color={palette.ratingStar} fill={palette.ratingStar} size={15} />
-                    <AppText variant="bodySmallBold">{dish.rating.toFixed(1)}</AppText>
-                    <AppText variant="bodySmall" tone="secondary">
-                      ({dish.reviewCount})
-                    </AppText>
-                  </View>
-                ) : null}
-                <Button
-                  label="View dish"
-                  onPress={() =>
-                    rootNavigation.navigate("CatalogRawDetail", { kind: "dish", id: dish.id })
-                  }
-                />
-                {!dish.imageUrl ? (
-                  <Button
-                    label={pendingDishId === dish.id ? "Removing..." : "Remove from saved"}
-                    variant="secondary"
-                    loading={pendingDishId === dish.id}
-                    onPress={() => void removeFavourite(dish)}
-                  />
-                ) : null}
               </View>
-            </View>
-          ))}
+            ))}
           {unavailableCount > 0 ? (
             <AppText tone="muted" variant="micro">
               {unavailableCount === 1
@@ -635,15 +696,18 @@ function SavedStallsSection({ onOpenStall }: { onOpenStall: (venueId: string) =>
   );
 }
 
-/** Your own lists (portfolios); the Lists area has checklists and discovery too. */
+/** Your collections (portfolios) as albums, with a tile to start a new one. */
 function SavedListsSection({
   onOpenList,
+  onCreateList,
   onOpenAllLists,
 }: {
   onOpenList: (portfolioId: string) => void;
+  onCreateList: () => void;
   onOpenAllLists: () => void;
 }) {
   const { spacing } = useHungryTheme();
+  const { width } = useWindowDimensions();
   const profileId = useProfileStore((state) => state.profile.id);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const portfolios = usePortfolioStore((state) => state.portfolios);
@@ -651,6 +715,9 @@ function SavedListsSection({
   const mineIds = usePortfolioStore((state) => state.scopeIds.mine);
   const loadPortfolioScope = usePortfolioStore((state) => state.loadPortfolioScope);
   const canLoad = FEATURE_FLAGS.portfoliosEnabled && isAuthenticated;
+  const repository = getDataRepository();
+  // Two columns inside the screen's spacing[4] gutters.
+  const tileWidth = (width - spacing[4] * 2 - spacing[3]) / 2;
 
   useEffect(() => {
     if (!canLoad) return;
@@ -665,23 +732,39 @@ function SavedListsSection({
       .filter((portfolio): portfolio is Portfolio => Boolean(portfolio));
   }, [mineIds, portfolios]);
 
+  // Cover mosaic: the first dish photos already in memory for each collection.
+  const coverPhotosById = useMemo(() => {
+    const covers = new Map<string, string[]>();
+    for (const portfolio of ownLists) {
+      const photos = (items[portfolio.id] ?? [])
+        .map((item) => (item.dishId ? repository.getDishById(item.dishId)?.imageUrl : undefined))
+        .filter((uri): uri is string => Boolean(uri));
+      covers.set(portfolio.id, Array.from(new Set(photos)).slice(0, 4));
+    }
+    return covers;
+  }, [items, ownLists, repository]);
+
   return (
-    <View style={{ gap: spacing[3] }}>
-      {ownLists.length === 0 ? (
-        <EmptyState
-          title="No lists yet"
-          body="Make a list of places worth recommending, then find it here."
-        />
-      ) : (
-        ownLists.map((portfolio) => (
-          <PortfolioCard
+    <View style={{ gap: spacing[4] }}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[3] }}>
+        <NewCollectionTile width={tileWidth} onPress={onCreateList} />
+        {ownLists.map((portfolio) => (
+          <CollectionAlbumCard
             key={portfolio.id}
-            portfolio={portfolio}
+            name={portfolio.name}
             itemCount={resolveListItemCount(portfolio, items[portfolio.id])}
+            coverPhotos={coverPhotosById.get(portfolio.id) ?? []}
+            width={tileWidth}
             onPress={() => onOpenList(portfolio.id)}
           />
-        ))
-      )}
+        ))}
+      </View>
+      {ownLists.length === 0 ? (
+        <AppText variant="bodySmall" tone="secondary" style={{ textAlign: "center" }}>
+          Make albums like &quot;Date night&quot; or &quot;Supper spots&quot;, then save dishes into
+          them from any dish page.
+        </AppText>
+      ) : null}
       <Button label="All lists" variant="secondary" onPress={onOpenAllLists} />
     </View>
   );

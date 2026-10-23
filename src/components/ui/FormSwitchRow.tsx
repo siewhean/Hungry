@@ -1,8 +1,9 @@
-import { Switch, View, type StyleProp, type ViewStyle } from "react-native";
+import { View, type StyleProp, type ViewStyle } from "react-native";
 
 import { selectHaptic } from "@/lib/haptics";
 import { useHungryTheme } from "@/theme";
 import { AppText } from "./AppText";
+import { AnimatedSwitch } from "./AnimatedSwitch";
 
 interface FormSwitchRowProps {
   label: string;
@@ -46,17 +47,13 @@ export function FormSwitchRow({
           </AppText>
         ) : null}
       </View>
-      <Switch
+      <AnimatedSwitch
         accessibilityLabel={label}
-        accessibilityState={{ checked: value }}
         value={value}
         onValueChange={(next) => {
           selectHaptic();
           onValueChange(next);
         }}
-        trackColor={{ false: palette.border, true: palette.orange }}
-        thumbColor={palette.white}
-        ios_backgroundColor={palette.border}
       />
     </View>
   );

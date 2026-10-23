@@ -86,17 +86,13 @@ test("nothing limits how many reviews a user writes for one dish", () => {
   }
 });
 
-test("review feed shows a Helpful button, gates guests and renames the A–Z chips", () => {
+test("review feed has no Helpful button and renames the A–Z chips", () => {
   const feed = read("src/app/screens/review/ReviewFeedScreen.tsx");
   assert.match(feed, /\{ id: "dish", label: "A–Z dish" \}/);
   assert.match(feed, /\{ id: "location", label: "A–Z stall" \}/);
   assert.doesNotMatch(feed, /By Dish|By Location/);
-  assert.match(feed, /requireAccountForReviewAction\("Sign in to mark reviews helpful\."\)/);
-  // One request at a time per review, so quick taps cannot arrive out of order.
-  assert.match(feed, /createHelpfulVoteQueue\(/);
-  assert.match(feed, /reviews\.setReviewHelpful\(reviewId, helpful\)/);
-  assert.match(feed, /submitHelpfulVote\(reviewId, next\.helpful, previous\.helpful/);
-  assert.match(feed, /<ThumbsUp/);
+  // Owner decision (round 2): the Helpful vote is gone from review cards.
+  assert.doesNotMatch(feed, /<ThumbsUp|Sign in to mark reviews helpful/);
   const service = read("src/lib/services/supabase/supabaseService.ts");
   assert.match(service, /merchant_replied_at,helpful_count/);
   assert.match(service, /\.from\("review_helpful_votes"\)/);

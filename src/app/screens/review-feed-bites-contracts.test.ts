@@ -32,12 +32,10 @@ test("Review feed cards do not render bottom bites sections", () => {
   assert.match(reviewFeed, /toggleFavourite\(localDish\)/);
   assert.match(reviewFeed, /: favouriteDishIds\.includes\(item\.dishId\)/);
   assert.match(reviewFeed, /incrementShare/);
-  assert.match(reviewFeed, /ReviewCommentsSheet/);
+  // Owner decision (round 2): review cards have no comments.
+  assert.doesNotMatch(reviewFeed, /ReviewCommentsSheet|commentsEnabled|openCommentsSheet/);
   assert.match(reviewFeed, /ReviewShareSheet/);
-  assert.match(reviewFeed, /commentsEnabled=\{commentsEnabled\}/);
-  assert.match(reviewFeed, /const openCommentsSheet = useCallback/);
-  assert.match(reviewFeed, /const commentSheet = commentsSheetRef\.current/);
-  assert.match(reviewFeed, /openCommentsSheet\(\)/);
+  assert.match(reviewFeed, /<CaptionPreview text=\{item\.review\.text\} \/>/);
   assert.match(reviewFeed, /shareSheetRef\.current\?\.present\(\)/);
   // Relative within a week, then a date that carries the year when it is not this year.
   assert.match(reviewFeed, /formatReviewDate\(item\.review\.createdAt\)/);
@@ -52,9 +50,8 @@ test("Review feed cards do not render bottom bites sections", () => {
   assert.match(reviewFeed, /"Save dish"/);
   assert.doesNotMatch(reviewFeed, /"Unsave review"/);
   assert.doesNotMatch(reviewFeed, /"Save review"/);
-  assert.match(reviewFeed, /accessibilityLabel="Open review comments"/);
+  assert.doesNotMatch(reviewFeed, /accessibilityLabel="Open review comments"/);
   assert.match(reviewFeed, /accessibilityLabel=\{liked \? "Unlike review" : "Like review"\}/);
-  assert.match(reviewFeed, /commentCount > 0/);
   assert.match(reviewFeed, /likeCount > 0/);
   assert.match(reviewFeed, /shareCount > 0/);
   assert.match(reviewFeed, /shareCount=\{reviewReactionsEnabled \?/);
@@ -68,7 +65,7 @@ test("Review feed cards do not render bottom bites sections", () => {
   assert.doesNotMatch(reviewFeed, /likeCount: item\.review\.rating/);
   assert.doesNotMatch(reviewFeed, /seededCommentsForActiveReview/);
   assert.doesNotMatch(reviewFeed, /seededComments=\{/);
-  assert.match(reviewFeed, /<Send[\s\S]*<Bookmark[\s\S]*<CommentIcon[\s\S]*<Heart/);
+  assert.match(reviewFeed, /<Heart[\s\S]*<Send[\s\S]*<Bookmark/);
   assert.match(reviewFeed, /justifyContent: "space-between"[\s\S]*justifyContent: "flex-end"/);
 
   assert.match(commentsSheet, /<BottomSheetModal/);

@@ -58,7 +58,6 @@ import {
 import { DiscoverModeTabs, type DiscoverMode } from "@/components/discover/DiscoverModeTabs";
 import { DiscoverViewToggle } from "@/components/discover/DiscoverViewToggle";
 import { ForYouCard } from "@/components/discover/ForYouCard";
-import { RecentSearchChips } from "@/components/discover/RecentSearchChips";
 import { TrendingList } from "@/components/discover/TrendingList";
 import { WhatsHerePanel } from "@/components/discover/WhatsHerePanel";
 import { StallLogoMark } from "@/components/stall/StallLogoMark";
@@ -99,7 +98,6 @@ import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useCurrentPlace } from "@/features/discover/currentPlace";
 import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
-import { useSearchStore } from "@/store/useSearchStore";
 import { useUIStore } from "@/store/useUIStore";
 import { DECIDE_INITIAL_RADIUS_METERS } from "@/features/discovery/decideForMeCandidates";
 import { isMerchantModeActive, useMerchantStore } from "@/store/useMerchantStore";
@@ -1267,6 +1265,7 @@ export function DiscoverHomeScreen() {
   const currentLocation = useLocationStore((state) => state.currentLocation);
   const manualLocation = useLocationStore((state) => state.manualLocation);
   const manualCoordinate = useLocationStore((state) => state.manualCoordinate);
+  const manualPlaceName = useLocationStore((state) => state.manualPlaceName);
   const grantLocation = useLocationStore((state) => state.grantLocation);
   const clearManualLocation = useLocationStore((state) => state.clearManualLocation);
   const showToast = useUIStore((state) => state.showToast);
@@ -1316,8 +1315,6 @@ export function DiscoverHomeScreen() {
     setActiveDiscoverChipIds((ids) => (ids.includes("dietary") ? ids : [...ids, "dietary"]));
   }, [profile.dietaryPreferences.length]);
   const [discoverMode, setDiscoverMode] = useState<DiscoverMode>("forYou");
-  const recentSearches = useSearchStore((state) => state.recentSearches);
-  const allowSearchHistory = useUIStore((state) => state.allowSearchHistory);
   const [visibleAreaStallCount, setVisibleAreaStallCount] = useState(
     DISCOVER_STALL_INITIAL_VISIBLE_COUNT,
   );
@@ -1411,15 +1408,18 @@ export function DiscoverHomeScreen() {
       });
     }
   }, [clearManualLocation, grantLocation, locationPermission, manualLocation, showToast]);
-  // Inside a mall, hawker centre or food court the header names it instead of the area. Only a
-  // real GPS fix counts: a picked area or the built-in default point is never "inside" a place.
+  // Inside a mall, hawker centre or food court the header names it instead of the area. A real
+  // GPS fix or a searched place counts; a searched area or the default point is never "inside".
   const { place: currentPlace, isResolving: isCurrentPlaceResolving } = useCurrentPlace(
-    locationPermission === "granted" && !manualCoordinate
+    (locationPermission === "granted" && !manualCoordinate) || (manualCoordinate && manualPlaceName)
       ? { latitude: discoverLocationLatitude, longitude: discoverLocationLongitude }
       : null,
   );
   const currentPlaceId = currentPlace?.id;
-  const discoverHeaderLabel = currentPlace?.name ?? discoverLocationLabel;
+  // Without a GPS fix or a searched area the header names the city, not a guessed area.
+  const discoverHeaderLabel = needsDiscoverAreaChoice
+    ? "Singapore"
+    : (currentPlace?.name ?? manualPlaceName ?? discoverLocationLabel);
 
   useEffect(() => {
     setVisibleAreaStallCount(DISCOVER_STALL_INITIAL_VISIBLE_COUNT);
@@ -1517,11 +1517,11 @@ export function DiscoverHomeScreen() {
   );
   const sortedChips = useMemo(() => {
     const baseChips = [{ id: "dietary" as const, label: "Dietary Needs" }, ...INTENT_CHIPS];
-    const prioritizeLateNight = isLateNightHour(currentHour);
-    if (prioritizeLateNight) {
+    // "Late night" only shows from 21:00 to 03:59, and then leads the row.
+    if (isLateNightHour(currentHour)) {
       return baseChips.sort((a, b) => (a.id === "late" ? -1 : b.id === "late" ? 1 : 0));
     }
-    return baseChips;
+    return baseChips.filter((chip) => chip.id !== "late");
   }, [currentHour]);
 
   // Tab press-to-top behavior intentionally disabled for bottom navigation.
@@ -2209,24 +2209,18 @@ export function DiscoverHomeScreen() {
           >
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={
-                needsDiscoverAreaChoice
-                  ? "Choose where you are"
-                  : `You are at ${discoverHeaderLabel}. Change area`
-              }
-              accessibilityHint="Pick a different area"
+              accessibilityLabel={`You are at ${discoverHeaderLabel}. Search for another area`}
+              accessibilityHint="Search for an area, mall, hawker centre or food court"
               hitSlop={DISCOVER_TEXT_LINK_HIT_SLOP}
               onPress={handleChangeArea}
               style={{ alignItems: "center", flex: 1, flexDirection: "row", gap: spacing[1] }}
             >
               <AppText
-                variant="h1"
+                variant="h2"
                 style={{ color: themeTints.text, flexShrink: 1 }}
                 numberOfLines={2}
               >
-                {needsDiscoverAreaChoice
-                  ? "Choose where you are"
-                  : `You are at ${discoverHeaderLabel}`}
+                {`You are at ${discoverHeaderLabel}`}
               </AppText>
               <ChevronDown color={themeTints.secondaryText} size={22} />
             </Pressable>
@@ -2302,13 +2296,6 @@ export function DiscoverHomeScreen() {
             </View>
           </Pressable>
         </View>
-
-        {allowSearchHistory && !inMallMode ? (
-          <RecentSearchChips
-            searches={recentSearches}
-            onSelect={(query) => navigation.navigate("SearchResults", { initialQuery: query })}
-          />
-        ) : null}
 
         {discoverLoadError || isFeedFallbackEmpty ? (
           <EmptyState

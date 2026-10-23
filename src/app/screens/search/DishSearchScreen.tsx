@@ -210,52 +210,36 @@ export function DishSearchScreen() {
             }}
             icon={<ArrowLeft color={palette.text} size={18} />}
           />
-          <AppText variant="display" style={{ color: palette.text }}>
-            Hungry
-          </AppText>
-          <View
-            style={{
-              alignItems: "center",
-              backgroundColor: palette.surface,
-              borderRadius: radii.pill,
-              flexDirection: "row",
-              gap: spacing[1],
-              paddingHorizontal: spacing[3],
-              paddingVertical: spacing[1],
-            }}
-          >
-            <MapPin color={palette.orange} size={14} />
-            <AppText variant="bodySmall">Singapore</AppText>
+          <View style={{ flex: 1 }}>
+            <Input
+              ref={searchInputRef}
+              autoFocus
+              leftIcon={<SearchIcon color={palette.textMuted} size={18} />}
+              rightIcon={
+                searchText ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Clear search"
+                    hitSlop={12}
+                    onPress={() => {
+                      setSearchText("");
+                      // Keep the user typing: clearing should not drop focus/keyboard.
+                      searchInputRef.current?.focus();
+                    }}
+                  >
+                    <X color={palette.textMuted} size={18} />
+                  </Pressable>
+                ) : undefined
+              }
+              placeholder="Try laksa, chicken rice, halal under $8"
+              accessibilityLabel="Search dishes, stalls, or hawker centres"
+              returnKeyType="search"
+              value={searchText}
+              onChangeText={setSearchText}
+              onSubmitEditing={() => openResults(searchText)}
+            />
           </View>
         </View>
-
-        <Input
-          ref={searchInputRef}
-          autoFocus
-          leftIcon={<SearchIcon color={palette.textMuted} size={18} />}
-          rightIcon={
-            searchText ? (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Clear search"
-                hitSlop={12}
-                onPress={() => {
-                  setSearchText("");
-                  // Keep the user typing: clearing should not drop focus/keyboard.
-                  searchInputRef.current?.focus();
-                }}
-              >
-                <X color={palette.textMuted} size={18} />
-              </Pressable>
-            ) : undefined
-          }
-          placeholder="Try laksa, chicken rice, halal under $8"
-          accessibilityLabel="Search dishes, stalls, or hawker centres"
-          returnKeyType="search"
-          value={searchText}
-          onChangeText={setSearchText}
-          onSubmitEditing={() => openResults(searchText)}
-        />
         {!trimmedSearchText ? (
           <ScrollView
             horizontal
@@ -268,20 +252,6 @@ export function DishSearchScreen() {
                 filter: undefined,
                 icon: <MapPin color={palette.textOnPrimary} size={16} />,
                 primary: true,
-              },
-              {
-                label: "Rice",
-                filter: "Rice",
-                icon: (
-                  <View
-                    style={{
-                      backgroundColor: palette.success,
-                      borderRadius: radii.pill,
-                      height: spacing[2],
-                      width: spacing[2],
-                    }}
-                  />
-                ),
               },
               {
                 label: "Under S$6",

@@ -60,7 +60,6 @@ test("P2-4: destructive dialog actions use the AA destructive fill and light lab
   assert.match(button, /backgroundColor: palette\.destructive/);
   assert.match(button, /variant === "destructive"\s*\?\s*palette\.textOnDestructive/);
 
-  for (const mode of ["light", "dark"] as const) {
-    assert.notEqual(colors[mode].textOnDestructive, colors[mode].textOnOrange);
-  }
+  // Dark mode keeps dark ink on orange, so its destructive label must differ from it.
+  assert.notEqual(colors.dark.textOnDestructive, colors.dark.textOnOrange);
 });

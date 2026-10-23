@@ -3,7 +3,6 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  StyleSheet,
   View,
   type LayoutChangeEvent,
   type NativeScrollEvent,
@@ -13,12 +12,15 @@ import {
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import * as ImagePicker from "expo-image-picker";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { useCallback, useEffect, useState, useRef, useMemo } from "react";
+import { useCallback, useEffect, useState, useRef, useMemo, type ReactNode } from "react";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Bookmark,
-  ChevronLeft,
+  ChevronDown,
+  ChevronRight,
+  ChevronUp,
   CircleHelp,
+  Clock3,
   Globe,
   Mail,
   MapPin,
@@ -39,18 +41,23 @@ import {
   Button,
   Card,
   Chip,
-  IconButton,
   Input,
   Skeleton,
 } from "@/components/ui";
 import { PhotoPager } from "@/components/dish/PhotoPager";
-import { DeliveryPlatformButton } from "@/components/dish/DeliveryPlatformButton";
+import { DeliveryButtonRow } from "@/components/dish/DeliveryPlatformButton";
+import { FloatingBackButton } from "@/components/detail/FloatingBackButton";
 import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
-import { DietaryFlagChips } from "@/components/dish/DietaryFlagChips";
-import { OwnReviewActions, ReviewPhotoStrip, ReviewReaderActions } from "@/components/review";
+import {
+  CaptionPreview,
+  OwnReviewActions,
+  ReviewPhotoStrip,
+  ReviewReaderActions,
+} from "@/components/review";
 import { summarizeStallDietaryFlags } from "@/features/detail/dietaryLabels";
 import { isOwnReview } from "@/features/review/reviewEdit";
 import { StallLogoMark } from "@/components/stall/StallLogoMark";
+import { MenuFilterDropdown } from "@/components/stall/MenuFilterDropdown";
 import {
   deriveStallCommunityReviews,
   STALL_COMMUNITY_REVIEW_LIMIT,
@@ -102,10 +109,7 @@ import type {
   OpeningSchedule,
   PublicMerchantProfile,
 } from "@/types/domain";
-import {
-  DetailSaveActionsCard,
-  useDetailSaveActions,
-} from "@/features/checklistPortfolio/DetailSaveActions";
+import { useDetailSaveActions } from "@/features/checklistPortfolio/DetailSaveActions";
 import { webShareUrl } from "@/constants/links";
 
 const CommentIcon = MessageCircle ?? MessageCircleMore;
@@ -138,6 +142,58 @@ const MENU_CATEGORY_ORDER = [
   "Sets",
   "Sides",
 ];
+
+function ContactRow({
+  icon,
+  label,
+  value,
+  accessibilityLabel,
+  onPress,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+  accessibilityLabel: string;
+  onPress: () => void;
+}) {
+  const { palette, radii, spacing } = useHungryTheme();
+  return (
+    <Pressable
+      accessibilityRole="link"
+      accessibilityLabel={accessibilityLabel}
+      onPress={onPress}
+      style={({ pressed }) => ({
+        alignItems: "center",
+        flexDirection: "row",
+        gap: spacing[3],
+        minHeight: 52,
+        opacity: pressed ? 0.75 : 1,
+      })}
+    >
+      <View
+        style={{
+          alignItems: "center",
+          backgroundColor: palette.orangeLight,
+          borderRadius: radii.pill,
+          height: 36,
+          justifyContent: "center",
+          width: 36,
+        }}
+      >
+        {icon}
+      </View>
+      <View style={{ flex: 1 }}>
+        <AppText variant="micro" tone="muted">
+          {label}
+        </AppText>
+        <AppText variant="body" numberOfLines={1}>
+          {value}
+        </AppText>
+      </View>
+      <ChevronRight color={palette.textMuted} size={18} />
+    </Pressable>
+  );
+}
 
 function StallDetailSkeleton() {
   const { spacing, radii, palette } = useHungryTheme();
@@ -389,7 +445,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const requireAccount = useRequireAccount();
   const showToast = useUIStore((state) => state.showToast);
-  const { componentRadii, palette, radii, spacing, zIndex } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const shareSheetRef = useRef<BottomSheetModal>(null);
@@ -476,6 +532,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const [merchantProfile, setMerchantProfile] = useState<PublicMerchantProfile>();
   const [openingSchedule, setOpeningSchedule] = useState<OpeningSchedule>();
   const [activeMenuCategory, setActiveMenuCategory] = useState(ALL_MENU_CATEGORY);
+  const [activeDietaryFlags, setActiveDietaryFlags] = useState<string[]>([]);
+  const [hoursExpanded, setHoursExpanded] = useState(false);
   const [menuQuery, setMenuQuery] = useState("");
   const [visibleMenuItemCount, setVisibleMenuItemCount] = useState(INITIAL_MENU_ITEM_COUNT);
   const contentBodyLayoutRef = useRef<{ y: number; height: number } | null>(null);
@@ -760,10 +818,24 @@ export function StallDetailScreen({ navigation, route }: Props) {
       activeMenuCategory === ALL_MENU_CATEGORY
         ? orderedMenuDishes
         : orderedMenuDishes.filter((dish) => menuCategoryByDishId[dish.id] === activeMenuCategory);
-    return trimmedMenuQuery
-      ? inCategory.filter((dish) => dish.name.toLowerCase().includes(trimmedMenuQuery))
+    // Every picked dietary need must be on the dish.
+    const forDiet = activeDietaryFlags.length
+      ? inCategory.filter((dish) =>
+          activeDietaryFlags.every((flag) =>
+            (dish.dietaryFlags ?? []).some((value) => value === flag),
+          ),
+        )
       : inCategory;
-  }, [activeMenuCategory, menuCategoryByDishId, orderedMenuDishes, trimmedMenuQuery]);
+    return trimmedMenuQuery
+      ? forDiet.filter((dish) => dish.name.toLowerCase().includes(trimmedMenuQuery))
+      : forDiet;
+  }, [
+    activeDietaryFlags,
+    activeMenuCategory,
+    menuCategoryByDishId,
+    orderedMenuDishes,
+    trimmedMenuQuery,
+  ]);
   const visibleMenuDishes = useMemo(
     () => filteredMenuDishes.slice(0, visibleMenuItemCount),
     [filteredMenuDishes, visibleMenuItemCount],
@@ -772,7 +844,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
 
   useEffect(() => {
     setVisibleMenuItemCount(INITIAL_MENU_ITEM_COUNT);
-  }, [activeMenuCategory, trimmedMenuQuery, venue?.id]);
+  }, [activeDietaryFlags, activeMenuCategory, trimmedMenuQuery, venue?.id]);
 
   useEffect(() => {
     if (!menuCategories.includes(activeMenuCategory)) {
@@ -881,8 +953,6 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const reviewedDishIds = profile.reviewedDishIds;
   const hasReviewedDishAtVenue = dishes.some((dish) => reviewedDishIds.includes(dish.id));
   const nextUnreviewedDish = dishes.find((dish) => !reviewedDishIds.includes(dish.id));
-  const headerButtonColor = palette.surface;
-  const headerButtonBorderColor = palette.border;
 
   // Only the signed-in bar calls this: guests are sent to sign in before they get here.
   const handleReviewRequiredForTried = () => {
@@ -1067,38 +1137,11 @@ export function StallDetailScreen({ navigation, route }: Props) {
     >
       <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["left", "right"]}>
         <View style={{ flex: 1 }}>
-          <View
-            style={[
-              styles.topNav,
-              {
-                backgroundColor: palette.surface,
-                height: insets.top + 56,
-                paddingTop: insets.top,
-                paddingHorizontal: spacing[3],
-                borderBottomWidth: 1,
-                borderBottomColor: palette.border,
-                zIndex: zIndex.overlay,
-              },
-            ]}
-          >
-            <IconButton
-              variant="floating"
-              accessibilityLabel="Go back"
-              onPress={goBackOrHome}
-              icon={<ChevronLeft color={palette.text} size={24} />}
-              style={{ backgroundColor: headerButtonColor, borderColor: headerButtonBorderColor }}
-            />
-            <AppText variant="h3" style={{ marginLeft: spacing[2] }}>
-              Stall Profile
-            </AppText>
-            <View style={{ flex: 1 }} />
-          </View>
           <ScrollView
             showsVerticalScrollIndicator={false}
             onScroll={handleScroll}
             scrollEventThrottle={120}
             contentContainerStyle={{
-              paddingTop: insets.top + 56,
               paddingBottom: insets.bottom + 96,
             }}
           >
@@ -1218,67 +1261,10 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     {openInfo.closureNotice}
                   </AppText>
                 ) : null}
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-                  {merchantProfile?.contactPhone ? (
-                    <Chip
-                      label="Call"
-                      accessibilityLabel={`Call ${venue.name}`}
-                      leftIcon={<Phone color={palette.orange} size={14} />}
-                      onPress={() =>
-                        openMerchantContact("phone", merchantProfile.contactPhone ?? "")
-                      }
-                    />
-                  ) : null}
-                </View>
                 {deliveryLinks.length > 0 ? (
-                  <View
-                    style={{
-                      alignItems: "center",
-                      flexDirection: "row",
-                      flexWrap: "wrap",
-                      gap: spacing[2],
-                    }}
-                  >
-                    <AppText variant="bodySmallBold" tone="secondary">
-                      ORDER ON
-                    </AppText>
-                    {deliveryLinks.map((link) => (
-                      <DeliveryPlatformButton
-                        key={`${link.platform}:${link.webUrl}`}
-                        link={link}
-                        compact
-                        venueId={venue.id}
-                      />
-                    ))}
-                  </View>
+                  <DeliveryButtonRow links={deliveryLinks} venueId={venue.id} />
                 ) : null}
               </View>
-              {/* Save / Visited / Add-to-List: the same row for guests and signed-in users */}
-              {showDeferredDetailControls && isAuthenticated && venue ? (
-                <StallInteractionBar
-                  hideSave
-                  stallId={venue.id}
-                  userId={profile.id}
-                  isAuthenticated={isAuthenticated}
-                  onRequireAuth={(message) => requireAuthForProtectedAction(message)}
-                  hasReviewedDishAtVenue={hasReviewedDishAtVenue}
-                  reviewPromptText="Try or review a dish here first, then mark this stall visited."
-                  onReviewRequired={handleReviewRequiredForTried}
-                  onSaved={() =>
-                    void getHungryService().discovery.recordMerchantActionEvent({
-                      eventType: "save",
-                      venueId: venue.id,
-                      userId: profile.id,
-                    })
-                  }
-                  onAddToList={
-                    FEATURE_FLAGS.portfoliosEnabled
-                      ? () => void detailSaveActions.addToPortfolio()
-                      : undefined
-                  }
-                  isAddingToList={detailSaveActions.isAddingToPortfolio}
-                />
-              ) : null}
               {/* Follow: a guest's tap goes through sign-in. */}
               {showDeferredDetailControls && venue ? (
                 <FollowStallButton
@@ -1292,14 +1278,6 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     )
                   }
                   onOpenAppSettings={() => navigation.navigate("Settings")}
-                />
-              ) : null}
-              {showDeferredDetailControls && FEATURE_FLAGS.collectionsEnabled ? (
-                <DetailSaveActionsCard
-                  title="Save this stall"
-                  body="Add this stall to your trying list."
-                  onAddToChecklist={detailSaveActions.addToChecklist}
-                  isAddingToChecklist={detailSaveActions.isAddingToChecklist}
                 />
               ) : null}
               {/* Menu */}
@@ -1325,25 +1303,6 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     </AppText>
                   ) : null}
                 </View>
-                {stallDietarySummary.length > 0 ? (
-                  <View style={{ gap: spacing[1] }}>
-                    <DietaryFlagChips
-                      flags={stallDietarySummary.map((item) => item.flag)}
-                      detailByFlag={Object.fromEntries(
-                        stallDietarySummary.map((item) => [
-                          item.flag,
-                          item.allDishes
-                            ? "all dishes"
-                            : `${item.dishCount} ${item.dishCount === 1 ? "dish" : "dishes"}`,
-                        ]),
-                      )}
-                    />
-                    <AppText variant="micro" tone="muted">
-                      Labels come from the stall or our catalogue. Check with the stall if it
-                      matters to you.
-                    </AppText>
-                  </View>
-                ) : null}
                 {menuStatus === "loading" ? (
                   <View
                     accessibilityLabel="Loading menu"
@@ -1375,22 +1334,19 @@ export function StallDetailScreen({ navigation, route }: Props) {
                         autoCorrect={false}
                       />
                     ) : null}
-                    {menuCategories.length > 2 ? (
-                      <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={{ gap: spacing[2], paddingRight: spacing[2] }}
-                      >
-                        {menuCategories.map((category) => (
-                          <Chip
-                            key={category}
-                            label={category}
-                            selected={activeMenuCategory === category}
-                            accessibilityLabel={`Filter menu by ${category}`}
-                            onPress={() => setActiveMenuCategory(category)}
-                          />
-                        ))}
-                      </ScrollView>
+                    {menuCategories.length > 2 || stallDietarySummary.length > 0 ? (
+                      <MenuFilterDropdown
+                        categories={
+                          menuCategories.length > 2 ? menuCategories : [ALL_MENU_CATEGORY]
+                        }
+                        activeCategory={activeMenuCategory}
+                        onCategoryChange={setActiveMenuCategory}
+                        allCategory={ALL_MENU_CATEGORY}
+                        dietaryOptions={stallDietarySummary}
+                        activeDietaryFlags={activeDietaryFlags}
+                        onDietaryFlagsChange={setActiveDietaryFlags}
+                        resultCount={filteredMenuDishes.length}
+                      />
                     ) : null}
                     {visibleMenuDishes.length > 0 ? (
                       <View
@@ -1415,7 +1371,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
                         <AppText variant="body" tone="secondary" style={{ textAlign: "center" }}>
                           {trimmedMenuQuery
                             ? `No dishes match "${menuQuery.trim()}".`
-                            : "No items in this category yet."}
+                            : activeDietaryFlags.length > 0
+                              ? "No dishes here match those filters."
+                              : "No items in this category yet."}
                         </AppText>
                       </Card>
                     )}
@@ -1469,22 +1427,71 @@ export function StallDetailScreen({ navigation, route }: Props) {
               ) : null}
               {/* Info: hours, address and the owner's words in one compact card */}
               <Card style={{ gap: spacing[4], padding: spacing[4] }}>
-                <View style={{ gap: spacing[1.5] }}>
-                  <AppText variant="bodyBold">Hours</AppText>
-                  <AppText variant="bodyBold" tone={openInfo.isOpen ? "success" : "default"}>
-                    {operatingStatusLabel}
-                  </AppText>
-                  {openInfo.todayRows.length > 0 && openInfo.todayRows !== hoursRows ? (
-                    <AppText variant="bodySmallBold">
-                      {openInfo.todayRows[0].label}: {openInfo.todayRows[0].text}
-                    </AppText>
-                  ) : null}
-                  {hoursRows.map((row) => (
-                    <AppText key={`${row.label}-${row.text}`} variant="bodySmall" tone="secondary">
-                      {row.label}: {row.text}
-                    </AppText>
-                  ))}
-                </View>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Opening hours, ${operatingStatusLabel}`}
+                  accessibilityHint={hoursExpanded ? "Hides the week" : "Shows every day's hours"}
+                  accessibilityState={{ expanded: hoursExpanded }}
+                  disabled={hoursRows.length === 0}
+                  onPress={() => setHoursExpanded((open) => !open)}
+                  style={({ pressed }) => ({ gap: spacing[1.5], opacity: pressed ? 0.75 : 1 })}
+                >
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
+                    <Clock3 color={palette.orange} size={18} />
+                    <View style={{ flex: 1, gap: spacing[0.5] }}>
+                      <AppText variant="bodyBold" tone={openInfo.isOpen ? "success" : "default"}>
+                        {operatingStatusLabel}
+                      </AppText>
+                      {openInfo.todayRows.length > 0 ? (
+                        <AppText variant="bodySmall" tone="secondary">
+                          {openInfo.todayRows[0].label}: {openInfo.todayRows[0].text}
+                        </AppText>
+                      ) : null}
+                    </View>
+                    {hoursRows.length > 0 ? (
+                      <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
+                        <AppText variant="bodySmallBold" tone="accent">
+                          {hoursExpanded ? "Hide" : "All hours"}
+                        </AppText>
+                        {hoursExpanded ? (
+                          <ChevronUp color={palette.orange} size={16} />
+                        ) : (
+                          <ChevronDown color={palette.orange} size={16} />
+                        )}
+                      </View>
+                    ) : null}
+                  </View>
+                  {hoursExpanded
+                    ? hoursRows.map((row) => {
+                        const isToday = openInfo.todayRows.some(
+                          (today) => today.label === row.label,
+                        );
+                        return (
+                          <View
+                            key={`${row.label}-${row.text}`}
+                            style={{
+                              flexDirection: "row",
+                              justifyContent: "space-between",
+                              paddingLeft: spacing[6],
+                            }}
+                          >
+                            <AppText
+                              variant={isToday ? "bodySmallBold" : "bodySmall"}
+                              tone={isToday ? "default" : "secondary"}
+                            >
+                              {row.label}
+                            </AppText>
+                            <AppText
+                              variant={isToday ? "bodySmallBold" : "bodySmall"}
+                              tone={isToday ? "default" : "secondary"}
+                            >
+                              {row.text}
+                            </AppText>
+                          </View>
+                        );
+                      })
+                    : null}
+                </Pressable>
 
                 <View
                   style={{
@@ -1514,7 +1521,6 @@ export function StallDetailScreen({ navigation, route }: Props) {
 
                 {merchantProfile &&
                 (merchantProfile.description ||
-                  merchantProfile.contactEmail ||
                   merchantProfile.cuisineCategories.length > 0 ||
                   merchantWebLinks.length > 0) ? (
                   <View
@@ -1543,24 +1549,6 @@ export function StallDetailScreen({ navigation, route }: Props) {
                         ))}
                       </View>
                     ) : null}
-                    {merchantProfile.contactEmail ? (
-                      <Pressable
-                        accessibilityRole="link"
-                        accessibilityLabel={`Email ${venue.name}`}
-                        onPress={() =>
-                          openMerchantContact("email", merchantProfile.contactEmail ?? "")
-                        }
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          gap: spacing[2],
-                          minHeight: 44,
-                        }}
-                      >
-                        <Mail color={palette.orange} size={16} />
-                        <AppText variant="body">{merchantProfile.contactEmail}</AppText>
-                      </Pressable>
-                    ) : null}
                     {merchantWebLinks.map((link) => (
                       <Pressable
                         key={`${link.platform}:${link.url}`}
@@ -1583,6 +1571,33 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   </View>
                 ) : null}
               </Card>
+              {merchantProfile?.contactPhone || merchantProfile?.contactEmail ? (
+                <Card style={{ gap: spacing[1], padding: spacing[4] }}>
+                  <AppText variant="bodyBold">Contact details</AppText>
+                  {merchantProfile.contactPhone ? (
+                    <ContactRow
+                      icon={<Phone color={palette.orange} size={18} />}
+                      label="Call"
+                      value={merchantProfile.contactPhone}
+                      accessibilityLabel={`Call ${venue.name} on ${merchantProfile.contactPhone}`}
+                      onPress={() =>
+                        openMerchantContact("phone", merchantProfile.contactPhone ?? "")
+                      }
+                    />
+                  ) : null}
+                  {merchantProfile.contactEmail ? (
+                    <ContactRow
+                      icon={<Mail color={palette.orange} size={18} />}
+                      label="Email"
+                      value={merchantProfile.contactEmail}
+                      accessibilityLabel={`Email ${venue.name}`}
+                      onPress={() =>
+                        openMerchantContact("email", merchantProfile.contactEmail ?? "")
+                      }
+                    />
+                  ) : null}
+                </Card>
+              ) : null}
               {showDeferredDetailControls && FEATURE_FLAGS.socialFeedEnabled ? (
                 <PopularVisitorsSection venueId={venue.id} horizontalPadding={0} />
               ) : null}
@@ -1719,13 +1734,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
                               {formatTimeAgo(review.createdAt)}
                             </AppText>
                           </View>
-                          <AppText
-                            variant="bodySmall"
-                            tone="secondary"
-                            style={{ marginTop: spacing[2] }}
-                          >
-                            {review.text}
-                          </AppText>
+                          <View style={{ marginTop: spacing[2] }}>
+                            <CaptionPreview text={review.text} />
+                          </View>
 
                           {review.photos.length > 0 ? (
                             <View style={{ marginTop: spacing[2] }}>
@@ -1876,8 +1887,24 @@ export function StallDetailScreen({ navigation, route }: Props) {
               }
               onShare={showDeferredDetailControls ? openShareSheet : undefined}
               onDirections={stallAddress || stallPin ? openStallMaps : undefined}
+              hasReviewedDishAtVenue={hasReviewedDishAtVenue}
+              reviewPromptText="Try or review a dish here first, then mark this stall visited."
+              onReviewRequired={isAuthenticated ? handleReviewRequiredForTried : undefined}
+              showVisited={showDeferredDetailControls && isAuthenticated}
+              onAddToList={
+                showDeferredDetailControls && FEATURE_FLAGS.portfoliosEnabled
+                  ? () => void detailSaveActions.addToPortfolio()
+                  : undefined
+              }
+              isAddingToList={detailSaveActions.isAddingToPortfolio}
+              onReview={
+                showDeferredDetailControls && FEATURE_FLAGS.reviewCreationEnabled
+                  ? openWriteReview
+                  : undefined
+              }
             />
           ) : null}
+          <FloatingBackButton onPress={goBackOrHome} />
 
           {showDeferredDetailControls ? (
             <ReviewShareSheet
@@ -1899,14 +1926,3 @@ export function StallDetailScreen({ navigation, route }: Props) {
     </FeedErrorBoundary>
   );
 }
-
-const styles = StyleSheet.create({
-  topNav: {
-    alignItems: "center",
-    flexDirection: "row",
-    left: 0,
-    position: "absolute",
-    right: 0,
-    top: 0,
-  },
-});

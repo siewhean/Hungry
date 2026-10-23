@@ -15,7 +15,8 @@ test("Stitch Search quick filters use supported result filters", () => {
   assert.match(home, /label: "Near Me",\s*filter: undefined/);
   assert.match(home, /label: "Under S\$6",\s*filter: "Under S\$6"/);
   assert.match(home, /label: "Halal",\s*filter: "Halal"/);
-  assert.match(home, /label: "Rice",\s*filter: "Rice"/);
+  // Owner decision (round 2): no Rice chip.
+  assert.doesNotMatch(home, /label: "Rice"/);
   assert.doesNotMatch(home, /filter: "Open Now"/);
   assert.match(filters, /export const BROWSE_FILTER_IDS = \[/);
   assert.match(home, /initialFilter: filter/);

@@ -6,6 +6,7 @@
 
 ## Current Focus
 
+- `STITCH-BUILD-03` — sh's 24 round-2 changes on the same branch (PR #121): Discover header and chips, area search, headerless search, dish/stall floating back and hold-menu bars, taste radar, similar dishes, stall contact/hours/filter dropdown, reviews (no Helpful/comments, photo required, caption preview), Saved collections + search, Passport stamps grid, Decide photo cards, spring switches, white on orange. Open: dark-mode text on orange, mall mode in `CatalogDiscoverHome`.
 - `STITCH-BUILD-02` — Built on `claude/project-thread-gt0f4d` (images 2-8 of the Stitch review). Perceived-taste model, mall-mode Discover (What's here / For you), Decide for Me questionnaire, dish and stall bottom bars with save counts, Achievements, Profile/Settings/Reviews/Saved restyle, and app-wide gentle haptics. Not done: Saved distance/sort, Passport "Active mission" restyle, mall mode in `CatalogDiscoverHome` (release builds), server-side likes and save counts (PR2 migration).
 
 - `STITCH-8-SCREENS-01` — Implemented on `codex/stitch-eight-screens` from
