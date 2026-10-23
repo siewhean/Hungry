@@ -203,3 +203,14 @@ test("profile home contract: a remembered merchant mode reopens the Merchant Cen
   );
   assert.match(store, /merchantModeActive: false,\s*merchantModeRestore: "none",\s*\};/);
 });
+
+test("profile home contract: account reads wait for a real profile id, not the guest placeholder", () => {
+  const source = read("src/app/screens/profile/ProfileHomeScreen.tsx");
+
+  assert.match(
+    source,
+    /const hasAccountProfile = isAuthenticated && profile\.id !== "guest-user";/,
+  );
+  // Posts, reviews, follow counts and follow requests all send profile.id to the server as a uuid.
+  assert.equal(source.match(/!hasAccountProfile/g)?.length, 4);
+});
