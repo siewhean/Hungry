@@ -37,7 +37,8 @@ test("Supabase chat service uses shared conversation tables and realtime", () =>
   assert.match(service, /buildConversationDedupeKey/);
   assert.match(service, /markConversationRead\(conversationId\)/);
   assert.match(service, /listReadReceiptsForMessages/);
-  assert.match(markReadBlock, /\.from\("read_receipts"\)\.insert\(missingReceiptRows\)/);
+  assert.match(markReadBlock, /\.rpc\("mark_conversation_read"/);
+  assert.doesNotMatch(markReadBlock, /\.from\("read_receipts"\)/);
   assert.match(service, /\.channel\(`conversation:\$\{conversationId\}`\)/);
   assert.match(service, /table: "messages"/);
   assert.match(service, /table: "read_receipts"/);

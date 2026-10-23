@@ -85,6 +85,14 @@ jobs:
       - name: Supabase static audit
         run: npm run audit:supabase:static
 
+      - name: Race condition patterns
+        run: |
+          node --test scripts/__tests__/check_race_patterns.test.mjs
+          npm run audit:races
+
+      - name: Race condition harness (two-session Postgres checks)
+        run: npm run test:races
+
       - name: Migration safety (down file and staging rehearsal for every new migration)
         run: |
           npm run test:migration-safety
