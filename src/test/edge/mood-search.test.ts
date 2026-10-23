@@ -48,6 +48,7 @@ interface Options {
   ipAllowed?: boolean | null;
   userAllowed?: boolean | null;
   headers?: Record<string, string>;
+  delays?: number[];
   env?: Record<string, string>;
 }
 
@@ -78,6 +79,7 @@ async function load(options: Options = {}) {
     env: { ...ENV, ...options.env },
     supabase,
     fetch: model.fetch,
+    delays: options.delays,
     now: NOW,
   });
   return { supabase, gemini: model, handler };
@@ -220,7 +222,7 @@ test("mood-search gives the slot back when Gemini cannot answer", async () => {
     () => geminiReply({}, "MAX_TOKENS"),
     () => new Error("overloaded"),
     () => geminiReply("{broken"),
-    () => new Response("quota", { status: 429 }),
+    () => new Response("bad request", { status: 400 }),
   ]) {
     const { handler, supabase } = await load({ gemini: gemini(reply) });
     const response = await handler(search("anything"));
@@ -288,4 +290,29 @@ test("mood-search also caps each signed-in user per minute, and fails open if th
 
   const down = await load({ ipAllowed: null, userAllowed: null });
   assert.equal((await down.handler(search("spicy"))).status, 200);
+});
+
+test("mood-search rides out a busy Gemini: it retries 429 and 5xx with growing waits, then gives up", async () => {
+  const busy = (status: number) => new Response("busy", { status });
+  const delays: number[] = [];
+  let attempt = 0;
+  const flaky = await load({
+    delays,
+    gemini: gemini(() => (attempt++ < 3 ? busy([429, 503, 500][attempt - 1]) : geminiReply(MOOD))),
+  });
+  const body = await json(await flaky.handler(search("anything")));
+  assert.equal(body.ok, true);
+  assert.equal(flaky.gemini.calls.length, 4);
+  assert.deepEqual(delays, [1000, 2500, 5000]);
+
+  const stuckDelays: number[] = [];
+  const stuck = await load({ delays: stuckDelays, gemini: gemini(() => busy(503)) });
+  const response = await stuck.handler(search("anything"));
+  assert.deepEqual([response.status, (await json(response)).error], [502, "parse_failed"]);
+  assert.equal(stuck.gemini.calls.length, 4, "four attempts, then the slot is given back");
+
+  const refusedDelays: number[] = [];
+  const refused = await load({ delays: refusedDelays, gemini: gemini(() => busy(400)) });
+  await refused.handler(search("anything"));
+  assert.deepEqual([refused.gemini.calls.length, refusedDelays], [1, []], "a 400 is not retried");
 });

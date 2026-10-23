@@ -126,6 +126,8 @@ export interface LoadOptions {
   env?: Record<string, string>;
   supabase?: FakeSupabase;
   fetch?: typeof fetch;
+  /** Receives the delay of every `setTimeout` the function asks for; the timer then fires at once. */
+  delays?: number[];
   /** Freezes `new Date()` and `Date.now()` inside the function. */
   now?: Date;
   /** Collects what the function sends to Sentry (set `SENTRY_DSN` in `env` to switch reporting on). */
@@ -292,7 +294,11 @@ export async function loadEdgeFunction(
         };
 
   const module = { exports: {} };
-  new Function("module", "exports", "Deno", "__edge", "fetch", "Date", code)(
+  const instantTimeout = (callback: () => void, delay?: number) => {
+    options.delays?.push(delay ?? 0);
+    return setTimeout(callback, 0);
+  };
+  new Function("module", "exports", "Deno", "__edge", "fetch", "Date", "setTimeout", code)(
     module,
     module.exports,
     Deno,
@@ -302,6 +308,7 @@ export async function loadEdgeFunction(
         throw new Error(`${name} called fetch but the test gave none`);
       }),
     FunctionDate,
+    instantTimeout,
   );
   if (!handler) throw new Error(`${name} never called Deno.serve`);
   return handler;
