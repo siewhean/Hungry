@@ -41,3 +41,27 @@ test("a failed write keeps the queued quiz answers; the next flush saves them on
     service.profile.recordQuizResponse = original;
   }
 });
+
+test("a signed-in quiz is written straight away and answers older than a week are dropped", async () => {
+  const service = getHungryService();
+  const original = service.profile.recordQuizResponse;
+  const writes: Record<string, unknown>[] = [];
+  service.profile.recordQuizResponse = async (responses) => {
+    writes.push(responses);
+  };
+  try {
+    useSessionStore.setState({ isAuthenticated: true });
+    recordQuizResponse({ flowMode: "retake" }, NEUTRAL_TASTE_VECTOR);
+    await Promise.resolve();
+    assert.equal(writes.length, 1);
+
+    useSessionStore.setState({ isAuthenticated: false });
+    recordQuizResponse({ flowMode: "onboarding" }, NEUTRAL_TASTE_VECTOR);
+    await flushPendingQuizResponse(Date.now() + 8 * 24 * 60 * 60 * 1000);
+    await flushPendingQuizResponse();
+    assert.equal(writes.length, 1);
+  } finally {
+    service.profile.recordQuizResponse = original;
+    useSessionStore.setState({ isAuthenticated: false });
+  }
+});
