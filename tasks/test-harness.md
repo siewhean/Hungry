@@ -71,6 +71,26 @@ Run focused source/service contracts directly when one slice changes:
 TMPDIR=/private/tmp HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/app/user-mode-coverage-contracts.test.ts
 ```
 
+## Gate 3a — Everything-is-tested ratchet
+
+The app keeps "every page, store, service and Edge Function is tested" true automatically. All of it runs in CI.
+
+| What | Command | Fails when |
+|------|---------|------------|
+| Unit and behaviour tests | `npm run test` | Any test fails |
+| Screen and component render tests | `npm run test:render` | A screen has no row in `src/test/render/screenMatrix.ts`, a screen shows the wrong thing or logs an unexpected console error, or a shared component test fails |
+| Coverage ratchet | `npm run test:coverage` | Line coverage drops more than 0.3 points, a file drops more than 3 points (or 3 lines, for small files), or a new file under `src/` starts below 70% (baseline in `tests/coverage-baseline.json`) |
+| Test-presence guard | `src/app/test-coverage-guard-contracts.test.ts` (part of `npm run test`) | A new screen, store, service, hook, feature module, shared component or Edge Function is not named by any test |
+
+Rules for all new work:
+
+- A new screen needs a row in `src/test/render/screenMatrix.ts` (who sees it, what it should show). Use `src/app/screens/flows.render.test.tsx` as the pattern for a click-through flow.
+- New logic needs a behaviour test next to it. Do not add files to the guard's allowlists; they are empty on purpose and only ever shrink.
+- Edge Functions run under Node through `src/test/edge/harness.ts` (`loadEdgeFunction`, `FakeSupabase`, frozen `now`, fake `fetch` and Anthropic). Copy `src/test/edge/purge-orphan-media.test.ts`.
+- Supabase service methods run against a fake client with `src/test/supabase/appClient.ts`. Copy `src/lib/services/supabase/supabaseService.behaviour.test.ts`.
+- After adding tests, run `npm run test:coverage:update` and commit `tests/coverage-baseline.json`. The updater only ever raises a number.
+- Render tests need `jsdom` (a devDependency). They swap `react-native` for `react-native-web` and stub native packages (`src/test/renderPreload.cjs`).
+
 ## Gate 3b — Playwright Web/Mobile Browser
 
 | Command | `npm run test:e2e -- --reporter=line` |
@@ -333,10 +353,10 @@ it('DishCard renders dish name', () => {
 Run this before broad pushes or release gates:
 
 ```bash
-npm run typecheck && npm run test
+npm run typecheck && npm run test:coverage && npm run test:render
 ```
 
-Both must exit 0.
+All three must exit 0.
 
 ---
 

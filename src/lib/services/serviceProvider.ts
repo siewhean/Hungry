@@ -109,7 +109,7 @@ function getExcelDiscoveryService(): DiscoveryService {
   return excelService.discovery;
 }
 
-function createResilientDiscoveryService(primary: DiscoveryService): DiscoveryService {
+export function createResilientDiscoveryService(primary: DiscoveryService): DiscoveryService {
   let fallback: DiscoveryService | null = null;
   const getFallback = () => {
     fallback ??= getExcelDiscoveryService();
