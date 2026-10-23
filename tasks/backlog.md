@@ -18,7 +18,8 @@
   failures are repaired (33/33 affected tests pass locally). Clean CI passed the
   coverage and render gates, then exposed Profile web accessibility errors and
   stale Profile/Search browser selectors. These are repaired with 24/24 focused
-  contracts passing; fresh CI and native visual smoke remain pending.
+  contracts passing. PR #116 CI, Security, and merge compatibility pass on
+  `a1ba4c863`; native visual smoke remains pending.
 
 - `SG-FNB-REGISTRY-01` — SFA-backed Singapore-wide public-access register plus alphabetized enrichment output. Regenerate base with `python3 scripts/refresh_sfa_verified_fnb_catalog.py` and enriched list with `python3 scripts/enrich_public_access_fnb_catalog.py`. The enriched CSV preserves the base 38,584 records, all 55 backup workbook headers, and exact-licence joins. Its 16,769 upstream menu rows carry approval/rights flags that deeper review found insufficient to prove reuse or freshness; the current Excel export filters platform/unavailable sources and keeps 509 dated-as-unknown historical candidates. Backup details remain dated 2026-04-04; they are not relabelled current. Permanent-closure proof and fresh verification of every menu/rating remain unclaimed.
 - `SG-FNB-WEB-REVIEW-01` — Review-only official-site scrape launched 2026-10-15. Three batches checked 75 candidate websites with zero catalogue writes; closure scan reviewed 7 extracted-source venues and found zero explicit permanent/temporary closure signals. Menu/image candidates require exact venue/menu review and image reuse permission before cataloguing. Google photos are not cached; fresh attributed Places display requires compliant live API usage. Not a Singapore-wide verification.
