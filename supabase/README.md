@@ -66,6 +66,7 @@ Required function environment variables:
 - `INGEST_MENU_PHOTO_ALLOWED_ORIGINS` (comma-separated exact origins; origin-less native requests are accepted after JWT validation)
 - `GOOGLE_CLOUD_VISION_API_KEY`
 - `GEMINI_API_KEY` (optional; falls back to deterministic OCR parsing when absent)
+- `AI_PROVIDER` / `AI_MODEL` (optional; pick the model for `mood-search` and `tag-dishes`: `gemini` with `GEMINI_API_KEY` (default model `gemini-3.8-flash`) or `anthropic` with `ANTHROPIC_API_KEY` (default `claude-haiku-5-5`))
 - `OPS_DISHES_DRAFT_ALLOWED_ORIGINS` (comma-separated exact trusted ops origins; native no-origin requests still require JWT)
 - `SUPABASE_ANON_KEY` (used to validate caller JWT before service-role operations)
 

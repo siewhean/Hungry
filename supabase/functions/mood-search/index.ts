@@ -2,8 +2,8 @@
 /* eslint-disable import/no-unresolved */
 import { reportFunctionError, serveWithSentry } from "../_shared/sentry.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.52.0";
-import { generateJson } from "../_shared/gemini.ts";
-import { MODEL, TASTE_AXES } from "../_shared/tasteTagging.ts";
+import { type AiSettings, generateJson, resolveAi } from "../_shared/aiProvider.ts";
+import { TASTE_AXES } from "../_shared/tasteTagging.ts";
 
 type JsonObject = Record<string, unknown>;
 
@@ -84,10 +84,8 @@ function toIntent(result: JsonObject): JsonObject {
   };
 }
 
-async function parseMood(apiKey: string, query: string): Promise<JsonObject | null> {
-  const result = await generateJson({
-    apiKey,
-    model: MODEL,
+async function parseMood(ai: AiSettings, query: string): Promise<JsonObject | null> {
+  const result = await generateJson(ai, {
     system: SYSTEM_PROMPT,
     user: query,
     schema: OUTPUT_SCHEMA,
@@ -177,9 +175,9 @@ serveWithSentry("mood-search", async (request) => {
     return toJson(200, { ok: true, cached: true, intent });
   }
 
-  const geminiApiKey = Deno.env.get("GEMINI_API_KEY") ?? "";
-  if (!geminiApiKey) {
-    return toJson(500, { error: "missing_gemini_api_key" });
+  const ai = resolveAi((name) => Deno.env.get(name));
+  if (ai.problem) {
+    return toJson(500, { error: ai.problem });
   }
 
   // Check the daily cap and claim a slot in one locked step, so parallel calls
@@ -197,7 +195,7 @@ serveWithSentry("mood-search", async (request) => {
   }
 
   try {
-    const intent = await parseMood(geminiApiKey, query);
+    const intent = await parseMood(ai, query);
     if (!intent) {
       await client.from("mood_search_queries").delete().eq("id", slotId);
       return toJson(502, { error: "parse_failed" });

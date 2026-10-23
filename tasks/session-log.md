@@ -820,3 +820,4 @@ All 9 required audit documents updated in `tasks/Roadmap/`:
 - 2026-10-22: Prod moved to Singapore (frluxwpqqyomiqmjzavd); safe-migration runbook prod URL updated; Seoul paused as fallback.
 - 2026-10-22: ProfileHomeScreen waits for a real profile id before account reads (guest-user placeholder was sent as a uuid).
 - 2026-10-22: Gemini helper retries 429/5xx with backoff (4 attempts) and reports the response body; tests in src/lib/ai/geminiHelper.test.ts.
+- 2026-10-23: mood-search and tag-dishes read AI_PROVIDER / AI_MODEL secrets (gemini default, or anthropic with ANTHROPIC_API_KEY); shared retry in _shared/aiRetry.ts; tests in src/lib/ai/aiProvider.test.ts.
