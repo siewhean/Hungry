@@ -35,6 +35,12 @@ export const Animated = {
 
 export const ActivityIndicator = "ActivityIndicator" as any;
 
+// Mutable so a test can capture listeners and choose which input is focused.
+export const Keyboard = {
+  addListener: (_event: string, _listener: (...args: any[]) => void) => ({ remove: () => {} }),
+} as any;
+export const TextInput = { State: {} as Record<string, any> } as any;
+
 export type StubAlertButton = { text?: string; style?: string; onPress?: () => void };
 export type StubAlertCall = { title: string; message?: string; buttons?: StubAlertButton[] };
 

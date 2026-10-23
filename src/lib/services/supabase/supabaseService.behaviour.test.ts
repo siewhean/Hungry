@@ -290,7 +290,7 @@ test("listBlockedUsers and listHiddenPosts map rows and throw on error", async (
   await rejectsWith(service.communitySafety.listHiddenPosts(), /offline/);
 });
 
-test("requestAccountDeletion proves the emailed code, queues the request, then signs out everywhere", async () => {
+test("requestAccountDeletion proves the emailed code, queues the request, and leaves sign-out to the caller", async () => {
   fake.rpc.request_my_account_deletion = () => ({ data: "2026-11-21T00:00:00Z" });
   const result = await service.auth.requestAccountDeletion({ code: " 123456 ", reason: "leaving" });
   assert.deepEqual(result, { scheduledFor: "2026-11-21T00:00:00Z" });
@@ -299,11 +299,11 @@ test("requestAccountDeletion proves the emailed code, queues the request, then s
     { email: "me@example.sg", token: "123456", type: "email" },
   ]);
   assert.deepEqual(fake.callsTo("request_my_account_deletion")[0].args, { p_reason: "leaving" });
-  assert.deepEqual(auth.calls.find((call) => call.method === "signOut")!.args, [
-    { scope: "global" },
-  ]);
-  const order = [...auth.calls.map((call) => call.method)];
-  assert.ok(order.indexOf("verifyOtp") < order.indexOf("signOut"));
+  assert.equal(
+    auth.calls.some((call) => call.method === "signOut"),
+    false,
+    "the caller purges local data and then signs out through the session store",
+  );
 });
 
 test("requestAccountDeletion needs sign-in, a code, and a code for the same account", async () => {
@@ -330,18 +330,20 @@ test("requestAccountDeletion needs sign-in, a code, and a code for the same acco
   );
 });
 
-test("requestAccountDeletion still succeeds when the global sign-out fails, falling back to this device", async () => {
+test("requestAccountDeletion defaults the reason and rejects a response without a date", async () => {
   fake.rpc.request_my_account_deletion = () => ({ data: "2026-11-21T00:00:00Z" });
-  auth.failures.signOut = { message: "network" };
-  const result = await service.auth.requestAccountDeletion({ code: "123456" });
-  assert.equal(result.scheduledFor, "2026-11-21T00:00:00Z");
-  assert.ok(auth.calls.filter((call) => call.method === "signOut").length >= 2);
+  await service.auth.requestAccountDeletion({ code: "123456" });
+  assert.deepEqual(fake.callsTo("request_my_account_deletion")[0].args, {
+    p_reason: "user_initiated_settings_flow",
+  });
 
   fake.rpc.request_my_account_deletion = () => ({ data: null });
   await rejectsWith(
     service.auth.requestAccountDeletion({ code: "123456" }),
     /did not return a date/,
   );
+  fake.rpc.request_my_account_deletion = () => ({ error: { message: "blocked" } });
+  await rejectsWith(service.auth.requestAccountDeletion({ code: "123456" }), /blocked/);
 });
 
 test("getPendingAccountDeletion, cancelAccountDeletion and the blocker read the server's answer", async () => {

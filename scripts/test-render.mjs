@@ -37,6 +37,7 @@ const run = spawnSync(
     stdio: "inherit",
     env: {
       ...process.env,
+      EXPO_PUBLIC_APP_ENV: "development",
       HUNGRY_DATA_SOURCE: "mock",
       HUNGRY_DISABLE_ASYNC_STORAGE: "1",
       HUNGRY_DISABLE_SECURE_STORE: "1",

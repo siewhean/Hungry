@@ -95,8 +95,10 @@ test("LoginScreen signs a known account in", async () => {
   assert.equal(useSessionStore.getState().isAuthenticated, true);
 });
 
-test("LoginScreen offers browsing without an account", async () => {
+test("LoginScreen requires an account: no guest browsing, a link to create one", async () => {
   const navigation = createFakeNavigation();
   const view = await renderScreen(LoginScreen as never, { name: "Login", navigation });
-  assert.ok(view.findByText("Continue without an account"));
+  assert.equal(view.findByText("Continue without an account"), null);
+  await view.press(view.findByText("Create account"));
+  assert.deepEqual(navigation.calls, [{ method: "navigate", args: ["SignUp"] }]);
 });

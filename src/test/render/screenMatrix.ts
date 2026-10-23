@@ -185,6 +185,12 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     expect: /WHERE ARE YOU/,
   },
   {
+    name: "DiscoverEntryScreen",
+    file: "src/app/screens/discover/DiscoverEntryScreen.tsx",
+    scenario: "user",
+    expect: /WHERE ARE YOU/,
+  },
+  {
     name: "HomeMapScreen",
     file: "src/app/screens/discover/HomeMapScreen.tsx",
     scenario: "user",
@@ -239,7 +245,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "HomeFeedScreen",
     file: "src/app/screens/home/HomeFeedScreen.tsx",
     scenario: "user",
-    expect: /Decide for me|Share post/,
+    expect: /Decide for me|Share in Hungry|Share post/,
   },
   {
     name: "StoryViewerScreen",
@@ -362,6 +368,12 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
   {
     name: "OnboardingAuthScreen",
     file: "src/app/screens/onboarding/OnboardingAuthScreen.tsx",
+    scenario: "user",
+    expect: /taste profile/,
+  },
+  {
+    name: "MandatoryOnboardingAuthScreen",
+    file: "src/app/screens/onboarding/MandatoryOnboardingAuthScreen.tsx",
     scenario: "user",
     expect: /taste profile/,
   },
@@ -531,6 +543,12 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     file: "src/app/screens/profile/ProfileHomeScreen.tsx",
     scenario: "user",
     expect: /Profile/,
+  },
+  {
+    name: "ReleaseProfileScreen",
+    file: "src/app/screens/profile/ReleaseProfileScreen.tsx",
+    scenario: "user",
+    expect: /Settings and privacy/,
   },
   {
     name: "ReviewHistoryScreen",

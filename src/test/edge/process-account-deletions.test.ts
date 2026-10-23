@@ -57,15 +57,17 @@ test("process-account-deletions reports a failed claim", async () => {
   assert.deepEqual(await json(response), { error: "claim_failed", detail: "lock timeout" });
 });
 
-test("process-account-deletions anonymises, strips media, deletes the auth user, then completes the request", async () => {
+test("process-account-deletions anonymises, purges, strips media, deletes the auth user, then completes the request", async () => {
   const supabase = new FakeSupabase();
   supabase.rpc.claim_account_deletion_requests = () => claims("1");
-  supabase.storage.list = ({ bucket }) => ({
-    data: bucket === "avatars" ? [{ name: "me.jpg", id: "obj-1" }, { name: "albums" }] : [],
-  });
   supabase.storage.list = ({ bucket, args }) => {
     if (bucket === "avatars" && args[0] === "user-1")
-      return { data: [{ name: "me.jpg", id: "obj-1" }, { name: "albums" }] };
+      return {
+        data: [
+          { name: "me.jpg", id: "obj-1" },
+          { name: "albums", id: null },
+        ],
+      };
     if (bucket === "avatars" && args[0] === "user-1/albums")
       return { data: [{ name: "pic.jpg", id: "obj-2" }] };
     return { data: [] };
@@ -75,7 +77,18 @@ test("process-account-deletions anonymises, strips media, deletes the auth user,
   const body = await json(await handler(post({}, TOKEN)));
   assert.equal(body.claimed, 1);
   assert.deepEqual(body.results, [
-    { requestId: "req-1", userId: "user-1", status: "completed", removedMedia: 2 },
+    {
+      requestId: "req-1",
+      userId: "user-1",
+      status: "completed",
+      storageRemoved: {
+        avatars: 2,
+        "review-media": 0,
+        "bites-media": 0,
+        "post-media": 0,
+        "user-stall-submission-images": 0,
+      },
+    },
   ]);
 
   assert.deepEqual(
@@ -83,20 +96,26 @@ test("process-account-deletions anonymises, strips media, deletes the auth user,
     [
       "claim_account_deletion_requests",
       "anonymize_account_deletion_request",
+      "purge_account_deletion_residual_data",
       "complete_account_deletion_request",
     ],
   );
+  const workerId = supabase.callsTo("claim_account_deletion_requests")[0].args.p_worker_id;
+  assert.deepEqual(supabase.callsTo("purge_account_deletion_residual_data")[0].args, {
+    p_request_id: "req-1",
+    p_worker_id: workerId,
+  });
   assert.deepEqual(supabase.callsTo("complete_account_deletion_request")[0].args, {
     p_request_id: "req-1",
-    p_worker_id: supabase.callsTo("claim_account_deletion_requests")[0].args.p_worker_id,
+    p_worker_id: workerId,
     p_auth_deleted: true,
   });
   assert.deepEqual(supabase.deletedAuthUsers, ["user-1"]);
 
   const removed = supabase.storageCalls.filter((call) => call.method === "remove");
   assert.deepEqual(
-    removed.map((call) => call.args[0]),
-    [["user-1/me.jpg", "user-1/albums/pic.jpg"]],
+    removed.map((call) => [call.bucket, call.args[0]]),
+    [["avatars", ["user-1/me.jpg", "user-1/albums/pic.jpg"]]],
   );
 
   const menuPhotos = supabase.queriesOn("menu_photo_submissions")[0].ops;
@@ -118,7 +137,121 @@ test("process-account-deletions never removes menu-photo files", async () => {
   const { handler } = await load(supabase);
   await handler(post({}, TOKEN));
   const buckets = new Set(supabase.storageCalls.map((call) => call.bucket));
-  assert.deepEqual([...buckets].sort(), ["avatars", "bites-media", "post-media", "review-media"]);
+  assert.deepEqual([...buckets].sort(), [
+    "avatars",
+    "bites-media",
+    "post-media",
+    "review-media",
+    "user-stall-submission-images",
+  ]);
+});
+
+test("process-account-deletions keeps the objects the purge says to retain", async () => {
+  const supabase = new FakeSupabase();
+  supabase.rpc.claim_account_deletion_requests = () => claims("1");
+  supabase.rpc.purge_account_deletion_residual_data = () => ({
+    data: {
+      retained_storage_objects: [
+        { bucket: "post-media", path: "user-1/shared.jpg" },
+        { bucket: "post-media" },
+        { path: "orphan.jpg" },
+        null,
+      ],
+    },
+  });
+  supabase.storage.list = ({ bucket }) => ({
+    data:
+      bucket === "post-media"
+        ? [
+            { name: "shared.jpg", id: "a" },
+            { name: "mine.jpg", id: "b" },
+          ]
+        : [],
+  });
+  const { handler } = await load(supabase);
+
+  const body = await json(await handler(post({}, TOKEN)));
+  assert.equal(body.results[0].storageRemoved["post-media"], 1);
+  const removed = supabase.storageCalls.filter((call) => call.method === "remove");
+  assert.deepEqual(
+    removed.map((call) => call.args[0]),
+    [["user-1/mine.jpg"]],
+  );
+});
+
+test("process-account-deletions pages through large folders and removes in chunks of 100", async () => {
+  const supabase = new FakeSupabase();
+  supabase.rpc.claim_account_deletion_requests = () => claims("1");
+  const file = (index: number) => ({ name: `f${index}.jpg`, id: `id-${index}` });
+  supabase.storage.list = ({ bucket, args }) => {
+    if (bucket !== "review-media") return { data: [] };
+    const { offset, limit } = args[1] as { offset: number; limit: number };
+    assert.equal(limit, 100);
+    const total = 150;
+    return {
+      data: Array.from({ length: Math.max(0, Math.min(limit, total - offset)) }, (_, i) =>
+        file(offset + i),
+      ),
+    };
+  };
+  const { handler } = await load(supabase);
+
+  const body = await json(await handler(post({}, TOKEN)));
+  assert.equal(body.results[0].storageRemoved["review-media"], 150);
+  const lists = supabase.storageCalls.filter(
+    (call) => call.method === "list" && call.bucket === "review-media",
+  );
+  assert.deepEqual(
+    lists.map((call) => (call.args[1] as { offset: number }).offset),
+    [0, 100],
+  );
+  const removed = supabase.storageCalls.filter((call) => call.method === "remove");
+  assert.deepEqual(
+    removed.map((call) => (call.args[0] as string[]).length),
+    [100, 50],
+  );
+});
+
+test("process-account-deletions skips a bucket that does not exist but fails on other storage errors", async () => {
+  const supabase = new FakeSupabase();
+  supabase.rpc.claim_account_deletion_requests = () => claims("1");
+  supabase.storage.list = ({ bucket }) =>
+    bucket === "bites-media" ? { error: { message: "Bucket not found" } } : { data: [] };
+  const { handler } = await load(supabase);
+  const body = await json(await handler(post({}, TOKEN)));
+  assert.equal(body.results[0].status, "completed");
+  assert.equal(body.results[0].storageRemoved["bites-media"], 0);
+
+  const broken = new FakeSupabase();
+  broken.rpc.claim_account_deletion_requests = () => claims("1");
+  broken.storage.list = () => ({ error: { message: "storage down" } });
+  const failing = await load(broken);
+  const failed = await json(await failing.handler(post({}, TOKEN)));
+  assert.equal(failed.results[0].status, "failed");
+  assert.equal(failed.results[0].error, "storage down");
+  assert.deepEqual(broken.deletedAuthUsers, [], "the auth user is kept so the request can retry");
+  assert.equal(broken.callsTo("complete_account_deletion_request").length, 0);
+});
+
+test("process-account-deletions fails the request when the purge or the media removal fails", async () => {
+  const purge = new FakeSupabase();
+  purge.rpc.claim_account_deletion_requests = () => claims("1");
+  purge.rpc.purge_account_deletion_residual_data = () => ({ error: { message: "purge failed" } });
+  const first = await load(purge);
+  const purged = await json(await first.handler(post({}, TOKEN)));
+  assert.equal(purged.results[0].error, "purge failed");
+  assert.deepEqual(purge.deletedAuthUsers, []);
+
+  const remove = new FakeSupabase();
+  remove.rpc.claim_account_deletion_requests = () => claims("1");
+  remove.storage.list = ({ bucket }) => ({
+    data: bucket === "avatars" ? [{ name: "me.jpg", id: "obj-1" }] : [],
+  });
+  remove.storage.remove = () => ({ error: { message: "cannot remove" } });
+  const second = await load(remove);
+  const removed = await json(await second.handler(post({}, TOKEN)));
+  assert.equal(removed.results[0].error, "cannot remove");
+  assert.deepEqual(remove.deletedAuthUsers, []);
 });
 
 test("process-account-deletions treats an already-deleted auth user as done", async () => {

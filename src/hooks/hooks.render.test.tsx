@@ -4,7 +4,7 @@
 import assert from "node:assert/strict";
 import { createElement } from "react";
 import { createRequire } from "node:module";
-import { Alert, Platform, Share } from "react-native";
+import { Alert, Keyboard, Platform, Share, TextInput } from "react-native";
 import test, { afterEach } from "node:test";
 
 import {
@@ -16,6 +16,7 @@ import {
 import { useRetryableLoad } from "@/features/profile/useRetryableLoad";
 import { profileShareUrl, shareProfileLink } from "@/features/share/profileShare";
 import { useFoodHistory } from "@/hooks/useFoodHistory";
+import { useKeyboardRevealFocusedInput } from "@/hooks/useKeyboardRevealFocusedInput";
 import { useScrollToRevealBack } from "@/hooks/useScrollToRevealBack";
 import { askMediaSource, captureWithCamera } from "@/lib/permissions/mediaSource";
 import { getHungryService, setMockServiceProvider } from "@/lib/services/serviceProvider";
@@ -293,5 +294,106 @@ test("captureWithCamera reports denied permission, a cancelled capture, and a ph
   } finally {
     picker.requestCameraPermissionsAsync = original.request;
     picker.launchCameraAsync = original.launch;
+  }
+});
+
+type KeyboardListener = (event: { endCoordinates: { screenY: number } }) => void;
+
+/** Replaces Keyboard.addListener and the focused-input lookup, restoring both when called. */
+function stubKeyboard(focused: unknown) {
+  const listeners: Record<string, KeyboardListener> = {};
+  const removed: string[] = [];
+  const keyboard = Keyboard as unknown as { addListener: unknown };
+  const state = TextInput as unknown as { State: Record<string, unknown> };
+  const originalAdd = keyboard.addListener;
+  const originalState = state.State;
+  keyboard.addListener = (name: string, listener: KeyboardListener) => {
+    listeners[name] = listener;
+    return { remove: () => void removed.push(name) };
+  };
+  state.State = { currentlyFocusedInput: () => focused };
+  return {
+    listeners,
+    removed,
+    restore() {
+      keyboard.addListener = originalAdd;
+      state.State = originalState;
+    },
+  };
+}
+
+const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+test("useKeyboardRevealFocusedInput scrolls a covered field above the keyboard after focus", async () => {
+  const scrolls: { y: number; animated: boolean }[] = [];
+  const focused = {
+    measureInWindow: (done: (x: number, y: number, w: number, h: number) => void) =>
+      done(0, 470, 300, 52),
+  };
+  const stub = stubKeyboard(focused);
+  try {
+    const { box, view } = await renderHook(() => useKeyboardRevealFocusedInput());
+    (box.current.scrollRef as { current: unknown }).current = {
+      getNativeScrollRef: () => ({
+        measureInWindow: (done: (x: number, y: number) => void) => done(0, 59),
+      }),
+      scrollTo: (options: { y: number; animated: boolean }) => void scrolls.push(options),
+    };
+
+    box.current.onScroll({ nativeEvent: { contentOffset: { y: 40 } } } as never);
+    stub.listeners.keyboardDidShow({ endCoordinates: { screenY: 530 } });
+    await pause(90);
+    // 470 + 52 + 136 - 530 = 128 more than the 40 already scrolled.
+    assert.deepEqual(scrolls, [{ y: 168, animated: true }]);
+
+    box.current.onFocus();
+    box.current.onFocus();
+    await pause(90);
+    assert.equal(scrolls.length, 2, "a burst of focus events reveals once");
+
+    stub.listeners.keyboardDidHide({ endCoordinates: { screenY: 0 } });
+    box.current.onFocus();
+    await pause(90);
+    assert.equal(scrolls.length, 2, "nothing is revealed with no keyboard");
+
+    await view.unmount();
+    assert.deepEqual(stub.removed.sort(), ["keyboardDidHide", "keyboardDidShow"]);
+  } finally {
+    stub.restore();
+  }
+});
+
+test("useKeyboardRevealFocusedInput leaves the scroll alone when there is nothing to move", async () => {
+  const scrolls: unknown[] = [];
+  const covered = { measureInWindow: (done: (...v: number[]) => void) => done(0, 100, 300, 52) };
+  const attach = (box: { current: ReturnType<typeof useKeyboardRevealFocusedInput> }) => {
+    (box.current.scrollRef as { current: unknown }).current = {
+      getNativeScrollRef: () => ({
+        measureInWindow: (done: (...v: number[]) => void) => done(0, 59),
+      }),
+      scrollTo: (options: unknown) => void scrolls.push(options),
+    };
+  };
+
+  const visible = stubKeyboard(covered);
+  try {
+    const { box } = await renderHook(() => useKeyboardRevealFocusedInput());
+    attach(box);
+    visible.listeners.keyboardDidShow({ endCoordinates: { screenY: 530 } });
+    await pause(90);
+    assert.deepEqual(scrolls, [], "the field and the space below it are already visible");
+  } finally {
+    visible.restore();
+  }
+
+  const none = stubKeyboard(null);
+  try {
+    const { box } = await renderHook(() => useKeyboardRevealFocusedInput());
+    attach(box);
+    none.listeners.keyboardDidShow({ endCoordinates: { screenY: 130 } });
+    await pause(90);
+    assert.deepEqual(scrolls, [], "no focused input to reveal");
+  } finally {
+    none.restore();
   }
 });
