@@ -7,7 +7,7 @@
 ## Current Focus
 
 - `STITCH-8-SCREENS-01` — Implemented on `codex/stitch-eight-screens` from
-  `main` `ec847ec30126698b876355cba1ef30883ac239aa`. Eight Stitch HTML exports
+  `main`, rebased after PR #114 merged. Eight Stitch HTML exports
   and full-resolution screenshots are in `design/stitch/iterations-11940609752387078506/`.
   Search, Profile, Achievements/Passport, Settings, Reviews, Saved Dishes, Stall,
   and Dish screens now use the design hierarchy with service-backed data and

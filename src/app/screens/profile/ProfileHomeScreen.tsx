@@ -1623,6 +1623,8 @@ function TasteRadar({ vector }: { vector: TasteVector }) {
   return (
     <View style={{ alignItems: "center", width: "100%", gap: spacing[3] }}>
       <Svg
+        accessible
+        accessibilityRole="image"
         accessibilityLabel={`Taste vector: ${axes.map((axis) => `${axis} ${vector[axis].toFixed(1)} out of 10`).join(", ")}`}
         width={260}
         height={260}

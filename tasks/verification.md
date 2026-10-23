@@ -18,6 +18,8 @@ Use the smallest check that matches the change risk.
 - Source: eight exact Stitch screen IDs and HTML/PNG exports in `design/stitch/iterations-11940609752387078506/README.md`; PNGs were fetched at full resolution with `curl -fsSL`.
 - Focused screen contracts: 30/30 pass across Search, Profile, Achievements, Settings, Reviews, Saved Dishes, Stall, and Dish.
 - Independent final QA: 28/28 focused contracts passed, all eight export hashes/dimensions matched, Prettier and `git diff --check` passed; Search back and palate routes were repaired and rechecked.
+- PR #116 first quality run installed dependencies and passed typecheck, lint, formatting, asset audit, security, and merge compatibility; seven full-suite tests failed on prior screen-label/layout assertions. The affected Search, Profile, Detail, accessibility, and social contracts were updated after confirming the equivalent controls; all 59 affected tests pass locally. CI rerun pending.
+- PR #116 second run passed quality, security, and merge compatibility on head `b6a31c2ad`; PR #114 then merged into `main`. Branch rebased onto `51c226ee5`; new CI rerun pending. The merged Profile account-read guard remains present.
 - `npm run typecheck`: blocked only by eight TS2307 imports of `expo-clipboard`, declared in `package.json` and `package-lock.json` but absent from the reused local `node_modules`.
 - Scoped ESLint: blocked before linting because the reused local `eslint-plugin-react-hooks` lacks the configured `react-hooks/refs` rule. CI will install from the lockfile.
 - No build or simulator run: free disk was approximately 5–6 GB during this work. Native visual acceptance and PR CI are pending.
