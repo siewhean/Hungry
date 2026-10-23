@@ -92,7 +92,7 @@ export const SettingsRow = memo(function SettingsRow({
           <View style={{ flex: 1, gap: spacing[1] }}>
             <AppText
               variant="bodyLarge"
-              numberOfLines={1}
+              numberOfLines={2}
               style={{ color: destructive ? palette.error : palette.text, fontWeight: "500" }}
             >
               {label}
