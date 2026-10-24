@@ -111,7 +111,7 @@ test("Screen header contract: live Discover, Review, and New Post headers use Ap
   assert.match(reviews, /FilterChipRail/);
   assert.match(
     reviews,
-    /\/\* Filter chips \*\/[\s\S]*<FilterChipRail[\s\S]*options=\{FILTER_OPTIONS\}[\s\S]*selectedId=\{filterMode\}[\s\S]*onSelect=\{setFilterMode\}[\s\S]*onSwipeLockChange=\{setTabSwipeLocked\}[\s\S]*gap=\{spacing\[2\]\}/,
+    /\/\* Filter chips: your taste, foods and areas \*\/[\s\S]*<FilterChipRail[\s\S]*options=\{chips\.map\([\s\S]*selectedId=\{activeChip\?\.id \?\? "all"\}[\s\S]*onSelect=\{setChipId\}[\s\S]*onSwipeLockChange=\{setTabSwipeLocked\}[\s\S]*gap=\{spacing\[2\]\}/,
   );
   assert.doesNotMatch(
     reviews,

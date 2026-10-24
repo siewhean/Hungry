@@ -91,13 +91,13 @@ test("profile home contract: web review actions remain separate and radar SVG is
 
 test("Stitch profile surfaces use account data and preserve their destinations", () => {
   const source = read("src/app/screens/profile/ProfileHomeScreen.tsx");
-  assert.match(source, /SINGAPORE FOODIE PASSPORT/);
+  assert.doesNotMatch(source, /SINGAPORE FOODIE PASSPORT/);
+  assert.doesNotMatch(source, /FollowRequestsRow/);
+  assert.match(source, /`Follow requests \(\$\{followRequestCount\}\)`/);
+  assert.match(source, /label="Collections"[\s\S]*?navigation\.navigate\("Collections"\)/);
   assert.match(source, /value=\{earnedBadgeCount\}/);
   assert.match(source, /getEarnedStamps\(\)\.length/);
-  assert.match(
-    source,
-    /accessibilityLabel="Account settings"[\s\S]*navigation\.navigate\("Settings"\)/,
-  );
+  assert.match(source, /navigation\.navigate\("Settings"\)/);
   assert.match(source, /Recent Hawker Log/);
   assert.match(source, /onPress=\{handleReviewsCardPress\}/);
   assert.match(

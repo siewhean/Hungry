@@ -239,7 +239,11 @@ test("protected actions preserve return routes before auth", () => {
     parameterizedRootReturnRestore,
     /name: returnRoute\.name, params: returnRoute\.params/,
   );
-  assert.match(tabs, /FEATURE_FLAGS\.postCreationEnabled/);
-  assert.match(tabs, /rootNavigation\?\.navigate\("Post"\)/);
-  assert.match(tabs, /setReturnRoute\(\{ name: "Post" \}\)/);
+  // The middle tab button writes a review; a guest returns to the review screen after sign-in.
+  assert.match(tabs, /FEATURE_FLAGS\.reviewCreationEnabled/);
+  assert.match(tabs, /rootNavigation\?\.navigate\("ReviewStack", \{ screen: "ReviewMain" \}\)/);
+  assert.match(
+    tabs,
+    /setReturnRoute\(\{ name: "ReviewStack", params: \{ screen: "ReviewMain" \} \}\)/,
+  );
 });

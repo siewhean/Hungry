@@ -30,6 +30,7 @@ export type ParamKey =
   | "dish"
   | "portfolio"
   | "portfolioPicker"
+  | "report"
   | "review"
   | "socialGrid"
   | "socialPost"
@@ -521,6 +522,19 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     expect: /Lists/,
   },
   {
+    name: "ReportProblemScreen",
+    file: "src/app/screens/detail/ReportProblemScreen.tsx",
+    scenario: "user",
+    params: "report",
+    expect: /What's wrong\?/,
+  },
+  {
+    name: "CollectionsScreen",
+    file: "src/app/screens/profile/CollectionsScreen.tsx",
+    scenario: "user",
+    expect: /Want to try/,
+  },
+  {
     name: "MissionsScreen",
     file: "src/app/screens/profile/MissionsScreen.tsx",
     scenario: "user",
@@ -548,7 +562,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "ProfileHomeScreen",
     file: "src/app/screens/profile/ProfileHomeScreen.tsx",
     scenario: "user",
-    expect: /SINGAPORE FOODIE PASSPORT/,
+    expect: /Collections/,
   },
   {
     name: "ReleaseProfileScreen",

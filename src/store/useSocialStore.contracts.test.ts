@@ -159,10 +159,8 @@ test("social store contract: real post shares sync to Supabase and unsupported i
   assert.match(homeFeed, /webShareUrl\("post", activeShareItem\.id\)/);
   assert.match(homeFeed, /if \(result\.action === Share\.sharedAction\) \{/);
   assert.match(homeFeed, /message: "Link copied"/);
-  // Reviews never borrow a linked post id for share counting.
-  assert.match(reviewFeed, /postId: "",/);
-  assert.doesNotMatch(reviewFeed, /linkedPost/);
-  assert.match(reviewFeed, /shareCount=\{reviewReactionsEnabled \?/);
+  // Reviews never borrow a linked post id for share counting (the grid has no share button).
+  assert.doesNotMatch(reviewFeed, /linkedPost|incrementShare/);
   assert.doesNotMatch(reviewFeed, /postId: linkedPost\?\.id \?\? item\.review\.id/);
   assert.doesNotMatch(reviewFeed, /stallPosts\[0\]/);
 });

@@ -86,11 +86,14 @@ test("nothing limits how many reviews a user writes for one dish", () => {
   }
 });
 
-test("review feed has no Helpful button and renames the A–Z chips", () => {
+test("review feed has no Helpful button and its chips follow taste, food and area", () => {
   const feed = read("src/app/screens/review/ReviewFeedScreen.tsx");
-  assert.match(feed, /\{ id: "dish", label: "A–Z dish" \}/);
-  assert.match(feed, /\{ id: "location", label: "A–Z stall" \}/);
-  assert.doesNotMatch(feed, /By Dish|By Location/);
+  // Round 6: the A–Z chips gave way to taste, food and area chips.
+  assert.match(
+    feed,
+    /buildReviewExploreChips\(allReviews, \{ userVector: tasteVector, areaOf \}\)/,
+  );
+  assert.doesNotMatch(feed, /By Dish|By Location|A–Z dish/);
   // Owner decision (round 2): the Helpful vote is gone from review cards.
   assert.doesNotMatch(feed, /<ThumbsUp|Sign in to mark reviews helpful/);
   const service = read("src/lib/services/supabase/supabaseService.ts");

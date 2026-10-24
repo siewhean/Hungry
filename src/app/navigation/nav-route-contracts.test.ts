@@ -215,9 +215,10 @@ test("synthetic post action stays behind the Release 0.1 post flag", () => {
   assert.doesNotMatch(tabs, /<Tab\.Screen name="Create"/);
   assert.doesNotMatch(types, /^\s+Create: undefined;/m);
   assert.match(tabs, /navigation\.getParent<NavigationProp<RootStackParamList>>\(\)/);
-  assert.match(tabs, /FEATURE_FLAGS\.postCreationEnabled[\s\S]*key: "Create"/);
-  assert.match(tabs, /rootNavigation\?\.navigate\("Post"\)/);
-  assert.match(tabs, /preloadRoute\(rootNavigation, "Post"\)/);
+  // The tab bar's create action writes a review now; posts open from elsewhere.
+  assert.match(tabs, /FEATURE_FLAGS\.reviewCreationEnabled[\s\S]*key: "Create"/);
+  assert.doesNotMatch(tabs, /navigate\("Post"\)/);
+  assert.match(tabs, /preloadRoute\(rootNavigation, "ReviewStack", \{ screen: "ReviewMain" \}\)/);
   assert.doesNotMatch(tabs, /PostComposerV2/);
   assert.match(tabs, /rootNavigation\?\.navigate\("AuthStack", \{ screen: "Login" \}\)/);
 });

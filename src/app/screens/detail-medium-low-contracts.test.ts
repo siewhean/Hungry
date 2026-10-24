@@ -88,8 +88,12 @@ test("detail-M10/L1/L19: reviews can be reported, blocked and open their author"
 
 test("detail-M11: 'Something wrong?' sends a catalog correction from both pages", () => {
   const link = readRepoFile("src/components/stall/ReportProblemLink.tsx");
+  const page = readRepoFile("src/app/screens/detail/ReportProblemScreen.tsx");
 
-  assert.match(link, /submitCatalogCorrection/);
+  // The link opens its own page, which sends the report.
+  assert.match(link, /navigation\.navigate\("ReportProblem", \{ venueId, dishId, subjectName \}\)/);
+  assert.match(page, /submitCatalogCorrection\(\{/);
+  assert.match(page, /note: note\.trim\(\)/);
   assert.match(stall, /<ReportProblemLink/);
   assert.match(dish, /<ReportProblemLink[\s\S]{0,120}dishId=\{dish\.id\}/);
   assert.match(readRepoFile("src/lib/services/types.ts"), /submitCatalogCorrection\(/);

@@ -259,6 +259,10 @@ const loadStallDetailScreen = () =>
   (
     require("@/app/screens/detail/StallDetailScreen") as typeof import("@/app/screens/detail/StallDetailScreen")
   ).StallDetailScreen;
+const loadReportProblemScreen = () =>
+  (
+    require("@/app/screens/detail/ReportProblemScreen") as typeof import("@/app/screens/detail/ReportProblemScreen")
+  ).ReportProblemScreen;
 const loadMerchantClaimExplainerScreen = () =>
   (
     require("@/app/screens/detail/MerchantClaimExplainerScreen") as typeof import("@/app/screens/detail/MerchantClaimExplainerScreen")
@@ -790,6 +794,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen getComponent={loadDishDetailScreenV2} name="DishDetail" />
           <RootStack.Screen getComponent={loadCatalogRawDetailScreen} name="CatalogRawDetail" />
           <RootStack.Screen getComponent={loadStallDetailScreen} name="StallDetail" />
+          <RootStack.Screen getComponent={loadReportProblemScreen} name="ReportProblem" />
           {FEATURE_FLAGS.merchantClaimCtaEnabled ? (
             <RootStack.Screen
               getComponent={loadMerchantClaimExplainerScreen}

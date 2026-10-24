@@ -3,6 +3,7 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  StyleSheet,
   View,
   type LayoutChangeEvent,
   type NativeScrollEvent,
@@ -127,6 +128,7 @@ const STALL_REVIEW_PAGE_SIZE = 10;
 /** Photos in the hero pager: owner cover, stall photo, dish photos, then review photos. */
 const HERO_PHOTO_LIMIT = 8;
 const ALL_MENU_CATEGORY = "All";
+const MENU_GRID_COLUMNS = 2;
 const MENU_CATEGORY_ORDER = [
   "Popular",
   "Rice",
@@ -308,12 +310,15 @@ function StallMenuDishCard({
   dish,
   onPress,
   width,
+  isLeftColumn,
 }: {
   dish: DishDetail;
   onPress: (dish: DishDetail) => void;
   width: number;
+  /** The left tile draws the hairline between the two columns. */
+  isLeftColumn: boolean;
 }) {
-  const { componentRadii, palette, spacing } = useHungryTheme();
+  const { palette, radii, spacing } = useHungryTheme();
   // One still photo per tile: no per-tile timers or measuring, and a swipe never fights the tap.
   const photo = useMemo(() => getStallDishPhotos(dish)[0], [dish]);
   const imageStyle = {
@@ -327,13 +332,14 @@ function StallMenuDishCard({
       accessibilityLabel={menuDishAccessibilityLabel(dish)}
       accessibilityHint="Opens this dish detail page"
       onPress={() => onPress(dish)}
+      // Square-cornered tiles that meet in the middle and run edge to edge.
       style={{
         width,
         backgroundColor: palette.surface,
-        borderRadius: componentRadii.card,
-        overflow: "hidden",
-        borderWidth: 1,
+        borderBottomWidth: StyleSheet.hairlineWidth,
         borderColor: palette.border,
+        borderRightWidth: isLeftColumn ? StyleSheet.hairlineWidth : 0,
+        overflow: "hidden",
       }}
     >
       <View>
@@ -349,12 +355,27 @@ function StallMenuDishCard({
         ) : (
           <NoDishPhoto dishName={dish.name} style={imageStyle} />
         )}
-        <View style={{ gap: spacing[1], padding: spacing[3] }}>
-          {dish.mustOrder ? (
-            <AppText variant="micro" style={{ color: palette.orangeText }}>
+        {dish.mustOrder ? (
+          <View
+            style={{
+              backgroundColor: palette.mediaScrim,
+              borderRadius: radii.pill,
+              left: spacing[2],
+              paddingHorizontal: spacing[2],
+              paddingVertical: 2,
+              position: "absolute",
+              top: width * 0.7 - spacing[2] - 22,
+            }}
+          >
+            <AppText
+              variant="micro"
+              style={{ color: palette.white, fontWeight: "800", letterSpacing: 0.5 }}
+            >
               MUST ORDER
             </AppText>
-          ) : null}
+          </View>
+        ) : null}
+        <View style={{ gap: spacing[1], padding: spacing[3] }}>
           <AppText variant="bodyBold" numberOfLines={2}>
             {dish.name}
           </AppText>
@@ -363,20 +384,25 @@ function StallMenuDishCard({
               {dish.description}
             </AppText>
           ) : null}
-          {isSoldOut(dish.availabilityFlags) ? (
-            <AppText variant="bodySmallBold" style={{ color: palette.error }}>
-              Sold out today
-            </AppText>
-          ) : (
-            <AppText variant="price" style={{ color: palette.orange }}>
-              {formatDishPrice(dish)}
-            </AppText>
-          )}
-          {dish.reviewCount > 0 ? (
-            <AppText variant="micro" tone="secondary">
-              <Text style={{ color: palette.starFill }}>★</Text> {dish.rating.toFixed(1)}
-            </AppText>
-          ) : null}
+          {/* Price on the left, rating on the right of the same row. */}
+          <View
+            style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}
+          >
+            {isSoldOut(dish.availabilityFlags) ? (
+              <AppText variant="bodySmallBold" style={{ color: palette.error }}>
+                Sold out today
+              </AppText>
+            ) : (
+              <AppText variant="price" style={{ color: palette.orange }}>
+                {formatDishPrice(dish)}
+              </AppText>
+            )}
+            {dish.reviewCount > 0 ? (
+              <AppText variant="micro" tone="secondary">
+                <Text style={{ color: palette.starFill }}>★</Text> {dish.rating.toFixed(1)}
+              </AppText>
+            ) : null}
+          </View>
         </View>
       </View>
     </Pressable>
@@ -1462,17 +1488,21 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     {visibleMenuDishes.length > 0 ? (
                       <View
                         style={{
+                          borderColor: palette.border,
+                          borderTopWidth: StyleSheet.hairlineWidth,
                           flexDirection: "row",
                           flexWrap: "wrap",
-                          gap: spacing[3],
+                          // Out to the screen edges, past the body's spacing[3] padding.
+                          marginHorizontal: -spacing[3],
                         }}
                       >
-                        {visibleMenuDishes.map((dish) => (
+                        {visibleMenuDishes.map((dish, index) => (
                           <StallMenuDishCard
                             key={dish.id}
                             dish={dish}
-                            // Two columns inside the body's spacing[3] padding and gap.
-                            width={(screenWidth - spacing[3] * 3) / 2}
+                            // Two columns with no gap between them.
+                            width={screenWidth / MENU_GRID_COLUMNS}
+                            isLeftColumn={index % MENU_GRID_COLUMNS === 0}
                             onPress={openMenuDish}
                           />
                         ))}
@@ -1817,6 +1847,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
               ) : null}
               <ReportProblemLink
                 venueId={venue.id}
+                subjectName={venue.name}
                 returnRoute={{ name: "StallDetail", params: { venueId: venue.id } }}
               />
             </View>

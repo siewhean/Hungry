@@ -325,16 +325,12 @@ test("review tab covers loading state, review cards, and bite card icon/sheet bo
       // The skeleton follows the real fetch, not a setTimeout(0) flag.
       /useDelayedLoadingSkeleton\(isServiceFeedLoading, 0\)/,
       /ReviewFeedSkeleton/,
-      /ReviewShareSheet/,
-      /const reviewReactionsEnabled = serviceProviderMode === "mock"/,
-      /accessibilityLabel=\{liked \? "Unlike review" : "Like review"\}/,
-      /"Remove saved dish"/,
-      /"Save dish"/,
-      /: favouriteDishIds\.includes\(item\.dishId\)/,
-      /<Heart[\s\S]*<Send[\s\S]*<Bookmark/,
-      /justifyContent: "flex-end"/,
+      // Round 6: a photo grid; a tap opens the review, a long press reports or blocks.
+      /<ReviewTile/,
+      /onLongPress=\{handleSafetyPress\}/,
+      /numColumns=\{GRID_COLUMNS\}/,
     ],
-    "review feed card actions",
+    "review feed photo grid",
   );
   assertSourceExcludes(
     reviewFeed,

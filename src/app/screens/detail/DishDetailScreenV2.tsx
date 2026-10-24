@@ -1216,11 +1216,85 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                 </Pressable>
               ) : null}
 
+              {moreFromStall.length > 0 ? (
+                <View style={{ gap: spacing[3] }}>
+                  <View
+                    style={{
+                      alignItems: "center",
+                      flexDirection: "row",
+                      gap: spacing[2],
+                      marginHorizontal: 0,
+                    }}
+                  >
+                    <Utensils color={palette.orange} size={20} />
+                    <AppText variant="h2" style={{ flex: 1 }} numberOfLines={1}>
+                      More from {venueName}
+                    </AppText>
+                  </View>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={{
+                      marginHorizontal: -spacing[4],
+                    }}
+                    contentContainerStyle={{ gap: spacing[3], paddingHorizontal: spacing[4] }}
+                  >
+                    {moreFromStall.map((item) => (
+                      <Pressable
+                        key={item.id}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Open ${item.name}, ${
+                          isSoldOut(item.availabilityFlags)
+                            ? "sold out today"
+                            : formatDishPrice(item)
+                        }`}
+                        // push, not navigate: each dish gets its own screen, so Back returns here.
+                        onPress={() => navigation.push("DishDetail", { dishId: item.id })}
+                        style={{
+                          backgroundColor: palette.surface,
+                          borderColor: palette.border,
+                          borderRadius: componentRadii.card,
+                          borderWidth: 1,
+                          overflow: "hidden",
+                          width: signatureGridItemWidth,
+                        }}
+                      >
+                        {sanitizeCatalogImageUrl(item.imageUrl) ? (
+                          <AccessibleImage
+                            source={{ uri: sanitizeCatalogImageUrl(item.imageUrl) }}
+                            contentFit="cover"
+                            style={{ width: "100%", height: signatureGridItemWidth * 0.62 }}
+                            decorative
+                          />
+                        ) : (
+                          <NoDishPhoto
+                            dishName={item.name}
+                            style={{ width: "100%", height: signatureGridItemWidth * 0.62 }}
+                          />
+                        )}
+                        <View style={{ gap: spacing[1], padding: spacing[3] }}>
+                          <AppText variant="bodyBold" numberOfLines={1}>
+                            {item.name}
+                          </AppText>
+                          <AppText variant="price" style={{ color: palette.orange }}>
+                            {formatDishPrice(item)}
+                          </AppText>
+                        </View>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                </View>
+              ) : null}
+
               {similarNearby.length > 0 ? (
                 <View style={{ gap: spacing[3] }}>
-                  <AppText variant="h2" numberOfLines={2}>
-                    {`Similar ${similarDishHeading} nearby`}
-                  </AppText>
+                  {/* Under "More from": the same food at other stalls near this one. */}
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
+                    <MapPin color={palette.orange} size={20} />
+                    <AppText variant="h2" style={{ flex: 1 }} numberOfLines={2}>
+                      {`Other ${similarDishHeading} stalls nearby`}
+                    </AppText>
+                  </View>
                   <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
@@ -1299,76 +1373,6 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                         </Pressable>
                       );
                     })}
-                  </ScrollView>
-                </View>
-              ) : null}
-
-              {moreFromStall.length > 0 ? (
-                <View style={{ gap: spacing[3] }}>
-                  <View
-                    style={{
-                      alignItems: "center",
-                      flexDirection: "row",
-                      gap: spacing[2],
-                      marginHorizontal: 0,
-                    }}
-                  >
-                    <Utensils color={palette.orange} size={20} />
-                    <AppText variant="h2" style={{ flex: 1 }} numberOfLines={1}>
-                      More from {venueName}
-                    </AppText>
-                  </View>
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    style={{
-                      marginHorizontal: -spacing[4],
-                    }}
-                    contentContainerStyle={{ gap: spacing[3], paddingHorizontal: spacing[4] }}
-                  >
-                    {moreFromStall.map((item) => (
-                      <Pressable
-                        key={item.id}
-                        accessibilityRole="button"
-                        accessibilityLabel={`Open ${item.name}, ${
-                          isSoldOut(item.availabilityFlags)
-                            ? "sold out today"
-                            : formatDishPrice(item)
-                        }`}
-                        // push, not navigate: each dish gets its own screen, so Back returns here.
-                        onPress={() => navigation.push("DishDetail", { dishId: item.id })}
-                        style={{
-                          backgroundColor: palette.surface,
-                          borderColor: palette.border,
-                          borderRadius: componentRadii.card,
-                          borderWidth: 1,
-                          overflow: "hidden",
-                          width: signatureGridItemWidth,
-                        }}
-                      >
-                        {sanitizeCatalogImageUrl(item.imageUrl) ? (
-                          <AccessibleImage
-                            source={{ uri: sanitizeCatalogImageUrl(item.imageUrl) }}
-                            contentFit="cover"
-                            style={{ width: "100%", height: signatureGridItemWidth * 0.62 }}
-                            decorative
-                          />
-                        ) : (
-                          <NoDishPhoto
-                            dishName={item.name}
-                            style={{ width: "100%", height: signatureGridItemWidth * 0.62 }}
-                          />
-                        )}
-                        <View style={{ gap: spacing[1], padding: spacing[3] }}>
-                          <AppText variant="bodyBold" numberOfLines={1}>
-                            {item.name}
-                          </AppText>
-                          <AppText variant="price" style={{ color: palette.orange }}>
-                            {formatDishPrice(item)}
-                          </AppText>
-                        </View>
-                      </Pressable>
-                    ))}
                   </ScrollView>
                 </View>
               ) : null}
@@ -1573,6 +1577,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
               <ReportProblemLink
                 venueId={dish.venueId}
                 dishId={dish.id}
+                subjectName={dish.name}
                 returnRoute={{ name: "DishDetail", params: { dishId: dish.id } }}
               />
             </View>

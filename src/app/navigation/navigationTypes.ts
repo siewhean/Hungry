@@ -64,6 +64,7 @@ export type ProfileStackParamList = {
   Favourites: undefined;
   /** One Lists area: Saved, your lists (portfolios) and checklists. */
   ListsHome: undefined;
+  Collections: undefined;
   ReviewHistory: undefined;
   Followers: { userId?: string; userDisplayName?: string } | undefined;
   Following: { userId?: string; userDisplayName?: string } | undefined;
@@ -135,6 +136,7 @@ export type RootStackParamList = {
   MerchantTabs: NavigatorScreenParams<MerchantTabParamList>;
   StallDetail: { venueId?: string; id?: string };
   MerchantClaimExplainer: undefined;
+  ReportProblem: { venueId: string; dishId?: string; subjectName?: string };
   DishDetail: { dishId?: string; id?: string };
   CatalogRawDetail: { kind: "dish" | "venue"; id: string; releaseId?: string };
   SearchHome: undefined;

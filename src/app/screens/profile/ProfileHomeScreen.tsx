@@ -31,7 +31,7 @@ import {
   Trophy,
   UserPlus,
   UserCheck,
-  Flame,
+  FolderHeart,
   FlaskConical,
 } from "lucide-react-native";
 import Svg, { Circle, Line, Polygon } from "react-native-svg";
@@ -648,6 +648,21 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                   }}
                 />
               )}
+              {(followRequestCount ?? 0) > 0 || profile.profileVisibility === "private" ? (
+                // Follow requests live in the menu, not on the profile page.
+                <MenuRow
+                  label={
+                    followRequestCount
+                      ? `Follow requests (${followRequestCount})`
+                      : "Follow requests"
+                  }
+                  icon={<UserPlus size={20} color={palette.orange} />}
+                  onPress={() => {
+                    setMenuOpen(false);
+                    rootNavigation.navigate("FollowRequests");
+                  }}
+                />
+              ) : null}
               <MenuRow
                 label="Followed Stalls"
                 icon={<Store size={20} color={palette.text} />}
@@ -719,55 +734,6 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
             }}
           />
         )}
-        <View
-          style={{
-            alignItems: "center",
-            flexDirection: "row",
-            justifyContent: "space-between",
-            marginBottom: spacing[2],
-          }}
-        >
-          <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
-            <View
-              style={{
-                alignItems: "center",
-                backgroundColor: palette.orangeLight,
-                borderRadius: radii.pill,
-                height: spacing[8],
-                justifyContent: "center",
-                width: spacing[8],
-              }}
-            >
-              <Flame color={palette.orange} size={18} />
-            </View>
-            <AppText
-              variant="micro"
-              tone="secondary"
-              style={{ fontWeight: "700", letterSpacing: 1 }}
-            >
-              SINGAPORE FOODIE PASSPORT
-            </AppText>
-          </View>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Account settings"
-            onPressIn={() => preloadRoute(navigation, "Settings")}
-            onPress={() => navigation.navigate("Settings")}
-            style={[
-              shadows.card,
-              {
-                alignItems: "center",
-                backgroundColor: palette.surface,
-                borderRadius: radii.pill,
-                height: 44,
-                justifyContent: "center",
-                width: 44,
-              },
-            ]}
-          >
-            <Settings color={palette.text} size={20} />
-          </Pressable>
-        </View>
         <View
           style={[
             shadows.card,
@@ -869,16 +835,8 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
             </View>
           </View>
 
-          <View
-            style={{
-              backgroundColor: palette.surface,
-              borderColor: palette.border,
-              borderRadius: radii.md,
-              borderWidth: 1,
-              flexDirection: "row",
-              padding: spacing[2],
-            }}
-          >
+          {/* Saved, Reviews and Badges sit side by side, with no box around the three. */}
+          <View style={{ flexDirection: "row", gap: spacing[2] }}>
             {FEATURE_FLAGS.favouritesEnabled ? (
               <StatBlock
                 label="Saved Dishes"
@@ -905,6 +863,16 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
               onPress={() => rootNavigation.navigate("PassportScreen")}
             />
           </View>
+          {isAuthenticated && FEATURE_FLAGS.favouritesEnabled ? (
+            <Button
+              label="Collections"
+              variant="secondary"
+              leftIcon={<FolderHeart size={18} color={palette.orange} />}
+              accessibilityHint="Opens your saved food and lists, with search"
+              onPressIn={() => preloadRoute(navigation, "Collections")}
+              onPress={() => navigation.navigate("Collections")}
+            />
+          ) : null}
         </View>
 
         {isAuthenticated && gamificationEnabled ? (
@@ -915,12 +883,6 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
         ) : null}
 
         <View style={{ gap: spacing[4] }}>
-          {(followRequestCount ?? 0) > 0 || profile.profileVisibility === "private" ? (
-            <FollowRequestsRow
-              count={followRequestCount}
-              onPress={() => rootNavigation.navigate("FollowRequests")}
-            />
-          ) : null}
           {isAuthenticated && gamificationEnabled ? (
             <MissionBanner onPress={() => navigation.navigate("MissionsScreen" as any)} />
           ) : null}
@@ -1706,65 +1668,6 @@ function StatBlock({
       }}
     >
       {row}
-    </Pressable>
-  );
-}
-
-function FollowRequestsRow({
-  count,
-  onPress,
-}: {
-  /** null while loading. */
-  count: number | null;
-  onPress: () => void;
-}) {
-  const { componentRadii, palette, radii, spacing } = useHungryTheme();
-  const pendingCount = count ?? 0;
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={
-        pendingCount === 1
-          ? "Follow requests, 1 pending"
-          : `Follow requests, ${pendingCount} pending`
-      }
-      accessibilityHint="Opens follow requests to approve or decline"
-      onPress={onPress}
-      style={({ pressed }) => ({
-        flexDirection: "row",
-        alignItems: "center",
-        gap: spacing[3],
-        padding: spacing[4],
-        borderRadius: componentRadii.button,
-        borderWidth: 1,
-        borderColor: palette.border,
-        backgroundColor: pressed ? palette.bgSoft : palette.surface,
-      })}
-    >
-      <UserPlus color={palette.orange} size={18} />
-      <AppText
-        numberOfLines={1}
-        style={{ flex: 1, minWidth: 0, fontWeight: "600", color: palette.text }}
-      >
-        Follow requests
-      </AppText>
-      {pendingCount > 0 ? (
-        <View
-          style={{
-            minWidth: spacing[6],
-            paddingHorizontal: spacing[2],
-            paddingVertical: spacing[0.5],
-            borderRadius: radii.pill,
-            backgroundColor: palette.orange,
-            alignItems: "center",
-          }}
-        >
-          <AppText variant="micro" style={{ color: palette.textOnOrange, fontWeight: "800" }}>
-            {pendingCount > 99 ? "99+" : pendingCount}
-          </AppText>
-        </View>
-      ) : null}
-      <ChevronRight color={palette.textMuted} size={18} />
     </Pressable>
   );
 }
