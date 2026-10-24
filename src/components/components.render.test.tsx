@@ -582,6 +582,18 @@ test("FloatingBackButton is a labelled back button", async () => {
   const view = await render(createElement(FloatingBackButton, { onPress: () => (backs += 1) }));
   await view.press(view.findByLabel("Go back"));
   assert.equal(backs, 1);
+  await view.unmount();
+
+  let shares = 0;
+  const share = await render(
+    createElement(FloatingBackButton, {
+      accessibilityLabel: "Share stall",
+      onPress: () => (shares += 1),
+      side: "right",
+    }),
+  );
+  await share.press(share.findByLabel("Share stall"));
+  assert.equal(shares, 1);
 });
 
 test("TasteRadarChart shows the dish from reviews and adds your taste only with a palette", async () => {

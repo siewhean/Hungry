@@ -29,6 +29,7 @@ import {
   MessageCircle,
   Phone,
   MessageCircleMore,
+  Send,
   Utensils,
 } from "lucide-react-native";
 
@@ -1845,7 +1846,6 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   userId: profile.id,
                 })
               }
-              onShare={showDeferredDetailControls ? openShareSheet : undefined}
               onDirections={stallAddress || stallPin ? openStallMaps : undefined}
               hasReviewedDishAtVenue={hasReviewedDishAtVenue}
               reviewPromptText="Try or review a dish here first, then mark this stall visited."
@@ -1865,6 +1865,15 @@ export function StallDetailScreen({ navigation, route }: Props) {
             />
           ) : null}
           <FloatingBackButton onPress={goBackOrHome} />
+          {showDeferredDetailControls ? (
+            // Share sits over the photo so the bottom bar has room for a whole "Write a review".
+            <FloatingBackButton
+              accessibilityLabel="Share stall"
+              icon={Send}
+              onPress={openShareSheet}
+              side="right"
+            />
+          ) : null}
 
           {showDeferredDetailControls ? (
             <ReviewShareSheet

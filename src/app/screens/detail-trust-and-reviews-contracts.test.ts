@@ -78,9 +78,10 @@ test("stall page has no fake save, timer skeleton, or menu-empty flash while loa
 test("stall header shows rating, price, status, actions and delivery links", () => {
   assert.match(stallDetail, /summarizeStallRating\(dishes\)/);
   assert.match(stallDetail, /formatStallPriceBand\(dishes\)/);
-  // Directions, Save and Share live in the sticky bottom bar, not in the header.
+  // Directions and Save live in the sticky bottom bar; Share floats over the photo.
   assert.match(stallDetail, /<StallInteractionBar[\s\S]*?layout="sticky"/);
   assert.match(stallDetail, /onDirections=/);
+  assert.match(stallDetail, /accessibilityLabel="Share stall"[\s\S]*?side="right"/);
   assert.match(read("src/components/stall/StallInteractionBar.tsx"), /label: "Directions"/);
   // Phone and email sit in a Contact details card; delivery uses the wide button row.
   assert.match(stallDetail, /Contact details/);
