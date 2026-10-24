@@ -14,8 +14,10 @@ import {
   setExperimentFlagSource,
   type ExperimentFlagSource,
 } from "@/lib/experiments/experiments";
-import { getHungryService } from "@/lib/services/serviceProvider";
+import { WheelResultModal } from "@/app/screens/wheel/WheelResultModal";
+import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
+import { useWheelStore } from "@/store/useWheelStore";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -338,6 +340,33 @@ test("decide_quiz_v1: two_questions asks cuisine and price only; control asks al
   setExperimentFlagSource(control.source);
   const controlView = await renderQuiz();
   assert.match(controlView.text(), /QUESTION 1 OF 4/);
+});
+
+test("WheelResultModal shows the winner with the dark-on-amber Winner badge", async () => {
+  const repository = getDataRepository();
+  const venue = repository.getVenueById(repository.listPopularNearby()[0].venueId)!;
+  useWheelStore.setState({
+    entries: [
+      {
+        id: "entry-1",
+        partyId: "p1",
+        addedByMemberId: "m1",
+        venueId: venue.id,
+        buildingId: venue.buildingId,
+        label: venue.name,
+        imageUrl: "",
+        isEliminated: false,
+        position: 0,
+        addedAt: new Date().toISOString(),
+      },
+    ],
+  });
+  const view = await renderScreen(WheelResultModal as never, {
+    name: "WheelResult",
+    params: { winnerEntryId: "entry-1" },
+  });
+  assert.match(view.text(), /Winner/);
+  assert.match(view.text(), new RegExp(venue.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 });
 
 test("decide_quiz_v1: people who only see the result screen are not exposed", async () => {

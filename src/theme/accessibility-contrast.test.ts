@@ -175,3 +175,28 @@ test("rating stars and orange CTA labels meet contrast targets", () => {
   assert.ok(contrast(colors.light.white as HexColor, colors.light.success as HexColor) >= 4.5);
   assert.ok(contrast(colors.dark.textOnOrange as HexColor, colors.dark.success as HexColor) >= 4.5);
 });
+
+test("Decide for Me and Wheel text on orange and amber passes 4.5:1", () => {
+  for (const mode of ["light", "dark"] as const) {
+    const palette = colors[mode];
+    const [r, g, b] = parseHex(palette.orange);
+    // The taste-match badge background: `${palette.orange}22` over the screen background.
+    const tint = compositeRgbaOverBackground(
+      `rgba(${r}, ${g}, ${b}, ${0x22 / 255})` as RgbaColor,
+      palette.bg as HexColor,
+    );
+    assert.ok(contrast(palette.accentText as HexColor, tint) >= 4.5, `${mode} match badge`);
+    // "Why this dish?" label on the bgSoft card.
+    assert.ok(
+      contrast(palette.accentText as HexColor, palette.bgSoft as HexColor) >= 4.5,
+      `${mode} Why this dish`,
+    );
+    // Wheel "Winner" badge: navy ink on amber.
+    assert.ok(
+      contrast(palette.navy as HexColor, palette.amber as HexColor) >= 4.5,
+      `${mode} Winner badge`,
+    );
+  }
+  // Wheel home card subtitle: white on the deep end of the light-mode gradient.
+  assert.ok(contrast(colors.light.white as HexColor, colors.light.orangeDark as HexColor) >= 4.5);
+});
