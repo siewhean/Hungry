@@ -177,3 +177,19 @@ test("a boolean flag maps to test/control and unknown variants fall back", () =>
   fake.load({ welcome_back_v1: "variant-from-a-typo" });
   assert.equal(getExperimentVariant("welcome_back_v1", { expose: true }), "test");
 });
+
+test("a draft experiment never reads PostHog, but QA can preview its variants", () => {
+  const draft = (Object.keys(EXPERIMENTS) as ExperimentKey[]).find(
+    (key) => (EXPERIMENTS[key] as ExperimentDefinition).status === "draft",
+  );
+  if (!draft) return;
+  const definition = EXPERIMENTS[draft] as ExperimentDefinition;
+  const other = definition.variants.find((variant) => variant !== definition.fallback)!;
+  const fake = fakeSource({ [draft]: other });
+  setExperimentFlagSource(fake.source);
+  assert.equal(getExperimentVariant(draft, { expose: true }), definition.fallback);
+  assert.deepEqual(fake.state.exposures, []);
+  setExperimentOverride(draft, other as never);
+  assert.equal(getExperimentVariant(draft, { expose: true }), other);
+  assert.deepEqual(fake.state.exposures, []);
+});

@@ -115,7 +115,8 @@ export function WheelHomeScreen({ navigation, route }: Props) {
           accessibilityLabel={PARTY_ENABLED ? "Host a party" : "Spin the wheel"}
         >
           <LinearGradient
-            colors={[palette.orange, palette.orangeDark]}
+            // The deep end sits behind the text: 14 px white on plain orange is under 4.5:1.
+            colors={[palette.orangeDark, palette.orange]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={{
@@ -129,7 +130,7 @@ export function WheelHomeScreen({ navigation, route }: Props) {
                 <AppText variant="h2" style={{ color: palette.white }}>
                   {PARTY_ENABLED ? "Host a Party" : "Spin the wheel"}
                 </AppText>
-                <AppText variant="bodySmall" style={{ color: palette.inverseTextSecondary }}>
+                <AppText variant="bodySmall" style={{ color: palette.white }}>
                   {PARTY_ENABLED
                     ? "Start a new room and invite your friends to join the spin."
                     : "Add a few places and let the wheel decide."}

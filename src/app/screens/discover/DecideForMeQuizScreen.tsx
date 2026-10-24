@@ -1,6 +1,13 @@
-import { useState } from "react";
-import { Pressable, View, useWindowDimensions } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useEffect, useRef, useState } from "react";
+import {
+  AccessibilityInfo,
+  Platform,
+  Pressable,
+  View,
+  findNodeHandle,
+  useWindowDimensions,
+} from "react-native";
+import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Check, Dices, Utensils } from "lucide-react-native";
 
@@ -12,6 +19,7 @@ import {
   type DecideAnswers,
 } from "@/features/discovery/decideQuiz";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { useExperimentVariant } from "@/lib/experiments/experiments";
 import { selectHaptic, tapHaptic } from "@/lib/haptics";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useHungryTheme } from "@/theme";
@@ -19,26 +27,86 @@ import { DECIDE_OPTION_IMAGES } from "./decideOptionImages";
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
+/** Taps this soon after a step change are ignored, so a double tap cannot answer the next question. */
+const STEP_TAP_GUARD_MS = 250;
+
 /**
  * A few quick questions before Decide for Me picks a dish: cuisine, rice or noodles, price and
  * flavour. Every question has "Decide for me", and the whole quiz can be skipped.
  */
 export function DecideForMeQuizScreen() {
   const navigation = useNavigation<Navigation>();
+  const route = useRoute<RouteProp<RootStackParamList, "DecideForMeQuiz">>();
   const { componentRadii, palette, radii, spacing } = useHungryTheme();
-  const { width } = useWindowDimensions();
-  // Three cards per row inside the screen's spacing[4] gutters.
-  const tileWidth = Math.floor((width - spacing[4] * 2 - spacing[2] * 2) / 3);
+  const { fontScale, width } = useWindowDimensions();
+  // Three cards per row inside the screen's spacing[4] gutters; two at large text sizes so the
+  // labels are not cut off.
+  const columns = fontScale >= 1.3 ? 2 : 3;
+  const tileWidth = Math.floor(
+    (width - spacing[4] * 2 - spacing[2] * (columns - 1)) / columns,
+  );
   const setDecideForMe = useDiscoveryStore((state) => state.setDecideForMe);
+  // Only Discover's Decide button opens this screen, so everyone who renders it sees the variant.
+  const quizVariant = useExperimentVariant("decide_quiz_v1", { enabled: true });
+  // Frozen at first render so a late flag load cannot change the question count mid-quiz.
+  const [questions] = useState(() =>
+    quizVariant === "two_questions"
+      ? DECIDE_QUESTIONS.filter((item) => item.id === "cuisine" || item.id === "price")
+      : DECIDE_QUESTIONS,
+  );
   const [step, setStep] = useState(0);
-  const [answers, setAnswers] = useState<DecideAnswers>({});
-  const question = DECIDE_QUESTIONS[step];
-  const isLast = step === DECIDE_QUESTIONS.length - 1;
+  const [answers, setAnswers] = useState<DecideAnswers>(() => route.params?.answers ?? {});
+  const question = questions[step];
+  const isLast = step === questions.length - 1;
+  const stepRef = useRef(step);
+  stepRef.current = step;
+  const finishedRef = useRef(false);
+  const lastStepChangeRef = useRef(0);
+  const pendingStepRef = useRef(step);
+  const headerRef = useRef<View>(null);
 
-  const finish = (finalAnswers: DecideAnswers) => {
-    trackAnalyticsEvent("decide_for_me_triggered", {
-      surface: "discover",
+  // System back (Android button, iOS swipe) steps back through the questions like the header
+  // back button, instead of leaving the quiz from any step.
+  useEffect(
+    () =>
+      navigation.addListener("beforeRemove", (event) => {
+        if (finishedRef.current || stepRef.current === 0) return;
+        event.preventDefault();
+        setStep((current) => Math.max(0, current - 1));
+      }),
+    [navigation],
+  );
+
+  // A screen reader hears the new question; focus would otherwise stay on a tile that now
+  // stands for a different answer.
+  const firstStepRef = useRef(true);
+  useEffect(() => {
+    lastStepChangeRef.current = Date.now();
+    pendingStepRef.current = step;
+    if (firstStepRef.current) {
+      firstStepRef.current = false;
+      return;
+    }
+    const announcement = `Question ${step + 1} of ${questions.length}. ${questions[step].title}`;
+    AccessibilityInfo.announceForAccessibility(announcement);
+    // findNodeHandle is native only; on web the announcement above reads the new question.
+    if (Platform.OS === "web") return;
+    const node = headerRef.current ? findNodeHandle(headerRef.current) : null;
+    if (node) AccessibilityInfo.setAccessibilityFocus(node);
+  }, [questions, step]);
+
+  const finish = (finalAnswers: DecideAnswers, skipped: boolean) => {
+    if (finishedRef.current) return;
+    finishedRef.current = true;
+    // Discover already sent decide_for_me_triggered for this flow; this is the quiz's own event.
+    trackAnalyticsEvent("decide_quiz_completed", {
+      skipped,
       answered: Object.values(finalAnswers).filter((id) => id !== DECIDE_FOR_ME_OPTION_ID).length,
+      questions: questions.length,
+      cuisine: finalAnswers.cuisine,
+      staple: finalAnswers.staple,
+      price: finalAnswers.price,
+      flavour: finalAnswers.flavour,
     });
     // The result screen picks the dish; clear any earlier pick so it starts fresh.
     setDecideForMe(undefined);
@@ -46,19 +114,25 @@ export function DecideForMeQuizScreen() {
   };
 
   const choose = (optionId: string) => {
+    if (finishedRef.current) return;
+    // A second tap before the next question has rendered, or within the guard time after it
+    // appeared, is the same double tap and is ignored.
+    if (pendingStepRef.current !== step) return;
+    if (step > 0 && Date.now() - lastStepChangeRef.current < STEP_TAP_GUARD_MS) return;
     selectHaptic();
     const next = { ...answers, [question.id]: optionId };
     setAnswers(next);
     if (isLast) {
-      finish(next);
+      finish(next, false);
       return;
     }
-    setStep((current) => current + 1);
+    pendingStepRef.current = step + 1;
+    setStep(step + 1);
   };
 
   const skipAll = () => {
     tapHaptic();
-    finish({});
+    finish({}, true);
   };
 
   return (
@@ -75,10 +149,16 @@ export function DecideForMeQuizScreen() {
       <View style={{ gap: spacing[5] }} testID="decide-quiz">
         <View style={{ gap: spacing[2] }}>
           <AppText tone="muted" variant="micro">
-            {`QUESTION ${step + 1} OF ${DECIDE_QUESTIONS.length}`}
+            {`QUESTION ${step + 1} OF ${questions.length}`}
           </AppText>
-          <View style={{ flexDirection: "row", gap: spacing[1] }}>
-            {DECIDE_QUESTIONS.map((item, index) => (
+          <View
+            accessible
+            accessibilityRole="progressbar"
+            accessibilityLabel="Quiz progress"
+            accessibilityValue={{ min: 0, max: questions.length, now: step + 1 }}
+            style={{ flexDirection: "row", gap: spacing[1] }}
+          >
+            {questions.map((item, index) => (
               <View
                 key={item.id}
                 style={{
@@ -92,9 +172,9 @@ export function DecideForMeQuizScreen() {
           </View>
         </View>
 
-        <AppText variant="h1" accessibilityRole="header">
-          {question.title}
-        </AppText>
+        <View ref={headerRef} accessible accessibilityRole="header">
+          <AppText variant="h1">{question.title}</AppText>
+        </View>
 
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
           {question.options.map((option) => {
@@ -122,7 +202,7 @@ export function DecideForMeQuizScreen() {
                   style={{
                     alignItems: "center",
                     backgroundColor: isDecide ? palette.orangeLight : palette.bgSoft,
-                    height: tileWidth - 2,
+                    height: Math.min(tileWidth - 2, 140),
                     justifyContent: "center",
                   }}
                 >
@@ -158,7 +238,8 @@ export function DecideForMeQuizScreen() {
                 </View>
                 <AppText
                   variant="bodySmallBold"
-                  numberOfLines={2}
+                  // At large text sizes the label wraps as far as it needs instead of being cut.
+                  numberOfLines={columns === 3 ? 2 : undefined}
                   style={{
                     color: isDecide ? palette.orangeDark : palette.text,
                     minHeight: 40,

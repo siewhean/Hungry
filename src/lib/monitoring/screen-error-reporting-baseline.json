@@ -5,7 +5,6 @@
     "src/app/screens/checklist/ChecklistsHomeScreen.tsx",
     "src/app/screens/dev/DeveloperLauncherScreen.tsx",
     "src/app/screens/discover/CraveScreen.tsx",
-    "src/app/screens/discover/DecideForMeResultScreen.tsx",
     "src/app/screens/discover/HomeMapScreen.tsx",
     "src/app/screens/discover/QuickBitesScreen.tsx",
     "src/app/screens/home/ActivityInboxScreen.tsx",

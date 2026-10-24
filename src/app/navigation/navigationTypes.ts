@@ -172,7 +172,8 @@ export type RootStackParamList = {
   BrowseDishes: undefined;
   BrowseStalls: undefined;
   DiscoverMap: undefined;
-  DecideForMeQuiz: undefined;
+  /** `answers` pre-fills the quiz when "Change answers" reopens it from the result. */
+  DecideForMeQuiz: { answers?: DecideAnswers } | undefined;
   DecideForMeResult:
     | { surface?: "home" | "discover" | "push"; answers?: DecideAnswers }
     | undefined;

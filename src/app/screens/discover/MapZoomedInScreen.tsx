@@ -16,7 +16,7 @@ import { getBuildingById, singaporeBuildings, toSummary } from "@/lib/geo/singap
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
 import { useHungryTheme } from "@/theme";
-import { isVenueOpenFromHours } from "@/utils/stallStatus";
+import { isVenueOpenNow } from "@/features/discovery/decideForMeCandidates";
 
 type Props = NativeStackScreenProps<RootStackParamList, "MapZoomedIn">;
 
@@ -81,7 +81,8 @@ export function MapZoomedInScreen({ navigation, route }: Props) {
   const featuredStallsWithStatus = useMemo(() => {
     return getBuildingVenues(building.id).map((venue) => ({
       venue,
-      isOpen: isVenueOpenFromHours(venue.operatingHours, venue.isOpen),
+      // Same rule as Decide for Me and the stall page: the merchant's schedule wins.
+      isOpen: isVenueOpenNow(venue),
     }));
   }, [building.id]);
 

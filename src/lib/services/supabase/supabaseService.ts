@@ -3899,16 +3899,10 @@ export const supabaseService: HungryService = {
         else missing.push(id);
       }
       if (missing.length > 0) {
+        // get_venue_summaries is deployed; when it fails (offline, rate cap) the missing stalls are
+        // left out rather than read one call per stall, which would turn one error into a fan-out.
         const fetched = await getVenuesByIdsViaRpc(missing);
-        if (fetched) {
-          fetched.forEach((venue) => cached.set(venue.id, venue));
-        } else {
-          // RPC not deployed yet: one detail read per stall, as before.
-          const singles = await Promise.all(
-            missing.map((id) => this.getVenue(id).catch(() => undefined)),
-          );
-          singles.forEach((venue) => venue && cached.set(venue.id, venue));
-        }
+        fetched?.forEach((venue) => cached.set(venue.id, venue));
       }
       return unique.flatMap((id) => cached.get(id) ?? []);
     },

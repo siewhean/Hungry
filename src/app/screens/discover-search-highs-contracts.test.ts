@@ -55,8 +55,10 @@ test("Decide for me picks and logs once, on the result screen, at the effective 
   assert.ok(handler, "handleDecideForMe should exist");
   assert.doesNotMatch(handler, /getDecideForMe|searchDishes|recordTasteInteraction/);
   assert.match(handler, /setDecideForMe\(undefined\)/);
-  assert.match(result, /loggedFirstPickRef/);
-  assert.match(result, /buttonId: "decide_for_me"/);
+  // The app's own pick is an impression, never logged as a click (behaviour test:
+  // discover/decide.render.test.tsx).
+  assert.doesNotMatch(result, /buttonId: "decide_for_me"/);
+  assert.match(result, /recordImpression\("decide", \[dish\.id\]\)/);
   assert.match(result, /isLocationApproximate \? undefined : formatDistance/);
 });
 
