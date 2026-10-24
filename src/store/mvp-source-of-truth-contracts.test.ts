@@ -315,7 +315,7 @@ test("Supabase review reads hydrate review_photos and public profile names and a
     /getReviewsForDish\(dishId\) \{\s*return supabaseRepository\.getDishById\(dishId\)\?\.reviews/,
   );
   // The stall reads its newest reviews in one query scoped to its menu, not one per dish.
-  assert.match(stallDetail, /reviews\.listRecentReviews\(\{\s*venueId: sideLoadVenueId,/);
+  assert.match(stallDetail, /reviews\.listRecentReviewsPage\(\{\s*venueId: sideLoadVenueId,/);
   assert.doesNotMatch(stallDetail, /getReviewsForDish/);
   assert.match(stallDetail, /<Avatar uri=\{review\.avatarUrl\}/);
   assert.match(reviewFeed, /getHungryService\(\)\.reviews\.listRecentReviewsPage\(\{/);

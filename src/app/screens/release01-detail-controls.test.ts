@@ -54,7 +54,15 @@ test("core-only builds keep detail controls read-only despite targeted feature o
     stall,
     /\{showDeferredDetailControls && FEATURE_FLAGS\.merchantClaimCtaEnabled \? \(/,
   );
-  assert.match(stall, /\{showDeferredDetailControls && FEATURE_FLAGS\.reviewCreationEnabled \? \(/);
+  // Reviews show whenever detail controls do; only writing one needs reviewCreationEnabled.
+  assert.match(
+    stall,
+    /\{showDeferredDetailControls \? \(\s*<View style=\{\{ gap: spacing\[4\] \}\}>\s*<AppText variant="h2">Reviews<\/AppText>/,
+  );
+  assert.match(
+    stall,
+    /FEATURE_FLAGS\.reviewCreationEnabled\s*\? \{ ctaLabel: "Write a review", onPress: openWriteReview \}/,
+  );
   assert.match(stall, /if \(!showDeferredDetailControls\) \{[\s\S]*?setActivePromotions\(\[\]\)/);
   assert.match(stall, /\{showDeferredDetailControls \? \([\s\S]*?<ReviewShareSheet/);
 });

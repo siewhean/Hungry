@@ -31,7 +31,8 @@ import {
   MessageCircle,
   Phone,
   MessageCircleMore,
-  Send,
+  Share as ShareIos,
+  Share2,
   Utensils,
 } from "lucide-react-native";
 
@@ -80,7 +81,11 @@ import {
 } from "@/lib/services/serviceProvider";
 import { getBuildingById } from "@/lib/geo/singaporeBuildings";
 import { formatDishPrice } from "@/features/detail/dishPrice";
-import type { MerchantClaimStatus, RecentReviewFeedEntry } from "@/lib/services/types";
+import type {
+  MerchantClaimStatus,
+  RecentReviewFeedEntry,
+  VenueMenuCursor,
+} from "@/lib/services/types";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { openMerchantProfileLink, openTrustedMapsUrl } from "@/lib/security/safeLinking";
 import { getDishSection, isSectionFlag, isSoldOut } from "@/features/merchant/menuSections";
@@ -100,6 +105,8 @@ import { StallInteractionBar } from "@/components/stall/StallInteractionBar";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useRequireAccount } from "@/features/auth/useRequireAccount";
+import { saveStallAfterSignIn } from "@/features/auth/finishGuestAction";
+import { reportError } from "@/lib/monitoring/reportError";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { resolveStallOpenInfo } from "@/features/detail/stallOpenState";
@@ -115,6 +122,8 @@ import { useDetailSaveActions } from "@/features/checklistPortfolio/DetailSaveAc
 import { webShareUrl } from "@/constants/links";
 
 const CommentIcon = MessageCircle ?? MessageCircleMore;
+/** The platform's own share glyph: the box-and-arrow on iOS, the three dots on Android. */
+const ShareIcon = Platform.OS === "ios" ? ShareIos : Share2;
 const CLAIM_STATUS_LABELS: Record<MerchantClaimStatus, string> = {
   none: "Claim this stall",
   submitted: "Claim submitted",
@@ -198,7 +207,7 @@ function ContactRow({
   );
 }
 
-function StallDetailSkeleton() {
+function StallDetailSkeleton({ onBack }: { onBack: () => void }) {
   const { spacing, radii, palette } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
 
@@ -223,6 +232,8 @@ function StallDetailSkeleton() {
           </View>
         </View>
       </View>
+      {/* The screen has no header: a slow or offline open still needs a way out. */}
+      <FloatingBackButton onPress={onBack} />
     </View>
   );
 }
@@ -305,9 +316,8 @@ function getStallDishPhotos(dish: DishDetail) {
 
 /** Screen-reader label for a menu tile: name, price or sold out. */
 function menuDishAccessibilityLabel(dish: DishDetail) {
-  return isSoldOut(dish.availabilityFlags)
-    ? `${dish.name}, sold out today`
-    : `${dish.name}, ${formatDishPrice(dish)}`;
+  const status = isSoldOut(dish.availabilityFlags) ? "sold out today" : formatDishPrice(dish);
+  return [dish.name, dish.mustOrder ? "must order" : null, status].filter(Boolean).join(", ");
 }
 
 function StallMenuDishCard({
@@ -447,7 +457,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
         if (nextVenue) setHydratedVenue(nextVenue);
         setHasLoadedVenueDetail(true);
       })
-      .catch(() => {
+      .catch((error) => {
+        reportError(error, { screen: "StallDetail", action: "load_venue" });
         if (!active) return;
         setVenueLoadFailed(true);
         setHasLoadedVenueDetail(true);
@@ -466,6 +477,10 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const [hydratedDishes, setHydratedDishes] = useState<DishDetail[] | undefined>();
   const [menuLoadFailed, setMenuLoadFailed] = useState(false);
   const [menuReloadKey, setMenuReloadKey] = useState(0);
+  // Long menus come a page at a time: the first page shows at once, the rest on demand.
+  const [menuNextCursor, setMenuNextCursor] = useState<VenueMenuCursor>();
+  const [menuPageStatus, setMenuPageStatus] = useState<"idle" | "loading" | "error">("idle");
+  const menuVenueIdRef = useRef<string | undefined>(undefined);
   const dishes =
     hydratedDishes ?? (serviceProviderMode === "supabase" ? EMPTY_DISHES : cachedDishes);
   // Supabase mode has no menu until listDishesByVenue resolves; an error is not an empty menu.
@@ -532,6 +547,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
         });
         showToast({ message: "Thanks, we'll add the menu soon.", tone: "success" });
       } catch (error) {
+        reportError(error, { screen: "StallDetail", action: "submit_menu_photo" });
         showToast({
           message:
             error instanceof Error && error.message
@@ -565,6 +581,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const [reviewsStatus, setReviewsStatus] = useState<"loading" | "error" | "ready">("loading");
   const [reviewsReloadKey, setReviewsReloadKey] = useState(0);
   const [hasMoreReviews, setHasMoreReviews] = useState(false);
+  const [reviewsCursor, setReviewsCursor] = useState<{ before: string; beforeId: string }>();
   const [isLoadingMoreReviews, setIsLoadingMoreReviews] = useState(false);
   const [activePromotions, setActivePromotions] = useState<MerchantPromotion[]>([]);
   const [merchantProfile, setMerchantProfile] = useState<PublicMerchantProfile>();
@@ -615,10 +632,13 @@ export function StallDetailScreen({ navigation, route }: Props) {
     venue?.unitNumber,
   ]);
 
+  menuVenueIdRef.current = venue?.id;
   useEffect(() => {
     let active = true;
     setHydratedDishes(undefined);
     setMenuLoadFailed(false);
+    setMenuNextCursor(undefined);
+    setMenuPageStatus("idle");
     if (!venue?.id) {
       return () => {
         active = false;
@@ -631,12 +651,19 @@ export function StallDetailScreen({ navigation, route }: Props) {
       };
     }
 
-    void getHungryService()
-      .discovery.listDishesByVenue(venue.id)
+    const discovery = getHungryService().discovery;
+    const firstPage = discovery.listDishesByVenuePage
+      ? discovery.listDishesByVenuePage(venue.id).then((page) => {
+          if (active) setMenuNextCursor(page.nextCursor);
+          return page.dishes;
+        })
+      : discovery.listDishesByVenue(venue.id);
+    void firstPage
       .then((nextDishes) => {
         if (active) setHydratedDishes(nextDishes);
       })
-      .catch(() => {
+      .catch((error) => {
+        reportError(error, { screen: "StallDetail", action: "load_menu" });
         if (active) setMenuLoadFailed(true);
       });
 
@@ -659,7 +686,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
         setClaimStatus(status);
         setIsClaimPending(true);
       })
-      .catch(() => undefined);
+      .catch((error) => reportError(error, { screen: "StallDetail", action: "load_claim_status" }));
     return () => {
       active = false;
     };
@@ -703,17 +730,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
       .then((profile) => {
         if (active) setMerchantProfile(profile);
       })
-      .catch(() => {
+      .catch((error) => {
+        reportError(error, { screen: "StallDetail", action: "load_merchant_profile" });
         if (active) setMerchantProfile(undefined);
-      });
-
-    void getHungryService()
-      .discovery.getVenueOpeningSchedule(sideLoadVenueId)
-      .then((schedule) => {
-        if (active) setOpeningSchedule(schedule);
-      })
-      .catch(() => {
-        if (active) setOpeningSchedule(undefined);
       });
 
     void getHungryService()
@@ -721,7 +740,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
       .then((promotions) => {
         if (active) setActivePromotions(promotions);
       })
-      .catch(() => {
+      .catch((error) => {
+        reportError(error, { screen: "StallDetail", action: "load_promotions" });
         if (active) setActivePromotions([]);
       });
 
@@ -729,6 +749,33 @@ export function StallDetailScreen({ navigation, route }: Props) {
       active = false;
     };
   }, [showDeferredDetailControls, sideLoadVenueId]);
+
+  // get_venue_detail already carries the weekly schedule; read it on its own only when the
+  // settled venue has none (mock data, or an older cached row).
+  const venueSettled =
+    serviceProviderMode !== "supabase" || hydratedVenue !== undefined || venueLoadFailed;
+  const venueHasSchedule = Boolean(venue?.openingSchedule);
+  useEffect(() => {
+    let active = true;
+    setOpeningSchedule(undefined);
+    if (!showDeferredDetailControls || !sideLoadVenueId || !venueSettled || venueHasSchedule) {
+      return () => {
+        active = false;
+      };
+    }
+    void getHungryService()
+      .discovery.getVenueOpeningSchedule(sideLoadVenueId)
+      .then((schedule) => {
+        if (active) setOpeningSchedule(schedule);
+      })
+      .catch((error) => {
+        reportError(error, { screen: "StallDetail", action: "load_opening_schedule" });
+        if (active) setOpeningSchedule(undefined);
+      });
+    return () => {
+      active = false;
+    };
+  }, [showDeferredDetailControls, sideLoadVenueId, venueHasSchedule, venueSettled]);
 
   useEffect(() => {
     if (!venue || activePromotions.length === 0) return;
@@ -763,17 +810,20 @@ export function StallDetailScreen({ navigation, route }: Props) {
 
     setReviewsStatus("loading");
     getHungryService()
-      .reviews.listRecentReviews({
+      .reviews.listRecentReviewsPage({
         venueId: sideLoadVenueId,
         limit: STALL_COMMUNITY_REVIEW_LIMIT,
       })
-      .then((entries) => {
+      .then((page) => {
         if (!active) return;
-        setReviewEntries(entries);
-        setHasMoreReviews(entries.length === STALL_COMMUNITY_REVIEW_LIMIT);
+        setReviewEntries(page.entries);
+        // From the server's raw rows: a review dropped from the entries is not the end.
+        setHasMoreReviews(page.hasMore);
+        setReviewsCursor(page.nextCursor);
         setReviewsStatus("ready");
       })
-      .catch(() => {
+      .catch((error) => {
+        reportError(error, { screen: "StallDetail", action: "load_reviews" });
         if (active) setReviewsStatus("error");
       });
 
@@ -783,29 +833,25 @@ export function StallDetailScreen({ navigation, route }: Props) {
   }, [sideLoadVenueId, reviewsReloadKey]);
 
   const loadMoreReviews = () => {
-    const sorted = [...reviewEntries].sort(
-      (left, right) =>
-        new Date(left.review.createdAt).getTime() - new Date(right.review.createdAt).getTime() ||
-        (left.review.id < right.review.id ? -1 : 1),
-    );
-    const last = sorted[0];
-    if (!sideLoadVenueId || !last || isLoadingMoreReviews) return;
+    if (!sideLoadVenueId || !reviewsCursor || isLoadingMoreReviews) return;
     setIsLoadingMoreReviews(true);
     getHungryService()
-      .reviews.listRecentReviews({
+      .reviews.listRecentReviewsPage({
         venueId: sideLoadVenueId,
         limit: STALL_REVIEW_PAGE_SIZE,
-        before: last.review.createdAt,
-        beforeId: last.review.id,
+        before: reviewsCursor.before,
+        beforeId: reviewsCursor.beforeId,
       })
-      .then((entries) => {
+      .then((page) => {
         setReviewEntries((current) => {
           const known = new Set(current.map((entry) => entry.review.id));
-          return [...current, ...entries.filter((entry) => !known.has(entry.review.id))];
+          return [...current, ...page.entries.filter((entry) => !known.has(entry.review.id))];
         });
-        setHasMoreReviews(entries.length === STALL_REVIEW_PAGE_SIZE);
+        setHasMoreReviews(page.hasMore);
+        setReviewsCursor(page.nextCursor);
       })
-      .catch(() => {
+      .catch((error) => {
+        reportError(error, { screen: "StallDetail", action: "load_more_reviews" });
         showToast({ message: "Couldn't load more reviews. Try again.", tone: "error" });
       })
       .finally(() => setIsLoadingMoreReviews(false));
@@ -879,6 +925,42 @@ export function StallDetailScreen({ navigation, route }: Props) {
     [filteredMenuDishes, visibleMenuItemCount],
   );
   const hasMoreMenuItems = visibleMenuDishes.length < filteredMenuDishes.length;
+  // The next menu page is read when the diner reaches the end of what is loaded, or filters
+  // or searches (which need the whole menu).
+  const menuFilterActive =
+    trimmedMenuQuery.length > 0 ||
+    activeDietaryFlags.length > 0 ||
+    activeMenuCategory !== ALL_MENU_CATEGORY;
+  const wantsMoreMenu =
+    menuStatus === "ready" &&
+    Boolean(menuNextCursor) &&
+    menuPageStatus === "idle" &&
+    (!hasMoreMenuItems || menuFilterActive);
+  useEffect(() => {
+    const discovery = getHungryService().discovery;
+    const forVenueId = venue?.id;
+    if (!wantsMoreMenu || !forVenueId || !menuNextCursor || !discovery.listDishesByVenuePage) {
+      return;
+    }
+    const cursor = menuNextCursor;
+    setMenuPageStatus("loading");
+    discovery
+      .listDishesByVenuePage(forVenueId, cursor)
+      .then((page) => {
+        if (menuVenueIdRef.current !== forVenueId) return;
+        setHydratedDishes((current) => {
+          const known = new Set((current ?? []).map((dish) => dish.id));
+          return [...(current ?? []), ...page.dishes.filter((dish) => !known.has(dish.id))];
+        });
+        // A cursor that does not move would read the same page forever.
+        setMenuNextCursor(page.nextCursor?.id !== cursor.id ? page.nextCursor : undefined);
+        setMenuPageStatus("idle");
+      })
+      .catch((error) => {
+        reportError(error, { screen: "StallDetail", action: "load_menu_page" });
+        if (menuVenueIdRef.current === forVenueId) setMenuPageStatus("error");
+      });
+  }, [menuNextCursor, venue?.id, wantsMoreMenu]);
 
   useEffect(() => {
     setVisibleMenuItemCount(INITIAL_MENU_ITEM_COUNT);
@@ -903,11 +985,12 @@ export function StallDetailScreen({ navigation, route }: Props) {
       navigation.goBack();
       return;
     }
-    navigation.navigate("MainTabs", { screen: "Home" });
+    // The Home tab is the Discover route; "Home" is a redirect placeholder now.
+    navigation.navigate("MainTabs", { screen: "Discover" });
   };
 
   if (Boolean(venueId) && !venue && !hasLoadedVenueDetail) {
-    return <StallDetailSkeleton />;
+    return <StallDetailSkeleton onBack={goBackOrHome} />;
   }
 
   if (!venue && venueLoadFailed) {
@@ -922,6 +1005,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
           ctaLabel="Retry"
           onPress={() => setVenueReloadKey((key) => key + 1)}
         />
+        <FloatingBackButton onPress={goBackOrHome} />
       </SafeAreaView>
     );
   }
@@ -992,6 +1076,27 @@ export function StallDetailScreen({ navigation, route }: Props) {
   // Short enough that hours, address and Order on show without scrolling.
   const heroHeight = Math.min(screenWidth * 0.45, 190);
   const hoursRows = openInfo.weekRows;
+  const hoursHeader = (
+    <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
+      <Clock3 color={palette.orange} size={18} />
+      <AppText
+        variant="bodyBold"
+        tone={openInfo.isOpen ? "success" : "default"}
+        // A long closure message wraps instead of being cut off at large text sizes.
+        numberOfLines={3}
+        style={{ flex: 1 }}
+      >
+        {operatingStatusLabel}
+      </AppText>
+      {hoursRows.length > 0 ? (
+        hoursExpanded ? (
+          <ChevronUp color={palette.orange} size={20} />
+        ) : (
+          <ChevronDown color={palette.orange} size={20} />
+        )
+      ) : null}
+    </View>
+  );
   const reviewedDishIds = profile.reviewedDishIds;
   const hasReviewedDishAtVenue = dishes.some((dish) => reviewedDishIds.includes(dish.id));
   const nextUnreviewedDish = dishes.find((dish) => !reviewedDishIds.includes(dish.id));
@@ -1023,13 +1128,14 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const openWriteReview = () => {
     // The composer sends review_started once a dish is picked; this is the entry tap.
     trackAnalyticsEvent("review_cta_tapped", { stall_id: venue.id, source_screen: "StallDetail" });
-    if (!requireAuthForProtectedAction("Sign in to review this stall.")) {
+    const composer = { screen: "ReviewMain" as const, params: { venueId: venue.id } };
+    // A guest goes straight on to the composer after signing in, not back to this page.
+    if (
+      !requireAccount("Sign in to review this stall.", { name: "ReviewStack", params: composer })
+    ) {
       return;
     }
-    navigation.navigate("ReviewStack", {
-      screen: "ReviewMain",
-      params: { venueId: venue.id },
-    });
+    navigation.navigate("ReviewStack", composer);
   };
 
   const recordTap = (
@@ -1102,7 +1208,11 @@ export function StallDetailScreen({ navigation, route }: Props) {
       return;
     }
 
-    setActiveShareReview(shareReviewTarget);
+    // The pager's first photo (owner cover or stall photo) beats the first dish's photo.
+    setActiveShareReview({
+      ...shareReviewTarget,
+      imageUrl: heroPhotos[0] ?? shareReviewTarget.imageUrl,
+    });
     requestAnimationFrame(() => {
       shareSheetRef.current?.present();
     });
@@ -1179,6 +1289,18 @@ export function StallDetailScreen({ navigation, route }: Props) {
     >
       <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["left", "right"]}>
         <View style={{ flex: 1 }}>
+          {/* Back and Share come first in the tree so screen readers reach them first; they
+              are positioned absolutely and still draw over the photo. */}
+          <FloatingBackButton onPress={goBackOrHome} />
+          {showDeferredDetailControls ? (
+            // Share sits over the photo so the bottom bar has room for a whole "Write a review".
+            <FloatingBackButton
+              accessibilityLabel="Share stall"
+              icon={ShareIcon}
+              onPress={openShareSheet}
+              side="right"
+            />
+          ) : null}
           <Animated.ScrollView
             showsVerticalScrollIndicator={false}
             onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: heroScrollY } } }], {
@@ -1303,9 +1425,10 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     </AppText>
                   ) : null}
                 </View>
-                {openInfo.closureNotice ? (
+                {/* Only when the hours card does not already say it. */}
+                {openInfo.extraNotice ? (
                   <AppText variant="bodySmall" tone="secondary">
-                    {openInfo.closureNotice}
+                    {openInfo.extraNotice}
                   </AppText>
                 ) : null}
               </View>
@@ -1345,39 +1468,35 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     ) : null}
                   </View>
                 ) : null}
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Opening hours, ${operatingStatusLabel}`}
-                  accessibilityHint={hoursExpanded ? "Hides the week" : "Shows every day's hours"}
-                  accessibilityState={{ expanded: hoursExpanded }}
-                  disabled={hoursRows.length === 0}
-                  onPress={() => setHoursExpanded((open) => !open)}
-                  style={({ pressed }) => ({ gap: spacing[1.5], opacity: pressed ? 0.75 : 1 })}
-                >
-                  <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
-                    <Clock3 color={palette.orange} size={18} />
-                    <View style={{ flex: 1, gap: spacing[0.5] }}>
-                      <AppText
-                        variant="bodyBold"
-                        tone={openInfo.isOpen ? "success" : "default"}
-                        numberOfLines={1}
-                      >
-                        {operatingStatusLabel}
-                      </AppText>
-                      {openInfo.todayRows.length > 0 ? (
-                        <AppText variant="bodySmall" tone="secondary">
-                          {openInfo.todayRows[0].label}: {openInfo.todayRows[0].text}
-                        </AppText>
-                      ) : null}
+                {/* Only the header toggles; today and the week are plain text a screen reader reads. */}
+                <View style={{ gap: spacing[1.5] }}>
+                  {hoursRows.length > 0 ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Opening hours, ${operatingStatusLabel}`}
+                      accessibilityHint={
+                        hoursExpanded ? "Hides the week" : "Shows every day's hours"
+                      }
+                      accessibilityState={{ expanded: hoursExpanded }}
+                      onPress={() => setHoursExpanded((open) => !open)}
+                      style={({ pressed }) => ({ opacity: pressed ? 0.75 : 1 })}
+                    >
+                      {hoursHeader}
+                    </Pressable>
+                  ) : (
+                    <View accessible accessibilityLabel={`Opening hours, ${operatingStatusLabel}`}>
+                      {hoursHeader}
                     </View>
-                    {hoursRows.length > 0 ? (
-                      hoursExpanded ? (
-                        <ChevronUp color={palette.orange} size={20} />
-                      ) : (
-                        <ChevronDown color={palette.orange} size={20} />
-                      )
-                    ) : null}
-                  </View>
+                  )}
+                  {openInfo.todayRows.length > 0 ? (
+                    <AppText
+                      variant="bodySmall"
+                      tone="secondary"
+                      style={{ paddingLeft: spacing[6] }}
+                    >
+                      {openInfo.todayRows[0].label}: {openInfo.todayRows[0].text}
+                    </AppText>
+                  ) : null}
                   {hoursExpanded
                     ? hoursRows.map((row) => {
                         const isToday = openInfo.todayRows.some(
@@ -1386,6 +1505,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
                         return (
                           <View
                             key={`${row.label}-${row.text}`}
+                            accessible
+                            accessibilityLabel={`${row.label}, ${row.text}`}
                             style={{
                               flexDirection: "row",
                               justifyContent: "space-between",
@@ -1408,7 +1529,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                         );
                       })
                     : null}
-                </Pressable>
+                </View>
 
                 <View
                   style={{
@@ -1450,11 +1571,13 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   <View
                     style={{
                       flexDirection: "row",
+                      flexWrap: "wrap",
+                      gap: spacing[2],
                       justifyContent: "space-between",
                       alignItems: "center",
                     }}
                   >
-                    <AppText variant="h2">Signature dishes</AppText>
+                    <AppText variant="h2">Menu</AppText>
                     {menuStatus === "ready" &&
                     dishes.length > 0 &&
                     (menuCategories.length > 2 || stallDietarySummary.length > 0) ? (
@@ -1474,7 +1597,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   </View>
                   {filteredMenuDishes.length > 0 ? (
                     <AppText variant="bodySmall" tone="secondary">
-                      Showing {visibleMenuDishes.length} of {filteredMenuDishes.length} items
+                      Showing {visibleMenuDishes.length} of {filteredMenuDishes.length}
+                      {menuNextCursor ? "+" : ""} items
                     </AppText>
                   ) : null}
                 </View>
@@ -1531,6 +1655,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
                           />
                         ))}
                       </View>
+                    ) : menuNextCursor && menuPageStatus !== "error" ? (
+                      <Skeleton width="100%" height={72} borderRadius={radii.lg} />
                     ) : (
                       <Card style={{ padding: spacing[4], alignItems: "center" }}>
                         <AppText variant="body" tone="secondary" style={{ textAlign: "center" }}>
@@ -1542,6 +1668,18 @@ export function StallDetailScreen({ navigation, route }: Props) {
                         </AppText>
                       </Card>
                     )}
+                    {menuPageStatus === "error" ? (
+                      <Card style={{ padding: spacing[4], alignItems: "center", gap: spacing[2] }}>
+                        <AppText variant="body" tone="secondary" style={{ textAlign: "center" }}>
+                          Couldn&apos;t load the rest of the menu.
+                        </AppText>
+                        <Button
+                          label="Retry"
+                          variant="secondary"
+                          onPress={() => setMenuPageStatus("idle")}
+                        />
+                      </Card>
+                    ) : null}
                   </View>
                 ) : (
                   <Card style={{ padding: spacing[4], alignItems: "center" }}>
@@ -1621,7 +1759,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
                 <PopularVisitorsSection venueId={venue.id} horizontalPadding={0} />
               ) : null}
               {/* Reviews */}
-              {showDeferredDetailControls && FEATURE_FLAGS.reviewCreationEnabled ? (
+              {/* Reading reviews does not depend on whether writing them is switched on. */}
+              {showDeferredDetailControls ? (
                 <View style={{ gap: spacing[4] }}>
                   <AppText variant="h2">Reviews</AppText>
                   {reviewsStatus === "loading" ? (
@@ -1808,8 +1947,15 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   ) : (
                     <EmptyState
                       title="No community reviews yet"
-                      body="Write your first review for this stall."
+                      body={
+                        FEATURE_FLAGS.reviewCreationEnabled
+                          ? "Be the first to review this stall."
+                          : "Reviews for this stall will show here."
+                      }
                       icon={<CommentIcon size={36} color={palette.textMuted} />}
+                      {...(FEATURE_FLAGS.reviewCreationEnabled
+                        ? { ctaLabel: "Write a review", onPress: openWriteReview }
+                        : {})}
                     />
                   )}
                 </View>
@@ -1848,11 +1994,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   />
                 </Card>
               ) : null}
-              <ReportProblemLink
-                venueId={venue.id}
-                subjectName={venue.name}
-                returnRoute={{ name: "StallDetail", params: { venueId: venue.id } }}
-              />
+              <ReportProblemLink venueId={venue.id} subjectName={venue.name} />
             </View>
           </Animated.ScrollView>
           {venue ? (
@@ -1861,7 +2003,13 @@ export function StallDetailScreen({ navigation, route }: Props) {
               stallId={venue.id}
               userId={profile.id}
               isAuthenticated={isAuthenticated}
-              onRequireAuth={(message) => requireAuthForProtectedAction(message)}
+              onRequireAuth={(message, action) =>
+                requireAuthForProtectedAction(
+                  message,
+                  // Finish the guest's Save once they sign in (never un-saves).
+                  action === "save" ? () => void saveStallAfterSignIn(venue.id) : undefined,
+                )
+              }
               onSaved={() =>
                 void getHungryService().discovery.recordMerchantActionEvent({
                   eventType: "save",
@@ -1885,16 +2033,6 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   ? openWriteReview
                   : undefined
               }
-            />
-          ) : null}
-          <FloatingBackButton onPress={goBackOrHome} />
-          {showDeferredDetailControls ? (
-            // Share sits over the photo so the bottom bar has room for a whole "Write a review".
-            <FloatingBackButton
-              accessibilityLabel="Share stall"
-              icon={Send}
-              onPress={openShareSheet}
-              side="right"
             />
           ) : null}
 

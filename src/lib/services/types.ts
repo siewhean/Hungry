@@ -577,6 +577,20 @@ export interface RecentReviewFeedEntry {
 }
 
 /** One page of the review feed, with the cursor taken from the raw rows read. */
+/** Opaque keyset cursor for the next page of a stall's menu. */
+export interface VenueMenuCursor {
+  score: number | null;
+  id: string;
+  /** The stall photo, so later pages drop it from dishes that have no photo of their own. */
+  venueImageUrl?: string;
+}
+
+export interface VenueMenuPage {
+  dishes: DishDetail[];
+  /** Set while more of the menu may exist. */
+  nextCursor?: VenueMenuCursor;
+}
+
 export interface RecentReviewFeedPage {
   entries: RecentReviewFeedEntry[];
   /**
@@ -937,6 +951,13 @@ export interface HungryService {
       metadata?: Record<string, string | number | boolean | null>;
     }): Promise<void>;
     listDishesByVenue(venueId: string): Promise<DishDetail[]>;
+    /**
+     * A stall's menu one page at a time, so the first dishes show at once. With no cursor it
+     * returns the page that comes with the venue detail. Throws when a page cannot be read,
+     * so a cut-short menu never looks complete. Services without paging leave it out and the
+     * caller uses listDishesByVenue.
+     */
+    listDishesByVenuePage?(venueId: string, cursor?: VenueMenuCursor): Promise<VenueMenuPage>;
     listPopularNearby(lat?: number, lng?: number): Promise<DishDetail[]>;
     listDiscoveryFeedByLocation(
       request: DiscoveryLocationFeedRequest,

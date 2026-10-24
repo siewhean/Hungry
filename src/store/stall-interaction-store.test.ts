@@ -70,14 +70,18 @@ test("loadInteractions indexes by stall, runs once, and survives a repository wi
   assert.deepEqual(store().getSavedStallIds(), []);
 });
 
+const flush = () => new Promise((resolve) => setImmediate(resolve));
+
 test("saving a stall is optimistic, awards cred once, and unsaving awards nothing", async () => {
   await store().toggleSaved(USER, "s1");
+  await flush();
   assert.equal(store().getInteraction("s1")?.isSaved, true);
   assert.ok(store().getInteraction("s1")?.savedAt);
   assert.equal(useFoodCredStore.getState().totalPoints, 152);
+  // The save is counted as soon as it is stored, before the points award.
   assert.deepEqual(
     getTrackedAnalyticsEvents().map((event) => event.event),
-    ["food_cred_earned", "stall_saved"],
+    ["stall_saved", "food_cred_earned"],
   );
 
   clearTrackedAnalyticsEvents();
@@ -89,9 +93,11 @@ test("saving a stall is optimistic, awards cred once, and unsaving awards nothin
 
 test("saves past the daily cred cutoff still persist but earn nothing", async () => {
   for (let i = 0; i < 10; i += 1) await store().toggleSaved(USER, `s${i}`);
+  await flush();
   assert.equal(useFoodCredStore.getState().totalPoints, 150 + 10 * 2);
 
   await store().toggleSaved(USER, "s10");
+  await flush();
   assert.equal(store().getInteraction("s10")?.isSaved, true);
   assert.equal(useFoodCredStore.getState().totalPoints, 170);
 });
@@ -196,4 +202,32 @@ test("markReviewed is idempotent and keeps saved and tried state", async () => {
   assert.equal(row?.isReviewed, true);
   assert.equal(row?.isSaved, true);
   assert.ok(row?.reviewedAt);
+});
+
+test("a failed points award never fails a stored save, and the save is still counted", async () => {
+  overrideRepository({
+    awardFoodCred: async () => {
+      throw new Error("rate limited");
+    },
+  });
+  await store().toggleSaved(USER, "s1");
+  await flush();
+  assert.equal(store().getInteraction("s1")?.isSaved, true);
+  assert.equal(useFoodCredStore.getState().totalPoints, 150);
+  assert.deepEqual(
+    getTrackedAnalyticsEvents().map((event) => event.event),
+    ["stall_saved"],
+  );
+});
+
+test("a failed points award never fails a stored tried mark", async () => {
+  overrideRepository({
+    awardFoodCred: async () => {
+      throw new Error("rate limited");
+    },
+  });
+  const result = await store().markTried(USER, "s1");
+  assert.deepEqual(result, { isTried: true, pointsAwarded: 0 });
+  assert.equal(store().getInteraction("s1")?.isTried, true);
+  assert.ok(getTrackedAnalyticsEvents().some((event) => event.event === "stall_marked_tried"));
 });

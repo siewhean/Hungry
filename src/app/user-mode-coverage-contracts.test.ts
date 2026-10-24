@@ -277,7 +277,7 @@ test("dish and stall details expose correct detail surfaces without user-mode ma
       /<AppText variant="bodyBold">Address<\/AppText>/,
       /\{stallAddress\}/,
       /Loading stall/,
-      /<AppText variant="h2">Signature dishes<\/AppText>/,
+      /<AppText variant="h2">Menu<\/AppText>/,
       /const \[visibleMenuItemCount, setVisibleMenuItemCount\] = useState\(INITIAL_MENU_ITEM_COUNT\)/,
       /listener: handleScroll/,
       /<DetailHeroFade scrollY=\{heroScrollY\} height=\{heroHeight\}>/,

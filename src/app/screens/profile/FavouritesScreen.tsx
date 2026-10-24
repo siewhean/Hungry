@@ -2,7 +2,6 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, View, useWindowDimensions } from "react-native";
 import {
-  BellRing,
   Bookmark,
   CircleCheck,
   Navigation,
@@ -38,11 +37,12 @@ import { openTrustedMapsUrl } from "@/lib/security/safeLinking";
 import { usePortfolioStore } from "@/store/usePortfolioStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
-import { useStallFollowStore } from "@/store/useStallFollowStore";
+import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { Bite } from "@/lib/services/types";
-import type { Portfolio } from "@/types/domain";
+import { reportError } from "@/lib/monitoring/reportError";
+import type { Portfolio, VenueSummary } from "@/types/domain";
 import { isDishDetail } from "./profileGuards";
 import { ProfileGridSkeleton, ProfileReviewsSkeleton } from "./ProfileGridSkeleton";
 import { ProfileScreenShell } from "./ProfileScreenShell";
@@ -637,41 +637,84 @@ function CatalogSavedDishes({ navigation, query }: Pick<Props, "navigation"> & {
   );
 }
 
-/** Stalls you follow: the stall-level "save" (Follow on a stall page). */
+/**
+ * Stalls you saved with Save on a stall page (`user_stall_interactions.is_saved`), newest first.
+ * The stall rows come from one `getVenuesByIds` call, so a saved stall that is not in the
+ * cached directory still shows.
+ */
 function SavedStallsSection({ onOpenStall }: { onOpenStall: (venueId: string) => void }) {
   const { palette, spacing } = useHungryTheme();
-  const followedStallIds = useStallFollowStore((state) => state.followedStallIds);
-  const loadFollowedStalls = useStallFollowStore((state) => state.loadFollowedStalls);
-  const repository = getDataRepository();
+  const userId = useProfileStore((state) => state.profile.id);
+  const interactions = useStallInteractionStore((state) => state.interactions);
+  const isLoaded = useStallInteractionStore((state) => state.isLoaded);
+  const loadInteractions = useStallInteractionStore((state) => state.loadInteractions);
+  const loadSavedStalls = useCallback(() => loadInteractions(userId), [loadInteractions, userId]);
+  const { failed: loadFailed, retry } = useRetryableLoad(loadSavedStalls, "saved stalls");
+  const [venues, setVenues] = useState<Map<string, VenueSummary> | null>(null);
+  const [venuesFailed, setVenuesFailed] = useState(false);
+  const [venuesReloadKey, setVenuesReloadKey] = useState(0);
 
-  const isLoaded = useStallFollowStore((state) => state.isLoaded);
-  const { failed: loadFailed, retry } = useRetryableLoad(loadFollowedStalls, "saved stalls");
-
-  const venues = useMemo(
-    () => followedStallIds.map((id) => repository.getVenueById(id)).filter((venue) => !!venue),
-    [followedStallIds, repository],
+  const savedStallIds = useMemo(
+    () =>
+      Object.values(interactions)
+        .filter((interaction) => interaction.isSaved)
+        .sort((left, right) => (right.savedAt ?? "").localeCompare(left.savedAt ?? ""))
+        .map((interaction) => interaction.stallId),
+    [interactions],
   );
+  const savedKey = savedStallIds.join(",");
 
-  if (venues.length === 0) {
-    if (!isLoaded && !loadFailed) return <ProfileReviewsSkeleton />;
-    if (loadFailed) {
-      return (
-        <EmptyState
-          title="Couldn't load saved stalls"
-          body="Check your connection and try again."
-          ctaLabel="Retry"
-          onPress={retry}
-        />
-      );
+  useEffect(() => {
+    if (!isLoaded) return undefined;
+    const ids = savedKey ? savedKey.split(",") : [];
+    if (ids.length === 0) {
+      setVenues(new Map());
+      return undefined;
     }
+    let active = true;
+    setVenuesFailed(false);
+    getHungryService()
+      .discovery.getVenuesByIds(ids)
+      .then((rows) => {
+        if (active) setVenues(new Map(rows.map((row) => [row.id, row])));
+      })
+      .catch((error) => {
+        reportError(error, { screen: "Favourites", action: "load_saved_stalls" });
+        if (active) setVenuesFailed(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, [isLoaded, savedKey, venuesReloadKey]);
+
+  if (loadFailed || venuesFailed) {
     return (
-      <EmptyState title="No saved stalls yet" body="Tap Follow on a stall page to keep it here." />
+      <EmptyState
+        title="Couldn't load saved stalls"
+        body="Check your connection and try again."
+        ctaLabel="Retry"
+        onPress={() => {
+          retry();
+          setVenuesReloadKey((key) => key + 1);
+        }}
+      />
+    );
+  }
+  if (!isLoaded || venues === null) return <ProfileReviewsSkeleton />;
+
+  const savedVenues = savedStallIds
+    .map((id) => venues.get(id))
+    .filter((venue): venue is VenueSummary => Boolean(venue));
+
+  if (savedVenues.length === 0) {
+    return (
+      <EmptyState title="No saved stalls yet" body="Tap Save on a stall page to keep it here." />
     );
   }
 
   return (
     <View style={{ gap: spacing[3] }}>
-      {venues.map((venue) => (
+      {savedVenues.map((venue) => (
         <Pressable
           key={venue.id}
           accessibilityRole="button"
@@ -679,13 +722,12 @@ function SavedStallsSection({ onOpenStall }: { onOpenStall: (venueId: string) =>
           onPress={() => onOpenStall(venue.id)}
         >
           <Card style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
-            <BellRing color={palette.orange} size={18} />
+            <Bookmark color={palette.orange} fill={palette.orange} size={18} />
             <View style={{ flex: 1, gap: spacing[1] }}>
               <AppText variant="bodyBold">{venue.name}</AppText>
-              {venue.unitNumber ? (
+              {venue.buildingName || venue.unitNumber ? (
                 <AppText variant="bodySmall" tone="secondary">
-                  {venue.unitNumber}
-                  {venue.floor ? ` · ${venue.floor}` : ""}
+                  {[venue.buildingName, venue.unitNumber?.trim()].filter(Boolean).join(" · ")}
                 </AppText>
               ) : null}
             </View>

@@ -54,6 +54,8 @@ export function PhotoPager({
   const urls = photos.filter((url) => url.trim().length > 0);
   if (urls.length === 0) return null;
   const count = urls.length;
+  // The list can shrink under the pager (a menu retry, a deleted review): never show "3 / 2".
+  const shownIndex = Math.min(index, count - 1);
 
   return (
     <View style={{ height, width }}>
@@ -92,7 +94,7 @@ export function PhotoPager({
       {count > 1 ? (
         <View
           accessible
-          accessibilityLabel={`Photo ${index + 1} of ${count}`}
+          accessibilityLabel={`Photo ${shownIndex + 1} of ${count}`}
           pointerEvents="none"
           style={{
             backgroundColor: palette.detailImageBadgeSurface,
@@ -105,7 +107,7 @@ export function PhotoPager({
           }}
         >
           <AppText variant="micro" style={{ color: palette.white }}>
-            {index + 1} / {count}
+            {shownIndex + 1} / {count}
           </AppText>
         </View>
       ) : null}

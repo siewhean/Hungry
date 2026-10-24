@@ -66,7 +66,7 @@ test("stall page: description only, hours on one row, website, filter beside the
   assert.match(stall, /link\.platform === "website"/);
   assert.match(
     stall,
-    /Signature dishes<\/AppText>\s+\{menuStatus === "ready" &&[\s\S]*?<MenuFilterDropdown/,
+    /"h2">Menu<\/AppText>\s+\{menuStatus === "ready" &&[\s\S]*?<MenuFilterDropdown/,
   );
   const card = stall.indexOf("Opening hours, ${operatingStatusLabel}");
   const orderOn = stall.search(/Order on\s*<\/AppText>/);

@@ -29,6 +29,7 @@ import {
   listBuildingsViaRpc,
   listDiscoveryFeedByLocationViaRpc,
   listDishesByVenueViaRpc,
+  listDishesByVenuePageViaRpc,
   listPopularNearbyViaRpc,
   listVenuesByBuildingViaRpc,
   refreshSupabaseRepositoryCache,
@@ -3905,7 +3906,8 @@ export const supabaseService: HungryService = {
         p_venue_id: input.venueId,
         p_dish_id: input.dishId ?? null,
       });
-      if (error) return [];
+      // Thrown, not swallowed: the page reports it and shows no promotions.
+      if (error) throw error;
       return (Array.isArray(data) ? (data as Row[]) : []).map(mapPromotion);
     },
 
@@ -3915,7 +3917,8 @@ export const supabaseService: HungryService = {
       const { data, error } = await client.rpc("get_public_merchant_profile", {
         p_venue_id: venueId,
       });
-      if (error) return undefined;
+      // Thrown, not swallowed: a lost temporary closure must reach Sentry.
+      if (error) throw error;
       const row = (Array.isArray(data) ? (data as Row[]) : [])[0];
       if (!row) return undefined;
       return {
@@ -3940,7 +3943,8 @@ export const supabaseService: HungryService = {
         .select("opening_schedule")
         .eq("id", venueId)
         .maybeSingle();
-      if (error || !data) return undefined;
+      if (error) throw error;
+      if (!data) return undefined;
       return toOpeningSchedule((data as Row).opening_schedule);
     },
 
@@ -3997,6 +4001,21 @@ export const supabaseService: HungryService = {
         // Offline with no cached menu must not read as "No menu available".
         const cached = supabaseRepository.listDishesByVenue(venueId);
         if (cached.length > 0) return cached;
+        throw error;
+      }
+    },
+
+    async listDishesByVenuePage(venueId, cursor) {
+      try {
+        return (
+          (await listDishesByVenuePageViaRpc(venueId, cursor)) ?? {
+            dishes: cursor ? [] : supabaseRepository.listDishesByVenue(venueId),
+          }
+        );
+      } catch (error) {
+        // Offline on the first page: a cached menu is better than none. Later pages throw.
+        const cached = cursor ? [] : supabaseRepository.listDishesByVenue(venueId);
+        if (cached.length > 0) return { dishes: cached };
         throw error;
       }
     },

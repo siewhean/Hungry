@@ -144,7 +144,7 @@ test("release-reachable screens hide controls for cut features behind their flag
 
   assert.match(
     notFound,
-    /label=\{FEATURE_FLAGS\.socialFeedEnabled \? "Back to Feed" : "Back to Discover"\}/,
+    /label=\{FEATURE_FLAGS\.socialFeedEnabled \? "Back to Feed" : "Back to Home"\}/,
   );
 
   // Search home has no local suggestion card (the paged catalog owns results).

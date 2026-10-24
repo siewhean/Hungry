@@ -50,7 +50,8 @@ test("detail-M7/M9/L9: stall reviews page by venue and the menu can be searched"
   assert.match(stall, /STALL_REVIEW_PAGE_SIZE/);
   assert.match(stall, /label="See more reviews"/);
   assert.match(stall, /MENU_SEARCH_MIN_ITEMS/);
-  assert.match(stall, /beforeId: last\.review\.id/);
+  // The next page starts from the server's cursor (STALL-12), not the last entry kept.
+  assert.match(stall, /beforeId: reviewsCursor\.beforeId/);
   const service = readRepoFile("src/lib/services/supabase/supabaseService.ts");
   assert.match(service, /\.eq\("venue_id", options\.venueId\)/);
   assert.match(readRepoFile("src/lib/services/types.ts"), /venueId\?: string;/);
@@ -61,7 +62,7 @@ test("detail-M8: stall and dish heroes are swipeable photo pagers with a full-sc
 
   assert.match(pager, /pagingEnabled/);
   assert.match(pager, /<Modal/);
-  assert.match(pager, /\{index \+ 1\} \/ \{count\}/);
+  assert.match(pager, /\{shownIndex \+ 1\} \/ \{count\}/);
   assert.match(stall, /<PhotoPager/);
   assert.match(dish, /<PhotoPager/);
   assert.match(dish, /\.\.\.reviewPhotos/);
@@ -91,7 +92,10 @@ test("detail-M11: 'Something wrong?' sends a catalog correction from both pages"
   const page = readRepoFile("src/app/screens/detail/ReportProblemScreen.tsx");
 
   // The link opens its own page, which sends the report.
-  assert.match(link, /navigation\.navigate\("ReportProblem", \{ venueId, dishId, subjectName \}\)/);
+  assert.match(link, /const params = \{ venueId, dishId, subjectName \};/);
+  assert.match(link, /navigation\.navigate\("ReportProblem", params\)/);
+  // A guest who signs in lands on the report page (STALL-19).
+  assert.match(link, /name: "ReportProblem",\s*params,/);
   assert.match(page, /submitCatalogCorrection\(\{/);
   assert.match(page, /note: note\.trim\(\)/);
   assert.match(stall, /<ReportProblemLink/);

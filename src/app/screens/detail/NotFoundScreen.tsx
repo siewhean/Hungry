@@ -69,7 +69,7 @@ export function NotFoundScreen({ navigation, route }: Props) {
             {body}
           </AppText>
           <Button
-            label={FEATURE_FLAGS.socialFeedEnabled ? "Back to Feed" : "Back to Discover"}
+            label={FEATURE_FLAGS.socialFeedEnabled ? "Back to Feed" : "Back to Home"}
             onPress={() =>
               navigation.navigate("MainTabs", {
                 screen: FEATURE_FLAGS.socialFeedEnabled ? "Home" : "Discover",
