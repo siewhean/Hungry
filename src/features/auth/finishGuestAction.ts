@@ -26,23 +26,18 @@ export async function saveDishAfterSignIn(dish: DishDetail): Promise<boolean> {
 
 /**
  * The multi-dish form of saveDishAfterSignIn: reads the account's saves once, then adds
- * each dish it does not have yet. Resolves to the dishes that could not be saved.
+ * the dishes it does not have yet in one write. Resolves to the dishes that could not be saved.
  */
 export async function saveDishesAfterSignIn(dishes: DishDetail[]): Promise<DishDetail[]> {
   const savedIds = await getHungryService()
     .profile.getFavouriteDishIds()
     .catch(() => null);
   if (!savedIds) return dishes;
-  const failed: DishDetail[] = [];
-  for (const dish of dishes) {
-    if (savedIds.includes(dish.id)) continue;
-    const profile = useProfileStore.getState();
-    if (profile.profile.favouriteDishIds.includes(dish.id)) continue;
-    // n-plus-one-ok: a guest's pending saves (at most 8); each goes through the store toggle for its taste-vector update, analytics and rollback, and there is no batched favourites write yet.
-    const result = await profile.toggleFavourite(dish);
-    if (result.status === "failed") failed.push(dish);
-  }
-  return failed;
+  const saved = new Set(savedIds);
+  const missing = dishes.filter((dish) => !saved.has(dish.id));
+  const failed = await useProfileStore.getState().addFavourites(missing);
+  const failedIds = new Set(failed.map((dish) => dish.id));
+  return missing.filter((dish) => failedIds.has(dish.id));
 }
 
 // The server's tried mark is idempotent, so marking an already-tried dish changes nothing.

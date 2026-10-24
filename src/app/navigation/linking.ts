@@ -13,6 +13,8 @@ export interface LinkingAuthState {
   isAuthReady: boolean;
   isAuthenticated: boolean;
   hasCompletedOnboarding?: boolean;
+  /** Onboarding is done on the device but waits for the account step (OnboardingAuth). */
+  onboardingCompletionPending?: boolean;
   /** Called with the route a signed-out user was sent to onboarding/Login from. */
   onAuthRedirect?: (route: LinkingRoute) => void;
 }
@@ -326,7 +328,14 @@ function isSignedOutOnlyAuthState(state: LinkingState): boolean {
   return screen === "EmailVerification" && !params?.params?.code;
 }
 
-function signedOutState(hasCompletedOnboarding: boolean | undefined): LinkingState {
+function signedOutState(
+  hasCompletedOnboarding: boolean | undefined,
+  onboardingCompletionPending?: boolean,
+): LinkingState {
+  // As Splash does: someone who finished the quiz but not the account step resumes there.
+  if (onboardingCompletionPending) {
+    return createState("OnboardingStack", { screen: "OnboardingAuth" });
+  }
   return hasCompletedOnboarding
     ? createState("AuthStack", { screen: "Login" })
     : createState("OnboardingStack", { screen: "OnboardingWelcome" });
@@ -424,8 +433,13 @@ export function createRootLinking(
       // The link is remembered as the return route (Splash and the post-login
       // navigation consume it) instead of being dropped, including on a cold
       // start while auth is still settling.
-      const { isAuthReady, isAuthenticated, hasCompletedOnboarding, onAuthRedirect } =
-        getAuthState();
+      const {
+        isAuthReady,
+        isAuthenticated,
+        hasCompletedOnboarding,
+        onboardingCompletionPending,
+        onAuthRedirect,
+      } = getAuthState();
       const activeRoute = state.routes[state.routes.length - 1];
       const rememberRoute = (route: LinkingRoute | undefined) => {
         if (!route) return;
@@ -438,7 +452,7 @@ export function createRootLinking(
       }
       if (!isAuthenticated) {
         rememberRoute(activeRoute);
-        return signedOutState(hasCompletedOnboarding);
+        return signedOutState(hasCompletedOnboarding, onboardingCompletionPending);
       }
 
       return state;

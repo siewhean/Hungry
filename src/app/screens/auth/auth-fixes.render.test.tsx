@@ -11,7 +11,10 @@ import {
   clearTrackedAnalyticsEvents,
   getTrackedAnalyticsEvents,
 } from "@/lib/analytics/mockAnalytics";
+import { AccessibilityInfo } from "react-native";
+
 import {
+  EXPERIMENTS,
   resetExperimentSession,
   setExperimentFlagSource,
   type ExperimentFlagSource,
@@ -87,31 +90,79 @@ test("AUTH-X5: the Login and SignUp footer rows wrap at large text", async () =>
   );
 });
 
+// The test is a draft until SignUp traffic is known; run it as live here to check exposure.
+// react-native-web always answers true, so each test says whether a screen reader is on.
+function runPasswordTest(flags: Record<string, string>, screenReaderOn = false) {
+  const definition = EXPERIMENTS.auth_signup_password_visible_v1 as { status: string };
+  const previous = definition.status;
+  definition.status = "running";
+  const originalScreenReader = AccessibilityInfo.isScreenReaderEnabled;
+  AccessibilityInfo.isScreenReaderEnabled = async () => screenReaderOn;
+  const fake = fakeFlags(flags);
+  setExperimentFlagSource(fake.source);
+  return {
+    exposures: fake.state.exposures,
+    restore: () => {
+      definition.status = previous;
+      AccessibilityInfo.isScreenReaderEnabled = originalScreenReader;
+    },
+  };
+}
+
 test("experiment auth_signup_password_visible_v1: control masks the new password", async () => {
-  const flags = fakeFlags({ auth_signup_password_visible_v1: "control" });
-  setExperimentFlagSource(flags.source);
-  const view = await renderScreen(SignUpScreen as never, { name: "SignUp" });
-  const password = inputs(view)[2];
-  assert.equal(password.getAttribute("type"), "password");
-  assert.deepEqual(flags.state.exposures.slice(0, 1), ["auth_signup_password_visible_v1"]);
+  const run = runPasswordTest({ auth_signup_password_visible_v1: "control" });
+  try {
+    const view = await renderScreen(SignUpScreen as never, { name: "SignUp" });
+    await view.settle();
+    const password = inputs(view)[2];
+    assert.equal(password.getAttribute("type"), "password");
+    assert.deepEqual(run.exposures.slice(0, 1), ["auth_signup_password_visible_v1"]);
+  } finally {
+    run.restore();
+  }
 });
 
 test("experiment auth_signup_password_visible_v1: visible_password shows it, and Hide still works", async () => {
-  const flags = fakeFlags({ auth_signup_password_visible_v1: "visible_password" });
-  setExperimentFlagSource(flags.source);
-  const view = await renderScreen(SignUpScreen as never, { name: "SignUp" });
-  assert.notEqual(inputs(view)[2].getAttribute("type"), "password");
-  await view.press(view.findByLabel("Hide password"));
-  assert.equal(inputs(view)[2].getAttribute("type"), "password");
+  const run = runPasswordTest({ auth_signup_password_visible_v1: "visible_password" });
+  try {
+    const view = await renderScreen(SignUpScreen as never, { name: "SignUp" });
+    await view.settle();
+    assert.notEqual(inputs(view)[2].getAttribute("type"), "password");
+    await view.press(view.findByLabel("Hide password"));
+    assert.equal(inputs(view)[2].getAttribute("type"), "password");
+  } finally {
+    run.restore();
+  }
 });
 
 test("experiment auth_signup_password_visible_v1: a signed-in user is never exposed", async () => {
   useSessionStore.setState({ isAuthenticated: true });
-  const flags = fakeFlags({ auth_signup_password_visible_v1: "visible_password" });
-  setExperimentFlagSource(flags.source);
-  const view = await renderScreen(SignUpScreen as never, { name: "SignUp" });
-  assert.equal(inputs(view)[2].getAttribute("type"), "password");
-  assert.deepEqual(flags.state.exposures, []);
+  const run = runPasswordTest({ auth_signup_password_visible_v1: "visible_password" });
+  try {
+    const view = await renderScreen(SignUpScreen as never, { name: "SignUp" });
+    await view.settle();
+    assert.equal(inputs(view)[2].getAttribute("type"), "password");
+    assert.deepEqual(run.exposures, []);
+  } finally {
+    run.restore();
+  }
+});
+
+test("AUTH-V2: a screen-reader user keeps a masked password and is not exposed", async () => {
+  const run = runPasswordTest({ auth_signup_password_visible_v1: "visible_password" }, true);
+  try {
+    const view = await renderScreen(SignUpScreen as never, { name: "SignUp" });
+    await view.settle();
+    assert.equal(inputs(view)[2].getAttribute("type"), "password");
+    assert.deepEqual(run.exposures, []);
+  } finally {
+    run.restore();
+  }
+});
+
+test("AUTH-V3: the password test is a draft measured on sign_up_submitted", () => {
+  assert.equal(EXPERIMENTS.auth_signup_password_visible_v1.status, "draft");
+  assert.equal(EXPERIMENTS.auth_signup_password_visible_v1.primaryMetric, "sign_up_submitted");
 });
 
 test("AUTH-13: a submitted sign-up logs sign_up_submitted", async () => {

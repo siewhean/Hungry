@@ -266,6 +266,8 @@ function buildPostHogIdentityProperties() {
 // Interactive sign-in calls completeAuth while Supabase also emits SIGNED_IN to
 // applyAuthStateFromSession; whichever runs first logs sign_in_completed.
 let signInTrackedForUserId: string | null = null;
+// Which event took that slot: an explicit sign-up may still follow a sign_in_completed.
+let signInTrackedKind: "sign_in" | "sign_up" | null = null;
 // Set as soon as a sign-up is reported (before the idle work runs), so a sign_in_completed
 // queued just before it for the same user gives way to sign_up_completed.
 let signUpReportedForUserId: string | null = null;
@@ -278,22 +280,27 @@ function trackSignInCompletedOnce(
     return;
   }
   signInTrackedForUserId = profileId;
+  signInTrackedKind = "sign_in";
   trackAnalyticsEvent("sign_in_completed", properties, { userId: profileId });
 }
 
 function resetSignInTracking(): void {
   signInTrackedForUserId = null;
+  signInTrackedKind = null;
   signUpReportedForUserId = null;
 }
 
 // The single place sign_up_completed is logged: from the first SIGNED_IN of a new
 // account (Supabase) or from completeAuth({ isNewUser }) (mock / auto-confirm).
-// It also claims the sign-in slot so the same login is not counted twice.
+// It also claims the sign-in slot so the same login is not counted twice. A sign_in_completed
+// already sent for the same user (the listener misread a new account) does not block it:
+// the sign-up is the truer event, and PostHog can drop the earlier sign-in.
 function trackSignUpCompletedOnce(profileId: string, method: string): void {
-  if (signInTrackedForUserId === profileId) {
+  if (signInTrackedForUserId === profileId && signInTrackedKind === "sign_up") {
     return;
   }
   signInTrackedForUserId = profileId;
+  signInTrackedKind = "sign_up";
   const shareAttribution = getShareAttribution();
   trackAnalyticsEvent(
     "sign_up_completed",
@@ -344,11 +351,15 @@ function markAccountOnboarded(): void {
 
 // Onboarding finished while signed out is only a completion once an account exists:
 // onboarding_completed is sent on the first successful auth after it.
-function trackPendingOnboardingCompletion(): void {
+// is_new_account tells a sign-up apart from an existing account signing in after the quiz.
+function trackPendingOnboardingCompletion(isNewAccount: boolean): void {
   const state = useSessionStore.getState();
   if (!state.isAuthenticated || !state.onboardingCompletionPending) return;
   useSessionStore.setState({ onboardingCompletionPending: false });
-  trackAnalyticsEvent("onboarding_completed", { skipped_quiz: state.hasSkippedTasteQuiz });
+  trackAnalyticsEvent("onboarding_completed", {
+    skipped_quiz: state.hasSkippedTasteQuiz,
+    is_new_account: isNewAccount,
+  });
 }
 
 const PUSH_TOKEN_UNBIND_TIMEOUT_MS = 3000;
@@ -357,13 +368,24 @@ const PUSH_TOKEN_UNBIND_TIMEOUT_MS = 3000;
 // then end the Supabase session. A slow or failed unbind never blocks sign-out.
 // signOutPending stays set until the stored session is gone, so a sign-out the
 // app is closed during is finished on the next launch instead of restored.
+// A sign-in that lands during the unbind wait (a new session) is left alone: only the session
+// that was being signed out is ended.
 function signOutOfSupabase(): Promise<void> {
   const service = getHungryService();
+  const before = service.auth.getCurrentSession().catch(() => null);
   const unbind = service.push.unregisterPushToken().catch(() => undefined);
   const timeout = new Promise<void>((resolve) => setTimeout(resolve, PUSH_TOKEN_UNBIND_TIMEOUT_MS));
   return Promise.race([unbind, timeout])
-    .then(() => service.auth.signOut())
-    .then(() => {
+    .then(async () => {
+      const [previous, current] = await Promise.all([
+        before,
+        service.auth.getCurrentSession().catch(() => null),
+      ]);
+      const signedInAgain =
+        current !== null &&
+        (current.userId !== previous?.userId || useSessionStore.getState().isAuthenticated);
+      if (signedInAgain) return;
+      await service.auth.signOut();
       useSessionStore.setState({ signOutPending: false });
     })
     .catch(() => undefined);
@@ -399,7 +421,7 @@ export const useSessionStore = create<SessionState>()(
           return;
         }
         markAccountOnboarded();
-        trackPendingOnboardingCompletion();
+        trackPendingOnboardingCompletion(Boolean(options?.isNewUser));
         const syncedProfile = getProfileStoreState().profile;
         const profileId = syncedProfile?.id ?? nextUserId ?? "authenticated-user";
         if (options?.isNewUser) signUpReportedForUserId = profileId;
@@ -562,7 +584,7 @@ export const useSessionStore = create<SessionState>()(
           }));
           syncProfileForAuthState(true, session.userId);
           markAccountOnboarded();
-          trackPendingOnboardingCompletion();
+          trackPendingOnboardingCompletion(Boolean(session.isNewUser && !currentlyAuthenticated));
 
           const profile = getProfileStoreState().profile;
           const profileId = session.userId ?? profile?.id ?? "authenticated-user";

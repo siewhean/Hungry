@@ -2143,6 +2143,17 @@ export const hungryService: HungryService = {
       return this.toggleFavourite(dishId);
     },
 
+    async addFavourites(dishIds) {
+      const added = [...new Set(dishIds)].filter((id) => !_profile.favouriteDishIds.includes(id));
+      const favouriteDishIds = [..._profile.favouriteDishIds, ...added];
+      _profile = {
+        ..._profile,
+        favouriteDishIds,
+        stats: { ..._profile.stats, favouritesCount: favouriteDishIds.length },
+      };
+      return resolve(undefined);
+    },
+
     async getFavouriteDishIds() {
       return resolve([..._profile.favouriteDishIds]);
     },

@@ -166,16 +166,21 @@ export const EXPERIMENTS = {
     primaryMetric: "dietary_preferences_set",
     guardrailMetrics: ["budget_preference_set", "decide_for_me_triggered", "sign_out"],
   },
-  /** New-password field on SignUp: masked (control) or shown as typed, with Hide. */
+  /**
+   * New-password field on SignUp: masked (control) or shown as typed, with Hide. Screen-reader
+   * users are not exposed. Measure sign_up_submitted filtered to screen = "sign_up":
+   * sign_up_completed also counts OnboardingAuth sign-ups, where this variant is not shown.
+   * Draft until weekly SignUp views are known (most accounts are made on OnboardingAuth).
+   */
   auth_signup_password_visible_v1: {
     variants: ["control", "visible_password"],
     fallback: "control",
-    status: "running",
+    status: "draft",
     surface: "auth",
     hypothesis:
-      "Showing the new password as it is typed (with a Hide button) cuts typos and weak-password retries on Create account, so more people who open SignUp finish signing up.",
-    primaryMetric: "sign_up_completed",
-    guardrailMetrics: ["sign_up_submitted", "auth_failed", "password_reset_requested"],
+      "Showing the new password as it is typed (with a Hide button) cuts typos and weak-password retries on Create account, so more people who open SignUp submit the form.",
+    primaryMetric: "sign_up_submitted",
+    guardrailMetrics: ["sign_up_completed", "auth_failed", "password_reset_requested"],
   },
   /**
    * Dish name and stars on Reviews grid tiles. Control keeps photo and date only (sh, 9ae387b).
@@ -370,15 +375,17 @@ export function getExperimentVariant<K extends ExperimentKey>(
 /**
  * The variant for this user, updated when PostHog flags load. Pass
  * `enabled: false` while the user is not eligible: the hook then returns the
- * fallback and records no exposure.
+ * fallback and records no exposure. Pass `expose: false` on a later screen of
+ * a test whose exposure fired earlier: it follows flag loads without exposing.
  */
 export function useExperimentVariant<K extends ExperimentKey>(
   key: K,
-  options: { enabled?: boolean } = {},
+  options: { enabled?: boolean; expose?: boolean } = {},
 ): ExperimentVariant<K> {
   const enabled = options.enabled ?? true;
+  const expose = options.expose ?? true;
   const [variant, setVariant] = useState(() =>
-    enabled ? getExperimentVariant(key, { expose: true }) : getFallbackVariant(key),
+    enabled ? getExperimentVariant(key, { expose }) : getFallbackVariant(key),
   );
   const keyRef = useRef(key);
   keyRef.current = key;
@@ -388,13 +395,11 @@ export function useExperimentVariant<K extends ExperimentKey>(
       setVariant(getFallbackVariant(key));
       return;
     }
-    setVariant(getExperimentVariant(key, { expose: true }));
+    setVariant(getExperimentVariant(key, { expose }));
     const source = getFlagSource();
     if (!source) return;
-    return source.onChange(() =>
-      setVariant(getExperimentVariant(keyRef.current, { expose: true })),
-    );
-  }, [enabled, key]);
+    return source.onChange(() => setVariant(getExperimentVariant(keyRef.current, { expose })));
+  }, [enabled, expose, key]);
 
   return variant;
 }

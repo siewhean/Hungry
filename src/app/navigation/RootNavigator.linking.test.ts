@@ -69,6 +69,28 @@ test("fresh users are sent to onboarding before protected catalog deep links", (
   assert.deepEqual(capturedRoute, { name: "DishDetail", params: { dishId: "dish-123" } });
 });
 
+test("a deep-link cold start with the account step pending resumes OnboardingAuth, not Login", () => {
+  let capturedRoute: { name: string; params?: Record<string, unknown> } | undefined;
+  const linking = createRootLinking(
+    "exp://127.0.0.1:8081/--/",
+    () => ({
+      isAuthReady: true,
+      isAuthenticated: false,
+      hasCompletedOnboarding: true,
+      onboardingCompletionPending: true,
+    }),
+    (route) => {
+      capturedRoute = route;
+    },
+  );
+
+  assert.deepEqual(linking.getStateFromPath("dish/dish-123")?.routes?.[0], {
+    name: "OnboardingStack",
+    params: { screen: "OnboardingAuth" },
+  });
+  assert.deepEqual(capturedRoute, { name: "DishDetail", params: { dishId: "dish-123" } });
+});
+
 test("onboarded signed-out users are sent to login and retain a safe return route", () => {
   let authState = {
     isAuthReady: true,

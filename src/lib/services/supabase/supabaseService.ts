@@ -4589,6 +4589,22 @@ export const supabaseService: HungryService = {
       return true;
     },
 
+    async addFavourites(dishIds: string[], expectedUserId?: string) {
+      const ids = [...new Set(dishIds)];
+      if (ids.length === 0) return;
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("You must be signed in to favourite dishes.");
+      if (expectedUserId && userId !== expectedUserId) {
+        throw new Error("Account changed before the favourites could be saved.");
+      }
+      const { error } = await client.from("user_favourite_dishes").upsert(
+        ids.map((dishId) => ({ user_id: userId, dish_id: dishId })),
+        { onConflict: "user_id,dish_id", ignoreDuplicates: true },
+      );
+      if (error) throw error;
+    },
+
     async setDishTried(dishId: string, tried: boolean) {
       const client = requireSupabaseClient();
       const userId = await getCurrentSupabaseUserId();

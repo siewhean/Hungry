@@ -57,3 +57,38 @@ test("a plain sign-in still logs sign_in_completed", async () => {
 
   assert.deepEqual(authEvents(), ["sign_in_completed"]);
 });
+
+test("an explicit sign-up still reports after a sign_in_completed for the same user already went out", async () => {
+  useSessionStore.getState().applyAuthStateFromSession({
+    isAuthenticated: true,
+    userId: userId(),
+    isNewUser: false,
+  });
+  // The listener's idle work has already sent sign_in_completed.
+  await flushIdleWork();
+  completeVerifiedSignUp(false);
+  await flushIdleWork();
+  // A repeat report is still deduped.
+  completeVerifiedSignUp(false);
+  await flushIdleWork();
+
+  assert.deepEqual(authEvents(), ["sign_in_completed", "sign_up_completed"]);
+});
+
+const onboardingCompleted = () =>
+  getTrackedAnalyticsEvents().filter((record) => record.event === "onboarding_completed");
+
+test("onboarding_completed tells an existing account from a new one", async () => {
+  useSessionStore.setState({ hasCompletedOnboarding: true, onboardingCompletionPending: true });
+  useSessionStore.getState().applyAuthStateFromSession({ isAuthenticated: true, userId: userId() });
+  await flushIdleWork();
+  assert.equal(onboardingCompleted().length, 1);
+  assert.equal(onboardingCompleted()[0]?.properties.is_new_account, false);
+
+  signedOut();
+  useSessionStore.setState({ hasCompletedOnboarding: true, onboardingCompletionPending: true });
+  useSessionStore.getState().completeAuth({ authProvider: "email", isNewUser: true });
+  await flushIdleWork();
+  assert.equal(onboardingCompleted().length, 1);
+  assert.equal(onboardingCompleted()[0]?.properties.is_new_account, true);
+});

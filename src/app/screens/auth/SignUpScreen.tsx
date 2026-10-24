@@ -1,6 +1,6 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Controller, useForm } from "react-hook-form";
-import { Pressable, View, type TextInput } from "react-native";
+import { AccessibilityInfo, Pressable, View, type TextInput } from "react-native";
 import { Eye, EyeOff, User, Mail, Lock } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 
@@ -52,10 +52,27 @@ export function SignUpScreen({ navigation }: Props) {
   const { componentRadii, palette, spacing } = useHungryTheme();
   const oauthProvidersEnabled = FEATURE_FLAGS.oauthProvidersEnabled;
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
-  // A/B test: everyone who sees this form while signed out is exposed; the password field
-  // is on screen from the first frame.
+  // A visible field reads every typed character aloud, so screen-reader users stay masked and
+  // out of the test. null until known: nobody is exposed before the check answers. On web,
+  // react-native-web cannot tell and always answers true, so web is left out of the test.
+  const [screenReaderOn, setScreenReaderOn] = useState<boolean | null>(null);
+  useEffect(() => {
+    let active = true;
+    void AccessibilityInfo.isScreenReaderEnabled()
+      .then((enabled) => {
+        if (active) setScreenReaderOn(enabled);
+      })
+      .catch(() => {
+        if (active) setScreenReaderOn(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+  // A/B test: everyone else who sees this form while signed out is exposed; the password
+  // field is on screen from the first frame.
   const passwordVariant = useExperimentVariant("auth_signup_password_visible_v1", {
-    enabled: !isAuthenticated,
+    enabled: !isAuthenticated && screenReaderOn === false,
   });
   // null until the person taps Show/Hide; until then the variant decides.
   const [passwordShownChoice, setPasswordShownChoice] = useState<boolean | null>(null);
