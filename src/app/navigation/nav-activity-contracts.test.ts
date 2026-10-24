@@ -14,11 +14,12 @@ test("Release 0.1 bottom navigation gates social, post, and review actions", () 
   const tabItem = read("src/components/ui/AppBottomTabItem.tsx");
   const types = read("src/app/navigation/navigationTypes.ts");
 
-  assert.match(tabs, /import \{ BookOpenText, House, PenLine, User \}/);
-  // Discover is the home page (labelled Home); the round middle button writes a review.
+  assert.match(tabs, /import \{ BookOpenText, House, Newspaper, PenLine, User \}/);
+  // Discover is the home page (labelled Home), the social posts feed is the Feed tab, and
+  // the round middle button writes a review.
   assert.match(
     tabs,
-    /key: "Discover", route: routeByName\.get\("Discover"\), icon: House, label: "Home"[\s\S]*FEATURE_FLAGS\.reviewCreationEnabled[\s\S]*key: "Create", isCreateAction: true, icon: PenLine, label: "Write a review"[\s\S]*key: "Review"[\s\S]*key: "Profile"/,
+    /key: "Discover", route: routeByName\.get\("Discover"\), icon: House, label: "Home"[\s\S]*FEATURE_FLAGS\.socialFeedEnabled[\s\S]*key: "Home", route: routeByName\.get\("Home"\), icon: Newspaper, label: "Feed"[\s\S]*FEATURE_FLAGS\.reviewCreationEnabled[\s\S]*key: "Create", isCreateAction: true, icon: PenLine, label: "Write a review"[\s\S]*key: "Review"[\s\S]*key: "Profile"/,
   );
   assert.match(
     tabs,
