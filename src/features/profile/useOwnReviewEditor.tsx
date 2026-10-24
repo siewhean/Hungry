@@ -3,6 +3,7 @@ import { MoreHorizontal } from "lucide-react-native";
 
 import { OwnContentEditDialog } from "@/components/social/OwnContentEditDialog";
 import { IconButton } from "@/components/ui";
+import { reportError } from "@/lib/monitoring/reportError";
 import { REVIEW_TEXT_MAX_LENGTH, sanitizeFreeText } from "@/lib/security/inputSanitization";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -48,10 +49,9 @@ export function useOwnReviewEditor(options: {
         onDeleted(review.id);
         showToast({ message: "Review deleted.", tone: "success" });
       } catch (error) {
-        showToast({
-          message: error instanceof Error ? error.message : "Could not delete this review.",
-          tone: "error",
-        });
+        reportError(error, { action: "delete_own_review", reviewId: review.id });
+        // The server's wording ("Review not found, or it isn't yours") is not for the person.
+        showToast({ message: "Couldn't delete this review. Please try again.", tone: "error" });
       }
     },
     [onDeleted, showToast],
@@ -77,13 +77,12 @@ export function useOwnReviewEditor(options: {
       try {
         await updateOwnReview(editing.id, patch);
       } catch (error) {
-        showToast({
-          message: error instanceof Error ? error.message : "Could not save your review.",
-          tone: "error",
-        });
+        reportError(error, { action: "update_own_review", reviewId: editing.id });
+        showToast({ message: "Couldn't save your review. Please try again.", tone: "error" });
         throw error;
       }
-      onUpdated({ ...editing, ...patch });
+      // The card shows "Edited" straight away, as it will after the next read.
+      onUpdated({ ...editing, ...patch, editedAt: new Date().toISOString() });
       setEditing(null);
       showToast({ message: "Review updated.", tone: "success" });
     },

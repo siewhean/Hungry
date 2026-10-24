@@ -704,6 +704,8 @@ export interface PublicUserProfile {
   canViewContent?: boolean;
   /** Stalls visited, counted on the server by the same rule as your own Stalls stat. */
   stallsVisited?: number;
+  /** Distinct dishes reviewed, the server's user_profiles.dishes_reviewed counter. */
+  dishesReviewed?: number;
 }
 
 export interface PublicMerchantProfile {

@@ -5,7 +5,13 @@ import { followUserAfterSignIn } from "@/features/auth/finishGuestAction";
 import { useRequireAccount } from "@/features/auth/useRequireAccount";
 import { useSocialStore } from "@/store/useSocialStore";
 
-export type FollowTarget = { userId: string; name: string; avatarUrl?: string };
+export type FollowTarget = {
+  userId: string;
+  name: string;
+  avatarUrl?: string;
+  /** The account approves followers: the button shows "Requested" at once. */
+  isPrivate?: boolean;
+};
 
 /**
  * The Follow button's tap, shared by a profile and the follower lists: a guest is asked to sign
@@ -17,7 +23,7 @@ export function useFollowPress() {
   const toggleFollow = useSocialStore((state) => state.toggleFollow);
 
   return useCallback(
-    ({ userId, name, avatarUrl }: FollowTarget) => {
+    ({ userId, name, avatarUrl, isPrivate }: FollowTarget) => {
       if (
         !requireAccount(
           `Sign in to follow ${name}`,
@@ -31,7 +37,7 @@ export function useFollowPress() {
         return;
       }
       if (!useSocialStore.getState().followedUserIds[userId]) {
-        toggleFollow(userId);
+        toggleFollow(userId, { isPrivate });
         return;
       }
       Alert.alert(`Unfollow ${name}?`, undefined, [

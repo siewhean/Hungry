@@ -34,7 +34,7 @@ test("social store contract: UUID follows sync to service while local-name fallb
   const connectionsSource = read("src/app/screens/profile/ProfileConnectionsScreen.tsx");
 
   assert.match(source, /toggleAuthorFollow: \(authorName: string\) => void/);
-  assert.match(source, /toggleFollow: \(userId: string\) => void/);
+  assert.match(source, /toggleFollow: \(userId: string, options\?: \{ isPrivate\?: boolean \}\) => void/);
   assert.match(source, /function canUseLocalAuthorFollowFallback\(\)/);
   assert.match(source, /Author-name follow ignored because this author is not backed by Supabase/);
   assert.match(source, /followedAuthors: \{\}/);
@@ -44,7 +44,7 @@ test("social store contract: UUID follows sync to service while local-name fallb
   assert.match(source, /service\.social\.followUser\(userId\)/);
   // Failed follows roll back with a visible error; private accounts get a request notice.
   assert.match(source, /Couldn't follow\. Please try again\./);
-  assert.match(source, /if \(result !== "pending"\) return;/);
+  assert.match(source, /if \(result !== "pending"\) \{[\s\S]*?return;\s*\}/);
   assert.match(source, /Follow request sent/);
   assert.match(source, /markFollowedUserIds: \(userIds\) =>/);
   assert.match(homeSource, /state\.followedAuthors/);

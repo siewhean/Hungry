@@ -90,6 +90,8 @@ export type AnalyticsEventName =
   | "user_followed"
   | "user_unfollowed"
   | "profile_viewed"
+  | "profile_updated"
+  | "profile_review_nudge_tapped"
   | "profile_shared"
   | "taste_fingerprint_shared"
   | "follow_request_approved"

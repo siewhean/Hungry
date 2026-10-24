@@ -86,3 +86,15 @@ test("a guest cannot follow, like, save, comment or count a share", async () => 
   assert.equal(state.commentsByPostId["post-1"], undefined);
   reset();
 });
+
+test("following a private account shows Requested at once and never Following", async () => {
+  reset();
+  useSocialStore.getState().toggleFollow(PRIVATE_USER_ID, { isPrivate: true });
+  // Before the server answers: locked and "Requested", not "Following".
+  assert.equal(followed(), false);
+  assert.equal(requested(), true);
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  assert.equal(followed(), false);
+  assert.equal(requested(), true);
+  reset();
+});

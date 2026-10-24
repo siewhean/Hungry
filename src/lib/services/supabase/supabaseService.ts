@@ -4075,6 +4075,9 @@ export const supabaseService: HungryService = {
               )
             : [];
         }
+        // Only a backend without the RPC falls back. Any other error (the rate cap, a
+        // network failure) is thrown, so the privacy rule and the cap are never skipped.
+        if (rpc.error.code !== "42883" && rpc.error.code !== "PGRST202") throw rpc.error;
       }
       const { data, error } = await client
         .from("reviews")
@@ -4359,7 +4362,7 @@ export const supabaseService: HungryService = {
       if (!client) return undefined;
       const { data, error } = await client
         .from("public_profiles")
-        .select("id,display_name,avatar_url,bio,stalls_visited")
+        .select("id,display_name,avatar_url,bio,dishes_reviewed,stalls_visited")
         .eq("id", userId)
         .maybeSingle();
       if (error) throw error;
@@ -4369,6 +4372,10 @@ export const supabaseService: HungryService = {
         // RLS hides a private account from non-followers: fall back to the minimal
         // card (name, avatar, private flag) so the profile can say it is private.
         const card = await client.rpc("get_profile_card", { p_user_id: userId });
+        // A failed or rate-capped read is an error (the screen offers Retry), not "not found".
+        if (card.error && card.error.code !== "42883" && card.error.code !== "PGRST202") {
+          throw card.error;
+        }
         const cardRow = !card.error && Array.isArray(card.data) ? (card.data[0] as Row) : null;
         const cardId = cardRow ? asString(cardRow.id) : undefined;
         if (!cardRow || !cardId) return undefined;
@@ -4385,6 +4392,7 @@ export const supabaseService: HungryService = {
         displayName: asString(row.display_name) ?? "Hungry member",
         avatarUrl: asString(row.avatar_url),
         bio: asString(row.bio),
+        dishesReviewed: asNumber(row.dishes_reviewed),
         stallsVisited: asNumber(row.stalls_visited),
       };
     },
