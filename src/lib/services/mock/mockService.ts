@@ -694,6 +694,7 @@ function listMockRecentReviews(options?: ListRecentReviewsOptions): RecentReview
     .flatMap((dish): RecentReviewFeedEntry[] =>
       dish.reviews
         .filter((review) => !isMockReviewHiddenForViewer(review))
+        .filter((review) => !options?.withPhotos || review.photos.length > 0)
         .map((review) => ({
           review: {
             ...review,

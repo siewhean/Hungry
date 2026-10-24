@@ -70,14 +70,18 @@ test("recommend is unanswered by default and derived from the rating when skippe
 test("review editor: dish first, helper text, modal picker, route wins over a stale draft", () => {
   const review = read("src/app/screens/review/ReviewScreen.tsx");
   const order = [
+    // The required photo comes right after the dish (REV-7), before rating and text.
     "{/* 1. Dish */}",
-    "{/* 2. Rating */}",
-    "{/* 3. Review text */}",
-    "{/* 4. Photos */}",
+    "{/* 2. Photo: required",
+    "{/* 3. Rating */}",
+    "{/* 4. Review text */}",
   ];
+  assert.match(review, /title="Photo \(required\)"/);
   const positions = order.map((marker) => review.indexOf(marker));
   assert.ok(positions.every((position, index) => position > (positions[index - 1] ?? -1)));
-  assert.match(review, /"Add a star rating to publish\."/);
+  // The blocked-publish copy lives in firstMissingReviewField and scrolls to the field.
+  assert.match(read("src/features/review/reviewDraft.ts"), /"Add a star rating to publish\."/);
+  assert.match(review, /onPress=\{\(\) => scrollToSection\(missingField\.field\)\}/);
   assert.match(review, /\{draft\.text\.length\}\/\{REVIEW_TEXT_MAX_LENGTH\}/);
   assert.match(review, /<Modal\s+visible=\{isSearching\}/);
   assert.match(review, /onRequestClose=/);
@@ -194,4 +198,18 @@ test("review medium/low fixes: sign-out clears the draft, feed pages by (created
   assert.doesNotMatch(review, /getParent\(\)\?\.getParent\(\)/);
   assert.match(migration, /on public\.reviews \(created_at desc, id desc\)/);
   assert.match(migration, /security definer\s+set search_path = ''/);
+});
+
+test("REV-X1: a failed publish reaches error tracking unless it was a refusal written for people", () => {
+  const review = read("src/app/screens/review/ReviewScreen.tsx");
+  const catchBlock = review.slice(
+    review.indexOf('trackAnalyticsEvent("review_submit_failed"'),
+    review.indexOf("setSubmitting(false);"),
+  );
+  assert.match(
+    catchBlock,
+    /if \(!isExpectedPublishError\(error\)\) \{\s*reportError\(error, \{ screen: "ReviewScreen", action: "submit_review"/,
+  );
+  // The cold-cache dish fetch no longer swallows its error.
+  assert.doesNotMatch(review, /\.catch\(\(\) => undefined\)/);
 });

@@ -3,6 +3,7 @@ import { MoreHorizontal } from "lucide-react-native";
 
 import { OwnContentEditDialog } from "@/components/social/OwnContentEditDialog";
 import { IconButton } from "@/components/ui";
+import { describeReviewEditError } from "@/features/review/publishErrorCopy";
 import { REVIEW_TEXT_MAX_LENGTH, sanitizeFreeText } from "@/lib/security/inputSanitization";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -48,10 +49,7 @@ export function useOwnReviewEditor(options: {
         onDeleted(review.id);
         showToast({ message: "Review deleted.", tone: "success" });
       } catch (error) {
-        showToast({
-          message: error instanceof Error ? error.message : "Could not delete this review.",
-          tone: "error",
-        });
+        showToast({ message: describeReviewEditError(error, "delete"), tone: "error" });
       }
     },
     [onDeleted, showToast],
@@ -77,10 +75,7 @@ export function useOwnReviewEditor(options: {
       try {
         await updateOwnReview(editing.id, patch);
       } catch (error) {
-        showToast({
-          message: error instanceof Error ? error.message : "Could not save your review.",
-          tone: "error",
-        });
+        showToast({ message: describeReviewEditError(error, "save"), tone: "error" });
         throw error;
       }
       onUpdated({ ...editing, ...patch });

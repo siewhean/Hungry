@@ -63,8 +63,6 @@
     "src/app/screens/profile/SocialGridScreen.tsx",
     "src/app/screens/profile/SocialPostDetailScreen.tsx",
     "src/app/screens/profile/UserProfileContent.tsx",
-    "src/app/screens/review/ReviewDetailScreen.tsx",
-    "src/app/screens/review/ReviewFeedScreen.tsx",
     "src/app/screens/review/ReviewShareSheet.tsx",
     "src/app/screens/search/DishSearchScreen.tsx",
     "src/app/screens/wheel/WheelEntryAddSheet.tsx",

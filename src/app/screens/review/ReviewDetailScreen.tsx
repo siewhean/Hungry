@@ -2,27 +2,41 @@
  * ReviewDetailScreen
  * One review on its own page: what a shared review link (usehungry.com/review/:id) opens.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { MoreHorizontal } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { ReviewModerationNotice, ReviewPhotoViewer, StarRating } from "@/components/review";
+import {
+  ReviewModerationNotice,
+  ReviewPhotoViewer,
+  ReviewReaderActions,
+} from "@/components/review";
 import {
   AccessibleImage,
   AppText,
   Avatar,
   Button,
   EmptyState,
+  IconButton,
   Screen,
   Skeleton,
 } from "@/components/ui";
 import { webShareUrl } from "@/constants/links";
+import { useRequireAccount } from "@/features/auth/useRequireAccount";
+import { useOwnReviewEditor } from "@/features/profile/useOwnReviewEditor";
 import { shareLink } from "@/features/share/messagingShare";
-import { isContentHiddenForSession } from "@/lib/security/communitySafety";
+import { reportError } from "@/lib/monitoring/reportError";
+import {
+  isContentHiddenForSession,
+  promptReviewSafetyActions,
+} from "@/lib/security/communitySafety";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import type { RecentReviewFeedEntry } from "@/lib/services/types";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ReviewDetail">;
@@ -31,29 +45,46 @@ export function ReviewDetailScreen({ navigation, route }: Props) {
   const { palette, radii, spacing } = useHungryTheme();
   const { reviewId } = route.params;
   const viewerId = useProfileStore((state) => state.profile.id);
+  const showToast = useUIStore((state) => state.showToast);
+  const requireAccount = useRequireAccount();
   const [entry, setEntry] = useState<RecentReviewFeedEntry | null>(null);
   const [state, setState] = useState<"loading" | "done" | "error">("loading");
   const [attempt, setAttempt] = useState(0);
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+  const [deleted, setDeleted] = useState(false);
+  // Bumped after a report or block so the page re-checks whether the review is hidden.
+  const [, setSafetyVersion] = useState(0);
+  const loadedIdRef = useRef<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    getHungryService()
-      .reviews.getReviewById(reviewId)
-      .then((found) => {
-        if (cancelled) return;
-        setEntry(found);
-        setState("done");
-      })
-      .catch(() => {
-        if (!cancelled) setState("error");
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [reviewId, attempt]);
+  // Loads on focus, so an edit made elsewhere (the dish page) shows on Back. Only the first
+  // load (or a retry) shows the skeleton; a refocus refreshes in place.
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      const firstLoad = loadedIdRef.current !== reviewId;
+      if (firstLoad) setState("loading");
+      getHungryService()
+        .reviews.getReviewById(reviewId)
+        .then((found) => {
+          if (cancelled) return;
+          loadedIdRef.current = reviewId;
+          setEntry(found);
+          setState("done");
+        })
+        .catch((error: unknown) => {
+          if (cancelled) return;
+          reportError(error, { screen: "ReviewDetailScreen", action: "load_review" });
+          // A failed refresh keeps the review on screen.
+          if (firstLoad) setState("error");
+        });
+      return () => {
+        cancelled = true;
+      };
+    }, [reviewId, attempt]),
+  );
 
   const retry = useCallback(() => {
+    loadedIdRef.current = null;
     setState("loading");
     setAttempt((current) => current + 1);
   }, []);
@@ -61,9 +92,44 @@ export function ReviewDetailScreen({ navigation, route }: Props) {
     () => navigation.navigate("MainTabs", { screen: "Review" }),
     [navigation],
   );
+  const refreshSafety = useCallback(() => setSafetyVersion((current) => current + 1), []);
+
+  const ownReviewEditor = useOwnReviewEditor({
+    onUpdated: (updated) =>
+      setEntry((current) =>
+        current
+          ? {
+              ...current,
+              review: { ...current.review, ...updated, editedAt: new Date().toISOString() },
+            }
+          : current,
+      ),
+    onDeleted: () => {
+      setDeleted(true);
+      if (navigation.canGoBack()) navigation.goBack();
+    },
+  });
 
   const review = entry?.review;
   const hidden = review && isContentHiddenForSession({ id: review.id, authorId: review.authorId });
+  const isOwn = Boolean(review?.authorId && review.authorId === viewerId);
+  const returnRoute = useMemo(() => ({ name: "ReviewDetail", params: { reviewId } }), [reviewId]);
+
+  const openMenu = useCallback(() => {
+    if (!review) return;
+    if (isOwn) {
+      ownReviewEditor.openActions(review);
+      return;
+    }
+    if (!requireAccount("Sign in to report or block.", returnRoute)) return;
+    promptReviewSafetyActions({
+      reviewId: review.id,
+      authorName: review.authorName,
+      authorId: review.authorId,
+      onHidden: refreshSafety,
+      onBlocked: refreshSafety,
+    });
+  }, [isOwn, ownReviewEditor, refreshSafety, requireAccount, returnRoute, review]);
 
   if (state === "loading") {
     return (
@@ -90,12 +156,18 @@ export function ReviewDetailScreen({ navigation, route }: Props) {
     );
   }
 
-  if (!entry || !review || hidden) {
+  if (!entry || !review || hidden || deleted) {
     return (
       <Screen title="Review">
         <EmptyState
           title="This review isn't available"
-          body="It may have been removed by its author."
+          body={
+            hidden
+              ? "You blocked or reported this review, so it's hidden for you."
+              : deleted
+                ? "You deleted this review."
+                : "It may have been removed, or the link is wrong."
+          }
           ctaLabel="See other reviews"
           onPress={goHome}
         />
@@ -103,15 +175,27 @@ export function ReviewDetailScreen({ navigation, route }: Props) {
     );
   }
 
-  const isOwn = Boolean(review.authorId && review.authorId === viewerId);
   const dateLabel = `${new Date(review.createdAt).toLocaleDateString("en-SG", {
     day: "numeric",
     month: "short",
     year: "numeric",
   })}${review.editedAt ? " · edited" : ""}`;
 
+  const menuButton =
+    isOwn && !ownReviewEditor.enabled ? undefined : (
+      <IconButton
+        variant="ghost"
+        accessibilityLabel={isOwn ? "Manage your review" : "More options"}
+        accessibilityHint={
+          isOwn ? "Edit or delete this review" : "Report this review or block its author"
+        }
+        onPress={openMenu}
+        icon={<MoreHorizontal color={palette.textSecondary} size={20} />}
+      />
+    );
+
   return (
-    <Screen title={entry.dishName} subtitle={entry.venueName}>
+    <Screen title={entry.dishName} subtitle={entry.venueName} headerRight={menuButton}>
       <View style={{ gap: spacing[4] }}>
         {review.moderationState ? (
           <ReviewModerationNotice
@@ -121,40 +205,44 @@ export function ReviewDetailScreen({ navigation, route }: Props) {
           />
         ) : null}
 
-        <View
-          style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}
+        <Pressable
+          accessibilityRole={review.authorId && !isOwn ? "button" : undefined}
+          accessibilityLabel={`${review.authorName}${review.authorId && !isOwn ? ", open profile" : ""}`}
+          disabled={!review.authorId || isOwn}
+          onPress={() =>
+            review.authorId
+              ? navigation.navigate("UserProfile", {
+                  authorId: review.authorId,
+                  authorName: review.authorName,
+                  authorAvatarUrl: review.authorAvatarUrl,
+                })
+              : undefined
+          }
+          style={{
+            alignItems: "center",
+            flexDirection: "row",
+            gap: spacing[2],
+            minHeight: 44,
+          }}
         >
-          <Pressable
-            accessibilityRole={review.authorId && !isOwn ? "button" : undefined}
-            accessibilityLabel={`${review.authorName}${review.authorId && !isOwn ? ", open profile" : ""}`}
-            disabled={!review.authorId || isOwn}
-            onPress={() =>
-              review.authorId
-                ? navigation.navigate("UserProfile", {
-                    authorId: review.authorId,
-                    authorName: review.authorName,
-                    authorAvatarUrl: review.authorAvatarUrl,
-                  })
-                : undefined
-            }
-            style={{
-              alignItems: "center",
-              flexDirection: "row",
-              flexShrink: 1,
-              gap: spacing[2],
-              minHeight: 44,
-            }}
-          >
-            <Avatar uri={review.authorAvatarUrl} name={review.authorName} size={40} />
-            <View style={{ flexShrink: 1 }}>
-              <AppText variant="bodySmallBold">{review.authorName}</AppText>
-              <AppText variant="micro" tone="muted">
-                {dateLabel}
-              </AppText>
-            </View>
-          </Pressable>
-          <StarRating value={review.rating} />
-        </View>
+          <Avatar uri={review.authorAvatarUrl} name={review.authorName} size={40} />
+          <View style={{ flexShrink: 1 }}>
+            <AppText variant="bodySmallBold">{review.authorName}</AppText>
+            <AppText variant="micro" tone="muted">
+              {dateLabel}
+            </AppText>
+          </View>
+        </Pressable>
+
+        {/* The stars (read-only, 14pt) and, on someone else's review, the like. */}
+        <ReviewReaderActions
+          key={review.id}
+          review={review}
+          isOwn={isOwn}
+          rating={review.rating}
+          returnRoute={returnRoute}
+          onRemoved={refreshSafety}
+        />
 
         {review.photos.length > 0 ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -227,7 +315,7 @@ export function ReviewDetailScreen({ navigation, route }: Props) {
             label="Share this review"
             variant="secondary"
             onPress={() =>
-              void shareLink(
+              shareLink(
                 {
                   kind: "review",
                   id: review.id,
@@ -235,7 +323,10 @@ export function ReviewDetailScreen({ navigation, route }: Props) {
                   url: webShareUrl("review", review.id),
                 },
                 "system_share",
-              )
+              ).catch((error: unknown) => {
+                reportError(error, { screen: "ReviewDetailScreen", action: "share_review" });
+                showToast({ message: "Couldn't open sharing. Try again.", tone: "warning" });
+              })
             }
           />
         )}
@@ -248,6 +339,7 @@ export function ReviewDetailScreen({ navigation, route }: Props) {
           onClose={() => setViewerIndex(null)}
         />
       ) : null}
+      {ownReviewEditor.dialog}
     </Screen>
   );
 }

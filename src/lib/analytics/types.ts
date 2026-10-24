@@ -79,6 +79,7 @@ export type AnalyticsEventName =
   | "review_helpful_toggled"
   | "review_feed_filter_changed"
   | "review_feed_searched"
+  | "review_opened"
   | "post_published"
   | "post_publish_failed"
   | "post_abandoned"

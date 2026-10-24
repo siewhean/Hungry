@@ -28,9 +28,10 @@ test("Review feed cards do not render bottom bites sections", () => {
   assert.doesNotMatch(reviewFeed, /linkedPost/);
   assert.doesNotMatch(reviewFeed, /toggleLike|likeCount/);
   assert.doesNotMatch(reviewFeed, /seededComments=\{/);
-  // The dish name and the date sit over a bottom gradient: relative within a week, then a date.
-  assert.match(reviewFeed, /\{item\.dishName\}[\s\S]*formatReviewDate\(item\.review\.createdAt\)/);
-  assert.match(reviewFeed, /formatReviewDate\(item\.review\.createdAt\)/);
+  // Control tiles are photo and date (sh, 9ae387b): relative within a week, then a date. The dish
+  // name shows only in the review_tile_labels_v1 "labels" arm.
+  assert.match(reviewFeed, /const dateLabel = formatReviewDate\(item\.review\.createdAt\);/);
+  assert.match(reviewFeed, /\{showLabels \? \([\s\S]*\{item\.dishName\}[\s\S]*\) : \([\s\S]*\{dateLabel\}/);
   assert.match(reviewFeed, /sameYear \? \{\} : \{ year: "numeric" \}/);
 
   assert.match(commentsSheet, /<BottomSheetModal/);

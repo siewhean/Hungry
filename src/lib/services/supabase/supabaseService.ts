@@ -1319,7 +1319,11 @@ async function fetchRecentReviewsPage(
   if (options?.dishIds && options.dishIds.length === 0) return { entries: [], hasMore: false };
   let query = client
     .from("reviews")
-    .select(REVIEW_FEED_COLUMNS)
+    // withPhotos: an inner join on review_photos (indexed by its (review_id, sort_order)
+    // unique key) keeps text-only reviews off the photo grid, so a page is all photo reviews.
+    .select(
+      options?.withPhotos ? `${REVIEW_FEED_COLUMNS},review_photos!inner(id)` : REVIEW_FEED_COLUMNS,
+    )
     .order("created_at", { ascending: false })
     .order("id", { ascending: false })
     .limit(limit);
@@ -1342,7 +1346,7 @@ async function fetchRecentReviewsPage(
   }
   const { data, error } = await query;
   if (error) throw error;
-  const rows = Array.isArray(data) ? (data as Row[]) : [];
+  const rows = Array.isArray(data) ? (data as unknown as Row[]) : [];
   const lastRow = rows[rows.length - 1];
   const lastCreatedAt = lastRow ? asString(lastRow.created_at) : undefined;
   const lastId = lastRow ? asString(lastRow.id) : undefined;

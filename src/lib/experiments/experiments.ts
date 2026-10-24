@@ -50,6 +50,25 @@ export const EXPERIMENTS = {
     primaryMetric: "welcome_back_opened",
     guardrailMetrics: ["welcome_back_dismissed", "dish_viewed"],
   },
+  /**
+   * Dish name and stars on Reviews grid tiles. Control keeps photo and date only (sh, 9ae387b).
+   * Exposed once a focused, non-empty live grid is on screen (ReviewFeedScreen).
+   */
+  review_tile_labels_v1: {
+    variants: ["control", "labels"],
+    fallback: "control",
+    status: "running",
+    surface: "reviews",
+    hypothesis:
+      "Showing the dish name and stars on Reviews grid tiles lets people pick what to open, so more exposed users open a review and go on to the dish.",
+    primaryMetric: "review_opened",
+    guardrailMetrics: [
+      "dish_viewed",
+      "review_feed_filter_changed",
+      "review_feed_searched",
+      "review_started",
+    ],
+  },
 } as const satisfies Record<string, ExperimentDefinition>;
 
 export type ExperimentKey = keyof typeof EXPERIMENTS;

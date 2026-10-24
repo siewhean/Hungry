@@ -606,6 +606,8 @@ export interface ListRecentReviewsOptions {
   dishIds?: string[];
   /** Only reviews written for this stall (read by its indexed venue column, not a long dish-id list). */
   venueId?: string;
+  /** Only reviews with at least one photo (the Reviews grid); dish and stall pages leave it off. */
+  withPhotos?: boolean;
 }
 
 export interface SubmitMenuPhotoInput {

@@ -3,7 +3,14 @@ import test from "node:test";
 
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import type { DishDetail, Review } from "@/types/domain";
-import { buildReviewExploreChips, filterReviewExplore, reviewsWithPhotos } from "./reviewExplore";
+import {
+  buildReviewExploreChips,
+  filterReviewExplore,
+  resolveActiveReviewChip,
+  reviewsWithPhotos,
+  visibleGridReviews,
+  withSelectedReviewChip,
+} from "./reviewExplore";
 import type { ReviewFeedItem } from "./reviewFeed";
 
 const review = (id: string, photos: string[]): Review => ({
@@ -76,4 +83,34 @@ test("filters by taste, food and area", () => {
   assert.deepEqual(pick("For your taste"), ["1"]);
   assert.deepEqual(pick("Laksa"), ["1", "2"]);
   assert.deepEqual(pick("Maxwell"), ["1", "3"]);
+});
+
+test("a picked food that drops out of the top six stays selected; a lost chip falls back to All (REV-8)", () => {
+  const chips = buildReviewExploreChips(items, { userVector: spicyLover, areaOf: (i) => (i as unknown as { area: string }).area });
+  assert.equal(chips[0]?.id, "taste", "taste is first for a diner with a palette");
+
+  // "food:Satay" is not on the page any more: it is kept, not swapped for "For your taste".
+  const kept = withSelectedReviewChip(chips, "food:Satay");
+  assert.equal(resolveActiveReviewChip(kept, "food:Satay")?.id, "food:Satay");
+  assert.equal(kept.length, chips.length + 1);
+  assert.equal(withSelectedReviewChip(chips, "food:Laksa").length, chips.length);
+
+  // An id that cannot be rebuilt falls back to All, never to the taste chip.
+  assert.equal(resolveActiveReviewChip(chips, "gone")?.id, "all");
+});
+
+test("the grid leaves out session-hidden reviews and the viewer's own moderated ones (REV-X5)", () => {
+  const own = item("own", "Laksa", "Maxwell");
+  own.review = { ...own.review, authorId: "me", moderationState: "hidden" };
+  const ownLive = item("own-live", "Laksa", "Maxwell");
+  ownLive.review = { ...ownLive.review, authorId: "me" };
+  const reported = item("reported", "Laksa", "Maxwell");
+  const visible = visibleGridReviews([own, ownLive, reported, ...items], {
+    viewerId: "me",
+    isHidden: (i) => i.review.id === "reported",
+  });
+  assert.deepEqual(
+    visible.map((i) => i.review.id),
+    ["own-live", ...items.map((i) => i.review.id)],
+  );
 });

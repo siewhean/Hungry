@@ -422,3 +422,23 @@ test("adjustCommunityTasteVector saves numeric axes through submit_dish_taste_ra
   await rejectsWith(service.ai.adjustCommunityTasteVector("dish-1", { sour: 5 }), /rate limited/);
   assert.equal(fake.callsTo("submit_dish_taste_rating")[0].args.p_review_id, null);
 });
+
+test("listRecentReviewsPage withPhotos inner-joins review_photos; dish and stall reads do not (REV-3)", async () => {
+  const rows = [
+    { id: "r2", dish_id: "d1", created_at: "2026-10-02T00:00:00Z", rating: 5, text: "a" },
+    { id: "r1", dish_id: "d1", created_at: "2026-10-01T00:00:00Z", rating: 4, text: "b" },
+  ];
+  fake.tables.reviews = () => ({ data: rows, error: null });
+  const select = (table: string) =>
+    fake.queriesOn(table)[0].ops.find(([method]) => method === "select")?.[1][0] as string;
+
+  const page = await service.reviews.listRecentReviewsPage({ limit: 2, withPhotos: true });
+  assert.match(select("reviews"), /,review_photos!inner\(id\)$/);
+  // Paging still comes from the raw rows read.
+  assert.equal(page.hasMore, true);
+  assert.deepEqual(page.nextCursor, { before: "2026-10-01T00:00:00Z", beforeId: "r1" });
+
+  fake.queries.length = 0;
+  await service.reviews.listRecentReviewsPage({ limit: 2, venueId: "v1" });
+  assert.doesNotMatch(select("reviews"), /review_photos/);
+});

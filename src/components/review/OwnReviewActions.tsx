@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { View } from "react-native";
 
+import { describeReviewEditError } from "@/features/review/publishErrorCopy";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { REVIEW_TEXT_MAX_LENGTH } from "@/lib/security/inputSanitization";
 import { useUIStore } from "@/store/useUIStore";
@@ -26,9 +27,6 @@ export function OwnReviewActions({ review, onUpdated, onDeleted }: OwnReviewActi
   const [isSaving, setIsSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  const describe = (error: unknown, fallback: string) =>
-    error instanceof Error && error.message ? error.message : fallback;
-
   const save = async () => {
     setIsSaving(true);
     try {
@@ -37,7 +35,7 @@ export function OwnReviewActions({ review, onUpdated, onDeleted }: OwnReviewActi
       setIsEditing(false);
       showToast({ message: "Review updated.", tone: "success" });
     } catch (error) {
-      showToast({ message: describe(error, "Couldn't save your review."), tone: "warning" });
+      showToast({ message: describeReviewEditError(error, "save"), tone: "warning" });
     } finally {
       setIsSaving(false);
     }
@@ -51,7 +49,7 @@ export function OwnReviewActions({ review, onUpdated, onDeleted }: OwnReviewActi
       onDeleted();
       showToast({ message: "Review deleted.", tone: "success" });
     } catch (error) {
-      showToast({ message: describe(error, "Couldn't delete your review."), tone: "warning" });
+      showToast({ message: describeReviewEditError(error, "delete"), tone: "warning" });
     } finally {
       setIsSaving(false);
     }

@@ -44,14 +44,15 @@ export function TasteRatingInput({ values, suggestions, onChange }: Props) {
         importantForAccessibility="no-hide-descendants"
         style={{ flexDirection: "row" }}
       >
-        <View style={{ width: LABEL_WIDTH }} />
-        <View style={{ flex: 1, flexDirection: "row", justifyContent: "space-between" }}>
+        <View style={{ width: LABEL_COLUMN }} />
+        <View style={{ flex: 1, flexDirection: "row" }}>
           {TASTE_RATING_LEVELS.map((step) => (
+            // Same flex column as the dots below, so names stay over their dots at 2x text.
             <AppText
               key={step.value}
               variant="micro"
               tone="muted"
-              style={{ minWidth: 44, textAlign: "center" }}
+              style={{ flex: 1, minWidth: STEP_MIN_WIDTH, textAlign: "center" }}
             >
               {step.label}
             </AppText>
@@ -66,10 +67,18 @@ export function TasteRatingInput({ values, suggestions, onChange }: Props) {
             : undefined;
         return (
           <View key={dimension.key} style={{ alignItems: "center", flexDirection: "row" }}>
-            <AppText variant="bodySmallBold" style={{ width: LABEL_WIDTH }}>
+            <AppText
+              variant="bodySmallBold"
+              style={{ paddingRight: spacing[1], width: LABEL_COLUMN }}
+            >
               {dimension.label}
             </AppText>
-            <View style={{ flex: 1, flexDirection: "row", justifyContent: "space-between" }}>
+            {/* One radio group per taste, so a screen reader says "Spicy, 2 of 5". */}
+            <View
+              accessibilityRole="radiogroup"
+              accessibilityLabel={dimension.label}
+              style={{ flex: 1, flexDirection: "row" }}
+            >
               {TASTE_RATING_LEVELS.map((step) => {
                 const isPicked = picked === step.value;
                 const isSuggested = suggested === step.value;
@@ -80,11 +89,13 @@ export function TasteRatingInput({ values, suggestions, onChange }: Props) {
                     accessibilityLabel={`${dimension.label}: ${step.label}${isSuggested ? ", suggested" : ""}`}
                     accessibilityState={{ checked: isPicked }}
                     onPress={() => onChange(dimension.key, isPicked ? undefined : step.value)}
+                    hitSlop={{ left: 2, right: 2 }}
                     style={{
                       alignItems: "center",
+                      flex: 1,
                       justifyContent: "center",
                       minHeight: 44,
-                      minWidth: 44,
+                      minWidth: STEP_MIN_WIDTH,
                     }}
                   >
                     <View
@@ -113,4 +124,9 @@ export function TasteRatingInput({ values, suggestions, onChange }: Props) {
   );
 }
 
-const LABEL_WIDTH = 84;
+/**
+ * The taste names take a share of the row, not a fixed 84pt, so five 40pt+ steps (44pt with
+ * their hit slop) still fit on a 320pt screen.
+ */
+const LABEL_COLUMN = "24%";
+const STEP_MIN_WIDTH = 40;
