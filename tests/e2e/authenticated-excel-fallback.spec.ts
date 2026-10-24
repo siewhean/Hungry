@@ -27,12 +27,14 @@ test.describe("authenticated Excel fallback on a deployed staging build", () => 
     });
 
     await authenticateFromFreshInstall(page);
-    await page.getByText("Discover", { exact: true }).click();
+    // The Discover tab is labelled Home since the Stitch redesign.
+    await page.getByText("Home", { exact: true }).click();
 
     await expect(page.getByTestId("catalog-source-excel")).toBeVisible({ timeout: 60_000 });
     await expect(page.getByText("Offline catalog", { exact: true })).toBeVisible();
     await expect(page.getByText("Nearby dishes", { exact: true })).toBeVisible();
-    await expect(page.getByText("Stalls near you", { exact: true })).toBeVisible();
+    // "Stalls near you" only with a GPS fix or a picked area; a fresh install has neither.
+    await expect(page.getByText(/^Stalls( near you)?$/)).toBeVisible();
 
     const imageSources = await page.locator("img").evaluateAll((images) =>
       images
@@ -46,7 +48,8 @@ test.describe("authenticated Excel fallback on a deployed staging build", () => 
     page,
   }) => {
     await authenticateFromFreshInstall(page);
-    await page.getByText("Discover", { exact: true }).click();
+    // The Discover tab is labelled Home since the Stitch redesign.
+    await page.getByText("Home", { exact: true }).click();
     await expect(page.getByTestId("catalog-source-supabase")).toBeVisible({ timeout: 60_000 });
 
     await page.getByRole("button", { name: "Browse dishes" }).click();

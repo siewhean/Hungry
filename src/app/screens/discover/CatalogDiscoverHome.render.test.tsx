@@ -1,7 +1,7 @@
 // The Home every Supabase build ships (CatalogDiscoverHome), rendered against a stubbed catalog
 // service shaped like the catalog RPC pages. Run with `node scripts/test-render.mjs <file>`.
 import assert from "node:assert/strict";
-import { createElement } from "react";
+import { act, createElement } from "react";
 import test, { afterEach, beforeEach } from "node:test";
 
 import { CatalogDiscoverHome } from "@/app/screens/discover/CatalogDiscoverHome";
@@ -23,6 +23,7 @@ import { getCatalogRawService } from "@/lib/services/serviceProvider";
 import { useLifecycleStore } from "@/store/useLifecycleStore";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useStallFollowStore } from "@/store/useStallFollowStore";
 import { cleanup, createFakeNavigation, render } from "@/test/render";
 import { enterScenario } from "@/test/render/sessions";
 
@@ -121,7 +122,7 @@ beforeEach(async () => {
   await enterScenario("user");
   clearTrackedAnalyticsEvents();
   setLocation({});
-  useLifecycleStore.setState({ snapshot: null, welcomeBackDismissed: false });
+  useLifecycleStore.setState({ snapshot: null, welcomeBackDismissed: false, welcomeBackShown: false });
 });
 
 afterEach(async () => {
@@ -179,22 +180,88 @@ test("diners see no catalog debug pill or data-quality badges", async () => {
   assert.doesNotMatch(view.text(), /40,000 dishes/, "release-wide totals are not shown");
 });
 
-test("a failed reload keeps the cards on screen with an inline retry", async () => {
+test("HOME-V1: a failed filter change shows the full error, not the previous filter's cards", async () => {
   const catalog = stubCatalog();
   const view = await render(createElement(CatalogDiscoverHome));
   assert.match(view.text(), /Laksa/);
 
   catalog.fail = new Error("PGRST301 JWT expired at row 4");
   await view.press(view.findByText("Japanese"));
-  assert.match(view.text(), /Sungei Road Laksa/, "the last good page stays");
-  assert.ok(view.findByTestId("catalog-discover-error-banner"));
+  assert.doesNotMatch(view.text(), /Sungei Road Laksa/, "the All page is not shown under Japanese");
+  assert.match(view.text(), /Couldn't load Home/);
   assert.doesNotMatch(view.text(), /PGRST301/, "the raw error is not shown");
 
   catalog.fail = null;
   const clears = catalog.cacheClears;
   await view.press(view.findByText("Retry"));
   assert.equal(catalog.cacheClears, clears + 1, "Retry bypasses the page cache");
+  assert.match(view.text(), /Sungei Road Laksa/);
   assert.equal(view.findByTestId("catalog-discover-error-banner"), null);
+});
+
+/** Calls the Home ScrollView's pull-to-refresh handler (react-native-web cannot pull). */
+async function pullToRefresh(view: Awaited<ReturnType<typeof render>>) {
+  const node = view.findByTestId("catalog-discover-screen") as unknown as Record<string, unknown>;
+  const fiberKey = Object.keys(node).find((key) => key.startsWith("__reactFiber$"));
+  let fiber = fiberKey
+    ? (node[fiberKey] as { memoizedProps?: Record<string, unknown>; return?: unknown })
+    : undefined;
+  while (fiber && !fiber.memoizedProps?.refreshControl) {
+    fiber = fiber.return as typeof fiber;
+  }
+  const control = fiber?.memoizedProps?.refreshControl as
+    | { props: { onRefresh(): void } }
+    | undefined;
+  assert.ok(control, "Home has a pull-to-refresh control");
+  await act(async () => control.props.onRefresh());
+  await view.settle();
+}
+
+test("HOME-V1: a failed refresh of the same request keeps the last good page under an inline banner", async () => {
+  const catalog = stubCatalog();
+  const view = await render(createElement(CatalogDiscoverHome));
+  assert.match(view.text(), /Sungei Road Laksa/);
+  catalog.fail = new Error("timeout");
+  await pullToRefresh(view);
+  assert.match(view.text(), /Sungei Road Laksa/, "the page for this same request stays");
+  assert.ok(view.findByTestId("catalog-discover-error-banner"));
+});
+
+test("HOME-V1 + V2: while a new filter loads the old cards are hidden, and its impression has its own counts", async () => {
+  stubCatalog();
+  const service = getCatalogRawService() as unknown as {
+    listDishes(request: CatalogPageRequest): Promise<CatalogPage<CatalogRawDishCard>>;
+  };
+  const view = await render(createElement(CatalogDiscoverHome));
+  assert.match(view.text(), /Sungei Road Laksa/);
+
+  let release: () => void = () => undefined;
+  service.listDishes = () =>
+    new Promise((resolve) => {
+      release = () =>
+        resolve(
+          page([
+            dish({ id: "dish-r", name: "Ramen", venueName: "Ramen Stall" }),
+            dish({ id: "dish-s", name: "Sushi", venueName: "Sushi Stall" }),
+          ]),
+        );
+    });
+  await view.press(view.findByText("Japanese"));
+  assert.ok(view.findByTestId("catalog-discover-skeleton"), "a loading state shows");
+  assert.doesNotMatch(view.text(), /Sungei Road Laksa/, "no stale cards under the new chip");
+
+  await act(async () => release());
+  await view.settle();
+  assert.match(view.text(), /Ramen/);
+  const dishImpressions = getTrackedAnalyticsEvents().filter(
+    (event) =>
+      event.event === "discover_rail_impression" && event.properties?.rail === "nearby_dishes",
+  );
+  assert.deepEqual(
+    dishImpressions.map((event) => event.properties?.count),
+    [1, 2],
+    "one impression per page, each with that page's own count",
+  );
 });
 
 test("a first-load failure keeps the header and chips and shows plain copy", async () => {
@@ -242,6 +309,35 @@ test("a halal diner's first request already filters for halal", async () => {
   await render(createElement(CatalogDiscoverHome));
   assert.deepEqual(catalog.requests[0]?.dietaryFlags, ["halal"]);
   assert.equal(catalog.requests.length, 1, "no unfiltered request first");
+});
+
+test("HOME-V5: a halal preference that arrives after Home mounts applies the Halal chip once", async () => {
+  useProfileStore.setState((state) => ({ profile: { ...state.profile, dietaryPreferences: [] } }));
+  const catalog = stubCatalog();
+  const view = await render(createElement(CatalogDiscoverHome));
+  assert.ok(!catalog.requests.at(-1)?.dietaryFlags?.length, "starts on All");
+  await act(async () => {
+    useProfileStore.setState((state) => ({
+      profile: { ...state.profile, dietaryPreferences: ["halal"] },
+    }));
+  });
+  await view.settle();
+  assert.deepEqual(catalog.requests.at(-1)?.dietaryFlags, ["halal"]);
+});
+
+test("HOME-V5: a diner who already picked a chip keeps it when the profile arrives", async () => {
+  useProfileStore.setState((state) => ({ profile: { ...state.profile, dietaryPreferences: [] } }));
+  const catalog = stubCatalog();
+  const view = await render(createElement(CatalogDiscoverHome));
+  await view.press(view.findByText("Japanese"));
+  const japanese = catalog.requests.at(-1);
+  await act(async () => {
+    useProfileStore.setState((state) => ({
+      profile: { ...state.profile, dietaryPreferences: ["halal"] },
+    }));
+  });
+  await view.settle();
+  assert.equal(catalog.requests.at(-1), japanese, "no halal request over the diner's pick");
 });
 
 test("GPS jitter of a few metres does not refetch", async () => {
@@ -319,4 +415,47 @@ test("section titles are announced as headings", async () => {
   const view = await render(createElement(CatalogDiscoverHome));
   assert.equal(view.findByText("Nearby dishes")?.getAttribute("role"), "heading");
   assert.notEqual(view.findByText("Browse the full directory")?.getAttribute("role"), "heading");
+});
+
+test("welcome_back_v2: control is exposed exactly once, and an unfocused Home exposes no one", async () => {
+  useLifecycleStore.setState({ snapshot: returning as never });
+  stubCatalog();
+  const control = fakeFlags({ welcome_back_v2: "control" });
+  setExperimentFlagSource(control.source);
+  await render(createElement(CatalogDiscoverHome));
+  assert.deepEqual(control.state.exposures, ["welcome_back_v2"]);
+  await cleanup();
+  resetExperimentSession();
+
+  const unfocused = fakeFlags({ welcome_back_v2: "test" });
+  setExperimentFlagSource(unfocused.source);
+  const navigation = { ...createFakeNavigation(), isFocused: () => false };
+  const view = await render(createElement(CatalogDiscoverHome), { navigation });
+  assert.doesNotMatch(view.text(), /Welcome back/);
+  assert.deepEqual(unfocused.state.exposures, []);
+});
+
+test("HOME-V6: a returning diner with no saved dishes and no followed stalls is not exposed", async () => {
+  useProfileStore.setState((state) => ({ profile: { ...state.profile, favouriteDishIds: [] } }));
+  useStallFollowStore.setState({ followedStallIds: [] });
+  const fake = fakeFlags({ welcome_back_v2: "test" });
+  setExperimentFlagSource(fake.source);
+  useLifecycleStore.setState({ snapshot: returning as never });
+  stubCatalog();
+  const view = await render(createElement(CatalogDiscoverHome));
+  assert.doesNotMatch(view.text(), /Welcome back/);
+  assert.deepEqual(fake.state.exposures, []);
+});
+
+test("HOME-V6: welcome_back_shown is sent once per session, even when the card remounts", async () => {
+  const fake = fakeFlags({ welcome_back_v2: "test" });
+  setExperimentFlagSource(fake.source);
+  useLifecycleStore.setState({ snapshot: returning as never });
+  stubCatalog();
+  await render(createElement(CatalogDiscoverHome));
+  await cleanup();
+  const view = await render(createElement(CatalogDiscoverHome));
+  assert.match(view.text(), /Welcome back/);
+  const shown = getTrackedAnalyticsEvents().filter((event) => event.event === "welcome_back_shown");
+  assert.equal(shown.length, 1);
 });

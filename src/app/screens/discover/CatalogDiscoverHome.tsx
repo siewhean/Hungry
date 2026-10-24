@@ -348,6 +348,14 @@ export function CatalogDiscoverHome() {
   useScrollToTop(scrollRef);
   // A halal diner starts on the Halal chip; they can still switch to All.
   const [filter, setFilter] = useState<CatalogFilter>(() => (prefersHalal ? "halal" : "all"));
+  // A profile that arrives after Home mounts (sign-in on a new device) still applies the halal
+  // preset once, unless the diner has already picked a chip themselves.
+  const filterTouchedRef = useRef(false);
+  useEffect(() => {
+    if (!prefersHalal || filterTouchedRef.current) return;
+    filterTouchedRef.current = true;
+    setFilter((current) => (current === "all" ? "halal" : current));
+  }, [prefersHalal]);
   const [dishes, setDishes] = useState<CatalogRawDishCard[]>([]);
   const [venues, setVenues] = useState<CatalogRawVenueCard[]>([]);
   const [releaseId, setReleaseId] = useState<string | undefined>();
@@ -374,6 +382,11 @@ export function CatalogDiscoverHome() {
     () => requestForFilter(filter, { latitude: cellLatitude, longitude: cellLongitude }),
     [cellLatitude, cellLongitude, filter],
   );
+  // Which filter and area the cards on screen were loaded for. The last good page stays only
+  // for a refresh or Retry of the same request; a new filter or area never shows old cards.
+  const requestKey = `${filter}:${cellLatitude}:${cellLongitude}`;
+  const [loadedKey, setLoadedKey] = useState<string | null>(null);
+  const contentIsCurrent = loadedKey === requestKey;
   const isOfflineCatalog = Boolean(releaseId?.startsWith("excel-fallback"));
   const needsAreaChoice = isApproximate && !manualLocation;
   // Distances from the built-in default point would be made up, so they are hidden.
@@ -423,6 +436,7 @@ export function CatalogDiscoverHome() {
       setVenues(venuePage.items);
       setTotals({ dishes: dishPage.totals.dishes, venues: venuePage.totals.venues });
       setReleaseId(nextReleaseId);
+      setLoadedKey(requestKey);
       recordCatalogDiagnostic({
         operation: "discover",
         durationMs: Date.now() - startedAt,
@@ -436,7 +450,8 @@ export function CatalogDiscoverHome() {
       // A dropped connection is the diner's network, not a defect worth an alert.
       const isNetwork = loadError instanceof CatalogAccessError && loadError.kind === "network";
       if (!isNetwork) reportError(loadError, { surface: "catalog_discover_home" });
-      // The last good page stays on screen; the error shows inline above it.
+      // A failed refresh keeps the last good page with the error inline above it; a failed new
+      // filter or area shows the full error state (see contentIsCurrent).
       setError(CATALOG_HOME_LOAD_ERROR);
       recordCatalogDiagnostic({
         operation: "discover",
@@ -459,7 +474,7 @@ export function CatalogDiscoverHome() {
       }
       refreshDiagnosticEvents();
     }
-  }, [refreshDiagnosticEvents, request, service]);
+  }, [refreshDiagnosticEvents, request, requestKey, service]);
 
   /** Pull-to-refresh and Retry: skip the 60 s page cache so the tap really refetches. */
   const reloadFresh = useCallback(() => {
@@ -475,8 +490,10 @@ export function CatalogDiscoverHome() {
   }, [load]);
 
   useEffect(() => {
-    if (loading || !isFocused) return;
-    const key = `${releaseId ?? ""}:${filter}:${cellLatitude}:${cellLongitude}`;
+    // Only once the page for this filter and area is on screen: right after a change the old
+    // page's counts are still in state and must not be logged under the new key.
+    if (loading || !isFocused || !contentIsCurrent) return;
+    const key = `${releaseId ?? ""}:${requestKey}`;
     if (impressionKey.current === key) return;
     impressionKey.current = key;
     if (dishes.length) {
@@ -493,16 +510,7 @@ export function CatalogDiscoverHome() {
         count: Math.min(venues.length, 8),
       });
     }
-  }, [
-    cellLatitude,
-    cellLongitude,
-    dishes.length,
-    filter,
-    isFocused,
-    loading,
-    releaseId,
-    venues.length,
-  ]);
+  }, [contentIsCurrent, dishes.length, isFocused, loading, releaseId, requestKey, venues.length]);
 
   const openBrowse = useCallback(
     (browseMode: "dishes" | "stalls", source: "tile" | "see_all") => {
@@ -522,6 +530,7 @@ export function CatalogDiscoverHome() {
       chip: next,
       selected: true,
     });
+    filterTouchedRef.current = true;
     setFilter(next);
   }, []);
 
@@ -557,7 +566,9 @@ export function CatalogDiscoverHome() {
     />
   );
 
-  const hasContent = dishes.length > 0 || venues.length > 0;
+  // Cards loaded for another filter or area do not count: the skeleton (or the full error)
+  // shows instead of them.
+  const hasContent = contentIsCurrent && (dishes.length > 0 || venues.length > 0);
   const showSkeleton = loading && !hasContent && !error;
   const showSourcePill = FEATURE_FLAGS.catalogDiagnosticsEnabled || isOfflineCatalog;
   const hasFilter = filter !== "all";
