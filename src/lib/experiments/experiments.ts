@@ -403,3 +403,24 @@ export function useExperimentVariant<K extends ExperimentKey>(
 function getFallbackVariant<K extends ExperimentKey>(key: K): ExperimentVariant<K> {
   return (EXPERIMENTS[key] as ExperimentDefinition).fallback as ExperimentVariant<K>;
 }
+
+/**
+ * True once this key's variant is final for the session: flags have loaded (or there is no
+ * flag source), or the experiment is not running, overridden, killed or already frozen. A
+ * surface that picks what to fetch by arm waits for this, so a late flag load cannot swap the
+ * arm after the first list is on screen.
+ */
+export function isExperimentAssignmentReady(key: ExperimentKey): boolean {
+  if (experimentsKilled()) return true;
+  if (overridesAllowed() && overrides.get(key)) return true;
+  if ((EXPERIMENTS[key] as ExperimentDefinition).status !== "running") return true;
+  if (sessionVariants.has(key)) return true;
+  const source = getFlagSource();
+  return !source || source.hasLoaded();
+}
+
+/** Calls back when flags load or reload; returns an unsubscribe. */
+export function onExperimentFlagsChange(callback: () => void): () => void {
+  const source = getFlagSource();
+  return source ? source.onChange(callback) : () => undefined;
+}

@@ -23,7 +23,9 @@ import type {
   CatalogRawDishCard,
   CatalogRawVenueCard,
 } from "@/lib/services/catalog";
+import { CatalogReleaseExpiredError } from "@/lib/services/catalog";
 import { getCatalogRawService } from "@/lib/services/serviceProvider";
+import { useLocationStore } from "@/store/useLocationStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { cleanup, renderScreen, type RenderResult } from "@/test/render";
@@ -247,6 +249,8 @@ test("stall cards show the top dish rating and keep same-name stalls apart (SEAR
   assert.match(view.text(), /Tiong Bahru/);
   assert.doesNotMatch(view.text(), /outlet/);
   assert.equal((view.text().match(/4\.4 \(30\)/g) ?? []).length, 2);
+  // SEARCH-V5: the pill says it is the top dish's rating, not the stall's.
+  assert.equal((view.text().match(/Top dish 4\.4 \(30\)/g) ?? []).length, 2);
 });
 
 // ---- Search home
@@ -277,6 +281,27 @@ function runExperiment() {
   };
 }
 
+/** A real GPS fix, so the near arm is in play (SEARCH-V3); restored after the test. */
+function withGps() {
+  const previous = useLocationStore.getState();
+  useLocationStore.setState({
+    permission: "granted",
+    currentLocation: { latitude: 1.2804, longitude: 103.8448 },
+    manualCoordinate: undefined,
+    manualLocation: undefined,
+  });
+  const previousRestore = restore;
+  restore = () => {
+    useLocationStore.setState({
+      permission: previous.permission,
+      currentLocation: previous.currentLocation,
+      manualCoordinate: previous.manualCoordinate,
+      manualLocation: previous.manualLocation,
+    });
+    previousRestore?.();
+  };
+}
+
 async function renderHome() {
   const view = await renderScreen(DishSearchScreen as never, { name: "DishSearch" });
   await wait(50);
@@ -294,6 +319,7 @@ test("Search home control: the island-wide top 3, no star for an unreviewed dish
     },
   });
   runExperiment();
+  withGps();
   const flags = fakeFlags({ search_home_featured_v1: "control" });
   setExperimentFlagSource(flags.source);
   const view = await renderHome();
@@ -318,6 +344,7 @@ test("Search home near: the best dishes within 1.5 km, with distance", async () 
     },
   });
   runExperiment();
+  withGps();
   const flags = fakeFlags({ search_home_featured_v1: "near" });
   setExperimentFlagSource(flags.source);
   const view = await renderHome();
@@ -339,6 +366,7 @@ test("Search home near falls back to the island-wide list when little is nearby"
     },
   });
   runExperiment();
+  withGps();
   setExperimentFlagSource(fakeFlags({ search_home_featured_v1: "near" }).source);
   const view = await renderHome();
   assert.equal(requests.length, 2);
@@ -395,4 +423,208 @@ test("Search home reports a failed load once (SEARCH-21)", async () => {
     console.error = original;
     globals.__DEV__ = previousDev;
   }
+});
+
+test("SEARCH-V2: Search home waits for flags, so a late load never exposes an arm nobody saw", async () => {
+  const requests: CatalogPageRequest[] = [];
+  let resolveNear: () => void = () => undefined;
+  stubCatalog({
+    suggest: async () => [],
+    listDishes: (request) => {
+      requests.push(request);
+      if (!request.radiusMeters) return Promise.resolve(page([dishCard("island")]));
+      return new Promise((resolve) => {
+        resolveNear = () => resolve(page([1, 2, 3].map((n) => dishCard(`near-${n}`))));
+      });
+    },
+  });
+  runExperiment();
+  withGps();
+  let loaded = false;
+  let exposures = 0;
+  const listeners: (() => void)[] = [];
+  setExperimentFlagSource({
+    peek: () => (loaded ? "near" : undefined),
+    expose: () => {
+      exposures += 1;
+      return loaded ? "near" : undefined;
+    },
+    hasLoaded: () => loaded,
+    onChange: (listener) => {
+      listeners.push(listener);
+      return () => undefined;
+    },
+  });
+  const view = await renderHome();
+  assert.equal(requests.length, 0, "no island-wide list is fetched before flags load");
+  await act(async () => {
+    loaded = true;
+    for (const listener of listeners) listener();
+  });
+  await view.settle();
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0]?.radiusMeters, 1_500, "the first list fetched is the user's arm");
+  // The diner starts typing before the near list arrives: the section never showed.
+  await view.type(view.findByLabel("Search dishes, stalls, or hawker centres"), "laksa");
+  await act(async () => resolveNear());
+  await view.settle();
+  assert.equal(exposures, 0);
+});
+
+test("SEARCH-V2: when flags never load, the island-wide list shows after a short wait, unexposed", async () => {
+  stubCatalog({
+    suggest: async () => [],
+    listDishes: async () => page([dishCard("1"), dishCard("2"), dishCard("3")]),
+  });
+  runExperiment();
+  withGps();
+  let exposures = 0;
+  setExperimentFlagSource({
+    peek: () => undefined,
+    expose: () => {
+      exposures += 1;
+      return undefined;
+    },
+    hasLoaded: () => false,
+    onChange: () => () => undefined,
+  });
+  const view = await renderHome();
+  assert.doesNotMatch(view.text(), /Dishes to Discover/);
+  await wait(1_600);
+  await view.settle();
+  assert.match(view.text(), /Dishes to Discover/);
+  assert.equal(exposures, 0);
+});
+
+test("SEARCH-V3: without a GPS fix or a picked area the near arm is not served or exposed", async () => {
+  const requests: CatalogPageRequest[] = [];
+  stubCatalog({
+    suggest: async () => [],
+    listDishes: async (request) => {
+      requests.push(request);
+      return page([dishCard("1"), dishCard("2"), dishCard("3")]);
+    },
+  });
+  runExperiment();
+  useLocationStore.setState({
+    permission: "denied",
+    manualCoordinate: undefined,
+    manualLocation: undefined,
+  });
+  const flags = fakeFlags({ search_home_featured_v1: "near" });
+  setExperimentFlagSource(flags.source);
+  const view = await renderHome();
+  assert.match(view.text(), /Dishes to Discover/);
+  assert.ok(requests.every((request) => !request.radiusMeters), "no radius request");
+  assert.deepEqual(requests[0], { limit: 3, sort: "quality" });
+  assert.equal(flags.state.exposures, 0);
+});
+
+/** Calls the grid's onEndReached (the jsdom FlashList stub never scrolls). */
+async function reachEnd(view: RenderResult) {
+  const node = view.container.querySelector('[data-stub="FlashList"]') as unknown as Record<
+    string,
+    unknown
+  >;
+  assert.ok(node, "the grid renders");
+  const fiberKey = Object.keys(node).find((key) => key.startsWith("__reactFiber$"));
+  let fiber = fiberKey
+    ? (node[fiberKey] as { memoizedProps?: Record<string, unknown>; return?: unknown })
+    : undefined;
+  while (fiber && typeof fiber.memoizedProps?.onEndReached !== "function") {
+    fiber = fiber.return as typeof fiber;
+  }
+  const onEndReached = fiber?.memoizedProps?.onEndReached as (() => void) | undefined;
+  assert.ok(onEndReached, "the grid pages on reaching the end");
+  await act(async () => onEndReached());
+  await view.settle();
+}
+
+test("SEARCH-20: an expired release mid-scroll reloads page 1 on the active release", async () => {
+  const requests: CatalogPageRequest[] = [];
+  stubCatalog({
+    listDishes: async (request) => {
+      requests.push({ ...request });
+      if (requests.length === 1) {
+        return { ...page([dishCard("old")]), releaseId: "release-old", nextCursor: "c1" };
+      }
+      if (request.cursor) throw new CatalogReleaseExpiredError();
+      return { ...page([dishCard("fresh")]), releaseId: "release-new" };
+    },
+  });
+  const view = await renderResults({ browseMode: "dishes" });
+  assert.match(view.text(), /Dish old/);
+  await reachEnd(view);
+  assert.equal(requests[1]?.cursor, "c1");
+  assert.equal(requests[1]?.releaseId, "release-old");
+  assert.equal(requests[2]?.cursor, undefined, "page 1 again");
+  assert.equal(requests[2]?.releaseId, undefined, "not pinned to the expired release");
+  assert.match(view.text(), /Dish fresh/);
+  assert.doesNotMatch(view.text(), /Dish old/);
+  assert.equal(view.findByText(/Couldn't load more|Retry/), null);
+});
+
+test("SEARCH-19: Search all Singapore applies only to the scope it was tapped for", async () => {
+  const requests: { mode: string; request: CatalogPageRequest }[] = [];
+  stubCatalog({
+    listDishes: async (request) => {
+      requests.push({ mode: "dishes", request });
+      return page<CatalogRawDishCard>([]);
+    },
+    listVenues: async (request) => {
+      requests.push({ mode: "stalls", request });
+      return page<CatalogRawVenueCard>([]);
+    },
+    listPlaces: async () => [],
+  });
+  const view = await renderResults({ browseMode: "dishes" });
+  await view.press(view.findByText("Search all Singapore"));
+  await wait(100);
+  await view.settle();
+  assert.equal(requests.at(-1)?.request.radiusMeters, 30_000, "widened for this browse");
+  const stallsTab = Array.from(view.container.querySelectorAll('[role="tab"]')).find(
+    (tab) => tab.textContent === "Stalls",
+  ) as HTMLElement;
+  await view.press(stallsTab);
+  await wait(100);
+  await view.settle();
+  await wait(100);
+  const last = requests.at(-1);
+  assert.equal(last?.mode, "stalls");
+  assert.notEqual(last?.request.radiusMeters, 30_000, "a new scope starts at the normal radius");
+  assert.ok(view.findByText("Search all Singapore"), "and offers to widen again");
+});
+
+test("SEARCH-9: a typed query that settles sends one search_query; quick typing sends none", async () => {
+  stubCatalog({
+    listDishes: async () => page([dishCard("1")]),
+    suggest: async () => [],
+  });
+  const view = await renderResults({ browseMode: "dishes", initialQuery: "mee" });
+  // act() flushes renders when it ends: one short wait lands the debounced load, the next
+  // covers the 1.5 s settle timer that load arms.
+  const settleTyping = async () => {
+    await wait(400);
+    await wait(1_800);
+  };
+  // Looked up each time: the field can re-mount as the screen state changes.
+  const input = () => view.findByTestId("browse-results-search-input");
+  await view.type(input(), "me");
+  await wait(300);
+  await view.type(input(), "");
+  await settleTyping();
+  const typed = () =>
+    getTrackedAnalyticsEvents().filter(
+      (event) => event.event === "search_query" && event.properties.source === "results_typed",
+    );
+  assert.equal(typed().length, 0, "text cleared before it settled is not a search");
+
+  await view.type(input(), "lak");
+  await wait(300);
+  await view.type(input(), "laksa");
+  await settleTyping();
+  assert.equal(typed().length, 1);
+  assert.equal(typed()[0].properties.query_length, 5);
+  await settleTyping();
+  assert.equal(typed().length, 1, "staying on the results does not log it again");
 });
