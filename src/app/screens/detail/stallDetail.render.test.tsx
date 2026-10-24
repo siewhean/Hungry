@@ -58,6 +58,22 @@ test("STALL-X3: Back is the first thing a screen reader reaches on the stall pag
   assert.ok(view.findByLabel("Share stall"));
 });
 
+test("STALL-V1: Back and Share sit in a raised wrapper so the hero photo cannot cover them", async () => {
+  const view = await openStall();
+  const chrome = view.container.querySelector(
+    '[data-testid="stall-detail-top-chrome"]',
+  ) as HTMLElement | null;
+  assert.ok(chrome, "the top chrome wrapper is rendered");
+  assert.ok(Number(chrome.style.zIndex) >= 10, `zIndex is ${chrome.style.zIndex}`);
+  const labels = accessibleNodes(chrome).map((node) => node.getAttribute("aria-label"));
+  assert.deepEqual(labels, ["Go back", "Share stall"]);
+  // The wrapper comes before the scroll view (and so before the hero photo).
+  const firstPhoto = view.container.querySelector('[aria-label^="Photo "]');
+  if (firstPhoto) {
+    assert.ok(chrome.compareDocumentPosition(firstPhoto) & Node.DOCUMENT_POSITION_FOLLOWING);
+  }
+});
+
 test("STALL-2: the hours toggle holds only the status; today and each day are their own text", async () => {
   const view = await openStall();
   const toggle = view.findByLabel(/^Opening hours, /) ?? (null as unknown as HTMLElement);

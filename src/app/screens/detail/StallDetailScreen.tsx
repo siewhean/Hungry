@@ -1291,18 +1291,33 @@ export function StallDetailScreen({ navigation, route }: Props) {
     >
       <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["left", "right"]}>
         <View style={{ flex: 1 }}>
-          {/* Back and Share come first in the tree so screen readers reach them first; they
-              are positioned absolutely and still draw over the photo. */}
-          <FloatingBackButton onPress={goBackOrHome} />
-          {showDeferredDetailControls ? (
-            // Share sits over the photo so the bottom bar has room for a whole "Write a review".
-            <FloatingBackButton
-              accessibilityLabel="Share stall"
-              icon={ShareIcon}
-              onPress={openShareSheet}
-              side="right"
-            />
-          ) : null}
+          {/* Back and Share come first in the tree so screen readers reach them first. A later
+              sibling draws on top on iOS and web, so this wrapper's zIndex/elevation keeps them
+              above the hero photo; box-none lets taps between the buttons reach the photo. */}
+          <View
+            pointerEvents="box-none"
+            testID="stall-detail-top-chrome"
+            style={{
+              elevation: 10,
+              height: insets.top + 64,
+              left: 0,
+              position: "absolute",
+              right: 0,
+              top: 0,
+              zIndex: 10,
+            }}
+          >
+            <FloatingBackButton onPress={goBackOrHome} />
+            {showDeferredDetailControls ? (
+              // Share sits over the photo so the bottom bar has room for a whole "Write a review".
+              <FloatingBackButton
+                accessibilityLabel="Share stall"
+                icon={ShareIcon}
+                onPress={openShareSheet}
+                side="right"
+              />
+            ) : null}
+          </View>
           <Animated.ScrollView
             showsVerticalScrollIndicator={false}
             onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: heroScrollY } } }], {
