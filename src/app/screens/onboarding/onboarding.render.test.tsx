@@ -248,6 +248,11 @@ test("ONB-6: the signed-out flow runs Welcome to sign-up and keeps the answers",
   await auth.press(allByText(auth, "Create account").at(-1) ?? null);
   assert.equal(useSessionStore.getState().isAuthenticated, true);
   assert.equal(events("onboarding_completed").length, 1);
+  // The sign-up tests' leading metric counts accounts made on the onboarding account step.
+  assert.deepEqual(
+    events("sign_up_submitted").map((record) => record.properties),
+    [{ screen: "onboarding_auth", method: "email" }],
+  );
 });
 
 test("ONB-7: the dietary step scrolls as one, so the budget is reachable at large text", async () => {

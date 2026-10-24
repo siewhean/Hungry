@@ -19,7 +19,11 @@ import { AppText, Button, Input } from "@/components/ui";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { applySignedInProfile } from "@/features/auth/applySignedInProfile";
-import { trackAuthFailed, trackAuthScreenViewed } from "@/features/auth/authAnalytics";
+import {
+  trackAuthFailed,
+  trackAuthScreenViewed,
+  trackSignUpSubmitted,
+} from "@/features/auth/authAnalytics";
 import { getAuthErrorCode, getAuthFailureMessage } from "@/features/auth/authErrors";
 import {
   isWeakPasswordError,
@@ -152,6 +156,8 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
         values.password,
         values.displayName,
       );
+      // Most accounts are made here, so the sign-up tests' leading metric must count them.
+      trackSignUpSubmitted("onboarding_auth", "email");
       if (!session) {
         showToast({ message: AUTH_COPY.signUp.emailVerificationToast, tone: "success" });
         navigation.getParent<NavigationProp<RootStackParamList>>()?.reset({
