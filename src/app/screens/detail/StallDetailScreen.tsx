@@ -1267,6 +1267,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
         });
       } else if (result.status === "already_exists") {
         setIsClaimPending(true);
+        // Without a known status the disabled button would still read "Claim this stall".
+        setClaimStatus((current) => (current === "none" ? "submitted" : current));
         showToast({
           message: `You have already submitted a claim for ${venue.name}.`,
           tone: "info",

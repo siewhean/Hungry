@@ -1296,7 +1296,8 @@ export interface HungryService {
     toggleSoldOut(outletId: string, dishId: string, soldOut?: boolean): Promise<boolean>;
     /** Sets or clears sold-out on many dishes in one call; resolves with the ids that changed. */
     setDishesSoldOut(outletId: string, dishIds: string[], soldOut: boolean): Promise<string[]>;
-    toggleFeatured(outletId: string, dishId: string): Promise<boolean>;
+    /** Toggles featured, or sets it when `featured` is given (retry-safe). Returns the new state. */
+    toggleFeatured(outletId: string, dishId: string, featured?: boolean): Promise<boolean>;
 
     // OCR Drafts
     getOCRDrafts(outletId: string): Promise<OCRDishDraft[]>;
@@ -1321,6 +1322,8 @@ export interface HungryService {
         limit?: number;
         /** Keyset page: only items created before this ISO timestamp. */
         before?: string;
+        /** With `before`: the id of the oldest item held, so rows sharing its timestamp are kept. */
+        beforeId?: string;
       },
     ): Promise<CustomerInteraction[]>;
     /** Posts a public reply, or replaces the existing one. */
@@ -1330,9 +1333,10 @@ export interface HungryService {
     reportInteraction(interactionId: string, reason: string): Promise<void>;
 
     // Featured Visitors
+    /** Keyset page on (visitedAt, reviewId): `before` and `beforeId` of the oldest row held. */
     listPopularVisitorCandidates(
       outletId: string,
-      options?: { limit?: number; before?: string },
+      options?: { limit?: number; before?: string; beforeId?: string },
     ): Promise<PopularVisitorCandidate[]>;
     listPopularVisitorPins(outletId: string): Promise<PopularVisitorPin[]>;
     pinPopularVisitor(outletId: string, reviewId: string): Promise<PopularVisitorPin>;

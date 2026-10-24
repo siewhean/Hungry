@@ -228,6 +228,25 @@ export const EXPERIMENTS = {
       "decide_for_me_radius_expanded",
     ],
   },
+  /**
+   * Merchant Home: the newest unreplied review inline with a Reply button, instead of the
+   * "Unreplied reviews" count card. Read in MerchantDashboardScreen only while the Dashboard is
+   * focused, loaded and has unreplied reviews. Draft until the Merchant Centre ships to production.
+   */
+  merchant_inline_reply_v1: {
+    variants: ["control", "inline"],
+    fallback: "control",
+    status: "draft",
+    surface: "merchant",
+    hypothesis:
+      "Showing the newest unreplied review with a Reply button on the merchant Home raises how many merchants reply, as Google Business Profile's review prompt does.",
+    primaryMetric: "merchant_customer_reply_sent",
+    guardrailMetrics: [
+      "merchant_customer_interaction_reported",
+      "merchant_customer_reply_removed",
+      "merchant_customer_inbox_viewed",
+    ],
+  },
 } as const satisfies Record<string, ExperimentDefinition>;
 
 export type ExperimentKey = keyof typeof EXPERIMENTS;

@@ -102,8 +102,9 @@ export function MerchantProfileScreen() {
   const outletLocation = [outletBuilding?.name, activeOutlet?.floor, activeOutlet?.unitNumber]
     .filter(Boolean)
     .join(" ");
+  // `||` after trimming: an empty phone must fall through to the email, then to the fallback.
   const outletContact =
-    activeOutlet?.contactPhone ?? activeOutlet?.contactEmail ?? "No contact added";
+    activeOutlet?.contactPhone?.trim() || activeOutlet?.contactEmail?.trim() || "No contact added";
   const isVerified = isVerificationCurrent(activeOutlet?.verification);
   const verificationInfo = getVerificationStatusInfo(activeOutlet?.verification);
   const verificationLabel = verificationInfo.profileLabel;

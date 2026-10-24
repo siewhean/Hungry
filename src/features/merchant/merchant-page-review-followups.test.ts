@@ -96,7 +96,7 @@ test("unverified merchants can prepare their profile and always reach an exit", 
   const gate = tabs.slice(tabs.indexOf("function MerchantAccessGate("));
   assert.match(gate, /const access = useMerchantAccessLevel\(\);/);
   assert.match(gate, /label="Switch to Customer Mode"/);
-  assert.match(gate, /label="Sign Out"/);
+  assert.match(gate, /label="Sign out"/);
 });
 
 test("merchant dish writes are atomic, idempotent and rebuild the catalog once", () => {
@@ -132,10 +132,11 @@ test("dashboard counts come from one summary RPC and reviews are indexed by venu
 
   const dashboard = read("src/app/screens/merchant/MerchantDashboardScreen.tsx");
   assert.match(dashboard, /merchant\.getDashboardSummary\(/);
-  assert.doesNotMatch(
-    dashboard,
-    /merchant\.getMenu\(|merchant\.getInbox\(|syncLowRatingNotifications/,
-  );
+  assert.doesNotMatch(dashboard, /merchant\.getMenu\(|syncLowRatingNotifications/);
+  // The only inbox read is the inline-reply experiment arm's single newest unreplied review.
+  assert.deepEqual(dashboard.match(/merchant\.getInbox\([^)]*\)/g), [
+    'merchant.getInbox(activeOutletId, { type: "review", unrepliedOnly: true, limit: 1 })',
+  ]);
   // R2 (M13): merchant tab prefetching no longer fires requests whose results were discarded.
   assert.doesNotMatch(read("src/features/navigation/prefetch.ts"), /merchant\.getAnalytics\(/);
 });

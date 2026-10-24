@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { View, StyleSheet, Pressable, FlatList, Switch } from "react-native";
+import { View, StyleSheet, Pressable, FlatList, RefreshControl, Switch } from "react-native";
 import { Plus, Search, MoreVertical, Camera, X } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -31,6 +31,7 @@ import { getDishSection, hasAvailabilityFlag } from "@/features/merchant/menuSec
 import { isVerificationCurrent } from "@/features/merchant/merchantGuards";
 import { trackMerchantEvent } from "@/features/merchant/merchantTracking";
 import { useMerchantDialog, type ShowMerchantAlert } from "@/features/merchant/useMerchantDialog";
+import { reportError } from "@/lib/monitoring/reportError";
 import type { DishDetail } from "@/types/domain";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 
@@ -40,7 +41,7 @@ type MenuFilter = "all" | "available" | "sold_out";
 const MENU_FILTER_OPTIONS: { id: MenuFilter; label: string }[] = [
   { id: "all", label: "All" },
   { id: "available", label: "Available" },
-  { id: "sold_out", label: "Sold Out" },
+  { id: "sold_out", label: "Sold out" },
 ];
 
 function showError(showAlert: ShowMerchantAlert, title: string, error: unknown) {
@@ -80,6 +81,9 @@ export function MerchantMenuScreen() {
 
   const [menu, setMenu] = useState<DishDetail[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  // Dishes with a Featured request in flight: a second tap waits instead of flipping it back.
+  const featuredInFlight = useRef(new Set<string>());
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState<MenuFilter>("all");
   const [showCreateOptions, setShowCreateOptions] = useState(false);
@@ -88,7 +92,7 @@ export function MerchantMenuScreen() {
     dish: DishDetail;
     confirmDelete: boolean;
   } | null>(null);
-  // Dialog closes itself after a button press; "Delete Dish" switches to the confirm step instead.
+  // Dialog closes itself after a button press; "Remove from menu" switches to the confirm step.
   const keepDishDialogOpen = useRef(false);
 
   const loadMenu = useCallback(async () => {
@@ -99,12 +103,21 @@ export function MerchantMenuScreen() {
       const data = await getHungryService().merchant.getMenu(activeOutlet.id);
       setMenu(data);
     } catch (e) {
-      console.error(e);
+      reportError(e, { screen: "MerchantMenu", action: "load_menu" });
       setError(e instanceof Error ? e.message : "Unable to load dishes.");
     } finally {
       setIsLoading(false);
     }
   }, [activeOutlet]);
+
+  const refreshMenu = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await loadMenu();
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [loadMenu]);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener("focus", () => {
@@ -192,6 +205,7 @@ export function MerchantMenuScreen() {
       });
     } catch (e) {
       setMenu((prev) => prev.map((d) => (d.id === dish.id ? withSoldOut(d, !nextSoldOut) : d)));
+      reportError(e, { screen: "MerchantMenu", action: "toggle_sold_out" });
       showError(showAlert, "Could not update availability", e);
     }
   };
@@ -214,8 +228,9 @@ export function MerchantMenuScreen() {
           false,
         ),
       );
-    } catch {
+    } catch (e) {
       // Every dish is put back below.
+      reportError(e, { screen: "MerchantMenu", action: "mark_all_available" });
     }
     const failedIds = new Set(
       soldOutDishes.filter((dish) => !changedIds.has(dish.id)).map((d) => d.id),
@@ -234,9 +249,16 @@ export function MerchantMenuScreen() {
   };
 
   const handleToggleFeatured = async (dish: DishDetail) => {
-    if (!activeOutlet) return;
+    if (!activeOutlet || featuredInFlight.current.has(dish.id)) return;
+    featuredInFlight.current.add(dish.id);
+    // The explicit target state: a retried or repeated request cannot toggle it back.
+    const nextFeatured = !hasAvailabilityFlag(dish.availabilityFlags, "featured");
     try {
-      const featured = await getHungryService().merchant.toggleFeatured(activeOutlet.id, dish.id);
+      const featured = await getHungryService().merchant.toggleFeatured(
+        activeOutlet.id,
+        dish.id,
+        nextFeatured,
+      );
       trackMerchantEvent("merchant_dish_featured_toggled", activeOutlet.id, { featured });
       setMenu((prev) =>
         prev.map((d) =>
@@ -254,7 +276,10 @@ export function MerchantMenuScreen() {
         ),
       );
     } catch (e) {
+      reportError(e, { screen: "MerchantMenu", action: "toggle_featured" });
       showError(showAlert, "Could not update featured dish", e);
+    } finally {
+      featuredInFlight.current.delete(dish.id);
     }
   };
 
@@ -265,7 +290,8 @@ export function MerchantMenuScreen() {
       trackMerchantEvent("merchant_dish_deleted", activeOutlet.id);
       setMenu((prev) => prev.filter((d) => d.id !== dish.id));
     } catch (e) {
-      showError(showAlert, "Could not delete dish", e);
+      reportError(e, { screen: "MerchantMenu", action: "remove_dish" });
+      showError(showAlert, "Could not remove dish", e);
     }
   };
 
@@ -283,7 +309,7 @@ export function MerchantMenuScreen() {
     : dishDialog.confirmDelete
       ? [
           {
-            text: "Delete",
+            text: "Remove",
             style: "destructive" as const,
             onPress: () => void handleDelete(dishDialog.dish),
           },
@@ -291,7 +317,7 @@ export function MerchantMenuScreen() {
         ]
       : [
           {
-            text: "Edit Dish",
+            text: "Edit dish",
             onPress: () => navigation.navigate("DishEditor", { dishId: dishDialog.dish.id }),
           },
           ...(isLockedLiveDish(dishDialog.dish, isVerified)
@@ -299,19 +325,19 @@ export function MerchantMenuScreen() {
             : [
                 {
                   text: hasAvailabilityFlag(dishDialog.dish.availabilityFlags, "sold_out")
-                    ? "Mark Available"
-                    : "Sold Out Until Tomorrow",
+                    ? "Mark available"
+                    : "Sold out until tomorrow",
                   onPress: () => void handleToggleSoldOut(dishDialog.dish),
                 },
                 {
                   text: hasAvailabilityFlag(dishDialog.dish.availabilityFlags, "featured")
-                    ? "Remove from Featured"
-                    : "Feature Dish",
+                    ? "Remove from featured"
+                    : "Feature dish",
                   onPress: () => void handleToggleFeatured(dishDialog.dish),
                 },
               ]),
           {
-            text: "Delete Dish",
+            text: "Remove from menu",
             style: "destructive" as const,
             onPress: () => {
               keepDishDialogOpen.current = true;
@@ -351,6 +377,13 @@ export function MerchantMenuScreen() {
           data={error ? [] : filteredMenu}
           keyExtractor={(dish) => dish.id}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={() => void refreshMenu()}
+              tintColor={palette.orange}
+            />
+          }
           contentContainerStyle={{ paddingBottom: spacing[20] }}
           ItemSeparatorComponent={() => <View style={{ height: spacing[3] }} />}
           ListHeaderComponent={
@@ -498,10 +531,17 @@ export function MerchantMenuScreen() {
                       {isSoldOut && (
                         <View style={[pillStyle, { backgroundColor: palette.errorSoft }]}>
                           <AppText variant="micro" tone="muted">
-                            Sold Out
+                            Sold out
                           </AppText>
                         </View>
                       )}
+                      {dish.isMerchantDraft ? (
+                        <View style={pillStyle}>
+                          <AppText variant="micro" tone="muted">
+                            Draft
+                          </AppText>
+                        </View>
+                      ) : null}
                     </View>
                     <AppText variant="body" tone="muted" style={{ marginTop: 4 }}>
                       {[
@@ -582,7 +622,7 @@ export function MerchantMenuScreen() {
                 }}
               />
               <Button
-                label="Add Menu Item Manually"
+                label="Add menu item manually"
                 variant="secondary"
                 fullWidth
                 leftIcon={<Plus size={16} color={palette.text} />}
@@ -622,7 +662,7 @@ export function MerchantMenuScreen() {
       {dialog}
       <Dialog
         visible={Boolean(dishDialog)}
-        title={dishDialog?.confirmDelete ? "Delete Dish" : "Dish Options"}
+        title={dishDialog?.confirmDelete ? "Remove from menu?" : "Dish options"}
         message={
           dishDialog?.confirmDelete
             ? `Remove ${dishDialog.dish.name} from your menu? Diner reviews and saves are kept.`

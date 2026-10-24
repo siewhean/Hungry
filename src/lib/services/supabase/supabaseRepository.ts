@@ -114,10 +114,15 @@ function isCatalogDeliveryAppUrl(value: string): boolean {
   );
 }
 
-function isCatalogMenuDisplayable(row: Row): boolean {
+/**
+ * Whether a raw `dishes` row may appear in the diner catalog cache. A dish the merchant removed
+ * from the menu keeps its row (archived_at set) so reviews and saves survive; it must not show.
+ */
+export function isCatalogMenuDisplayable(row: Row): boolean {
   const rightsStatus = toString(row.menu_rights_status, "unverified");
   const sourceUrl = toString(row.menu_source_url);
   return (
+    (row.archived_at === null || row.archived_at === undefined || row.archived_at === "") &&
     toBool(row.menu_approved_for_display) &&
     ["merchant_owned", "operator_owned", "user_submitted", "permitted_api", "licensed"].includes(
       rightsStatus,

@@ -1333,7 +1333,7 @@ function buildWeeklySummaryStats(outletId: string): MerchantWeeklySummary {
     totalViews: analytics.profileVisits + analytics.menuViews + analytics.dishViews,
     dishViews: analytics.dishViews,
     topDishes: analytics.topDishes,
-    newReviews: reviews.length,
+    newReviews: analytics.reviewCount,
     averageRating: analytics.averageRating,
     ratingChange: analytics.averageRating - analytics.previousPeriodComparison.averageRating,
     unrepliedReviews,
@@ -3239,11 +3239,11 @@ export const hungryService: HungryService = {
       return resolve(changed);
     },
 
-    async toggleFeatured(outletId, dishId) {
+    async toggleFeatured(outletId, dishId, featured) {
       const menu = getMerchantMenu(outletId);
       const dish = menu.find((menuDish) => menuDish.id === dishId);
       if (!dish) throw new Error(`Dish ${dishId} not found for outlet ${outletId}`);
-      const isFeatured = !dish.availabilityFlags.includes("Featured");
+      const isFeatured = featured ?? !dish.availabilityFlags.includes("Featured");
       dish.availabilityFlags = mergeAvailabilityFlag(
         dish.availabilityFlags,
         "Featured",
@@ -3328,10 +3328,17 @@ export const hungryService: HungryService = {
       }
       const before = filters?.before ? new Date(filters.before).getTime() : undefined;
       if (before !== undefined && Number.isFinite(before)) {
-        interactions = interactions.filter((i) => new Date(i.createdAt).getTime() < before);
+        const beforeId = filters?.beforeId;
+        interactions = interactions.filter((i) => {
+          const createdAt = new Date(i.createdAt).getTime();
+          return createdAt < before || Boolean(beforeId && createdAt === before && i.id < beforeId);
+        });
       }
+      // Newest first, ties by id descending: the same keyset order the database uses.
       interactions = [...interactions].sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime() ||
+          (a.id < b.id ? 1 : a.id > b.id ? -1 : 0),
       );
       if (filters?.limit !== undefined) {
         interactions = interactions.slice(0, Math.max(1, filters.limit));

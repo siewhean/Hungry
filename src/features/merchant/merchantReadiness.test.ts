@@ -3,7 +3,8 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 
-import { getMetricDelta } from "./merchantReadiness";
+import { getMerchantProfileGaps, getMetricDelta } from "./merchantReadiness";
+import type { MerchantOutlet } from "@/types/domain";
 
 test("getMetricDelta reports the real change and its direction", () => {
   assert.deepEqual(getMetricDelta(120, 100), { label: "+20%", trend: "up" });
@@ -23,4 +24,25 @@ test("dashboard metric cards show a trend only from real comparison data", () =>
   assert.match(dashboard, /trend === "up" \? \(\s*<TrendingUp/);
   assert.match(dashboard, /<TrendingDown/);
   assert.doesNotMatch(dashboard, /"vs last week"/);
+});
+
+test("MERCH-X2: no 'contact' gap while contact details are not loaded this session", () => {
+  const outlet = {
+    name: "Ah Seng",
+    businessType: "hawker_stall",
+    description: "Wonton mee",
+    profilePhotoUrl: "a.jpg",
+    coverPhotoUrl: "b.jpg",
+    unitNumber: "#01-02",
+    operatingHours: "Mon-Sun 8am-2pm",
+    contactPhone: undefined,
+    contactEmail: undefined,
+  } as unknown as MerchantOutlet;
+  const menu = { menuCount: 3, dishesWithoutImages: 0 };
+  assert.deepEqual(getMerchantProfileGaps(outlet, menu, { contactKnown: false }), []);
+  assert.deepEqual(
+    getMerchantProfileGaps(outlet, menu).map((gap) => gap.id),
+    ["contact"],
+    "once synced, a missing contact is a real gap",
+  );
 });

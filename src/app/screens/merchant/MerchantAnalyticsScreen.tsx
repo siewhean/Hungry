@@ -7,6 +7,7 @@ import { AppText, Screen, FilterChipRail, Skeleton, EmptyState } from "@/compone
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
+import { reportError } from "@/lib/monitoring/reportError";
 import { getDataTrustDisclosure } from "@/lib/services/dataTrustDisclosure";
 import {
   formatAverageRating,
@@ -111,6 +112,7 @@ export function MerchantAnalyticsScreen() {
       setAnalytics(data);
     } catch (e) {
       if (requestId !== latestRequestId.current) return;
+      reportError(e, { screen: "MerchantAnalytics", action: "load_analytics" });
       setError(e instanceof Error ? e.message : "Failed to load analytics.");
       console.error(e);
     } finally {
@@ -250,7 +252,7 @@ export function MerchantAnalyticsScreen() {
               detail={`Top dish: ${analytics.topDishes[0]?.name ?? "no dish data yet"}.`}
             />
             <MetricCard
-              label="Avg Rating"
+              label="Avg rating"
               value={formatAverageRating(analytics.averageRating, analytics.reviewCount)}
               trend={formatRatingChange(
                 analytics.averageRating,

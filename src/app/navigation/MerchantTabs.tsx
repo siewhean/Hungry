@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppBottomTabItem, AppText, Button, Screen } from "@/components/ui";
 import { resolveMerchantAccess, VERIFIED_ONLY_SCREENS } from "@/features/merchant/merchantGuards";
+import { useMerchantDialog } from "@/features/merchant/useMerchantDialog";
 import { prefetchMerchantTab, preloadRoute } from "@/features/navigation/prefetch";
 import { getHungryService, getServiceProvider } from "@/lib/services/serviceProvider";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
@@ -121,6 +122,7 @@ function MerchantAccessGate({
   const rootNavigation = navigation.getParent<NavigationProp<RootStackParamList>>();
   const access = useMerchantAccessLevel();
   const signOut = useSessionStore((state) => state.signOut);
+  const { showAlert, dialog } = useMerchantDialog();
 
   if (access === "none") {
     return <MerchantSignInGate rootNavigation={rootNavigation} />;
@@ -162,19 +164,29 @@ function MerchantAccessGate({
               fullWidth
             />
             <Button
-              label="Sign Out"
+              label="Sign out"
               variant="ghost"
-              onPress={() => {
-                signOut();
-                rootNavigation?.reset({
-                  index: 0,
-                  routes: [{ name: "AuthStack", params: { screen: "Login" } }],
-                });
-              }}
+              onPress={() =>
+                showAlert("Sign out?", "You will need to sign in again to use Hungry.", [
+                  { text: "Cancel", style: "cancel" },
+                  {
+                    text: "Sign out",
+                    style: "destructive",
+                    onPress: () => {
+                      signOut();
+                      rootNavigation?.reset({
+                        index: 0,
+                        routes: [{ name: "AuthStack", params: { screen: "Login" } }],
+                      });
+                    },
+                  },
+                ])
+              }
               fullWidth
             />
           </View>
         </View>
+        {dialog}
       </Screen>
     );
   }

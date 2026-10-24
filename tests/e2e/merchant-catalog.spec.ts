@@ -15,9 +15,9 @@ test.describe("merchant catalog", () => {
 
     // The preset has one outlet, so the outlet switcher stays hidden.
     await expect(page.getByRole("button", { name: /Switch outlet/ })).toHaveCount(0);
-    await expect(page.getByText("Manage Menu").first()).toBeVisible();
+    await expect(page.getByText("Manage menu").first()).toBeVisible();
 
-    await page.getByText("Manage Menu").first().click();
+    await page.getByText("Manage menu").first().click();
     await expect(page.getByText("Menu", { exact: true }).first()).toBeVisible();
     await expect(page.getByRole("button", { name: "Add menu item" }).first()).toBeVisible();
 

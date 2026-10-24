@@ -16,6 +16,7 @@ import {
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
+import { reportError } from "@/lib/monitoring/reportError";
 import { useMerchantDialog } from "@/features/merchant/useMerchantDialog";
 import type { OCRDishDraft } from "@/types/domain";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
@@ -48,7 +49,7 @@ export function OCRDraftScreen() {
       const data = await getHungryService().merchant.getOCRDrafts(activeOutlet.id);
       setDrafts(data.filter((draft) => draft.status === "pending"));
     } catch (e) {
-      console.error(e);
+      reportError(e, { screen: "OCRDraft", action: "load_drafts" });
       setError(e instanceof Error ? e.message : "Failed to load photo drafts.");
     } finally {
       setIsLoading(false);
@@ -92,6 +93,7 @@ export function OCRDraftScreen() {
       }
       return true;
     } catch (e) {
+      reportError(e, { screen: "OCRDraft", action: "accept_draft" });
       if (!options.silent) showAlert("Error", "Failed to accept draft.");
       return false;
     } finally {
@@ -109,6 +111,7 @@ export function OCRDraftScreen() {
       await getHungryService().merchant.rejectOCRDraft(draftId);
       setDrafts((prev) => prev.filter((d) => d.id !== draftId));
     } catch (e) {
+      reportError(e, { screen: "OCRDraft", action: "reject_draft" });
       showAlert("Error", "Failed to reject draft.");
     }
   };

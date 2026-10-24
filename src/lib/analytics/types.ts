@@ -169,6 +169,7 @@ export type AnalyticsEventName =
   | "merchant_ocr_draft_rejected"
   | "merchant_customer_inbox_viewed"
   | "merchant_customer_reply_sent"
+  | "merchant_customer_reply_removed"
   | "merchant_customer_interaction_reported"
   | "merchant_promotion_created"
   | "merchant_promotion_published"

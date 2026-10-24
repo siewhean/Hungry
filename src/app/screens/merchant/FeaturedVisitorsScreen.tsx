@@ -13,6 +13,7 @@ import {
   Skeleton,
 } from "@/components/ui";
 import { getHungryService } from "@/lib/services/serviceProvider";
+import { reportError } from "@/lib/monitoring/reportError";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { useHungryTheme } from "@/theme";
 import type { PopularVisitorCandidate, PopularVisitorPin } from "@/types/domain";
@@ -55,6 +56,7 @@ export function FeaturedVisitorsScreen() {
       setCandidates(reviewCandidates);
       setHasMoreCandidates(reviewCandidates.length >= CANDIDATE_PAGE_SIZE);
     } catch (caughtError) {
+      reportError(caughtError, { screen: "FeaturedVisitors", action: "load" });
       setError(
         caughtError instanceof Error ? caughtError.message : "Unable to load featured visitors.",
       );
@@ -75,7 +77,7 @@ export function FeaturedVisitorsScreen() {
     try {
       const older = await getHungryService().merchant.listPopularVisitorCandidates(
         activeOutlet.id,
-        { limit: CANDIDATE_PAGE_SIZE, before: oldest.visitedAt },
+        { limit: CANDIDATE_PAGE_SIZE, before: oldest.visitedAt, beforeId: oldest.reviewId },
       );
       setCandidates((current) => {
         const known = new Set(current.map((item) => item.reviewId));
@@ -83,6 +85,7 @@ export function FeaturedVisitorsScreen() {
       });
       setHasMoreCandidates(older.length >= CANDIDATE_PAGE_SIZE);
     } catch (caughtError) {
+      reportError(caughtError, { screen: "FeaturedVisitors", action: "load_more" });
       setActionError(
         caughtError instanceof Error ? caughtError.message : "Unable to load older reviews.",
       );
@@ -104,6 +107,7 @@ export function FeaturedVisitorsScreen() {
         // Update from the mutation result instead of refetching both lists.
         setPins((current) => [...current.filter((item) => item.id !== pin.id), pin]);
       } catch (caughtError) {
+        reportError(caughtError, { screen: "FeaturedVisitors", action: "pin" });
         setActionError(
           caughtError instanceof Error ? caughtError.message : "Unable to pin visitor.",
         );
@@ -121,6 +125,7 @@ export function FeaturedVisitorsScreen() {
       await getHungryService().merchant.unpinPopularVisitor(pinId);
       setPins((current) => current.filter((pin) => pin.id !== pinId));
     } catch (caughtError) {
+      reportError(caughtError, { screen: "FeaturedVisitors", action: "unpin" });
       setActionError(
         caughtError instanceof Error ? caughtError.message : "Unable to unpin visitor.",
       );
@@ -149,6 +154,7 @@ export function FeaturedVisitorsScreen() {
         );
         setPins(updated);
       } catch (caughtError) {
+        reportError(caughtError, { screen: "FeaturedVisitors", action: "reorder" });
         setPins(previousPins);
         setActionError(
           caughtError instanceof Error ? caughtError.message : "Unable to reorder visitors.",

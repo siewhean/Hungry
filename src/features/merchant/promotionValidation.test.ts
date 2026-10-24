@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  getPromotionPublishDateError,
   promotionBoundaryToDateOnly,
   toSingaporeDateOnly,
   toSingaporePromotionBoundary,
@@ -163,4 +164,11 @@ test("validateMerchantPromotionInput rejects invalid promotion rules", () => {
       }),
     /must be marked available/,
   );
+});
+
+test("MERCH-4: publishing refuses an end date whose Singapore day is over", () => {
+  const now = new Date("2026-10-24T02:00:00Z"); // 10:00 in Singapore
+  assert.match(getPromotionPublishDateError("2026-10-23", now) ?? "", /end date has passed/);
+  assert.equal(getPromotionPublishDateError("2026-10-24", now), undefined, "today is still on");
+  assert.equal(getPromotionPublishDateError("2026-11-01", now), undefined);
 });

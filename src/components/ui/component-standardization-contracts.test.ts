@@ -146,7 +146,7 @@ test("merchant forms use shared user-mode input, select, chip, and toggle primit
   assertSourceIncludes(
     dishEditor,
     [
-      /<Input[\s\S]*label="Dish Name \*"/,
+      /<Input[\s\S]*label="Dish name \*"/,
       /<ChipGroup[\s\S]*options=\{DIETARY_OPTIONS\.map/,
       /<FormSwitchRow[\s\S]*label="Available for sale"/,
       /<FormSwitchRow[\s\S]*label="Featured Dish"/,
@@ -172,7 +172,7 @@ test("merchant forms use shared user-mode input, select, chip, and toggle primit
 
   assertSourceIncludes(
     inbox,
-    [/<Input[\s\S]*placeholder="Type your message\.\.\."/],
+    [/<Input[\s\S]*placeholder="Type your reply\.\.\."/],
     "Customer Inbox reply input",
   );
   assertSourceExcludes(inbox, [/<TextInput|styles\.input/], "Customer Inbox raw reply input");
@@ -186,7 +186,7 @@ test("merchant settings and bottom tabs use shared user-mode primitives", () => 
   assertSourceIncludes(
     merchantSettings,
     [
-      /<SettingsSection title="Business Account">/,
+      /<SettingsSection title="Business account">/,
       /<SettingsSection title="Alerts">/,
       /<SettingsRow[\s\S]*label="Help & Support"/,
     ],

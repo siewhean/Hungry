@@ -27,6 +27,7 @@ import { ALLERGEN_CHECK_DISCLAIMER } from "@/features/merchant/allergenKeywords"
 import { createMerchantDishId, trackMerchantEvent } from "@/features/merchant/merchantTracking";
 import { isVerificationCurrent } from "@/features/merchant/merchantGuards";
 import { useMerchantDialog } from "@/features/merchant/useMerchantDialog";
+import { reportError } from "@/lib/monitoring/reportError";
 import { useUnsavedChangesGuard } from "@/features/merchant/useUnsavedChangesGuard";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import type { DietaryFlag, DishDetail } from "@/types/domain";
@@ -83,6 +84,8 @@ export function DishEditorScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // The dish id is not on this outlet's menu (removed, or another stall's dish).
+  const [isMissing, setIsMissing] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{ name?: string; price?: string }>({});
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
@@ -105,6 +108,7 @@ export function DishEditorScreen() {
 
   const loadDish = useCallback(async () => {
     setError(null);
+    setIsMissing(false);
     if (!activeOutlet) {
       setIsLoading(false);
       return;
@@ -129,10 +133,11 @@ export function DishEditorScreen() {
         return;
       }
       if (!dishId) return;
-      const dish =
-        menu.find((item) => item.id === dishId) ??
-        (await getHungryService().discovery.getDish(dishId));
-      if (dish) {
+      // Only this outlet's own menu: a removed dish, or another stall's dish, is not editable.
+      const dish = menu.find((item) => item.id === dishId);
+      if (!dish) {
+        setIsMissing(true);
+      } else {
         const dishImageUrl = dish.imageUrl || dish.gallery?.[0] || "";
         setName(dish.name);
         setPrice(dish.price ? dish.price.toFixed(2) : "");
@@ -152,6 +157,7 @@ export function DishEditorScreen() {
         setIsFeatured(hasAvailabilityFlag(dish.availabilityFlags, "featured"));
       }
     } catch (e) {
+      reportError(e, { screen: "DishEditor", action: "load_dish" });
       setError(e instanceof Error ? e.message : "Failed to load dish details.");
     } finally {
       setIsLoading(false);
@@ -244,6 +250,7 @@ export function DishEditorScreen() {
         [{ text: "OK", onPress: () => navigation.goBack() }],
       );
     } catch (e) {
+      reportError(e, { screen: "DishEditor", action: "save_dish" });
       showAlert("Could not save dish", errorMessage(e, "Please try again."));
     } finally {
       setIsSaving(false);
@@ -253,12 +260,12 @@ export function DishEditorScreen() {
   const handleDelete = () => {
     if (!activeOutlet || !dishId) return;
     showAlert(
-      "Delete Dish",
+      "Remove from menu?",
       `Remove ${name || "this dish"} from your menu? Diner reviews and saves are kept.`,
       [
         { text: "Cancel", style: "cancel" },
         {
-          text: "Delete",
+          text: "Remove",
           style: "destructive",
           onPress: async () => {
             setIsSaving(true);
@@ -267,7 +274,8 @@ export function DishEditorScreen() {
               trackMerchantEvent("merchant_dish_deleted", activeOutlet.id);
               navigation.goBack();
             } catch (e) {
-              showAlert("Could not delete dish", errorMessage(e, "Please try again."));
+              reportError(e, { screen: "DishEditor", action: "remove_dish" });
+              showAlert("Could not remove dish", errorMessage(e, "Please try again."));
             } finally {
               setIsSaving(false);
             }
@@ -306,13 +314,26 @@ export function DishEditorScreen() {
 
   if (isLoading) {
     return (
-      <Screen title={dishId ? "Edit Dish" : "Add Dish"}>
+      <Screen title={dishId ? "Edit dish" : "Add dish"}>
         <View accessibilityLabel="Loading dish details" style={{ gap: spacing[4], width: "100%" }}>
           <Skeleton height={56} borderRadius={radii.lg} />
           <Skeleton height={56} borderRadius={radii.lg} />
           <Skeleton height={160} borderRadius={radii.lg} />
           <Skeleton height={56} borderRadius={radii.lg} />
         </View>
+      </Screen>
+    );
+  }
+
+  if (isMissing) {
+    return (
+      <Screen title="Edit dish">
+        <EmptyState
+          title="This dish is no longer on your menu"
+          body="It may have been removed. Go back to your menu to see the dishes you can edit."
+          ctaLabel="Back to menu"
+          onPress={() => navigation.goBack()}
+        />
       </Screen>
     );
   }
@@ -334,11 +355,11 @@ export function DishEditorScreen() {
   }
 
   return (
-    <Screen title={dishId ? "Edit Dish" : "Add Dish"} onBackPress={confirmLeave}>
+    <Screen title={dishId ? "Edit dish" : "Add dish"} onBackPress={confirmLeave}>
       <View style={{ gap: spacing[5], width: "100%" }}>
         <View>
           <Input
-            label="Dish Name *"
+            label="Dish name *"
             value={name}
             onChangeText={setName}
             errorText={fieldErrors.name}
@@ -457,7 +478,7 @@ export function DishEditorScreen() {
 
         <FormSwitchRow
           label="Available for sale"
-          description="Turn off to mark as Sold Out"
+          description="Turn off to mark as sold out"
           value={isAvailable}
           onValueChange={setIsAvailable}
         />
@@ -479,7 +500,7 @@ export function DishEditorScreen() {
         />
         {dishId ? (
           <Button
-            label="Delete Dish"
+            label="Remove from menu"
             variant="destructive"
             fullWidth
             onPress={handleDelete}

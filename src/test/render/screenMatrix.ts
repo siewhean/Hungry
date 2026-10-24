@@ -278,13 +278,13 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "CustomerInboxScreen",
     file: "src/app/screens/merchant/CustomerInboxScreen.tsx",
     scenario: "merchant",
-    expect: /Customer Inbox/,
+    expect: /Customer inbox/,
   },
   {
     name: "DishEditorScreen",
     file: "src/app/screens/merchant/DishEditorScreen.tsx",
     scenario: "merchant",
-    expect: /Add Dish/,
+    expect: /Add dish/,
     known: "BACK_HANDLER",
   },
   {
@@ -339,7 +339,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "PromotionBuilderScreen",
     file: "src/app/screens/merchant/PromotionBuilderScreen.tsx",
     scenario: "merchant",
-    expect: /New Promotion/,
+    expect: /New promotion/,
     known: "BACK_HANDLER",
   },
   {

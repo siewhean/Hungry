@@ -129,7 +129,8 @@ export type MerchantTabParamList = {
   BusinessProfileEditor: undefined;
   DishEditor: { dishId?: string; ocrDraftId?: string } | undefined;
   OCRDrafts: undefined;
-  CustomerInbox: undefined;
+  /** `filter` opens a filtered list; `replyToId` opens the reply composer for that review. */
+  CustomerInbox: { filter?: "unreplied"; replyToId?: string } | undefined;
   FeaturedVisitors: undefined;
   PromotionBuilder: { promotionId?: string; duplicateFromId?: string } | undefined;
   PromotionList: undefined;

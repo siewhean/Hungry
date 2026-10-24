@@ -2777,6 +2777,33 @@ async function getSupabaseMerchantAccount(
   };
 }
 
+/**
+ * The merchant_verifications row a merchant (re)submits. It never carries the decision fields
+ * (rejected_at, rejection_reason, verified_at, expires_at): the decision guard trigger refuses any
+ * merchant write that changes them, so clearing them here made every resubmission after a
+ * rejection fail with 42501. The old reason is only shown in the rejected/more-info states.
+ */
+export function buildVerificationSubmitPayload(outletId: string, method: string, now: Date) {
+  return {
+    outlet_id: outletId,
+    status: "submitted" as const,
+    method,
+    submitted_at: now.toISOString(),
+  };
+}
+
+/**
+ * Keyset page on (created_at, id) for the merchant review lists. A plain `created_at < before`
+ * skipped every row that shared the boundary timestamp with the last row of the previous page.
+ */
+function applyMerchantReviewKeyset<
+  Q extends { lt(column: string, value: string): Q; or(filter: string): Q },
+>(query: Q, before: string | undefined, beforeId: string | undefined): Q {
+  if (!before) return query;
+  if (!beforeId) return query.lt("created_at", before);
+  return query.or(`created_at.lt."${before}",and(created_at.eq."${before}",id.lt."${beforeId}")`);
+}
+
 async function getMerchantOutletRow(client: SupabaseClient, outletId: string): Promise<Row> {
   if (UUID_PATTERN.test(outletId)) {
     const { data, error } = await client
@@ -3233,10 +3260,14 @@ function mapMerchantNotification(row: Row): MerchantNotification {
   };
 }
 
-function buildWeeklySummaryFromAnalytics(
+/**
+ * The Settings weekly card. Review numbers come from the 7-day analytics, not from an inbox page:
+ * the inbox read was all-time and capped, so "new reviews this week" counted old reviews.
+ */
+export function buildWeeklySummaryFromAnalytics(
   outletId: string,
   analytics: MerchantAnalytics,
-  reviews: CustomerInteraction[],
+  unrepliedReviews: number,
   promotions: MerchantPromotion[],
 ): MerchantWeeklySummary {
   const now = new Date();
@@ -3250,10 +3281,10 @@ function buildWeeklySummaryFromAnalytics(
     totalViews: analytics.profileVisits + analytics.menuViews + analytics.dishViews,
     dishViews: analytics.dishViews,
     topDishes: analytics.topDishes,
-    newReviews: reviews.length,
+    newReviews: analytics.reviewCount,
     averageRating: analytics.averageRating,
     ratingChange: analytics.averageRating - analytics.previousPeriodComparison.averageRating,
-    unrepliedReviews: reviews.filter((review) => !review.reply).length,
+    unrepliedReviews,
     promotionViews: promotions.reduce(
       (sum, promotion) => sum + (promotion.analytics?.impressions ?? 0),
       0,
@@ -6547,17 +6578,9 @@ export const supabaseService: HungryService = {
 
       const { error } = await client
         .from("merchant_verifications")
-        .upsert(
-          {
-            outlet_id: resolvedOutletId,
-            status: "submitted",
-            method: evidence.method,
-            submitted_at: new Date().toISOString(),
-            rejected_at: null,
-            rejection_reason: null,
-          },
-          { onConflict: "outlet_id" },
-        )
+        .upsert(buildVerificationSubmitPayload(resolvedOutletId, evidence.method, new Date()), {
+          onConflict: "outlet_id",
+        })
         .select("id")
         .single();
       if (error) throw error;
@@ -6757,10 +6780,10 @@ export const supabaseService: HungryService = {
       return Array.isArray(data) ? data.filter((id): id is string => typeof id === "string") : [];
     },
 
-    async toggleFeatured(outletId, dishId) {
+    async toggleFeatured(outletId, dishId, featured) {
       const client = requireSupabaseClient();
       const outlet = await requireLinkedMerchantOutlet(client, outletId);
-      return setMerchantDishFlag(client, outlet, dishId, "featured");
+      return setMerchantDishFlag(client, outlet, dishId, "featured", featured);
     },
 
     async getOCRDrafts(outletId) {
@@ -6952,9 +6975,10 @@ export const supabaseService: HungryService = {
           "id,dish_id,author_name,rating,text,tags,created_at,merchant_reply_text,merchant_replied_at",
         )
         .eq("venue_id", venueId)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false });
       if (filters?.unrepliedOnly) query = query.is("merchant_reply_text", null);
-      if (filters?.before) query = query.lt("created_at", filters.before);
+      query = applyMerchantReviewKeyset(query, filters?.before, filters?.beforeId);
       // Never an unbounded read: callers page with `before` (the oldest created_at they hold).
       query = query.limit(
         Math.min(Math.max(1, filters?.limit ?? MERCHANT_INBOX_MAX_ROWS), MERCHANT_INBOX_MAX_ROWS),
@@ -7042,8 +7066,13 @@ export const supabaseService: HungryService = {
         .from("reviews")
         .select("id,user_id,dish_id,venue_id,author_name,rating,text,created_at")
         .eq("venue_id", venueId)
-        .order("created_at", { ascending: false });
-      if (options?.before) candidateQuery = candidateQuery.lt("created_at", options.before);
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false });
+      candidateQuery = applyMerchantReviewKeyset(
+        candidateQuery,
+        options?.before,
+        options?.beforeId,
+      );
       candidateQuery = candidateQuery.limit(
         Math.min(Math.max(1, options?.limit ?? MERCHANT_INBOX_MAX_ROWS), MERCHANT_INBOX_MAX_ROWS),
       );
@@ -7373,11 +7402,18 @@ export const supabaseService: HungryService = {
     },
 
     async getWeeklySummaryStats(outletId) {
-      const analytics = await this.getAnalytics(outletId, "7d");
-      const reviews = await this.getInbox(outletId, { type: "review" });
-      const promotions = await this.getPromotions(outletId);
       // Read-only: opening Settings must not write a summary row for every visit.
-      return buildWeeklySummaryFromAnalytics(outletId, analytics, reviews, promotions);
+      const [analytics, summary, promotions] = await Promise.all([
+        this.getAnalytics(outletId, "7d"),
+        this.getDashboardSummary(outletId),
+        this.getPromotions(outletId),
+      ]);
+      return buildWeeklySummaryFromAnalytics(
+        outletId,
+        analytics,
+        summary.unrepliedReviews,
+        promotions,
+      );
     },
 
     async getMerchantNotifications(merchantAccountId) {

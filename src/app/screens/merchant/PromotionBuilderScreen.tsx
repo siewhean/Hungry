@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect, useMemo } from "react";
+import React, { useCallback, useState, useEffect, useMemo, useRef } from "react";
 import { View, StyleSheet, Pressable } from "react-native";
 import { X } from "lucide-react-native";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
@@ -20,6 +20,7 @@ import {
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
+import { reportError } from "@/lib/monitoring/reportError";
 import type {
   DishDetail,
   MerchantPromotion,
@@ -32,6 +33,7 @@ import { trackMerchantEvent } from "@/features/merchant/merchantTracking";
 import { useMerchantDialog } from "@/features/merchant/useMerchantDialog";
 import { useUnsavedChangesGuard } from "@/features/merchant/useUnsavedChangesGuard";
 import {
+  getPromotionPublishDateError,
   promotionBoundaryToDateOnly,
   toSingaporeDateOnly,
   toSingaporePromotionBoundary,
@@ -73,6 +75,8 @@ export function PromotionBuilderScreen() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  // Set synchronously: a second tap lands before the disabled state renders.
+  const savingRef = useRef(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [targetDishId, setTargetDishId] = useState<string | undefined>(undefined);
@@ -143,6 +147,7 @@ export function PromotionBuilderScreen() {
         setIsAvailable(promo.isAvailable ?? true);
       }
     } catch (e) {
+      reportError(e, { screen: "PromotionBuilder", action: "load_promotion" });
       setError(e instanceof Error ? e.message : "Failed to load promotion details.");
     } finally {
       setIsLoading(false);
@@ -203,6 +208,7 @@ export function PromotionBuilderScreen() {
       setSavedSnapshot(formSnapshot);
       navigation.goBack();
     } catch (e) {
+      reportError(e, { screen: "PromotionBuilder", action: "promotion_action" });
       showAlert(failureTitle, e instanceof Error ? e.message : "Please try again.");
     } finally {
       setIsSaving(false);
@@ -261,7 +267,7 @@ export function PromotionBuilderScreen() {
   };
 
   const handleSave = async (publish: boolean) => {
-    if (!activeOutlet) return;
+    if (!activeOutlet || savingRef.current) return;
     // Problems are shown next to the fields, not in an alert.
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
     const isStartValid = dateRegex.test(startDate);
@@ -269,12 +275,18 @@ export function PromotionBuilderScreen() {
     const nextErrors = {
       title: title.trim() ? undefined : "Add a title.",
       description: description.trim() ? undefined : "Add a description.",
-      dates: isStartValid && isEndValid ? undefined : "Enter both dates as YYYY-MM-DD.",
+      dates:
+        isStartValid && isEndValid
+          ? publish
+            ? getPromotionPublishDateError(endDate)
+            : undefined
+          : "Enter both dates as YYYY-MM-DD.",
     };
     setDateErrors({ start: !isStartValid, end: !isEndValid });
     setFieldErrors(nextErrors);
     if (nextErrors.title || nextErrors.description || nextErrors.dates) return;
 
+    savingRef.current = true;
     setIsSaving(true);
     try {
       const parsedOriginalPrice = originalPrice ? Number(originalPrice) : undefined;
@@ -347,6 +359,7 @@ export function PromotionBuilderScreen() {
                   );
                   updateOutletProfile(outletId, updated);
                 } catch (e) {
+                  reportError(e, { screen: "PromotionBuilder", action: "show_on_hungry" });
                   showAlert(
                     "Could not show your stall",
                     e instanceof Error ? e.message : "Please try again.",
@@ -363,16 +376,17 @@ export function PromotionBuilderScreen() {
         { text: "OK", onPress: () => navigation.goBack() },
       ]);
     } catch (e) {
+      reportError(e, { screen: "PromotionBuilder", action: "save_promotion" });
       showAlert("Error", e instanceof Error ? e.message : "Failed to save promotion.");
-      console.error(e);
     } finally {
+      savingRef.current = false;
       setIsSaving(false);
     }
   };
 
   if (isLoading) {
     return (
-      <Screen title={promotionId ? "Edit Promotion" : "New Promotion"}>
+      <Screen title={promotionId ? "Edit promotion" : "New promotion"}>
         <View accessibilityLabel="Loading promotion details" style={{ gap: spacing[4] }}>
           <Skeleton height={140} borderRadius={componentRadii.card} />
           <Skeleton height={56} borderRadius={componentRadii.input} />
@@ -421,7 +435,7 @@ export function PromotionBuilderScreen() {
   };
 
   return (
-    <Screen title={promotionId ? "Edit Promotion" : "New Promotion"} onBackPress={confirmLeave}>
+    <Screen title={promotionId ? "Edit promotion" : "New promotion"} onBackPress={confirmLeave}>
       <View style={{ gap: spacing[5], width: "100%" }}>
         {/* Preview Card */}
         <View>
@@ -432,7 +446,7 @@ export function PromotionBuilderScreen() {
           <CustomerPromotionCard
             promotion={{
               ...previewPromotion,
-              title: title || "Your Promotion Title",
+              title: title || "Your promotion title",
               description:
                 description || "Add a description to tell customers why they should visit.",
             }}
@@ -626,14 +640,14 @@ export function PromotionBuilderScreen() {
 
         <View style={{ flexDirection: "row", gap: spacing[3], marginTop: spacing[4] }}>
           <Button
-            label={isSaving ? "Saving..." : isLivePromotion ? "Unpublish" : "Save as Draft"}
+            label={isSaving ? "Saving..." : isLivePromotion ? "Unpublish" : "Save as draft"}
             variant="secondary"
             style={{ flex: 1 }}
             onPress={isLivePromotion ? handleUnpublish : () => void handleSave(false)}
             disabled={isSaving}
           />
           <Button
-            label={isSaving ? "Publishing..." : "Publish Now"}
+            label={isSaving ? "Publishing..." : "Publish now"}
             variant="primary"
             style={{ flex: 1 }}
             onPress={() => void handleSave(true)}

@@ -4,7 +4,7 @@
  * Features large numbers, big buttons, and simple navigation.
  * Feedback-driven for 'Uncle Tan' and 'Ahmad'.
  */
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { View, ScrollView, Pressable, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -27,12 +27,18 @@ import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { OutletSwitcher } from "@/components/merchant/OutletSwitcher";
 import { prefetchMerchantTab, preloadRoute } from "@/features/navigation/prefetch";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useIsFocused, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { getDataTrustDisclosure } from "@/lib/services/dataTrustDisclosure";
-import type { MerchantAnalytics, MerchantDashboardSummary } from "@/types/domain";
+import { useExperimentVariant } from "@/lib/experiments/experiments";
+import { reportError } from "@/lib/monitoring/reportError";
+import type {
+  CustomerInteraction,
+  MerchantAnalytics,
+  MerchantDashboardSummary,
+} from "@/types/domain";
 import { trackMerchantEvent } from "@/features/merchant/merchantTracking";
 import {
   formatAverageRating,
@@ -51,8 +57,8 @@ type DashboardRange = "today" | "7d" | "30d";
 // The shared chip rail gives each option a button role and selected state.
 const DASHBOARD_RANGE_OPTIONS: { id: DashboardRange; label: string }[] = [
   { id: "today", label: "Today" },
-  { id: "7d", label: "7 Days" },
-  { id: "30d", label: "30 Days" },
+  { id: "7d", label: "7 days" },
+  { id: "30d", label: "30 days" },
 ];
 
 const RANGE_COMPARISON_LABELS: Record<DashboardRange, string> = {
@@ -225,12 +231,78 @@ function ActionCard({
   );
 }
 
+// ─── Inline reply card (merchant_inline_reply_v1 "inline" arm) ──────────────
+
+/** The newest unreplied review with a Reply button, in place of the unreplied count card. */
+export function MerchantInlineReplyCard({
+  review,
+  unrepliedCount,
+  onReply,
+}: {
+  review: CustomerInteraction;
+  unrepliedCount: number;
+  onReply: (review: CustomerInteraction) => void;
+}) {
+  const { componentRadii, palette, spacing } = useHungryTheme();
+  const rating = typeof review.rating === "number" && review.rating > 0 ? review.rating : null;
+  return (
+    <View
+      style={{
+        backgroundColor: palette.surface,
+        borderRadius: componentRadii.button,
+        padding: spacing[4],
+        borderWidth: 1,
+        borderColor: palette.border,
+        gap: spacing[2],
+      }}
+    >
+      <AppText variant="bodyBold">
+        {unrepliedCount === 1
+          ? "1 review is waiting for your reply"
+          : `${unrepliedCount} reviews are waiting for your reply`}
+      </AppText>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", gap: spacing[2] }}>
+        <AppText variant="bodySmallBold">{review.authorName}</AppText>
+        {rating ? (
+          <AppText variant="bodySmall" tone="muted" accessibilityLabel={`Rated ${rating} out of 5`}>
+            {"★".repeat(rating)}
+          </AppText>
+        ) : null}
+      </View>
+      <AppText variant="bodySmall" numberOfLines={2}>
+        {review.text}
+      </AppText>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Reply to ${review.authorName}`}
+        onPress={() => onReply(review)}
+        style={({ pressed }) => ({
+          alignSelf: "flex-start",
+          minHeight: 44,
+          justifyContent: "center",
+          paddingHorizontal: spacing[4],
+          borderRadius: componentRadii.button,
+          backgroundColor: palette.orange,
+          opacity: pressed ? 0.8 : 1,
+        })}
+      >
+        <AppText variant="bodySmallBold" style={{ color: palette.textOnOrange }}>
+          Reply
+        </AppText>
+      </Pressable>
+    </View>
+  );
+}
+
 // ─── MerchantDashboardScreen ──────────────────────────────────────────────────
 
 export function MerchantDashboardScreen() {
   const { componentRadii, palette, spacing, radii } = useHungryTheme();
   const activeOutlet = useMerchantStore(getActiveOutlet);
+  // Contact details are not persisted: until this session synced the account they are unknown.
+  const contactKnown = useMerchantStore((state) => state.accountSyncedAt !== null);
   const navigation = useNavigation<NativeStackNavigationProp<MerchantTabParamList>>();
+  const isFocused = useIsFocused();
 
   const [dateRange, setDateRange] = useState<DashboardRange>("today");
   const [analytics, setAnalytics] = useState<MerchantAnalytics | null>(null);
@@ -275,7 +347,7 @@ export function MerchantDashboardScreen() {
       setSummary(counts);
     } catch (err) {
       if (requestId !== latestRequestId.current) return;
-      console.error("Failed to fetch analytics:", err);
+      reportError(err, { screen: "MerchantDashboard", action: "load_dashboard" });
       setError(err instanceof Error ? err.message : "Failed to load dashboard analytics.");
     } finally {
       if (requestId === latestRequestId.current) setIsLoading(false);
@@ -303,6 +375,32 @@ export function MerchantDashboardScreen() {
       setIsRefreshing(false);
     }
   }, [loadDashboard]);
+
+  const unrepliedCount = summary?.unrepliedReviews ?? 0;
+  // Exposure only for merchants who actually see the card: focused, loaded, reviews waiting.
+  const replyVariant = useExperimentVariant("merchant_inline_reply_v1", {
+    enabled: isFocused && !isLoading && summary !== null && unrepliedCount > 0,
+  });
+  const [inlineReview, setInlineReview] = useState<CustomerInteraction | null>(null);
+  useEffect(() => {
+    // Only the inline arm pays for the extra read.
+    if (replyVariant !== "inline" || !activeOutletId || unrepliedCount === 0) {
+      setInlineReview(null);
+      return;
+    }
+    let isMounted = true;
+    getHungryService()
+      .merchant.getInbox(activeOutletId, { type: "review", unrepliedOnly: true, limit: 1 })
+      .then((rows) => {
+        if (isMounted) setInlineReview(rows[0] ?? null);
+      })
+      .catch((err) => {
+        reportError(err, { screen: "MerchantDashboard", action: "load_inline_review" });
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [activeOutletId, replyVariant, unrepliedCount]);
 
   // A failed refresh with numbers already on screen shows a banner; only a first load that
   // failed replaces the screen.
@@ -365,7 +463,7 @@ export function MerchantDashboardScreen() {
   ) : (
     <Skeleton height={12} width={80} borderRadius={radii.sm} />
   );
-  const outletName = activeOutlet?.name?.trim() || "Your Stall";
+  const outletName = activeOutlet?.name?.trim() || "Your stall";
   const outletStatus = getMerchantOutletStatus(activeOutlet);
   const outletStatusLabel = getMerchantOutletStatusLabel(outletStatus);
   const statusColor =
@@ -380,8 +478,8 @@ export function MerchantDashboardScreen() {
       : outletStatus === "closed"
         ? palette.amber + "20"
         : palette.bgSoft;
-  const profileGaps = activeOutlet && summary ? getMerchantProfileGaps(activeOutlet, summary) : [];
-  const unrepliedCount = summary?.unrepliedReviews ?? 0;
+  const profileGaps =
+    activeOutlet && summary ? getMerchantProfileGaps(activeOutlet, summary, { contactKnown }) : [];
   const hasActionCards = profileGaps.length > 0 || unrepliedCount > 0;
   const latestFeedback = summary?.latestReview;
   const analyticsDisclosure = getDataTrustDisclosure("merchantAnalytics");
@@ -460,7 +558,7 @@ export function MerchantDashboardScreen() {
           </View>
           <View style={{ flex: 1 }}>
             <MetricCard
-              title="Avg Rating"
+              title="Avg rating"
               value={rating}
               subtext={ratingSubtext}
               icon={<Star size={24} color={palette.amber} />}
@@ -472,28 +570,39 @@ export function MerchantDashboardScreen() {
         {/* Action Cards (Dynamic Urgent Tasks) */}
         <View style={{ gap: spacing[3] }}>
           <AppText variant="h3" style={{ fontWeight: "800" }}>
-            Actionable Insights
+            To do
           </AppText>
 
           {profileGaps.length > 0 ? (
             <ActionCard
-              title="Incomplete Profile"
+              title="Incomplete profile"
               description={`Missing: ${profileGaps.map((gap) => gap.label).join(", ")}`}
               icon={<Utensils size={20} color={palette.orange} />}
-              actionText="Edit Profile"
+              actionText="Edit profile"
               onPressIn={() => prefetchMerchantRoute("BusinessProfileEditor")}
               onPress={() => navigation.navigate("BusinessProfileEditor")}
             />
           ) : null}
 
-          {unrepliedCount > 0 ? (
+          {unrepliedCount > 0 && replyVariant === "inline" && inlineReview ? (
+            <MerchantInlineReplyCard
+              review={inlineReview}
+              unrepliedCount={unrepliedCount}
+              onReply={(review) =>
+                navigation.navigate("CustomerInbox", {
+                  filter: "unreplied",
+                  replyToId: review.id,
+                })
+              }
+            />
+          ) : unrepliedCount > 0 ? (
             <ActionCard
-              title="Unreplied Reviews"
+              title="Unreplied reviews"
               description={`${unrepliedCount} review${unrepliedCount === 1 ? "" : "s"} waiting for your response.`}
               icon={<MessageSquare size={20} color={palette.textSecondary} />}
-              actionText="Read Reviews"
+              actionText="Read reviews"
               onPressIn={() => prefetchMerchantRoute("CustomerInbox")}
-              onPress={() => navigation.navigate("CustomerInbox")}
+              onPress={() => navigation.navigate("CustomerInbox", { filter: "unreplied" })}
             />
           ) : null}
 
@@ -518,12 +627,12 @@ export function MerchantDashboardScreen() {
         {/* Quick Actions (Big Buttons for Uncle Tan) */}
         <View style={{ gap: spacing[3] }}>
           <AppText variant="h3" style={{ fontWeight: "800" }}>
-            Quick Actions
+            Quick actions
           </AppText>
 
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Manage Menu. Update prices or add new dishes"
+            accessibilityLabel="Manage menu. Update prices or add new dishes"
             onPressIn={() => prefetchMerchantRoute("Menu")}
             onPress={() => navigation.navigate("Menu")}
             style={{
@@ -549,7 +658,7 @@ export function MerchantDashboardScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <AppText variant="h3" style={{ color: palette.white, fontWeight: "800" }}>
-                Manage Menu
+                Manage menu
               </AppText>
               <AppText variant="bodySmall" style={{ color: palette.inverseTextSecondary }}>
                 Update prices or add new dishes
@@ -560,7 +669,7 @@ export function MerchantDashboardScreen() {
 
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Recent Reviews. Read and reply to your customers"
+            accessibilityLabel="Recent reviews. Read and reply to your customers"
             onPressIn={() => prefetchMerchantRoute("CustomerInbox")}
             onPress={() => navigation.navigate("CustomerInbox")}
             style={{
@@ -588,7 +697,7 @@ export function MerchantDashboardScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <AppText variant="h3" style={{ color: palette.text, fontWeight: "800" }}>
-                Recent Reviews
+                Recent reviews
               </AppText>
               <AppText variant="bodySmall" tone="muted">
                 Read and reply to your customers
@@ -601,23 +710,23 @@ export function MerchantDashboardScreen() {
         {/* Business Tools */}
         <View style={{ gap: spacing[3] }}>
           <AppText variant="h3" style={{ fontWeight: "800" }}>
-            Business Tools
+            Business tools
           </AppText>
 
           <ActionCard
             title="Promotions"
             description="Create and manage offers for nearby customers."
             icon={<Megaphone size={20} color={palette.orange} />}
-            actionText="Open Promotions"
+            actionText="Open promotions"
             onPressIn={() => prefetchMerchantRoute("PromotionList")}
             onPress={() => navigation.navigate("PromotionList")}
           />
 
           <ActionCard
-            title="Featured Visitors"
+            title="Featured visitors"
             description="Pin popular visitor reviews to your public stall page."
             icon={<Users size={20} color={palette.orange} />}
-            actionText="Manage Visitors"
+            actionText="Manage visitors"
             onPressIn={() => prefetchMerchantRoute("FeaturedVisitors")}
             onPress={() => navigation.navigate("FeaturedVisitors")}
           />
@@ -626,16 +735,16 @@ export function MerchantDashboardScreen() {
             title="Insights"
             description="See a simple summary of your stall's recent activity."
             icon={<Sparkles size={20} color={palette.orange} />}
-            actionText="View Insights"
+            actionText="View insights"
             onPressIn={() => prefetchMerchantRoute("AIAssistant")}
             onPress={() => navigation.navigate("AIAssistant")}
           />
 
           <ActionCard
-            title="Merchant Settings"
-            description="Manage staff access, alerts, verification, and account actions."
+            title="Merchant settings"
+            description="Alerts, verification and account."
             icon={<Settings size={20} color={palette.textSecondary} />}
-            actionText="Open Settings"
+            actionText="Open settings"
             onPressIn={() => prefetchMerchantRoute("MerchantSettings")}
             onPress={() => navigation.navigate("MerchantSettings")}
           />
@@ -644,7 +753,7 @@ export function MerchantDashboardScreen() {
         {/* Recent Activity */}
         <View style={{ gap: spacing[3] }}>
           <AppText variant="h3" style={{ fontWeight: "800" }}>
-            Recent Feedback
+            Recent feedback
           </AppText>
           {latestFeedback ? (
             <Pressable

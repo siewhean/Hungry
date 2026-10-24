@@ -18,6 +18,7 @@ import { confirmGalleryAccess, isGalleryPermissionGranted } from "@/lib/permissi
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
+import { reportError } from "@/lib/monitoring/reportError";
 import type { LocationPrivacy } from "@/types/domain";
 import { trackMerchantEvent } from "@/features/merchant/merchantTracking";
 
@@ -121,7 +122,8 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
       setPhotoUris((current) =>
         Array.from(new Set([...current, ...picked])).slice(0, MAX_HOME_BASED_PHOTOS),
       );
-    } catch {
+    } catch (e) {
+      reportError(e, { screen: "HomeBasedVerification", action: "pick_photo" });
       setPhotoError("Unable to open the photo library right now.");
     }
   };
@@ -157,7 +159,7 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
       // Go back to the Verification Centre to see the pending status
       navigation.goBack();
     } catch (e) {
-      console.error(e);
+      reportError(e, { screen: "HomeBasedVerification", action: "submit" });
       setSubmitError(
         e instanceof Error && e.message
           ? e.message
