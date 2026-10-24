@@ -101,7 +101,7 @@ test("social writes and taste signals never reach the server for a guest", () =>
   // Favourites refuse a signed-out caller (for example after session expiry).
   assert.match(
     profile,
-    /toggleFavourite: async \(dish\) => \{[\s\S]*?if \(!session\.isAuthenticated\) \{[\s\S]*?reason: "signed_out"/,
+    /toggleFavourite: async \(dish, options\) => \{[\s\S]*?if \(!session\.isAuthenticated\) \{[\s\S]*?reason: "signed_out"/,
   );
 });
 

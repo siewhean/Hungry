@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { ArrowLeft, Search } from "lucide-react-native";
+import { ArrowLeft, Check, Search } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
@@ -15,11 +15,38 @@ import {
   searchPickerDishes,
   searchPickerVenues,
 } from "@/features/checklistPortfolio/pickerSearch";
+import { reportError } from "@/lib/monitoring/reportError";
 import { usePortfolioStore } from "@/store/usePortfolioStore";
 import { useHungryTheme } from "@/theme";
 import type { DishDetail, VenueSummary } from "@/types/domain";
 
 type Props = NativeStackScreenProps<ProfileStackParamList, "PortfolioItemPicker">;
+
+/** "#01-23 · Maxwell Food Centre": only the parts the stall has, never a stray "·". */
+export function formatPickerVenueLine(
+  venue: Pick<VenueSummary, "unitNumber" | "floor" | "buildingName">,
+): string {
+  return [venue.unitNumber || venue.floor, venue.buildingName].filter(Boolean).join(" · ");
+}
+
+function PickerTitle({ name, added }: { name: string; added: boolean }) {
+  const { palette, spacing } = useHungryTheme();
+  return (
+    <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
+      <AppText variant="bodyBold" style={{ flex: 1 }}>
+        {name}
+      </AppText>
+      {added ? (
+        <>
+          <Check color={palette.orange} size={16} />
+          <AppText variant="bodySmall" tone="secondary">
+            Added
+          </AppText>
+        </>
+      ) : null}
+    </View>
+  );
+}
 
 /** The dish or stall just tapped, waiting for its score and notes. */
 type PendingItem =
@@ -37,6 +64,10 @@ export function PortfolioItemPickerScreen({ navigation, route }: Props) {
   const [dishes, setDishes] = useState<DishDetail[]>([]);
   const [venues, setVenues] = useState<VenueSummary[]>([]);
   const [resultLimit, setResultLimit] = useState(PICKER_PAGE_SIZE);
+  const [searchStatus, setSearchStatus] = useState<"loading" | "ready" | "error">("loading");
+  const listItems = usePortfolioStore((state) => state.items[portfolioId]);
+  const addedDishIds = new Set((listItems ?? []).flatMap((item) => item.dishId ?? []));
+  const addedStallIds = new Set((listItems ?? []).flatMap((item) => item.stallId ?? []));
   const [isSaving, setIsSaving] = useState(false);
   const canAddItem = !isSaving;
   const insets = useSafeAreaInsets();
@@ -44,20 +75,30 @@ export function PortfolioItemPickerScreen({ navigation, route }: Props) {
   useEffect(() => {
     // `mounted` drops results from a superseded search; the timer debounces typing.
     let mounted = true;
+    setSearchStatus("loading");
 
     async function loadChoices() {
       if (mode === "dish") {
         const nextDishes = await searchPickerDishes(query, resultLimit);
-        if (mounted) setDishes(nextDishes);
+        if (mounted) {
+          setDishes(nextDishes);
+          setSearchStatus("ready");
+        }
         return;
       }
       // Whole catalog via the venue search RPC, not the first few buildings.
       const nextVenues = await searchPickerVenues(query, resultLimit);
-      if (mounted) setVenues(nextVenues);
+      if (mounted) {
+        setVenues(nextVenues);
+        setSearchStatus("ready");
+      }
     }
 
     const timer = setTimeout(() => {
-      void loadChoices().catch((error) => console.error("Failed to search:", error));
+      void loadChoices().catch((error) => {
+        reportError(error, { screen: "PortfolioItemPicker", action: "search", mode });
+        if (mounted) setSearchStatus("error");
+      });
     }, 250);
     return () => {
       mounted = false;
@@ -135,9 +176,20 @@ export function PortfolioItemPickerScreen({ navigation, route }: Props) {
         leftIcon={<Search color={palette.textMuted} size={18} />}
       />
 
-      {(mode === "dish" ? dishes : venues).length === 0 ? (
+      {searchStatus === "loading" && (mode === "dish" ? dishes : venues).length === 0 ? (
+        <AppText variant="body" tone="secondary" accessibilityLiveRegion="polite">
+          Searching…
+        </AppText>
+      ) : searchStatus === "error" ? (
         <Card>
-          <AppText variant="h3">No results yet</AppText>
+          <AppText variant="h3">{"Couldn't search right now"}</AppText>
+          <AppText variant="body" tone="secondary">
+            Check your connection and try again.
+          </AppText>
+        </Card>
+      ) : (mode === "dish" ? dishes : venues).length === 0 ? (
+        <Card>
+          <AppText variant="h3">No results</AppText>
           <AppText variant="body" tone="secondary">
             Try another search term.
           </AppText>
@@ -149,12 +201,16 @@ export function PortfolioItemPickerScreen({ navigation, route }: Props) {
             <Pressable
               key={dish.id}
               accessibilityRole="button"
-              accessibilityLabel={`Add ${dish.name} to list`}
-              disabled={!canAddItem}
+              accessibilityLabel={
+                addedDishIds.has(dish.id)
+                  ? `${dish.name}, already in this list`
+                  : `Add ${dish.name} to list`
+              }
+              disabled={!canAddItem || addedDishIds.has(dish.id)}
               onPress={() => setPending({ kind: "dish", id: dish.id, label: dish.name })}
             >
               <Card>
-                <AppText variant="bodyBold">{dish.name}</AppText>
+                <PickerTitle name={dish.name} added={addedDishIds.has(dish.id)} />
                 <AppText variant="bodySmall" tone="secondary">
                   {dish.venueName} · {dish.priceRange}
                 </AppText>
@@ -165,15 +221,21 @@ export function PortfolioItemPickerScreen({ navigation, route }: Props) {
             <Pressable
               key={venue.id}
               accessibilityRole="button"
-              accessibilityLabel={`Add ${venue.name} to list`}
-              disabled={!canAddItem}
+              accessibilityLabel={
+                addedStallIds.has(venue.id)
+                  ? `${venue.name}, already in this list`
+                  : `Add ${venue.name} to list`
+              }
+              disabled={!canAddItem || addedStallIds.has(venue.id)}
               onPress={() => setPending({ kind: "stall", id: venue.id, label: venue.name })}
             >
               <Card>
-                <AppText variant="bodyBold">{venue.name}</AppText>
-                <AppText variant="bodySmall" tone="secondary">
-                  {venue.floor} · {venue.unitNumber}
-                </AppText>
+                <PickerTitle name={venue.name} added={addedStallIds.has(venue.id)} />
+                {formatPickerVenueLine(venue) ? (
+                  <AppText variant="bodySmall" tone="secondary">
+                    {formatPickerVenueLine(venue)}
+                  </AppText>
+                ) : null}
               </Card>
             </Pressable>
           ))}

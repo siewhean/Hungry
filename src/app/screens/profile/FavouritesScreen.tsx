@@ -1,6 +1,6 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, View, useWindowDimensions } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, View, useWindowDimensions } from "react-native";
 import {
   Bookmark,
   CircleCheck,
@@ -56,6 +56,20 @@ const SECTION_LABELS: Record<SavedSection, string> = {
   stalls: "Stalls",
   posts: "Posts",
   lists: "Collections",
+};
+
+/** Posts are part of the archived social feed: their tab shows only when the feed is on. */
+export function visibleSavedSections(socialFeedEnabled: boolean): SavedSection[] {
+  return (Object.keys(SECTION_LABELS) as SavedSection[]).filter(
+    (key) => key !== "posts" || socialFeedEnabled,
+  );
+}
+
+const SECTION_HEADINGS: Record<SavedSection, string> = {
+  dishes: "Saved Dishes",
+  stalls: "Saved Stalls",
+  posts: "Saved Posts",
+  lists: "Your Collections",
 };
 
 /** Case-insensitive match on the dish or its stall, for the saved-dishes search box. */
@@ -131,30 +145,37 @@ export function FavouritesScreen({ navigation }: Props) {
   return (
     <ProfileScreenShell title="Saved">
       <View style={{ gap: spacing[1] }}>
-        <AppText variant="h1">Saved Dishes</AppText>
-        <AppText variant="bodySmall" tone="secondary">
-          {profile.favouriteDishIds.length} cravings saved for later
-        </AppText>
+        <AppText variant="h1">{SECTION_HEADINGS[section]}</AppText>
+        {section === "dishes" ? (
+          <AppText variant="bodySmall" tone="secondary">
+            {profile.favouriteDishIds.length} cravings saved for later
+          </AppText>
+        ) : null}
       </View>
-      <View
+      {/* Scrolls sideways so the tabs never clip at large text sizes or on small phones. */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
         accessibilityRole="tablist"
-        style={{ flexDirection: "row", gap: spacing[2], marginBottom: spacing[3] }}
+        contentContainerStyle={{ gap: spacing[2] }}
+        style={{ flexGrow: 0, marginBottom: spacing[3] }}
       >
-        {(Object.keys(SECTION_LABELS) as SavedSection[]).map((key) => (
+        {visibleSavedSections(FEATURE_FLAGS.socialFeedEnabled).map((key) => (
           <Chip
             key={key}
             label={SECTION_LABELS[key]}
+            accessibilityRole="tab"
             accessibilityLabel={`Saved ${SECTION_LABELS[key].toLowerCase()}`}
             selected={section === key}
             onPress={() => setSection(key)}
           />
         ))}
-      </View>
+      </ScrollView>
       {section === "stalls" ? (
         <SavedStallsSection
           onOpenStall={(venueId) => rootNavigation.navigate("StallDetail", { venueId })}
         />
-      ) : section === "posts" ? (
+      ) : section === "posts" && FEATURE_FLAGS.socialFeedEnabled ? (
         <SavedPostsSection
           onOpenPost={(postId) => rootNavigation.navigate("ActivityPostDetail", { postId })}
         />
@@ -438,6 +459,8 @@ function CatalogSavedDishes({ navigation, query }: Pick<Props, "navigation"> & {
   const loadVersion = useRef(0);
   const hasLoadedRef = useRef(false);
   const favouriteKey = favouriteDishIds.join(",");
+  // The saved set this screen's own Remove produced; that change is already on screen.
+  const ownRemovalKey = useRef<string | null>(null);
 
   const load = useCallback(async () => {
     const version = ++loadVersion.current;
@@ -469,6 +492,11 @@ function CatalogSavedDishes({ navigation, query }: Pick<Props, "navigation"> & {
 
   // Re-resolve when the saved set changes (e.g. a dish saved elsewhere).
   useEffect(() => {
+    if (ownRemovalKey.current !== null && ownRemovalKey.current === favouriteKey) {
+      ownRemovalKey.current = null;
+      return;
+    }
+    ownRemovalKey.current = null;
     void load();
     return () => {
       loadVersion.current += 1;
@@ -477,12 +505,20 @@ function CatalogSavedDishes({ navigation, query }: Pick<Props, "navigation"> & {
 
   const removeFavourite = async (dish: CatalogRawDishDetail) => {
     setPendingDishId(dish.id);
+    // The store drops the id right away; the row is removed below, so skip the full re-read
+    // that saved-set change would trigger.
+    ownRemovalKey.current = favouriteDishIds.filter((id) => id !== dish.id).join(",");
     try {
-      const result = await toggleFavourite({ id: dish.id, venueId: dish.venueId });
+      const result = await toggleFavourite(
+        { id: dish.id, venueId: dish.venueId },
+        { surface: "saved" },
+      );
       showToast(
         result.status === "failed"
           ? { message: result.message, tone: "error" }
-          : { message: "Removed from favourites.", tone: "success" },
+          : result.status === "removed"
+            ? { message: "Removed from Saved.", tone: "success" }
+            : { message: "This dish is still saved.", tone: "info" },
       );
       if (result.status === "removed") {
         setDishes((current) => current.filter((item) => item.id !== dish.id));

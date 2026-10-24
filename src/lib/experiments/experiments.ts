@@ -127,6 +127,18 @@ export const EXPERIMENTS = {
       "stall_menu_dish_opened",
     ],
   },
+  /**
+  /** "Save to list" next to Save on the catalog dish page (CatalogRawDetail). */
+  catalog_save_to_list_v1: {
+    variants: ["control", "save_with_lists"],
+    fallback: "control",
+    status: "running",
+    surface: "saved-lists",
+    hypothesis:
+      "Offering Save to list next to Save on the dish page diners actually reach gets more of them organising saves into lists, without reducing plain saves.",
+    primaryMetric: "portfolio_item_added",
+    guardrailMetrics: ["dish_favourited", "dish_unfavourited", "list_item_removed", "dish_viewed"],
+  },
 } as const satisfies Record<string, ExperimentDefinition>;
 
 export type ExperimentKey = keyof typeof EXPERIMENTS;

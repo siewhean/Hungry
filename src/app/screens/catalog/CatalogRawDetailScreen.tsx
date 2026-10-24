@@ -1,12 +1,15 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { ArrowLeft, Bookmark, Clock, ExternalLink, MapPin } from "lucide-react-native";
+import { ArrowLeft, Bookmark, Clock, ExternalLink, ListPlus, MapPin } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AccessibleImage, AppText, Button, EmptyState, Screen, Skeleton } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { formatDishPrice } from "@/features/detail/dishPrice";
+import { useDetailSaveActions } from "@/features/checklistPortfolio/DetailSaveActions";
+import { trackAnalyticsEvent } from "@/lib/analytics";
+import { useExperimentVariant } from "@/lib/experiments/experiments";
 import { reportError } from "@/lib/monitoring/reportError";
 import { openMerchantProfileLink } from "@/lib/security/safeLinking";
 import { getCatalogRawService } from "@/lib/services/serviceProvider";
@@ -87,7 +90,8 @@ function statusLabel(status: Detail["verificationStatus"]) {
 
 export function CatalogRawDetailScreen({ navigation, route }: Props) {
   const { palette, spacing } = useHungryTheme();
-  // Read-only catalog record with no save/like actions. Sign-in is still required.
+  // Catalog record; sign-in is required. Dishes can be saved (and, in the
+  // catalog_save_to_list_v1 test, saved to a list).
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const service = getCatalogRawService();
@@ -104,6 +108,44 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
   const [isSavingFavourite, setIsSavingFavourite] = useState(false);
   const [isLoadingMoreMenu, setIsLoadingMoreMenu] = useState(false);
   const [menuError, setMenuError] = useState<string | null>(null);
+  const loadedDish = isDish && detail && !error ? (detail as CatalogRawDishDetail) : null;
+  // Only signed-in diners looking at a loaded dish see the two arms differ, so only they are
+  // exposed; guests, stall pages and the loading/error states never are.
+  const saveExperimentEligible =
+    isAuthenticated &&
+    loadedDish !== null &&
+    FEATURE_FLAGS.favouritesEnabled &&
+    FEATURE_FLAGS.portfoliosEnabled;
+  const saveVariant = useExperimentVariant("catalog_save_to_list_v1", {
+    enabled: saveExperimentEligible,
+  });
+  const showSaveToList = saveExperimentEligible && saveVariant === "save_with_lists";
+  const saveTarget = useMemo(
+    () => ({
+      itemType: "dish" as const,
+      id: route.params.id,
+      label: loadedDish?.name ?? "This dish",
+      venueId: loadedDish?.venueId,
+    }),
+    [loadedDish?.name, loadedDish?.venueId, route.params.id],
+  );
+  const { addToPortfolio, isAddingToPortfolio, saveToListSheet } = useDetailSaveActions({
+    navigation,
+    target: saveTarget,
+    surface: "catalog_detail",
+  });
+  const lastViewedDishId = useRef<string | null>(null);
+
+  // dish_viewed fires on the dish page most diners reach, not only on DishDetail.
+  useEffect(() => {
+    if (!loadedDish || lastViewedDishId.current === loadedDish.id) return;
+    lastViewedDishId.current = loadedDish.id;
+    trackAnalyticsEvent("dish_viewed", {
+      dish_id: loadedDish.id,
+      venue_id: loadedDish.venueId,
+      source: "catalog_detail",
+    });
+  }, [loadedDish]);
 
   // Deep links can open this screen with no history; never leave a dead end.
   const goBackOrHome = useCallback(() => {
@@ -177,7 +219,10 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
     setIsSavingFavourite(true);
     try {
       // Toast only after the authenticated write settles so failures are never hidden.
-      const result = await toggleFavourite({ id: dish.id, venueId: dish.venueId });
+      const result = await toggleFavourite(
+        { id: dish.id, venueId: dish.venueId },
+        { surface: "catalog_detail" },
+      );
       if (result.status === "failed") {
         showToast({ message: result.message, tone: "error" });
         return;
@@ -241,7 +286,11 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
         setMenu(null);
       }
     } catch (loadError) {
-      reportError(loadError, { screen: "CatalogRawDetail", action: "load", kind: route.params.kind });
+      reportError(loadError, {
+        screen: "CatalogRawDetail",
+        action: "load",
+        kind: route.params.kind,
+      });
       // Raw service errors are not user copy.
       setError("load_failed");
       recordCatalogDiagnostic({
@@ -260,7 +309,14 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
     } finally {
       setIsLoading(false);
     }
-  }, [isAuthenticated, isDish, route.params.id, route.params.releaseId, service]);
+  }, [
+    isAuthenticated,
+    isDish,
+    route.params.id,
+    route.params.kind,
+    route.params.releaseId,
+    service,
+  ]);
 
   useEffect(() => {
     void load();
@@ -433,6 +489,16 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
               onPress={() => void handleToggleFavourite(detail as CatalogRawDishDetail)}
             />
           ) : null}
+          {showSaveToList ? (
+            <Button
+              label="Save to list"
+              variant="secondary"
+              loading={isAddingToPortfolio}
+              accessibilityHint="Opens your lists to add this dish to one"
+              leftIcon={<ListPlus color={palette.text} size={18} />}
+              onPress={() => void addToPortfolio()}
+            />
+          ) : null}
           {"description" in detail && detail.description ? (
             <AppText>{detail.description}</AppText>
           ) : null}
@@ -526,6 +592,7 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
           ) : null}
         </View>
       </ScrollView>
+      {showSaveToList ? saveToListSheet : null}
     </Screen>
   );
 }

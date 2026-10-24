@@ -8,6 +8,8 @@ import { useShallow } from "zustand/react/shallow";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
 import { PortfolioItemEditSheet, PortfolioItemRow, ReportListSheet } from "@/components/portfolio";
+import { buildPortfolioItemUpdate } from "@/features/checklistPortfolio/portfolioItemUpdate";
+import { reportError } from "@/lib/monitoring/reportError";
 import { AppText, Button, Card, Dialog, Skeleton } from "@/components/ui";
 import { webShareUrl } from "@/constants/links";
 import { formatPortfolioSummary, isPortfolioLive } from "@/features/checklistPortfolio/listLabels";
@@ -133,21 +135,21 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
     void refreshPortfolio(portfolioId)
       .then(() => mounted && setListState("ready"))
       .catch((error) => {
-        console.error("Failed to load list:", error);
+        reportError(error, { screen: "PortfolioDetail", action: "loadList" });
         if (mounted) setListState(listLoadStateForError(error));
       });
     void loadPortfolioItems(portfolioId)
       .then(() => mounted && setItemsState("ready"))
       .catch((error) => {
-        console.error("Failed to load list items:", error);
+        reportError(error, { screen: "PortfolioDetail", action: "loadItems" });
         if (mounted) setItemsState("error");
       });
     void checkFollowStatus(portfolioId).catch((error) =>
-      console.error("Failed to load follow status:", error),
+      reportError(error, { screen: "PortfolioDetail", action: "loadFollowStatus" }),
     );
     // Your own collaborator row says whether you can edit (only members get rows).
     void loadPortfolioCollaborators(portfolioId).catch((error) =>
-      console.error("Failed to load collaborators:", error),
+      reportError(error, { screen: "PortfolioDetail", action: "loadCollaborators" }),
     );
     return () => {
       mounted = false;
@@ -606,6 +608,8 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
         title={
           editingItem ? formatPortfolioItemLabel(editingItem, details, labelsLoaded, failedIds) : ""
         }
+        itemKey={editingItem?.id}
+        scoreCanBeCleared={false}
         confirmLabel="Save"
         initialScore={editingItem?.score}
         initialPublicNotes={editingItem?.publicNotes}
@@ -616,12 +620,9 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
           const target = editingItem;
           if (!target) return;
           void runOwnerAction(async () => {
-            // The server keeps the old value for anything left out; "" clears a note.
-            await updateItem(target.id, {
-              score: next.score,
-              publicNotes: next.publicNotes.trim(),
-              privateNotes: next.privateNotes.trim(),
-            });
+            // Only changed fields are sent; the server keeps the old value for anything left
+            // out, so a private note that failed to load is never wiped by an untouched field.
+            await updateItem(target.id, buildPortfolioItemUpdate(target, next));
             setEditingItem(null);
           });
         }}

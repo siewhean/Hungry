@@ -58,12 +58,12 @@ test("R01-WRITE-01: favourite writes resolve only after the authenticated write 
 
   assert.match(
     store,
-    /toggleFavourite: \(dish: FavouriteDishInput\) => Promise<FavouriteToggleResult>/,
+    /toggleFavourite: \(\s*dish: FavouriteDishInput,\s*options\?: \{ surface\?: string \},\s*\) => Promise<FavouriteToggleResult>/,
   );
-  assert.match(store, /toggleFavourite: async \(dish\) => \{/);
+  assert.match(store, /toggleFavourite: async \(dish, options\) => \{/);
   assert.match(
     store,
-    /const saved = await getHungryService\(\)\.profile\.toggleFavourite\(dishId, ownerUserId\);\s*if \(!isStillOwner\(\)\) return staleFavouriteResult\(\);[\s\S]*?return \{ status: saved \? "saved" : "removed" \};/,
+    /const saved = await getHungryService\(\)\.profile\.setFavourite\(\s*dishId,\s*!wasFavourite,\s*ownerUserId,\s*\);\s*if \(!isStillOwner\(\)\) return staleFavouriteResult\(\);[\s\S]*?return \{ status: saved \? "saved" : "removed" \};/,
   );
   assert.match(
     store,
@@ -83,7 +83,7 @@ test("R01-WRITE-01: favourite results are dropped when the account changes mid-w
   );
   assert.match(
     supabase,
-    /async toggleFavourite\(dishId: string, expectedUserId\?: string\)[\s\S]*?if \(expectedUserId && userId !== expectedUserId\) \{\s*throw/,
+    /async setFavourite\(dishId: string, saved: boolean, expectedUserId\?: string\)[\s\S]*?if \(expectedUserId && userId !== expectedUserId\) \{\s*throw/,
   );
 });
 
@@ -95,7 +95,7 @@ test("R01-WRITE-01: favourite toasts follow the write result, never an optimisti
   assert.match(catalogDetail, /\{isDish && FEATURE_FLAGS\.favouritesEnabled \? \(/);
   assert.match(
     catalogDetail,
-    /const result = await toggleFavourite\(\{ id: dish\.id, venueId: dish\.venueId \}\);[\s\S]*?result\.status === "failed"[\s\S]*?tone: "error"/,
+    /const result = await toggleFavourite\(\s*\{ id: dish\.id, venueId: dish\.venueId \},\s*\{ surface: "catalog_detail" \},?\s*\);[\s\S]*?result\.status === "failed"[\s\S]*?tone: "error"/,
   );
 
   assert.match(

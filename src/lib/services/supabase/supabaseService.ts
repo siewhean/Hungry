@@ -4497,6 +4497,34 @@ export const supabaseService: HungryService = {
       return true;
     },
 
+    async setFavourite(dishId: string, saved: boolean, expectedUserId?: string) {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("You must be signed in to favourite dishes.");
+      if (expectedUserId && userId !== expectedUserId) {
+        throw new Error("Account changed before the favourite could be saved.");
+      }
+      // One idempotent write for the state the user asked for: no read first, so a failed or
+      // stale read can never turn "remove" into "save" (or two taps into a flip-flop).
+      if (!saved) {
+        const { error } = await client
+          .from("user_favourite_dishes")
+          .delete()
+          .eq("user_id", userId)
+          .eq("dish_id", dishId);
+        if (error) throw error;
+        return false;
+      }
+      const { error } = await client
+        .from("user_favourite_dishes")
+        .upsert(
+          { user_id: userId, dish_id: dishId },
+          { onConflict: "user_id,dish_id", ignoreDuplicates: true },
+        );
+      if (error) throw error;
+      return true;
+    },
+
     async setDishTried(dishId: string, tried: boolean) {
       const client = requireSupabaseClient();
       const userId = await getCurrentSupabaseUserId();
@@ -8176,6 +8204,32 @@ export const supabaseService: HungryService = {
       if (error) throw error;
       const items = (data || []).map((row) => mapPortfolioItem(row as unknown as Row));
       return attachPortfolioPrivateNotes(client, portfolioId, items);
+    },
+
+    async getPortfolioItemsForPortfolios(portfolioIds: string[]) {
+      const ids = [...new Set(portfolioIds)];
+      if (ids.length === 0) return {};
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { data, error } = await client
+        .from("portfolio_items")
+        .select(PORTFOLIO_ITEM_COLUMNS)
+        .in("portfolio_id", ids)
+        .order("position", { ascending: true });
+      if (error) throw error;
+      const grouped = new Map<string, PortfolioItem[]>(ids.map((id) => [id, []]));
+      for (const row of data || []) {
+        const item = mapPortfolioItem(row as unknown as Row);
+        grouped.get(item.portfolioId)?.push(item);
+      }
+      const entries = await Promise.all(
+        ids.map(
+          async (id) =>
+            // n-plus-one-ok: get_portfolio_private_notes takes one list id; an array version needs a migration.
+            [id, await attachPortfolioPrivateNotes(client, id, grouped.get(id) ?? [])] as const,
+        ),
+      );
+      return Object.fromEntries(entries);
     },
 
     async getPortfolioItemDetails(portfolioId: string) {

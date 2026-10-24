@@ -166,7 +166,11 @@ interface ProfileState {
   setProvisionalOnboardingMigration: (migration: ProvisionalOnboardingMigration) => void;
   clearProvisionalOnboardingMigration: (userId: string) => void;
   syncProfile: (isAuthenticated: boolean, userId?: string | null) => void;
-  toggleFavourite: (dish: FavouriteDishInput) => Promise<FavouriteToggleResult>;
+  /** `surface` names the page the tap came from, for the dish_favourited event. */
+  toggleFavourite: (
+    dish: FavouriteDishInput,
+    options?: { surface?: string },
+  ) => Promise<FavouriteToggleResult>;
   updateProfile: (next: Partial<Pick<UserProfile, "displayName" | "email" | "avatarUrl">>) => void;
   /** Resolves false when the server rejected the change and the old value was restored. */
   setProfileVisibility: (profileVisibility: ProfileVisibility) => Promise<boolean>;
@@ -641,8 +645,15 @@ export const useProfileStore = create<ProfileState>()(
         rehydrateFavouriteDishIds();
         if (authenticatedUserId) void get().loadFoodHistory();
       },
-      toggleFavourite: async (dish) => {
+      toggleFavourite: async (dish, options) => {
         const dishId = dish.id;
+        // Sent only once the save is settled, with what was actually stored.
+        const trackFavouriteResult = (saved: boolean) =>
+          trackAnalyticsEvent(saved ? "dish_favourited" : "dish_unfavourited", {
+            dish_id: dish.id,
+            venue_id: dish.venueId,
+            surface: options?.surface,
+          });
         if (pendingFavouriteDishToggles.has(dishId)) {
           return {
             status: "failed",
@@ -684,10 +695,6 @@ export const useProfileStore = create<ProfileState>()(
             : [...state.profile.favouriteDishIds, dishId];
           const feedbackType: ExplicitFeedbackEvent["type"] = isFavourite ? "unsaved" : "saved";
 
-          trackAnalyticsEvent(isFavourite ? "dish_unfavourited" : "dish_favourited", {
-            dish_id: dish.id,
-            venue_id: dish.venueId,
-          });
           if (!isFavourite) {
             trackActivationOnce(state.profile, "saved", dish.id);
           }
@@ -746,15 +753,21 @@ export const useProfileStore = create<ProfileState>()(
         }
         if (getServiceProvider().mode === "mock") {
           pendingFavouriteDishToggles.delete(dishId);
+          trackFavouriteResult(!wasFavourite);
           return { status: wasFavourite ? "removed" : "saved" };
         }
 
         const optimisticProfile = get().profile;
         try {
-          const saved = await getHungryService().profile.toggleFavourite(dishId, ownerUserId);
+          // Write the state the user asked for; a server toggle could flip a stale tap.
+          const saved = await getHungryService().profile.setFavourite(
+            dishId,
+            !wasFavourite,
+            ownerUserId,
+          );
           if (!isStillOwner()) return staleFavouriteResult();
-          // The server toggles its own row; if local state was stale, adopt the server result.
           setFavouriteMembership(set, dishId, saved);
+          trackFavouriteResult(saved);
           return { status: saved ? "saved" : "removed" };
         } catch (error) {
           if (!isStillOwner()) return staleFavouriteResult();

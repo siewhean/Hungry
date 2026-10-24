@@ -27,6 +27,13 @@ interface PortfolioItemEditSheetProps {
   visible: boolean;
   /** The dish or stall being added or edited. */
   title: string;
+  /** Which item is open; the fields re-seed when it changes (not when the title loads). */
+  itemKey?: string;
+  /**
+   * False when the server cannot clear a score yet (update_portfolio_item_with_version keeps
+   * the old value for a null score): emptying a saved score then asks for 1-10 instead.
+   */
+  scoreCanBeCleared?: boolean;
   confirmLabel: string;
   initialScore?: number;
   initialPublicNotes?: string;
@@ -40,6 +47,8 @@ interface PortfolioItemEditSheetProps {
 export function PortfolioItemEditSheet({
   visible,
   title,
+  itemKey,
+  scoreCanBeCleared = true,
   confirmLabel,
   initialScore,
   initialPublicNotes,
@@ -59,10 +68,14 @@ export function PortfolioItemEditSheet({
     setScore(initialScore === undefined ? "" : String(initialScore));
     setPublicNotes(initialPublicNotes ?? "");
     setPrivateNotes(initialPrivateNotes ?? "");
-  }, [visible, title]);
+  }, [visible, itemKey]);
 
   const parsedScore = parseListItemScore(score);
-  const scoreError = listItemScoreError(parsedScore);
+  const scoreError =
+    listItemScoreError(parsedScore) ??
+    (!scoreCanBeCleared && initialScore !== undefined && parsedScore === undefined
+      ? "A saved score can't be removed yet. Pick a score from 1 to 10."
+      : undefined);
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -99,6 +112,7 @@ export function PortfolioItemEditSheet({
               keyboardType="number-pad"
               placeholder="Optional"
               maxLength={2}
+              error={Boolean(scoreError)}
               errorText={scoreError}
               helperText="Optional. A whole number from 1 to 10, handy for rankings."
             />
