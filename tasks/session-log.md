@@ -836,3 +836,4 @@ All 9 required audit documents updated in `tasks/Roadmap/`:
 - 2026-10-23: Optional ANTHROPIC_WORKSPACE_ID secret sent as the anthropic-workspace-id header (for Anthropic keys not tied to a Console workspace); test in src/lib/ai/aiProvider.test.ts.
 
 - 2026-10-23 | Codex | PR #116 final CI readback: head `a1ba4c863` is mergeable and passed CI 39909912775, Security 39909912600, and merge compatibility after the Profile web/browser fixes. Native visual smoke remains pending because of low Mac disk space.
+- 2026-10-24: ledger gap fix: 4 catalog migrations from PR #72 moved to supabase/migrations-pending (unsafe to apply over newer catalog code); rollback + smoke for 20261018180000 account deletion purge so it can be rehearsed and shipped.

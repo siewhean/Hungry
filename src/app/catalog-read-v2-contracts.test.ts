@@ -132,7 +132,9 @@ test("discovery entry points never warm a local catalog index and map passes vie
 });
 
 test("raw map excludes non-consumer venues at the RPC boundary", () => {
-  const migration = read("supabase/migrations/20260715020000_catalog_raw_map_exclusion.sql");
+  const migration = read(
+    "supabase/migrations-pending/20260715020000_catalog_raw_map_exclusion.sql",
+  );
   assert.match(migration, /catalog_raw_map_view/);
   assert.match(migration, /catalog_raw_excluded_venues/);
   assert.match(migration, /where e\.venue_id = id/);
