@@ -149,6 +149,21 @@ test("authenticated fallback smoke requires staging credentials and an offline c
   assert.match(discover, /releaseId\?\.startsWith\("excel-fallback"\)/);
 });
 
+test("HOME-V4: outage smokes accept the rail title Home shows without a GPS fix", () => {
+  const flow = read(".maestro/ios-authenticated-fallback-smoke.yaml");
+  const spec = read("tests/e2e/authenticated-excel-fallback.spec.ts");
+  const discover = read("src/app/screens/discover/CatalogDiscoverHome.tsx");
+  // Fresh installs have no location grant, so Home titles the rail "Stalls".
+  assert.match(discover, /showDistance \? "Stalls near you" : "Stalls"/);
+  assert.doesNotMatch(flow, /assertVisible: "Stalls near you"/);
+  assert.match(flow, /assertVisible: "Stalls\( near you\)\?"/);
+  assert.doesNotMatch(spec, /getByText\("Stalls near you"/);
+  assert.match(spec, /getByText\(\/\^Stalls\( near you\)\?\$\/\)/);
+  // The Discover tab is labelled Home.
+  assert.match(flow, /tapOn:\n\s+text: "Home"/);
+  assert.match(spec, /getByText\("Home", \{ exact: true \}\)\.click\(\)/);
+});
+
 test("native media and interaction flows remain available as explicit authenticated targets", () => {
   const runner = read("scripts/run-maestro-smoke.mjs");
   const mediaFlow = read(".maestro/ios-media-picker-permission.yaml");

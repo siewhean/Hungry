@@ -36,10 +36,10 @@ appId: ${APP_ID}
       - tapOn:
           text: "Sign in"
 - extendedWaitUntil:
-    visible: "Discover"
+    visible: "Home"
     timeout: 60000
 - tapOn:
-    text: "Discover"
+    text: "Home"
 - extendedWaitUntil:
     visible:
       id: "catalog-source-excel"
@@ -48,6 +48,7 @@ appId: ${APP_ID}
     id: "catalog-source-excel"
 - assertVisible: "Offline catalog"
 - assertVisible: "Nearby dishes"
-- assertVisible: "Stalls near you"
+# "Stalls near you" needs a GPS fix or a picked area; a fresh install has neither (regex).
+- assertVisible: "Stalls( near you)?"
 - assertVisible: "Browse the full directory"
 - takeScreenshot: "ios-authenticated-excel-fallback"

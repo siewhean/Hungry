@@ -66,7 +66,17 @@ export function ReportProblemScreen({ navigation, route }: Props) {
         ...(note.trim() ? { note: note.trim() } : {}),
       });
       showToast({ message: "Thanks, we'll check it.", tone: "success" });
-      navigation.goBack();
+      // A guest who signed in to report lands here straight from sign-in, above Home, not
+      // the page they reported from; send them back to that page instead (STALL-V4).
+      const state = navigation.getState();
+      const previous = state?.routes[(state.index ?? 0) - 1]?.name;
+      if (previous === "StallDetail" || previous === "DishDetail") {
+        navigation.goBack();
+      } else if (dishId) {
+        navigation.replace("DishDetail", { dishId });
+      } else {
+        navigation.replace("StallDetail", { venueId });
+      }
     } catch (error) {
       const code = (error as { code?: unknown } | null)?.code;
       const serverMessage = (error as { message?: unknown } | null)?.message;

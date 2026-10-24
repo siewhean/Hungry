@@ -3,6 +3,7 @@ import test from "node:test";
 
 import { colors, contrastRatios } from "@/theme/tokens";
 import { getBadgeToneStyles, type BadgeTone } from "@/components/ui/badgeTones";
+import { readRepoFile } from "@/test/sourceContracts";
 
 type HexColor = `#${string}`;
 type RgbaColor = `rgba(${number}, ${number}, ${number}, ${number})`;
@@ -199,4 +200,25 @@ test("Decide for Me and Wheel text on orange and amber passes 4.5:1", () => {
   }
   // Wheel home card subtitle: white on the deep end of the light-mode gradient.
   assert.ok(contrast(colors.light.white as HexColor, colors.light.orangeDark as HexColor) >= 4.5);
+});
+
+test("MAP-12: Wheel home card text passes 4.5:1 on every gradient stop under its scrim, both modes", () => {
+  // WheelHomeScreen: gradient orangeControl -> orangeDark, with mediaScrimSubtle in dark mode.
+  const wheelHome = readRepoFile("src/app/screens/wheel/WheelHomeScreen.tsx");
+  assert.match(wheelHome, /colors=\{\[palette\.orangeControl, palette\.orangeDark\]\}/);
+  assert.match(wheelHome, /colorScheme === "dark" \?[\s\S]{0,400}palette\.mediaScrimSubtle/);
+  for (const mode of ["light", "dark"] as const) {
+    const palette = colors[mode];
+    for (const stop of ["orangeControl", "orangeDark"] as const) {
+      const behind =
+        mode === "dark"
+          ? compositeRgbaOverBackground(
+              palette.mediaScrimSubtle as RgbaColor,
+              palette[stop] as HexColor,
+            )
+          : (palette[stop] as HexColor);
+      const ratio = contrast(palette.white as HexColor, behind);
+      assert.ok(ratio >= 4.5, `${mode} ${stop}: ${ratio.toFixed(2)}`);
+    }
+  }
 });

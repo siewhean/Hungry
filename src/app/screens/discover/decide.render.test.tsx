@@ -10,6 +10,7 @@ import { DecideForMeQuizScreen } from "@/app/screens/discover/DecideForMeQuizScr
 import { DecideForMeResultScreen } from "@/app/screens/discover/DecideForMeResultScreen";
 import { clearTrackedAnalyticsEvents, getTrackedAnalyticsEvents } from "@/lib/analytics";
 import {
+  EXPERIMENTS,
   resetExperimentSession,
   setExperimentFlagSource,
   setExperimentOverride,
@@ -261,6 +262,42 @@ test("system back steps back through the quiz, and leaves only from the first qu
   }
 });
 
+test("MAP-V1: the iOS swipe is blocked natively (usePreventRemove) only after question 1", async () => {
+  const clock = advanceClock();
+  try {
+    const navigation = createFakeNavigation();
+    const view = await renderQuiz(navigation);
+    assert.equal(navigation.isRemovePrevented(), false, "question 1: the swipe leaves the quiz");
+    await view.press(view.findByLabel("Malay"));
+    assert.match(view.text(), /QUESTION 2 OF 4/);
+    assert.equal(navigation.isRemovePrevented(), true, "question 2: native dismiss is prevented");
+  } finally {
+    clock.restore();
+  }
+});
+
+test("MAP-V1: the last answer still reaches the result, with removal no longer prevented", async () => {
+  const clock = advanceClock();
+  try {
+    const navigation = createFakeNavigation();
+    const preventedAtReplace: boolean[] = [];
+    const record = navigation.replace;
+    navigation.replace = (...args: unknown[]) => {
+      preventedAtReplace.push(navigation.isRemovePrevented());
+      record(...args);
+    };
+    const view = await renderQuiz(navigation);
+    for (const label of ["Malay", "Rice", "Under S$8", "Spicy"]) {
+      clock.step();
+      await view.press(view.findByLabel(label));
+    }
+    assert.equal(navigation.calls.filter((call) => call.method === "replace").length, 1);
+    assert.deepEqual(preventedAtReplace, [false]);
+  } finally {
+    clock.restore();
+  }
+});
+
 test("a double tap answers one question, not the next one too", async () => {
   const view = await renderQuiz();
   await view.press(view.findByLabel("Malay"));
@@ -369,10 +406,60 @@ test("WheelResultModal shows the winner with the dark-on-amber Winner badge", as
   assert.match(view.text(), new RegExp(venue.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 });
 
-test("decide_quiz_v1: people who only see the result screen are not exposed", async () => {
-  const flags = fakeFlags({ decide_quiz_v1: "two_questions" });
-  setExperimentFlagSource(flags.source);
-  serve([dish("a", "Chicken Rice")]);
-  await renderResult({ surface: "push" });
-  assert.equal(flags.state.exposures, 0);
+/** Runs `body` as if decide_quiz_v1 were live, so the flag source is really consulted. */
+async function whileRunning(body: () => Promise<void>) {
+  const definition = EXPERIMENTS.decide_quiz_v1 as { status: string };
+  const status = definition.status;
+  definition.status = "running";
+  try {
+    await body();
+  } finally {
+    definition.status = status;
+  }
+}
+
+test("decide_quiz_v1: the quiz exposes once, people who only see the result screen are not exposed", async () => {
+  await whileRunning(async () => {
+    const flags = fakeFlags({ decide_quiz_v1: "two_questions" });
+    setExperimentFlagSource(flags.source);
+    const quiz = await renderQuiz();
+    assert.match(quiz.text(), /QUESTION 1 OF 2/);
+    assert.equal(flags.state.exposures, 1, "the quiz exposes the arm it shows");
+    await quiz.unmount();
+    resetExperimentSession();
+
+    const resultFlags = fakeFlags({ decide_quiz_v1: "two_questions" });
+    setExperimentFlagSource(resultFlags.source);
+    serve([dish("a", "Chicken Rice")]);
+    await renderResult({ surface: "push" });
+    assert.equal(resultFlags.state.exposures, 0);
+  });
+});
+
+test("MAP-V5: flags that load after the quiz opens keep the four questions and expose no one", async () => {
+  await whileRunning(async () => {
+    let loaded = false;
+    const changeListeners: (() => void)[] = [];
+    let exposures = 0;
+    setExperimentFlagSource({
+      peek: () => (loaded ? "two_questions" : undefined),
+      expose: () => {
+        exposures += 1;
+        return loaded ? "two_questions" : undefined;
+      },
+      hasLoaded: () => loaded,
+      onChange: (listener) => {
+        changeListeners.push(listener);
+        return () => undefined;
+      },
+    });
+    const view = await renderQuiz();
+    assert.match(view.text(), /QUESTION 1 OF 4/);
+    await act(async () => {
+      loaded = true;
+      for (const listener of changeListeners) listener();
+    });
+    assert.match(view.text(), /QUESTION 1 OF 4/);
+    assert.equal(exposures, 0, "nobody is counted in two_questions after seeing four questions");
+  });
 });

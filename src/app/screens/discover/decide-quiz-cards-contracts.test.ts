@@ -14,11 +14,29 @@ test("Decide for me shows three photo cards per row from bundled food photos", (
   assert.match(screen, /\(width - spacing\[4\] \* 2 - spacing\[2\] \* \(columns - 1\)\) \/ columns/);
   assert.match(screen, /flexWrap: "wrap"/);
   assert.doesNotMatch(images, /https?:\/\//);
-  // Every real answer outside Western has a photo; "Decide for me" keeps its dice tile.
+  // Every real answer outside Western and price has a photo; "Decide for me" keeps its dice tile.
   for (const question of DECIDE_QUESTIONS) {
     for (const option of question.options) {
       if (option.id === DECIDE_FOR_ME_OPTION_ID || option.id === "western") continue;
+      if (question.id === "price") continue;
       assert.match(images, new RegExp(`(^|\\s|")${option.id}"?:`), option.id);
     }
+  }
+});
+
+test("MAP-V7: no photo is used for two answers, and price answers show a tier, not food", () => {
+  const images = readRepoFile("src/app/screens/discover/decideOptionImages.ts");
+  const photoBlock = images.slice(
+    images.indexOf("export const DECIDE_OPTION_IMAGES"),
+    images.indexOf("export const DECIDE_PRICE_TIERS"),
+  );
+  const photos = [...photoBlock.matchAll(/FOOD\.(\w+)/g)].map((match) => match[1]);
+  assert.ok(photos.length >= 14);
+  assert.equal(new Set(photos).size, photos.length, `duplicate photos: ${photos.join(", ")}`);
+  const price = DECIDE_QUESTIONS.find((question) => question.id === "price");
+  for (const option of price?.options ?? []) {
+    if (option.id === DECIDE_FOR_ME_OPTION_ID) continue;
+    assert.doesNotMatch(photoBlock, new RegExp(`\\b${option.id}:`), option.id);
+    assert.match(images, new RegExp(`${option.id}: "\\$+"`), option.id);
   }
 });

@@ -17,7 +17,7 @@ type Props = NativeStackScreenProps<WheelStackParamList, "WheelHome">;
 const PARTY_ENABLED = FEATURE_FLAGS.wheelPartyEnabled;
 
 export function WheelHomeScreen({ navigation, route }: Props) {
-  const { componentRadii, palette, spacing, radii, shadows } = useHungryTheme();
+  const { colorScheme, componentRadii, palette, spacing, radii, shadows } = useHungryTheme();
   const createParty = useWheelStore((s) => s.createParty);
   const joinParty = useWheelStore((s) => s.joinParty);
 
@@ -115,8 +115,9 @@ export function WheelHomeScreen({ navigation, route }: Props) {
           accessibilityLabel={PARTY_ENABLED ? "Host a party" : "Spin the wheel"}
         >
           <LinearGradient
-            // The deep end sits behind the text: 14 px white on plain orange is under 4.5:1.
-            colors={[palette.orangeDark, palette.orange]}
+            // The text runs across the whole card, so both stops must take 14 px white at 4.5:1:
+            // plain orange is under it in both modes (accessibility-contrast.test.ts, MAP-12).
+            colors={[palette.orangeControl, palette.orangeDark]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={{
@@ -125,6 +126,22 @@ export function WheelHomeScreen({ navigation, route }: Props) {
               ...shadows.floating,
             }}
           >
+            {colorScheme === "dark" ? (
+              // Dark mode's orangeDark (#EA580C) is about 3.6:1 with white; the scrim fixes it.
+              <View
+                pointerEvents="none"
+                testID="wheel-home-cta-scrim"
+                style={{
+                  backgroundColor: palette.mediaScrimSubtle,
+                  borderRadius: componentRadii.button,
+                  bottom: 0,
+                  left: 0,
+                  position: "absolute",
+                  right: 0,
+                  top: 0,
+                }}
+              />
+            ) : null}
             <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[4] }}>
               <View style={{ flex: 1, gap: spacing[1] }}>
                 <AppText variant="h2" style={{ color: palette.white }}>

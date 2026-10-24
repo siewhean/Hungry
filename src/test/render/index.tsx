@@ -2,7 +2,11 @@
 // app theme and a fake navigation, and gives small helpers to read and press what is on screen.
 // Used by `*.render.test.tsx` files; run with `npm run test:render`.
 
-import { NavigationContext, NavigationRouteContext } from "@react-navigation/native";
+import {
+  NavigationContext,
+  NavigationRouteContext,
+  PreventRemoveContext,
+} from "@react-navigation/native";
 import { act, createElement, type ComponentType, type ReactElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 
@@ -44,6 +48,10 @@ export function createFakeNavigation() {
     addListener: () => () => undefined,
     removeListener: () => undefined,
     getId: () => undefined,
+    /** usePreventRemove state by hook id; native-stack blocks the iOS swipe from this. */
+    preventRemove: new Map<string, boolean>(),
+    /** True while any usePreventRemove on the screen is on (native-stack's preventNativeDismiss). */
+    isRemovePrevented: () => [...navigation.preventRemove.values()].some(Boolean),
   };
   return navigation;
 }
@@ -126,6 +134,14 @@ export async function render(
   document.body.appendChild(container);
   const root: Root = createRoot(container);
 
+  const preventRemove = navigation.preventRemove ?? new Map<string, boolean>();
+  const preventRemoveContext = {
+    preventedRoutes: {},
+    setPreventRemove: (id: string, _routeKey: string, value: boolean) => {
+      preventRemove.set(id, value);
+    },
+    notifyPreventRemove: () => undefined,
+  };
   const wrap = (child: ReactElement) =>
     createElement(
       HungryThemeProvider,
@@ -133,7 +149,11 @@ export async function render(
       createElement(
         NavigationContext.Provider,
         { value: navigation as never },
-        createElement(NavigationRouteContext.Provider, { value: route as never }, child),
+        createElement(
+          PreventRemoveContext.Provider,
+          { value: preventRemoveContext },
+          createElement(NavigationRouteContext.Provider, { value: route as never }, child),
+        ),
       ),
     );
 

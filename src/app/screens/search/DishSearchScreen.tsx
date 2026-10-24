@@ -27,7 +27,12 @@ import {
 } from "@/components/ui";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { trackAnalyticsEvent } from "@/lib/analytics";
-import { getExperimentVariant, useExperimentVariant } from "@/lib/experiments/experiments";
+import {
+  getExperimentVariant,
+  isExperimentAssignmentReady,
+  onExperimentFlagsChange,
+  useExperimentVariant,
+} from "@/lib/experiments/experiments";
 import { reportError } from "@/lib/monitoring/reportError";
 import { formatBrowseDistance } from "@/features/search/browseGrid";
 import {
@@ -58,6 +63,8 @@ type SearchHomeSource = "search_typed" | "search_recent" | "search_suggestion" |
 const FEATURED_NEAR_RADIUS_METERS = 1_500;
 /** Below this many nearby dishes the "near" arm shows the island-wide list, like control. */
 const FEATURED_NEAR_MIN_ITEMS = 3;
+/** How long Search home waits for flags before showing the island-wide list outside the test. */
+const FEATURED_FLAG_WAIT_MS = 1_500;
 
 const SUGGESTION_KIND_LABELS: Record<CatalogSuggestion["kind"], string> = {
   food_type: "Dish type",
@@ -139,15 +146,52 @@ export function DishSearchScreen() {
 
   // The arm is peeked (no exposure) to choose what to fetch; exposure waits until the
   // section is on screen. Both arms end with a list, so eligibility never depends on the arm.
-  const featuredArm = getExperimentVariant("search_home_featured_v1");
-  const { coordinate: featuredCoordinate } = getEffectiveLocation({
-    permission,
-    currentLocation,
-    manualCoordinate,
-  });
+  // The arm is decided once per visit, after flags have loaded (or a short wait runs out), so
+  // a late flag load never swaps the list on screen or exposes an arm nobody saw.
+  const [flagsReady, setFlagsReady] = useState(() =>
+    isExperimentAssignmentReady("search_home_featured_v1"),
+  );
+  const [flagWaitOver, setFlagWaitOver] = useState(false);
+  useEffect(() => {
+    if (flagsReady) return;
+    const unsubscribe = onExperimentFlagsChange(() => {
+      if (isExperimentAssignmentReady("search_home_featured_v1")) setFlagsReady(true);
+    });
+    const timer = setTimeout(() => setFlagWaitOver(true), FEATURED_FLAG_WAIT_MS);
+    return () => {
+      unsubscribe();
+      clearTimeout(timer);
+    };
+  }, [flagsReady]);
+  const { coordinate: featuredCoordinate, isApproximate: featuredLocationApproximate } =
+    getEffectiveLocation({
+      permission,
+      currentLocation,
+      manualCoordinate,
+    });
+  const [featuredDecision, setFeaturedDecision] = useState<{
+    arm: string;
+    /** False when the visit is outside the experiment: flags never loaded, or no real location. */
+    inExperiment: boolean;
+  } | null>(null);
+  useEffect(() => {
+    if (featuredDecision || (!flagsReady && !flagWaitOver)) return;
+    // "near" from the built-in default point would list dishes near a place the diner is not
+    // at, so without a GPS fix or a picked area the visit gets the island-wide list, unexposed.
+    if (!flagsReady || featuredLocationApproximate) {
+      setFeaturedDecision({ arm: "control", inExperiment: false });
+      return;
+    }
+    setFeaturedDecision({
+      arm: getExperimentVariant("search_home_featured_v1"),
+      inExperiment: true,
+    });
+  }, [featuredDecision, featuredLocationApproximate, flagWaitOver, flagsReady]);
+  const featuredArm = featuredDecision?.arm ?? "";
   const featuredLatitude = Math.round(featuredCoordinate.latitude * 1000) / 1000;
   const featuredLongitude = Math.round(featuredCoordinate.longitude * 1000) / 1000;
   useEffect(() => {
+    if (!featuredArm) return;
     let active = true;
     const service = getCatalogRawService();
     const islandWide = () => service.listDishes({ limit: 3, sort: "quality" });
@@ -177,6 +221,7 @@ export function DishSearchScreen() {
   const featuredDishes = featured.arm === featuredArm ? featured.items : [];
   // Exposed only once the section is actually on screen: no typed text, loaded, not empty.
   const featuredEligible =
+    Boolean(featuredDecision?.inExperiment) &&
     !trimmedSearchText &&
     featured.settled &&
     featured.arm === featuredArm &&

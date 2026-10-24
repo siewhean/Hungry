@@ -215,9 +215,10 @@ export const EXPERIMENTS = {
     status: "draft", // Until search_dishes returns cuisine data (MAP-3 follow-up migration).
     surface: "decide",
     hypothesis:
-      "Two questions (cuisine and price, the two the server can filter on) instead of four get more diners to a pick they act on, because fewer people abandon the quiz and the pick is still filtered by what they care about most.",
+      "Two questions (cuisine and price) instead of four get more diners to a pick they act on, because fewer people abandon the quiz. Only price is filtered on the server today; cuisine is matched on the client. Abandonment is decide_quiz_completed against exposures.",
     primaryMetric: "directions_opened",
     guardrailMetrics: [
+      "decide_quiz_completed",
       "decide_for_me_result_shown",
       "decide_for_me_no_match",
       "decide_for_me_radius_expanded",
@@ -401,4 +402,25 @@ export function useExperimentVariant<K extends ExperimentKey>(
 
 function getFallbackVariant<K extends ExperimentKey>(key: K): ExperimentVariant<K> {
   return (EXPERIMENTS[key] as ExperimentDefinition).fallback as ExperimentVariant<K>;
+}
+
+/**
+ * True once this key's variant is final for the session: flags have loaded (or there is no
+ * flag source), or the experiment is not running, overridden, killed or already frozen. A
+ * surface that picks what to fetch by arm waits for this, so a late flag load cannot swap the
+ * arm after the first list is on screen.
+ */
+export function isExperimentAssignmentReady(key: ExperimentKey): boolean {
+  if (experimentsKilled()) return true;
+  if (overridesAllowed() && overrides.get(key)) return true;
+  if ((EXPERIMENTS[key] as ExperimentDefinition).status !== "running") return true;
+  if (sessionVariants.has(key)) return true;
+  const source = getFlagSource();
+  return !source || source.hasLoaded();
+}
+
+/** Calls back when flags load or reload; returns an unsubscribe. */
+export function onExperimentFlagsChange(callback: () => void): () => void {
+  const source = getFlagSource();
+  return source ? source.onChange(callback) : () => undefined;
 }

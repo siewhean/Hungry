@@ -106,14 +106,31 @@ export const MIN_LEARNED_TASTE_SIGNALS = 5;
  * True when a match percent is worth showing: the person took the taste quiz, or skipped it
  * and has since given enough signals. One click nudges a neutral vector off all-5s, which
  * `hasPersonalTasteProfile` alone would read as a profile ("100% taste match").
+ * Turn-downs ("Not for me", unsave, 1-2 star ratings) are counted in `signalCount` but say
+ * nothing about what the person likes, so `negativeSignalCount` of them are left out.
  */
 export function hasTrustedTasteProfile(
   vector: TasteVector,
-  options: { skippedTasteQuiz: boolean; signalCount?: number },
+  options: { skippedTasteQuiz: boolean; signalCount?: number; negativeSignalCount?: number },
 ): boolean {
   if (!hasPersonalTasteProfile(vector)) return false;
   if (!options.skippedTasteQuiz) return true;
-  return (options.signalCount ?? 0) >= MIN_LEARNED_TASTE_SIGNALS;
+  const positive = (options.signalCount ?? 0) - (options.negativeSignalCount ?? 0);
+  return positive >= MIN_LEARNED_TASTE_SIGNALS;
+}
+
+/** Recorded taste interactions that are turn-downs, not likes (see hasTrustedTasteProfile). */
+export function countNegativeTasteSignals(
+  events: readonly { type: string; rating?: number; applied?: boolean }[],
+): number {
+  // Capped or signal-less events never bumped signalCount, so they are not subtracted either.
+  return events.filter(
+    (event) =>
+      event.applied !== false &&
+      (event.type === "dismissed" ||
+        event.type === "unsaved" ||
+        (event.type === "rating" && (event.rating ?? 5) <= 2)),
+  ).length;
 }
 
 /**
