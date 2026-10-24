@@ -123,7 +123,8 @@ interface SocialState {
   toggleLike: (postId: string) => void;
   toggleSave: (postId: string) => void;
   toggleAuthorFollow: (authorName: string) => void;
-  toggleFollow: (userId: string) => void;
+  /** `isPrivate`: the account approves followers, so a follow shows "Requested" straight away. */
+  toggleFollow: (userId: string, options?: { isPrivate?: boolean }) => void;
   /** Record server-confirmed follows (e.g. from the viewer's own Following list). */
   markFollowedUserIds: (userIds: string[]) => void;
   /** Reconcile one user's follow state with the server (true or false). */
@@ -442,7 +443,7 @@ export const useSocialStore = create<SocialState>()(
         }));
       },
 
-      toggleFollow: (userId: string) => {
+      toggleFollow: (userId: string, options?: { isPrivate?: boolean }) => {
         if (!isSignedIn()) return;
         const isFollowing = get().followedUserIds[userId] ?? false;
         const service = getHungryService();
@@ -464,12 +465,15 @@ export const useSocialStore = create<SocialState>()(
           });
           return;
         }
+        // A private account approves followers first: show "Requested" (still locked) at once,
+        // never a brief "Following" with the content unlocked.
+        const optimisticRequest = !isFollowing && options?.isPrivate === true;
         set((prev) => ({
           followedUserIds: {
             ...prev.followedUserIds,
-            [userId]: !isFollowing,
+            [userId]: optimisticRequest ? false : !isFollowing,
           },
-          requestedUserIds: { ...prev.requestedUserIds, [userId]: false },
+          requestedUserIds: { ...prev.requestedUserIds, [userId]: optimisticRequest },
         }));
         void (isFollowing ? service.social.unfollowUser(userId) : service.social.followUser(userId))
           .then((result) => {
@@ -482,7 +486,16 @@ export const useSocialStore = create<SocialState>()(
                 : { target_user_id: userId, status: result === "pending" ? "pending" : "approved" },
             );
             // Private accounts must approve the request, so the viewer is not following yet.
-            if (result !== "pending") return;
+            if (result !== "pending") {
+              // Approved at once (the account was public after all): now really following.
+              if (optimisticRequest) {
+                set((prev) => ({
+                  followedUserIds: { ...prev.followedUserIds, [userId]: true },
+                  requestedUserIds: { ...prev.requestedUserIds, [userId]: false },
+                }));
+              }
+              return;
+            }
             set((prev) => ({
               followedUserIds: { ...prev.followedUserIds, [userId]: false },
               requestedUserIds: { ...prev.requestedUserIds, [userId]: true },
@@ -496,6 +509,9 @@ export const useSocialStore = create<SocialState>()(
             console.error("Failed to sync follow state", error);
             set((prev) => ({
               followedUserIds: { ...prev.followedUserIds, [userId]: isFollowing },
+              ...(optimisticRequest
+                ? { requestedUserIds: { ...prev.requestedUserIds, [userId]: false } }
+                : {}),
             }));
             useUIStore.getState().showToast({
               message: isFollowing

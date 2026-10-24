@@ -74,7 +74,7 @@ test("catalog dish page, control arm: one Save button, no Save to list; the view
     params,
   });
   assert.match(view.text(), new RegExp(dish.name));
-  assert.ok(view.findByText(/Save to favourites|Remove from favourites/));
+  assert.ok(view.findByText(/Save to Want to try|Saved to Want to try/));
   assert.equal(view.findByText("Save to list"), null);
   assert.deepEqual(flags.exposures, ["catalog_save_to_list_v1"]);
 });
@@ -86,7 +86,7 @@ test("catalog dish page, save_with_lists arm: Save to list sits next to Save", a
     name: "CatalogRawDetail",
     params,
   });
-  assert.ok(view.findByText(/Save to favourites|Remove from favourites/));
+  assert.ok(view.findByText(/Save to Want to try|Saved to Want to try/));
   assert.ok(view.findByText("Save to list"));
 });
 

@@ -39,11 +39,8 @@
     "src/app/screens/profile/FollowRequestsScreen.tsx",
     "src/app/screens/profile/PassportScreen.tsx",
     "src/app/screens/profile/ProfileConnectionsScreen.tsx",
-    "src/app/screens/profile/ProfileHomeScreen.tsx",
-    "src/app/screens/profile/ReviewHistoryScreen.tsx",
     "src/app/screens/profile/SocialGridScreen.tsx",
     "src/app/screens/profile/SocialPostDetailScreen.tsx",
-    "src/app/screens/profile/UserProfileContent.tsx",
     "src/app/screens/review/ReviewShareSheet.tsx",
     "src/app/screens/wheel/WheelEntryAddSheet.tsx",
     "src/app/screens/wheel/WheelResultModal.tsx"

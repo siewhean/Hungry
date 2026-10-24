@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Pressable, View } from "react-native";
 import {
   Lock,
@@ -21,6 +21,7 @@ import {
   Skeleton,
 } from "@/components/ui";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { FollowPillButton } from "@/components/social/FollowPillButton";
 import { listSharedStallPosts, mergeStallPosts } from "@/features/social/sharedStallPosts";
 import { shareProfileLink } from "@/features/share/profileShare";
@@ -30,7 +31,9 @@ import { useProfileStore } from "@/store/useProfileStore";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { useFollowPress } from "@/features/profile/useFollowPress";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { reportError } from "@/lib/monitoring/reportError";
 import { useSocialStore } from "@/store/useSocialStore";
+import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { PublicUserProfile, Review, StallPost } from "@/types/domain";
 import { ProfileGridSkeleton, ProfileReviewsSkeleton } from "./ProfileGridSkeleton";
@@ -47,6 +50,8 @@ type UserProfileContentProps = {
 const USER_POSTS_PAGE_SIZE = 60;
 /** Reviews per server page. */
 const USER_REVIEWS_PAGE_SIZE = 50;
+/** The posts feed is archived: without it there is no Posts tab and no post reads. */
+const showPosts = () => FEATURE_FLAGS.socialFeedEnabled;
 
 function haveSamePosts(left: StallPost[], right: StallPost[]) {
   if (left.length !== right.length) return false;
@@ -80,7 +85,10 @@ export function UserProfileContent({
   const setFollowedUserId = useSocialStore((state) => state.setFollowedUserId);
   const requestedUserIds = useSocialStore((state) => state.requestedUserIds);
   const setFollowRequested = useSocialStore((state) => state.setFollowRequested);
-  const [activeTab, setActiveTab] = useState<"posts" | "reviews">("posts");
+  const showToast = useUIStore((state) => state.showToast);
+  const [activeTab, setActiveTab] = useState<"posts" | "reviews">(() =>
+    showPosts() ? "posts" : "reviews",
+  );
   const [posts, setPosts] = useState<StallPost[]>([]);
   // Server rows fetched so far (offset for the next page) and whether another page may exist.
   const [loadedPostRows, setLoadedPostRows] = useState(0);
@@ -128,7 +136,7 @@ export function UserProfileContent({
         setPublicProfileStatus(row ? "loaded" : "missing");
       })
       .catch((error) => {
-        console.error("Failed to load public profile:", error);
+        reportError(error, { screen: "UserProfile", action: "load_public_profile" });
         if (isMounted) setPublicProfileStatus("failed");
       });
     return () => {
@@ -145,14 +153,23 @@ export function UserProfileContent({
   // Your own posts can link here: never offer Follow, Report or Block on yourself.
   const isSelf = Boolean(resolvedAuthorId && resolvedAuthorId === viewerId);
 
+  // Counted once the profile is on screen: not while loading, and not for a missing profile.
+  const profileViewedIsPrivateLocked =
+    publicProfile?.isPrivate === true && publicProfile.canViewContent !== true;
+  const profileViewTrackedRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!resolvedAuthorId || isSelf) return;
+    if (!resolvedAuthorId || isSelf || publicProfileStatus !== "loaded") return;
+    if (profileViewTrackedRef.current === resolvedAuthorId) return;
+    profileViewTrackedRef.current = resolvedAuthorId;
     trackAnalyticsEvent("profile_viewed", {
       self: false,
       target_user_id: resolvedAuthorId,
       source: "navigation",
+      is_private_locked:
+        profileViewedIsPrivateLocked &&
+        !useSocialStore.getState().followedUserIds[resolvedAuthorId],
     });
-  }, [isSelf, resolvedAuthorId]);
+  }, [isSelf, profileViewedIsPrivateLocked, publicProfileStatus, resolvedAuthorId]);
 
   const openProfileConnections = useCallback(
     (target: "UserFollowers" | "UserFollowing") => {
@@ -180,7 +197,7 @@ export function UserProfileContent({
   );
 
   useEffect(() => {
-    if (!normalizedAuthorId) return;
+    if (!normalizedAuthorId || !showPosts()) return;
     let isMounted = true;
     setPostsLoadFailed(false);
     void (async () => {
@@ -215,7 +232,8 @@ export function UserProfileContent({
         setHasMorePosts(rowCount === USER_POSTS_PAGE_SIZE);
       })
       .catch((error) => {
-        console.error("Failed to load more posts:", error);
+        reportError(error, { screen: "UserProfile", action: "load_more_posts" });
+        showToast({ message: "Couldn't load more posts. Try again.", tone: "error" });
       })
       .finally(() => setIsLoadingMorePosts(false));
   };
@@ -243,7 +261,7 @@ export function UserProfileContent({
         setReviewsLoaded(true);
       })
       .catch((error) => {
-        console.error("Failed to load user reviews:", error);
+        reportError(error, { screen: "UserProfile", action: "load_reviews" });
         if (!isMounted) return;
         setReviewsLoadFailed(true);
         setReviewsLoaded(true);
@@ -266,7 +284,8 @@ export function UserProfileContent({
         setHasMoreReviews(rows.length === USER_REVIEWS_PAGE_SIZE);
       })
       .catch((error) => {
-        console.error("Failed to load more reviews:", error);
+        reportError(error, { screen: "UserProfile", action: "load_more_reviews" });
+        showToast({ message: "Couldn't load more reviews. Try again.", tone: "error" });
       })
       .finally(() => setIsLoadingMoreReviews(false));
   };
@@ -306,7 +325,7 @@ export function UserProfileContent({
         });
       })
       .catch((error) => {
-        console.error("Failed to load follow counts:", error);
+        reportError(error, { screen: "UserProfile", action: "load_follow_counts" });
         if (!isActive) return;
         setServerFollowState({
           userId: resolvedAuthorId,
@@ -321,18 +340,29 @@ export function UserProfileContent({
     };
   }, [resolvedAuthorId, setFollowRequested, setFollowedUserId]);
 
-  // null while loading (shows a skeleton); "12+" when more pages exist.
+  // null while loading (shows a skeleton). With more pages to load, the server's counter
+  // (distinct dishes reviewed) when it has one, otherwise "50+".
   const reviewCount = !reviewsLoaded
     ? null
     : hasMoreReviews
-      ? `${reviews.length}+`
+      ? publicProfile?.dishesReviewed !== undefined
+        ? Math.max(publicProfile.dishesReviewed, reviews.length)
+        : `${reviews.length}+`
       : reviews.length;
   // The server counts stalls the same way as your own Stalls stat (tried or reviewed). Without
-  // it (mock data), fall back to the venues of the posts loaded so far.
+  // it (mock data), fall back to the venues of the posts (or, with no posts feed, the reviews)
+  // loaded so far.
+  const fallbackVenueSource = showPosts()
+    ? postsLoaded
+      ? posts.map((post) => post.venueId)
+      : null
+    : reviewsLoaded
+      ? reviews.map((review) => review.venueId)
+      : null;
   const stallsCount =
     publicProfile?.stallsVisited ??
-    (postsLoaded && publicProfileStatus !== "loading"
-      ? new Set(posts.map((post) => post.venueId).filter(Boolean)).size
+    (fallbackVenueSource && publicProfileStatus !== "loading"
+      ? new Set(fallbackVenueSource.filter(Boolean)).size
       : null);
   const isFollowingAuthor = resolvedAuthorId ? Boolean(followedUserIds[resolvedAuthorId]) : false;
   // Pending request to a private account: tapping again cancels it.
@@ -355,7 +385,12 @@ export function UserProfileContent({
     publicProfile.canViewContent !== true;
   const handleFollowPress = () => {
     if (!resolvedAuthorId) return;
-    followPress({ userId: resolvedAuthorId, name: authorName, avatarUrl: authorAvatarUrl });
+    followPress({
+      userId: resolvedAuthorId,
+      name: authorName,
+      avatarUrl: authorAvatarUrl,
+      isPrivate: publicProfile?.id === resolvedAuthorId && publicProfile.isPrivate === true,
+    });
   };
   const openProfileSafetyActions = () => {
     if (!resolvedAuthorId) return;
@@ -437,7 +472,7 @@ export function UserProfileContent({
               hitSlop={8}
               onPress={() =>
                 void shareProfileLink(resolvedAuthorId, authorName).catch((error) =>
-                  console.error("Error sharing profile:", error),
+                  reportError(error, { screen: "UserProfile", action: "share_profile" }),
                 )
               }
               style={{ alignItems: "center", height: 44, justifyContent: "center", width: 44 }}
@@ -482,7 +517,8 @@ export function UserProfileContent({
                 },
               ]}
             >
-              <Avatar name={authorName} uri={resolvedAuthorAvatarUrl} size={80} />
+              {/* 76 inside the 80pt ring and its 2pt border on each side. */}
+              <Avatar name={authorName} uri={resolvedAuthorAvatarUrl} size={spacing[20] - 4} />
             </View>
           </View>
 
@@ -561,67 +597,73 @@ export function UserProfileContent({
             {isPrivateLocked ? (
               <EmptyState
                 title="This account is private"
-                body={`Follow ${authorName} to see their posts and reviews.`}
+                body={
+                  showPosts()
+                    ? `Follow ${authorName} to see their posts and reviews.`
+                    : `Follow ${authorName} to see their reviews.`
+                }
                 icon={<Lock color={palette.textSecondary} size={36} />}
               />
             ) : (
               <View style={{ gap: spacing[4], marginTop: spacing[2] }}>
                 <AppText variant="h2">{activeTab === "posts" ? "Posts" : "Reviews"}</AppText>
-                <View
-                  accessibilityRole="tablist"
-                  style={{
-                    alignSelf: "stretch",
-                    flexDirection: "row",
-                    borderWidth: 1,
-                    borderRadius: componentRadii.button,
-                    borderColor: palette.border,
-                    backgroundColor: palette.surface,
-                    overflow: "hidden",
-                  }}
-                >
-                  <Pressable
-                    accessibilityRole="tab"
-                    accessibilityLabel="Show posts"
-                    accessibilityState={{ selected: activeTab === "posts" }}
-                    onPress={() => setActiveTab("posts")}
+                {showPosts() ? (
+                  <View
+                    accessibilityRole="tablist"
                     style={{
-                      flex: 1,
-                      paddingVertical: spacing[2],
-                      alignItems: "center",
-                      backgroundColor: activeTab === "posts" ? palette.orange : "transparent",
+                      alignSelf: "stretch",
+                      flexDirection: "row",
+                      borderWidth: 1,
+                      borderRadius: componentRadii.button,
+                      borderColor: palette.border,
+                      backgroundColor: palette.surface,
+                      overflow: "hidden",
                     }}
                   >
-                    <AppText
+                    <Pressable
+                      accessibilityRole="tab"
+                      accessibilityLabel="Show posts"
+                      accessibilityState={{ selected: activeTab === "posts" }}
+                      onPress={() => setActiveTab("posts")}
                       style={{
-                        fontWeight: activeTab === "posts" ? 700 : 500,
-                        color: activeTab === "posts" ? palette.textOnOrange : palette.text,
+                        flex: 1,
+                        paddingVertical: spacing[2],
+                        alignItems: "center",
+                        backgroundColor: activeTab === "posts" ? palette.orange : "transparent",
                       }}
                     >
-                      Posts
-                    </AppText>
-                  </Pressable>
-                  <Pressable
-                    accessibilityRole="tab"
-                    accessibilityLabel="Show reviews"
-                    accessibilityState={{ selected: activeTab === "reviews" }}
-                    onPress={() => setActiveTab("reviews")}
-                    style={{
-                      flex: 1,
-                      paddingVertical: spacing[2],
-                      alignItems: "center",
-                      backgroundColor: activeTab === "reviews" ? palette.orange : "transparent",
-                    }}
-                  >
-                    <AppText
+                      <AppText
+                        style={{
+                          fontWeight: activeTab === "posts" ? 700 : 500,
+                          color: activeTab === "posts" ? palette.textOnOrange : palette.text,
+                        }}
+                      >
+                        Posts
+                      </AppText>
+                    </Pressable>
+                    <Pressable
+                      accessibilityRole="tab"
+                      accessibilityLabel="Show reviews"
+                      accessibilityState={{ selected: activeTab === "reviews" }}
+                      onPress={() => setActiveTab("reviews")}
                       style={{
-                        fontWeight: activeTab === "reviews" ? 700 : 500,
-                        color: activeTab === "reviews" ? palette.textOnOrange : palette.text,
+                        flex: 1,
+                        paddingVertical: spacing[2],
+                        alignItems: "center",
+                        backgroundColor: activeTab === "reviews" ? palette.orange : "transparent",
                       }}
                     >
-                      Reviews
-                    </AppText>
-                  </Pressable>
-                </View>
+                      <AppText
+                        style={{
+                          fontWeight: activeTab === "reviews" ? 700 : 500,
+                          color: activeTab === "reviews" ? palette.textOnOrange : palette.text,
+                        }}
+                      >
+                        Reviews
+                      </AppText>
+                    </Pressable>
+                  </View>
+                ) : null}
 
                 {activeItemsCount > 0 ? (
                   activeTab === "posts" ? (
@@ -633,7 +675,19 @@ export function UserProfileContent({
                       }}
                     >
                       {posts.map((post) => {
-                        return (
+                        const image = (
+                          <AccessibleImage
+                            source={{ uri: post.mediaUrl }}
+                            decorative
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                            }}
+                            contentFit="cover"
+                          />
+                        );
+                        // The post detail lives in Activity; with Activity off a tile is a photo.
+                        return FEATURE_FLAGS.activityEnabled ? (
                           <Pressable
                             key={post.id}
                             accessibilityRole="button"
@@ -645,16 +699,12 @@ export function UserProfileContent({
                             }
                             style={{ width: "33.333%", aspectRatio: 1 }}
                           >
-                            <AccessibleImage
-                              source={{ uri: post.mediaUrl }}
-                              decorative
-                              style={{
-                                width: "100%",
-                                height: "100%",
-                              }}
-                              contentFit="cover"
-                            />
+                            {image}
                           </Pressable>
+                        ) : (
+                          <View key={post.id} style={{ width: "33.333%", aspectRatio: 1 }}>
+                            {image}
+                          </View>
                         );
                       })}
                     </View>
@@ -752,15 +802,6 @@ export function UserProfileContent({
                     size="sm"
                     loading={isLoadingMorePosts}
                     onPress={loadMorePosts}
-                  />
-                ) : null}
-                {activeTab === "reviews" && hasMoreReviews ? (
-                  <Button
-                    label="Load more"
-                    variant="ghost"
-                    size="sm"
-                    loading={isLoadingMoreReviews}
-                    onPress={loadMoreReviews}
                   />
                 ) : null}
               </View>

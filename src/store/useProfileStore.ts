@@ -580,7 +580,9 @@ export const useProfileStore = create<ProfileState>()(
               ...state.profile,
               displayName: savedProfile.displayName,
               email: savedProfile.email ?? state.profile.email,
-              avatarUrl: savedProfile.avatarUrl ?? state.profile.avatarUrl,
+              // The save returns the whole row: a missing bio or photo means it was removed.
+              bio: savedProfile.bio,
+              avatarUrl: savedProfile.avatarUrl,
               dietaryPreferences:
                 savedProfile.dietaryPreferences ?? state.profile.dietaryPreferences,
             },
