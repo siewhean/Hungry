@@ -1,0 +1,14 @@
+{
+  "version": "20261024100000",
+  "name": "20261024100000_dish_taste_ratings",
+  "result": "pass",
+  "rehearsed_at": "2026-10-24T14:42:08Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "c5cc2bef639405c5b0096f1ed27103fba72a9e1c",
+  "up_sha256": "88116e2dc4282cd9827e31608dfc0cba910e10ea03106c2b7003482ae3d22e86",
+  "down_sha256": "893fe49c284c486148249a1685ba24d9b0b678465c290f1e5962249152430728",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/dish_taste_ratings.sql"]
+}
