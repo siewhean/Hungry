@@ -86,7 +86,9 @@ export function CustomerInboxScreen() {
   }, [navigation, requestedFilter]);
   // Read by the focus event, so a chip change is not counted as another inbox view.
   const filterRef = useRef(filter);
-  filterRef.current = filter;
+  useEffect(() => {
+    filterRef.current = filter;
+  }, [filter]);
 
   const fetchInteractions = useCallback(async () => {
     const loadId = latestLoadId.current + 1;

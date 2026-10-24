@@ -38,6 +38,7 @@ import {
 } from "@/features/detail/perceivedTaste";
 import {
   formatAwayLabel,
+  similarDishTileLabel,
   similarDishQuery,
   useSimilarDishesNearby,
 } from "@/features/detail/similarDishes";
@@ -49,7 +50,11 @@ import { TasteRadarChart } from "@/components/taste/TasteRadarChart";
 import { PhotoPager } from "@/components/dish/PhotoPager";
 import { DetailHeroFade } from "@/components/detail/DetailHeroFade";
 import { ReportProblemLink } from "@/components/stall/ReportProblemLink";
-import { buildDishHeroPhotos, withoutRemovedReview } from "@/features/detail/dishPage";
+import {
+  buildDishHeroPhotos,
+  mergeRefreshedReviews,
+  withoutRemovedReview,
+} from "@/features/detail/dishPage";
 import { TriedFollowUp } from "@/features/detail/TriedFollowUp";
 import { formatDishUpdated } from "@/features/detail/dishFreshness";
 import { formatDishPrice } from "@/features/detail/dishPrice";
@@ -72,8 +77,10 @@ import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import {
   likeDishAfterSignIn,
+  markDishTried,
   markDishTriedAfterSignIn,
   saveDishAfterSignIn,
+  type DishTriedResult,
 } from "@/features/auth/finishGuestAction";
 import { rememberPendingDishSave } from "@/features/auth/pendingDishSave";
 import { useRequireAccount } from "@/features/auth/useRequireAccount";
@@ -154,14 +161,12 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
   const likedDishIdsByUser = useDishLikeStore((state) => state.likedDishIdsByUser);
   const toggleDishLike = useDishLikeStore((state) => state.toggleLike);
-  const recordTriedDish = useAchievementTallyStore((state) => state.recordTriedDish);
   const forgetTriedDish = useAchievementTallyStore((state) => state.forgetTriedDish);
   const setDishTried = useProfileStore((state) => state.setDishTried);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const requireAccount = useRequireAccount();
   const showToast = useUIStore((state) => state.showToast);
-  const markTried = useStallInteractionStore((state) => state.markTried);
   const loadStallInteractions = useStallInteractionStore((state) => state.loadInteractions);
   const incrementShare = useSocialStore((state) => state.incrementShare);
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
@@ -429,6 +434,13 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   useEffect(() => {
     setShowAllReviews(false);
   }, [reviewDishId]);
+  // The list on screen (with any edit or removal) and the dish it belongs to, so a refresh
+  // on return can keep the older pages the diner loaded.
+  const shownReviewsRef = useRef({ reviews: dishReviews, hasMore: hasMoreReviews });
+  useEffect(() => {
+    shownReviewsRef.current = { reviews: dishReviews, hasMore: hasMoreReviews };
+  }, [dishReviews, hasMoreReviews]);
+  const shownReviewsDishIdRef = useRef<string | undefined>(undefined);
   useEffect(() => {
     let active = true;
     if (!reviewDishId) {
@@ -442,8 +454,14 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
       .reviews.listRecentReviews({ dishIds: [reviewDishId], limit: DISH_REVIEW_PAGE_SIZE })
       .then((entries) => {
         if (!active) return;
-        setDishReviews(entries.map((entry) => entry.review));
-        setHasMoreReviews(entries.length === DISH_REVIEW_PAGE_SIZE);
+        const merged = mergeRefreshedReviews(
+          shownReviewsDishIdRef.current === reviewDishId ? shownReviewsRef.current : null,
+          entries.map((entry) => entry.review),
+          DISH_REVIEW_PAGE_SIZE,
+        );
+        shownReviewsDishIdRef.current = reviewDishId;
+        setDishReviews(merged.reviews);
+        setHasMoreReviews(merged.hasMore);
         setReviewsStatus("ready");
       })
       .catch((error) => {
@@ -748,10 +766,9 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     isOwnReview(review, isAuthenticated ? profile.id : undefined),
   );
 
-  // From the "you tried it" popup: the review starts with the stars and taste words filled in.
+  // The "you tried it" popup's stars and taste words go into the review draft for this dish.
   // A draft for another dish is left alone so the review screen can ask what to do with it.
-  const continueTriedReview = (triedRating: number, triedTags: string[]) => {
-    setTriedFollowUpPending(false);
+  const keepTriedAnswers = (triedRating: number, triedTags: string[]) => {
     const { draft } = useReviewDraftStore.getState();
     if (!draft.selectedDishId || draft.selectedDishId === dish.id) {
       if (draft.selectedDishId !== dish.id) resetReviewDraft();
@@ -760,6 +777,12 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
       const chosen = useReviewDraftStore.getState().draft.selectedTags;
       for (const tag of triedTags) if (!chosen.includes(tag)) toggleReviewTag(tag);
     }
+  };
+
+  // From the popup: the review starts with the stars and taste words filled in.
+  const continueTriedReview = (triedRating: number, triedTags: string[]) => {
+    setTriedFollowUpPending(false);
+    keepTriedAnswers(triedRating, triedTags);
     handleReview();
   };
 
@@ -778,12 +801,16 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const handleTryFood = async () => {
     if (tryingFoodRef.current) return;
 
-    // A guest's tap is finished after sign-in, as Save is.
+    // A guest's tap is finished after sign-in, as Save is, with the same stall mark, tally,
+    // event and follow-up as a signed-in tap.
     if (
       !requireAccount(
         `Sign in to mark ${dish.name} as tried`,
         { name: "DishDetail", params: { dishId: dish.id } },
-        () => void markDishTriedAfterSignIn(dish.id),
+        () =>
+          void markDishTriedAfterSignIn(dish, triedDishFacts(dish, hasTasteSignal)).then(
+            afterTriedMarked,
+          ),
       )
     ) {
       return;
@@ -813,46 +840,32 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
 
     setIsTryingFood(true);
     try {
-      if (!(await setDishTried(dish.id, true))) {
-        showToast({ message: "Couldn't mark this dish as tried. Try again.", ...triedToastStyle });
-        return;
-      }
-      recordTriedDish(profile.id, dish.id, triedDishFacts(dish, hasTasteSignal));
-      trackAnalyticsEvent("dish_marked_tried", { dish_id: dish.id, stall_id: dish.venueId });
-      let pointsAwarded = 0;
-      let stallMarkFailed = false;
-      // Read the saved stalls first so an already-visited stall is never marked again.
-      await loadStallInteractions(profile.id).catch((error) => {
-        reportError(error, { screen: "DishDetail", action: "load_stall_interactions" });
-      });
-      if (!useStallInteractionStore.getState().getInteraction(dish.venueId)?.isTried) {
-        try {
-          const result = await markTried(profile.id, dish.venueId, "DishDetail");
-          pointsAwarded = result.pointsAwarded;
-        } catch (error) {
-          // The store rolled the stall mark back; the dish itself is marked.
-          reportError(error, { screen: "DishDetail", action: "mark_stall_tried" });
-          stallMarkFailed = true;
-        }
-      }
-      showToast({
-        message: stallMarkFailed
-          ? "Marked as tried, but couldn't mark the stall visited. Try again from the stall page."
-          : FEATURE_FLAGS.gamificationEnabled && pointsAwarded > 0
-            ? `Marked as tried. +${pointsAwarded} Food Cred`
-            : "Marked as tried.",
-        ...triedToastStyle,
-      });
-      // Rating only makes sense once the dish is tried; both the stars and the taste are optional.
-      // The follow-up mounts only now, so its experiment exposes only diners who reach it.
-      if (!FEATURE_FLAGS.release01CoreOnly && FEATURE_FLAGS.reviewCreationEnabled && !hasReviewed) {
-        setTriedFollowUpPending(true);
-      }
+      afterTriedMarked(await markDishTried(dish, triedDishFacts(dish, hasTasteSignal)));
     } finally {
       tryingFoodRef.current = false;
       setIsTryingFood(false);
     }
   };
+
+  function afterTriedMarked({ saved, pointsAwarded, stallMarkFailed }: DishTriedResult) {
+    if (!saved) {
+      showToast({ message: "Couldn't mark this dish as tried. Try again.", ...triedToastStyle });
+      return;
+    }
+    showToast({
+      message: stallMarkFailed
+        ? "Marked as tried, but couldn't mark the stall visited. Try again from the stall page."
+        : FEATURE_FLAGS.gamificationEnabled && pointsAwarded > 0
+          ? `Marked as tried. +${pointsAwarded} Food Cred`
+          : "Marked as tried.",
+      ...triedToastStyle,
+    });
+    // Rating only makes sense once the dish is tried; both the stars and the taste are optional.
+    // The follow-up mounts only now, so its experiment exposes only diners who reach it.
+    if (!FEATURE_FLAGS.release01CoreOnly && FEATURE_FLAGS.reviewCreationEnabled && !hasReviewed) {
+      setTriedFollowUpPending(true);
+    }
+  }
 
   // Staging and production are a read-only Release 0.1 catalog experience.
   // Keep deferred write and social controls available for local development,
@@ -1452,9 +1465,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                         <Pressable
                           key={item.id}
                           accessibilityRole="button"
-                          accessibilityLabel={`Open ${item.name} at ${item.venueName}${
-                            away ? `, ${away}` : ""
-                          }`}
+                          accessibilityLabel={similarDishTileLabel(item)}
                           onPress={() => {
                             tapHaptic();
                             trackAnalyticsEvent("dish_similar_opened", {
@@ -1804,6 +1815,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
             <TriedFollowUp
               dish={dish}
               onWriteReview={continueTriedReview}
+              onKeepAnswers={keepTriedAnswers}
               onShowRateIt={() => setRateItCta(true)}
               onClose={() => setTriedFollowUpPending(false)}
             />

@@ -81,7 +81,12 @@ test("H29: Tried is saved on the server, rolls back on failure and is not a revi
   const store = read("src/store/useProfileStore.ts");
   assert.match(store, /setDishTried: async \(dishId, tried\) =>/);
   assert.match(store, /reviewedDishIds: previousIds/);
-  assert.match(dishDetail, /await setDishTried\(dish\.id, true\)/);
+  // The Tried mark (shared by a signed-in tap and a guest's tap after sign-in, DISH-V4).
+  assert.match(dishDetail, /await markDishTried\(dish, triedDishFacts\(dish, hasTasteSignal\)\)/);
+  assert.match(
+    read("src/features/auth/finishGuestAction.ts"),
+    /await useProfileStore\.getState\(\)\.setDishTried\(dish\.id, true\)/,
+  );
   assert.doesNotMatch(dishDetail, /removeReviewedDish\(dish\.id\)/);
 
   // Mock mirror: a reviewed dish stays Tried; an unreviewed one is removed.

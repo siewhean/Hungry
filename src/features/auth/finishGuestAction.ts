@@ -1,5 +1,8 @@
 import type { DishDetail } from "@/types/domain";
+import { trackAnalyticsEvent } from "@/lib/analytics";
+import { reportError } from "@/lib/monitoring/reportError";
 import { getHungryService } from "@/lib/services/serviceProvider";
+import { useAchievementTallyStore, type TriedDishFacts } from "@/store/useAchievementTallyStore";
 import { useDishLikeStore } from "@/store/useDishLikeStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSocialStore } from "@/store/useSocialStore";
@@ -45,9 +48,47 @@ export async function saveDishesAfterSignIn(dishes: DishDetail[]): Promise<DishD
   return failed;
 }
 
-// The server's tried mark is idempotent, so marking an already-tried dish changes nothing.
-export async function markDishTriedAfterSignIn(dishId: string): Promise<boolean> {
-  return useProfileStore.getState().setDishTried(dishId, true);
+export type DishTriedResult = { saved: boolean; pointsAwarded: number; stallMarkFailed: boolean };
+
+/**
+ * Everything a "Tried" mark does, for the dish page and for a guest's Tried finished after
+ * sign-in: the dish mark, the achievement tally, `dish_marked_tried`, and the stall marked
+ * visited the first time. The server's tried mark is idempotent.
+ */
+export async function markDishTried(
+  dish: { id: string; venueId: string },
+  facts: TriedDishFacts,
+): Promise<DishTriedResult> {
+  if (!(await useProfileStore.getState().setDishTried(dish.id, true))) {
+    return { saved: false, pointsAwarded: 0, stallMarkFailed: false };
+  }
+  const userId = useProfileStore.getState().profile.id;
+  useAchievementTallyStore.getState().recordTriedDish(userId, dish.id, facts);
+  trackAnalyticsEvent("dish_marked_tried", { dish_id: dish.id, stall_id: dish.venueId });
+  const stalls = useStallInteractionStore.getState();
+  // Read the saved stalls first so an already-visited stall is never marked again.
+  await stalls.loadInteractions(userId).catch((error: unknown) => {
+    reportError(error, { screen: "DishDetail", action: "load_stall_interactions" });
+  });
+  if (useStallInteractionStore.getState().getInteraction(dish.venueId)?.isTried) {
+    return { saved: true, pointsAwarded: 0, stallMarkFailed: false };
+  }
+  try {
+    const result = await stalls.markTried(userId, dish.venueId, "DishDetail");
+    return { saved: true, pointsAwarded: result.pointsAwarded, stallMarkFailed: false };
+  } catch (error) {
+    // The store rolled the stall mark back; the dish itself is marked.
+    reportError(error, { screen: "DishDetail", action: "mark_stall_tried" });
+    return { saved: true, pointsAwarded: 0, stallMarkFailed: true };
+  }
+}
+
+/** A guest's Tried, finished after sign-in with the same side effects as a signed-in tap. */
+export function markDishTriedAfterSignIn(
+  dish: { id: string; venueId: string },
+  facts: TriedDishFacts,
+): Promise<DishTriedResult> {
+  return markDishTried(dish, facts);
 }
 
 // Dish likes are kept on the device per account: only ever adds.

@@ -271,7 +271,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "BusinessProfileEditorScreen",
     file: "src/app/screens/merchant/BusinessProfileEditorScreen.tsx",
     scenario: "merchant",
-    expect: /Business Profile/,
+    expect: /Business profile/,
     known: "BACK_HANDLER",
   },
   {

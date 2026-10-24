@@ -477,6 +477,11 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
           {isDish && FEATURE_FLAGS.favouritesEnabled ? (
             <Button
               label={isFavourite ? "Saved to Want to try" : "Save to Want to try"}
+              // The visible text says the state; the screen reader also hears what a tap does.
+              accessibilityLabel={
+                isFavourite ? "Saved to Want to try. Tap to remove" : "Save to Want to try"
+              }
+              accessibilityState={{ selected: isFavourite }}
               variant={isFavourite ? "secondary" : "primary"}
               loading={isSavingFavourite}
               leftIcon={
@@ -587,7 +592,9 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
             <Button
               label="Open dish page"
               variant="secondary"
-              onPress={() => navigation.navigate("DishDetail", { dishId: detail.id })}
+              onPress={() =>
+                navigation.navigate("DishDetail", { dishId: detail.id, source: "catalog_detail" })
+              }
             />
           ) : null}
         </View>

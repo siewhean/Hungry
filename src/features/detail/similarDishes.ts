@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+import { formatDishPrice } from "@/features/detail/dishPrice";
 import type { CatalogRawDishCard } from "@/lib/services/catalog";
 import { getCatalogRawService } from "@/lib/services/serviceProvider";
 import type { Coordinate } from "@/types/domain";
@@ -66,6 +67,23 @@ export function formatAwayLabel(distanceMeters: number | undefined): string | un
   if (distanceMeters === undefined || !Number.isFinite(distanceMeters)) return undefined;
   if (distanceMeters < 1000) return `${Math.max(10, Math.round(distanceMeters / 10) * 10)} m away`;
   return `${(distanceMeters / 1000).toFixed(1)} km away`;
+}
+
+/**
+ * What a screen reader says for a nearby tile: the tile's own label replaces its children's, so
+ * the price and rating the tile shows are spoken here too.
+ */
+export function similarDishTileLabel(
+  item: Pick<CatalogRawDishCard, "name" | "venueName" | "price" | "priceRange" | "rating" | "reviewCount" | "distanceMeters">,
+): string {
+  const price = formatDishPrice({ price: item.price ?? 0, priceRange: item.priceRange ?? "" });
+  const rated =
+    item.reviewCount && item.rating
+      ? `rated ${item.rating.toFixed(1)} from ${item.reviewCount} ${item.reviewCount === 1 ? "review" : "reviews"}`
+      : undefined;
+  return [`Open ${item.name} at ${item.venueName}`, price, rated, formatAwayLabel(item.distanceMeters)]
+    .filter(Boolean)
+    .join(", ");
 }
 
 type SimilarDishSource = {

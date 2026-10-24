@@ -15,6 +15,7 @@ import {
 import type { RecentReviewFeedEntry } from "@/lib/services/types";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useReviewDraftStore } from "@/store/useReviewDraftStore";
 import { cleanup, createFakeNavigation, renderScreen, type RenderResult } from "@/test/render";
 import { enterScenario } from "@/test/render/sessions";
 import type { DishDetail, Review } from "@/types/domain";
@@ -261,4 +262,52 @@ test("a short description is plain text, not a button (DISH-22); copy is sentenc
   assert.equal(description.closest('[role="button"]'), null);
   assert.doesNotMatch(view.text(), /MUST ORDER/);
   assert.match(view.text(), /Must order/);
+});
+
+// ─── Round-three post-verify (DISH-V5, DISH-V7) ─────────────────────────────
+
+test("a refresh on return keeps the older reviews the diner paged to (DISH-V5)", async () => {
+  const pageSize = 50;
+  const at = (index: number) => new Date(Date.UTC(2026, 9, 20, 12, 0, 0) - index * 60000).toISOString();
+  const all = Array.from({ length: 70 }, (_, index) => ({
+    ...review(`r${String(index).padStart(3, "0")}`, `user-${index}`),
+    createdAt: at(index),
+  }));
+  let calls = 0;
+  stub(getHungryService().reviews, "listRecentReviews", (async (options: {
+    before?: string;
+    beforeId?: string;
+  }) => {
+    calls += 1;
+    const start = options.beforeId ? all.findIndex((entry) => entry.id === options.beforeId) + 1 : 0;
+    return all.slice(start, start + pageSize).map((entry) => ({ review: entry }) as RecentReviewFeedEntry);
+  }) as never);
+  const { navigation, emit } = focusableNavigation();
+  const { view } = await openDish({ navigation });
+  const showAll = view.findByText(/^See all/);
+  if (showAll) await view.press(showAll);
+  const more = view.findByText(/^(Load|Show) more reviews/);
+  assert.ok(more, "a full first page offers more");
+  await view.press(more);
+  assert.match(view.text(), /Review r065/);
+
+  await emit("blur");
+  await emit("focus");
+  await view.settle();
+  assert.equal(calls, 3);
+  assert.match(view.text(), /Review r065/, "the second page is still on screen");
+});
+
+test("Not now keeps the popup's stars and taste words as a review draft (DISH-V7)", async () => {
+  stubReviews([]);
+  stubTried();
+  fakeFlags({ dish_tried_prompt_v1: "control" });
+  useReviewDraftStore.getState().resetDraft();
+  const { dish, view } = await openDish();
+  await view.press(triedButton(view));
+  await view.press(view.findByTestId("star-4"));
+  await view.press(view.findByText("Not now"));
+  const { draft } = useReviewDraftStore.getState();
+  assert.equal(draft.selectedDishId, dish.id);
+  assert.equal(draft.rating, 4);
 });
