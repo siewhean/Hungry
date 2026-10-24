@@ -339,8 +339,8 @@ export function TasteQuizScreen({ navigation, route }: Props) {
       },
       tasteAnswers,
     );
-    setDietaryPreferences(dietaryPreferences);
-    setMaxDishBudget(maxDishBudget);
+    setDietaryPreferences(dietaryPreferences, { surface: flowMode });
+    setMaxDishBudget(maxDishBudget, { surface: flowMode });
     if (flowMode === "profile") {
       setSkippedTasteQuiz(false);
       showToast({ message: "Taste profile updated.", tone: "success" });

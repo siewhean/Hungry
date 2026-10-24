@@ -14,6 +14,7 @@ import {
   validateDisplayName,
 } from "@/features/profile/profileName";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { reportError } from "@/lib/monitoring/reportError";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -144,7 +145,7 @@ export function EditProfileScreen({ navigation }: Props) {
       .then((pending) => {
         if (isActive) setPendingEmail(pending);
       })
-      .catch(() => undefined);
+      .catch((error: unknown) => reportError(error, { area: "edit_profile_pending_email" }));
     return () => {
       isActive = false;
     };
@@ -316,7 +317,8 @@ export function EditProfileScreen({ navigation }: Props) {
                     message: `Check your current inbox and ${nextEmail} for links to confirm the change.`,
                     tone: "success",
                   });
-                } catch {
+                } catch (error) {
+                  reportError(error, { area: "edit_profile_email_change" });
                   showToast({
                     message: "Profile saved, but we could not start the email change.",
                     tone: "warning",
@@ -329,6 +331,7 @@ export function EditProfileScreen({ navigation }: Props) {
               navigation.goBack();
             } catch (error) {
               const refusal = profileTextRefusalHint(error);
+              if (!refusal) reportError(error, { area: "edit_profile_save" });
               showToast({
                 message:
                   refusal === "display_name_reserved"

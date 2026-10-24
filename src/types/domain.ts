@@ -1304,6 +1304,8 @@ export interface PushPreferences {
   weeklyPicks: boolean;
   /** Lunch (11:30) and dinner (17:30) suggestion pushes. Off unless the user turns them on. */
   mealtimeSuggestions: boolean;
+  /** Follow-request pushes (notification_preferences.social_activity). On unless the user opts out. */
+  socialActivity: boolean;
   quietStartHour: number;
   quietEndHour: number;
   weeklyCap: number;
@@ -1313,6 +1315,7 @@ export const DEFAULT_PUSH_PREFERENCES: PushPreferences = {
   stallUpdates: false,
   weeklyPicks: true,
   mealtimeSuggestions: false,
+  socialActivity: true,
   quietStartHour: 22,
   quietEndHour: 8,
   weeklyCap: 3,

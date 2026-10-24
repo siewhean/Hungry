@@ -483,7 +483,8 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "BlockedAndHiddenScreen",
     file: "src/app/screens/profile/BlockedAndHiddenScreen.tsx",
     scenario: "user",
-    expect: /Blocked and hidden/,
+    // Hidden posts belong to the archived social feed, so only blocks list while it is off.
+    expect: /Blocked people/,
   },
   {
     name: "ChangePasswordScreen",

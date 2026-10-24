@@ -246,7 +246,9 @@ test("M5: Settings lists blocked people and hidden posts with Unblock and Unhide
   const screen = read("src/app/screens/profile/BlockedAndHiddenScreen.tsx");
   const navigator = read("src/app/navigation/RootNavigator.tsx");
   const types = read("src/app/navigation/navigationTypes.ts");
-  assert.match(settings, /label="Blocked and hidden"/);
+  assert.match(settings, /label=\{BLOCKED_AND_HIDDEN_TITLE\}/);
+  // Hidden posts belong to the archived social feed and only list while it is on.
+  assert.match(screen, /const showHiddenPosts = FEATURE_FLAGS\.socialFeedEnabled;/);
   assert.match(settings, /rootNavigation\.navigate\("BlockedAndHidden"\)/);
   assert.match(types, /BlockedAndHidden: undefined/);
   assert.match(navigator, /name="BlockedAndHidden"/);

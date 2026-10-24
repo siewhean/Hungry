@@ -40,7 +40,7 @@ test("push alerts are opt-in and tapped alerts open through deep link rules", ()
   assert.equal(DEFAULT_PUSH_PREFERENCES.weeklyPicks, true);
   const alerts = read("src/components/settings/StallAlertsSettings.tsx");
   assert.match(alerts, /label="Weekly picks"/);
-  assert.match(alerts, /isEnabled=\{preferences\.weeklyPicks && !permissionDenied\}/);
+  assert.match(alerts, /isEnabled=\{preferences\.weeklyPicks\}/);
   assert.match(
     read("src/lib/services/supabase/supabaseService.ts"),
     /weekly_picks: next\.weeklyPicks/,

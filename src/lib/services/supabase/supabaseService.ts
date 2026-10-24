@@ -707,10 +707,21 @@ function mapLifecycleSnapshot(data: unknown): LifecycleSnapshot | null {
   };
 }
 
+/** A stall submission whose saved row could not be found after the write. */
+export class StallSubmissionUnconfirmedError extends Error {
+  constructor() {
+    super(
+      "We couldn't confirm your submission was saved. Check My submissions before trying again.",
+    );
+    this.name = "StallSubmissionUnconfirmedError";
+  }
+}
+
 function mapPushPreferencesRow(row: {
   stall_updates: boolean;
   weekly_picks: boolean;
   mealtime_suggestions: boolean;
+  social_activity: boolean;
   quiet_start_hour: number;
   quiet_end_hour: number;
   weekly_cap: number;
@@ -719,6 +730,7 @@ function mapPushPreferencesRow(row: {
     stallUpdates: row.stall_updates,
     weeklyPicks: row.weekly_picks,
     mealtimeSuggestions: row.mealtime_suggestions,
+    socialActivity: row.social_activity,
     quietStartHour: row.quiet_start_hour,
     quietEndHour: row.quiet_end_hour,
     weeklyCap: row.weekly_cap,
@@ -1092,12 +1104,24 @@ async function uploadReviewPhotos(
   return uploaded.filter((row): row is Row => Boolean(row));
 }
 
-async function mapSupabaseReviewRows(
+/** Text the account-deletion worker leaves on a deleted account's kept review (rating only). */
+export const DELETED_ACCOUNT_REVIEW_TEXT = "[deleted]";
+
+function isDeletedAccountReviewRow(row: Row): boolean {
+  return !asString(row.user_id) && asString(row.text) === DELETED_ACCOUNT_REVIEW_TEXT;
+}
+
+/** Exported for tests. Batches photo and author lookups for one page of review rows. */
+export async function mapSupabaseReviewRows(
   client: SupabaseClient,
   rows: Row[],
   options: { includePhotos?: boolean } = {},
 ): Promise<DishDetail["reviews"]> {
-  const reviewIds = rows.map((row) => asString(row.id)).filter((id): id is string => Boolean(id));
+  // A deleted account's kept review is a bare rating: its photos were removed from storage.
+  const reviewIds = rows
+    .filter((row) => !isDeletedAccountReviewRow(row))
+    .map((row) => asString(row.id))
+    .filter((id): id is string => Boolean(id));
   const userIds = rows
     .map((row) => asString(row.user_id))
     .filter((id): id is string => Boolean(id));
@@ -1166,22 +1190,24 @@ async function mapSupabaseReviewRows(
   return rows.map((row) => {
     const id = asString(row.id) ?? `${Date.now()}`;
     const userId = asString(row.user_id);
+    const fromDeletedAccount = isDeletedAccountReviewRow(row);
     return {
       id,
       dishId: asString(row.dish_id),
       venueId: asString(row.venue_id),
       authorId: userId,
-      authorName:
-        (userId ? namesByUserId.get(userId) : undefined) ??
-        asString(row.author_name) ??
-        "Hungry User",
+      authorName: fromDeletedAccount
+        ? "Deleted account"
+        : ((userId ? namesByUserId.get(userId) : undefined) ??
+          asString(row.author_name) ??
+          "Hungry User"),
       authorAvatarUrl: (userId ? avatarsByUserId.get(userId) : undefined) ?? undefined,
       rating: asNumber(row.rating) ?? 0,
       createdAt: asString(row.created_at) ?? new Date().toISOString(),
-      text: asString(row.text) ?? "",
-      tags: asStringArray(row.tags),
+      text: fromDeletedAccount ? "" : (asString(row.text) ?? ""),
+      tags: fromDeletedAccount ? [] : asStringArray(row.tags),
       wouldRecommend: asBoolean(row.would_recommend) ?? true,
-      photos: photosByReviewId.get(id) ?? [],
+      photos: fromDeletedAccount ? [] : (photosByReviewId.get(id) ?? []),
       helpfulCount: asNumber(row.helpful_count),
       editedAt: asString(row.edited_at),
       merchantReply: asString(row.merchant_reply_text)
@@ -4649,7 +4675,7 @@ export const supabaseService: HungryService = {
       const { data, error } = await client
         .from("notification_preferences")
         .select(
-          "stall_updates,weekly_picks,mealtime_suggestions,quiet_start_hour,quiet_end_hour,weekly_cap",
+          "stall_updates,weekly_picks,mealtime_suggestions,social_activity,quiet_start_hour,quiet_end_hour,weekly_cap",
         )
         .eq("user_id", userId)
         .maybeSingle();
@@ -4671,6 +4697,7 @@ export const supabaseService: HungryService = {
             stall_updates: next.stallUpdates,
             weekly_picks: next.weeklyPicks,
             mealtime_suggestions: next.mealtimeSuggestions,
+            social_activity: next.socialActivity,
             quiet_start_hour: next.quietStartHour,
             quiet_end_hour: next.quietEndHour,
             weekly_cap: next.weeklyCap,
@@ -4678,7 +4705,7 @@ export const supabaseService: HungryService = {
           { onConflict: "user_id" },
         )
         .select(
-          "stall_updates,weekly_picks,mealtime_suggestions,quiet_start_hour,quiet_end_hour,weekly_cap",
+          "stall_updates,weekly_picks,mealtime_suggestions,social_activity,quiet_start_hour,quiet_end_hour,weekly_cap",
         )
         .single();
       if (error) throw error;
@@ -5816,7 +5843,8 @@ export const supabaseService: HungryService = {
       });
 
       const uploadPrefix = `${userId}/${Date.now()}-${sanitizeStorageSegment(input.stallName)}`;
-      const uploadedImages = await Promise.all(
+      // n-plus-one-ok: one storage upload per photo (at most six); there is no batch upload.
+      const uploadResults = await Promise.allSettled(
         imageUris.map((uri, index) =>
           uploadImageFromUri({
             client,
@@ -5826,6 +5854,25 @@ export const supabaseService: HungryService = {
           }),
         ),
       );
+      const uploadedImages = uploadResults.flatMap((result) =>
+        result.status === "fulfilled" ? [result.value] : [],
+      );
+      // A submission that is not saved must not leave its photos in storage.
+      const removeUploadedImages = () =>
+        uploadedImages.length
+          ? client.storage
+              .from("user-stall-submission-images")
+              .remove(uploadedImages.map((image) => image.path))
+              .then(
+                () => undefined,
+                () => undefined,
+              )
+          : Promise.resolve();
+      const failedUpload = uploadResults.find((result) => result.status === "rejected");
+      if (failedUpload) {
+        await removeUploadedImages();
+        throw (failedUpload as PromiseRejectedResult).reason;
+      }
       const uploaded = uploadedImages[0];
       if (!uploaded) {
         throw new Error("Stall image must be uploaded from your device.");
@@ -5908,16 +5955,6 @@ export const supabaseService: HungryService = {
           isColumnNotExistError(error) ||
           error?.message.toLowerCase().includes("schema cache")
         );
-
-      const isPermissionDeniedError = (error: PostgrestError | null | undefined) => {
-        if (!error) return false;
-        const message = error.message.toLowerCase();
-        return (
-          error.code === "42501" ||
-          message.includes("permission denied for table user_stall_submissions") ||
-          message.includes("permission denied for relation")
-        );
-      };
 
       if (
         primarySubmit.error &&
@@ -6030,18 +6067,20 @@ export const supabaseService: HungryService = {
           finalResult = { data: insertedRows, error: null };
         } else if (!insertError && !insertedRows) {
           finalResult = { data: null, error: null };
-        } else if (
-          insertError &&
-          (isRetryableInsertSchemaError(insertError) || isPermissionDeniedError(insertError))
-        ) {
+        } else if (insertError && isRetryableInsertSchemaError(insertError)) {
           finalResult = { data: null, error: null };
         } else {
+          // Includes permission denied: the row was not saved, so this is a failure, not success.
+          await removeUploadedImages();
           throw insertError;
         }
       }
 
       const { data, error } = finalResult;
-      if (error) throw error;
+      if (error) {
+        await removeUploadedImages();
+        throw error;
+      }
 
       try {
         const fallbackMenuItems = input.menuItems ?? [];
@@ -6073,8 +6112,7 @@ export const supabaseService: HungryService = {
 
         if (!data) {
           const fallbackWindowIso = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-          const trimmedStallName = input.stallName.trim();
-          const normalizedStallName = trimmedStallName.toLowerCase();
+          const normalizedStallName = input.stallName.trim().toLowerCase();
 
           const resolveByRecentFallback = async () => {
             const { data: fallbackRows, error: fallbackError } = await client
@@ -6095,7 +6133,7 @@ export const supabaseService: HungryService = {
                 return true;
               if (rowStall && rowStall === normalizedStallName && rowUrl === uploaded.publicUrl)
                 return true;
-              if (rowStall && rowStall === normalizedStallName) return true;
+              // A name alone could match an older submission of the same stall.
               return false;
             });
             if (!match) return { data: null, error: null };
@@ -6136,36 +6174,17 @@ export const supabaseService: HungryService = {
             return { data: null, error: null };
           };
 
-          const resolveByRecentName = async () => {
-            const { data: nameData, error: nameError } = await client
-              .from("user_stall_submissions")
-              .select("*")
-              .eq("user_id", userId)
-              .eq("stall_name", trimmedStallName)
-              .gte("created_at", fallbackWindowIso)
-              .order("created_at", { ascending: false })
-              .limit(1)
-              .maybeSingle();
-            if (nameError) return { error: null, data: null };
-            if (nameData) {
-              return { data: mapUserStallSubmission(client, asRecord(nameData)), error: null };
-            }
-            return { data: null, error: null };
-          };
-
           const imagePathFallback = await resolveByImagePath();
           if (imagePathFallback.data) return imagePathFallback.data;
 
           const imageUrlFallback = await resolveByImageUrl();
           if (imageUrlFallback.data) return imageUrlFallback.data;
 
-          const recentNameFallback = await resolveByRecentName();
-          if (recentNameFallback.data) return recentNameFallback.data;
-
           const recentFallback = await resolveByRecentFallback();
           if (recentFallback.data) return recentFallback.data;
 
-          return fallbackSubmission;
+          // Nothing confirms the row was saved; do not report a made-up submission as success.
+          throw new StallSubmissionUnconfirmedError();
         }
 
         if (typeof data === "string") {
@@ -6194,6 +6213,7 @@ export const supabaseService: HungryService = {
         }
         return fallbackSubmission;
       } catch (parseError) {
+        if (parseError instanceof StallSubmissionUnconfirmedError) throw parseError;
         console.warn(
           "[submitDiscoveredStall] failed to parse rpc response, using fallback",
           parseError,
