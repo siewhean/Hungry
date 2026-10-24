@@ -121,12 +121,8 @@ test("release-reachable screens hide controls for cut features behind their flag
   const search = read("src/app/screens/search/DishSearchScreen.tsx");
   const dishDetail = read("src/app/screens/detail/DishDetailScreenV2.tsx");
 
-  // Follows and follow requests outlive the archived social feed.
-  assert.match(settings, /const showSocialPrivacySettings = true;/);
-  assert.match(
-    settings,
-    /\{showSocialPrivacySettings \? \(\s*<SettingsRow\s+label="Profile visibility"/,
-  );
+  // Follows and follow requests outlive the archived social feed, so visibility always shows.
+  assert.match(settings, /\{isAuthenticated \? \(\s*<SettingsRow\s+label="Profile visibility"/);
   // Unwired preferences were removed outright (see mvp-source-of-truth-contracts).
   for (const label of [
     "Show location badge",
@@ -137,9 +133,10 @@ test("release-reachable screens hide controls for cut features behind their flag
   ]) {
     assert.doesNotMatch(settings, new RegExp(`label="${label}"`));
   }
+  // Left-handed mode only moves the merchant menu's add button, so only merchants see it.
   assert.match(
     settings,
-    /onToggle=\{handleDeviceToggle\("left_handed_mode", setLeftHandedMode\)\}\s*isLast\s/,
+    /\{hasMerchantAccount \? \(\s*<SettingsRow[\s\S]*?label="Left-handed mode"/,
   );
 
   assert.match(

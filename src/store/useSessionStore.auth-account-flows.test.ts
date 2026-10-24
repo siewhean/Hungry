@@ -147,7 +147,7 @@ test("account deletion purges locally, records a notice, then signs out; confirm
   assert.ok(purgeIndex > 0 && purgeIndex < noticeIndex && noticeIndex < signOutIndex);
   assert.match(
     run,
-    /try \{\s*await purgePersistedAccountData\(\);\s*\} catch \{\s*purgeFailed = true;/,
+    /try \{\s*await purgePersistedAccountData\(\);\s*\} catch \(error\) \{\s*reportError\(error, \{ area: "settings_deletion_local_purge" \}\);\s*purgeFailed = true;/,
   );
 });
 

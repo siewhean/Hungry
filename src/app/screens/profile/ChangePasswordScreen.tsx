@@ -17,6 +17,7 @@ import {
   validateRequired,
   WEAK_PASSWORD_MESSAGE,
 } from "@/features/auth/validation";
+import { reportError } from "@/lib/monitoring/reportError";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -74,13 +75,14 @@ export function ChangePasswordScreen() {
             void getHungryService()
               .auth.signOut({ scope: "others" })
               .then(() => showToast({ message: "Other devices signed out.", tone: "success" }))
-              .catch(() =>
+              .catch((error: unknown) => {
+                reportError(error, { area: "change_password_sign_out_others" });
                 showToast({
                   message:
                     "Couldn't sign out other devices. Try Sign out of all devices in Settings.",
                   tone: "error",
-                }),
-              );
+                });
+              });
             navigation.goBack();
           },
         },
@@ -106,6 +108,7 @@ export function ChangePasswordScreen() {
       } else if (isWeakPasswordError(error)) {
         setError("newPassword", { message: WEAK_PASSWORD_MESSAGE });
       } else {
+        reportError(error, { area: "change_password" });
         // A dropped connection or rate limit is not "wrong password"; say what happened.
         showToast({
           message: getAuthFailureMessage(

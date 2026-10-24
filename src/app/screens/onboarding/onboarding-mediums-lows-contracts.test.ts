@@ -92,12 +92,14 @@ test("M5 and L3: the result fallback respects every dietary flag, and says so wh
 
 test("M6: dietary analytics carry a count, never the religious or health flags", () => {
   clearTrackedAnalyticsEvents();
-  useProfileStore.getState().setDietaryPreferences(["halal", "diabetic_friendly"]);
+  useProfileStore.getState().setDietaryPreferences(["halal", "diabetic_friendly"], {
+    surface: "profile",
+  });
   const event = getTrackedAnalyticsEvents().find(
     (entry) => entry.event === "dietary_preferences_set",
   );
   assert.ok(event);
-  assert.deepEqual(event.properties, { flag_count: 2 });
+  assert.deepEqual(event.properties, { flag_count: 2, surface: "profile" });
   assert.doesNotMatch(JSON.stringify(event), /halal|diabetic/);
 });
 

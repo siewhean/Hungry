@@ -6,10 +6,12 @@ import {
   RefreshCw,
   Sparkles,
   Store,
+  UserPlus,
   UtensilsCrossed,
 } from "lucide-react-native";
 
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { reportError } from "@/lib/monitoring/reportError";
 import { getNotificationPermissionState, registerForStallAlerts } from "@/lib/notifications/push";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useUIStore } from "@/store/useUIStore";
@@ -27,7 +29,10 @@ const PREFERENCE_EVENT_KEYS = {
   stallUpdates: "stall_updates",
   weeklyPicks: "weekly_picks",
   mealtimeSuggestions: "mealtime_suggestions",
+  socialActivity: "social_activity",
 } as const;
+
+type PreferenceKey = keyof typeof PREFERENCE_EVENT_KEYS;
 
 interface StallAlertsSettingsProps {
   onOpenFollowedStalls: () => void;
@@ -35,8 +40,9 @@ interface StallAlertsSettingsProps {
 
 /**
  * Push alerts: opt-in menu changes at followed stalls and lunch and dinner
- * suggestions (both off until turned on), and the weekly picks push (on unless
- * the user opts out).
+ * suggestions (both off until turned on), and the weekly picks and follow-request
+ * pushes (on unless the user opts out). While the phone blocks notifications the
+ * switches still show what is saved, dimmed, so a saved alert can be turned off.
  */
 export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSettingsProps) {
   const { palette } = useHungryTheme();
@@ -55,7 +61,8 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
         setPreferences(next);
         setLoadState("loaded");
       })
-      .catch(() => {
+      .catch((error: unknown) => {
+        reportError(error, { area: "stall_alerts_settings_load" });
         if (!isCancelled()) setLoadState("error");
       });
   }, []);
@@ -69,7 +76,8 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
   }, [loadPreferences]);
 
   // The phone's permission can be off or revoked later; read it on open and when the app
-  // comes back from system settings, so a switch never shows "on" while nothing can arrive.
+  // comes back from system settings, so the "Notifications are off" row explains why
+  // nothing can arrive.
   const [permissionDenied, setPermissionDenied] = useState(false);
   useEffect(() => {
     let cancelled = false;
@@ -92,10 +100,7 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
 
   const isBusy = loadState !== "loaded" || isSaving;
 
-  const handleToggle = async (
-    key: "stallUpdates" | "weeklyPicks" | "mealtimeSuggestions",
-    enabled: boolean,
-  ) => {
+  const handleToggle = async (key: PreferenceKey, enabled: boolean) => {
     if (isSaving) return;
     setIsSaving(true);
     try {
@@ -115,7 +120,8 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
       trackAnalyticsEvent("notification_preferences_updated", {
         [PREFERENCE_EVENT_KEYS[key]]: enabled,
       });
-    } catch {
+    } catch (error) {
+      reportError(error, { area: "stall_alerts_settings_update", preference: key });
       showToast({ message: "Couldn't update alerts. Please try again.", tone: "error" });
     } finally {
       setIsSaving(false);
@@ -152,7 +158,7 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
         )} to ${formatHour(preferences.quietEndHour)}, at most ${preferences.weeklyCap} a week.`}
         icon={<BellRing size={20} color={palette.orange} />}
         type="toggle"
-        isEnabled={preferences.stallUpdates && !permissionDenied}
+        isEnabled={preferences.stallUpdates}
         dimmed={permissionDenied}
         busy={isBusy}
         onToggle={(value) => void handleToggle("stallUpdates", value)}
@@ -164,7 +170,7 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
         description="A Monday nudge when your new dish picks are ready on Home."
         icon={<Sparkles size={20} color={palette.orange} />}
         type="toggle"
-        isEnabled={preferences.weeklyPicks && !permissionDenied}
+        isEnabled={preferences.weeklyPicks}
         dimmed={permissionDenied}
         busy={isBusy}
         onToggle={(value) => void handleToggle("weeklyPicks", value)}
@@ -176,10 +182,22 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
         description="Three picks at 11:30am or 5:30pm, only on days you haven't opened Hungry yet."
         icon={<UtensilsCrossed size={20} color={palette.orange} />}
         type="toggle"
-        isEnabled={preferences.mealtimeSuggestions && !permissionDenied}
+        isEnabled={preferences.mealtimeSuggestions}
         dimmed={permissionDenied}
         busy={isBusy}
         onToggle={(value) => void handleToggle("mealtimeSuggestions", value)}
+        isLast={false}
+      />
+      <SettingsRow
+        editorial
+        label="Follow requests"
+        description="When someone asks to follow your private profile."
+        icon={<UserPlus size={20} color={palette.orange} />}
+        type="toggle"
+        isEnabled={preferences.socialActivity}
+        dimmed={permissionDenied}
+        busy={isBusy}
+        onToggle={(value) => void handleToggle("socialActivity", value)}
         isLast={false}
       />
       <SettingsRow

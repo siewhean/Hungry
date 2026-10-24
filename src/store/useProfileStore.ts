@@ -167,9 +167,16 @@ interface ProfileState {
   setProfileVisibility: (profileVisibility: ProfileVisibility) => Promise<boolean>;
   setTasteVector: (tasteVector: TasteVector) => void;
   setTasteProfile: (tasteProfile: TasteProfile) => void;
-  setDietaryPreferences: (dietaryPreferences: DietaryFlag[]) => void;
+  /** `surface` tags the analytics event: the onboarding quiz or the profile/Settings edit. */
+  setDietaryPreferences: (
+    dietaryPreferences: DietaryFlag[],
+    options?: { surface?: "onboarding" | "profile" },
+  ) => void;
   /** Saved on the account (user_profiles.max_dish_budget) when signed in; kept on the device for guests. */
-  setMaxDishBudget: (maxDishBudget: number | undefined) => void;
+  setMaxDishBudget: (
+    maxDishBudget: number | undefined,
+    options?: { surface?: "onboarding" | "profile" },
+  ) => void;
   addReview: (dish: DishDetail) => void;
   addReviewedDish: (dishId: string) => void;
   removeReviewedDish: (dishId: string) => void;
@@ -904,12 +911,13 @@ export const useProfileStore = create<ProfileState>()(
             set(previousSnapshot);
           });
       },
-      setDietaryPreferences: (dietaryPreferences) => {
+      setDietaryPreferences: (dietaryPreferences, options) => {
         const previousProfile = get().profile;
         set((state) => {
           // Religious and health diets are sensitive (PDPA): only how many were picked is sent.
           trackAnalyticsEvent("dietary_preferences_set", {
             flag_count: dietaryPreferences.length,
+            surface: options?.surface ?? null,
           });
           return {
             profile: {
@@ -930,8 +938,11 @@ export const useProfileStore = create<ProfileState>()(
             set({ profile: previousProfile });
           });
       },
-      setMaxDishBudget: (maxDishBudget) => {
-        trackAnalyticsEvent("budget_preference_set", { max_dish_budget: maxDishBudget ?? null });
+      setMaxDishBudget: (maxDishBudget, options) => {
+        trackAnalyticsEvent("budget_preference_set", {
+          max_dish_budget: maxDishBudget ?? null,
+          surface: options?.surface ?? null,
+        });
         const previousProfile = get().profile;
         set((state) => ({ profile: { ...state.profile, maxDishBudget } }));
         const optimisticProfile = get().profile;

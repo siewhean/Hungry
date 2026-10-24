@@ -96,6 +96,16 @@ export type AnalyticsEventName =
   | "follow_request_declined"
   | "claim_this_stall_tapped"
 
+  // ─── Settings & Account Events ─────────────────────────────────────────────
+  | "settings_changed"
+  | "settings_data_export_requested"
+  | "settings_data_export_failed"
+  | "settings_local_cache_cleared"
+  | "account_deletion_started"
+  | "account_deletion_code_sent"
+  | "account_deletion_requested"
+  | "account_deletion_cancelled"
+
   // ─── Website Events ────────────────────────────────────────────────────────
   | "website_page_viewed"
   | "website_cta_clicked"

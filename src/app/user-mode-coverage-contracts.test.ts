@@ -98,7 +98,7 @@ test("user auth and onboarding flows cover account, taste, dietary, and location
       /const setTasteVector = useProfileStore/,
       /const setDietaryPreferences = useProfileStore/,
       /setTasteVector\(values\)/,
-      /setDietaryPreferences\(dietaryPreferences\)/,
+      /setDietaryPreferences\(dietaryPreferences, \{ surface: flowMode \}\)/,
       /setSkippedTasteQuiz\(true\)/,
       /navigation\.navigate\("FoodOpenness", \{ mode: "onboarding" \}\)/,
     ],

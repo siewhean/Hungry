@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Alert, AppState } from "react-native";
 
+import { SUPPORT_EMAIL } from "@/constants/links";
+import { trackAnalyticsEvent } from "@/lib/analytics";
+import { reportError } from "@/lib/monitoring/reportError";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -9,6 +12,14 @@ export function formatDeletionDate(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "soon";
   return date.toLocaleDateString("en-SG", { day: "numeric", month: "long", year: "numeric" });
+}
+
+/** Keep my account found no request to cancel: the deletion worker already took it. */
+export function showDeletionAlreadyStartedAlert() {
+  Alert.alert(
+    "Deletion already started",
+    `We couldn't stop this deletion because it has already started. Email ${SUPPORT_EMAIL} and we will help.`,
+  );
 }
 
 /**
@@ -69,12 +80,20 @@ export function useAccountDeletionGracePrompt(onContinueDeletion: () => void) {
               onPress: () => {
                 void getHungryService()
                   .auth.cancelAccountDeletion()
-                  .then(() => {
+                  .then((cancelled) => {
+                    if (!cancelled) {
+                      showDeletionAlreadyStartedAlert();
+                      return;
+                    }
+                    trackAnalyticsEvent("account_deletion_cancelled", {
+                      surface: "sign_in_prompt",
+                    });
                     useUIStore
                       .getState()
                       .showToast({ message: "Account deletion cancelled.", tone: "success" });
                   })
-                  .catch(() => {
+                  .catch((error: unknown) => {
+                    reportError(error, { area: "deletion_grace_prompt_cancel" });
                     retryOnNextForeground();
                     Alert.alert(
                       "Could not cancel deletion",
@@ -88,8 +107,9 @@ export function useAccountDeletionGracePrompt(onContinueDeletion: () => void) {
           { cancelable: false },
         );
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         settled = true;
+        reportError(error, { area: "deletion_grace_prompt_load" });
         retryOnNextForeground();
       });
 

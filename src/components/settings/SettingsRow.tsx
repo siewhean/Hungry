@@ -1,5 +1,5 @@
 import { memo, type ReactNode } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 import { ChevronRight, ExternalLink } from "lucide-react-native";
 import { AppText } from "../ui";
 import { selectHaptic } from "@/lib/haptics";
@@ -27,6 +27,9 @@ interface SettingsRowProps {
   editorial?: boolean;
 }
 
+/** Font scale from which row text is no longer cut to a fixed number of lines. */
+export const LARGE_TEXT_FONT_SCALE = 1.3;
+
 export const SettingsRow = memo(function SettingsRow({
   label,
   description,
@@ -44,6 +47,9 @@ export const SettingsRow = memo(function SettingsRow({
   editorial = false,
 }: SettingsRowProps) {
   const { palette, radii, spacing } = useHungryTheme();
+  // At large text sizes labels and values wrap in full instead of being cut off.
+  const { fontScale } = useWindowDimensions();
+  const clampLines = (lines: number) => (fontScale >= LARGE_TEXT_FONT_SCALE ? undefined : lines);
   const isToggle = type === "toggle";
   const isLink = type === "link";
   // Rows without an action only show a value, so they are not buttons.
@@ -93,7 +99,7 @@ export const SettingsRow = memo(function SettingsRow({
           <View style={{ flex: 1, gap: spacing[1] }}>
             <AppText
               variant="bodyLarge"
-              numberOfLines={2}
+              numberOfLines={clampLines(2)}
               style={{ color: destructive ? palette.error : palette.text, fontWeight: "500" }}
             >
               {label}
@@ -137,7 +143,7 @@ export const SettingsRow = memo(function SettingsRow({
           <AppText
             tone="secondary"
             style={[styles.valueText, styles.rightText]}
-            numberOfLines={2}
+            numberOfLines={clampLines(2)}
             ellipsizeMode="tail"
           >
             {value}
@@ -150,7 +156,7 @@ export const SettingsRow = memo(function SettingsRow({
               <AppText
                 tone="secondary"
                 style={[styles.valueText, styles.rightText]}
-                numberOfLines={1}
+                numberOfLines={clampLines(1)}
               >
                 {value}
               </AppText>
@@ -165,7 +171,7 @@ export const SettingsRow = memo(function SettingsRow({
               <AppText
                 tone="secondary"
                 style={[styles.valueText, styles.rightText]}
-                numberOfLines={1}
+                numberOfLines={clampLines(1)}
               >
                 {value}
               </AppText>

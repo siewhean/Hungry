@@ -1,7 +1,7 @@
 import * as Clipboard from "expo-clipboard";
 import Constants from "expo-constants";
 import * as Updates from "expo-updates";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Alert, AppState, Linking, Platform, Share, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -50,6 +50,8 @@ import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { foodOpennessLabel } from "@/constants/taste";
 import { resolveFoodOpenness } from "@/lib/ai/exploration";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { useExperimentVariant } from "@/lib/experiments/experiments";
+import { reportError } from "@/lib/monitoring/reportError";
 import { openTrustedExternalUrl } from "@/lib/security/safeLinking";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { ACCOUNT_DELETION_GRACE_DAYS } from "@/lib/services/types";
@@ -63,6 +65,7 @@ import {
 import { isNoAccountEmailError } from "@/features/auth/accountDeletionErrors";
 import { formatDeletionDate } from "@/features/auth/useAccountDeletionGracePrompt";
 import { useLocationStore } from "@/store/useLocationStore";
+import { useMerchantStore } from "@/store/useMerchantStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useReviewDraftStore } from "@/store/useReviewDraftStore";
 import { useSearchStore } from "@/store/useSearchStore";
@@ -71,6 +74,7 @@ import { ThemePreference, useUIStore } from "@/store/useUIStore";
 import { hungryPersistStorage } from "@/store/persistStorage";
 import { PendingDeletionBanner } from "@/features/auth/PendingDeletionBanner";
 import { useHungryTheme } from "@/theme";
+import { BLOCKED_AND_HIDDEN_TITLE } from "./BlockedAndHiddenScreen";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 import { SUPPORT_EMAIL, WEB_LINKS } from "@/constants/links";
 
@@ -84,6 +88,12 @@ const THEME_LABELS: Record<ThemePreference, string> = {
 function isAuthCodeError(error: unknown): boolean {
   const name = (error as { name?: unknown } | null)?.name;
   return typeof name === "string" && name.startsWith("Auth");
+}
+
+/** The deletion RPC refuses a merchant owner who has not handed the business over. */
+function isOwnerMustTransferError(error: unknown): boolean {
+  const message = (error as { message?: unknown } | null)?.message;
+  return typeof message === "string" && message.includes("merchant_owner_must_transfer");
 }
 
 /** "on 14 November 2026", using the same date format as the grace-period prompt. */
@@ -168,9 +178,13 @@ export function SettingsScreen() {
   );
 
   const isProfilePrivate = profile.profileVisibility === "private";
-  // Profile visibility only matters when social surfaces ship.
-  // Follows and follow requests outlive the archived social feed.
-  const showSocialPrivacySettings = true;
+  // Left-handed mode only moves the merchant menu's add button, so only merchants see it.
+  const hasMerchantAccount = useMerchantStore((state) => state.account !== null);
+  // A/B: Dining preferences folded (control) or open (unfolded). The section is the first
+  // thing on Settings in both arms, so exposure on mount is exposure to the variant.
+  const diningVariant = useExperimentVariant("settings_dining_unfolded_v1", {
+    enabled: isAuthenticated,
+  });
 
   const normalizedThemePreference: ThemePreference =
     themePreference === "system" || themePreference === "light" || themePreference === "dark"
@@ -184,6 +198,11 @@ export function SettingsScreen() {
   const [themeSheetVisible, setThemeSheetVisible] = useState(false);
   const [visibilitySheetVisible, setVisibilitySheetVisible] = useState(false);
   const [canChangePassword, setCanChangePassword] = useState(false);
+  const [deletionPending, setDeletionPending] = useState(false);
+  const handlePendingDeletionChange = useCallback(
+    (pending: boolean) => setDeletionPending(pending),
+    [],
+  );
 
   // Version, native build and the over-the-air update, so support can tell builds apart.
   const buildNumber = Constants.nativeBuildVersion;
@@ -205,7 +224,7 @@ export function SettingsScreen() {
       .then((allowed) => {
         if (isActive) setCanChangePassword(allowed);
       })
-      .catch(() => undefined);
+      .catch((error: unknown) => reportError(error, { area: "settings_can_change_password" }));
     return () => {
       isActive = false;
     };
@@ -268,7 +287,8 @@ export function SettingsScreen() {
             );
           }
         }
-      } catch {
+      } catch (error) {
+        reportError(error, { area: "settings_data_export" });
         trackAnalyticsEvent("settings_data_export_failed", {});
         Alert.alert(
           "Export failed",
@@ -299,7 +319,10 @@ export function SettingsScreen() {
     });
   };
 
-  const handleDeleteAccount = () => setAccountDialog("deleteAccount");
+  const handleDeleteAccount = () => {
+    trackAnalyticsEvent("account_deletion_started", { surface: "settings" });
+    setAccountDialog("deleteAccount");
+  };
 
   // Step 1: email a code (works for Google and Apple accounts too).
   const sendDeletionCode = async () => {
@@ -311,8 +334,11 @@ export function SettingsScreen() {
         return;
       }
       await getHungryService().auth.sendAccountDeletionCode();
+      trackAnalyticsEvent("account_deletion_code_sent", { surface: "settings" });
       setDeletionCodeVisible(true);
     } catch (error) {
+      if (!isNoAccountEmailError(error))
+        reportError(error, { area: "settings_deletion_code_send" });
       setAccountDialog(isNoAccountEmailError(error) ? "noAccountEmail" : "codeSendFailed");
     } finally {
       setDeletionRequested(false);
@@ -334,6 +360,11 @@ export function SettingsScreen() {
     } catch (error) {
       if (isAuthCodeError(error)) throw error;
       setDeletionCodeVisible(false);
+      if (isOwnerMustTransferError(error)) {
+        setAccountDialog("ownerBlocked");
+        return;
+      }
+      reportError(error, { area: "settings_deletion_request" });
       setAccountDialog("deleteFailed");
       return;
     }
@@ -345,7 +376,8 @@ export function SettingsScreen() {
     let purgeFailed = false;
     try {
       await purgePersistedAccountData();
-    } catch {
+    } catch (error) {
+      reportError(error, { area: "settings_deletion_local_purge" });
       purgeFailed = true;
     }
 
@@ -403,7 +435,8 @@ export function SettingsScreen() {
   const openAppSettings = async () => {
     try {
       await Linking.openSettings();
-    } catch {
+    } catch (error) {
+      reportError(error, { area: "settings_open_app_settings" });
       Alert.alert(
         "Open settings",
         "Unable to open system settings from here. You can update permissions from your device settings app.",
@@ -456,7 +489,10 @@ export function SettingsScreen() {
           onPress: () => {
             void resetFoodHistory()
               .then(() => Alert.alert("Food history reset", "Recommendations start fresh."))
-              .catch(() => Alert.alert("Couldn't reset", "Check your connection and try again."));
+              .catch((error: unknown) => {
+                reportError(error, { area: "settings_reset_food_history" });
+                Alert.alert("Couldn't reset", "Check your connection and try again.");
+              });
           },
         },
       ],
@@ -541,12 +577,13 @@ export function SettingsScreen() {
                   routes: [{ name: "AuthStack", params: { screen: "Login" } }],
                 });
               })
-              .catch(() =>
+              .catch((error: unknown) => {
+                reportError(error, { area: "settings_sign_out_everywhere" });
                 Alert.alert(
                   "Couldn't sign out everywhere",
                   "Check your connection and try again. You are still signed in.",
-                ),
-              );
+                );
+              });
           },
         },
       ],
@@ -556,18 +593,32 @@ export function SettingsScreen() {
   const handleCopyVersion = () => {
     void Clipboard.setStringAsync(`Hungry ${appVersion}`)
       .then(() => showToast({ message: "Version copied.", tone: "success" }))
-      .catch(() => undefined);
+      .catch((error: unknown) => reportError(error, { area: "settings_copy_version" }));
   };
+
+  const foodOpenness = foodOpennessLabel(resolveFoodOpenness(profile.tasteProfile));
+  const diningSummary = [
+    profile.dietaryPreferences.length ? `${profile.dietaryPreferences.length} dietary` : null,
+    profile.maxDishBudget ? `up to S$${profile.maxDishBudget}` : null,
+    foodOpenness,
+  ]
+    .filter(Boolean)
+    .join(", ");
 
   return (
     <ProfileScreenShell title="Settings">
+      {/* First, so a pending deletion and Keep my account are the first thing seen. */}
+      {isAuthenticated ? (
+        <PendingDeletionBanner onPendingChange={handlePendingDeletionChange} />
+      ) : null}
       <SettingsSection
+        // Remount when the variant resolves after flags load, so the fold state follows it.
+        key={`dining-${diningVariant}`}
         editorial
         collapsible
+        defaultCollapsed={diningVariant === "control"}
         title="Dining preferences"
-        collapsedSummary={
-          profile.dietaryPreferences.length ? `${profile.dietaryPreferences.length} selected` : ""
-        }
+        collapsedSummary={diningSummary}
       >
         <SettingsRow
           editorial
@@ -621,7 +672,7 @@ export function SettingsScreen() {
           label="Trying new food"
           icon={<Compass size={20} color={palette.orange} />}
           type="navigation"
-          value={foodOpennessLabel(resolveFoodOpenness(profile.tasteProfile))}
+          value={foodOpenness}
           onPress={() =>
             rootNavigation.navigate("OnboardingStack", {
               screen: "FoodOpenness",
@@ -704,7 +755,6 @@ export function SettingsScreen() {
         />
       ) : null}
 
-      {isAuthenticated ? <PendingDeletionBanner /> : null}
       {isAuthenticated ? (
         <>
           <SettingsSection editorial title="Account & sync">
@@ -729,7 +779,7 @@ export function SettingsScreen() {
               onPress={() => navigation.navigate("EditProfile")}
               isLast={false}
             />
-            {canChangePassword && isAuthenticated ? (
+            {canChangePassword ? (
               <SettingsRow
                 editorial
                 label="Change password"
@@ -748,49 +798,31 @@ export function SettingsScreen() {
             />
           </SettingsSection>
         </>
-      ) : (
-        <SettingsSection
-          editorial
-          title="Account"
-          description="You're browsing as a guest. Sign in to save dishes, write reviews and keep your settings."
-        >
-          <SettingsRow
-            editorial
-            label="Sign in or create an account"
-            icon={<User size={20} color={palette.orange} />}
-            onPress={() => rootNavigation.navigate("AuthStack", { screen: "Login" })}
-            isLast
-          />
-        </SettingsSection>
-      )}
+      ) : null}
 
       <SettingsSection editorial title="Data & privacy">
         {isAuthenticated ? (
-          <>
-            {showSocialPrivacySettings ? (
-              <SettingsRow
-                label="Profile visibility"
-                editorial
-                icon={
-                  isProfilePrivate ? (
-                    <Lock size={20} color={palette.orange} />
-                  ) : (
-                    <Eye size={20} color={palette.orange} />
-                  )
-                }
-                type="navigation"
-                value={isSavingVisibility ? "Saving…" : isProfilePrivate ? "Private" : "Public"}
-                onPress={() => setVisibilitySheetVisible(true)}
-                busy={isSavingVisibility}
-                isLast={false}
-              />
-            ) : null}
-          </>
+          <SettingsRow
+            label="Profile visibility"
+            editorial
+            icon={
+              isProfilePrivate ? (
+                <Lock size={20} color={palette.orange} />
+              ) : (
+                <Eye size={20} color={palette.orange} />
+              )
+            }
+            type="navigation"
+            value={isSavingVisibility ? "Saving…" : isProfilePrivate ? "Private" : "Public"}
+            onPress={() => setVisibilitySheetVisible(true)}
+            busy={isSavingVisibility}
+            isLast={false}
+          />
         ) : null}
         {isAuthenticated ? (
           <SettingsRow
             editorial
-            label="Blocked and hidden"
+            label={BLOCKED_AND_HIDDEN_TITLE}
             icon={<UserX size={20} color={palette.orange} />}
             type="navigation"
             onPress={() => rootNavigation.navigate("BlockedAndHidden")}
@@ -859,18 +891,20 @@ export function SettingsScreen() {
           type="toggle"
           isEnabled={hapticFeedbackEnabled}
           onToggle={handleDeviceToggle("haptic_feedback", setHapticFeedbackEnabled)}
-          isLast={false}
+          isLast={!hasMerchantAccount}
         />
-        <SettingsRow
-          editorial
-          label="Left-handed mode"
-          description="Moves floating buttons, like the add-menu button and the like and save buttons on posts, to the left side."
-          icon={<Hand size={20} color={palette.orange} />}
-          type="toggle"
-          isEnabled={leftHandedMode}
-          onToggle={handleDeviceToggle("left_handed_mode", setLeftHandedMode)}
-          isLast
-        />
+        {hasMerchantAccount ? (
+          <SettingsRow
+            editorial
+            label="Left-handed mode"
+            description="Moves the add button on your merchant menu to the left side."
+            icon={<Hand size={20} color={palette.orange} />}
+            type="toggle"
+            isEnabled={leftHandedMode}
+            onToggle={handleDeviceToggle("left_handed_mode", setLeftHandedMode)}
+            isLast
+          />
+        ) : null}
       </SettingsSection>
 
       <SettingsSection editorial title="Support">
@@ -885,6 +919,7 @@ export function SettingsScreen() {
         <SettingsRow
           editorial
           label="Email support"
+          type="link"
           icon={<Mail size={20} color={palette.orange} />}
           onPress={() => void openTrustedExternalUrl(`mailto:${SUPPORT_EMAIL}`)}
           isLast={false}
@@ -914,7 +949,8 @@ export function SettingsScreen() {
           icon={<Info size={20} color={palette.orange} />}
           type="value"
           value={appVersion}
-          description="Press and hold to copy."
+          description="Tap to copy."
+          onPress={handleCopyVersion}
           onLongPress={handleCopyVersion}
           isLast={false}
         />
@@ -941,7 +977,8 @@ export function SettingsScreen() {
         </SettingsSection>
       ) : null}
 
-      {isAuthenticated ? (
+      {/* While a request is pending, Keep my account (top) is the action; no second request. */}
+      {isAuthenticated && !deletionPending ? (
         <View style={{ gap: spacing[3], marginBottom: spacing[4], marginTop: spacing[1] }}>
           <Button
             label="Delete account"
@@ -1039,19 +1076,19 @@ export function SettingsScreen() {
         onClose={() => setThemeSheetVisible(false)}
       />
       <SettingsChoiceSheet
-        visible={isAuthenticated && showSocialPrivacySettings && visibilitySheetVisible}
+        visible={isAuthenticated && visibilitySheetVisible}
         title="Profile visibility"
-        message="Private: only approved followers see your posts, Lists and the reviews on your profile. Your reviews still show on dish pages."
+        message="Private: only approved followers see your Lists and the reviews on your profile. Your reviews still show on dish pages."
         options={[
           {
             value: "public" as const,
             label: "Public",
-            description: "Anyone can see your profile, posts and Lists.",
+            description: "Anyone can see your profile and Lists.",
           },
           {
             value: "private" as const,
             label: "Private",
-            description: "Only approved followers see your posts, Lists and profile reviews.",
+            description: "Only approved followers see your Lists and profile reviews.",
           },
         ]}
         selected={isProfilePrivate ? "private" : "public"}
