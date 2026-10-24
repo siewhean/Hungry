@@ -2,7 +2,16 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import type { VenueSummary } from "@/types/domain";
-import { dedupeNearestVenueCandidates, getVenueChainKey } from "./venueDedupe";
+import { dedupeNearestVenueCandidates, getVenueBrandKey, getVenueChainKey } from "./venueDedupe";
+
+test("the brand key never comes from the name alone (SEARCH-2)", () => {
+  assert.equal(getVenueBrandKey({ id: "v1" }), "id:v1");
+  assert.notEqual(getVenueBrandKey({ id: "v1" }), getVenueBrandKey({ id: "v2" }));
+  assert.equal(
+    getVenueBrandKey({ id: "v1", logoUrl: "https://logo.clearbit.com/yakun.com" }),
+    getVenueBrandKey({ id: "v2", logoUrl: "https://logo.clearbit.com/yakun.com" }),
+  );
+});
 
 function venue(overrides: Partial<VenueSummary> & Pick<VenueSummary, "id" | "name">): VenueSummary {
   return {

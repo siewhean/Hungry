@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { sanitizeCatalogImageUrl, sanitizeCatalogMediaUrl } from "./media";
+import {
+  SERVER_FILTERED_CARD_IMAGE_RPCS,
+  sanitizeCatalogCardImageUrl,
+  sanitizeCatalogImageUrl,
+  sanitizeCatalogMediaUrl,
+} from "./media";
 
 test("catalog image mapping rejects blocked, malformed, and withheld media", () => {
   assert.equal(sanitizeCatalogImageUrl("https://images.unsplash.com/photo-1"), undefined);
@@ -48,5 +53,31 @@ test("catalog image mapping retains a valid allowed image", () => {
   assert.equal(
     sanitizeCatalogImageUrl("http://cdn.example.com/stall.jpg"),
     "http://cdn.example.com/stall.jpg",
+  );
+});
+
+test("card images: only the server-filtered RPCs are trusted without a display flag", () => {
+  const url = "https://cdn.example.com/dish.jpg";
+  for (const rpc of SERVER_FILTERED_CARD_IMAGE_RPCS) {
+    assert.equal(sanitizeCatalogCardImageUrl(url, rpc, { rightsStatus: "unverified" }), url, rpc);
+    assert.equal(
+      sanitizeCatalogCardImageUrl(url, rpc, { approvedForDisplay: false }),
+      undefined,
+      `${rpc}: an explicit false still hides`,
+    );
+    assert.equal(
+      sanitizeCatalogCardImageUrl(url, rpc, { rightsStatus: "rejected" }),
+      undefined,
+      `${rpc}: a withheld rights status still hides`,
+    );
+  }
+  // Any other source (a new RPC, the gallery table, a fallback) keeps the strict rule.
+  assert.equal(sanitizeCatalogCardImageUrl(url, "catalog_raw_map_view", {}), undefined);
+  assert.equal(
+    sanitizeCatalogCardImageUrl(url, "catalog_raw_map_view", {
+      rightsStatus: "merchant_owned",
+      approvedForDisplay: true,
+    }),
+    url,
   );
 });

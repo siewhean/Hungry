@@ -28,6 +28,16 @@ function getLogoDomain(logoUrl?: string) {
   }
 }
 
+/**
+ * A brand key that is never derived from the name: the shared logo file when there is one,
+ * otherwise the venue's own id. Generic hawker names ("Chicken Rice", "Drinks Stall") belong to
+ * unrelated stalls, so a name match alone must not merge two venues.
+ */
+export function getVenueBrandKey(venue: Pick<VenueSummary, "id" | "logoUrl">) {
+  const logoDomain = getLogoDomain(venue.logoUrl);
+  return logoDomain ? `logo:${logoDomain}` : `id:${venue.id}`;
+}
+
 export function getVenueChainKey(venue: VenueSummary) {
   const logoDomain = getLogoDomain(venue.logoUrl);
   if (logoDomain) return `logo:${logoDomain}`;

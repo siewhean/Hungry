@@ -20,8 +20,7 @@ import {
   type CatalogSort,
 } from "@/lib/services/catalog";
 import { sanitizeSearchQuery } from "@/lib/security/inputSanitization";
-import { getVenueChainKey } from "@/features/search/venueDedupe";
-import type { VenueSummary } from "@/types/domain";
+import { getVenueBrandKey } from "@/features/search/venueDedupe";
 
 export type BrowseMode = "dishes" | "stalls";
 export {
@@ -111,16 +110,18 @@ export type BrowseItem = CatalogRawDishCard | CatalogRawVenueCard;
 export type StallRow = CatalogRawVenueCard & { extraOutlets: number };
 
 /**
- * Chain outlets and duplicate records of the same stall show as one card, like Discover:
- * the first (best-ranked) card is kept, and `extraOutlets` counts the other buildings the
- * brand appears in. Cards in the same building with the same brand are duplicate records
- * and are folded in without counting as outlets.
+ * Cards merge only on a real brand signal, never on the name: the same venue id (a row repeated
+ * across pages) or, once venue cards carry one, a shared logo file. The first (best-ranked) card
+ * is kept, and `extraOutlets` counts the other buildings the brand appears in. Raw venue cards
+ * carry no logo today, so every distinct stall keeps its own card.
  */
-export function mergeStallOutlets(stalls: readonly CatalogRawVenueCard[]): StallRow[] {
+export function mergeStallOutlets(
+  stalls: readonly (CatalogRawVenueCard & { logoUrl?: string })[],
+): StallRow[] {
   const groups = new Map<string, { row: StallRow; buildings: Set<string> }>();
   const order: string[] = [];
   for (const stall of stalls) {
-    const key = getVenueChainKey({ id: stall.id, name: stall.name } as VenueSummary);
+    const key = getVenueBrandKey({ id: stall.id, logoUrl: stall.logoUrl });
     const group = groups.get(key);
     if (!group) {
       groups.set(key, {

@@ -151,22 +151,41 @@ test("the search sanitiser keeps real words and only drops markup (search-L1)", 
   assert.equal(sanitizeSearchQuery("a".repeat(300), 80).length, 80);
 });
 
-test("chain outlets and duplicate records merge into one stall card (search-M7)", () => {
+test("same-name stalls in other buildings stay separate cards (SEARCH-2)", () => {
   const merged = mergeStallOutlets([
-    stall("1", "Ya Kun Kaya Toast (Bugis)", "b1"),
-    stall("2", "Ah Seng Laksa", "b1"),
-    stall("3", "Ya Kun Kaya Toast (Raffles)", "b2"),
-    stall("4", "Ya Kun Kaya Toast - Orchard", "b3"),
-    stall("5", "Ah Seng Laksa", "b1"),
-    stall("6", "Ah Seng Laksa", "b9"),
+    stall("v1", "Chicken Rice", "maxwell"),
+    stall("v2", "Chicken Rice", "tiong-bahru"),
+    stall("v3", "Drinks Stall", "maxwell"),
+    stall("v4", "Drinks Stall", "maxwell"),
+    stall("v5", "Chicken Rice (Halal)", "amoy"),
   ]);
   assert.deepEqual(
     merged.map((row) => [row.id, row.extraOutlets]),
     [
-      ["1", 2],
-      ["2", 1],
+      ["v1", 0],
+      ["v2", 0],
+      ["v3", 0],
+      ["v4", 0],
+      ["v5", 0],
     ],
-    "the best-ranked card stays; the same building twice is a duplicate, not an outlet",
+  );
+});
+
+test("a row repeated across pages merges into one card; a shared logo counts outlets (SEARCH-2)", () => {
+  assert.deepEqual(
+    mergeStallOutlets([stall("v1", "Ya Kun", "b1"), stall("v1", "Ya Kun", "b1")]).map((row) => [
+      row.id,
+      row.extraOutlets,
+    ]),
+    [["v1", 0]],
+  );
+  const logo = "https://project.supabase.co/storage/v1/object/public/logos/ya-kun.png";
+  assert.deepEqual(
+    mergeStallOutlets([
+      { ...stall("v1", "Ya Kun (Bugis)", "b1"), logoUrl: logo },
+      { ...stall("v2", "Ya Kun Raffles", "b2"), logoUrl: logo },
+    ]).map((row) => [row.id, row.extraOutlets]),
+    [["v1", 1]],
   );
 });
 
@@ -181,9 +200,8 @@ test("dish cards read out stall, hawker centre, price, rating and distance (sear
   assert.equal(ratingPillText(4.5, 120), "4.5 (120)");
   assert.equal(ratingPillText(0, 0), undefined, "no rating, no pill");
   assert.equal(ratingPillText(4, 0), undefined, "a rating without reviews is not shown");
-  const merged = mergeStallOutlets([stall("1", "Ya Kun", "b1"), stall("2", "Ya Kun", "b2")]);
   assert.equal(
-    cardAccessibilityLabel("stalls", merged[0]),
+    cardAccessibilityLabel("stalls", { ...stall("1", "Ya Kun", "b1"), extraOutlets: 1 }),
     "Ya Kun, Building b1, 3 dishes, 1 more outlet",
   );
 });
