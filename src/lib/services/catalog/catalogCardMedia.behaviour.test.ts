@@ -128,6 +128,9 @@ test("catalog_raw_venues_page rows keep the stall photo and the representative d
   const result = await service.listVenues({ query: "laksa" });
   assert.equal(result.items[0]?.imageUrl, STALL_PHOTO);
   assert.equal(result.items[0]?.representativeDish?.imageUrl, DISH_PHOTO);
+  // SEARCH-10: the quality columns are in the payload and reach the card.
+  assert.equal(result.items[0]?.qualityRating, 4.4);
+  assert.equal(result.items[0]?.qualityReviewCount, 30);
 });
 
 test("catalog_raw_venue_menu_page rows (the stall menu) keep their photo", async () => {
@@ -172,6 +175,22 @@ test("catalog_raw_venue_detail keeps the stall hero photo", async () => {
   const detail = await service.getVenue("venue-1");
   assert.equal(detail.imageUrl, STALL_PHOTO);
   assert.equal(detail.representativeDish?.imageUrl, DISH_PHOTO);
+});
+
+test("an expired or mismatched cursor release is its own error class (SEARCH-20)", async () => {
+  const { CatalogReleaseExpiredError } = await import("./index");
+  for (const error of [
+    { code: "P0001", message: "catalog release unavailable" },
+    { code: "22023", message: "catalog cursor release mismatch" },
+  ]) {
+    service.clearCache();
+    fake.rpc.catalog_raw_dishes_page = () => ({ data: null, error });
+    await assert.rejects(
+      service.listDishes({ query: "laksa", cursor: "next", releaseId: RELEASE }),
+      (thrown: unknown) => thrown instanceof CatalogReleaseExpiredError,
+      error.code,
+    );
+  }
 });
 
 test("server-filtered rows still drop blocked, malformed and explicitly withheld photos", async () => {

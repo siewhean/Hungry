@@ -10,13 +10,16 @@ import {
   cardAccessibilityLabel,
   cardSubtitle,
   describeMatchCount,
+  describeResultsSummary,
   effectiveSort,
+  effectiveSortLabel,
   isTooShortQuery,
   mergeStallOutlets,
   normalizeQuery,
   parseFilterIds,
   ratingPillText,
   toggleFilterId,
+  type StallRow,
 } from "./browseGrid";
 
 const coordinate = { latitude: 1.28, longitude: 103.85 };
@@ -33,6 +36,8 @@ function stall(id: string, name: string, buildingId: string): CatalogRawVenueCar
     mediaRightsStatus: "unverified",
   };
 }
+
+const stallRow = (row: StallRow) => row;
 
 function dish(overrides: Partial<CatalogRawDishCard> = {}): CatalogRawDishCard {
   return {
@@ -201,8 +206,21 @@ test("dish cards read out stall, hawker centre, price, rating and distance (sear
   assert.equal(ratingPillText(0, 0), undefined, "no rating, no pill");
   assert.equal(ratingPillText(4, 0), undefined, "a rating without reviews is not shown");
   assert.equal(
-    cardAccessibilityLabel("stalls", { ...stall("1", "Ya Kun", "b1"), extraOutlets: 1 }),
+    cardAccessibilityLabel("stalls", stallRow({ ...stall("1", "Ya Kun", "b1"), extraOutlets: 1 })),
     "Ya Kun, Building b1, 3 dishes, 1 more outlet",
+  );
+  // SEARCH-10: a stall with a rated top dish reads it out.
+  assert.equal(
+    cardAccessibilityLabel(
+      "stalls",
+      stallRow({
+        ...stall("1", "Ya Kun", "b1"),
+        qualityRating: 4.4,
+        qualityReviewCount: 30,
+        extraOutlets: 0,
+      }),
+    ),
+    "Ya Kun, Building b1, top dish 4.4 from 30 reviews, 3 dishes",
   );
 });
 
@@ -211,4 +229,37 @@ test("the result count line is capped at 100 (search-M3)", () => {
   assert.equal(describeMatchCount(1, "stalls"), "1 stall");
   assert.equal(describeMatchCount(24, "dishes"), "24 dishes");
   assert.equal(describeMatchCount(100, "stalls"), "100+ stalls");
+});
+
+test("the sort control names the order the results are really in (SEARCH-X8)", () => {
+  assert.equal(effectiveSortLabel("relevance", true), "Best match");
+  assert.equal(effectiveSortLabel("relevance", false), "Nearest");
+  assert.equal(effectiveSortLabel("relevance", false, true), "Top rated");
+  assert.equal(effectiveSortLabel("price", false), "Price: low to high");
+});
+
+test("the summary names the place instead of a radius (SEARCH-X2, SEARCH-12)", () => {
+  const base = { count: 24, mode: "stalls" as const, hasQuery: false, widened: false };
+  assert.equal(describeResultsSummary(base), "24 stalls within 3 km");
+  assert.equal(describeResultsSummary({ ...base, widened: true }), "24 stalls in Singapore");
+  assert.equal(
+    describeResultsSummary({ ...base, placeName: "Maxwell Food Centre" }),
+    "24 stalls at Maxwell Food Centre",
+  );
+  assert.equal(describeResultsSummary({ ...base, hasQuery: true }), "24 stalls");
+});
+
+test("a share link keeps the place and the sort (SEARCH-5)", () => {
+  const url = new URL(
+    buildSearchShareUrl({
+      query: "",
+      filters: [],
+      mode: "stalls",
+      place: { id: "maxwell", name: "Maxwell Food Centre" },
+      sort: "quality",
+    }),
+  );
+  assert.equal(url.searchParams.get("place"), "maxwell");
+  assert.equal(url.searchParams.get("placeName"), "Maxwell Food Centre");
+  assert.equal(url.searchParams.get("sort"), "quality");
 });

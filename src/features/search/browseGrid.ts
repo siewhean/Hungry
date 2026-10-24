@@ -53,6 +53,18 @@ export const BROWSE_SORT_OPTIONS: readonly { id: BrowseSortId; label: string }[]
   { id: "price", label: "Price: low to high" },
 ];
 
+/** The label of the order the results are really in ("Best match" without text is "Nearest"). */
+export function effectiveSortLabel(sort: BrowseSortId, hasQuery: boolean, inPlace = false): string {
+  const effective = effectiveSort(sort, hasQuery, inPlace);
+  return BROWSE_SORT_OPTIONS.find((option) => option.id === effective)?.label ?? "Sort";
+}
+
+/**
+ * Share links stay off until https://usehungry.com/search exists and /search is registered for
+ * universal and app links (SEARCH-5 follow-up); until then a shared link would 404.
+ */
+export const SEARCH_SHARE_LINKS_LIVE: boolean = false;
+
 /** Without typed text there is nothing to match, so "Best match" falls back to nearest. */
 export function effectiveSort(sort: BrowseSortId, hasQuery: boolean, inPlace = false): CatalogSort {
   if (sort === "relevance" && !hasQuery) return inPlace ? "quality" : "nearby";
@@ -166,9 +178,11 @@ export function cardAccessibilityLabel(mode: BrowseMode, item: BrowseItem): stri
       .join(", ");
   }
   const stall = item as StallRow;
+  const topDishRating = ratingLabel(stall.qualityRating, stall.qualityReviewCount);
   return [
     stall.name,
     stall.buildingName,
+    topDishRating ? `top dish ${topDishRating}` : undefined,
     stall.menuCount > 0
       ? `${stall.menuCount} ${stall.menuCount === 1 ? "dish" : "dishes"}`
       : undefined,
@@ -197,6 +211,23 @@ export function ratingPillText(rating?: number, reviewCount?: number): string | 
   return `${rating.toFixed(1)} (${reviewCount})`;
 }
 
+/**
+ * The line above the grid: "12 dishes within 3 km", "24 stalls at Maxwell Food Centre",
+ * "5 dishes in Singapore", or just the count for typed text.
+ */
+export function describeResultsSummary(input: {
+  count: number;
+  mode: BrowseMode;
+  hasQuery: boolean;
+  placeName?: string;
+  widened: boolean;
+}): string {
+  const count = describeMatchCount(input.count, input.mode);
+  if (input.placeName !== undefined) return `${count} at ${input.placeName}`;
+  if (input.hasQuery) return count;
+  return `${count}${input.widened ? " in Singapore" : " within 3 km"}`;
+}
+
 /** "12 dishes", "1 stall", "100+ dishes"; the server caps the count at 100. */
 export function describeMatchCount(count: number, mode: BrowseMode): string {
   const [one, many] = mode === "dishes" ? ["dish", "dishes"] : ["stall", "stalls"];
@@ -205,15 +236,22 @@ export function describeMatchCount(count: number, mode: BrowseMode): string {
   return count === 1 ? `1 ${one}` : `${count} ${many}`;
 }
 
-/** A shareable link to this search: https://usehungry.com/search?q=&filter=&mode= */
+/** A shareable link to this search: https://usehungry.com/search?q=&filter=&mode=&place=&sort= */
 export function buildSearchShareUrl(input: {
   query: string;
   filters: readonly BrowseFilterId[];
   mode: BrowseMode;
+  place?: { id: string; name: string };
+  sort?: BrowseSortId;
 }): string {
   const params = new URLSearchParams();
   if (input.query) params.set("q", input.query);
   if (input.filters.length) params.set("filter", input.filters.join(","));
   params.set("mode", input.mode);
+  if (input.place) {
+    params.set("place", input.place.id);
+    params.set("placeName", input.place.name);
+  }
+  if (input.sort && input.sort !== "relevance") params.set("sort", input.sort);
   return `${WEB_BASE_URL}/search?${params.toString()}`;
 }

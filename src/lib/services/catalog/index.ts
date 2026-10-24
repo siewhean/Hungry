@@ -16,7 +16,11 @@ export type CatalogErrorKind =
   | "contract"
   | "network"
   | "rpc"
+  | "release_expired"
   | "unavailable";
+
+/** Pages served from the bundled offline copy (the Excel fallback) carry this release id. */
+export const CATALOG_OFFLINE_RELEASE_ID = "excel-fallback-v1";
 
 /** Typed text shorter than this is not searched (the RPCs return an empty page); longer is cut. */
 export const CATALOG_QUERY_MIN_CHARS = 2;
@@ -109,6 +113,9 @@ export interface CatalogRawVenueCard {
   distanceMeters?: number;
   isOpen?: boolean;
   menuCount: number;
+  /** The stall's best displayable dish: its rating and review count (quality_rating columns). */
+  qualityRating?: number;
+  qualityReviewCount?: number;
   representativeDish?: Pick<
     CatalogRawDishCard,
     "id" | "name" | "imageUrl" | "price" | "verificationStatus"
@@ -279,6 +286,17 @@ export class CatalogContractError extends CatalogAccessError {
   }
 }
 
+/**
+ * The release a cursor was pinned to has expired (or the cursor belongs to another release).
+ * The list must start again from page 1 on the active release; retrying the cursor never works.
+ */
+export class CatalogReleaseExpiredError extends CatalogAccessError {
+  constructor(message = "The catalog was updated. Reloading the latest results.", cause?: unknown) {
+    super(message, { kind: "release_expired", fallbackEligible: false, cause });
+    this.name = "CatalogReleaseExpiredError";
+  }
+}
+
 export class CatalogNetworkError extends CatalogAccessError {
   constructor(message = "The online catalog could not be reached.", cause?: unknown) {
     super(message, { kind: "network", fallbackEligible: true, cause });
@@ -385,6 +403,16 @@ function looksLikeAuthorizationFailure(value: unknown): boolean {
   );
 }
 
+function looksLikeExpiredRelease(value: unknown): boolean {
+  const code = errorCode(value);
+  const message = errorMessage(value).toLowerCase();
+  return (
+    code === "22023" ||
+    message.includes("catalog release unavailable") ||
+    message.includes("catalog cursor release mismatch")
+  );
+}
+
 function looksLikeConfigurationFailure(value: unknown): boolean {
   const message = errorMessage(value).toLowerCase();
   return message.includes("not configured") || message.includes("missing configuration");
@@ -422,6 +450,7 @@ export function classifyCatalogAccessError(value: unknown, context: "session" | 
   if (looksLikeInvalidSession(value)) return new CatalogSessionInvalidError(message, value);
   if (looksLikeAuthorizationFailure(value)) return new CatalogAuthorizationError(message, value);
   if (looksLikeNetworkFailure(value)) return new CatalogNetworkError(message, value);
+  if (looksLikeExpiredRelease(value)) return new CatalogReleaseExpiredError(undefined, value);
   if (looksLikeContractFailure(value)) return new CatalogContractError(message, value);
 
   // getSession may return an unrecognised failure object. Treating that as an
@@ -522,6 +551,8 @@ function mapVenueCard(value: unknown, sourceRpc: ServerFilteredCardImageRpc): Ca
     distanceMeters: asNumber(row.distance_meters),
     isOpen: asBoolean(row.is_open),
     menuCount: asNumber(row.menu_count) ?? 0,
+    qualityRating: asNumber(row.quality_rating),
+    qualityReviewCount: asNumber(row.quality_review_count),
     representativeDish: asString(representative.id)
       ? {
           id: asString(representative.id) ?? "",
