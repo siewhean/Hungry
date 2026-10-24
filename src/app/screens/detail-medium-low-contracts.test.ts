@@ -62,7 +62,7 @@ test("detail-M8: stall and dish heroes are swipeable photo pagers with a full-sc
 
   assert.match(pager, /pagingEnabled/);
   assert.match(pager, /<Modal/);
-  assert.match(pager, /\{shownIndex \+ 1\} \/ \{count\}/);
+  assert.match(pager, /\{index \+ 1\} \/ \{count\}/);
   assert.match(stall, /<PhotoPager/);
   assert.match(dish, /<PhotoPager/);
   // DISH-18: the dish hero holds the dish's own photos; review photos have their own rail.
