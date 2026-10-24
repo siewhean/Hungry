@@ -51,7 +51,7 @@ test("taste quiz asks for a usual budget and saves it with dietary preferences",
   const quiz = read("src/app/screens/onboarding/TasteQuizScreen.tsx");
 
   assert.match(quiz, /Usual budget per dish/);
-  assert.match(quiz, /setMaxDishBudget\(maxDishBudget(, \{ surface: flowMode \})?\)/);
+  assert.match(quiz, /setMaxDishBudget\(maxDishBudget(, \{ surface(: flowMode)? \})?\)/);
 });
 
 test("setMaxDishBudget stores the budget locally and logs it", () => {

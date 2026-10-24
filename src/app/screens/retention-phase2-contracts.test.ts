@@ -155,5 +155,5 @@ test("merchant low-rating push: reviews trigger enqueues, worker rechecks, setti
   assert.match(worker, /!isLowRating && isQuietHour\(/);
 
   const push = read("src/lib/notifications/push.ts");
-  assert.match(push, /if \(!existing\.granted && !askPermission\) return false;/);
+  assert.match(push, /resolveNotificationPermission\(\{\s*askPermission,/);
 });

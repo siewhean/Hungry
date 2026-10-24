@@ -114,7 +114,7 @@ test("plain sign-out only ends this device; global is explicit (M4)", () => {
   // The session store calls signOut() with no scope, which is local.
   assert.match(
     read("src/store/useSessionStore.ts"),
-    /\.then\(\(\) => service\.auth\.signOut\(\)\)/,
+    /\.then\(async \(\) => \{[\s\S]*?await service\.auth\.signOut\(\);/,
   );
   assert.match(
     read("src/lib/services/types.ts"),
