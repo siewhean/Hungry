@@ -385,11 +385,12 @@ test("signOut ends only this device by default and clears locally when the serve
     "no silent local fallback for global",
   );
   auth.calls.length = 0;
-  await rejectsWith(service.auth.signOut(), /offline/); // local still failing is reported
-  assert.equal(
-    auth.calls.filter((call) => call.method === "signOut").length,
-    2,
-    "local tried the server revoke, then locally",
+  // AUTH-10: a failed local revoke removes the stored session directly instead of a
+  // second signOut, which went back to the server and failed the same way.
+  await service.auth.signOut();
+  assert.deepEqual(
+    auth.calls.map((call) => call.method),
+    ["signOut", "_removeSession"],
   );
 });
 
@@ -421,4 +422,12 @@ test("adjustCommunityTasteVector saves numeric axes through submit_dish_taste_ra
   fake.rpc.submit_dish_taste_rating = () => ({ error: { message: "rate limited" } });
   await rejectsWith(service.ai.adjustCommunityTasteVector("dish-1", { sour: 5 }), /rate limited/);
   assert.equal(fake.callsTo("submit_dish_taste_rating")[0].args.p_review_id, null);
+});
+
+test("an offline sign-out still clears the stored session on this device (AUTH-10)", async () => {
+  auth.failures.signOut = { message: "Network request failed" };
+  await service.auth.signOut();
+  const methods = auth.calls.map((call) => call.method);
+  // One server attempt only: a second signOut would hit the server and fail the same way.
+  assert.deepEqual(methods, ["signOut", "_removeSession"]);
 });

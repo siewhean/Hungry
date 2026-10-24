@@ -151,6 +151,18 @@ export const EXPERIMENTS = {
     primaryMetric: "dietary_preferences_set",
     guardrailMetrics: ["budget_preference_set", "decide_for_me_triggered", "sign_out"],
   },
+  /**
+  /** New-password field on SignUp: masked (control) or shown as typed, with Hide. */
+  auth_signup_password_visible_v1: {
+    variants: ["control", "visible_password"],
+    fallback: "control",
+    status: "running",
+    surface: "auth",
+    hypothesis:
+      "Showing the new password as it is typed (with a Hide button) cuts typos and weak-password retries on Create account, so more people who open SignUp finish signing up.",
+    primaryMetric: "sign_up_completed",
+    guardrailMetrics: ["sign_up_submitted", "auth_failed", "password_reset_requested"],
+  },
 } as const satisfies Record<string, ExperimentDefinition>;
 
 export type ExperimentKey = keyof typeof EXPERIMENTS;

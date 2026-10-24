@@ -1,9 +1,5 @@
 {
   "screens": [
-    "src/app/screens/auth/EmailChangeScreen.tsx",
-    "src/app/screens/auth/EmailVerificationScreen.tsx",
-    "src/app/screens/auth/ForgotPasswordScreen.tsx",
-    "src/app/screens/auth/ResetPasswordScreen.tsx",
     "src/app/screens/checklist/ChecklistDetailScreen.tsx",
     "src/app/screens/checklist/ChecklistItemPickerScreen.tsx",
     "src/app/screens/checklist/ChecklistsHomeScreen.tsx",

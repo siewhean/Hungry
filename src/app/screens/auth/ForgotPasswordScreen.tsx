@@ -12,10 +12,15 @@ import {
   trackAuthScreenViewed,
   trackPasswordResetRequested,
 } from "@/features/auth/authAnalytics";
-import { getAuthErrorKind, getAuthFailureMessage } from "@/features/auth/authErrors";
+import {
+  getAuthErrorKind,
+  getAuthFailureMessage,
+  isUnexpectedAuthError,
+} from "@/features/auth/authErrors";
 import { EmailCodeField } from "@/features/auth/EmailCodeField";
 import { formatCooldown, useResendCooldown } from "@/features/auth/useResendCooldown";
 import { validateEmail } from "@/features/auth/validation";
+import { reportError } from "@/lib/monitoring/reportError";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { getConfiguredDataSource } from "@/lib/services/supabase/client";
 import { useHungryTheme } from "@/theme";
@@ -26,7 +31,7 @@ import { AUTH_COPY } from "./authCopy";
 type Props = NativeStackScreenProps<AuthStackParamList, "ForgotPassword">;
 type FormValues = { email: string };
 
-export function ForgotPasswordScreen({ navigation }: Props) {
+export function ForgotPasswordScreen({ navigation, route }: Props) {
   const { palette, radii, spacing } = useHungryTheme();
   const showToast = useUIStore((state) => state.showToast);
   const setPasswordRecoveryInProgress = useSessionStore(
@@ -41,11 +46,22 @@ export function ForgotPasswordScreen({ navigation }: Props) {
     control,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<FormValues>({ defaultValues: { email: "" } });
+  } = useForm<FormValues>({ defaultValues: { email: route.params?.email ?? "" } });
+  // A signed-in user ("Forgot current password?") stays signed in and returns to Settings.
+  // The hold keeps RootNavigator from sending them Home while this screen is open (a wrong
+  // code would otherwise release it and trigger that redirect).
+  const fromSignedIn = route.params?.fromSignedIn === true;
+  const backLabel = fromSignedIn ? "Back" : AUTH_COPY.forgotPassword.backToLogin;
 
   useEffect(() => {
     trackAuthScreenViewed("forgot_password");
   }, []);
+
+  useEffect(() => {
+    if (!fromSignedIn) return;
+    setPasswordRecoveryInProgress(true);
+    return () => setPasswordRecoveryInProgress(false);
+  }, [fromSignedIn, setPasswordRecoveryInProgress]);
 
   // The emailed code works when the link was opened on another device. Verifying
   // signs the user in, so hold RootNavigator's redirect until the password is saved.
@@ -55,11 +71,16 @@ export function ForgotPasswordScreen({ navigation }: Props) {
     try {
       await getHungryService().auth.verifyEmailCode(sentTo, code, "recovery");
     } catch (error) {
-      setPasswordRecoveryInProgress(false);
+      if (!fromSignedIn) setPasswordRecoveryInProgress(false);
       trackAuthFailed("password_reset", "email", error);
+      if (isUnexpectedAuthError(error)) reportError(error, { flow: "password_reset_code" });
       throw error;
     }
-    navigation.navigate("ResetPassword", { email: sentTo, recoveryVerified: true });
+    navigation.navigate("ResetPassword", {
+      email: sentTo,
+      recoveryVerified: true,
+      ...(fromSignedIn ? { fromSignedIn: true } : {}),
+    });
   };
 
   const handleSend = handleSubmit(async ({ email }) => {
@@ -72,6 +93,7 @@ export function ForgotPasswordScreen({ navigation }: Props) {
       restartResendCooldown();
     } catch (error) {
       trackAuthFailed("password_reset", "email", error);
+      if (isUnexpectedAuthError(error)) reportError(error, { flow: "password_reset_request" });
       // A 429 means an email went out within the last minute: wait it out, don't retry.
       if (getAuthErrorKind(error) === "rate_limited") restartResendCooldown();
       showToast({
@@ -94,8 +116,10 @@ export function ForgotPasswordScreen({ navigation }: Props) {
           <Pressable
             accessible
             accessibilityRole="button"
-            accessibilityLabel={AUTH_COPY.forgotPassword.backToLogin}
-            accessibilityHint="Returns to the sign in screen"
+            accessibilityLabel={backLabel}
+            accessibilityHint={
+              fromSignedIn ? "Returns to the previous screen" : "Returns to the sign in screen"
+            }
             onPress={() => {
               if (navigation.canGoBack()) {
                 navigation.goBack();
@@ -113,7 +137,7 @@ export function ForgotPasswordScreen({ navigation }: Props) {
           >
             <ArrowLeft color={palette.text} size={14} />
             <AppText tone="accent" style={{ fontWeight: "700" }}>
-              {AUTH_COPY.forgotPassword.backToLogin}
+              {backLabel}
             </AppText>
           </Pressable>
         }

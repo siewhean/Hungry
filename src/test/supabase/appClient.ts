@@ -56,6 +56,10 @@ export function installFakeSupabase() {
       })),
       signInWithOtp: record("signInWithOtp", () => ({ data: {}, error: null })),
       signOut: record("signOut", () => ({ error: null })),
+      // supabase-js internal that clears the stored session (used after an offline sign-out).
+      _removeSession: async () => {
+        auth.calls.push({ method: "_removeSession", args: [] });
+      },
       onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }),
     },
   };

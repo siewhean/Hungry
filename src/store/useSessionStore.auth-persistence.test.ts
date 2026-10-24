@@ -357,7 +357,9 @@ test("sign-out clears the stored Supabase session before any restore", () => {
   const service = read("src/lib/services/supabase/supabaseService.ts");
   assert.match(
     service,
-    /async signOut\(options\) \{[\s\S]*?if \(!error\) return;[\s\S]*?const \{ error: localError \} = await client\.auth\.signOut\(\{ scope: "local" \}\);/,
+    // AUTH-10: a failed local revoke removes the stored session itself (a second signOut
+    // would call the server again and fail the same way offline).
+    /async signOut\(options\) \{[\s\S]*?if \(!error\) return;[\s\S]*?\._removeSession\(\);/,
   );
   const store = read("src/store/useSessionStore.ts");
   assert.match(store, /signOutPending: state\.signOutPending/);

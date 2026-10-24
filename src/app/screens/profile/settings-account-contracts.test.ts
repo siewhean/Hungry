@@ -47,7 +47,10 @@ test("Settings location rows respect the OS permission and return from the picke
     "settings mode must go back before the onboarding path continues to the quiz",
   );
   assert.match(submit, /if \(!isOnboarding\)/);
-  assert.match(picker, /const isOnboarding = !isSettingsMode && !hasCompletedOnboarding;/);
+  assert.match(
+    picker,
+    /const isOnboarding =\s+route\.params\?\.mode === "onboarding" \|\| \(!isSettingsMode && !hasCompletedOnboarding\);/,
+  );
 });
 
 test("Email edits go through the auth email-change flow, not the profile column", () => {

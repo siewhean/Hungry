@@ -1,15 +1,19 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { View } from "react-native";
 
 import { AppText, Button, Input } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { getAuthFailureMessage } from "./authErrors";
+import { RESEND_COOLDOWN_SECONDS, useResendCooldown } from "./useResendCooldown";
 
 /** Supabase auth.email.otp_length (supabase/config.toml). */
 export const EMAIL_CODE_LENGTH = 8;
 
-/** Supabase auth.email.max_frequency (supabase/config.toml): one code email per minute. */
-export const EMAIL_CODE_RESEND_SECONDS = 60;
+/**
+ * Supabase auth.email.max_frequency (supabase/config.toml) is one code email per minute; the
+ * shared cooldown adds a few seconds of margin, so every auth screen waits the same time.
+ */
+export const EMAIL_CODE_RESEND_SECONDS = RESEND_COOLDOWN_SECONDS;
 
 export function normalizeEmailCode(value: string): string {
   return value.replace(/\D/g, "").slice(0, EMAIL_CODE_LENGTH);
@@ -43,19 +47,14 @@ export function EmailCodeField({
   const { spacing } = useHungryTheme();
   const [code, setCode] = useState("");
   // The code was just sent when the field opens, so the first resend waits too.
-  const [cooldown, setCooldown] = useState(EMAIL_CODE_RESEND_SECONDS);
+  // It runs from an end time, so a backgrounded app cannot end the wait early or late.
+  const { seconds: cooldown, restart: restartCooldown } = useResendCooldown(true);
   const [isResending, setIsResending] = useState(false);
   const [resendState, setResendState] = useState<"idle" | "sent" | "failed">("idle");
   const [isSubmitting, setIsSubmitting] = useState(false);
   // The message to show; a dropped connection or rate limit is not "wrong code".
   const [failure, setFailure] = useState<string | null>(null);
   const isComplete = code.length === EMAIL_CODE_LENGTH;
-
-  useEffect(() => {
-    if (cooldown <= 0) return;
-    const timer = setTimeout(() => setCooldown((seconds) => seconds - 1), 1000);
-    return () => clearTimeout(timer);
-  }, [cooldown]);
 
   const resend = async () => {
     if (!onResend || cooldown > 0 || isResending) return;
@@ -66,7 +65,7 @@ export function EmailCodeField({
       setCode("");
       setFailure(null);
       setResendState("sent");
-      setCooldown(EMAIL_CODE_RESEND_SECONDS);
+      restartCooldown();
     } catch {
       setResendState("failed");
     } finally {

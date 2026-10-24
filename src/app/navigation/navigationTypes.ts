@@ -20,10 +20,16 @@ export type AuthStackParamList = {
       }
     | undefined;
   /** The link a signed-in user opens to confirm a new sign-in email (hungry://auth/email-change). */
-  EmailChange: { code?: string } | undefined;
-  ForgotPassword: undefined;
+  /** otherLinkPending: the first of two double-confirmation links was accepted. */
+  EmailChange: { code?: string; otherLinkPending?: boolean } | undefined;
+  /**
+   * fromSignedIn: opened by a signed-in user ("Forgot current password?" on ChangePassword),
+   * who stays signed in and returns there; email fills the field.
+   */
+  ForgotPassword: { email?: string; fromSignedIn?: boolean } | undefined;
   /**
    * recoveryVerified: the emailed code was already verified (ForgotPassword).
+   * fromSignedIn: the user was signed in before the reset, so leaving does not sign out.
    * error / linkError: the reset link came back with an error (expired, already used).
    */
   ResetPassword:
@@ -32,6 +38,7 @@ export type AuthStackParamList = {
         code?: string;
         error?: "expired" | "invalid";
         recoveryVerified?: boolean;
+        fromSignedIn?: boolean;
         linkError?: "expired" | "invalid";
       }
     | undefined;

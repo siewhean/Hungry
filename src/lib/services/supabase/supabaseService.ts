@@ -3635,10 +3635,11 @@ export const supabaseService: HungryService = {
       const { error } = await client.auth.signOut({ scope });
       if (!error) return;
       if (scope !== "local") throw error;
-      // A failed server revoke (offline) leaves the stored session in place; clear
-      // it locally anyway so the next launch does not sign the user back in.
-      const { error: localError } = await client.auth.signOut({ scope: "local" });
-      if (localError) throw localError;
+      // A failed server revoke (offline) returns before supabase-js removes the stored
+      // session, and a second signOut({ scope: "local" }) calls the server again and fails
+      // the same way. Remove the stored session directly (this also emits SIGNED_OUT), so
+      // the next launch does not sign the user back in.
+      await (client.auth as unknown as { _removeSession(): Promise<void> })._removeSession();
     },
 
     async getAccountDeletionBlocker() {
