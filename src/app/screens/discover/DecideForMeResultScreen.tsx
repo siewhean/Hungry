@@ -41,6 +41,7 @@ import { openTrustedMapsUrl } from "@/lib/security/safeLinking";
 import { shareLink } from "@/features/share/messagingShare";
 import { webShareUrl } from "@/constants/links";
 import {
+  countNegativeTasteSignals,
   hasTrustedTasteProfile,
   TASTE_LABELS,
   tasteAxisMatchPercent,
@@ -312,6 +313,9 @@ export function DecideForMeResultScreen() {
     hasTrustedTasteProfile(profile.tasteVector, {
       skippedTasteQuiz,
       signalCount: profile.recommendationSignals?.signalCount,
+      negativeSignalCount: countNegativeTasteSignals(
+        useProfileStore.getState().tasteInteractionEvents,
+      ),
     }),
   );
 

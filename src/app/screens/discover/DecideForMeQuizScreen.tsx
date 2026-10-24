@@ -7,7 +7,12 @@ import {
   findNodeHandle,
   useWindowDimensions,
 } from "react-native";
-import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
+import {
+  usePreventRemove,
+  useNavigation,
+  useRoute,
+  type RouteProp,
+} from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Check, Dices, Utensils } from "lucide-react-native";
 
@@ -19,11 +24,11 @@ import {
   type DecideAnswers,
 } from "@/features/discovery/decideQuiz";
 import { trackAnalyticsEvent } from "@/lib/analytics";
-import { useExperimentVariant } from "@/lib/experiments/experiments";
+import { getExperimentVariant } from "@/lib/experiments/experiments";
 import { selectHaptic, tapHaptic } from "@/lib/haptics";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useHungryTheme } from "@/theme";
-import { DECIDE_OPTION_IMAGES } from "./decideOptionImages";
+import { DECIDE_OPTION_IMAGES, DECIDE_PRICE_TIERS } from "./decideOptionImages";
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
@@ -46,11 +51,11 @@ export function DecideForMeQuizScreen() {
     (width - spacing[4] * 2 - spacing[2] * (columns - 1)) / columns,
   );
   const setDecideForMe = useDiscoveryStore((state) => state.setDecideForMe);
-  // Only Discover's Decide button opens this screen, so everyone who renders it sees the variant.
-  const quizVariant = useExperimentVariant("decide_quiz_v1", { enabled: true });
-  // Frozen at first render so a late flag load cannot change the question count mid-quiz.
+  // Everyone who renders this screen sees the variant. Read once at first render: exposure is
+  // recorded only if flags have already loaded, and only for the arm actually shown, so a late
+  // flag load can neither change the question count mid-quiz nor expose an unseen arm.
   const [questions] = useState(() =>
-    quizVariant === "two_questions"
+    getExperimentVariant("decide_quiz_v1", { expose: true }) === "two_questions"
       ? DECIDE_QUESTIONS.filter((item) => item.id === "cuisine" || item.id === "price")
       : DECIDE_QUESTIONS,
   );
@@ -58,24 +63,27 @@ export function DecideForMeQuizScreen() {
   const [answers, setAnswers] = useState<DecideAnswers>(() => route.params?.answers ?? {});
   const question = questions[step];
   const isLast = step === questions.length - 1;
-  const stepRef = useRef(step);
-  stepRef.current = step;
   const finishedRef = useRef(false);
   const lastStepChangeRef = useRef(0);
   const pendingStepRef = useRef(step);
   const headerRef = useRef<View>(null);
 
+  // The answers the quiz finished with. The replace to the result runs in an effect after this
+  // is set, once usePreventRemove below has switched off, so the last answer is never blocked.
+  const [finishedWith, setFinishedWith] = useState<DecideAnswers | null>(null);
+
   // System back (Android button, iOS swipe) steps back through the questions like the header
-  // back button, instead of leaving the quiz from any step.
-  useEffect(
-    () =>
-      navigation.addListener("beforeRemove", (event) => {
-        if (finishedRef.current || stepRef.current === 0) return;
-        event.preventDefault();
-        setStep((current) => Math.max(0, current - 1));
-      }),
-    [navigation],
-  );
+  // back button, instead of leaving the quiz from any step. usePreventRemove (not a bare
+  // beforeRemove listener) is what sets native-stack's preventNativeDismiss, so the iOS swipe is
+  // stopped natively instead of dismissing the screen while it stays in the JS stack.
+  usePreventRemove(step > 0 && finishedWith === null, () => {
+    setStep((current) => Math.max(0, current - 1));
+  });
+
+  useEffect(() => {
+    if (!finishedWith) return;
+    navigation.replace("DecideForMeResult", { surface: "discover", answers: finishedWith });
+  }, [finishedWith, navigation]);
 
   // A screen reader hears the new question; focus would otherwise stay on a tile that now
   // stands for a different answer.
@@ -110,7 +118,7 @@ export function DecideForMeQuizScreen() {
     });
     // The result screen picks the dish; clear any earlier pick so it starts fresh.
     setDecideForMe(undefined);
-    navigation.replace("DecideForMeResult", { surface: "discover", answers: finalAnswers });
+    setFinishedWith(finalAnswers);
   };
 
   const choose = (optionId: string) => {
@@ -181,6 +189,7 @@ export function DecideForMeQuizScreen() {
             const isDecide = option.id === DECIDE_FOR_ME_OPTION_ID;
             const selected = answers[question.id] === option.id;
             const image = DECIDE_OPTION_IMAGES[option.id];
+            const priceTier = DECIDE_PRICE_TIERS[option.id];
             return (
               <Pressable
                 key={option.id}
@@ -213,6 +222,14 @@ export function DecideForMeQuizScreen() {
                       contentFit="cover"
                       style={{ height: "100%", width: "100%" }}
                     />
+                  ) : priceTier ? (
+                    <AppText
+                      testID={`decide-price-tier-${option.id}`}
+                      variant="h1"
+                      style={{ color: palette.text }}
+                    >
+                      {priceTier}
+                    </AppText>
                   ) : isDecide ? (
                     <Dices color={palette.orange} size={32} />
                   ) : (

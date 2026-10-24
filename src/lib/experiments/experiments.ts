@@ -215,9 +215,10 @@ export const EXPERIMENTS = {
     status: "draft", // Until search_dishes returns cuisine data (MAP-3 follow-up migration).
     surface: "decide",
     hypothesis:
-      "Two questions (cuisine and price, the two the server can filter on) instead of four get more diners to a pick they act on, because fewer people abandon the quiz and the pick is still filtered by what they care about most.",
+      "Two questions (cuisine and price) instead of four get more diners to a pick they act on, because fewer people abandon the quiz. Only price is filtered on the server today; cuisine is matched on the client. Abandonment is decide_quiz_completed against exposures.",
     primaryMetric: "directions_opened",
     guardrailMetrics: [
+      "decide_quiz_completed",
       "decide_for_me_result_shown",
       "decide_for_me_no_match",
       "decide_for_me_radius_expanded",
