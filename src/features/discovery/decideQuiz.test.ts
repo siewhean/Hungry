@@ -2,8 +2,11 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  applyDecideAnswers,
   DECIDE_FOR_ME_OPTION_ID,
   DECIDE_QUESTIONS,
+  decideAnswerMaxPrice,
+  describeDecideAnswers,
   filterByDecideAnswers,
   hasDecideConstraints,
 } from "./decideQuiz";
@@ -85,5 +88,52 @@ test("a question that would empty the list is skipped", () => {
   assert.deepEqual(
     result.map((d) => d.name),
     ["Chicken Rice"],
+  );
+});
+
+test("keywords match whole words, so rice and fish dishes are not desserts", () => {
+  const dishes = [
+    dish("Chicken Rice", { price: 4 }),
+    dish("Steamed Fish", { price: 9 }),
+    dish("Iced Tea", { price: 2 }),
+    dish("Ice Kachang", { price: 3 }),
+  ];
+  assert.deepEqual(
+    filterByDecideAnswers(dishes, { staple: "dessert" }).map((d) => d.name),
+    ["Iced Tea", "Ice Kachang"],
+  );
+  assert.deepEqual(
+    filterByDecideAnswers([dish("Fishball Noodles"), dish("Kaya Toast")], {
+      staple: "noodles",
+    }).map((d) => d.name),
+    ["Fishball Noodles"],
+    "plural forms still match",
+  );
+});
+
+test("answers that would empty the list are reported as relaxed", () => {
+  const dishes = [
+    dish("Chicken Rice", { price: 4.5 }),
+    dish("Fish Soup", { price: 6 }),
+    dish("Steamed Fish", { price: 9 }),
+  ];
+  const result = applyDecideAnswers(dishes, { cuisine: "japanese-korean", price: "under5" });
+  assert.deepEqual(result.relaxed, ["cuisine"]);
+  assert.deepEqual(
+    result.dishes.map((d) => d.name),
+    ["Chicken Rice"],
+  );
+  assert.deepEqual(applyDecideAnswers(dishes, { price: "under8" }).relaxed, []);
+  assert.deepEqual(applyDecideAnswers([], { price: "under8" }).relaxed, [], "nothing to relax");
+});
+
+test("the result screen gets the chosen price and the answer labels", () => {
+  assert.equal(decideAnswerMaxPrice({ price: "under8" }), 8);
+  assert.equal(decideAnswerMaxPrice({ price: "decide" }), undefined);
+  assert.deepEqual(
+    describeDecideAnswers({ flavour: "spicy", cuisine: "malay", staple: "decide" }).map(
+      (answer) => answer.label,
+    ),
+    ["Malay", "Spicy"],
   );
 });

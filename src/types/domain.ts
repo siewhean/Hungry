@@ -456,6 +456,8 @@ export interface SearchFilters {
   foodTypeTag?: string;
   maxPrice?: number;
   openOnly?: boolean;
+  /** Rows to ask the server for (default 20, server cap 50). */
+  limit?: number;
 }
 
 /** What Claude understood from a plain-language search such as "something soupy, under $8". */

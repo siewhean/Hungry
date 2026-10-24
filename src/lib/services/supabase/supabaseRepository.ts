@@ -1014,7 +1014,8 @@ export async function searchDishesViaRpc(
         ? Math.round(filters.radius)
         : null,
     p_dietary_flags: filters.dietaryFlags,
-    p_limit: 20,
+    // search_dishes caps p_limit at 50.
+    p_limit: Math.min(50, Math.max(1, Math.round(filters.limit ?? 20))),
     p_cursor_score: null,
     p_cursor_id: null,
     p_venue_id: null,
@@ -1129,8 +1130,8 @@ export async function getVenueByIdViaRpc(venueId: string): Promise<VenueSummary 
 }
 
 /**
- * Stall summaries for many ids in one get_venue_summaries call (no menus). Undefined when the
- * RPC is unavailable, so the caller can fall back to one get_venue_detail per stall.
+ * Stall summaries for many ids (up to 50) in one get_venue_summaries call (no menus). Undefined
+ * when the RPC fails.
  */
 export async function getVenuesByIdsViaRpc(
   venueIds: string[],

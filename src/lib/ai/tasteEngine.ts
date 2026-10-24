@@ -99,6 +99,23 @@ export function hasPersonalTasteProfile(vector: TasteVector): boolean {
   return TASTE_AXES.some((axis) => vector[axis] !== NEUTRAL_AXIS);
 }
 
+/** Taste signals a person who skipped the quiz needs before a match percent means something. */
+export const MIN_LEARNED_TASTE_SIGNALS = 5;
+
+/**
+ * True when a match percent is worth showing: the person took the taste quiz, or skipped it
+ * and has since given enough signals. One click nudges a neutral vector off all-5s, which
+ * `hasPersonalTasteProfile` alone would read as a profile ("100% taste match").
+ */
+export function hasTrustedTasteProfile(
+  vector: TasteVector,
+  options: { skippedTasteQuiz: boolean; signalCount?: number },
+): boolean {
+  if (!hasPersonalTasteProfile(vector)) return false;
+  if (!options.skippedTasteQuiz) return true;
+  return (options.signalCount ?? 0) >= MIN_LEARNED_TASTE_SIGNALS;
+}
+
 /**
  * Match percent for display, 0-100. Both vectors are centred on the neutral 5
  * before the cosine, so an all-positive 0-10 dish no longer looks close to

@@ -10,7 +10,7 @@ export type DecideQuestionId = "cuisine" | "staple" | "price" | "flavour";
 export type DecideOption = {
   id: string;
   label: string;
-  /** Words matched against the dish name, food type tag and taste tags. */
+  /** Whole words matched against the dish name, food type tag and taste tags. */
   keywords?: string[];
   /** Price ceiling in S$ for the price question. */
   maxPrice?: number;
@@ -115,42 +115,82 @@ function dishText(dish: DishDetail): string {
   return [dish.name, dish.foodTypeTag ?? "", ...dish.tasteTags].join(" ").toLowerCase();
 }
 
+/**
+ * Whole-word match, plurals allowed: "ice" matches "ice kachang" but not "chicken rice", and
+ * "noodle" matches "noodles". Keywords are plain lower-case words.
+ */
+function matchesKeyword(text: string, keyword: string): boolean {
+  return new RegExp(`(^|[^a-z])${keyword}(s|es)?([^a-z]|$)`).test(text);
+}
+
 function matchesKeywords(dish: DishDetail, keywords: string[] | undefined): boolean {
   if (!keywords?.length) return true;
   const text = dishText(dish);
-  return keywords.some((keyword) => text.includes(keyword));
+  return keywords.some((keyword) => matchesKeyword(text, keyword));
 }
+
+const QUESTION_ORDER: readonly DecideQuestionId[] = ["cuisine", "staple", "price", "flavour"];
 
 /** True when at least one answer narrows the search. */
 export function hasDecideConstraints(answers: DecideAnswers): boolean {
-  return (["cuisine", "staple", "price", "flavour"] as const).some((id) =>
-    Boolean(findOption(id, answers)),
-  );
+  return QUESTION_ORDER.some((id) => Boolean(findOption(id, answers)));
+}
+
+/** The price ceiling the diner chose, sent to the server search. */
+export function decideAnswerMaxPrice(answers: DecideAnswers): number | undefined {
+  return findOption("price", answers)?.maxPrice;
+}
+
+/** The answered questions in quiz order, as labels for the result screen's chips. */
+export function describeDecideAnswers(
+  answers: DecideAnswers,
+): { questionId: DecideQuestionId; label: string }[] {
+  return QUESTION_ORDER.flatMap((questionId) => {
+    const option = findOption(questionId, answers);
+    return option ? [{ questionId, label: option.label }] : [];
+  });
+}
+
+export interface DecideAnswerResult {
+  dishes: DishDetail[];
+  /** Answered questions that were dropped because no dish fitted them. */
+  relaxed: DecideQuestionId[];
 }
 
 /**
  * Keeps the dishes that fit every answered question. Each question is applied in turn and a
- * question that would empty the list is skipped, so the diner always gets something to eat.
+ * question that would empty the list is skipped and reported in `relaxed`, so the diner always
+ * gets something to eat and is told which answer was dropped.
  */
-export function filterByDecideAnswers(dishes: DishDetail[], answers: DecideAnswers): DishDetail[] {
+export function applyDecideAnswers(
+  dishes: DishDetail[],
+  answers: DecideAnswers,
+): DecideAnswerResult {
   let current = dishes;
-  const apply = (keep: (dish: DishDetail) => boolean) => {
+  const relaxed: DecideQuestionId[] = [];
+  const apply = (questionId: DecideQuestionId, keep: (dish: DishDetail) => boolean) => {
+    if (!current.length) return;
     const next = current.filter(keep);
     if (next.length) current = next;
+    else relaxed.push(questionId);
   };
   const cuisine = findOption("cuisine", answers);
-  if (cuisine) apply((dish) => matchesKeywords(dish, cuisine.keywords));
+  if (cuisine) apply("cuisine", (dish) => matchesKeywords(dish, cuisine.keywords));
   const staple = findOption("staple", answers);
-  if (staple) apply((dish) => matchesKeywords(dish, staple.keywords));
+  if (staple) apply("staple", (dish) => matchesKeywords(dish, staple.keywords));
   const price = findOption("price", answers);
   if (price?.maxPrice !== undefined) {
     const ceiling = price.maxPrice;
-    apply((dish) => dish.price > 0 && dish.price <= ceiling);
+    apply("price", (dish) => dish.price > 0 && dish.price <= ceiling);
   }
   const flavour = findOption("flavour", answers);
   if (flavour?.axis) {
     const axis = flavour.axis;
-    apply((dish) => dish.tasteVector[axis] >= FLAVOUR_MIN_LEVEL);
+    apply("flavour", (dish) => dish.tasteVector[axis] >= FLAVOUR_MIN_LEVEL);
   }
-  return current;
+  return { dishes: current, relaxed };
+}
+
+export function filterByDecideAnswers(dishes: DishDetail[], answers: DecideAnswers): DishDetail[] {
+  return applyDecideAnswers(dishes, answers).dishes;
 }
