@@ -169,7 +169,8 @@ export function SettingsScreen() {
 
   const isProfilePrivate = profile.profileVisibility === "private";
   // Profile visibility only matters when social surfaces ship.
-  const showSocialPrivacySettings = FEATURE_FLAGS.socialFeedEnabled;
+  // Follows and follow requests outlive the archived social feed.
+  const showSocialPrivacySettings = true;
 
   const normalizedThemePreference: ThemePreference =
     themePreference === "system" || themePreference === "light" || themePreference === "dark"

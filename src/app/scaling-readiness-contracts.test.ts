@@ -76,8 +76,9 @@ test("production feature flags remain MVP-safe and documented in the release mat
   // Advanced surfaces stay out of production (main's nonProductionSurfaceEnabled).
   assert.match(flags, /const prototypeRoutesEnabled = appEnv !== "production"/);
   assert.match(flags, /release01CoreOnly: enabled\(env, "EXPO_PUBLIC_RELEASE_01_CORE_ONLY"\)/);
+  // Messages is archived: off everywhere unless a build opts in.
+  assert.match(flags, /directMessagesEnabled: surface\("EXPO_PUBLIC_ENABLE_MESSAGES", false\)/);
   for (const flag of [
-    "directMessagesEnabled",
     "commentsEnabled",
     "oauthProvidersEnabled",
     "gamificationEnabled",

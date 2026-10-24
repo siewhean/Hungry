@@ -223,7 +223,7 @@ function buildStateFromPath(rawPath: string): LinkingState | undefined {
     return postId ? createStateOverHome("ActivityPostDetail", { postId }) : undefined;
   }
   // Shared profiles: https://usehungry.com/user/:id (the screen loads the public name).
-  if (FEATURE_FLAGS.socialFeedEnabled && parts[0] === "user") {
+  if (parts[0] === "user") {
     const authorId = decodePathSegment(parts[1]);
     return authorId ? createStateOverHome("UserProfile", { authorId }) : undefined;
   }
@@ -347,7 +347,7 @@ export function createRootLinking(
         // Social push notifications open the inbox or the follow requests (sign-in required).
         ...(FEATURE_FLAGS.activityEnabled ? { ActivityInbox: "activity" } : {}),
         FollowRequests: "follow-requests",
-        ...(FEATURE_FLAGS.socialFeedEnabled ? { UserProfile: "user/:authorId" } : {}),
+        UserProfile: "user/:authorId",
         SearchResults: "search",
         ...(FEATURE_FLAGS.portfoliosEnabled
           ? { PortfolioPublicView: "portfolio/:portfolioId" }

@@ -38,10 +38,12 @@ export function resolveFeatureFlags(
     return defaultValue;
   };
 
-  const socialFeedEnabled = surface("EXPO_PUBLIC_ENABLE_SOCIAL_FEED", true);
+  // Archived (owner decision 2026-10-24): the social posts feed, Activity and Messages are
+  // off by default; their code stays so a build can opt back in with `=1`.
+  const socialFeedEnabled = surface("EXPO_PUBLIC_ENABLE_SOCIAL_FEED", false);
   const postCreationEnabled = surface("EXPO_PUBLIC_ENABLE_POSTS", true);
   const reviewCreationEnabled = surface("EXPO_PUBLIC_ENABLE_REVIEWS", true);
-  const activityEnabled = surface("EXPO_PUBLIC_ENABLE_ACTIVITY", true);
+  const activityEnabled = surface("EXPO_PUBLIC_ENABLE_ACTIVITY", false);
   const mapEnabled = surface("EXPO_PUBLIC_ENABLE_MAP", true);
   // Wheel solo spin ships everywhere. Group parties are an in-memory mock (a /join
   // link can't reach another phone), so hosting/joining stays out of production.
@@ -68,7 +70,7 @@ export function resolveFeatureFlags(
     notificationsEnabled: false,
     catalogDiagnosticsEnabled: appEnv !== "production",
     mockMapboxEnabled: enabled(env, "EXPO_PUBLIC_MOCK_MAPBOX_ENABLED"),
-    directMessagesEnabled: nonProductionSurfaceEnabled,
+    directMessagesEnabled: surface("EXPO_PUBLIC_ENABLE_MESSAGES", false),
     commentsEnabled: nonProductionSurfaceEnabled,
     oauthProvidersEnabled: nonProductionSurfaceEnabled,
     floorplansEnabled: false,

@@ -134,8 +134,6 @@ function isReleaseRouteAvailable(routeName: RootRouteName | MainTabRouteName): b
       return FEATURE_FLAGS.reviewCreationEnabled;
     case "Favourites":
       return FEATURE_FLAGS.favouritesEnabled;
-    case "UserProfile":
-      return FEATURE_FLAGS.socialFeedEnabled;
     case "DiscoverMap":
     case "MapZoomedIn":
       return FEATURE_FLAGS.mapEnabled;
@@ -788,9 +786,8 @@ export function RootNavigator({ theme }: { theme: Theme }) {
             <RootStack.Screen getComponent={loadReviewHistoryScreen} name="ReviewHistory" />
           ) : null}
           <RootStack.Screen getComponent={loadSettingsScreen} name="Settings" />
-          {FEATURE_FLAGS.socialFeedEnabled ? (
-            <RootStack.Screen component={UserProfileScreen} name="UserProfile" />
-          ) : null}
+          {/* Reviewer profiles stay reachable from reviews and follower lists. */}
+          <RootStack.Screen component={UserProfileScreen} name="UserProfile" />
           <RootStack.Screen getComponent={loadDishDetailScreenV2} name="DishDetail" />
           <RootStack.Screen getComponent={loadCatalogRawDetailScreen} name="CatalogRawDetail" />
           <RootStack.Screen getComponent={loadStallDetailScreen} name="StallDetail" />
