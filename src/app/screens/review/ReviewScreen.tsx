@@ -344,6 +344,7 @@ export function ReviewScreen({ navigation, route }: Props) {
           .ai.adjustCommunityTasteVector(
             selectedDish.id,
             standardTasteRating(feltTaste, userTasteVector),
+            reviewId,
           )
           .catch((error: unknown) =>
             reportError(error, { screen: "ReviewScreen", action: "adjust_taste_vector" }),

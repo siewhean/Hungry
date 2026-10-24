@@ -401,3 +401,24 @@ test("sendAccountDeletionCode emails a one-time code to the signed-in address wi
   auth.email = null;
   await rejectsWith(service.auth.sendAccountDeletionCode(), /./);
 });
+
+test("adjustCommunityTasteVector saves numeric axes through submit_dish_taste_rating", async () => {
+  await service.ai.adjustCommunityTasteVector(
+    "dish-1",
+    { spicy: 7.5, sweet: undefined, salty: 2.5 },
+    POST,
+  );
+  assert.deepEqual(fake.callsTo("submit_dish_taste_rating")[0].args, {
+    p_dish_id: "dish-1",
+    p_rating: { spicy: 7.5, salty: 2.5 },
+    p_review_id: POST,
+  });
+
+  fake.rpcCalls.length = 0;
+  await service.ai.adjustCommunityTasteVector("dish-1", {});
+  assert.equal(fake.rpcCalls.length, 0);
+
+  fake.rpc.submit_dish_taste_rating = () => ({ error: { message: "rate limited" } });
+  await rejectsWith(service.ai.adjustCommunityTasteVector("dish-1", { sour: 5 }), /rate limited/);
+  assert.equal(fake.callsTo("submit_dish_taste_rating")[0].args.p_review_id, null);
+});
