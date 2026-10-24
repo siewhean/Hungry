@@ -200,7 +200,7 @@ export function MusicSearchModal({ innerRef }: MusicSearchModalProps) {
             { marginBottom: spacing[4], paddingHorizontal: semanticSpacing.screenEdge },
           ]}
         >
-          <AppText variant="h3">Music Library</AppText>
+          <AppText variant="h3">Music library</AppText>
           <IconButton
             icon={<X size={24} color={palette.text} />}
             accessibilityLabel="Close"

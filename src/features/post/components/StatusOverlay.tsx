@@ -94,7 +94,7 @@ export function StatusOverlay({ onFinish }: StatusOverlayProps) {
         >
           <Calendar size={20} color={palette.orange} />
           <View style={{ flex: 1, gap: spacing.sm }}>
-            <AppText variant="bodySmallBold">Post Scheduled!</AppText>
+            <AppText variant="bodySmallBold">Post scheduled!</AppText>
             <AppText variant="micro" tone="secondary">
               Your schedule time has been saved to this composer.
             </AppText>
@@ -178,25 +178,25 @@ export function StatusOverlay({ onFinish }: StatusOverlayProps) {
                 onFinish?.();
               }}
             />
-            <Button label="Create Another" variant="ghost" fullWidth onPress={reset} />
+            <Button label="Create another" variant="ghost" fullWidth onPress={reset} />
           </View>
         ) : publishingState === "draft" ? (
           <View style={styles.content}>
             <Save size={60} color={palette.text} />
             <View style={{ alignItems: "center", gap: spacing.sm }}>
-              <AppText variant="h2">Draft Saved</AppText>
+              <AppText variant="h2">Draft saved</AppText>
               <AppText variant="bodySmall" tone="secondary" style={{ textAlign: "center" }}>
                 Your changes have been saved to your local drafts.
               </AppText>
             </View>
             <Button
-              label="Keep Editing"
+              label="Keep editing"
               variant="primary"
               fullWidth
               onPress={() => setPublishingState("editing")}
             />
             <Button
-              label="Finish Later"
+              label="Finish later"
               variant="ghost"
               fullWidth
               onPress={() => {
@@ -216,7 +216,7 @@ export function StatusOverlay({ onFinish }: StatusOverlayProps) {
               </AppText>
             </View>
             <Button
-              label="Try Again"
+              label="Try again"
               variant="primary"
               fullWidth
               onPress={() => {

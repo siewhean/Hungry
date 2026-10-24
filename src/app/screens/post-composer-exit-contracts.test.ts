@@ -34,5 +34,5 @@ test("Post composer exits return to the home feed instead of replaying stale bac
     overlay,
     /label=\{isReviewOnlySuccess \? "Done" : "View Post"\}[\s\S]*reset\(\);[\s\S]*onFinish\?\.\(\);/,
   );
-  assert.match(overlay, /label="Finish Later"[\s\S]*reset\(\);[\s\S]*onFinish\?\.\(\);/);
+  assert.match(overlay, /label="Finish later"[\s\S]*reset\(\);[\s\S]*onFinish\?\.\(\);/);
 });

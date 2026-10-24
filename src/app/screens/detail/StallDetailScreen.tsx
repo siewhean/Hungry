@@ -394,7 +394,7 @@ function StallMenuDishCard({
                 Sold out today
               </AppText>
             ) : (
-              <AppText variant="price" style={{ color: palette.orange }}>
+              <AppText variant="price" style={{ color: palette.text }}>
                 {formatDishPrice(dish)}
               </AppText>
             )}

@@ -359,7 +359,7 @@ test("post composer supports long captions, tags, carousel media, publish, draft
     composer,
     [
       /testID="post-composer-screen"/,
-      /title="Save Draft\?"/,
+      /title="Save draft\?"/,
       /setPublishingState\("draft"\)/,
       /navigation\.dispatch\(\{[\s\S]*type: "POP_TO"[\s\S]*name: "MainTabs"/,
     ],
@@ -368,7 +368,7 @@ test("post composer supports long captions, tags, carousel media, publish, draft
   assertSourceIncludes(
     bottomBar,
     [
-      /label="Save Draft"/,
+      /label="Save draft"/,
       /setPublishingState\("draft"\)/,
       /label=\{getLabel\(\)\}/,
       /const request = \{ publishMode, routeDishId, routeVenueId \}/,
@@ -418,7 +418,7 @@ test("post composer supports long captions, tags, carousel media, publish, draft
       /import \{ publishComposerPost \} from "\.\.\/publishing"/,
       /const retryPublish = async \(\) =>/,
       /await publishComposerPost\(lastPublishRequest\)/,
-      /label="Try Again"[\s\S]*void retryPublish\(\)/,
+      /label="Try again"[\s\S]*void retryPublish\(\)/,
       /isReviewOnlySuccess \? "Review saved" : "Shared!"/,
       /label=\{isReviewOnlySuccess \? "Done" : "View Post"\}/,
     ],

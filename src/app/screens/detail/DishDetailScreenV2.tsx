@@ -1275,7 +1275,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                           <AppText variant="bodyBold" numberOfLines={1}>
                             {item.name}
                           </AppText>
-                          <AppText variant="price" style={{ color: palette.orange }}>
+                          <AppText variant="price" style={{ color: palette.text }}>
                             {formatDishPrice(item)}
                           </AppText>
                         </View>
@@ -1364,7 +1364,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                               {[item.name, item.buildingName].filter(Boolean).join(" · ")}
                             </AppText>
                             {item.price ? (
-                              <AppText variant="price" style={{ color: palette.orange }}>
+                              <AppText variant="price" style={{ color: palette.text }}>
                                 {`S$${item.price.toFixed(2)}`}
                               </AppText>
                             ) : null}

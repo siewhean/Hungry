@@ -268,7 +268,7 @@ export function FavouritesScreen({ navigation }: Props) {
                         <AppText variant="h2" style={{ flex: 1 }} numberOfLines={2}>
                           {dish.name}
                         </AppText>
-                        <AppText variant="price" style={{ color: palette.orange }}>
+                        <AppText variant="price" style={{ color: palette.text }}>
                           S${dish.price.toFixed(2)}
                         </AppText>
                       </View>
@@ -576,7 +576,7 @@ function CatalogSavedDishes({ navigation, query }: Pick<Props, "navigation"> & {
                       {dish.name}
                     </AppText>
                     {dish.price !== undefined ? (
-                      <AppText variant="price" style={{ color: palette.orange }}>
+                      <AppText variant="price" style={{ color: palette.text }}>
                         S${dish.price.toFixed(2)}
                       </AppText>
                     ) : null}

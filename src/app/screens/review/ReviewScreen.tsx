@@ -423,7 +423,7 @@ export function ReviewScreen({ navigation, route }: Props) {
               </Card>
             ) : (
               <Button
-                label="Select Stall & Dish"
+                label="Select stall & dish"
                 variant="secondary"
                 onPress={openPicker}
                 leftIcon={<Search size={18} color={palette.text} />}
@@ -433,7 +433,7 @@ export function ReviewScreen({ navigation, route }: Props) {
 
           {/* 2. Rating */}
           <View style={{ gap: spacing[2] }}>
-            <AppText variant="h3">Overall Rating</AppText>
+            <AppText variant="h3">Overall rating</AppText>
             <StarRating value={draft.rating} onChange={setRating} editable showDescriptor />
           </View>
 
@@ -519,7 +519,7 @@ export function ReviewScreen({ navigation, route }: Props) {
 
           {/* Every reviewer can tag taste; the tags feed dish taste profiles. */}
           <View style={{ gap: spacing[3] }}>
-            <AppText variant="h3">Taste Tags</AppText>
+            <AppText variant="h3">Taste tags</AppText>
             <ChipGroup
               options={REVIEW_EDITOR_TAGS.map((tag) => ({ id: tag, label: tag }))}
               selectedIds={draft.selectedTags}

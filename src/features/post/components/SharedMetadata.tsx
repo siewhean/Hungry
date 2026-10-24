@@ -116,7 +116,7 @@ export function SharedMetadata({ onOpenLocation, onOpenCollaborators }: SharedMe
             }}
           >
             <Hash size={18} color={palette.textMuted} />
-            <AppText variant="bodyBold">Taste Tags</AppText>
+            <AppText variant="bodyBold">Taste tags</AppText>
           </View>
 
           <View style={{ gap: spacing.lg }}>
