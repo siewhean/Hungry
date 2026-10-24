@@ -175,6 +175,15 @@ export function SplashScreen({ navigation }: Props) {
       }
 
       if (!isAuthenticated) {
+        // Finished onboarding here but never made an account: back to the account
+        // step, not a "Welcome back" sign-in screen.
+        if (useSessionStore.getState().onboardingCompletionPending) {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "OnboardingStack", params: { screen: "OnboardingAuth" } }],
+          });
+          return;
+        }
         navigation.reset({
           index: 0,
           routes: [{ name: "AuthStack", params: { screen: "Login" } }],

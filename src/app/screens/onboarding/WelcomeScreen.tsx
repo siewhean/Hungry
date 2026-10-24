@@ -8,6 +8,7 @@ import * as Haptics from "@/lib/haptics";
 import { AppText, Button } from "@/components/ui";
 import { HUNGRY_LOGO_ICON, HUNGRY_LOGO_STANDARD_SIZE } from "@/constants/brandAssets";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
+import { clearPendingDishSave } from "@/features/auth/pendingDishSave";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
@@ -67,8 +68,10 @@ export function WelcomeScreen({ navigation }: Props) {
   const handleExistingAccountSignIn = () => {
     // An existing account has already completed the account journey. Persist
     // that intent before leaving onboarding so protected deep links and an
-    // app reload return to authentication rather than the welcome screen.
-    completeOnboarding();
+    // app reload return to authentication rather than the welcome screen. It is not
+    // the onboarding journey, and a dish saved earlier as a guest is not attached to it.
+    clearPendingDishSave();
+    completeOnboarding(false, { existingAccount: true });
     getRootNavigation(navigation).navigate("AuthStack", { screen: "Login" });
   };
 

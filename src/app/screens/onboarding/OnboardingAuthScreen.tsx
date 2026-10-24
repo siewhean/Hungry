@@ -11,7 +11,7 @@ import {
 import type { NavigationProp } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Controller, useForm } from "react-hook-form";
-import { Eye, EyeOff, Mail, Lock, User } from "lucide-react-native";
+import { ArrowLeft, Eye, EyeOff, Mail, Lock, User } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "@/lib/haptics";
 
@@ -29,6 +29,8 @@ import {
   validateRequired,
   WEAK_PASSWORD_MESSAGE,
 } from "@/features/auth/validation";
+import { getExperimentVariant } from "@/lib/experiments/experiments";
+import { reportError } from "@/lib/monitoring/reportError";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { getConfiguredDataSource } from "@/lib/services/supabase/client";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -53,11 +55,11 @@ type SignUpValues = { displayName: string; email: string; password: string };
 type LoginValues = { email: string; password: string };
 
 export function OnboardingAuthScreen({ navigation, route }: Props) {
-  const { componentRadii, palette, spacing } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const oauthEnabled = FEATURE_FLAGS.oauthProvidersEnabled;
 
-  const [tab, setTab] = useState<Tab>("signup");
+  const [tab, setTabState] = useState<Tab>("signup");
   const [showPassword, setShowPassword] = useState(false);
   const [providerInFlight, setProviderInFlight] = useState<AuthProvider | null>(null);
   // Inline copy of the last server error (a toast alone passes before it can be read, and
@@ -71,6 +73,13 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
   const completeAuth = useSessionStore((s) => s.completeAuth);
   const completeOnboarding = useSessionStore((s) => s.completeOnboarding);
   const reduceMotion = useReduceMotion();
+  // The result screen exposed this user; read the frozen variant here without exposing again.
+  const [framing] = useState(() => getExperimentVariant("onboarding_account_framing_v1"));
+  // A server error belongs to the form it came from; switching tabs starts clean.
+  const setTab = (next: Tab) => {
+    setTabState(next);
+    setFormError(null);
+  };
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
@@ -166,6 +175,13 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
     } catch (err) {
       trackAuthFailed("sign_up", "email", err);
       const code = getAuthErrorCode(err);
+      const expected =
+        isWeakPasswordError(err) ||
+        code === "email_address_invalid" ||
+        code === "user_already_exists" ||
+        code === "email_exists";
+      // A weak password or a taken email is the user's to fix, not an app error.
+      if (!expected) reportError(err, { screen: "OnboardingAuth", action: "sign_up" });
       setFormError(
         isWeakPasswordError(err)
           ? WEAK_PASSWORD_MESSAGE
@@ -196,6 +212,9 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
     } catch (err) {
       trackAuthFailed("sign_in", "email", err);
       const code = getAuthErrorCode(err);
+      if (code !== "invalid_credentials" && code !== "email_not_confirmed") {
+        reportError(err, { screen: "OnboardingAuth", action: "sign_in" });
+      }
       setFormError(
         code === "invalid_credentials"
           ? AUTH_COPY.login.invalidCredentialsToast
@@ -225,11 +244,14 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
       completeAuth({ authProvider: provider, completedOnboarding: true, trackSignInEvent: false });
       finishOnboarding();
     } catch (err) {
-      trackAuthFailed("sign_up", provider, err);
+      trackAuthFailed(tab === "login" ? "sign_in" : "sign_up", provider, err);
       const message = getProviderErrorMessage(err, provider, {
         cancelled: AUTH_COPY.signUp.providerCancelledToast,
         failed: AUTH_COPY.signUp.genericErrorToast,
       });
+      if (message !== AUTH_COPY.signUp.providerCancelledToast) {
+        reportError(err, { screen: "OnboardingAuth", action: "provider_sign_in", provider });
+      }
       if (message === AUTH_COPY.signUp.providerCancelledToast) {
         // Cancelling is not an error: a passing toast, no red banner.
         showToast({ message, tone: "warning" });
@@ -273,6 +295,26 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
             transform: [{ translateY: slideAnim }],
           }}
         >
+          {/* Back to the result screen; absent when a relaunch opened this step directly. */}
+          {navigation.canGoBack() ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Back"
+              onPress={() => navigation.goBack()}
+              style={{
+                alignItems: "center",
+                borderRadius: radii.pill,
+                height: 44,
+                justifyContent: "center",
+                marginLeft: -10,
+                marginBottom: spacing[2],
+                width: 44,
+              }}
+            >
+              <ArrowLeft color={palette.text} size={22} />
+            </Pressable>
+          ) : null}
+
           {/* Header */}
           <View style={{ marginBottom: spacing[6] }}>
             <AppText
@@ -283,12 +325,15 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
               {"Save your\ntaste profile"}
             </AppText>
             <AppText variant="bodySmall" tone="secondary">
-              Create an account to keep your preferences and discover more.
+              {framing === "test"
+                ? "Create an account to keep your taste profile and the dishes picked for you."
+                : "Create an account to keep your preferences and discover more."}
             </AppText>
           </View>
 
           {/* Tab switcher */}
           <View
+            accessibilityRole="tablist"
             style={{
               flexDirection: "row",
               backgroundColor: palette.bgSoft,

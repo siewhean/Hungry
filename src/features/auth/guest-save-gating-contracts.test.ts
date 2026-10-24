@@ -40,7 +40,10 @@ test("one sign-in sheet opens the shared Login and finishes the guest's action o
   assert.match(dish, /`Sign in to save \$\{dish\.name\}`[\s\S]*?saveDishAfterSignIn\(dish\)/);
   const finish = read("src/features/auth/finishGuestAction.ts");
   // Finishing never toggles an existing save/like/follow off.
-  assert.match(finish, /if \(!profile\.profile\.favouriteDishIds\.includes\(dish\.id\)\)/);
+  assert.match(
+    finish,
+    /if \(profile\.profile\.favouriteDishIds\.includes\(dish\.id\)\) (return true|continue);/,
+  );
   assert.match(finish, /if \(!social\.interactions\[postId\]\?\.liked\)/);
 });
 

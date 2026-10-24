@@ -150,7 +150,12 @@ interface ProfileState {
   loadFoodHistory: () => Promise<void>;
   resetFoodHistory: () => Promise<void>;
   /** Onboarding / Settings: how open the user is to new food. Also sets neophiliaIndex. */
-  setFoodOpenness: (openness: FoodOpenness, surface: "onboarding" | "settings") => void;
+  /** `changedFromDefault`: false when the user kept the preselected answer. */
+  setFoodOpenness: (
+    openness: FoodOpenness,
+    surface: "onboarding" | "settings",
+    options?: { changedFromDefault?: boolean },
+  ) => void;
   applyProfile: (profile: UserProfile) => void;
   /**
    * Merge a profile returned by `profile.updateProfile` after an Edit Profile save.
@@ -519,7 +524,7 @@ export const useProfileStore = create<ProfileState>()(
         set({ foodHistory: [] });
         trackAnalyticsEvent("food_history_reset", {});
       },
-      setFoodOpenness: (openness, surface) => {
+      setFoodOpenness: (openness, surface, options) => {
         const previousSnapshot = { profile: get().profile, tasteProfile: get().tasteProfile };
         const base = get().profile.tasteProfile ?? get().tasteProfile;
         const tasteProfile: TasteProfile = {
@@ -530,7 +535,13 @@ export const useProfileStore = create<ProfileState>()(
           neophiliaIndex: OPENNESS_NEOPHILIA_INDEX[openness],
         };
         set((state) => ({ profile: { ...state.profile, tasteProfile }, tasteProfile }));
-        trackAnalyticsEvent("food_openness_set", { openness, surface });
+        trackAnalyticsEvent("food_openness_set", {
+          openness,
+          surface,
+          ...(options?.changedFromDefault === undefined
+            ? {}
+            : { changed_from_default: options.changedFromDefault }),
+        });
         const optimisticProfile = get().profile;
         if (!shouldSyncAuthenticatedProfile(optimisticProfile)) return;
         void getHungryService()

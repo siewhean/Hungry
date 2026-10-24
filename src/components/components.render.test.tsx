@@ -576,7 +576,7 @@ test("SingaporeAreaMap names the highlighted area for screen readers", async () 
   assert.ok(view.findByLabel("Map of Singapore with Bedok highlighted"));
   await view.unmount();
   const plain = await render(createElement(SingaporeAreaMap, { width: 320 }));
-  assert.ok(plain.findByLabel("Map of Singapore by area"));
+  assert.ok(plain.findByLabel("Map of Singapore. Search above to choose an area"));
 });
 
 test("DeliveryBrandLogo draws Grab and foodpanda marks only", async () => {

@@ -176,6 +176,10 @@ export function TasteQuizScreen({ navigation, route }: Props) {
   const carriedAnswers =
     isDietaryRoute && route.params && "answers" in route.params ? route.params.answers : undefined;
   const hasTasteAnswers = !isDietaryRoute || carriedAnswers !== undefined;
+  const carriedAnsweredKeys =
+    isDietaryRoute && route.params && "answeredKeys" in route.params
+      ? route.params.answeredKeys
+      : undefined;
   // Answers stay a local draft until the quiz is finished, so swiping does not
   // write, sync or log anything and backing out discards the draft. A retake from
   // Profile starts from the saved vector so untouched dimensions keep their values.
@@ -321,6 +325,12 @@ export function TasteQuizScreen({ navigation, route }: Props) {
     recordQuizResponse(
       {
         answers: tasteAnswers,
+        // Which answers the user picked; the rest are the untouched middle value.
+        answeredKeys: hasTasteAnswers
+          ? isDietaryRoute
+            ? (carriedAnsweredKeys ?? [])
+            : answeredKeys
+          : [],
         tasteSkipped: !hasTasteAnswers,
         dietaryPreferences,
         maxDishBudget: maxDishBudget ?? null,
@@ -415,7 +425,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
     navigation.navigate("DietaryPreferences", {
       mode: flowMode,
       initialPhase: "dietary",
-      ...(answeredAny ? { answers: values } : {}),
+      ...(answeredAny ? { answers: values, answeredKeys } : {}),
     });
   };
 
@@ -486,9 +496,12 @@ export function TasteQuizScreen({ navigation, route }: Props) {
   // The question counter is the only counter on these screens; the step bar returns on the next step.
   const questionHeading = (
     <View style={{ gap: spacing[3] }}>
-      <AppText variant="h2" accessibilityRole="header" style={{ textAlign: "center" }}>
-        {inDietaryStep ? "Dietary preferences" : QUESTIONS[currentKey]}
-      </AppText>
+      {/* The dietary step's h1 is its question; a second heading would only repeat it. */}
+      {inDietaryStep ? null : (
+        <AppText variant="h2" accessibilityRole="header" style={{ textAlign: "center" }}>
+          {QUESTIONS[currentKey]}
+        </AppText>
+      )}
       <AppText variant="bodySmall" tone="muted" style={{ textAlign: "center" }}>
         Question {inDietaryStep ? totalSteps : step + 1} of {totalSteps}
       </AppText>
@@ -523,21 +536,26 @@ export function TasteQuizScreen({ navigation, route }: Props) {
           </Pressable>
         </View>
         {inDietaryStep ? (
-          <View style={{ flex: 1, gap: spacing[3], paddingTop: spacing[2] }}>
+          // One scroll for the whole step: at large text sizes the headings and the search
+          // must scroll away with the list, or the list (and the budget) get no room at all.
+          <ScrollView
+            testID="dietary-step-scroll"
+            style={{ flex: 1 }}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{
+              gap: spacing[3],
+              paddingBottom: spacing[6] + accessibilityFooterReserve,
+              paddingTop: spacing[2],
+            }}
+          >
             {headline}
             {questionHeading}
-            <View
-              style={{
-                flex: 1,
-                paddingBottom: spacing[4],
-                paddingHorizontal: spacing[3],
-              }}
-            >
-              <Card style={{ flex: 1, gap: spacing[2], padding: spacing[3] }}>
-                <AppText variant="h3">Select any that apply</AppText>
+            <View style={{ paddingHorizontal: spacing[3] }}>
+              <Card style={{ gap: spacing[2], padding: spacing[3] }}>
                 <AppText variant="bodySmall" tone="muted">
-                  We use these to filter dishes. Allergen details come from stalls and diners and
-                  may be incomplete, so always check with the stall.
+                  Select any that apply. We use these to filter dishes. Allergen details come from
+                  stalls and diners and may be incomplete, so always check with the stall.
                 </AppText>
                 <Input
                   placeholder="Search dietary restrictions"
@@ -545,15 +563,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                   onChangeText={setDietaryQuery}
                   leftIcon={<Search color={palette.textMuted} size={16} />}
                 />
-                <ScrollView
-                  style={{ flex: 1 }}
-                  showsVerticalScrollIndicator={false}
-                  contentContainerStyle={{
-                    gap: spacing[2],
-                    paddingBottom: spacing[6] + accessibilityFooterReserve,
-                    paddingTop: spacing[1],
-                  }}
-                >
+                <View style={{ gap: spacing[2], paddingTop: spacing[1] }}>
                   {normalizedDietaryQuery
                     ? null
                     : renderDietaryRow({
@@ -602,10 +612,10 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                       />
                     ))}
                   </View>
-                </ScrollView>
+                </View>
               </Card>
             </View>
-          </View>
+          </ScrollView>
         ) : (
           // The taste phase scrolls, so large text sizes cannot push the cards or the footer buttons out of reach.
           <ScrollView
@@ -850,7 +860,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                   />
                 ) : (
                   <Button
-                    label="Skip"
+                    label={flowMode === "profile" ? "Cancel" : "Skip"}
                     variant="ghost"
                     onPress={() => {
                       if (flowMode === "profile") {

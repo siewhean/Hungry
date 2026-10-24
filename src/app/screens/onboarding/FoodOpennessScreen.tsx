@@ -38,16 +38,20 @@ export function FoodOpennessScreen({ navigation, route }: Props) {
   const tasteProfile = useProfileStore((state) => state.profile.tasteProfile);
   const setFoodOpenness = useProfileStore((state) => state.setFoodOpenness);
   const showToast = useUIStore((state) => state.showToast);
-  const [selected, setSelected] = useState<FoodOpenness>(() =>
+  // The preselected answer; Continue without a tap keeps it, which is not a real choice.
+  const [initialSelection] = useState<FoodOpenness>(() =>
     tasteProfile?.foodOpenness ? resolveFoodOpenness(tasteProfile) : DEFAULT_FOOD_OPENNESS,
   );
+  const [selected, setSelected] = useState<FoodOpenness>(initialSelection);
 
   useEffect(() => {
     if (!isSettings) trackOnboardingStepViewed("openness");
   }, [isSettings]);
 
   const finish = (openness: FoodOpenness) => {
-    setFoodOpenness(openness, isSettings ? "settings" : "onboarding");
+    setFoodOpenness(openness, isSettings ? "settings" : "onboarding", {
+      changedFromDefault: openness !== initialSelection,
+    });
     if (isSettings) {
       showToast({ message: "Recommendations updated.", tone: "success" });
       navigation.goBack();
