@@ -47,7 +47,14 @@ export type AuthStackParamList = {
 
 export type OnboardingStackParamList = {
   OnboardingWelcome: undefined;
-  TasteQuiz: { mode?: "onboarding" | "profile"; initialPhase?: "taste" | "dietary" } | undefined;
+  TasteQuiz:
+    | {
+        mode?: "onboarding" | "profile";
+        initialPhase?: "taste" | "dietary";
+        /** The page the edit was opened from, for the preference events' surface. */
+        source?: "settings";
+      }
+    | undefined;
   DietaryPreferences:
     | {
         mode?: "onboarding" | "profile";

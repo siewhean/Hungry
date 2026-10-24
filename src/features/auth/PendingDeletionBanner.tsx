@@ -10,10 +10,7 @@ import { getHungryService } from "@/lib/services/serviceProvider";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
-import {
-  formatDeletionDate,
-  showDeletionAlreadyStartedAlert,
-} from "./useAccountDeletionGracePrompt";
+import { explainNothingCancelled, formatDeletionDate } from "./useAccountDeletionGracePrompt";
 
 /**
  * Signing in does not cancel a deletion request; only Keep my account does. While a
@@ -63,10 +60,7 @@ export function PendingDeletionBanner({
       .then(async (cancelled) => {
         if (!cancelled) {
           // Nothing was cancelled: the deletion already started, or was already stopped.
-          showDeletionAlreadyStartedAlert();
-          const pending = await getHungryService()
-            .auth.getPendingAccountDeletion()
-            .catch(() => null);
+          const pending = await explainNothingCancelled();
           setScheduledFor(pending?.scheduledFor ?? null);
           return;
         }

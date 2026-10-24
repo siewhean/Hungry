@@ -3,10 +3,15 @@ import assert from "node:assert/strict";
 import test, { afterEach, beforeEach } from "node:test";
 
 import { EmailChangeScreen } from "@/app/screens/auth/EmailChangeScreen";
+import { EmailVerificationScreen } from "@/app/screens/auth/EmailVerificationScreen";
 import { ForgotPasswordScreen } from "@/app/screens/auth/ForgotPasswordScreen";
 import { LoginScreen } from "@/app/screens/auth/LoginScreen";
 import { ResetPasswordScreen } from "@/app/screens/auth/ResetPasswordScreen";
 import { SignUpScreen } from "@/app/screens/auth/SignUpScreen";
+import {
+  rememberPendingEmailVerification,
+  takePendingEmailVerificationCompletesOnboarding,
+} from "@/features/auth/pendingEmailVerification";
 import {
   clearTrackedAnalyticsEvents,
   getTrackedAnalyticsEvents,
@@ -217,4 +222,15 @@ test("AUTH-6: the first of two email-change links reads as progress, not failure
   });
   assert.match(view.text(), /One down, one to go/);
   assert.doesNotMatch(view.text(), /couldn't confirm/);
+});
+
+test("AUTH-V6: opening the code screen from Login keeps the onboarding flag a sign-up saved", async () => {
+  // The OnboardingAuth sign-up remembered that onboarding was done.
+  rememberPendingEmailVerification(true);
+  const view = await renderScreen(EmailVerificationScreen as never, {
+    name: "EmailVerification",
+    params: { email: "mei@example.sg" },
+  });
+  await view.settle();
+  assert.equal(await takePendingEmailVerificationCompletesOnboarding(), true);
 });

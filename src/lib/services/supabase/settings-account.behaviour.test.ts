@@ -206,6 +206,60 @@ test("a submission no saved row confirms is an error, not a made-up success", as
   );
 });
 
+test("SET-X2: isAccountDeletionProcessing reads only this account's processing request", async () => {
+  fake.tables.account_deletion_requests = () => ({ data: { id: "req-1" }, error: null });
+  assert.equal(await service.auth.isAccountDeletionProcessing(), true);
+  const ops = fake.queriesOn("account_deletion_requests")[0].ops;
+  assert.deepEqual(
+    ops.filter(([op]) => op === "eq").map(([, args]) => args),
+    [
+      ["user_id", ME],
+      ["status", "processing"],
+    ],
+  );
+  fake.tables.account_deletion_requests = () => ({ data: null, error: null });
+  assert.equal(await service.auth.isAccountDeletionProcessing(), false);
+});
+
+test("SET-V5: an RPC id whose row cannot be read back is kept, not replaced by a made-up one", async () => {
+  fake.rpc.submit_user_stall_submission = () => ({ data: "sub-123", error: null });
+  fake.tables.user_stall_submissions = () => ({ data: null, error: null });
+  const submission = await service.contributions.submitDiscoveredStall(stallInput);
+  assert.equal(submission.id, "sub-123");
+});
+
+test("SET-6: an empty RPC result is not reported as a made-up submission", async () => {
+  fake.rpc.submit_user_stall_submission = () => ({ data: [], error: null });
+  fake.tables.user_stall_submissions = () => ({ data: null, error: null });
+  await assert.rejects(
+    service.contributions.submitDiscoveredStall(stallInput),
+    /couldn't confirm your submission/,
+  );
+});
+
+test("SET-V5: a direct insert that fails on the schema removes its photos before reporting", async () => {
+  fake.rpc.submit_user_stall_submission = () => ({
+    data: null,
+    error: { code: "42883", message: "could not find the function submit_user_stall_submission" },
+  });
+  fake.tables.user_stall_submissions = (call) =>
+    call.ops.some(([op]) => op === "insert")
+      ? {
+          data: null,
+          error: {
+            code: "PGRST204",
+            message: "Could not find the 'legacy_column' column of 'user_stall_submissions' in the schema cache",
+          },
+        }
+      : { data: null, error: null };
+  await assert.rejects(
+    service.contributions.submitDiscoveredStall(stallInput),
+    /couldn't confirm your submission/,
+  );
+  const lastRemove = storageCalls.filter((call) => call.method === "remove").at(-1);
+  assert.equal((lastRemove?.args[0] as string[] | undefined)?.length, 2, "both photos are removed");
+});
+
 test("a deleted account's kept review shows as a bare rating without text or photos", async () => {
   fake.tables.review_photos = () => ({ data: [], error: null });
   fake.tables.public_profiles = () => ({ data: [], error: null });

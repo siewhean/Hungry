@@ -187,12 +187,12 @@ interface ProfileState {
   /** `surface` tags the analytics event: the onboarding quiz or the profile/Settings edit. */
   setDietaryPreferences: (
     dietaryPreferences: DietaryFlag[],
-    options?: { surface?: "onboarding" | "profile" },
+    options?: { surface?: "onboarding" | "profile" | "settings" },
   ) => void;
   /** Saved on the account (user_profiles.max_dish_budget) when signed in; kept on the device for guests. */
   setMaxDishBudget: (
     maxDishBudget: number | undefined,
-    options?: { surface?: "onboarding" | "profile" },
+    options?: { surface?: "onboarding" | "profile" | "settings" },
   ) => void;
   addReview: (dish: DishDetail) => void;
   addReviewedDish: (dishId: string) => void;

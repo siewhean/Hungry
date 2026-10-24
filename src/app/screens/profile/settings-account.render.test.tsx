@@ -15,11 +15,13 @@ import { SettingsRow } from "@/components/settings/SettingsRow";
 import { StallAlertsSettings } from "@/components/settings/StallAlertsSettings";
 import { PendingDeletionBanner } from "@/features/auth/PendingDeletionBanner";
 import {
+  EXPERIMENTS,
   clearExperimentOverrides,
   resetExperimentSession,
   setExperimentFlagSource,
   type ExperimentFlagSource,
 } from "@/lib/experiments/experiments";
+import { clearTrackedAnalyticsEvents, getTrackedAnalyticsEvents } from "@/lib/analytics";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useStallSubmissionStore } from "@/store/useStallSubmissionStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -106,6 +108,7 @@ test("without a pending deletion, Delete account is offered", async () => {
 test("Keep my account does not claim success when the deletion already started", async () => {
   stub(getHungryService().auth, "getPendingAccountDeletion", async () => pendingIn30Days());
   stub(getHungryService().auth, "cancelAccountDeletion", async () => false);
+  stub(getHungryService().auth, "isAccountDeletionProcessing", async () => true);
   const view = await render(createElement(PendingDeletionBanner));
   await view.press(view.findByText("Keep my account"));
   await view.settle();
@@ -114,6 +117,23 @@ test("Keep my account does not claim success when the deletion already started",
     alerts.map((call) => call.title),
     ["Deletion already started"],
   );
+});
+
+test("SET-X2: Keep my account after a cancel elsewhere says it is not scheduled, not 'already started'", async () => {
+  let pending: { scheduledFor: string } | null = pendingIn30Days();
+  stub(getHungryService().auth, "getPendingAccountDeletion", async () => pending);
+  // Another device kept the account first; nothing is left to cancel or process.
+  stub(getHungryService().auth, "cancelAccountDeletion", async () => {
+    pending = null;
+    return false;
+  });
+  stub(getHungryService().auth, "isAccountDeletionProcessing", async () => false);
+  const view = await render(createElement(PendingDeletionBanner));
+  await view.press(view.findByText("Keep my account"));
+  await view.settle();
+  assert.deepEqual(alerts, []);
+  assert.equal(useUIStore.getState().toast?.message, "Your account is not scheduled for deletion.");
+  assert.equal(view.findByText("Keep my account"), null, "the banner goes away");
 });
 
 test("Keep my account confirms when the request was cancelled", async () => {
@@ -183,7 +203,23 @@ test("the folded Dining header reads its summary with the title", async () => {
   assert.equal(view.findByText("Meal budget"), null, "control starts folded");
 });
 
+// The test is a draft until its PostHog flag exists; run it as live here to check the arms.
+function runDiningTestLive() {
+  const definition = EXPERIMENTS.settings_dining_unfolded_v1 as { status: string };
+  const previous = definition.status;
+  definition.status = "running";
+  restores.push(() => {
+    definition.status = previous;
+  });
+}
+
+test("the dining experiment is a draft measured on Settings dietary changes", () => {
+  assert.equal(EXPERIMENTS.settings_dining_unfolded_v1.status, "draft");
+  assert.equal(EXPERIMENTS.settings_dining_unfolded_v1.primaryMetric, "dietary_preferences_set");
+});
+
 test("the unfolded variant shows the dining rows open and is exposed", async () => {
+  runDiningTestLive();
   const fake = fakeFlags({ settings_dining_unfolded_v1: "unfolded" });
   setExperimentFlagSource(fake.source);
   const view = await renderScreen(SettingsScreen as never, { name: "Settings" });
@@ -192,6 +228,7 @@ test("the unfolded variant shows the dining rows open and is exposed", async () 
 });
 
 test("the control variant starts folded", async () => {
+  runDiningTestLive();
   const fake = fakeFlags({ settings_dining_unfolded_v1: "control" });
   setExperimentFlagSource(fake.source);
   const view = await renderScreen(SettingsScreen as never, { name: "Settings" });
@@ -201,11 +238,43 @@ test("the control variant starts folded", async () => {
 
 test("a signed-out viewer is never exposed to the dining experiment", async () => {
   await enterScenario("guest");
+  runDiningTestLive();
   const fake = fakeFlags({ settings_dining_unfolded_v1: "unfolded" });
   setExperimentFlagSource(fake.source);
   const view = await renderScreen(SettingsScreen as never, { name: "Settings" });
   assert.equal(view.findByText("Meal budget"), null, "falls back to control");
   assert.equal(fake.state.exposed.includes("settings_dining_unfolded_v1"), false);
+});
+
+test("SET-V4: a Settings dining edit tags surface settings, and an unchanged finish sends nothing", async () => {
+  const { TasteQuizScreen } =
+    require("@/app/screens/onboarding/TasteQuizScreen") as typeof import("@/app/screens/onboarding/TasteQuizScreen");
+  const { useProfileStore } =
+    require("@/store/useProfileStore") as typeof import("@/store/useProfileStore");
+  useProfileStore.setState((state) => ({
+    profile: { ...state.profile, dietaryPreferences: [], maxDishBudget: undefined },
+  }));
+  const params = { mode: "profile", initialPhase: "dietary", source: "settings" };
+  const dietaryEvents = () =>
+    getTrackedAnalyticsEvents().filter((record) => record.event === "dietary_preferences_set");
+  const continueButton = (view: Awaited<ReturnType<typeof renderScreen>>) =>
+    (Array.from(document.body.querySelectorAll("*")) as HTMLElement[])
+      .filter((el) => el.childNodes.length === 1 && el.textContent === "Continue")
+      .at(-1) ?? null;
+
+  clearTrackedAnalyticsEvents();
+  let view = await renderScreen(TasteQuizScreen as never, { name: "TasteQuiz", params });
+  await view.press(continueButton(view));
+  assert.equal(dietaryEvents().length, 0, "nothing changed, so no dietary event");
+  await view.unmount();
+
+  view = await renderScreen(TasteQuizScreen as never, { name: "TasteQuiz", params });
+  await view.press(view.findByLabel("Dietary preference Vegetarian"));
+  await view.press(continueButton(view));
+  assert.deepEqual(
+    dietaryEvents().map((record) => record.properties),
+    [{ flag_count: 1, surface: "settings" }],
+  );
 });
 
 // --- SET-4, SET-15, SET-19, SET-14 ----------------------------------------------------------
@@ -312,6 +381,21 @@ test("AddStall says so when the photo picker fails instead of failing silently",
   assert.equal(
     useUIStore.getState().toast?.message,
     "Couldn't open your photos. Please try again.",
+  );
+});
+
+test("SET-V5: an unconfirmed stall submission points to My submissions instead of 'try again'", async () => {
+  const { resolveSubmitErrorMessage } =
+    require("@/app/screens/profile/AddStallScreen") as typeof import("@/app/screens/profile/AddStallScreen");
+  const { StallSubmissionUnconfirmedError } =
+    require("@/lib/services/supabase/supabaseService") as typeof import("@/lib/services/supabase/supabaseService");
+  assert.match(
+    resolveSubmitErrorMessage(new StallSubmissionUnconfirmedError()),
+    /Check My submissions before trying again/,
+  );
+  assert.equal(
+    resolveSubmitErrorMessage(new Error("schema cache")),
+    "Couldn't submit the stall. Please try again.",
   );
 });
 

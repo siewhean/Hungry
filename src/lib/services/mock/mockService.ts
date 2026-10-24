@@ -1634,6 +1634,11 @@ export const hungryService: HungryService = {
       return resolve(hadPending);
     },
 
+    async isAccountDeletionProcessing() {
+      // The mock has no deletion worker.
+      return resolve(false);
+    },
+
     async forgotPassword(_email) {
       // Mock: no-op — in production sends a reset email
       return resolve(undefined);

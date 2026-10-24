@@ -869,6 +869,8 @@ export interface HungryService {
     requestAccountDeletion(request?: AccountDeletionRequest): Promise<PendingAccountDeletion>;
     getPendingAccountDeletion(): Promise<PendingAccountDeletion | null>;
     cancelAccountDeletion(): Promise<boolean>;
+    /** True while the deletion worker is processing this account's request (too late to keep). */
+    isAccountDeletionProcessing(): Promise<boolean>;
     forgotPassword(email: string): Promise<void>;
     /** Exchanges the `?code` from the password-reset link; this signs the user in. */
     exchangeRecoveryCode(token: string): Promise<void>;

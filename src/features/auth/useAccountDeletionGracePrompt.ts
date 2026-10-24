@@ -23,6 +23,28 @@ export function showDeletionAlreadyStartedAlert() {
 }
 
 /**
+ * Keep my account cancelled nothing: say why. Either the worker already started (too late),
+ * or the request was already cancelled, for example on another device (SET-X2). Resolves
+ * to the request still pending, if any, so the caller can refresh what it shows.
+ */
+export async function explainNothingCancelled(): Promise<{ scheduledFor: string } | null> {
+  const auth = getHungryService().auth;
+  const [pending, processing] = await Promise.all([
+    auth.getPendingAccountDeletion().catch(() => null),
+    auth.isAccountDeletionProcessing().catch(() => true),
+  ]);
+  if (processing) {
+    showDeletionAlreadyStartedAlert();
+  } else if (!pending) {
+    useUIStore.getState().showToast({
+      message: "Your account is not scheduled for deletion.",
+      tone: "success",
+    });
+  }
+  return pending;
+}
+
+/**
  * When someone signs back in during the 30-day deletion grace period, ask
  * whether to keep the account (cancels the request) or continue deletion.
  * Signing in alone does not cancel it, so a failed check or cancel is retried
@@ -82,7 +104,7 @@ export function useAccountDeletionGracePrompt(onContinueDeletion: () => void) {
                   .auth.cancelAccountDeletion()
                   .then((cancelled) => {
                     if (!cancelled) {
-                      showDeletionAlreadyStartedAlert();
+                      void explainNothingCancelled();
                       return;
                     }
                     trackAnalyticsEvent("account_deletion_cancelled", {

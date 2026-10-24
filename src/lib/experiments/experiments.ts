@@ -155,11 +155,15 @@ export const EXPERIMENTS = {
     primaryMetric: "portfolio_item_added",
     guardrailMetrics: ["dish_favourited", "dish_unfavourited", "list_item_removed", "dish_viewed"],
   },
-  /** Dining preferences on Settings start open instead of folded. */
+  /**
+   * Dining preferences on Settings start open instead of folded. Measure dietary_preferences_set
+   * with surface = "settings": the Settings rows tag it, and a profile edit sends it only when
+   * the flags changed. Draft until the PostHog flag exists.
+   */
   settings_dining_unfolded_v1: {
     variants: ["control", "unfolded"],
     fallback: "control",
-    status: "running",
+    status: "draft",
     surface: "settings",
     hypothesis:
       "Showing the dining rows open instead of behind a folded header leads more Settings visitors to update their dietary and budget preferences, which makes Home and Decide for me more relevant.",
