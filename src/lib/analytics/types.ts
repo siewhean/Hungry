@@ -41,6 +41,8 @@ export type AnalyticsEventName =
   | "map_filter_toggled"
   | "map_search_submitted"
   | "discover_rail_impression"
+  | "discover_card_opened"
+  | "discover_search_opened"
   | "floor_switched"
   | "dish_viewed"
   | "decide_for_me_triggered"

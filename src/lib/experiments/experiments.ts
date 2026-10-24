@@ -39,10 +39,27 @@ export interface ExperimentDefinition {
 }
 
 export const EXPERIMENTS = {
-  /** Welcome back card on Home after more than a week away. */
+  /**
+   * Concluded without data: the card was mounted only in the archived social feed and the
+   * fallback was "test". Replaced by welcome_back_v2 on the Home that ships.
+   */
   welcome_back_v1: {
     variants: ["control", "test"],
     fallback: "test",
+    status: "concluded",
+    surface: "home",
+    hypothesis:
+      "Showing returning users their saved dishes and what is new at followed stalls brings more of them back to a dish page.",
+    primaryMetric: "welcome_back_opened",
+    guardrailMetrics: ["welcome_back_dismissed", "dish_viewed"],
+  },
+  /**
+   * Welcome back card on the shipped Home (CatalogDiscoverHome) after more than a week away.
+   * Read in WelcomeBackCard only for returning users while Home is focused and has content.
+   */
+  welcome_back_v2: {
+    variants: ["control", "test"],
+    fallback: "control",
     status: "running",
     surface: "home",
     hypothesis:

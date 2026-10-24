@@ -83,6 +83,7 @@ import {
   preloadRoute,
 } from "@/features/navigation/prefetch";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { reportError } from "@/lib/monitoring/reportError";
 import {
   getNearestBuildings,
   getNearestSingaporeArea,
@@ -1445,6 +1446,7 @@ export function DiscoverHomeScreen() {
   // Without a GPS fix or a manual pick the coordinate is only the built-in default,
   // so the header asks the user to choose an area instead of asserting one.
   const needsDiscoverAreaChoice = isDiscoverLocationApproximate && !manualLocation;
+  const wheelCtaLabel = FEATURE_FLAGS.wheelPartyEnabled ? "Pick with friends" : "Spin the wheel";
   const areaBuildings = useMemo(
     () => getNearestBuildings(discoverLocationLatitude, discoverLocationLongitude, 3, 14),
     [discoverLocationLatitude, discoverLocationLongitude],
@@ -1541,6 +1543,7 @@ export function DiscoverHomeScreen() {
       if (discoveryFeedResult.status === "fulfilled") {
         setSupabaseDiscoveryFeed(discoveryFeedResult.value ?? null);
       } else {
+        reportError(discoveryFeedResult.reason, { surface: "discover_home_feed" });
         setDiscoverLoadError(true);
       }
       setIsSupabaseDiscoveryFeedLoading(false);
@@ -2548,59 +2551,66 @@ export function DiscoverHomeScreen() {
             </View>
           </Pressable>
 
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Pick with friends"
-            accessibilityHint="Opens the Hungry Wheel to spin together with your group"
-            onPressIn={() => preloadRoute(navigation, "WheelStack", { screen: "WheelHome" })}
-            onPress={() => navigation.navigate("WheelStack", { screen: "WheelHome" })}
-            style={({ pressed }) => [
-              {
-                alignItems: "center",
-                backgroundColor: "transparent",
-                borderColor: palette.border,
-                borderRadius: componentRadii.button,
-                borderWidth: 1,
-                flexDirection: "row",
-                gap: decisionCardInnerGap,
-                minHeight: 56,
-                justifyContent: "center",
-                opacity: pressed ? 0.92 : 1,
-                padding: decisionCardPadding,
-                width: decisionCardWidth,
-              },
-            ]}
-          >
-            <View
-              style={{
-                alignItems: "center",
-                backgroundColor: palette.bgSoft,
-                borderRadius: radii.pill,
-                height: decisionCardIconSize,
-                justifyContent: "center",
-                width: decisionCardIconSize,
-              }}
+          {/* WheelStack is registered only when the wheel ships; party mode is non-production. */}
+          {FEATURE_FLAGS.hungryWheelEnabled ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={wheelCtaLabel}
+              accessibilityHint={
+                FEATURE_FLAGS.wheelPartyEnabled
+                  ? "Opens the Hungry Wheel to spin together with your group"
+                  : "Opens the Hungry Wheel to pick between a few options"
+              }
+              onPressIn={() => preloadRoute(navigation, "WheelStack", { screen: "WheelHome" })}
+              onPress={() => navigation.navigate("WheelStack", { screen: "WheelHome" })}
+              style={({ pressed }) => [
+                {
+                  alignItems: "center",
+                  backgroundColor: "transparent",
+                  borderColor: palette.border,
+                  borderRadius: componentRadii.button,
+                  borderWidth: 1,
+                  flexDirection: "row",
+                  gap: decisionCardInnerGap,
+                  minHeight: 56,
+                  justifyContent: "center",
+                  opacity: pressed ? 0.92 : 1,
+                  padding: decisionCardPadding,
+                  width: decisionCardWidth,
+                },
+              ]}
             >
-              <Users color={themeTints.text} size={decisionCardIconGraphicSize} />
-            </View>
-            <AppText
-              variant="bodyBold"
-              numberOfLines={2}
-              style={{
-                color: themeTints.text,
-                includeFontPadding: false,
-                flexShrink: 1,
-                fontSize: decisionCardLabelFontSize,
-                lineHeight: decisionCardLabelLineHeight,
-                maxWidth: decisionCardLabelMaxWidth,
-                minWidth: 0,
-                textAlign: "center",
-                textAlignVertical: "center",
-              }}
-            >
-              Pick with friends
-            </AppText>
-          </Pressable>
+              <View
+                style={{
+                  alignItems: "center",
+                  backgroundColor: palette.bgSoft,
+                  borderRadius: radii.pill,
+                  height: decisionCardIconSize,
+                  justifyContent: "center",
+                  width: decisionCardIconSize,
+                }}
+              >
+                <Users color={themeTints.text} size={decisionCardIconGraphicSize} />
+              </View>
+              <AppText
+                variant="bodyBold"
+                numberOfLines={2}
+                style={{
+                  color: themeTints.text,
+                  includeFontPadding: false,
+                  flexShrink: 1,
+                  fontSize: decisionCardLabelFontSize,
+                  lineHeight: decisionCardLabelLineHeight,
+                  maxWidth: decisionCardLabelMaxWidth,
+                  minWidth: 0,
+                  textAlign: "center",
+                  textAlignVertical: "center",
+                }}
+              >
+                {wheelCtaLabel}
+              </AppText>
+            </Pressable>
+          ) : null}
         </View>
 
         {inMallMode && currentPlace ? (

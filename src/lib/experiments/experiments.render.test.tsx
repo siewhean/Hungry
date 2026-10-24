@@ -37,7 +37,7 @@ function fakeSource(flags: Record<string, string> | undefined) {
 async function renderVariant(enabled: boolean) {
   const box = { current: "" };
   function Probe({ on }: { on: boolean }) {
-    box.current = useExperimentVariant("welcome_back_v1", { enabled: on });
+    box.current = useExperimentVariant("welcome_back_v2", { enabled: on });
     return null;
   }
   const view = await render(createElement(Probe, { on: enabled }));
@@ -45,10 +45,10 @@ async function renderVariant(enabled: boolean) {
 }
 
 test("an ineligible user gets the fallback and is never exposed", async () => {
-  const fake = fakeSource({ welcome_back_v1: "control" });
+  const fake = fakeSource({ welcome_back_v2: "test" });
   setExperimentFlagSource(fake.source);
   const { box } = await renderVariant(false);
-  assert.equal(box.current, "test");
+  assert.equal(box.current, "control");
   assert.equal(fake.state.exposures, 0);
 });
 
@@ -56,29 +56,29 @@ test("the variant switches in when flags load, exposing once", async () => {
   const fake = fakeSource(undefined);
   setExperimentFlagSource(fake.source);
   const { box } = await renderVariant(true);
-  assert.equal(box.current, "test");
+  assert.equal(box.current, "control");
   assert.equal(fake.state.exposures, 0);
 
   await act(async () => {
-    fake.state.flags = { welcome_back_v1: "control" };
+    fake.state.flags = { welcome_back_v2: "test" };
     for (const listener of fake.state.listeners) listener();
   });
-  assert.equal(box.current, "control");
+  assert.equal(box.current, "test");
   assert.equal(fake.state.exposures, 1);
 });
 
 test("becoming eligible later exposes at that moment", async () => {
-  const fake = fakeSource({ welcome_back_v1: "control" });
+  const fake = fakeSource({ welcome_back_v2: "test" });
   setExperimentFlagSource(fake.source);
   const { box, rerender } = await renderVariant(false);
   assert.equal(fake.state.exposures, 0);
   await rerender(true);
-  assert.equal(box.current, "control");
+  assert.equal(box.current, "test");
   assert.equal(fake.state.exposures, 1);
 });
 
 test("unmounting unsubscribes from flag reloads", async () => {
-  const fake = fakeSource({ welcome_back_v1: "control" });
+  const fake = fakeSource({ welcome_back_v2: "control" });
   setExperimentFlagSource(fake.source);
   await renderVariant(true);
   assert.equal(fake.state.listeners.size, 1);
