@@ -101,7 +101,7 @@ export function TrendingList({ title, bites, onOpen, onPrefetch, onSeeAll }: Tre
                   </AppText>
                 ) : null}
                 {bite.price > 0 ? (
-                  <AppText variant="bodySmallBold" style={{ color: palette.orange }}>
+                  <AppText variant="bodySmallBold" style={{ color: palette.text }}>
                     S${bite.price.toFixed(2)}
                   </AppText>
                 ) : null}

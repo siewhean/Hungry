@@ -421,7 +421,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /const isLateNightMakanVisible = isLateNightHour\(currentHour\)/);
   assert.match(
     discover,
-    /\{isLateNightMakanVisible && shouldRenderDiscoverRail\(lateNightCards\.length, MIN_DISCOVER_RAIL_ITEMS\) \? \([\s\S]*title="Late night eats"[\s\S]*cards=\{lateNightCards\}/,
+    /\{isLateNightMakanVisible &&\s*shouldRenderDiscoverRail\(\s*lateNightCards\.length,\s*MIN_DISCOVER_RAIL_ITEMS,?\s*\) \? \([\s\S]*title="Late night eats"[\s\S]*cards=\{lateNightCards\}/,
   );
   assert.match(discover, /trackAnalyticsEvent\("discover_see_all_tapped", \{ collection \}\)/);
   assert.doesNotMatch(discover, /const foodInset = 5/);
@@ -444,8 +444,11 @@ test("Discover V1 contract: situation intents live in their matching sections", 
     /const shouldShowPopularFoodSkeleton =[\s\S]*showPopularFoodSkeleton \|\| showPopularFoodFilterSkeleton \|\| showInitialDiscoverSkeleton/,
   );
   assert.match(discover, /function DiscoverDishImagePlaceholder\(/);
-  assert.match(discover, /backgroundColor: palette\.surfaceRaised/);
-  assert.match(discover, /<Utensils color=\{palette\.orange\} size=\{iconSize\} \/>/);
+  assert.match(discover, /backgroundColor: palette\.bgSoft/);
+  assert.match(
+    discover,
+    /<Utensils color=\{palette\.textMuted\} size=\{Math\.min\(iconSize, 24\)\} \/>/,
+  );
   assert.match(discover, /function DiscoverBiteImage\(\{ bite, height \}/);
   assert.match(discover, /\[bite\.photoUrl, \.\.\.\(bite\.mediaUrls \?\? \[\]\)\]/);
   assert.match(discover, /source=\{\{ uri: activeImageUrl \}\}/);
@@ -550,7 +553,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.doesNotMatch(discover, /import \{ DecideForMeCard \}/);
   assert.match(
     discover,
-    /\/\* Decision action chips \*\/[\s\S]*<View style=\{\{ flexDirection: "row", gap: decisionCardGap \}\}>[\s\S]*onPress=\{handleDecideForMe\}[\s\S]*Decide for Me[\s\S]*navigation\.navigate\("WheelStack", \{ screen: "WheelHome" \}\)[\s\S]*Pick with friends[\s\S]*<\/View>/,
+    /\/\* Decision action chips \*\/[\s\S]*<View style=\{\{ flexDirection: "row", gap: decisionCardGap \}\}>[\s\S]*onPress=\{handleDecideForMe\}[\s\S]*Decide for me[\s\S]*navigation\.navigate\("WheelStack", \{ screen: "WheelHome" \}\)[\s\S]*Pick with friends[\s\S]*<\/View>/,
   );
   assert.match(
     discover,
@@ -558,7 +561,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   );
   assert.match(
     discover,
-    /<Dices color=\{palette\.white\} size=\{decisionCardIconGraphicSize\} \/>/,
+    /<Dices color=\{palette\.textOnOrange\} size=\{decisionCardIconGraphicSize\} \/>/,
   );
   // Cards grow with large text instead of clipping at a fixed 72.
   assert.match(discover, /minHeight: 56,[\s\S]*width: decisionCardWidth/);

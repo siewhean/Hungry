@@ -109,6 +109,7 @@ export function TasteRadarChart({ axes, size = 260 }: Props) {
           fill={palette.textSecondary}
           fillOpacity={0.14}
           stroke={palette.textSecondary}
+          strokeDasharray="6 4"
           strokeWidth={2}
         />
         {axes.map((axis, index) => {
@@ -143,14 +144,23 @@ export function TasteRadarChart({ axes, size = 260 }: Props) {
           justifyContent: "center",
         }}
       >
-        <LegendItem color={palette.textSecondary} label="This dish, from reviews" />
+        <LegendItem dashed color={palette.textSecondary} label="This dish, from reviews" />
         {showYours ? <LegendItem color={palette.orange} label="How it tastes to you" /> : null}
       </View>
     </View>
   );
 }
 
-function LegendItem({ color, label }: { color: string; label: string }) {
+/** A dashed swatch marks the dashed outline, so the two series differ by more than colour. */
+function LegendItem({
+  color,
+  dashed = false,
+  label,
+}: {
+  color: string;
+  dashed?: boolean;
+  label: string;
+}) {
   const { spacing } = useHungryTheme();
   return (
     <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1.5] }}>
@@ -158,10 +168,11 @@ function LegendItem({ color, label }: { color: string; label: string }) {
         style={{
           borderColor: color,
           borderRadius: 2,
+          borderStyle: dashed ? "dashed" : "solid",
           borderWidth: 1.5,
           height: 10,
           width: 14,
-          backgroundColor: color,
+          backgroundColor: dashed ? "transparent" : color,
           opacity: 0.85,
         }}
       />

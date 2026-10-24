@@ -23,7 +23,6 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "@/lib/haptics";
-import { LinearGradient } from "expo-linear-gradient";
 import {
   ChevronRight,
   Compass,
@@ -307,14 +306,14 @@ function DiscoverDishImagePlaceholder({
       style={[
         {
           alignItems: "center",
-          backgroundColor: palette.surfaceRaised,
+          backgroundColor: palette.bgSoft,
           justifyContent: "center",
           overflow: "hidden",
         },
         style,
       ]}
     >
-      <Utensils color={palette.orange} size={iconSize} />
+      <Utensils color={palette.textMuted} size={Math.min(iconSize, 24)} />
     </View>
   );
 }
@@ -782,7 +781,7 @@ const DiscoverBiteCard = memo(function DiscoverBiteCard({
             marginTop: spacing[1],
           }}
         >
-          <AppText variant="price" style={{ color: palette.accentText }}>
+          <AppText variant="price" style={{ color: palette.text }}>
             S${bite.price.toFixed(2)}
           </AppText>
           {variant !== "price" && hasRating ? (
@@ -1121,7 +1120,7 @@ function VerticalStallShowcaseSection({
                         <AppText
                           variant="price"
                           style={{
-                            color: palette.accentText,
+                            color: palette.text,
                             fontSize: typography.bodySmallBold.fontSize,
                             fontWeight: "800",
                             lineHeight: typography.bodySmallBold.lineHeight,
@@ -2230,7 +2229,7 @@ export function DiscoverHomeScreen() {
               <AppText variant="bodySmall" style={{ color: themeTints.secondaryText }}>
                 You are at
               </AppText>
-              <AppText variant="h2" style={{ color: palette.orange }} numberOfLines={1}>
+              <AppText variant="h2" style={{ color: themeTints.text }} numberOfLines={1}>
                 {discoverHeaderLabel}
               </AppText>
             </Pressable>
@@ -2417,12 +2416,10 @@ export function DiscoverHomeScreen() {
               },
             ]}
           >
-            <LinearGradient
-              colors={[palette.orange, palette.amber]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
+            <View
               style={{
                 alignItems: "center",
+                backgroundColor: palette.orange,
                 borderRadius: componentRadii.button,
                 flexDirection: "row",
                 gap: decisionCardInnerGap,
@@ -2441,13 +2438,13 @@ export function DiscoverHomeScreen() {
                   width: decisionCardIconSize,
                 }}
               >
-                <Dices color={palette.white} size={decisionCardIconGraphicSize} />
+                <Dices color={palette.textOnOrange} size={decisionCardIconGraphicSize} />
               </View>
               <AppText
                 variant="bodyBold"
-                tone="inverse"
                 numberOfLines={2}
                 style={{
+                  color: palette.textOnOrange,
                   includeFontPadding: false,
                   flexShrink: 1,
                   fontSize: decisionCardLabelFontSize,
@@ -2458,9 +2455,9 @@ export function DiscoverHomeScreen() {
                   textAlignVertical: "center",
                 }}
               >
-                Decide for Me
+                Decide for me
               </AppText>
-            </LinearGradient>
+            </View>
           </Pressable>
 
           <Pressable
@@ -2470,11 +2467,12 @@ export function DiscoverHomeScreen() {
             onPressIn={() => preloadRoute(navigation, "WheelStack", { screen: "WheelHome" })}
             onPress={() => navigation.navigate("WheelStack", { screen: "WheelHome" })}
             style={({ pressed }) => [
-              shadows.card,
               {
                 alignItems: "center",
-                backgroundColor: themeTints.isDark ? palette.inverseSurfaceFaint : palette.navy,
+                backgroundColor: "transparent",
+                borderColor: palette.border,
                 borderRadius: componentRadii.button,
+                borderWidth: 1,
                 flexDirection: "row",
                 gap: decisionCardInnerGap,
                 minHeight: 56,
@@ -2488,20 +2486,20 @@ export function DiscoverHomeScreen() {
             <View
               style={{
                 alignItems: "center",
-                backgroundColor: palette.inverseSurfaceSoft,
+                backgroundColor: palette.bgSoft,
                 borderRadius: radii.pill,
                 height: decisionCardIconSize,
                 justifyContent: "center",
                 width: decisionCardIconSize,
               }}
             >
-              <Users color={palette.white} size={decisionCardIconGraphicSize} />
+              <Users color={themeTints.text} size={decisionCardIconGraphicSize} />
             </View>
             <AppText
               variant="bodyBold"
-              tone="inverse"
               numberOfLines={2}
               style={{
+                color: themeTints.text,
                 includeFontPadding: false,
                 flexShrink: 1,
                 fontSize: decisionCardLabelFontSize,

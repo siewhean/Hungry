@@ -38,7 +38,7 @@ test("Discover asks for an area instead of asserting the default location", () =
   assert.match(screen, /You are at\s*<\/AppText>/);
   assert.match(
     screen,
-    /style=\{\{ color: palette\.orange \}\} numberOfLines=\{1\}>\s*\{discoverHeaderLabel\}/,
+    /style=\{\{ color: themeTints\.text \}\} numberOfLines=\{1\}>\s*\{discoverHeaderLabel\}/,
   );
   assert.match(
     screen,

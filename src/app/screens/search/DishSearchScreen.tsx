@@ -599,7 +599,7 @@ export function DishSearchScreen() {
                 </View>
                 <View style={{ alignItems: "flex-end", gap: spacing[4] }}>
                   {dish.price != null ? (
-                    <AppText variant="bodyBold" style={{ color: palette.orange }}>
+                    <AppText variant="bodyBold" style={{ color: palette.text }}>
                       S${dish.price.toFixed(2)}
                     </AppText>
                   ) : null}

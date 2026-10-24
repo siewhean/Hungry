@@ -9,6 +9,9 @@ interface NoDishPhotoProps {
   iconSize?: number;
 }
 
+/** A quiet tinted tile: the icon stays small however large the empty photo area is. */
+const MAX_ICON_SIZE = 24;
+
 /** Shown instead of a stock or placeholder image when a dish has no real photo yet. */
 export function NoDishPhoto({ dishName, style, iconSize = 28 }: NoDishPhotoProps) {
   const { palette } = useHungryTheme();
@@ -17,11 +20,11 @@ export function NoDishPhoto({ dishName, style, iconSize = 28 }: NoDishPhotoProps
       accessibilityRole="image"
       accessibilityLabel={`${dishName}, no photo yet`}
       style={[
-        { alignItems: "center", backgroundColor: palette.surfaceRaised, justifyContent: "center" },
+        { alignItems: "center", backgroundColor: palette.bgSoft, justifyContent: "center" },
         style,
       ]}
     >
-      <Utensils color={palette.orange} size={iconSize} />
+      <Utensils color={palette.textMuted} size={Math.min(iconSize, MAX_ICON_SIZE)} />
     </View>
   );
 }

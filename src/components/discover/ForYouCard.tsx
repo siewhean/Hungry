@@ -77,7 +77,7 @@ export function ForYouCard({ pick, onPress, onPressIn }: ForYouCardProps) {
             {dish.name}
           </AppText>
           {dish.price > 0 ? (
-            <AppText variant="h2" style={{ color: palette.orange }}>
+            <AppText variant="h2" style={{ color: palette.text }}>
               S${dish.price.toFixed(2)}
             </AppText>
           ) : null}

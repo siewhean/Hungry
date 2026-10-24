@@ -253,7 +253,7 @@ const RawCatalogCard = memo(function RawCatalogCard({
                 : "Singapore"}
             </AppText>
             {dish?.price !== undefined ? (
-              <AppText style={{ color: palette.orange }} variant="price">
+              <AppText style={{ color: palette.text }} variant="price">
                 S${dish.price.toFixed(2)}
               </AppText>
             ) : null}

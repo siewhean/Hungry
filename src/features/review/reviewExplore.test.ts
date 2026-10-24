@@ -51,12 +51,12 @@ test("only reviews with a photo are shown", () => {
   assert.equal(reviewsWithPhotos([item("5", "X", "Y", NEUTRAL_TASTE_VECTOR, [" "])]).length, 0);
 });
 
-test("chips: all, your taste, most reviewed foods, then areas", () => {
+test("chips: your taste first, then all, most reviewed foods, then areas", () => {
   const shown = reviewsWithPhotos(items);
   const chips = buildReviewExploreChips(shown, { userVector: spicyLover, areaOf });
   assert.deepEqual(
     chips.map((chip) => chip.label),
-    ["All", "For your taste", "Laksa", "Chicken Rice", "Maxwell", "Amoy"],
+    ["For your taste", "All", "Laksa", "Chicken Rice", "Maxwell", "Amoy"],
   );
   // No palette: no taste chip.
   const plain = buildReviewExploreChips(shown, { userVector: NEUTRAL_TASTE_VECTOR, areaOf });

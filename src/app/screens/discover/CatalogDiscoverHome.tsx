@@ -163,7 +163,7 @@ function RawDishCard({ item, releaseId }: { item: CatalogRawDishCard; releaseId?
                 : `${Math.round(item.distanceMeters)} m`}
             </AppText>
             {item.price !== undefined ? (
-              <AppText style={{ color: palette.orange }} variant="price">
+              <AppText style={{ color: palette.text }} variant="price">
                 S${item.price.toFixed(2)}
               </AppText>
             ) : null}

@@ -36,17 +36,18 @@ function topValues(values: string[], limit: number): string[] {
 }
 
 /**
- * Chips built from what is on the page: "For your taste" when the diner has a palette, then
- * the most reviewed foods, then the areas with the most reviews.
+ * Chips built from what is on the page: "For your taste" first when the diner has a palette,
+ * then "All", the most reviewed foods, then the areas with the most reviews.
  */
 export function buildReviewExploreChips(
   items: readonly ReviewFeedItem[],
   options: { userVector?: TasteVector; areaOf: (item: ReviewFeedItem) => string | undefined },
 ): ReviewExploreChip[] {
-  const chips: ReviewExploreChip[] = [{ id: "all", kind: "all", label: "All" }];
+  const chips: ReviewExploreChip[] = [];
   if (options.userVector && hasPersonalTasteProfile(options.userVector)) {
     chips.push({ id: "taste", kind: "taste", label: "For your taste" });
   }
+  chips.push({ id: "all", kind: "all", label: "All" });
   for (const food of topValues(items.map(reviewFoodLabel), MAX_FOOD_CHIPS)) {
     chips.push({ id: `food:${food}`, kind: "food", label: food, value: food });
   }

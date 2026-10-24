@@ -28,8 +28,8 @@ test("Review feed cards do not render bottom bites sections", () => {
   assert.doesNotMatch(reviewFeed, /linkedPost/);
   assert.doesNotMatch(reviewFeed, /toggleLike|likeCount/);
   assert.doesNotMatch(reviewFeed, /seededComments=\{/);
-  // The date sits in the tile's bottom-left corner: relative within a week, then a date.
-  assert.match(reviewFeed, /bottom: spacing\[1\.5\],\s*left: spacing\[1\.5\]/);
+  // The dish name and the date sit over a bottom gradient: relative within a week, then a date.
+  assert.match(reviewFeed, /\{item\.dishName\}[\s\S]*formatReviewDate\(item\.review\.createdAt\)/);
   assert.match(reviewFeed, /formatReviewDate\(item\.review\.createdAt\)/);
   assert.match(reviewFeed, /sameYear \? \{\} : \{ year: "numeric" \}/);
 
