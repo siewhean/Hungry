@@ -6,6 +6,7 @@ import {
   sanitizeCatalogCardImageUrl,
   sanitizeCatalogImageUrl,
   sanitizeCatalogMediaUrl,
+  sanitizeOfflineCatalogImageUrl,
 } from "./media";
 
 test("catalog image mapping rejects blocked, malformed, and withheld media", () => {
@@ -80,4 +81,21 @@ test("card images: only the server-filtered RPCs are trusted without a display f
     }),
     url,
   );
+});
+
+test("offline catalog images: delivery-app photos are dropped, first-party photos stay", () => {
+  for (const url of [
+    "https://food-cms.grab.com/compressed_webp/items/abc.webp",
+    "https://huawei-food-cms.grab.com/items/abc.jpg",
+    "https://food.grab.com/sg/en/restaurant/x",
+    "https://images.deliveroo.com/x.jpg",
+    "https://images.foodpanda.sg/x.jpg",
+  ]) {
+    assert.equal(sanitizeOfflineCatalogImageUrl(url), undefined, url);
+  }
+  assert.equal(
+    sanitizeOfflineCatalogImageUrl("https://www.yakun.com/menu/kaya-toast.jpg"),
+    "https://www.yakun.com/menu/kaya-toast.jpg",
+  );
+  assert.equal(sanitizeOfflineCatalogImageUrl("https://images.unsplash.com/photo-1"), undefined);
 });

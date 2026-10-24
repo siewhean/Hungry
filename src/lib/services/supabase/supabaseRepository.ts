@@ -1138,7 +1138,8 @@ export async function getVenueByIdViaRpc(venueId: string): Promise<VenueSummary 
 
 /**
  * Stall summaries for many ids (up to 50) in one get_venue_summaries call (no menus). Undefined
- * when the RPC fails.
+ * when Supabase is not configured. Throws when the configured RPC failed (offline, rate cap), so
+ * callers show a retry instead of treating every stall as closed or gone.
  */
 export async function getVenuesByIdsViaRpc(
   venueIds: string[],
@@ -1146,6 +1147,9 @@ export async function getVenuesByIdsViaRpc(
   const ids = [...new Set(venueIds)].slice(0, 50);
   if (ids.length === 0) return [];
   const rows = await rpcRows("get_venue_summaries", { p_venue_ids: ids });
+  if (!rows && isSupabaseConfigured() && getSupabaseClient()) {
+    throw new Error("Couldn't load these stalls.");
+  }
   return rows?.map(mapRpcVenue);
 }
 

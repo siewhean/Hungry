@@ -320,3 +320,25 @@ test("section titles are announced as headings", async () => {
   assert.equal(view.findByText("Nearby dishes")?.getAttribute("role"), "heading");
   assert.notEqual(view.findByText("Browse the full directory")?.getAttribute("role"), "heading");
 });
+
+test("HOME-V3: on the offline copy a stall row opens the catalog record, not StallDetail", async () => {
+  stubCatalog();
+  const service = getCatalogRawService() as unknown as {
+    listDishes(request: CatalogPageRequest): Promise<CatalogPage<CatalogRawDishCard>>;
+    listVenues(request: CatalogPageRequest): Promise<CatalogPage<CatalogRawVenueCard>>;
+  };
+  const offline = <T,>(items: T[]): CatalogPage<T> => ({
+    ...page(items),
+    releaseId: "excel-fallback-v1",
+  });
+  service.listDishes = async () => offline([dish()]);
+  service.listVenues = async () => offline([venue()]);
+  const navigation = createFakeNavigation();
+  const view = await render(createElement(CatalogDiscoverHome), { navigation });
+
+  await view.press(view.findByLabel(/^Sungei Road Laksa, Laksa/));
+  assert.deepEqual(navigation.calls.at(-1)?.args, [
+    "CatalogRawDetail",
+    { kind: "venue", id: "venue-1", releaseId: "excel-fallback-v1" },
+  ]);
+});

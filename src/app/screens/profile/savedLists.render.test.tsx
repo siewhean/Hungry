@@ -19,10 +19,12 @@ import {
 } from "@/lib/experiments/experiments";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
+import { usePortfolioStore } from "@/store/usePortfolioStore";
 import { useStallFollowStore } from "@/store/useStallFollowStore";
+import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 import { cleanup, render, renderScreen } from "@/test/render";
 import { enterScenario } from "@/test/render/sessions";
-import type { PortfolioItem, VenueSummary } from "@/types/domain";
+import type { PortfolioItem, StallInteraction, VenueSummary } from "@/types/domain";
 
 const restores: (() => void)[] = [];
 function stub<T extends object, K extends keyof T>(target: T, key: K, value: T[K]) {
@@ -268,3 +270,141 @@ test("the item edit sheet keeps typed text when the title loads, and will not cl
   await view.type(score ?? null, "");
   assert.match(view.text(), /A saved score can't be removed yet/);
 });
+
+// ─── Post-verify: SAVED-V1/V2/V3/V4 (MAP-V2, STALL-V2) ───────────────────────────────────────
+
+function savedStalls(count: number) {
+  const interactions: Record<string, StallInteraction> = {};
+  for (let index = 0; index < count; index += 1) {
+    const stallId = `saved-stall-${index}`;
+    interactions[stallId] = {
+      userId: "user",
+      stallId,
+      isSaved: true,
+      isTried: false,
+      isReviewed: false,
+      savedAt: new Date(Date.UTC(2026, 0, 1, 0, 0, count - index)).toISOString(),
+    };
+  }
+  useStallInteractionStore.setState({ interactions, isLoaded: true });
+}
+
+const venueFor = (id: string) =>
+  ({ id, name: `Stall ${id}`, buildingName: "Bedok" }) as VenueSummary;
+
+async function openSavedStalls() {
+  const view = await renderScreen(FavouritesScreen as never, { name: "Favourites" });
+  await view.press(view.findByLabel("Saved stalls"));
+  return view;
+}
+
+test("Saved > Stalls shows all 60 saved stalls, in 50-id batches (SAVED-V2)", async () => {
+  savedStalls(60);
+  const asked: string[][] = [];
+  stub(getHungryService().discovery, "getVenuesByIds", async (ids: string[]) => {
+    asked.push(ids);
+    return ids.map(venueFor);
+  });
+  const view = await openSavedStalls();
+  assert.ok(view.findByText("Stall saved-stall-0"));
+  assert.ok(view.findByText("Stall saved-stall-59"), "the 60th stall shows");
+  assert.deepEqual(
+    asked.map((ids) => ids.length),
+    [50, 10],
+  );
+});
+
+test("Saved > Stalls offline shows Retry and reports, not No saved stalls (SAVED-V1)", async () => {
+  savedStalls(2);
+  let fail = true;
+  stub(getHungryService().discovery, "getVenuesByIds", async (ids: string[]) => {
+    if (fail) throw new Error("Couldn't load these stalls.");
+    return ids.map(venueFor);
+  });
+  const reports = captureReports();
+  const view = await openSavedStalls();
+  assert.ok(view.findByText("Couldn't load saved stalls"));
+  assert.doesNotMatch(view.text(), /No saved stalls yet|may have closed/);
+  assert.ok(reports.some((report) => report.action === "load_saved_stalls"));
+  fail = false;
+  await view.press(view.findByText("Retry"));
+  assert.ok(view.findByText("Stall saved-stall-0"));
+});
+
+test("Saved > Stalls says some stalls are gone when lookups miss, even when all miss", async () => {
+  savedStalls(3);
+  stub(getHungryService().discovery, "getVenuesByIds", async (ids: string[]) =>
+    ids.slice(0, 1).map(venueFor),
+  );
+  const partial = await openSavedStalls();
+  assert.match(partial.text(), /2 stalls couldn't be loaded/);
+  await cleanup();
+
+  savedStalls(2);
+  stub(getHungryService().discovery, "getVenuesByIds", async () => []);
+  const none = await openSavedStalls();
+  assert.match(none.text(), /2 stalls couldn't be loaded/);
+  assert.doesNotMatch(none.text(), /No saved stalls yet/);
+});
+
+test("Followed stalls offline shows Retry, not 'may have closed' (SAVED-V1)", async () => {
+  stub(getHungryService().profile, "getFollowedStallIds", async () => ["s-1", "s-2"]);
+  stub(getHungryService().discovery, "getVenuesByIds", async () => {
+    throw new Error("Couldn't load these stalls.");
+  });
+  useStallFollowStore.setState({ followedStallIds: [], isLoaded: false });
+  const reports = captureReports();
+  const view = await renderScreen(FollowedStallsScreen as never, { name: "FollowedStalls" });
+  assert.ok(view.findByText("Couldn't load followed stalls"));
+  assert.doesNotMatch(view.text(), /may have closed|No followed stalls yet/);
+  assert.ok(reports.some((report) => report.screen === "FollowedStalls"));
+});
+
+test("Followed stalls whose lookups all miss say so, not 'No followed stalls yet' (SAVED-V3)", async () => {
+  stub(getHungryService().profile, "getFollowedStallIds", async () => ["s-1", "s-2"]);
+  stub(getHungryService().discovery, "getVenuesByIds", async () => []);
+  useStallFollowStore.setState({ followedStallIds: [], isLoaded: false });
+  const view = await renderScreen(FollowedStallsScreen as never, { name: "FollowedStalls" });
+  assert.match(view.text(), /2 stalls couldn't be loaded/);
+  assert.doesNotMatch(view.text(), /No followed stalls yet/);
+  assert.ok(view.findByText("Retry"));
+});
+
+test("Saved > Collections shows an error with Retry and reports when lists fail (SAVED-V4)", async () => {
+  const original = usePortfolioStore.getState().loadPortfolioScope;
+  restores.push(() => usePortfolioStore.setState({ loadPortfolioScope: original }));
+  let fail = true;
+  usePortfolioStore.setState({
+    scopeIds: { ...usePortfolioStore.getState().scopeIds, mine: [] },
+    loadPortfolioScope: (async (...args: Parameters<typeof original>) => {
+      if (fail) throw new Error("lists down");
+      return original(...args);
+    }) as typeof original,
+  });
+  const reports = captureReports();
+  const view = await renderScreen(FavouritesScreen as never, { name: "Favourites" });
+  await view.press(view.findByLabel("Saved collections"));
+  assert.ok(view.findByText("Couldn't load your lists"));
+  assert.doesNotMatch(view.text(), /Make albums like/);
+  assert.ok(reports.some((report) => report.label === "saved lists"));
+  fail = false;
+  await view.press(view.findByText("Retry"));
+  assert.equal(view.findByText("Couldn't load your lists"), null);
+});
+
+/** reportError logs `[reportError]`, error, context in development; this collects the contexts. */
+function captureReports() {
+  const reports: Record<string, unknown>[] = [];
+  const original = console.error;
+  const globals = globalThis as { __DEV__?: boolean };
+  const previousDev = globals.__DEV__;
+  globals.__DEV__ = true;
+  console.error = (...args: unknown[]) => {
+    if (args[0] === "[reportError]") reports.push((args[2] ?? {}) as Record<string, unknown>);
+  };
+  restores.push(() => {
+    console.error = original;
+    globals.__DEV__ = previousDev;
+  });
+  return reports;
+}

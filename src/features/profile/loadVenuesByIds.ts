@@ -27,3 +27,10 @@ export async function loadVenuesByIds(
   const venues = unique.flatMap((id) => byId.get(id) ?? []);
   return { venues, missingCount: unique.length - venues.length };
 }
+
+/** The note under a saved or followed stall list when some ids came back with no stall. */
+export function describeMissingStalls(missingCount: number): string {
+  return missingCount === 1
+    ? "1 stall couldn't be loaded. It may have closed or left Hungry."
+    : `${missingCount} stalls couldn't be loaded. They may have closed or left Hungry.`;
+}

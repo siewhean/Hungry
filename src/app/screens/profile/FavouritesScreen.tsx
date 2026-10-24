@@ -24,6 +24,7 @@ import {
   formatFullStallAddress,
   getStallPin,
 } from "@/features/detail/stallLocation";
+import { describeMissingStalls, loadVenuesByIds } from "@/features/profile/loadVenuesByIds";
 import { useRetryableLoad } from "@/features/profile/useRetryableLoad";
 import type { CatalogRawDishDetail } from "@/lib/services/catalog";
 import { loadCatalogFavourites } from "@/lib/services/catalog/favourites";
@@ -675,8 +676,8 @@ function CatalogSavedDishes({ navigation, query }: Pick<Props, "navigation"> & {
 
 /**
  * Stalls you saved with Save on a stall page (`user_stall_interactions.is_saved`), newest first.
- * The stall rows come from one `getVenuesByIds` call, so a saved stall that is not in the
- * cached directory still shows.
+ * The stall rows come from the server in 50-id batches (`loadVenuesByIds`), so a saved stall that
+ * is not in the cached directory still shows, and so does the 51st.
  */
 function SavedStallsSection({ onOpenStall }: { onOpenStall: (venueId: string) => void }) {
   const { palette, spacing } = useHungryTheme();
@@ -687,6 +688,7 @@ function SavedStallsSection({ onOpenStall }: { onOpenStall: (venueId: string) =>
   const loadSavedStalls = useCallback(() => loadInteractions(userId), [loadInteractions, userId]);
   const { failed: loadFailed, retry } = useRetryableLoad(loadSavedStalls, "saved stalls");
   const [venues, setVenues] = useState<Map<string, VenueSummary> | null>(null);
+  const [missingCount, setMissingCount] = useState(0);
   const [venuesFailed, setVenuesFailed] = useState(false);
   const [venuesReloadKey, setVenuesReloadKey] = useState(0);
 
@@ -705,14 +707,16 @@ function SavedStallsSection({ onOpenStall }: { onOpenStall: (venueId: string) =>
     const ids = savedKey ? savedKey.split(",") : [];
     if (ids.length === 0) {
       setVenues(new Map());
+      setMissingCount(0);
       return undefined;
     }
     let active = true;
     setVenuesFailed(false);
-    getHungryService()
-      .discovery.getVenuesByIds(ids)
-      .then((rows) => {
-        if (active) setVenues(new Map(rows.map((row) => [row.id, row])));
+    loadVenuesByIds(ids)
+      .then((result) => {
+        if (!active) return;
+        setVenues(new Map(result.venues.map((row) => [row.id, row])));
+        setMissingCount(result.missingCount);
       })
       .catch((error) => {
         reportError(error, { screen: "Favourites", action: "load_saved_stalls" });
@@ -723,16 +727,17 @@ function SavedStallsSection({ onOpenStall }: { onOpenStall: (venueId: string) =>
     };
   }, [isLoaded, savedKey, venuesReloadKey]);
 
+  const onRetry = () => {
+    retry();
+    setVenuesReloadKey((key) => key + 1);
+  };
   if (loadFailed || venuesFailed) {
     return (
       <EmptyState
         title="Couldn't load saved stalls"
         body="Check your connection and try again."
         ctaLabel="Retry"
-        onPress={() => {
-          retry();
-          setVenuesReloadKey((key) => key + 1);
-        }}
+        onPress={onRetry}
       />
     );
   }
@@ -742,8 +747,23 @@ function SavedStallsSection({ onOpenStall }: { onOpenStall: (venueId: string) =>
     .map((id) => venues.get(id))
     .filter((venue): venue is VenueSummary => Boolean(venue));
 
+  const missingNote =
+    missingCount > 0 ? (
+      <AppText tone="secondary" variant="bodySmall">
+        {describeMissingStalls(missingCount)}
+      </AppText>
+    ) : null;
+
   if (savedVenues.length === 0) {
-    return (
+    // Every saved id came back with no stall: say so, rather than "No saved stalls yet".
+    return missingCount > 0 ? (
+      <EmptyState
+        title="Couldn't show your saved stalls"
+        body={describeMissingStalls(missingCount)}
+        ctaLabel="Retry"
+        onPress={onRetry}
+      />
+    ) : (
       <EmptyState title="No saved stalls yet" body="Tap Save on a stall page to keep it here." />
     );
   }
@@ -763,13 +783,14 @@ function SavedStallsSection({ onOpenStall }: { onOpenStall: (venueId: string) =>
               <AppText variant="bodyBold">{venue.name}</AppText>
               {venue.buildingName || venue.unitNumber ? (
                 <AppText variant="bodySmall" tone="secondary">
-                  {[venue.buildingName, venue.unitNumber?.trim()].filter(Boolean).join(" · ")}
+                  {[venue.unitNumber?.trim(), venue.buildingName].filter(Boolean).join(" · ")}
                 </AppText>
               ) : null}
             </View>
           </Card>
         </Pressable>
       ))}
+      {missingNote}
     </View>
   );
 }
@@ -788,6 +809,7 @@ function SavedListsSection({
   const { width } = useWindowDimensions();
   const profileId = useProfileStore((state) => state.profile.id);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const authenticatedUserId = useSessionStore((state) => state.authenticatedUserId);
   const portfolios = usePortfolioStore((state) => state.portfolios);
   const items = usePortfolioStore((state) => state.items);
   const mineIds = usePortfolioStore((state) => state.scopeIds.mine);
@@ -797,11 +819,17 @@ function SavedListsSection({
   // Two columns inside the screen's spacing[4] gutters.
   const tileWidth = (width - spacing[4] * 2 - spacing[3]) / 2;
 
-  useEffect(() => {
-    if (!canLoad) return;
-    // Your own lists by owner on the server, not a filter over everyone's newest 100.
-    void loadPortfolioScope("mine").catch((error) => console.error("Failed to load lists:", error));
-  }, [canLoad, loadPortfolioScope, profileId]);
+  // Your own lists by owner on the server, not a filter over everyone's newest 100. Keyed on the
+  // owner id the store queries with (the signed-in account first), so a switch reloads.
+  const ownerId = (isAuthenticated ? authenticatedUserId : undefined) ?? profileId;
+  const loadOwnLists = useCallback(
+    async () => {
+      if (canLoad) await loadPortfolioScope("mine");
+    },
+    // ownerId: a different account reloads its own lists.
+    [canLoad, loadPortfolioScope, ownerId],
+  );
+  const { failed: listsFailed, retry: retryLists } = useRetryableLoad(loadOwnLists, "saved lists");
 
   const ownLists = useMemo(() => {
     const byId = new Map(portfolios.map((portfolio) => [portfolio.id, portfolio]));
@@ -821,6 +849,17 @@ function SavedListsSection({
     }
     return covers;
   }, [items, ownLists, repository]);
+
+  if (listsFailed && ownLists.length === 0) {
+    return (
+      <EmptyState
+        title="Couldn't load your lists"
+        body="Check your connection and try again."
+        ctaLabel="Retry"
+        onPress={retryLists}
+      />
+    );
+  }
 
   return (
     <View style={{ gap: spacing[4] }}>

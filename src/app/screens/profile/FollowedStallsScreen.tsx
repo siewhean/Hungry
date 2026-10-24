@@ -5,7 +5,7 @@ import { BellRing } from "lucide-react-native";
 
 import { AppText, Card, EmptyState } from "@/components/ui";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
-import { loadVenuesByIds } from "@/features/profile/loadVenuesByIds";
+import { describeMissingStalls, loadVenuesByIds } from "@/features/profile/loadVenuesByIds";
 import { useRetryableLoad } from "@/features/profile/useRetryableLoad";
 import { reportError } from "@/lib/monitoring/reportError";
 import type { VenueSummary } from "@/types/domain";
@@ -57,6 +57,7 @@ export function FollowedStallsScreen({ navigation }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idsKey, lookupRetry]);
   const venues = lookup?.venues ?? [];
+  const missingCount = lookup && lookup.key === idsKey ? lookup.missingCount : 0;
   const isResolving = followedStallIds.length > 0 && lookup?.key !== idsKey && !lookupFailed;
   const failed = loadFailed || (lookupFailed && venues.length === 0);
   const onRetry = () => {
@@ -102,16 +103,22 @@ export function FollowedStallsScreen({ navigation }: Props) {
                 </Card>
               </Pressable>
             ))}
-            {lookup && lookup.key === idsKey && lookup.missingCount > 0 ? (
+            {missingCount > 0 ? (
               <AppText tone="secondary" variant="bodySmall">
-                {lookup.missingCount === 1
-                  ? "1 stall couldn't be loaded. It may have closed or left Hungry."
-                  : `${lookup.missingCount} stalls couldn't be loaded. They may have closed or left Hungry.`}
+                {describeMissingStalls(missingCount)}
               </AppText>
             ) : null}
           </>
         ) : (!isLoaded || isResolving) && !failed ? (
           <ProfileReviewsSkeleton />
+        ) : !failed && missingCount > 0 ? (
+          // You follow stalls, but none came back: not "No followed stalls yet".
+          <EmptyState
+            title="Couldn't show your followed stalls"
+            body={describeMissingStalls(missingCount)}
+            ctaLabel="Retry"
+            onPress={onRetry}
+          />
         ) : failed ? (
           <EmptyState
             title="Couldn't load followed stalls"

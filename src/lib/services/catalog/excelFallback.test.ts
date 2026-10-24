@@ -3,7 +3,11 @@ import test from "node:test";
 
 import { isUsableDiscoverImageUrl } from "@/features/discover/bites";
 import { excelCatalogFallbackService } from "@/lib/services/catalog/excelFallback";
-import { getExcelCatalogMetadata } from "@/lib/services/excel/repositories";
+import {
+  getExcelCatalogMetadata,
+  listExcelDishes,
+  listExcelVenues,
+} from "@/lib/services/excel/repositories";
 
 test("Excel catalog fallback exposes workbook totals through paged dish and venue reads", async () => {
   const metadata = getExcelCatalogMetadata();
@@ -183,4 +187,30 @@ test("Excel fallback honours the Noodles keywords (SEARCH-4)", async () => {
       keywords.some((keyword) => item.name.toLowerCase().includes(keyword)),
     ),
   );
+});
+
+test("SEARCH-V1: the offline copy never shows a Grab, foodpanda or Deliveroo photo", async () => {
+  const isDeliveryApp = (url: string | undefined) =>
+    Boolean(url && /grab\.com|foodpanda\.|deliveroo\./i.test(url));
+  const dishes = listExcelDishes();
+  const venues = listExcelVenues();
+  const repositoryUrls = [
+    ...dishes.flatMap((dish) => [dish.imageUrl, ...(dish.gallery ?? [])]),
+    ...venues.flatMap((venue) => [venue.imageUrl, venue.logoUrl]),
+  ];
+  assert.deepEqual(repositoryUrls.filter(isDeliveryApp), []);
+
+  const [dishPage, venuePage] = await Promise.all([
+    excelCatalogFallbackService.listDishes({ limit: 50, sort: "quality" }),
+    excelCatalogFallbackService.listVenues({ limit: 50, sort: "quality" }),
+  ]);
+  const details = await Promise.all(
+    dishPage.items.slice(0, 20).map((item) => excelCatalogFallbackService.getDish(item.id)),
+  );
+  const fallbackUrls = [
+    ...dishPage.items.map((item) => item.imageUrl),
+    ...venuePage.items.flatMap((item) => [item.imageUrl, item.representativeDish?.imageUrl]),
+    ...details.flatMap((detail) => [detail.imageUrl, ...detail.media.map((media) => media.url)]),
+  ];
+  assert.deepEqual(fallbackUrls.filter(isDeliveryApp), []);
 });

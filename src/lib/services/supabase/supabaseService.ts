@@ -38,7 +38,7 @@ import {
   searchVenuesByLocationViaRpc,
   supabaseRepository,
 } from "@/lib/services/supabase/supabaseRepository";
-import { getSupabaseClient } from "@/lib/services/supabase/client";
+import { getSupabaseClient, isSupabaseConfigured } from "@/lib/services/supabase/client";
 import { hungryPersistStorage } from "@/store/persistStorage";
 import {
   assertValidMenuPhotoUpload,
@@ -3930,8 +3930,8 @@ export const supabaseService: HungryService = {
         else missing.push(id);
       }
       if (missing.length > 0) {
-        // get_venue_summaries is deployed; when it fails (offline, rate cap) the missing stalls are
-        // left out rather than read one call per stall, which would turn one error into a fan-out.
+        // One batched read, never one call per stall. When it fails (offline, rate cap) this
+        // throws: leaving the uncached stalls out would tell Saved and Followed stalls they closed.
         const fetched = await getVenuesByIdsViaRpc(missing);
         fetched?.forEach((venue) => cached.set(venue.id, venue));
       }
@@ -4108,6 +4108,11 @@ export const supabaseService: HungryService = {
       const rpcResults = await searchDishesViaRpc(filters, tasteProfile);
       if (rpcResults) return rpcResults;
       const results = supabaseRepository.searchDishes(filters, tasteProfile);
+      if (results.length === 0 && isSupabaseConfigured() && getSupabaseClient()) {
+        // The RPC failed (offline, rate cap) and the cache has nothing: say so, so the screen
+        // shows its retry and reports, rather than "No match found".
+        throw new Error("Couldn't search dishes.");
+      }
       return results.map((dish) => ({
         dish,
         score: similarityScore(dish.tasteVector, tasteProfile),

@@ -248,10 +248,12 @@ function RawDishCard({
 function RawVenueRow({
   item,
   position,
+  releaseId,
   showDistance,
 }: {
   item: CatalogRawVenueCard;
   position: number;
+  releaseId?: string;
   showDistance: boolean;
 }) {
   const navigation = useNavigation<RootNavigation>();
@@ -276,7 +278,13 @@ function RawVenueRow({
           kind: "stall",
           position,
         });
-        navigation.navigate("StallDetail", { venueId: item.id });
+        // The offline copy is served only when Supabase is failing, and StallDetail reads
+        // Supabase: open the read-only catalog record, which the offline copy can serve.
+        if (releaseId?.startsWith("excel-fallback")) {
+          navigation.navigate("CatalogRawDetail", { kind: "venue", id: item.id, releaseId });
+        } else {
+          navigation.navigate("StallDetail", { venueId: item.id });
+        }
       }}
     >
       <View
@@ -687,7 +695,13 @@ export function CatalogDiscoverHome() {
               <ChevronRight color={palette.textMuted} size={20} />
             </Pressable>
             {venues.slice(0, 8).map((item, index) => (
-              <RawVenueRow key={item.id} item={item} position={index} showDistance={showDistance} />
+              <RawVenueRow
+                key={item.id}
+                item={item}
+                position={index}
+                releaseId={releaseId}
+                showDistance={showDistance}
+              />
             ))}
           </View>
         ) : null}
