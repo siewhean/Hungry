@@ -94,7 +94,7 @@ test("H18/H19: Decide for Me picks from the server and prefers open stalls", () 
   assert.match(decide, /preferOpenStalls\(ranked, new Map\(venues\.map\(/);
   assert.match(
     decide,
-    /const hasNoMatch =\s*!isLocationApproximate && !isLoadingCandidates && candidates\.length === 0 && !selectedDish;/,
+    /const hasNoMatch =\s*!isLocationApproximate &&\s*!isLoadingCandidates &&\s*!loadFailed &&\s*answerResult\.dishes\.length === 0 &&\s*!selectedDish;/,
   );
   assert.match(decide, /if \(!dish && isLoadingCandidates\)/);
   assert.match(decide, /<Badge\s+label=\{openLabel\}/);

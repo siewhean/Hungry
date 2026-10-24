@@ -500,14 +500,15 @@ export function DecideForMeResultScreen() {
     ],
   };
 
-  // Every match was turned down with "Not for me" (not the same as nothing nearby).
-  const hasSeenEveryMatch = matchingCandidates.length > 0 && candidates.length === 0;
+  // Every match was turned down with "Not for me", on this visit or before (food history hides
+  // dismissed dishes too): not the same as nothing nearby.
+  const hasSeenEveryMatch = answerResult.dishes.length > 0 && candidates.length === 0;
   // A cold open (such as the meal-time push) waits for the server instead of saying "no match".
   const hasNoMatch =
     !isLocationApproximate &&
     !isLoadingCandidates &&
     !loadFailed &&
-    matchingCandidates.length === 0 &&
+    answerResult.dishes.length === 0 &&
     !selectedDish;
   useEffect(() => {
     if (!hasNoMatch) return;
@@ -649,16 +650,9 @@ export function DecideForMeResultScreen() {
             onPress={expandRadius}
           />
         ) : null}
-        {hasSeenEveryMatch ? (
-          <Button
-            label="Show them again"
-            variant="secondary"
-            onPress={() => setDismissedIds(new Set())}
-          />
-        ) : null}
         <Button
           label="Back to Discover"
-          variant={hasSeenEveryMatch ? "ghost" : "primary"}
+          variant={upcomingRadius ? "secondary" : "primary"}
           onPress={() => navigation.navigate("MainTabs", { screen: "Discover" })}
         />
       </Screen>

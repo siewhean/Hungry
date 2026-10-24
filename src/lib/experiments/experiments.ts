@@ -50,6 +50,21 @@ export const EXPERIMENTS = {
     primaryMetric: "welcome_back_opened",
     guardrailMetrics: ["welcome_back_dismissed", "dish_viewed"],
   },
+  /** Decide for Me quiz length; read in DecideForMeQuizScreen, which only Discover's Decide button opens. */
+  decide_quiz_v1: {
+    variants: ["control", "two_questions"],
+    fallback: "control",
+    status: "running",
+    surface: "decide",
+    hypothesis:
+      "Two questions (cuisine and price, the two the server can filter on) instead of four get more diners to a pick they act on, because fewer people abandon the quiz and the pick is still filtered by what they care about most.",
+    primaryMetric: "directions_opened",
+    guardrailMetrics: [
+      "decide_for_me_result_shown",
+      "decide_for_me_no_match",
+      "decide_for_me_radius_expanded",
+    ],
+  },
 } as const satisfies Record<string, ExperimentDefinition>;
 
 export type ExperimentKey = keyof typeof EXPERIMENTS;

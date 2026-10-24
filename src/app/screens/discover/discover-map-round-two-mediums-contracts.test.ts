@@ -107,7 +107,7 @@ test("M18: the Decide price uses the accessible accent colour", () => {
   const decide = readRepoFile("src/app/screens/discover/DecideForMeResultScreen.tsx");
   assert.match(
     decide,
-    /style=\{\{ color: palette\.accentText \}\}>\s*S\$\{dish\.price\.toFixed\(2\)\}/,
+    /style=\{\{ color: palette\.accentText \}\}>\s*\{formatDishPrice\(dish\)\}/,
   );
 });
 
