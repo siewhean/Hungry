@@ -21,7 +21,6 @@ import {
   FolderPlus,
   CheckCircle,
   MapPin,
-  PenLine,
   Send,
   Star,
   Utensils,
@@ -1157,7 +1156,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
               {venue && deliveryLinks.length > 0 ? (
                 <View style={{ gap: spacing[2] }}>
                   <AppText variant="bodySmallBold" tone="secondary">
-                    ORDER ON
+                    Order on
                   </AppText>
                   <DeliveryButtonRow links={deliveryLinks} dishId={dish.id} venueId={venue.id} />
                 </View>
@@ -1588,10 +1587,8 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
             cta={
               showDeferredDetailControls && FEATURE_FLAGS.reviewCreationEnabled
                 ? {
-                    label: "Review",
-                    icon: PenLine,
+                    label: "Write a review",
                     onPress: handleReview,
-                    accessibilityLabel: "Write a review",
                   }
                 : undefined
             }

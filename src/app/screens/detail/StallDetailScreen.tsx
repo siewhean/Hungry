@@ -1415,7 +1415,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
               {deliveryLinks.length > 0 ? (
                 <View style={{ gap: spacing[2] }}>
                   <AppText variant="bodySmallBold" tone="secondary">
-                    ORDER ON
+                    Order on
                   </AppText>
                   <DeliveryButtonRow links={deliveryLinks} venueId={venue.id} />
                 </View>
@@ -1430,7 +1430,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                       alignItems: "center",
                     }}
                   >
-                    <AppText variant="h2">Signature Dishes</AppText>
+                    <AppText variant="h2">Signature dishes</AppText>
                     {menuStatus === "ready" &&
                     dishes.length > 0 &&
                     (menuCategories.length > 2 || stallDietarySummary.length > 0) ? (
@@ -1599,26 +1599,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
               {/* Reviews */}
               {showDeferredDetailControls && FEATURE_FLAGS.reviewCreationEnabled ? (
                 <View style={{ gap: spacing[4] }}>
-                  <View
-                    style={{
-                      alignItems: "center",
-                      flexDirection: "row",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <AppText variant="h2">Reviews</AppText>
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel={`Write a review for ${venue.name}`}
-                      onPress={openWriteReview}
-                      hitSlop={8}
-                      style={{ justifyContent: "center", minHeight: 44 }}
-                    >
-                      <AppText variant="bodySmallBold" tone="accent">
-                        Write a review
-                      </AppText>
-                    </Pressable>
-                  </View>
+                  <AppText variant="h2">Reviews</AppText>
                   {reviewsStatus === "loading" ? (
                     <Skeleton width="100%" height={72} borderRadius={radii.lg} />
                   ) : reviewsStatus === "error" ? (
@@ -1805,8 +1786,6 @@ export function StallDetailScreen({ navigation, route }: Props) {
                       title="No community reviews yet"
                       body="Write your first review for this stall."
                       icon={<CommentIcon size={36} color={palette.textMuted} />}
-                      ctaLabel="Write a review"
-                      onPress={openWriteReview}
                     />
                   )}
                 </View>

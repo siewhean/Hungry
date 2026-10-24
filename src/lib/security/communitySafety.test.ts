@@ -286,11 +286,29 @@ test("blocking a review author needs an account id; otherwise the person is poin
   await getHungryService().communitySafety.unblockUser("u-rev");
 });
 
-test("the review action sheet offers report, block and cancel", () => {
-  promptReviewSafetyActions({ reviewId: "r1", authorName: "Mei", authorId: "u1" });
-  const buttons = alertCalls[0].buttons ?? [];
-  assert.deepEqual(
-    buttons.map((button) => button.text),
-    ["Report review", "Block Mei", "Cancel"],
-  );
+test("the review action sheet offers report and block for a review with an author account", async () => {
+  const hidden: string[] = [];
+  promptReviewSafetyActions({
+    reviewId: "r1",
+    authorName: "Mei",
+    authorId: "u1",
+    onHidden: (id) => hidden.push(id),
+  });
+  const menu = useUIStore.getState().safetyMenu;
+  assert.equal(menu?.label, "review");
+  assert.equal(menu?.canHide, false);
+  assert.equal(menu?.canBlock, true);
+  assert.equal(alertCalls.length, 0);
+
+  menu?.onReport("spam");
+  await settle();
+  assert.deepEqual(hidden, ["r1"]);
+  assert.equal(isContentHiddenForSession({ id: "r1" }), true);
+  useUIStore.getState().closeSafetyMenu();
+});
+
+test("the review action sheet cannot block a seeded review with no author account", () => {
+  promptReviewSafetyActions({ reviewId: "r2", authorName: "Seeded" });
+  assert.equal(useUIStore.getState().safetyMenu?.canBlock, false);
+  useUIStore.getState().closeSafetyMenu();
 });

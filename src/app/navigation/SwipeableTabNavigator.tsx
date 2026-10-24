@@ -229,7 +229,7 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
       ? [{ key: "Create", isCreateAction: true, icon: PenLine, label: "Write a review" }]
       : []),
     ...(FEATURE_FLAGS.reviewCreationEnabled
-      ? [{ key: "Review", route: routeByName.get("Review"), icon: BookOpenText, label: "Review" }]
+      ? [{ key: "Review", route: routeByName.get("Review"), icon: BookOpenText, label: "Reviews" }]
       : []),
     { key: "Profile", route: routeByName.get("Profile"), icon: User, label: "Profile" },
   ].filter((item) => item.isCreateAction || item.route);

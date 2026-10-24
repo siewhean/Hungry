@@ -52,10 +52,10 @@ test("search home: params instead of persisted query, recents, landing view, red
   assert.doesNotMatch(home, /updateQuery/);
   // Search is ready for immediate typing while the Stitch quick filters and dish cards remain available.
   assert.match(home, /\bautoFocus\b/);
-  assert.match(home, /Hawker Classics/);
+  assert.match(home, /Hawker classics/);
   assert.match(home, /Dishes to Discover/);
   assert.match(home, /returnKeyType="search"/);
-  assert.match(home, /Recent Searches/);
+  assert.match(home, /Recent searches/);
   assert.match(home, /allowSearchHistory && recentSearches\.length > 0/);
   assert.match(home, /useNativeDriver: true/);
   assert.doesNotMatch(home, /useNativeDriver: false/);

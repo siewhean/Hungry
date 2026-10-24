@@ -210,14 +210,14 @@ export function SocialGridScreen() {
         {isStory && (
           <View style={[styles.badge, { backgroundColor: palette.orange }]}>
             <AppText variant="bodySmallBold" style={{ color: palette.textOnOrange }}>
-              STORY
+              Story
             </AppText>
           </View>
         )}
         {isDish && (
           <View style={[styles.badge, { backgroundColor: palette.statusFast }]}>
             <AppText variant="bodySmallBold" style={{ color: palette.white }}>
-              DISH
+              Dish
             </AppText>
           </View>
         )}
@@ -227,7 +227,7 @@ export function SocialGridScreen() {
 
   return (
     <Screen
-      title={type === "liked" ? "Liked Content" : "Saved Content"}
+      title={type === "liked" ? "Liked content" : "Saved content"}
       fullWidth
       contentContainerStyle={{ paddingHorizontal: 0 }}
     >

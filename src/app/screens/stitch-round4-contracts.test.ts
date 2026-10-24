@@ -7,7 +7,7 @@ const read = (path: string) => readFileSync(path, "utf8");
 test("dish page: Order on under the stall card, rating only after Tried, no flavour tags", () => {
   const dish = read("src/app/screens/detail/DishDetailScreenV2.tsx");
   const stallCard = dish.indexOf("stall details`}");
-  const orderOn = dish.indexOf("ORDER ON");
+  const orderOn = dish.search(/Order on\s*<\/AppText>/);
   const radar = dish.indexOf("<TasteRadarChart");
   assert.ok(stallCard > 0 && orderOn > stallCard && radar > orderOn);
   // No rating before the dish is tried; marking it tried opens an optional rate + taste popup.
@@ -66,10 +66,10 @@ test("stall page: description only, hours on one row, website, filter beside the
   assert.match(stall, /link\.platform === "website"/);
   assert.match(
     stall,
-    /Signature Dishes<\/AppText>\s+\{menuStatus === "ready" &&[\s\S]*?<MenuFilterDropdown/,
+    /Signature dishes<\/AppText>\s+\{menuStatus === "ready" &&[\s\S]*?<MenuFilterDropdown/,
   );
   const card = stall.indexOf("Opening hours, ${operatingStatusLabel}");
-  const orderOn = stall.indexOf("ORDER ON");
+  const orderOn = stall.search(/Order on\s*<\/AppText>/);
   const menu = stall.indexOf("{/* Menu */}");
   assert.ok(card > 0 && orderOn > card && menu > orderOn);
 });

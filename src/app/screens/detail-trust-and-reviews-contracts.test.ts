@@ -24,7 +24,9 @@ test("stall reviews are one newest-first query naming each dish, with a write-re
   assert.match(stallDetail, /on \{review\.dishName\}/);
   assert.match(stallDetail, /navigation\.navigate\("DishDetail", \{ dishId: review\.dishId \}\)/);
   assert.match(stallDetail, /Couldn&apos;t load reviews for this stall\./);
-  assert.match(stallDetail, /ctaLabel="Write a review"\s*onPress=\{openWriteReview\}/);
+  // One "Write a review" pill lives in the sticky bar; the Reviews heading carries no second link.
+  assert.match(stallDetail, /onReview=\{[\s\S]*?openWriteReview/);
+  assert.doesNotMatch(stallDetail, /accessibilityLabel=\{`Write a review for \$\{venue\.name\}`\}/);
   assert.match(
     stallDetail,
     /const openWriteReview = \(\) => \{[\s\S]*?if \(!requireAuthForProtectedAction\(/,

@@ -512,7 +512,7 @@ export function ReviewScreen({ navigation, route }: Props) {
                 </Card>
               ) : (
                 <Button
-                  label="Add Music"
+                  label="Add music"
                   variant="secondary"
                   onPress={() => navigation.navigate("MusicSelection" as any)}
                   leftIcon={<Music size={18} color={palette.text} />}
@@ -554,7 +554,7 @@ export function ReviewScreen({ navigation, route }: Props) {
 
           <View style={{ gap: spacing[2] }}>
             <Button
-              label="Publish Review"
+              label="Publish review"
               onPress={handleSubmit}
               loading={isSubmitting}
               disabled={Boolean(publishBlockedReason)}

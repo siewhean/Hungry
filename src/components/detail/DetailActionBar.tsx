@@ -23,6 +23,8 @@ export type DetailHoldOption = {
 export type DetailAction = {
   id: string;
   label: string;
+  /** Short text shown under the icon; defaults to `label`. */
+  caption?: string;
   /** Lucide-style icon: receives size, color and an optional fill. */
   icon: IconComponent;
   onPress: () => void;
@@ -56,9 +58,9 @@ export type DetailCallToAction = {
 };
 
 type Props = {
-  /** Icon-only buttons on the right. Each may have its own hold menu. */
+  /** Icon buttons on the right, each captioned. Each may have its own hold menu. */
   actions: DetailAction[];
-  /** The orange button at the left end, e.g. "Review". */
+  /** The orange button at the left end, e.g. "Write a review". */
   cta?: DetailCallToAction;
   testID?: string;
 };
@@ -66,7 +68,7 @@ type Props = {
 const ICON_SIZE = 22;
 const TARGET_SIZE = 48;
 /** Icon buttons sit close together: narrower than tall, with hit slop making up the rest. */
-const ICON_BUTTON_WIDTH = 40;
+const ICON_BUTTON_MIN_WIDTH = 44;
 const LONG_PRESS_MS = 320;
 /** Above the page and the floating back button while a hold menu is open. */
 const OVERLAY_Z = 20;
@@ -82,11 +84,11 @@ function playToggleHaptic(action: DetailAction) {
 
 /**
  * The sticky bottom bar on dish and stall pages: the orange call to action on the left and
- * icon-only buttons on the right. Holding a button that has options (tried / not tried,
+ * captioned icon buttons on the right. Holding a button that has options (tried / not tried,
  * collections) dims the page and opens a small menu above it; only that button stays lit.
  */
 export function DetailActionBar({ actions, cta, testID }: Props) {
-  const { componentRadii, palette, radii, shadows, spacing } = useHungryTheme();
+  const { componentRadii, palette, shadows, spacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   // The last menu shown, kept while it animates closed.
@@ -159,15 +161,16 @@ export function DetailActionBar({ actions, cta, testID }: Props) {
             backgroundColor: palette.orange,
             borderRadius: componentRadii.button,
             flexDirection: "row",
+            flexShrink: 1,
             gap: spacing[1.5],
-            height: 44,
+            minHeight: 44,
             justifyContent: "center",
-            paddingHorizontal: spacing[4],
+            paddingHorizontal: spacing[3],
             transform: [{ scale: pressed ? 0.97 : 1 }],
           })}
         >
           {cta.icon ? <cta.icon color={palette.textOnOrange} size={18} /> : null}
-          <AppText variant="bodyBold" style={{ color: palette.textOnOrange }}>
+          <AppText variant="bodyBold" numberOfLines={1} style={{ color: palette.textOnOrange }}>
             {cta.label}
           </AppText>
         </Pressable>
@@ -224,12 +227,13 @@ export function DetailActionBar({ actions, cta, testID }: Props) {
             }}
             style={({ pressed }) => ({
               alignItems: "center",
-              borderRadius: radii.pill,
-              height: TARGET_SIZE,
+              borderRadius: componentRadii.button,
               justifyContent: "center",
+              minHeight: TARGET_SIZE,
+              minWidth: ICON_BUTTON_MIN_WIDTH,
               opacity: action.disabled ? 0.5 : 1,
+              paddingHorizontal: spacing[1],
               transform: [{ scale: pressed ? 0.9 : 1 }],
-              width: ICON_BUTTON_WIDTH,
             })}
           >
             {action.loading ? (
@@ -241,6 +245,17 @@ export function DetailActionBar({ actions, cta, testID }: Props) {
                 size={ICON_SIZE}
               />
             )}
+            <AppText
+              variant="micro"
+              numberOfLines={1}
+              style={{
+                color: action.active ? palette.orangeText : color,
+                fontWeight: action.active ? "800" : "600",
+                marginTop: 2,
+              }}
+            >
+              {action.caption ?? action.label}
+            </AppText>
           </Pressable>
         );
       })}
@@ -307,7 +322,6 @@ export function DetailActionBar({ actions, cta, testID }: Props) {
                 letterSpacing: 0.6,
                 paddingHorizontal: spacing[4],
                 paddingTop: spacing[2],
-                textTransform: "uppercase",
               }}
             >
               {menuTitle}

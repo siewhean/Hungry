@@ -116,6 +116,11 @@ function reportContent(target: ContentSafetyTarget, reason: SafetyReportReason):
       reason: `user_reported_${target.targetType}_${reason}`,
     })
     .then(() => {
+      // A reported review disappears for the reporter right away; the server hides it on reload.
+      if (target.targetType === "review") {
+        hiddenPostIds.add(target.targetId);
+        target.onHidden?.(target.targetId);
+      }
       trackAnalyticsEvent("content_report_submitted", {
         targetType: target.targetType,
         targetId: target.targetId,
@@ -271,17 +276,30 @@ export function promptReportReview(target: ReviewSafetyTarget): void {
   );
 }
 
-/** Report / Block menu for a review, shared by the stall and dish pages (the Review feed has its own copy). */
+/** Report / Block sheet for a review, shared by the Reviews grid and the stall and dish pages. */
 export function promptReviewSafetyActions(target: ReviewSafetyTarget): void {
-  Alert.alert(`Review by ${target.authorName}`, undefined, [
-    { text: "Report review", onPress: () => promptReportReview(target) },
-    {
-      text: `Block ${target.authorName}`,
-      style: "destructive",
-      onPress: () => promptBlockReviewAuthor(target),
+  const blockedAuthorId = normalizeAuthorId(target.authorId);
+  const safetyTarget: ContentSafetyTarget = {
+    targetType: "review",
+    targetId: target.reviewId,
+    authorName: target.authorName,
+    authorId: target.authorId,
+    label: "review",
+    onHidden: target.onHidden,
+    onBlocked: target.onBlocked,
+  };
+  useUIStore.getState().openSafetyMenu({
+    label: "review",
+    authorName: target.authorName,
+    canHide: false,
+    // Seeded reviews have no account behind them, so there is nobody to block.
+    canBlock: Boolean(blockedAuthorId),
+    onReport: (reason) => reportContent(safetyTarget, reason),
+    onHide: () => {},
+    onBlock: () => {
+      if (blockedAuthorId) blockAuthor(safetyTarget, blockedAuthorId);
     },
-    { text: "Cancel", style: "cancel" },
-  ]);
+  });
 }
 
 export function promptBlockReviewAuthor(target: ReviewSafetyTarget): void {

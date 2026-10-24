@@ -123,7 +123,7 @@ export function ChecklistsHomeScreen() {
           <ArrowLeft color={theme.palette.text} size={22} />
         </Pressable>
         <AppText variant="h2" style={{ flex: 1 }}>
-          My Checklists
+          My checklists
         </AppText>
         <Button
           label="Create"
@@ -142,7 +142,7 @@ export function ChecklistsHomeScreen() {
             Create your first checklist to track dishes and stalls you want to try
           </AppText>
           <Button
-            label="Create Checklist"
+            label="Create checklist"
             onPress={handleCreateChecklist}
             disabled={isCreating}
             variant="primary"

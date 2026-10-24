@@ -164,7 +164,7 @@ export function WheelHomeScreen({ navigation, route }: Props) {
             >
               <View style={{ flex: 1, height: 1, backgroundColor: palette.border, opacity: 0.5 }} />
               <AppText variant="micro" tone="secondary" style={{ fontWeight: "800" }}>
-                HAVE A CODE?
+                Have a code?
               </AppText>
               <View style={{ flex: 1, height: 1, backgroundColor: palette.border, opacity: 0.5 }} />
             </View>
@@ -179,7 +179,7 @@ export function WheelHomeScreen({ navigation, route }: Props) {
 
                 <View style={{ gap: spacing[3] }}>
                   <Input
-                    label="Party Code"
+                    label="Party code"
                     placeholder="e.g. MAKAN7"
                     value={joinCode}
                     onChangeText={(t) => setJoinCode(t.toUpperCase())}
@@ -187,7 +187,7 @@ export function WheelHomeScreen({ navigation, route }: Props) {
                     maxLength={8}
                   />
                   <Input
-                    label="Your Name"
+                    label="Your name"
                     placeholder="How should the group see you?"
                     value={joinName}
                     onChangeText={setJoinName}

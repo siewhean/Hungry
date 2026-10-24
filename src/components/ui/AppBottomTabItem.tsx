@@ -74,6 +74,8 @@ export function AppBottomTabItem({
       >
         <Icon
           color={createAction ? createIconColor : resolvedColor}
+          // Filled glyph for the selected tab so the state is not colour alone.
+          fill={focused && !createAction ? resolvedColor : "none"}
           size={componentSizes.bottomTabIcon}
         />
       </View>

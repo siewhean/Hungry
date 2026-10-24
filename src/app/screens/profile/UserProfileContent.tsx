@@ -815,11 +815,7 @@ function StatBlock({
           </AppText>
         )}
       </View>
-      <AppText
-        variant="micro"
-        tone="secondary"
-        style={{ textTransform: "uppercase", letterSpacing: 0.5 }}
-      >
+      <AppText variant="micro" tone="secondary" style={{ letterSpacing: 0.5 }}>
         {label}
       </AppText>
     </Pressable>

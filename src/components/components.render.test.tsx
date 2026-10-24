@@ -489,8 +489,9 @@ test("DetailActionBar presses the right action and marks the active one", async 
       ],
     }),
   );
-  // Icon-only buttons: the label is for assistive tech, not printed under the icon.
-  assert.doesNotMatch(view.text(), /Save|Tried/);
+  // Each icon button carries a caption, so the action is not guessed from the glyph alone.
+  assert.match(view.text(), /Save/);
+  assert.match(view.text(), /Tried/);
   await view.press(view.findByLabel("Save"));
   await view.press(view.findByLabel("Tried"));
   assert.deepEqual(pressed, ["save", "tried"]);
@@ -530,10 +531,10 @@ test("DetailActionBar opens a held button's own menu, dims the page, and keeps t
         },
         { id: "like", label: "Like", icon: () => null, onPress: () => pressed.push("like") },
       ],
-      cta: { label: "Review", onPress: () => pressed.push("review") },
+      cta: { label: "Write a review", onPress: () => pressed.push("review") },
     }),
   );
-  assert.match(view.text(), /Review/);
+  assert.match(view.text(), /Write a review/);
   // No three-dots menu, and nothing extra shows until a button is held.
   assert.equal(view.findByLabel("More actions"), null);
   assert.doesNotMatch(view.text(), /Not tried/);
@@ -546,7 +547,7 @@ test("DetailActionBar opens a held button's own menu, dims the page, and keeps t
   assert.match(view.text(), /Have you tried it\?/);
   assert.ok(view.findByLabel("Close menu"));
   await view.press(view.findByLabel("Not tried"));
-  await view.press(view.findByLabel("Review"));
+  await view.press(view.findByLabel("Write a review"));
   assert.ok(pressed.includes("like"));
   assert.deepEqual(
     pressed.filter((entry) => entry !== "like"),

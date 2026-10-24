@@ -122,7 +122,7 @@ export function SharedMetadata({ onOpenLocation, onOpenCollaborators }: SharedMe
           <View style={{ gap: spacing.lg }}>
             <View>
               <AppText variant="micro" tone="muted" style={{ marginBottom: spacing.md }}>
-                FOOD TAGS
+                Food tags
               </AppText>
               <View style={[styles.chipRow, { gap: spacing.md }]}>
                 {["Noodles", "Rice", "Seafood", "Snack", "Dessert"].map((tag) => (
@@ -138,7 +138,7 @@ export function SharedMetadata({ onOpenLocation, onOpenCollaborators }: SharedMe
 
             <View>
               <AppText variant="micro" tone="muted" style={{ marginBottom: spacing.md }}>
-                TASTE PROFILE
+                Taste profile
               </AppText>
               <View style={[styles.chipRow, { gap: spacing.md }]}>
                 {["Spicy", "Savoury", "Sweet", "Umami", "Smoky"].map((tag) => (

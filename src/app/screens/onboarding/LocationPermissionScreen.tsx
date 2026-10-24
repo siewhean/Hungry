@@ -26,7 +26,7 @@ const locationPermissionsGraphic = require("../../../../assets/images/location-p
 const FEATURE_ROWS = [
   {
     key: "nearby",
-    title: "Nearby Dish Discovery",
+    title: "Nearby dish discovery",
     description: "Find trending laksa or hidden gem pastries just steps away.",
     icon: UtensilsCrossed,
     iconTone: "orange",
@@ -42,7 +42,7 @@ const FEATURE_ROWS = [
   },
   {
     key: "favourites",
-    title: "Local Favourites",
+    title: "Local favourites",
     description: "See what diners near you rate highly right now.",
     icon: Star,
     iconTone: "textSecondary",
@@ -228,7 +228,7 @@ export function LocationPermissionScreen({ navigation }: Props) {
           />
           {permissionBlocked ? (
             <Button
-              label="Open Settings"
+              label="Open settings"
               variant="ghost"
               accessibilityHint="Opens Settings to turn on location for Hungry"
               onPress={() => void Linking.openSettings().catch(() => undefined)}

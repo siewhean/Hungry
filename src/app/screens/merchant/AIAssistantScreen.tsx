@@ -185,7 +185,7 @@ export function AIAssistantScreen() {
                 <BarChart2 size={16} color={palette.textOnOrange} />
               </View>
               <AppText variant="bodySmallBold" style={{ color: palette.orangeText }}>
-                SUMMARY
+                Summary
               </AppText>
             </View>
             <AppText

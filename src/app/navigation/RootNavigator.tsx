@@ -804,7 +804,11 @@ export function RootNavigator({ theme }: { theme: Theme }) {
             />
           ) : null}
           {FEATURE_FLAGS.reviewCreationEnabled ? (
-            <RootStack.Screen getComponent={loadReviewStack} name="ReviewStack" />
+            <RootStack.Screen
+              getComponent={loadReviewStack}
+              name="ReviewStack"
+              options={{ presentation: "modal" }}
+            />
           ) : null}
           {FEATURE_FLAGS.hungryWheelEnabled ? (
             <RootStack.Screen getComponent={loadWheelStack} name="WheelStack" />

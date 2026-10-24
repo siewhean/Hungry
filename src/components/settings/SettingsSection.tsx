@@ -108,7 +108,6 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     fontWeight: "700",
     // Visual only: screen readers read the title as written, not letter by letter.
-    textTransform: "uppercase",
   },
   content: {
     borderRadius: componentRadii.card,

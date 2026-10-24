@@ -26,21 +26,22 @@ export function TrendingList({ title, bites, onOpen, onPrefetch, onSeeAll }: Tre
   if (!bites.length) return null;
   return (
     <View style={{ gap: spacing[3] }} testID="trending-list">
-      <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
+      {onSeeAll ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`See all: ${title}`}
+          hitSlop={8}
+          onPress={onSeeAll}
+          style={{ alignItems: "center", flexDirection: "row", gap: spacing[2], minHeight: 44 }}
+        >
+          <AppText variant="h2" style={{ flexShrink: 1 }}>
+            {title}
+          </AppText>
+          <ChevronRight color={palette.textMuted} size={20} />
+        </Pressable>
+      ) : (
         <AppText variant="h2">{title}</AppText>
-        {onSeeAll ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`See all: ${title}`}
-            hitSlop={8}
-            onPress={onSeeAll}
-          >
-            <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
-              SEE ALL
-            </AppText>
-          </Pressable>
-        ) : null}
-      </View>
+      )}
       {bites.slice(0, MAX_ROWS).map((bite) => {
         const distance = distanceLabel(bite.distanceMeters);
         return (

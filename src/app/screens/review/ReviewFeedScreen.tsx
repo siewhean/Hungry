@@ -37,8 +37,7 @@ import {
 import {
   isContentHiddenForSession,
   loadBlockedAuthorsForSession,
-  promptBlockReviewAuthor,
-  promptReportReview,
+  promptReviewSafetyActions,
 } from "@/lib/security/communitySafety";
 import {
   getDataRepository,
@@ -450,30 +449,13 @@ export function ReviewFeedScreen() {
         ]);
         return;
       }
-      Alert.alert(`Review by ${review.authorName}`, undefined, [
-        {
-          text: "Report review",
-          onPress: () =>
-            promptReportReview({
-              reviewId: review.id,
-              authorName: review.authorName,
-              authorId: review.authorId,
-              onHidden: bumpSafetyFilter,
-            }),
-        },
-        {
-          text: `Block ${review.authorName}`,
-          style: "destructive",
-          onPress: () =>
-            promptBlockReviewAuthor({
-              reviewId: review.id,
-              authorName: review.authorName,
-              authorId: review.authorId,
-              onBlocked: bumpSafetyFilter,
-            }),
-        },
-        { text: "Cancel", style: "cancel" },
-      ]);
+      promptReviewSafetyActions({
+        reviewId: review.id,
+        authorName: review.authorName,
+        authorId: review.authorId,
+        onHidden: bumpSafetyFilter,
+        onBlocked: bumpSafetyFilter,
+      });
     },
     [bumpSafetyFilter, isAuthenticated, requireAccountForReviewAction],
   );
@@ -532,7 +514,7 @@ export function ReviewFeedScreen() {
                 }
               }}
               onClear={() => setSearchQuery("")}
-              placeholder="Search Reviews"
+              placeholder="Search reviews"
               expandedWidth={searchBarWidth}
               iconAlignment="right"
               iconSize={headerActionSize}

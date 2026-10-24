@@ -492,7 +492,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
         selectedShareChatIds.map((chatId) =>
           sharePostToChat(chatId, {
             postId: `taste-fingerprint-${profile.id}`,
-            title: "Taste Fingerprint",
+            title: "Taste fingerprint",
             subtitle: `${profile.displayName} · Taste profile`,
             imageUrl: profile.avatarUrl ?? "",
             authorName: profile.displayName,
@@ -593,7 +593,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
             >
               {FEATURE_FLAGS.merchantCentreEnabled && merchantAccount !== null && (
                 <MenuRow
-                  label="Merchant Dashboard"
+                  label="Merchant dashboard"
                   icon={<Store size={20} color={palette.orange} />}
                   onPressIn={prefetchMerchantDashboard}
                   onPress={() => {
@@ -616,7 +616,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                 )}
               {isAuthenticated && FEATURE_FLAGS.collectionsEnabled && (
                 <MenuRow
-                  label="Liked Content"
+                  label="Liked content"
                   icon={<Heart size={20} color={palette.error} fill={palette.error} />}
                   onPressIn={() => preloadRoute(navigation, "SocialGrid", { type: "liked" })}
                   onPress={() => {
@@ -664,7 +664,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                 />
               ) : null}
               <MenuRow
-                label="Followed Stalls"
+                label="Followed stalls"
                 icon={<Store size={20} color={palette.text} />}
                 onPressIn={() => preloadRoute(navigation, "FollowedStalls")}
                 onPress={() => {
@@ -674,7 +674,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
               />
               {FEATURE_FLAGS.reviewCreationEnabled ? (
                 <MenuRow
-                  label="Review History"
+                  label="Review history"
                   icon={<PencilLine size={20} color={palette.text} />}
                   onPressIn={() => preloadRoute(navigation, "ReviewHistory")}
                   onPress={() => {
@@ -694,7 +694,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
               />
               {isAuthenticated && (
                 <MenuRow
-                  label="Sign Out"
+                  label="Sign out"
                   icon={<LogOut size={20} color={palette.error} />}
                   onPress={() => {
                     setMenuOpen(false);
@@ -839,7 +839,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
           <View style={{ flexDirection: "row", gap: spacing[2] }}>
             {FEATURE_FLAGS.favouritesEnabled ? (
               <StatBlock
-                label="Saved Dishes"
+                label="Saved dishes"
                 value={profileStatSummary.saved}
                 icon={<Bookmark size={14} color={palette.orange} />}
                 onPressIn={() => preloadRoute(navigation, "Favourites")}
@@ -998,7 +998,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                 <View style={{ alignItems: "center", gap: spacing[3] }}>
                   <TasteRadar vector={profile.tasteVector} />
                   <Button
-                    label="Recalibrate Taste Vector"
+                    label="Recalibrate taste vector"
                     onPress={() =>
                       rootNavigation.navigate("OnboardingStack", {
                         screen: "TasteQuiz",
@@ -1626,10 +1626,7 @@ function StatBlock({
       )}
       <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
         {icon}
-        <AppText
-          variant="micro"
-          style={{ color: palette.textSecondary, letterSpacing: 0.5, textTransform: "uppercase" }}
-        >
+        <AppText variant="micro" style={{ color: palette.textSecondary, letterSpacing: 0.5 }}>
           {label}
         </AppText>
       </View>

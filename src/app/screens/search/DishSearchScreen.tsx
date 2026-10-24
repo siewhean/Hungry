@@ -258,7 +258,7 @@ export function DishSearchScreen() {
           >
             {[
               {
-                label: "Near Me",
+                label: "Near me",
                 filter: undefined,
                 icon: <MapPin color={palette.textOnPrimary} size={16} />,
                 primary: true,
@@ -403,7 +403,7 @@ export function DishSearchScreen() {
               }}
             >
               <AppText variant="h2" accessibilityRole="header">
-                Recent Searches
+                Recent searches
               </AppText>
               <Pressable
                 accessibilityRole="button"
@@ -412,7 +412,7 @@ export function DishSearchScreen() {
                 onPress={clearSearchHistory}
               >
                 <AppText tone="secondary" variant="bodySmall">
-                  Clear All
+                  Clear all
                 </AppText>
               </Pressable>
             </View>
@@ -471,10 +471,10 @@ export function DishSearchScreen() {
           <View accessibilityLabel="Popular dishes" style={{ gap: spacing[2] }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
               <AppText variant="h2" accessibilityRole="header">
-                Hawker Classics
+                Hawker classics
               </AppText>
               <AppText variant="bodySmall" tone="secondary">
-                Quick Find
+                Quick find
               </AppText>
             </View>
             <ScrollView

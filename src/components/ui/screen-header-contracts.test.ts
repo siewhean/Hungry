@@ -103,7 +103,7 @@ test("Screen header contract: live Discover, Review, and New Post headers use Ap
   assert.match(reviews, /<AppHeader[\s\S]*title=\{reviewHeaderTitle\}/);
   assert.match(
     reviews,
-    /right=\{\s*<ExpandableSearchLauncher[\s\S]*accessibilityLabel="Search reviews"[\s\S]*placeholder="Search Reviews"[\s\S]*iconAlignment="right"[\s\S]*enableMovingPlaceholder=\{false\}[\s\S]*showExpandedBacking=\{false\}[\s\S]*\/>\s*\}/,
+    /right=\{\s*<ExpandableSearchLauncher[\s\S]*accessibilityLabel="Search reviews"[\s\S]*placeholder="Search reviews"[\s\S]*iconAlignment="right"[\s\S]*enableMovingPlaceholder=\{false\}[\s\S]*showExpandedBacking=\{false\}[\s\S]*\/>\s*\}/,
   );
   assert.doesNotMatch(reviews, /ReviewSearchBar|navigation\.navigate\("SearchHome"\)/);
   assert.doesNotMatch(reviews, /useMovingSearchPlaceholder|movingSearchPlaceholder/);
@@ -416,12 +416,12 @@ test("Discover V1 contract: situation intents live in their matching sections", 
     discover,
     /S\$\{bite\.price\.toFixed\(2\)\}[\s\S]*<Star color=\{palette\.starStroke\} size=\{12\} fill=\{palette\.starFill\} \/>[\s\S]*\{bite\.rating\.toFixed\(1\)\}/,
   );
-  assert.match(discover, /title="Budget < S\$8"[\s\S]*label="VALUE"/);
+  assert.match(discover, /title="Budget < S\$8"[\s\S]*label="Value"/);
   assert.match(discover, /navigation\.navigate\("DishDetail", \{ dishId: bite\.dishId \}\)/);
   assert.match(discover, /const isLateNightMakanVisible = isLateNightHour\(currentHour\)/);
   assert.match(
     discover,
-    /\{isLateNightMakanVisible && shouldRenderDiscoverRail\(lateNightCards\.length\) \? \([\s\S]*title="Late night eats"[\s\S]*cards=\{lateNightCards\}/,
+    /\{isLateNightMakanVisible && shouldRenderDiscoverRail\(lateNightCards\.length, MIN_DISCOVER_RAIL_ITEMS\) \? \([\s\S]*title="Late night eats"[\s\S]*cards=\{lateNightCards\}/,
   );
   assert.match(discover, /trackAnalyticsEvent\("discover_see_all_tapped", \{ collection \}\)/);
   assert.doesNotMatch(discover, /const foodInset = 5/);
@@ -802,10 +802,10 @@ test("Discover collapses empty rails and offers pull-to-refresh plus one error s
   assert.doesNotMatch(discover, /Sparkles/);
   assert.match(
     discover,
-    /const shouldRenderDiscoverRail = \(count: number\) =>\s*showDiscoverFilterRailSkeleton \|\| count > 0 \|\| isDiscoverFiltering/,
+    /const shouldRenderDiscoverRail = \(count: number, minItems = 1\) =>\s*showDiscoverFilterRailSkeleton \|\| count >= minItems \|\| isDiscoverFiltering/,
   );
   for (const cards of ["quickBiteCards", "editorChoiceCards", "budgetCards", "areaStallCards"]) {
-    assert.match(discover, new RegExp(`shouldRenderDiscoverRail\\(${cards}\\.length\\)`));
+    assert.match(discover, new RegExp(`shouldRenderDiscoverRail\\(${cards}\\.length[,)]`));
   }
   assert.match(
     discover,

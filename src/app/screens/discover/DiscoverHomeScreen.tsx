@@ -158,7 +158,9 @@ type DiscoverRepositoryLookup = Pick<
 >;
 
 const STALL_SHOWCASE_CARD_LIMIT = 30;
-/** Lifts the 12px SEE ALL / VIEW MAP links to a 44pt touch target. */
+/** A horizontal rail with fewer dishes than this is hidden. */
+const MIN_DISCOVER_RAIL_ITEMS = 3;
+/** Widens the tappable section titles (with a chevron) to a 44pt touch target. */
 const DISCOVER_TEXT_LINK_HIT_SLOP = { top: 16, bottom: 16, left: 12, right: 12 } as const;
 /** Stable empties so memos keyed on the feed do not rerun every render. */
 const EMPTY_FEED_VENUES: DiscoveryLocationFeed["venues"] = [];
@@ -797,7 +799,7 @@ const DiscoverBiteCard = memo(function DiscoverBiteCard({
   );
 });
 
-/** A titled horizontal rail of dish cards with "SEE ALL", a loading state and a filter-empty state. */
+/** A titled horizontal rail of dish cards whose title opens the full list, with a loading state and a filter-empty state. */
 const DiscoverBiteRail = memo(function DiscoverBiteRail({
   buttonId,
   cards,
@@ -851,22 +853,25 @@ const DiscoverBiteRail = memo(function DiscoverBiteRail({
           justifyContent: "space-between",
         }}
       >
-        <View style={{ alignItems: "center", flex: 1, flexDirection: "row", gap: spacing[2] }}>
-          <AppText variant="h2" style={{ color: palette.text, flexShrink: 1 }}>
-            {title}
-          </AppText>
-          {titleBadge}
-        </View>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={seeAllLabel}
           hitSlop={DISCOVER_TEXT_LINK_HIT_SLOP}
           onPressIn={() => onPrefetchCollection(rail)}
           onPress={() => onSeeAll(rail)}
+          style={{
+            alignItems: "center",
+            flex: 1,
+            flexDirection: "row",
+            gap: spacing[2],
+            minHeight: 44,
+          }}
         >
-          <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
-            SEE ALL
+          <AppText variant="h2" style={{ color: palette.text, flexShrink: 1 }}>
+            {title}
           </AppText>
+          {titleBadge}
+          <ChevronRight color={palette.textMuted} size={20} />
         </Pressable>
       </View>
       {isLoading ? (
@@ -1031,7 +1036,7 @@ function VerticalStallShowcaseSection({
                           variant="micro"
                           style={{ color: palette.textOnDark, fontWeight: "900" }}
                         >
-                          {openLabel.startsWith("Open") ? "OPEN" : "CLOSED"}
+                          {openLabel.startsWith("Open") ? "Open" : "Closed"}
                         </AppText>
                       </View>
                     ) : null}
@@ -1522,7 +1527,7 @@ export function DiscoverHomeScreen() {
     }, []),
   );
   const sortedChips = useMemo(() => {
-    const baseChips = [{ id: "dietary" as const, label: "Dietary Needs" }, ...INTENT_CHIPS];
+    const baseChips = [{ id: "dietary" as const, label: "Dietary needs" }, ...INTENT_CHIPS];
     // "Late night" only shows from 21:00 to 03:59, and then leads the row.
     if (isLateNightHour(currentHour)) {
       return baseChips.sort((a, b) => (a.id === "late" ? -1 : b.id === "late" ? 1 : 0));
@@ -1800,9 +1805,10 @@ export function DiscoverHomeScreen() {
   const showDiscoverFilterRailSkeleton =
     showPopularFoodFilterSkeleton || showInitialDiscoverSkeleton;
   // Empty rails collapse instead of each showing its own "nothing found" block; a filter
-  // that matches nothing still shows the filtered empty state.
-  const shouldRenderDiscoverRail = (count: number) =>
-    showDiscoverFilterRailSkeleton || count > 0 || isDiscoverFiltering;
+  // that matches nothing still shows the filtered empty state. Horizontal rails need a few
+  // dishes to look like a rail, so they wait for MIN_DISCOVER_RAIL_ITEMS.
+  const shouldRenderDiscoverRail = (count: number, minItems = 1) =>
+    showDiscoverFilterRailSkeleton || count >= minItems || isDiscoverFiltering;
   const unfilteredAreaStallCards = useMemo(() => {
     if (isSupabaseDataSource) {
       const dishesByVenueId = new Map(
@@ -2654,7 +2660,7 @@ export function DiscoverHomeScreen() {
                   </View>
                   <View style={{ flex: 1 }}>
                     <AppText variant="bodyBold" style={{ color: themeTints.text }}>
-                      Daily Crave
+                      Daily crave
                     </AppText>
                     <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
                       Swipe to build your taste profile
@@ -2669,7 +2675,7 @@ export function DiscoverHomeScreen() {
             </View>
 
             {/* Rails: each is the same memoised rail over its own collection. */}
-            {shouldRenderDiscoverRail(quickBiteCards.length) ? (
+            {shouldRenderDiscoverRail(quickBiteCards.length, MIN_DISCOVER_RAIL_ITEMS) ? (
               <DiscoverBiteRail
                 {...discoverRailProps}
                 rail="quickBites"
@@ -2682,7 +2688,7 @@ export function DiscoverHomeScreen() {
               />
             ) : null}
 
-            {shouldRenderDiscoverRail(editorChoiceCards.length) ? (
+            {shouldRenderDiscoverRail(editorChoiceCards.length, MIN_DISCOVER_RAIL_ITEMS) ? (
               <DiscoverBiteRail
                 {...discoverRailProps}
                 rail="editorChoice"
@@ -2696,12 +2702,12 @@ export function DiscoverHomeScreen() {
               />
             ) : null}
 
-            {shouldRenderDiscoverRail(budgetCards.length) ? (
+            {shouldRenderDiscoverRail(budgetCards.length, MIN_DISCOVER_RAIL_ITEMS) ? (
               <DiscoverBiteRail
                 {...discoverRailProps}
                 rail="budget"
                 title="Budget < S$8"
-                titleBadge={<DiscoverRailBadge label="VALUE" tone="success" />}
+                titleBadge={<DiscoverRailBadge label="Value" tone="success" />}
                 seeAllLabel="See all budget dishes under 8 dollars"
                 cards={budgetCards}
                 variant="price"
@@ -2710,7 +2716,8 @@ export function DiscoverHomeScreen() {
               />
             ) : null}
 
-            {isLateNightMakanVisible && shouldRenderDiscoverRail(lateNightCards.length) ? (
+            {isLateNightMakanVisible &&
+            shouldRenderDiscoverRail(lateNightCards.length, MIN_DISCOVER_RAIL_ITEMS) ? (
               <DiscoverBiteRail
                 {...discoverRailProps}
                 rail="lateNight"
@@ -2733,41 +2740,41 @@ export function DiscoverHomeScreen() {
                     alignItems: "center",
                   }}
                 >
-                  <AppText variant="h2" style={{ color: themeTints.text }}>
-                    {placeStallCardCount > 0 && currentPlace
-                      ? `Stalls at ${currentPlace.name}`
-                      : `Stalls ${discoverAreaPhrase}`}
-                  </AppText>
-                  {isUserMode && currentPlace ? (
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel={`See all stalls at ${currentPlace.name}`}
-                      hitSlop={DISCOVER_TEXT_LINK_HIT_SLOP}
-                      onPress={() =>
-                        navigation.navigate("SearchResults", {
-                          browseMode: "stalls",
-                          placeId: currentPlace.id,
-                          placeName: currentPlace.name,
-                        })
-                      }
-                    >
-                      <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
-                        SEE ALL
-                      </AppText>
-                    </Pressable>
-                  ) : (
-                    /* Every diner can open the map from here, like the List/Map toggle. */
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel="View stalls on map"
-                      hitSlop={DISCOVER_TEXT_LINK_HIT_SLOP}
-                      onPress={() => navigation.navigate("DiscoverMap")}
-                    >
-                      <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
-                        VIEW MAP
-                      </AppText>
-                    </Pressable>
-                  )}
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      isUserMode && currentPlace
+                        ? `See all stalls at ${currentPlace.name}`
+                        : "View stalls on map"
+                    }
+                    hitSlop={DISCOVER_TEXT_LINK_HIT_SLOP}
+                    onPress={() =>
+                      isUserMode && currentPlace
+                        ? navigation.navigate("SearchResults", {
+                            browseMode: "stalls",
+                            placeId: currentPlace.id,
+                            placeName: currentPlace.name,
+                          })
+                        : navigation.navigate("DiscoverMap")
+                    }
+                    style={{
+                      alignItems: "center",
+                      flex: 1,
+                      flexDirection: "row",
+                      gap: spacing[2],
+                      minHeight: 44,
+                    }}
+                  >
+                    <AppText variant="h2" style={{ color: themeTints.text, flexShrink: 1 }}>
+                      {placeStallCardCount > 0 && currentPlace
+                        ? `Stalls at ${currentPlace.name}`
+                        : `Stalls ${discoverAreaPhrase}`}
+                    </AppText>
+                    <ChevronRight
+                      color={themeTints.isDark ? palette.white : palette.textMuted}
+                      size={20}
+                    />
+                  </Pressable>
                 </View>
                 <View style={{ gap: discoverContentGap }}>
                   {showDiscoverFilterRailSkeleton ? (

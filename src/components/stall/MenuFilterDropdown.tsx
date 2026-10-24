@@ -120,7 +120,7 @@ export function MenuFilterDropdown({
 
           <View style={{ gap: spacing[1] }}>
             <AppText variant="bodySmallBold" tone="secondary">
-              CATEGORY
+              Category
             </AppText>
             {categories.map((category) => {
               const selected = category === activeCategory;
@@ -155,7 +155,7 @@ export function MenuFilterDropdown({
           {dietaryOptions.length > 0 ? (
             <View style={{ gap: spacing[1] }}>
               <AppText variant="bodySmallBold" tone="secondary">
-                DIETARY
+                Dietary
               </AppText>
               {dietaryOptions.map((option) => {
                 const checked = activeDietaryFlags.includes(option.flag);

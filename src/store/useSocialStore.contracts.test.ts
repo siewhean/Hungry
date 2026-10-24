@@ -202,10 +202,10 @@ test("public profile does not expose the current user's saved card", () => {
 
   assert.match(
     profileHome,
-    /FEATURE_FLAGS\.favouritesEnabled \? \([\s\S]*label="Saved Dishes"[\s\S]*onPress=\{\(\) => navigation\.navigate\("Favourites"\)\}/,
+    /FEATURE_FLAGS\.favouritesEnabled \? \([\s\S]*label="Saved dishes"[\s\S]*onPress=\{\(\) => navigation\.navigate\("Favourites"\)\}/,
   );
   assert.doesNotMatch(profileHome, /isOtherUserProfile|import \{ UserProfileContent/);
-  assert.doesNotMatch(profileContent, /label="Saved Dishes"/);
+  assert.doesNotMatch(profileContent, /label="Saved dishes"/);
   assert.doesNotMatch(profileContent, /navigation\.navigate\("Favourites"\)/);
 });
 

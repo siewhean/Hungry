@@ -352,8 +352,8 @@ test("web-opening rows are links with an external icon and hint (L8)", () => {
   const screen = settings();
   for (const label of [
     "Contact us",
-    "Privacy Policy",
-    "Terms of Service",
+    "Privacy policy",
+    "Terms of service",
     "How account deletion works",
   ]) {
     const index = screen.indexOf(`label="${label}"`);

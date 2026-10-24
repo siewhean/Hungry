@@ -113,7 +113,7 @@ export function FollowStallButton({
           "Turn on stall updates in Settings to get alerts when its menu changes.",
           [
             { text: "Not now", style: "cancel" },
-            { text: "Open Settings", onPress: onOpenAppSettings },
+            { text: "Open settings", onPress: onOpenAppSettings },
           ],
         );
         return;

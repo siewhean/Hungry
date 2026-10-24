@@ -121,7 +121,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "ChecklistsHomeScreen",
     file: "src/app/screens/checklist/ChecklistsHomeScreen.tsx",
     scenario: "user",
-    expect: /My Checklists/,
+    expect: /My checklists/,
   },
   {
     name: "DishDetailScreenV2",
@@ -171,7 +171,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "CraveScreen",
     file: "src/app/screens/discover/CraveScreen.tsx",
     scenario: "user",
-    expect: /CRAVE/,
+    expect: /Crave/,
   },
   {
     name: "DecideForMeQuizScreen",
@@ -538,7 +538,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "MissionsScreen",
     file: "src/app/screens/profile/MissionsScreen.tsx",
     scenario: "user",
-    expect: /Weekly Missions/,
+    expect: /Weekly missions/,
   },
   {
     name: "PassportScreen",
@@ -574,7 +574,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "ReviewHistoryScreen",
     file: "src/app/screens/profile/ReviewHistoryScreen.tsx",
     scenario: "user",
-    expect: /REVIEWED/,
+    expect: /Reviewed/,
   },
   {
     name: "SettingsScreen",
@@ -586,7 +586,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "SocialGridScreen",
     file: "src/app/screens/profile/SocialGridScreen.tsx",
     scenario: "user",
-    expect: /Saved Content/,
+    expect: /Saved content/,
     params: "socialGrid",
   },
   {

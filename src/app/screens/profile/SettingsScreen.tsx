@@ -423,7 +423,7 @@ export function SettingsScreen() {
         "Location permissions",
         "Hungry could not enable location access. Update this permission in Settings if you previously denied it.",
         [
-          { text: "Open Settings", onPress: () => void openAppSettings() },
+          { text: "Open settings", onPress: () => void openAppSettings() },
           { text: "Cancel", style: "cancel" },
         ],
       );
@@ -891,7 +891,7 @@ export function SettingsScreen() {
         />
         <SettingsRow
           editorial
-          label="Privacy Policy"
+          label="Privacy policy"
           type="link"
           icon={<FileText size={20} color={palette.orange} />}
           onPress={() => void openTrustedExternalUrl(WEB_LINKS.privacy)}
@@ -899,7 +899,7 @@ export function SettingsScreen() {
         />
         <SettingsRow
           editorial
-          label="Terms of Service"
+          label="Terms of service"
           type="link"
           icon={<Scale size={20} color={palette.orange} />}
           onPress={() => void openTrustedExternalUrl(WEB_LINKS.terms)}

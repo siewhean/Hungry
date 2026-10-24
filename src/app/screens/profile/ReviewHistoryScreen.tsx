@@ -164,7 +164,7 @@ export function ReviewHistoryScreen({ navigation }: Props) {
             <View style={{ alignItems: "center", gap: spacing[1] }}>
               <AppText variant="h1">{historyItems.length}</AppText>
               <AppText variant="micro" tone="secondary">
-                REVIEWED
+                Reviewed
               </AppText>
             </View>
             {averageRating ? (
@@ -176,7 +176,7 @@ export function ReviewHistoryScreen({ navigation }: Props) {
                     <AppText variant="h1">{averageRating}</AppText>
                   </View>
                   <AppText variant="micro" tone="secondary">
-                    YOUR AVG SCORE
+                    Your avg score
                   </AppText>
                 </View>
               </>

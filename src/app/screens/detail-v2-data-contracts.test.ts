@@ -66,5 +66,5 @@ test("dish detail V2 bottom bar is labelled, stateful and meets 44px targets", (
   assert.match(bar, /accessibilityRole=\{action\.role \?\? "button"\}/);
   assert.match(bar, /checked: Boolean\(action\.active\)/);
   assert.doesNotMatch(bar, /palette\.white/);
-  assert.match(dish, /accessibilityLabel: "Write a review"/);
+  assert.match(dish, /label: "Write a review"/);
 });

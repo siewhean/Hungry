@@ -40,7 +40,7 @@ test("profile home contract: profile stats use dynamic profile and social store 
   assert.match(source, /ownReviews === null \? null : ownReviews\.length/);
   assert.doesNotMatch(source, /label="Stalls"/);
   assert.match(source, /label="Reviews"[\s\S]*<PencilLine size=\{14\}/);
-  assert.match(source, /label="Saved Dishes"[\s\S]*<Bookmark size=\{14\}/);
+  assert.match(source, /label="Saved dishes"[\s\S]*<Bookmark size=\{14\}/);
   assert.match(source, /<AppText variant="h1" style=\{\{ color: palette\.orange \}\}>/);
   assert.match(
     source,
@@ -69,7 +69,7 @@ test("profile home contract: Palate Fingerprint plots all six dimensions and kee
   assert.match(source, /<TasteRadar vector=\{profile\.tasteVector\}/);
   assert.match(source, /TASTE_DIMENSIONS\.map\(\(\{ key, label \}\) => \(/);
   assert.match(source, /Math\.max\(0, Math\.min\(10, vector\[axis\]\)\)/);
-  assert.match(source, /label="Saved Dishes"/);
+  assert.match(source, /label="Saved dishes"/);
   assert.doesNotMatch(source, /label="Favourites"|>Favourites</);
 });
 
@@ -123,7 +123,7 @@ test("profile home contract: merchant entry loads on sign-in and switching mode 
   const source = read("src/app/screens/profile/ProfileHomeScreen.tsx");
   assert.match(source, /\.merchant\.getMerchantAccount\(\)/);
   assert.match(source, /setMerchantAccount\(account\)/);
-  assert.match(source, /label="Merchant Dashboard"/);
+  assert.match(source, /label="Merchant dashboard"/);
   assert.match(source, /label="Hungry for Business"/);
 
   for (const file of [

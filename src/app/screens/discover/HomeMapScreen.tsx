@@ -88,7 +88,7 @@ function formatVenueCardDish(venue: CatalogRawVenueCard) {
 const HOME_MAP_FILTER_OPTIONS: readonly { id: HomeMapFilterId; label: string }[] = [
   { id: "nearMe", label: "Near me" },
   { id: "hawkerOnly", label: "Hawker" },
-  { id: "topRated", label: "Top Rated" },
+  { id: "topRated", label: "Top rated" },
 ];
 
 export function HomeMapScreen() {
@@ -600,7 +600,7 @@ export function HomeMapScreen() {
                 onPress={() => navigation.navigate("SearchResults", { initialQuery: mapQuery })}
               >
                 <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
-                  SEE ALL RESULTS
+                  See all results
                 </AppText>
               </Pressable>
             </View>
@@ -748,7 +748,7 @@ export function HomeMapScreen() {
             }}
           >
             <AppText variant="h2" style={{ marginBottom: spacing[2] }}>
-              Nearby Stalls
+              Nearby stalls
             </AppText>
             {emptyMessage ? (
               <AppText tone="secondary" accessibilityLiveRegion="polite">

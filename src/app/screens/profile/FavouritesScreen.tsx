@@ -296,7 +296,7 @@ export function FavouritesScreen({ navigation }: Props) {
                       ) : null}
                       {destination ? (
                         <Button
-                          label="Get Directions"
+                          label="Get directions"
                           leftIcon={<Navigation size={18} color={palette.textOnPrimary} />}
                           onPress={() =>
                             void openTrustedMapsUrl(
@@ -323,7 +323,7 @@ export function FavouritesScreen({ navigation }: Props) {
                           style={{ flex: 1 }}
                         />
                         <Button
-                          label="Add review"
+                          label="Write a review"
                           variant="secondary"
                           size="sm"
                           fullWidth={false}
@@ -357,7 +357,7 @@ export function FavouritesScreen({ navigation }: Props) {
                   ? "Save dishes you want to try and they'll show up here."
                   : "Mark a dish as tried from its page to keep a record here."
               }
-              ctaLabel="Discover Dishes"
+              ctaLabel="Discover dishes"
               onPress={() => rootNavigation.navigate("MainTabs", { screen: "Discover" })}
             />
           )}
@@ -629,7 +629,7 @@ function CatalogSavedDishes({ navigation, query }: Pick<Props, "navigation"> & {
               ? "Your saved dishes are not in the current catalog."
               : "Tap Save to favourites on any dish to keep it here."
           }
-          ctaLabel="Discover Dishes"
+          ctaLabel="Discover dishes"
           onPress={() => rootNavigation.navigate("MainTabs", { screen: "Discover" })}
         />
       )}

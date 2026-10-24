@@ -105,7 +105,7 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
           "Allow notifications for Hungry in your phone settings to get these alerts.",
           [
             { text: "Not now", style: "cancel" },
-            { text: "Open Settings", onPress: () => void Linking.openSettings().catch(() => {}) },
+            { text: "Open settings", onPress: () => void Linking.openSettings().catch(() => {}) },
           ],
         );
         return;

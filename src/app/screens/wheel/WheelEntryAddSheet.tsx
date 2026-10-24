@@ -170,7 +170,7 @@ function VenueRow({
           }}
         >
           <AppText style={{ fontWeight: "700", fontSize: 16 }}>{venue.name}</AppText>
-          {isHighMatch && <Badge label="BEST MATCH" tone="orange" />}
+          {isHighMatch && <Badge label="Best match" tone="orange" />}
         </View>
         <AppText variant="micro" tone="secondary">
           {joinVenueSubtitle([
@@ -439,7 +439,7 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
               >
                 <ShieldAlert size={12} color={palette.error} />
                 <AppText variant="micro" style={{ color: palette.error, fontWeight: "700" }}>
-                  {PARTY_ENABLED ? "GROUP NEEDS" : "YOUR NEEDS"}:{" "}
+                  {PARTY_ENABLED ? "Group needs" : "Your needs"}:{" "}
                   {groupDietaryRestrictions.join(", ").toUpperCase()}
                 </AppText>
               </View>

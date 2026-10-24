@@ -89,7 +89,7 @@ export function PostTab({ onOpenMusic }: { onOpenMusic?: () => void }) {
             ]}
           >
             <AppText variant="micro" style={{ color: palette.orange, fontWeight: "700", flex: 1 }}>
-              USE SAME CAPTION AS REVIEW
+              Use same caption as review
             </AppText>
             <Switch
               value={useSameCaption}
@@ -156,7 +156,7 @@ export function PostTab({ onOpenMusic }: { onOpenMusic?: () => void }) {
           <Music size={20} color={musicId ? palette.orange : palette.text} />
           <View style={{ flex: 1 }}>
             <AppText variant="bodyBold" style={{ color: musicId ? palette.orange : palette.text }}>
-              {musicId ? "Background Music" : "Add Music"}
+              {musicId ? "Background music" : "Add music"}
             </AppText>
             {musicId && (
               <AppText variant="micro" tone="secondary" style={{ marginTop: 2 }}>

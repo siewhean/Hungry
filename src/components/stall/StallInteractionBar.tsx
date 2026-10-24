@@ -10,15 +10,7 @@
 
 import { View, Pressable, StyleSheet, ActivityIndicator } from "react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  Bookmark,
-  CheckCircle,
-  Circle,
-  ListPlus,
-  MapPin,
-  PenLine,
-  Send,
-} from "lucide-react-native";
+import { Bookmark, CheckCircle, Circle, ListPlus, MapPin, Send } from "lucide-react-native";
 import { confirmHaptic, tapHaptic } from "@/lib/haptics";
 
 import { useHungryTheme } from "@/theme";
@@ -39,7 +31,7 @@ interface StallInteractionBarProps {
   onReviewRequired?: () => void;
   /** Called after the stall is saved (not when it is unsaved). */
   onSaved?: () => void;
-  /** Called when user taps "Add to List" — saves the stall to the user's Lists (portfolios). */
+  /** Called when user taps "Add to list" — saves the stall to the user's Lists (portfolios). */
   onAddToList?: () => void;
   isAddingToList?: boolean;
   /**
@@ -51,7 +43,7 @@ interface StallInteractionBarProps {
   hideSave?: boolean;
   onShare?: () => void;
   onDirections?: () => void;
-  /** Sticky layout only: the orange "Review" button. */
+  /** Sticky layout only: the orange "Write a review" button. */
   onReview?: () => void;
   /** Sticky layout only: offer "Mark visited" in the hold menu. */
   showVisited?: boolean;
@@ -228,6 +220,7 @@ export function StallInteractionBar({
             {
               id: "tried",
               label: isTried ? "Visited" : "Mark visited",
+              caption: "Visited",
               icon: isTried ? CheckCircle : Circle,
               active: isTried,
               mutedWhenInactive: true,
@@ -272,7 +265,7 @@ export function StallInteractionBar({
     return (
       <DetailActionBar
         actions={stickyActions}
-        cta={onReview ? { label: "Review", icon: PenLine, onPress: onReview } : undefined}
+        cta={onReview ? { label: "Write a review", onPress: onReview } : undefined}
         testID="stall-action-bar"
       />
     );
@@ -301,7 +294,7 @@ export function StallInteractionBar({
         ]),
     {
       id: "tried",
-      label: isTried ? "Visited" : "Mark Visited",
+      label: isTried ? "Visited" : "Mark visited",
       icon: CheckCircle,
       active: isTried,
       onPress: handleTried,
@@ -311,7 +304,7 @@ export function StallInteractionBar({
       ? [
           {
             id: "list",
-            label: "Add to List",
+            label: "Add to list",
             icon: ListPlus,
             active: false,
             onPress: onAddToList,
