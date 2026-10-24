@@ -34,7 +34,10 @@ test("social store contract: UUID follows sync to service while local-name fallb
   const connectionsSource = read("src/app/screens/profile/ProfileConnectionsScreen.tsx");
 
   assert.match(source, /toggleAuthorFollow: \(authorName: string\) => void/);
-  assert.match(source, /toggleFollow: \(userId: string, options\?: \{ isPrivate\?: boolean \}\) => void/);
+  assert.match(
+    source,
+    /toggleFollow: \(userId: string, options\?: \{ isPrivate\?: boolean \}\) => void/,
+  );
   assert.match(source, /function canUseLocalAuthorFollowFallback\(\)/);
   assert.match(source, /Author-name follow ignored because this author is not backed by Supabase/);
   assert.match(source, /followedAuthors: \{\}/);

@@ -36,7 +36,10 @@ test("addFavourites writes every dish in one idempotent upsert", async () => {
 });
 
 test("addFavourites refuses another account and writes nothing for no dishes", async () => {
-  await assert.rejects(service.profile.addFavourites(["dish-1"], "someone-else"), /Account changed/);
+  await assert.rejects(
+    service.profile.addFavourites(["dish-1"], "someone-else"),
+    /Account changed/,
+  );
   await service.profile.addFavourites([]);
   assert.equal(fake.queriesOn("user_favourite_dishes").length, 0);
 });

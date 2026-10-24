@@ -16,7 +16,8 @@ afterEach(() => {
   experiments.setExperimentFlagSource(undefined);
 });
 
-const exposures = () => PostHogStub.captured.filter((entry) => entry.event === "$feature_flag_called");
+const exposures = () =>
+  PostHogStub.captured.filter((entry) => entry.event === "$feature_flag_called");
 
 test("peek reads the flag without sending $feature_flag_called", () => {
   PostHogStub.flags = { welcome_back_v1: "control" };
@@ -34,9 +35,10 @@ test("an exposed read sends exactly one $feature_flag_called with the variant", 
   PostHogStub.flags = { welcome_back_v2: "test" };
   assert.equal(experiments.getExperimentVariant("welcome_back_v2", { expose: true }), "test");
   assert.equal(experiments.getExperimentVariant("welcome_back_v2", { expose: true }), "test");
-  assert.deepEqual(exposures().map((entry) => entry.properties), [
-    { $feature_flag: "welcome_back_v2", $feature_flag_response: "test" },
-  ]);
+  assert.deepEqual(
+    exposures().map((entry) => entry.properties),
+    [{ $feature_flag: "welcome_back_v2", $feature_flag_response: "test" }],
+  );
 });
 
 test("before flags load the fallback is shown and nothing is exposed", () => {

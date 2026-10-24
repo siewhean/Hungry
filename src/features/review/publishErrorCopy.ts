@@ -54,7 +54,9 @@ export function describeReviewEditError(error: unknown, action: "save" | "delete
     return /[.!?]$/.test(message) ? message : `${message}.`;
   }
   if (isRateLimited(parsed)) return "You're making changes quickly. Wait a minute and try again.";
-  if (/network request failed|failed to fetch|network error|offline|timed out|timeout/i.test(message)) {
+  if (
+    /network request failed|failed to fetch|network error|offline|timed out|timeout/i.test(message)
+  ) {
     return "You appear to be offline. Try again when you're connected.";
   }
   return action === "save"

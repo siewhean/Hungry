@@ -440,7 +440,10 @@ test("MERCH-V1: an inline merchant keeps the inline card through a focus refetch
     return [review(7)];
   });
   const { navigation, emit } = focusableNavigation();
-  const view = await renderScreen(MerchantDashboardScreen as never, { name: "Dashboard", navigation });
+  const view = await renderScreen(MerchantDashboardScreen as never, {
+    name: "Dashboard",
+    navigation,
+  });
   assert.match(view.text(), /Review text 7/);
 
   await emit("blur");

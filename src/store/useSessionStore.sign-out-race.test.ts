@@ -31,7 +31,8 @@ function setup() {
     new Promise<void>((resolve) => {
       releaseUnbind = resolve;
     })) as typeof service.push.unregisterPushToken;
-  service.auth.getCurrentSession = (async () => current as Session | null) as typeof service.auth.getCurrentSession;
+  service.auth.getCurrentSession = (async () =>
+    current as Session | null) as typeof service.auth.getCurrentSession;
   service.auth.signOut = (async () => {
     calls.signOut += 1;
     current = null;

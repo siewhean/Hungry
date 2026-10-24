@@ -1204,9 +1204,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                   dish.description.trim().length > DESCRIPTION_EXPANDABLE_CHARS) ? (
                     <Pressable
                       accessibilityRole="button"
-                      accessibilityHint={
-                        descriptionExpanded ? "Shows less" : "Shows the full text"
-                      }
+                      accessibilityHint={descriptionExpanded ? "Shows less" : "Shows the full text"}
                       onPress={() => setDescriptionExpanded((open) => !open)}
                     >
                       <AppText

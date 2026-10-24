@@ -248,7 +248,8 @@ test("SET-V5: a direct insert that fails on the schema removes its photos before
           data: null,
           error: {
             code: "PGRST204",
-            message: "Could not find the 'legacy_column' column of 'user_stall_submissions' in the schema cache",
+            message:
+              "Could not find the 'legacy_column' column of 'user_stall_submissions' in the schema cache",
           },
         }
       : { data: null, error: null };

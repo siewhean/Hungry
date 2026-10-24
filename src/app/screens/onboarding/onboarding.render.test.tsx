@@ -297,8 +297,10 @@ test("ONB-6: the full flow carries the quiz answers, the diet and a saved dish i
     params: { mode: "onboarding" },
     navigation: quizNav,
   });
-  const sweetCards = (Array.from(document.querySelectorAll("[aria-label]")) as HTMLElement[]).filter(
-    (el) => (el.getAttribute("aria-label") ?? "").startsWith("How sweet do you like your food? "),
+  const sweetCards = (
+    Array.from(document.querySelectorAll("[aria-label]")) as HTMLElement[]
+  ).filter((el) =>
+    (el.getAttribute("aria-label") ?? "").startsWith("How sweet do you like your food? "),
   );
   const strongest = sweetCards.at(-1) ?? null;
   assert.ok(strongest, "the first question has answer cards");

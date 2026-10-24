@@ -122,7 +122,11 @@ beforeEach(async () => {
   await enterScenario("user");
   clearTrackedAnalyticsEvents();
   setLocation({});
-  useLifecycleStore.setState({ snapshot: null, welcomeBackDismissed: false, welcomeBackShown: false });
+  useLifecycleStore.setState({
+    snapshot: null,
+    welcomeBackDismissed: false,
+    welcomeBackShown: false,
+  });
 });
 
 afterEach(async () => {

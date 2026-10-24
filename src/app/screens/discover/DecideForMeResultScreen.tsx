@@ -602,10 +602,7 @@ export function DecideForMeResultScreen() {
   if (loadFailed) {
     return (
       <Screen title="Recommended for you" subtitle="Couldn't load picks.">
-        <EmptyState
-          title="Couldn't load picks"
-          body="Check your connection and try again."
-        />
+        <EmptyState title="Couldn't load picks" body="Check your connection and try again." />
         <Button label="Try again" onPress={() => setReloadCount((count) => count + 1)} />
         <Button
           label="Back to Discover"
@@ -637,7 +634,9 @@ export function DecideForMeResultScreen() {
       <Screen
         title="Recommended for you"
         subtitle={
-          hasSeenEveryMatch ? "That's every match nearby." : "No matching dish for current filters yet."
+          hasSeenEveryMatch
+            ? "That's every match nearby."
+            : "No matching dish for current filters yet."
         }
       >
         <EmptyState

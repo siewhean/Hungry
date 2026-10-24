@@ -11,7 +11,10 @@ test("Decide for me shows three photo cards per row from bundled food photos", (
   assert.match(screen, /DECIDE_OPTION_IMAGES\[option\.id\]/);
   // Three per row, two at large text sizes.
   assert.match(screen, /const columns = fontScale >= 1\.3 \? 2 : 3;/);
-  assert.match(screen, /\(width - spacing\[4\] \* 2 - spacing\[2\] \* \(columns - 1\)\) \/ columns/);
+  assert.match(
+    screen,
+    /\(width - spacing\[4\] \* 2 - spacing\[2\] \* \(columns - 1\)\) \/ columns/,
+  );
   assert.match(screen, /flexWrap: "wrap"/);
   assert.doesNotMatch(images, /https?:\/\//);
   // Every real answer outside Western and price has a photo; "Decide for me" keeps its dice tile.

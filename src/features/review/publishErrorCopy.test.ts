@@ -64,7 +64,10 @@ test("a rate-limited publish says to slow down, not 'something went wrong' (REV-
 });
 
 test("expected publish refusals are not faults; unknown ones are (REV-X1)", () => {
-  assert.equal(isExpectedPublishError({ code: "rate_limited", message: "Too many requests" }), true);
+  assert.equal(
+    isExpectedPublishError({ code: "rate_limited", message: "Too many requests" }),
+    true,
+  );
   assert.equal(isExpectedPublishError({ code: "23514", message: "Please keep it kind." }), true);
   assert.equal(
     isExpectedPublishError({ code: "42501", message: "You cannot review a stall you manage." }),

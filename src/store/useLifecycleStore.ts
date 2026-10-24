@@ -70,5 +70,10 @@ export const useLifecycleStore = create<LifecycleStoreState>()((set, get) => ({
   markWelcomeBackShown: () => set({ welcomeBackShown: true }),
 
   reset: () =>
-    set({ snapshot: null, recordedDate: null, welcomeBackDismissed: false, welcomeBackShown: false }),
+    set({
+      snapshot: null,
+      recordedDate: null,
+      welcomeBackDismissed: false,
+      welcomeBackShown: false,
+    }),
 }));

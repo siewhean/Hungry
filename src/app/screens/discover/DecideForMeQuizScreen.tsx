@@ -47,9 +47,7 @@ export function DecideForMeQuizScreen() {
   // Three cards per row inside the screen's spacing[4] gutters; two at large text sizes so the
   // labels are not cut off.
   const columns = fontScale >= 1.3 ? 2 : 3;
-  const tileWidth = Math.floor(
-    (width - spacing[4] * 2 - spacing[2] * (columns - 1)) / columns,
-  );
+  const tileWidth = Math.floor((width - spacing[4] * 2 - spacing[2] * (columns - 1)) / columns);
   const setDecideForMe = useDiscoveryStore((state) => state.setDecideForMe);
   // Everyone who renders this screen sees the variant. Read once at first render: exposure is
   // recorded only if flags have already loaded, and only for the arm actually shown, so a late

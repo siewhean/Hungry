@@ -479,7 +479,9 @@ export function ReviewFeedScreen() {
   const allReviews = useMemo<ReviewFeedItem[]>(() => {
     const reviews = visibleGridReviews(
       reviewsWithPhotos(
-        serviceProviderMode === "mock" ? listReviewFeedItems(repository) : (serviceReviewItems ?? []),
+        serviceProviderMode === "mock"
+          ? listReviewFeedItems(repository)
+          : (serviceReviewItems ?? []),
       ),
       {
         viewerId,
@@ -625,7 +627,9 @@ export function ReviewFeedScreen() {
         index={index}
         size={tileSize}
         holdAction={reviewTileHoldAction({
-          isOwn: Boolean(isAuthenticated && item.review.authorId && item.review.authorId === viewerId),
+          isOwn: Boolean(
+            isAuthenticated && item.review.authorId && item.review.authorId === viewerId,
+          ),
           canEditOwnReviews,
         })}
         showLabels={showTileLabels}

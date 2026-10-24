@@ -74,14 +74,22 @@ export function formatAwayLabel(distanceMeters: number | undefined): string | un
  * the price and rating the tile shows are spoken here too.
  */
 export function similarDishTileLabel(
-  item: Pick<CatalogRawDishCard, "name" | "venueName" | "price" | "priceRange" | "rating" | "reviewCount" | "distanceMeters">,
+  item: Pick<
+    CatalogRawDishCard,
+    "name" | "venueName" | "price" | "priceRange" | "rating" | "reviewCount" | "distanceMeters"
+  >,
 ): string {
   const price = formatDishPrice({ price: item.price ?? 0, priceRange: item.priceRange ?? "" });
   const rated =
     item.reviewCount && item.rating
       ? `rated ${item.rating.toFixed(1)} from ${item.reviewCount} ${item.reviewCount === 1 ? "review" : "reviews"}`
       : undefined;
-  return [`Open ${item.name} at ${item.venueName}`, price, rated, formatAwayLabel(item.distanceMeters)]
+  return [
+    `Open ${item.name} at ${item.venueName}`,
+    price,
+    rated,
+    formatAwayLabel(item.distanceMeters),
+  ]
     .filter(Boolean)
     .join(", ");
 }

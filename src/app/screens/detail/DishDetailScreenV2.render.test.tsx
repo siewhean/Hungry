@@ -182,15 +182,11 @@ test("TriedFollowUp: viewing the page exposes nobody; a Tried mark shows the con
   assert.match(view.text(), /You tried /);
   // DISH-X5: the popup body scrolls, so its buttons stay reachable at large text.
   assert.ok(view.findByTestId("tried-prompt-scroll"));
-  assert.ok(
-    getTrackedAnalyticsEvents().some((event) => event.event === "tried_prompt_shown"),
-  );
+  assert.ok(getTrackedAnalyticsEvents().some((event) => event.event === "tried_prompt_shown"));
 
   await view.press(view.findByText("Not now"));
   assert.doesNotMatch(view.text(), /You tried /);
-  assert.ok(
-    getTrackedAnalyticsEvents().some((event) => event.event === "tried_prompt_dismissed"),
-  );
+  assert.ok(getTrackedAnalyticsEvents().some((event) => event.event === "tried_prompt_dismissed"));
 });
 
 test("the toast_cta variant shows no popup and the bar asks to rate it", async () => {
@@ -268,7 +264,8 @@ test("a short description is plain text, not a button (DISH-22); copy is sentenc
 
 test("a refresh on return keeps the older reviews the diner paged to (DISH-V5)", async () => {
   const pageSize = 50;
-  const at = (index: number) => new Date(Date.UTC(2026, 9, 20, 12, 0, 0) - index * 60000).toISOString();
+  const at = (index: number) =>
+    new Date(Date.UTC(2026, 9, 20, 12, 0, 0) - index * 60000).toISOString();
   const all = Array.from({ length: 70 }, (_, index) => ({
     ...review(`r${String(index).padStart(3, "0")}`, `user-${index}`),
     createdAt: at(index),
@@ -279,8 +276,12 @@ test("a refresh on return keeps the older reviews the diner paged to (DISH-V5)",
     beforeId?: string;
   }) => {
     calls += 1;
-    const start = options.beforeId ? all.findIndex((entry) => entry.id === options.beforeId) + 1 : 0;
-    return all.slice(start, start + pageSize).map((entry) => ({ review: entry }) as RecentReviewFeedEntry);
+    const start = options.beforeId
+      ? all.findIndex((entry) => entry.id === options.beforeId) + 1
+      : 0;
+    return all
+      .slice(start, start + pageSize)
+      .map((entry) => ({ review: entry }) as RecentReviewFeedEntry);
   }) as never);
   const { navigation, emit } = focusableNavigation();
   const { view } = await openDish({ navigation });

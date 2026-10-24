@@ -20,7 +20,12 @@ test("the page index never runs past the last photo when the list shrinks (DISH-
 
 test("PhotoPager counts photos and reports when the viewer opens", async () => {
   const opened: number[] = [];
-  const props = { width: 320, height: 200, subject: "Laksa", onViewerOpen: (at: number) => opened.push(at) };
+  const props = {
+    width: 320,
+    height: 200,
+    subject: "Laksa",
+    onViewerOpen: (at: number) => opened.push(at),
+  };
   const view = await render(createElement(PhotoPager, { ...props, photos: photos(4) }));
   assert.ok(view.findByLabel("Photo 1 of 4"));
   await view.press(view.findByLabel("Photo 2 of 4, Laksa"));

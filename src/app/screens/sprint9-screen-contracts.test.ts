@@ -614,7 +614,10 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
   assert.doesNotMatch(source, /\{dish\.priceRange\}/);
   assert.doesNotMatch(source, /\{item\.priceRange\}/);
   // push, so Back returns to the previous dish.
-  assert.match(source, /navigation\.push\("DishDetail", \{\s*dishId: item\.id,\s*source: "more_from_stall"/);
+  assert.match(
+    source,
+    /navigation\.push\("DishDetail", \{\s*dishId: item\.id,\s*source: "more_from_stall"/,
+  );
   assert.match(navigatorSource, /const loadDishDetailScreenV2 =/);
   // The redundant DishDetailV2 alias route was removed; DishDetail is the V2 screen.
   assert.doesNotMatch(navigatorSource, /name="DishDetailV2"/);

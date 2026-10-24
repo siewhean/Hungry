@@ -9,7 +9,12 @@ import { Alert } from "react-native";
 import { ReviewDetailScreen } from "@/app/screens/review/ReviewDetailScreen";
 import { ReviewFeedScreen } from "@/app/screens/review/ReviewFeedScreen";
 import { ReviewSuccessModal } from "@/app/screens/review/ReviewSuccessModal";
-import { OwnReviewActions, ReviewPhotoStrip, ReviewReaderActions, TasteRatingInput } from "@/components/review";
+import {
+  OwnReviewActions,
+  ReviewPhotoStrip,
+  ReviewReaderActions,
+  TasteRatingInput,
+} from "@/components/review";
 import {
   clearDeletedReviewsForSession,
   reviewTileHoldAction,
@@ -20,7 +25,11 @@ import {
   setExperimentFlagSource,
   type ExperimentFlagSource,
 } from "@/lib/experiments/experiments";
-import { getHungryService, getServiceProvider, setServiceProvider } from "@/lib/services/serviceProvider";
+import {
+  getHungryService,
+  getServiceProvider,
+  setServiceProvider,
+} from "@/lib/services/serviceProvider";
 import type { HungryService, RecentReviewFeedEntry } from "@/lib/services/types";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -44,7 +53,11 @@ const originalAlert = Alert.alert;
 /** Answers every Alert by pressing the button named next in `answers`; records the titles. */
 function answerAlerts(answers: string[]) {
   const titles: string[] = [];
-  Alert.alert = ((title: string, _message?: string, buttons?: { text?: string; onPress?: () => void }[]) => {
+  Alert.alert = ((
+    title: string,
+    _message?: string,
+    buttons?: { text?: string; onPress?: () => void }[],
+  ) => {
     titles.push(title);
     const label = answers.shift();
     buttons?.find((button) => button.text === label)?.onPress?.();
@@ -106,7 +119,11 @@ async function captureReportedErrors(run: () => Promise<void>): Promise<unknown[
   return errors;
 }
 
-function entry(id: string, authorId: string, overrides: Partial<RecentReviewFeedEntry["review"]> = {}) {
+function entry(
+  id: string,
+  authorId: string,
+  overrides: Partial<RecentReviewFeedEntry["review"]> = {},
+) {
   return {
     review: {
       id,
@@ -287,7 +304,8 @@ test("like, unlike, like quickly: one request in flight, the final state wins (R
     assert.deepEqual(sent, [true]);
     assert.equal(like()?.getAttribute("aria-label"), "Like, 1 like");
     assert.equal(
-      getTrackedAnalyticsEvents().filter((event) => event.event === "review_helpful_toggled").length,
+      getTrackedAnalyticsEvents().filter((event) => event.event === "review_helpful_toggled")
+        .length,
       3,
     );
   } finally {

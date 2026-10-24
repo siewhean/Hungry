@@ -164,7 +164,11 @@ const MENU_CATEGORY_ORDER = [
 function isOfflineReadError(error: unknown): boolean {
   if (useUIStore.getState().isOffline) return true;
   if (!error || typeof error !== "object") return false;
-  const { message, name, status } = error as { message?: unknown; name?: unknown; status?: unknown };
+  const { message, name, status } = error as {
+    message?: unknown;
+    name?: unknown;
+    status?: unknown;
+  };
   if (status === 0 || name === "AuthRetryableFetchError") return true;
   return (
     typeof message === "string" &&

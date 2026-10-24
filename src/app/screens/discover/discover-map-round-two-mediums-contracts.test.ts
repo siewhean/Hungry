@@ -105,10 +105,7 @@ test("L13: pressing the Map toggle does not preload the Mapbox screen", () => {
 
 test("M18: the Decide price uses the accessible accent colour", () => {
   const decide = readRepoFile("src/app/screens/discover/DecideForMeResultScreen.tsx");
-  assert.match(
-    decide,
-    /style=\{\{ color: palette\.accentText \}\}>\s*\{formatDishPrice\(dish\)\}/,
-  );
+  assert.match(decide, /style=\{\{ color: palette\.accentText \}\}>\s*\{formatDishPrice\(dish\)\}/);
 });
 
 test("L7/L12: catalog detail shows address and hours once, Crave never claims 'seen it all' empty", () => {

@@ -226,8 +226,7 @@ export function MerchantSettingsScreen() {
                   {formatReviewCountLabel(weeklySummary.newReviews, "in the last 7 days", {
                     zeroLabel: "No reviews in the last 7 days",
                   })}{" "}
-                  ·{" "}
-                  {weeklySummary.unrepliedReviews} unreplied · Avg rating{" "}
+                  · {weeklySummary.unrepliedReviews} unreplied · Avg rating{" "}
                   {formatAverageRating(weeklySummary.averageRating, weeklySummary.newReviews)}
                 </AppText>
               </View>

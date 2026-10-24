@@ -515,7 +515,10 @@ test("SEARCH-V3: without a GPS fix or a picked area the near arm is not served o
   setExperimentFlagSource(flags.source);
   const view = await renderHome();
   assert.match(view.text(), /Dishes to Discover/);
-  assert.ok(requests.every((request) => !request.radiusMeters), "no radius request");
+  assert.ok(
+    requests.every((request) => !request.radiusMeters),
+    "no radius request",
+  );
   assert.deepEqual(requests[0], { limit: 3, sort: "quality" });
   assert.equal(flags.state.exposures, 0);
 });

@@ -188,9 +188,7 @@ test("PROF-V1: a failed follower-count read shows the tiles as unavailable, not 
     await view.press(view.findByLabel("Followers, unavailable"));
     assert.equal(navigation.calls.at(-1)?.args[0], "Followers");
     assert.ok(
-      reported.some(
-        (context) => (context as { action?: string })?.action === "load_follow_counts",
-      ),
+      reported.some((context) => (context as { action?: string })?.action === "load_follow_counts"),
     );
   } finally {
     console.error = originalConsoleError;
@@ -456,14 +454,20 @@ test("PROF-18a: saving an edit to your own review marks it Edited straight away"
   assert.equal(view.text().includes("Edited"), false, "not edited yet");
 
   await view.press(view.findByLabel("Manage your review"));
-  prompts.at(-1)?.find((button) => button.text === "Edit review")?.onPress?.();
+  prompts
+    .at(-1)
+    ?.find((button) => button.text === "Edit review")
+    ?.onPress?.();
   await view.settle();
   const textarea = document.body.querySelector("textarea") as HTMLTextAreaElement;
   assert.ok(textarea, "the editor opened");
   await view.type(textarea, "Better on a second visit");
   await view.press(view.findByLabel("Save"));
 
-  assert.deepEqual(updates.map((update) => update.id), ["review-1"]);
+  assert.deepEqual(
+    updates.map((update) => update.id),
+    ["review-1"],
+  );
   assert.ok(view.findByText("Better on a second visit"), "the card shows the new text");
   assert.ok(view.text().includes("Edited"), "the card says Edited without a reload");
 });

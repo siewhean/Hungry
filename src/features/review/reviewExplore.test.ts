@@ -89,7 +89,10 @@ test("filters by taste, food and area", () => {
 });
 
 test("a picked food that drops out of the top six stays selected; a lost chip falls back to All (REV-8)", () => {
-  const chips = buildReviewExploreChips(items, { userVector: spicyLover, areaOf: (i) => (i as unknown as { area: string }).area });
+  const chips = buildReviewExploreChips(items, {
+    userVector: spicyLover,
+    areaOf: (i) => (i as unknown as { area: string }).area,
+  });
   assert.equal(chips[0]?.id, "taste", "taste is first for a diner with a palette");
 
   // "food:Satay" is not on the page any more: it is kept, not swapped for "For your taste".

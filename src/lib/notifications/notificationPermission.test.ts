@@ -30,10 +30,13 @@ test("SET-V3: a launch with permission already granted reads it without tracking
 });
 
 test("a real prompt tracks its outcome once", async () => {
-  const phone = permissions({ granted: false, status: "undetermined" }, {
-    granted: false,
-    status: "denied",
-  });
+  const phone = permissions(
+    { granted: false, status: "undetermined" },
+    {
+      granted: false,
+      status: "denied",
+    },
+  );
   assert.equal(await resolveNotificationPermission({ askPermission: true, ...phone }), "denied");
   assert.equal(phone.prompts(), 1);
   assert.deepEqual(

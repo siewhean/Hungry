@@ -31,9 +31,7 @@ export function WelcomeBackCard(props: WelcomeBackCardProps) {
   const dismissed = useLifecycleStore((state) => state.welcomeBackDismissed);
   // The card's actions are saved dishes and new dishes at followed stalls; with neither there
   // is nothing to tap, so those diners are not eligible in either arm.
-  const hasSavedDishes = useProfileStore(
-    (state) => state.profile.favouriteDishIds.length > 0,
-  );
+  const hasSavedDishes = useProfileStore((state) => state.profile.favouriteDishIds.length > 0);
   const followsAStall = useStallFollowStore((state) => state.followedStallIds.length > 0);
 
   // Read the experiment only for eligible users, so exposure counts only them.

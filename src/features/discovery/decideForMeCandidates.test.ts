@@ -5,11 +5,7 @@ import { dishes, venues } from "@/lib/services/mock/data";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import type { DishDetail, VenueSummary } from "@/types/domain";
 
-import {
-  isVenueOpenNow,
-  preferOpenStalls,
-  rankDecideCandidates,
-} from "./decideForMeCandidates";
+import { isVenueOpenNow, preferOpenStalls, rankDecideCandidates } from "./decideForMeCandidates";
 
 const baseDish = dishes[0]!;
 const baseVenue = venues[0]!;

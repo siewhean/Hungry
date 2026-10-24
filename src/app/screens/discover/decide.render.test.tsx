@@ -171,7 +171,10 @@ test("a pick left from an earlier visit is not shown or logged while the pool lo
 });
 
 test("a dish with no price says Price not listed, never S$0.00", async () => {
-  serve([dish("a", "Mystery Noodles", { price: 0, priceRange: "" }), dish("b", "Laksa", { price: 0 })]);
+  serve([
+    dish("a", "Mystery Noodles", { price: 0, priceRange: "" }),
+    dish("b", "Laksa", { price: 0 }),
+  ]);
   const view = await renderResult({ surface: "push" });
   assert.match(view.text(), /Price not listed/);
   assert.doesNotMatch(view.text(), /S\$0\.00/);
@@ -197,7 +200,9 @@ test("quiz answers are sent to the search, shown as chips, and a dropped answer 
 });
 
 test("the price answer is dropped and retried once when nothing nearby is under it", async () => {
-  serve(async () => (searchCalls.at(-1)?.maxPrice ? [] : [dish("a", "Wagyu Ramen", { price: 18 })]));
+  serve(async () =>
+    searchCalls.at(-1)?.maxPrice ? [] : [dish("a", "Wagyu Ramen", { price: 18 })],
+  );
   const view = await renderResult({ surface: "discover", answers: { price: "under5" } });
   assert.deepEqual(
     searchCalls.map((call) => call.maxPrice),

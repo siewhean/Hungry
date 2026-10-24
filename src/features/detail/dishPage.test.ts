@@ -46,7 +46,10 @@ test("blocking an author drops all their reviews; a report drops only that one (
 test("a refreshed first page keeps the older pages already loaded, and drops what left (DISH-V5)", () => {
   const r = (id: string, minute: number) =>
     ({ id, createdAt: new Date(Date.UTC(2026, 9, 20, 12, 60 - minute)).toISOString() }) as Review;
-  const shown = { reviews: [r("a", 1), r("b", 2), r("gone", 3), r("c", 4), r("d", 5)], hasMore: true };
+  const shown = {
+    reviews: [r("a", 1), r("b", 2), r("gone", 3), r("c", 4), r("d", 5)],
+    hasMore: true,
+  };
   // A new review on top; "gone" was deleted; the fresh page of 4 ends at "c".
   const fresh = [r("new", 0), r("a", 1), r("b", 2), r("c", 4)];
   const merged = mergeRefreshedReviews(shown, fresh, 4);

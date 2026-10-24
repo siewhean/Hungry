@@ -194,7 +194,10 @@ test("Area picker returns already-onboarded users without re-completing onboardi
     submit,
     /if \(!isOnboarding\) \{[\s\S]*?navigation\.goBack\(\);\s*return;\s*\}[\s\S]*?navigation\.navigate\("TasteQuiz"\)/,
   );
-  assert.match(picker, /const isOnboarding =\s+route\.params\?\.mode === "onboarding" \|\| \(!isSettingsMode && !hasCompletedOnboarding\);/);
+  assert.match(
+    picker,
+    /const isOnboarding =\s+route\.params\?\.mode === "onboarding" \|\| \(!isSettingsMode && !hasCompletedOnboarding\);/,
+  );
   assert.doesNotMatch(picker, /completeOnboarding/);
 });
 
