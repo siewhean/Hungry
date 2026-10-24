@@ -50,7 +50,7 @@ test("user auth and onboarding flows cover account, taste, dietary, and location
   assertSourceIncludes(
     onboardingStack,
     [
-      /<Stack\.Screen name="TasteQuiz" component=\{TasteQuizScreen\}/,
+      /<Stack\.Screen name="TasteQuiz" component=\{TasteQuizRoute\}/,
       /<Stack\.Screen name="DietaryPreferences" component=\{TasteQuizScreen\}/,
       /<Stack\.Screen name="LocationPermission" component=\{LocationPermissionScreen\}/,
       /<Stack\.Screen name="ManualLocationPicker" component=\{ManualLocationPickerScreen\}/,

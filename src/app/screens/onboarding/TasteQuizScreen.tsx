@@ -175,6 +175,10 @@ export function TasteQuizScreen({ navigation, route }: Props) {
   // quiz route arrive via params; without them we must not overwrite the vector.
   const carriedAnswers =
     isDietaryRoute && route.params && "answers" in route.params ? route.params.answers : undefined;
+  const carriedAnsweredKeys =
+    isDietaryRoute && route.params && "answeredKeys" in route.params
+      ? route.params.answeredKeys
+      : undefined;
   const hasTasteAnswers = !isDietaryRoute || carriedAnswers !== undefined;
   // Answers stay a local draft until the quiz is finished, so swiping does not
   // write, sync or log anything and backing out discards the draft. A retake from
@@ -322,6 +326,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
       {
         answers: tasteAnswers,
         tasteSkipped: !hasTasteAnswers,
+        ...(carriedAnsweredKeys ? { tasteAnsweredKeys: carriedAnsweredKeys } : {}),
         dietaryPreferences,
         maxDishBudget: maxDishBudget ?? null,
         cuisineIds: profile.onboardingCuisineIds ?? [],

@@ -397,6 +397,12 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     expect: /What flavours do/,
   },
   {
+    name: "TasteSliderQuizScreen",
+    file: "src/app/screens/onboarding/TasteSliderQuizScreen.tsx",
+    scenario: "user",
+    expect: /How spicy do you usually go/,
+  },
+  {
     name: "WelcomeScreen",
     file: "src/app/screens/onboarding/WelcomeScreen.tsx",
     scenario: "user",
