@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { resetExperimentSession } from "@/lib/experiments/experiments";
 import { clearShareAttribution, getShareAttribution } from "@/features/share/shareAttribution";
 import { deleteExportFile } from "@/features/profile/exportFile";
 import type { AuthProvider } from "@/lib/services/types";
@@ -231,6 +232,7 @@ function identifyPostHogUser(userId: string, properties: Record<string, unknown>
 }
 
 function resetPostHogUser(): void {
+  resetExperimentSession();
   if (!shouldEnablePostHogIdentity()) return;
   const { resetPostHogUser: reset } =
     require("@/lib/analytics/posthogSink") as typeof import("@/lib/analytics/posthogSink");
