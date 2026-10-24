@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Animated, Easing, Pressable, ScrollView, TextInput, View } from "react-native";
+import { Animated, Easing, Pressable, ScrollView, TextInput, View, Text } from "react-native";
 import {
   ArrowLeft,
   ChevronRight,
@@ -592,8 +592,8 @@ export function DishSearchScreen() {
                     {dish.distanceMeters != null ? ` · ${Math.round(dish.distanceMeters)}m` : ""}
                   </AppText>
                   {dish.rating != null ? (
-                    <AppText variant="micro" style={{ color: palette.ratingStar }}>
-                      ★ {dish.rating.toFixed(1)}
+                    <AppText variant="micro" tone="secondary">
+                      <Text style={{ color: palette.starFill }}>★</Text> {dish.rating.toFixed(1)}
                     </AppText>
                   ) : null}
                 </View>

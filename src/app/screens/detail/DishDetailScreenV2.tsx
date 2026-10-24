@@ -6,6 +6,7 @@ import {
   ScrollView,
   View,
   useWindowDimensions,
+  Text,
 } from "react-native";
 import type { ColorValue } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -1383,7 +1384,8 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                   <AppText variant="h2">Reviews</AppText>
                   {dish.reviewCount > 0 ? (
                     <AppText variant="bodySmall" tone="secondary">
-                      ★ {dish.rating.toFixed(1)} ({dish.reviewCount})
+                      <Text style={{ color: palette.starFill }}>★</Text> {dish.rating.toFixed(1)} (
+                      {dish.reviewCount})
                     </AppText>
                   ) : null}
                 </View>

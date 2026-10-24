@@ -7,6 +7,7 @@ import {
   Share,
   StyleSheet,
   View,
+  Text,
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { useIsFocused } from "@react-navigation/native";
@@ -1249,8 +1250,9 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                                   {dish.venueName}
                                 </AppText>
                               ) : null}
-                              <AppText variant="bodySmall" style={{ color: palette.ratingStar }}>
-                                ★ {review.rating.toFixed(1)} / 5
+                              <AppText variant="bodySmall" tone="secondary">
+                                <Text style={{ color: palette.starFill }}>★</Text>{" "}
+                                {review.rating.toFixed(1)} / 5
                               </AppText>
                             </View>
                           </Pressable>

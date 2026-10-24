@@ -8,6 +8,7 @@ import {
   type NativeScrollEvent,
   type NativeSyntheticEvent,
   useWindowDimensions,
+  Text,
 } from "react-native";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import * as ImagePicker from "expo-image-picker";
@@ -373,7 +374,7 @@ function StallMenuDishCard({
           )}
           {dish.reviewCount > 0 ? (
             <AppText variant="micro" tone="secondary">
-              ★ {dish.rating.toFixed(1)}
+              <Text style={{ color: palette.starFill }}>★</Text> {dish.rating.toFixed(1)}
             </AppText>
           ) : null}
         </View>
@@ -1217,7 +1218,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
                       }}
                     >
                       <AppText variant="bodySmallBold">
-                        ★ {ratingSummary.rating.toFixed(1)}{" "}
+                        <Text style={{ color: palette.starFill }}>★</Text>{" "}
+                        {ratingSummary.rating.toFixed(1)}{" "}
                         <AppText variant="bodySmall" tone="secondary">
                           ({ratingSummary.reviewCount} reviews)
                         </AppText>
