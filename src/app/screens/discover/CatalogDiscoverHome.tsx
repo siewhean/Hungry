@@ -248,10 +248,12 @@ function RawDishCard({
 function RawVenueRow({
   item,
   position,
+  releaseId,
   showDistance,
 }: {
   item: CatalogRawVenueCard;
   position: number;
+  releaseId?: string;
   showDistance: boolean;
 }) {
   const navigation = useNavigation<RootNavigation>();
@@ -276,6 +278,12 @@ function RawVenueRow({
           kind: "stall",
           position,
         });
+        // The offline copy is served only while the live catalog is down, and StallDetail reads
+        // the live catalog, so offline rows open the read-only page built from the copy.
+        if (releaseId?.startsWith("excel-fallback")) {
+          navigation.navigate("CatalogRawDetail", { kind: "venue", id: item.id, releaseId });
+          return;
+        }
         navigation.navigate("StallDetail", { venueId: item.id });
       }}
     >
@@ -698,7 +706,13 @@ export function CatalogDiscoverHome() {
               <ChevronRight color={palette.textMuted} size={20} />
             </Pressable>
             {venues.slice(0, 8).map((item, index) => (
-              <RawVenueRow key={item.id} item={item} position={index} showDistance={showDistance} />
+              <RawVenueRow
+                key={item.id}
+                item={item}
+                position={index}
+                releaseId={releaseId}
+                showDistance={showDistance}
+              />
             ))}
           </View>
         ) : null}

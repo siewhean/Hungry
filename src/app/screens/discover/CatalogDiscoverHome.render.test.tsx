@@ -301,6 +301,23 @@ test("cards open the real dish and stall pages and are tracked", async () => {
   assert.equal(events.filter((event) => event === "discover_card_opened").length, 3);
 });
 
+test("HOME-V3: on the offline copy a stall row opens the read-only catalog page", async () => {
+  stubCatalog();
+  const service = getCatalogRawService() as unknown as {
+    listDishes(request: CatalogPageRequest): Promise<CatalogPage<CatalogRawDishCard>>;
+    listVenues(request: CatalogPageRequest): Promise<CatalogPage<CatalogRawVenueCard>>;
+  };
+  service.listDishes = async () => ({ ...page([dish()]), releaseId: "excel-fallback-v1" });
+  service.listVenues = async () => ({ ...page([venue()]), releaseId: "excel-fallback-v1" });
+  const navigation = createFakeNavigation();
+  const view = await render(createElement(CatalogDiscoverHome), { navigation });
+  await view.press(view.findByLabel(/^Sungei Road Laksa, Laksa/));
+  assert.deepEqual(navigation.calls.at(-1)?.args, [
+    "CatalogRawDetail",
+    { kind: "venue", id: "venue-1", releaseId: "excel-fallback-v1" },
+  ]);
+});
+
 test("a halal diner's first request already filters for halal", async () => {
   useProfileStore.setState((state) => ({
     profile: { ...state.profile, dietaryPreferences: ["halal"] },
