@@ -7,7 +7,7 @@ const migration = readRepoFile(
   "supabase/migrations/20260619110000_release_advisor_security_cleanup.sql",
 );
 const releaseHardening = readRepoFile(
-  "supabase/migrations/20260724090000_release_01_advisor_hardening.sql",
+  "supabase/migrations-pending/20260724090000_release_01_advisor_hardening.sql",
 );
 
 test("release advisor cleanup fixes catalog helper search paths", () => {

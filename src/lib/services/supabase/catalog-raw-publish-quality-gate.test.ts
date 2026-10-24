@@ -7,7 +7,9 @@ import test from "node:test";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 test("raw catalog publisher records deterministic quality findings before activation", () => {
-  const migration = read("supabase/migrations/20260724113000_catalog_raw_publish_quality_gate.sql");
+  const migration = read(
+    "supabase/migrations-pending/20260724113000_catalog_raw_publish_quality_gate.sql",
+  );
 
   assert.match(migration, /catalog_raw_release_quarantines/);
   assert.match(migration, /catalog_raw_is_mock_id/);
@@ -33,7 +35,9 @@ test("raw catalog publisher records deterministic quality findings before activa
 });
 
 test("raw catalog publisher carries only approved media plus approval metadata into cards", () => {
-  const migration = read("supabase/migrations/20260724113000_catalog_raw_publish_quality_gate.sql");
+  const migration = read(
+    "supabase/migrations-pending/20260724113000_catalog_raw_publish_quality_gate.sql",
+  );
 
   assert.match(migration, /catalog_raw_venue_cards[\s\S]*?media_approved_for_display boolean/);
   assert.match(migration, /catalog_raw_dish_cards[\s\S]*?media_approved_for_display boolean/);
@@ -82,8 +86,10 @@ test("versioned release manifest pins workbook checksum and expected source tota
 });
 
 test("raw publisher grants and Advisor allowlist proof are definition-aware", () => {
-  const migration = read("supabase/migrations/20260724113000_catalog_raw_publish_quality_gate.sql");
-  const smoke = read("supabase/smoke/catalog_raw_publish_grants.sql");
+  const migration = read(
+    "supabase/migrations-pending/20260724113000_catalog_raw_publish_quality_gate.sql",
+  );
+  const smoke = read("supabase/migrations-pending/smoke/catalog_raw_publish_grants.sql");
 
   assert.match(
     migration,
