@@ -10,6 +10,9 @@ test("Stitch Search quick filters use supported result filters", () => {
   const filters = read("src/features/search/browseFilters.ts");
   // SEARCH-X5: the tab is "Home" now, so the back button does not name a tab.
   assert.match(home, /accessibilityLabel="Go back"/);
+  // SEARCH-11: the text is matched by name only, so no hint promises "halal under $8".
+  assert.doesNotMatch(home, /halal under \$8/i);
+  assert.match(home, /placeholder="Try laksa or chicken rice"/);
   assert.match(home, /navigation\.canGoBack\(\)[\s\S]*navigation\.goBack\(\)/);
   assert.match(home, /navigation\.navigate\("MainTabs", \{ screen: "Discover" \}\)/);
   assert.match(home, /if \(isAuthenticated\)[\s\S]*screen: "TasteQuiz",[\s\S]*mode: "profile"/);
