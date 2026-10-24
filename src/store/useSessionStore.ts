@@ -255,12 +255,15 @@ function buildPostHogIdentityProperties() {
 // Interactive sign-in calls completeAuth while Supabase also emits SIGNED_IN to
 // applyAuthStateFromSession; whichever runs first logs sign_in_completed.
 let signInTrackedForUserId: string | null = null;
+// Set as soon as a sign-up is reported (before the idle work runs), so a sign_in_completed
+// queued just before it for the same user gives way to sign_up_completed.
+let signUpReportedForUserId: string | null = null;
 
 function trackSignInCompletedOnce(
   profileId: string,
   properties: { method: string; has_completed_onboarding: boolean; skipped_taste_quiz: boolean },
 ): void {
-  if (signInTrackedForUserId === profileId) {
+  if (signInTrackedForUserId === profileId || signUpReportedForUserId === profileId) {
     return;
   }
   signInTrackedForUserId = profileId;
@@ -269,6 +272,7 @@ function trackSignInCompletedOnce(
 
 function resetSignInTracking(): void {
   signInTrackedForUserId = null;
+  signUpReportedForUserId = null;
 }
 
 // The single place sign_up_completed is logged: from the first SIGNED_IN of a new
@@ -377,6 +381,7 @@ export const useSessionStore = create<SessionState>()(
         markAccountOnboarded();
         const syncedProfile = getProfileStoreState().profile;
         const profileId = syncedProfile?.id ?? nextUserId ?? "authenticated-user";
+        if (options?.isNewUser) signUpReportedForUserId = profileId;
         scheduleIdleWork(
           () => {
             identifyPostHogUser(profileId, buildPostHogIdentityProperties());
@@ -525,6 +530,7 @@ export const useSessionStore = create<SessionState>()(
 
           const profile = getProfileStoreState().profile;
           const profileId = session.userId ?? profile?.id ?? "authenticated-user";
+          if (session.isNewUser && !currentlyAuthenticated) signUpReportedForUserId = profileId;
           scheduleIdleWork(
             () => {
               identifyPostHogUser(profileId, buildPostHogIdentityProperties());

@@ -1,6 +1,8 @@
 export type AnalyticsEventName =
   | "app_launched"
   | "sign_up_completed"
+  | "sign_up_submitted"
+  | "email_verified"
   | "sign_in_completed"
   | "auth_screen_viewed"
   | "auth_failed"

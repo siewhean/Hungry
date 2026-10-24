@@ -3,7 +3,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { View } from "react-native";
 import { CheckCircle2 } from "lucide-react-native";
 
-import { AppText, Button } from "@/components/ui";
+import { AppText, Button, InlineBanner } from "@/components/ui";
 import { applySignedInProfile } from "@/features/auth/applySignedInProfile";
 import { reportError } from "@/lib/monitoring/reportError";
 import { getHungryService } from "@/lib/services/serviceProvider";
@@ -30,6 +30,9 @@ export function ResetPasswordSuccessScreen({ navigation }: Props) {
     (state) => state.setPasswordRecoveryInProgress,
   );
   const [isContinuing, setIsContinuing] = useState(false);
+  // Finishing sign-in failed while the recovery session is still signed in. Leaving now
+  // would release the hold and drop the user on Home with no word, so stay and offer a retry.
+  const [finishFailed, setFinishFailed] = useState(false);
 
   // Leaving this screen any other way also releases the recovery hold.
   useEffect(() => () => setPasswordRecoveryInProgress(false), [setPasswordRecoveryInProgress]);
@@ -46,6 +49,7 @@ export function ResetPasswordSuccessScreen({ navigation }: Props) {
       return;
     }
     setIsContinuing(true);
+    setFinishFailed(false);
     try {
       const recoverySession = await getHungryService().auth.getCurrentSession();
       if (!recoverySession) {
@@ -61,19 +65,21 @@ export function ResetPasswordSuccessScreen({ navigation }: Props) {
           }),
       });
       if (migration.status === "failed") {
-        goToLogin();
+        setFinishFailed(true);
         return;
       }
+      // Only an existing account resets its password, so onboarding is done; its taste-quiz
+      // choice is the account's own and is left as it is.
       session.completeAuth({
         authProvider: "email",
         completedOnboarding: true,
-        skippedTasteQuiz: true,
         trackSignInEvent: false,
       });
       setPasswordRecoveryInProgress(false);
     } catch (error) {
       reportError(error, { surface: "reset_password_success" });
-      goToLogin();
+      if (useSessionStore.getState().isAuthenticated) setFinishFailed(true);
+      else goToLogin();
     } finally {
       setIsContinuing(false);
     }
@@ -103,8 +109,15 @@ export function ResetPasswordSuccessScreen({ navigation }: Props) {
           <CheckCircle2 color={palette.orange} size={40} />
         </View>
 
+        {finishFailed ? (
+          <InlineBanner
+            message="Your new password is saved, but we couldn't finish signing you in. Try again."
+            tone="error"
+          />
+        ) : null}
+
         <Button
-          label="Continue"
+          label={finishFailed ? "Try again" : "Continue"}
           onPress={() => {
             void handleContinue();
           }}

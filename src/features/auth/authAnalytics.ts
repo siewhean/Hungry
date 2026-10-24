@@ -29,6 +29,20 @@ export function trackGuestContinued(screen: AuthFunnelScreen) {
   trackAnalyticsEvent("auth_guest_continued", { screen });
 }
 
+/**
+ * The sign-up form was accepted and a confirmation email is on its way (or, with
+ * auto-confirm, the account is live). Leading metric for sign-up tests, before the email
+ * step can hide an effect.
+ */
+export function trackSignUpSubmitted(screen: AuthFunnelScreen, method: string) {
+  trackAnalyticsEvent("sign_up_submitted", { screen, method });
+}
+
+/** The sign-up email was confirmed in the app, by the 8-digit code or the link. */
+export function trackEmailVerified(via: "code" | "link") {
+  trackAnalyticsEvent("email_verified", { via });
+}
+
 export function trackPasswordResetRequested() {
   trackAnalyticsEvent("password_reset_requested", {});
 }

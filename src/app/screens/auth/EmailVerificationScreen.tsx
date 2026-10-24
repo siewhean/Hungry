@@ -5,15 +5,26 @@ import { CircleAlert, MailCheck } from "lucide-react-native";
 
 import { AppText, FeedErrorBoundary } from "@/components/ui";
 import { applySignedInProfile } from "@/features/auth/applySignedInProfile";
-import { trackAuthFailed, trackAuthScreenViewed } from "@/features/auth/authAnalytics";
-import { getAuthErrorCode, getAuthFailureMessage } from "@/features/auth/authErrors";
+import {
+  trackAuthFailed,
+  trackAuthScreenViewed,
+  trackEmailVerified,
+} from "@/features/auth/authAnalytics";
+import {
+  AUTH_EMAIL_RATE_LIMITED_MESSAGE,
+  getAuthErrorCode,
+  getAuthFailureMessage,
+  isUnexpectedAuthError,
+} from "@/features/auth/authErrors";
 import { completeVerifiedSignUp } from "@/features/auth/completeVerifiedSignUp";
+import { beginSignUpConfirmation, endSignUpConfirmation } from "@/features/auth/firstSignIn";
 import { EmailCodeField } from "@/features/auth/EmailCodeField";
 import { formatCooldown, useResendCooldown } from "@/features/auth/useResendCooldown";
 import {
   rememberPendingEmailVerification,
   takePendingEmailVerificationCompletesOnboarding,
 } from "@/features/auth/pendingEmailVerification";
+import { reportError } from "@/lib/monitoring/reportError";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import type { Session } from "@/lib/services/types";
 import { getConfiguredDataSource } from "@/lib/services/supabase/client";
@@ -87,10 +98,15 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
     async (code: string) => {
       setIsConfirming(true);
       try {
-        const session = await getHungryService().auth.confirmEmail(code);
+        beginSignUpConfirmation(null);
+        const session = await getHungryService()
+          .auth.confirmEmail(code)
+          .finally(endSignUpConfirmation);
+        trackEmailVerified("link");
         await finishVerifiedSession(session);
       } catch (error) {
         trackAuthFailed("email_confirm", "email", error);
+        if (isUnexpectedAuthError(error)) reportError(error, { flow: "email_confirm_link" });
         showToast({
           message:
             "We couldn't finish verifying on this device. If you opened the link, sign in to continue.",
@@ -108,11 +124,16 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
   const confirmWithEmailCode = async (code: string) => {
     if (!email) return;
     try {
-      const session = await getHungryService().auth.verifyEmailCode(email, code, "signup");
+      beginSignUpConfirmation(email);
+      const session = await getHungryService()
+        .auth.verifyEmailCode(email, code, "signup")
+        .finally(endSignUpConfirmation);
       if (!session) throw new Error("Email verified but no active session.");
+      trackEmailVerified("code");
       await finishVerifiedSession(session);
     } catch (error) {
       trackAuthFailed("email_confirm", "email", error);
+      if (isUnexpectedAuthError(error)) reportError(error, { flow: "email_confirm_code" });
       throw error;
     }
   };
@@ -137,6 +158,7 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
       restartResendCooldown();
     } catch (error) {
       trackAuthFailed("email_confirm", "email", error);
+      if (isUnexpectedAuthError(error)) reportError(error, { flow: "email_confirm_resend" });
       const code = getAuthErrorCode(error);
       const isRateLimited =
         code === "over_email_send_rate_limit" || (error as { status?: number })?.status === 429;
@@ -146,7 +168,7 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
       }
       showToast({
         message: isRateLimited
-          ? "You've requested a few emails already. Please wait a minute, then try again."
+          ? AUTH_EMAIL_RATE_LIMITED_MESSAGE
           : getAuthFailureMessage(
               error,
               "Could not resend verification email. Please try again shortly.",

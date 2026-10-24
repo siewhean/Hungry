@@ -23,7 +23,7 @@ test("H106: the signup confirmation link is exchanged for a session, not refresh
   });
 
   const screen = read("src/app/screens/auth/EmailVerificationScreen.tsx");
-  assert.match(screen, /getHungryService\(\)\.auth\.confirmEmail\(code\)/);
+  assert.match(screen, /getHungryService\(\)\s*\.auth\.confirmEmail\(code\)/);
   assert.doesNotMatch(screen, /refreshSession|I Verified My Email|james\.cook@chef\.com/);
   assert.match(
     read("src/lib/services/supabase/supabaseService.ts"),
@@ -60,7 +60,11 @@ test("H108/H110: a reset holds the signed-in redirect until the success screen c
 
   const success = read("src/app/screens/auth/ResetPasswordSuccessScreen.tsx");
   assert.match(success, /title="Password updated"/);
-  assert.match(success, /label="Continue"/);
+  assert.match(success, /"Continue"/);
+  // AUTH-8: the reset keeps the account's own taste-quiz choice, and a failed finish stays
+  // here with a retry instead of dropping the user on Home.
+  assert.doesNotMatch(success, /skippedTasteQuiz: true/);
+  assert.match(success, /if \(migration\.status === "failed"\) \{\s*setFinishFailed\(true\);/);
   assert.match(success, /setPasswordRecoveryInProgress\(false\)/);
   assert.doesNotMatch(success, /Check your inbox|Open email client|Resend link|Reset link resent/);
 });

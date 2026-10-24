@@ -3,6 +3,8 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 
+import { AUTH_OFFLINE_MESSAGE, AUTH_RATE_LIMITED_MESSAGE } from "@/features/auth/authErrors";
+
 import { AUTH_COPY } from "./authCopy";
 import { getAuthErrorLogContext, getLoginErrorMessage } from "./authErrors";
 
@@ -53,10 +55,12 @@ test("login errors map to clear messages and log without PII", () => {
     getLoginErrorMessage({ error_code: "email_not_confirmed" }),
     AUTH_COPY.login.emailNotConfirmedToast,
   );
-  assert.equal(getLoginErrorMessage({ status: 429 }), AUTH_COPY.login.tooManyAttemptsToast);
+  assert.equal(getLoginErrorMessage({ status: 429 }), AUTH_RATE_LIMITED_MESSAGE);
+  assert.equal(getLoginErrorMessage(new TypeError("Network request failed")), AUTH_OFFLINE_MESSAGE);
+  // AUTH-12: a banned account is told so instead of "Sign in failed".
   assert.equal(
-    getLoginErrorMessage(new TypeError("Network request failed")),
-    AUTH_COPY.login.networkErrorToast,
+    getLoginErrorMessage({ code: "user_banned" }),
+    AUTH_COPY.login.accountUnavailableToast,
   );
   assert.equal(getLoginErrorMessage(new Error("boom")), AUTH_COPY.login.genericErrorToast);
   assert.equal(getLoginErrorMessage(undefined), AUTH_COPY.login.genericErrorToast);

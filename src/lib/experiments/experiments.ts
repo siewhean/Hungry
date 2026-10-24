@@ -50,6 +50,17 @@ export const EXPERIMENTS = {
     primaryMetric: "welcome_back_opened",
     guardrailMetrics: ["welcome_back_dismissed", "dish_viewed"],
   },
+  /** New-password field on SignUp: masked (control) or shown as typed, with Hide. */
+  auth_signup_password_visible_v1: {
+    variants: ["control", "visible_password"],
+    fallback: "control",
+    status: "running",
+    surface: "auth",
+    hypothesis:
+      "Showing the new password as it is typed (with a Hide button) cuts typos and weak-password retries on Create account, so more people who open SignUp finish signing up.",
+    primaryMetric: "sign_up_completed",
+    guardrailMetrics: ["sign_up_submitted", "auth_failed", "password_reset_requested"],
+  },
 } as const satisfies Record<string, ExperimentDefinition>;
 
 export type ExperimentKey = keyof typeof EXPERIMENTS;
@@ -77,7 +88,8 @@ function isPostHogEnabled() {
 
 function createPostHogFlagSource(): ExperimentFlagSource | null {
   if (!isPostHogEnabled()) return null;
-  const sink = require("@/lib/analytics/posthogSink") as typeof import("@/lib/analytics/posthogSink");
+  const sink =
+    require("@/lib/analytics/posthogSink") as typeof import("@/lib/analytics/posthogSink");
   return {
     peek: sink.peekPostHogFeatureFlag,
     expose: sink.getPostHogFeatureFlag,
@@ -197,7 +209,9 @@ export function useExperimentVariant<K extends ExperimentKey>(
     setVariant(getExperimentVariant(key, { expose: true }));
     const source = getFlagSource();
     if (!source) return;
-    return source.onChange(() => setVariant(getExperimentVariant(keyRef.current, { expose: true })));
+    return source.onChange(() =>
+      setVariant(getExperimentVariant(keyRef.current, { expose: true })),
+    );
   }, [enabled, key]);
 
   return variant;

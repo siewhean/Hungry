@@ -7,7 +7,7 @@ import { Eye, EyeOff } from "lucide-react-native";
 import { AppText, Button, Card, Input } from "@/components/ui";
 import { AUTH_EYE_BUTTON_STYLE } from "@/app/screens/auth/authEyeButton";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { getAuthFailureMessage } from "@/features/auth/authErrors";
+import { getAuthFailureMessage, isUnexpectedAuthError } from "@/features/auth/authErrors";
 import {
   isWeakPasswordError,
   PASSWORD_REQUIREMENTS_COPY,
@@ -17,7 +17,9 @@ import {
   validateRequired,
   WEAK_PASSWORD_MESSAGE,
 } from "@/features/auth/validation";
+import { reportError } from "@/lib/monitoring/reportError";
 import { getHungryService } from "@/lib/services/serviceProvider";
+import { useProfileStore } from "@/store/useProfileStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { ProfileScreenShell } from "./ProfileScreenShell";
@@ -32,6 +34,7 @@ export function ChangePasswordScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const { palette, spacing } = useHungryTheme();
   const showToast = useUIStore((state) => state.showToast);
+  const accountEmail = useProfileStore((state) => state.profile?.email) || undefined;
   const [isSaving, setIsSaving] = useState(false);
   const [showPasswords, setShowPasswords] = useState(false);
   const {
@@ -106,6 +109,7 @@ export function ChangePasswordScreen() {
       } else if (isWeakPasswordError(error)) {
         setError("newPassword", { message: WEAK_PASSWORD_MESSAGE });
       } else {
+        if (isUnexpectedAuthError(error)) reportError(error, { flow: "change_password" });
         // A dropped connection or rate limit is not "wrong password"; say what happened.
         showToast({
           message: getAuthFailureMessage(
@@ -189,7 +193,12 @@ export function ChangePasswordScreen() {
             accessibilityRole="button"
             accessibilityLabel="Forgot current password?"
             accessibilityHint="Opens password reset"
-            onPress={() => navigation.navigate("AuthStack", { screen: "ForgotPassword" })}
+            onPress={() =>
+              navigation.navigate("AuthStack", {
+                screen: "ForgotPassword",
+                params: { email: accountEmail, fromSignedIn: true },
+              })
+            }
             hitSlop={8}
             style={{ alignSelf: "flex-start", justifyContent: "center", minHeight: 44 }}
           >

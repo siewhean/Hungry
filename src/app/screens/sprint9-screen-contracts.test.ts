@@ -86,9 +86,9 @@ test("Sprint 9 screen contract: Login screen uses service auth + error boundary"
   );
   assert.match(
     forgotPasswordSource,
-    /accessibilityLabel=\{AUTH_COPY\.forgotPassword\.backToLogin\}/,
+    /const backLabel = fromSignedIn \? "Back" : AUTH_COPY\.forgotPassword\.backToLogin;[\s\S]*accessibilityLabel=\{backLabel\}/,
   );
-  assert.match(forgotPasswordSource, /accessibilityHint="Returns to the sign in screen"/);
+  assert.match(forgotPasswordSource, /"Returns to the sign in screen"/);
   assert.match(resetPasswordSource, /"Back to sign in"/);
   assert.match(
     resetPasswordSource,
