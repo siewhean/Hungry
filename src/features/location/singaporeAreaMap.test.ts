@@ -3,12 +3,19 @@ import test from "node:test";
 
 import { SINGAPORE_MAP_PROJECTION } from "./singaporeAreaMap.generated";
 import {
+  FULL_MAP_VIEW,
+  MAP_MAX_ZOOM,
+  MAP_PLACE_DOTS_ZOOM,
   SINGAPORE_PLANNING_AREAS,
+  clampMapView,
+  mapViewArea,
+  mapViewBox,
   planningAreaAt,
   planningAreasFor,
   pointInRing,
   projectCoordinate,
   ringsToPath,
+  unprojectPoint,
 } from "./singaporeAreaMap";
 
 test("the generated map covers Singapore's planning areas in a 1000-wide viewBox", () => {
@@ -43,4 +50,27 @@ test("app areas map to the planning areas to highlight", () => {
     "Bukit Merah",
   ]);
   assert.deepEqual(planningAreasFor("Nowhere"), []);
+});
+
+test("map points and coordinates round-trip, and views stay inside the map", () => {
+  const jem = { latitude: 1.3333, longitude: 103.7436 };
+  const { x, y } = projectCoordinate(jem);
+  const back = unprojectPoint(x, y);
+  assert.ok(Math.abs(back.latitude - jem.latitude) < 1e-9);
+  assert.ok(Math.abs(back.longitude - jem.longitude) < 1e-9);
+
+  assert.deepEqual(clampMapView({ centerX: -500, centerY: 9999, zoom: 0.2 }), FULL_MAP_VIEW);
+  const zoomed = clampMapView({ centerX: 0, centerY: 0, zoom: 20 });
+  assert.equal(zoomed.zoom, MAP_MAX_ZOOM);
+  assert.equal(zoomed.centerX, SINGAPORE_MAP_PROJECTION.width / MAP_MAX_ZOOM / 2);
+  assert.equal(mapViewBox(FULL_MAP_VIEW), `0 0 1000 ${SINGAPORE_MAP_PROJECTION.height}`);
+  assert.ok(MAP_PLACE_DOTS_ZOOM > 1);
+});
+
+test("a view's area shrinks as the map zooms in", () => {
+  const whole = mapViewArea(FULL_MAP_VIEW);
+  const close = mapViewArea({ ...FULL_MAP_VIEW, zoom: 4 });
+  assert.ok(whole.radiusMeters > 20_000);
+  assert.ok(Math.abs(close.radiusMeters - whole.radiusMeters / 4) < 2);
+  assert.ok(Math.abs(close.center.latitude - whole.center.latitude) < 1e-9);
 });

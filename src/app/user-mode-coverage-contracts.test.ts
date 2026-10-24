@@ -270,7 +270,7 @@ test("dish and stall details expose correct detail surfaces without user-mode ma
   assertSourceIncludes(
     stallDetail,
     [
-      /height=\{screenWidth \* 0\.72\}/,
+      /height=\{heroHeight\}/,
       /const stallAddress =/,
       /import \{ StallLogoMark \} from "@\/components\/stall\/StallLogoMark"/,
       /logoUrl=\{sanitizeCatalogImageUrl\(venue\.logoUrl\)\}/,

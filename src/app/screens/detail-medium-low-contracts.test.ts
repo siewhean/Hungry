@@ -192,5 +192,5 @@ test("detail-L15/L22/L23: copy and dead ends", () => {
   assert.match(raw, /goBackOrHome/);
   assert.match(raw, /Open stall page/);
   assert.match(dish, /<AppText variant="h2">Reviews<\/AppText>/);
-  assert.match(stall, /<AppText variant="h2">Community Highlights<\/AppText>/);
+  assert.match(stall, /<AppText variant="h2">Reviews<\/AppText>/);
 });

@@ -512,7 +512,7 @@ async function holdDown(view: Awaited<ReturnType<typeof render>>, target: HTMLEl
   await view.settle();
 }
 
-test("DetailActionBar opens More, a held button's own menu, and the call to action", async () => {
+test("DetailActionBar opens a held button's own menu, dims the page, and keeps taps", async () => {
   const pressed: string[] = [];
   const view = await render(
     createElement(DetailActionBar, {
@@ -528,25 +528,30 @@ test("DetailActionBar opens More, a held button's own menu, and the call to acti
             { id: "no", label: "Not tried", onPress: () => pressed.push("no") },
           ],
         },
-      ],
-      secondaryActions: [
         { id: "like", label: "Like", icon: () => null, onPress: () => pressed.push("like") },
       ],
       cta: { label: "Review", onPress: () => pressed.push("review") },
     }),
   );
   assert.match(view.text(), /Review/);
-  // Nothing extra shows until a button is held or More is tapped.
-  assert.doesNotMatch(view.text(), /Not tried|Like/);
-  await view.press(view.findByLabel("More actions"));
-  assert.match(view.text(), /Like/);
+  // No three-dots menu, and nothing extra shows until a button is held.
+  assert.equal(view.findByLabel("More actions"), null);
+  assert.doesNotMatch(view.text(), /Not tried/);
   await view.press(view.findByLabel("Like"));
+  // A button with no hold options opens nothing when held.
+  await holdDown(view, view.findByLabel("Like"));
+  assert.equal(view.findByLabel("Close menu"), null);
 
   await holdDown(view, view.findByLabel("Tried"));
   assert.match(view.text(), /Have you tried it\?/);
+  assert.ok(view.findByLabel("Close menu"));
   await view.press(view.findByLabel("Not tried"));
   await view.press(view.findByLabel("Review"));
-  assert.deepEqual(pressed, ["like", "no", "review"]);
+  assert.ok(pressed.includes("like"));
+  assert.deepEqual(
+    pressed.filter((entry) => entry !== "like"),
+    ["no", "review"],
+  );
 });
 
 test("SingaporeAreaMap names the highlighted area for screen readers", async () => {

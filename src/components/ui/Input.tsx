@@ -98,6 +98,12 @@ export const Input = forwardRef<TextInput, InputProps>(
     const animatedPlaceholder = useMovingSearchPlaceholder({
       phrases: movingPlaceholderPhrases ?? [staticPlaceholder || "Search..."],
       enabled: shouldAnimatePlaceholder,
+      // The same pace as the Discover search bar.
+      tickMs: 55,
+      revealStepMs: 55,
+      deleteStepMs: 55,
+      pauseMs: 950,
+      totalCycleMs: 6200,
     });
     const placeholderValue = shouldAnimatePlaceholder ? animatedPlaceholder : staticPlaceholder;
     const accessibilityLabel =

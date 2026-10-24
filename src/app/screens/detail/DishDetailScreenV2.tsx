@@ -9,25 +9,18 @@ import {
   Bookmark,
   ChevronRight,
   Circle,
-  Copy,
   Heart,
   FolderPlus,
   CheckCircle,
   MapPin,
-  MessageCircle,
-  Navigation,
   PenLine,
   Send,
-  Share2,
   Star,
   Utensils,
 } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import * as Clipboard from "expo-clipboard";
 import { useDetailSaveActions } from "@/features/checklistPortfolio/DetailSaveActions";
-import { shareLink } from "@/features/share/messagingShare";
-import { withShareSource } from "@/features/share/shareAttribution";
 import { resolveStallOpenInfo } from "@/features/detail/stallOpenState";
 import {
   perceivedTasteAxes,
@@ -56,6 +49,7 @@ import {
   OwnReviewActions,
   ReviewPhotoStrip,
   ReviewReaderActions,
+  StarRating,
 } from "@/components/review";
 import { isOwnReview } from "@/features/review/reviewEdit";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
@@ -69,6 +63,7 @@ import { useSessionStore } from "@/store/useSessionStore";
 import { saveDishAfterSignIn } from "@/features/auth/finishGuestAction";
 import { rememberPendingDishSave } from "@/features/auth/pendingDishSave";
 import { useRequireAccount } from "@/features/auth/useRequireAccount";
+import { useReviewDraftStore } from "@/store/useReviewDraftStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useSocialStore } from "@/store/useSocialStore";
 import {
@@ -98,12 +93,7 @@ import { webShareUrl } from "@/constants/links";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { firstDishTimingProps } from "@/lib/analytics/firstDishTiming";
 import { getBuildingById } from "@/lib/geo/singaporeBuildings";
-import { openTrustedMapsUrl } from "@/lib/security/safeLinking";
-import {
-  buildMapsSearchUrl,
-  formatFullStallAddress,
-  getStallPin,
-} from "@/features/detail/stallLocation";
+import { formatFullStallAddress, getStallPin } from "@/features/detail/stallLocation";
 
 /** Reviews shown before "See all". */
 const DISH_REVIEW_PREVIEW_COUNT = 3;
@@ -155,6 +145,10 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const shareSheetRef = useRef<BottomSheetModal>(null);
   const lastRecordedDishViewId = useRef<string | null>(null);
   const [isTryingFood, setIsTryingFood] = useState(false);
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
+  const selectReviewDish = useReviewDraftStore((state) => state.selectDish);
+  const setReviewRating = useReviewDraftStore((state) => state.setRating);
+  const resetReviewDraft = useReviewDraftStore((state) => state.resetDraft);
   const [openingSchedule, setOpeningSchedule] = useState<OpeningSchedule>();
   const [merchantProfile, setMerchantProfile] = useState<PublicMerchantProfile>();
   const [dishReviews, setDishReviews] = useState<Review[]>([]);
@@ -547,7 +541,9 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const heroPhotos = Array.from(
     new Set([...gallery, ...(dish.imageUrl ? [dish.imageUrl] : []), ...reviewPhotos]),
   ).slice(0, 8);
-  const heroHeight = Math.min(Math.max(width * 0.8, 280), 380);
+  // Short enough that the stall card and Order on show without scrolling; shorter still
+  // with no photo, where the name below already says what the dish is.
+  const heroHeight = heroPhotos.length > 0 ? Math.min(width * 0.62, 300) : 140;
   const signatureGridItemWidth = Math.min(width * 0.56, 220);
   const canonicalDishUrl = webShareUrl("dish", dish.id);
   const heroGradientColors: readonly [ColorValue, ColorValue, ColorValue] = [
@@ -576,17 +572,6 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
       dishId: dish.id,
       userId: isAuthenticated ? profile.id : undefined,
     });
-  };
-
-  const openStallMaps = () => {
-    if (!stallAddress) return;
-    trackAnalyticsEvent("directions_opened", { stall_id: dish.venueId, source: "dish_detail" });
-    void openTrustedMapsUrl(
-      buildMapsSearchUrl(
-        stallAddress,
-        venue ? getStallPin(venue, building?.coordinate) : undefined,
-      ),
-    );
   };
 
   const openReviewerProfile = (review: Review) => {
@@ -663,6 +648,21 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   };
 
   const isDishTried = profile.reviewedDishIds.includes(dish.id);
+  const hasReviewed = dishReviews.some((review) =>
+    isOwnReview(review, isAuthenticated ? profile.id : undefined),
+  );
+
+  // Quick rate: a tapped star starts the review with that rating filled in. A draft for another
+  // dish is left alone so the review screen can ask what to do with it.
+  const startRating = (rating: number) => {
+    const { draft } = useReviewDraftStore.getState();
+    if (!draft.selectedDishId || draft.selectedDishId === dish.id) {
+      if (draft.selectedDishId !== dish.id) resetReviewDraft();
+      selectReviewDish(dish.venueId, dish.id);
+      setReviewRating(rating);
+    }
+    handleReview();
+  };
 
   const triedToastStyle = {
     tone: "success" as const,
@@ -762,25 +762,12 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     showToast({ message: liked ? "Liked." : "Like removed.", tone: "success" });
   };
 
-  const shareTo = (channel: "whatsapp" | "telegram" | "system_share") => {
-    void shareLink(
-      { kind: "dish", id: dish.id, message: shareReviewTarget.message, url: canonicalDishUrl },
-      channel,
-    )
-      .then(recordMerchantShare)
-      .catch(() => showToast({ message: "Couldn't open sharing. Try again.", tone: "error" }));
-  };
-  const copyDishLink = async () => {
-    await Clipboard.setStringAsync(withShareSource(canonicalDishUrl, "copy_link"));
-    trackAnalyticsEvent("dish_shared", { dish_id: dish.id, channel: "copy_link" });
-    showToast({ message: "Link copied.", tone: "success" });
-  };
   const setTried = (tried: boolean) => {
     if (tried !== isDishTried) void handleTryFood();
   };
 
-  // Bottom bar: Review on the left; Share, Tried and Save on the right, each with its own hold
-  // menu (share apps, tried / not tried, collections). More holds Directions and Like.
+  // Bottom bar: Review on the left; Share, Tried, Save and Like on the right. Holding Tried
+  // or Save opens its own menu (tried / not tried, collections); Share and Like are taps.
   const barActions: DetailAction[] = showDeferredDetailControls
     ? [
         {
@@ -789,23 +776,6 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
           icon: Send,
           onPress: openShareSheet,
           accessibilityLabel: `Share ${dish.name}`,
-          holdTitle: "Share to",
-          holdOptions: [
-            {
-              id: "whatsapp",
-              label: "WhatsApp",
-              icon: MessageCircle,
-              onPress: () => shareTo("whatsapp"),
-            },
-            { id: "telegram", label: "Telegram", icon: Send, onPress: () => shareTo("telegram") },
-            { id: "copy", label: "Copy link", icon: Copy, onPress: () => void copyDishLink() },
-            {
-              id: "more",
-              label: "More apps",
-              icon: Share2,
-              onPress: () => shareTo("system_share"),
-            },
-          ],
         },
         {
           id: "tried",
@@ -882,34 +852,17 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
               },
             ]
           : []),
+        {
+          id: "like",
+          label: isLiked ? "Liked" : "Like",
+          icon: Heart,
+          active: isLiked,
+          fillWhenActive: true,
+          onPress: handleLike,
+          accessibilityLabel: isLiked ? "Unlike this dish" : "Like this dish",
+        },
       ]
     : [];
-  const secondaryBarActions: DetailAction[] = [
-    ...(stallAddress
-      ? [
-          {
-            id: "directions",
-            label: "Directions",
-            icon: Navigation,
-            onPress: openStallMaps,
-            accessibilityLabel: `Directions to ${venueName}`,
-          },
-        ]
-      : []),
-    ...(showDeferredDetailControls
-      ? [
-          {
-            id: "like",
-            label: isLiked ? "Liked" : "Like",
-            icon: Heart,
-            active: isLiked,
-            fillWhenActive: true,
-            onPress: handleLike,
-            accessibilityLabel: isLiked ? "Unlike this dish" : "Like this dish",
-          },
-        ]
-      : []),
-  ];
 
   return (
     <FeedErrorBoundary title="Dish details unavailable" body="Couldn't load this dish — try again.">
@@ -933,7 +886,13 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                   <LinearGradient
                     colors={heroGradientColors}
                     locations={[0, 0.58, 1]}
-                    style={{ bottom: 0, height: 260, left: 0, position: "absolute", right: 0 }}
+                    style={{
+                      bottom: 0,
+                      height: Math.min(260, heroHeight),
+                      left: 0,
+                      position: "absolute",
+                      right: 0,
+                    }}
                   />
                 </PhotoPager>
               ) : (
@@ -949,21 +908,18 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                       padding: spacing[6],
                     }}
                   >
-                    <Utensils color={palette.orange} size={44} />
-                    <AppText variant="h2" style={{ marginTop: spacing[3], textAlign: "center" }}>
-                      {dish.name}
-                    </AppText>
-                    <AppText
-                      tone="secondary"
-                      style={{ marginTop: spacing[1], textAlign: "center" }}
-                    >
-                      {venueName}
-                    </AppText>
+                    <Utensils color={palette.orange} size={36} />
                   </View>
                   <LinearGradient
                     colors={heroGradientColors}
                     locations={[0, 0.58, 1]}
-                    style={{ bottom: 0, height: 260, left: 0, position: "absolute", right: 0 }}
+                    style={{
+                      bottom: 0,
+                      height: Math.min(260, heroHeight),
+                      left: 0,
+                      position: "absolute",
+                      right: 0,
+                    }}
                   />
                 </>
               )}
@@ -1089,9 +1045,19 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                   </View>
                 ) : null}
                 {dish.description?.trim() ? (
-                  <AppText variant="bodyLarge" tone="secondary" style={{ lineHeight: 26 }}>
-                    {dish.description}
-                  </AppText>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityHint={descriptionExpanded ? "Shows less" : "Shows the full text"}
+                    onPress={() => setDescriptionExpanded((open) => !open)}
+                  >
+                    <AppText
+                      variant="body"
+                      tone="secondary"
+                      numberOfLines={descriptionExpanded ? undefined : 3}
+                    >
+                      {dish.description}
+                    </AppText>
+                  </Pressable>
                 ) : null}
                 {formatDishUpdated(dish.updatedAt) ? (
                   <AppText variant="bodySmall" tone="muted">
@@ -1155,6 +1121,35 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                 <ChevronRight color={palette.textMuted} size={20} />
               </Pressable>
 
+              {venue && deliveryLinks.length > 0 ? (
+                <View style={{ gap: spacing[2] }}>
+                  <AppText variant="bodySmallBold" tone="secondary">
+                    ORDER ON
+                  </AppText>
+                  <DeliveryButtonRow links={deliveryLinks} dishId={dish.id} venueId={venue.id} />
+                </View>
+              ) : null}
+
+              {showDeferredDetailControls && FEATURE_FLAGS.reviewCreationEnabled && !hasReviewed ? (
+                <View
+                  style={{
+                    alignItems: "center",
+                    backgroundColor: palette.surface,
+                    borderColor: palette.border,
+                    borderRadius: componentRadii.card,
+                    borderWidth: 1,
+                    gap: spacing[2],
+                    padding: spacing[4],
+                  }}
+                >
+                  <AppText variant="bodyBold">Rate this dish</AppText>
+                  <StarRating value={0} editable onChange={startRating} />
+                  <AppText variant="micro" tone="muted">
+                    Tap a star, then add a photo to post it.
+                  </AppText>
+                </View>
+              ) : null}
+
               {hasTasteSignal ? (
                 <View style={{ gap: spacing[3] }}>
                   <View style={{ gap: spacing[1] }}>
@@ -1188,32 +1183,6 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                           ))
                       : null}
                   </View>
-                  {dish.tasteTags.length > 0 ? (
-                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-                      {dish.tasteTags.slice(0, 5).map((tag) => (
-                        <View
-                          key={tag}
-                          style={{
-                            backgroundColor: palette.bgSoft,
-                            borderRadius: radii.pill,
-                            paddingHorizontal: spacing[3],
-                            paddingVertical: spacing[1],
-                          }}
-                        >
-                          <AppText variant="bodySmall">{tag}</AppText>
-                        </View>
-                      ))}
-                    </View>
-                  ) : null}
-                </View>
-              ) : null}
-
-              {venue && deliveryLinks.length > 0 ? (
-                <View style={{ gap: spacing[2] }}>
-                  <AppText variant="bodySmallBold" tone="secondary">
-                    ORDER ON
-                  </AppText>
-                  <DeliveryButtonRow links={deliveryLinks} dishId={dish.id} venueId={venue.id} />
                 </View>
               ) : null}
 
@@ -1480,17 +1449,6 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                               {formatTimeAgo(review.createdAt)}
                             </AppText>
                           </View>
-                          <View
-                            accessible
-                            accessibilityRole="text"
-                            accessibilityLabel={`Rated ${review.rating} out of 5`}
-                            style={{ alignItems: "center", flexDirection: "row", gap: 2 }}
-                          >
-                            <Star color={palette.ratingStar} fill={palette.ratingStar} size={13} />
-                            <AppText variant="micro" style={{ fontWeight: "800" }}>
-                              {review.rating}
-                            </AppText>
-                          </View>
                         </View>
                         <CaptionPreview text={review.text} />
                         <ReviewPhotoStrip
@@ -1533,6 +1491,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                         ) : null}
                         <ReviewReaderActions
                           key={review.id}
+                          rating={review.rating}
                           review={review}
                           isOwn={isOwnReview(review, isAuthenticated ? profile.id : undefined)}
                           returnRoute={{ name: "DishDetail", params: { dishId: dish.id } }}
@@ -1603,7 +1562,6 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
 
           <DetailActionBar
             actions={barActions}
-            secondaryActions={secondaryBarActions}
             cta={
               showDeferredDetailControls && FEATURE_FLAGS.reviewCreationEnabled
                 ? {

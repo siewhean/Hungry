@@ -82,3 +82,53 @@ export function planningAreasFor(areaName: string, coordinate?: Coordinate): str
   const containing = coordinate ? planningAreaAt(coordinate) : undefined;
   return containing ? [containing] : [];
 }
+
+/** The coordinate under a point of the map's viewBox (the inverse of projectCoordinate). */
+export function unprojectPoint(x: number, y: number): Coordinate {
+  return {
+    latitude: PROJECTION.maxLat - y / PROJECTION.latScale,
+    longitude: x / PROJECTION.lonScale + PROJECTION.minLon,
+  };
+}
+
+/** The part of the map on screen: its centre in viewBox units and a zoom of 1 or more. */
+export type MapView = { centerX: number; centerY: number; zoom: number };
+
+export const MAP_MIN_ZOOM = 1;
+export const MAP_MAX_ZOOM = 8;
+/** Malls, food courts and hawker centres show as dots from this zoom in. */
+export const MAP_PLACE_DOTS_ZOOM = 2.5;
+
+export const FULL_MAP_VIEW: MapView = {
+  centerX: PROJECTION.width / 2,
+  centerY: PROJECTION.height / 2,
+  zoom: MAP_MIN_ZOOM,
+};
+
+/** Keeps the zoom in range and the view inside the map's edges. */
+export function clampMapView(view: MapView): MapView {
+  const zoom = Math.max(MAP_MIN_ZOOM, Math.min(MAP_MAX_ZOOM, view.zoom));
+  const halfWidth = PROJECTION.width / zoom / 2;
+  const halfHeight = PROJECTION.height / zoom / 2;
+  return {
+    zoom,
+    centerX: Math.max(halfWidth, Math.min(PROJECTION.width - halfWidth, view.centerX)),
+    centerY: Math.max(halfHeight, Math.min(PROJECTION.height - halfHeight, view.centerY)),
+  };
+}
+
+/** The SVG viewBox for a view: "minX minY width height". */
+export function mapViewBox(view: MapView): string {
+  const width = PROJECTION.width / view.zoom;
+  const height = PROJECTION.height / view.zoom;
+  return `${view.centerX - width / 2} ${view.centerY - height / 2} ${width} ${height}`;
+}
+
+/** The view's centre as a coordinate and the radius, in metres, that covers what is on screen. */
+export function mapViewArea(view: MapView): { center: Coordinate; radiusMeters: number } {
+  const halfWidthDegrees = PROJECTION.width / view.zoom / 2 / PROJECTION.lonScale;
+  const halfHeightDegrees = PROJECTION.height / view.zoom / 2 / PROJECTION.latScale;
+  // Near the equator a degree is about 111 km both ways.
+  const radiusMeters = Math.round(Math.hypot(halfWidthDegrees, halfHeightDegrees) * 111_320);
+  return { center: unprojectPoint(view.centerX, view.centerY), radiusMeters };
+}

@@ -1,7 +1,7 @@
 import { useEffect, useState, type ComponentType } from "react";
 import { ActivityIndicator, Animated, Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Check, MoreHorizontal } from "lucide-react-native";
+import { Check } from "lucide-react-native";
 
 import { AppText } from "@/components/ui/AppText";
 import { confirmHaptic, selectHaptic, tapHaptic } from "@/lib/haptics";
@@ -56,8 +56,6 @@ export type DetailCallToAction = {
 type Props = {
   /** Icon-only buttons on the right. Each may have its own hold menu. */
   actions: DetailAction[];
-  /** The "More" (three dots) menu at the far right. */
-  secondaryActions?: DetailAction[];
   /** The orange button at the left end, e.g. "Review". */
   cta?: DetailCallToAction;
   testID?: string;
@@ -65,8 +63,11 @@ type Props = {
 
 const ICON_SIZE = 22;
 const TARGET_SIZE = 48;
+/** Icon buttons sit close together: narrower than tall, with hit slop making up the rest. */
+const ICON_BUTTON_WIDTH = 40;
 const LONG_PRESS_MS = 320;
-const MORE_MENU_ID = "__more__";
+/** Above the page and the floating back button while a hold menu is open. */
+const OVERLAY_Z = 20;
 
 function playToggleHaptic(action: DetailAction) {
   if (action.fillWhenActive || action.role === "checkbox") {
@@ -77,27 +78,12 @@ function playToggleHaptic(action: DetailAction) {
   }
 }
 
-type MenuRow = {
-  id: string;
-  label: string;
-  icon?: IconComponent;
-  onPress: () => void;
-  selected?: boolean;
-  active?: boolean;
-  fillWhenActive?: boolean;
-  loading?: boolean;
-  disabled?: boolean;
-  accessibilityLabel?: string;
-  accessibilityHint?: string;
-  role?: "button" | "checkbox";
-};
-
 /**
  * The sticky bottom bar on dish and stall pages: the orange call to action on the left and
- * icon-only buttons on the right. Holding a button opens its own small menu above it (share
- * options, tried / not tried, collections); "More" opens the rest.
+ * icon-only buttons on the right. Holding a button that has options (tried / not tried,
+ * collections) dims the page and opens a small menu above it; only that button stays lit.
  */
-export function DetailActionBar({ actions, secondaryActions = [], cta, testID }: Props) {
+export function DetailActionBar({ actions, cta, testID }: Props) {
   const { componentRadii, palette, radii, shadows, spacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -105,8 +91,9 @@ export function DetailActionBar({ actions, secondaryActions = [], cta, testID }:
   const [shownMenuId, setShownMenuId] = useState<string | null>(null);
   const [menuProgress] = useState(() => new Animated.Value(0));
   const [barWidth, setBarWidth] = useState(0);
-  const [buttonRight, setButtonRight] = useState<Record<string, number>>({});
-  const hasMore = secondaryActions.length > 0;
+  const [buttonFrames, setButtonFrames] = useState<Record<string, { x: number; width: number }>>(
+    {},
+  );
   const barBottomPadding = Math.max(insets.bottom, spacing[3]);
   const menuOpen = openMenuId !== null;
 
@@ -128,28 +115,175 @@ export function DetailActionBar({ actions, secondaryActions = [], cta, testID }:
   const closeMenu = () => setOpenMenuId(null);
 
   const heldAction = actions.find((action) => action.id === shownMenuId);
-  const menuTitle = shownMenuId === MORE_MENU_ID ? undefined : heldAction?.holdTitle;
-  const menuRows: MenuRow[] =
-    shownMenuId === MORE_MENU_ID
-      ? secondaryActions
-      : (heldAction?.holdOptions ?? []).map((option) => ({ ...option }));
-  const menuLoading = shownMenuId !== MORE_MENU_ID && Boolean(heldAction?.holdLoading);
+  const menuTitle = heldAction?.holdTitle;
+  const menuRows = heldAction?.holdOptions ?? [];
+  const menuLoading = Boolean(heldAction?.holdLoading);
   // Line the menu's right edge up with the held button, inside the screen edge.
-  const anchorRight = shownMenuId ? buttonRight[shownMenuId] : undefined;
+  const heldFrame = shownMenuId ? buttonFrames[shownMenuId] : undefined;
   const menuRight =
-    barWidth > 0 && anchorRight !== undefined
-      ? Math.max(spacing[4], barWidth - anchorRight - spacing[1])
+    barWidth > 0 && heldFrame
+      ? Math.max(spacing[4], barWidth - (heldFrame.x + heldFrame.width) - spacing[1])
       : spacing[4];
+  const HeldIcon = heldAction?.icon;
+
+  const renderBar = () => (
+    <View
+      testID={testID}
+      onLayout={(event) => setBarWidth(event.nativeEvent.layout.width)}
+      style={{
+        alignItems: "center",
+        backgroundColor: palette.surface,
+        borderTopColor: palette.border,
+        borderTopWidth: 1,
+        bottom: 0,
+        flexDirection: "row",
+        left: 0,
+        paddingBottom: barBottomPadding,
+        paddingHorizontal: spacing[4],
+        paddingTop: spacing[2],
+        position: "absolute",
+        right: 0,
+      }}
+    >
+      {cta ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={cta.accessibilityLabel ?? cta.label}
+          onPress={() => {
+            tapHaptic();
+            cta.onPress();
+          }}
+          style={({ pressed }) => ({
+            alignItems: "center",
+            backgroundColor: palette.orange,
+            borderRadius: componentRadii.button,
+            flexDirection: "row",
+            gap: spacing[1.5],
+            height: 44,
+            justifyContent: "center",
+            paddingHorizontal: spacing[4],
+            transform: [{ scale: pressed ? 0.97 : 1 }],
+          })}
+        >
+          {cta.icon ? <cta.icon color={palette.textOnOrange} size={18} /> : null}
+          <AppText variant="bodyBold" style={{ color: palette.textOnOrange }}>
+            {cta.label}
+          </AppText>
+        </Pressable>
+      ) : null}
+      <View style={{ flex: 1 }} />
+      {actions.map((action) => {
+        const Icon = action.icon;
+        const color = action.active ? palette.orange : palette.text;
+        const hasHold = Boolean(action.holdOptions?.length || action.onHoldOpen);
+        const openHold = () => {
+          if (!hasHold) return;
+          action.onHoldOpen?.();
+          openMenu(action.id);
+        };
+        return (
+          <Pressable
+            key={action.id}
+            onLayout={(event) => {
+              const { x, width } = event.nativeEvent.layout;
+              setButtonFrames((current) =>
+                current[action.id]?.x === x && current[action.id]?.width === width
+                  ? current
+                  : { ...current, [action.id]: { x, width } },
+              );
+            }}
+            accessibilityHint={
+              action.accessibilityHint ??
+              (hasHold ? `Hold for more ${action.label.toLowerCase()} options` : undefined)
+            }
+            accessibilityLabel={action.accessibilityLabel ?? action.label}
+            accessibilityRole={action.role ?? "button"}
+            accessibilityState={
+              action.role === "checkbox"
+                ? { checked: Boolean(action.active), disabled: action.disabled }
+                : { selected: Boolean(action.active), disabled: action.disabled }
+            }
+            accessibilityActions={
+              hasHold ? [{ name: "longpress", label: `${action.label} options` }] : undefined
+            }
+            onAccessibilityAction={(event) => {
+              if (event.nativeEvent.actionName === "longpress") openHold();
+            }}
+            delayLongPress={LONG_PRESS_MS}
+            disabled={action.disabled || action.loading}
+            hitSlop={{ left: 2, right: 2 }}
+            onLongPress={hasHold ? openHold : undefined}
+            onPress={() => {
+              playToggleHaptic(action);
+              action.onPress();
+            }}
+            style={({ pressed }) => ({
+              alignItems: "center",
+              borderRadius: radii.pill,
+              height: TARGET_SIZE,
+              justifyContent: "center",
+              opacity: action.disabled ? 0.5 : 1,
+              transform: [{ scale: pressed ? 0.9 : 1 }],
+              width: ICON_BUTTON_WIDTH,
+            })}
+          >
+            {action.loading ? (
+              <ActivityIndicator color={palette.orange} size="small" />
+            ) : (
+              <Icon
+                color={color}
+                fill={action.active && action.fillWhenActive ? palette.orange : "none"}
+                size={ICON_SIZE}
+              />
+            )}
+          </Pressable>
+        );
+      })}
+    </View>
+  );
 
   return (
     <>
+      {renderBar()}
+
       {menuOpen ? (
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Close menu"
           onPress={closeMenu}
-          style={[StyleSheet.absoluteFill, { backgroundColor: palette.mediaScrimSubtle }]}
+          style={[
+            StyleSheet.absoluteFill,
+            { backgroundColor: palette.mediaScrim, elevation: OVERLAY_Z, zIndex: OVERLAY_Z },
+          ]}
         />
+      ) : null}
+
+      {/* The held button stays lit above the dimmed page. */}
+      {menuOpen && heldAction && heldFrame && HeldIcon ? (
+        <View
+          pointerEvents="none"
+          importantForAccessibility="no-hide-descendants"
+          accessibilityElementsHidden
+          style={{
+            alignItems: "center",
+            backgroundColor: palette.surface,
+            borderRadius: radii.pill,
+            bottom: barBottomPadding,
+            elevation: OVERLAY_Z + 1,
+            height: TARGET_SIZE,
+            justifyContent: "center",
+            left: heldFrame.x + (heldFrame.width - TARGET_SIZE) / 2,
+            position: "absolute",
+            width: TARGET_SIZE,
+            zIndex: OVERLAY_Z + 1,
+          }}
+        >
+          <HeldIcon
+            color={palette.orange}
+            fill={heldAction.active && heldAction.fillWhenActive ? palette.orange : "none"}
+            size={ICON_SIZE}
+          />
+        </View>
       ) : null}
 
       {shownMenuId ? (
@@ -164,12 +298,14 @@ export function DetailActionBar({ actions, secondaryActions = [], cta, testID }:
               borderRadius: componentRadii.card,
               borderWidth: 1,
               bottom: barBottomPadding + TARGET_SIZE + spacing[4],
+              elevation: OVERLAY_Z + 1,
               maxWidth: 280,
               minWidth: 200,
               opacity: menuProgress,
               paddingVertical: spacing[1],
               position: "absolute",
               right: menuRight,
+              zIndex: OVERLAY_Z + 1,
               transform: [
                 {
                   translateY: menuProgress.interpolate({
@@ -208,23 +344,16 @@ export function DetailActionBar({ actions, secondaryActions = [], cta, testID }:
           ) : null}
           {menuRows.map((row) => {
             const Icon = row.icon;
-            const highlighted = row.active || row.selected;
+            const highlighted = row.selected;
             const color = highlighted ? palette.orange : palette.text;
             return (
               <Pressable
                 key={row.id}
-                accessibilityHint={row.accessibilityHint}
                 accessibilityLabel={row.accessibilityLabel ?? row.label}
-                accessibilityRole={row.role ?? "button"}
-                accessibilityState={
-                  row.role === "checkbox"
-                    ? { checked: Boolean(row.active), disabled: row.disabled }
-                    : { selected: Boolean(highlighted), disabled: row.disabled }
-                }
-                disabled={row.disabled || row.loading}
+                accessibilityRole="button"
+                accessibilityState={{ selected: Boolean(highlighted) }}
                 onPress={() => {
-                  if (row.selected === undefined) playToggleHaptic(row as DetailAction);
-                  else tapHaptic();
+                  tapHaptic();
                   closeMenu();
                   row.onPress();
                 }}
@@ -237,15 +366,7 @@ export function DetailActionBar({ actions, secondaryActions = [], cta, testID }:
                   paddingHorizontal: spacing[4],
                 })}
               >
-                {row.loading ? (
-                  <ActivityIndicator color={palette.orange} size="small" />
-                ) : Icon ? (
-                  <Icon
-                    color={color}
-                    fill={row.active && row.fillWhenActive ? palette.orange : "none"}
-                    size={20}
-                  />
-                ) : null}
+                {Icon ? <Icon color={color} fill="none" size={20} /> : null}
                 <AppText variant="bodyBold" numberOfLines={1} style={{ color, flexShrink: 1 }}>
                   {row.label}
                 </AppText>
@@ -259,149 +380,6 @@ export function DetailActionBar({ actions, secondaryActions = [], cta, testID }:
           })}
         </Animated.View>
       ) : null}
-
-      <View
-        testID={testID}
-        onLayout={(event) => setBarWidth(event.nativeEvent.layout.width)}
-        style={{
-          alignItems: "center",
-          backgroundColor: palette.surface,
-          borderTopColor: palette.border,
-          borderTopWidth: 1,
-          bottom: 0,
-          flexDirection: "row",
-          gap: spacing[1],
-          left: 0,
-          paddingBottom: barBottomPadding,
-          paddingHorizontal: spacing[4],
-          paddingTop: spacing[2],
-          position: "absolute",
-          right: 0,
-        }}
-      >
-        {cta ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={cta.accessibilityLabel ?? cta.label}
-            onPress={() => {
-              tapHaptic();
-              cta.onPress();
-            }}
-            style={({ pressed }) => ({
-              alignItems: "center",
-              backgroundColor: palette.orange,
-              borderRadius: componentRadii.button,
-              flexDirection: "row",
-              gap: spacing[1.5],
-              height: 44,
-              justifyContent: "center",
-              paddingHorizontal: spacing[4],
-              transform: [{ scale: pressed ? 0.97 : 1 }],
-            })}
-          >
-            {cta.icon ? <cta.icon color={palette.textOnOrange} size={18} /> : null}
-            <AppText variant="bodyBold" style={{ color: palette.textOnOrange }}>
-              {cta.label}
-            </AppText>
-          </Pressable>
-        ) : null}
-        <View style={{ flex: 1 }} />
-        {actions.map((action) => {
-          const Icon = action.icon;
-          const color = action.active ? palette.orange : palette.text;
-          const hasHold = Boolean(action.holdOptions?.length || action.onHoldOpen);
-          const openHold = () => {
-            if (!hasHold) return;
-            action.onHoldOpen?.();
-            openMenu(action.id);
-          };
-          return (
-            <Pressable
-              key={action.id}
-              onLayout={(event) => {
-                const { x, width } = event.nativeEvent.layout;
-                setButtonRight((current) =>
-                  current[action.id] === x + width
-                    ? current
-                    : { ...current, [action.id]: x + width },
-                );
-              }}
-              accessibilityHint={
-                action.accessibilityHint ??
-                (hasHold ? `Hold for more ${action.label.toLowerCase()} options` : undefined)
-              }
-              accessibilityLabel={action.accessibilityLabel ?? action.label}
-              accessibilityRole={action.role ?? "button"}
-              accessibilityState={
-                action.role === "checkbox"
-                  ? { checked: Boolean(action.active), disabled: action.disabled }
-                  : { selected: Boolean(action.active), disabled: action.disabled }
-              }
-              accessibilityActions={
-                hasHold ? [{ name: "longpress", label: `${action.label} options` }] : undefined
-              }
-              onAccessibilityAction={(event) => {
-                if (event.nativeEvent.actionName === "longpress") openHold();
-              }}
-              delayLongPress={LONG_PRESS_MS}
-              disabled={action.disabled || action.loading}
-              onLongPress={hasHold ? openHold : undefined}
-              onPress={() => {
-                playToggleHaptic(action);
-                action.onPress();
-              }}
-              style={({ pressed }) => ({
-                alignItems: "center",
-                borderRadius: radii.pill,
-                height: TARGET_SIZE,
-                justifyContent: "center",
-                opacity: action.disabled ? 0.5 : 1,
-                transform: [{ scale: pressed ? 0.9 : 1 }],
-                width: TARGET_SIZE,
-              })}
-            >
-              {action.loading ? (
-                <ActivityIndicator color={palette.orange} size="small" />
-              ) : (
-                <Icon
-                  color={openMenuId === action.id ? palette.orange : color}
-                  fill={action.active && action.fillWhenActive ? palette.orange : "none"}
-                  size={ICON_SIZE}
-                />
-              )}
-            </Pressable>
-          );
-        })}
-        {hasMore ? (
-          <Pressable
-            onLayout={(event) => {
-              const { x, width } = event.nativeEvent.layout;
-              setButtonRight((current) =>
-                current[MORE_MENU_ID] === x + width
-                  ? current
-                  : { ...current, [MORE_MENU_ID]: x + width },
-              );
-            }}
-            accessibilityRole="button"
-            accessibilityLabel="More actions"
-            accessibilityHint={secondaryActions.map((action) => action.label).join(", ")}
-            accessibilityState={{ expanded: openMenuId === MORE_MENU_ID }}
-            onPress={() => (openMenuId === MORE_MENU_ID ? closeMenu() : openMenu(MORE_MENU_ID))}
-            style={({ pressed }) => ({
-              alignItems: "center",
-              height: TARGET_SIZE,
-              justifyContent: "center",
-              transform: [{ scale: pressed ? 0.9 : 1 }],
-              width: TARGET_SIZE,
-            })}
-          >
-            <MoreHorizontal
-              color={openMenuId === MORE_MENU_ID ? palette.orange : palette.text}
-              size={ICON_SIZE}
-            />
-          </Pressable>
-        ) : null}
-      </View>
     </>
   );
 }

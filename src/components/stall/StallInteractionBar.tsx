@@ -10,7 +10,7 @@
 
 import { View, Pressable, StyleSheet, ActivityIndicator } from "react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Bookmark, CheckCircle, ListPlus, Navigation, PenLine, Send } from "lucide-react-native";
+import { Bookmark, CheckCircle, ListPlus, MapPin, PenLine, Send } from "lucide-react-native";
 import { confirmHaptic, tapHaptic } from "@/lib/haptics";
 
 import { useHungryTheme } from "@/theme";
@@ -191,31 +191,19 @@ export function StallInteractionBar({
 
   if (layout === "sticky") {
     const interactionLoading = !isLoaded && isLoadingInteractions;
+    // Directions, Share and Visited are taps; holding Save offers a collection.
     const stickyActions: DetailAction[] = [
       ...(onDirections
         ? [
             {
               id: "directions",
               label: "Directions",
-              icon: Navigation,
+              icon: MapPin,
               onPress: onDirections,
               accessibilityLabel: "Directions to this stall",
             },
           ]
         : []),
-      {
-        id: "save",
-        label: isSaved ? "Saved" : "Save",
-        icon: Bookmark,
-        active: isSaved,
-        fillWhenActive: true,
-        loading: savingInProgress || interactionLoading,
-        onPress: () => void handleSave(),
-        accessibilityLabel: isSaved ? "Saved" : "Save this stall",
-      },
-    ];
-    // Held icons (or "More") open these: share, mark visited, save to a collection.
-    const secondaryActions: DetailAction[] = [
       ...(onShare
         ? [
             {
@@ -241,22 +229,40 @@ export function StallInteractionBar({
             },
           ]
         : []),
-      ...(onAddToList
-        ? [
-            {
-              id: "collection",
-              label: "Save to a collection",
-              icon: ListPlus,
-              loading: isAddingToList,
-              onPress: onAddToList,
-            },
-          ]
-        : []),
+      {
+        id: "save",
+        label: isSaved ? "Saved" : "Save",
+        icon: Bookmark,
+        active: isSaved,
+        fillWhenActive: true,
+        loading: savingInProgress || interactionLoading,
+        onPress: () => void handleSave(),
+        accessibilityLabel: isSaved ? "Saved" : "Save this stall",
+        ...(onAddToList
+          ? {
+              holdTitle: "Save to",
+              holdOptions: [
+                {
+                  id: "want-to-try",
+                  label: "Want to try",
+                  icon: Bookmark,
+                  selected: isSaved,
+                  onPress: () => void handleSave(),
+                },
+                {
+                  id: "collection",
+                  label: isAddingToList ? "Adding..." : "Save to a collection",
+                  icon: ListPlus,
+                  onPress: onAddToList,
+                },
+              ],
+            }
+          : {}),
+      },
     ];
     return (
       <DetailActionBar
         actions={stickyActions}
-        secondaryActions={secondaryActions}
         cta={onReview ? { label: "Review", icon: PenLine, onPress: onReview } : undefined}
         testID="stall-action-bar"
       />

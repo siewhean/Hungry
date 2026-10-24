@@ -18,11 +18,19 @@ import { AppText, Button } from "@/components/ui";
 import {
   AREA_SEARCH_MIN_CHARS,
   buildAreaSearchResults,
+  mapAreaSearchResult,
   nearestAreaName,
+  placeSearchResult,
   type AreaSearchPlace,
   type AreaSearchResult,
 } from "@/features/location/areaSearch";
-import { planningAreasFor } from "@/features/location/singaporeAreaMap";
+import {
+  MAP_PLACE_DOTS_ZOOM,
+  mapViewArea,
+  planningAreasFor,
+  type MapView,
+} from "@/features/location/singaporeAreaMap";
+import { useMovingSearchPlaceholder } from "@/features/search/useMovingSearchPlaceholder";
 import { selectHaptic } from "@/lib/haptics";
 import { searchOneMapAddresses, type OneMapAddress } from "@/lib/geo/oneMap";
 import { reportError } from "@/lib/monitoring/reportError";
@@ -38,6 +46,14 @@ import { SORTED_SINGAPORE_AREAS } from "./singaporeAreas";
 type Props = NativeStackScreenProps<OnboardingStackParamList, "ManualLocationPicker">;
 
 const SEARCH_DEBOUNCE_MS = 300;
+/** Waits for the map to settle before reading the places in view. */
+const MAP_PLACES_DEBOUNCE_MS = 400;
+const SEARCH_PLACEHOLDER_PHRASES = [
+  "Area, mall, hawker centre or address",
+  "Try Tampines",
+  "Try Maxwell Food Centre",
+  "Try JEM",
+];
 // The field's rounded border already frames it; drop the browser's square focus outline.
 const WEB_NO_OUTLINE = { outlineStyle: "none", outlineWidth: 0 } as unknown as TextStyle;
 
@@ -65,6 +81,16 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
   });
   const [isSearching, setIsSearching] = useState(false);
   const [selected, setSelected] = useState<AreaSearchResult | null>(null);
+  const [mapView, setMapView] = useState<MapView | null>(null);
+  const [mapPlaces, setMapPlaces] = useState<AreaSearchPlace[]>([]);
+  const movingPlaceholder = useMovingSearchPlaceholder({
+    phrases: SEARCH_PLACEHOLDER_PHRASES,
+    tickMs: 55,
+    revealStepMs: 55,
+    deleteStepMs: 55,
+    pauseMs: 950,
+    totalCycleMs: 6200,
+  });
   const manualLocation = useLocationStore((state) => state.manualLocation);
   const manualCoordinate = useLocationStore((state) => state.manualCoordinate);
   const { width: windowWidth } = useWindowDimensions();
@@ -107,6 +133,45 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
       clearTimeout(timer);
     };
   }, [trimmedQuery]);
+
+  // Zoomed in far enough, the malls, food courts and hawker centres in view load as dots.
+  const showsPlaceDots = (mapView?.zoom ?? 1) >= MAP_PLACE_DOTS_ZOOM;
+  useEffect(() => {
+    if (!mapView || !showsPlaceDots) return;
+    let active = true;
+    const timer = setTimeout(() => {
+      const { center, radiusMeters } = mapViewArea(mapView);
+      getCatalogRawService()
+        .listPlaces({ coordinate: center, radiusMeters, limit: 20 })
+        .then((items) => {
+          if (active) setMapPlaces(items);
+        })
+        .catch((error: unknown) => {
+          reportError(error, { screen: "ManualLocationPicker", action: "listMapPlaces" });
+        });
+    }, MAP_PLACES_DEBOUNCE_MS);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [mapView, showsPlaceDots]);
+  const mapPlaceDots = useMemo(
+    () =>
+      mapPlaces.flatMap((place) =>
+        place.latitude === undefined || place.longitude === undefined
+          ? []
+          : [
+              {
+                id: place.id,
+                name: place.name,
+                coordinate: { latitude: place.latitude, longitude: place.longitude },
+              },
+            ],
+      ),
+    [mapPlaces],
+  );
+  const areaForCoordinate = (coordinate: { latitude: number; longitude: number }) =>
+    nearestAreaName(coordinate, SORTED_SINGAPORE_AREAS);
 
   const results = useMemo(
     () =>
@@ -223,7 +288,7 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
               autoCorrect={false}
               autoFocus
               onChangeText={setQuery}
-              placeholder="Area, mall, hawker centre or address"
+              placeholder={movingPlaceholder}
               placeholderTextColor={palette.textMuted}
               returnKeyType="search"
               style={[
@@ -290,7 +355,21 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
         </ScrollView>
 
         <View style={{ alignItems: "center", gap: spacing[3], paddingBottom: spacing[3] }}>
-          <SingaporeAreaMap width={mapWidth} highlighted={mapArea} pin={mapPin} />
+          <SingaporeAreaMap
+            width={mapWidth}
+            highlighted={mapArea}
+            pin={mapPin}
+            places={showsPlaceDots ? mapPlaceDots : []}
+            onViewChange={setMapView}
+            onAreaPress={(planningArea, coordinate) =>
+              choose(mapAreaSearchResult(planningArea, coordinate, SORTED_SINGAPORE_AREAS))
+            }
+            onPlacePress={(dot) => {
+              const place = mapPlaces.find((entry) => entry.id === dot.id);
+              const result = place ? placeSearchResult(place, areaForCoordinate) : null;
+              if (result) choose(result);
+            }}
+          />
           {selected ? (
             <View style={{ alignSelf: "stretch", gap: spacing[1] }}>
               <AppText variant="bodySmall" tone="secondary" style={{ textAlign: "center" }}>

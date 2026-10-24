@@ -5,8 +5,10 @@ import type { SingaporeArea } from "@/app/screens/onboarding/singaporeAreas";
 import {
   buildAreaSearchResults,
   formatAddress,
+  mapAreaSearchResult,
   matchAreas,
   nearestAreaName,
+  placeSearchResult,
   placeTypeLabel,
 } from "@/features/location/areaSearch";
 import {
@@ -145,4 +147,29 @@ test("postal code lookup checks the code, reports an outage and parses a hit", a
     }) as Response) as typeof fetch;
   const hit = await lookupPostalCode("069111", up);
   assert.equal(hit?.postalCode, "069111");
+});
+
+test("a tapped map area uses the app's area name when one covers it", () => {
+  const tapped = { latitude: 1.3237, longitude: 103.928 };
+  const bedok = mapAreaSearchResult("Bedok", tapped, AREAS);
+  assert.equal(bedok.areaName, "Bedok");
+  assert.deepEqual(bedok.coordinate, AREAS[0].coordinate);
+  // No app area for it: the planning area itself, at the tap.
+  const changi = mapAreaSearchResult("Changi", { latitude: 1.36, longitude: 103.99 }, AREAS);
+  assert.equal(changi.areaName, "Changi");
+  assert.deepEqual(changi.coordinate, { latitude: 1.36, longitude: 103.99 });
+});
+
+test("a map dot becomes a place result, and needs a position", () => {
+  const place = {
+    id: "b1",
+    name: "Bedok Interchange",
+    venueCount: 40,
+    buildingType: "hawker_centre",
+  };
+  assert.equal(placeSearchResult(place, areaFor), null);
+  const result = placeSearchResult({ ...place, latitude: 1.325, longitude: 103.93 }, areaFor);
+  assert.equal(result?.kind, "place");
+  assert.equal(result?.placeName, "Bedok Interchange");
+  assert.equal(result?.areaName, "Bedok");
 });

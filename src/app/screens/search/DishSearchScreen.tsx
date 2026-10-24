@@ -61,6 +61,14 @@ function suggestionMode(suggestion: CatalogSuggestion): BrowseMode {
   return suggestion.kind === "food_type" ? "dishes" : "stalls";
 }
 
+/** Moves through these like the Discover search bar. */
+const DISH_SEARCH_PLACEHOLDER_PHRASES = [
+  "Try laksa, chicken rice, halal under $8",
+  "Search for mee pok",
+  "Stalls or hawker centres",
+  "What's near you?",
+];
+
 export function DishSearchScreen() {
   const navigation = useNavigation<RootNavigation>();
   const { componentRadii, motion, palette, radii, shadows, spacing } = useHungryTheme();
@@ -232,6 +240,8 @@ export function DishSearchScreen() {
                 ) : undefined
               }
               placeholder="Try laksa, chicken rice, halal under $8"
+              enableMovingPlaceholder
+              movingPlaceholderPhrases={DISH_SEARCH_PLACEHOLDER_PHRASES}
               accessibilityLabel="Search dishes, stalls, or hawker centres"
               returnKeyType="search"
               value={searchText}

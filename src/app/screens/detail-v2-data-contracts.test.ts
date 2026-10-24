@@ -46,13 +46,11 @@ test("dish detail V2 bottom bar is labelled, stateful and meets 44px targets", (
   assert.doesNotMatch(dish, /Missing dish data for ID/);
   assert.doesNotMatch(dish, /Sparkles/);
   assert.match(dish, /We can't find this dish/);
-  // Directions, Like, Save, Share and Tried sit in one bar of icon-over-label buttons.
-  assert.match(
-    dish,
-    /<DetailActionBar\s+actions=\{barActions\}\s+secondaryActions=\{secondaryBarActions\}/,
-  );
+  // Share, Tried, Save and Like sit in one bar of icon buttons; no three-dots menu.
+  assert.match(dish, /<DetailActionBar\s+actions=\{barActions\}\s+cta=/);
   assert.match(dish, /testID="dish-action-bar"/);
-  for (const label of ["Directions", "Like", "Share", "Tried"]) {
+  assert.doesNotMatch(dish, /secondaryActions/);
+  for (const label of ["Like", "Share", "Tried"]) {
     assert.match(dish, new RegExp(`label: [^\\n]*"${label}`));
   }
   assert.match(dish, /label: isSaved \? "Saved" : "Save"/);

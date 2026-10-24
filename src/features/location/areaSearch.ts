@@ -7,6 +7,8 @@ import type { OneMapAddress } from "@/lib/geo/oneMap";
 import type { SingaporeArea } from "@/app/screens/onboarding/singaporeAreas";
 import type { Coordinate } from "@/types/domain";
 
+import { planningAreasFor } from "./singaporeAreaMap";
+
 export type AreaSearchPlace = {
   id: string;
   name: string;
@@ -66,6 +68,47 @@ export function formatAddress(address: string): string {
     .replace(/\bSingapore (\d{6})$/, "Singapore $1");
 }
 
+/** A mall / hawker centre / food court as a result; null without a position. */
+export function placeSearchResult(
+  place: AreaSearchPlace,
+  areaForCoordinate: (coordinate: Coordinate) => string,
+): AreaSearchResult | null {
+  if (place.latitude === undefined || place.longitude === undefined) return null;
+  const coordinate = { latitude: place.latitude, longitude: place.longitude };
+  const areaName = areaForCoordinate(coordinate);
+  return {
+    key: `place:${place.id}`,
+    kind: "place",
+    title: place.name,
+    subtitle: `${placeTypeLabel(place.buildingType)} · ${areaName} · ${place.venueCount} stalls`,
+    areaName,
+    coordinate,
+    placeName: place.name,
+  };
+}
+
+/**
+ * An area tapped on the map. The app's own area wins when it covers that planning area
+ * (so Discover keeps its usual names); otherwise the planning area itself, at the tap.
+ */
+export function mapAreaSearchResult(
+  planningArea: string,
+  tapped: Coordinate,
+  areas: readonly SingaporeArea[],
+): AreaSearchResult {
+  const appArea =
+    areas.find((area) => area.name.toLowerCase() === planningArea.toLowerCase()) ??
+    areas.find((area) => planningAreasFor(area.name, area.coordinate).includes(planningArea));
+  return {
+    key: `area:${appArea?.id ?? planningArea}`,
+    kind: "area",
+    title: appArea?.name ?? planningArea,
+    subtitle: "Area",
+    areaName: appArea?.name ?? planningArea,
+    coordinate: appArea?.coordinate ?? tapped,
+  };
+}
+
 export function buildAreaSearchResults(input: {
   query: string;
   areas: readonly SingaporeArea[];
@@ -75,18 +118,8 @@ export function buildAreaSearchResults(input: {
 }): AreaSearchResult[] {
   const results: AreaSearchResult[] = [];
   for (const place of input.places) {
-    if (place.latitude === undefined || place.longitude === undefined) continue;
-    const coordinate = { latitude: place.latitude, longitude: place.longitude };
-    const areaName = input.areaForCoordinate(coordinate);
-    results.push({
-      key: `place:${place.id}`,
-      kind: "place",
-      title: place.name,
-      subtitle: `${placeTypeLabel(place.buildingType)} · ${areaName} · ${place.venueCount} stalls`,
-      areaName,
-      coordinate,
-      placeName: place.name,
-    });
+    const result = placeSearchResult(place, input.areaForCoordinate);
+    if (result) results.push(result);
   }
   for (const area of matchAreas(input.query, input.areas)) {
     results.push({

@@ -33,7 +33,10 @@ test("core-only builds keep detail controls read-only despite targeted feature o
     dish,
     /const barActions: DetailAction\[\] = showDeferredDetailControls\s*\? \[[\s\S]*?accessibilityLabel: `Share \$\{dish\.name\}`[\s\S]*?accessibilityLabel: "Tried"/,
   );
-  assert.match(dish, /\.\.\.\(showDeferredDetailControls\s*\? \[[\s\S]*?id: "like"/);
+  assert.match(
+    dish,
+    /const barActions: DetailAction\[\] = showDeferredDetailControls[\s\S]*?id: "like"/,
+  );
   assert.match(dish, /\{showDeferredDetailControls \? \([\s\S]*?<ReviewShareSheet/);
   assert.match(
     dish,

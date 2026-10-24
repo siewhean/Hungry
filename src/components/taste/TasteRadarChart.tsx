@@ -21,8 +21,8 @@ type Props = {
 const clamp = (value: number) => Math.max(0, Math.min(10, value));
 
 /**
- * A radar (spider) chart of a dish's taste: the standard level from everyone's reviews and,
- * when the diner has a palette, their own taste on top so the two shapes can be compared.
+ * A radar (spider) chart of a dish's taste: the standard level from everyone's reviews in grey
+ * and, when the diner has a palette, their own taste in orange on top to compare the shapes.
  */
 export function TasteRadarChart({ axes, size = 260 }: Props) {
   const { palette, spacing, typography } = useHungryTheme();
@@ -103,27 +103,37 @@ export function TasteRadarChart({ axes, size = 260 }: Props) {
             </SvgText>,
           ];
         })}
-        {showYours ? (
-          <Polygon
-            points={shape((axis) => axis.yours ?? 0)}
-            fill={palette.text}
-            fillOpacity={0.06}
-            stroke={palette.textSecondary}
-            strokeDasharray="5 4"
-            strokeWidth={2}
-          />
-        ) : null}
+        {/* Grey: the dish from its reviews. Orange: the diner's own palette, on top. */}
         <Polygon
           points={shape((axis) => axis.standard)}
-          fill={palette.orange}
-          fillOpacity={0.16}
-          stroke={palette.orange}
-          strokeWidth={2.5}
+          fill={palette.textSecondary}
+          fillOpacity={0.14}
+          stroke={palette.textSecondary}
+          strokeWidth={2}
         />
         {axes.map((axis, index) => {
           const { x, y } = point(index, (clamp(axis.standard) / 10) * radius);
-          return <Circle key={`${axis.key}-dot`} cx={x} cy={y} r={3.5} fill={palette.orange} />;
+          return (
+            <Circle key={`${axis.key}-dot`} cx={x} cy={y} r={3} fill={palette.textSecondary} />
+          );
         })}
+        {showYours ? (
+          <Polygon
+            points={shape((axis) => axis.yours ?? 0)}
+            fill={palette.orange}
+            fillOpacity={0.16}
+            stroke={palette.orange}
+            strokeWidth={2.5}
+          />
+        ) : null}
+        {showYours
+          ? axes.map((axis, index) => {
+              const { x, y } = point(index, (clamp(axis.yours ?? 0) / 10) * radius);
+              return (
+                <Circle key={`${axis.key}-yours`} cx={x} cy={y} r={3.5} fill={palette.orange} />
+              );
+            })
+          : null}
       </Svg>
       <View
         style={{
@@ -133,14 +143,14 @@ export function TasteRadarChart({ axes, size = 260 }: Props) {
           justifyContent: "center",
         }}
       >
-        <LegendItem color={palette.orange} label="This dish, from reviews" />
-        {showYours ? <LegendItem color={palette.textSecondary} label="Your taste" dashed /> : null}
+        <LegendItem color={palette.textSecondary} label="This dish, from reviews" />
+        {showYours ? <LegendItem color={palette.orange} label="Your taste" /> : null}
       </View>
     </View>
   );
 }
 
-function LegendItem({ color, label, dashed }: { color: string; label: string; dashed?: boolean }) {
+function LegendItem({ color, label }: { color: string; label: string }) {
   const { spacing } = useHungryTheme();
   return (
     <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1.5] }}>
@@ -148,12 +158,11 @@ function LegendItem({ color, label, dashed }: { color: string; label: string; da
         style={{
           borderColor: color,
           borderRadius: 2,
-          borderStyle: dashed ? "dashed" : "solid",
           borderWidth: 1.5,
           height: 10,
           width: 14,
-          backgroundColor: dashed ? "transparent" : color,
-          opacity: dashed ? 1 : 0.85,
+          backgroundColor: color,
+          opacity: 0.85,
         }}
       />
       <AppText variant="micro" tone="secondary">
