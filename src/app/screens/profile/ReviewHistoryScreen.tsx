@@ -29,6 +29,9 @@ type Props = NativeStackScreenProps<ProfileStackParamList, "ReviewHistory">;
 
 /** Reviews per server page. */
 const REVIEW_HISTORY_PAGE_SIZE = 50;
+// Load more re-reads this many rows before the end, so reviews deleted or posted elsewhere
+// (which shift the server's offsets) cannot make it skip one; repeats are dropped by id.
+const LOAD_MORE_OVERLAP = 5;
 
 export function ReviewHistoryScreen({ navigation }: Props) {
   const { palette, spacing, radii, componentRadii, shadows } = useHungryTheme();
@@ -56,8 +59,11 @@ export function ReviewHistoryScreen({ navigation }: Props) {
       setRemoteReviews((current) =>
         current.map((review) => (review.id === updated.id ? updated : review)),
       ),
-    onDeleted: (reviewId) =>
-      setRemoteReviews((current) => current.filter((review) => review.id !== reviewId)),
+    onDeleted: (reviewId) => {
+      setRemoteReviews((current) => current.filter((review) => review.id !== reviewId));
+      // The server's rows after it move up by one.
+      setLoadedRows((current) => Math.max(0, current - 1));
+    },
   });
   const mockHistory = useMemo(
     () =>
@@ -121,15 +127,17 @@ export function ReviewHistoryScreen({ navigation }: Props) {
   const loadMore = () => {
     if (isLoadingMore || !hasMore) return;
     setIsLoadingMore(true);
+    const offset = Math.max(0, loadedRows - LOAD_MORE_OVERLAP);
+    const limit = REVIEW_HISTORY_PAGE_SIZE + (loadedRows - offset);
     void getHungryService()
-      .reviews.getUserReviews(profile.id, { limit: REVIEW_HISTORY_PAGE_SIZE, offset: loadedRows })
+      .reviews.getUserReviews(profile.id, { limit, offset })
       .then((reviews) => {
         setRemoteReviews((current) => {
           const seen = new Set(current.map((review) => review.id));
           return [...current, ...reviews.filter((review) => !seen.has(review.id))];
         });
-        setLoadedRows((current) => current + reviews.length);
-        setHasMore(reviews.length === REVIEW_HISTORY_PAGE_SIZE);
+        setLoadedRows(offset + reviews.length);
+        setHasMore(reviews.length === limit);
       })
       .catch((error) => {
         reportError(error, { screen: "ReviewHistory", action: "load_more_reviews" });

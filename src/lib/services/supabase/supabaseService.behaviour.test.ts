@@ -105,7 +105,7 @@ test("canViewFollowLists assumes visible when the check fails, and respects an e
   assert.equal(await service.social.canViewFollowLists(OTHER), true);
 });
 
-test("getFollowCounts returns null unless the server returns a row", async () => {
+test("getFollowCounts returns null without a row and throws when the read fails (PROF-V1)", async () => {
   fake.rpc.get_follow_counts = () => ({ data: [{ followers_count: 12, following_count: "7" }] });
   assert.deepEqual(await service.social.getFollowCounts(OTHER), {
     followersCount: 12,
@@ -114,7 +114,7 @@ test("getFollowCounts returns null unless the server returns a row", async () =>
   fake.rpc.get_follow_counts = () => ({ data: [] });
   assert.equal(await service.social.getFollowCounts(OTHER), null);
   fake.rpc.get_follow_counts = () => ({ error: { message: "x" } });
-  assert.equal(await service.social.getFollowCounts(OTHER), null);
+  await assert.rejects(service.social.getFollowCounts(OTHER));
 });
 
 test("getFollowStatus is 'none' when signed out and reads the caller's own row otherwise", async () => {

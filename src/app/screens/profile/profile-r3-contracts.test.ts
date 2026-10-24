@@ -11,7 +11,8 @@ const other = read("src/app/screens/profile/UserProfileContent.tsx");
 test("PROF-25: ReleaseProfile asks before signing out", () => {
   const source = read("src/app/screens/profile/ReleaseProfileScreen.tsx");
   assert.doesNotMatch(source, /onPress=\{signOut\}/);
-  assert.match(source, /Alert\.alert\("Sign out"[\s\S]*onPress: signOut/);
+  // A web-safe confirm (Alert.alert is a no-op on web): see confirmAction.test.ts.
+  assert.match(source, /confirmAction\(\{[\s\S]*title: "Sign out"[\s\S]*onConfirm: signOut/);
 });
 
 test("PROF-22: both avatars fit inside their 80pt ring with its 2pt border", () => {

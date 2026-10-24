@@ -3,6 +3,7 @@
 
 import assert from "node:assert/strict";
 import { createElement } from "react";
+import { Alert } from "react-native";
 import test, { afterEach, beforeEach } from "node:test";
 
 import { EditProfileScreen } from "@/app/screens/profile/EditProfileScreen";
@@ -148,7 +149,8 @@ test("own profile in production: no dead Badges tile or post loads, follower lis
   assert.equal(view.findByLabel("Show profile posts"), null, "no Posts tab with the feed archived");
   assert.equal(postReads, 0, "no post reads for an archived feed");
   assert.deepEqual(interactionLoads, [], "tried stalls load only for the Passport");
-  assert.ok(view.findByText("Taste Fingerprint") || !view.text().includes("Palate Fingerprint"));
+  assert.ok(view.findByText("Taste Fingerprint"), "the taste section is titled Taste Fingerprint");
+  assert.equal(view.text().includes("Palate Fingerprint"), false, "the old Palate name is gone");
 
   await view.press(view.findByLabel("Followers 3"));
   await view.press(view.findByLabel("Following 5"));
@@ -156,6 +158,44 @@ test("own profile in production: no dead Badges tile or post loads, follower lis
     navigation.calls.filter((call) => call.method === "navigate").map((call) => call.args[0]),
     ["Followers", "Following"],
   );
+});
+
+test("PROF-V1: a failed follower-count read shows the tiles as unavailable, not loading, and reports it", async () => {
+  const social = getHungryService().social;
+  stub(social, "getFollowCounts", async () => {
+    throw new Error("rate limited");
+  });
+  const reported: unknown[] = [];
+  const originalConsoleError = console.error;
+  const globals = globalThis as { __DEV__?: boolean };
+  const previousDev = globals.__DEV__;
+  // reportError logs to the console in development; that is what this test reads.
+  globals.__DEV__ = true;
+  console.error = (...args: unknown[]) => {
+    if (args[0] === "[reportError]") reported.push(args[2]);
+  };
+  try {
+    const navigation = createFakeNavigation();
+    const view = await renderScreen(ProfileHomeScreen as never, {
+      name: "ProfileHome",
+      navigation,
+    });
+    await view.settle();
+    assert.equal(view.findByLabel("Followers, loading"), null);
+    assert.ok(view.findByLabel("Followers, unavailable"));
+    assert.ok(view.findByLabel("Following, unavailable"));
+    // The lists load on their own, so the tiles still open them.
+    await view.press(view.findByLabel("Followers, unavailable"));
+    assert.equal(navigation.calls.at(-1)?.args[0], "Followers");
+    assert.ok(
+      reported.some(
+        (context) => (context as { action?: string })?.action === "load_follow_counts",
+      ),
+    );
+  } finally {
+    console.error = originalConsoleError;
+    globals.__DEV__ = previousDev;
+  }
 });
 
 test("own profile shows Badges only with the Passport", async () => {
@@ -323,10 +363,11 @@ function useServerReviews() {
 
 test("Review history keeps loaded pages after visiting a dish and coming back", async () => {
   const offsets: number[] = [];
+  const server = Array.from({ length: 60 }, (_, index) => review(index));
   stub(getHungryService().reviews, "getUserReviews", async (_id: string, page) => {
     offsets.push(page?.offset ?? 0);
     const start = page?.offset ?? 0;
-    return Array.from({ length: start === 0 ? 50 : 10 }, (_, index) => review(start + index));
+    return server.slice(start, start + (page?.limit ?? 50));
   });
   useServerReviews();
   const navigation = focusableNavigation();
@@ -342,8 +383,35 @@ test("Review history keeps loaded pages after visiting a dish and coming back", 
   await view.settle();
   navigation.setFocused(true);
   await view.settle();
-  assert.deepEqual(offsets, [0, 50, 0], "page 1 refreshed on return");
+  // Load more re-reads the last 5 rows (offset 45) so a shifted row is never skipped.
+  assert.deepEqual(offsets, [0, 45, 0], "page 1 refreshed on return");
   assert.ok(view.findByText("Notes 59"), "the second page is still there");
+});
+
+test("PROF-V3: a review deleted elsewhere does not make Load more skip the next one", async () => {
+  let server = Array.from({ length: 120 }, (_, index) => review(index));
+  stub(getHungryService().reviews, "getUserReviews", async (_id: string, page) => {
+    const start = page?.offset ?? 0;
+    return server.slice(start, start + (page?.limit ?? 50));
+  });
+  useServerReviews();
+  const navigation = focusableNavigation();
+  const view = await renderScreen(ReviewHistoryScreen as never, {
+    name: "ReviewHistory",
+    navigation,
+  });
+  await view.press(view.findByText("Load more"));
+  assert.ok(view.findByText("Notes 99"), "two pages loaded");
+
+  // Deleted on another device while this screen was in the background.
+  server = server.filter((item) => item.id !== "review-10");
+  navigation.setFocused(false);
+  await view.settle();
+  navigation.setFocused(true);
+  await view.settle();
+
+  await view.press(view.findByText("Load more"));
+  assert.ok(view.findByText("Notes 100"), "the review after the old page end is not skipped");
 });
 
 test("Review history shows the server count while more pages exist", async () => {
@@ -369,6 +437,35 @@ test("Review history: the review menu is outside the card's button, so a screen 
   const card = view.findByLabel(/^Review of /);
   assert.ok(card);
   assert.equal(card.contains(menu), false);
+});
+
+test("PROF-18a: saving an edit to your own review marks it Edited straight away", async () => {
+  const reviews = getHungryService().reviews;
+  const updates: Array<{ id: string; patch: unknown }> = [];
+  stub(reviews, "getUserReviews", async () => [review(1, { dishId: "dish-chicken-rice" })]);
+  stub(reviews, "updateReview", async (id: string, patch) => {
+    updates.push({ id, patch });
+  });
+  type AlertButton = { text?: string; onPress?: () => void };
+  const prompts: AlertButton[][] = [];
+  stub(Alert, "alert", ((_title: string, _message?: string, buttons?: AlertButton[]) => {
+    prompts.push(buttons ?? []);
+  }) as typeof Alert.alert);
+  useServerReviews();
+  const view = await renderScreen(ReviewHistoryScreen as never, { name: "ReviewHistory" });
+  assert.equal(view.text().includes("Edited"), false, "not edited yet");
+
+  await view.press(view.findByLabel("Manage your review"));
+  prompts.at(-1)?.find((button) => button.text === "Edit review")?.onPress?.();
+  await view.settle();
+  const textarea = document.body.querySelector("textarea") as HTMLTextAreaElement;
+  assert.ok(textarea, "the editor opened");
+  await view.type(textarea, "Better on a second visit");
+  await view.press(view.findByLabel("Save"));
+
+  assert.deepEqual(updates.map((update) => update.id), ["review-1"]);
+  assert.ok(view.findByText("Better on a second visit"), "the card shows the new text");
+  assert.ok(view.text().includes("Edited"), "the card says Edited without a reload");
 });
 
 test("Edit profile keeps a typed bio after a trip to the taste quiz", async () => {

@@ -152,11 +152,15 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
   const showToast = useUIStore((state) => state.showToast);
   // The posts feed is archived: no Posts tab and no post reads without it.
   const socialFeedEnabled = FEATURE_FLAGS.socialFeedEnabled;
-  /** Your approved follower/following counts; null until loaded or when unavailable. */
-  const [followCounts, setFollowCounts] = useState<{
-    followersCount: number;
-    followingCount: number;
-  } | null>(null);
+  /** Your approved follower/following counts; null until loaded, "unavailable" after a failed read. */
+  const [followCounts, setFollowCounts] = useState<
+    | {
+        followersCount: number;
+        followingCount: number;
+      }
+    | "unavailable"
+    | null
+  >(null);
   const shareSheetRef = useRef<BottomSheetModal>(null);
   const shareSnapPoints = useMemo(() => ["45%"], []);
   /** Incoming pending follow requests; null until loaded. */
@@ -456,10 +460,12 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
     void getHungryService()
       .social.getFollowCounts(profile.id)
       .then((counts) => {
-        if (isActive) setFollowCounts(counts);
+        // No row is not "loading" either: the tiles must never shimmer forever.
+        if (isActive) setFollowCounts(counts ?? "unavailable");
       })
       .catch((error) => {
         reportError(error, { screen: "ProfileHome", action: "load_follow_counts" });
+        if (isActive) setFollowCounts("unavailable");
       });
     return () => {
       isActive = false;
@@ -926,14 +932,26 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
           <View style={{ flexDirection: "row", gap: spacing[2] }} testID="profile-follow-counts">
             <StatBlock
               label="Followers"
-              value={followCounts ? followCounts.followersCount : null}
+              value={
+                followCounts === "unavailable"
+                  ? STAT_UNAVAILABLE
+                  : followCounts
+                    ? followCounts.followersCount
+                    : null
+              }
               icon={<Users size={14} color={palette.orange} />}
               onPressIn={() => preloadRoute(navigation, "Followers")}
               onPress={() => navigation.navigate("Followers")}
             />
             <StatBlock
               label="Following"
-              value={followCounts ? followCounts.followingCount : null}
+              value={
+                followCounts === "unavailable"
+                  ? STAT_UNAVAILABLE
+                  : followCounts
+                    ? followCounts.followingCount
+                    : null
+              }
               icon={<UserCheck size={14} color={palette.orange} />}
               onPressIn={() => preloadRoute(navigation, "Following")}
               onPress={() => navigation.navigate("Following")}
@@ -1719,6 +1737,9 @@ function TasteRadar({ vector }: { vector: TasteVector }) {
   );
 }
 
+/** A stat whose read failed: a dash on screen, "unavailable" to a screen reader. */
+const STAT_UNAVAILABLE = "–";
+
 function StatBlock({
   label,
   value,
@@ -1770,7 +1791,13 @@ function StatBlock({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={value === null ? `${label}, loading` : `${label} ${value}`}
+      accessibilityLabel={
+        value === null
+          ? `${label}, loading`
+          : value === STAT_UNAVAILABLE
+            ? `${label}, unavailable`
+            : `${label} ${value}`
+      }
       onPressIn={onPressIn}
       onPress={onPress}
       style={({ pressed }) => {

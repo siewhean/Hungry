@@ -5402,7 +5402,10 @@ export const supabaseService: HungryService = {
     async getFollowCounts(userId: string) {
       const client = requireSupabaseClient();
       const { data, error } = await client.rpc("get_follow_counts", { p_user_id: userId });
-      if (error || !Array.isArray(data) || data.length === 0) return null;
+      // A failed read (offline, rate cap) is an error for the caller to show and report;
+      // null means only that the server has no row.
+      if (error) throw error;
+      if (!Array.isArray(data) || data.length === 0) return null;
       const row = data[0] as Row;
       return {
         followersCount: asNumber(row.followers_count) ?? 0,
