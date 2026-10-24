@@ -191,7 +191,7 @@ export function PromotionListScreen() {
                 Create a promotion to attract more customers and boost your sales.
               </AppText>
               <Button
-                label="Create Promotion"
+                label="Create promotion"
                 variant="primary"
                 style={{ marginTop: spacing[4] }}
                 onPress={() => navigation.navigate("PromotionBuilder")}

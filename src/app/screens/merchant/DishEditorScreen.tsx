@@ -381,7 +381,7 @@ export function DishEditorScreen() {
         </View>
 
         <MerchantImageField
-          label="Dish Photo"
+          label="Dish photo"
           rationale="Hungry needs access to your photo library to add a photo of this dish."
           value={imageUrl}
           onChange={setImageUrl}
@@ -391,7 +391,7 @@ export function DishEditorScreen() {
 
         <View>
           <Input
-            label="Menu Section"
+            label="Menu section"
             value={section}
             onChangeText={setSection}
             maxLength={32}
@@ -449,7 +449,7 @@ export function DishEditorScreen() {
 
         <View>
           <AppText variant="bodyBold" style={{ marginBottom: spacing[2] }}>
-            Ingredient Indicators
+            Ingredient indicators
           </AppText>
           <AppText variant="bodySmall" tone="muted" style={{ marginBottom: spacing[3] }}>
             Choose customer-facing labels for dietary needs and ingredient exclusions. These are
@@ -484,14 +484,14 @@ export function DishEditorScreen() {
         />
 
         <FormSwitchRow
-          label="Featured Dish"
+          label="Featured dish"
           description="Highlight at top of menu"
           value={isFeatured}
           onValueChange={setIsFeatured}
         />
 
         <Button
-          label={isSaving ? "Saving..." : "Save Dish"}
+          label={isSaving ? "Saving..." : "Save dish"}
           variant="primary"
           fullWidth
           onPress={handleSave}

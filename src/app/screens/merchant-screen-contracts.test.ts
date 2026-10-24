@@ -310,7 +310,7 @@ test("Merchant screen contract: profile, menu, and analytics use production-read
   assert.match(menu, /hidden from diners until Hungry verifies your stall/);
   assert.doesNotMatch(menu, /console\.error\(e\);\s*\}\s*\};/);
   assert.match(analytics, /showsVerticalScrollIndicator=\{false\}/);
-  assert.match(analytics, /See More/);
+  assert.match(analytics, /See more/);
   assert.match(dashboard, /getMerchantProfileGaps/);
   // Unreplied and menu counts come from the dashboard summary RPC, not full menu/inbox loads.
   assert.match(dashboard, /merchant\.getDashboardSummary\(/);

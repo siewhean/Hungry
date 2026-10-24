@@ -461,7 +461,7 @@ export function PromotionBuilderScreen() {
 
         <View>
           <Input
-            label="Promotion Title *"
+            label="Promotion title *"
             value={title}
             onChangeText={setTitle}
             error={Boolean(fieldErrors.title)}
@@ -484,7 +484,7 @@ export function PromotionBuilderScreen() {
         </View>
 
         <View style={{ gap: spacing[3] }}>
-          <AppText variant="bodyBold">Promotion Item</AppText>
+          <AppText variant="bodyBold">Promotion item</AppText>
           <ChipGroup
             options={PROMOTION_ITEM_TYPE_OPTIONS}
             selectedId={promotionItemType}
@@ -538,7 +538,7 @@ export function PromotionBuilderScreen() {
           <View style={{ flexDirection: "row", gap: spacing[3] }}>
             <View style={{ flex: 1 }}>
               <Input
-                label="Original Price"
+                label="Original price"
                 keyboardType="decimal-pad"
                 value={originalPrice}
                 onChangeText={setOriginalPrice}
@@ -547,7 +547,7 @@ export function PromotionBuilderScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <Input
-                label="Final Price"
+                label="Final price"
                 keyboardType="decimal-pad"
                 value={promotionalPrice}
                 onChangeText={setPromotionalPrice}
@@ -600,7 +600,7 @@ export function PromotionBuilderScreen() {
         <View style={{ flexDirection: "row", gap: spacing[3] }}>
           <View style={{ flex: 1 }}>
             <PromotionDateField
-              label="Start Date"
+              label="Start date"
               value={startDate}
               onChange={(text) => {
                 setStartDate(text);
@@ -611,7 +611,7 @@ export function PromotionBuilderScreen() {
           </View>
           <View style={{ flex: 1 }}>
             <PromotionDateField
-              label="End Date"
+              label="End date"
               value={endDate}
               minimumDate={startDate}
               onChange={(text) => {

@@ -52,6 +52,11 @@ test("ratings read as stars and say so when there are no reviews (M11, L4)", () 
   assert.equal(formatAverageRating(4.26, 3), "4.3");
   assert.equal(formatReviewCountLabel(0, "today"), "No reviews yet");
   assert.equal(formatReviewCountLabel(1, "today"), "1 review today");
+  // MERCH-V4: the weekly summary sits next to an all-time unreplied count.
+  assert.equal(
+    formatReviewCountLabel(0, "in the last 7 days", { zeroLabel: "No reviews in the last 7 days" }),
+    "No reviews in the last 7 days",
+  );
   assert.equal(formatRatingChange(4.5, 4.3, 5, 4), "+0.2★");
   assert.equal(formatRatingChange(4, 4.5, 5, 4), "-0.5★");
   assert.equal(formatRatingChange(4, 4, 5, 4), "0.0★");

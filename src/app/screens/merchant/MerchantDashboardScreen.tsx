@@ -378,8 +378,16 @@ export function MerchantDashboardScreen() {
 
   const unrepliedCount = summary?.unrepliedReviews ?? 0;
   // Exposure only for merchants who actually see the card: focused, loaded, reviews waiting.
+  // Latched once reached, so a focus refetch or range change (which sets isLoading) never drops
+  // an inline merchant back to the control card mid-session.
+  const [replyEligible, setReplyEligible] = useState(false);
+  useEffect(() => {
+    if (!replyEligible && isFocused && !isLoading && summary !== null && unrepliedCount > 0) {
+      setReplyEligible(true);
+    }
+  }, [isFocused, isLoading, replyEligible, summary, unrepliedCount]);
   const replyVariant = useExperimentVariant("merchant_inline_reply_v1", {
-    enabled: isFocused && !isLoading && summary !== null && unrepliedCount > 0,
+    enabled: replyEligible,
   });
   const [inlineReview, setInlineReview] = useState<CustomerInteraction | null>(null);
   useEffect(() => {

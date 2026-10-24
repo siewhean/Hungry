@@ -62,7 +62,7 @@ export const OutletSwitcher: React.FC = () => {
       >
         <View style={{ gap: spacing[4], paddingBottom: spacing[6] }}>
           <View style={{ marginBottom: spacing[2] }}>
-            <AppText variant="h2">Switch Outlet</AppText>
+            <AppText variant="h2">Switch outlet</AppText>
             <AppText tone="secondary">Select a business location to manage</AppText>
           </View>
 

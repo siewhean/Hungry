@@ -291,7 +291,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "FeaturedVisitorsScreen",
     file: "src/app/screens/merchant/FeaturedVisitorsScreen.tsx",
     scenario: "merchant",
-    expect: /Featured Visitors/,
+    expect: /Featured visitors/,
   },
   {
     name: "HomeBasedVerificationScreen",
@@ -321,7 +321,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "MerchantProfileScreen",
     file: "src/app/screens/merchant/MerchantProfileScreen.tsx",
     scenario: "merchant",
-    expect: /Stall Profile/,
+    expect: /Stall profile/,
   },
   {
     name: "MerchantSettingsScreen",

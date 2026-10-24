@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { View, StyleSheet, Pressable, KeyboardAvoidingView, Modal, Platform } from "react-native";
 import { MessageSquare, Star, Send, MoreVertical, CheckCircle2, X } from "lucide-react-native";
-import { useFocusEffect, useRoute, type RouteProp } from "@react-navigation/native";
+import { useFocusEffect, useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import {
   AppText,
@@ -58,6 +59,7 @@ export function CustomerInboxScreen() {
   const activeOutletId = activeOutlet?.id;
   const { showAlert, dialog } = useMerchantDialog();
   const route = useRoute<RouteProp<MerchantTabParamList, "CustomerInbox">>();
+  const navigation = useNavigation<NativeStackNavigationProp<MerchantTabParamList>>();
   const requestedFilter = route.params?.filter;
   const replyToId = route.params?.replyToId;
 
@@ -74,10 +76,17 @@ export function CustomerInboxScreen() {
   // "All caught up" while older reviews still wait for a reply.
   const unrepliedOnly = filter === "unreplied";
 
-  // A Dashboard link can ask for a filter while the screen is already open.
+  // A Dashboard link can ask for a filter while the screen is already open. The tab stays
+  // mounted, so the param is cleared once applied: the same link tapped again (after the
+  // merchant picked another chip) changes the params and applies again.
   useEffect(() => {
-    if (requestedFilter) setFilter(requestedFilter);
-  }, [requestedFilter]);
+    if (!requestedFilter) return;
+    setFilter(requestedFilter);
+    navigation.setParams({ filter: undefined });
+  }, [navigation, requestedFilter]);
+  // Read by the focus event, so a chip change is not counted as another inbox view.
+  const filterRef = useRef(filter);
+  filterRef.current = filter;
 
   const fetchInteractions = useCallback(async () => {
     const loadId = latestLoadId.current + 1;
@@ -113,23 +122,27 @@ export function CustomerInboxScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      trackMerchantEvent("merchant_customer_inbox_viewed", activeOutletId, { filter });
-    }, [activeOutletId, filter]),
+      trackMerchantEvent("merchant_customer_inbox_viewed", activeOutletId, {
+        filter: filterRef.current,
+      });
+    }, [activeOutletId]),
   );
 
-  // Opened from a Dashboard review card: start the reply to that review once it has loaded.
-  const openedReplyFor = useRef<string | null>(null);
+  // Opened from a Dashboard review card: start the reply to that review once it has loaded,
+  // then clear the param so a later Reply on the same review opens the composer again.
   useEffect(() => {
-    if (!replyToId || openedReplyFor.current === replyToId) return;
+    if (!replyToId) return;
     const target = interactions.find((item) => item.id === replyToId);
     if (!target) return;
-    openedReplyFor.current = replyToId;
     setReplyingTo(target);
-  }, [interactions, replyToId]);
+    navigation.setParams({ replyToId: undefined });
+  }, [interactions, navigation, replyToId]);
 
   const loadMore = async () => {
     const oldest = interactions[interactions.length - 1];
     if (!activeOutletId || !oldest || isLoadingMore) return;
+    // A filter switch while this page loads starts a new load: drop this older page then.
+    const loadId = latestLoadId.current;
     setIsLoadingMore(true);
     try {
       const data = await getHungryService().merchant.getInbox(activeOutletId, {
@@ -139,12 +152,14 @@ export function CustomerInboxScreen() {
         before: oldest.createdAt,
         beforeId: oldest.id,
       });
+      if (loadId !== latestLoadId.current) return;
       setInteractions((current) => {
         const known = new Set(current.map((item) => item.id));
         return [...current, ...data.filter((item) => !known.has(item.id))];
       });
       setHasMore(data.length >= INBOX_PAGE_SIZE);
     } catch (e) {
+      if (loadId !== latestLoadId.current) return;
       reportError(e, { screen: "CustomerInbox", action: "load_more" });
       showAlert("Could not load more", e instanceof Error ? e.message : "Please try again.");
     } finally {
@@ -548,6 +563,7 @@ function ReplyComposer({
   // Editing starts from the current reply.
   const initialText = interaction.reply?.text ?? "";
   const [text, setText] = useState(initialText);
+  const nearReplyLimit = text.length >= MERCHANT_REPLY_MAX_LENGTH * 0.9;
   const [isSending, setIsSending] = useState(false);
   // Its own dialog: the composer is a Modal, and a dialog from the screen would sit behind it.
   const { showAlert, dialog } = useMerchantDialog();
@@ -638,15 +654,22 @@ function ReplyComposer({
             style={{ minHeight: 120, textAlignVertical: "top" }}
           />
 
-          <AppText
-            variant="micro"
-            tone="muted"
-            accessibilityLiveRegion="polite"
-            style={{ marginTop: spacing[2] }}
-          >
-            Your reply is public. Diners see it under this review. {text.length}/
-            {MERCHANT_REPLY_MAX_LENGTH}
-          </AppText>
+          <View style={{ flexDirection: "row", gap: spacing[2], marginTop: spacing[2] }}>
+            <AppText variant="micro" tone="muted" style={{ flex: 1 }}>
+              Your reply is public. Diners see it under this review.
+            </AppText>
+            {/* Only the counter is a live region, and only near the limit, so a screen reader
+                is not interrupted on every keystroke. */}
+            <AppText
+              variant="micro"
+              tone={nearReplyLimit ? "secondary" : "muted"}
+              testID="reply-character-count"
+              accessibilityLabel={`${MERCHANT_REPLY_MAX_LENGTH - text.length} characters left`}
+              accessibilityLiveRegion={nearReplyLimit ? "polite" : "none"}
+            >
+              {text.length}/{MERCHANT_REPLY_MAX_LENGTH}
+            </AppText>
+          </View>
 
           <Button
             label={isSending ? "Sending..." : interaction.reply ? "Save reply" : "Send reply"}

@@ -212,9 +212,16 @@ export function formatAverageRating(average: number, reviewCount: number): strin
   return reviewCount > 0 ? average.toFixed(1) : "–";
 }
 
-/** Subtext under the rating: "No reviews yet" or the count for the range. */
-export function formatReviewCountLabel(reviewCount: number, rangeLabel: string): string {
-  if (reviewCount <= 0) return "No reviews yet";
+/**
+ * Subtext under the rating: "No reviews yet" or the count for the range. Pass `zeroLabel` where
+ * the stall may have older reviews (a weekly summary next to an all-time unreplied count).
+ */
+export function formatReviewCountLabel(
+  reviewCount: number,
+  rangeLabel: string,
+  options: { zeroLabel?: string } = {},
+): string {
+  if (reviewCount <= 0) return options.zeroLabel ?? "No reviews yet";
   return `${reviewCount} ${reviewCount === 1 ? "review" : "reviews"} ${rangeLabel}`;
 }
 

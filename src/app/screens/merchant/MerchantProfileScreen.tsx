@@ -115,7 +115,7 @@ export function MerchantProfileScreen() {
 
   if (!activeOutlet) {
     return (
-      <Screen title="Stall Profile" subtitle="Manage your stall information">
+      <Screen title="Stall profile" subtitle="Manage your stall information">
         <EmptyState
           title="No merchant outlet yet"
           body="No merchant outlet is linked to this account yet."
@@ -129,7 +129,7 @@ export function MerchantProfileScreen() {
   }
 
   return (
-    <Screen title="Stall Profile" subtitle="Manage your stall information">
+    <Screen title="Stall profile" subtitle="Manage your stall information">
       <View style={{ paddingBottom: spacing[12], width: "100%" }}>
         {/* Stall Identity */}
         <View style={{ alignItems: "center", marginVertical: spacing[6] }}>
@@ -145,7 +145,7 @@ export function MerchantProfileScreen() {
           </View>
         </View>
 
-        <Section title="Basic Info">
+        <Section title="Basic info">
           <ProfileItem
             icon={MapPin}
             label="Location"
@@ -154,7 +154,7 @@ export function MerchantProfileScreen() {
           />
           <ProfileItem
             icon={Clock}
-            label="Operating Hours"
+            label="Operating hours"
             value={activeOutlet.operatingHours || "Hours not set"}
             onPress={() => navigation.navigate("BusinessProfileEditor" as any)}
           />
@@ -220,13 +220,13 @@ export function MerchantProfileScreen() {
             }}
           />
           <Button
-            label="Sign Out"
+            label="Sign out"
             variant="destructive"
             onPress={() =>
               showAlert("Sign out?", "You will need to sign in again to use Hungry.", [
                 { text: "Cancel", style: "cancel" },
                 {
-                  text: "Sign Out",
+                  text: "Sign out",
                   style: "destructive",
                   onPress: () => {
                     signOut();
