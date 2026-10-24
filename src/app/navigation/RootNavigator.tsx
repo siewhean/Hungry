@@ -485,7 +485,13 @@ function OfflineBanner() {
   );
 }
 
-function ReviewSuccessModalHost({ onOpenHistory }: { onOpenHistory: () => void }) {
+function ReviewSuccessModalHost({
+  onOpenHistory,
+  onOpenReview,
+}: {
+  onOpenHistory: () => void;
+  onOpenReview: (reviewId: string) => void;
+}) {
   const payload = useUIStore((state) => state.reviewSuccess);
   if (!payload) {
     return null;
@@ -493,7 +499,7 @@ function ReviewSuccessModalHost({ onOpenHistory }: { onOpenHistory: () => void }
 
   const { ReviewSuccessModal } =
     require("@/app/screens/review/ReviewSuccessModal") as typeof import("@/app/screens/review/ReviewSuccessModal");
-  return <ReviewSuccessModal onOpenHistory={onOpenHistory} />;
+  return <ReviewSuccessModal onOpenHistory={onOpenHistory} onOpenReview={onOpenReview} />;
 }
 
 function CredEarnedToastHost() {
@@ -902,7 +908,10 @@ export function RootNavigator({ theme }: { theme: Theme }) {
       <GlobalScrollBackButton />
       <OfflineBanner />
       {FEATURE_FLAGS.reviewCreationEnabled ? (
-        <ReviewSuccessModalHost onOpenHistory={() => navigationRef.navigate("ReviewHistory")} />
+        <ReviewSuccessModalHost
+          onOpenHistory={() => navigationRef.navigate("ReviewHistory")}
+          onOpenReview={(reviewId) => navigationRef.navigate("ReviewDetail", { reviewId })}
+        />
       ) : null}
       <FloatingToast />
       <CredEarnedToastHost />

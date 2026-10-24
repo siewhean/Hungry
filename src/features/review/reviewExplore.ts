@@ -61,6 +61,51 @@ export function buildReviewExploreChips(
   return chips;
 }
 
+/**
+ * The chip a diner picked, kept in the rail even when its food or area dropped out of the top
+ * values after a reload, so the filter never jumps to another chip on its own.
+ */
+export function withSelectedReviewChip(
+  chips: readonly ReviewExploreChip[],
+  selectedId: string,
+): ReviewExploreChip[] {
+  if (chips.some((chip) => chip.id === selectedId)) return [...chips];
+  const [kind, ...rest] = selectedId.split(":");
+  const value = rest.join(":");
+  if ((kind === "food" || kind === "area") && value) {
+    return [...chips, { id: selectedId, kind, label: value, value }];
+  }
+  return [...chips];
+}
+
+/** The chip in force: the picked one when it is in the rail, otherwise "All" (never "taste"). */
+export function resolveActiveReviewChip(
+  chips: readonly ReviewExploreChip[],
+  selectedId: string,
+): ReviewExploreChip | undefined {
+  return (
+    chips.find((chip) => chip.id === selectedId) ??
+    chips.find((chip) => chip.kind === "all") ??
+    chips[0]
+  );
+}
+
+/**
+ * The reviews the grid may show: not hidden for this session (reported, blocked), and not the
+ * viewer's own review that moderation hid or removed (others cannot see it, so the public grid
+ * must not suggest they can).
+ */
+export function visibleGridReviews(
+  items: readonly ReviewFeedItem[],
+  options: { viewerId?: string; isHidden: (item: ReviewFeedItem) => boolean },
+): ReviewFeedItem[] {
+  return items.filter((item) => {
+    if (options.isHidden(item)) return false;
+    const own = Boolean(options.viewerId && item.review.authorId === options.viewerId);
+    return !(own && item.review.moderationState);
+  });
+}
+
 export function filterReviewExplore(
   items: readonly ReviewFeedItem[],
   chip: ReviewExploreChip | undefined,

@@ -16,6 +16,8 @@ interface MediaPickerProps {
   onRemovePhoto: (uri: string) => void;
   /** Omit to hide the reel slot. */
   onSetVideo?: (uri?: string) => void;
+  /** Section heading; defaults to "Photos" (or "Photos & Reels"). */
+  title?: string;
 }
 
 export function MediaPicker({
@@ -25,6 +27,7 @@ export function MediaPicker({
   onAddPhoto,
   onRemovePhoto,
   onSetVideo,
+  title,
 }: MediaPickerProps) {
   const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const showToast = useUIStore((state) => state.showToast);
@@ -82,7 +85,7 @@ export function MediaPicker({
   return (
     <View style={{ gap: spacing[4] }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-        <AppText variant="h3">{onSetVideo ? "Photos & Reels" : "Photos"}</AppText>
+        <AppText variant="h3">{title ?? (onSetVideo ? "Photos & Reels" : "Photos")}</AppText>
         <AppText variant="micro" tone="muted">
           {photos.length}/{maxPhotos} photos
         </AppText>

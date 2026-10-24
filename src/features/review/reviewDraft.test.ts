@@ -3,9 +3,11 @@ import assert from "node:assert/strict";
 
 import { REVIEW_TEXT_MAX_LENGTH, sanitizeFreeText } from "@/lib/security/inputSanitization";
 import { REVIEW_MAX_PHOTOS, useReviewDraftStore } from "@/store/useReviewDraftStore";
+import { REVIEW_EDITOR_TAGS, REVIEW_MAX_TAGS } from "@/constants/taste";
 import {
   createClientReviewId,
   createInitialReviewDraft,
+  firstMissingReviewField,
   reviewDraftHasContent,
 } from "./reviewDraft";
 
@@ -136,4 +138,45 @@ test("review photos are capped and a duplicate pick is ignored", () => {
   store.getState().removePhoto("file:///a.jpg");
   assert.equal(store.getState().draft.photos.length, REVIEW_MAX_PHOTOS - 1);
   store.getState().resetDraft();
+});
+
+test("taste tags stop at REVIEW_MAX_TAGS, and a picked tag can still be removed (REV-13)", () => {
+  const store = useReviewDraftStore;
+  store.getState().resetDraft();
+  for (const tag of REVIEW_EDITOR_TAGS) store.getState().toggleTag(tag);
+  assert.equal(REVIEW_EDITOR_TAGS.length > REVIEW_MAX_TAGS, true);
+  assert.equal(store.getState().draft.selectedTags.length, REVIEW_MAX_TAGS);
+  const first = store.getState().draft.selectedTags[0]!;
+  store.getState().toggleTag(first);
+  assert.equal(store.getState().draft.selectedTags.length, REVIEW_MAX_TAGS - 1);
+  store.getState().resetDraft();
+});
+
+test("'How did it taste?' answers are saved with the draft, per dish (REV-X2)", () => {
+  const store = useReviewDraftStore;
+  store.getState().resetDraft();
+  store.getState().selectDish("venue-a", "dish-a");
+  store.getState().setFeltTaste("dish-a", "spicy", 7.5);
+  store.getState().setFeltTaste("dish-a", "sweet", 2.5);
+  store.getState().setFeltTaste("dish-a", "sweet", undefined);
+  assert.deepEqual(store.getState().feltTaste, { dishId: "dish-a", values: { spicy: 7.5 } });
+  // The persisted slice carries them, so a resumed draft keeps them.
+  const persisted = store.persist.getOptions().partialize?.(store.getState()) as {
+    feltTaste?: unknown;
+  };
+  assert.deepEqual(persisted.feltTaste, { dishId: "dish-a", values: { spicy: 7.5 } });
+
+  store.getState().selectDish("venue-a", "dish-b");
+  assert.deepEqual(store.getState().feltTaste.values, {}, "another dish starts blank");
+  store.getState().setFeltTaste("dish-b", "salty", 5);
+  store.getState().resetDraft();
+  assert.deepEqual(store.getState().feltTaste.values, {});
+});
+
+test("the first missing field follows the editor order: dish, photo, rating (REV-7)", () => {
+  const draft = { rating: 0, photos: [] as string[] };
+  assert.equal(firstMissingReviewField(draft, false)?.field, "dish");
+  assert.equal(firstMissingReviewField(draft, true)?.field, "photo");
+  assert.equal(firstMissingReviewField({ rating: 0, photos: ["a"] }, true)?.field, "rating");
+  assert.equal(firstMissingReviewField({ rating: 4, photos: ["a"] }, true), null);
 });

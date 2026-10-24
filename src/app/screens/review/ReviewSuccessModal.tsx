@@ -7,14 +7,18 @@ import { AppText, Badge, Button, Card } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { webShareUrl } from "@/constants/links";
 import { shareLink } from "@/features/share/messagingShare";
+import { reportError } from "@/lib/monitoring/reportError";
+import { getServiceProvider } from "@/lib/services/serviceProvider";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 
 interface ReviewSuccessModalProps {
   onOpenHistory: () => void;
+  /** Opens the posted review on its own page (live data only; mock reviews live on the dish). */
+  onOpenReview?: (reviewId: string) => void;
 }
 
-export function ReviewSuccessModal({ onOpenHistory }: ReviewSuccessModalProps) {
+export function ReviewSuccessModal({ onOpenHistory, onOpenReview }: ReviewSuccessModalProps) {
   const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const payload = useUIStore((state) => state.reviewSuccess);
   const hideReviewSuccess = useUIStore((state) => state.hideReviewSuccess);
@@ -108,7 +112,7 @@ export function ReviewSuccessModal({ onOpenHistory }: ReviewSuccessModalProps) {
               onPress={() => {
                 const reviewId = payload.reviewId;
                 if (!reviewId) return;
-                void shareLink(
+                shareLink(
                   {
                     kind: "review",
                     id: reviewId,
@@ -116,7 +120,20 @@ export function ReviewSuccessModal({ onOpenHistory }: ReviewSuccessModalProps) {
                     url: webShareUrl("review", reviewId),
                   },
                   "system_share",
+                ).catch((error: unknown) =>
+                  reportError(error, { screen: "ReviewSuccessModal", action: "share_review" }),
                 );
+              }}
+            />
+          ) : null}
+          {payload?.reviewId && onOpenReview && getServiceProvider().mode !== "mock" ? (
+            <Button
+              label="View your review"
+              variant="secondary"
+              onPress={() => {
+                const reviewId = payload.reviewId;
+                hideReviewSuccess();
+                if (reviewId) onOpenReview(reviewId);
               }}
             />
           ) : null}

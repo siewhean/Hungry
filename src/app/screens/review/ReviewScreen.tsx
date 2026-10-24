@@ -1,5 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Alert, FlatList, Modal, Pressable, View } from "react-native";
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import {
+  Alert,
+  FlatList,
+  Modal,
+  Pressable,
+  View,
+  type LayoutChangeEvent,
+  type ScrollView,
+} from "react-native";
 import type {
   NativeStackNavigationProp,
   NativeStackScreenProps,
@@ -22,14 +30,15 @@ import {
 } from "@/components/ui";
 import { MediaPicker, StarRating, TasteRatingInput } from "@/components/review";
 import { TRENDING_MUSIC } from "@/features/review/musicData";
-import { REVIEW_EDITOR_TAGS, TASTE_DIMENSIONS } from "@/constants/taste";
+import { REVIEW_EDITOR_TAGS, REVIEW_MAX_TAGS, TASTE_DIMENSIONS } from "@/constants/taste";
 import { perceivedTasteLevel, standardTasteRating } from "@/features/detail/perceivedTaste";
 import { reportError } from "@/lib/monitoring/reportError";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { useReviewDraftHydrated, useReviewDraftStore } from "@/store/useReviewDraftStore";
 import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
-import { describePublishError } from "@/features/review/publishErrorCopy";
+import { describePublishError, isExpectedPublishError } from "@/features/review/publishErrorCopy";
+import { normalizeReviewTags } from "@/features/review/reviewEdit";
 import {
   buildDishPickerRows,
   formatPickerDistance,
@@ -43,7 +52,9 @@ import { trackAnalyticsEvent } from "@/lib/analytics";
 import { REVIEW_TEXT_MAX_LENGTH, sanitizeFreeText } from "@/lib/security/inputSanitization";
 import {
   REVIEW_PHOTOS_NOT_ATTACHED,
+  firstMissingReviewField,
   resolveWouldRecommend,
+  type ReviewRequiredField,
   reviewDraftHasContent,
 } from "@/features/review/reviewDraft";
 import type { ReviewStackParamList, RootStackParamList } from "@/app/navigation/navigationTypes";
@@ -89,6 +100,8 @@ export function ReviewScreen({ navigation, route }: Props) {
   const [isSearching, setIsSearching] = useState(false);
   const [pickerVenueId, setPickerVenueId] = useState<string | null>(null);
   const [remoteDish, setRemoteDish] = useState<DishDetail | undefined>(undefined);
+  const scrollRef = useRef<ScrollView>(null) as RefObject<ScrollView>;
+  const sectionYRef = useRef<Partial<Record<ReviewRequiredField, number>>>({});
 
   // Derived data
   const routeDishId = route.params?.dishId || undefined;
@@ -102,12 +115,14 @@ export function ReviewScreen({ navigation, route }: Props) {
     );
   }, [repository, selectedDishId, remoteDish]);
   // Optional "How did it taste?": what the reviewer felt, per taste, on the 0-10 scale.
-  // Kept per dish, so picking another dish starts blank.
-  const [feltTasteState, setFeltTasteState] = useState<{
-    dishId?: string;
-    values: Partial<Record<TasteKey, number>>;
-  }>({ values: {} });
-  const feltTaste = feltTasteState.dishId === selectedDishId ? feltTasteState.values : {};
+  // Saved with the draft and kept per dish, so picking another dish starts blank.
+  const feltTasteState = useReviewDraftStore((state) => state.feltTaste);
+  const setFeltTaste = useReviewDraftStore((state) => state.setFeltTaste);
+  const clearFeltTaste = useReviewDraftStore((state) => state.clearFeltTaste);
+  const feltTaste = useMemo<Partial<Record<TasteKey, number>>>(
+    () => (feltTasteState.dishId === selectedDishId ? feltTasteState.values : {}),
+    [feltTasteState, selectedDishId],
+  );
   const userTasteVector = useProfileStore((state) => state.profile.tasteVector);
   // Our guess: the dish's standard level as this reviewer is likely to feel it.
   const tasteSuggestions = useMemo(() => {
@@ -238,7 +253,9 @@ export function ReviewScreen({ navigation, route }: Props) {
       .then((dish) => {
         if (active && dish) setRemoteDish(dish);
       })
-      .catch(() => undefined);
+      .catch((error: unknown) =>
+        reportError(error, { screen: "ReviewScreen", action: "load_selected_dish" }),
+      );
     return () => {
       active = false;
     };
@@ -310,6 +327,8 @@ export function ReviewScreen({ navigation, route }: Props) {
     const reviewScore = FEATURE_FLAGS.gamificationEnabled
       ? 25 + draft.selectedTags.length * 5 + draft.photos.length * 10 + (hasVideo ? 20 : 0)
       : 0;
+    // What the server keeps (allowed list, at most REVIEW_MAX_TAGS), so the device matches it.
+    const reviewTags = normalizeReviewTags(draft.selectedTags);
     // Fixed before the submit so the success modal can offer to share this exact review.
     const reviewId = ensurePendingReviewId();
     const successPayload = {
@@ -319,7 +338,7 @@ export function ReviewScreen({ navigation, route }: Props) {
       venueName: selectedVenue?.name ?? selectedDish.venueName ?? "",
       pointsEarned: reviewScore,
       xpEarned: reviewScore,
-      tagCount: draft.selectedTags.length,
+      tagCount: reviewTags.length,
       rating: draft.rating,
     };
 
@@ -331,7 +350,7 @@ export function ReviewScreen({ navigation, route }: Props) {
         venueId: selectedDish.venueId,
         rating: draft.rating,
         text: reviewText,
-        tags: draft.selectedTags,
+        tags: reviewTags,
         photos: draft.photos,
         wouldRecommend: resolveWouldRecommend(draft.recommend, draft.rating),
         // Reused on retry so a failed photo step never creates a second review.
@@ -349,7 +368,7 @@ export function ReviewScreen({ navigation, route }: Props) {
           .catch((error: unknown) =>
             reportError(error, { screen: "ReviewScreen", action: "adjust_taste_vector" }),
           );
-        setFeltTasteState({ values: {} });
+        clearFeltTaste();
       }
 
       useProfileStore.getState().addReviewedDish(selectedDish.id);
@@ -357,7 +376,7 @@ export function ReviewScreen({ navigation, route }: Props) {
       useProfileStore.getState().recordReviewEntry(selectedDish.id, {
         rating: draft.rating,
         text: reviewText,
-        tags: draft.selectedTags,
+        tags: reviewTags,
       });
 
       trackAnalyticsEvent("review_submitted", {
@@ -386,6 +405,11 @@ export function ReviewScreen({ navigation, route }: Props) {
         media_count: draft.photos.length,
         reason: photosOnly ? "photos_not_attached" : "submit_failed",
       });
+      // Refusals written for the person (text filter, own stall, rate limit) are expected;
+      // every other failure of the app's main write reaches error tracking.
+      if (!isExpectedPublishError(error)) {
+        reportError(error, { screen: "ReviewScreen", action: "submit_review", photosOnly });
+      }
       useUIStore.getState().showToast({
         message: photosOnly
           ? "Your review is posted, but the photos didn't upload. Tap Publish again to add them."
@@ -395,6 +419,18 @@ export function ReviewScreen({ navigation, route }: Props) {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  // Where each required section sits, so the "Add a photo…" line can scroll to it.
+  const rememberSectionY = (field: ReviewRequiredField) => (event: LayoutChangeEvent) => {
+    sectionYRef.current[field] = event.nativeEvent.layout.y;
+  };
+  const scrollToSection = (field: ReviewRequiredField) => {
+    if (field === "dish" && !selectedDish) {
+      openPicker();
+      return;
+    }
+    scrollRef.current?.scrollTo({ y: Math.max(0, (sectionYRef.current[field] ?? 0) - 16) });
   };
 
   if (!isAuthenticated) return null;
@@ -411,23 +447,24 @@ export function ReviewScreen({ navigation, route }: Props) {
     );
   }
 
-  const publishBlockedReason = !selectedDish
-    ? "Choose a dish to review."
-    : !draft.rating
-      ? "Add a star rating to publish."
-      : draft.photos.length === 0
-        ? "Add a photo of the dish to publish."
-        : null;
+  const missingField = firstMissingReviewField(draft, Boolean(selectedDish));
+  const publishBlockedReason = missingField?.message ?? null;
 
   return (
-    <Screen keyboardAvoiding title="Write a review" subtitle="Share what you ate" scroll>
+    <Screen
+      keyboardAvoiding
+      title="Write a review"
+      subtitle="Share what you ate"
+      scroll
+      scrollRef={scrollRef}
+    >
       <FeedErrorBoundary
         title="Review editor failed"
         body="We hit a snag loading the editor. Please try again."
       >
         <View style={{ gap: spacing[6], paddingBottom: spacing[20] }}>
           {/* 1. Dish */}
-          <View style={{ gap: spacing[3] }}>
+          <View style={{ gap: spacing[3] }} onLayout={rememberSectionY("dish")}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
               <MapPin size={18} color={palette.orange} />
               <AppText variant="h3">What did you eat?</AppText>
@@ -466,8 +503,20 @@ export function ReviewScreen({ navigation, route }: Props) {
             )}
           </View>
 
-          {/* 2. Rating */}
-          <View style={{ gap: spacing[2] }}>
+          {/* 2. Photo: required (sh, STITCH-BUILD-03), so it comes right after the dish. */}
+          <View onLayout={rememberSectionY("photo")}>
+            <MediaPicker
+              title="Photo (required)"
+              photos={draft.photos}
+              videoUri={reviewVideoEnabled ? draft.videoUri : undefined}
+              onAddPhoto={addPhoto}
+              onRemovePhoto={removePhoto}
+              onSetVideo={reviewVideoEnabled ? setVideoUri : undefined}
+            />
+          </View>
+
+          {/* 3. Rating */}
+          <View style={{ gap: spacing[2] }} onLayout={rememberSectionY("rating")}>
             <AppText variant="h3">Overall rating</AppText>
             <StarRating
               value={draft.rating}
@@ -478,7 +527,7 @@ export function ReviewScreen({ navigation, route }: Props) {
             />
           </View>
 
-          {/* 3. Review text */}
+          {/* 4. Review text */}
           <View style={{ gap: spacing[3] }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
               <AppText variant="h3">Your review</AppText>
@@ -497,15 +546,6 @@ export function ReviewScreen({ navigation, route }: Props) {
               style={{ minHeight: 100 }}
             />
           </View>
-
-          {/* 4. Photos */}
-          <MediaPicker
-            photos={draft.photos}
-            videoUri={reviewVideoEnabled ? draft.videoUri : undefined}
-            onAddPhoto={addPhoto}
-            onRemovePhoto={removePhoto}
-            onSetVideo={reviewVideoEnabled ? setVideoUri : undefined}
-          />
 
           {/* Music Picker (Navigation Button) */}
           {reviewMusicEnabled ? (
@@ -560,7 +600,12 @@ export function ReviewScreen({ navigation, route }: Props) {
 
           {/* Every reviewer can tag taste; the tags feed dish taste profiles. */}
           <View style={{ gap: spacing[3] }}>
-            <AppText variant="h3">Taste tags</AppText>
+            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+              <AppText variant="h3">Taste tags</AppText>
+              <AppText variant="micro" tone="muted">
+                Up to {REVIEW_MAX_TAGS} · {draft.selectedTags.length}/{REVIEW_MAX_TAGS}
+              </AppText>
+            </View>
             <ChipGroup
               options={REVIEW_EDITOR_TAGS.map((tag) => ({ id: tag, label: tag }))}
               selectedIds={draft.selectedTags}
@@ -581,10 +626,7 @@ export function ReviewScreen({ navigation, route }: Props) {
                 values={feltTaste}
                 suggestions={tasteSuggestions}
                 onChange={(key, value) => {
-                  const next = { ...feltTaste };
-                  if (value === undefined) delete next[key];
-                  else next[key] = value;
-                  setFeltTasteState({ dishId: selectedDishId, values: next });
+                  if (selectedDishId) setFeltTaste(selectedDishId, key, value);
                 }}
               />
             </View>
@@ -618,15 +660,22 @@ export function ReviewScreen({ navigation, route }: Props) {
               loading={isSubmitting}
               disabled={Boolean(publishBlockedReason)}
             />
-            {publishBlockedReason ? (
-              <AppText
-                variant="bodySmall"
-                tone="secondary"
-                accessibilityLiveRegion="polite"
-                style={{ textAlign: "center" }}
+            {missingField ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityHint="Scrolls to the missing field"
+                onPress={() => scrollToSection(missingField.field)}
+                style={{ alignItems: "center", justifyContent: "center", minHeight: 44 }}
               >
-                {publishBlockedReason}
-              </AppText>
+                <AppText
+                  variant="bodySmall"
+                  tone="secondary"
+                  accessibilityLiveRegion="polite"
+                  style={{ textAlign: "center", textDecorationLine: "underline" }}
+                >
+                  {missingField.message}
+                </AppText>
+              </Pressable>
             ) : null}
           </View>
         </View>

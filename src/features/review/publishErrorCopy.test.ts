@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { describePublishError } from "./publishErrorCopy";
+import {
+  describePublishError,
+  describeReviewEditError,
+  isExpectedPublishError,
+} from "./publishErrorCopy";
 
 test("an upload failure never shows the raw error text and says the draft is kept", () => {
   const message = describePublishError(new Error("Signed upload URL creation failed."), "review");
@@ -50,4 +54,34 @@ test("server text the user can act on (text filter) is passed through", () => {
     describePublishError(filtered, "review"),
     "Reviews can include at most one link or phone number.",
   );
+});
+
+test("a rate-limited publish says to slow down, not 'something went wrong' (REV-18)", () => {
+  const limited = { code: "rate_limited", message: "Too many requests" };
+  assert.match(describePublishError(limited, "review"), /posting quickly/);
+  assert.match(describePublishError({ status: 429, message: "" }, "review"), /posting quickly/);
+  assert.match(describePublishError(limited, "review"), /draft is saved/i);
+});
+
+test("expected publish refusals are not faults; unknown ones are (REV-X1)", () => {
+  assert.equal(isExpectedPublishError({ code: "rate_limited", message: "Too many requests" }), true);
+  assert.equal(isExpectedPublishError({ code: "23514", message: "Please keep it kind." }), true);
+  assert.equal(
+    isExpectedPublishError({ code: "42501", message: "You cannot review a stall you manage." }),
+    true,
+  );
+  assert.equal(isExpectedPublishError(new Error("new row violates row-level security")), false);
+  assert.equal(isExpectedPublishError(new TypeError("Network request failed")), false);
+});
+
+test("edit and delete failures never show raw error text (REV-12)", () => {
+  const raw = new Error('duplicate key value violates unique constraint "reviews_pkey"');
+  assert.equal(describeReviewEditError(raw, "save"), "Couldn't save your review. Try again.");
+  assert.equal(describeReviewEditError(raw, "delete"), "Couldn't delete your review. Try again.");
+  assert.equal(
+    describeReviewEditError({ code: "23514", message: "Please keep it kind" }, "save"),
+    "Please keep it kind.",
+  );
+  assert.match(describeReviewEditError(new TypeError("Network request failed"), "save"), /offline/);
+  assert.match(describeReviewEditError({ code: "rate_limited", message: "" }, "save"), /quickly/);
 });
