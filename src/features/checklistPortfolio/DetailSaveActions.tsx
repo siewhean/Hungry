@@ -201,7 +201,7 @@ export function useDetailSaveActions({ navigation, target, surface }: UseDetailS
           option,
           selected: Boolean(
             option.portfolio &&
-              findPortfolioTargetItem(portfolioItems, option.portfolio.id, target),
+            findPortfolioTargetItem(portfolioItems, option.portfolio.id, target),
           ),
         }),
       );

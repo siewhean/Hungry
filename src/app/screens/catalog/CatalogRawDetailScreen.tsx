@@ -276,7 +276,11 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
         setMenu(null);
       }
     } catch (loadError) {
-      reportError(loadError, { screen: "CatalogRawDetail", action: "load", kind: route.params.kind });
+      reportError(loadError, {
+        screen: "CatalogRawDetail",
+        action: "load",
+        kind: route.params.kind,
+      });
       // Raw service errors are not user copy.
       setError("load_failed");
       recordCatalogDiagnostic({

@@ -214,7 +214,7 @@ test("Avatar and Card avoid duplicate or unsupported announcements", () => {
   assert.match(avatar, /decorative/);
   assert.match(accessibleImage, /accessibilityElementsHidden/);
   assert.doesNotMatch(card, /accessibilityRole="article"/);
-  assert.match(chip, /accessibilityRole="button"/);
+  assert.match(chip, /accessibilityRole = "button"/);
   assert.match(chip, /accessibilityLabel=\{accessibilityLabel \?\? label\}/);
   assert.match(chip, /accessibilityState=\{\{ selected \}\}/);
 });

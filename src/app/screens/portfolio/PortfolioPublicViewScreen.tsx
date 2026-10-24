@@ -16,6 +16,7 @@ import { usePortfolioStore } from "@/store/usePortfolioStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
 import type { PublicPortfolio } from "@/types/domain";
+import { reportError } from "@/lib/monitoring/reportError";
 
 type Props = NativeStackScreenProps<RootStackParamList, "PortfolioPublicView">;
 
@@ -54,7 +55,8 @@ export function PortfolioPublicViewScreen({ navigation, route }: Props) {
         setPortfolio(next);
         setLoadState(next ? "ready" : "missing");
       })
-      .catch(() => {
+      .catch((error: unknown) => {
+        reportError(error, { screen: "PortfolioPublicView", action: "load" });
         if (mounted) setLoadState("error");
       });
     return () => {
@@ -187,6 +189,16 @@ export function PortfolioPublicViewScreen({ navigation, route }: Props) {
               key={`${item.dishId ?? item.stallId}-${index}`}
               accessibilityRole="button"
               accessibilityLabel={`Open ${item.name}`}
+              // The nested "Get directions" link is swallowed by this row for screen readers,
+              // so it is offered as an action on the row too.
+              accessibilityActions={
+                item.mapQuery ? [{ name: "directions", label: "Get directions" }] : undefined
+              }
+              onAccessibilityAction={(event) => {
+                if (event.nativeEvent.actionName === "directions" && item.mapQuery) {
+                  void openTrustedMapsUrl(buildMapsSearchUrl(item.mapQuery));
+                }
+              }}
               onPress={() => {
                 if (item.dishId) navigation.navigate("DishDetail", { dishId: item.dishId });
                 else if (item.stallId)
@@ -210,7 +222,8 @@ export function PortfolioPublicViewScreen({ navigation, route }: Props) {
                 )}
                 <View style={{ flex: 1, gap: 2 }}>
                   <AppText variant="bodyBold" numberOfLines={1}>
-                    #{index + 1} {item.name}
+                    {portfolio.type === "ranking" ? `#${index + 1} ` : ""}
+                    {item.name}
                     {item.score !== undefined ? ` · ${item.score}/10` : ""}
                   </AppText>
                   {item.itemType === "dish" ? (

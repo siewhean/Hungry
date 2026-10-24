@@ -1431,7 +1431,9 @@ export interface HungryService {
     ): Promise<PortfolioItem>;
     getPortfolioItems(portfolioId: string): Promise<PortfolioItem[]>;
     /** Items of several lists in one read, keyed by list id. */
-    getPortfolioItemsForPortfolios(portfolioIds: string[]): Promise<Record<string, PortfolioItem[]>>;
+    getPortfolioItemsForPortfolios(
+      portfolioIds: string[],
+    ): Promise<Record<string, PortfolioItem[]>>;
     /** Names, photos and prices for every item of a list in one call. */
     getPortfolioItemDetails(portfolioId: string): Promise<PortfolioItemDetailRow[]>;
     updatePortfolioItem(
