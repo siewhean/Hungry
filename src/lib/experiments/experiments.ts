@@ -50,6 +50,27 @@ export const EXPERIMENTS = {
     primaryMetric: "welcome_back_opened",
     guardrailMetrics: ["welcome_back_dismissed", "dish_viewed"],
   },
+  /**
+   * What follows a Tried mark on the dish page: the rate-it popup (control) or no popup and
+   * the bar's call to action reading "Rate it" (toast_cta). Read in TriedFollowUp, which mounts
+   * only after a Tried mark succeeds for a signed-in diner who has not reviewed the dish.
+   * Analyse as a funnel from dish_marked_tried to review_submitted on the same dish_id in 24 h.
+   */
+  dish_tried_prompt_v1: {
+    variants: ["control", "toast_cta"],
+    fallback: "control",
+    status: "running",
+    surface: "dish",
+    hypothesis:
+      "A popup straight after Tried interrupts diners and teaches them to dismiss it; a quieter Rate it button converts more Tried marks into published reviews.",
+    primaryMetric: "review_submitted",
+    guardrailMetrics: [
+      "review_abandoned",
+      "review_started",
+      "dish_unfavourited",
+      "review_cta_tapped",
+    ],
+  },
 } as const satisfies Record<string, ExperimentDefinition>;
 
 export type ExperimentKey = keyof typeof EXPERIMENTS;

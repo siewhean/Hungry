@@ -64,7 +64,8 @@ test("detail-M8: stall and dish heroes are swipeable photo pagers with a full-sc
   assert.match(pager, /\{index \+ 1\} \/ \{count\}/);
   assert.match(stall, /<PhotoPager/);
   assert.match(dish, /<PhotoPager/);
-  assert.match(dish, /\.\.\.reviewPhotos/);
+  // DISH-18: the dish hero holds the dish's own photos; review photos have their own rail.
+  assert.match(dish, /buildDishHeroPhotos\(dish\)/);
 });
 
 test("detail-M10/L1/L19: reviews can be reported, blocked and open their author", () => {

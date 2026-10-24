@@ -260,7 +260,7 @@ test("dish and stall details expose correct detail surfaces without user-mode ma
   assertSourceIncludes(
     dishDetail,
     [
-      /const gallery = useMemo\([\s\S]*?dish\s*\? buildDishGallery\(dish\)[\s\S]*?sanitizeCatalogImageUrl/,
+      /const heroPhotos = useMemo\(\(\) => \(dish \? buildDishHeroPhotos\(dish\) : \[\]\), \[dish\]\)/,
       /perceivedTasteRows\(dish\.tasteVector, profile\.tasteVector\)/,
       /ReviewShareSheet/,
       /toggleFavourite\(dish\)/,

@@ -555,6 +555,14 @@ test("DetailActionBar opens a held button's own menu, dims the page, and keeps t
     pressed.filter((entry) => entry !== "like"),
     ["no", "review"],
   );
+
+  // DISH-8: once closed, the fading menu is hidden from screen readers and its rows do nothing.
+  const hiddenRow = view.findByLabel("Not tried");
+  if (hiddenRow) {
+    assert.ok(hiddenRow.closest('[aria-hidden="true"]'), "a closed menu is hidden from readers");
+    await view.press(hiddenRow);
+  }
+  assert.equal(pressed.filter((entry) => entry === "no").length, 1);
 });
 
 test("SingaporeAreaMap names the highlighted area for screen readers", async () => {
@@ -628,7 +636,7 @@ test("TasteRatingInput picks a level, clears it on a second tap, and marks our g
   assert.equal(nearestTasteRatingLevel(8.9), 10);
 });
 
-test("TasteRadarChart shows the dish from reviews and adds your taste only with a palette", async () => {
+test("TasteRadarChart shows the dish's typical taste and adds your taste only with a palette", async () => {
   const axes = [
     { key: "spicy", label: "Spicy", standard: 7, yours: 9 },
     { key: "sweet", label: "Sweet", standard: 2, yours: 1 },
@@ -637,7 +645,9 @@ test("TasteRadarChart shows the dish from reviews and adds your taste only with 
   const withPalette = await render(createElement(TasteRadarChart, { axes }));
 
   assert.match(withPalette.text(), /How it tastes to you/);
-  assert.match(withPalette.text(), /This dish, from reviews/);
+  assert.match(withPalette.text(), /Typical taste \(estimate\)/);
+  // The grey shape comes from catalog tags, not from reviews' taste ratings (DISH-2).
+  assert.doesNotMatch(withPalette.text(), /from reviews/);
   await withPalette.unmount();
   const plain = await render(
     createElement(TasteRadarChart, {

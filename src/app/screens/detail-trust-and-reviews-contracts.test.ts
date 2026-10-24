@@ -162,8 +162,11 @@ test("dish Tried is per dish and never clears the stall; Food Cred copy uses awa
 });
 
 test("detail back buttons fall back to Home on cold-start links", () => {
+  assert.match(stallDetail, /const goBackOrHome = \(\) => \{\s*if \(navigation\.canGoBack\(\)\)/);
+  // DISH-16: the dish page has one back helper, to the Home tab (route "Discover").
+  assert.match(dishDetail, /const leaveDetail = \(\) => \{\s*if \(navigation\.canGoBack\(\)\)/);
+  assert.doesNotMatch(dishDetail, /screen: "Home"/);
   for (const source of [stallDetail, dishDetail]) {
-    assert.match(source, /const goBackOrHome = \(\) => \{\s*if \(navigation\.canGoBack\(\)\)/);
     assert.doesNotMatch(source, /onPress=\{\(\) => navigation\.goBack\(\)\}/);
   }
   assert.match(dishDetail, /ctaLabel="Search dishes"/);

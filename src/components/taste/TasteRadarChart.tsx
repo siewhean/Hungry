@@ -7,7 +7,10 @@ import { useHungryTheme } from "@/theme";
 export type TasteRadarAxis = {
   key: string;
   label: string;
-  /** The dish's standard level from its reviews, 0-10. */
+  /**
+   * The dish's typical level, 0-10: an estimate from its catalog taste tags. Reviews' taste
+   * ratings are not read here yet, so the legend must not say "from reviews".
+   */
   standard: number;
   /** How strong this dish is likely to feel to the diner, 0-10; omitted when they have no palette. */
   yours?: number;
@@ -21,7 +24,7 @@ type Props = {
 const clamp = (value: number) => Math.max(0, Math.min(10, value));
 
 /**
- * A radar (spider) chart of a dish's taste: the standard level from everyone's reviews in grey
+ * A radar (spider) chart of a dish's taste: its typical level (an estimate) in grey
  * and, when the diner has a palette, how it is likely to taste to them in orange on top.
  */
 export function TasteRadarChart({ axes, size = 260 }: Props) {
@@ -103,7 +106,7 @@ export function TasteRadarChart({ axes, size = 260 }: Props) {
             </SvgText>,
           ];
         })}
-        {/* Grey: the dish from its reviews. Orange: how it tastes to this diner, on top. */}
+        {/* Grey: the dish's typical taste. Orange: how it tastes to this diner, on top. */}
         <Polygon
           points={shape((axis) => axis.standard)}
           fill={palette.textSecondary}
@@ -144,7 +147,7 @@ export function TasteRadarChart({ axes, size = 260 }: Props) {
           justifyContent: "center",
         }}
       >
-        <LegendItem dashed color={palette.textSecondary} label="This dish, from reviews" />
+        <LegendItem dashed color={palette.textSecondary} label="Typical taste (estimate)" />
         {showYours ? <LegendItem color={palette.orange} label="How it tastes to you" /> : null}
       </View>
     </View>

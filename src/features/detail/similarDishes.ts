@@ -7,6 +7,11 @@ import type { Coordinate } from "@/types/domain";
 /** How far around the stall to look for the same kind of dish. */
 export const SIMILAR_DISH_RADIUS_METERS = 3_000;
 export const SIMILAR_DISH_LIMIT = 6;
+/**
+ * Rows read per lookup. The current stall's own matches and its hawker-centre neighbours sort
+ * first and are dropped (one pick per other stall), so a 12-row page often left 0-2 tiles.
+ */
+export const SIMILAR_DISH_FETCH_LIMIT = 40;
 
 const NOISE_WORDS = /\b(set|special|signature|combo|meal|large|small|regular|portion|plate)\b/gi;
 
@@ -18,6 +23,25 @@ export function similarDishQuery(name: string): string {
     .replace(/[^\p{L}\p{N}\s'-]/gu, " ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function queryTokens(query: string): string[] {
+  return query
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((token) => token.length >= 2);
+}
+
+/**
+ * True when the dish's own name holds every word of the query. The catalog search also matches
+ * stall and building names, so "Barley" at "Ah Seng Chicken Rice" would otherwise count as
+ * chicken rice.
+ */
+export function dishNameMatchesQuery(name: string, query: string): boolean {
+  const tokens = queryTokens(query);
+  if (tokens.length === 0) return false;
+  const words = queryTokens(similarDishQuery(name));
+  return tokens.every((token) => words.some((word) => word.startsWith(token)));
 }
 
 /** Other stalls' versions of a dish: never the same dish or another dish from the same stall. */
@@ -54,21 +78,29 @@ type SimilarDishSource = {
   }) => Promise<{ items: CatalogRawDishCard[] }>;
 };
 
-/** One catalog read for the same kind of dish around `coordinate`, then one pick per stall. */
+/**
+ * One catalog read for the same kind of dish around `coordinate`, then one pick per stall.
+ * Needs a coordinate: without one there is no "nearby".
+ */
 export async function loadSimilarDishes(
   service: SimilarDishSource,
   dish: { id: string; venueId: string; name: string },
   coordinate: Coordinate | undefined,
 ): Promise<CatalogRawDishCard[]> {
   const query = similarDishQuery(dish.name);
-  if (query.length < 2) return [];
+  // With no point the RPC drops the radius and "nearby" order is arbitrary: show nothing.
+  if (query.length < 2 || !coordinate) return [];
   const page = await service.listDishes({
     query,
     sort: "nearby",
-    limit: 12,
-    ...(coordinate ? { coordinate, radiusMeters: SIMILAR_DISH_RADIUS_METERS } : {}),
+    limit: SIMILAR_DISH_FETCH_LIMIT,
+    coordinate,
+    radiusMeters: SIMILAR_DISH_RADIUS_METERS,
   });
-  return pickSimilarDishes(page.items, dish);
+  return pickSimilarDishes(
+    page.items.filter((item) => dishNameMatchesQuery(item.name, query)),
+    dish,
+  );
 }
 
 /** The same kind of dish at other stalls near `coordinate`, nearest first. */

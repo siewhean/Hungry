@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { ArrowLeft, Clock, ExternalLink, Heart, MapPin } from "lucide-react-native";
+import { ArrowLeft, Bookmark, Clock, ExternalLink, MapPin } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AccessibleImage, AppText, Button, EmptyState, Screen, Skeleton } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { formatDishPrice } from "@/features/detail/dishPrice";
+import { reportError } from "@/lib/monitoring/reportError";
 import { openMerchantProfileLink } from "@/lib/security/safeLinking";
 import { getCatalogRawService } from "@/lib/services/serviceProvider";
 import {
@@ -29,6 +31,13 @@ type Props = NativeStackScreenProps<RootStackParamList, "CatalogRawDetail">;
 type Detail = CatalogRawDishDetail | CatalogRawVenueDetail;
 
 const VENUE_MENU_PAGE_SIZE = 24;
+/** Set when the viewer is signed out: the screen asks them to sign in, not to check a connection. */
+const SIGN_IN_REQUIRED = "sign_in_required";
+
+/** A catalog price may be missing or 0: "Price not listed", never "S$0.00". */
+function catalogPriceLabel(item: { price?: number; priceRange?: string }) {
+  return formatDishPrice({ price: item.price ?? 0, priceRange: item.priceRange ?? "" });
+}
 
 function DetailHeader({ title, onBack }: { title?: string; onBack: () => void }) {
   const { palette, spacing } = useHungryTheme();
@@ -80,6 +89,7 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
   const { palette, spacing } = useHungryTheme();
   // Read-only catalog record with no save/like actions. Sign-in is still required.
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const service = getCatalogRawService();
   const [detail, setDetail] = useState<Detail | null>(null);
   const [menu, setMenu] = useState<CatalogPage<CatalogRawDishCard> | null>(null);
@@ -141,6 +151,7 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
         request: summarizeCatalogRequest({ releaseId: menu.releaseId, cursor: menu.nextCursor }),
       });
     } catch (loadError) {
+      reportError(loadError, { screen: "CatalogRawDetail", action: "load_more_menu" });
       setMenuError(
         loadError instanceof Error ? loadError.message : "Couldn't load more menu items.",
       );
@@ -171,8 +182,9 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
         showToast({ message: result.message, tone: "error" });
         return;
       }
+      // The same list and words as the dish page's Save.
       showToast({
-        message: result.status === "saved" ? "Saved to favourites." : "Removed from favourites.",
+        message: result.status === "saved" ? "Saved to Want to try." : "Removed from Want to try.",
         tone: "success",
       });
     } finally {
@@ -183,7 +195,7 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
   const load = useCallback(async () => {
     const startedAt = Date.now();
     if (!isAuthenticated) {
-      setError("Sign in to view this catalog record.");
+      setError(SIGN_IN_REQUIRED);
       setIsLoading(false);
       recordCatalogDiagnostic({
         operation: isDish ? "dish-detail" : "stall-detail",
@@ -229,6 +241,7 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
         setMenu(null);
       }
     } catch (loadError) {
+      reportError(loadError, { screen: "CatalogRawDetail", action: "load", kind: route.params.kind });
       // Raw service errors are not user copy.
       setError("load_failed");
       recordCatalogDiagnostic({
@@ -247,7 +260,7 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
     } finally {
       setIsLoading(false);
     }
-  }, [isDish, route.params.id, route.params.releaseId, service]);
+  }, [isAuthenticated, isDish, route.params.id, route.params.releaseId, service]);
 
   useEffect(() => {
     void load();
@@ -265,6 +278,23 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
           <Skeleton width="70%" height={28} />
           <ActivityIndicator color={palette.orange} />
         </View>
+      </Screen>
+    );
+  }
+
+  if (error === SIGN_IN_REQUIRED) {
+    return (
+      <Screen scroll={false}>
+        <DetailHeader onBack={goBackOrHome} />
+        <EmptyState
+          title="Sign in to see this listing"
+          body="Hungry's dish and stall pages need an account."
+          ctaLabel="Sign in"
+          onPress={() => {
+            setReturnRoute({ name: "CatalogRawDetail", params: route.params });
+            navigation.navigate("AuthStack", { screen: "Login" });
+          }}
+        />
       </Screen>
     );
   }
@@ -372,11 +402,16 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
               ) : (
                 <AppText tone="secondary">{(detail as CatalogRawDishDetail).venueName}</AppText>
               )}
-              {(detail as CatalogRawDishDetail).price !== undefined ? (
-                <AppText style={{ color: palette.orange }} variant="h2">
-                  S${(detail as CatalogRawDishDetail).price?.toFixed(2)}
-                </AppText>
-              ) : null}
+              <AppText
+                style={{
+                  color: (detail as CatalogRawDishDetail).price
+                    ? palette.orange
+                    : palette.textSecondary,
+                }}
+                variant="h2"
+              >
+                {catalogPriceLabel(detail as CatalogRawDishDetail)}
+              </AppText>
             </>
           ) : (
             <AppText tone="secondary">
@@ -385,13 +420,13 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
           )}
           {isDish && FEATURE_FLAGS.favouritesEnabled ? (
             <Button
-              label={isFavourite ? "Remove from favourites" : "Save to favourites"}
+              label={isFavourite ? "Saved to Want to try" : "Save to Want to try"}
               variant={isFavourite ? "secondary" : "primary"}
               loading={isSavingFavourite}
               leftIcon={
-                <Heart
-                  color={isFavourite ? palette.error : palette.white}
-                  fill={isFavourite ? palette.error : "transparent"}
+                <Bookmark
+                  color={isFavourite ? palette.orange : palette.white}
+                  fill={isFavourite ? palette.orange : "transparent"}
                   size={18}
                 />
               }
@@ -419,7 +454,7 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
                 >
                   <AppText variant="bodySmallBold">{item.name}</AppText>
                   <AppText tone="secondary" variant="micro">
-                    {item.price !== undefined ? `S$${item.price.toFixed(2)}` : "Price unavailable"}
+                    {catalogPriceLabel(item)}
                   </AppText>
                 </Pressable>
               ))}

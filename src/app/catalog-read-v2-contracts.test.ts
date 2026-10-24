@@ -193,7 +193,7 @@ test("signed-out users never reach map pins or catalog detail (sign-in required)
   const detail = read("src/app/screens/catalog/CatalogRawDetailScreen.tsx");
   assert.match(
     detail,
-    /if \(!isAuthenticated\) \{\s*setError\("Sign in to view this catalog record\."\);/,
+    /if \(!isAuthenticated\) \{\s*setError\(SIGN_IN_REQUIRED\);/,
   );
   // Its only save action is the favourites store, which refuses a signed-out caller.
   assert.doesNotMatch(detail, /toggleSave|toggleLike|addItem\(/);

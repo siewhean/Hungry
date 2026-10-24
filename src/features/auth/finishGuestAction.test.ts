@@ -2,9 +2,14 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { getHungryService } from "@/lib/services/serviceProvider";
+import { useDishLikeStore } from "@/store/useDishLikeStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import type { DishDetail } from "@/types/domain";
-import { saveDishAfterSignIn } from "./finishGuestAction";
+import {
+  likeDishAfterSignIn,
+  markDishTriedAfterSignIn,
+  saveDishAfterSignIn,
+} from "./finishGuestAction";
 
 const dish = { id: "dish-already-saved" } as DishDetail;
 
@@ -72,4 +77,30 @@ test("finishing a guest save does nothing when the account's saves cannot be rea
     restoreService();
     toggle.restore();
   }
+});
+
+test("a guest's Tried tap is finished after sign-in (DISH-X4)", async () => {
+  const calls: [string, boolean][] = [];
+  const original = useProfileStore.getState().setDishTried;
+  useProfileStore.setState({
+    setDishTried: async (dishId, tried) => {
+      calls.push([dishId, tried]);
+      return true;
+    },
+  });
+  try {
+    assert.equal(await markDishTriedAfterSignIn("dish-pending-tried"), true);
+    assert.deepEqual(calls, [["dish-pending-tried", true]]);
+  } finally {
+    useProfileStore.setState({ setDishTried: original });
+  }
+});
+
+test("a guest's Like is finished after sign-in and never toggles an existing like off (DISH-X4)", () => {
+  const userId = useProfileStore.getState().profile.id;
+  useDishLikeStore.setState({ likedDishIdsByUser: {} });
+  likeDishAfterSignIn("dish-pending-like");
+  assert.equal(useDishLikeStore.getState().isLiked(userId, "dish-pending-like"), true);
+  likeDishAfterSignIn("dish-pending-like");
+  assert.equal(useDishLikeStore.getState().isLiked(userId, "dish-pending-like"), true);
 });

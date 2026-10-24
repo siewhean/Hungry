@@ -137,7 +137,8 @@ export type RootStackParamList = {
   StallDetail: { venueId?: string; id?: string };
   MerchantClaimExplainer: undefined;
   ReportProblem: { venueId: string; dishId?: string; subjectName?: string };
-  DishDetail: { dishId?: string; id?: string };
+  /** `source` names where the dish was opened from, for the dish_viewed event. */
+  DishDetail: { dishId?: string; id?: string; source?: string };
   CatalogRawDetail: { kind: "dish" | "venue"; id: string; releaseId?: string };
   SearchHome: undefined;
   SearchResults:

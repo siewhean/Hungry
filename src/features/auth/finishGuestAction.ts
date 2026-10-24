@@ -1,5 +1,6 @@
 import type { DishDetail } from "@/types/domain";
 import { getHungryService } from "@/lib/services/serviceProvider";
+import { useDishLikeStore } from "@/store/useDishLikeStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSocialStore } from "@/store/useSocialStore";
 import { useStallFollowStore } from "@/store/useStallFollowStore";
@@ -19,6 +20,18 @@ export async function saveDishAfterSignIn(dish: DishDetail): Promise<boolean> {
   const profile = useProfileStore.getState();
   if (!profile.profile.favouriteDishIds.includes(dish.id)) profile.toggleFavourite(dish);
   return true;
+}
+
+// The server's tried mark is idempotent, so marking an already-tried dish changes nothing.
+export async function markDishTriedAfterSignIn(dishId: string): Promise<boolean> {
+  return useProfileStore.getState().setDishTried(dishId, true);
+}
+
+// Dish likes are kept on the device per account: only ever adds.
+export function likeDishAfterSignIn(dishId: string) {
+  const userId = useProfileStore.getState().profile.id;
+  const likes = useDishLikeStore.getState();
+  if (!likes.isLiked(userId, dishId)) likes.toggleLike(userId, dishId);
 }
 
 export function likePostAfterSignIn(postId: string) {

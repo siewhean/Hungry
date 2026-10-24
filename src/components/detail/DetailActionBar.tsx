@@ -108,7 +108,10 @@ export function DetailActionBar({ actions, cta, testID }: Props) {
       mass: 0.6,
       stiffness: 260,
       useNativeDriver: true,
-    }).start();
+    }).start(({ finished }) => {
+      // Unmount the closed menu so its rows can't be focused or activated while invisible.
+      if (finished && !menuOpen) setShownMenuId(null);
+    });
   }, [menuOpen, menuProgress]);
 
   const openMenu = (id: string) => {
@@ -283,6 +286,11 @@ export function DetailActionBar({ actions, cta, testID }: Props) {
         <Animated.View
           pointerEvents={menuOpen ? "auto" : "none"}
           accessibilityViewIsModal={menuOpen}
+          // While it fades out, screen readers must not reach the hidden rows (TalkBack ignores
+          // pointerEvents and could double-tap "Not tried").
+          aria-hidden={!menuOpen}
+          accessibilityElementsHidden={!menuOpen}
+          importantForAccessibility={menuOpen ? "auto" : "no-hide-descendants"}
           style={[
             shadows.floating,
             {
@@ -343,7 +351,8 @@ export function DetailActionBar({ actions, cta, testID }: Props) {
                 key={row.id}
                 accessibilityLabel={row.accessibilityLabel ?? row.label}
                 accessibilityRole="button"
-                accessibilityState={{ selected: Boolean(highlighted) }}
+                accessibilityState={{ selected: Boolean(highlighted), disabled: !menuOpen }}
+                disabled={!menuOpen}
                 onPress={() => {
                   tapHaptic();
                   closeMenu();

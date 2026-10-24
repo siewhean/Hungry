@@ -1,16 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
   Platform,
   ActivityIndicator,
-  Modal,
   Pressable,
   ScrollView,
   View,
   useWindowDimensions,
-  Text,
 } from "react-native";
 import type { ColorValue } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -23,6 +22,7 @@ import {
   FolderPlus,
   CheckCircle,
   MapPin,
+  MoreHorizontal,
   Send,
   Star,
   Utensils,
@@ -49,7 +49,8 @@ import { TasteRadarChart } from "@/components/taste/TasteRadarChart";
 import { PhotoPager } from "@/components/dish/PhotoPager";
 import { DetailHeroFade } from "@/components/detail/DetailHeroFade";
 import { ReportProblemLink } from "@/components/stall/ReportProblemLink";
-import { buildDishGallery } from "@/features/detail/detailTransforms";
+import { buildDishHeroPhotos, withoutRemovedReview } from "@/features/detail/dishPage";
+import { TriedFollowUp } from "@/features/detail/TriedFollowUp";
 import { formatDishUpdated } from "@/features/detail/dishFreshness";
 import { formatDishPrice } from "@/features/detail/dishPrice";
 import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
@@ -59,7 +60,6 @@ import {
   OwnReviewActions,
   ReviewPhotoStrip,
   ReviewReaderActions,
-  StarRating,
 } from "@/components/review";
 import { isOwnReview } from "@/features/review/reviewEdit";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
@@ -70,7 +70,11 @@ import { useAchievementTallyStore, triedDishFacts } from "@/store/useAchievement
 import { useDishLikeStore } from "@/store/useDishLikeStore";
 import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 import { useSessionStore } from "@/store/useSessionStore";
-import { saveDishAfterSignIn } from "@/features/auth/finishGuestAction";
+import {
+  likeDishAfterSignIn,
+  markDishTriedAfterSignIn,
+  saveDishAfterSignIn,
+} from "@/features/auth/finishGuestAction";
 import { rememberPendingDishSave } from "@/features/auth/pendingDishSave";
 import { useRequireAccount } from "@/features/auth/useRequireAccount";
 import { useReviewDraftStore } from "@/store/useReviewDraftStore";
@@ -81,11 +85,9 @@ import {
   AppText,
   Avatar,
   Button,
-  ChipGroup,
   EmptyState,
   FeedErrorBoundary,
 } from "@/components/ui";
-import { REVIEW_EDITOR_TAGS, REVIEW_VALUE_TAGS } from "@/constants/taste";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useHungryTheme } from "@/theme";
 import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/ReviewShareSheet";
@@ -103,16 +105,19 @@ import {
 } from "@/utils/operatingHours";
 import { webShareUrl } from "@/constants/links";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { reportError } from "@/lib/monitoring/reportError";
+import {
+  getBlockedAuthorIdsForSession,
+  promptReviewSafetyActions,
+} from "@/lib/security/communitySafety";
 import { firstDishTimingProps } from "@/lib/analytics/firstDishTiming";
 import { getBuildingById } from "@/lib/geo/singaporeBuildings";
 import { formatFullStallAddress, getStallPin } from "@/features/detail/stallLocation";
 
 /** Reviews shown before "See all". */
 const DISH_REVIEW_PREVIEW_COUNT = 3;
-/** Taste words offered in the "you tried it" popup (value tags belong in the full review). */
-const TRIED_PROMPT_TASTE_TAGS = REVIEW_EDITOR_TAGS.filter(
-  (tag) => !REVIEW_VALUE_TAGS.includes(tag),
-);
+/** Longer descriptions are expandable before the text has been measured (and on web). */
+const DESCRIPTION_EXPANDABLE_CHARS = 160;
 /** One page of a dish's reviews, newest first. */
 const DISH_REVIEW_PAGE_SIZE = 50;
 /** Below this confidence a dish's taste vector is too weak to show as fact. */
@@ -163,11 +168,16 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const shareSheetRef = useRef<BottomSheetModal>(null);
   const lastRecordedDishViewId = useRef<string | null>(null);
   const [isTryingFood, setIsTryingFood] = useState(false);
-  // After marking a dish tried: an optional popup to rate it and say how it tasted.
-  const [triedPromptOpen, setTriedPromptOpen] = useState(false);
-  const [triedRating, setTriedRating] = useState(0);
-  const [triedTags, setTriedTags] = useState<string[]>([]);
+  // Set synchronously: a second tap in the same frame never runs a second Tried write.
+  const tryingFoodRef = useRef(false);
+  // After marking a dish tried: the follow-up (rate-it popup, or a "Rate it" bar button).
+  const [triedFollowUpPending, setTriedFollowUpPending] = useState(false);
+  const [rateItCta, setRateItCta] = useState(false);
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
+  // Measured line count says whether the description is cut at three lines.
+  const [descriptionTruncates, setDescriptionTruncates] = useState<boolean | undefined>();
+  // Bumped when the page comes back into view or the diner's own review changes.
+  const [dishRefreshKey, setDishRefreshKey] = useState(0);
   const selectReviewDish = useReviewDraftStore((state) => state.selectDish);
   const setReviewRating = useReviewDraftStore((state) => state.setRating);
   const toggleReviewTag = useReviewDraftStore((state) => state.toggleTag);
@@ -208,16 +218,9 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const [venueReloadKey, setVenueReloadKey] = useState(0);
   const venue = hydratedVenue ?? cachedVenue;
 
-  const gallery = useMemo(
-    () =>
-      dish
-        ? buildDishGallery(dish)
-            .map((imageUrl) => sanitizeCatalogImageUrl(imageUrl))
-            .filter((imageUrl): imageUrl is string => Boolean(imageUrl))
-        : [],
-    [dish],
-  );
-  const heroImage = gallery[0] ?? sanitizeCatalogImageUrl(dish?.imageUrl);
+  // Dish photos only: review photos have their own rail and cards.
+  const heroPhotos = useMemo(() => (dish ? buildDishHeroPhotos(dish) : []), [dish]);
+  const heroImage = heroPhotos[0];
   // "Photos from reviews" rail: newest reviews first, at most 12 photos.
   const reviewPhotos = useMemo(
     () =>
@@ -279,7 +282,8 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
         setHydratedDish(nextDish);
         setHasLoadedDishDetail(true);
       })
-      .catch(() => {
+      .catch((error) => {
+        reportError(error, { screen: "DishDetail", action: "load_dish", dishId });
         if (!active) return;
         setDishLoadFailed(true);
         setHasLoadedDishDetail(true);
@@ -289,6 +293,38 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
       active = false;
     };
   }, [cachedDish, dishId, dishReloadKey]);
+
+  // Back on screen (after writing, editing or deleting a review): read the dish again even
+  // with a warm cache, so the rating, review count and Tried state are current.
+  useEffect(() => {
+    if (!dishRefreshKey || !dishId) return;
+    let active = true;
+    void getHungryService()
+      .discovery.getDish(dishId)
+      .then((nextDish) => {
+        if (active && nextDish) setHydratedDish(nextDish);
+      })
+      .catch((error) => {
+        // The page keeps what it shows.
+        reportError(error, { screen: "DishDetail", action: "refresh_dish", dishId });
+      });
+    return () => {
+      active = false;
+    };
+  }, [dishId, dishRefreshKey]);
+
+  // The first focus is the mount, which already loads everything.
+  const hasFocusedRef = useRef(false);
+  useFocusEffect(
+    useCallback(() => {
+      if (!hasFocusedRef.current) {
+        hasFocusedRef.current = true;
+        return;
+      }
+      setDishRefreshKey((key) => key + 1);
+      setReviewsReloadKey((key) => key + 1);
+    }, []),
+  );
 
   // A cold cache holds only this dish: read the stall's menu for "More from {stall}".
   const venueIdForMenu = dish?.venueId;
@@ -306,7 +342,10 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
       .then((nextDishes) => {
         if (active) setFetchedVenueDishes(nextDishes);
       })
-      .catch(() => undefined);
+      .catch((error) => {
+        // "More from" just stays hidden.
+        reportError(error, { screen: "DishDetail", action: "load_venue_menu" });
+      });
     return () => {
       active = false;
     };
@@ -328,7 +367,8 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
         if (!active) return;
         setHydratedVenue(nextVenue);
       })
-      .catch(() => {
+      .catch((error) => {
+        reportError(error, { screen: "DishDetail", action: "load_venue" });
         if (!active) return;
         setVenueLoadFailed(true);
       });
@@ -340,7 +380,11 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
 
   // The saved/visited map loads here too, so "Tried" never re-marks a stall already visited.
   useEffect(() => {
-    if (isAuthenticated) void loadStallInteractions(profile.id).catch(() => undefined);
+    if (isAuthenticated) {
+      void loadStallInteractions(profile.id).catch((error) => {
+        reportError(error, { screen: "DishDetail", action: "load_stall_interactions" });
+      });
+    }
   }, [isAuthenticated, loadStallInteractions, profile.id]);
 
   // The owner's schedule (special hours) and temporary closure decide "Open now", as on the stall page.
@@ -359,13 +403,18 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
       .then((schedule) => {
         if (active) setOpeningSchedule(schedule);
       })
-      .catch(() => undefined);
+      .catch((error) => {
+        // Open state falls back to the listed hours.
+        reportError(error, { screen: "DishDetail", action: "load_opening_schedule" });
+      });
     void getHungryService()
       .discovery.getPublicMerchantProfile(hoursVenueId)
       .then((nextProfile) => {
         if (active) setMerchantProfile(nextProfile);
       })
-      .catch(() => undefined);
+      .catch((error) => {
+        reportError(error, { screen: "DishDetail", action: "load_merchant_profile" });
+      });
     return () => {
       active = false;
     };
@@ -378,14 +427,17 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     reviewDishIdRef.current = reviewDishId;
   }, [reviewDishId]);
   useEffect(() => {
-    let active = true;
     setShowAllReviews(false);
+  }, [reviewDishId]);
+  useEffect(() => {
+    let active = true;
     if (!reviewDishId) {
       return () => {
         active = false;
       };
     }
-    setReviewsStatus("loading");
+    // A refresh on return keeps the list on screen until the new one lands.
+    setReviewsStatus((current) => (current === "ready" ? current : "loading"));
     getHungryService()
       .reviews.listRecentReviews({ dishIds: [reviewDishId], limit: DISH_REVIEW_PAGE_SIZE })
       .then((entries) => {
@@ -394,8 +446,9 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
         setHasMoreReviews(entries.length === DISH_REVIEW_PAGE_SIZE);
         setReviewsStatus("ready");
       })
-      .catch(() => {
-        if (active) setReviewsStatus("error");
+      .catch((error) => {
+        reportError(error, { screen: "DishDetail", action: "load_reviews" });
+        if (active) setReviewsStatus((current) => (current === "ready" ? current : "error"));
       });
     return () => {
       active = false;
@@ -427,7 +480,8 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
         });
         setHasMoreReviews(entries.length === DISH_REVIEW_PAGE_SIZE);
       })
-      .catch(() => {
+      .catch((error) => {
+        reportError(error, { screen: "DishDetail", action: "load_more_reviews" });
         showToast({ message: "Couldn't load more reviews. Try again.", tone: "error" });
       })
       .finally(() => setIsLoadingMoreReviews(false));
@@ -438,7 +492,12 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     lastRecordedDishViewId.current = dish.id;
     trackAnalyticsEvent(
       "dish_viewed",
-      { dish_id: dish.id, venue_id: dish.venueId, ...firstDishTimingProps() },
+      {
+        dish_id: dish.id,
+        venue_id: dish.venueId,
+        source: route.params?.source ?? "unknown",
+        ...firstDishTimingProps(),
+      },
       isAuthenticated ? { userId: profile.id } : undefined,
     );
     void getHungryService().discovery.recordDishView(dish.id, {
@@ -478,15 +537,6 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     );
   }
 
-  // A cold-start shared link opens this screen with nothing underneath it.
-  const goBackOrHome = () => {
-    if (navigation.canGoBack()) {
-      navigation.goBack();
-      return;
-    }
-    navigation.navigate("MainTabs", { screen: "Home" });
-  };
-
   if (!dish) {
     return (
       <FeedErrorBoundary
@@ -524,7 +574,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
             <Button
               label={navigation.canGoBack() ? "Go back" : "Go to Home"}
               variant="secondary"
-              onPress={goBackOrHome}
+              onPress={leaveDetail}
             />
           </View>
         </SafeAreaView>
@@ -560,10 +610,6 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const savedCount = dish.savedCount ?? 0;
   const savedCountLabel =
     savedCount > 0 ? `${savedCount} ${savedCount === 1 ? "person" : "people"} saved this` : null;
-  // Dish photos first, then photos from reviews, swipeable in the hero.
-  const heroPhotos = Array.from(
-    new Set([...gallery, ...(dish.imageUrl ? [dish.imageUrl] : []), ...reviewPhotos]),
-  ).slice(0, 8);
   // Short enough that the stall card and Order on show without scrolling; shorter still
   // with no photo, where the name below already says what the dish is.
   const heroHeight = heroPhotos.length > 0 ? Math.min(width * 0.62, 300) : 140;
@@ -603,6 +649,33 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
       authorId: review.authorId,
       authorName: review.authorName,
       authorAvatarUrl: review.authorAvatarUrl,
+    });
+  };
+
+  // Own review edited or deleted: the rating, count and Tried state come from the server.
+  const refreshDish = () => setDishRefreshKey((key) => key + 1);
+
+  // Report or block from a review card: a block also drops the author's other reviews.
+  const removeReview = (reviewId: string) =>
+    setDishReviews((current) =>
+      withoutRemovedReview(current, reviewId, getBlockedAuthorIdsForSession()),
+    );
+
+  const openReviewSafetyMenu = (review: Review) => {
+    if (
+      !requireAccount("Sign in to report or block.", {
+        name: "DishDetail",
+        params: { dishId: dish.id },
+      })
+    ) {
+      return;
+    }
+    promptReviewSafetyActions({
+      reviewId: review.id,
+      authorName: review.authorName,
+      authorId: review.authorId,
+      onHidden: () => removeReview(review.id),
+      onBlocked: () => removeReview(review.id),
     });
   };
 
@@ -677,8 +750,8 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
 
   // From the "you tried it" popup: the review starts with the stars and taste words filled in.
   // A draft for another dish is left alone so the review screen can ask what to do with it.
-  const continueTriedReview = () => {
-    setTriedPromptOpen(false);
+  const continueTriedReview = (triedRating: number, triedTags: string[]) => {
+    setTriedFollowUpPending(false);
     const { draft } = useReviewDraftStore.getState();
     if (!draft.selectedDishId || draft.selectedDishId === dish.id) {
       if (draft.selectedDishId !== dish.id) resetReviewDraft();
@@ -688,11 +761,6 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
       for (const tag of triedTags) if (!chosen.includes(tag)) toggleReviewTag(tag);
     }
     handleReview();
-  };
-  const openTriedPrompt = () => {
-    setTriedRating(0);
-    setTriedTags([]);
-    setTriedPromptOpen(true);
   };
 
   const triedToastStyle = {
@@ -708,17 +776,20 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   // "Tried" is per dish. Trying a dish marks the stall visited the first time;
   // un-marking a dish never clears the stall (other dishes may be tried too).
   const handleTryFood = async () => {
-    if (isTryingFood) return;
+    if (tryingFoodRef.current) return;
 
-    if (!isAuthenticated) {
-      setReturnRoute({
-        name: "DishDetail",
-        params: { dishId: dish.id },
-      });
-      navigation.navigate("AuthStack", { screen: "Login" });
+    // A guest's tap is finished after sign-in, as Save is.
+    if (
+      !requireAccount(
+        `Sign in to mark ${dish.name} as tried`,
+        { name: "DishDetail", params: { dishId: dish.id } },
+        () => void markDishTriedAfterSignIn(dish.id),
+      )
+    ) {
       return;
     }
 
+    tryingFoodRef.current = true;
     if (isDishTried) {
       setIsTryingFood(true);
       try {
@@ -734,6 +805,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
           ...triedToastStyle,
         });
       } finally {
+        tryingFoodRef.current = false;
         setIsTryingFood(false);
       }
       return;
@@ -750,13 +822,16 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
       let pointsAwarded = 0;
       let stallMarkFailed = false;
       // Read the saved stalls first so an already-visited stall is never marked again.
-      await loadStallInteractions(profile.id).catch(() => undefined);
+      await loadStallInteractions(profile.id).catch((error) => {
+        reportError(error, { screen: "DishDetail", action: "load_stall_interactions" });
+      });
       if (!useStallInteractionStore.getState().getInteraction(dish.venueId)?.isTried) {
         try {
           const result = await markTried(profile.id, dish.venueId, "DishDetail");
           pointsAwarded = result.pointsAwarded;
-        } catch {
+        } catch (error) {
           // The store rolled the stall mark back; the dish itself is marked.
+          reportError(error, { screen: "DishDetail", action: "mark_stall_tried" });
           stallMarkFailed = true;
         }
       }
@@ -769,10 +844,12 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
         ...triedToastStyle,
       });
       // Rating only makes sense once the dish is tried; both the stars and the taste are optional.
+      // The follow-up mounts only now, so its experiment exposes only diners who reach it.
       if (!FEATURE_FLAGS.release01CoreOnly && FEATURE_FLAGS.reviewCreationEnabled && !hasReviewed) {
-        openTriedPrompt();
+        setTriedFollowUpPending(true);
       }
     } finally {
+      tryingFoodRef.current = false;
       setIsTryingFood(false);
     }
   };
@@ -786,14 +863,16 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const isLiked = (likedDishIdsByUser[profile.id] ?? []).includes(dish.id);
   const handleLike = () => {
     if (
-      !requireAccount(`Sign in to like ${dish.name}`, {
-        name: "DishDetail",
-        params: { dishId: dish.id },
-      })
+      !requireAccount(
+        `Sign in to like ${dish.name}`,
+        { name: "DishDetail", params: { dishId: dish.id } },
+        () => likeDishAfterSignIn(dish.id),
+      )
     ) {
       return;
     }
     const liked = toggleDishLike(profile.id, dish.id);
+    trackAnalyticsEvent("dish_liked", { dish_id: dish.id, stall_id: dish.venueId, liked });
     showToast({ message: liked ? "Liked." : "Like removed.", tone: "success" });
   };
 
@@ -905,6 +984,21 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     <FeedErrorBoundary title="Dish details unavailable" body="Couldn't load this dish — try again.">
       <SafeAreaView style={{ backgroundColor: palette.bg, flex: 1 }} edges={["left", "right"]}>
         <View style={{ flex: 1 }}>
+          {/* First in the tree so screen readers reach Back first; zIndex keeps it on top. */}
+          <View
+            pointerEvents="box-none"
+            style={{
+              elevation: 10,
+              height: insets.top + 64,
+              left: 0,
+              position: "absolute",
+              right: 0,
+              top: 0,
+              zIndex: 10,
+            }}
+          >
+            <FloatingBackButton onPress={leaveDetail} />
+          </View>
           <Animated.ScrollView
             showsVerticalScrollIndicator={false}
             onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: heroScrollY } } }], {
@@ -923,6 +1017,13 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                   height={heroHeight}
                   subject={dish.name}
                   countBottomOffset={spacing[12] + spacing[2]}
+                  onViewerOpen={(position) =>
+                    trackAnalyticsEvent("dish_photo_viewer_opened", {
+                      dish_id: dish.id,
+                      position,
+                      photo_count: heroPhotos.length,
+                    })
+                  }
                 >
                   <LinearGradient
                     colors={heroGradientColors}
@@ -985,7 +1086,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                     }}
                   >
                     <AppText variant="bodySmallBold" style={{ color: palette.warningText }}>
-                      MUST ORDER
+                      Must order
                     </AppText>
                   </View>
                 ) : null}
@@ -1086,19 +1187,45 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                   </View>
                 ) : null}
                 {dish.description?.trim() ? (
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityHint={descriptionExpanded ? "Shows less" : "Shows the full text"}
-                    onPress={() => setDescriptionExpanded((open) => !open)}
-                  >
-                    <AppText
-                      variant="body"
-                      tone="secondary"
-                      numberOfLines={descriptionExpanded ? undefined : 3}
+                  (descriptionTruncates ??
+                  dish.description.trim().length > DESCRIPTION_EXPANDABLE_CHARS) ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityHint={
+                        descriptionExpanded ? "Shows less" : "Shows the full text"
+                      }
+                      onPress={() => setDescriptionExpanded((open) => !open)}
                     >
+                      <AppText
+                        variant="body"
+                        tone="secondary"
+                        numberOfLines={descriptionExpanded ? undefined : 3}
+                      >
+                        {dish.description}
+                      </AppText>
+                    </Pressable>
+                  ) : (
+                    <AppText variant="body" tone="secondary">
                       {dish.description}
                     </AppText>
-                  </Pressable>
+                  )
+                ) : null}
+                {dish.description?.trim() ? (
+                  // Measures the full text off screen: only a description cut at three lines
+                  // is a button.
+                  <AppText
+                    variant="body"
+                    aria-hidden
+                    accessibilityElementsHidden
+                    importantForAccessibility="no-hide-descendants"
+                    pointerEvents="none"
+                    onTextLayout={(event) =>
+                      setDescriptionTruncates(event.nativeEvent.lines.length > 3)
+                    }
+                    style={{ left: 0, opacity: 0, position: "absolute", right: 0 }}
+                  >
+                    {dish.description}
+                  </AppText>
                 ) : null}
                 {formatDishUpdated(dish.updatedAt) ? (
                   <AppText variant="bodySmall" tone="muted">
@@ -1204,7 +1331,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                         ))
                     ) : (
                       <AppText variant="micro" tone="muted" style={{ textAlign: "center" }}>
-                        Set your taste palette in Profile to see how it tastes to you.
+                        Take the taste quiz in Profile to see how it tastes to you.
                       </AppText>
                     )}
                   </View>
@@ -1257,7 +1384,16 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                             : formatDishPrice(item)
                         }`}
                         // push, not navigate: each dish gets its own screen, so Back returns here.
-                        onPress={() => navigation.push("DishDetail", { dishId: item.id })}
+                        onPress={() => {
+                          trackAnalyticsEvent("dish_more_from_opened", {
+                            dish_id: dish.id,
+                            target_dish_id: item.id,
+                          });
+                          navigation.push("DishDetail", {
+                            dishId: item.id,
+                            source: "more_from_stall",
+                          });
+                        }}
                         style={{
                           backgroundColor: palette.surface,
                           borderColor: palette.border,
@@ -1321,7 +1457,15 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                           }`}
                           onPress={() => {
                             tapHaptic();
-                            navigation.push("DishDetail", { dishId: item.id });
+                            trackAnalyticsEvent("dish_similar_opened", {
+                              dish_id: dish.id,
+                              target_dish_id: item.id,
+                              distance_meters: item.distanceMeters,
+                            });
+                            navigation.push("DishDetail", {
+                              dishId: item.id,
+                              source: "similar_nearby",
+                            });
                           }}
                           style={({ pressed }) => ({
                             backgroundColor: palette.surface,
@@ -1372,9 +1516,21 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                             <AppText variant="micro" tone="secondary" numberOfLines={1}>
                               {[item.name, item.buildingName].filter(Boolean).join(" · ")}
                             </AppText>
-                            {item.price ? (
-                              <AppText variant="price" style={{ color: palette.text }}>
-                                {`S$${item.price.toFixed(2)}`}
+                            <AppText variant="price" style={{ color: palette.text }}>
+                              {formatDishPrice({
+                                price: item.price ?? 0,
+                                priceRange: item.priceRange ?? "",
+                              })}
+                            </AppText>
+                            {item.reviewCount && item.rating ? (
+                              <AppText
+                                variant="micro"
+                                tone="secondary"
+                                accessibilityLabel={`Rated ${item.rating.toFixed(1)} from ${
+                                  item.reviewCount
+                                } ${item.reviewCount === 1 ? "review" : "reviews"}`}
+                              >
+                                {`★ ${item.rating.toFixed(1)} (${item.reviewCount})`}
                               </AppText>
                             ) : null}
                           </View>
@@ -1395,9 +1551,14 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                 >
                   <AppText variant="h2">Reviews</AppText>
                   {dish.reviewCount > 0 ? (
-                    <AppText variant="bodySmall" tone="secondary">
-                      <Text style={{ color: palette.starFill }}>★</Text> {dish.rating.toFixed(1)} (
-                      {dish.reviewCount})
+                    <AppText
+                      variant="bodySmall"
+                      tone="secondary"
+                      accessibilityLabel={`Rated ${dish.rating.toFixed(1)} out of 5 from ${
+                        dish.reviewCount
+                      } ${dish.reviewCount === 1 ? "review" : "reviews"}`}
+                    >
+                      {`★ ${dish.rating.toFixed(1)} (${dish.reviewCount})`}
                     </AppText>
                   ) : null}
                 </View>
@@ -1449,36 +1610,56 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                         }}
                       >
                         <View
-                          style={{ alignItems: "center", flexDirection: "row", gap: spacing[3] }}
+                          style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}
                         >
+                          {/* One stop per author: avatar and name together, a link only with an account. */}
                           <Pressable
+                            accessible
                             accessibilityRole={review.authorId ? "link" : undefined}
-                            accessibilityLabel={`Open ${review.authorName}'s profile`}
+                            accessibilityLabel={
+                              review.authorId
+                                ? `Open ${review.authorName}'s profile`
+                                : review.authorName
+                            }
                             disabled={!review.authorId}
                             onPress={() => openReviewerProfile(review)}
+                            style={{
+                              alignItems: "center",
+                              flex: 1,
+                              flexDirection: "row",
+                              gap: spacing[3],
+                            }}
                           >
                             <Avatar
                               uri={review.authorAvatarUrl}
                               name={review.authorName}
                               size={36}
                             />
-                          </Pressable>
-                          <View style={{ flex: 1 }}>
-                            <Pressable
-                              accessibilityRole={review.authorId ? "link" : undefined}
-                              accessibilityLabel={`Open ${review.authorName}'s profile`}
-                              disabled={!review.authorId}
-                              hitSlop={{ top: 8, bottom: 4, left: 8, right: 8 }}
-                              onPress={() => openReviewerProfile(review)}
-                            >
+                            <View style={{ flex: 1 }}>
                               <AppText style={{ fontWeight: "900" }} numberOfLines={1}>
                                 {review.authorName}
                               </AppText>
+                              <AppText variant="micro" tone="muted">
+                                {formatTimeAgo(review.createdAt)}
+                              </AppText>
+                            </View>
+                          </Pressable>
+                          {isOwnReview(review, isAuthenticated ? profile.id : undefined) ? null : (
+                            <Pressable
+                              accessibilityRole="button"
+                              accessibilityLabel={`Report or block, review by ${review.authorName}`}
+                              hitSlop={8}
+                              onPress={() => openReviewSafetyMenu(review)}
+                              style={{
+                                alignItems: "center",
+                                justifyContent: "center",
+                                minHeight: 44,
+                                minWidth: 44,
+                              }}
+                            >
+                              <MoreHorizontal color={palette.textSecondary} size={20} />
                             </Pressable>
-                            <AppText variant="micro" tone="muted">
-                              {formatTimeAgo(review.createdAt)}
-                            </AppText>
-                          </View>
+                          )}
                         </View>
                         <CaptionPreview text={review.text} />
                         <ReviewPhotoStrip
@@ -1488,18 +1669,20 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                         {isOwnReview(review, isAuthenticated ? profile.id : undefined) ? (
                           <OwnReviewActions
                             review={review}
-                            onUpdated={(patch) =>
+                            onUpdated={(patch) => {
                               setDishReviews((current) =>
                                 current.map((entry) =>
                                   entry.id === review.id ? { ...entry, ...patch } : entry,
                                 ),
-                              )
-                            }
-                            onDeleted={() =>
+                              );
+                              refreshDish();
+                            }}
+                            onDeleted={() => {
                               setDishReviews((current) =>
                                 current.filter((entry) => entry.id !== review.id),
-                              )
-                            }
+                              );
+                              refreshDish();
+                            }}
                           />
                         ) : null}
                         {review.merchantReply ? (
@@ -1525,11 +1708,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                           review={review}
                           isOwn={isOwnReview(review, isAuthenticated ? profile.id : undefined)}
                           returnRoute={{ name: "DishDetail", params: { dishId: dish.id } }}
-                          onRemoved={() =>
-                            setDishReviews((current) =>
-                              current.filter((entry) => entry.id !== review.id),
-                            )
-                          }
+                          onRemoved={() => removeReview(review.id)}
                         />
                       </View>
                     ))}
@@ -1596,15 +1775,14 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
             cta={
               showDeferredDetailControls && FEATURE_FLAGS.reviewCreationEnabled
                 ? {
-                    label: "Write a review",
+                    // dish_tried_prompt_v1 toast_cta: after a Tried mark the CTA asks to rate it.
+                    label: rateItCta && !hasReviewed ? "Rate it" : "Write a review",
                     onPress: handleReview,
                   }
                 : undefined
             }
             testID="dish-action-bar"
           />
-
-          <FloatingBackButton onPress={goBackOrHome} />
 
           {showDeferredDetailControls ? (
             <ReviewShareSheet
@@ -1622,68 +1800,14 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
           ) : null}
           {saveToListSheet}
 
-          <Modal
-            visible={triedPromptOpen}
-            transparent
-            animationType="fade"
-            onRequestClose={() => setTriedPromptOpen(false)}
-          >
-            <View
-              style={{
-                backgroundColor: palette.mediaScrim,
-                flex: 1,
-                justifyContent: "center",
-                padding: spacing[4],
-              }}
-            >
-              <View
-                accessibilityViewIsModal
-                style={{
-                  backgroundColor: palette.surface,
-                  borderRadius: componentRadii.card,
-                  gap: spacing[4],
-                  padding: spacing[5],
-                }}
-              >
-                <View style={{ alignItems: "center", gap: spacing[1] }}>
-                  <AppText variant="h2" style={{ textAlign: "center" }}>
-                    {`You tried ${dish.name}`}
-                  </AppText>
-                  <AppText variant="bodySmall" tone="secondary" style={{ textAlign: "center" }}>
-                    How was it? Both are optional.
-                  </AppText>
-                </View>
-                <View style={{ alignItems: "center", gap: spacing[2] }}>
-                  <AppText variant="bodySmallBold">Your rating</AppText>
-                  <StarRating value={triedRating} editable onChange={setTriedRating} />
-                </View>
-                <View style={{ gap: spacing[2] }}>
-                  <AppText variant="bodySmallBold" style={{ textAlign: "center" }}>
-                    How did it taste?
-                  </AppText>
-                  <ChipGroup
-                    options={TRIED_PROMPT_TASTE_TAGS.map((tag) => ({ id: tag, label: tag }))}
-                    selectedIds={triedTags}
-                    onSelect={(tag) =>
-                      setTriedTags((current) =>
-                        current.includes(tag)
-                          ? current.filter((value) => value !== tag)
-                          : [...current, tag],
-                      )
-                    }
-                  />
-                </View>
-                <View style={{ gap: spacing[2] }}>
-                  <Button label="Write a review" onPress={continueTriedReview} />
-                  <Button
-                    label="Not now"
-                    variant="ghost"
-                    onPress={() => setTriedPromptOpen(false)}
-                  />
-                </View>
-              </View>
-            </View>
-          </Modal>
+          {triedFollowUpPending ? (
+            <TriedFollowUp
+              dish={dish}
+              onWriteReview={continueTriedReview}
+              onShowRateIt={() => setRateItCta(true)}
+              onClose={() => setTriedFollowUpPending(false)}
+            />
+          ) : null}
         </View>
       </SafeAreaView>
     </FeedErrorBoundary>
