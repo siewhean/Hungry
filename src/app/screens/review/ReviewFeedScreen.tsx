@@ -60,6 +60,7 @@ import {
   buildReviewExploreChips,
   filterReviewExplore,
   resolveActiveReviewChip,
+  reviewTileHoldAction,
   reviewsWithPhotos,
   visibleGridReviews,
   withSelectedReviewChip,
@@ -146,7 +147,7 @@ const ReviewTile = memo(function ReviewTile({
   item,
   index,
   size,
-  isOwn,
+  holdAction,
   showLabels,
   onPress,
   onLongPress,
@@ -154,7 +155,8 @@ const ReviewTile = memo(function ReviewTile({
   item: ReviewFeedItem;
   index: number;
   size: number;
-  isOwn: boolean;
+  /** What holding the tile does: manage your own review, report someone else's, or nothing. */
+  holdAction: "manage" | "report" | null;
   showLabels: boolean;
   onPress: (item: ReviewFeedItem, index: number) => void;
   onLongPress: (item: ReviewFeedItem) => void;
@@ -162,24 +164,26 @@ const ReviewTile = memo(function ReviewTile({
   const { palette, radii, spacing } = useHungryTheme();
   const photoCount = item.review.photos.length;
   const dateLabel = formatReviewDate(item.review.createdAt);
-  const holdLabel = isOwn ? "Edit or delete" : "Report or block";
+  const holdLabel = holdAction === "manage" ? "Edit or delete" : "Report or block";
 
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${item.review.authorName}'s review of ${item.dishName} at ${item.venueName}, ${dateLabel}`}
       accessibilityHint={
-        isOwn
+        holdAction === "manage"
           ? "Opens the review. Hold to edit or delete it"
-          : "Opens the review. Hold to report it or block its author"
+          : holdAction === "report"
+            ? "Opens the review. Hold to report it or block its author"
+            : "Opens the review"
       }
-      accessibilityActions={[{ name: "longpress", label: holdLabel }]}
+      accessibilityActions={holdAction ? [{ name: "longpress", label: holdLabel }] : undefined}
       onAccessibilityAction={(event) => {
-        if (event.nativeEvent.actionName === "longpress") onLongPress(item);
+        if (holdAction && event.nativeEvent.actionName === "longpress") onLongPress(item);
       }}
       testID={`review-tile-${item.review.id}`}
       onPress={() => onPress(item, index)}
-      onLongPress={() => onLongPress(item)}
+      onLongPress={holdAction ? () => onLongPress(item) : undefined}
       style={({ pressed }) => ({ height: size, opacity: pressed ? 0.85 : 1, width: size })}
     >
       <AccessibleImage
@@ -401,6 +405,8 @@ export function ReviewFeedScreen() {
   // so a review the user just posted shows without losing the pages already scrolled.
   useFocusEffect(
     useCallback(() => {
+      // Re-filter on every focus: a review deleted on its own page leaves the loaded pages.
+      bumpSafetyFilter();
       if (serviceProviderMode === "mock") {
         setServiceReviewItems(null);
         return undefined;
@@ -411,7 +417,7 @@ export function ReviewFeedScreen() {
         void loadServiceReviews("prepend");
       }
       return undefined;
-    }, [loadServiceReviews, serviceProviderMode]),
+    }, [bumpSafetyFilter, loadServiceReviews, serviceProviderMode]),
   );
 
   useEffect(
@@ -618,13 +624,24 @@ export function ReviewFeedScreen() {
         item={item}
         index={index}
         size={tileSize}
-        isOwn={Boolean(isAuthenticated && item.review.authorId && item.review.authorId === viewerId)}
+        holdAction={reviewTileHoldAction({
+          isOwn: Boolean(isAuthenticated && item.review.authorId && item.review.authorId === viewerId),
+          canEditOwnReviews,
+        })}
         showLabels={showTileLabels}
         onPress={handleOpenReview}
         onLongPress={handleSafetyPress}
       />
     ),
-    [handleOpenReview, handleSafetyPress, isAuthenticated, showTileLabels, tileSize, viewerId],
+    [
+      canEditOwnReviews,
+      handleOpenReview,
+      handleSafetyPress,
+      isAuthenticated,
+      showTileLabels,
+      tileSize,
+      viewerId,
+    ],
   );
 
   const keyExtractor = useCallback((item: ReviewFeedItem) => item.interactionId, []);

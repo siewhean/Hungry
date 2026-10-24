@@ -4,10 +4,16 @@
 import assert from "node:assert/strict";
 import { createElement } from "react";
 import test, { afterEach, beforeEach } from "node:test";
+import { Alert } from "react-native";
 
 import { ReviewDetailScreen } from "@/app/screens/review/ReviewDetailScreen";
 import { ReviewFeedScreen } from "@/app/screens/review/ReviewFeedScreen";
-import { ReviewReaderActions } from "@/components/review";
+import { ReviewSuccessModal } from "@/app/screens/review/ReviewSuccessModal";
+import { OwnReviewActions, ReviewPhotoStrip, ReviewReaderActions, TasteRatingInput } from "@/components/review";
+import {
+  clearDeletedReviewsForSession,
+  reviewTileHoldAction,
+} from "@/features/review/reviewExplore";
 import { clearTrackedAnalyticsEvents, getTrackedAnalyticsEvents } from "@/lib/analytics";
 import {
   resetExperimentSession,
@@ -17,7 +23,8 @@ import {
 import { getHungryService, getServiceProvider, setServiceProvider } from "@/lib/services/serviceProvider";
 import type { HungryService, RecentReviewFeedEntry } from "@/lib/services/types";
 import { useProfileStore } from "@/store/useProfileStore";
-import { cleanup, render, renderScreen } from "@/test/render";
+import { useUIStore } from "@/store/useUIStore";
+import { cleanup, createFakeNavigation, render, renderScreen } from "@/test/render";
 import { enterScenario } from "@/test/render/sessions";
 
 beforeEach(async () => {
@@ -26,9 +33,78 @@ beforeEach(async () => {
 });
 afterEach(async () => {
   await cleanup();
+  clearDeletedReviewsForSession();
+  Alert.alert = originalAlert;
   setExperimentFlagSource(undefined);
   resetExperimentSession();
 });
+
+const originalAlert = Alert.alert;
+
+/** Answers every Alert by pressing the button named next in `answers`; records the titles. */
+function answerAlerts(answers: string[]) {
+  const titles: string[] = [];
+  Alert.alert = ((title: string, _message?: string, buttons?: { text?: string; onPress?: () => void }[]) => {
+    titles.push(title);
+    const label = answers.shift();
+    buttons?.find((button) => button.text === label)?.onPress?.();
+  }) as typeof Alert.alert;
+  return titles;
+}
+
+/** A fake navigation that can blur and refocus the screen, like leaving and coming back. */
+function focusableNavigation() {
+  const navigation = createFakeNavigation();
+  const listeners = new Map<string, Set<() => void>>();
+  let focused = true;
+  Object.assign(navigation, {
+    isFocused: () => focused,
+    addListener: (type: string, listener: () => void) => {
+      if (!listeners.has(type)) listeners.set(type, new Set());
+      listeners.get(type)?.add(listener);
+      return () => listeners.get(type)?.delete(listener);
+    },
+  });
+  const emit = (type: "focus" | "blur") => {
+    focused = type === "focus";
+    for (const listener of [...(listeners.get(type) ?? [])]) listener();
+  };
+  return { navigation, emit };
+}
+
+/** Holds a pressable for longer than the long-press delay (react-native-web responder). */
+async function holdDown(view: Awaited<ReturnType<typeof render>>, target: HTMLElement | null) {
+  assert.ok(target, "hold target not found");
+  const init = { bubbles: true, cancelable: true, button: 0 };
+  const PointerCtor = (window as unknown as { PointerEvent?: typeof MouseEvent }).PointerEvent;
+  target.dispatchEvent(
+    PointerCtor ? new PointerCtor("pointerdown", init) : new window.MouseEvent("mousedown", init),
+  );
+  await new Promise((resolve) => setTimeout(resolve, 600));
+  target.dispatchEvent(
+    PointerCtor ? new PointerCtor("pointerup", init) : new window.MouseEvent("mouseup", init),
+  );
+  await view.settle();
+}
+
+/** Reads what reportError logs in development, so a test can tell what reached Sentry. */
+async function captureReportedErrors(run: () => Promise<void>): Promise<unknown[]> {
+  const errors: unknown[] = [];
+  const original = console.error;
+  const globals = globalThis as { __DEV__?: boolean };
+  const previousDev = globals.__DEV__;
+  globals.__DEV__ = true;
+  console.error = (...args: unknown[]) => {
+    if (args[0] === "[reportError]") errors.push(args[1]);
+  };
+  try {
+    await run();
+  } finally {
+    console.error = original;
+    globals.__DEV__ = previousDev;
+  }
+  return errors;
+}
 
 function entry(id: string, authorId: string, overrides: Partial<RecentReviewFeedEntry["review"]> = {}) {
   return {
@@ -217,4 +293,187 @@ test("like, unlike, like quickly: one request in flight, the final state wins (R
   } finally {
     reviews.setReviewHelpful = original;
   }
+});
+
+// ─── Round-three post-verify (REV-V1..V5, REV-19) ────────────────────────────
+
+test("ReviewDetail refetches on refocus without a skeleton and takes the new like count (REV-2, REV-V3)", async () => {
+  let reads = 0;
+  useLiveReviews({
+    getReviewById: async () => {
+      reads += 1;
+      return entry("r-other", "user-emma", { helpfulCount: reads === 1 ? 1 : 5 });
+    },
+  });
+  const { navigation, emit } = focusableNavigation();
+  const view = await renderScreen(ReviewDetailScreen as never, {
+    name: "ReviewDetail",
+    params: { reviewId: "r-other" },
+    navigation,
+  });
+  assert.equal(reads, 1);
+  assert.ok(view.findByLabel("Like, 1 like"));
+  emit("blur");
+  emit("focus");
+  await view.settle();
+  assert.equal(reads, 2, "coming back reads the review again");
+  assert.equal(view.findByLabel("Loading review"), null, "no skeleton on a refocus");
+  assert.ok(view.findByLabel("Like, 5 likes"), "the heart shows the refetched count");
+});
+
+test("the success modal's View your review opens the posted review (REV-2)", async () => {
+  useLiveReviews({});
+  const opened: string[] = [];
+  useUIStore.getState().showReviewSuccess({
+    reviewId: "r-new",
+    dishName: "Katong Laksa",
+    venueName: "Laksa Stall",
+    xpEarned: 10,
+  });
+  const view = await render(
+    createElement(ReviewSuccessModal, {
+      onOpenHistory: () => undefined,
+      onOpenReview: (id: string) => opened.push(id),
+    }),
+  );
+  await view.press(view.findByText("View your review"));
+  assert.deepEqual(opened, ["r-new"]);
+  assert.equal(useUIStore.getState().reviewSuccess, null);
+});
+
+test("a review deleted on ReviewDetail leaves the Reviews grid on its next focus (REV-V1)", async () => {
+  const me = useProfileStore.getState().profile.id;
+  const deleted: string[] = [];
+  useLiveReviews({
+    getReviewById: async () => entry("mine", me),
+    listRecentReviewsPage: async () => ({
+      entries: [entry("mine", me), entry("r1", "user-emma")],
+      hasMore: false,
+    }),
+    deleteReview: async (id: string) => {
+      deleted.push(id);
+    },
+  });
+  const grid = focusableNavigation();
+  const gridView = await renderScreen(ReviewFeedScreen as never, {
+    name: "Review",
+    navigation: grid.navigation,
+  });
+  assert.ok(gridView.findByTestId("review-tile-mine"));
+  grid.emit("blur");
+
+  const detail = await renderScreen(ReviewDetailScreen as never, {
+    name: "ReviewDetail",
+    params: { reviewId: "mine" },
+  });
+  answerAlerts(["Delete review", "Delete"]);
+  await detail.press(detail.findByLabel("Manage your review"));
+  assert.deepEqual(deleted, ["mine"]);
+
+  grid.emit("focus");
+  await gridView.settle();
+  assert.equal(gridView.findByTestId("review-tile-mine"), null, "the deleted tile is gone");
+  assert.ok(gridView.findByTestId("review-tile-r1"));
+});
+
+test("holding your own tile opens Edit / Delete, not Report (REV-4a)", async () => {
+  const me = useProfileStore.getState().profile.id;
+  useLiveReviews({
+    listRecentReviewsPage: async () => ({ entries: [entry("mine", me)], hasMore: false }),
+  });
+  const titles = answerAlerts([]);
+  const view = await renderScreen(ReviewFeedScreen as never, { name: "Review" });
+  await holdDown(view, view.findByTestId("review-tile-mine"));
+  assert.deepEqual(titles, ["Your review"]);
+  assert.equal(useUIStore.getState().safetyMenu, null, "no report menu for your own review");
+});
+
+test("holding your own tile does nothing when editing is unavailable (REV-V2)", async () => {
+  assert.equal(reviewTileHoldAction({ isOwn: true, canEditOwnReviews: false }), null);
+  assert.equal(reviewTileHoldAction({ isOwn: true, canEditOwnReviews: true }), "manage");
+  assert.equal(reviewTileHoldAction({ isOwn: false, canEditOwnReviews: false }), "report");
+  const me = useProfileStore.getState().profile.id;
+  useLiveReviews({
+    listRecentReviewsPage: async () => ({ entries: [entry("mine", me)], hasMore: false }),
+    updateReview: undefined,
+    deleteReview: undefined,
+  });
+  const titles = answerAlerts([]);
+  const view = await renderScreen(ReviewFeedScreen as never, { name: "Review" });
+  await holdDown(view, view.findByTestId("review-tile-mine"));
+  assert.deepEqual(titles, []);
+  assert.equal(useUIStore.getState().safetyMenu, null);
+});
+
+test("For your taste with no match shows its own empty state and Show all reviews (REV-9)", async () => {
+  // The review's dish is not in the catalog, so it can never match the diner's palette.
+  useLiveReviews({
+    listRecentReviewsPage: async () => ({
+      entries: [{ ...entry("r1", "user-emma"), dishId: "dish-not-in-catalog" }],
+      hasMore: false,
+    }),
+  });
+  const view = await renderScreen(ReviewFeedScreen as never, { name: "Review" });
+  const tasteChip = view.findByText("For your taste");
+  assert.ok(tasteChip, "the diner has a palette, so the taste chip shows");
+  await view.press(tasteChip);
+  assert.match(view.text(), /No reviews for your taste yet/);
+  assert.equal(view.findByTestId("review-tile-r1"), null);
+  await view.press(view.findByText("Show all reviews"));
+  assert.ok(view.findByTestId("review-tile-r1"));
+});
+
+test("each taste is one labelled radio group with five radios (REV-16)", async () => {
+  const view = await render(
+    createElement(TasteRatingInput, { values: { spicy: 2 }, onChange: () => undefined }),
+  );
+  const groups = Array.from(document.body.querySelectorAll('[role="radiogroup"]'));
+  assert.ok(groups.length >= 5);
+  for (const group of groups) {
+    assert.ok(group.getAttribute("aria-label"), "each group is named after its taste");
+    assert.equal(group.querySelectorAll('[role="radio"]').length, 5);
+  }
+  assert.ok(view.findByLabel("Spicy"));
+});
+
+test("an expected edit refusal stays out of Sentry; a real failure on a dish page reports (REV-V5)", async () => {
+  const reviews = getHungryService().reviews;
+  const original = reviews.updateReview;
+  let failure: unknown = { code: "23514", message: "Please keep reviews friendly" };
+  reviews.updateReview = async () => {
+    throw failure;
+  };
+  try {
+    const errors = await captureReportedErrors(async () => {
+      const view = await render(
+        createElement(OwnReviewActions, {
+          review: { id: "r-own", rating: 4, text: "Good" },
+          onUpdated: () => undefined,
+          onDeleted: () => undefined,
+        }),
+      );
+      await view.press(view.findByLabel("Edit your review"));
+      await view.press(view.findByText("Save"));
+      failure = new Error("connection reset by peer");
+      await view.press(view.findByText("Save"));
+    });
+    assert.deepEqual(
+      errors.map((error) => (error as Error).message),
+      ["connection reset by peer"],
+    );
+  } finally {
+    reviews.updateReview = original;
+  }
+});
+
+test("tapping a review photo opens it full screen (REV-19)", async () => {
+  const view = await render(
+    createElement(ReviewPhotoStrip, {
+      photos: ["https://example.com/a.jpg", "https://example.com/b.jpg"],
+      subject: "Katong Laksa, review by Emma",
+    }),
+  );
+  assert.equal(view.findByLabel("Close photos"), null);
+  await view.press(view.findByLabel("Photo 2 of 2, Katong Laksa, review by Emma"));
+  assert.ok(view.findByLabel("Close photos"), "the full-screen viewer is open");
 });

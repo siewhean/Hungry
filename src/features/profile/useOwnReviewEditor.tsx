@@ -3,7 +3,11 @@ import { MoreHorizontal } from "lucide-react-native";
 
 import { OwnContentEditDialog } from "@/components/social/OwnContentEditDialog";
 import { IconButton } from "@/components/ui";
-import { describeReviewEditError } from "@/features/review/publishErrorCopy";
+import {
+  describeReviewEditError,
+  isExpectedPublishError,
+} from "@/features/review/publishErrorCopy";
+import { markReviewDeletedForSession } from "@/features/review/reviewExplore";
 import { reportError } from "@/lib/monitoring/reportError";
 import { REVIEW_TEXT_MAX_LENGTH, sanitizeFreeText } from "@/lib/security/inputSanitization";
 import { useUIStore } from "@/store/useUIStore";
@@ -47,10 +51,14 @@ export function useOwnReviewEditor(options: {
     async (review: Review) => {
       try {
         await deleteOwnReview(review.id);
+        markReviewDeletedForSession(review.id);
         onDeleted(review.id);
         showToast({ message: "Review deleted.", tone: "success" });
       } catch (error) {
-        reportError(error, { action: "delete_own_review", reviewId: review.id });
+        // A text-filter refusal or the rate limit is an expected outcome, not a fault.
+        if (!isExpectedPublishError(error)) {
+          reportError(error, { action: "delete_own_review", reviewId: review.id });
+        }
         showToast({ message: describeReviewEditError(error, "delete"), tone: "error" });
       }
     },
@@ -77,7 +85,9 @@ export function useOwnReviewEditor(options: {
       try {
         await updateOwnReview(editing.id, patch);
       } catch (error) {
-        reportError(error, { action: "update_own_review", reviewId: editing.id });
+        if (!isExpectedPublishError(error)) {
+          reportError(error, { action: "update_own_review", reviewId: editing.id });
+        }
         showToast({ message: describeReviewEditError(error, "save"), tone: "error" });
         throw error;
       }

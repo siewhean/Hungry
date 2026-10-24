@@ -8,6 +8,9 @@ import {
   filterReviewExplore,
   resolveActiveReviewChip,
   reviewsWithPhotos,
+  clearDeletedReviewsForSession,
+  isReviewDeletedForSession,
+  markReviewDeletedForSession,
   visibleGridReviews,
   withSelectedReviewChip,
 } from "./reviewExplore";
@@ -113,4 +116,19 @@ test("the grid leaves out session-hidden reviews and the viewer's own moderated 
     visible.map((i) => i.review.id),
     ["own-live", ...items.map((i) => i.review.id)],
   );
+});
+
+test("a review deleted on another screen leaves the grid this session (REV-V1)", () => {
+  clearDeletedReviewsForSession();
+  const deleted = item("deleted", "Laksa", "Maxwell");
+  const kept = item("kept", "Laksa", "Maxwell");
+  const options = { isHidden: () => false };
+  assert.equal(visibleGridReviews([deleted, kept], options).length, 2);
+  markReviewDeletedForSession("deleted");
+  assert.equal(isReviewDeletedForSession("deleted"), true);
+  assert.deepEqual(
+    visibleGridReviews([deleted, kept], options).map((i) => i.review.id),
+    ["kept"],
+  );
+  clearDeletedReviewsForSession();
 });
