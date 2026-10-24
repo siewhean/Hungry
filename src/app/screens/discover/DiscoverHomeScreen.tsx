@@ -2650,7 +2650,7 @@ export function DiscoverHomeScreen() {
                       justifyContent: "center",
                     }}
                   >
-                    <Flame color={palette.white} size={22} />
+                    <Flame color={palette.textOnOrange} size={22} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <AppText variant="bodyBold" style={{ color: themeTints.text }}>

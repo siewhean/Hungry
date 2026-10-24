@@ -257,7 +257,7 @@ export function ComposerBottomBar({ routeDishId, routeVenueId }: ComposerBottomB
                 borderLeftColor: palette.inverseSurfaceSubtle,
               }}
             >
-              <ChevronUp size={18} color={palette.white} />
+              <ChevronUp size={18} color={palette.textOnOrange} />
             </Pressable>
           </View>
         </View>

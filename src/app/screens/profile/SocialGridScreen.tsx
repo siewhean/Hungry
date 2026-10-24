@@ -209,7 +209,7 @@ export function SocialGridScreen() {
         />
         {isStory && (
           <View style={[styles.badge, { backgroundColor: palette.orange }]}>
-            <AppText variant="bodySmallBold" style={{ color: palette.white }}>
+            <AppText variant="bodySmallBold" style={{ color: palette.textOnOrange }}>
               STORY
             </AppText>
           </View>

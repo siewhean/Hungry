@@ -142,7 +142,7 @@ export function PassportCard({ onPress, onPressIn }: PassportCardProps) {
               Start exploring to earn your first stamp
             </AppText>
             {nextStamp ? (
-              <AppText variant="micro" style={{ color: palette.orange, fontWeight: "700" }}>
+              <AppText variant="micro" style={{ color: palette.orangeText, fontWeight: "700" }}>
                 Next: {nextStamp.category.name}
               </AppText>
             ) : null}

@@ -482,7 +482,7 @@ export function CraveScreen() {
               pressed && { scale: 0.9, opacity: 0.9 },
             ]}
           >
-            <Heart color={palette.white} fill={palette.white} size={32} />
+            <Heart color={palette.textOnOrange} fill={palette.textOnOrange} size={32} />
           </Pressable>
         </View>
       </SafeAreaView>

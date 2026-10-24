@@ -124,7 +124,8 @@ test("Screen header contract: live Discover, Review, and New Post headers use Ap
   assert.match(reviewSearchSummary, /Showing results for/);
   assert.doesNotMatch(reviewSearchSummary, /Searching for|backgroundColor|borderRadius/);
   assert.doesNotMatch(reviews, /showSearch|setShowSearch/);
-  assert.match(profileShell, /contentContainerStyle=\{\{ paddingTop: 0 \}\}/);
+  assert.match(profileShell, /useSafeAreaInsets/);
+  assert.match(profileShell, /contentContainerStyle=\{\{ paddingTop: topPadding \}\}/);
   assert.match(composerHeader, /<AppHeader[\s\S]*title=\{title\}/);
   assert.doesNotMatch(composerHeader, /fontSize: 16/);
 });

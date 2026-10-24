@@ -612,9 +612,9 @@ export function MerchantMenuScreen() {
             }}
           >
             {MENU_PHOTO_DRAFTS_ENABLED && showCreateOptions ? (
-              <X size={26} color={palette.white} />
+              <X size={26} color={palette.textOnOrange} />
             ) : (
-              <Plus size={28} color={palette.white} />
+              <Plus size={28} color={palette.textOnOrange} />
             )}
           </Pressable>
         </FAB>

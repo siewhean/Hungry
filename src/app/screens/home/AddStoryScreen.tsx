@@ -192,7 +192,7 @@ export function AddStoryScreen() {
                 </View>
                 {selected ? (
                   <View style={[styles.selectedBadge, { backgroundColor: palette.orange }]}>
-                    <Check color={palette.white} size={14} strokeWidth={3} />
+                    <Check color={palette.textOnOrange} size={14} strokeWidth={3} />
                   </View>
                 ) : null}
               </Pressable>

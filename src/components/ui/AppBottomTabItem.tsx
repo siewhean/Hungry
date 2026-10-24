@@ -29,7 +29,7 @@ export function AppBottomTabItem({
   onPressIn,
   accessibilityLabel,
 }: AppBottomTabItemProps) {
-  const { colorScheme, componentSizes, palette, radii, spacing } = useHungryTheme();
+  const { colorScheme, componentSizes, fontScaling, palette, radii, spacing } = useHungryTheme();
   // orangeText keeps the small active label above 4.5:1 (brand orange is 3.69:1 on white).
   const resolvedColor = color ?? (focused ? palette.orangeText : palette.textMuted);
   // White on the brighter dark-mode orange is only 2.8:1, so use the dark on-orange ink there.
@@ -81,6 +81,7 @@ export function AppBottomTabItem({
         <AppText
           variant="micro"
           numberOfLines={1}
+          maxFontSizeMultiplier={fontScaling.tabLabelMaxMultiplier}
           style={{
             color: resolvedColor,
             fontSize: componentSizes.bottomTabLabelFontSize,

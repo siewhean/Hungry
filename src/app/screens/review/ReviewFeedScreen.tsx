@@ -168,7 +168,7 @@ const ReviewTile = memo(function ReviewTile({
       ) : null}
       <View
         style={{
-          backgroundColor: palette.overlay,
+          backgroundColor: palette.mediaScrimStrong,
           borderRadius: radii.pill,
           bottom: spacing[1.5],
           left: spacing[1.5],

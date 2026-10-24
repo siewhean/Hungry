@@ -276,8 +276,8 @@ export const componentSizes = {
   bottomTabIconSlotHeight: 28,
   bottomTabCreateButton: 44,
   bottomTabIcon: 26,
-  bottomTabLabelFontSize: 10,
-  bottomTabLabelLineHeight: 12,
+  bottomTabLabelFontSize: 12,
+  bottomTabLabelLineHeight: 16,
   merchantTabIcon: 30,
   buttonSmMinHeight: 36,
   buttonMdMinHeight: 52,
@@ -286,10 +286,12 @@ export const componentSizes = {
 } as const;
 
 export const fontScaling = {
-  displayMaxMultiplier: 1.05,
-  headingMaxMultiplier: 1.08,
-  bodyMaxMultiplier: 1.12,
-  compactMaxMultiplier: 1,
+  displayMaxMultiplier: 1.5,
+  headingMaxMultiplier: 1.6,
+  bodyMaxMultiplier: 2,
+  compactMaxMultiplier: 2,
+  /** Bottom tab labels share a bar of fixed height, so they scale less than body text. */
+  tabLabelMaxMultiplier: 1.3,
 } as const;
 
 export const radii = {

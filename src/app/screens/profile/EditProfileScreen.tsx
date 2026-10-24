@@ -217,7 +217,7 @@ export function EditProfileScreen({ navigation }: Props) {
               borderColor: palette.surface,
             }}
           >
-            <Camera size={16} color={palette.surface} />
+            <Camera size={16} color={palette.textOnOrange} />
           </View>
         </Pressable>
         {avatarPreviewUri ? (

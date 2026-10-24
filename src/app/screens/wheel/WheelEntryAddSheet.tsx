@@ -156,7 +156,7 @@ function VenueRow({
               borderColor: palette.surface,
             }}
           >
-            <Sparkles size={10} color={palette.textOnPrimary} />
+            <Sparkles size={10} color={palette.textOnOrange} />
           </View>
         )}
       </View>
