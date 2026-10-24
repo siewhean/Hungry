@@ -21,7 +21,7 @@ import type {
   CatalogSuggestion,
 } from "@/lib/services/catalog";
 import { CATALOG_OFFLINE_RELEASE_ID, CatalogContractError } from "@/lib/services/catalog";
-import { sanitizeCatalogImageUrl } from "@/lib/services/catalog/media";
+import { sanitizeOfflineCatalogImageUrl } from "@/lib/services/catalog/media";
 import type { Coordinate, DietaryFlag, DishDetail } from "@/types/domain";
 
 type ExcelVenue = ReturnType<typeof listExcelVenues>[number];
@@ -43,7 +43,7 @@ for (const dish of allDishes) {
 }
 
 function cleanImageUrl(value: string | null | undefined): string | undefined {
-  return sanitizeCatalogImageUrl(value, { rightsStatus: "approved", approvedForDisplay: true });
+  return sanitizeOfflineCatalogImageUrl(value);
 }
 
 function dishImageUrl(dish: Pick<DishDetail, "gallery" | "imageUrl">): string | undefined {

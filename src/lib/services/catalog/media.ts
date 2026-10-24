@@ -31,6 +31,26 @@ export function sanitizeCatalogImageUrl(
   }
 }
 
+/**
+ * Mirrors `public.catalog_url_is_delivery_app` (20260610120000): Grab, foodpanda and Deliveroo
+ * photos are not licensed for display unless the server says so.
+ */
+export function isDeliveryAppImageUrl(value: string | null | undefined): boolean {
+  const url = (value ?? "").toLowerCase();
+  return url.includes("grab.com") || url.includes("foodpanda.") || url.includes("deliveroo.");
+}
+
+/**
+ * The bundled offline (Excel) catalog has no rights data. It keeps first-party photos as before,
+ * but never a delivery-app photo, which the server would withhold (no licence on record).
+ */
+export function sanitizeOfflineCatalogImageUrl(
+  value: string | null | undefined,
+): string | undefined {
+  if (isDeliveryAppImageUrl(value)) return undefined;
+  return sanitizeCatalogImageUrl(value, { rightsStatus: "approved", approvedForDisplay: true });
+}
+
 export function sanitizeCatalogMediaUrl(
   value: string | null | undefined,
   rightsStatus: string | undefined,

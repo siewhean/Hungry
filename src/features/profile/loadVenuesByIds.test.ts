@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import type { VenueSummary } from "@/types/domain";
-import { loadVenuesByIds, VENUE_LOOKUP_CHUNK_SIZE } from "./loadVenuesByIds";
+import { describeMissingStalls, loadVenuesByIds, VENUE_LOOKUP_CHUNK_SIZE } from "./loadVenuesByIds";
 
 const venue = (id: string) => ({ id, name: `Stall ${id}` }) as VenueSummary;
 
@@ -34,4 +34,22 @@ test("no ids makes no call", async () => {
   });
   assert.equal(called, false);
   assert.deepEqual(result, { venues: [], missingCount: 0 });
+});
+
+test("a failed chunk rejects the whole lookup, so screens show Retry (SAVED-V1)", async () => {
+  const ids = Array.from({ length: 60 }, (_, index) => `v${index}`);
+  await assert.rejects(
+    loadVenuesByIds(ids, async (chunk) => {
+      if (chunk.length < VENUE_LOOKUP_CHUNK_SIZE) throw new Error("offline");
+      return chunk.map(venue);
+    }),
+  );
+});
+
+test("the missing-stalls note is singular for one stall", () => {
+  assert.equal(
+    describeMissingStalls(1),
+    "1 stall couldn't be loaded. It may have closed or left Hungry.",
+  );
+  assert.match(describeMissingStalls(3), /^3 stalls couldn't be loaded\. They may/);
 });

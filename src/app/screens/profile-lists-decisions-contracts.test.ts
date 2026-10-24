@@ -115,8 +115,8 @@ test("21: one Lists area, and Saved has Dishes, Stalls and Lists tabs", () => {
     saved,
     /dishes: "Dishes",\s*stalls: "Stalls",\s*posts: "Posts",\s*lists: "Collections"/,
   );
-  // Saved > Stalls lists saved stalls (STALL-1), fetched in one batch.
-  assert.match(saved, /discovery\.getVenuesByIds\(ids\)/);
+  // Saved > Stalls lists saved stalls (STALL-1), fetched in 50-id batches (SAVED-V2).
+  assert.match(saved, /loadVenuesByIds\(ids\)/);
   assert.match(saved, /navigation\.navigate\("ListsHome", undefined, \{ pop: true \}\)/);
 });
 
