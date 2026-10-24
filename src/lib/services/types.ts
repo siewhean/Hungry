@@ -995,6 +995,8 @@ export interface HungryService {
      * implementation must refuse to write if the live session belongs to anyone else.
      */
     toggleFavourite(dishId: string, expectedUserId?: string): Promise<boolean>;
+    /** Saves (true) or removes (false) a favourite with one idempotent write; no read first. */
+    setFavourite(dishId: string, saved: boolean, expectedUserId?: string): Promise<boolean>;
     /**
      * Saves the dish "Tried" mark on the server and resolves to the updated Tried list.
      * A dish the user reviewed stays in the list when un-ticked.
@@ -1428,6 +1430,8 @@ export interface HungryService {
       options?: PortfolioMutationOptions,
     ): Promise<PortfolioItem>;
     getPortfolioItems(portfolioId: string): Promise<PortfolioItem[]>;
+    /** Items of several lists in one read, keyed by list id. */
+    getPortfolioItemsForPortfolios(portfolioIds: string[]): Promise<Record<string, PortfolioItem[]>>;
     /** Names, photos and prices for every item of a list in one call. */
     getPortfolioItemDetails(portfolioId: string): Promise<PortfolioItemDetailRow[]>;
     updatePortfolioItem(

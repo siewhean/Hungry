@@ -1,26 +1,25 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import type { BottomSheetModal } from "@gorhom/bottom-sheet";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Check, ListPlus, Plus } from "lucide-react-native";
+import { Check, Plus } from "lucide-react-native";
 import { Pressable, View } from "react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, BottomSheet, Button, Card, Input } from "@/components/ui";
+import { AppText, BottomSheet, Button, Input } from "@/components/ui";
 import {
   buildSaveToListOptions,
   DEFAULT_PORTFOLIO_NAME,
   type SaveToListOption,
 } from "@/features/checklistPortfolio/saveToListOptions";
+import { PORTFOLIO_NAME_MAX_LENGTH } from "@/features/checklistPortfolio/listLabels";
+import { reportError } from "@/lib/monitoring/reportError";
 import { getHungryService } from "@/lib/services/serviceProvider";
-import { useChecklistStore } from "@/store/useChecklistStore";
 import { useMissionStore } from "@/store/useMissionStore";
-import { usePortfolioStore } from "@/store/usePortfolioStore";
+import { getPortfolioOwnerId, usePortfolioStore } from "@/store/usePortfolioStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
-
-const DEFAULT_CHECKLIST_NAME = "Want to Try";
 
 export type DetailSaveTarget =
   | {
@@ -39,23 +38,12 @@ export type DetailSaveTarget =
 interface UseDetailSaveActionsOptions {
   navigation: NativeStackNavigationProp<RootStackParamList>;
   target: DetailSaveTarget;
+  /** The page the save comes from, sent with portfolio_item_added (e.g. "catalog_detail"). */
+  surface?: string;
 }
 
 function isDuplicateError(error: unknown): boolean {
   return error instanceof Error && /already|duplicate/i.test(error.message);
-}
-
-function checklistContainsTarget(
-  items: ReturnType<typeof useChecklistStore.getState>["items"],
-  checklistId: string,
-  target: DetailSaveTarget,
-) {
-  return (items[checklistId] ?? []).some((item) => {
-    if (target.itemType === "dish") {
-      return item.itemType === "dish" && item.dishId === target.id;
-    }
-    return item.itemType === "stall" && item.stallId === target.id;
-  });
 }
 
 function findPortfolioTargetItem(
@@ -71,12 +59,11 @@ function findPortfolioTargetItem(
   });
 }
 
-export function useDetailSaveActions({ navigation, target }: UseDetailSaveActionsOptions) {
+export function useDetailSaveActions({ navigation, target, surface }: UseDetailSaveActionsOptions) {
   const profile = useProfileStore((state) => state.profile);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const showToast = useUIStore((state) => state.showToast);
-  const [isAddingToChecklist, setIsAddingToChecklist] = useState(false);
   const [isAddingToPortfolio, setIsAddingToPortfolio] = useState(false);
   const listSheetRef = useRef<BottomSheetModal>(null);
   // Bumped on every open so the sheet reloads your lists and their items.
@@ -96,59 +83,6 @@ export function useDetailSaveActions({ navigation, target }: UseDetailSaveAction
     navigation.navigate("AuthStack", { screen: "Login" });
     return false;
   }, [isAuthenticated, navigation, setReturnRoute, showToast, target]);
-
-  const addToChecklist = useCallback(async () => {
-    if (isAddingToChecklist || !requireAuth()) {
-      return;
-    }
-
-    setIsAddingToChecklist(true);
-    try {
-      let checklistState = useChecklistStore.getState();
-      if (!checklistState.isLoaded) {
-        await checklistState.loadChecklists();
-        checklistState = useChecklistStore.getState();
-      }
-
-      // Quick save only ever uses its own "Want to Try" list, never another checklist.
-      let checklist = checklistState.checklists.find(
-        (entry) => entry.name === DEFAULT_CHECKLIST_NAME,
-      );
-      if (!checklist) {
-        checklist = await checklistState.createChecklist(DEFAULT_CHECKLIST_NAME);
-      }
-
-      if (!useChecklistStore.getState().items[checklist.id]) {
-        await useChecklistStore.getState().loadChecklistItems(checklist.id);
-      }
-
-      if (checklistContainsTarget(useChecklistStore.getState().items, checklist.id, target)) {
-        showToast({
-          message: `${target.label} is already in ${checklist.name}.`,
-          tone: "info",
-        });
-        return;
-      }
-
-      await useChecklistStore
-        .getState()
-        .addItem(
-          target.itemType === "dish"
-            ? { checklistId: checklist.id, itemType: "dish", dishId: target.id }
-            : { checklistId: checklist.id, itemType: "stall", stallId: target.id },
-        );
-      showToast({ message: `Added to ${checklist.name}.`, tone: "success" });
-    } catch (error) {
-      showToast({
-        message: isDuplicateError(error)
-          ? `${target.label} is already saved to that checklist.`
-          : "Could not add this to your checklist.",
-        tone: isDuplicateError(error) ? "info" : "error",
-      });
-    } finally {
-      setIsAddingToChecklist(false);
-    }
-  }, [isAddingToChecklist, profile.id, requireAuth, showToast, target]);
 
   /** Opens "Save to list": your lists plus lists shared with you as an editor. */
   const addToPortfolio = useCallback(async () => {
@@ -199,6 +133,7 @@ export function useDetailSaveActions({ navigation, target }: UseDetailSaveAction
             target.itemType === "dish"
               ? { portfolioId: portfolio.id, itemType: "dish", dishId: target.id }
               : { portfolioId: portfolio.id, itemType: "stall", stallId: target.id },
+            { surface },
           );
         showToast({ message: `Added to ${portfolio.name}.`, tone: "success" });
         if (target.itemType === "stall") {
@@ -209,6 +144,9 @@ export function useDetailSaveActions({ navigation, target }: UseDetailSaveAction
             .catch(() => undefined);
         }
       } catch (error) {
+        if (!isDuplicateError(error)) {
+          reportError(error, { feature: "DetailSaveActions", action: "togglePortfolio" });
+        }
         showToast({
           message: isDuplicateError(error)
             ? `${target.label} is already saved to that list.`
@@ -219,14 +157,13 @@ export function useDetailSaveActions({ navigation, target }: UseDetailSaveAction
         setIsAddingToPortfolio(false);
       }
     },
-    [isAddingToPortfolio, profile.id, showToast, target],
+    [isAddingToPortfolio, profile.id, showToast, surface, target],
   );
 
   const saveToListSheet = (
     <SaveToListSheet
       sheetRef={listSheetRef}
       openCount={listSheetOpenCount}
-      profileId={profile.id}
       target={target}
       isSaving={isAddingToPortfolio}
       onToggle={togglePortfolio}
@@ -238,46 +175,43 @@ export function useDetailSaveActions({ navigation, target }: UseDetailSaveAction
   const ownPortfolioIds = usePortfolioStore((state) => state.scopeIds.mine);
   const portfolioItems = usePortfolioStore((state) => state.items);
   const [collectionsLoading, setCollectionsLoading] = useState(false);
+  const [collectionsFailed, setCollectionsFailed] = useState(false);
   const loadCollections = useCallback(async () => {
     if (!isAuthenticated) return;
     setCollectionsLoading(true);
+    setCollectionsFailed(false);
     try {
       const store = usePortfolioStore.getState();
       await store.loadPortfolioScope("mine");
-      const state = usePortfolioStore.getState();
-      // One read per list is how the store loads items; a failed one just shows unchecked.
-      await Promise.all(
-        (state.scopeIds.mine ?? [])
-          .filter((id) => !state.items[id])
-          // n-plus-one-ok: the store has no batched item read; at most a handful of own lists.
-          .map((id) => state.loadPortfolioItems(id).catch(() => undefined)),
-      );
-    } catch {
-      // The menu still offers "All lists", which retries.
+      // Every open reads the items again, so a change on another device shows the right ticks.
+      await store.loadItemsForPortfolios(usePortfolioStore.getState().scopeIds.mine ?? []);
+    } catch (error) {
+      // No list options (and no "Hungry Picks" placeholder) until a load succeeds; "New
+      // collection" opens the sheet, which retries.
+      reportError(error, { feature: "DetailSaveActions", action: "loadCollections" });
+      setCollectionsFailed(true);
     } finally {
       setCollectionsLoading(false);
     }
   }, [isAuthenticated]);
-  const collectionOptions = buildSaveToListOptions(
-    ownPortfolios,
-    ownPortfolioIds ?? [],
-    [],
-    profile.id,
-  ).map((option) => ({
-    option,
-    selected: Boolean(
-      option.portfolio && findPortfolioTargetItem(portfolioItems, option.portfolio.id, target),
-    ),
-  }));
+  const collectionOptions = collectionsFailed
+    ? []
+    : buildSaveToListOptions(ownPortfolios, ownPortfolioIds ?? [], [], getPortfolioOwnerId()).map(
+        (option) => ({
+          option,
+          selected: Boolean(
+            option.portfolio &&
+              findPortfolioTargetItem(portfolioItems, option.portfolio.id, target),
+          ),
+        }),
+      );
 
   return {
-    addToChecklist,
     addToPortfolio,
     collectionOptions,
     collectionsLoading,
     loadCollections,
     togglePortfolio,
-    isAddingToChecklist,
     isAddingToPortfolio,
     /** Render once on the page; addToPortfolio opens it. */
     saveToListSheet,
@@ -287,7 +221,6 @@ export function useDetailSaveActions({ navigation, target }: UseDetailSaveAction
 interface SaveToListSheetProps {
   sheetRef: RefObject<BottomSheetModal | null>;
   openCount: number;
-  profileId: string;
   target: DetailSaveTarget;
   isSaving: boolean;
   onToggle: (option: SaveToListOption, newListName?: string) => Promise<void>;
@@ -296,7 +229,6 @@ interface SaveToListSheetProps {
 function SaveToListSheet({
   sheetRef,
   openCount,
-  profileId,
   target,
   isSaving,
   onToggle,
@@ -307,13 +239,15 @@ function SaveToListSheet({
   const ownIds = usePortfolioStore((state) => state.scopeIds.mine);
   const [editorIds, setEditorIds] = useState<string[]>([]);
   // The open that last finished loading; anything newer is still loading.
-  const [loadedOpenCount, setLoadedOpenCount] = useState(0);
-  const isLoading = loadedOpenCount < openCount;
+  const [retryCount, setRetryCount] = useState(0);
+  const loadKey = openCount + retryCount;
+  const [loadedKey, setLoadedKey] = useState(0);
+  const isLoading = loadedKey < loadKey;
   const [loadFailed, setLoadFailed] = useState(false);
   const [newListName, setNewListName] = useState("");
 
   useEffect(() => {
-    if (openCount === 0) return;
+    if (loadKey === 0) return;
     let mounted = true;
     void (async () => {
       try {
@@ -323,31 +257,30 @@ function SaveToListSheet({
           getHungryService().portfolio.getSharedPortfolioIds({ role: "editor" }),
         ]);
         if (nextEditorIds.length > 0) await store.loadPortfolioScope("shared");
-        const state = usePortfolioStore.getState();
-        const listIds = [...(state.scopeIds.mine ?? []), ...nextEditorIds];
-        // Item lists decide each checkmark; a failed one just shows unchecked.
-        await Promise.all(
-          listIds
-            .filter((id) => !state.items[id])
-            .map((id) => state.loadPortfolioItems(id).catch(() => undefined)),
-        );
+        const listIds = [...(usePortfolioStore.getState().scopeIds.mine ?? []), ...nextEditorIds];
+        // Items decide each checkmark, so every open reads them again in one call.
+        await store.loadItemsForPortfolios(listIds);
         if (mounted) {
           setEditorIds(nextEditorIds);
           setLoadFailed(false);
         }
       } catch (error) {
-        console.error("Failed to load lists:", error);
+        reportError(error, { feature: "SaveToListSheet", action: "loadLists" });
         if (mounted) setLoadFailed(true);
       } finally {
-        if (mounted) setLoadedOpenCount(openCount);
+        if (mounted) setLoadedKey(loadKey);
       }
     })();
     return () => {
       mounted = false;
     };
-  }, [openCount]);
+  }, [loadKey]);
 
-  const options = buildSaveToListOptions(portfolios, ownIds ?? [], editorIds, profileId);
+  // Until your lists load, offering "Hungry Picks" would create a second one on tap.
+  const options =
+    isLoading || loadFailed
+      ? []
+      : buildSaveToListOptions(portfolios, ownIds ?? [], editorIds, getPortfolioOwnerId());
 
   return (
     <BottomSheet ref={sheetRef} accessibilityLabel="Save to list" snapPoints={["60%", "90%"]}>
@@ -356,10 +289,23 @@ function SaveToListSheet({
         <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
           {target.label}
         </AppText>
-        {loadFailed ? (
-          <AppText variant="bodySmall" tone="secondary">
-            {"Couldn't load all your lists. Check your connection and try again."}
+        {isLoading ? (
+          <AppText variant="bodySmall" tone="secondary" accessibilityLiveRegion="polite">
+            Loading your lists…
           </AppText>
+        ) : loadFailed ? (
+          <View style={{ gap: spacing[2] }}>
+            <AppText variant="bodySmall" tone="secondary" accessibilityLiveRegion="polite">
+              {"Couldn't load your lists. Check your connection and try again."}
+            </AppText>
+            <Button
+              label="Retry"
+              variant="secondary"
+              size="sm"
+              fullWidth={false}
+              onPress={() => setRetryCount((count) => count + 1)}
+            />
+          </View>
         ) : null}
         {options.map((option) => {
           const selected = Boolean(
@@ -399,6 +345,7 @@ function SaveToListSheet({
         <Input
           label="New list"
           placeholder="Name a new private list"
+          maxLength={PORTFOLIO_NAME_MAX_LENGTH}
           value={newListName}
           onChangeText={setNewListName}
         />
@@ -406,7 +353,7 @@ function SaveToListSheet({
           label="Create and add"
           variant="secondary"
           leftIcon={<Plus color={palette.text} size={16} />}
-          disabled={!newListName.trim() || isSaving}
+          disabled={!newListName.trim() || isSaving || isLoading}
           onPress={() => {
             const name = newListName.trim();
             void onToggle({ key: "new", name, isShared: false }, name).then(() =>
@@ -416,65 +363,5 @@ function SaveToListSheet({
         />
       </View>
     </BottomSheet>
-  );
-}
-
-interface DetailSaveActionsCardProps {
-  title: string;
-  body: string;
-  onAddToChecklist: () => void;
-  /** Omit to hide the portfolio action (stalls save to Lists from the interaction bar). */
-  onAddToPortfolio?: () => void;
-  isAddingToChecklist?: boolean;
-  isAddingToPortfolio?: boolean;
-}
-
-export function DetailSaveActionsCard({
-  title,
-  body,
-  onAddToChecklist,
-  onAddToPortfolio,
-  isAddingToChecklist = false,
-  isAddingToPortfolio = false,
-}: DetailSaveActionsCardProps) {
-  const { palette, spacing } = useHungryTheme();
-
-  return (
-    <Card style={{ gap: spacing[3] }}>
-      <View style={{ gap: spacing[1] }}>
-        <AppText variant="h3">{title}</AppText>
-        <AppText variant="bodySmall" tone="secondary">
-          {body}
-        </AppText>
-      </View>
-      <View style={{ flexDirection: "row", gap: spacing[2] }}>
-        <Button
-          label="Add to Checklist"
-          variant="secondary"
-          size="sm"
-          fullWidth={false}
-          loading={isAddingToChecklist}
-          onPress={onAddToChecklist}
-          leftIcon={<ListPlus color={palette.text} size={14} />}
-          style={{ flex: 1, minWidth: 0 }}
-          labelNumberOfLines={1}
-          labelEllipsizeMode="tail"
-        />
-        {onAddToPortfolio ? (
-          <Button
-            label="Add to list"
-            variant="secondary"
-            size="sm"
-            fullWidth={false}
-            loading={isAddingToPortfolio}
-            onPress={onAddToPortfolio}
-            leftIcon={<Plus color={palette.text} size={14} />}
-            style={{ flex: 1, minWidth: 0 }}
-            labelNumberOfLines={1}
-            labelEllipsizeMode="tail"
-          />
-        ) : null}
-      </View>
-    </Card>
   );
 }

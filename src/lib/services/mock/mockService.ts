@@ -2136,6 +2136,12 @@ export const hungryService: HungryService = {
       return resolve(!isFav);
     },
 
+    async setFavourite(dishId, saved) {
+      const isFav = _profile.favouriteDishIds.includes(dishId);
+      if (isFav === saved) return resolve(saved);
+      return this.toggleFavourite(dishId);
+    },
+
     async getFavouriteDishIds() {
       return resolve([..._profile.favouriteDishIds]);
     },
@@ -4240,6 +4246,16 @@ export const hungryService: HungryService = {
             .map((item) => (canReadPrivateNotes ? item : { ...item, privateNotes: undefined })),
         ),
       );
+    },
+
+    async getPortfolioItemsForPortfolios(portfolioIds: string[]) {
+      const result: Record<string, PortfolioItem[]> = {};
+      for (const portfolioId of new Set(portfolioIds)) {
+        // Lists the viewer cannot see are left out, as RLS does on the server.
+        const items = await this.getPortfolioItems(portfolioId).catch(() => undefined);
+        if (items) result[portfolioId] = items;
+      }
+      return result;
     },
 
     async updatePortfolioItem(

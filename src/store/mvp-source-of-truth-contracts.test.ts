@@ -13,7 +13,7 @@ test("profile store treats Supabase writes as source of truth with guarded rollb
   const source = read("src/store/useProfileStore.ts");
 
   for (const method of [
-    "profile.toggleFavourite",
+    "profile.setFavourite",
     "profile.updateProfile",
     "profile.updateTasteVector",
     "profile.updateTasteProfile",

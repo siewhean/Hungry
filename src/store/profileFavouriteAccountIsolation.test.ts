@@ -25,7 +25,7 @@ function installDeferredFavouriteService(calls: { dishId: string; expectedUserId
     service: {
       profile: {
         getFavouriteDishIds: async () => [],
-        toggleFavourite: (dishId: string, expectedUserId?: string) => {
+        setFavourite: (dishId: string, _saved: boolean, expectedUserId?: string) => {
           calls.push({ dishId, expectedUserId });
           return new Promise<boolean>((resolve, reject) => pending.push({ resolve, reject }));
         },

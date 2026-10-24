@@ -27,10 +27,9 @@ test("detail save buttons use compact standardized labels that stay inside the b
   const saveActions = read("src/features/checklistPortfolio/DetailSaveActions.tsx");
   const button = read("src/components/ui/Button.tsx");
 
-  assert.match(saveActions, /label="Add to Checklist"[\s\S]*size="sm"/);
-  assert.match(saveActions, /label="Add to list"[\s\S]*size="sm"/);
-  assert.match(saveActions, /labelNumberOfLines=\{1\}/);
-  assert.match(saveActions, /labelEllipsizeMode="tail"/);
+  // The two-button save card had no callers and was removed; the sheet keeps its labels short.
+  assert.doesNotMatch(saveActions, /label="Add to Checklist"/);
+  assert.match(saveActions, /label="Create and add"/);
   assert.match(button, /flexShrink: 1/);
   assert.match(button, /textAlign: "center"/);
 });
