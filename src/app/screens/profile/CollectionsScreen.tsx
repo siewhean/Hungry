@@ -1,10 +1,19 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Pressable, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Bookmark, ChevronRight, FolderHeart, MapPin, Search, Utensils } from "lucide-react-native";
+import {
+  Bookmark,
+  ChevronRight,
+  FolderHeart,
+  MapPin,
+  Plus,
+  Search,
+  Utensils,
+} from "lucide-react-native";
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
-import { AccessibleImage, AppText, Input } from "@/components/ui";
+import { AccessibleImage, AppText, Button, Input } from "@/components/ui";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import {
   WANT_TO_TRY_COLLECTION_ID,
   buildCollectionFoods,
@@ -132,6 +141,14 @@ export function CollectionsScreen({ navigation }: Props) {
               onPress={() => navigation.navigate("PortfolioDetail", { portfolioId: portfolio.id })}
             />
           ))}
+          {FEATURE_FLAGS.portfoliosEnabled ? (
+            <Button
+              label="New collection"
+              variant="secondary"
+              leftIcon={<Plus color={palette.text} size={18} />}
+              onPress={() => navigation.navigate("PortfolioCreate")}
+            />
+          ) : null}
           {portfolios.length === 0 ? (
             <View
               style={{

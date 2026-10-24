@@ -165,6 +165,11 @@ export function ReportProblemScreen({ navigation, route }: Props) {
           </AppText>
         </View>
 
+        {!kind || needsNote ? (
+          <AppText variant="bodySmall" tone="secondary" style={{ textAlign: "center" }}>
+            {!kind ? "Pick what's wrong to send" : "Tell us more to send"}
+          </AppText>
+        ) : null}
         <Button
           label="Send report"
           loading={isSending}

@@ -70,7 +70,7 @@ export function StarRating({
             >
               <Star
                 size={24}
-                color={active ? palette.starStroke : palette.border}
+                color={active ? palette.starStroke : palette.textMuted}
                 fill={active ? palette.starFill : "transparent"}
               />
             </View>
@@ -89,7 +89,7 @@ export function StarRating({
           >
             <Star
               size={24}
-              color={active ? palette.starStroke : palette.border}
+              color={active ? palette.starStroke : palette.textMuted}
               fill={active ? palette.starFill : "transparent"}
             />
           </Pressable>

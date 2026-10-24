@@ -195,6 +195,7 @@ export function PassportCard({ onPress, onPressIn }: PassportCardProps) {
         variant="micro"
         numberOfLines={1}
         accessibilityElementsHidden
+        aria-hidden
         importantForAccessibility="no-hide-descendants"
         style={{
           color: palette.passportGold,

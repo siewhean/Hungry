@@ -49,9 +49,10 @@ import type { DishDetail } from "@/types/domain";
 
 type Props = NativeStackScreenProps<ReviewStackParamList, "ReviewMain">;
 
-// Music is never saved and video is never uploaded with a review, so both stay prototype-only.
-const reviewMusicEnabled = FEATURE_FLAGS.prototypeRoutesEnabled;
-const reviewVideoEnabled = FEATURE_FLAGS.prototypeRoutesEnabled;
+// Music is never saved and video is never uploaded with a review, so the editor hides both
+// (Reels and Music) in every build until they ship.
+const reviewMusicEnabled = false;
+const reviewVideoEnabled = false;
 
 export function ReviewScreen({ navigation, route }: Props) {
   const repository = getDataRepository();
@@ -365,7 +366,7 @@ export function ReviewScreen({ navigation, route }: Props) {
 
   if (!draftHydrated) {
     return (
-      <Screen title="Write a review" subtitle="Share your latest meal with the community.">
+      <Screen title="Write a review" subtitle="Share what you ate">
         <View accessibilityLabel="Loading your draft" style={{ gap: spacing[4] }}>
           <Skeleton width="100%" height={88} />
           <Skeleton width="60%" height={32} />
@@ -384,12 +385,7 @@ export function ReviewScreen({ navigation, route }: Props) {
         : null;
 
   return (
-    <Screen
-      keyboardAvoiding
-      title="Write a review"
-      subtitle="Share your latest meal with the community."
-      scroll
-    >
+    <Screen keyboardAvoiding title="Write a review" subtitle="Share what you ate" scroll>
       <FeedErrorBoundary
         title="Review editor failed"
         body="We hit a snag loading the editor. Please try again."

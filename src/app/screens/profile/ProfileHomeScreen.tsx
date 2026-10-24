@@ -946,8 +946,6 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                   backgroundColor: palette.surface,
                   borderRadius: componentRadii.card,
                   padding: spacing[5],
-                  borderWidth: 1,
-                  borderColor: palette.border,
                   gap: spacing[4],
                 },
               ]}
@@ -1040,7 +1038,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                   onPress={handleReviewsCardPress}
                 >
                   <AppText variant="bodySmall" style={{ color: palette.orange }}>
-                    View All{ownReviews ? ` (${ownReviews.length})` : ""}
+                    View all{ownReviews ? ` (${ownReviews.length})` : ""}
                   </AppText>
                 </Pressable>
               ) : null}
@@ -1397,9 +1395,7 @@ function StallContributionCard({
       style={{
         ...shadows.card,
         backgroundColor: palette.surface,
-        borderColor: palette.border,
         borderRadius: componentRadii.card,
-        borderWidth: 1,
         gap: spacing[4],
         padding: spacing[4],
       }}
@@ -1487,10 +1483,8 @@ function ScoutMetric({
   return (
     <View
       style={{
-        backgroundColor: palette.surface,
-        borderColor: palette.border,
+        backgroundColor: palette.bgSoft,
         borderRadius: radii.lg,
-        borderWidth: 1,
         flex: 1,
         gap: spacing[1],
         padding: spacing[3],
@@ -1626,17 +1620,15 @@ function StatBlock({
       )}
       <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
         {icon}
-        <AppText variant="micro" style={{ color: palette.textSecondary, letterSpacing: 0.5 }}>
+        <AppText variant="micro" style={{ color: palette.textSecondary }}>
           {label}
         </AppText>
       </View>
     </>
   );
 
+  // A flat row of numbers: no card or border around each stat.
   const baseStyle = {
-    backgroundColor: palette.surface,
-    borderColor: palette.border,
-    borderWidth: 1,
     borderRadius: componentRadii.card,
     paddingVertical: spacing[3],
     paddingHorizontal: spacing[3],

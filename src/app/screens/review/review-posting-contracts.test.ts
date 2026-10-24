@@ -148,8 +148,8 @@ test("prototype-only review features stay out of production", () => {
   const review = read("src/app/screens/review/ReviewScreen.tsx");
   const stallDetail = read("src/app/screens/detail/StallDetailScreen.tsx");
 
-  assert.match(review, /const reviewMusicEnabled = FEATURE_FLAGS\.prototypeRoutesEnabled/);
-  assert.match(review, /const reviewVideoEnabled = FEATURE_FLAGS\.prototypeRoutesEnabled/);
+  assert.match(review, /const reviewMusicEnabled = false/);
+  assert.match(review, /const reviewVideoEnabled = false/);
   assert.match(review, /\{reviewMusicEnabled \? \(/);
   assert.match(review, /const hasVideo = reviewVideoEnabled && Boolean\(draft\.videoUri\)/);
   assert.doesNotMatch(review, /\(draft\.videoUri \? 20 : 0\)/);
