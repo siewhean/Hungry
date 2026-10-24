@@ -156,3 +156,31 @@ test("Excel fallback supplies visible paged Discover data without Supabase", asy
   assert.ok(venues.items.length > 0);
   assert.ok(dishes.items.some((item) => Boolean(item.imageUrl)));
 });
+
+test("Excel fallback honours a place (buildingId) for dishes and stalls (SEARCH-4)", async () => {
+  const first = await excelCatalogFallbackService.listDishes({ limit: 1, sort: "quality" });
+  const buildingId = first.items[0]?.buildingId;
+  assert.ok(buildingId);
+  const [dishes, venues] = await Promise.all([
+    excelCatalogFallbackService.listDishes({ limit: 50, sort: "quality", buildingId }),
+    excelCatalogFallbackService.listVenues({ limit: 50, sort: "quality", buildingId }),
+  ]);
+  assert.ok(dishes.items.length > 0);
+  assert.ok(dishes.items.every((item) => item.buildingId === buildingId));
+  assert.ok(venues.items.every((item) => item.buildingId === buildingId));
+});
+
+test("Excel fallback honours the Noodles keywords (SEARCH-4)", async () => {
+  const keywords = ["noodle", "mee", "laksa"];
+  const page = await excelCatalogFallbackService.listDishes({
+    limit: 50,
+    sort: "quality",
+    foodKeywords: keywords,
+  });
+  assert.ok(page.items.length > 0);
+  assert.ok(
+    page.items.every((item) =>
+      keywords.some((keyword) => item.name.toLowerCase().includes(keyword)),
+    ),
+  );
+});

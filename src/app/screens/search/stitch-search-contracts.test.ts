@@ -8,7 +8,11 @@ const read = (file: string) => readFileSync(path.join(process.cwd(), file), "utf
 test("Stitch Search quick filters use supported result filters", () => {
   const home = read("src/app/screens/search/DishSearchScreen.tsx");
   const filters = read("src/features/search/browseFilters.ts");
-  assert.match(home, /accessibilityLabel="Go back to Discover"/);
+  // SEARCH-X5: the tab is "Home" now, so the back button does not name a tab.
+  assert.match(home, /accessibilityLabel="Go back"/);
+  // SEARCH-11: the text is matched by name only, so no hint promises "halal under $8".
+  assert.doesNotMatch(home, /halal under \$8/i);
+  assert.match(home, /placeholder="Try laksa or chicken rice"/);
   assert.match(home, /navigation\.canGoBack\(\)[\s\S]*navigation\.goBack\(\)/);
   assert.match(home, /navigation\.navigate\("MainTabs", \{ screen: "Discover" \}\)/);
   assert.match(home, /if \(isAuthenticated\)[\s\S]*screen: "TasteQuiz",[\s\S]*mode: "profile"/);
@@ -25,7 +29,7 @@ test("Stitch Search quick filters use supported result filters", () => {
 test("Stitch Search featured cards show catalog dishes and open the corresponding detail", () => {
   const home = read("src/app/screens/search/DishSearchScreen.tsx");
   assert.match(home, /\.listDishes\(\{ limit: 3, sort: "quality" \}\)/);
-  assert.match(home, /featuredDishes\.map\(\(dish\) => \(/);
+  assert.match(home, /featuredDishes\.map\(\(dish, position\) => \(/);
   assert.match(
     home,
     /navigation\.navigate\("CatalogRawDetail", \{ kind: "dish", id: dish\.id \}\)/,

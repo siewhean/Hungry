@@ -92,6 +92,21 @@ export const EXPERIMENTS = {
       "onboarding_picks_shown",
     ],
   },
+  /**
+   * Search home "Dishes to Discover": island-wide top 3 by rating (control) vs the top 6 within
+   * 1.5 km (near, falls back to the island-wide list under 3 nearby dishes). Draft until the
+   * catalog stores a Bayesian score to rank on (SEARCH-7 follow-up migration).
+   */
+  search_home_featured_v1: {
+    variants: ["control", "near"],
+    fallback: "control",
+    status: "draft",
+    surface: "search",
+    hypothesis:
+      "Showing the best dishes within 1.5 km of the user, with distance, on Search home leads more users to open a dish from Search home than the island-wide top 3 by rating.",
+    primaryMetric: "search_home_featured_opened",
+    guardrailMetrics: ["dish_viewed", "review_started", "search_query", "search_zero_results"],
+  },
 } as const satisfies Record<string, ExperimentDefinition>;
 
 export type ExperimentKey = keyof typeof EXPERIMENTS;

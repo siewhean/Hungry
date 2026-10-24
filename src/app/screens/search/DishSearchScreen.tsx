@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Animated, Easing, Pressable, ScrollView, TextInput, View, Text } from "react-native";
 import {
   ArrowLeft,
@@ -27,12 +27,16 @@ import {
 } from "@/components/ui";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { getExperimentVariant, useExperimentVariant } from "@/lib/experiments/experiments";
+import { reportError } from "@/lib/monitoring/reportError";
+import { formatBrowseDistance } from "@/features/search/browseGrid";
 import {
   CATALOG_SUGGEST_MIN_CHARS,
   type CatalogRawDishCard,
   type CatalogSuggestion,
 } from "@/lib/services/catalog";
 import { getCatalogRawService } from "@/lib/services/serviceProvider";
+import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
 import { useSearchStore } from "@/store/useSearchStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -48,6 +52,12 @@ const CATEGORY_OPTIONS = CATALOG_CATEGORIES.map((category) => ({
 }));
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 type BrowseMode = "dishes" | "stalls";
+type SearchHomeSource = "search_typed" | "search_recent" | "search_suggestion" | "search_featured";
+
+/** search_home_featured_v1 "near": the best dishes within this distance of the user. */
+const FEATURED_NEAR_RADIUS_METERS = 1_500;
+/** Below this many nearby dishes the "near" arm shows the island-wide list, like control. */
+const FEATURED_NEAR_MIN_ITEMS = 3;
 
 const SUGGESTION_KIND_LABELS: Record<CatalogSuggestion["kind"], string> = {
   food_type: "Dish type",
@@ -63,7 +73,7 @@ function suggestionMode(suggestion: CatalogSuggestion): BrowseMode {
 
 /** Moves through these like the Discover search bar. */
 const DISH_SEARCH_PLACEHOLDER_PHRASES = [
-  "Try laksa, chicken rice, halal under $8",
+  "Try laksa or chicken rice",
   "Search for mee pok",
   "Stalls or hawker centres",
   "What's near you?",
@@ -73,7 +83,6 @@ export function DishSearchScreen() {
   const navigation = useNavigation<RootNavigation>();
   const { componentRadii, motion, palette, radii, shadows, spacing } = useHungryTheme();
   const reduceMotion = useReduceMotion();
-  const rememberSearch = useSearchStore((state) => state.rememberSearch);
   const recentSearches = useSearchStore((state) => state.recentSearches);
   const clearSearchHistory = useSearchStore((state) => state.clearSearchHistory);
   const removeRecentSearch = useSearchStore((state) => state.removeRecentSearch);
@@ -94,7 +103,23 @@ export function DishSearchScreen() {
     items: CatalogSuggestion[];
   }>({ query: "", items: [] });
   const [popularFoodTypes, setPopularFoodTypes] = useState<CatalogSuggestion[]>([]);
-  const [featuredDishes, setFeaturedDishes] = useState<CatalogRawDishCard[]>([]);
+  const permission = useLocationStore((state) => state.permission);
+  const currentLocation = useLocationStore((state) => state.currentLocation);
+  const manualCoordinate = useLocationStore((state) => state.manualCoordinate);
+  // The featured list is kept with the arm it was fetched for, so a flag load never shows one
+  // arm's list as the other's.
+  const [featured, setFeatured] = useState<{
+    arm: string;
+    items: CatalogRawDishCard[];
+    settled: boolean;
+  }>({ arm: "", items: [], settled: false });
+  // One report per mount for each Search home load, not one per retry.
+  const reportedLoadsRef = useRef(new Set<string>());
+  const reportLoadError = useCallback((load: string, error: unknown) => {
+    if (reportedLoadsRef.current.has(load)) return;
+    reportedLoadsRef.current.add(load);
+    reportError(error, { surface: "search_home", load });
+  }, []);
   const showSuggestions = trimmedSearchText.length >= CATALOG_SUGGEST_MIN_CHARS;
   const suggestions = suggestionResult.query === trimmedSearchText ? suggestionResult.items : [];
 
@@ -106,24 +131,59 @@ export function DishSearchScreen() {
       .then((items) => {
         if (active) setPopularFoodTypes(items);
       })
-      .catch(() => undefined);
+      .catch((error) => reportLoadError("popular_food_types", error));
     return () => {
       active = false;
     };
-  }, []);
+  }, [reportLoadError]);
 
+  // The arm is peeked (no exposure) to choose what to fetch; exposure waits until the
+  // section is on screen. Both arms end with a list, so eligibility never depends on the arm.
+  const featuredArm = getExperimentVariant("search_home_featured_v1");
+  const { coordinate: featuredCoordinate } = getEffectiveLocation({
+    permission,
+    currentLocation,
+    manualCoordinate,
+  });
+  const featuredLatitude = Math.round(featuredCoordinate.latitude * 1000) / 1000;
+  const featuredLongitude = Math.round(featuredCoordinate.longitude * 1000) / 1000;
   useEffect(() => {
     let active = true;
-    getCatalogRawService()
-      .listDishes({ limit: 3, sort: "quality" })
+    const service = getCatalogRawService();
+    const islandWide = () => service.listDishes({ limit: 3, sort: "quality" });
+    const load =
+      featuredArm === "near"
+        ? service
+            .listDishes({
+              limit: 6,
+              sort: "quality",
+              coordinate: { latitude: featuredLatitude, longitude: featuredLongitude },
+              radiusMeters: FEATURED_NEAR_RADIUS_METERS,
+            })
+            .then((page) => (page.items.length >= FEATURED_NEAR_MIN_ITEMS ? page : islandWide()))
+        : islandWide();
+    load
       .then((page) => {
-        if (active) setFeaturedDishes(page.items);
+        if (active) setFeatured({ arm: featuredArm, items: page.items, settled: true });
       })
-      .catch(() => undefined);
+      .catch((error) => {
+        if (active) setFeatured({ arm: featuredArm, items: [], settled: true });
+        reportLoadError("featured_dishes", error);
+      });
     return () => {
       active = false;
     };
-  }, []);
+  }, [featuredArm, featuredLatitude, featuredLongitude, reportLoadError]);
+  const featuredDishes = featured.arm === featuredArm ? featured.items : [];
+  // Exposed only once the section is actually on screen: no typed text, loaded, not empty.
+  const featuredEligible =
+    !trimmedSearchText &&
+    featured.settled &&
+    featured.arm === featuredArm &&
+    featuredDishes.length > 0;
+  const featuredVariant = useExperimentVariant("search_home_featured_v1", {
+    enabled: featuredEligible,
+  });
 
   useEffect(() => {
     if (!showSuggestions) return;
@@ -134,13 +194,13 @@ export function DishSearchScreen() {
         .then((items) => {
           if (active) setSuggestionResult({ query: trimmedSearchText, items });
         })
-        .catch(() => undefined);
+        .catch((error) => reportLoadError("suggestions", error));
     }, SUGGEST_DEBOUNCE_MS);
     return () => {
       active = false;
       clearTimeout(timer);
     };
-  }, [showSuggestions, trimmedSearchText]);
+  }, [reportLoadError, showSuggestions, trimmedSearchText]);
 
   useEffect(() => {
     if (reduceMotion) {
@@ -164,13 +224,14 @@ export function DishSearchScreen() {
     ]).start();
   }, [entryOpacity, entryY, motion.screenTransition, reduceMotion]);
 
-  const openResults = (query: string, browseMode?: BrowseMode) => {
+  const openResults = (query: string, source: SearchHomeSource, browseMode?: BrowseMode) => {
     // The results grid saves a submitted query as a recent search, once it commits it.
     const trimmedQuery = query.trim();
     navigation.navigate("SearchResults", {
       browseMode,
       initialQuery: trimmedQuery || undefined,
       foodTypeTag: selectedCategory,
+      source,
     });
   };
 
@@ -178,8 +239,8 @@ export function DishSearchScreen() {
     trackAnalyticsEvent("search_suggestion_opened", { kind: suggestion.kind, surface });
     setSearchText(suggestion.label);
     if (suggestion.kind === "place" && suggestion.placeId) {
-      // A place shows only the stalls inside that building, not every fuzzy name match.
-      rememberSearch(suggestion.label);
+      // A place shows only the stalls inside that building, not every fuzzy name match. It is not
+      // saved as a text recent: tapping that recent would run a name search, not the place.
       navigation.navigate("SearchResults", {
         browseMode: "stalls",
         placeId: suggestion.placeId,
@@ -187,7 +248,7 @@ export function DishSearchScreen() {
       });
       return;
     }
-    openResults(suggestion.label, suggestionMode(suggestion));
+    openResults(suggestion.label, "search_suggestion", suggestionMode(suggestion));
   };
 
   const showRecents = allowSearchHistory && recentSearches.length > 0;
@@ -208,7 +269,7 @@ export function DishSearchScreen() {
         <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[3] }}>
           <IconButton
             variant="ghost"
-            accessibilityLabel="Go back to Discover"
+            accessibilityLabel="Go back"
             onPress={() => {
               if (navigation.canGoBack()) {
                 navigation.goBack();
@@ -239,14 +300,14 @@ export function DishSearchScreen() {
                   </Pressable>
                 ) : undefined
               }
-              placeholder="Try laksa, chicken rice, halal under $8"
+              placeholder="Try laksa or chicken rice"
               enableMovingPlaceholder
               movingPlaceholderPhrases={DISH_SEARCH_PLACEHOLDER_PHRASES}
               accessibilityLabel="Search dishes, stalls, or hawker centres"
               returnKeyType="search"
               value={searchText}
               onChangeText={setSearchText}
-              onSubmitEditing={() => openResults(searchText)}
+              onSubmitEditing={() => openResults(searchText, "search_typed")}
             />
           </View>
         </View>
@@ -436,7 +497,7 @@ export function DishSearchScreen() {
                     accessibilityLabel={`Search ${query} again`}
                     onPress={() => {
                       setSearchText(query);
-                      openResults(query);
+                      openResults(query, "search_recent");
                     }}
                     style={{
                       alignItems: "center",
@@ -534,19 +595,30 @@ export function DishSearchScreen() {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="See all dishes"
-                onPress={() => openResults("")}
+                hitSlop={12}
+                onPress={() => openResults("", "search_featured")}
+                style={{
+                  alignItems: "center",
+                  justifyContent: "center",
+                  minHeight: 44,
+                  minWidth: 44,
+                }}
               >
                 <ChevronRight color={palette.textMuted} size={20} />
               </Pressable>
             </View>
-            {featuredDishes.map((dish) => (
+            {featuredDishes.map((dish, position) => (
               <Pressable
                 key={dish.id}
                 accessibilityRole="button"
                 accessibilityLabel={`View ${dish.name} from ${dish.venueName}`}
-                onPress={() =>
-                  navigation.navigate("CatalogRawDetail", { kind: "dish", id: dish.id })
-                }
+                onPress={() => {
+                  trackAnalyticsEvent("search_home_featured_opened", {
+                    position,
+                    variant: featuredVariant,
+                  });
+                  navigation.navigate("CatalogRawDetail", { kind: "dish", id: dish.id });
+                }}
                 style={[
                   shadows.card,
                   {
@@ -589,9 +661,12 @@ export function DishSearchScreen() {
                   </AppText>
                   <AppText variant="micro" tone="secondary" numberOfLines={1}>
                     {dish.buildingName || "Singapore"}
-                    {dish.distanceMeters != null ? ` · ${Math.round(dish.distanceMeters)}m` : ""}
+                    {dish.distanceMeters != null
+                      ? ` · ${formatBrowseDistance(dish.distanceMeters)}`
+                      : ""}
                   </AppText>
-                  {dish.rating != null ? (
+                  {/* A rating with no reviews behind it is not a rating (no "★ 0.0"). */}
+                  {dish.rating != null && (dish.reviewCount ?? 0) > 0 ? (
                     <AppText variant="micro" tone="secondary">
                       <Text style={{ color: palette.starFill }}>★</Text> {dish.rating.toFixed(1)}
                     </AppText>
@@ -611,7 +686,7 @@ export function DishSearchScreen() {
         ) : null}
         <Button
           label={trimmedSearchText ? "See all results" : "Browse dishes near you"}
-          onPress={() => openResults(searchText)}
+          onPress={() => openResults(searchText, "search_typed")}
         />
       </Animated.View>
     </Screen>

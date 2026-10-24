@@ -114,7 +114,7 @@ test("M2/M3/M5/M6/M10/L8/L10/L12: the results grid", () => {
   // M3: chips combine, with a sort sheet and a count line.
   assert.match(grid, /selectedIds=\{filters\.length \? filters : \[BROWSE_ALL_FILTER\]\}/);
   assert.match(grid, /accessibilityLabel=\{`Sort by, \$\{sortLabel\}`\}/);
-  assert.match(grid, /describeMatchCount\(matchCount, mode\)/);
+  assert.match(grid, /describeResultsSummary\(\{\s*count: matchCount,\s*mode,/);
   // M5/M6: card line, rating pill, full spoken label, result announcement.
   assert.match(grid, /cardSubtitle\(mode, item\)/);
   assert.match(grid, /ratingPillText\(dish\.rating, dish\.reviewCount\)/);
@@ -151,7 +151,7 @@ test("M2/M3/M5/M6/M10/L8/L10/L12: the results grid", () => {
   assert.match(grid, /not all MUIS-certified/);
   // L5: the search can be shared.
   assert.match(grid, /accessibilityLabel="Share this search"/);
-  assert.match(grid, /buildSearchShareUrl\(\{ query, filters, mode \}\)/);
+  assert.match(grid, /buildSearchShareUrl\(\{ query, filters, mode, place, sort \}\)/);
 });
 
 test("M8: one search event for guests and members; zero results only for submitted queries", () => {
@@ -164,7 +164,11 @@ test("M8: one search event for guests and members; zero results only for submitt
   // Zero results need a committed query that equals what is on screen, once per request.
   assert.match(grid, /committedQuery\.toLowerCase\(\) !== query\.toLowerCase\(\)/);
   assert.match(grid, /loggedZeroKeyRef\.current === requestKey/);
-  assert.match(grid, /query: committedQuery\.slice\(0, CATALOG_QUERY_MAX_CHARS\)/);
+  // SEARCH-8: the text only when search history is allowed.
+  assert.match(
+    grid,
+    /allowSearchHistory \? \{ query: committedQuery\.slice\(0, CATALOG_QUERY_MAX_CHARS\) \}/,
+  );
   // The Halal chip is reported as "dietary".
   assert.match(grid, /filter === "Halal" \? "dietary" : filter/);
   assert.doesNotMatch(read("src/store/useSearchStore.ts"), /search_submitted/);
@@ -179,11 +183,10 @@ test("L6/L7: recents come from submitted queries, and a Discover chip logs only 
   assert.match(grid, /remember: !fromDiscoverChip/);
   assert.match(discover, /source: "discover_chip"/);
   assert.doesNotMatch(discover, /rememberSearch/);
-  assert.match(types, /source\?: "discover_chip"/);
-  // Search home no longer saves typed queries on its own; only opening a place (which skips the
-  // results grid's committed-query path) saves its name. Each recent has a remove button.
-  assert.equal(home.match(/rememberSearch\(/g)?.length, 1);
-  assert.match(home, /rememberSearch\(suggestion\.label\)/);
+  assert.match(types, /source\?:\s*\| "discover_chip"/);
+  // Search home never saves recents on its own; a place is not saved as a text recent either
+  // (SEARCH-X4: tapping it would run a name search). Each recent has a remove button.
+  assert.equal(home.match(/rememberSearch\(/g), null);
   assert.match(home, /removeRecentSearch\(query\)/);
   assert.match(home, /accessibilityLabel=\{`Remove \$\{query\} from recent searches`\}/);
 });

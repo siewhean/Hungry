@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AccessibilityInfo,
   ActivityIndicator,
+  Platform,
   Pressable,
   Share,
   StyleSheet,
@@ -45,11 +46,14 @@ import {
   BROWSE_ALL_FILTER,
   BROWSE_FILTER_IDS,
   BROWSE_SORT_OPTIONS,
+  SEARCH_SHARE_LINKS_LIVE,
   buildBrowseRequest,
   buildSearchShareUrl,
   cardAccessibilityLabel,
   cardSubtitle,
   describeMatchCount,
+  describeResultsSummary,
+  effectiveSortLabel,
   formatBrowseDistance,
   isTooShortQuery,
   mergeStallOutlets,
@@ -65,6 +69,7 @@ import {
 } from "@/features/search/browseGrid";
 import { getCatalogRawService } from "@/lib/services/serviceProvider";
 import {
+  CATALOG_OFFLINE_RELEASE_ID,
   CATALOG_QUERY_MAX_CHARS,
   CATALOG_QUERY_MIN_CHARS,
   CATALOG_SUGGEST_MIN_CHARS,
@@ -72,7 +77,7 @@ import {
   type CatalogRawDishCard,
   type CatalogRawVenueCard,
 } from "@/lib/services/catalog";
-import { CatalogAccessError } from "@/lib/services/catalog";
+import { CatalogAccessError, CatalogReleaseExpiredError } from "@/lib/services/catalog";
 import {
   recordCatalogDiagnostic,
   summarizeCatalogRequest,
@@ -83,11 +88,18 @@ import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSearchStore } from "@/store/useSearchStore";
 import { useSessionStore } from "@/store/useSessionStore";
+import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 type SearchResultsRoute = RouteProp<RootStackParamList, "SearchResults">;
-type SearchSource = "discover_chip" | "search_home";
+type SearchSource = NonNullable<NonNullable<RootStackParamList["SearchResults"]>["source"]>;
+/** A typed query counts as a search once its results have been on screen this long. */
+const SEARCH_SETTLE_MS = 1_500;
+
+function newSearchId() {
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
 
 const RAW_BROWSE_FILTER_OPTIONS = [BROWSE_ALL_FILTER, ...BROWSE_FILTER_IDS].map((filter) => ({
   id: filter,
@@ -155,7 +167,9 @@ const RawCatalogCard = memo(function RawCatalogCard({
     item.imageUrl ?? ("representativeDish" in item ? item.representativeDish?.imageUrl : undefined);
   const title = item.name;
   const stallName = dish ? dish.venueName : title;
-  const rating = dish ? ratingPillText(dish.rating, dish.reviewCount) : undefined;
+  const rating = dish
+    ? ratingPillText(dish.rating, dish.reviewCount)
+    : ratingPillText(stall?.qualityRating, stall?.qualityReviewCount);
   const outlets = stall?.extraOutlets ?? 0;
   const isVerified = item.verificationStatus === "approved";
 
@@ -236,7 +250,7 @@ const RawCatalogCard = memo(function RawCatalogCard({
           </AppText>
           {rating ? (
             <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
-              <Star color={palette.orange} fill={palette.orange} size={12} />
+              <Star color={palette.starFill} fill={palette.starFill} size={12} />
               <AppText tone="secondary" variant="micro">
                 {rating}
               </AppText>
@@ -290,6 +304,7 @@ function RawCatalogBrowseGrid({
   const currentLocation = useLocationStore((state) => state.currentLocation);
   const manualCoordinate = useLocationStore((state) => state.manualCoordinate);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const allowSearchHistory = useUIStore((state) => state.allowSearchHistory);
   const recordTasteInteraction = useProfileStore((state) => state.recordTasteInteraction);
   const rememberSearch = useSearchStore((state) => state.rememberSearch);
   const [mode, setMode] = useState(initialMode);
@@ -306,7 +321,8 @@ function RawCatalogBrowseGrid({
     parseFilterIds(initialFilter),
   );
   const [sort, setSort] = useState<BrowseSortId>("relevance");
-  const [widenRadius, setWidenRadius] = useState(false);
+  // "Search all Singapore" applies only to the query, filters and place it was tapped for.
+  const [widenedScope, setWidenedScope] = useState<string | null>(null);
   const [items, setItems] = useState<BrowseItem[]>([]);
   const [matchCount, setMatchCount] = useState<number | undefined>();
   const [nextCursor, setNextCursor] = useState<string | undefined>();
@@ -319,6 +335,8 @@ function RawCatalogBrowseGrid({
   const [committedQuery, setCommittedQuery] = useState(() => normalizeQuery(initialSearchQuery));
   // The request whose first page is on screen, so "no results" is never shown for a stale one.
   const [loadedKey, setLoadedKey] = useState<string | null>(null);
+  // The page on screen came from the bundled offline copy, not the live catalog.
+  const [isOfflineCopy, setIsOfflineCopy] = useState(false);
   const [didYouMean, setDidYouMean] = useState<{ query: string; label: string } | null>(null);
   const requestVersion = useRef(0);
   const rawSearchInputRef = useRef<TextInput | null>(null);
@@ -327,11 +345,15 @@ function RawCatalogBrowseGrid({
   const sortSheetRef = useRef<BottomSheetModal>(null);
   const lastRecordedQueryRef = useRef("");
   const loggedZeroKeyRef = useRef("");
+  // One id per counted search, carried on its result-opened and zero-results events.
+  const searchIdRef = useRef<string | undefined>(undefined);
   const service = getCatalogRawService();
   const itemWidth = width / 2;
 
   const query = useMemo(() => normalizeQuery(searchText), [searchText]);
   const tooShort = isTooShortQuery(query);
+  const widenScope = JSON.stringify([mode, query, filters, place?.id]);
+  const widenRadius = widenedScope === widenScope;
 
   // A link or a new navigation with other params replaces what the grid shows.
   useEffect(() => {
@@ -387,6 +409,7 @@ function RawCatalogBrowseGrid({
         setItems((current) => (append ? appendUniqueById(current, page.items) : page.items));
         setNextCursor(page.nextCursor);
         releaseIdRef.current = page.releaseId || undefined;
+        setIsOfflineCopy(page.releaseId === CATALOG_OFFLINE_RELEASE_ID);
         recordCatalogDiagnostic({
           operation:
             mode === "dishes"
@@ -414,6 +437,17 @@ function RawCatalogBrowseGrid({
           AccessibilityInfo.announceForAccessibility(describeMatchCount(count, mode));
         }
       } catch (loadError) {
+        if (
+          requestVersion.current === version &&
+          append &&
+          loadError instanceof CatalogReleaseExpiredError
+        ) {
+          // The pinned release expired mid-scroll: start again on the active release.
+          releaseIdRef.current = undefined;
+          setIsLoadingMore(false);
+          void loadPageRef.current?.();
+          return;
+        }
         if (requestVersion.current === version) {
           reportError(loadError, { surface: "catalog_browse", mode });
           if (append) {
@@ -475,12 +509,19 @@ function RawCatalogBrowseGrid({
     ],
   );
 
+  const loadPageRef = useRef<typeof loadPage | undefined>(undefined);
+  loadPageRef.current = loadPage;
+
   // A search is committed by Enter, a suggestion or a link, not by typing pauses: one search
   // event, one taste signal and one recent-search entry each, the same for guests and members.
   const recordCommittedQuery = useCallback(
     (
       text: string,
-      options: { recordTaste: boolean; remember: boolean; source: SearchSource | "results" },
+      options: {
+        recordTaste: boolean;
+        remember: boolean;
+        source: SearchSource | "results" | "results_typed";
+      },
     ) => {
       const committed = normalizeQuery(text);
       const key = committed.toLowerCase();
@@ -488,10 +529,12 @@ function RawCatalogBrowseGrid({
       setCommittedQuery(committed);
       if (lastRecordedQueryRef.current === key) return;
       lastRecordedQueryRef.current = key;
+      searchIdRef.current = newSearchId();
       trackAnalyticsEvent("search_query", {
         mode,
         filter: filters.map(analyticsFilterName).join(",") || BROWSE_ALL_FILTER,
         query_length: committed.length,
+        search_id: searchIdRef.current,
         source: options.source,
       });
       if (options.remember) rememberSearch(committed);
@@ -517,7 +560,7 @@ function RawCatalogBrowseGrid({
     recordCommittedQuery(initialSearchQuery, {
       recordTaste: isAuthenticated && !fromDiscoverChip,
       remember: !fromDiscoverChip,
-      source: initialSource ?? "search_home",
+      source: initialSource ?? "search_typed",
     });
   }, [initialSearchQuery, initialSource, isAuthenticated, recordCommittedQuery]);
 
@@ -526,7 +569,11 @@ function RawCatalogBrowseGrid({
     releaseIdRef.current = undefined;
     // One typed character matches most of the catalog and is not sent; the hint says why.
     if (tooShort) {
+      // Old results must not stay on screen (and tappable) under a query they do not answer.
       setIsLoading(false);
+      setItems([]);
+      setMatchCount(undefined);
+      setNextCursor(undefined);
       return;
     }
     const timer = setTimeout(
@@ -578,6 +625,23 @@ function RawCatalogBrowseGrid({
   // Zero results are logged only for a submitted query, once, with the (capped) text so
   // "what did people fail to find" can be answered. Partial typing is never logged.
   const hasNoResults = loadedKey === requestKey && !isLoading && !error && items.length === 0;
+
+  // Results load while the user types, so a typed query that stays on screen is a search too,
+  // not only one submitted with Enter. Not saved as a recent and not a taste signal.
+  const resultsSettled = loadedKey === requestKey && !isLoading && !error;
+  useEffect(() => {
+    if (!resultsSettled || query.length < CATALOG_QUERY_MIN_CHARS) return;
+    const timer = setTimeout(
+      () =>
+        recordCommittedQuery(query, {
+          recordTaste: false,
+          remember: false,
+          source: "results_typed",
+        }),
+      SEARCH_SETTLE_MS,
+    );
+    return () => clearTimeout(timer);
+  }, [query, recordCommittedQuery, resultsSettled]);
   useEffect(() => {
     if (!hasNoResults || !committedQuery) return;
     if (committedQuery.toLowerCase() !== query.toLowerCase()) return;
@@ -586,14 +650,17 @@ function RawCatalogBrowseGrid({
     trackAnalyticsEvent("search_zero_results", {
       mode,
       filter: filters.map(analyticsFilterName).join(",") || BROWSE_ALL_FILTER,
-      query: committedQuery.slice(0, CATALOG_QUERY_MAX_CHARS),
+      // The text itself only when the user allows search history (Settings).
+      ...(allowSearchHistory ? { query: committedQuery.slice(0, CATALOG_QUERY_MAX_CHARS) } : {}),
       query_length: committedQuery.length,
+      search_id: searchIdRef.current,
     });
-  }, [committedQuery, filters, hasNoResults, mode, query, requestKey]);
+  }, [allowSearchHistory, committedQuery, filters, hasNoResults, mode, query, requestKey]);
 
-  // "Did you mean": the closest food type for a typed query with no results.
+  // "Did you mean": the closest food type for a typed query with no results. With filters on,
+  // the filters are the likelier cause, so "Clear filters" is offered instead.
   useEffect(() => {
-    if (!hasNoResults || query.length < CATALOG_QUERY_MIN_CHARS) return;
+    if (!hasNoResults || filters.length > 0 || query.length < CATALOG_QUERY_MIN_CHARS) return;
     let active = true;
     service
       .suggest(query)
@@ -609,7 +676,7 @@ function RawCatalogBrowseGrid({
     return () => {
       active = false;
     };
-  }, [hasNoResults, query, service]);
+  }, [filters.length, hasNoResults, query, service]);
 
   const handleSelectFilter = useCallback(
     (filter: string) => {
@@ -643,10 +710,15 @@ function RawCatalogBrowseGrid({
   }, [navigation]);
 
   const handleShare = useCallback(() => {
-    const url = buildSearchShareUrl({ query, filters, mode });
+    const url = buildSearchShareUrl({ query, filters, mode, place, sort });
     trackAnalyticsEvent("search_shared", { mode, filter_count: filters.length });
-    void Share.share({ message: `Search Hungry: ${url}`, url }).catch(() => undefined);
-  }, [filters, mode, query]);
+    // iOS sends both message and url, so the link goes only in `url` there.
+    const content =
+      Platform.OS === "ios"
+        ? { message: "Search Hungry", url }
+        : { message: `Search Hungry: ${url}` };
+    void Share.share(content).catch(() => undefined);
+  }, [filters, mode, place, query, sort]);
 
   // Cards get one stable press handler; the live query and release are read when a card is tapped.
   const queryRef = useRef(query);
@@ -663,7 +735,12 @@ function RawCatalogBrowseGrid({
         id: item.id,
         releaseId: releaseIdRef.current,
       });
-      trackAnalyticsEvent("search_result_opened", { mode: openedMode, position: index });
+      trackAnalyticsEvent("search_result_opened", {
+        mode: openedMode,
+        position: index,
+        query_length: queryRef.current.length,
+        search_id: searchIdRef.current,
+      });
       if (openedMode === "dishes") {
         recordTasteInteraction({
           type: "dish_result_click",
@@ -698,11 +775,19 @@ function RawCatalogBrowseGrid({
   const isRefreshing = isLoading && items.length > 0;
   const summary =
     matchCount !== undefined && !error && loadedKey === requestKey
-      ? `${describeMatchCount(matchCount, mode)}${query ? "" : widenRadius ? " in Singapore" : " within 3 km"}`
+      ? describeResultsSummary({
+          count: matchCount,
+          mode,
+          hasQuery: Boolean(query),
+          placeName: place?.name,
+          widened: widenRadius,
+        })
       : undefined;
-  const sortLabel = BROWSE_SORT_OPTIONS.find((option) => option.id === sort)?.label ?? "Sort";
-  const suggestedQuery = didYouMean && didYouMean.query === query ? didYouMean.label : undefined;
-  const radiusInPlay = !query && !widenRadius;
+  const sortLabel = effectiveSortLabel(sort, Boolean(query), Boolean(place));
+  const suggestedQuery =
+    didYouMean && didYouMean.query === query && filters.length === 0 ? didYouMean.label : undefined;
+  // A place lists its whole building with no radius, so there is nothing to widen.
+  const radiusInPlay = !query && !widenRadius && !place;
 
   return (
     <Screen scroll={false} fullWidth style={{ backgroundColor: palette.bg }}>
@@ -773,12 +858,14 @@ function RawCatalogBrowseGrid({
                 </Pressable>
               ) : null}
             </View>
-            <IconButton
-              variant="ghost"
-              accessibilityLabel="Share this search"
-              onPress={handleShare}
-              icon={<Share2 color={palette.text} size={20} />}
-            />
+            {SEARCH_SHARE_LINKS_LIVE ? (
+              <IconButton
+                variant="ghost"
+                accessibilityLabel="Share this search"
+                onPress={handleShare}
+                icon={<Share2 color={palette.text} size={20} />}
+              />
+            ) : null}
           </View>
           {tooShort ? (
             <AppText tone="secondary" variant="micro">
@@ -849,6 +936,7 @@ function RawCatalogBrowseGrid({
               {(["dishes", "stalls"] as const).map((option) => (
                 <Chip
                   key={option}
+                  accessibilityRole="tab"
                   label={MODE_LABELS[option]}
                   accessibilityLabel={`Show ${MODE_LABELS[option].toLowerCase()}`}
                   selected={mode === option}
@@ -877,6 +965,18 @@ function RawCatalogBrowseGrid({
               <AppText tone="secondary" variant="micro" style={{ flex: 1 }}>
                 Halal tags come from stalls and public listings, and are not all MUIS-certified.
                 Check the stall&apos;s certificate if it matters to you.
+              </AppText>
+            </View>
+          ) : null}
+          {isOfflineCopy ? (
+            <View
+              accessibilityRole="text"
+              testID="search-offline-copy"
+              style={{ alignItems: "flex-start", flexDirection: "row", gap: spacing[2] }}
+            >
+              <Info color={palette.textMuted} size={16} />
+              <AppText tone="secondary" variant="micro" style={{ flex: 1 }}>
+                {"You're seeing a saved copy of the catalog. It may be out of date."}
               </AppText>
             </View>
           ) : null}
@@ -941,7 +1041,15 @@ function RawCatalogBrowseGrid({
             onEndReachedThreshold={0.6}
             renderItem={renderItem}
             ListEmptyComponent={
-              isLoading ? (
+              !isAuthenticated ? (
+                // A signed-out grid (after a session expiry and a back swipe) loads nothing.
+                <EmptyState
+                  title="Sign in to search"
+                  body="Sign in again to search dishes and stalls."
+                  ctaLabel="Sign in"
+                  onPress={() => navigation.navigate("AuthStack", { screen: "Login" })}
+                />
+              ) : isLoading ? (
                 <BrowseGridLoadingState itemWidth={itemWidth} mode={mode} />
               ) : error ? (
                 <EmptyState
@@ -986,7 +1094,7 @@ function RawCatalogBrowseGrid({
                       <Button
                         label="Search all Singapore"
                         variant="secondary"
-                        onPress={() => setWidenRadius(true)}
+                        onPress={() => setWidenedScope(widenScope)}
                       />
                     ) : null}
                   </View>
@@ -1032,8 +1140,8 @@ function RawCatalogBrowseGrid({
             return (
               <Pressable
                 key={option.id}
-                accessibilityRole="button"
-                accessibilityState={{ selected }}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: selected }}
                 onPress={() => handleSelectSort(option.id)}
                 style={{
                   alignItems: "center",

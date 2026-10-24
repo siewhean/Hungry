@@ -57,3 +57,47 @@ export function sanitizeCatalogMediaUrl(
 
   return sanitizeCatalogImageUrl(value, { rightsStatus, approvedForDisplay });
 }
+
+/**
+ * Raw-catalog RPCs whose card rows carry an `image_url` the server has already passed through
+ * `public.catalog_display_image_url` (approved for display, allowed rights status, no Unsplash,
+ * no delivery-app photo unless licensed). The card tables have no `media_approved_for_display`
+ * column, so these rows never carry a display flag; the BEFORE INSERT triggers from
+ * 20261021150100_catalog_raw_card_display_rights.sql rewrite every `catalog_raw_dish_cards.image_url`,
+ * `catalog_raw_venue_cards.image_url` and `representative_dish.image_url` on publish:
+ *   - catalog_raw_dishes_page / catalog_raw_venues_page: `to_jsonb(visible)` of the card rows
+ *   - catalog_raw_venue_menu_page: delegates to catalog_raw_dishes_page
+ *   - catalog_raw_dish_detail / catalog_raw_venue_detail: `to_jsonb(c)` of one card row
+ * The dish gallery (`media` from catalog_raw_dish_media) is not in this list: those rows do carry
+ * `approved_for_display` and keep the strict `sanitizeCatalogMediaUrl` check.
+ */
+export const SERVER_FILTERED_CARD_IMAGE_RPCS = [
+  "catalog_raw_dishes_page",
+  "catalog_raw_venues_page",
+  "catalog_raw_venue_menu_page",
+  "catalog_raw_dish_detail",
+  "catalog_raw_venue_detail",
+] as const;
+
+export type ServerFilteredCardImageRpc = (typeof SERVER_FILTERED_CARD_IMAGE_RPCS)[number];
+
+const SERVER_FILTERED_CARD_IMAGE_RPC_SET: ReadonlySet<string> = new Set(
+  SERVER_FILTERED_CARD_IMAGE_RPCS,
+);
+
+/**
+ * The card image for a raw-catalog row. Rows from a server-filtered RPC keep their image unless it
+ * is blocked, malformed or explicitly withheld (an explicit `false` display flag or a withheld
+ * rights status still hides it). Rows from any other source must carry a positive display approval
+ * and a recognised rights status, as before.
+ */
+export function sanitizeCatalogCardImageUrl(
+  value: string | null | undefined,
+  sourceRpc: string,
+  policy: CatalogMediaPolicy = {},
+): string | undefined {
+  if (!SERVER_FILTERED_CARD_IMAGE_RPC_SET.has(sourceRpc)) {
+    return sanitizeCatalogMediaUrl(value, policy.rightsStatus, policy.approvedForDisplay);
+  }
+  return sanitizeCatalogImageUrl(value, policy);
+}
