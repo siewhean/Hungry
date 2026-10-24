@@ -186,7 +186,7 @@ export function PhotoPager({
               }}
             >
               <AppText variant="bodySmall" style={{ color: palette.white }}>
-                {viewerIndex + 1} / {count}
+                {clampPhotoIndex(viewerIndex, count) + 1} / {count}
               </AppText>
             </View>
           ) : null}

@@ -99,6 +99,7 @@ import {
 } from "@/features/detail/stallLocation";
 import { ReportProblemLink } from "@/components/stall/ReportProblemLink";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useMissionStore } from "@/store/useMissionStore";
 import { useSocialStore } from "@/store/useSocialStore";
 import { PopularVisitorsSection } from "@/components/stall/PopularVisitorsSection";
 import { StallInteractionBar } from "@/components/stall/StallInteractionBar";
@@ -154,6 +155,27 @@ const MENU_CATEGORY_ORDER = [
   "Sets",
   "Sides",
 ];
+
+/**
+ * A failed read because the diner is offline is not a defect: opening a stall offline would
+ * otherwise send one Sentry event per section (venue, menu, claim, merchant, promotions,
+ * hours, reviews). Everything else is reported.
+ */
+function isOfflineReadError(error: unknown): boolean {
+  if (useUIStore.getState().isOffline) return true;
+  if (!error || typeof error !== "object") return false;
+  const { message, name, status } = error as { message?: unknown; name?: unknown; status?: unknown };
+  if (status === 0 || name === "AuthRetryableFetchError") return true;
+  return (
+    typeof message === "string" &&
+    /network request failed|failed to fetch|network error|load failed/i.test(message)
+  );
+}
+
+function reportStallError(error: unknown, action: string) {
+  if (isOfflineReadError(error)) return;
+  reportError(error, { screen: "StallDetail", action });
+}
 
 function ContactRow({
   icon,
@@ -458,7 +480,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
         setHasLoadedVenueDetail(true);
       })
       .catch((error) => {
-        reportError(error, { screen: "StallDetail", action: "load_venue" });
+        reportStallError(error, "load_venue");
         if (!active) return;
         setVenueLoadFailed(true);
         setHasLoadedVenueDetail(true);
@@ -547,7 +569,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
         });
         showToast({ message: "Thanks, we'll add the menu soon.", tone: "success" });
       } catch (error) {
-        reportError(error, { screen: "StallDetail", action: "submit_menu_photo" });
+        reportStallError(error, "submit_menu_photo");
         showToast({
           message:
             error instanceof Error && error.message
@@ -663,7 +685,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
         if (active) setHydratedDishes(nextDishes);
       })
       .catch((error) => {
-        reportError(error, { screen: "StallDetail", action: "load_menu" });
+        reportStallError(error, "load_menu");
         if (active) setMenuLoadFailed(true);
       });
 
@@ -686,7 +708,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
         setClaimStatus(status);
         setIsClaimPending(true);
       })
-      .catch((error) => reportError(error, { screen: "StallDetail", action: "load_claim_status" }));
+      .catch((error) => reportStallError(error, "load_claim_status"));
     return () => {
       active = false;
     };
@@ -731,7 +753,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
         if (active) setMerchantProfile(profile);
       })
       .catch((error) => {
-        reportError(error, { screen: "StallDetail", action: "load_merchant_profile" });
+        reportStallError(error, "load_merchant_profile");
         if (active) setMerchantProfile(undefined);
       });
 
@@ -741,7 +763,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
         if (active) setActivePromotions(promotions);
       })
       .catch((error) => {
-        reportError(error, { screen: "StallDetail", action: "load_promotions" });
+        reportStallError(error, "load_promotions");
         if (active) setActivePromotions([]);
       });
 
@@ -769,7 +791,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
         if (active) setOpeningSchedule(schedule);
       })
       .catch((error) => {
-        reportError(error, { screen: "StallDetail", action: "load_opening_schedule" });
+        reportStallError(error, "load_opening_schedule");
         if (active) setOpeningSchedule(undefined);
       });
     return () => {
@@ -823,7 +845,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
         setReviewsStatus("ready");
       })
       .catch((error) => {
-        reportError(error, { screen: "StallDetail", action: "load_reviews" });
+        reportStallError(error, "load_reviews");
         if (active) setReviewsStatus("error");
       });
 
@@ -851,7 +873,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
         setReviewsCursor(page.nextCursor);
       })
       .catch((error) => {
-        reportError(error, { screen: "StallDetail", action: "load_more_reviews" });
+        reportStallError(error, "load_more_reviews");
         showToast({ message: "Couldn't load more reviews. Try again.", tone: "error" });
       })
       .finally(() => setIsLoadingMoreReviews(false));
@@ -957,7 +979,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
         setMenuPageStatus("idle");
       })
       .catch((error) => {
-        reportError(error, { screen: "StallDetail", action: "load_menu_page" });
+        reportStallError(error, "load_menu_page");
         if (menuVenueIdRef.current === forVenueId) setMenuPageStatus("error");
       });
   }, [menuNextCursor, venue?.id, wantsMoreMenu]);
@@ -2024,7 +2046,28 @@ export function StallDetailScreen({ navigation, route }: Props) {
                 requireAuthForProtectedAction(
                   message,
                   // Finish the guest's Save once they sign in (never un-saves).
-                  action === "save" ? () => void saveStallAfterSignIn(venue.id) : undefined,
+                  action === "save"
+                    ? () =>
+                        void saveStallAfterSignIn(venue.id, () => {
+                          // Counted and confirmed like a tap on Save (STALL-X1). The guest's
+                          // id was swapped for the account's at sign-in, so read it now.
+                          const userId = useProfileStore.getState().profile.id;
+                          showToast({
+                            message: "Saved. Find it in Profile, Saved, Stalls.",
+                            tone: "success",
+                            duration: 3000,
+                          });
+                          void getHungryService().discovery.recordMerchantActionEvent({
+                            eventType: "save",
+                            venueId: venue.id,
+                            userId,
+                          });
+                          void useMissionStore
+                            .getState()
+                            .incrementProgress(userId, "save_stalls")
+                            .catch((error) => reportStallError(error, "mission_save_stalls"));
+                        })
+                    : undefined,
                 )
               }
               onSaved={() =>

@@ -138,8 +138,10 @@ function stubStallWrites(serverSaved: string[]) {
 test("finishing a guest stall save saves the stall once", async () => {
   const stub = stubStallWrites([]);
   try {
-    assert.equal(await saveStallAfterSignIn("stall-new"), true);
+    let confirmed = 0;
+    assert.equal(await saveStallAfterSignIn("stall-new", () => (confirmed += 1)), true);
     assert.deepEqual(stub.writes, [{ stallId: "stall-new", isSaved: true }]);
+    assert.equal(confirmed, 1, "a new save is confirmed and counted (STALL-X1)");
     assert.equal(useStallInteractionStore.getState().interactions["stall-new"]?.isSaved, true);
   } finally {
     stub.restore();
@@ -149,8 +151,10 @@ test("finishing a guest stall save saves the stall once", async () => {
 test("finishing a guest stall save never un-saves a stall the account already saved", async () => {
   const stub = stubStallWrites(["stall-saved"]);
   try {
-    assert.equal(await saveStallAfterSignIn("stall-saved"), true);
+    let confirmed = 0;
+    assert.equal(await saveStallAfterSignIn("stall-saved", () => (confirmed += 1)), true);
     assert.deepEqual(stub.writes, []);
+    assert.equal(confirmed, 0, "an existing save is not counted again");
     assert.equal(useStallInteractionStore.getState().interactions["stall-saved"]?.isSaved, true);
   } finally {
     stub.restore();

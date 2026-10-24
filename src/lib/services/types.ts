@@ -576,7 +576,6 @@ export interface RecentReviewFeedEntry {
   venueName: string;
 }
 
-/** One page of the review feed, with the cursor taken from the raw rows read. */
 /** Opaque keyset cursor for the next page of a stall's menu. */
 export interface VenueMenuCursor {
   score: number | null;
@@ -591,6 +590,7 @@ export interface VenueMenuPage {
   nextCursor?: VenueMenuCursor;
 }
 
+/** One page of the review feed, with the cursor taken from the raw rows read. */
 export interface RecentReviewFeedPage {
   entries: RecentReviewFeedEntry[];
   /**

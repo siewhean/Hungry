@@ -84,8 +84,12 @@ export async function followStallAfterSignIn(stallId: string) {
 
 // The stall page's Save. The account's saved stalls are read first, so a stall it already
 // saved stays saved (Save toggles). Resolves false when the saves could not be read or the
-// save could not be stored (nothing was changed).
-export async function saveStallAfterSignIn(stallId: string): Promise<boolean> {
+// save could not be stored (nothing was changed). `onNewlySaved` runs only when this call
+// stored a new save, so the page can confirm it and count it like a tap on Save.
+export async function saveStallAfterSignIn(
+  stallId: string,
+  onNewlySaved?: () => void,
+): Promise<boolean> {
   const userId = useProfileStore.getState().profile.id;
   const stalls = useStallInteractionStore.getState();
   const loaded = await stalls
@@ -96,6 +100,9 @@ export async function saveStallAfterSignIn(stallId: string): Promise<boolean> {
   if (useStallInteractionStore.getState().interactions[stallId]?.isSaved) return true;
   return stalls
     .toggleSaved(userId, stallId)
-    .then(() => true)
+    .then(() => {
+      onNewlySaved?.();
+      return true;
+    })
     .catch(() => false);
 }
