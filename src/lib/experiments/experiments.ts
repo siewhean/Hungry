@@ -144,7 +144,6 @@ export const EXPERIMENTS = {
       "stall_menu_dish_opened",
     ],
   },
-  /**
   /** "Save to list" next to Save on the catalog dish page (CatalogRawDetail). */
   catalog_save_to_list_v1: {
     variants: ["control", "save_with_lists"],
@@ -156,7 +155,6 @@ export const EXPERIMENTS = {
     primaryMetric: "portfolio_item_added",
     guardrailMetrics: ["dish_favourited", "dish_unfavourited", "list_item_removed", "dish_viewed"],
   },
-  /**
   /** Dining preferences on Settings start open instead of folded. */
   settings_dining_unfolded_v1: {
     variants: ["control", "unfolded"],
@@ -168,7 +166,6 @@ export const EXPERIMENTS = {
     primaryMetric: "dietary_preferences_set",
     guardrailMetrics: ["budget_preference_set", "decide_for_me_triggered", "sign_out"],
   },
-  /**
   /** New-password field on SignUp: masked (control) or shown as typed, with Hide. */
   auth_signup_password_visible_v1: {
     variants: ["control", "visible_password"],
@@ -199,7 +196,6 @@ export const EXPERIMENTS = {
       "review_started",
     ],
   },
-  /**
   /** "Write your first review" card under the stats on your own profile, when you have none. */
   profile_first_review_nudge_v1: {
     variants: ["control", "test"],
@@ -212,7 +208,6 @@ export const EXPERIMENTS = {
     primaryMetric: "review_submitted",
     guardrailMetrics: ["review_abandoned", "review_submit_failed", "profile_viewed"],
   },
-  /**
   /** Decide for Me quiz length; read in DecideForMeQuizScreen, which only Discover's Decide button opens. */
   decide_quiz_v1: {
     variants: ["control", "two_questions"],
