@@ -10,8 +10,8 @@ const ALLOWLIST = {
   // image-size: fixed only in 2.0.3, but React Native and Metro require the 0.6/1.x lines.
   "GHSA-5p2g-fcmc-qvqq": "image-size",
   "GHSA-w3rx-r6r6-pgpr": "image-size",
-  // zod <4.6.6: fixed only in 4.x, but the Expo CLI and the React hooks ESLint plugin pin 3.x.
-  // Build and lint tooling only; the app bundle does not ship zod.
+  // zod <4.6.6: fixed only in zod 4; eslint-plugin-react-hooks and @expo/cli require zod 3.
+  // Build and lint tooling only; it is not in the app bundle and never validates user input.
   "GHSA-mrhx-c7xc-m3w5": "zod",
 };
 const FAILING_SEVERITIES = new Set(["moderate", "high", "critical"]);
