@@ -1,3 +1,4 @@
+-- smoke: supabase/smoke/account_deletion_residual_purge.sql
 -- ACCDEL-01: purge personal data that 0040's anonymize_account_deletion_request
 -- does not cover (tables added after 0040, plus user_profiles.avatar_url, which
 -- otherwise keeps syncing into public_profiles after deletion).
