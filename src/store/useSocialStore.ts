@@ -68,6 +68,8 @@ const pendingReactionCounts = new Map<string, number>();
 // When each post's last like/save write settled. A feed read that started
 // before then may carry pre-write viewer state, so it is ignored for that post.
 const lastReactionSettledAt = new Map<string, number>();
+// Users with a follow, unfollow or request cancel still on its way to the server.
+const followWritesInFlight = new Set<string>();
 
 function enqueueReactionWrite(
   postId: string,
@@ -445,6 +447,8 @@ export const useSocialStore = create<SocialState>()(
 
       toggleFollow: (userId: string, options?: { isPrivate?: boolean }) => {
         if (!isSignedIn()) return;
+        // A second tap while a follow or cancel is still on its way would race it (PROF-V2).
+        if (followWritesInFlight.has(userId)) return;
         const isFollowing = get().followedUserIds[userId] ?? false;
         const service = getHungryService();
         const { useUIStore } = require("./useUIStore") as typeof import("./useUIStore");
@@ -453,16 +457,20 @@ export const useSocialStore = create<SocialState>()(
           set((prev) => ({
             requestedUserIds: { ...prev.requestedUserIds, [userId]: false },
           }));
-          void service.social.cancelFollowRequest(userId).catch((error) => {
-            console.error("Failed to cancel follow request", error);
-            set((prev) => ({
-              requestedUserIds: { ...prev.requestedUserIds, [userId]: true },
-            }));
-            useUIStore.getState().showToast({
-              message: "Couldn't cancel the request. Please try again.",
-              tone: "error",
-            });
-          });
+          followWritesInFlight.add(userId);
+          void service.social
+            .cancelFollowRequest(userId)
+            .catch((error) => {
+              console.error("Failed to cancel follow request", error);
+              set((prev) => ({
+                requestedUserIds: { ...prev.requestedUserIds, [userId]: true },
+              }));
+              useUIStore.getState().showToast({
+                message: "Couldn't cancel the request. Please try again.",
+                tone: "error",
+              });
+            })
+            .finally(() => followWritesInFlight.delete(userId));
           return;
         }
         // A private account approves followers first: show "Requested" (still locked) at once,
@@ -475,6 +483,7 @@ export const useSocialStore = create<SocialState>()(
           },
           requestedUserIds: { ...prev.requestedUserIds, [userId]: optimisticRequest },
         }));
+        followWritesInFlight.add(userId);
         void (isFollowing ? service.social.unfollowUser(userId) : service.social.followUser(userId))
           .then((result) => {
             // Counted after the server answers, so a failed follow is not an event, and a
@@ -519,7 +528,8 @@ export const useSocialStore = create<SocialState>()(
                 : "Couldn't follow. Please try again.",
               tone: "error",
             });
-          });
+          })
+          .finally(() => followWritesInFlight.delete(userId));
       },
 
       markFollowedUserIds: (userIds) => {

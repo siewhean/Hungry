@@ -255,6 +255,287 @@ test("ONB-6: the signed-out flow runs Welcome to sign-up and keeps the answers",
   );
 });
 
+test("ONB-6: the full flow carries the quiz answers, the diet and a saved dish into the new account", async () => {
+  // The signed-out profile as the app has it (the mock repository names its guest "guest").
+  const { useProfileStore } =
+    require("@/store/useProfileStore") as typeof import("@/store/useProfileStore");
+  useProfileStore.setState((state) => ({ profile: { ...state.profile, id: "guest-user" } }));
+  // Location: open the picker from the Location step and choose an area.
+  const locationNav = createFakeNavigation();
+  const location = await renderScreen(LocationPermissionScreen as never, {
+    name: "LocationPermission",
+    navigation: locationNav,
+  });
+  await location.unmount();
+  const pickerNav = createFakeNavigation();
+  const picker = await renderScreen(ManualLocationPickerScreen as never, {
+    name: "ManualLocationPicker",
+    params: { mode: "onboarding" },
+    navigation: pickerNav,
+  });
+  await picker.type(
+    picker.findByLabel("Search for an area, mall, hawker centre or address"),
+    "Bishan",
+  );
+  await new Promise((resolve) => setTimeout(resolve, 600));
+  await picker.settle();
+  const area = picker.findByLabel(/^Choose Bishan/);
+  assert.ok(area, "the picker lists Bishan");
+  await picker.press(area);
+  await picker.press(allByText(picker, "Set as my location").at(-1) ?? null);
+  await picker.settle();
+  assert.ok(pickerNav.calls.some((call) => call.args[0] === "TasteQuiz"));
+  assert.match(JSON.stringify(useLocationStore.getState()), /Bishan/);
+  await picker.unmount();
+
+  // Taste quiz: answer the first question with the strongest card, then Next to the end.
+  const { useUIStore } = require("@/store/useUIStore") as typeof import("@/store/useUIStore");
+  useUIStore.setState({ reducedMotionEnabled: true });
+  const quizNav = createFakeNavigation();
+  const quiz = await renderScreen(TasteQuizScreen as never, {
+    name: "TasteQuiz",
+    params: { mode: "onboarding" },
+    navigation: quizNav,
+  });
+  const sweetCards = (Array.from(document.querySelectorAll("[aria-label]")) as HTMLElement[]).filter(
+    (el) => (el.getAttribute("aria-label") ?? "").startsWith("How sweet do you like your food? "),
+  );
+  const strongest = sweetCards.at(-1) ?? null;
+  assert.ok(strongest, "the first question has answer cards");
+  await quiz.press(strongest);
+  for (let tap = 0; tap < 20; tap += 1) {
+    const next = allByText(quiz, "Next").at(-1) ?? null;
+    if (!next) break;
+    await quiz.press(next);
+    // Each step slides out and in before the next tap counts.
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    await quiz.settle();
+    if (quizNav.calls.some((call) => call.args[0] === "DietaryPreferences")) break;
+  }
+  const toDietary = quizNav.calls.find((call) => call.args[0] === "DietaryPreferences");
+  assert.ok(toDietary, "Next on the last question opens the dietary step");
+  const dietaryParams = toDietary!.args[1] as {
+    answers?: { sweet?: number };
+    answeredKeys?: string[];
+  };
+  assert.deepEqual(dietaryParams.answeredKeys, ["sweet"]);
+  assert.equal(dietaryParams.answers?.sweet, 8);
+  await quiz.unmount();
+
+  // Dietary: pick Vegetarian and continue.
+  const dietaryNav = createFakeNavigation();
+  const dietary = await renderScreen(TasteQuizScreen as never, {
+    name: "DietaryPreferences",
+    params: { mode: "onboarding", initialPhase: "dietary", ...dietaryParams },
+    navigation: dietaryNav,
+  });
+  await dietary.press(dietary.findByLabel("Dietary preference Vegetarian"));
+  await dietary.press(allByText(dietary, "Continue").at(-1) ?? null);
+  assert.ok(dietaryNav.calls.some((call) => call.args[0] === "FoodOpenness"));
+  assert.equal(useProfileStore.getState().profile.tasteVector.sweet, 8);
+  assert.ok(useProfileStore.getState().profile.dietaryPreferences.includes("vegetarian"));
+  await dietary.unmount();
+
+  // Openness -> result: heart one dish.
+  const openness = await renderScreen(FoodOpennessScreen as never, {
+    name: "FoodOpenness",
+    params: { mode: "onboarding" },
+  });
+  await openness.press(openness.findByText("Continue"));
+  await openness.unmount();
+  const result = await renderScreen(TasteProfileResultScreen as never, {
+    name: "TasteProfileResult",
+  });
+  const heart = result.findByLabel(/^Save /);
+  assert.ok(heart, "the result grid has a dish to save");
+  await result.press(heart);
+  const [savedDishId] = getPendingDishSaveIds();
+  assert.ok(savedDishId);
+  await result.unmount();
+
+  // Account step: sign up; the answers, the diet and the saved dish belong to the account.
+  useSessionStore.getState().completeOnboarding(false);
+  const auth = await renderScreen(OnboardingAuthScreen as never, { name: "OnboardingAuth" });
+  const [name, email, password] = inputs();
+  await auth.type(name, "Mei");
+  await auth.type(email, "mei.flow@example.sg");
+  await auth.type(password, "Str0ng-Passw0rd!");
+  await auth.press(allByText(auth, "Create account").at(-1) ?? null);
+  await auth.settle();
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  assert.equal(useSessionStore.getState().isAuthenticated, true);
+  const profile = useProfileStore.getState().profile;
+  // The mock account already has a saved taste, which the quiz recalibrates: the strong
+  // sweet answer pulls it up from the account's own value (4.3).
+  assert.ok(profile.tasteVector.sweet > 5, `sweet is ${profile.tasteVector.sweet}`);
+  assert.ok(profile.dietaryPreferences.includes("vegetarian"));
+  assert.ok(profile.favouriteDishIds.includes(savedDishId), "the guest's heart is saved");
+  assert.equal(events("onboarding_completed").length, 1);
+  assert.equal(events("onboarding_completed")[0]?.properties.is_new_account, true);
+});
+
+test("ONB-V1: an unconfirmed sign-in on the account step opens the code screen without a new email", async () => {
+  const auth = getHungryService().auth;
+  const originalSignIn = auth.signIn;
+  const originalResend = auth.resendVerificationEmail;
+  const { setConfiguredDataSource } =
+    require("@/lib/services/supabase/client") as typeof import("@/lib/services/supabase/client");
+  let resends = 0;
+  auth.signIn = (async () => {
+    throw Object.assign(new Error("refused"), { code: "email_not_confirmed" });
+  }) as typeof auth.signIn;
+  auth.resendVerificationEmail = (async () => {
+    resends += 1;
+  }) as typeof auth.resendVerificationEmail;
+  try {
+    const parent = createFakeNavigation();
+    const navigation = { ...createFakeNavigation(), getParent: () => parent };
+    const view = await renderScreen(OnboardingAuthScreen as never, {
+      name: "OnboardingAuth",
+      navigation: navigation as never,
+    });
+    await view.press(allByText(view, "Sign in")[0] ?? null);
+    await view.settle();
+    const [email, password] = inputs().slice(-2);
+    await view.type(email, "Mei@Example.SG");
+    await view.type(password, "secret-password");
+    // Sign-in reaches the service only with Supabase configured.
+    setConfiguredDataSource("supabase");
+    await view.press(allByText(view, "Sign in").at(-1) ?? null);
+    await view.settle();
+    await view.press(view.findByText("Enter the code from the email"));
+    assert.equal(resends, 0);
+    assert.deepEqual(parent.calls.at(-1), {
+      method: "reset",
+      args: [
+        {
+          index: 0,
+          routes: [
+            {
+              name: "AuthStack",
+              params: {
+                screen: "EmailVerification",
+                params: { email: "mei@example.sg", completedOnboarding: true },
+              },
+            },
+          ],
+        },
+      ],
+    });
+  } finally {
+    setConfiguredDataSource("mock");
+    auth.signIn = originalSignIn;
+    auth.resendVerificationEmail = originalResend;
+  }
+});
+
+test("ONB-PF1: after switching from Create account, the Sign in fields keep what is typed", async () => {
+  const view = await renderScreen(OnboardingAuthScreen as never, { name: "OnboardingAuth" });
+  await view.press(allByText(view, "Sign in")[0] ?? null);
+  await view.settle();
+  const [email, password] = inputs();
+  await view.type(email, "mei@example.sg");
+  await view.type(password, "secret-password");
+  assert.deepEqual(
+    inputs().map((input) => input.value),
+    ["mei@example.sg", "secret-password"],
+  );
+});
+
+test("ONB-V3: an offline or rate-limited sign-up on the account step is not sent to Sentry", async () => {
+  const auth = getHungryService().auth;
+  const original = auth.signUp;
+  const reported: unknown[] = [];
+  const originalConsoleError = console.error;
+  const globals = globalThis as { __DEV__?: boolean };
+  const previousDev = globals.__DEV__;
+  // reportError logs to the console in development; that is what this test reads.
+  globals.__DEV__ = true;
+  console.error = (...args: unknown[]) => {
+    if (args[0] === "[reportError]") reported.push(args[1]);
+  };
+  try {
+    for (const failure of [
+      Object.assign(new TypeError("Network request failed"), {}),
+      Object.assign(new Error("too many"), { code: "over_email_send_rate_limit", status: 429 }),
+    ]) {
+      auth.signUp = (async () => {
+        throw failure;
+      }) as typeof auth.signUp;
+      const view = await renderScreen(OnboardingAuthScreen as never, { name: "OnboardingAuth" });
+      const [name, email, password] = inputs();
+      await view.type(name, "Mei");
+      await view.type(email, "mei@example.sg");
+      await view.type(password, "Str0ng-Passw0rd!");
+      await view.press(allByText(view, "Create account").at(-1) ?? null);
+      await view.settle();
+      await view.unmount();
+    }
+    assert.deepEqual(reported, []);
+  } finally {
+    auth.signUp = original;
+    console.error = originalConsoleError;
+    globals.__DEV__ = previousDev;
+  }
+});
+
+test("ONB-V5: the account step follows the framing variant once flags load after mount", async () => {
+  let loaded = false;
+  const listeners: (() => void)[] = [];
+  const exposures: string[] = [];
+  setExperimentFlagSource({
+    peek: (key) => (loaded && key === "onboarding_account_framing_v1" ? "test" : undefined),
+    expose: (key) => {
+      exposures.push(key);
+      return loaded ? "test" : undefined;
+    },
+    hasLoaded: () => loaded,
+    onChange: (callback) => {
+      listeners.push(callback);
+      return () => undefined;
+    },
+  });
+  const view = await renderScreen(OnboardingAuthScreen as never, { name: "OnboardingAuth" });
+  assert.match(view.text(), /keep your preferences and discover more/);
+  loaded = true;
+  listeners.forEach((callback) => callback());
+  await view.settle();
+  assert.match(view.text(), /the dishes picked for you/);
+  assert.deepEqual(exposures, [], "the account step never exposes");
+});
+
+test("ONB-V5: with no picks on screen, the test arm keeps the control label", async () => {
+  setExperimentOverride("onboarding_account_framing_v1", "test");
+  const { getServiceProvider, resetServiceProvider, setServiceProvider } =
+    require("@/lib/services/serviceProvider") as typeof import("@/lib/services/serviceProvider");
+  const provider = getServiceProvider();
+  // The server picks fail to load, so the grid is empty.
+  setServiceProvider({
+    ...provider,
+    mode: "supabase",
+    service: {
+      ...provider.service,
+      recommendations: {
+        ...provider.service.recommendations,
+        getSlate: async () => {
+          throw new Error("offline");
+        },
+      },
+    },
+  });
+  try {
+    const view = await renderScreen(TasteProfileResultScreen as never, {
+      name: "TasteProfileResult",
+    });
+    await view.settle();
+    assert.ok(view.findByText("Try again"), "the load failed");
+    assert.ok(view.findByText("Start exploring"));
+    assert.equal(view.findByText("Save my picks"), null);
+  } finally {
+    resetServiceProvider();
+  }
+});
+
 test("ONB-7: the dietary step scrolls as one, so the budget is reachable at large text", async () => {
   const view = await renderScreen(TasteQuizScreen as never, {
     name: "DietaryPreferences",

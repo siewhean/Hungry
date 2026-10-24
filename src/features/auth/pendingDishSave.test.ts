@@ -11,11 +11,11 @@ const dish = { id: "dish-chicken-rice", name: "Chicken Rice" } as DishDetail;
 
 function stubToggleAndServer(serverIds: string[]) {
   const calls: string[] = [];
-  const originalToggle = useProfileStore.getState().toggleFavourite;
+  const originalAdd = useProfileStore.getState().addFavourites;
   useProfileStore.setState({
-    toggleFavourite: async (target) => {
-      calls.push(target.id);
-      return { status: "saved" };
+    addFavourites: async (targets) => {
+      calls.push(...targets.map((target) => target.id));
+      return [];
     },
   });
   const current = useProfileStore.getState().profile;
@@ -26,7 +26,7 @@ function stubToggleAndServer(serverIds: string[]) {
   return {
     calls,
     restore: () => {
-      useProfileStore.setState({ toggleFavourite: originalToggle });
+      useProfileStore.setState({ addFavourites: originalAdd });
       profileService.getFavouriteDishIds = originalIds;
     },
   };

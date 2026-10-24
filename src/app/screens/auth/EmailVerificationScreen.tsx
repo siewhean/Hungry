@@ -43,7 +43,8 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
   const confirmationCode = route.params?.code;
   // Supabase redirects with ?error= when the link expired or was already used.
   const confirmationError = route.params?.error;
-  const completedOnboarding = route.params?.completedOnboarding ?? false;
+  // Only a sign-up sets this; Login's "Enter the code" leaves it out and must not reset it.
+  const completedOnboarding = route.params?.completedOnboarding;
   // The sign-up that opened this screen just sent an email, so the wait starts now.
   const { seconds: resendSeconds, restart: restartResendCooldown } = useResendCooldown(true);
   const [isResending, setIsResending] = useState(false);
@@ -56,9 +57,11 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
 
   // The confirmation link reopens this screen with only `?code=` (often after a
   // cold start), so each sign-up that opens it records whether it had already
-  // finished onboarding. A plain SignUp passes no flag and resets it to false.
+  // finished onboarding. Sign-up always passes the flag; Login's code path passes none.
   useEffect(() => {
-    if (email) rememberPendingEmailVerification(completedOnboarding);
+    if (email && completedOnboarding !== undefined) {
+      rememberPendingEmailVerification(completedOnboarding);
+    }
   }, [completedOnboarding, email]);
 
   useEffect(() => {

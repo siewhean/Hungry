@@ -1634,6 +1634,11 @@ export const hungryService: HungryService = {
       return resolve(hadPending);
     },
 
+    async isAccountDeletionProcessing() {
+      // The mock has no deletion worker.
+      return resolve(false);
+    },
+
     async forgotPassword(_email) {
       // Mock: no-op — in production sends a reset email
       return resolve(undefined);
@@ -2141,6 +2146,17 @@ export const hungryService: HungryService = {
       const isFav = _profile.favouriteDishIds.includes(dishId);
       if (isFav === saved) return resolve(saved);
       return this.toggleFavourite(dishId);
+    },
+
+    async addFavourites(dishIds) {
+      const added = [...new Set(dishIds)].filter((id) => !_profile.favouriteDishIds.includes(id));
+      const favouriteDishIds = [..._profile.favouriteDishIds, ...added];
+      _profile = {
+        ..._profile,
+        favouriteDishIds,
+        stats: { ..._profile.stats, favouritesCount: favouriteDishIds.length },
+      };
+      return resolve(undefined);
     },
 
     async getFavouriteDishIds() {

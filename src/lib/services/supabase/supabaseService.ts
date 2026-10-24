@@ -1377,8 +1377,13 @@ async function fetchRecentReviewsPage(
   const lastRow = rows[rows.length - 1];
   const lastCreatedAt = lastRow ? asString(lastRow.created_at) : undefined;
   const lastId = lastRow ? asString(lastRow.id) : undefined;
+  const entries = await buildRecentReviewEntries(client, rows);
   return {
-    entries: await buildRecentReviewEntries(client, rows),
+    // A deleted account's review keeps its photo rows (the join matches) but is shown without
+    // photos, so it would be a blank tile on the photo grid: leave it out there.
+    entries: options?.withPhotos
+      ? entries.filter((entry) => entry.review.photos.length > 0)
+      : entries,
     // From the raw rows: a dropped review must not look like the end of the feed.
     hasMore: rows.length >= limit,
     nextCursor: lastCreatedAt && lastId ? { before: lastCreatedAt, beforeId: lastId } : undefined,
@@ -3758,6 +3763,21 @@ export const supabaseService: HungryService = {
       return data === true;
     },
 
+    async isAccountDeletionProcessing() {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) return false;
+      const { data, error } = await client
+        .from("account_deletion_requests")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("status", "processing")
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return Boolean(data);
+    },
+
     async forgotPassword(email) {
       const client = requireSupabaseClient();
       const { error } = await client.auth.resetPasswordForEmail(normalizeAuthEmail(email), {
@@ -4594,6 +4614,22 @@ export const supabaseService: HungryService = {
       return true;
     },
 
+    async addFavourites(dishIds: string[], expectedUserId?: string) {
+      const ids = [...new Set(dishIds)];
+      if (ids.length === 0) return;
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("You must be signed in to favourite dishes.");
+      if (expectedUserId && userId !== expectedUserId) {
+        throw new Error("Account changed before the favourites could be saved.");
+      }
+      const { error } = await client.from("user_favourite_dishes").upsert(
+        ids.map((dishId) => ({ user_id: userId, dish_id: dishId })),
+        { onConflict: "user_id,dish_id", ignoreDuplicates: true },
+      );
+      if (error) throw error;
+    },
+
     async setDishTried(dishId: string, tried: boolean) {
       const client = requireSupabaseClient();
       const userId = await getCurrentSupabaseUserId();
@@ -5371,7 +5407,10 @@ export const supabaseService: HungryService = {
     async getFollowCounts(userId: string) {
       const client = requireSupabaseClient();
       const { data, error } = await client.rpc("get_follow_counts", { p_user_id: userId });
-      if (error || !Array.isArray(data) || data.length === 0) return null;
+      // A failed read (offline, rate cap) is an error for the caller to show and report;
+      // null means only that the server has no row.
+      if (error) throw error;
+      if (!Array.isArray(data) || data.length === 0) return null;
       const row = data[0] as Row;
       return {
         followersCount: asNumber(row.followers_count) ?? 0,
@@ -5962,6 +6001,8 @@ export const supabaseService: HungryService = {
         .rpc("submit_user_stall_submission", rpcPayload)
         .maybeSingle();
       let finalResult: { data: unknown; error: PostgrestError | null } = primarySubmit;
+      // Set when every direct insert failed on the schema: no row was written by it.
+      let directInsertFailed = false;
       const isFunctionSchemaError = (error: PostgrestError | null | undefined) => {
         if (!error) return false;
         const message = error.message.toLowerCase();
@@ -6111,6 +6152,7 @@ export const supabaseService: HungryService = {
         } else if (!insertError && !insertedRows) {
           finalResult = { data: null, error: null };
         } else if (insertError && isRetryableInsertSchemaError(insertError)) {
+          directInsertFailed = true;
           finalResult = { data: null, error: null };
         } else {
           // Includes permission denied: the row was not saved, so this is a failure, not success.
@@ -6153,7 +6195,8 @@ export const supabaseService: HungryService = {
           updatedAt: new Date().toISOString(),
         };
 
-        if (!data) {
+        // An empty result confirms nothing either: look the row up as for no data.
+        if (!data || (Array.isArray(data) && data.length === 0)) {
           const fallbackWindowIso = new Date(Date.now() - 5 * 60 * 1000).toISOString();
           const normalizedStallName = input.stallName.trim().toLowerCase();
 
@@ -6227,6 +6270,8 @@ export const supabaseService: HungryService = {
           if (recentFallback.data) return recentFallback.data;
 
           // Nothing confirms the row was saved; do not report a made-up submission as success.
+          // When the insert itself failed, nothing refers to the uploaded photos: remove them.
+          if (directInsertFailed) await removeUploadedImages();
           throw new StallSubmissionUnconfirmedError();
         }
 
@@ -6240,13 +6285,11 @@ export const supabaseService: HungryService = {
           if (rowById) {
             return mapUserStallSubmission(client, asRecord(rowById));
           }
-          return fallbackSubmission;
+          // The RPC returned the saved row's id; keep it even when the read-back fails.
+          return { ...fallbackSubmission, id: data };
         }
 
         if (Array.isArray(data)) {
-          if (data.length === 0) {
-            return fallbackSubmission;
-          }
           return mapUserStallSubmission(client, asRecord(data[0]));
         }
 
@@ -6977,7 +7020,7 @@ export const supabaseService: HungryService = {
       let query = client
         .from("reviews")
         .select(
-          "id,dish_id,author_name,rating,text,tags,created_at,merchant_reply_text,merchant_replied_at",
+          "id,dish_id,user_id,author_name,rating,text,tags,created_at,merchant_reply_text,merchant_replied_at",
         )
         .eq("venue_id", venueId)
         .order("created_at", { ascending: false })
@@ -6997,14 +7040,18 @@ export const supabaseService: HungryService = {
       );
       const interactions = reviewRows.map((row) => {
         const rating = asNumber(row.rating);
+        // A deleted account's kept review is a bare rating, as on the dish page.
+        const fromDeletedAccount = isDeletedAccountReviewRow(row);
         return {
           id: asString(row.id) ?? "",
           outletId,
           type: "review" as InteractionType,
-          authorName: asString(row.author_name) ?? "Hungry diner",
+          authorName: fromDeletedAccount
+            ? "Deleted account"
+            : (asString(row.author_name) ?? "Hungry diner"),
           rating,
-          text: asString(row.text) ?? "",
-          tags: asStringArray(row.tags),
+          text: fromDeletedAccount ? "" : (asString(row.text) ?? ""),
+          tags: fromDeletedAccount ? [] : asStringArray(row.tags),
           createdAt: asString(row.created_at) ?? new Date().toISOString(),
           dishName: dishNameById.get(asString(row.dish_id) ?? ""),
           reply: asString(row.merchant_reply_text)

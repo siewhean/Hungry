@@ -375,7 +375,12 @@ export function TasteProfileResultScreen({ navigation }: Props) {
 
       <View style={{ padding: spacing[4], paddingBottom: insets.bottom + spacing[4] }}>
         <Button
-          label={!isAuthenticated && framing === "test" ? "Save my picks" : "Start exploring"}
+          // With no picks on screen (load error, nothing fits the diet) there is nothing to save.
+          label={
+            !isAuthenticated && framing === "test" && dishes.length > 0
+              ? "Save my picks"
+              : "Start exploring"
+          }
           onPress={() => {
             // Sign-in is required: a signed-out user finishes on the account step,
             // which completes onboarding (with this quiz-skip choice) before auth.

@@ -79,14 +79,14 @@ const dish = (id: string, name: string) => ({ id, name }) as DishDetail;
 
 function stubSaves(options: { fail?: string[] } = {}) {
   const calls: string[] = [];
+  let writes = 0;
   let serverReads = 0;
-  const originalToggle = useProfileStore.getState().toggleFavourite;
+  const originalAdd = useProfileStore.getState().addFavourites;
   useProfileStore.setState({
-    toggleFavourite: async (target) => {
-      calls.push(target.id);
-      return options.fail?.includes(target.id)
-        ? { status: "failed", reason: "sync_failed", message: "offline" }
-        : { status: "saved" };
+    addFavourites: async (targets) => {
+      writes += 1;
+      calls.push(...targets.map((target) => target.id));
+      return targets.filter((target) => options.fail?.includes(target.id));
     },
   });
   const current = useProfileStore.getState().profile;
@@ -99,9 +99,10 @@ function stubSaves(options: { fail?: string[] } = {}) {
   };
   return {
     calls,
+    writes: () => writes,
     serverReads: () => serverReads,
     restore: () => {
-      useProfileStore.setState({ toggleFavourite: originalToggle });
+      useProfileStore.setState({ addFavourites: originalAdd });
       profileService.getFavouriteDishIds = originalIds;
     },
   };
@@ -119,6 +120,7 @@ test("ONB-4: every dish a guest hearts is kept (deduped) and saved after sign-up
     await flushPendingDishSave();
     assert.deepEqual(stub.calls, ["d2", "d1"]);
     assert.equal(stub.serverReads(), 1, "the account's saves are read once, not per dish");
+    assert.equal(stub.writes(), 1, "and written once, not per dish (ONB-V6)");
     assert.equal(useUIStore.getState().toast?.message, "Saved 2 dishes");
   } finally {
     stub.restore();

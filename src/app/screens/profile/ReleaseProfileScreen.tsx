@@ -1,10 +1,11 @@
-import { Alert, Pressable, View } from "react-native";
+import { Pressable, View } from "react-native";
 import { ChevronRight, Heart, LogOut, Pencil, Settings } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { AppText, Avatar, Card, Screen } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { confirmAction } from "@/lib/runtime/confirmAction";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
@@ -118,10 +119,13 @@ export function ReleaseProfileScreen() {
         accessibilityLabel="Sign out"
         accessibilityHint="Signs out and returns to the authentication screen"
         onPress={() =>
-          Alert.alert("Sign out", "You will be signed out from Hungry on this device.", [
-            { text: "Cancel", style: "cancel" },
-            { text: "Sign out", style: "destructive", onPress: signOut },
-          ])
+          confirmAction({
+            title: "Sign out",
+            message: "You will be signed out from Hungry on this device.",
+            confirmLabel: "Sign out",
+            destructive: true,
+            onConfirm: signOut,
+          })
         }
         style={({ pressed }) => ({
           alignItems: "center",

@@ -98,3 +98,36 @@ test("following a private account shows Requested at once and never Following", 
   assert.equal(requested(), true);
   reset();
 });
+
+test("PROF-V2: a double tap on Follow for a private account sends one request and no cancel", async () => {
+  reset();
+  const social = getHungryService().social;
+  const originalFollow = social.followUser;
+  const originalCancel = social.cancelFollowRequest;
+  const calls: string[] = [];
+  let settle: (value: "pending") => void = () => undefined;
+  social.followUser = (() => {
+    calls.push("follow");
+    return new Promise<"pending">((resolve) => {
+      settle = resolve;
+    });
+  }) as typeof social.followUser;
+  social.cancelFollowRequest = (async () => {
+    calls.push("cancel");
+  }) as typeof social.cancelFollowRequest;
+  try {
+    useSocialStore.getState().toggleFollow(PRIVATE_USER_ID, { isPrivate: true });
+    useSocialStore.getState().toggleFollow(PRIVATE_USER_ID, { isPrivate: true });
+    settle("pending");
+    await waitFor(requested);
+    assert.deepEqual(calls, ["follow"]);
+    // Once the request has settled, a tap withdraws it again.
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    useSocialStore.getState().toggleFollow(PRIVATE_USER_ID, { isPrivate: true });
+    assert.deepEqual(calls, ["follow", "cancel"]);
+  } finally {
+    social.followUser = originalFollow;
+    social.cancelFollowRequest = originalCancel;
+    reset();
+  }
+});

@@ -148,7 +148,12 @@ function clamp(value: number, min: number, max: number): number {
 
 const SUBMIT_FAILED_MESSAGE = "Couldn't submit the stall. Please try again.";
 
-function resolveSubmitErrorMessage(error: unknown): string {
+/** Exported for tests. */
+export function resolveSubmitErrorMessage(error: unknown): string {
+  // The row may have been saved: point to My submissions instead of inviting a duplicate.
+  if (error instanceof Error && error.name === "StallSubmissionUnconfirmedError") {
+    return error.message;
+  }
   const asText = findErrorMessage(error)?.toLowerCase() ?? "";
   // Our own server limits say something a person can act on; everything else (migration or
   // schema-cache errors, permission errors, raw codes) is not for them.

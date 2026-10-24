@@ -171,6 +171,14 @@ interface ProfileState {
     dish: FavouriteDishInput,
     options?: { surface?: string },
   ) => Promise<FavouriteToggleResult>;
+  /**
+   * Adds several favourites with one server write (a guest's pending saves after sign-up).
+   * Only adds; resolves to the dishes that could not be saved.
+   */
+  addFavourites: (
+    dishes: FavouriteDishInput[],
+    options?: { surface?: string },
+  ) => Promise<FavouriteDishInput[]>;
   updateProfile: (next: Partial<Pick<UserProfile, "displayName" | "email" | "avatarUrl">>) => void;
   /** Resolves false when the server rejected the change and the old value was restored. */
   setProfileVisibility: (profileVisibility: ProfileVisibility) => Promise<boolean>;
@@ -179,12 +187,12 @@ interface ProfileState {
   /** `surface` tags the analytics event: the onboarding quiz or the profile/Settings edit. */
   setDietaryPreferences: (
     dietaryPreferences: DietaryFlag[],
-    options?: { surface?: "onboarding" | "profile" },
+    options?: { surface?: "onboarding" | "profile" | "settings" },
   ) => void;
   /** Saved on the account (user_profiles.max_dish_budget) when signed in; kept on the device for guests. */
   setMaxDishBudget: (
     maxDishBudget: number | undefined,
-    options?: { surface?: "onboarding" | "profile" },
+    options?: { surface?: "onboarding" | "profile" | "settings" },
   ) => void;
   addReview: (dish: DishDetail) => void;
   addReviewedDish: (dishId: string) => void;
@@ -793,6 +801,103 @@ export const useProfileStore = create<ProfileState>()(
           };
         } finally {
           pendingFavouriteDishToggles.delete(dishId);
+        }
+      },
+      addFavourites: async (dishes, options) => {
+        const session = getSessionStoreState();
+        if (!session.isAuthenticated) return dishes;
+        const ownerUserId = session.authenticatedUserId ?? undefined;
+        const ownerEpoch = profileAccountEpoch;
+        const isStillOwner = () => {
+          const current = getSessionStoreState();
+          return (
+            profileAccountEpoch === ownerEpoch &&
+            current.isAuthenticated &&
+            (current.authenticatedUserId ?? undefined) === ownerUserId
+          );
+        };
+        const seen = new Set(get().profile.favouriteDishIds);
+        const toAdd = dishes.filter((dish) => {
+          if (seen.has(dish.id) || pendingFavouriteDishToggles.has(dish.id)) return false;
+          seen.add(dish.id);
+          return true;
+        });
+        if (toAdd.length === 0) return [];
+        const ids = toAdd.map((dish) => dish.id);
+        ids.forEach((id) => pendingFavouriteDishToggles.add(id));
+        const previousSnapshot = {
+          profile: get().profile,
+          tasteProfile: get().tasteProfile,
+          tasteInteractionEvents: get().tasteInteractionEvents,
+        };
+        const interactions: { input: RecordTasteInteractionInput; event: TasteInteractionEvent }[] =
+          [];
+        // One store update for every dish: membership, and the taste nudge a save gives.
+        set((state) => {
+          let profile = state.profile;
+          let tasteInteractionEvents = state.tasteInteractionEvents;
+          for (const dish of toAdd) {
+            trackActivationOnce(profile, "saved", dish.id);
+            if (!isFullFavouriteDish(dish)) continue;
+            const updatedTasteVector = processExplicitFeedback(profile.tasteVector, {
+              type: "saved",
+              dishVector: dish.tasteVector,
+              dishConfidence: dish.tasteConfidence,
+              timestamp: Date.now(),
+            });
+            const input: RecordTasteInteractionInput = { type: "saved", surface: "profile", dish };
+            const event = createTasteEvent(input, profile.tasteVector, updatedTasteVector, true);
+            interactions.push({ input, event });
+            tasteInteractionEvents = appendTasteEvent(tasteInteractionEvents, event);
+            profile = {
+              ...profile,
+              tasteVector: updatedTasteVector,
+              recommendationSignals: bumpRecommendationSignals(profile, "saved"),
+            };
+          }
+          const favouriteDishIds = [...state.profile.favouriteDishIds, ...ids];
+          return {
+            profile: {
+              ...profile,
+              favouriteDishIds,
+              stats: { ...profile.stats, favouritesCount: favouriteDishIds.length },
+            },
+            tasteProfile: { ...state.tasteProfile, vector: profile.tasteVector },
+            tasteInteractionEvents,
+          };
+        });
+        // n-plus-one-ok: fire-and-forget taste signals, at most 8 pending guest saves; there is no batched feedback RPC yet.
+        interactions.forEach(({ input, event }) => persistTasteInteraction(input, event));
+        const trackSaved = () =>
+          toAdd.forEach((dish) =>
+            trackAnalyticsEvent("dish_favourited", {
+              dish_id: dish.id,
+              venue_id: dish.venueId,
+              surface: options?.surface,
+            }),
+          );
+        if (getServiceProvider().mode === "mock") {
+          ids.forEach((id) => pendingFavouriteDishToggles.delete(id));
+          trackSaved();
+          return [];
+        }
+        const optimisticProfile = get().profile;
+        try {
+          await getHungryService().profile.addFavourites(ids, ownerUserId);
+          if (!isStillOwner()) return toAdd;
+          trackSaved();
+          return [];
+        } catch (error) {
+          if (!isStillOwner()) return toAdd;
+          console.error("Failed to save favourites", error);
+          if (get().profile === optimisticProfile) {
+            set(previousSnapshot);
+          } else {
+            ids.forEach((id) => setFavouriteMembership(set, id, false));
+          }
+          return toAdd;
+        } finally {
+          ids.forEach((id) => pendingFavouriteDishToggles.delete(id));
         }
       },
       updateProfile: (next) => {

@@ -538,6 +538,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           isAuthReady: state.isAuthReady,
           isAuthenticated: state.isAuthenticated,
           hasCompletedOnboarding: state.hasCompletedOnboarding,
+          onboardingCompletionPending: state.onboardingCompletionPending,
           onAuthRedirect: (route) => {
             state.setReturnRoute({ name: route.name, params: route.params });
           },

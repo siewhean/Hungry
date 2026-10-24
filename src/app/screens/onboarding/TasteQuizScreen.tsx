@@ -339,8 +339,19 @@ export function TasteQuizScreen({ navigation, route }: Props) {
       },
       tasteAnswers,
     );
-    setDietaryPreferences(dietaryPreferences, { surface: flowMode });
-    setMaxDishBudget(maxDishBudget, { surface: flowMode });
+    // Settings opens this as a profile edit; its rows tag the events with where they came from.
+    const surface =
+      (route.params && "source" in route.params ? route.params.source : undefined) ?? flowMode;
+    // A profile edit sends a preference event only when the answer changed (a taste-only
+    // edit, or Continue without changes, is not a dietary or budget update).
+    const dietaryChanged =
+      flowMode !== "profile" ||
+      dietaryPreferences.length !== profile.dietaryPreferences.length ||
+      dietaryPreferences.some((flag) => !profile.dietaryPreferences.includes(flag));
+    const budgetChanged =
+      flowMode !== "profile" || (maxDishBudget ?? null) !== (profile.maxDishBudget ?? null);
+    if (dietaryChanged) setDietaryPreferences(dietaryPreferences, { surface });
+    if (budgetChanged) setMaxDishBudget(maxDishBudget, { surface });
     if (flowMode === "profile") {
       setSkippedTasteQuiz(false);
       showToast({ message: "Taste profile updated.", tone: "success" });

@@ -869,6 +869,8 @@ export interface HungryService {
     requestAccountDeletion(request?: AccountDeletionRequest): Promise<PendingAccountDeletion>;
     getPendingAccountDeletion(): Promise<PendingAccountDeletion | null>;
     cancelAccountDeletion(): Promise<boolean>;
+    /** True while the deletion worker is processing this account's request (too late to keep). */
+    isAccountDeletionProcessing(): Promise<boolean>;
     forgotPassword(email: string): Promise<void>;
     /** Exchanges the `?code` from the password-reset link; this signs the user in. */
     exchangeRecoveryCode(token: string): Promise<void>;
@@ -1020,6 +1022,8 @@ export interface HungryService {
     toggleFavourite(dishId: string, expectedUserId?: string): Promise<boolean>;
     /** Saves (true) or removes (false) a favourite with one idempotent write; no read first. */
     setFavourite(dishId: string, saved: boolean, expectedUserId?: string): Promise<boolean>;
+    /** Saves several favourites with one idempotent multi-row write (a guest's pending saves). */
+    addFavourites(dishIds: string[], expectedUserId?: string): Promise<void>;
     /**
      * Saves the dish "Tried" mark on the server and resolves to the updated Tried list.
      * A dish the user reviewed stays in the list when un-ticked.

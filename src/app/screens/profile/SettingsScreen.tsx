@@ -634,7 +634,7 @@ export function SettingsScreen() {
           onPress={() =>
             rootNavigation.navigate("OnboardingStack", {
               screen: "TasteQuiz",
-              params: { mode: "profile", initialPhase: "dietary" },
+              params: { mode: "profile", initialPhase: "dietary", source: "settings" },
             })
           }
           isLast={false}
@@ -648,7 +648,7 @@ export function SettingsScreen() {
           onPress={() =>
             rootNavigation.navigate("OnboardingStack", {
               screen: "TasteQuiz",
-              params: { mode: "profile", initialPhase: "taste" },
+              params: { mode: "profile", initialPhase: "taste", source: "settings" },
             })
           }
           isLast={false}
@@ -662,7 +662,7 @@ export function SettingsScreen() {
           onPress={() =>
             rootNavigation.navigate("OnboardingStack", {
               screen: "TasteQuiz",
-              params: { mode: "profile", initialPhase: "dietary" },
+              params: { mode: "profile", initialPhase: "dietary", source: "settings" },
             })
           }
           isLast={false}
