@@ -12,6 +12,7 @@ export type AnalyticsEventName =
   | "onboarding_step_skipped"
   | "onboarding_question_viewed"
   | "onboarding_area_picker_viewed"
+  | "onboarding_picks_shown"
   | "activated"
   | "taste_quiz_completed"
   | "dietary_preferences_set"

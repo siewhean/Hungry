@@ -174,7 +174,11 @@ test("H119: picking a location from Settings returns there instead of re-complet
 
 test("H122: onboarding_completed fires once and a returning user's onboarding state is kept", () => {
   clearTrackedAnalyticsEvents();
-  useSessionStore.setState({ hasCompletedOnboarding: false, hasSkippedTasteQuiz: false });
+  useSessionStore.setState({
+    hasCompletedOnboarding: false,
+    hasSkippedTasteQuiz: false,
+    isAuthenticated: true,
+  });
   useSessionStore.getState().completeOnboarding(true);
   useSessionStore.getState().completeOnboarding(false);
 

@@ -191,7 +191,12 @@ test("L5, L6: location copy is honest, the icon is neutral, and a blocked permis
   assert.match(source, /icon: Star,\s*iconTone: "textSecondary"/);
   // Blocked: toast and stay, with Open Settings next to Pick my area, even after an area was picked.
   assert.match(source, /setPermissionBlocked\(true\);\s*showToast\([\s\S]*?return;/);
-  assert.match(source, /\{permissionBlocked \? \(\s*<Button\s*label="Open settings"/);
+  // Behaviour (Open settings as the primary action when blocked) is in onboarding.render.test.tsx.
+  assert.match(source, /\{showSettingsPrimary \? \(\s*<Button\s*label="Open settings"/);
+  assert.match(
+    source,
+    /\{permissionBlocked && manualLocation \? \(\s*<Button\s*label="Open settings"/,
+  );
 });
 
 test("L7: the quiz has a visible back arrow on every question", () => {

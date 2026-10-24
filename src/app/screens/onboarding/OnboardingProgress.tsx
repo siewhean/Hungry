@@ -11,13 +11,31 @@ export type OnboardingStep = (typeof ONBOARDING_STEPS)[number];
 /** Welcome is the front door, not a task: the counter starts at Location and runs to Done. */
 const PROGRESS_STEPS = ONBOARDING_STEPS.filter((name) => name !== "welcome");
 
-/** Onboarding funnel: one event per step shown, tagged with the onboarding surface. */
+/** The "Step x of N" number the user sees for a step; 0 for Welcome, which shows no counter. */
+export function visibleStepNumber(step: OnboardingStep): number {
+  return PROGRESS_STEPS.indexOf(step as (typeof PROGRESS_STEPS)[number]) + 1;
+}
+
+/**
+ * Onboarding funnel: one event per step shown, tagged with the onboarding surface.
+ * step_number matches the on-screen counter; step_index is the position in the whole flow.
+ */
 export function trackOnboardingStepViewed(step: OnboardingStep) {
   trackAnalyticsEvent("onboarding_step_viewed", {
     step,
-    step_number: ONBOARDING_STEPS.indexOf(step) + 1,
+    step_number: visibleStepNumber(step),
+    step_index: ONBOARDING_STEPS.indexOf(step) + 1,
     surface: "onboarding",
   });
+}
+
+/** What the result grid ended up showing, once it settles. */
+export function trackOnboardingPicksShown(picks: {
+  ranked: boolean;
+  count: number;
+  source: "local" | "server" | "popular" | "error";
+}) {
+  trackAnalyticsEvent("onboarding_picks_shown", { ...picks, surface: "onboarding" });
 }
 
 export function trackOnboardingStepSkipped(step: OnboardingStep) {
@@ -37,7 +55,7 @@ export function trackOnboardingAreaPickerViewed() {
 /** The one progress indicator every onboarding screen shows: "Step x of N". */
 export function OnboardingProgress({ step }: { step: OnboardingStep }) {
   const { palette, radii, spacing } = useHungryTheme();
-  const current = PROGRESS_STEPS.indexOf(step as (typeof PROGRESS_STEPS)[number]) + 1;
+  const current = visibleStepNumber(step);
   const total = PROGRESS_STEPS.length;
   if (current === 0) return null;
 

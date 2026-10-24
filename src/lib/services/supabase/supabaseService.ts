@@ -1981,6 +1981,17 @@ function toRpcRadiusMeters(radiusMeters: number | undefined): number | null {
     : null;
 }
 
+// Loaded on first use: Sentry is a native module that plain service tests never need.
+function reportTasteRecommendationsError(error: unknown): void {
+  try {
+    const { reportError } =
+      require("@/lib/monitoring/reportError") as typeof import("@/lib/monitoring/reportError");
+    reportError(error, { screen: "service", action: "get_taste_recommendations" });
+  } catch {
+    // Reporting must never break the recommendations fallback.
+  }
+}
+
 async function getLiveTasteRecommendations(
   client: SupabaseClient,
   request: RecommendationSlateRequest,
@@ -2000,6 +2011,9 @@ async function getLiveTasteRecommendations(
 
   if (error) {
     console.warn("Failed to fetch live taste recommendations", error.message);
+    // The fallback (popular dishes) hides the failure from users, so it must reach Sentry;
+    // a rate-limit refusal is expected under load and is not reported.
+    if (error.code !== "rate_limited") reportTasteRecommendationsError(error);
     return undefined;
   }
   if (!Array.isArray(data)) return undefined;

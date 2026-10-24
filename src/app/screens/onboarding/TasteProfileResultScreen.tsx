@@ -1,6 +1,6 @@
 import type { NavigationProp } from "@react-navigation/native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { Heart } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -8,7 +8,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
 import { AccessibleImage, AppText, Button, Card } from "@/components/ui";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { flushPendingDishSave, rememberPendingDishSave } from "@/features/auth/pendingDishSave";
+import {
+  flushPendingDishSave,
+  forgetPendingDishSave,
+  getPendingDishSaveIds,
+  rememberPendingDishSave,
+} from "@/features/auth/pendingDishSave";
+import { useExperimentVariant } from "@/lib/experiments/experiments";
+import { reportError } from "@/lib/monitoring/reportError";
 import {
   getDataRepository,
   getHungryService,
@@ -20,7 +27,11 @@ import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
-import { OnboardingProgress, trackOnboardingStepViewed } from "./OnboardingProgress";
+import {
+  OnboardingProgress,
+  trackOnboardingPicksShown,
+  trackOnboardingStepViewed,
+} from "./OnboardingProgress";
 import type { OnboardingStackParamList } from "./OnboardingStack";
 import { describeTaste, matchesAllDietaryFlags, noDietaryPicksMessage } from "./resultPicks";
 
@@ -70,6 +81,10 @@ export function TasteProfileResultScreen({ navigation }: Props) {
   const { palette, radii, spacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  // The CTA is on screen from first render, so a signed-out user is exposed on mount.
+  const framing = useExperimentVariant("onboarding_account_framing_v1", {
+    enabled: !isAuthenticated,
+  });
   const hasSkippedTasteQuiz = useSessionStore((state) => state.hasSkippedTasteQuiz);
   const completeOnboarding = useSessionStore((state) => state.completeOnboarding);
   const showToast = useUIStore((state) => state.showToast);
@@ -84,7 +99,12 @@ export function TasteProfileResultScreen({ navigation }: Props) {
 
   // Rank the catalog by the quiz taste vector (and dietary picks) instead of a fixed popular list.
   // Fetched once so saving a dish (which nudges the vector) does not reshuffle the grid.
+  // Supabase has no cached catalog during onboarding: searching it would only start a
+  // full catalog download, so go straight to the server picks below.
   const [initialPicks] = useState(() => {
+    if (getServiceProvider().mode === "supabase") {
+      return { dishes: [] as DishDetail[], tasteRanked: false };
+    }
     const { tasteVector, dietaryPreferences } = useProfileStore.getState().profile;
     const repository = getDataRepository();
     const ranked = repository.searchDishes(getResultFilters(), tasteVector);
@@ -104,6 +124,24 @@ export function TasteProfileResultScreen({ navigation }: Props) {
   const [tasteRanked, setTasteRanked] = useState(initialPicks.tasteRanked);
   // True when the diet left nothing to show, so the screen says so instead of looking broken.
   const [noDietaryMatch, setNoDietaryMatch] = useState(false);
+  // A guest's hearts: kept on the device and saved after sign-up, shown filled meanwhile.
+  const [pendingSaveIds, setPendingSaveIds] = useState(getPendingDishSaveIds);
+
+  // What the grid showed, once per screen: lets the funnel see taste-ranked vs fallback picks.
+  const picksTrackedRef = useRef(false);
+  const trackPicksOnce = useCallback((picks: Parameters<typeof trackOnboardingPicksShown>[0]) => {
+    if (picksTrackedRef.current) return;
+    picksTrackedRef.current = true;
+    trackOnboardingPicksShown(picks);
+  }, []);
+  useEffect(() => {
+    if (initialPicks.dishes.length === 0) return;
+    trackPicksOnce({
+      ranked: initialPicks.tasteRanked,
+      count: initialPicks.dishes.length,
+      source: initialPicks.tasteRanked ? "local" : "popular",
+    });
+  }, [initialPicks, trackPicksOnce]);
 
   // The Supabase repository has no cached catalog during onboarding, so ask the server.
   const [loadState, setLoadState] = useState<"idle" | "loading" | "error">(() =>
@@ -133,9 +171,17 @@ export function TasteProfileResultScreen({ navigation }: Props) {
         setTasteRanked(ranked);
         setNoDietaryMatch(results.length === 0 && dietaryPreferences.length > 0);
         setLoadState("idle");
+        trackPicksOnce({
+          ranked,
+          count: Math.min(results.length, RESULT_COUNT),
+          source: ranked ? "server" : "popular",
+        });
       })
-      .catch(() => {
-        if (active) setLoadState("error");
+      .catch((error: unknown) => {
+        reportError(error, { screen: "TasteProfileResult", action: "load_picks" });
+        if (!active) return;
+        setLoadState("error");
+        trackPicksOnce({ ranked: false, count: 0, source: "error" });
       });
     return () => {
       active = false;
@@ -221,37 +267,45 @@ export function TasteProfileResultScreen({ navigation }: Props) {
           }}
         >
           {dishes.map((dish) => {
-            const isSaved = favouriteDishIds.includes(dish.id);
+            const isSaved = isAuthenticated
+              ? favouriteDishIds.includes(dish.id)
+              : pendingSaveIds.includes(dish.id);
+            const photo = dish.imageUrl ? (
+              <AccessibleImage
+                source={{ uri: dish.imageUrl }}
+                contentFit="cover"
+                style={{ height: 120, width: "100%" }}
+                accessibilityLabel={`Photo of ${dish.name}`}
+              />
+            ) : (
+              <NoDishPhoto dishName={dish.name} style={{ height: 120, width: "100%" }} />
+            );
             return (
               <Card
                 key={dish.id}
                 style={{ borderRadius: radii.md, overflow: "hidden", padding: 0, width: "48%" }}
               >
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Open ${dish.name}`}
-                  onPress={() => {
-                    navigation
-                      .getParent<NavigationProp<RootStackParamList>>()
-                      ?.navigate("DishDetail", { dishId: dish.id });
-                    // Opening a dish is leaving the flow: if the app is closed while the user
-                    // browses, the next launch must not start onboarding again. Done after
-                    // navigating, so the root navigator sees DishDetail on top and stays put.
-                    completeOnboarding(hasSkippedTasteQuiz);
-                  }}
-                >
-                  {/* The dish's own photo, or the shared no-photo tile; never a stand-in dish. */}
-                  {dish.imageUrl ? (
-                    <AccessibleImage
-                      source={{ uri: dish.imageUrl }}
-                      contentFit="cover"
-                      style={{ height: 120, width: "100%" }}
-                      accessibilityLabel={`Photo of ${dish.name}`}
-                    />
-                  ) : (
-                    <NoDishPhoto dishName={dish.name} style={{ height: 120, width: "100%" }} />
-                  )}
-                </Pressable>
+                {/* The dish's own photo, or the shared no-photo tile; never a stand-in dish.
+                    Signed out, the pre-auth navigator has no DishDetail, so it is not a link. */}
+                {isAuthenticated ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Open ${dish.name}`}
+                    onPress={() => {
+                      navigation
+                        .getParent<NavigationProp<RootStackParamList>>()
+                        ?.navigate("DishDetail", { dishId: dish.id });
+                      // Opening a dish is leaving the flow: if the app is closed while the user
+                      // browses, the next launch must not start onboarding again. Done after
+                      // navigating, so the root navigator sees DishDetail on top and stays put.
+                      completeOnboarding(hasSkippedTasteQuiz);
+                    }}
+                  >
+                    {photo}
+                  </Pressable>
+                ) : (
+                  photo
+                )}
                 <View style={{ gap: spacing[1], padding: spacing[2] }}>
                   <AppText variant="bodyBold" numberOfLines={1}>
                     {dish.name}
@@ -284,9 +338,15 @@ export function TasteProfileResultScreen({ navigation }: Props) {
                           });
                           return;
                         }
-                        // Account creation is the step after this one. The dish is kept
+                        // Account creation is the step after this one. The dishes are kept
                         // on the device and saved once sign-in finishes (main H6).
+                        if (isSaved) {
+                          forgetPendingDishSave(dish.id);
+                          setPendingSaveIds(getPendingDishSaveIds());
+                          return;
+                        }
                         rememberPendingDishSave(dish);
+                        setPendingSaveIds(getPendingDishSaveIds());
                         showToast({
                           message: `We'll save ${dish.name} once you create your account.`,
                           tone: "info",
@@ -315,7 +375,7 @@ export function TasteProfileResultScreen({ navigation }: Props) {
 
       <View style={{ padding: spacing[4], paddingBottom: insets.bottom + spacing[4] }}>
         <Button
-          label="Start exploring"
+          label={!isAuthenticated && framing === "test" ? "Save my picks" : "Start exploring"}
           onPress={() => {
             // Sign-in is required: a signed-out user finishes on the account step,
             // which completes onboarding (with this quiz-skip choice) before auth.

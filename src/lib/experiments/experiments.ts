@@ -50,6 +50,27 @@ export const EXPERIMENTS = {
     primaryMetric: "welcome_back_opened",
     guardrailMetrics: ["welcome_back_dismissed", "dish_viewed"],
   },
+  /**
+   * The last onboarding step for a signed-out user. Exposure fires on the result screen
+   * (the CTA is visible from first render); the account screen reads the frozen variant
+   * without exposing again. On a fresh install flags may load while the user is on the
+   * result screen, so the CTA can switch once; the session freeze stops any later switch.
+   */
+  onboarding_account_framing_v1: {
+    variants: ["control", "test"],
+    fallback: "control",
+    status: "running",
+    surface: "onboarding",
+    hypothesis:
+      'Telling a signed-out user that the account step saves their taste profile and the dishes they were just shown ("Save my picks") lifts sign-up completion compared with "Start exploring".',
+    primaryMetric: "sign_up_completed",
+    guardrailMetrics: [
+      "auth_screen_viewed",
+      "auth_failed",
+      "dish_favourited",
+      "onboarding_picks_shown",
+    ],
+  },
 } as const satisfies Record<string, ExperimentDefinition>;
 
 export type ExperimentKey = keyof typeof EXPERIMENTS;
@@ -77,7 +98,8 @@ function isPostHogEnabled() {
 
 function createPostHogFlagSource(): ExperimentFlagSource | null {
   if (!isPostHogEnabled()) return null;
-  const sink = require("@/lib/analytics/posthogSink") as typeof import("@/lib/analytics/posthogSink");
+  const sink =
+    require("@/lib/analytics/posthogSink") as typeof import("@/lib/analytics/posthogSink");
   return {
     peek: sink.peekPostHogFeatureFlag,
     expose: sink.getPostHogFeatureFlag,
@@ -197,7 +219,9 @@ export function useExperimentVariant<K extends ExperimentKey>(
     setVariant(getExperimentVariant(key, { expose: true }));
     const source = getFlagSource();
     if (!source) return;
-    return source.onChange(() => setVariant(getExperimentVariant(keyRef.current, { expose: true })));
+    return source.onChange(() =>
+      setVariant(getExperimentVariant(keyRef.current, { expose: true })),
+    );
   }, [enabled, key]);
 
   return variant;

@@ -33,6 +33,12 @@ interface SessionState {
   isAuthenticated: boolean;
   hasCompletedOnboarding: boolean;
   hasSkippedTasteQuiz: boolean;
+  /**
+   * Persisted: onboarding was finished on this device before any sign-in. The
+   * onboarding_completed event waits for auth to succeed, and Splash returns the
+   * user to the account step instead of "Welcome back" sign-in.
+   */
+  onboardingCompletionPending: boolean;
   authenticatedUserId?: string | null;
   authDataSource?: HungryDataSource | null;
   returnRoute?: string | PendingRoute;
@@ -56,7 +62,11 @@ interface SessionState {
     /** The account was just created; logs sign_up_completed instead of sign_in_completed. */
     isNewUser?: boolean;
   }) => void;
-  completeOnboarding: (skippedQuiz?: boolean) => void;
+  /**
+   * Marks first-run onboarding done. Signed out, onboarding_completed waits for auth;
+   * `existingAccount` (Welcome's "Sign in") skips the onboarding journey and its event.
+   */
+  completeOnboarding: (skippedQuiz?: boolean, options?: { existingAccount?: boolean }) => void;
   expireSession: () => void;
   dismissSessionExpiry: () => void;
   setReturnRoute: (route?: string | PendingRoute) => void;
@@ -89,6 +99,7 @@ const initialState = {
   isAuthenticated: false,
   hasCompletedOnboarding: false,
   hasSkippedTasteQuiz: false,
+  onboardingCompletionPending: false,
   authenticatedUserId: null,
   authDataSource: null,
   returnRoute: undefined,
@@ -327,6 +338,15 @@ function markAccountOnboarded(): void {
     });
 }
 
+// Onboarding finished while signed out is only a completion once an account exists:
+// onboarding_completed is sent on the first successful auth after it.
+function trackPendingOnboardingCompletion(): void {
+  const state = useSessionStore.getState();
+  if (!state.isAuthenticated || !state.onboardingCompletionPending) return;
+  useSessionStore.setState({ onboardingCompletionPending: false });
+  trackAnalyticsEvent("onboarding_completed", { skipped_quiz: state.hasSkippedTasteQuiz });
+}
+
 const PUSH_TOKEN_UNBIND_TIMEOUT_MS = 3000;
 
 // Unbind this device's push token while the session can still authorize it,
@@ -375,6 +395,7 @@ export const useSessionStore = create<SessionState>()(
           return;
         }
         markAccountOnboarded();
+        trackPendingOnboardingCompletion();
         const syncedProfile = getProfileStoreState().profile;
         const profileId = syncedProfile?.id ?? nextUserId ?? "authenticated-user";
         scheduleIdleWork(
@@ -394,9 +415,19 @@ export const useSessionStore = create<SessionState>()(
           { fallbackDelayMs: 0 },
         );
       },
-      completeOnboarding: (skippedQuiz = false) => {
+      completeOnboarding: (skippedQuiz = false, options) => {
         // onboarding_completed fires once; a returning user's saved state is kept.
-        if (useSessionStore.getState().hasCompletedOnboarding) {
+        const { hasCompletedOnboarding, isAuthenticated } = useSessionStore.getState();
+        if (hasCompletedOnboarding) {
+          return;
+        }
+        // Signed out, this is the local preference journey only; the event waits for auth.
+        if (!isAuthenticated) {
+          set({
+            hasCompletedOnboarding: true,
+            hasSkippedTasteQuiz: skippedQuiz,
+            onboardingCompletionPending: !options?.existingAccount,
+          });
           return;
         }
         set({
@@ -452,6 +483,10 @@ export const useSessionStore = create<SessionState>()(
         if (isSupabase) {
           void signOutOfSupabase();
         }
+        // A guest save remembered on this device never attaches to the next account.
+        const { clearPendingDishSave } =
+          require("@/features/auth/pendingDishSave") as typeof import("@/features/auth/pendingDishSave");
+        clearPendingDishSave();
         clearAccountScopedStores();
         clearAccountLocalHistory();
         clearAuthenticatedProfile();
@@ -522,6 +557,7 @@ export const useSessionStore = create<SessionState>()(
           }));
           syncProfileForAuthState(true, session.userId);
           markAccountOnboarded();
+          trackPendingOnboardingCompletion();
 
           const profile = getProfileStoreState().profile;
           const profileId = session.userId ?? profile?.id ?? "authenticated-user";
@@ -585,6 +621,7 @@ export const useSessionStore = create<SessionState>()(
         authDataSource: state.authDataSource,
         hasCompletedOnboarding: state.hasCompletedOnboarding,
         hasSkippedTasteQuiz: state.hasSkippedTasteQuiz,
+        onboardingCompletionPending: state.onboardingCompletionPending,
         signOutPending: state.signOutPending,
         // Where a guest was headed when sign-up sent them to the email app: a cold-start
         // confirmation link still returns them there.

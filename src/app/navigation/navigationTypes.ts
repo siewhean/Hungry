@@ -47,6 +47,8 @@ export type OnboardingStackParamList = {
         initialPhase?: "taste" | "dietary";
         /** Taste answers carried over from the TasteQuiz route. */
         answers?: TasteVector;
+        /** The questions the user actually answered (the rest kept the middle value). */
+        answeredKeys?: (keyof TasteVector)[];
       }
     | undefined;
   /** "How open are you to trying new food?" mode "settings": change it from Settings and go back. */
@@ -55,7 +57,7 @@ export type OnboardingStackParamList = {
   TasteProfileResult: undefined;
   LocationPermission: undefined;
   /** mode "settings": change the location from Settings and go back, without onboarding. */
-  ManualLocationPicker: { mode?: "settings" } | undefined;
+  ManualLocationPicker: { mode?: "settings" | "onboarding" } | undefined;
   /** dishName: the dish a guest tapped save on, so the headline can say what the account is for. */
   OnboardingAuth: { dishName?: string } | undefined;
 };
