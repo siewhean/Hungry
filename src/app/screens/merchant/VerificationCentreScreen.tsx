@@ -174,7 +174,7 @@ export function VerificationCentreScreen({ navigation }: Props) {
           >
             <AlertCircle size={32} color={palette.error} />
             <AppText variant="h3" style={{ color: palette.error, marginTop: spacing[2] }}>
-              Verification Rejected
+              Verification rejected
             </AppText>
             <AppText style={{ color: palette.text, marginTop: spacing[1], textAlign: "center" }}>
               {opsNote
@@ -199,7 +199,7 @@ export function VerificationCentreScreen({ navigation }: Props) {
           >
             <AlertCircle size={32} color={palette.warningText} />
             <AppText variant="h3" style={{ color: palette.warningText, marginTop: spacing[2] }}>
-              More Information Needed
+              More information needed
             </AppText>
             <AppText style={{ color: palette.text, marginTop: spacing[1], textAlign: "center" }}>
               {opsNote
@@ -224,7 +224,7 @@ export function VerificationCentreScreen({ navigation }: Props) {
           >
             <ShieldAlert size={32} color={palette.orange} />
             <AppText variant="h3" style={{ color: palette.text, marginTop: spacing[2] }}>
-              {isExpired ? "Verification Expired" : "Verify Your Outlet"}
+              {isExpired ? "Verification expired" : "Verify your outlet"}
             </AppText>
             <AppText
               style={{ color: palette.textSecondary, marginTop: spacing[1], textAlign: "center" }}
@@ -300,7 +300,7 @@ export function VerificationCentreScreen({ navigation }: Props) {
 
         <MethodCard
           icon={<Video size={24} color={palette.orange} />}
-          title="Video Walkaround"
+          title="Video walkaround"
           description={`Attach a video of up to ${MAX_EVIDENCE_VIDEO_SECONDS / 60} minutes showing your stall front, menu, and kitchen.`}
           onPress={() => void handlePickEvidence("video_walkaround", "video")}
           isLoading={isUploadingEvidence}
@@ -308,7 +308,7 @@ export function VerificationCentreScreen({ navigation }: Props) {
 
         <MethodCard
           icon={<FileText size={24} color={palette.orange} />}
-          title="Document Photo"
+          title="Document photo"
           description="Attach a photo of your SFA licence or ACRA business profile."
           onPress={() => void handlePickEvidence("licence_upload", "image")}
           isLoading={isUploadingEvidence}
@@ -316,7 +316,7 @@ export function VerificationCentreScreen({ navigation }: Props) {
 
         <MethodCard
           icon={<Camera size={24} color={palette.orange} />}
-          title="Take Document Photo"
+          title="Take document photo"
           description="Use your camera to photograph your SFA licence or ACRA business profile."
           onPress={() => void handlePickEvidence("licence_upload", "image", "camera")}
           isLoading={isUploadingEvidence}

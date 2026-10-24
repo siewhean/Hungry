@@ -57,7 +57,20 @@ export function ReviewReaderActions({
   const showToast = useUIStore((state) => state.showToast);
   const [liked, setLiked] = useState(() => reviewHelpfulState(review));
   // The vote the server last confirmed, so a failure rolls back to it, not to the last tap.
-  const [confirmed] = useState(() => reviewHelpfulState(review));
+  const [confirmed, setConfirmed] = useState(() => reviewHelpfulState(review));
+  // A page refetch (ReviewDetail on focus) brings a newer count or vote: take it, unless a vote
+  // of ours is still on its way, whose result would be overwritten.
+  const [pendingVotes, setPendingVotes] = useState(0);
+  const loadedKey = `${review.helpfulCount ?? 0}:${review.viewerFoundHelpful ?? false}`;
+  const [seededKey, setSeededKey] = useState(loadedKey);
+  if (loadedKey !== seededKey) {
+    setSeededKey(loadedKey);
+    if (pendingVotes === 0) {
+      const fresh = reviewHelpfulState(review);
+      setLiked(fresh);
+      setConfirmed(fresh);
+    }
+  }
 
   if (isOwn && rating === undefined) return null;
 
@@ -69,9 +82,12 @@ export function ReviewReaderActions({
     else tapHaptic();
     setLiked(next);
     trackAnalyticsEvent("review_helpful_toggled", { review_id: review.id, helpful: next.helpful });
+    setPendingVotes((count) => count + 1);
     void submitHelpfulVote(review.id, next.helpful, previous.helpful, (serverHelpful) => {
       setLiked(helpfulStateFor(confirmed, serverHelpful));
       showToast({ message: "Could not save your like.", tone: "warning" });
+    }).finally(() => {
+      setPendingVotes((count) => count - 1);
     });
   };
 

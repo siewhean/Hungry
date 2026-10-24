@@ -17,6 +17,8 @@ type Props = {
   dish: { id: string; name: string; venueId: string };
   /** "Write a review" in the popup: the review starts with these stars and taste words. */
   onWriteReview: (rating: number, tags: string[]) => void;
+  /** "Not now" after picking stars or taste words: they are kept as a review draft. */
+  onKeepAnswers?: (rating: number, tags: string[]) => void;
   /** The toast_cta variant: no popup, the bar's call to action becomes "Rate it". */
   onShowRateIt: () => void;
   /** The follow-up is over (popup closed, or the CTA was switched). */
@@ -27,7 +29,13 @@ type Props = {
  * What follows a successful "Tried" mark. Mounted only then, so the dish_tried_prompt_v1
  * exposure fires for diners who actually reach the follow-up, never for every dish viewer.
  */
-export function TriedFollowUp({ dish, onWriteReview, onShowRateIt, onClose }: Props) {
+export function TriedFollowUp({
+  dish,
+  onWriteReview,
+  onKeepAnswers,
+  onShowRateIt,
+  onClose,
+}: Props) {
   const variant = useExperimentVariant("dish_tried_prompt_v1", { enabled: true });
   const { componentRadii, palette, spacing } = useHungryTheme();
   const { height } = useWindowDimensions();
@@ -56,6 +64,8 @@ export function TriedFollowUp({ dish, onWriteReview, onShowRateIt, onClose }: Pr
       rated: rating > 0,
       tag_count: tags.length,
     });
+    // What the diner picked is not thrown away: the review screen opens with it later.
+    if (rating > 0 || tags.length > 0) onKeepAnswers?.(rating, tags);
     onClose();
   };
 

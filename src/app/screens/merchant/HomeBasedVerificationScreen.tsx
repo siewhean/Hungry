@@ -202,7 +202,7 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
         </AppText>
 
         <Input
-          label="Business Profile Name"
+          label="Business profile name"
           value={displayName}
           onChangeText={setDisplayName}
           placeholder="e.g. Auntie Mary's Nasi Lemak"
@@ -210,7 +210,7 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
         />
 
         <AppText variant="h3" style={{ color: palette.text, marginBottom: spacing[2] }}>
-          Location Privacy
+          Location privacy
         </AppText>
         <AppText
           variant="bodySmall"
@@ -222,7 +222,7 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
         <View accessibilityRole="radiogroup" style={{ gap: spacing[2] }}>
           {/* Home-based businesses never show an exact address to diners. */}
           <PrivacyOption
-            title="Approximate Area"
+            title="Approximate area"
             description="Shows the building area only, never your unit or floor"
             selected={privacy === "approximate"}
             onSelect={() => setPrivacy("approximate")}
@@ -400,7 +400,7 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
           </AppText>
         ) : null}
         <Button
-          label="Submit Verification"
+          label="Submit verification"
           onPress={handleSubmit}
           loading={isSubmitting}
           disabled={!displayName.trim() || !hasEnoughPhotos || !safetyChecked || isSubmitting}

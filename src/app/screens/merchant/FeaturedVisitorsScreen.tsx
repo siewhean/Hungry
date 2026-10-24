@@ -168,7 +168,7 @@ export function FeaturedVisitorsScreen() {
 
   if (!activeOutlet) {
     return (
-      <Screen title="Featured Visitors">
+      <Screen title="Featured visitors">
         <EmptyState
           title="No outlet selected"
           body="Select or create an outlet before featuring visitor reviews."
@@ -180,7 +180,7 @@ export function FeaturedVisitorsScreen() {
 
   return (
     <Screen
-      title="Featured Visitors"
+      title="Featured visitors"
       subtitle={activeOutlet.name}
       headerRight={
         <Pressable

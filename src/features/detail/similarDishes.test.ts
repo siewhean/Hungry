@@ -9,6 +9,7 @@ import {
   loadSimilarDishes,
   pickSimilarDishes,
   similarDishQuery,
+  similarDishTileLabel,
 } from "@/features/detail/similarDishes";
 
 const card = (id: string, venueId: string) => ({ id, venueId }) as unknown as CatalogRawDishCard;
@@ -139,4 +140,22 @@ test("with no stall coordinate there is no nearby read and no tiles (DISH-14)", 
     [],
   );
   assert.equal(called, 0);
+});
+
+test("a nearby tile's spoken label carries its price, rating and distance (DISH-V6)", () => {
+  assert.equal(
+    similarDishTileLabel({
+      name: "Laksa",
+      venueName: "Sungei Road Laksa",
+      price: 4.5,
+      rating: 4.3,
+      reviewCount: 12,
+      distanceMeters: 450,
+    }),
+    "Open Laksa at Sungei Road Laksa, S$4.50, rated 4.3 from 12 reviews, 450 m away",
+  );
+  assert.equal(
+    similarDishTileLabel({ name: "Laksa", venueName: "Stall", price: 0 }),
+    "Open Laksa at Stall, Price not listed",
+  );
 });

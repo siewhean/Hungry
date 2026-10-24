@@ -143,7 +143,7 @@ function BusinessTypeDropdown({
   return (
     <View style={{ gap: 8 }}>
       <SelectField
-        label="Business Type"
+        label="Business type"
         value={value}
         options={BUSINESS_TYPE_SELECT_OPTIONS}
         onChange={onChange}
@@ -392,7 +392,7 @@ export function BusinessProfileEditorScreen() {
 
   return (
     <Screen
-      title="Business Profile"
+      title="Business profile"
       onBackPress={confirmLeave}
       contentContainerStyle={{ paddingBottom: spacing[6] }}
       headerRight={
@@ -444,7 +444,7 @@ export function BusinessProfileEditorScreen() {
 
         <View style={{ gap: spacing[4] }}>
           <AppText variant="h3" style={{ fontWeight: "600" }}>
-            Basic Info
+            Basic info
           </AppText>
 
           <View>
@@ -454,7 +454,7 @@ export function BusinessProfileEditorScreen() {
               rules={{ required: "Name is required" }}
               render={({ field: { onChange, onBlur, value } }) => (
                 <Input
-                  label="Business Name *"
+                  label="Business name *"
                   onBlur={onBlur}
                   onChangeText={onChange}
                   value={value}
@@ -507,7 +507,7 @@ export function BusinessProfileEditorScreen() {
               name="profilePhotoUrl"
               render={({ field: { onChange, value } }) => (
                 <MerchantImageField
-                  label="Profile Image"
+                  label="Profile image"
                   rationale="Hungry needs access to your photo library to upload your stall's profile image."
                   value={value}
                   onChange={onChange}
@@ -522,7 +522,7 @@ export function BusinessProfileEditorScreen() {
               name="coverPhotoUrl"
               render={({ field: { onChange, value } }) => (
                 <MerchantImageField
-                  label="Cover Image"
+                  label="Cover image"
                   rationale="Hungry needs access to your photo library to upload your stall's cover image."
                   value={value}
                   onChange={onChange}
@@ -545,7 +545,7 @@ export function BusinessProfileEditorScreen() {
               name="cuisineCategories"
               render={({ field: { onChange, onBlur, value } }) => (
                 <Input
-                  label="Cuisine Categories"
+                  label="Cuisine categories"
                   onBlur={onBlur}
                   onChangeText={onChange}
                   value={value}
@@ -568,7 +568,7 @@ export function BusinessProfileEditorScreen() {
                 name="unitNumber"
                 render={({ field: { onChange, onBlur, value } }) => (
                   <Input
-                    label="Unit Number"
+                    label="Unit number"
                     onBlur={onBlur}
                     onChangeText={onChange}
                     value={value}
@@ -602,7 +602,7 @@ export function BusinessProfileEditorScreen() {
                   name="postalCode"
                   render={({ field: { onChange, onBlur, value } }) => (
                     <Input
-                      label="Postal Code"
+                      label="Postal code"
                       onBlur={onBlur}
                       onChangeText={onChange}
                       value={value}
@@ -631,7 +631,7 @@ export function BusinessProfileEditorScreen() {
               name="address"
               render={({ field: { onChange, onBlur, value } }) => (
                 <Input
-                  label="Street Address"
+                  label="Street address"
                   onBlur={onBlur}
                   onChangeText={onChange}
                   value={value}
@@ -679,7 +679,7 @@ export function BusinessProfileEditorScreen() {
               name="temporaryClosure"
               render={({ field: { onChange, onBlur, value } }) => (
                 <Input
-                  label="Temporary Closure Notice"
+                  label="Temporary closure notice"
                   onBlur={onBlur}
                   onChangeText={onChange}
                   value={value}
@@ -713,7 +713,7 @@ export function BusinessProfileEditorScreen() {
 
         <View style={{ gap: spacing[4] }}>
           <AppText variant="h3" style={{ fontWeight: "600" }}>
-            Contact Info
+            Contact info
           </AppText>
 
           <View>
@@ -728,7 +728,7 @@ export function BusinessProfileEditorScreen() {
               }}
               render={({ field: { onChange, onBlur, value } }) => (
                 <Input
-                  label="Phone Number"
+                  label="Phone number"
                   onBlur={onBlur}
                   onChangeText={onChange}
                   value={value}
@@ -753,7 +753,7 @@ export function BusinessProfileEditorScreen() {
               }}
               render={({ field: { onChange, onBlur, value } }) => (
                 <Input
-                  label="Email Address"
+                  label="Email address"
                   onBlur={onBlur}
                   onChangeText={onChange}
                   value={value}
@@ -812,7 +812,7 @@ export function BusinessProfileEditorScreen() {
         </View>
 
         <Button
-          label={isSubmitting ? "Saving..." : "Save Profile"}
+          label={isSubmitting ? "Saving..." : "Save profile"}
           variant="primary"
           fullWidth
           onPress={handleSubmit(onSubmit)}

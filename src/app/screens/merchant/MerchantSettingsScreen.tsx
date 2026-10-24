@@ -223,7 +223,10 @@ export function MerchantSettingsScreen() {
                   {weeklySummary.totalViews.toLocaleString()} views in the last 7 days
                 </AppText>
                 <AppText variant="bodySmall" tone="muted">
-                  {formatReviewCountLabel(weeklySummary.newReviews, "in the last 7 days")} ·{" "}
+                  {formatReviewCountLabel(weeklySummary.newReviews, "in the last 7 days", {
+                    zeroLabel: "No reviews in the last 7 days",
+                  })}{" "}
+                  ·{" "}
                   {weeklySummary.unrepliedReviews} unreplied · Avg rating{" "}
                   {formatAverageRating(weeklySummary.averageRating, weeklySummary.newReviews)}
                 </AppText>
@@ -247,7 +250,7 @@ export function MerchantSettingsScreen() {
         {/* Links & Legal */}
         <SettingsSection title="Support">
           <SettingsRow
-            label="Verification Status"
+            label="Verification status"
             value={verificationInfo.label}
             description={verificationInfo.nextStep || undefined}
             icon={<Shield size={20} color={palette.textSecondary} />}

@@ -1,7 +1,12 @@
 import { useState } from "react";
 import { View } from "react-native";
 
-import { describeReviewEditError } from "@/features/review/publishErrorCopy";
+import {
+  describeReviewEditError,
+  isExpectedPublishError,
+} from "@/features/review/publishErrorCopy";
+import { markReviewDeletedForSession } from "@/features/review/reviewExplore";
+import { reportError } from "@/lib/monitoring/reportError";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { REVIEW_TEXT_MAX_LENGTH } from "@/lib/security/inputSanitization";
 import { useUIStore } from "@/store/useUIStore";
@@ -35,6 +40,9 @@ export function OwnReviewActions({ review, onUpdated, onDeleted }: OwnReviewActi
       setIsEditing(false);
       showToast({ message: "Review updated.", tone: "success" });
     } catch (error) {
+      if (!isExpectedPublishError(error)) {
+        reportError(error, { action: "update_own_review", reviewId: review.id });
+      }
       showToast({ message: describeReviewEditError(error, "save"), tone: "warning" });
     } finally {
       setIsSaving(false);
@@ -46,9 +54,13 @@ export function OwnReviewActions({ review, onUpdated, onDeleted }: OwnReviewActi
     setIsSaving(true);
     try {
       await getHungryService().reviews.deleteReview(review.id);
+      markReviewDeletedForSession(review.id);
       onDeleted();
       showToast({ message: "Review deleted.", tone: "success" });
     } catch (error) {
+      if (!isExpectedPublishError(error)) {
+        reportError(error, { action: "delete_own_review", reviewId: review.id });
+      }
       showToast({ message: describeReviewEditError(error, "delete"), tone: "warning" });
     } finally {
       setIsSaving(false);

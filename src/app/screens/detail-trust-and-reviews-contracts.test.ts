@@ -148,9 +148,10 @@ test("dish attributes never present placeholder taste data as fact", () => {
 });
 
 test("dish Tried is per dish and never clears the stall; Food Cred copy uses awarded points", () => {
+  // The stall is marked visited only the first time (shared Tried helper, DISH-V4).
   assert.match(
-    dishDetail,
-    /getInteraction\(dish\.venueId\)\?\.isTried\) \{\s*try \{\s*const result = await markTried/,
+    read("src/features/auth/finishGuestAction.ts"),
+    /getInteraction\(dish\.venueId\)\?\.isTried\) \{\s*return \{ saved: true, pointsAwarded: 0[\s\S]*await stalls\.markTried/,
   );
   assert.doesNotMatch(dishDetail, /-5 Food Cred|"\+5 Food Cred"|adjustPoints/);
   assert.match(dishDetail, /FEATURE_FLAGS\.gamificationEnabled && pointsAwarded > 0/);

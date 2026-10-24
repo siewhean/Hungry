@@ -12,6 +12,8 @@ import { DishEditorScreen } from "@/app/screens/merchant/DishEditorScreen";
 import { MerchantDashboardScreen } from "@/app/screens/merchant/MerchantDashboardScreen";
 import { MerchantMenuScreen } from "@/app/screens/merchant/MerchantMenuScreen";
 import { MerchantProfileScreen } from "@/app/screens/merchant/MerchantProfileScreen";
+import { MerchantSettingsScreen } from "@/app/screens/merchant/MerchantSettingsScreen";
+import { MerchantTabs } from "@/app/navigation/MerchantTabs";
 import { PromotionBuilderScreen } from "@/app/screens/merchant/PromotionBuilderScreen";
 import { clearTrackedAnalyticsEvents, getTrackedAnalyticsEvents } from "@/lib/analytics";
 import {
@@ -109,8 +111,8 @@ test("MERCH-2: a stale cached account (no contact details) never saves blank pho
   const view = await renderScreen(BusinessProfileEditorScreen as never, {
     name: "BusinessProfileEditor",
   });
-  await view.type(view.findByLabel("Business Name *"), "Uncle Tan Chicken Rice");
-  await view.press(view.findByText("Save Profile"));
+  await view.type(view.findByLabel("Business name *"), "Uncle Tan Chicken Rice");
+  await view.press(view.findByText("Save profile"));
 
   assert.equal(sent.length, 1);
   assert.equal(sent[0].name, "Uncle Tan Chicken Rice");
@@ -355,7 +357,7 @@ test("MERCH-11/4: Publish twice in one frame creates one promotion; a past end d
     return { ...promo, id: `promo-${created}`, outletId: outletId(), createdAt: "" } as never;
   });
   const view = await renderScreen(PromotionBuilderScreen as never, { name: "PromotionBuilder" });
-  await view.type(view.findByLabel("Promotion Title *"), "Lunch deal");
+  await view.type(view.findByLabel("Promotion title *"), "Lunch deal");
   await view.type(view.findByLabel("Description *"), "Free drink with any noodle");
 
   const publish = view.findByText("Publish now")!;
@@ -368,11 +370,184 @@ test("MERCH-11/4: Publish twice in one frame creates one promotion; a past end d
 
   await cleanup();
   const again = await renderScreen(PromotionBuilderScreen as never, { name: "PromotionBuilder" });
-  await again.type(again.findByLabel("Promotion Title *"), "Old deal");
+  await again.type(again.findByLabel("Promotion title *"), "Old deal");
   await again.type(again.findByLabel("Description *"), "Already over");
-  await again.type(again.findByLabel("Start Date"), "2020-01-01");
-  await again.type(again.findByLabel("End Date"), "2020-01-02");
+  await again.type(again.findByLabel("Start date"), "2020-01-01");
+  await again.type(again.findByLabel("End date"), "2020-01-02");
   await again.press(again.findByText("Publish now"));
   assert.match(again.text(), /end date has passed/);
   assert.equal(created, 1);
+});
+
+// ─── Round-three post-verify (MERCH-V1..V8) ─────────────────────────────────
+
+/** A fake navigation that can blur and refocus the screen, like leaving and coming back. */
+function focusableNavigation() {
+  const navigation = createFakeNavigation();
+  const listeners = new Map<string, Set<() => void>>();
+  let focused = true;
+  Object.assign(navigation, {
+    isFocused: () => focused,
+    addListener: (type: string, listener: () => void) => {
+      if (!listeners.has(type)) listeners.set(type, new Set());
+      listeners.get(type)?.add(listener);
+      return () => listeners.get(type)?.delete(listener);
+    },
+  });
+  const emit = async (type: "focus" | "blur") => {
+    focused = type === "focus";
+    await act(async () => {
+      for (const listener of [...(listeners.get(type) ?? [])]) listener();
+    });
+  };
+  return { navigation, emit };
+}
+
+/** Reads what reportError logs in development, so a test can tell what reached Sentry. */
+async function captureReportedErrors(run: () => Promise<void>) {
+  const reported: { error: unknown; context: unknown }[] = [];
+  const original = console.error;
+  const globals = globalThis as { __DEV__?: boolean };
+  const previousDev = globals.__DEV__;
+  globals.__DEV__ = true;
+  console.error = (...args: unknown[]) => {
+    if (args[0] === "[reportError]") reported.push({ error: args[1], context: args[2] });
+  };
+  try {
+    await run();
+  } finally {
+    console.error = original;
+    globals.__DEV__ = previousDev;
+  }
+  return reported;
+}
+
+test("MERCH-V1: an inline merchant keeps the inline card through a focus refetch", async () => {
+  withStatus("running");
+  const flags = fakeFlags({ merchant_inline_reply_v1: "inline" });
+  const merchant = getHungryService().merchant;
+  const realSummary = merchant.getDashboardSummary.bind(merchant);
+  let releaseRefetch: (() => void) | undefined;
+  let summaryReads = 0;
+  stub("getDashboardSummary", async (id) => {
+    summaryReads += 1;
+    if (summaryReads > 1) await new Promise<void>((resolve) => (releaseRefetch = resolve));
+    return { ...(await realSummary(id)), unrepliedReviews: 2 };
+  });
+  let inboxReads = 0;
+  stub("getInbox", async () => {
+    inboxReads += 1;
+    return [review(7)];
+  });
+  const { navigation, emit } = focusableNavigation();
+  const view = await renderScreen(MerchantDashboardScreen as never, { name: "Dashboard", navigation });
+  assert.match(view.text(), /Review text 7/);
+
+  await emit("blur");
+  await emit("focus");
+  // The refetch is still in flight (isLoading): the inline card stays, the count card never shows.
+  assert.match(view.text(), /Review text 7/);
+  assert.doesNotMatch(view.text(), /waiting for your response/);
+  releaseRefetch?.();
+  await view.settle();
+  assert.match(view.text(), /Review text 7/);
+  assert.equal(inboxReads, 1, "the inline review is not fetched again");
+  assert.equal(flags.exposures, 1);
+});
+
+test("MERCH-V2: the Dashboard's filter and reply params are cleared once applied", async () => {
+  stubInbox([review(1), review(2)]);
+  const view = await renderScreen(CustomerInboxScreen as never, {
+    name: "CustomerInbox",
+    params: { filter: "unreplied", replyToId: "review-002" },
+  });
+  assert.match(view.text(), /Reply to Reviewer 2/);
+  const cleared = view.navigation.calls
+    .filter((call) => call.method === "setParams")
+    .map((call) => call.args[0]);
+  assert.deepEqual(cleared, [{ filter: undefined }, { replyToId: undefined }]);
+});
+
+test("MERCH-V3: switching chips does not count as another inbox view", async () => {
+  stubInbox([review(1)]);
+  const view = await renderScreen(CustomerInboxScreen as never, { name: "CustomerInbox" });
+  await view.press(view.findByText("Unreplied"));
+  await view.press(view.findByText("Reviews"));
+  const viewed = getTrackedAnalyticsEvents().filter(
+    (e) => e.event === "merchant_customer_inbox_viewed",
+  );
+  assert.equal(viewed.length, 1);
+});
+
+test("MERCH-V8: an older page that lands after a filter switch is dropped", async () => {
+  const items = Array.from({ length: 40 }, (_, i) => review(i, i < 5 ? "Thanks!" : undefined));
+  let releaseOlder: (() => void) | undefined;
+  stub("getInbox", async (_id, filters) => {
+    let rows = items.filter((item) => !filters?.unrepliedOnly || !item.reply);
+    if (filters?.before) {
+      await new Promise<void>((resolve) => (releaseOlder = resolve));
+      const index = rows.findIndex((item) => item.id === filters.beforeId);
+      rows = rows.slice(index + 1);
+    }
+    return rows.slice(0, filters?.limit ?? 200);
+  });
+  const view = await renderScreen(CustomerInboxScreen as never, { name: "CustomerInbox" });
+  const loadOlder = view.findByText("Load older reviews");
+  assert.ok(loadOlder);
+  await view.press(loadOlder);
+  await view.press(view.findByText("Unreplied"));
+  releaseOlder?.();
+  await view.settle();
+  // The Unreplied list is the server's first 30 unreplied (5..34); All's older page (30..39)
+  // must not be appended to it.
+  assert.equal(allByText("Reviewer 35").length, 0);
+  assert.equal(allByText("Reviewer 34").length, 1);
+});
+
+test("MERCH-V6: the reply counter is a live region only near the limit", async () => {
+  stubInbox([review(1)]);
+  const view = await renderScreen(CustomerInboxScreen as never, { name: "CustomerInbox" });
+  await view.press(allByText("Reply")[0]);
+  const counter = () => view.findByTestId("reply-character-count");
+  assert.notEqual(counter()?.getAttribute("aria-live"), "polite");
+  await view.type(document.querySelector("textarea"), "x".repeat(950));
+  assert.equal(counter()?.getAttribute("aria-live"), "polite");
+  assert.equal(counter()?.getAttribute("aria-label"), "50 characters left");
+});
+
+test("MERCH-V4: no reviews this week with older unreplied ones does not say 'No reviews yet'", async () => {
+  const merchant = getHungryService().merchant;
+  const real = merchant.getWeeklySummaryStats.bind(merchant);
+  stub("getWeeklySummaryStats", async (id) => ({
+    ...(await real(id)),
+    newReviews: 0,
+    unrepliedReviews: 120,
+  }));
+  const view = await renderScreen(MerchantSettingsScreen as never, { name: "MerchantSettings" });
+  assert.match(view.text(), /No reviews in the last 7 days · 120 unreplied/);
+  assert.doesNotMatch(view.text(), /No reviews yet/);
+});
+
+test("MERCH-V5: a failed merchant account sync reaches error reporting", async () => {
+  useMerchantStore.setState({ account: null, accountSyncedAt: null });
+  stub("getMerchantAccount", async () => {
+    throw new Error("account sync down");
+  });
+  const reported = await captureReportedErrors(async () => {
+    await renderScreen(MerchantTabs as never, { name: "MerchantTabs" });
+  });
+  assert.ok(
+    reported.some(
+      (entry) =>
+        (entry.error as Error).message === "account sync down" &&
+        (entry.context as { action?: string }).action === "sync_account",
+    ),
+  );
+});
+
+test("MERCH-V7: merchant forms use sentence case", async () => {
+  const view = await renderScreen(MerchantProfileScreen as never, { name: "MerchantProfile" });
+  assert.match(view.text(), /Stall profile/);
+  assert.match(view.text(), /Sign out/);
+  assert.doesNotMatch(view.text(), /Sign Out|Basic Info|Stall Profile/);
 });

@@ -11,6 +11,7 @@ import { AppBottomTabItem, AppText, Button, Screen } from "@/components/ui";
 import { resolveMerchantAccess, VERIFIED_ONLY_SCREENS } from "@/features/merchant/merchantGuards";
 import { useMerchantDialog } from "@/features/merchant/useMerchantDialog";
 import { prefetchMerchantTab, preloadRoute } from "@/features/navigation/prefetch";
+import { reportError } from "@/lib/monitoring/reportError";
 import { getHungryService, getServiceProvider } from "@/lib/services/serviceProvider";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 import { useHungryTheme } from "@/theme";
@@ -61,7 +62,7 @@ function MerchantSignInGate({
       setAccount(mockAccount);
       completeAuth({ completedOnboarding: true, skippedTasteQuiz: true });
     } catch (e) {
-      console.error(e);
+      reportError(e, { screen: "MerchantTabs", action: "mock_login" });
     }
   };
 
@@ -517,7 +518,8 @@ export function MerchantTabs() {
           setAccount(latestAccount);
         }
       } catch (error) {
-        console.error("Failed to sync merchant account", error);
+        // Sentry sees why a merchant lands on the retry gate.
+        reportError(error, { screen: "MerchantTabs", action: "sync_account" });
         if (isMounted) setSyncFailed(true);
       } finally {
         if (isMounted) {

@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
+import { clearTrackedAnalyticsEvents, getTrackedAnalyticsEvents } from "@/lib/analytics";
+import { useAchievementTallyStore } from "@/store/useAchievementTallyStore";
 import { useDishLikeStore } from "@/store/useDishLikeStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import type { DishDetail } from "@/types/domain";
@@ -81,20 +83,50 @@ test("finishing a guest save does nothing when the account's saves cannot be rea
   }
 });
 
-test("a guest's Tried tap is finished after sign-in (DISH-X4)", async () => {
+test("a guest's Tried tap is finished after sign-in like a signed-in tap (DISH-X4, DISH-V4)", async () => {
   const calls: [string, boolean][] = [];
+  const stallMarks: string[] = [];
   const original = useProfileStore.getState().setDishTried;
+  const stalls = useStallInteractionStore.getState();
+  const originalStalls = { loadInteractions: stalls.loadInteractions, markTried: stalls.markTried };
   useProfileStore.setState({
     setDishTried: async (dishId, tried) => {
       calls.push([dishId, tried]);
       return true;
     },
   });
+  useStallInteractionStore.setState({
+    interactions: {},
+    loadInteractions: async () => undefined,
+    markTried: async (_userId, stallId) => {
+      stallMarks.push(stallId);
+      return { pointsAwarded: 5 } as Awaited<ReturnType<typeof stalls.markTried>>;
+    },
+  });
+  clearTrackedAnalyticsEvents();
+  const userId = useProfileStore.getState().profile.id;
   try {
-    assert.equal(await markDishTriedAfterSignIn("dish-pending-tried"), true);
+    const result = await markDishTriedAfterSignIn(
+      { id: "dish-pending-tried", venueId: "venue-pending" },
+      { spicy: true, sweet: false, budget: false },
+    );
+    assert.deepEqual(result, { saved: true, pointsAwarded: 5, stallMarkFailed: false });
     assert.deepEqual(calls, [["dish-pending-tried", true]]);
+    assert.deepEqual(stallMarks, ["venue-pending"], "the stall is marked visited");
+    assert.equal(
+      useAchievementTallyStore.getState().triedByUser[userId]?.["dish-pending-tried"]?.spicy,
+      true,
+      "the achievement tally counts it",
+    );
+    assert.ok(
+      getTrackedAnalyticsEvents().some(
+        (event) =>
+          event.event === "dish_marked_tried" && event.properties?.dish_id === "dish-pending-tried",
+      ),
+    );
   } finally {
     useProfileStore.setState({ setDishTried: original });
+    useStallInteractionStore.setState(originalStalls);
   }
 });
 

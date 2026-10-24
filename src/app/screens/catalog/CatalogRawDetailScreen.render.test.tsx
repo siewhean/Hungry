@@ -4,6 +4,7 @@ import test, { afterEach } from "node:test";
 
 import { CatalogRawDetailScreen } from "@/app/screens/catalog/CatalogRawDetailScreen";
 import { getCatalogRawService, getDataRepository } from "@/lib/services/serviceProvider";
+import { useProfileStore } from "@/store/useProfileStore";
 import { cleanup, renderScreen } from "@/test/render";
 import { enterScenario } from "@/test/render/sessions";
 
@@ -54,4 +55,35 @@ test("a price of 0 reads 'Price not listed' and Save uses Want to try with a boo
   assert.match(view.text(), /Price not listed/);
   assert.doesNotMatch(view.text(), /S\$0\.00/);
   assert.doesNotMatch(view.text(), /favourites/i);
+});
+
+test("Saved reads as selected, and Open dish page says it came from here (DISH-V2, DISH-V3)", async () => {
+  await enterScenario("user");
+  const params = dishParams();
+  const profile = useProfileStore.getState().profile;
+  useProfileStore.setState({
+    profile: { ...profile, favouriteDishIds: [...profile.favouriteDishIds, params.id] },
+  });
+  const service = getCatalogRawService();
+  const original = service.getDish.bind(service);
+  service.getDish = (async (id: string, releaseId?: string) => ({
+    ...(await original(id, releaseId)),
+    verificationStatus: "approved",
+  })) as typeof service.getDish;
+  restores.push(() => {
+    service.getDish = original;
+  });
+  const view = await renderScreen(CatalogRawDetailScreen as never, {
+    name: "CatalogRawDetail",
+    params,
+  });
+  // The label says what a tap does, not only the state (react-native-web drops aria-selected
+  // on buttons; native gets accessibilityState.selected too).
+  assert.ok(view.findByLabel("Saved to Want to try. Tap to remove"));
+
+  await view.press(view.findByText("Open dish page"));
+  const opened = view.navigation.calls.find(
+    (call) => call.method === "navigate" && call.args[0] === "DishDetail",
+  );
+  assert.deepEqual(opened?.args[1], { dishId: params.id, source: "catalog_detail" });
 });
