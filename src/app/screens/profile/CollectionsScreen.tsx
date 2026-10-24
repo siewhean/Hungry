@@ -283,13 +283,16 @@ function FoodRow({ food, onPress }: { food: CollectionFood; onPress: () => void 
           </AppText>
         ) : null}
       </View>
-      <AppText
-        variant="micro"
-        style={{ color: palette.orange, fontWeight: "700", maxWidth: 96 }}
-        numberOfLines={1}
-      >
-        {food.collectionId === WANT_TO_TRY_COLLECTION_ID ? "Want to try" : food.collectionName}
-      </AppText>
+      {/* Only named lists get a tag; Want to try is the default home for saved food. */}
+      {food.collectionId === WANT_TO_TRY_COLLECTION_ID ? null : (
+        <AppText
+          variant="micro"
+          style={{ color: palette.orangeText, fontWeight: "700", maxWidth: 96 }}
+          numberOfLines={1}
+        >
+          {food.collectionName}
+        </AppText>
+      )}
     </Pressable>
   );
 }

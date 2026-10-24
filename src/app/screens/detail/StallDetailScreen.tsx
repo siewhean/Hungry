@@ -1,5 +1,6 @@
 import {
   Alert,
+  Animated,
   Platform,
   Pressable,
   ScrollView,
@@ -15,6 +16,7 @@ import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import * as ImagePicker from "expo-image-picker";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useState, useRef, useMemo, type ReactNode } from "react";
+import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Bookmark,
@@ -46,6 +48,7 @@ import {
   Skeleton,
 } from "@/components/ui";
 import { PhotoPager } from "@/components/dish/PhotoPager";
+import { DetailHeroFade } from "@/components/detail/DetailHeroFade";
 import { DeliveryButtonRow } from "@/components/dish/DeliveryPlatformButton";
 import { FloatingBackButton } from "@/components/detail/FloatingBackButton";
 import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
@@ -411,6 +414,8 @@ function StallMenuDishCard({
 }
 
 export function StallDetailScreen({ navigation, route }: Props) {
+  // Drives the photo fading out as the page scrolls.
+  const [heroScrollY] = useState(() => new Animated.Value(0));
   const venueId = route.params?.venueId ?? route.params?.id ?? "";
   const repository = getDataRepository();
   const serviceProviderMode = getServiceProvider().mode;
@@ -1174,38 +1179,56 @@ export function StallDetailScreen({ navigation, route }: Props) {
     >
       <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["left", "right"]}>
         <View style={{ flex: 1 }}>
-          <ScrollView
+          <Animated.ScrollView
             showsVerticalScrollIndicator={false}
-            onScroll={handleScroll}
-            scrollEventThrottle={120}
+            onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: heroScrollY } } }], {
+              listener: handleScroll,
+              useNativeDriver: Platform.OS !== "web",
+            })}
+            scrollEventThrottle={16}
             contentContainerStyle={{
               paddingBottom: insets.bottom + 96,
             }}
           >
             {/* Hero: swipeable photos (owner cover, stall, dishes, reviews), else a short branded header */}
-            {heroPhotos.length > 0 ? (
-              <PhotoPager
-                photos={heroPhotos}
-                width={screenWidth}
-                height={heroHeight}
-                subject={venue.name}
-              />
-            ) : (
-              <View
-                accessibilityRole="image"
-                accessibilityLabel={`${venue.name} photo unavailable`}
-                style={{
-                  alignItems: "center",
-                  backgroundColor: palette.surfaceRaised,
-                  height: heroHeight,
-                  justifyContent: "flex-end",
-                  paddingBottom: spacing[4],
-                  width: screenWidth,
-                }}
-              >
-                <Utensils color={palette.orange} size={32} />
-              </View>
-            )}
+            <DetailHeroFade scrollY={heroScrollY} height={heroHeight}>
+              {heroPhotos.length > 0 ? (
+                <PhotoPager
+                  photos={heroPhotos}
+                  width={screenWidth}
+                  height={heroHeight}
+                  subject={venue.name}
+                >
+                  {/* White fade at the foot of the photo, into the page. */}
+                  <LinearGradient
+                    colors={[palette.detailHeroGradientStart, palette.bg]}
+                    pointerEvents="none"
+                    style={{
+                      bottom: 0,
+                      height: heroHeight * 0.45,
+                      left: 0,
+                      position: "absolute",
+                      right: 0,
+                    }}
+                  />
+                </PhotoPager>
+              ) : (
+                <View
+                  accessibilityRole="image"
+                  accessibilityLabel={`${venue.name} photo unavailable`}
+                  style={{
+                    alignItems: "center",
+                    backgroundColor: palette.surfaceRaised,
+                    height: heroHeight,
+                    justifyContent: "flex-end",
+                    paddingBottom: spacing[4],
+                    width: screenWidth,
+                  }}
+                >
+                  <Utensils color={palette.orange} size={32} />
+                </View>
+              )}
+            </DetailHeroFade>
 
             <View
               onLayout={handleContentBodyLayout}
@@ -1831,7 +1854,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                 returnRoute={{ name: "StallDetail", params: { venueId: venue.id } }}
               />
             </View>
-          </ScrollView>
+          </Animated.ScrollView>
           {venue ? (
             <StallInteractionBar
               layout="sticky"

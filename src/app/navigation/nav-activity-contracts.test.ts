@@ -32,15 +32,15 @@ test("Release 0.1 bottom navigation gates social, post, and review actions", () 
     /height: componentSizes\.bottomTabBar \+ Math\.max\(insets\.bottom, spacing\[2\]\)/,
   );
   assert.match(tabs, /paddingTop: spacing\[2\]/);
-  assert.match(tabItem, /backgroundColor: palette\.orange[\s\S]*borderRadius: radii\.pill/);
+  // The write button is a plain outline glyph: no orange disc, orange only while pressed.
+  assert.doesNotMatch(tabItem, /backgroundColor: palette\.orange/);
   assert.match(
     tabItem,
-    /<Icon[\s\S]*color=\{createAction \? createIconColor : resolvedColor\}[\s\S]*size=\{componentSizes\.bottomTabIcon\}[\s\S]*\/>/,
+    /<Icon[\s\S]*color=\{createAction \? \(pressed \? palette\.orange : palette\.text\) : iconColor\}/,
   );
-  assert.match(
-    tabItem,
-    /const createIconColor = colorScheme === "dark" \? palette\.textOnOrange : palette\.white/,
-  );
+  // Selected tabs use an orange outline icon, never a filled one.
+  assert.match(tabItem, /focused \? palette\.orange : palette\.textMuted/);
+  assert.doesNotMatch(tabItem, /fill=/);
   // Active tab stays highlighted (no fade-out timer) and is exposed as a selected tab.
   assert.doesNotMatch(tabs, /highlightVisible|setTimeout/);
   assert.match(tabs, /accessibilityRole="tablist"/);
@@ -58,11 +58,7 @@ test("Release 0.1 bottom navigation gates social, post, and review actions", () 
   );
   assert.match(
     tabItem,
-    /height: componentSizes\.bottomTabIconSlotHeight[\s\S]*width: componentSizes\.bottomTabIconSlotWidth/,
-  );
-  assert.match(
-    tabItem,
-    /height: componentSizes\.bottomTabCreateButton[\s\S]*width: componentSizes\.bottomTabCreateButton/,
+    /height: createAction\s*\? componentSizes\.bottomTabCreateButton\s*: componentSizes\.bottomTabIconSlotHeight[\s\S]*width: componentSizes\.bottomTabIconSlotWidth/,
   );
   assert.doesNotMatch(tabs, /createTabItem/);
   assert.doesNotMatch(tabs, /borderWidth: 4/);

@@ -20,9 +20,11 @@ import {
   FeedErrorBoundary,
   Skeleton,
 } from "@/components/ui";
-import { MediaPicker, StarRating } from "@/components/review";
+import { MediaPicker, StarRating, TasteRatingInput } from "@/components/review";
 import { TRENDING_MUSIC } from "@/features/review/musicData";
-import { REVIEW_EDITOR_TAGS } from "@/constants/taste";
+import { REVIEW_EDITOR_TAGS, TASTE_DIMENSIONS } from "@/constants/taste";
+import { perceivedTasteLevel, standardTasteRating } from "@/features/detail/perceivedTaste";
+import { reportError } from "@/lib/monitoring/reportError";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { useReviewDraftHydrated, useReviewDraftStore } from "@/store/useReviewDraftStore";
@@ -45,7 +47,7 @@ import {
   reviewDraftHasContent,
 } from "@/features/review/reviewDraft";
 import type { ReviewStackParamList, RootStackParamList } from "@/app/navigation/navigationTypes";
-import type { DishDetail } from "@/types/domain";
+import type { DishDetail, TasteKey } from "@/types/domain";
 
 type Props = NativeStackScreenProps<ReviewStackParamList, "ReviewMain">;
 
@@ -99,6 +101,25 @@ export function ReviewScreen({ navigation, route }: Props) {
       (remoteDish?.id === selectedDishId ? remoteDish : undefined)
     );
   }, [repository, selectedDishId, remoteDish]);
+  // Optional "How did it taste?": what the reviewer felt, per taste, on the 0-10 scale.
+  // Kept per dish, so picking another dish starts blank.
+  const [feltTasteState, setFeltTasteState] = useState<{
+    dishId?: string;
+    values: Partial<Record<TasteKey, number>>;
+  }>({ values: {} });
+  const feltTaste = feltTasteState.dishId === selectedDishId ? feltTasteState.values : {};
+  const userTasteVector = useProfileStore((state) => state.profile.tasteVector);
+  // Our guess: the dish's standard level as this reviewer is likely to feel it.
+  const tasteSuggestions = useMemo(() => {
+    const dishVector = selectedDish?.tasteVector;
+    if (!dishVector) return undefined;
+    return Object.fromEntries(
+      TASTE_DIMENSIONS.map(({ key }) => [
+        key,
+        perceivedTasteLevel(dishVector[key] ?? 0, userTasteVector?.[key]),
+      ]),
+    ) as Partial<Record<TasteKey, number>>;
+  }, [selectedDish?.tasteVector, userTasteVector]);
   const selectedVenue = useMemo(
     () => repository.getVenueById(draft.selectedVenueId || selectedDish?.venueId || ""),
     [repository, draft.selectedVenueId, selectedDish?.venueId],
@@ -317,6 +338,19 @@ export function ReviewScreen({ navigation, route }: Props) {
         clientReviewId: reviewId,
       });
 
+      // The felt levels go in as the dish's standard levels, undoing this reviewer's palate.
+      if (Object.keys(feltTaste).length > 0) {
+        void getHungryService()
+          .ai.adjustCommunityTasteVector(
+            selectedDish.id,
+            standardTasteRating(feltTaste, userTasteVector),
+          )
+          .catch((error: unknown) =>
+            reportError(error, { screen: "ReviewScreen", action: "adjust_taste_vector" }),
+          );
+        setFeltTasteState({ values: {} });
+      }
+
       useProfileStore.getState().addReviewedDish(selectedDish.id);
       useProfileStore.getState().addReview(selectedDish);
       useProfileStore.getState().recordReviewEntry(selectedDish.id, {
@@ -418,7 +452,7 @@ export function ReviewScreen({ navigation, route }: Props) {
                       {selectedVenue?.name ?? selectedDish.venueName}
                     </AppText>
                   </View>
-                  <Button label="Change" variant="ghost" onPress={openPicker} />
+                  <Button label="Change" variant="ghost" fullWidth={false} onPress={openPicker} />
                 </View>
               </Card>
             ) : (
@@ -434,7 +468,13 @@ export function ReviewScreen({ navigation, route }: Props) {
           {/* 2. Rating */}
           <View style={{ gap: spacing[2] }}>
             <AppText variant="h3">Overall rating</AppText>
-            <StarRating value={draft.rating} onChange={setRating} editable showDescriptor />
+            <StarRating
+              value={draft.rating}
+              onChange={setRating}
+              editable
+              showDescriptor
+              centered
+            />
           </View>
 
           {/* 3. Review text */}
@@ -526,6 +566,28 @@ export function ReviewScreen({ navigation, route }: Props) {
               onSelect={toggleTag}
             />
           </View>
+
+          {/* Optional: how strong each taste felt. Saved as the dish's standard levels. */}
+          {selectedDish ? (
+            <View style={{ gap: spacing[2] }}>
+              <View style={{ gap: spacing[1] }}>
+                <AppText variant="h3">How did it taste?</AppText>
+                <AppText variant="bodySmall" tone="secondary">
+                  Optional. Dashed rings are our guess for your palate; tap what you tasted.
+                </AppText>
+              </View>
+              <TasteRatingInput
+                values={feltTaste}
+                suggestions={tasteSuggestions}
+                onChange={(key, value) => {
+                  const next = { ...feltTaste };
+                  if (value === undefined) delete next[key];
+                  else next[key] = value;
+                  setFeltTasteState({ dishId: selectedDishId, values: next });
+                }}
+              />
+            </View>
+          ) : null}
 
           {/* 5. Recommend: unanswered until the reviewer picks one. */}
           <View style={{ gap: spacing[3] }}>

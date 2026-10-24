@@ -40,6 +40,34 @@ export function perceivedTasteLevel(standard: number, userLevel: number | undefi
   return Math.round(clampLevel(standard * factor) * 10) / 10;
 }
 
+/**
+ * The reverse of perceivedTasteLevel: what a diner felt, turned back into the dish's standard
+ * level. A spice-sensitive diner (0) who felt 8/10 heat rates the dish 4/10 for everyone.
+ */
+export function standardTasteLevel(felt: number, userLevel: number | undefined): number {
+  const user = clampLevel(userLevel ?? NEUTRAL);
+  const factor =
+    user <= NEUTRAL
+      ? 1 + ((NEUTRAL - user) / NEUTRAL) * (SENSITIVE_FACTOR - 1)
+      : 1 - ((user - NEUTRAL) / NEUTRAL) * (1 - TOLERANT_FACTOR);
+  return Math.round(clampLevel(clampLevel(felt) / factor) * 10) / 10;
+}
+
+/** A reviewer's felt taste levels as standard levels, axis by axis. */
+export function standardTasteRating(
+  felt: Partial<Record<TasteKey, number>>,
+  userVector: TasteVector | undefined,
+): Partial<TasteVector> {
+  const rating: Partial<TasteVector> = {};
+  for (const dimension of TASTE_DIMENSIONS) {
+    const value = felt[dimension.key];
+    if (typeof value === "number") {
+      rating[dimension.key] = standardTasteLevel(value, userVector?.[dimension.key]);
+    }
+  }
+  return rating;
+}
+
 export function perceivedDirection(standard: number, perceived: number): PerceivedDirection {
   const difference = perceived - standard;
   if (Math.abs(difference) < SAME_THRESHOLD) return "same";

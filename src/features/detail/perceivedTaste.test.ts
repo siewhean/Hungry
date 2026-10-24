@@ -9,6 +9,8 @@ import {
   perceivedTasteLevel,
   perceivedTasteRows,
   perceivedTasteSentence,
+  standardTasteLevel,
+  standardTasteRating,
 } from "./perceivedTaste";
 
 test("a neutral diner feels the standard level", () => {
@@ -101,4 +103,22 @@ test("radar axes cover every taste and add the diner's level only with a palette
     "About as sweet as it is for most people",
   );
   assert.deepEqual(palateSummary(undefined), { loves: [], mild: [] });
+});
+
+test("a felt rating turns back into the dish's standard level", () => {
+  // Spice-sensitive diner (0) felt 8/10: the dish is 4/10 for everyone.
+  assert.equal(standardTasteLevel(8, 0), 4);
+  // Heat lover (10) felt 3/10: the dish is 6/10 for everyone.
+  assert.equal(standardTasteLevel(3, 10), 6);
+  // A neutral palate, or no quiz yet, keeps the number.
+  assert.equal(standardTasteLevel(6, 5), 6);
+  assert.equal(standardTasteLevel(6, undefined), 6);
+  // Round trip with perceivedTasteLevel.
+  assert.equal(standardTasteLevel(perceivedTasteLevel(5, 2), 2), 5);
+});
+
+test("only the axes the reviewer rated are converted", () => {
+  const user = { sweet: 5, spicy: 0, sour: 5, salty: 5, rich: 10, aromatic: 5 };
+  assert.deepEqual(standardTasteRating({ spicy: 8, rich: 3 }, user), { spicy: 4, rich: 6 });
+  assert.deepEqual(standardTasteRating({}, user), {});
 });

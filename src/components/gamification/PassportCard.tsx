@@ -1,12 +1,13 @@
 /**
  * PassportCard — the profile's Hungry Passport, drawn like an explorer's travel passport:
- * a dark cover with a gold crest, an open page of stamp slots and trail progress.
+ * a navy cover with a gold crest and outline rings, an open page of stamp slots and trail progress.
  *
  * Shows the first 3 categories with any progress.
  * Tapping navigates to the full PassportScreen.
  */
 
-import { Platform, View, Pressable, StyleSheet } from "react-native";
+import { View, Pressable, StyleSheet } from "react-native";
+import Svg, { Circle } from "react-native-svg";
 import { ChevronRight, Compass, Stamp } from "lucide-react-native";
 
 import { useMemo } from "react";
@@ -55,10 +56,13 @@ export function PassportCard({ onPress, onPressIn }: PassportCardProps) {
           borderRadius: componentRadii.card,
           gap: spacing[3],
           opacity: pressed ? 0.92 : 1,
+          overflow: "hidden",
           padding: spacing[4],
         },
       ]}
     >
+      <PassportCoverPattern color={palette.passportGold} />
+
       {/* Cover: gold foil crest and title, like a travel passport */}
       <View style={[styles.row, { gap: spacing[3] }]}>
         <View
@@ -189,28 +193,50 @@ export function PassportCard({ onPress, onPressIn }: PassportCardProps) {
           </View>
         )}
       </View>
-
-      {/* Machine-readable line along the bottom of the page */}
-      <AppText
-        variant="micro"
-        numberOfLines={1}
-        accessibilityElementsHidden
-        aria-hidden
-        importantForAccessibility="no-hide-descendants"
-        style={{
-          color: palette.passportGold,
-          fontFamily: Platform.select({ ios: "Menlo", android: "monospace", default: "monospace" }),
-          letterSpacing: 1,
-          opacity: 0.8,
-        }}
-      >
-        {`P<SGP<HUNGRY<<FOOD<EXPLORER<<<<${String(totalStamps).padStart(2, "0")}<<<`}
-      </AppText>
     </Pressable>
   );
 }
 
 const STAMP_SLOTS = 3;
+
+/** Fine gold outline rings behind the cover, like the security print on a passport. */
+function PassportCoverPattern({ color }: { color: string }) {
+  return (
+    <View
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      pointerEvents="none"
+      style={StyleSheet.absoluteFill}
+    >
+      <Svg width="100%" height="100%" preserveAspectRatio="xMidYMid slice" viewBox="0 0 360 240">
+        {[28, 52, 76, 100, 124, 148, 172, 196].map((r) => (
+          <Circle
+            key={`a-${r}`}
+            cx={330}
+            cy={20}
+            r={r}
+            fill="none"
+            stroke={color}
+            strokeWidth={0.8}
+            opacity={0.16}
+          />
+        ))}
+        {[28, 52, 76, 100, 124, 148].map((r) => (
+          <Circle
+            key={`b-${r}`}
+            cx={20}
+            cy={230}
+            r={r}
+            fill="none"
+            stroke={color}
+            strokeWidth={0.8}
+            opacity={0.12}
+          />
+        ))}
+      </Svg>
+    </View>
+  );
+}
 
 const styles = StyleSheet.create({
   row: {

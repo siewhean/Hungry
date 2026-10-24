@@ -6,3 +6,4 @@ export * from "./OwnReviewActions";
 export * from "./ReviewModerationNotice";
 export * from "./ReviewReaderActions";
 export * from "./CaptionPreview";
+export * from "./TasteRatingInput";

@@ -14,7 +14,6 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
 import { Images } from "lucide-react-native";
 import {
   useFocusEffect,
@@ -131,7 +130,7 @@ function ReviewSearchQuerySummary({ query }: { query: string }) {
 
 // ─── ReviewTile ──────────────────────────────────────────────────────────────
 
-/** One square photo in the grid, with the dish name and date over a bottom gradient. */
+/** One square photo in the grid, its date in the bottom-left corner. */
 const ReviewTile = memo(function ReviewTile({
   item,
   size,
@@ -166,41 +165,21 @@ const ReviewTile = memo(function ReviewTile({
           <Images color={palette.white} size={16} />
         </View>
       ) : null}
-      <LinearGradient
-        colors={[palette.imageOverlayGradientStart, palette.imageOverlayGradientEnd]}
-        pointerEvents="none"
+      <View
         style={{
-          bottom: 0,
-          gap: 2,
-          left: 0,
-          paddingBottom: spacing[1.5],
+          backgroundColor: palette.mediaScrimStrong,
+          borderRadius: radii.pill,
+          bottom: spacing[1.5],
+          left: spacing[1.5],
           paddingHorizontal: spacing[1.5],
-          paddingTop: spacing[6],
+          paddingVertical: 2,
           position: "absolute",
-          right: 0,
         }}
       >
-        <AppText
-          variant="micro"
-          numberOfLines={2}
-          style={{ color: palette.white, fontWeight: "800" }}
-        >
-          {item.dishName}
+        <AppText variant="micro" style={{ color: palette.white, fontWeight: "700" }}>
+          {formatReviewDate(item.review.createdAt)}
         </AppText>
-        <View
-          style={{
-            alignSelf: "flex-start",
-            backgroundColor: palette.mediaScrimStrong,
-            borderRadius: radii.pill,
-            paddingHorizontal: spacing[1.5],
-            paddingVertical: 2,
-          }}
-        >
-          <AppText variant="micro" style={{ color: palette.white, fontWeight: "700" }}>
-            {formatReviewDate(item.review.createdAt)}
-          </AppText>
-        </View>
-      </LinearGradient>
+      </View>
     </Pressable>
   );
 });

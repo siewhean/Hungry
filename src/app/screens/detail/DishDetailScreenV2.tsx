@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  Animated,
+  Platform,
   ActivityIndicator,
   Modal,
   Pressable,
@@ -45,6 +47,7 @@ import { DetailActionBar, type DetailAction } from "@/components/detail/DetailAc
 import { FloatingBackButton } from "@/components/detail/FloatingBackButton";
 import { TasteRadarChart } from "@/components/taste/TasteRadarChart";
 import { PhotoPager } from "@/components/dish/PhotoPager";
+import { DetailHeroFade } from "@/components/detail/DetailHeroFade";
 import { ReportProblemLink } from "@/components/stall/ReportProblemLink";
 import { buildDishGallery } from "@/features/detail/detailTransforms";
 import { formatDishUpdated } from "@/features/detail/dishFreshness";
@@ -129,6 +132,8 @@ function getMoreFromStall(currentDish: DishDetail, venueDishes: DishDetail[]) {
 }
 
 export function DishDetailScreenV2({ navigation, route }: Props) {
+  // Drives the photo fading out as the page scrolls.
+  const [heroScrollY] = useState(() => new Animated.Value(0));
   const repository = getDataRepository();
   const dishId = route.params?.dishId ?? route.params?.id ?? "";
   const cachedDish = repository.getDishById(dishId);
@@ -900,13 +905,17 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     <FeedErrorBoundary title="Dish details unavailable" body="Couldn't load this dish — try again.">
       <SafeAreaView style={{ backgroundColor: palette.bg, flex: 1 }} edges={["left", "right"]}>
         <View style={{ flex: 1 }}>
-          <ScrollView
+          <Animated.ScrollView
             showsVerticalScrollIndicator={false}
+            onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: heroScrollY } } }], {
+              useNativeDriver: Platform.OS !== "web",
+            })}
+            scrollEventThrottle={16}
             contentContainerStyle={{
               paddingBottom: insets.bottom + 96,
             }}
           >
-            <View style={{ height: heroHeight }}>
+            <DetailHeroFade scrollY={heroScrollY} height={heroHeight}>
               {heroPhotos.length > 0 ? (
                 <PhotoPager
                   photos={heroPhotos}
@@ -955,7 +964,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                   />
                 </>
               )}
-            </View>
+            </DetailHeroFade>
 
             <View
               style={{
@@ -1580,7 +1589,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                 returnRoute={{ name: "DishDetail", params: { dishId: dish.id } }}
               />
             </View>
-          </ScrollView>
+          </Animated.ScrollView>
 
           <DetailActionBar
             actions={barActions}

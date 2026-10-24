@@ -31,8 +31,8 @@ export const colors = {
     /** Rating star icons: a yellow fill, edged in gold so the shape reads on white (3:1). */
     starFill: "#FFC21A",
     starStroke: "#B8860B",
-    /** Hungry Passport: a dark green explorer's cover with gold foil and a cream page. */
-    passportCover: "#1F3B33",
+    /** Hungry Passport: a navy blue cover with gold foil and a cream page. */
+    passportCover: "#1D3A6E",
     passportGold: "#D9B45A",
     passportPage: "#FBF4E4",
     passportInk: "#5B4A2E",
@@ -118,7 +118,7 @@ export const colors = {
     ratingStar: "#F5A623",
     starFill: "#FFC21A",
     starStroke: "#FFC21A",
-    passportCover: "#183029",
+    passportCover: "#172F59",
     passportGold: "#D9B45A",
     passportPage: "#2A2620",
     passportInk: "#E8D9B5",

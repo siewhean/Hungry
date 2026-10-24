@@ -15,6 +15,8 @@ interface StarRatingProps {
   fullWidth?: boolean;
   /** Names the chosen rating ("Good", "Amazing") under the stars. */
   showDescriptor?: boolean;
+  /** Centres the stars and the line under them (the review editor). */
+  centered?: boolean;
 }
 
 export function StarRating({
@@ -24,6 +26,7 @@ export function StarRating({
   onChange,
   fullWidth = false,
   showDescriptor = false,
+  centered = false,
 }: StarRatingProps) {
   const { palette } = useHungryTheme();
 
@@ -44,7 +47,11 @@ export function StarRating({
 
   const stars = (
     <View
-      style={[styles.row, fullWidth && { justifyContent: "space-between" }]}
+      style={[
+        styles.row,
+        fullWidth && { justifyContent: "space-between" },
+        centered && { alignSelf: "center" },
+      ]}
       accessible
       accessibilityLabel={
         editable
@@ -100,7 +107,7 @@ export function StarRating({
 
   if (!showDescriptor) return stars;
   return (
-    <View>
+    <View style={centered ? { alignItems: "center" } : undefined}>
       {stars}
       {/* The row's own label already says the number; this names it for sighted readers. */}
       <AppText

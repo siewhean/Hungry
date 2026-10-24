@@ -3,7 +3,7 @@
 
 import assert from "node:assert/strict";
 import { createElement } from "react";
-import { View } from "react-native";
+import { Animated, Text, View } from "react-native";
 import test, { afterEach, beforeEach } from "node:test";
 
 import { cleanup, render } from "@/test/render";
@@ -13,6 +13,8 @@ import { TrendingList } from "@/components/discover/TrendingList";
 import { WhatsHerePanel } from "@/components/discover/WhatsHerePanel";
 import { DetailActionBar } from "@/components/detail/DetailActionBar";
 import { FloatingBackButton } from "@/components/detail/FloatingBackButton";
+import { DetailHeroFade } from "@/components/detail/DetailHeroFade";
+import { TasteRatingInput, nearestTasteRatingLevel } from "@/components/review/TasteRatingInput";
 import { DeliveryBrandLogo, hasDeliveryBrandLogo } from "@/components/dish/DeliveryBrandLogo";
 import { SingaporeAreaMap } from "@/components/location/SingaporeAreaMap";
 import { HeritageStampTile } from "@/components/gamification/HeritageStampTile";
@@ -594,6 +596,36 @@ test("FloatingBackButton is a labelled back button", async () => {
   );
   await share.press(share.findByLabel("Share stall"));
   assert.equal(shares, 1);
+});
+
+test("DetailHeroFade shows the photo it holds", async () => {
+  const view = await render(
+    createElement(
+      DetailHeroFade,
+      { scrollY: new Animated.Value(0), height: 200 },
+      createElement(Text, null, "Hero photo"),
+    ),
+  );
+  assert.match(view.text(), /Hero photo/);
+});
+
+test("TasteRatingInput picks a level, clears it on a second tap, and marks our guess", async () => {
+  const changes: [string, number | undefined][] = [];
+  const view = await render(
+    createElement(TasteRatingInput, {
+      values: { spicy: 7.5 },
+      suggestions: { sweet: 2.2 },
+      onChange: (key, value) => changes.push([key, value]),
+    }),
+  );
+  await view.press(view.findByLabel("Sour: Medium"));
+  await view.press(view.findByLabel("Spicy: Strong"));
+  assert.deepEqual(changes, [
+    ["sour", 5],
+    ["spicy", undefined],
+  ]);
+  assert.ok(view.findByLabel("Sweet: Light, suggested"));
+  assert.equal(nearestTasteRatingLevel(8.9), 10);
 });
 
 test("TasteRadarChart shows the dish from reviews and adds your taste only with a palette", async () => {

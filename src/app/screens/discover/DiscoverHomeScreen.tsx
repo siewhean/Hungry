@@ -72,6 +72,7 @@ import {
   type DiscoverCollection,
 } from "@/features/discover/bites";
 import { getDiscoverAreaCountLabel } from "@/features/discover/areaCount";
+import { orderHawkerClassics } from "@/features/discover/hawkerClassics";
 import { rankForYou, type HereStall } from "@/features/discover/mallMode";
 import { dedupeNearestVenueCandidates } from "@/features/search/venueDedupe";
 import {
@@ -245,6 +246,66 @@ const POPULAR_FOOD_STYLES: readonly PopularFoodStyle[] = [
     label: "Bak Chor Mee",
     query: "Bak Chor Mee",
     imageSource: POPULAR_BAK_CHOR_MEE_GRAPHIC,
+  },
+  {
+    id: "nasi-lemak",
+    label: "Nasi Lemak",
+    query: "Nasi Lemak",
+    imageSource: require("../../../assets/onboarding/food/nasi-lemak.webp"),
+  },
+  {
+    id: "satay",
+    label: "Satay",
+    query: "Satay",
+    imageSource: require("../../../assets/onboarding/food/satay.webp"),
+  },
+  {
+    id: "roti-prata",
+    label: "Roti Prata",
+    query: "Roti Prata",
+    imageSource: require("../../../assets/onboarding/food/roti-prata.webp"),
+  },
+  {
+    id: "carrot-cake",
+    label: "Carrot Cake",
+    query: "Carrot Cake",
+    imageSource: require("../../../assets/onboarding/food/carrot-cake.webp"),
+  },
+  {
+    id: "fish-soup",
+    label: "Fish Soup",
+    query: "Fish Soup",
+    imageSource: require("../../../assets/onboarding/food/fish-soup.webp"),
+  },
+  {
+    id: "mee-siam",
+    label: "Mee Siam",
+    query: "Mee Siam",
+    imageSource: require("../../../assets/onboarding/food/mee-siam.webp"),
+  },
+  {
+    id: "yong-tau-foo",
+    label: "Yong Tau Foo",
+    query: "Yong Tau Foo",
+    imageSource: require("../../../assets/onboarding/food/yong-tau-foo.webp"),
+  },
+  {
+    id: "nasi-briyani",
+    label: "Nasi Briyani",
+    query: "Nasi Briyani",
+    imageSource: require("../../../assets/onboarding/food/nasi-briyani.webp"),
+  },
+  {
+    id: "kaya-toast",
+    label: "Kaya Toast",
+    query: "Kaya Toast",
+    imageSource: require("../../../assets/onboarding/food/kaya-toast.webp"),
+  },
+  {
+    id: "kueh-tutu",
+    label: "Kueh Tutu",
+    query: "Kueh Tutu",
+    imageSource: require("../../../assets/onboarding/food/kueh-tutu.webp"),
   },
 ] as const;
 const SEARCH_PLACEHOLDER_DEFAULT = "Dishes, stalls, or hawker centres…";
@@ -1768,32 +1829,59 @@ export function DiscoverHomeScreen() {
         : unfilteredLateNightCards,
     [filterDiscoverBites, isDiscoverFiltering, unfilteredLateNightCards],
   );
+  const familiarDishNames = useMemo(
+    () =>
+      [...profile.favouriteDishIds, ...profile.reviewedDishIds].flatMap((dishId) => {
+        const name = repositoryLookup.getDishById(dishId)?.name;
+        return name ? [name.toLowerCase()] : [];
+      }),
+    [profile.favouriteDishIds, profile.reviewedDishIds, repositoryLookup],
+  );
+  const foodOpenness = profile.tasteProfile?.foodOpenness;
   const unfilteredPopularFoodStyleItems = useMemo(
     () =>
-      POPULAR_FOOD_STYLES.map((style) => {
-        const normalizedQuery = style.query.toLowerCase();
-        const dish =
-          areaDishPool.find((candidate) =>
-            candidate.name.toLowerCase().includes(normalizedQuery),
-          ) ?? (style.dishId ? repositoryLookup.getDishById(style.dishId) : undefined);
-        const image = getDiscoverCardImage(dish ? getDishImageCandidates(dish) : []);
-        return {
-          ...style,
-          imageSource: image.imageUrl ? { uri: image.imageUrl } : style.imageSource,
-          imageUrl: image.imageUrl || undefined,
-          dish,
-        };
-      }).filter((style): style is PopularFoodStyleItemData => Boolean(style.imageSource)),
-    [areaDishPool, repositoryLookup],
+      orderHawkerClassics(POPULAR_FOOD_STYLES, {
+        openness: foodOpenness,
+        isFamiliar: (style) =>
+          familiarDishNames.some((name) => name.includes(style.query.toLowerCase())),
+      })
+        .map((style) => {
+          const normalizedQuery = style.query.toLowerCase();
+          const dish =
+            areaDishPool.find((candidate) =>
+              candidate.name.toLowerCase().includes(normalizedQuery),
+            ) ?? (style.dishId ? repositoryLookup.getDishById(style.dishId) : undefined);
+          const image = getDiscoverCardImage(dish ? getDishImageCandidates(dish) : []);
+          return {
+            ...style,
+            imageSource: image.imageUrl ? { uri: image.imageUrl } : style.imageSource,
+            imageUrl: image.imageUrl || undefined,
+            dish,
+          };
+        })
+        .filter((style): style is PopularFoodStyleItemData => Boolean(style.imageSource)),
+    [areaDishPool, familiarDishNames, foodOpenness, repositoryLookup],
   );
   const popularFoodStyleItems = useMemo(
     () =>
       isDiscoverFiltering
-        ? unfilteredPopularFoodStyleItems.filter((style) =>
-            matchesDiscoverChipSelection(style.dish, [style.label, style.query]),
-          )
+        ? unfilteredPopularFoodStyleItems.filter((style) => {
+            // A classic stays when any dish of that kind nearby passes the filters.
+            const query = style.query.toLowerCase();
+            const candidates = areaDishPool.filter((dish) =>
+              dish.name.toLowerCase().includes(query),
+            );
+            return (candidates.length ? candidates : [style.dish]).some((dish) =>
+              matchesDiscoverChipSelection(dish, [style.label, style.query]),
+            );
+          })
         : unfilteredPopularFoodStyleItems,
-    [isDiscoverFiltering, matchesDiscoverChipSelection, unfilteredPopularFoodStyleItems],
+    [
+      areaDishPool,
+      isDiscoverFiltering,
+      matchesDiscoverChipSelection,
+      unfilteredPopularFoodStyleItems,
+    ],
   );
   const isWaitingForPopularFoodStyles = !isDiscoverFiltering && popularFoodStyleItems.length === 0;
   const showPopularFoodSkeleton = useDelayedLoadingSkeleton(isWaitingForPopularFoodStyles);

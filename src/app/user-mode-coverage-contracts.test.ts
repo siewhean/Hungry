@@ -279,7 +279,8 @@ test("dish and stall details expose correct detail surfaces without user-mode ma
       /Loading stall/,
       /<AppText variant="h2">Signature dishes<\/AppText>/,
       /const \[visibleMenuItemCount, setVisibleMenuItemCount\] = useState\(INITIAL_MENU_ITEM_COUNT\)/,
-      /onScroll=\{handleScroll\}/,
+      /listener: handleScroll/,
+      /<DetailHeroFade scrollY=\{heroScrollY\} height=\{heroHeight\}>/,
       /onLayout=\{handleContentBodyLayout\}/,
       /onLayout=\{handleMenuSectionLayout\}/,
       /contentBodyLayout\.y \+ menuSectionLayout\.y \+ menuSectionLayout\.height/,
@@ -299,7 +300,7 @@ test("dish and stall details expose correct detail surfaces without user-mode ma
       /Add to cart/,
       /Order delivery/,
       /navigation\.navigate\("MapZoomedIn", \{ buildingId: venue\.buildingId \}\)/,
-      /<LinearGradient/,
+      // Round 8 brings back a white fade at the foot of the photo (owner request, 2026-10-24).
       /heroGradientColors/,
       /<Star color=\{palette\.surface\} fill=\{palette\.surface\}/,
       /\(leadDish\?\.rating \?\? 4\.8\)\.toFixed\(1\)/,
