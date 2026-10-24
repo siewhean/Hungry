@@ -110,3 +110,55 @@ test("searches by food name, caption, stall, place and area", () => {
   assert.deepEqual(names("durian"), ["Ah Seng Durian"]);
   assert.deepEqual(names("pizza"), []);
 });
+
+test("edge rows: no-id details are skipped, private notes are captions, a list without items is empty", () => {
+  const index = indexItemDetails([
+    { name: "No id" } as PortfolioItemDetailRow,
+    { stallId: "s2", name: "Kopi" },
+    { dishId: "d9", name: "Mee Pok", imageUrl: "" },
+  ]);
+  assert.deepEqual([...index.keys()], ["stall:s2", "dish:d9"]);
+
+  const lists = [
+    { id: "p1", name: "Breakfast" },
+    { id: "p2", name: "Not loaded" },
+  ] as Portfolio[];
+  const itemsByPortfolio = {
+    p1: [
+      {
+        id: "i1",
+        portfolioId: "p1",
+        itemType: "dish",
+        dishId: "d9",
+        privateNotes: "  Dry, extra chilli ",
+      },
+      { id: "i2", portfolioId: "p1", itemType: "stall", stallId: "s2" },
+      { id: "i3", portfolioId: "p1", itemType: "stall" },
+    ] as PortfolioItem[],
+  };
+  const built = buildCollectionFoods({
+    savedDishIds: [],
+    portfolios: lists,
+    itemsByPortfolio,
+    getDetail: (type, id) => index.get(`${type}:${id}`),
+  });
+  assert.deepEqual(
+    built.map((food) => [food.key, food.venueName, food.caption, food.imageUrl]),
+    [
+      ["p1:dish:d9", "Mee Pok", "Dry, extra chilli", undefined],
+      ["p1:stall:s2", "Kopi", undefined, undefined],
+    ],
+  );
+  assert.deepEqual(
+    collectCollectionItemIds({ savedDishIds: ["d1"], portfolios: lists, itemsByPortfolio }),
+    { dishIds: ["d1", "d9"], stallIds: ["s2"] },
+  );
+  assert.equal(buildingAreaName(undefined), undefined);
+  assert.equal(
+    typeof buildingAreaName({
+      coordinate: { latitude: 1.35, longitude: 103.94 },
+    } as BuildingSummary),
+    "string",
+  );
+  assert.equal(searchCollectionFoods(built, "   ").length, 2, "a blank query lists everything");
+});

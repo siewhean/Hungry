@@ -7,6 +7,8 @@ import {
   buildReviewExploreChips,
   filterReviewExplore,
   resolveActiveReviewChip,
+  reviewFoodLabel,
+  reviewTileHoldAction,
   reviewsWithPhotos,
   clearDeletedReviewsForSession,
   isReviewDeletedForSession,
@@ -134,4 +136,45 @@ test("a review deleted on another screen leaves the grid this session (REV-V1)",
     ["kept"],
   );
   clearDeletedReviewsForSession();
+});
+
+test("holding a tile manages your own review only when it can be edited, and reports others'", () => {
+  assert.equal(reviewTileHoldAction({ isOwn: false, canEditOwnReviews: true }), "report");
+  assert.equal(reviewTileHoldAction({ isOwn: true, canEditOwnReviews: true }), "manage");
+  assert.equal(reviewTileHoldAction({ isOwn: true, canEditOwnReviews: false }), null);
+});
+
+test("chips and filters without a palette, without a chip, and for unknown ids", () => {
+  const typed = {
+    ...item("5", "Mee Siam", ""),
+    dish: { id: "dish-5", foodTypeTag: " Noodles ", tasteVector: NEUTRAL_TASTE_VECTOR },
+  } as unknown as ReviewFeedItem;
+  assert.equal(reviewFoodLabel(typed), "Noodles", "the dish's food type wins over its name");
+  const noDish = { ...item("6", "Satay", "Amoy"), dish: undefined } as ReviewFeedItem;
+  const all = [...items, typed, noDish];
+  const chips = buildReviewExploreChips(all, { areaOf: () => undefined });
+  assert.equal(chips[0]?.id, "all", "no taste chip without a palette");
+  assert.equal(
+    chips.some((chip) => chip.kind === "area"),
+    false,
+    "no area chips without areas",
+  );
+  assert.equal(filterReviewExplore(all, undefined, { areaOf }).length, all.length);
+  const taste = { id: "taste", kind: "taste", label: "For your taste" } as const;
+  assert.equal(
+    filterReviewExplore(all, taste, { areaOf }).length,
+    all.length,
+    "no palette, no filter",
+  );
+  assert.equal(
+    filterReviewExplore(all, taste, { userVector: spicyLover, areaOf }).some(
+      (entry) => entry.dish === undefined,
+    ),
+    false,
+    "a review without a dish cannot match a palette",
+  );
+  assert.equal(withSelectedReviewChip(chips, "taste").length, chips.length);
+  assert.equal(withSelectedReviewChip(chips, "area:").length, chips.length);
+  assert.equal(withSelectedReviewChip(chips, "area:Bugis:East").at(-1)?.label, "Bugis:East");
+  assert.equal(resolveActiveReviewChip([], "all"), undefined);
 });

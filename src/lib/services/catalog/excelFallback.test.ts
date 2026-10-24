@@ -214,3 +214,114 @@ test("SEARCH-V1: the offline copy never shows a Grab, foodpanda or Deliveroo pho
   ];
   assert.deepEqual(fallbackUrls.filter(isDeliveryApp), []);
 });
+
+const singapore = { latitude: 1.3, longitude: 103.85 };
+
+test("Excel fallback sorts by distance, and an exact name match leads a typed search", async () => {
+  const nearby = await excelCatalogFallbackService.listDishes({
+    limit: 50,
+    sort: "nearby",
+    coordinate: singapore,
+  });
+  const distances = nearby.items.map((item) => item.distanceMeters ?? Number.MAX_SAFE_INTEGER);
+  assert.deepEqual(
+    distances,
+    [...distances].sort((a, b) => a - b),
+  );
+  const stalls = await excelCatalogFallbackService.listVenues({
+    limit: 50,
+    sort: "nearby",
+    coordinate: singapore,
+  });
+  const stallDistances = stalls.items.map((item) => item.distanceMeters ?? Number.MAX_SAFE_INTEGER);
+  assert.deepEqual(
+    stallDistances,
+    [...stallDistances].sort((a, b) => a - b),
+  );
+
+  const sample = (await excelCatalogFallbackService.listDishes({ limit: 1, sort: "quality" }))
+    .items[0];
+  assert.ok(sample);
+  const typed = await excelCatalogFallbackService.listDishes({
+    limit: 50,
+    sort: "relevance",
+    query: `  ${sample.name.toUpperCase()} `,
+    coordinate: singapore,
+  });
+  assert.equal(typed.items[0]?.name.toLowerCase(), sample.name.toLowerCase());
+});
+
+test("Excel fallback honours radius, price, open, building type, cuisine and dietary filters", async () => {
+  const tight = await excelCatalogFallbackService.listDishes({
+    limit: 50,
+    sort: "quality",
+    coordinate: singapore,
+    radiusMeters: 1,
+  });
+  assert.ok(
+    tight.items.every((item) => item.distanceMeters === undefined || item.distanceMeters <= 1),
+  );
+  const cheap = await excelCatalogFallbackService.listDishes({
+    limit: 50,
+    sort: "quality",
+    maxPrice: 3,
+  });
+  assert.ok(cheap.items.every((item) => (item.price ?? 0) <= 3));
+  const [everyStall, budgetStalls] = await Promise.all([
+    excelCatalogFallbackService.listVenues({ limit: 50, sort: "quality" }),
+    excelCatalogFallbackService.listVenues({ limit: 50, sort: "quality", maxPrice: 3 }),
+  ]);
+  assert.ok(budgetStalls.totals.venues > 0);
+  assert.ok(
+    budgetStalls.totals.venues < everyStall.totals.venues,
+    "only stalls with a dish at or under the price are kept",
+  );
+
+  const open = await excelCatalogFallbackService.listDishes({
+    limit: 50,
+    sort: "quality",
+    openOnly: true,
+  });
+  assert.ok(open.items.every((item) => item.isOpen !== false));
+  const openStalls = await excelCatalogFallbackService.listVenues({
+    limit: 50,
+    sort: "quality",
+    openOnly: true,
+  });
+  assert.ok(openStalls.items.every((item) => item.isOpen !== false));
+
+  for (const list of [
+    excelCatalogFallbackService.listDishes,
+    excelCatalogFallbackService.listVenues,
+  ]) {
+    const none = await list({
+      limit: 50,
+      sort: "quality",
+      buildingTypes: ["no-such-building-type"],
+    });
+    assert.equal(none.items.length, 0);
+    const noCuisine = await list({ limit: 50, sort: "quality", cuisineTags: ["zz-no-cuisine"] });
+    assert.equal(noCuisine.items.length, 0);
+    const noDiet = await list({ limit: 50, sort: "quality", dietaryFlags: ["zz-no-flag"] });
+    assert.equal(noDiet.items.length, 0);
+    const noKeyword = await list({ limit: 50, sort: "quality", foodKeywords: ["zzzz-no-food"] });
+    assert.equal(noKeyword.items.length, 0);
+    const blankKeyword = await list({ limit: 1, sort: "quality", foodKeywords: ["  "] });
+    assert.equal(blankKeyword.items.length, 1, "a blank keyword filters nothing");
+  }
+});
+
+test("Excel fallback refuses an online or malformed cursor, and unknown ids", async () => {
+  await assert.rejects(
+    excelCatalogFallbackService.listDishes({ cursor: "rpc:abc" }),
+    /online catalog cursor/,
+  );
+  await assert.rejects(
+    excelCatalogFallbackService.listVenues({ cursor: "excel:-4" }),
+    /cursor is invalid/,
+  );
+  const clamped = await excelCatalogFallbackService.listDishes({ limit: 500 });
+  assert.equal(clamped.items.length, 50, "a page is at most 50");
+  await assert.rejects(excelCatalogFallbackService.getDish("no-such-dish"), /Dish not found/);
+  await assert.rejects(excelCatalogFallbackService.getVenue("no-such-venue"), /Venue not found/);
+});

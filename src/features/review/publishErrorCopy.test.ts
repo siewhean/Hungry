@@ -88,3 +88,29 @@ test("edit and delete failures never show raw error text (REV-12)", () => {
   assert.match(describeReviewEditError(new TypeError("Network request failed"), "save"), /offline/);
   assert.match(describeReviewEditError({ code: "rate_limited", message: "" }, "save"), /quickly/);
 });
+
+test("odd error shapes still get plain copy", () => {
+  assert.match(describePublishError(undefined, "review"), /^Something went wrong/);
+  assert.match(describePublishError("timed out", "post"), /^You appear to be offline/);
+  assert.match(describePublishError({ status: 429 }, "post"), /posting quickly/);
+  assert.match(describePublishError({ code: "upload_failed" }, "review"), /couldn't upload/);
+  assert.match(
+    describePublishError({ code: "23514", message: "x".repeat(200) }, "review"),
+    /^Something went wrong/,
+    "overlong server text is not shown",
+  );
+  assert.equal(
+    describePublishError({ code: "23514", message: "Please keep it kind!" }, "review"),
+    "Please keep it kind!",
+  );
+  assert.equal(
+    describeReviewEditError({ code: "23514", message: "Please keep it kind" }, "save"),
+    "Please keep it kind.",
+  );
+  assert.equal(describeReviewEditError({ code: "23514", message: "Done!" }, "delete"), "Done!");
+  assert.match(describeReviewEditError({ message: "Too Many Requests" }, "save"), /quickly/);
+  assert.match(describeReviewEditError(new Error("Failed to fetch"), "delete"), /offline/);
+  assert.equal(describeReviewEditError(null, "delete"), "Couldn't delete your review. Try again.");
+  assert.equal(isExpectedPublishError(null), false);
+  assert.equal(isExpectedPublishError({ code: "23514", message: "" }), false);
+});

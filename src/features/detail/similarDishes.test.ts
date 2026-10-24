@@ -159,3 +159,40 @@ test("a nearby tile's spoken label carries its price, rating and distance (DISH-
     "Open Laksa at Stall, Price not listed",
   );
 });
+
+test("a tile with one review, no price fields and an unknown distance still reads cleanly", () => {
+  assert.equal(
+    similarDishTileLabel({ name: "Laksa", venueName: "Stall", rating: 5, reviewCount: 1 }),
+    "Open Laksa at Stall, Price not listed, rated 5.0 from 1 review",
+  );
+  assert.equal(
+    similarDishTileLabel({ name: "Laksa", venueName: "Stall", rating: 4, reviewCount: 0 }),
+    "Open Laksa at Stall, Price not listed",
+    "a rating without reviews is not read out",
+  );
+  assert.equal(formatAwayLabel(Number.NaN), undefined);
+  assert.equal(formatAwayLabel(3), "10 m away");
+});
+
+test("a name query with no words matches nothing, and short names load nothing", async () => {
+  assert.equal(dishNameMatchesQuery("Laksa", "   "), false);
+  let reads = 0;
+  const service = {
+    listDishes: async () => {
+      reads += 1;
+      return { items: [] };
+    },
+  };
+  assert.deepEqual(
+    await loadSimilarDishes(
+      service,
+      { id: "d1", venueId: "v1", name: "A" },
+      {
+        latitude: 1.3,
+        longitude: 103.8,
+      },
+    ),
+    [],
+  );
+  assert.equal(reads, 0);
+});

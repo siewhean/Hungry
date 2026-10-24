@@ -36,6 +36,37 @@ test("client review ids are RFC 4122 v4 uuids and unique", () => {
   assert.notEqual(first, second);
 });
 
+function withCrypto(stand: Partial<Crypto> | undefined, run: () => void) {
+  const descriptor = Object.getOwnPropertyDescriptor(globalThis, "crypto")!;
+  Object.defineProperty(globalThis, "crypto", { value: stand, configurable: true });
+  try {
+    run();
+  } finally {
+    Object.defineProperty(globalThis, "crypto", descriptor);
+  }
+}
+
+const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
+test("client review ids stay v4 uuids without crypto.randomUUID (older runtimes)", () => {
+  withCrypto(
+    {
+      getRandomValues: <T extends ArrayBufferView | null>(array: T) => {
+        if (array instanceof Uint8Array) array.fill(0xff);
+        return array;
+      },
+    },
+    () => {
+      assert.equal(createClientReviewId(), "ffffffff-ffff-4fff-bfff-ffffffffffff");
+    },
+  );
+  withCrypto(undefined, () => {
+    const first = createClientReviewId();
+    assert.match(first, UUID_V4);
+    assert.notEqual(first, createClientReviewId());
+  });
+});
+
 test("selecting the same dish keeps the draft; a different dish resets it", () => {
   const store = useReviewDraftStore;
   store.getState().resetDraft();

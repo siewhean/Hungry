@@ -172,3 +172,47 @@ test("MERCH-4: publishing refuses an end date whose Singapore day is over", () =
   assert.equal(getPromotionPublishDateError("2026-10-24", now), undefined, "today is still on");
   assert.equal(getPromotionPublishDateError("2026-11-01", now), undefined);
 });
+
+test("validateMerchantPromotionInput rejects missing or overlong text, bad prices and a mismatched discount", () => {
+  const rejects = (patch: Partial<PromotionDraft>, pattern: RegExp) =>
+    assert.throws(() => validateMerchantPromotionInput({ ...basePromotion, ...patch }), pattern);
+  rejects({ title: "   " }, /title is required/);
+  rejects({ title: "x".repeat(81) }, /title must be at most 80/);
+  rejects({ description: "" }, /description is required/);
+  rejects({ description: "x".repeat(601) }, /description must be at most 600/);
+  rejects({ originalPrice: -1 }, /Original price must be a non-negative/);
+  rejects({ promotionalPrice: Number.NaN }, /Promotional price must be a non-negative/);
+  rejects({ discountPercentage: -5 }, /between 0 and 100/);
+  rejects({ discountPercentage: Number.POSITIVE_INFINITY }, /between 0 and 100/);
+  rejects({ discountPercentage: 50 }, /must match the original and final prices/);
+  rejects({ startDate: "2026-13-01T10:00:00Z" }, /calendar/);
+});
+
+test("validateMerchantPromotionInput fills defaults for a new-item draft with no prices", () => {
+  const result = validateMerchantPromotionInput({
+    title: "Opening week",
+    description: "Something new.",
+    startDate: "2026-05-25T09:00:00+08:00",
+    endDate: "2026-05-31",
+    targetAudience: ["nearby_users"],
+    status: "draft",
+  } as PromotionDraft);
+  assert.equal(result.promotionItemType, "new_item");
+  assert.equal(result.isAvailable, false, "a draft is not available until it is active");
+  assert.equal(result.finalPrice, undefined);
+  assert.equal(result.startDate, "2026-05-25T01:00:00.000Z");
+  const priced = validateMerchantPromotionInput({
+    ...basePromotion,
+    promotionalPrice: undefined,
+    finalPrice: undefined,
+    discountPercentage: undefined,
+    isAvailable: undefined,
+  });
+  assert.equal(priced.finalPrice, 8, "the final price falls back to the original price");
+  assert.equal(priced.isAvailable, true, "an active promotion defaults to available");
+  assert.equal(
+    getPromotionPublishDateError("not-a-date"),
+    undefined,
+    "an unreadable end date is left to field validation",
+  );
+});

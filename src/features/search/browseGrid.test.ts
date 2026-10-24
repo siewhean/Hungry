@@ -263,3 +263,60 @@ test("a share link keeps the place and the sort (SEARCH-5)", () => {
   assert.equal(url.searchParams.get("placeName"), "Maxwell Food Centre");
   assert.equal(url.searchParams.get("sort"), "quality");
 });
+
+test("cards leave out what they do not know and read singular counts (search-M5)", () => {
+  assert.equal(
+    cardAccessibilityLabel(
+      "dishes",
+      dish({ buildingName: undefined, price: undefined, rating: 4, reviewCount: 1 }),
+    ),
+    "Laksa, Sungei Road Laksa, 4.0 from 1 review, 450 m",
+  );
+  assert.equal(
+    cardAccessibilityLabel("dishes", dish({ distanceMeters: 2400, rating: undefined })),
+    "Laksa, Sungei Road Laksa, Bugis Hawker Centre, S$5.00, 2.4 km",
+  );
+  assert.equal(
+    cardAccessibilityLabel(
+      "stalls",
+      stallRow({
+        ...stall("1", "Ya Kun", "b1"),
+        menuCount: 1,
+        extraOutlets: 2,
+        distanceMeters: 80,
+      }),
+    ),
+    "Ya Kun, Building b1, 1 dish, 2 more outlets, 80 m",
+  );
+  assert.equal(
+    cardAccessibilityLabel(
+      "stalls",
+      stallRow({ ...stall("1", "Ya Kun", "b1"), menuCount: 0, extraOutlets: 0 }),
+    ),
+    "Ya Kun, Building b1",
+  );
+  const noBuilding = { ...stall("1", "Ya Kun", "b1"), buildingName: undefined };
+  assert.equal(
+    cardSubtitle("stalls", {
+      ...noBuilding,
+      representativeDish: { name: "Kaya toast" },
+    } as CatalogRawVenueCard),
+    "Kaya toast",
+  );
+  assert.equal(cardSubtitle("stalls", noBuilding), "");
+  assert.equal(cardSubtitle("stalls", stall("1", "Ya Kun", "b1")), "Building b1");
+});
+
+test("a stall seen in a second building counts one more outlet only once", () => {
+  const logo = "https://project.supabase.co/storage/v1/object/public/logos/ya-kun.png";
+  const rows = mergeStallOutlets([
+    { ...stall("v1", "Ya Kun", "b1"), logoUrl: logo },
+    { ...stall("v2", "Ya Kun", "b2"), logoUrl: logo },
+    { ...stall("v3", "Ya Kun", "b2"), logoUrl: logo },
+    { ...stall("v4", "Ya Kun", "b1"), logoUrl: logo },
+  ]);
+  assert.deepEqual(
+    rows.map((row) => [row.id, row.extraOutlets]),
+    [["v1", 1]],
+  );
+});

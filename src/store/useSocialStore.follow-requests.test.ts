@@ -131,3 +131,67 @@ test("PROF-V2: a double tap on Follow for a private account sends one request an
     reset();
   }
 });
+
+// Lets the in-flight write's finally run, so the next tap is not ignored as a double tap.
+const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+test("withdrawing a request, a failed follow and a failed withdrawal each restore the old state", async () => {
+  reset();
+  const social = getHungryService().social;
+  const original = {
+    followUser: social.followUser,
+    unfollowUser: social.unfollowUser,
+    cancelFollowRequest: social.cancelFollowRequest,
+  };
+  const cancels: string[] = [];
+  try {
+    // Tapping Requested withdraws the request.
+    useSocialStore.getState().setFollowRequested(PRIVATE_USER_ID, true);
+    social.cancelFollowRequest = async (userId) => {
+      cancels.push(userId);
+    };
+    useSocialStore.getState().toggleFollow(PRIVATE_USER_ID);
+    assert.equal(requested(), false);
+    await waitFor(() => cancels.length === 1);
+    await settle();
+
+    // A withdrawal the server refuses puts Requested back.
+    useSocialStore.getState().setFollowRequested(PRIVATE_USER_ID, true);
+    social.cancelFollowRequest = async () => {
+      throw new Error("offline");
+    };
+    useSocialStore.getState().toggleFollow(PRIVATE_USER_ID);
+    assert.equal(requested(), false);
+    await waitFor(requested);
+    await settle();
+
+    // A follow the server refuses goes back to Follow, also for a private account's request.
+    useSocialStore.getState().setFollowRequested(PRIVATE_USER_ID, false);
+    social.followUser = async () => {
+      throw new Error("offline");
+    };
+    useSocialStore.getState().toggleFollow(PRIVATE_USER_ID, { isPrivate: true });
+    assert.equal(requested(), true, "Requested at once");
+    await waitFor(() => !requested());
+    await settle();
+    assert.equal(followed(), false);
+
+    // A private-looking account that approves at once is followed.
+    social.followUser = async () => "approved";
+    useSocialStore.getState().toggleFollow(PRIVATE_USER_ID, { isPrivate: true });
+    await waitFor(followed);
+    await settle();
+    assert.equal(requested(), false);
+
+    // An unfollow the server refuses keeps Following.
+    social.unfollowUser = async () => {
+      throw new Error("offline");
+    };
+    useSocialStore.getState().toggleFollow(PRIVATE_USER_ID);
+    assert.equal(followed(), false);
+    await waitFor(followed);
+  } finally {
+    Object.assign(social, original);
+    reset();
+  }
+});
