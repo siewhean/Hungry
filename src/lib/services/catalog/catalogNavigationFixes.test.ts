@@ -288,7 +288,7 @@ test("release tab redirects stay inert and never mount Discover", () => {
   assert.match(redirect, /useFocusEffect\(/);
   assert.match(redirect, /return <TabScreenLoadingPlaceholder \/>/);
   assert.doesNotMatch(redirect, /useEffect\(/);
-  assert.match(tabs, /<Tab\.Screen name="Discover" component=\{DiscoverWrapper\} \/>/);
+  assert.match(tabs, /<Tab\.Screen\s+name="Discover"\s+component=\{DiscoverWrapper\}/);
 });
 
 test("browse grid keeps rows on a failed continuation and offers retry", () => {

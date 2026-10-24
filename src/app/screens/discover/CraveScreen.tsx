@@ -22,6 +22,7 @@ import { useUIStore } from "@/store/useUIStore";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { useHungryTheme } from "@/theme";
 import type { DishDetail } from "@/types/domain";
+import { reportError } from "@/lib/monitoring/reportError";
 
 const SWIPE_THRESHOLD = 120;
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
@@ -78,7 +79,7 @@ export function CraveScreen() {
         hadDeckRef.current = deck.length > 0;
         setDishes(deck);
       })
-      .catch(() => undefined)
+      .catch((error) => reportError(error, { surface: "crave_deck" }))
       .finally(() => {
         if (isActive) setIsLoadingDeck(false);
       });

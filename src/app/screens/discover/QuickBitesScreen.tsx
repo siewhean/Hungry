@@ -42,6 +42,7 @@ import { useSearchStore } from "@/store/useSearchStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 import { sanitizeSearchQuery } from "@/lib/security/inputSanitization";
+import { reportError } from "@/lib/monitoring/reportError";
 import {
   DISCOVER_CUISINE_FILTERS,
   getDiscoverBiteCollection,
@@ -369,8 +370,9 @@ export function QuickBitesScreen() {
         } else {
           setBites(fallbackBites);
         }
-      } catch {
+      } catch (error) {
         if (!isActive) return;
+        reportError(error, { surface: "quick_bites" });
         setBites(isSupabaseDataSource ? [] : fallbackBites);
         setLoadFailed(isSupabaseDataSource);
         setIsLoading(false);

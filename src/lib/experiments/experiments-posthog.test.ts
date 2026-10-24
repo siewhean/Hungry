@@ -31,16 +31,16 @@ test("flags count as loaded only after PostHog returns them", () => {
 });
 
 test("an exposed read sends exactly one $feature_flag_called with the variant", () => {
-  PostHogStub.flags = { welcome_back_v1: "control" };
-  assert.equal(experiments.getExperimentVariant("welcome_back_v1", { expose: true }), "control");
-  assert.equal(experiments.getExperimentVariant("welcome_back_v1", { expose: true }), "control");
+  PostHogStub.flags = { welcome_back_v2: "test" };
+  assert.equal(experiments.getExperimentVariant("welcome_back_v2", { expose: true }), "test");
+  assert.equal(experiments.getExperimentVariant("welcome_back_v2", { expose: true }), "test");
   assert.deepEqual(exposures().map((entry) => entry.properties), [
-    { $feature_flag: "welcome_back_v1", $feature_flag_response: "control" },
+    { $feature_flag: "welcome_back_v2", $feature_flag_response: "test" },
   ]);
 });
 
 test("before flags load the fallback is shown and nothing is exposed", () => {
-  assert.equal(experiments.getExperimentVariant("welcome_back_v1", { expose: true }), "test");
+  assert.equal(experiments.getExperimentVariant("welcome_back_v2", { expose: true }), "control");
   assert.equal(exposures().length, 0);
 });
 

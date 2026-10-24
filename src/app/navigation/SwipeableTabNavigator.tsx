@@ -334,7 +334,13 @@ export function SwipeableTabNavigator() {
         lazyPreloadDistance: tabPreloadEnabled ? MAIN_TAB_PRELOAD_DISTANCE : 0,
       }}
     >
-      <Tab.Screen name="Discover" component={DiscoverWrapper} />
+      {/* With the feed hidden, the next pager page is the Home redirect, which bounces a
+          swipe straight back here. Swiping is off on Discover then; the tab bar still works. */}
+      <Tab.Screen
+        name="Discover"
+        component={DiscoverWrapper}
+        options={{ swipeEnabled: FEATURE_FLAGS.socialFeedEnabled }}
+      />
       {/* The social posts feed. No pager swipe: its photo carousels own horizontal swipes. */}
       <Tab.Screen
         name="Home"
