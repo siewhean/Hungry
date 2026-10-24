@@ -14,6 +14,7 @@ import {
   validateDisplayName,
 } from "@/features/profile/profileName";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { reportError } from "@/lib/monitoring/reportError";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -44,9 +45,9 @@ export function EditProfileScreen({ navigation }: Props) {
   const showToast = useUIStore((state) => state.showToast);
   const { palette, spacing, radii } = useHungryTheme();
   // The store is the source of truth. A local draft exists only while the user
-  // is typing; it is cleared on every focus, so a screen instance mounted early
-  // (ProfileHome preloads this route on press-in) or reopened after a save never
-  // shows a stale snapshot.
+  // is typing (null shows the store value), so a screen instance mounted early
+  // (ProfileHome preloads this route on press-in) never shows a stale snapshot.
+  // Drafts survive a trip to the taste quiz and back; a save clears them.
   const [displayNameDraft, setDisplayNameDraft] = useState<string | null>(null);
   const displayName = displayNameDraft ?? profile.displayName;
   const [emailDraft, setEmailDraft] = useState<string | null>(null);
@@ -86,13 +87,16 @@ export function EditProfileScreen({ navigation }: Props) {
   const allowLeaveRef = useRef(false);
   useFocusEffect(
     useCallback(() => {
-      setDisplayNameDraft(null);
-      setEmailDraft(null);
-      setBioDraft(null);
-      setAvatarUri(undefined);
       allowLeaveRef.current = false;
     }, []),
   );
+  const clearDrafts = () => {
+    setDisplayNameDraft(null);
+    setEmailDraft(null);
+    setBioDraft(null);
+    setAvatarUri(undefined);
+    setRemoveAvatar(false);
+  };
 
   useEffect(() => {
     const unsubscribe = navigation.addListener("beforeRemove", (event) => {
@@ -302,6 +306,7 @@ export function EditProfileScreen({ navigation }: Props) {
                 dietaryPreferences: profile.dietaryPreferences,
               });
               applySavedProfileEdits(savedProfile);
+              clearDrafts();
               allowLeaveRef.current = true;
               trackAnalyticsEvent("profile_updated", {
                 name_changed: trimmedName !== profile.displayName.trim(),
@@ -329,6 +334,8 @@ export function EditProfileScreen({ navigation }: Props) {
               navigation.goBack();
             } catch (error) {
               const refusal = profileTextRefusalHint(error);
+              // A refused name or bio is the person's to fix; anything else is unexpected.
+              if (!refusal) reportError(error, { screen: "EditProfile", action: "save_profile" });
               showToast({
                 message:
                   refusal === "display_name_reserved"
@@ -349,7 +356,7 @@ export function EditProfileScreen({ navigation }: Props) {
         }}
       />
       <Button
-        label="Retake taste quiz"
+        label="Retake the taste quiz"
         variant="secondary"
         onPress={() => {
           const rootNavigation = getRootNavigation(navigation);

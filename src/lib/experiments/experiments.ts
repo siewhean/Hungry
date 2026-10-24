@@ -50,6 +50,18 @@ export const EXPERIMENTS = {
     primaryMetric: "welcome_back_opened",
     guardrailMetrics: ["welcome_back_dismissed", "dish_viewed"],
   },
+  /** "Write your first review" card under the stats on your own profile, when you have none. */
+  profile_first_review_nudge_v1: {
+    variants: ["control", "test"],
+    fallback: "control",
+    // Without a PostHog flag of this key everyone gets the fallback ("control").
+    status: "running",
+    surface: "profile",
+    hypothesis:
+      "Signed-in users with no reviews who see a 'Write your first review' card on their own profile submit a first review sooner than users who see only the empty Reviews list.",
+    primaryMetric: "review_submitted",
+    guardrailMetrics: ["review_abandoned", "review_submit_failed", "profile_viewed"],
+  },
 } as const satisfies Record<string, ExperimentDefinition>;
 
 export type ExperimentKey = keyof typeof EXPERIMENTS;

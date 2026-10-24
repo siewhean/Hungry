@@ -93,7 +93,7 @@ test("social store contract: UUID follows sync to service while local-name fallb
   // A guest is asked to sign in before the follow (or unfollow prompt) is sent.
   assert.match(
     profileContentSource,
-    /const handleFollowPress = \(\) => \{\s*if \(!resolvedAuthorId\) return;\s*followPress\(\{ userId: resolvedAuthorId,/,
+    /const handleFollowPress = \(\) => \{\s*if \(!resolvedAuthorId\) return;\s*followPress\(\{\s*userId: resolvedAuthorId,/,
   );
 });
 

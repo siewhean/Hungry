@@ -66,7 +66,7 @@ test("guest-reachable follow, like and comment taps prompt sign-in first", () =>
   assert.match(commentsSheet, /if \(onBeforeSend && !onBeforeSend\(\)\) return;/);
 
   const userProfile = read("src/app/screens/profile/UserProfileContent.tsx");
-  assert.match(userProfile, /followPress\(\{ userId: resolvedAuthorId, name: authorName/);
+  assert.match(userProfile, /followPress\(\{\s*userId: resolvedAuthorId,\s*name: authorName/);
   // The shared follow press (profile and follower lists) holds the sign-in gate.
   assert.match(
     read("src/features/profile/useFollowPress.ts"),
