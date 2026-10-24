@@ -5,6 +5,7 @@ import { FoodOpennessScreen } from "./FoodOpennessScreen";
 import { LocationPermissionScreen } from "./LocationPermissionScreen";
 import { ManualLocationPickerScreen } from "./ManualLocationPickerScreen";
 import { MandatoryOnboardingAuthScreen } from "./MandatoryOnboardingAuthScreen";
+import { TasteQuizRoute } from "./TasteQuizRoute";
 import { TasteQuizScreen } from "./TasteQuizScreen";
 import { TasteProfileResultScreen } from "./TasteProfileResultScreen";
 import { WelcomeScreen } from "./WelcomeScreen";
@@ -20,7 +21,7 @@ export function OnboardingStack() {
       <Stack.Screen name="OnboardingWelcome" component={WelcomeScreen} />
       <Stack.Screen name="LocationPermission" component={LocationPermissionScreen} />
       <Stack.Screen name="ManualLocationPicker" component={ManualLocationPickerScreen} />
-      <Stack.Screen name="TasteQuiz" component={TasteQuizScreen} />
+      <Stack.Screen name="TasteQuiz" component={TasteQuizRoute} />
       <Stack.Screen name="DietaryPreferences" component={TasteQuizScreen} />
       <Stack.Screen name="FoodOpenness" component={FoodOpennessScreen} />
       <Stack.Screen name="TasteProfileResult" component={TasteProfileResultScreen} />

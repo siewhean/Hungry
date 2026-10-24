@@ -29,6 +29,7 @@ const NON_PRODUCTION_FLAGS = [
   "merchantCentreEnabled",
   "merchantClaimCtaEnabled",
   "prototypeRoutesEnabled",
+  "sliderOnboardingEnabled",
 ] as const;
 
 test("production ships main's core surfaces and keeps advanced surfaces closed", () => {
