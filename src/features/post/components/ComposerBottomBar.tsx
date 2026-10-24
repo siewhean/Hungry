@@ -179,7 +179,7 @@ export function ComposerBottomBar({ routeDishId, routeVenueId }: ComposerBottomB
 
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Schedule Post"
+              accessibilityLabel="Schedule post"
               onPress={handleSchedule}
               style={styles.optionItem}
             >
@@ -191,7 +191,7 @@ export function ComposerBottomBar({ routeDishId, routeVenueId }: ComposerBottomB
                 }}
               >
                 <Calendar size={18} color={palette.text} />
-                <AppText variant="bodySmallBold">Schedule Post</AppText>
+                <AppText variant="bodySmallBold">Schedule post</AppText>
               </View>
               <View
                 style={{
@@ -214,7 +214,7 @@ export function ComposerBottomBar({ routeDishId, routeVenueId }: ComposerBottomB
         <View style={[styles.row, { gap: semanticSpacing.componentGap }]}>
           <View style={{ flex: 1 }}>
             <Button
-              label="Save Draft"
+              label="Save draft"
               variant="secondary"
               size="sm"
               onPress={() => {
@@ -257,7 +257,7 @@ export function ComposerBottomBar({ routeDishId, routeVenueId }: ComposerBottomB
                 borderLeftColor: palette.inverseSurfaceSubtle,
               }}
             >
-              <ChevronUp size={18} color={palette.white} />
+              <ChevronUp size={18} color={palette.textOnOrange} />
             </Pressable>
           </View>
         </View>

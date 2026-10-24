@@ -42,8 +42,7 @@ test("detail-M3/M17/L17/L24: sold-out dishes and prices read the same everywhere
 test("detail-M6/L18/L20: dish page has no wait card, shows the exact score and Order buttons", () => {
   assert.doesNotMatch(dish, /formatWaitTime|getDataTrustDisclosure/);
   assert.doesNotMatch(dish, /Math\.round\(dish\.rating\)/);
-  assert.match(dish, /DeliveryPlatformButton/);
-  assert.match(dish, /deliveryLinks\.map/);
+  assert.match(dish, /<DeliveryButtonRow/);
   assert.match(dish, /if \(result\.reason !== "pending"\) showToast/);
 });
 
@@ -68,10 +67,13 @@ test("detail-M8: stall and dish heroes are swipeable photo pagers with a full-sc
   assert.match(dish, /\.\.\.reviewPhotos/);
 });
 
-test("detail-M10/L1/L19: reviews can be voted helpful, reported, blocked and open their author", () => {
+test("detail-M10/L1/L19: reviews can be reported, blocked and open their author", () => {
   const actions = readRepoFile("src/components/review/ReviewReaderActions.tsx");
 
+  // Owner decision (round 3): a heart like (stored as the helpful vote); hold it to report.
+  assert.doesNotMatch(actions, /ThumbsUp|MoreHorizontal/);
   assert.match(actions, /setReviewHelpful/);
+  assert.match(actions, /onLongPress=\{openSafetyActions\}/);
   assert.match(actions, /promptReviewSafetyActions/);
   assert.match(readRepoFile("src/components/review/index.ts"), /ReviewReaderActions/);
   for (const source of [stall, dish]) {
@@ -86,8 +88,12 @@ test("detail-M10/L1/L19: reviews can be voted helpful, reported, blocked and ope
 
 test("detail-M11: 'Something wrong?' sends a catalog correction from both pages", () => {
   const link = readRepoFile("src/components/stall/ReportProblemLink.tsx");
+  const page = readRepoFile("src/app/screens/detail/ReportProblemScreen.tsx");
 
-  assert.match(link, /submitCatalogCorrection/);
+  // The link opens its own page, which sends the report.
+  assert.match(link, /navigation\.navigate\("ReportProblem", \{ venueId, dishId, subjectName \}\)/);
+  assert.match(page, /submitCatalogCorrection\(\{/);
+  assert.match(page, /note: note\.trim\(\)/);
   assert.match(stall, /<ReportProblemLink/);
   assert.match(dish, /<ReportProblemLink[\s\S]{0,120}dishId=\{dish\.id\}/);
   assert.match(readRepoFile("src/lib/services/types.ts"), /submitCatalogCorrection\(/);
@@ -189,6 +195,6 @@ test("detail-L15/L22/L23: copy and dead ends", () => {
   assert.doesNotMatch(offline, /queued|will be sent when/i);
   assert.match(raw, /goBackOrHome/);
   assert.match(raw, /Open stall page/);
-  assert.match(dish, /<AppText variant="h2">Community Palate Feedback<\/AppText>/);
-  assert.match(stall, /<AppText variant="h2">Community Highlights<\/AppText>/);
+  assert.match(dish, /<AppText variant="h2">Reviews<\/AppText>/);
+  assert.match(stall, /<AppText variant="h2">Reviews<\/AppText>/);
 });

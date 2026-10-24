@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Animated, Easing, Pressable, ScrollView, TextInput, View } from "react-native";
+import { Animated, Easing, Pressable, ScrollView, TextInput, View, Text } from "react-native";
 import {
   ArrowLeft,
   ChevronRight,
@@ -60,6 +60,14 @@ const SUGGEST_DEBOUNCE_MS = 200;
 function suggestionMode(suggestion: CatalogSuggestion): BrowseMode {
   return suggestion.kind === "food_type" ? "dishes" : "stalls";
 }
+
+/** Moves through these like the Discover search bar. */
+const DISH_SEARCH_PLACEHOLDER_PHRASES = [
+  "Try laksa, chicken rice, halal under $8",
+  "Search for mee pok",
+  "Stalls or hawker centres",
+  "What's near you?",
+];
 
 export function DishSearchScreen() {
   const navigation = useNavigation<RootNavigation>();
@@ -210,52 +218,38 @@ export function DishSearchScreen() {
             }}
             icon={<ArrowLeft color={palette.text} size={18} />}
           />
-          <AppText variant="display" style={{ color: palette.text }}>
-            Hungry
-          </AppText>
-          <View
-            style={{
-              alignItems: "center",
-              backgroundColor: palette.surface,
-              borderRadius: radii.pill,
-              flexDirection: "row",
-              gap: spacing[1],
-              paddingHorizontal: spacing[3],
-              paddingVertical: spacing[1],
-            }}
-          >
-            <MapPin color={palette.orange} size={14} />
-            <AppText variant="bodySmall">Singapore</AppText>
+          <View style={{ flex: 1 }}>
+            <Input
+              ref={searchInputRef}
+              autoFocus
+              leftIcon={<SearchIcon color={palette.textMuted} size={18} />}
+              rightIcon={
+                searchText ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Clear search"
+                    hitSlop={12}
+                    onPress={() => {
+                      setSearchText("");
+                      // Keep the user typing: clearing should not drop focus/keyboard.
+                      searchInputRef.current?.focus();
+                    }}
+                  >
+                    <X color={palette.textMuted} size={18} />
+                  </Pressable>
+                ) : undefined
+              }
+              placeholder="Try laksa, chicken rice, halal under $8"
+              enableMovingPlaceholder
+              movingPlaceholderPhrases={DISH_SEARCH_PLACEHOLDER_PHRASES}
+              accessibilityLabel="Search dishes, stalls, or hawker centres"
+              returnKeyType="search"
+              value={searchText}
+              onChangeText={setSearchText}
+              onSubmitEditing={() => openResults(searchText)}
+            />
           </View>
         </View>
-
-        <Input
-          ref={searchInputRef}
-          autoFocus
-          leftIcon={<SearchIcon color={palette.textMuted} size={18} />}
-          rightIcon={
-            searchText ? (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Clear search"
-                hitSlop={12}
-                onPress={() => {
-                  setSearchText("");
-                  // Keep the user typing: clearing should not drop focus/keyboard.
-                  searchInputRef.current?.focus();
-                }}
-              >
-                <X color={palette.textMuted} size={18} />
-              </Pressable>
-            ) : undefined
-          }
-          placeholder="Try laksa, chicken rice, halal under $8"
-          accessibilityLabel="Search dishes, stalls, or hawker centres"
-          returnKeyType="search"
-          value={searchText}
-          onChangeText={setSearchText}
-          onSubmitEditing={() => openResults(searchText)}
-        />
         {!trimmedSearchText ? (
           <ScrollView
             horizontal
@@ -264,24 +258,10 @@ export function DishSearchScreen() {
           >
             {[
               {
-                label: "Near Me",
+                label: "Near me",
                 filter: undefined,
                 icon: <MapPin color={palette.textOnPrimary} size={16} />,
                 primary: true,
-              },
-              {
-                label: "Rice",
-                filter: "Rice",
-                icon: (
-                  <View
-                    style={{
-                      backgroundColor: palette.success,
-                      borderRadius: radii.pill,
-                      height: spacing[2],
-                      width: spacing[2],
-                    }}
-                  />
-                ),
               },
               {
                 label: "Under S$6",
@@ -385,8 +365,10 @@ export function DishSearchScreen() {
               shadows.card,
               {
                 alignItems: "center",
-                backgroundColor: palette.text,
+                backgroundColor: palette.surface,
+                borderColor: palette.border,
                 borderRadius: componentRadii.card,
+                borderWidth: 1,
                 flexDirection: "row",
                 gap: spacing[3],
                 padding: spacing[4],
@@ -395,7 +377,7 @@ export function DishSearchScreen() {
           >
             <View
               style={{
-                backgroundColor: palette.inverseSurfaceSoft,
+                backgroundColor: palette.orangeLight,
                 borderRadius: radii.md,
                 padding: spacing[3],
               }}
@@ -403,14 +385,12 @@ export function DishSearchScreen() {
               <SlidersHorizontal color={palette.orange} size={24} />
             </View>
             <View style={{ flex: 1 }}>
-              <AppText variant="h3" style={{ color: palette.textOnDark }}>
-                Tune Palate Vector
-              </AppText>
-              <AppText variant="bodySmall" style={{ color: palette.inverseTextSecondary }}>
-                Your six-axis taste profile
+              <AppText variant="h3">Tune your palate</AppText>
+              <AppText variant="bodySmall" tone="secondary">
+                Set how much spice, sweetness and richness you enjoy
               </AppText>
             </View>
-            <ChevronRight color={palette.textOnDark} size={20} />
+            <ChevronRight color={palette.textMuted} size={20} />
           </Pressable>
         )}
         {showRecents ? (
@@ -423,7 +403,7 @@ export function DishSearchScreen() {
               }}
             >
               <AppText variant="h2" accessibilityRole="header">
-                Recent Searches
+                Recent searches
               </AppText>
               <Pressable
                 accessibilityRole="button"
@@ -432,7 +412,7 @@ export function DishSearchScreen() {
                 onPress={clearSearchHistory}
               >
                 <AppText tone="secondary" variant="bodySmall">
-                  Clear All
+                  Clear all
                 </AppText>
               </Pressable>
             </View>
@@ -491,10 +471,10 @@ export function DishSearchScreen() {
           <View accessibilityLabel="Popular dishes" style={{ gap: spacing[2] }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
               <AppText variant="h2" accessibilityRole="header">
-                Hawker Classics
+                Hawker classics
               </AppText>
               <AppText variant="bodySmall" tone="secondary">
-                Quick Find
+                Quick find
               </AppText>
             </View>
             <ScrollView
@@ -612,14 +592,14 @@ export function DishSearchScreen() {
                     {dish.distanceMeters != null ? ` · ${Math.round(dish.distanceMeters)}m` : ""}
                   </AppText>
                   {dish.rating != null ? (
-                    <AppText variant="micro" style={{ color: palette.ratingStar }}>
-                      ★ {dish.rating.toFixed(1)}
+                    <AppText variant="micro" tone="secondary">
+                      <Text style={{ color: palette.starFill }}>★</Text> {dish.rating.toFixed(1)}
                     </AppText>
                   ) : null}
                 </View>
                 <View style={{ alignItems: "flex-end", gap: spacing[4] }}>
                   {dish.price != null ? (
-                    <AppText variant="bodyBold" style={{ color: palette.orange }}>
+                    <AppText variant="bodyBold" style={{ color: palette.text }}>
                       S${dish.price.toFixed(2)}
                     </AppText>
                   ) : null}

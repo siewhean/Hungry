@@ -81,7 +81,7 @@ test("Screen header contract: live Discover, Review, and New Post headers use Ap
   const composerHeader = read("src/features/post/components/ComposerHeader.tsx");
   const reviewSearchSummary =
     reviews.match(/function ReviewSearchQuerySummary[\s\S]*?\n}\n\n\/\//)?.[0] ?? "";
-  assert.match(discover, /YOU ARE AT/);
+  assert.match(discover, /You are at \$\{discoverHeaderLabel\}/);
   assert.doesNotMatch(discover, /<AppHeader[\s\S]*title="Discover"/);
   assert.match(
     discover,
@@ -103,7 +103,7 @@ test("Screen header contract: live Discover, Review, and New Post headers use Ap
   assert.match(reviews, /<AppHeader[\s\S]*title=\{reviewHeaderTitle\}/);
   assert.match(
     reviews,
-    /right=\{\s*<ExpandableSearchLauncher[\s\S]*accessibilityLabel="Search reviews"[\s\S]*placeholder="Search Reviews"[\s\S]*iconAlignment="right"[\s\S]*enableMovingPlaceholder=\{false\}[\s\S]*showExpandedBacking=\{false\}[\s\S]*\/>\s*\}/,
+    /right=\{\s*<ExpandableSearchLauncher[\s\S]*accessibilityLabel="Search reviews"[\s\S]*placeholder="Search reviews"[\s\S]*iconAlignment="right"[\s\S]*enableMovingPlaceholder=\{false\}[\s\S]*showExpandedBacking=\{false\}[\s\S]*\/>\s*\}/,
   );
   assert.doesNotMatch(reviews, /ReviewSearchBar|navigation\.navigate\("SearchHome"\)/);
   assert.doesNotMatch(reviews, /useMovingSearchPlaceholder|movingSearchPlaceholder/);
@@ -111,7 +111,7 @@ test("Screen header contract: live Discover, Review, and New Post headers use Ap
   assert.match(reviews, /FilterChipRail/);
   assert.match(
     reviews,
-    /\/\* Filter chips \*\/[\s\S]*<FilterChipRail[\s\S]*options=\{FILTER_OPTIONS\}[\s\S]*selectedId=\{filterMode\}[\s\S]*onSelect=\{setFilterMode\}[\s\S]*onSwipeLockChange=\{setTabSwipeLocked\}[\s\S]*gap=\{spacing\[2\]\}/,
+    /\/\* Filter chips: your taste, foods and areas \*\/[\s\S]*<FilterChipRail[\s\S]*options=\{chips\.map\([\s\S]*selectedId=\{activeChip\?\.id \?\? "all"\}[\s\S]*onSelect=\{setChipId\}[\s\S]*onSwipeLockChange=\{setTabSwipeLocked\}[\s\S]*gap=\{spacing\[2\]\}/,
   );
   assert.doesNotMatch(
     reviews,
@@ -124,7 +124,8 @@ test("Screen header contract: live Discover, Review, and New Post headers use Ap
   assert.match(reviewSearchSummary, /Showing results for/);
   assert.doesNotMatch(reviewSearchSummary, /Searching for|backgroundColor|borderRadius/);
   assert.doesNotMatch(reviews, /showSearch|setShowSearch/);
-  assert.match(profileShell, /contentContainerStyle=\{\{ paddingTop: 0 \}\}/);
+  assert.match(profileShell, /useSafeAreaInsets/);
+  assert.match(profileShell, /contentContainerStyle=\{\{ paddingTop: topPadding \}\}/);
   assert.match(composerHeader, /<AppHeader[\s\S]*title=\{title\}/);
   assert.doesNotMatch(composerHeader, /fontSize: 16/);
 });
@@ -183,7 +184,6 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   );
   for (const [rail, cards] of [
     ["quickBites", "quickBiteCards"],
-    ["trending", "trendingCards"],
     ["editorChoice", "editorChoiceCards"],
     ["budget", "budgetCards"],
     ["lateNight", "lateNightCards"],
@@ -268,7 +268,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /source=\{card\.imageSource\}/);
   assert.match(
     discover,
-    /bottom: spacing\[2\],[\s\S]*right: spacing\[2\],[\s\S]*<Star color=\{palette\.amber\} size=\{11\} fill=\{palette\.amber\} \/>[\s\S]*\{card\.heroDish\.rating\.toFixed\(1\)\}/,
+    /bottom: spacing\[2\],[\s\S]*right: spacing\[2\],[\s\S]*<Star color=\{palette\.starStroke\} size=\{11\} fill=\{palette\.starFill\} \/>[\s\S]*\{card\.heroDish\.rating\.toFixed\(1\)\}/,
   );
   assert.match(
     discover,
@@ -298,7 +298,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   );
   assert.match(
     discover,
-    /const \[activeDiscoverChipIds, setActiveDiscoverChipIds\] = useState<DiscoverChipId\[\]>\(\[\]\)/,
+    /const \[activeDiscoverChipIds, setActiveDiscoverChipIds\] = useState<DiscoverChipId\[\]>\(\(\) =>\s*profile\.dietaryPreferences\.length \? \["dietary"\] : \[\],?\s*\)/,
   );
   assert.match(
     discover,
@@ -414,14 +414,14 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /onSeeAll: openDiscoverCollection/);
   assert.match(
     discover,
-    /S\$\{bite\.price\.toFixed\(2\)\}[\s\S]*<Star color=\{palette\.amber\} size=\{12\} fill=\{palette\.amber\} \/>[\s\S]*\{bite\.rating\.toFixed\(1\)\}/,
+    /S\$\{bite\.price\.toFixed\(2\)\}[\s\S]*<Star color=\{palette\.starStroke\} size=\{12\} fill=\{palette\.starFill\} \/>[\s\S]*\{bite\.rating\.toFixed\(1\)\}/,
   );
-  assert.match(discover, /title="Budget < S\$8"[\s\S]*label="VALUE"/);
+  assert.match(discover, /title="Budget < S\$8"[\s\S]*label="Value"/);
   assert.match(discover, /navigation\.navigate\("DishDetail", \{ dishId: bite\.dishId \}\)/);
   assert.match(discover, /const isLateNightMakanVisible = isLateNightHour\(currentHour\)/);
   assert.match(
     discover,
-    /\{isLateNightMakanVisible && shouldRenderDiscoverRail\(lateNightCards\.length\) \? \([\s\S]*title="Late night eats"[\s\S]*cards=\{lateNightCards\}/,
+    /\{isLateNightMakanVisible &&\s*shouldRenderDiscoverRail\(\s*lateNightCards\.length,\s*MIN_DISCOVER_RAIL_ITEMS,?\s*\) \? \([\s\S]*title="Late night eats"[\s\S]*cards=\{lateNightCards\}/,
   );
   assert.match(discover, /trackAnalyticsEvent\("discover_see_all_tapped", \{ collection \}\)/);
   assert.doesNotMatch(discover, /const foodInset = 5/);
@@ -444,8 +444,11 @@ test("Discover V1 contract: situation intents live in their matching sections", 
     /const shouldShowPopularFoodSkeleton =[\s\S]*showPopularFoodSkeleton \|\| showPopularFoodFilterSkeleton \|\| showInitialDiscoverSkeleton/,
   );
   assert.match(discover, /function DiscoverDishImagePlaceholder\(/);
-  assert.match(discover, /backgroundColor: palette\.surfaceRaised/);
-  assert.match(discover, /<Utensils color=\{palette\.orange\} size=\{iconSize\} \/>/);
+  assert.match(discover, /backgroundColor: palette\.bgSoft/);
+  assert.match(
+    discover,
+    /<Utensils color=\{palette\.textMuted\} size=\{Math\.min\(iconSize, 24\)\} \/>/,
+  );
   assert.match(discover, /function DiscoverBiteImage\(\{ bite, height \}/);
   assert.match(discover, /\[bite\.photoUrl, \.\.\.\(bite\.mediaUrls \?\? \[\]\)\]/);
   assert.match(discover, /source=\{\{ uri: activeImageUrl \}\}/);
@@ -485,7 +488,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
     /contentContainerStyle=\{\{\s*gap: discoverSectionGap,\s*paddingHorizontal: semanticSpacing\.screenEdge,\s*\}\}/,
   );
   assert.match(discover, /paddingTop: spacing\[1\]/);
-  assert.match(discover, /Stalls & Restaurants/);
+  assert.match(discover, /Browse stalls and restaurants/);
   assert.match(discover, /Dishes/);
   assert.match(discover, /backgroundColor: palette\.imageLabelSurface/);
   assert.match(discover, /borderColor: palette\.imageLabelBorder/);
@@ -550,18 +553,18 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.doesNotMatch(discover, /import \{ DecideForMeCard \}/);
   assert.match(
     discover,
-    /\/\* Decision action chips \*\/[\s\S]*<View style=\{\{ flexDirection: "row", gap: decisionCardGap \}\}>[\s\S]*onPress=\{handleDecideForMe\}[\s\S]*Decide for Me[\s\S]*navigation\.navigate\("WheelStack", \{ screen: "WheelHome" \}\)[\s\S]*Pick with friends[\s\S]*<\/View>/,
+    /\/\* Decision action chips \*\/[\s\S]*<View style=\{\{ flexDirection: "row", gap: decisionCardGap \}\}>[\s\S]*onPress=\{handleDecideForMe\}[\s\S]*Decide for me[\s\S]*navigation\.navigate\("WheelStack", \{ screen: "WheelHome" \}\)[\s\S]*Pick with friends[\s\S]*<\/View>/,
   );
   assert.match(
     discover,
-    /const handleDecideForMe = \(\) => \{[\s\S]*navigation\.navigate\("DecideForMeResult", \{ surface: "discover" \}/,
+    /const handleDecideForMe = \(\) => \{[\s\S]*navigation\.navigate\("DecideForMeQuiz"\)/,
   );
   assert.match(
     discover,
-    /<Dices color=\{palette\.white\} size=\{decisionCardIconGraphicSize\} \/>/,
+    /<Dices color=\{palette\.textOnOrange\} size=\{decisionCardIconGraphicSize\} \/>/,
   );
   // Cards grow with large text instead of clipping at a fixed 72.
-  assert.match(discover, /minHeight: 72,[\s\S]*width: decisionCardWidth/);
+  assert.match(discover, /minHeight: 56,[\s\S]*width: decisionCardWidth/);
   assert.match(discover, /height: "100%"/);
   assert.match(discover, /justifyContent: "center"/);
   assert.doesNotMatch(discover, /adjustsFontSizeToFit[\s\S]{0,80}minimumFontScale=\{0\.88\}/);
@@ -570,7 +573,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /numberOfLines=\{2\}/);
   assert.doesNotMatch(discover, /height: 72,[\s\S]{0,40}width: decisionCardWidth/);
   assert.doesNotMatch(discover, /height: 52/);
-  assert.match(discover, /Most reviewed \$\{trendingAreaPhrase\}/);
+  assert.match(discover, /Trending \$\{trendingAreaPhrase\}/);
   assert.match(discover, /Stalls \$\{discoverAreaPhrase\}/);
   assert.match(discover, /const DISCOVER_AREA_RADIUS_METERS = 3000/);
   assert.match(
@@ -657,55 +660,21 @@ test("Discover V1 contract: browse cards open the image-feed browse mode", () =>
   const discover = read("src/app/screens/discover/DiscoverHomeScreen.tsx");
   const navigationTypes = read("src/app/navigation/navigationTypes.ts");
   const searchResults = read("src/app/screens/search/SearchResultsScreen.tsx");
-  const targetCardsBlock = discover.match(
-    /\{\/\* Discovery Targets — two large tap targets \*\/\}[\s\S]*?\{\/\* Proactive Selection \*\//,
-  )?.[0];
-
-  assert.ok(targetCardsBlock);
-
+  // The two big photo tiles are gone: trending dishes lead, and the full lists are two compact links.
+  assert.match(discover, /<TrendingList[\s\S]*?bites=\{trendingCards\}/);
+  assert.match(discover, /The full lists stay one tap away/);
+  assert.match(
+    discover,
+    /accessibilityLabel: "Browse stalls and restaurants"|a11y: "Browse stalls and restaurants"/,
+  );
+  assert.match(discover, /a11y: "Browse dishes"/);
   assert.doesNotMatch(discover, /function DiscoveryTargetGridPreview/);
   assert.doesNotMatch(discover, /<DiscoveryTargetGridPreview/);
-  assert.match(
+  assert.doesNotMatch(discover, /STALLS_CARD_GRAPHIC|DISHES_CARD_GRAPHIC/);
+  assert.doesNotMatch(
     discover,
-    /const STALLS_CARD_GRAPHIC = require\("\.\.\/\.\.\/\.\.\/assets\/discover\/stalls-restaurants-card-wide\.png"\)/,
+    /stallTargetImage|dishTargetImage|stallPreviewImages|dishPreviewImages/,
   );
-  assert.match(
-    discover,
-    /const DISHES_CARD_GRAPHIC = require\("\.\.\/\.\.\/\.\.\/assets\/discover\/dishes-card-wide\.png"\)/,
-  );
-  assert.match(
-    targetCardsBlock,
-    /<View style=\{\{ flexDirection: "row", gap: discoverContentGap \}\}>/,
-  );
-  assert.match(targetCardsBlock, /accessibilityLabel="Browse stalls and restaurants"/);
-  assert.match(targetCardsBlock, /accessibilityLabel="Browse dishes"/);
-  assert.match(discover, /const stallsCategoryImageSource = useMemo/);
-  assert.match(discover, /const dishesCategoryImageSource = useMemo/);
-  assert.match(targetCardsBlock, /source=\{stallsCategoryImageSource\}/);
-  assert.match(targetCardsBlock, /source=\{dishesCategoryImageSource\}/);
-  assert.match(
-    targetCardsBlock,
-    /source=\{stallsCategoryImageSource\}[\s\S]*style=\{\{ aspectRatio: 1\.55, width: "100%" \}\}[\s\S]*contentFit="cover"/,
-  );
-  assert.match(
-    targetCardsBlock,
-    /source=\{dishesCategoryImageSource\}[\s\S]*style=\{\{ aspectRatio: 1\.55, width: "100%" \}\}[\s\S]*contentFit="cover"/,
-  );
-  assert.doesNotMatch(targetCardsBlock, /aspectRatio: 1\.75/);
-  assert.doesNotMatch(targetCardsBlock, /aspectRatio: 1\.8/);
-  assert.doesNotMatch(targetCardsBlock, /contentFit="contain"/);
-  assert.match(targetCardsBlock, /<LinearGradient[\s\S]*palette\.imageOverlayGradientEnd/);
-  assert.match(targetCardsBlock, /Stalls & Restaurants/);
-  assert.match(targetCardsBlock, /Dishes/);
-  assert.match(targetCardsBlock, /position: "absolute"/);
-  assert.doesNotMatch(targetCardsBlock, /Browse this area/);
-  assert.doesNotMatch(targetCardsBlock, /What are you craving\?/);
-  assert.doesNotMatch(discover, /stallTargetImage/);
-  assert.doesNotMatch(discover, /dishTargetImage/);
-  assert.doesNotMatch(discover, /stallPreviewImages/);
-  assert.doesNotMatch(discover, /dishPreviewImages/);
-  assert.doesNotMatch(discover, />🏪</);
-  assert.doesNotMatch(discover, />🍜</);
   assert.match(discover, /navigation\.navigate\("BrowseStalls"\)/);
   assert.match(discover, /navigation\.navigate\("BrowseDishes"\)/);
   assert.match(
@@ -836,16 +805,10 @@ test("Discover collapses empty rails and offers pull-to-refresh plus one error s
   assert.doesNotMatch(discover, /Sparkles/);
   assert.match(
     discover,
-    /const shouldRenderDiscoverRail = \(count: number\) =>\s*showDiscoverFilterRailSkeleton \|\| count > 0 \|\| isDiscoverFiltering/,
+    /const shouldRenderDiscoverRail = \(count: number, minItems = 1\) =>\s*showDiscoverFilterRailSkeleton \|\| count >= minItems \|\| isDiscoverFiltering/,
   );
-  for (const cards of [
-    "quickBiteCards",
-    "trendingCards",
-    "editorChoiceCards",
-    "budgetCards",
-    "areaStallCards",
-  ]) {
-    assert.match(discover, new RegExp(`shouldRenderDiscoverRail\\(${cards}\\.length\\)`));
+  for (const cards of ["quickBiteCards", "editorChoiceCards", "budgetCards", "areaStallCards"]) {
+    assert.match(discover, new RegExp(`shouldRenderDiscoverRail\\(${cards}\\.length[,)]`));
   }
   assert.match(
     discover,

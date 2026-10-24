@@ -41,12 +41,12 @@ export function CustomerPromotionCard({
             <AppText variant="price" tone="muted" style={{ textDecorationLine: "line-through" }}>
               S${pricing.originalPrice.toFixed(2)}
             </AppText>
-            <AppText variant="price" style={{ color: palette.orange }}>
+            <AppText variant="price" style={{ color: palette.orangeText }}>
               S${pricing.finalPrice.toFixed(2)}
             </AppText>
           </View>
         ) : pricing.label ? (
-          <AppText variant="price" style={{ color: palette.orange }}>
+          <AppText variant="price" style={{ color: palette.orangeText }}>
             {pricing.label}
           </AppText>
         ) : null}

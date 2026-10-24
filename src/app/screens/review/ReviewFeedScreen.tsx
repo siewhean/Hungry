@@ -1,8 +1,7 @@
 /**
- * ReviewFeedScreen — Tab 3
- * Pure user-review feed.
- * Sort by recency, rating, or A–Z by dish or stall.
- * No discovery or editorial content here.
+ * ReviewFeedScreen — the Reviews tab.
+ * A photo grid of diners' reviews, like Instagram's explore page: only reviews with a photo,
+ * newest first, filtered by the diner's taste, a kind of food or an area.
  */
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -11,27 +10,14 @@ import {
   Keyboard,
   Pressable,
   RefreshControl,
-  type TextInput,
   View,
   useWindowDimensions,
 } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import {
-  Bookmark,
-  Heart,
-  MessageCircle,
-  MessageCircleMore,
-  MoreHorizontal,
-  Pencil,
-  Send,
-  Star,
-  ThumbsUp,
-} from "lucide-react-native";
-import { BottomSheetModal } from "@gorhom/bottom-sheet";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Images } from "lucide-react-native";
 import {
   useFocusEffect,
   useNavigation,
-  useRoute,
   type CompositeNavigationProp,
 } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -39,13 +25,10 @@ import type { MaterialTopTabNavigationProp } from "@react-navigation/material-to
 
 import type { MainTabParamList, RootStackParamList } from "@/app/navigation/navigationTypes";
 import type { RecentReviewFeedEntry } from "@/lib/services/types";
-import { ReviewCommentsSheet, type ActiveReviewCommentTarget } from "@/components/social";
-import { ReviewModerationNotice, ReviewPhotoViewer } from "@/components/review";
 import {
   AccessibleImage,
   AppHeader,
   AppText,
-  Avatar,
   EmptyState,
   ExpandableSearchLauncher,
   FilterChipRail,
@@ -54,8 +37,7 @@ import {
 import {
   isContentHiddenForSession,
   loadBlockedAuthorsForSession,
-  promptBlockReviewAuthor,
-  promptReportReview,
+  promptReviewSafetyActions,
 } from "@/lib/security/communitySafety";
 import {
   getDataRepository,
@@ -64,28 +46,22 @@ import {
 } from "@/lib/services/serviceProvider";
 import { useDelayedLoadingSkeleton } from "@/hooks/useDelayedLoadingSkeleton";
 import { useProfileStore } from "@/store/useProfileStore";
-import { useSocialStore, type InteractionState } from "@/store/useSocialStore";
 import { useRequireAccount } from "@/features/auth/useRequireAccount";
-import { likePostAfterSignIn, saveDishAfterSignIn } from "@/features/auth/finishGuestAction";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
-import { ReviewShareSheet, type ReviewShareTarget } from "./ReviewShareSheet";
 import {
   listReviewFeedItems,
   makeReviewInteractionId,
   type ReviewFeedItem,
 } from "@/features/review/reviewFeed";
 import {
-  createHelpfulVoteQueue,
-  helpfulStateFor,
-  reviewHelpfulState,
-  toggleReviewHelpful,
-  type ReviewHelpfulState,
-} from "@/features/review/reviewHelpful";
+  buildReviewExploreChips,
+  filterReviewExplore,
+  reviewsWithPhotos,
+} from "@/features/review/reviewExplore";
 import { openTrustedExternalUrl } from "@/lib/security/safeLinking";
-import { FEATURE_FLAGS } from "@/constants/featureFlags";
-import { SUPPORT_EMAIL, webShareUrl } from "@/constants/links";
+import { SUPPORT_EMAIL } from "@/constants/links";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 
@@ -95,8 +71,6 @@ type RootNavigation = CompositeNavigationProp<
   MaterialTopTabNavigationProp<MainTabParamList, "Review">,
   NativeStackNavigationProp<RootStackParamList>
 >;
-
-type FilterMode = "recent" | "top_rated" | "dish" | "location";
 
 const REVIEW_FEED_PAGE_SIZE = 50;
 /** A focus refetch runs when the loaded page is older than this (e.g. after posting a review). */
@@ -117,54 +91,18 @@ function formatReviewDate(createdAt: string): string {
   });
 }
 
-const FILTER_OPTIONS: { id: FilterMode; label: string }[] = [
-  { id: "recent", label: "Most Recent" },
-  { id: "top_rated", label: "Top Rated" },
-  { id: "dish", label: "A–Z dish" },
-  { id: "location", label: "A–Z stall" },
-];
-
-// ─── StarRow ─────────────────────────────────────────────────────────────────
-
-function StarRow({ rating, size = 12 }: { rating: number; size?: number }) {
-  const { palette } = useHungryTheme();
-  return (
-    <View
-      accessible
-      accessibilityRole="image"
-      accessibilityLabel={`Rated ${rating} out of 5 stars`}
-      style={{ flexDirection: "row", gap: 2 }}
-    >
-      {[1, 2, 3, 4, 5].map((i) => (
-        <Star
-          key={i}
-          size={size}
-          color={palette.amber}
-          fill={i <= rating ? palette.amber : "transparent"}
-        />
-      ))}
-    </View>
-  );
-}
+const GRID_COLUMNS = 3;
+const GRID_GAP = 2;
 
 function ReviewFeedSkeleton() {
-  const { componentRadii, radii, spacing } = useHungryTheme();
+  const { spacing } = useHungryTheme();
+  const { width } = useWindowDimensions();
+  const tileSize = (width - GRID_GAP * (GRID_COLUMNS - 1)) / GRID_COLUMNS;
 
   return (
-    <View style={{ gap: spacing[4], paddingHorizontal: spacing[4], paddingTop: spacing[3] }}>
-      {[0, 1, 2].map((item) => (
-        <View key={item} style={{ gap: spacing[3] }}>
-          <Skeleton width="100%" height={180} borderRadius={componentRadii.card} />
-          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
-            <Skeleton width={36} height={36} borderRadius={radii.pill} />
-            <View style={{ flex: 1, gap: spacing[1] }}>
-              <Skeleton width="42%" height={16} borderRadius={radii.sm} />
-              <Skeleton width="32%" height={12} borderRadius={radii.sm} />
-            </View>
-          </View>
-          <Skeleton width="90%" height={16} borderRadius={radii.sm} />
-          <Skeleton width="62%" height={16} borderRadius={radii.sm} />
-        </View>
+    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: GRID_GAP, paddingTop: spacing[2] }}>
+      {Array.from({ length: 9 }, (_, index) => (
+        <Skeleton key={index} width={tileSize} height={tileSize} borderRadius={0} />
       ))}
     </View>
   );
@@ -190,438 +128,59 @@ function ReviewSearchQuerySummary({ query }: { query: string }) {
   );
 }
 
-// ─── ReviewCard ───────────────────────────────────────────────────────────────
+// ─── ReviewTile ──────────────────────────────────────────────────────────────
 
-// The card takes primitives (not the interaction map or helpful objects) so that one helpful
-// tap or save re-renders that card only, and `memo` keeps every other card as it is.
-const ReviewCard = memo(function ReviewCard({
+/** One square photo in the grid, its date in the bottom-left corner. */
+const ReviewTile = memo(function ReviewTile({
   item,
-  liked,
-  likeCount,
-  saved,
-  shareCount,
-  commentCount,
-  helpfulActive,
-  helpfulCount,
-  isOwnReview,
-  commentsEnabled,
-  onCommentPress,
-  onPressDish,
-  onSavePress,
-  onSharePress,
-  onLikePress,
-  onHelpfulPress,
-  onSafetyPress,
-  onPhotoPress,
-  onAuthorPress,
-  reviewReactionsEnabled,
+  size,
+  onPress,
+  onLongPress,
 }: {
   item: ReviewFeedItem;
-  liked: boolean;
-  likeCount: number;
-  saved: boolean;
-  shareCount: number;
-  commentCount: number;
-  /** The viewer's "Helpful" vote, with any optimistic change applied. */
-  helpfulActive: boolean;
-  helpfulCount: number;
-  onHelpfulPress: (item: ReviewFeedItem) => void;
-  /** The viewer wrote this review: no Report/Block on it. */
-  isOwnReview: boolean;
-  commentsEnabled: boolean;
-  onCommentPress: (item: ReviewFeedItem) => void;
-  onPressDish: (dishId: string) => void;
-  onSavePress: (item: ReviewFeedItem) => void;
-  onSharePress: (item: ReviewFeedItem) => void;
-  onLikePress: (item: ReviewFeedItem) => void;
-  onSafetyPress: (item: ReviewFeedItem) => void;
-  onPhotoPress: (item: ReviewFeedItem, index: number) => void;
-  onAuthorPress: (item: ReviewFeedItem) => void;
-  reviewReactionsEnabled: boolean;
+  size: number;
+  onPress: (item: ReviewFeedItem) => void;
+  onLongPress: (item: ReviewFeedItem) => void;
 }) {
-  const { componentRadii, palette, radii, spacing, shadows, typography } = useHungryTheme();
-  const CommentIcon = MessageCircle ?? MessageCircleMore;
-  const { width } = useWindowDimensions();
-  const hasPhoto = item.review.photos.length > 0;
-  const reviewDate = `${formatReviewDate(item.review.createdAt)}${item.review.editedAt ? " · edited" : ""}`;
+  const { palette, radii, spacing } = useHungryTheme();
   const photoCount = item.review.photos.length;
-  const canOpenAuthor = Boolean(item.review.authorId) && !isOwnReview;
-  // 44pt minimum on every action so each is an easy target.
-  const actionStyle = {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: spacing[1],
-    justifyContent: "center",
-    minHeight: 44,
-    minWidth: 44,
-  } as const;
 
   return (
-    <View
-      style={[
-        {
-          backgroundColor: palette.surface,
-          borderRadius: componentRadii.card,
-          marginHorizontal: spacing[4],
-          marginBottom: spacing[4],
-          overflow: "hidden",
-          borderWidth: 1,
-          borderColor: palette.border,
-        },
-        shadows.card,
-      ]}
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${item.review.authorName}'s review of ${item.dishName} at ${item.venueName}, ${formatReviewDate(item.review.createdAt)}`}
+      accessibilityHint="Opens the review. Hold to report it or block its author"
+      onPress={() => onPress(item)}
+      onLongPress={() => onLongPress(item)}
+      style={({ pressed }) => ({ height: size, opacity: pressed ? 0.85 : 1, width: size })}
     >
-      {/* Photo */}
-      {hasPhoto && (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={
-            photoCount > 1
-              ? `View ${photoCount} photos from this review of ${item.dishName}`
-              : `View photo from this review of ${item.dishName}`
-          }
-          onPress={() => onPhotoPress(item, 0)}
-        >
-          <AccessibleImage
-            source={{ uri: item.review.photos[0] }}
-            style={{ width: "100%", height: width * 0.55 }}
-            contentFit="cover"
-            decorative
-          />
-          {photoCount > 1 ? (
-            <View
-              style={{
-                backgroundColor: palette.overlay,
-                borderRadius: radii.pill,
-                bottom: spacing[2],
-                paddingHorizontal: spacing[2],
-                paddingVertical: spacing[1],
-                position: "absolute",
-                right: spacing[2],
-              }}
-            >
-              <AppText variant="micro" style={{ color: palette.white, fontWeight: "700" }}>
-                {`1/${photoCount}`}
-              </AppText>
-            </View>
-          ) : null}
-        </Pressable>
-      )}
-
-      {/* Body */}
-      <View style={{ padding: spacing[4], gap: spacing[3] }}>
-        {item.review.moderationState ? (
-          <ReviewModerationNotice
-            state={item.review.moderationState}
-            reviewId={item.review.id}
-            dishName={item.dishName}
-          />
-        ) : null}
-
-        {/* Author + rating row */}
-        <View
-          style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}
-        >
-          <Pressable
-            accessibilityRole={canOpenAuthor ? "button" : undefined}
-            accessibilityLabel={
-              canOpenAuthor
-                ? `Open ${item.review.authorName}'s profile`
-                : `${item.review.authorName}, ${item.venueName}`
-            }
-            disabled={!canOpenAuthor}
-            onPress={() => onAuthorPress(item)}
-            style={{
-              alignItems: "center",
-              flexDirection: "row",
-              flexShrink: 1,
-              gap: spacing[2],
-              minHeight: 44,
-            }}
-          >
-            <Avatar uri={item.review.authorAvatarUrl} name={item.review.authorName} size={36} />
-            <View style={{ flexShrink: 1 }}>
-              <AppText variant="bodySmallBold" style={{ color: palette.text }}>
-                {item.review.authorName}
-              </AppText>
-              <AppText variant="micro" tone="muted" numberOfLines={1}>
-                {item.venueName}
-              </AppText>
-            </View>
-          </Pressable>
-          <StarRow rating={item.review.rating} size={14} />
+      <AccessibleImage
+        source={{ uri: item.review.photos[0] }}
+        style={{ backgroundColor: palette.bgSoft, height: size, width: size }}
+        contentFit="cover"
+        decorative
+      />
+      {photoCount > 1 ? (
+        <View style={{ position: "absolute", right: spacing[1.5], top: spacing[1.5] }}>
+          <Images color={palette.white} size={16} />
         </View>
-
-        {/* Dish link */}
-        <Pressable
-          accessibilityRole="link"
-          accessibilityLabel={`Open ${item.dishName} at ${item.venueName}`}
-          hitSlop={8}
-          onPress={() => onPressDish(item.dishId)}
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: spacing[2],
-            backgroundColor: palette.orangeLight,
-            paddingHorizontal: spacing[3],
-            paddingVertical: spacing[2],
-            borderRadius: radii.md,
-            alignSelf: "flex-start",
-          }}
-        >
-          <AppText variant="micro" style={{ color: palette.orangeText, fontWeight: "700" }}>
-            {item.dishName}
-          </AppText>
-          <AppText variant="micro" style={{ color: palette.textMuted }}>
-            ·
-          </AppText>
-          <AppText variant="micro" style={{ color: palette.textMuted }} numberOfLines={1}>
-            {item.venueName}
-          </AppText>
-        </Pressable>
-
-        {/* Review text */}
-        <AppText
-          variant="body"
-          style={{ color: palette.text, lineHeight: typography.body.lineHeight }}
-        >
-          {item.review.text}
+      ) : null}
+      <View
+        style={{
+          backgroundColor: palette.mediaScrimStrong,
+          borderRadius: radii.pill,
+          bottom: spacing[1.5],
+          left: spacing[1.5],
+          paddingHorizontal: spacing[1.5],
+          paddingVertical: 2,
+          position: "absolute",
+        }}
+      >
+        <AppText variant="micro" style={{ color: palette.white, fontWeight: "700" }}>
+          {formatReviewDate(item.review.createdAt)}
         </AppText>
-
-        {item.review.merchantReply?.text ? (
-          <View
-            accessible
-            accessibilityLabel={`Reply from the stall: ${item.review.merchantReply.text}`}
-            style={{
-              backgroundColor: palette.bgSoft,
-              borderRadius: radii.md,
-              gap: spacing[1],
-              padding: spacing[3],
-            }}
-          >
-            <AppText variant="micro" tone="secondary" style={{ fontWeight: "700" }}>
-              Reply from {item.venueName}
-            </AppText>
-            <AppText variant="bodySmall">{item.review.merchantReply.text}</AppText>
-          </View>
-        ) : null}
-
-        {/* Tags (or date when no recommend) */}
-        {item.review.tags.length > 0 || !item.review.wouldRecommend ? (
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "flex-start",
-            }}
-          >
-            <View
-              style={{
-                flexDirection: "row",
-                flexWrap: "wrap",
-                gap: spacing[2],
-                flex: 1,
-                minWidth: 0,
-              }}
-            >
-              {item.review.tags.map((tag) => (
-                <View
-                  key={tag}
-                  style={{
-                    backgroundColor: palette.bgSoft,
-                    paddingHorizontal: spacing[2],
-                    paddingVertical: 4,
-                    borderRadius: radii.sm,
-                  }}
-                >
-                  <AppText
-                    variant="micro"
-                    style={{ color: palette.textSecondary, fontWeight: "600" }}
-                  >
-                    {tag}
-                  </AppText>
-                </View>
-              ))}
-            </View>
-            {!item.review.wouldRecommend && (
-              <AppText
-                variant="micro"
-                tone="muted"
-                style={{ marginLeft: spacing[3], textAlign: "right" }}
-              >
-                {reviewDate}
-              </AppText>
-            )}
-          </View>
-        ) : null}
-
-        {/* Recommend row */}
-        {item.review.wouldRecommend && (
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: spacing[2],
-            }}
-          >
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: spacing[2],
-                flex: 1,
-                minWidth: 0,
-              }}
-            >
-              <View
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: 4,
-                  backgroundColor: palette.success,
-                }}
-              />
-              <AppText variant="micro" style={{ color: palette.success, fontWeight: "600" }}>
-                Would recommend
-              </AppText>
-            </View>
-            <AppText
-              variant="micro"
-              tone="muted"
-              numberOfLines={1}
-              style={{ marginLeft: spacing[3], textAlign: "right" }}
-            >
-              {reviewDate}
-            </AppText>
-          </View>
-        )}
-
-        <View
-          style={{
-            alignItems: "center",
-            flexDirection: "row",
-            justifyContent: "space-between",
-            paddingTop: spacing[1],
-          }}
-        >
-          {isOwnReview ? (
-            <View />
-          ) : (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`More options for ${item.review.authorName}'s review`}
-              accessibilityHint="Report this review or block its author"
-              onPress={() => onSafetyPress(item)}
-              style={{ alignItems: "center", height: 44, justifyContent: "center", width: 44 }}
-            >
-              <MoreHorizontal color={palette.textMuted} size={20} />
-            </Pressable>
-          )}
-
-          <View style={{ alignItems: "flex-end", gap: spacing[1.5] }}>
-            <View
-              style={{
-                alignItems: "center",
-                flexDirection: "row",
-                gap: spacing[4],
-                justifyContent: "flex-end",
-              }}
-            >
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={
-                  helpfulCount === 1
-                    ? "Helpful, 1 person found this helpful"
-                    : `Helpful, ${helpfulCount} people found this helpful`
-                }
-                accessibilityState={{ disabled: isOwnReview, selected: helpfulActive }}
-                disabled={isOwnReview}
-                hitSlop={8}
-                onPress={() => onHelpfulPress(item)}
-                style={actionStyle}
-              >
-                <ThumbsUp
-                  color={helpfulActive ? palette.orange : palette.text}
-                  fill={helpfulActive ? palette.orange : "transparent"}
-                  size={20}
-                />
-                <AppText
-                  variant="micro"
-                  style={{
-                    color: helpfulActive ? palette.orange : palette.text,
-                    fontWeight: "600",
-                  }}
-                >
-                  {helpfulCount > 0 ? `Helpful · ${helpfulCount}` : "Helpful"}
-                </AppText>
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Share review"
-                hitSlop={8}
-                onPress={() => onSharePress(item)}
-                style={actionStyle}
-              >
-                <Send color={palette.text} size={22} />
-                {shareCount > 0 ? (
-                  <AppText variant="micro" style={{ color: palette.text, fontWeight: "600" }}>
-                    {shareCount}
-                  </AppText>
-                ) : null}
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={saved ? "Remove saved dish" : "Save dish"}
-                hitSlop={8}
-                onPress={() => onSavePress(item)}
-                style={actionStyle}
-              >
-                <Bookmark
-                  color={saved ? palette.orange : palette.text}
-                  fill={saved ? palette.orange : "transparent"}
-                  size={22}
-                />
-              </Pressable>
-              {commentsEnabled ? (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Open review comments"
-                  onPress={() => onCommentPress(item)}
-                  style={actionStyle}
-                >
-                  <CommentIcon color={palette.text} size={22} />
-                  {commentCount > 0 ? (
-                    <AppText variant="micro" style={{ color: palette.text, fontWeight: "600" }}>
-                      {commentCount}
-                    </AppText>
-                  ) : null}
-                </Pressable>
-              ) : null}
-              {reviewReactionsEnabled ? (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={liked ? "Unlike review" : "Like review"}
-                  onPress={() => onLikePress(item)}
-                  style={actionStyle}
-                >
-                  <Heart
-                    color={liked ? palette.error : palette.text}
-                    fill={liked ? palette.error : "transparent"}
-                    size={22}
-                  />
-                  {likeCount > 0 ? (
-                    <AppText variant="micro" style={{ color: palette.text, fontWeight: "600" }}>
-                      {likeCount}
-                    </AppText>
-                  ) : null}
-                </Pressable>
-              ) : null}
-            </View>
-          </View>
-        </View>
       </View>
-    </View>
+    </Pressable>
   );
 });
 
@@ -629,48 +188,18 @@ const ReviewCard = memo(function ReviewCard({
 
 export function ReviewFeedScreen() {
   const navigation = useNavigation<RootNavigation>();
-  const route = useRoute();
-  const reviewFeedScrollRef = useRef<FlatList<ReviewFeedItem> | null>(null);
   const isTabSwipeLockedRef = useRef(false);
-  const { palette, radii, shadows, spacing, semanticSpacing } = useHungryTheme();
+  const { palette, spacing, semanticSpacing } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
-  const insets = useSafeAreaInsets();
   const repository = getDataRepository();
   const serviceProviderMode = getServiceProvider().mode;
-  const commentsEnabled = FEATURE_FLAGS.commentsEnabled;
-  const interactions = useSocialStore((state) => state.interactions);
-  const commentsByPostId = useSocialStore((state) => state.commentsByPostId);
-  const repliesByCommentId = useSocialStore((state) => state.repliesByCommentId);
-  const initializeInteractions = useSocialStore((state) => state.initializeInteractions);
-  const toggleLike = useSocialStore((state) => state.toggleLike);
-  const toggleSave = useSocialStore((state) => state.toggleSave);
-  const incrementShare = useSocialStore((state) => state.incrementShare);
-  const favouriteDishIds = useProfileStore((state) => state.profile.favouriteDishIds);
-  const viewerId = useProfileStore((state) => state.profile.id);
-  const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
+  const tasteVector = useProfileStore((state) => state.profile.tasteVector);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
-  const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const showToast = useUIStore((state) => state.showToast);
 
-  const [filterMode, setFilterMode] = useState<FilterMode>("recent");
+  const [chipId, setChipId] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeCommentReview, setActiveCommentReview] = useState<ActiveReviewCommentTarget | null>(
-    null,
-  );
-  const commentsSheetRef = useRef<BottomSheetModal>(null);
-  const shareSheetRef = useRef<BottomSheetModal>(null);
-  const commentInputRef = useRef<TextInput>(null);
-  const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
   const [serviceReviewItems, setServiceReviewItems] = useState<ReviewFeedItem[] | null>(null);
-  /** Helpful votes changed on this screen, by review id, until the next full reload. */
-  const [helpfulByReviewId, setHelpfulByReviewId] = useState<Record<string, ReviewHelpfulState>>(
-    {},
-  );
-  const [photoViewer, setPhotoViewer] = useState<{
-    photos: string[];
-    label: string;
-    index: number;
-  } | null>(null);
   const [serviceLoadFailed, setServiceLoadFailed] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -684,26 +213,8 @@ export function ReviewFeedScreen() {
   const feedCursorRef = useRef<{ before: string; beforeId: string } | undefined>(undefined);
   /** Newest created_at loaded, so a refocus asks only for newer reviews. */
   const newestCreatedAtRef = useRef<string | undefined>(undefined);
-  /** The latest helpful state per review (the state value lags a render behind rapid taps). */
-  const helpfulStateRef = useRef<Record<string, ReviewHelpfulState>>({});
-  const submitHelpfulVote = useMemo(
-    () =>
-      createHelpfulVoteQueue((reviewId, helpful) =>
-        getHungryService().reviews.setReviewHelpful(reviewId, helpful),
-      ),
-    [],
-  );
-  const reviewReactionsEnabled = serviceProviderMode === "mock";
-  const openCommentsSheet = useCallback(() => {
-    const commentSheet = commentsSheetRef.current;
-    if (!commentSheet) return;
-
-    void commentSheet.present?.();
-    requestAnimationFrame(() => {
-      commentSheet.snapToIndex(0);
-    });
-  }, []);
   const searchBarWidth = screenWidth - spacing[8];
+  const tileSize = (screenWidth - GRID_GAP * (GRID_COLUMNS - 1)) / GRID_COLUMNS;
   const setTabSwipeLocked = useCallback(
     (isLocked: boolean) => {
       if (isTabSwipeLockedRef.current === isLocked) {
@@ -721,12 +232,12 @@ export function ReviewFeedScreen() {
   const showInitialSkeleton = useDelayedLoadingSkeleton(isServiceFeedLoading, 0);
   const reviewHeaderTitle = "Reviews";
 
-  const trackedFilterModeRef = useRef<FilterMode>(filterMode);
+  const trackedChipRef = useRef(chipId);
   useEffect(() => {
-    if (trackedFilterModeRef.current === filterMode) return;
-    trackedFilterModeRef.current = filterMode;
-    trackAnalyticsEvent("review_feed_filter_changed", { filter: filterMode });
-  }, [filterMode]);
+    if (trackedChipRef.current === chipId) return;
+    trackedChipRef.current = chipId;
+    trackAnalyticsEvent("review_feed_filter_changed", { filter: chipId.split(":")[0] });
+  }, [chipId]);
 
   useEffect(() => {
     let isMounted = true;
@@ -784,9 +295,6 @@ export function ReviewFeedScreen() {
         // A full page of new rows may leave a gap before the loaded ones: start over from it.
         const startsOver = mode === "replace" || (mode === "prepend" && page.hasMore);
         if (startsOver) {
-          // A full reload carries the server's helpful counts and votes.
-          helpfulStateRef.current = {};
-          setHelpfulByReviewId({});
           feedCursorRef.current = page.nextCursor;
           newestCreatedAtRef.current = items[0]?.review.createdAt;
           setHasMoreServiceReviews(page.hasMore);
@@ -874,205 +382,52 @@ export function ReviewFeedScreen() {
       requireAccount(message, { name: "MainTabs", params: { screen: "Review" } }, onSignedIn),
     [requireAccount],
   );
-  const openWriteReview = useCallback(() => {
-    const open = () => navigation.navigate("ReviewStack", { screen: "ReviewMain" });
-    if (!requireAccountForReviewAction("Sign in to write a review.", open)) return;
-    open();
-  }, [navigation, requireAccountForReviewAction]);
 
-  // Gather reviews from all dishes
+  // Where a review's dish is: the name of its hawker centre, mall or building.
+  const buildingNames = useMemo(
+    () => new Map(repository.listBuildings().map((building) => [building.id, building.name])),
+    [repository],
+  );
+  const areaOf = useCallback(
+    (item: ReviewFeedItem) => (item.dish ? buildingNames.get(item.dish.buildingId) : undefined),
+    [buildingNames],
+  );
+
+  // Every review with a photo, newest first.
   const allReviews = useMemo<ReviewFeedItem[]>(() => {
-    const reviews = (
-      serviceProviderMode === "mock" ? listReviewFeedItems(repository) : (serviceReviewItems ?? [])
+    const reviews = reviewsWithPhotos(
+      serviceProviderMode === "mock" ? listReviewFeedItems(repository) : (serviceReviewItems ?? []),
     ).filter(
       (item) => !isContentHiddenForSession({ id: item.review.id, authorId: item.review.authorId }),
     );
-
-    // Sort
-    if (filterMode === "top_rated") {
-      return [...reviews].sort((a, b) => b.review.rating - a.review.rating);
-    }
-    if (filterMode === "dish") {
-      return [...reviews].sort((a, b) => a.dishName.localeCompare(b.dishName));
-    }
-    if (filterMode === "location") {
-      return [...reviews].sort((a, b) => a.venueName.localeCompare(b.venueName));
-    }
-    // Default: most recent
     return [...reviews].sort(
       (a, b) => new Date(b.review.createdAt).getTime() - new Date(a.review.createdAt).getTime(),
     );
-  }, [repository, filterMode, safetyFilterVersion, serviceProviderMode, serviceReviewItems]);
+  }, [repository, safetyFilterVersion, serviceProviderMode, serviceReviewItems]);
 
-  useEffect(() => {
-    // Likes are mock-only; live reviews keep no per-card interaction state in the store.
-    if (serviceProviderMode !== "mock") return;
-    initializeInteractions(
-      allReviews.map((item) => ({
-        id: item.interactionId,
-        commentCount: 0,
-        likeCount: 0,
-        savedCount: 0,
-      })),
-    );
-  }, [allReviews, initializeInteractions, serviceProviderMode]);
+  // Chips follow the diner's palette, the foods and the areas on the page.
+  const chips = useMemo(
+    () => buildReviewExploreChips(allReviews, { userVector: tasteVector, areaOf }),
+    [allReviews, areaOf, tasteVector],
+  );
+  const activeChip = chips.find((chip) => chip.id === chipId) ?? chips[0];
 
   const filteredReviews = useMemo(() => {
-    if (!searchQuery.trim()) return allReviews;
+    const byChip = filterReviewExplore(allReviews, activeChip, {
+      userVector: tasteVector,
+      areaOf,
+    });
+    if (!searchQuery.trim()) return byChip;
     const q = searchQuery.toLowerCase();
-    return allReviews.filter(
+    return byChip.filter(
       (item) =>
         item.dishName.toLowerCase().includes(q) ||
         item.venueName.toLowerCase().includes(q) ||
         item.review.text.toLowerCase().includes(q) ||
         item.review.tags.some((t) => t.toLowerCase().includes(q)),
     );
-  }, [allReviews, searchQuery]);
+  }, [activeChip, allReviews, areaOf, searchQuery, tasteVector]);
 
-  const openReviewComments = useCallback(
-    (item: ReviewFeedItem) => {
-      if (!commentsEnabled) return;
-
-      setActiveCommentReview({
-        id: item.review.id,
-        authorName: item.review.authorName,
-        dishName: item.dishName,
-        caption: item.review.text,
-      });
-      openCommentsSheet();
-    },
-    [commentsEnabled, openCommentsSheet],
-  );
-
-  // Tab press-to-top behavior intentionally disabled for bottom navigation.
-
-  const openShareReview = useCallback(
-    (item: ReviewFeedItem) => {
-      const linkedDish = item.dish?.imageUrl ? item.dish : repository.getDishById(item.dishId);
-      // A review is not a post: never borrow another post's id, or its share
-      // count goes up when this review is shared.
-      setActiveShareReview({
-        reviewId: item.review.id,
-        postId: "",
-        title: item.dishName,
-        subtitle: `${item.venueName} · ${item.review.authorName}`,
-        imageUrl: item.review.photos[0] ?? linkedDish?.imageUrl ?? "",
-        authorName: item.review.authorName,
-        message: `${item.review.authorName} reviewed ${item.dishName} at ${item.venueName} on Hungry: ${item.review.text}`,
-        link: webShareUrl("review", item.review.id),
-      });
-      requestAnimationFrame(() => {
-        shareSheetRef.current?.present();
-      });
-    },
-    [repository],
-  );
-
-  const requireAccountForComment = useCallback(() => {
-    if (isAuthenticated) return true;
-    // Close the sheet first so it does not stay on top of the sign-in screen.
-    commentsSheetRef.current?.dismiss();
-    return requireAccountForReviewAction("Sign in to comment.");
-  }, [isAuthenticated, requireAccountForReviewAction]);
-
-  const handleSavePress = useCallback(
-    (item: ReviewFeedItem) => {
-      if (
-        !requireAccountForReviewAction(`Sign in to save ${item.dishName}`, () => {
-          const dish = item.dish ?? repository.getDishById(item.dishId);
-          if (dish) saveDishAfterSignIn(dish);
-        })
-      ) {
-        return;
-      }
-
-      if (serviceProviderMode === "mock") {
-        void toggleSave(item.interactionId);
-        return;
-      }
-
-      const localDish = item.dish ?? repository.getDishById(item.dishId);
-      if (localDish) {
-        toggleFavourite(localDish);
-        return;
-      }
-      void getHungryService()
-        .discovery.getDish(item.dishId)
-        .then((dish) => {
-          if (dish) {
-            toggleFavourite(dish);
-          } else {
-            showToast({ message: "Could not save this dish right now.", tone: "warning" });
-          }
-        })
-        .catch(() =>
-          showToast({ message: "Could not save this dish right now.", tone: "warning" }),
-        );
-    },
-    [
-      repository,
-      requireAccountForReviewAction,
-      serviceProviderMode,
-      showToast,
-      toggleFavourite,
-      toggleSave,
-    ],
-  );
-
-  // Comment + reply counts per review, computed once per store change instead of per row.
-  const threadCountByReviewId = useMemo(() => {
-    const reviewIdByCommentId = new Map<string, string>();
-    const counts = new Map<string, number>();
-    Object.entries(commentsByPostId).forEach(([reviewId, comments]) => {
-      comments.forEach((comment) => reviewIdByCommentId.set(comment.id, reviewId));
-      counts.set(reviewId, comments.length);
-    });
-    Object.values(repliesByCommentId).forEach((replies) => {
-      replies.forEach((reply) => {
-        const reviewId = reviewIdByCommentId.get(reply.parentCommentId);
-        if (reviewId) counts.set(reviewId, (counts.get(reviewId) ?? 0) + 1);
-      });
-    });
-    return counts;
-  }, [commentsByPostId, repliesByCommentId]);
-
-  const handleLikePress = useCallback(
-    (targetItem: ReviewFeedItem) => {
-      if (
-        reviewReactionsEnabled &&
-        requireAccountForReviewAction("Sign in to like reviews.", () =>
-          likePostAfterSignIn(targetItem.interactionId),
-        )
-      ) {
-        void toggleLike(targetItem.interactionId);
-      }
-    },
-    [requireAccountForReviewAction, reviewReactionsEnabled, toggleLike],
-  );
-  const handleHelpfulPress = useCallback(
-    (targetItem: ReviewFeedItem) => {
-      if (!requireAccountForReviewAction("Sign in to mark reviews helpful.")) return;
-      const reviewId = targetItem.review.id;
-      const base = reviewHelpfulState(targetItem.review);
-      const previous = helpfulStateRef.current[reviewId] ?? base;
-      const next = toggleReviewHelpful(previous);
-      const setHelpful = (state: ReviewHelpfulState) => {
-        helpfulStateRef.current = { ...helpfulStateRef.current, [reviewId]: state };
-        setHelpfulByReviewId(helpfulStateRef.current);
-      };
-      setHelpful(next);
-      trackAnalyticsEvent("review_helpful_toggled", {
-        review_id: reviewId,
-        helpful: next.helpful,
-      });
-      // One request at a time per review: quick taps cannot arrive out of order.
-      void submitHelpfulVote(reviewId, next.helpful, previous.helpful, (confirmed) => {
-        setHelpful(helpfulStateFor(base, confirmed));
-        showToast({ message: "Could not save your helpful vote.", tone: "warning" });
-      });
-    },
-    [requireAccountForReviewAction, showToast, submitHelpfulVote],
-  );
   const handleSafetyPress = useCallback(
     (targetItem: ReviewFeedItem) => {
       const { review } = targetItem;
@@ -1094,107 +449,38 @@ export function ReviewFeedScreen() {
         ]);
         return;
       }
-      Alert.alert(`Review by ${review.authorName}`, undefined, [
-        {
-          text: "Report review",
-          onPress: () =>
-            promptReportReview({
-              reviewId: review.id,
-              authorName: review.authorName,
-              authorId: review.authorId,
-              onHidden: bumpSafetyFilter,
-            }),
-        },
-        {
-          text: `Block ${review.authorName}`,
-          style: "destructive",
-          onPress: () =>
-            promptBlockReviewAuthor({
-              reviewId: review.id,
-              authorName: review.authorName,
-              authorId: review.authorId,
-              onBlocked: bumpSafetyFilter,
-            }),
-        },
-        { text: "Cancel", style: "cancel" },
-      ]);
+      promptReviewSafetyActions({
+        reviewId: review.id,
+        authorName: review.authorName,
+        authorId: review.authorId,
+        onHidden: bumpSafetyFilter,
+        onBlocked: bumpSafetyFilter,
+      });
     },
     [bumpSafetyFilter, isAuthenticated, requireAccountForReviewAction],
   );
-  const handlePhotoPress = useCallback((targetItem: ReviewFeedItem, index: number) => {
-    setPhotoViewer({
-      photos: targetItem.review.photos,
-      label: `${targetItem.dishName} review`,
-      index,
-    });
-  }, []);
-  const handleAuthorPress = useCallback(
-    (targetItem: ReviewFeedItem) => {
-      const { authorId, authorName, authorAvatarUrl } = targetItem.review;
-      if (!authorId) return;
-      navigation.navigate("UserProfile", { authorId, authorName, authorAvatarUrl });
+  const handleOpenReview = useCallback(
+    (item: ReviewFeedItem) => {
+      // Mock reviews live on their dish; live reviews open on their own page.
+      if (serviceProviderMode === "mock") {
+        navigation.navigate("DishDetail", { dishId: item.dishId });
+        return;
+      }
+      navigation.navigate("ReviewDetail", { reviewId: item.review.id });
     },
-    [navigation],
-  );
-  const handlePressDish = useCallback(
-    (dishId: string) => navigation.navigate("DishDetail", { dishId }),
-    [navigation],
+    [navigation, serviceProviderMode],
   );
 
   const renderItem = useCallback(
-    ({ item }: { item: ReviewFeedItem }) => {
-      const baseInteraction = interactions[item.interactionId];
-      const helpful = helpfulByReviewId[item.review.id] ?? reviewHelpfulState(item.review);
-      return (
-        <ReviewCard
-          item={item}
-          liked={reviewReactionsEnabled ? (baseInteraction?.liked ?? false) : false}
-          likeCount={reviewReactionsEnabled ? (baseInteraction?.likeCount ?? 0) : 0}
-          saved={
-            reviewReactionsEnabled
-              ? (baseInteraction?.saved ?? false)
-              : favouriteDishIds.includes(item.dishId)
-          }
-          shareCount={reviewReactionsEnabled ? (baseInteraction?.shareCount ?? 0) : 0}
-          commentCount={Math.max(
-            baseInteraction?.commentCount ?? 0,
-            threadCountByReviewId.get(item.review.id) ?? 0,
-          )}
-          isOwnReview={Boolean(item.review.authorId && item.review.authorId === viewerId)}
-          commentsEnabled={commentsEnabled}
-          onCommentPress={openReviewComments}
-          onLikePress={handleLikePress}
-          helpfulActive={helpful.helpful}
-          helpfulCount={helpful.count}
-          onHelpfulPress={handleHelpfulPress}
-          onPressDish={handlePressDish}
-          onSavePress={handleSavePress}
-          onSharePress={openShareReview}
-          onSafetyPress={handleSafetyPress}
-          onPhotoPress={handlePhotoPress}
-          onAuthorPress={handleAuthorPress}
-          reviewReactionsEnabled={reviewReactionsEnabled}
-        />
-      );
-    },
-    [
-      interactions,
-      favouriteDishIds,
-      handleAuthorPress,
-      handleLikePress,
-      handleHelpfulPress,
-      helpfulByReviewId,
-      handlePhotoPress,
-      handlePressDish,
-      handleSafetyPress,
-      openReviewComments,
-      openShareReview,
-      handleSavePress,
-      commentsEnabled,
-      threadCountByReviewId,
-      reviewReactionsEnabled,
-      viewerId,
-    ],
+    ({ item }: { item: ReviewFeedItem }) => (
+      <ReviewTile
+        item={item}
+        size={tileSize}
+        onPress={handleOpenReview}
+        onLongPress={handleSafetyPress}
+      />
+    ),
+    [handleOpenReview, handleSafetyPress, tileSize],
   );
 
   const keyExtractor = useCallback((item: ReviewFeedItem) => item.interactionId, []);
@@ -1228,7 +514,7 @@ export function ReviewFeedScreen() {
                 }
               }}
               onClear={() => setSearchQuery("")}
-              placeholder="Search Reviews"
+              placeholder="Search reviews"
               expandedWidth={searchBarWidth}
               iconAlignment="right"
               iconSize={headerActionSize}
@@ -1243,11 +529,11 @@ export function ReviewFeedScreen() {
           }
         />
 
-        {/* Filter chips */}
+        {/* Filter chips: your taste, foods and areas */}
         <FilterChipRail
-          options={FILTER_OPTIONS}
-          selectedId={filterMode}
-          onSelect={setFilterMode}
+          options={chips.map((chip) => ({ id: chip.id, label: chip.label }))}
+          selectedId={activeChip?.id ?? "all"}
+          onSelect={setChipId}
           onSwipeLockChange={setTabSwipeLocked}
           gap={spacing[2]}
         />
@@ -1255,19 +541,22 @@ export function ReviewFeedScreen() {
         <ReviewSearchQuerySummary query={searchQuery} />
       </View>
 
-      {/* Review feed */}
+      {/* Photo grid */}
       {showInitialSkeleton ? (
         <ReviewFeedSkeleton />
       ) : (
         <FlatList
-          ref={reviewFeedScrollRef}
           data={filteredReviews}
+          key={`grid-${GRID_COLUMNS}`}
+          numColumns={GRID_COLUMNS}
+          columnWrapperStyle={{ gap: GRID_GAP }}
           keyExtractor={keyExtractor}
           renderItem={renderItem}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{
-            paddingTop: spacing[3],
+            gap: GRID_GAP,
             paddingBottom: spacing[20],
+            paddingTop: spacing[2],
           }}
           refreshControl={
             serviceProviderMode === "mock" ? undefined : (
@@ -1299,62 +588,13 @@ export function ReviewFeedScreen() {
               />
             ) : (
               <EmptyState
-                title="No reviews yet"
-                body="Be the first to review a dish!"
-                ctaLabel="Write a review"
-                onPress={openWriteReview}
+                title="No photo reviews yet"
+                body="Reviews with a photo show here. Tap Write a review below to post one."
               />
             )
           }
         />
       )}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Write a review"
-        onPress={openWriteReview}
-        style={{
-          alignItems: "center",
-          backgroundColor: palette.orange,
-          borderRadius: radii.pill,
-          bottom: spacing[4],
-          flexDirection: "row",
-          gap: spacing[2],
-          minHeight: 48,
-          paddingHorizontal: spacing[4],
-          position: "absolute",
-          right: spacing[4],
-          ...shadows.card,
-        }}
-      >
-        <Pencil color={palette.white} size={18} />
-        <AppText variant="bodySmallBold" style={{ color: palette.white }}>
-          Write a review
-        </AppText>
-      </Pressable>
-      {photoViewer ? (
-        <ReviewPhotoViewer
-          photos={photoViewer.photos}
-          initialIndex={photoViewer.index}
-          label={photoViewer.label}
-          onClose={() => setPhotoViewer(null)}
-        />
-      ) : null}
-      {commentsEnabled ? (
-        <ReviewCommentsSheet
-          activeReview={activeCommentReview}
-          inputRef={commentInputRef}
-          innerRef={commentsSheetRef}
-          onDismiss={() => setActiveCommentReview(null)}
-          onBeforeSend={requireAccountForComment}
-        />
-      ) : null}
-      <ReviewShareSheet
-        activeReview={activeShareReview}
-        bottomInset={insets.bottom}
-        innerRef={shareSheetRef}
-        onDismiss={() => setActiveShareReview(null)}
-        onShared={incrementShare}
-      />
     </SafeAreaView>
   );
 }

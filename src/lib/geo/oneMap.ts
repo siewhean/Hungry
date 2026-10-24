@@ -82,3 +82,37 @@ export async function lookupPostalCode(
   if (!response.ok) throw new Error("Postal code lookup is unavailable. Try again later.");
   return parseOneMapPostalResponse(code, await response.json());
 }
+
+/** Addresses, streets or buildings OneMap knows for free text, inside Singapore only. */
+export function parseOneMapAddressResults(body: unknown, limit = 3): OneMapAddress[] {
+  const results = (body as { results?: OneMapResult[] } | null)?.results;
+  if (!Array.isArray(results)) return [];
+  const addresses: OneMapAddress[] = [];
+  for (const result of results) {
+    const coordinate = { latitude: Number(result.LATITUDE), longitude: Number(result.LONGITUDE) };
+    const address = clean(result.ADDRESS);
+    if (!address || !Number.isFinite(coordinate.latitude) || !isInSingapore(coordinate)) continue;
+    addresses.push({
+      postalCode: clean(result.POSTAL) ?? "",
+      address,
+      building: clean(result.BUILDING),
+      coordinate,
+    });
+    if (addresses.length >= limit) break;
+  }
+  return addresses;
+}
+
+/** Looks up an address, street name or postal code (3+ characters). */
+export async function searchOneMapAddresses(
+  text: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<OneMapAddress[]> {
+  const query = text.trim().slice(0, 80);
+  if (query.length < 3) return [];
+  const url = buildOneMapSearchUrl(query);
+  assertAllowedFetchUrl(url);
+  const response = await fetchImpl(url, { headers: { Accept: "application/json" } });
+  if (!response.ok) return [];
+  return parseOneMapAddressResults(await response.json());
+}

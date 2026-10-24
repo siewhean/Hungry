@@ -552,11 +552,7 @@ function MetricCard({
         <AppText variant="h2" style={{ fontWeight: "900" }}>
           {value}
         </AppText>
-        <AppText
-          variant="micro"
-          tone="muted"
-          style={{ textTransform: "uppercase", marginTop: 2, fontWeight: "700" }}
-        >
+        <AppText variant="micro" tone="muted" style={{ marginTop: 2, fontWeight: "700" }}>
           {label}
         </AppText>
         {expanded ? (

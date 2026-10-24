@@ -272,10 +272,10 @@ export function CraveScreen() {
                 letterSpacing: 1,
               }}
             >
-              CRAVE
+              Crave
             </AppText>
             <AppText variant="micro" style={{ color: palette.inverseTextMuted }}>
-              SWIPE TO BUILD PROFILE
+              Swipe to build your profile
             </AppText>
           </View>
           <View style={{ width: 40, height: 40 }} />
@@ -349,7 +349,7 @@ export function CraveScreen() {
               ]}
             >
               <AppText style={{ color: palette.teal, fontWeight: "900", fontSize: 32 }}>
-                CRAVE
+                Crave
               </AppText>
             </Animated.View>
             <Animated.View
@@ -375,7 +375,7 @@ export function CraveScreen() {
                   fontSize: 32,
                 }}
               >
-                PASS
+                Pass
               </AppText>
             </Animated.View>
 
@@ -426,7 +426,7 @@ export function CraveScreen() {
                       variant="micro"
                       style={{ color: palette.textOnDark, fontWeight: "700" }}
                     >
-                      {tag.toUpperCase()}
+                      {tag}
                     </AppText>
                   </View>
                 ))}
@@ -482,7 +482,7 @@ export function CraveScreen() {
               pressed && { scale: 0.9, opacity: 0.9 },
             ]}
           >
-            <Heart color={palette.white} fill={palette.white} size={32} />
+            <Heart color={palette.textOnOrange} fill={palette.textOnOrange} size={32} />
           </Pressable>
         </View>
       </SafeAreaView>

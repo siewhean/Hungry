@@ -191,7 +191,7 @@ test("L5, L6: location copy is honest, the icon is neutral, and a blocked permis
   assert.match(source, /icon: Star,\s*iconTone: "textSecondary"/);
   // Blocked: toast and stay, with Open Settings next to Pick my area, even after an area was picked.
   assert.match(source, /setPermissionBlocked\(true\);\s*showToast\([\s\S]*?return;/);
-  assert.match(source, /\{permissionBlocked \? \(\s*<Button\s*label="Open Settings"/);
+  assert.match(source, /\{permissionBlocked \? \(\s*<Button\s*label="Open settings"/);
 });
 
 test("L7: the quiz has a visible back arrow on every question", () => {
@@ -205,12 +205,12 @@ test("L8: back buttons are 44 points and area rows at least 48", () => {
     assert.match(source, /height: 44,[\s\S]{0,60}width: 44,/);
     assert.doesNotMatch(source, /height: 40,/);
   }
-  assert.match(picker(), /minHeight: 48,/);
+  assert.match(picker(), /minHeight: 56,/);
 });
 
 test("L9: choices are radios in a group, headings are headers, the illustration is decorative", () => {
-  assert.match(picker(), /accessibilityRole="radiogroup"/);
-  assert.match(picker(), /accessibilityRole="radio"[\s\S]*accessibilityState=\{\{ checked:/);
+  // The picker is a search box with result rows now, not a radio list of areas.
+  assert.match(picker(), /accessibilityLabel=\{`Choose \$\{result\.title\}`\}/);
   assert.match(location(), /<AppText variant="h2" accessibilityRole="header"/);
   assert.match(location(), /<AccessibleImage[\s\S]*?decorative/);
   assert.doesNotMatch(location(), /Location permission illustration/);
@@ -224,14 +224,11 @@ test("L10: OnboardingAuth field errors use the shared Input error props", () => 
 });
 
 test("L11: the area list has Sembawang and Tengah, and finds areas by their common names", () => {
-  const source = `${read(`${DIR}/singaporeAreas.ts`)}\n${picker()}`;
+  const source = `${read(`${DIR}/singaporeAreas.ts`)}\n${read("src/features/location/areaSearch.ts")}`;
   assert.match(source, /id: "sembawang", name: "Sembawang"/);
   assert.match(source, /id: "tengah", name: "Tengah"/);
   assert.match(source, /keywords: \["outram", "tanjong pagar"\]/);
-  assert.match(
-    source,
-    /area\.keywords\?\.some\(\(keyword\) => keyword\.includes\(normalizedQuery\)\)/,
-  );
+  assert.match(source, /area\.keywords\?\.some\(\(keyword\) => keyword\.includes\(needle\)\)/);
 });
 
 test("L13: Skip on the openness step saves nothing", () => {

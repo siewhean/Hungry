@@ -545,7 +545,7 @@ export function MerchantDashboardScreen() {
                 justifyContent: "center",
               }}
             >
-              <ClipboardList color={palette.white} size={28} />
+              <ClipboardList color={palette.textOnOrange} size={28} />
             </View>
             <View style={{ flex: 1 }}>
               <AppText variant="h3" style={{ color: palette.white, fontWeight: "800" }}>

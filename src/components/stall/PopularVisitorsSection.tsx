@@ -175,8 +175,10 @@ export function PopularVisitorsSection({
                 <Star
                   key={index}
                   size={16}
-                  color={index < Math.round(selectedPin.rating) ? palette.amber : palette.border}
-                  fill={index < Math.round(selectedPin.rating) ? palette.amber : "transparent"}
+                  color={
+                    index < Math.round(selectedPin.rating) ? palette.starStroke : palette.border
+                  }
+                  fill={index < Math.round(selectedPin.rating) ? palette.starFill : "transparent"}
                 />
               ))}
             </View>

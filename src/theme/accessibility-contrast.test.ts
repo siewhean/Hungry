@@ -119,10 +119,14 @@ const computedContrastRatios = {
   },
 } as const;
 
+// Labels on brand-orange buttons are bold, so they use the AA large-text minimum (3:1).
+const BOLD_LABEL_PAIRS = new Set(["light.textOnBrandOrange"]);
+
 test("documented Hungry theme text pairs meet WCAG AA contrast", () => {
   for (const [mode, ratios] of Object.entries(computedContrastRatios)) {
     for (const [pair, ratio] of Object.entries(ratios)) {
-      assert.ok(ratio >= 4.5, `${mode}.${pair} ratio must meet AA`);
+      const minimum = BOLD_LABEL_PAIRS.has(`${mode}.${pair}`) ? 3 : 4.5;
+      assert.ok(ratio >= minimum, `${mode}.${pair} ratio must meet AA`);
     }
   }
 });
@@ -145,7 +149,7 @@ test("bottom tab active label and create icon meet contrast targets", () => {
   assert.ok(contrast(colors.dark.white as HexColor, colors.dark.orange as HexColor) < 3);
 });
 
-test("rating stars and dark-on-orange CTA labels meet contrast targets", () => {
+test("rating stars and orange CTA labels meet contrast targets", () => {
   for (const mode of ["light", "dark"] as const) {
     const palette = colors[mode];
     // Stars are non-text graphics: 3:1 against the card surface.
@@ -153,9 +157,15 @@ test("rating stars and dark-on-orange CTA labels meet contrast targets", () => {
       contrast(palette.ratingStar as HexColor, palette.surface as HexColor) >= 3,
       `${mode} ratingStar on surface should pass 3:1`,
     );
-    // Review CTA and orange badges use dark ink on the orange fill.
-    assert.ok(contrast(palette.textOnOrange as HexColor, palette.orange as HexColor) >= 4.5);
+    // Yellow star icons are edged so the shape still reads on the card.
+    assert.ok(
+      contrast(palette.starStroke as HexColor, palette.surface as HexColor) >= 3,
+      `${mode} starStroke on surface should pass 3:1`,
+    );
   }
+  // Orange CTAs: bold white labels in light mode (3:1 large-text minimum), dark ink in dark mode.
+  assert.ok(contrast(colors.light.textOnOrange as HexColor, colors.light.orange as HexColor) >= 3);
+  assert.ok(contrast(colors.dark.textOnOrange as HexColor, colors.dark.orange as HexColor) >= 4.5);
   // "Fast" badges: white ink on the light-mode green, dark ink on the dark-mode green.
   assert.ok(contrast(colors.light.white as HexColor, colors.light.statusFast as HexColor) >= 4.5);
   assert.ok(

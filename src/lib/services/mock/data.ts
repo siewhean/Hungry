@@ -245,7 +245,7 @@ export const dishes: DishDetail[] = [
         text: "The rice is fragrant and the chicken stays silky even during lunch rush.",
         tags: ["Fragrant", "Juicy"],
         wouldRecommend: true,
-        photos: [],
+        photos: [FOOD_1],
       },
     ],
   },
@@ -269,7 +269,18 @@ export const dishes: DishDetail[] = [
     gallery: [FOOD_3, FOOD_2],
     mustOrder: true,
     availabilityFlags: ["Lunch rush only"],
-    reviews: [],
+    reviews: [
+      {
+        id: "review-ban-mian-1",
+        authorName: "Aisha",
+        rating: 5,
+        createdAt: "2026-10-20",
+        text: "Clean broth, generous fish slices. Worth the queue.",
+        tags: ["Umami"],
+        wouldRecommend: true,
+        photos: [FOOD_3],
+      },
+    ],
   },
   {
     id: "dish-satay",
@@ -292,7 +303,18 @@ export const dishes: DishDetail[] = [
     gallery: [FOOD_2],
     mustOrder: false,
     availabilityFlags: ["After 4:30 PM"],
-    reviews: [],
+    reviews: [
+      {
+        id: "review-satay-1",
+        authorName: "Daniel",
+        rating: 5,
+        createdAt: "2026-10-18",
+        text: "Smoky and sweet, the peanut sauce is the star.",
+        tags: ["Smoky"],
+        wouldRecommend: true,
+        photos: [FOOD_2],
+      },
+    ],
   },
   {
     id: "dish-japanese-curry",
@@ -314,7 +336,18 @@ export const dishes: DishDetail[] = [
     gallery: [FOOD_4],
     mustOrder: false,
     availabilityFlags: ["Dine-in only"],
-    reviews: [],
+    reviews: [
+      {
+        id: "review-japanese-curry-1",
+        authorName: "Mei Ling",
+        rating: 5,
+        createdAt: "2026-10-12",
+        text: "Thick, rich curry and a crisp katsu.",
+        tags: ["Rich"],
+        wouldRecommend: true,
+        photos: [FOOD_4],
+      },
+    ],
   },
   {
     id: "dish-laksa",

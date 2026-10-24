@@ -54,6 +54,7 @@ before(async () => {
     dish: { id: dish.id },
     portfolio: { portfolioId: portfolio.id },
     portfolioPicker: { portfolioId: portfolio.id, mode: "dish" },
+    report: { venueId: dish.venueId, dishId: dish.id, subjectName: dish.name },
     review: { reviewId: reviews[0]?.id ?? "review-1" },
     socialGrid: { type: "saved" },
     socialPost: { postId: post.id, type: "saved" },

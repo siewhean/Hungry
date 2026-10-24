@@ -7,9 +7,10 @@ const stall = readRepoFile("src/app/screens/detail/StallDetailScreen.tsx");
 const dish = readRepoFile("src/app/screens/detail/DishDetailScreenV2.tsx");
 
 test("Stitch stall layout keeps catalogue and review evidence dynamic", () => {
-  assert.match(stall, /Stall Profile/);
-  assert.match(stall, /Signature Dishes/);
-  assert.match(stall, /Community Highlights/);
+  assert.match(stall, /<FloatingBackButton/);
+  assert.match(stall, /Signature dishes/);
+  assert.match(stall, /<AppText variant="h2">Reviews<\/AppText>/);
+  assert.doesNotMatch(stall, /Community Highlights/);
   assert.match(stall, /ratingSummary\s*\?/);
   assert.match(stall, /dish\.reviewCount > 0/);
   assert.match(stall, /dish\.mustOrder\s*\?/);
@@ -19,12 +20,12 @@ test("Stitch stall layout keeps catalogue and review evidence dynamic", () => {
 });
 
 test("Stitch dish layout keeps taste, rating, price, and menu data dynamic", () => {
-  assert.match(dish, /Dish Details/);
-  assert.match(dish, /Taste Matrix &amp; Palate Profile/);
-  assert.match(dish, /Community Palate Feedback/);
+  assert.match(dish, /<FloatingBackButton/);
+  assert.match(dish, /How it tastes to you/);
+  assert.match(dish, /<AppText variant="h2">Reviews<\/AppText>/);
   assert.match(dish, /dish\.mustOrder\s*\?/);
   assert.match(dish, /hasTasteSignal\s*\?/);
-  assert.match(dish, /dish\.tasteVector\[dimension\.key\]/);
+  assert.match(dish, /perceivedTasteRows\(dish\.tasteVector, profile\.tasteVector\)/);
   assert.match(dish, /formatDishPrice\(item\)/);
   assert.match(dish, /dish\.reviewCount > 0/);
   assert.match(dish, /<PhotoPager/);

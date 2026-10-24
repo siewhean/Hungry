@@ -1206,7 +1206,15 @@ export interface HungryService {
     // Legacy (backward-compatible)
     computeTasteVector(answers: QuizAnswer[]): TasteVector;
     getSmartRecommendations(ctx: RecommendationContext): Promise<RecommendationResult[]>;
-    adjustCommunityTasteVector(dishId: string, userRating: Partial<TasteVector>): Promise<void>;
+    /**
+     * Saves a reviewer's taste rating for a dish (dish_taste_ratings), already converted to standard
+     * 0-10 levels. One per diner per dish: rating again replaces it. Links the review when given.
+     */
+    adjustCommunityTasteVector(
+      dishId: string,
+      userRating: Partial<TasteVector>,
+      reviewId?: string,
+    ): Promise<void>;
     explainMatch(userVector: TasteVector, dishVector: TasteVector): string;
 
     // Extended — Scenario Quiz

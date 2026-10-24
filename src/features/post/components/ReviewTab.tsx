@@ -72,8 +72,8 @@ export function ReviewTab() {
             marginBottom: semanticSpacing.componentGap,
           }}
         >
-          <Star size={18} color={palette.amber} fill={palette.amber} />
-          <AppText variant="bodyBold">Overall Rating</AppText>
+          <Star size={18} color={palette.starStroke} fill={palette.starFill} />
+          <AppText variant="bodyBold">Overall rating</AppText>
         </View>
         <StarRating value={rating} onChange={setRating} editable fullWidth />
       </View>
@@ -92,7 +92,7 @@ export function ReviewTab() {
             style={{ flexDirection: "row", alignItems: "center", gap: semanticSpacing.inlineGaps }}
           >
             <MessageSquare size={18} color={palette.text} />
-            <AppText variant="bodyBold">Quick Review</AppText>
+            <AppText variant="bodyBold">Quick review</AppText>
           </View>
           <AppText variant="code" tone={remaining < 0 ? "accent" : "muted"}>
             {remaining}

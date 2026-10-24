@@ -32,20 +32,15 @@ test("profile home contract: profile stats use dynamic profile and social store 
 
   assert.match(domainSource, /followersCount: number/);
   assert.match(domainSource, /followingCount: number/);
-  // Follow counts come only from the server; never invented from feed/comment authors
-  // or inflated with local follow maps.
-  assert.match(source, /\.social\.getFollowCounts\(profile\.id\)/);
-  assert.match(source, /value=\{profileFollowCounts\?\.followersCount \?\? null\}/);
-  assert.match(source, /value=\{profileFollowCounts\?\.followingCount \?\? null\}/);
+  // The profile shows saved dishes, reviews and badges only: no follower or following counts,
+  // and no Stalls tile (visited stalls live on the Achievements screen).
+  assert.doesNotMatch(source, /getFollowCounts|label="Followers"|label="Following"/);
   assert.doesNotMatch(source, /mergeFollowerNames|localFollowerCount|localFollowingCount/);
-  // Reviews count real reviews from the server; Stalls share the Visited stalls source.
+  // Reviews count real reviews from the server.
   assert.match(source, /ownReviews === null \? null : ownReviews\.length/);
-  assert.match(source, /value=\{visitedStallIds\.length\}/);
-  assert.match(source, /label="Followers"/);
-  assert.match(source, /label="Following"/);
+  assert.doesNotMatch(source, /label="Stalls"/);
   assert.match(source, /label="Reviews"[\s\S]*<PencilLine size=\{14\}/);
-  assert.match(source, /label="Stalls"[\s\S]*<Utensils size=\{14\}/);
-  assert.match(source, /label="Saved Dishes"[\s\S]*<Bookmark size=\{14\}/);
+  assert.match(source, /label="Saved dishes"[\s\S]*<Bookmark size=\{14\}/);
   assert.match(source, /<AppText variant="h1" style=\{\{ color: palette\.orange \}\}>/);
   assert.match(
     source,
@@ -53,7 +48,7 @@ test("profile home contract: profile stats use dynamic profile and social store 
   );
   assert.match(
     source,
-    /value === null \? \(\s*<Skeleton[\s\S]*?<AppText variant="h3" style=\{\{ color: palette\.text \}\}>\s*\{value\}\s*<\/AppText>/,
+    /value === null \? \(\s*<Skeleton[\s\S]*?<AppText variant="h2" style=\{\{ color: palette\.text \}\}>\s*\{value\}\s*<\/AppText>/,
   );
   assert.match(source, /const headerActionSize = spacing\[8\] \+ spacing\[2\.5\]/);
   assert.match(source, /height: headerActionSize/);
@@ -74,7 +69,7 @@ test("profile home contract: Palate Fingerprint plots all six dimensions and kee
   assert.match(source, /<TasteRadar vector=\{profile\.tasteVector\}/);
   assert.match(source, /TASTE_DIMENSIONS\.map\(\(\{ key, label \}\) => \(/);
   assert.match(source, /Math\.max\(0, Math\.min\(10, vector\[axis\]\)\)/);
-  assert.match(source, /label="Saved Dishes"/);
+  assert.match(source, /label="Saved dishes"/);
   assert.doesNotMatch(source, /label="Favourites"|>Favourites</);
 });
 
@@ -96,13 +91,13 @@ test("profile home contract: web review actions remain separate and radar SVG is
 
 test("Stitch profile surfaces use account data and preserve their destinations", () => {
   const source = read("src/app/screens/profile/ProfileHomeScreen.tsx");
-  assert.match(source, /SINGAPORE FOODIE PASSPORT/);
+  assert.doesNotMatch(source, /SINGAPORE FOODIE PASSPORT/);
+  assert.doesNotMatch(source, /FollowRequestsRow/);
+  assert.match(source, /`Follow requests \(\$\{followRequestCount\}\)`/);
+  assert.match(source, /label="Collections"[\s\S]*?navigation\.navigate\("Collections"\)/);
   assert.match(source, /value=\{earnedBadgeCount\}/);
   assert.match(source, /getEarnedStamps\(\)\.length/);
-  assert.match(
-    source,
-    /accessibilityLabel="Account settings"[\s\S]*navigation\.navigate\("Settings"\)/,
-  );
+  assert.match(source, /navigation\.navigate\("Settings"\)/);
   assert.match(source, /Recent Hawker Log/);
   assert.match(source, /onPress=\{handleReviewsCardPress\}/);
   assert.match(
@@ -128,7 +123,7 @@ test("profile home contract: merchant entry loads on sign-in and switching mode 
   const source = read("src/app/screens/profile/ProfileHomeScreen.tsx");
   assert.match(source, /\.merchant\.getMerchantAccount\(\)/);
   assert.match(source, /setMerchantAccount\(account\)/);
-  assert.match(source, /label="Merchant Dashboard"/);
+  assert.match(source, /label="Merchant dashboard"/);
   assert.match(source, /label="Hungry for Business"/);
 
   for (const file of [
@@ -245,6 +240,6 @@ test("profile home contract: account reads wait for a real profile id, not the g
     source,
     /const hasAccountProfile = isAuthenticated && profile\.id !== "guest-user";/,
   );
-  // Posts, reviews, follow counts and follow requests all send profile.id to the server as a uuid.
-  assert.equal(source.match(/!hasAccountProfile/g)?.length, 4);
+  // Posts, reviews and follow requests all send profile.id to the server as a uuid.
+  assert.equal(source.match(/!hasAccountProfile/g)?.length, 3);
 });

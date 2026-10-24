@@ -72,7 +72,7 @@ export function AppHeader({
           <AppText
             variant="h1"
             style={titleStyle ? [styles.title, titleStyle] : styles.title}
-            numberOfLines={1}
+            numberOfLines={2}
           >
             {title}
           </AppText>
@@ -82,7 +82,7 @@ export function AppHeader({
             variant="bodySmall"
             tone="secondary"
             style={subtitleStyle ? [styles.subtitle, subtitleStyle] : styles.subtitle}
-            numberOfLines={1}
+            numberOfLines={2}
           >
             {subtitle}
           </AppText>
@@ -105,7 +105,8 @@ const createStyles = (
       elevation: 20,
       flexDirection: "row",
       gap: spacing[3],
-      height: componentSizes.headerMinHeight,
+      // minHeight so large text sizes grow the header instead of clipping the title.
+      minHeight: componentSizes.headerMinHeight,
       overflow: "visible",
       paddingBottom: spacing[1],
       paddingTop: spacing[1],
@@ -128,7 +129,7 @@ const createStyles = (
       alignItems: "center",
       elevation: 21,
       justifyContent: "center",
-      height: componentSizes.headerMinHeight,
+      minHeight: componentSizes.headerMinHeight,
       overflow: "visible",
       zIndex: 21,
     },

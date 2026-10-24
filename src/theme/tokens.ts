@@ -11,7 +11,8 @@ export const colors = {
     white: "#FFFFFF",
     textOnPrimary: "#FFFFFF",
     textOnDark: "#FFFFFF",
-    textOnOrange: "#0D0F14",
+    // White on brand orange (owner decision 2026-10-23): 3.69:1, passes AA for bold/large labels.
+    textOnOrange: "#FFFFFF",
     statusFast: "#047857",
     statusModerate: "#8A4D00",
     statusBusy: "#CD0302",
@@ -27,6 +28,14 @@ export const colors = {
     amberLight: "#FFFBEB",
     /** Rating stars: a darker amber that reads on white (3:1 non-text minimum). */
     ratingStar: "#B45309",
+    /** Rating star icons: a yellow fill, edged in gold so the shape reads on white (3:1). */
+    starFill: "#FFC21A",
+    starStroke: "#B8860B",
+    /** Hungry Passport: a navy blue cover with gold foil and a cream page. */
+    passportCover: "#1D3A6E",
+    passportGold: "#D9B45A",
+    passportPage: "#FBF4E4",
+    passportInk: "#5B4A2E",
     teal: "#14B8A6",
     success: "#4F7E17",
     successText: "#4F7E17",
@@ -107,6 +116,12 @@ export const colors = {
     amber: "#F5A623",
     amberLight: "rgba(245, 166, 35, 0.1)",
     ratingStar: "#F5A623",
+    starFill: "#FFC21A",
+    starStroke: "#FFC21A",
+    passportCover: "#172F59",
+    passportGold: "#D9B45A",
+    passportPage: "#2A2620",
+    passportInk: "#E8D9B5",
     teal: "#14B8A6",
     success: "#4ADE80",
     successText: "#4ADE80",
@@ -170,7 +185,7 @@ export const contrastRatios = {
     accentTextOnBg: 5.87,
     accentTextOnOrangeLight: 5.48,
     textOnOrangeControl: 5.87,
-    textOnBrandOrange: 5.19,
+    textOnBrandOrange: 3.69,
     textOnDestructive: 5.82,
     statusFastOnBg: 5.48,
     statusModerateOnBg: 6.68,
@@ -261,8 +276,8 @@ export const componentSizes = {
   bottomTabIconSlotHeight: 28,
   bottomTabCreateButton: 44,
   bottomTabIcon: 26,
-  bottomTabLabelFontSize: 10,
-  bottomTabLabelLineHeight: 12,
+  bottomTabLabelFontSize: 12,
+  bottomTabLabelLineHeight: 16,
   merchantTabIcon: 30,
   buttonSmMinHeight: 36,
   buttonMdMinHeight: 52,
@@ -271,10 +286,12 @@ export const componentSizes = {
 } as const;
 
 export const fontScaling = {
-  displayMaxMultiplier: 1.05,
-  headingMaxMultiplier: 1.08,
-  bodyMaxMultiplier: 1.12,
-  compactMaxMultiplier: 1,
+  displayMaxMultiplier: 1.5,
+  headingMaxMultiplier: 1.6,
+  bodyMaxMultiplier: 2,
+  compactMaxMultiplier: 2,
+  /** Bottom tab labels share a bar of fixed height, so they scale less than body text. */
+  tabLabelMaxMultiplier: 1.3,
 } as const;
 
 export const radii = {

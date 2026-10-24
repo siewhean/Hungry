@@ -10,6 +10,8 @@ interface LocationState {
   currentLocation: Coordinate;
   manualLocation?: string;
   manualCoordinate?: Coordinate;
+  /** The mall, hawker centre or food court the diner searched for, shown as "You are at …". */
+  manualPlaceName?: string;
   gpsBadgeState: "live" | "manual" | "denied";
   /** When the GPS fix in currentLocation was taken (ms since epoch). */
   lastLocationFixAt?: number;
@@ -22,7 +24,8 @@ interface LocationState {
   refreshLocation: (options?: { force?: boolean }) => Promise<boolean>;
   denyLocation: () => void;
   setManualLocation: (label: string) => void;
-  setManualSelection: (label: string, coordinate: Coordinate) => void;
+  /** `label` is the planning area; `placeName` names a searched mall or food centre in it. */
+  setManualSelection: (label: string, coordinate: Coordinate, placeName?: string) => void;
   /** Drops the manual pick and returns to device location (fresh fix when allowed). */
   clearManualLocation: () => Promise<void>;
   /** Re-reads the OS permission without prompting, e.g. when the app returns to the foreground. */
@@ -122,6 +125,7 @@ export const useLocationStore = create<LocationState>()(
       permission: "unknown",
       currentLocation: defaultLocation,
       manualLocation: undefined,
+      manualPlaceName: undefined,
       manualCoordinate: undefined,
       gpsBadgeState: "live",
       grantLocation: async (options) => {
@@ -161,6 +165,7 @@ export const useLocationStore = create<LocationState>()(
             }),
             // A GPS fix replaces any manual pick, so the old area label goes with its coordinate.
             manualLocation: undefined,
+            manualPlaceName: undefined,
             manualCoordinate: undefined,
             lastLocationFixAt: Date.now(),
           });
@@ -229,13 +234,15 @@ export const useLocationStore = create<LocationState>()(
       setManualLocation: (label) =>
         set({
           manualLocation: normalizeManualLocationLabel(label),
+          manualPlaceName: undefined,
           manualCoordinate: undefined,
           gpsBadgeState: "manual",
         }),
-      setManualSelection: (label, coordinate) => {
+      setManualSelection: (label, coordinate, placeName) => {
         // The OS permission is unchanged; a manual pick only overrides the coordinate.
         set({
           manualLocation: normalizeManualLocationLabel(label),
+          manualPlaceName: normalizeManualLocationLabel(placeName),
           manualCoordinate: coordinate,
           currentLocation: coordinate,
           gpsBadgeState: "manual",
@@ -251,6 +258,7 @@ export const useLocationStore = create<LocationState>()(
         const granted = get().permission === "granted";
         set({
           manualLocation: undefined,
+          manualPlaceName: undefined,
           manualCoordinate: undefined,
           gpsBadgeState: granted ? "live" : "denied",
           ...(granted ? {} : { currentLocation: defaultLocation, lastLocationFixAt: undefined }),
@@ -289,6 +297,7 @@ export const useLocationStore = create<LocationState>()(
           permission: "unknown",
           currentLocation: defaultLocation,
           manualLocation: undefined,
+          manualPlaceName: undefined,
           manualCoordinate: undefined,
           gpsBadgeState: "live",
           lastLocationFixAt: undefined,
@@ -302,6 +311,7 @@ export const useLocationStore = create<LocationState>()(
         currentLocation: state.currentLocation,
         manualLocation: state.manualLocation,
         manualCoordinate: state.manualCoordinate,
+        manualPlaceName: state.manualPlaceName,
         gpsBadgeState: state.gpsBadgeState,
         lastLocationFixAt: state.lastLocationFixAt,
       }),

@@ -14,28 +14,33 @@ test("Release 0.1 bottom navigation gates social, post, and review actions", () 
   const tabItem = read("src/components/ui/AppBottomTabItem.tsx");
   const types = read("src/app/navigation/navigationTypes.ts");
 
-  assert.match(tabs, /import \{ BookOpenText, Compass, House, Plus, User \}/);
+  assert.match(tabs, /import \{ BookOpenText, House, Newspaper, PenLine, User \}/);
+  // Discover is the home page (labelled Home), the social posts feed is the Feed tab, and
+  // the round middle button writes a review.
   assert.match(
     tabs,
-    /FEATURE_FLAGS\.socialFeedEnabled[\s\S]*key: "Home"[\s\S]*key: "Discover"[\s\S]*FEATURE_FLAGS\.postCreationEnabled[\s\S]*key: "Create"[\s\S]*FEATURE_FLAGS\.reviewCreationEnabled[\s\S]*key: "Review"[\s\S]*key: "Profile"/,
+    /key: "Discover", route: routeByName\.get\("Discover"\), icon: House, label: "Home"[\s\S]*FEATURE_FLAGS\.socialFeedEnabled[\s\S]*key: "Home", route: routeByName\.get\("Home"\), icon: Newspaper, label: "Feed"[\s\S]*FEATURE_FLAGS\.reviewCreationEnabled[\s\S]*key: "Create", isCreateAction: true, icon: PenLine, label: "Write a review"[\s\S]*key: "Review"[\s\S]*key: "Profile"/,
   );
-  // Every environment opens the shipping composer (V1) from the create tab.
-  assert.match(tabs, /isCreateAction[\s\S]*rootNavigation\?\.navigate\("Post"\)/);
+  assert.match(
+    tabs,
+    /isCreateAction[\s\S]*rootNavigation\?\.navigate\("ReviewStack", \{ screen: "ReviewMain" \}\)/,
+  );
+  assert.match(tabs, /initialRouteName="Discover"/);
   assert.doesNotMatch(tabs, /PostComposerV2/);
   assert.match(
     tabs,
     /height: componentSizes\.bottomTabBar \+ Math\.max\(insets\.bottom, spacing\[2\]\)/,
   );
   assert.match(tabs, /paddingTop: spacing\[2\]/);
-  assert.match(tabItem, /backgroundColor: palette\.orange[\s\S]*borderRadius: radii\.pill/);
+  // The write button is a plain outline glyph: no orange disc, orange only while pressed.
+  assert.doesNotMatch(tabItem, /backgroundColor: palette\.orange/);
   assert.match(
     tabItem,
-    /<Icon[\s\S]*color=\{createAction \? createIconColor : resolvedColor\}[\s\S]*size=\{componentSizes\.bottomTabIcon\}[\s\S]*\/>/,
+    /<Icon[\s\S]*color=\{createAction \? \(pressed \? palette\.orange : palette\.text\) : iconColor\}/,
   );
-  assert.match(
-    tabItem,
-    /const createIconColor = colorScheme === "dark" \? palette\.textOnOrange : palette\.white/,
-  );
+  // Selected tabs use an orange outline icon, never a filled one.
+  assert.match(tabItem, /focused \? palette\.orange : palette\.textMuted/);
+  assert.doesNotMatch(tabItem, /fill=/);
   // Active tab stays highlighted (no fade-out timer) and is exposed as a selected tab.
   assert.doesNotMatch(tabs, /highlightVisible|setTimeout/);
   assert.match(tabs, /accessibilityRole="tablist"/);
@@ -53,11 +58,7 @@ test("Release 0.1 bottom navigation gates social, post, and review actions", () 
   );
   assert.match(
     tabItem,
-    /height: componentSizes\.bottomTabIconSlotHeight[\s\S]*width: componentSizes\.bottomTabIconSlotWidth/,
-  );
-  assert.match(
-    tabItem,
-    /height: componentSizes\.bottomTabCreateButton[\s\S]*width: componentSizes\.bottomTabCreateButton/,
+    /height: createAction\s*\? componentSizes\.bottomTabCreateButton\s*: componentSizes\.bottomTabIconSlotHeight[\s\S]*width: componentSizes\.bottomTabIconSlotWidth/,
   );
   assert.doesNotMatch(tabs, /createTabItem/);
   assert.doesNotMatch(tabs, /borderWidth: 4/);

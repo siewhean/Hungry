@@ -139,9 +139,11 @@ test("Sprint 9 screen contract: onboarding icon controls and location rows are l
     manualLocation,
     /if \(!isOnboarding\) \{[\s\S]*?navigation\.goBack\(\);[\s\S]*?return;[\s\S]*?navigation\.navigate\("TasteQuiz"\)/,
   );
-  assert.match(manualLocation, /accessibilityLabel="Search Singapore location"/);
-  assert.match(manualLocation, /accessibilityLabel=\{`Choose \$\{area\.name\}`\}/);
-  assert.match(manualLocation, /accessibilityHint="Sets this as your Hungry discovery location"/);
+  assert.match(
+    manualLocation,
+    /accessibilityLabel="Search for an area, mall, hawker centre or address"/,
+  );
+  assert.match(manualLocation, /accessibilityLabel=\{`Choose \$\{result\.title\}`\}/);
   assert.match(
     tasteProfileResult,
     /accessibilityLabel=\{`\$\{isSaved \? "Unsave" : "Save"\} \$\{dish\.name\}`\}/,
@@ -590,10 +592,11 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
   assert.match(source, /locations=\{\[0, 0\.58, 1\]\}/);
   assert.doesNotMatch(source, /Epicurean Discovery/);
   assert.doesNotMatch(source, /borderBottomWidth: 1,[\s\S]*Epicurean Discovery/);
-  assert.match(source, /View Taste Profile/);
-  assert.match(source, /Opening hours/);
+  assert.match(source, /How it tastes to you/);
+  // Owner decision (round 2): similar dishes nearby replace the hours on the dish page.
+  assert.match(source, /useSimilarDishesNearby\(/);
   assert.match(source, /More from \{venueName\}/);
-  assert.match(source, /<AppText variant="h2">Community Palate Feedback<\/AppText>/);
+  assert.match(source, /<AppText variant="h2">Reviews<\/AppText>/);
   assert.match(source, /const cachedVenueDishes = useMemo/);
   // Never repeats the dish being viewed.
   assert.match(source, /getMoreFromStall\(dish, venueDishes\)/);

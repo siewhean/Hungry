@@ -58,8 +58,10 @@ test("feeds filter blocked authors by id and drop reported reviews", () => {
     reviewFeed,
     /isContentHiddenForSession\(\{ id: item\.review\.id, authorId: item\.review\.authorId \}\)/,
   );
-  assert.match(reviewFeed, /authorId: review\.authorId,\s*onHidden: bumpSafetyFilter/);
-  assert.match(reviewFeed, /authorId: review\.authorId,\s*onBlocked: bumpSafetyFilter/);
+  assert.match(
+    reviewFeed,
+    /authorId: review\.authorId,\s*onHidden: bumpSafetyFilter,\s*onBlocked: bumpSafetyFilter/,
+  );
   // A guest is sent to sign in (or to email support) instead of a report that would fail.
   assert.match(reviewFeed, /Sign in to report this review/);
 });

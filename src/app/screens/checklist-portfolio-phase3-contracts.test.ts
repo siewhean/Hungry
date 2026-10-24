@@ -122,8 +122,9 @@ test("dish and stall detail screens expose checklist and portfolio entry points"
 
   assert.match(stallDetail, /useDetailSaveActions/);
   assert.match(stallDetail, /itemType: "stall"/);
-  assert.match(stallDetail, /<DetailSaveActionsCard/);
-  assert.match(stallDetail, /title="Save this stall"/);
+  // The "Save this stall" card is gone: the bar's hold menu saves to a collection.
+  assert.doesNotMatch(stallDetail, /<DetailSaveActionsCard|title="Save this stall"/);
+  assert.match(stallDetail, /detailSaveActions\.addToPortfolio\(\)/);
 
   assert.match(supabaseService, /insert\(\{ user_id: userId, name \}\)/);
   assert.match(supabaseService, /insert\(\{\s+owner_id: userId/s);

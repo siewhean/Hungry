@@ -7739,8 +7739,18 @@ export const supabaseService: HungryService = {
         }));
     },
 
-    async adjustCommunityTasteVector() {
-      return;
+    async adjustCommunityTasteVector(dishId, userRating, reviewId) {
+      const rating = Object.fromEntries(
+        Object.entries(userRating).filter(([, level]) => typeof level === "number"),
+      );
+      if (Object.keys(rating).length === 0) return;
+      const client = requireSupabaseClient();
+      const { error } = await client.rpc("submit_dish_taste_rating", {
+        p_dish_id: dishId,
+        p_rating: rating,
+        p_review_id: reviewId ?? null,
+      });
+      if (error) throw error;
     },
 
     explainMatch(userVector, dishVector) {

@@ -45,7 +45,8 @@ test("R01-SCOPE-01: favourites ship default-on in every eas release profile", ()
     const env = eas.build[name]?.env ?? {};
     const flags = resolveFeatureFlags(env.EXPO_PUBLIC_APP_ENV, "production", env);
     assert.equal(flags.release01CoreOnly, false, `${name} follows main's surface`);
-    assert.equal(flags.socialFeedEnabled, true);
+    // The social feed is archived (owner decision 2026-10-24).
+    assert.equal(flags.socialFeedEnabled, false);
     assert.equal(flags.reviewCreationEnabled, true);
     assert.equal(flags.portfoliosEnabled, true);
     assert.equal(flags.stallAlertsEnabled, true);
@@ -103,7 +104,7 @@ test("R01-WRITE-01: favourite toasts follow the write result, never an optimisti
   );
   assert.doesNotMatch(dishDetail, /Saved to favourites!/);
 
-  assert.match(favourites, /<CatalogSavedDishes navigation=\{navigation\} \/>/);
+  assert.match(favourites, /<CatalogSavedDishes navigation=\{navigation\} query=\{dishQuery\} \/>/);
   assert.match(
     favourites,
     /rootNavigation\.navigate\("CatalogRawDetail", \{ kind: "dish", id: dish\.id \}\)/,
@@ -120,7 +121,8 @@ test("release-reachable screens hide controls for cut features behind their flag
   const search = read("src/app/screens/search/DishSearchScreen.tsx");
   const dishDetail = read("src/app/screens/detail/DishDetailScreenV2.tsx");
 
-  assert.match(settings, /const showSocialPrivacySettings = FEATURE_FLAGS\.socialFeedEnabled;/);
+  // Follows and follow requests outlive the archived social feed.
+  assert.match(settings, /const showSocialPrivacySettings = true;/);
   assert.match(
     settings,
     /\{showSocialPrivacySettings \? \(\s*<SettingsRow\s+label="Profile visibility"/,

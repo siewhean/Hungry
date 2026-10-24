@@ -182,10 +182,10 @@ export function AIAssistantScreen() {
                   borderRadius: componentRadii.iconButton,
                 }}
               >
-                <BarChart2 size={16} color={palette.white} />
+                <BarChart2 size={16} color={palette.textOnOrange} />
               </View>
               <AppText variant="bodySmallBold" style={{ color: palette.orangeText }}>
-                SUMMARY
+                Summary
               </AppText>
             </View>
             <AppText

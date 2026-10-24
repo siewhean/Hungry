@@ -25,8 +25,9 @@ test("production route gates keep advanced surfaces behind MVP-safe flags", () =
   assert.match(flags, /prototypeRoutesEnabled/);
   // Advanced surfaces follow main: available outside production only.
   assert.match(flags, /const nonProductionSurfaceEnabled = prototypeRoutesEnabled/);
+  // Messages is archived: off everywhere unless a build opts in.
+  assert.match(flags, /directMessagesEnabled: surface\("EXPO_PUBLIC_ENABLE_MESSAGES", false\)/);
   for (const flag of [
-    "directMessagesEnabled",
     "gamificationEnabled",
     "collectionsEnabled",
     "storiesEnabled",
@@ -107,7 +108,11 @@ test("production route gates keep advanced surfaces behind MVP-safe flags", () =
     rootNavigator,
     /FEATURE_FLAGS\.reviewCreationEnabled \? \([\s\S]*name="ReviewHistory"/,
   );
-  assert.match(rootNavigator, /FEATURE_FLAGS\.socialFeedEnabled \? \([\s\S]*name="UserProfile"/);
+  // Reviewer profiles outlive the archived social feed.
+  assert.match(
+    rootNavigator,
+    /\n\s*<RootStack\.Screen component=\{UserProfileScreen\} name="UserProfile" \/>/,
+  );
   assert.match(rootNavigator, /function isReleaseRouteAvailable/);
 });
 
@@ -239,7 +244,11 @@ test("protected actions preserve return routes before auth", () => {
     parameterizedRootReturnRestore,
     /name: returnRoute\.name, params: returnRoute\.params/,
   );
-  assert.match(tabs, /FEATURE_FLAGS\.postCreationEnabled/);
-  assert.match(tabs, /rootNavigation\?\.navigate\("Post"\)/);
-  assert.match(tabs, /setReturnRoute\(\{ name: "Post" \}\)/);
+  // The middle tab button writes a review; a guest returns to the review screen after sign-in.
+  assert.match(tabs, /FEATURE_FLAGS\.reviewCreationEnabled/);
+  assert.match(tabs, /rootNavigation\?\.navigate\("ReviewStack", \{ screen: "ReviewMain" \}\)/);
+  assert.match(
+    tabs,
+    /setReturnRoute\(\{ name: "ReviewStack", params: \{ screen: "ReviewMain" \} \}\)/,
+  );
 });

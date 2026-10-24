@@ -18,10 +18,10 @@ test.describe("checklist and portfolio critical flows", () => {
     await page.getByRole("button", { name: "Open quick access" }).click();
     await page.getByRole("button", { name: "Lists", exact: true }).click();
     await page.getByRole("button", { name: /^Checklists\./ }).click();
-    await expect(page.getByText("My Checklists", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("My checklists", { exact: true }).first()).toBeVisible();
 
     await page
-      .getByRole("button", { name: /Create Checklist|Create/ })
+      .getByRole("button", { name: /Create checklist|Create/i })
       .first()
       .click();
     await expect(page.getByText("Checklist", { exact: true }).first()).toBeVisible();

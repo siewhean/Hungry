@@ -134,8 +134,6 @@ function isReleaseRouteAvailable(routeName: RootRouteName | MainTabRouteName): b
       return FEATURE_FLAGS.reviewCreationEnabled;
     case "Favourites":
       return FEATURE_FLAGS.favouritesEnabled;
-    case "UserProfile":
-      return FEATURE_FLAGS.socialFeedEnabled;
     case "DiscoverMap":
     case "MapZoomedIn":
       return FEATURE_FLAGS.mapEnabled;
@@ -259,6 +257,10 @@ const loadStallDetailScreen = () =>
   (
     require("@/app/screens/detail/StallDetailScreen") as typeof import("@/app/screens/detail/StallDetailScreen")
   ).StallDetailScreen;
+const loadReportProblemScreen = () =>
+  (
+    require("@/app/screens/detail/ReportProblemScreen") as typeof import("@/app/screens/detail/ReportProblemScreen")
+  ).ReportProblemScreen;
 const loadMerchantClaimExplainerScreen = () =>
   (
     require("@/app/screens/detail/MerchantClaimExplainerScreen") as typeof import("@/app/screens/detail/MerchantClaimExplainerScreen")
@@ -313,6 +315,10 @@ const loadMusicSelectionScreen = () =>
   (
     require("@/app/screens/review/MusicSelectionScreen") as typeof import("@/app/screens/review/MusicSelectionScreen")
   ).MusicSelectionScreen;
+const loadDecideForMeQuizScreen = () =>
+  (
+    require("@/app/screens/discover/DecideForMeQuizScreen") as typeof import("@/app/screens/discover/DecideForMeQuizScreen")
+  ).DecideForMeQuizScreen;
 const loadDecideForMeResultScreen = () =>
   (
     require("@/app/screens/discover/DecideForMeResultScreen") as typeof import("@/app/screens/discover/DecideForMeResultScreen")
@@ -780,12 +786,12 @@ export function RootNavigator({ theme }: { theme: Theme }) {
             <RootStack.Screen getComponent={loadReviewHistoryScreen} name="ReviewHistory" />
           ) : null}
           <RootStack.Screen getComponent={loadSettingsScreen} name="Settings" />
-          {FEATURE_FLAGS.socialFeedEnabled ? (
-            <RootStack.Screen component={UserProfileScreen} name="UserProfile" />
-          ) : null}
+          {/* Reviewer profiles stay reachable from reviews and follower lists. */}
+          <RootStack.Screen component={UserProfileScreen} name="UserProfile" />
           <RootStack.Screen getComponent={loadDishDetailScreenV2} name="DishDetail" />
           <RootStack.Screen getComponent={loadCatalogRawDetailScreen} name="CatalogRawDetail" />
           <RootStack.Screen getComponent={loadStallDetailScreen} name="StallDetail" />
+          <RootStack.Screen getComponent={loadReportProblemScreen} name="ReportProblem" />
           {FEATURE_FLAGS.merchantClaimCtaEnabled ? (
             <RootStack.Screen
               getComponent={loadMerchantClaimExplainerScreen}
@@ -798,7 +804,11 @@ export function RootNavigator({ theme }: { theme: Theme }) {
             />
           ) : null}
           {FEATURE_FLAGS.reviewCreationEnabled ? (
-            <RootStack.Screen getComponent={loadReviewStack} name="ReviewStack" />
+            <RootStack.Screen
+              getComponent={loadReviewStack}
+              name="ReviewStack"
+              options={{ presentation: "modal" }}
+            />
           ) : null}
           {FEATURE_FLAGS.hungryWheelEnabled ? (
             <RootStack.Screen getComponent={loadWheelStack} name="WheelStack" />
@@ -832,6 +842,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           {FEATURE_FLAGS.prototypeRoutesEnabled ? (
             <RootStack.Screen getComponent={loadMusicSelectionScreen} name="MusicSelection" />
           ) : null}
+          <RootStack.Screen getComponent={loadDecideForMeQuizScreen} name="DecideForMeQuiz" />
           <RootStack.Screen getComponent={loadDecideForMeResultScreen} name="DecideForMeResult" />
           <RootStack.Screen getComponent={loadOfflineStateScreen} name="Offline" />
           <RootStack.Screen getComponent={loadNotFoundScreen} name="NotFound" />

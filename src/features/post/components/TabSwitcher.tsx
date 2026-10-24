@@ -78,7 +78,7 @@ export function TabSwitcher() {
               fontSize: 13,
             }}
           >
-            REVIEW
+            Review
           </AppText>
         </Pressable>
       </View>

@@ -36,6 +36,7 @@ test("successful mock authentication is required before the app shell mounts", a
   await page.getByLabel("Password", { exact: true }).fill("Password123!");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
 
-  await expect(page.getByTestId("home-social-feed")).toBeVisible({ timeout: 30_000 });
+  // The app shell opens on Discover, the home page.
+  await expect(page.getByText(/^You are at/).first()).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText("Welcome back", { exact: true })).toHaveCount(0);
 });

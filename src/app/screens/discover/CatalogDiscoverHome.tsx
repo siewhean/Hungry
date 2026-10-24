@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, RefreshControl, ScrollView, View } from "react-native";
-import { MapPinned, Search, Utensils } from "lucide-react-native";
+import { ChevronRight, MapPinned, Search, Utensils } from "lucide-react-native";
 import { useNavigation, type CompositeNavigationProp } from "@react-navigation/native";
 import type { MaterialTopTabNavigationProp } from "@react-navigation/material-top-tabs";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -163,7 +163,7 @@ function RawDishCard({ item, releaseId }: { item: CatalogRawDishCard; releaseId?
                 : `${Math.round(item.distanceMeters)} m`}
             </AppText>
             {item.price !== undefined ? (
-              <AppText style={{ color: palette.orange }} variant="price">
+              <AppText style={{ color: palette.text }} variant="price">
                 S${item.price.toFixed(2)}
               </AppText>
             ) : null}
@@ -478,7 +478,7 @@ export function CatalogDiscoverHome() {
         <Pressable
           accessibilityLabel="Search dishes and stalls"
           accessibilityRole="button"
-          onPress={() => openBrowse("dishes")}
+          onPress={() => navigation.navigate("SearchHome")}
           style={{
             alignItems: "center",
             backgroundColor: palette.surface,
@@ -570,20 +570,15 @@ export function CatalogDiscoverHome() {
         </View>
 
         <View style={{ gap: spacing[3] }}>
-          <View
-            style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}
+          <Pressable
+            accessibilityLabel="See all nearby dishes"
+            accessibilityRole="button"
+            onPress={() => openBrowse("dishes")}
+            style={{ alignItems: "center", flexDirection: "row", gap: spacing[2], minHeight: 44 }}
           >
             <AppText variant="h3">Nearby dishes</AppText>
-            <Pressable
-              accessibilityLabel="See all nearby dishes"
-              accessibilityRole="button"
-              onPress={() => openBrowse("dishes")}
-            >
-              <AppText style={{ color: palette.orange }} variant="bodyBold">
-                See all
-              </AppText>
-            </Pressable>
-          </View>
+            <ChevronRight color={palette.textMuted} size={20} />
+          </Pressable>
           <ScrollView
             contentContainerStyle={{ gap: spacing[3] }}
             horizontal
@@ -596,20 +591,15 @@ export function CatalogDiscoverHome() {
         </View>
 
         <View style={{ gap: spacing[2] }}>
-          <View
-            style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}
+          <Pressable
+            accessibilityLabel="See all nearby stalls"
+            accessibilityRole="button"
+            onPress={() => openBrowse("stalls")}
+            style={{ alignItems: "center", flexDirection: "row", gap: spacing[2], minHeight: 44 }}
           >
             <AppText variant="h3">Stalls near you</AppText>
-            <Pressable
-              accessibilityLabel="See all nearby stalls"
-              accessibilityRole="button"
-              onPress={() => openBrowse("stalls")}
-            >
-              <AppText style={{ color: palette.orange }} variant="bodyBold">
-                See all
-              </AppText>
-            </Pressable>
-          </View>
+            <ChevronRight color={palette.textMuted} size={20} />
+          </Pressable>
           {venues.slice(0, 8).map((item) => (
             <RawVenueRow key={item.id} item={item} releaseId={releaseId} />
           ))}

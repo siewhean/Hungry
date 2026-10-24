@@ -1,4 +1,5 @@
 import type { NavigatorScreenParams } from "@react-navigation/native";
+import type { DecideAnswers } from "@/features/discovery/decideQuiz";
 import type { TasteVector } from "@/types/domain";
 
 export type AuthStackParamList = {
@@ -63,6 +64,7 @@ export type ProfileStackParamList = {
   Favourites: undefined;
   /** One Lists area: Saved, your lists (portfolios) and checklists. */
   ListsHome: undefined;
+  Collections: undefined;
   ReviewHistory: undefined;
   Followers: { userId?: string; userDisplayName?: string } | undefined;
   Following: { userId?: string; userDisplayName?: string } | undefined;
@@ -134,6 +136,7 @@ export type RootStackParamList = {
   MerchantTabs: NavigatorScreenParams<MerchantTabParamList>;
   StallDetail: { venueId?: string; id?: string };
   MerchantClaimExplainer: undefined;
+  ReportProblem: { venueId: string; dishId?: string; subjectName?: string };
   DishDetail: { dishId?: string; id?: string };
   CatalogRawDetail: { kind: "dish" | "venue"; id: string; releaseId?: string };
   SearchHome: undefined;
@@ -154,7 +157,10 @@ export type RootStackParamList = {
   BrowseDishes: undefined;
   BrowseStalls: undefined;
   DiscoverMap: undefined;
-  DecideForMeResult: { surface?: "home" | "discover" | "push" } | undefined;
+  DecideForMeQuiz: undefined;
+  DecideForMeResult:
+    | { surface?: "home" | "discover" | "push"; answers?: DecideAnswers }
+    | undefined;
   MapZoomedIn: { buildingId: string };
   ReviewStack: NavigatorScreenParams<ReviewStackParamList>;
   WheelStack: NavigatorScreenParams<WheelStackParamList>;

@@ -30,6 +30,7 @@ export type ParamKey =
   | "dish"
   | "portfolio"
   | "portfolioPicker"
+  | "report"
   | "review"
   | "socialGrid"
   | "socialPost"
@@ -120,7 +121,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "ChecklistsHomeScreen",
     file: "src/app/screens/checklist/ChecklistsHomeScreen.tsx",
     scenario: "user",
-    expect: /My Checklists/,
+    expect: /My checklists/,
   },
   {
     name: "DishDetailScreenV2",
@@ -170,7 +171,13 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "CraveScreen",
     file: "src/app/screens/discover/CraveScreen.tsx",
     scenario: "user",
-    expect: /CRAVE/,
+    expect: /Crave/,
+  },
+  {
+    name: "DecideForMeQuizScreen",
+    file: "src/app/screens/discover/DecideForMeQuizScreen.tsx",
+    scenario: "user",
+    expect: /What kind of food\?/,
   },
   {
     name: "DecideForMeResultScreen",
@@ -182,13 +189,13 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "DiscoverHomeScreen",
     file: "src/app/screens/discover/DiscoverHomeScreen.tsx",
     scenario: "user",
-    expect: /WHERE ARE YOU/,
+    expect: /Choose where you are|You are at/,
   },
   {
     name: "DiscoverEntryScreen",
     file: "src/app/screens/discover/DiscoverEntryScreen.tsx",
     scenario: "user",
-    expect: /WHERE ARE YOU/,
+    expect: /Choose where you are|You are at/,
   },
   {
     name: "HomeMapScreen",
@@ -363,7 +370,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "ManualLocationPickerScreen",
     file: "src/app/screens/onboarding/ManualLocationPickerScreen.tsx",
     scenario: "user",
-    expect: /Pick a location/,
+    expect: /Use my current location/,
   },
   {
     name: "OnboardingAuthScreen",
@@ -515,10 +522,23 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     expect: /Lists/,
   },
   {
+    name: "ReportProblemScreen",
+    file: "src/app/screens/detail/ReportProblemScreen.tsx",
+    scenario: "user",
+    params: "report",
+    expect: /What's wrong\?/,
+  },
+  {
+    name: "CollectionsScreen",
+    file: "src/app/screens/profile/CollectionsScreen.tsx",
+    scenario: "user",
+    expect: /Want to try/,
+  },
+  {
     name: "MissionsScreen",
     file: "src/app/screens/profile/MissionsScreen.tsx",
     scenario: "user",
-    expect: /Weekly Missions/,
+    expect: /Weekly missions/,
   },
   {
     name: "PassportScreen",
@@ -542,7 +562,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "ProfileHomeScreen",
     file: "src/app/screens/profile/ProfileHomeScreen.tsx",
     scenario: "user",
-    expect: /SINGAPORE FOODIE PASSPORT/,
+    expect: /Collections/,
   },
   {
     name: "ReleaseProfileScreen",
@@ -554,7 +574,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "ReviewHistoryScreen",
     file: "src/app/screens/profile/ReviewHistoryScreen.tsx",
     scenario: "user",
-    expect: /Taste Journal/,
+    expect: /Reviewed/,
   },
   {
     name: "SettingsScreen",
@@ -566,7 +586,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "SocialGridScreen",
     file: "src/app/screens/profile/SocialGridScreen.tsx",
     scenario: "user",
-    expect: /Saved Content/,
+    expect: /Saved content/,
     params: "socialGrid",
   },
   {

@@ -11,8 +11,16 @@ function read(relativePath: string): string {
 
 test("D1: saved dish bookmark uses a visible brand fill, never white on the light action bar", () => {
   const dish = read("src/app/screens/detail/DishDetailScreenV2.tsx");
-  assert.match(dish, /color=\{isSaved \? palette\.orange : palette\.text\}/);
-  assert.match(dish, /fill=\{isSaved \? palette\.orange : "none"\}/);
+  const bar = read("src/components/detail/DetailActionBar.tsx");
+  assert.match(dish, /fillWhenActive: true/);
+  assert.match(
+    bar,
+    /const color = action\.active\s+\? palette\.orange\s+: action\.mutedWhenInactive\s+\? palette\.textMuted\s+: palette\.text/,
+  );
+  assert.match(
+    bar,
+    /fill=\{action\.active && action\.fillWhenActive \? palette\.orange : "none"\}/,
+  );
   assert.doesNotMatch(dish, /isSaved \? palette\.white/);
 });
 

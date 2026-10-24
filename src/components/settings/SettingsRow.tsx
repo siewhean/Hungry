@@ -1,8 +1,10 @@
 import { memo, type ReactNode } from "react";
-import { Pressable, StyleSheet, View, Switch } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { ChevronRight, ExternalLink } from "lucide-react-native";
 import { AppText } from "../ui";
+import { selectHaptic } from "@/lib/haptics";
 import { useHungryTheme } from "@/theme";
+import { AnimatedSwitch } from "@/components/ui/AnimatedSwitch";
 
 interface SettingsRowProps {
   label: string;
@@ -50,6 +52,7 @@ export const SettingsRow = memo(function SettingsRow({
   // Handle row press even for toggle types
   const handlePress = () => {
     if (type === "toggle" && onToggle) {
+      selectHaptic();
       onToggle(!isEnabled);
     } else if (onPress) {
       onPress();
@@ -64,7 +67,7 @@ export const SettingsRow = memo(function SettingsRow({
     paddingVertical: spacing[4],
     paddingHorizontal: spacing[4],
     borderBottomWidth: isLast ? 0 : 1,
-    borderBottomColor: editorial ? palette.bgSoft : palette.border,
+    borderBottomColor: palette.border,
     opacity: dimmed ? 0.55 : 1,
   };
 
@@ -76,7 +79,7 @@ export const SettingsRow = memo(function SettingsRow({
             <View
               style={{
                 alignItems: "center",
-                backgroundColor: palette.surfaceRaised,
+                backgroundColor: palette.orangeLight,
                 borderRadius: radii.pill,
                 height: 40,
                 justifyContent: "center",
@@ -90,6 +93,7 @@ export const SettingsRow = memo(function SettingsRow({
           <View style={{ flex: 1, gap: spacing[1] }}>
             <AppText
               variant="bodyLarge"
+              numberOfLines={2}
               style={{ color: destructive ? palette.error : palette.text, fontWeight: "500" }}
             >
               {label}
@@ -171,18 +175,14 @@ export const SettingsRow = memo(function SettingsRow({
         ) : null}
 
         {type === "toggle" ? (
-          <Switch
-            value={isEnabled}
+          <AnimatedSwitch
+            value={Boolean(isEnabled)}
             onValueChange={onToggle}
             disabled={busy}
             // The off track uses textMuted so it keeps 3:1 against the row (WCAG 1.4.11).
-            trackColor={{ false: palette.textMuted, true: palette.orange }}
-            thumbColor={palette.white}
-            ios_backgroundColor={palette.textMuted}
+            offTrackColor={palette.textMuted}
             // The row itself is the accessible switch; avoid a second, unlabeled control.
             accessible={false}
-            accessibilityElementsHidden
-            importantForAccessibility="no-hide-descendants"
           />
         ) : null}
       </View>

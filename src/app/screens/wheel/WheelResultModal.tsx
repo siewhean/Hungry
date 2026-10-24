@@ -154,7 +154,7 @@ export function WheelResultModal({ navigation, route }: Props) {
           >
             <Trophy size={14} color={palette.white} />
             <AppText variant="micro" style={{ color: palette.white, fontWeight: "900" }}>
-              WINNER
+              Winner
             </AppText>
           </LinearGradient>
         </View>
@@ -189,11 +189,7 @@ export function WheelResultModal({ navigation, route }: Props) {
         {/* Content */}
         <View style={{ padding: spacing[5], gap: spacing[5] }}>
           <View style={{ gap: spacing[1], alignItems: "center" }}>
-            <AppText
-              variant="micro"
-              tone="accent"
-              style={{ fontWeight: "800", textTransform: "uppercase", letterSpacing: 1 }}
-            >
+            <AppText variant="micro" tone="accent" style={{ fontWeight: "800", letterSpacing: 1 }}>
               {isClassic ? "Your next stop is..." : `The Last One Standing`}
             </AppText>
             <AppText variant="h1" style={{ textAlign: "center", fontSize: 28 }}>
@@ -220,7 +216,7 @@ export function WheelResultModal({ navigation, route }: Props) {
           {/* CTA dock */}
           <View style={{ gap: spacing[3] }}>
             <Button
-              label="View Stall Details"
+              label="View stall details"
               onPress={handleStallDetail}
               leftIcon={<Navigation size={18} color={palette.white} />}
             />
@@ -255,11 +251,7 @@ export function WheelResultModal({ navigation, route }: Props) {
             >
               <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
                 <CheckCircle2 size={14} color={palette.textMuted} />
-                <AppText
-                  variant="bodySmallBold"
-                  tone="muted"
-                  style={{ textTransform: "uppercase", letterSpacing: 1 }}
-                >
+                <AppText variant="bodySmallBold" tone="muted" style={{ letterSpacing: 1 }}>
                   {isClassic ? "Done" : "Disband Party"}
                 </AppText>
               </View>

@@ -111,8 +111,12 @@ test("media picker and star rating are usable with a screen reader", () => {
   assert.match(stars, /onAccessibilityAction=/);
   assert.match(stars, /min: 0, max, now: value/);
   assert.match(stars, /`Rating, \$\{value > 0/);
+  // Grid tiles say whose review it is, of what, where and when.
   const feed = read("src/app/screens/review/ReviewFeedScreen.tsx");
-  assert.match(feed, /accessibilityLabel=\{`Rated \$\{rating\} out of 5 stars`\}/);
+  assert.match(
+    feed,
+    /accessibilityLabel=\{`\$\{item\.review\.authorName\}'s review of \$\{item\.dishName\} at \$\{item\.venueName\}/,
+  );
 });
 
 test("review feed signs photo urls in one batch", () => {
@@ -144,8 +148,8 @@ test("prototype-only review features stay out of production", () => {
   const review = read("src/app/screens/review/ReviewScreen.tsx");
   const stallDetail = read("src/app/screens/detail/StallDetailScreen.tsx");
 
-  assert.match(review, /const reviewMusicEnabled = FEATURE_FLAGS\.prototypeRoutesEnabled/);
-  assert.match(review, /const reviewVideoEnabled = FEATURE_FLAGS\.prototypeRoutesEnabled/);
+  assert.match(review, /const reviewMusicEnabled = false/);
+  assert.match(review, /const reviewVideoEnabled = false/);
   assert.match(review, /\{reviewMusicEnabled \? \(/);
   assert.match(review, /const hasVideo = reviewVideoEnabled && Boolean\(draft\.videoUri\)/);
   assert.doesNotMatch(review, /\(draft\.videoUri \? 20 : 0\)/);
@@ -160,8 +164,8 @@ test("review tab loads one paginated page with refresh, error and empty states",
   assert.doesNotMatch(feed, /getReviewsForDish/);
   assert.match(feed, /<RefreshControl/);
   assert.match(feed, /title="Couldn't load reviews"[\s\S]*ctaLabel="Try again"/);
-  assert.match(feed, /ctaLabel="Write a review"/);
-  assert.match(feed, /const reviewReactionsEnabled = serviceProviderMode === "mock"/);
+  // Writing a review starts from the centre tab button, not the feed.
+  assert.match(feed, /title="No photo reviews yet"/);
 });
 
 test("review medium/low fixes: sign-out clears the draft, feed pages by (created_at, id)", () => {

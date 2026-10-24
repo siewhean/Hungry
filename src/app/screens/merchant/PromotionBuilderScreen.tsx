@@ -425,11 +425,7 @@ export function PromotionBuilderScreen() {
       <View style={{ gap: spacing[5], width: "100%" }}>
         {/* Preview Card */}
         <View>
-          <AppText
-            variant="bodySmallBold"
-            tone="muted"
-            style={{ marginBottom: spacing[2], textTransform: "uppercase" }}
-          >
+          <AppText variant="bodySmallBold" tone="muted" style={{ marginBottom: spacing[2] }}>
             Preview
           </AppText>
           {/* The same card diners see on the stall page. */}

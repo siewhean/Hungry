@@ -177,7 +177,7 @@ export function MediaPicker({
           >
             <Camera size={24} color={palette.textMuted} />
             <AppText variant="micro" tone="secondary">
-              Add Photo
+              Add photo
             </AppText>
           </Pressable>
         )}

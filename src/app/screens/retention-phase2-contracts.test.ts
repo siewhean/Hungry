@@ -54,7 +54,8 @@ test("push alerts are opt-in and tapped alerts open through deep link rules", ()
 });
 
 test("follow a stall is tracked and listed in Profile", async () => {
-  assert.match(read("src/app/screens/detail/StallDetailScreen.tsx"), /<FollowStallButton/);
+  // Owner decision (round 3): the stall page no longer shows a Follow button.
+  assert.doesNotMatch(read("src/app/screens/detail/StallDetailScreen.tsx"), /<FollowStallButton/);
   assert.match(read("src/store/useStallFollowStore.ts"), /"stall_followed" : "stall_unfollowed"/);
   assert.match(read("src/app/screens/profile/ProfileStack.tsx"), /name="FollowedStalls"/);
 

@@ -73,7 +73,7 @@ export function canManageMenu(level: MerchantAccessLevel): boolean {
  * - Submit/resubmit evidence
  * - View limited onboarding instructions
  * - Prepare the stall profile and menu (hidden from diners until verified)
- * - Open Profile and Settings, which hold the "Switch to Customer Mode" and "Sign Out" exits
+ * - Open Profile and Settings, which hold the "Switch to Customer Mode" and "Sign out" exits
  */
 export const UNVERIFIED_ALLOWED_SCREENS = [
   "VerificationCentre",

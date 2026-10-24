@@ -443,7 +443,7 @@ function PostComposerScreenInner({ navigation, route }: Props) {
             label="Caption"
             multiline
             numberOfLines={5}
-            placeholder="What makes this worth the queue?"
+            placeholder="What makes this dish special?"
             value={caption}
             maxLength={POST_CAPTION_MAX_LENGTH}
             onChangeText={setCaption}

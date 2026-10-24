@@ -3,9 +3,31 @@
 
 import assert from "node:assert/strict";
 import { createElement } from "react";
+import { Animated, Text, View } from "react-native";
 import test, { afterEach, beforeEach } from "node:test";
 
 import { cleanup, render } from "@/test/render";
+import { DiscoverModeTabs } from "@/components/discover/DiscoverModeTabs";
+import { ForYouCard } from "@/components/discover/ForYouCard";
+import { TrendingList } from "@/components/discover/TrendingList";
+import { WhatsHerePanel } from "@/components/discover/WhatsHerePanel";
+import { DetailActionBar } from "@/components/detail/DetailActionBar";
+import { FloatingBackButton } from "@/components/detail/FloatingBackButton";
+import { DetailHeroFade } from "@/components/detail/DetailHeroFade";
+import { TasteRatingInput, nearestTasteRatingLevel } from "@/components/review/TasteRatingInput";
+import { DeliveryBrandLogo, hasDeliveryBrandLogo } from "@/components/dish/DeliveryBrandLogo";
+import { SingaporeAreaMap } from "@/components/location/SingaporeAreaMap";
+import { HeritageStampTile } from "@/components/gamification/HeritageStampTile";
+import {
+  CollectionAlbumCard,
+  NewCollectionTile,
+  collectionCountLabel,
+} from "@/components/portfolio/CollectionAlbumCard";
+import { CaptionPreview, captionNeedsMore } from "@/components/review/CaptionPreview";
+import { MenuFilterDropdown, menuFilterSummary } from "@/components/stall/MenuFilterDropdown";
+import { TasteRadarChart } from "@/components/taste/TasteRadarChart";
+import { AnimatedSwitch } from "@/components/ui/AnimatedSwitch";
+import { AchievementsSection } from "@/components/gamification/AchievementsSection";
 import { MissionCard } from "@/components/gamification/MissionCard";
 import { PassportBook } from "@/components/gamification/PassportBook";
 import { PassportCard } from "@/components/gamification/PassportCard";
@@ -26,9 +48,12 @@ import {
   getNextPassportStamp,
   PASSPORT_BADGE_DEFINITIONS,
 } from "@/constants/passportConfig";
+import { computeAchievements } from "@/features/achievements/achievements";
+import type { HereStall } from "@/features/discover/mallMode";
+import type { Bite } from "@/lib/services/types";
 import { usePassportStore } from "@/store/usePassportStore";
 import { useUIStore } from "@/store/useUIStore";
-import type { WheelMember } from "@/types/domain";
+import type { DishDetail, VenueSummary, WheelMember } from "@/types/domain";
 
 afterEach(cleanup);
 
@@ -397,4 +422,467 @@ test("TabSwitcher marks the active tab and switches the composer tab on press", 
   assert.equal(useComposerStore.getState().activeTab, "review");
   await view.press(view.findByLabel("Post tab"));
   assert.equal(useComposerStore.getState().activeTab, "post");
+});
+
+const NEUTRAL_TASTE = { sweet: 5, spicy: 5, sour: 5, salty: 5, rich: 5, aromatic: 5 };
+
+function renderDish(id: string, overrides: Partial<DishDetail> = {}): DishDetail {
+  return {
+    id,
+    venueId: `venue-${id}`,
+    buildingId: "building-1",
+    venueName: "Ah Heng Stall",
+    unitNumber: "#01-12",
+    floor: "L1",
+    name: `Dish ${id}`,
+    imageUrl: "",
+    distanceMeters: 120,
+    rating: 4.5,
+    reviewCount: 12,
+    price: 5.5,
+    priceRange: "$",
+    tasteTags: [],
+    tasteVector: NEUTRAL_TASTE,
+    dietaryFlags: [],
+    gallery: [],
+    mustOrder: false,
+    availabilityFlags: [],
+    reviews: [],
+    ...overrides,
+  };
+}
+
+function renderVenue(id: string): VenueSummary {
+  return {
+    id,
+    buildingId: "building-1",
+    name: `Stall ${id}`,
+    unitNumber: "#01-01",
+    floor: "L1",
+    isOpen: true,
+    topDishId: "",
+    operatingHours: "",
+    deliveryLinks: [],
+  };
+}
+
+test("DetailActionBar presses the right action and marks the active one", async () => {
+  const pressed: string[] = [];
+  const view = await render(
+    createElement(DetailActionBar, {
+      testID: "bar",
+      actions: [
+        { id: "save", label: "Save", icon: () => null, onPress: () => pressed.push("save") },
+        {
+          id: "tried",
+          label: "Tried",
+          icon: () => null,
+          role: "checkbox" as const,
+          active: true,
+          onPress: () => pressed.push("tried"),
+        },
+        {
+          id: "busy",
+          label: "Busy",
+          icon: () => null,
+          loading: true,
+          onPress: () => pressed.push("busy"),
+        },
+      ],
+    }),
+  );
+  // Each icon button carries a caption, so the action is not guessed from the glyph alone.
+  assert.match(view.text(), /Save/);
+  assert.match(view.text(), /Tried/);
+  await view.press(view.findByLabel("Save"));
+  await view.press(view.findByLabel("Tried"));
+  assert.deepEqual(pressed, ["save", "tried"]);
+});
+
+async function holdDown(view: Awaited<ReturnType<typeof render>>, target: HTMLElement | null) {
+  assert.ok(target, "hold target not found");
+  const init = { bubbles: true, cancelable: true, button: 0 };
+  const PointerCtor = (window as unknown as { PointerEvent?: typeof MouseEvent }).PointerEvent;
+  const down = PointerCtor
+    ? new PointerCtor("pointerdown", init)
+    : new window.MouseEvent("mousedown", init);
+  target.dispatchEvent(down);
+  await new Promise((resolve) => setTimeout(resolve, 600));
+  const up = PointerCtor
+    ? new PointerCtor("pointerup", init)
+    : new window.MouseEvent("mouseup", init);
+  target.dispatchEvent(up);
+  await view.settle();
+}
+
+test("DetailActionBar opens a held button's own menu, dims the page, and keeps taps", async () => {
+  const pressed: string[] = [];
+  const view = await render(
+    createElement(DetailActionBar, {
+      actions: [
+        {
+          id: "tried",
+          label: "Tried",
+          icon: () => null,
+          onPress: () => pressed.push("tried"),
+          holdTitle: "Have you tried it?",
+          holdOptions: [
+            { id: "yes", label: "Tried", selected: true, onPress: () => pressed.push("yes") },
+            { id: "no", label: "Not tried", onPress: () => pressed.push("no") },
+          ],
+        },
+        { id: "like", label: "Like", icon: () => null, onPress: () => pressed.push("like") },
+      ],
+      cta: { label: "Write a review", onPress: () => pressed.push("review") },
+    }),
+  );
+  assert.match(view.text(), /Write a review/);
+  // No three-dots menu, and nothing extra shows until a button is held.
+  assert.equal(view.findByLabel("More actions"), null);
+  assert.doesNotMatch(view.text(), /Not tried/);
+  await view.press(view.findByLabel("Like"));
+  // A button with no hold options opens nothing when held.
+  await holdDown(view, view.findByLabel("Like"));
+  assert.equal(view.findByLabel("Close menu"), null);
+
+  await holdDown(view, view.findByLabel("Tried"));
+  assert.match(view.text(), /Have you tried it\?/);
+  assert.ok(view.findByLabel("Close menu"));
+  await view.press(view.findByLabel("Not tried"));
+  await view.press(view.findByLabel("Write a review"));
+  assert.ok(pressed.includes("like"));
+  assert.deepEqual(
+    pressed.filter((entry) => entry !== "like"),
+    ["no", "review"],
+  );
+});
+
+test("SingaporeAreaMap names the highlighted area for screen readers", async () => {
+  const view = await render(
+    createElement(SingaporeAreaMap, {
+      width: 320,
+      highlighted: ["Bedok"],
+      pin: { latitude: 1.3236, longitude: 103.9273 },
+    }),
+  );
+  assert.ok(view.findByLabel("Map of Singapore with Bedok highlighted"));
+  await view.unmount();
+  const plain = await render(createElement(SingaporeAreaMap, { width: 320 }));
+  assert.ok(plain.findByLabel("Map of Singapore by area"));
+});
+
+test("DeliveryBrandLogo draws Grab and foodpanda marks only", async () => {
+  assert.equal(hasDeliveryBrandLogo("grabfood"), true);
+  assert.equal(hasDeliveryBrandLogo("foodpanda"), true);
+  assert.equal(hasDeliveryBrandLogo("deliveroo"), false);
+  assert.equal(DeliveryBrandLogo({ platform: "deliveroo", color: "#000" }), null);
+  assert.notEqual(DeliveryBrandLogo({ platform: "grabfood", color: "#000" }), null);
+});
+
+test("FloatingBackButton is a labelled back button", async () => {
+  let backs = 0;
+  const view = await render(createElement(FloatingBackButton, { onPress: () => (backs += 1) }));
+  await view.press(view.findByLabel("Go back"));
+  assert.equal(backs, 1);
+  await view.unmount();
+
+  let shares = 0;
+  const share = await render(
+    createElement(FloatingBackButton, {
+      accessibilityLabel: "Share stall",
+      onPress: () => (shares += 1),
+      side: "right",
+    }),
+  );
+  await share.press(share.findByLabel("Share stall"));
+  assert.equal(shares, 1);
+});
+
+test("DetailHeroFade shows the photo it holds", async () => {
+  const view = await render(
+    createElement(
+      DetailHeroFade,
+      { scrollY: new Animated.Value(0), height: 200 },
+      createElement(Text, null, "Hero photo"),
+    ),
+  );
+  assert.match(view.text(), /Hero photo/);
+});
+
+test("TasteRatingInput picks a level, clears it on a second tap, and marks our guess", async () => {
+  const changes: [string, number | undefined][] = [];
+  const view = await render(
+    createElement(TasteRatingInput, {
+      values: { spicy: 7.5 },
+      suggestions: { sweet: 2.2 },
+      onChange: (key, value) => changes.push([key, value]),
+    }),
+  );
+  await view.press(view.findByLabel("Sour: Medium"));
+  await view.press(view.findByLabel("Spicy: Strong"));
+  assert.deepEqual(changes, [
+    ["sour", 5],
+    ["spicy", undefined],
+  ]);
+  assert.ok(view.findByLabel("Sweet: Light, suggested"));
+  assert.equal(nearestTasteRatingLevel(8.9), 10);
+});
+
+test("TasteRadarChart shows the dish from reviews and adds your taste only with a palette", async () => {
+  const axes = [
+    { key: "spicy", label: "Spicy", standard: 7, yours: 9 },
+    { key: "sweet", label: "Sweet", standard: 2, yours: 1 },
+    { key: "rich", label: "Rich", standard: 5, yours: 5 },
+  ];
+  const withPalette = await render(createElement(TasteRadarChart, { axes }));
+
+  assert.match(withPalette.text(), /How it tastes to you/);
+  assert.match(withPalette.text(), /This dish, from reviews/);
+  await withPalette.unmount();
+  const plain = await render(
+    createElement(TasteRadarChart, {
+      axes: axes.map(({ key, label, standard }) => ({ key, label, standard })),
+    }),
+  );
+  assert.doesNotMatch(plain.text(), /How it tastes to you/);
+});
+
+test("CaptionPreview folds a long caption to a preview with ...more", async () => {
+  const long = "The broth is deep and peppery. ".repeat(6);
+  const view = await render(createElement(CaptionPreview, { text: long }));
+  assert.match(view.text(), /\.\.\.more/);
+  await view.press(view.findByLabel(long.trim()));
+  assert.match(view.text(), /Show less/);
+  await view.unmount();
+  const short = await render(createElement(CaptionPreview, { text: "Great rice." }));
+  assert.doesNotMatch(short.text(), /more/);
+  assert.equal(captionNeedsMore("Great rice."), false);
+  assert.equal(captionNeedsMore(long), true);
+});
+
+test("AnimatedSwitch is a switch that flips its value", async () => {
+  const values: boolean[] = [];
+  const view = await render(
+    createElement(AnimatedSwitch, {
+      value: false,
+      accessibilityLabel: "Push alerts",
+      onValueChange: (next: boolean) => values.push(next),
+    }),
+  );
+  await view.press(view.findByLabel("Push alerts"));
+  assert.deepEqual(values, [true]);
+});
+
+test("Collection album tiles open their collection and the new tile starts one", async () => {
+  const opened: string[] = [];
+  const view = await render(
+    createElement(
+      View,
+      null,
+      createElement(NewCollectionTile, { width: 150, onPress: () => opened.push("new") }),
+      createElement(CollectionAlbumCard, {
+        name: "Supper spots",
+        itemCount: 3,
+        coverPhotos: [],
+        width: 150,
+        onPress: () => opened.push("supper"),
+      }),
+    ),
+  );
+  assert.match(view.text(), /3 saved/);
+  await view.press(view.findByLabel("New collection"));
+  await view.press(view.findByLabel("Open collection Supper spots, 3 saved"));
+  assert.deepEqual(opened, ["new", "supper"]);
+  assert.equal(collectionCountLabel(1), "1 saved");
+});
+
+test("HeritageStampTile shows the detail when earned and Locked otherwise", async () => {
+  const earned = await render(
+    createElement(HeritageStampTile, {
+      title: "Laksa Lover",
+      subtitle: "Cuisine",
+      detail: "3 tried",
+      earned: true,
+      width: 110,
+    }),
+  );
+  assert.match(earned.text(), /3 tried/);
+  await earned.unmount();
+  const locked = await render(
+    createElement(HeritageStampTile, {
+      title: "Durian King",
+      subtitle: "Classic",
+      detail: "0 tried",
+      earned: false,
+      width: 110,
+    }),
+  );
+  assert.match(locked.text(), /Locked/);
+});
+
+test("MenuFilterDropdown summarises the filters and clears them", async () => {
+  assert.equal(menuFilterSummary("All", "All", []), "All dishes");
+  assert.equal(menuFilterSummary("Noodles", "All", ["Vegetarian"]), "Noodles · Vegetarian");
+  assert.equal(menuFilterSummary("Noodles", "All", ["Vegetarian", "Halal"]), "Noodles +2");
+  const view = await render(
+    createElement(MenuFilterDropdown, {
+      categories: ["All", "Noodles"],
+      activeCategory: "All",
+      onCategoryChange: () => undefined,
+      allCategory: "All",
+      dietaryOptions: [{ flag: "vegetarian", label: "Vegetarian", dishCount: 2 }],
+      activeDietaryFlags: [],
+      onDietaryFlagsChange: () => undefined,
+      resultCount: 4,
+    }),
+  );
+  assert.ok(view.findByLabel("Filter menu, All dishes"));
+});
+
+test("DiscoverModeTabs switches between What's here and For you", async () => {
+  const chosen: string[] = [];
+  const view = await render(
+    createElement(DiscoverModeTabs, {
+      value: "forYou",
+      onChange: (mode: string) => chosen.push(mode),
+    }),
+  );
+  assert.match(view.text(), /What's here/);
+  assert.match(view.text(), /For you/);
+  // Pressing the tab that is already selected does nothing.
+  await view.press(view.findByLabel("For you"));
+  assert.deepEqual(chosen, []);
+  await view.press(view.findByLabel("What's here"));
+  assert.deepEqual(chosen, ["here"]);
+});
+
+test("ForYouCard shows the match, the reason and a review, and opens the dish", async () => {
+  let opened = 0;
+  const dish = renderDish("a", {
+    savedCount: 7,
+    reviews: [
+      {
+        id: "r1",
+        authorName: "Mei",
+        rating: 5,
+        createdAt: "2026-10-01T00:00:00Z",
+        text: "Smoky and just spicy enough.",
+        tags: [],
+        wouldRecommend: true,
+        photos: [],
+      },
+    ],
+  });
+  const view = await render(
+    createElement(ForYouCard, {
+      pick: { dish, matchPercent: 88, reason: "Spicy, the way you like it" },
+      onPress: () => {
+        opened += 1;
+      },
+    }),
+  );
+  assert.match(view.text(), /Dish a/);
+  assert.match(view.text(), /S\$5\.50/);
+  assert.match(view.text(), /Spicy, the way you like it/);
+  assert.match(view.text(), /Smoky and just spicy enough/);
+  assert.match(view.text(), /7 saved/);
+  await view.press(view.findByLabel(/Dish a at Ah Heng Stall, 88 percent match/));
+  assert.equal(opened, 1);
+});
+
+test("ForYouCard shows no match badge without a palate", async () => {
+  const view = await render(
+    createElement(ForYouCard, {
+      pick: { dish: renderDish("b"), reason: "Popular here" },
+      onPress: () => undefined,
+    }),
+  );
+  assert.doesNotMatch(view.text(), /% match/);
+  assert.match(view.text(), /Popular here/);
+});
+
+test("WhatsHerePanel filters stalls by food type and price, and clears the filters", async () => {
+  const opened: string[] = [];
+  const stalls: HereStall[] = [
+    {
+      venue: renderVenue("noodle"),
+      dishes: [renderDish("n", { foodTypeTag: "Noodles", price: 4 })],
+    },
+    {
+      venue: renderVenue("rice"),
+      dishes: [renderDish("r", { foodTypeTag: "Rice", price: 9 })],
+    },
+  ];
+  const view = await render(
+    createElement(WhatsHerePanel, {
+      placeName: "Maxwell",
+      stalls,
+      getStallMeta: () => "Open now",
+      onOpenStall: (id: string) => opened.push(id),
+    }),
+  );
+  assert.match(view.text(), /All stalls at Maxwell/);
+  assert.match(view.text(), /2 stalls/);
+  await view.press(view.findByLabel("Noodles filter"));
+  assert.match(view.text(), /1 stall/);
+  assert.match(view.text(), /Stall noodle/);
+  assert.doesNotMatch(view.text(), /Stall rice/);
+  await view.press(view.findByLabel("S$8+ filter"));
+  assert.match(view.text(), /No stalls match/);
+  await view.press(view.findByLabel("Clear filters"));
+  assert.match(view.text(), /2 stalls/);
+  await view.press(view.findByLabel("Open Stall rice"));
+  assert.deepEqual(opened, ["rice"]);
+});
+
+test("TrendingList shows rich rows, opens one, and hides when there are none", async () => {
+  const opened: string[] = [];
+  const bite = {
+    id: "b1",
+    dishId: "d1",
+    dishName: "Laksa",
+    venueName: "Sungei Road",
+    unitNumber: "#01-01",
+    photoUrl: "",
+    rating: 4.6,
+    price: 5,
+    distanceMeters: 350,
+  } as unknown as Bite;
+  const view = await render(
+    createElement(TrendingList, {
+      title: "Trending near you",
+      bites: [bite],
+      onOpen: (item: Bite) => opened.push(item.dishId),
+    }),
+  );
+  assert.match(view.text(), /Trending near you/);
+  assert.match(view.text(), /Laksa/);
+  assert.match(view.text(), /350 m/);
+  assert.match(view.text(), /S\$5\.00/);
+  await view.press(view.findByLabel("Laksa at Sungei Road"));
+  assert.deepEqual(opened, ["d1"]);
+  await view.rerender(
+    createElement(TrendingList, { title: "Trending near you", bites: [], onOpen: () => undefined }),
+  );
+  assert.doesNotMatch(view.text(), /Trending near you/);
+});
+
+test("AchievementsSection shows levels, progress and a completed goal", async () => {
+  const rows = computeAchievements({
+    triedDishes: 12,
+    distinctCentres: 0,
+    stallsVisited: 0,
+    spicyDishes: 0,
+    sweetDishes: 0,
+    budgetDishes: 0,
+    reviewsWritten: 1,
+    dishesSaved: 60,
+  });
+  const view = await render(createElement(AchievementsSection, { rows }));
+  assert.match(view.text(), /Dish collector/);
+  assert.match(view.text(), /Level 1\/4/);
+  assert.match(view.text(), /12 \/ 25/);
+  // Curator has all three levels done.
+  assert.match(view.text(), /Complete/);
+  assert.match(view.text(), /3 of 8 started/);
 });

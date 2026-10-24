@@ -156,6 +156,8 @@ export interface VenueSummary {
   /** Weekly + special hours a verified merchant set; wins over operatingHours for "Open now". */
   openingSchedule?: OpeningSchedule;
   closureNotice?: string;
+  /** How many diners saved this stall. Undefined when the count is not available. */
+  savedCount?: number;
   deliveryLinks: DeliveryLink[];
   verificationStatus?: VerificationStatus;
   planningArea?: string;
@@ -256,6 +258,8 @@ export interface DishSummary {
   venueVerificationStatus?: VerificationStatus;
   /** ISO time the dish row last changed; shown as "Updated 3d ago". Undefined when unknown. */
   updatedAt?: string;
+  /** How many diners saved this dish. Undefined when the count is not available. */
+  savedCount?: number;
 }
 
 export interface Review {

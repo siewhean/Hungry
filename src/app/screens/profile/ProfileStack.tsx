@@ -7,6 +7,7 @@ import { AddStallScreen } from "./AddStallScreen";
 import { StallSubmissionsScreen } from "./StallSubmissionsScreen";
 import { FavouritesScreen } from "./FavouritesScreen";
 import { ListsHomeScreen } from "./ListsHomeScreen";
+import { CollectionsScreen } from "./CollectionsScreen";
 import { ProfileHomeScreen } from "./ProfileHomeScreen";
 import { FollowersScreen, FollowingScreen } from "./ProfileConnectionsScreen";
 import { ReviewHistoryScreen } from "./ReviewHistoryScreen";
@@ -85,6 +86,7 @@ export function ProfileStack() {
         <Stack.Screen name="FollowedStalls" component={FollowedStallsScreen} />
         <Stack.Screen name="Favourites" component={FavouritesScreen} />
         <Stack.Screen name="ListsHome" component={ListsHomeScreen} />
+        <Stack.Screen name="Collections" component={CollectionsScreen} />
         <Stack.Screen name="ReviewHistory" component={ReviewHistoryScreen} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
         <Stack.Screen name="ReviewFlow" component={ReviewStack} />

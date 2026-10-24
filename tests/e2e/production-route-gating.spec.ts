@@ -25,7 +25,8 @@ test.describe("production route gating", () => {
     expect(flags).toContain("collectionsEnabled");
     expect(flags).toContain("storiesEnabled");
     expect(flags).toContain("commentsEnabled: nonProductionSurfaceEnabled");
-    expect(flags).toContain("directMessagesEnabled: nonProductionSurfaceEnabled");
+    // Messages is archived: off everywhere unless a build opts in.
+    expect(flags).toContain('directMessagesEnabled: surface("EXPO_PUBLIC_ENABLE_MESSAGES", false)');
     expect(flags).toContain("merchantCentreEnabled: nonProductionSurfaceEnabled");
     expect(flags).toContain("merchantClaimCtaEnabled: nonProductionSurfaceEnabled");
     expect(flags).toContain('appEnv !== "production"');

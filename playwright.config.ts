@@ -67,6 +67,11 @@ export default defineConfig({
           EXPO_PUBLIC_DISABLE_POSTHOG: "1",
           EXPO_NO_DOTENV: "1",
           EXPO_NO_TELEMETRY: "1",
+          // The social feed, Activity and Messages are archived (off by default). The
+          // browser suite opts them back in so their code stays tested until they return.
+          EXPO_PUBLIC_ENABLE_SOCIAL_FEED: "1",
+          EXPO_PUBLIC_ENABLE_ACTIVITY: "1",
+          EXPO_PUBLIC_ENABLE_MESSAGES: "1",
         },
       }
     : undefined,

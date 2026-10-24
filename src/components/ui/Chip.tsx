@@ -1,6 +1,6 @@
 import { type ReactNode } from "react";
 import { Pressable, StyleSheet, type StyleProp, View, type ViewStyle } from "react-native";
-import * as Haptics from "@/lib/haptics";
+import { selectHaptic } from "@/lib/haptics";
 
 import { useHungryTheme } from "@/theme";
 import { AppText } from "./AppText";
@@ -83,7 +83,7 @@ export function Chip({
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{ selected }}
       onPress={() => {
-        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        selectHaptic();
         onPress();
       }}
       style={({ pressed }) => [

@@ -5,10 +5,8 @@ import { resolveFeatureFlags } from "@/constants/featureFlags";
 
 // Core surfaces that ship in every environment (main's product decisions).
 const SHIPPED_SURFACE_FLAGS = [
-  "socialFeedEnabled",
   "postCreationEnabled",
   "reviewCreationEnabled",
-  "activityEnabled",
   "mapEnabled",
   "hungryWheelEnabled",
   "favouritesEnabled",
@@ -16,11 +14,13 @@ const SHIPPED_SURFACE_FLAGS = [
   "stallAlertsEnabled",
 ] as const;
 
+// Archived surfaces (owner decision 2026-10-24): off everywhere unless a build opts in.
+const ARCHIVED_FLAGS = ["socialFeedEnabled", "activityEnabled", "directMessagesEnabled"] as const;
+
 // Surfaces that stay out of production (mock-backed or not launch-ready).
 const NON_PRODUCTION_FLAGS = [
   "craveEnabled",
   "wheelPartyEnabled",
-  "directMessagesEnabled",
   "commentsEnabled",
   "oauthProvidersEnabled",
   "gamificationEnabled",
@@ -38,8 +38,25 @@ test("production ships main's core surfaces and keeps advanced surfaces closed",
   for (const flag of SHIPPED_SURFACE_FLAGS) {
     assert.equal(flags[flag], true, `${flag} must ship in production`);
   }
-  for (const flag of NON_PRODUCTION_FLAGS) {
+  for (const flag of [...NON_PRODUCTION_FLAGS, ...ARCHIVED_FLAGS]) {
     assert.equal(flags[flag], false, `${flag} must stay out of production`);
+  }
+});
+
+test("the archived social feed, Activity and Messages are off until a build opts in", () => {
+  for (const appEnv of ["development", "staging", "production"] as const) {
+    const flags = resolveFeatureFlags(appEnv, "production", {});
+    for (const flag of ARCHIVED_FLAGS) {
+      assert.equal(flags[flag], false, `${flag} is archived in ${appEnv}`);
+    }
+  }
+  const optedIn = resolveFeatureFlags("development", "development", {
+    EXPO_PUBLIC_ENABLE_SOCIAL_FEED: "1",
+    EXPO_PUBLIC_ENABLE_ACTIVITY: "1",
+    EXPO_PUBLIC_ENABLE_MESSAGES: "1",
+  });
+  for (const flag of ARCHIVED_FLAGS) {
+    assert.equal(optedIn[flag], true, `${flag} can be opted back in`);
   }
 });
 
@@ -68,7 +85,7 @@ test("build profiles can narrow surfaces one at a time and opt into core-only mo
 
   assert.equal(flags.mapEnabled, false);
   assert.equal(flags.reviewCreationEnabled, false);
-  assert.equal(flags.socialFeedEnabled, true);
+  assert.equal(flags.postCreationEnabled, true);
   assert.equal(flags.release01CoreOnly, true);
   assert.equal(flags.favouritesEnabled, true);
 });

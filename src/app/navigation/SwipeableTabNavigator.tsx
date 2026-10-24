@@ -6,7 +6,7 @@ import type {
   MaterialTopTabNavigationProp,
 } from "@react-navigation/material-top-tabs";
 import { useFocusEffect, useNavigation, type NavigationProp } from "@react-navigation/native";
-import { BookOpenText, Compass, House, Plus, User } from "lucide-react-native";
+import { BookOpenText, House, Newspaper, PenLine, User } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppBottomTabItem, Skeleton } from "@/components/ui";
@@ -218,16 +218,18 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const routeByName = new Map(state.routes.map((route) => [route.name, route]));
+  // Discover is the home page; the social posts feed (the "Home" route) is the Feed tab.
+  // The round middle button writes a review.
   const tabItems = [
+    { key: "Discover", route: routeByName.get("Discover"), icon: House, label: "Home" },
     ...(FEATURE_FLAGS.socialFeedEnabled
-      ? [{ key: "Home", route: routeByName.get("Home"), icon: House, label: "Home" }]
-      : []),
-    { key: "Discover", route: routeByName.get("Discover"), icon: Compass, label: "Discover" },
-    ...(FEATURE_FLAGS.postCreationEnabled
-      ? [{ key: "Create", isCreateAction: true, icon: Plus, label: "Create post" }]
+      ? [{ key: "Home", route: routeByName.get("Home"), icon: Newspaper, label: "Feed" }]
       : []),
     ...(FEATURE_FLAGS.reviewCreationEnabled
-      ? [{ key: "Review", route: routeByName.get("Review"), icon: BookOpenText, label: "Review" }]
+      ? [{ key: "Create", isCreateAction: true, icon: PenLine, label: "Write a review" }]
+      : []),
+    ...(FEATURE_FLAGS.reviewCreationEnabled
+      ? [{ key: "Review", route: routeByName.get("Review"), icon: BookOpenText, label: "Reviews" }]
       : []),
     { key: "Profile", route: routeByName.get("Profile"), icon: User, label: "Profile" },
   ].filter((item) => item.isCreateAction || item.route);
@@ -256,12 +258,12 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
         const onPress = () => {
           if (isCreateAction) {
             if (!isAuthenticated) {
-              setReturnRoute({ name: "Post" });
+              setReturnRoute({ name: "ReviewStack", params: { screen: "ReviewMain" } });
               rootNavigation?.navigate("AuthStack", { screen: "Login" });
               return;
             }
 
-            rootNavigation?.navigate("Post");
+            rootNavigation?.navigate("ReviewStack", { screen: "ReviewMain" });
             return;
           }
 
@@ -284,7 +286,7 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
 
         const onPressIn = () => {
           if (isCreateAction) {
-            preloadRoute(rootNavigation, "Post");
+            preloadRoute(rootNavigation, "ReviewStack", { screen: "ReviewMain" });
             return;
           }
           scheduleMainTabRouteWarmup(routeName);
@@ -321,7 +323,7 @@ export function SwipeableTabNavigator() {
   return (
     <Tab.Navigator
       id="Tabs"
-      initialRouteName={FEATURE_FLAGS.socialFeedEnabled ? "Home" : "Discover"}
+      initialRouteName="Discover"
       tabBarPosition="bottom"
       tabBar={(props: MaterialTopTabBarProps) => <CustomTabBar {...props} />}
       screenOptions={{
@@ -332,13 +334,13 @@ export function SwipeableTabNavigator() {
         lazyPreloadDistance: tabPreloadEnabled ? MAIN_TAB_PRELOAD_DISTANCE : 0,
       }}
     >
-      {/* No pager swipe on Home: its photo carousels own horizontal swipes. */}
+      <Tab.Screen name="Discover" component={DiscoverWrapper} />
+      {/* The social posts feed. No pager swipe: its photo carousels own horizontal swipes. */}
       <Tab.Screen
         name="Home"
         component={FEATURE_FLAGS.socialFeedEnabled ? HomeWrapper : ReleaseLandingRedirect}
         options={{ swipeEnabled: false }}
       />
-      <Tab.Screen name="Discover" component={DiscoverWrapper} />
       <Tab.Screen
         name="Review"
         component={FEATURE_FLAGS.reviewCreationEnabled ? ReviewWrapper : ReleaseLandingRedirect}

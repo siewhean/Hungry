@@ -24,7 +24,9 @@ test("stall reviews are one newest-first query naming each dish, with a write-re
   assert.match(stallDetail, /on \{review\.dishName\}/);
   assert.match(stallDetail, /navigation\.navigate\("DishDetail", \{ dishId: review\.dishId \}\)/);
   assert.match(stallDetail, /Couldn&apos;t load reviews for this stall\./);
-  assert.match(stallDetail, /ctaLabel="Write a review"\s*onPress=\{openWriteReview\}/);
+  // One "Write a review" pill lives in the sticky bar; the Reviews heading carries no second link.
+  assert.match(stallDetail, /onReview=\{[\s\S]*?openWriteReview/);
+  assert.doesNotMatch(stallDetail, /accessibilityLabel=\{`Write a review for \$\{venue\.name\}`\}/);
   assert.match(
     stallDetail,
     /const openWriteReview = \(\) => \{[\s\S]*?if \(!requireAuthForProtectedAction\(/,
@@ -74,12 +76,17 @@ test("stall page has no fake save, timer skeleton, or menu-empty flash while loa
 });
 
 test("stall header shows rating, price, status, actions and delivery links", () => {
-  assert.doesNotMatch(stallDetail, /ChevronRight/);
   assert.match(stallDetail, /summarizeStallRating\(dishes\)/);
   assert.match(stallDetail, /formatStallPriceBand\(dishes\)/);
-  assert.match(stallDetail, /label="Directions"/);
+  // Directions and Save live in the sticky bottom bar; Share floats over the photo.
+  assert.match(stallDetail, /<StallInteractionBar[\s\S]*?layout="sticky"/);
+  assert.match(stallDetail, /onDirections=/);
+  assert.match(stallDetail, /accessibilityLabel="Share stall"[\s\S]*?side="right"/);
+  assert.match(read("src/components/stall/StallInteractionBar.tsx"), /label: "Directions"/);
+  // Phone and email sit in a Contact details card; delivery uses the wide button row.
+  assert.match(stallDetail, /Contact details/);
   assert.match(stallDetail, /label="Call"/);
-  assert.match(stallDetail, /<DeliveryPlatformButton/);
+  assert.match(stallDetail, /<DeliveryButtonRow/);
   assert.match(stallDetail, /cachedVenue && serviceProviderMode !== "supabase"/);
   assert.match(stallDetail, /merchantProfile\?\.coverPhotoUrl,\s*venue\.imageUrl/);
   assert.doesNotMatch(stallDetail, /hero dish photo/);
@@ -133,7 +140,9 @@ test("dish attributes never present placeholder taste data as fact", () => {
   assert.match(dishDetail, /hasDishTasteSignal\(dish\)/);
   assert.doesNotMatch(dishDetail, /"Signature"|"House style"/);
   assert.doesNotMatch(dishDetail, /% taste match/);
-  assert.match(dishDetail, /\.\.\.\(showTasteMatch/);
+  // The taste matrix box is gone; the "how it tastes to you" rows come from the dish's own vector.
+  assert.doesNotMatch(dishDetail, /showTasteMatch|tasteMatch/);
+  assert.match(dishDetail, /perceivedTasteRows\(dish\.tasteVector, profile\.tasteVector\)/);
   const disclosure = read("src/lib/services/dataTrustDisclosure.ts");
   assert.doesNotMatch(disclosure, /Live wait estimate/);
 });

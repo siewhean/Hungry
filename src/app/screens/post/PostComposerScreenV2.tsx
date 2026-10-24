@@ -233,7 +233,7 @@ export function PostComposerScreenV2({ navigation, route }: Props) {
 
       <Dialog
         visible={showExitDialog}
-        title="Save Draft?"
+        title="Save draft?"
         message="You have unsaved changes. Would you like to save this as a draft before leaving?"
         onClose={() => setShowExitDialog(false)}
         buttons={[
@@ -247,7 +247,7 @@ export function PostComposerScreenV2({ navigation, route }: Props) {
             },
           },
           {
-            text: "Save Draft",
+            text: "Save draft",
             onPress: () => {
               setPublishingState("draft");
               setShowExitDialog(false);
@@ -258,7 +258,7 @@ export function PostComposerScreenV2({ navigation, route }: Props) {
             },
           },
           {
-            text: "Keep Editing",
+            text: "Keep editing",
             style: "cancel",
             onPress: () => setShowExitDialog(false),
           },

@@ -68,13 +68,15 @@ test("profile home shows real reviews, loading skeletons, retry, and a confirmed
   assert.match(source, /tastePersonaSummary/);
 });
 
-test("stalls stat and visited stalls list share one source", () => {
-  const home = read("src/app/screens/profile/ProfileHomeScreen.tsx");
+test("achievements stalls count and visited stalls list share one source", () => {
+  const passport = read("src/app/screens/profile/PassportScreen.tsx");
+  const input = read("src/features/achievements/useAchievementInput.ts");
   const visited = read("src/app/screens/profile/VisitedStallsScreen.tsx");
   const hook = read("src/features/profile/visitedStalls.ts");
 
   assert.match(hook, /interaction\.isTried/);
-  assert.match(home, /useVisitedStallIds\(\)/);
+  assert.match(input, /interaction\.isTried/);
+  assert.match(passport, /screen: "VisitedStalls"/);
   assert.match(visited, /useVisitedStallIds\(\)/);
   assert.match(visited, /title="Visited stalls"/);
   assert.doesNotMatch(visited, /Visited stores/);
@@ -109,7 +111,8 @@ test("review history shows only the user's own rating with one CTA", () => {
   const source = read("src/app/screens/profile/ReviewHistoryScreen.tsx");
 
   assert.doesNotMatch(source, /dish\?\.rating/);
-  assert.equal(source.match(/label="Write another review"/g)?.length, 1);
+  assert.equal(source.match(/accessibilityLabel="Write a review"/g)?.length, 1);
+  assert.doesNotMatch(source, /Taste Journal|Foodie Footprint/);
   assert.doesNotMatch(source, /"review-history-entry"/);
   assert.match(source, /navigate\("DishDetail", \{ dishId \}\)/);
 });
@@ -128,7 +131,10 @@ test("locked passport stamps use their own category count", () => {
   const screen = read("src/app/screens/profile/PassportScreen.tsx");
 
   assert.match(card, /stamp\.threshold - triedInCategory/);
-  assert.match(screen, /triedInCategory=\{progress\?\.triedCount \?\? 0\}/);
+  assert.match(
+    screen,
+    /triedInCategory=\{progressMap\[nextStamp\.category\.id\]\?\.triedCount \?\? 0\}/,
+  );
   assert.match(screen, /trackPassportViewed\("profile"\)/);
 });
 

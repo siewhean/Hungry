@@ -28,10 +28,10 @@ test("AppText bounds OS font scaling so fixed-format mobile UI does not clip", (
   const theme = read("src/theme/index.tsx");
 
   assert.match(tokens, /export const fontScaling = \{/);
-  assert.match(tokens, /displayMaxMultiplier: 1\.05/);
-  assert.match(tokens, /headingMaxMultiplier: 1\.08/);
-  assert.match(tokens, /bodyMaxMultiplier: 1\.12/);
-  assert.match(tokens, /compactMaxMultiplier: 1/);
+  assert.match(tokens, /displayMaxMultiplier: 1\.5/);
+  assert.match(tokens, /headingMaxMultiplier: 1\.6/);
+  assert.match(tokens, /bodyMaxMultiplier: 2/);
+  assert.match(tokens, /compactMaxMultiplier: 2/);
   assert.match(theme, /fontScaling: typeof fontScaling/);
   assert.match(source, /maxFontSizeMultiplier,/);
   assert.match(source, /allowFontScaling,/);

@@ -139,10 +139,9 @@ export function WheelLobbyScreen({ navigation }: Props) {
                     style={{
                       color: palette.inverseTextSecondary,
                       fontWeight: "800",
-                      textTransform: "uppercase",
                     }}
                   >
-                    Active Party Code
+                    Active party code
                   </AppText>
                   <AppText
                     variant="display"
@@ -178,7 +177,7 @@ export function WheelLobbyScreen({ navigation }: Props) {
                       marginTop: 4,
                     }}
                   >
-                    {copied ? "COPIED" : "COPY"}
+                    {copied ? "Copied" : "Copy"}
                   </AppText>
                 </Pressable>
               </LinearGradient>
@@ -274,7 +273,7 @@ export function WheelLobbyScreen({ navigation }: Props) {
         <View style={{ gap: spacing[3], paddingBottom: spacing[2] }}>
           <View style={{ flexDirection: "row", gap: spacing[3] }}>
             <Button
-              label="Add Option"
+              label="Add option"
               onPress={() => setAddSheetOpen(true)}
               variant="secondary"
               style={{ flex: 1 }}
@@ -282,7 +281,7 @@ export function WheelLobbyScreen({ navigation }: Props) {
             />
             {isHost && (
               <Button
-                label="Spin Wheel"
+                label="Spin wheel"
                 onPress={handleSpin}
                 disabled={!canSpin}
                 style={{ flex: 1.5 }}
@@ -315,7 +314,6 @@ export function WheelLobbyScreen({ navigation }: Props) {
               tone="muted"
               style={{
                 textAlign: "center",
-                textTransform: "uppercase",
                 letterSpacing: 1,
               }}
             >

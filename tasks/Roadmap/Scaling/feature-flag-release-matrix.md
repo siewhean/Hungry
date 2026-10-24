@@ -18,7 +18,9 @@ Production defaults must stay MVP-safe. Advanced surfaces may be visible in deve
 | `prototypeRoutesEnabled` | true | true | false | Blocks V2/design/prototype roots in production |
 | `merchantCentreEnabled` | true | true | false | Production requires separate launch approval |
 | `merchantClaimCtaEnabled` | true | true | false | Hidden in production MVP |
-| `directMessagesEnabled` | true | true | false | Disabled until moderation and safety proof |
+| `socialFeedEnabled` | false | false | false | Archived 2026-10-24 (owner decision); `EXPO_PUBLIC_ENABLE_SOCIAL_FEED=1` opts in |
+| `activityEnabled` | false | false | false | Archived 2026-10-24 (owner decision); `EXPO_PUBLIC_ENABLE_ACTIVITY=1` opts in |
+| `directMessagesEnabled` | false | false | false | Archived 2026-10-24 (owner decision); `EXPO_PUBLIC_ENABLE_MESSAGES=1` opts in |
 | `commentsEnabled` | true | true | false | Disabled until moderation and safety proof |
 | `storiesEnabled` | true | true | false | Disabled until moderation and safety proof |
 | `collectionsEnabled` | true | true | false | Disabled until MVP launch approval |

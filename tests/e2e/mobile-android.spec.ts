@@ -27,6 +27,6 @@ test.describe("mobile Android smoke", () => {
 
     await resetAppState(page);
     await openComposerFromLauncher(page);
-    await expect(page.getByRole("button", { name: "Save Draft" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Save draft" })).toBeVisible();
   });
 });

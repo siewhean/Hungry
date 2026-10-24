@@ -116,13 +116,13 @@ export function SharedMetadata({ onOpenLocation, onOpenCollaborators }: SharedMe
             }}
           >
             <Hash size={18} color={palette.textMuted} />
-            <AppText variant="bodyBold">Taste Tags</AppText>
+            <AppText variant="bodyBold">Taste tags</AppText>
           </View>
 
           <View style={{ gap: spacing.lg }}>
             <View>
               <AppText variant="micro" tone="muted" style={{ marginBottom: spacing.md }}>
-                FOOD TAGS
+                Food tags
               </AppText>
               <View style={[styles.chipRow, { gap: spacing.md }]}>
                 {["Noodles", "Rice", "Seafood", "Snack", "Dessert"].map((tag) => (
@@ -138,7 +138,7 @@ export function SharedMetadata({ onOpenLocation, onOpenCollaborators }: SharedMe
 
             <View>
               <AppText variant="micro" tone="muted" style={{ marginBottom: spacing.md }}>
-                TASTE PROFILE
+                Taste profile
               </AppText>
               <View style={[styles.chipRow, { gap: spacing.md }]}>
                 {["Spicy", "Savoury", "Sweet", "Umami", "Smoky"].map((tag) => (

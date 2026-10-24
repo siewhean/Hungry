@@ -52,7 +52,7 @@ function DynamicHeader({ onClose }: { onClose: () => void }) {
         animatedStyle,
       ]}
     >
-      <AppText variant="h3">Select Location</AppText>
+      <AppText variant="h3">Select location</AppText>
       <IconButton
         icon={<X size={24} color={palette.text} />}
         accessibilityLabel="Close"

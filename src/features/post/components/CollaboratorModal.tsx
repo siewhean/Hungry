@@ -49,7 +49,7 @@ export function CollaboratorModal({ innerRef }: CollaboratorModalProps) {
             { marginBottom: spacing[2], paddingHorizontal: semanticSpacing.screenEdge },
           ]}
         >
-          <AppText variant="h3">Tag Collaborators</AppText>
+          <AppText variant="h3">Tag collaborators</AppText>
           <IconButton
             icon={<X size={24} color={palette.text} />}
             accessibilityLabel="Close"

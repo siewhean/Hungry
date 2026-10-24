@@ -187,10 +187,9 @@ test("post composer remains isolated behind the Release 0.1 post flag", () => {
   const publishing = read("src/features/post/publishing.ts");
   const swipeTabs = read("src/app/navigation/SwipeableTabNavigator.tsx");
 
-  assert.match(swipeTabs, /FEATURE_FLAGS\.postCreationEnabled[\s\S]*key: "Create"/);
-  // QA tests what ships: every environment opens the V1 Post composer.
-  assert.match(swipeTabs, /rootNavigation\?\.navigate\("Post"\)/);
-  assert.doesNotMatch(swipeTabs, /PostComposerV2/);
+  // The tab bar's middle button writes a review; it never opens a composer.
+  assert.match(swipeTabs, /FEATURE_FLAGS\.reviewCreationEnabled[\s\S]*key: "Create"/);
+  assert.doesNotMatch(swipeTabs, /navigate\("Post"\)|PostComposerV2/);
   assert.match(postScreen, /import \{ publishComposerPost \}/);
   assert.match(postScreen, /useComposerStore\.getState\(\)/);
   // Camera or library, asked for only when chosen.
@@ -343,19 +342,8 @@ test("Supabase review reads hydrate review_photos and public profile names and a
 test("Supabase review feed does not send review ids through post reaction writes", () => {
   const reviewFeed = read("src/app/screens/review/ReviewFeedScreen.tsx");
 
-  assert.match(reviewFeed, /const reviewReactionsEnabled = serviceProviderMode === "mock"/);
-  assert.match(reviewFeed, /"Remove saved dish"/);
-  assert.match(reviewFeed, /"Save dish"/);
-  assert.doesNotMatch(reviewFeed, /"Unsave review"/);
-  assert.doesNotMatch(reviewFeed, /"Save review"/);
-  assert.match(reviewFeed, /\{reviewReactionsEnabled \? \(/);
-  assert.match(reviewFeed, /toggleSave\(item\.interactionId\)/);
-  assert.match(
-    reviewFeed,
-    /const localDish = item\.dish \?\? repository\.getDishById\(item\.dishId\)/,
-  );
-  assert.match(reviewFeed, /toggleFavourite\(localDish\)/);
-  assert.match(reviewFeed, /: favouriteDishIds\.includes\(item\.dishId\)/);
+  // Round 6: the Reviews grid has no like, save or share buttons, so it writes no reactions.
+  assert.doesNotMatch(reviewFeed, /useSocialStore|toggleSave|toggleLike|incrementShare/);
   assert.doesNotMatch(reviewFeed, /void toggleSave\(item\.review\.id\);\s*const dish/);
 });
 
@@ -368,7 +356,7 @@ test("advanced liked-content social collection is gated out of MVP production", 
   assert.match(profileStack, /name="SocialPostDetail" getComponent=\{loadSocialPostDetailScreen\}/);
   assert.doesNotMatch(profileStack, /SocialGridScreen\} from "\.\/SocialGridScreen"/);
   assert.match(profileHome, /isAuthenticated && FEATURE_FLAGS\.collectionsEnabled && \(/);
-  assert.match(profileHome, /label="Liked Content"/);
+  assert.match(profileHome, /label="Liked content"/);
 });
 
 test("Search results route reads the paged catalog service, never the repository cache", () => {

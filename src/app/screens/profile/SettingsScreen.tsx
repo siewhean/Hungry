@@ -169,7 +169,8 @@ export function SettingsScreen() {
 
   const isProfilePrivate = profile.profileVisibility === "private";
   // Profile visibility only matters when social surfaces ship.
-  const showSocialPrivacySettings = FEATURE_FLAGS.socialFeedEnabled;
+  // Follows and follow requests outlive the archived social feed.
+  const showSocialPrivacySettings = true;
 
   const normalizedThemePreference: ThemePreference =
     themePreference === "system" || themePreference === "light" || themePreference === "dark"
@@ -422,7 +423,7 @@ export function SettingsScreen() {
         "Location permissions",
         "Hungry could not enable location access. Update this permission in Settings if you previously denied it.",
         [
-          { text: "Open Settings", onPress: () => void openAppSettings() },
+          { text: "Open settings", onPress: () => void openAppSettings() },
           { text: "Cancel", style: "cancel" },
         ],
       );
@@ -560,7 +561,14 @@ export function SettingsScreen() {
 
   return (
     <ProfileScreenShell title="Settings">
-      <SettingsSection editorial title="Dining preferences">
+      <SettingsSection
+        editorial
+        collapsible
+        title="Dining preferences"
+        collapsedSummary={
+          profile.dietaryPreferences.length ? `${profile.dietaryPreferences.length} selected` : ""
+        }
+      >
         <SettingsRow
           editorial
           label="Dietary preferences"
@@ -883,7 +891,7 @@ export function SettingsScreen() {
         />
         <SettingsRow
           editorial
-          label="Privacy Policy"
+          label="Privacy policy"
           type="link"
           icon={<FileText size={20} color={palette.orange} />}
           onPress={() => void openTrustedExternalUrl(WEB_LINKS.privacy)}
@@ -891,7 +899,7 @@ export function SettingsScreen() {
         />
         <SettingsRow
           editorial
-          label="Terms of Service"
+          label="Terms of service"
           type="link"
           icon={<Scale size={20} color={palette.orange} />}
           onPress={() => void openTrustedExternalUrl(WEB_LINKS.terms)}

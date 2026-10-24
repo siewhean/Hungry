@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Platform, Pressable, Switch, View } from "react-native";
+import { Platform, Pressable, View } from "react-native";
 import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { Clock } from "lucide-react-native";
 
@@ -10,6 +10,7 @@ import { useHungryTheme } from "@/theme";
 import type { OpeningSchedule, OpeningTimeRange } from "@/types/domain";
 import { DAY_ORDER } from "@/utils/operatingHours";
 import { MAX_RANGES_PER_DAY, MAX_SPECIAL_DAYS, OPENING_DAY_KEYS } from "@/utils/openingSchedule";
+import { AnimatedSwitch } from "@/components/ui/AnimatedSwitch";
 
 type SpecialDay = NonNullable<OpeningSchedule["special"]>[number];
 
@@ -132,18 +133,7 @@ function OpenSwitch({
   value: boolean;
   onValueChange: (value: boolean) => void;
 }) {
-  const { palette } = useHungryTheme();
-  return (
-    <Switch
-      accessibilityLabel={label}
-      accessibilityState={{ checked: value }}
-      value={value}
-      onValueChange={onValueChange}
-      trackColor={{ false: palette.border, true: palette.orange }}
-      thumbColor={palette.white}
-      ios_backgroundColor={palette.border}
-    />
-  );
+  return <AnimatedSwitch accessibilityLabel={label} value={value} onValueChange={onValueChange} />;
 }
 
 function RangeRows({

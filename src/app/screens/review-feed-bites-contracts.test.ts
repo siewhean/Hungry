@@ -20,56 +20,18 @@ test("Review feed cards do not render bottom bites sections", () => {
   assert.doesNotMatch(reviewFeed, /useDelayedLoadingSkeleton\(isBitesLoading\)/);
   assert.doesNotMatch(reviewFeed, /bitesByDishId/);
   assert.doesNotMatch(reviewFeed, /activeCommentBite/);
-  assert.match(reviewFeed, /useSocialStore/);
-  assert.match(reviewFeed, /initializeInteractions\(/);
-  assert.match(reviewFeed, /const reviewReactionsEnabled = serviceProviderMode === "mock"/);
-  assert.match(reviewFeed, /toggleLike/);
-  assert.match(reviewFeed, /toggleSave\(item\.interactionId\)/);
-  assert.match(
-    reviewFeed,
-    /const localDish = item\.dish \?\? repository\.getDishById\(item\.dishId\)/,
-  );
-  assert.match(reviewFeed, /toggleFavourite\(localDish\)/);
-  assert.match(reviewFeed, /: favouriteDishIds\.includes\(item\.dishId\)/);
-  assert.match(reviewFeed, /incrementShare/);
-  assert.match(reviewFeed, /ReviewCommentsSheet/);
-  assert.match(reviewFeed, /ReviewShareSheet/);
-  assert.match(reviewFeed, /commentsEnabled=\{commentsEnabled\}/);
-  assert.match(reviewFeed, /const openCommentsSheet = useCallback/);
-  assert.match(reviewFeed, /const commentSheet = commentsSheetRef\.current/);
-  assert.match(reviewFeed, /openCommentsSheet\(\)/);
-  assert.match(reviewFeed, /shareSheetRef\.current\?\.present\(\)/);
-  // Relative within a week, then a date that carries the year when it is not this year.
+  // Round 6: the Reviews tab is a photo grid. Tiles carry no like, save, share or comment actions.
+  assert.match(reviewFeed, /const GRID_COLUMNS = 3;/);
+  assert.match(reviewFeed, /numColumns=\{GRID_COLUMNS\}/);
+  assert.match(reviewFeed, /reviewsWithPhotos\(/);
+  assert.doesNotMatch(reviewFeed, /ReviewCommentsSheet|commentsEnabled|openCommentsSheet/);
+  assert.doesNotMatch(reviewFeed, /linkedPost/);
+  assert.doesNotMatch(reviewFeed, /toggleLike|likeCount/);
+  assert.doesNotMatch(reviewFeed, /seededComments=\{/);
+  // The dish name and the date sit over a bottom gradient: relative within a week, then a date.
+  assert.match(reviewFeed, /\{item\.dishName\}[\s\S]*formatReviewDate\(item\.review\.createdAt\)/);
   assert.match(reviewFeed, /formatReviewDate\(item\.review\.createdAt\)/);
   assert.match(reviewFeed, /sameYear \? \{\} : \{ year: "numeric" \}/);
-  assert.match(
-    reviewFeed,
-    /<AppText variant="micro" tone="muted" numberOfLines=\{1\}>\s*\{item\.venueName\}\s*<\/AppText>/,
-  );
-  assert.match(reviewFeed, /\{reviewDate\}[\s\S]*<Send/);
-  assert.match(reviewFeed, /accessibilityLabel="Share review"/);
-  assert.match(reviewFeed, /"Remove saved dish"/);
-  assert.match(reviewFeed, /"Save dish"/);
-  assert.doesNotMatch(reviewFeed, /"Unsave review"/);
-  assert.doesNotMatch(reviewFeed, /"Save review"/);
-  assert.match(reviewFeed, /accessibilityLabel="Open review comments"/);
-  assert.match(reviewFeed, /accessibilityLabel=\{liked \? "Unlike review" : "Like review"\}/);
-  assert.match(reviewFeed, /commentCount > 0/);
-  assert.match(reviewFeed, /likeCount > 0/);
-  assert.match(reviewFeed, /shareCount > 0/);
-  assert.match(reviewFeed, /shareCount=\{reviewReactionsEnabled \?/);
-  // Reviews never borrow a linked post id for share counting.
-  assert.match(reviewFeed, /postId: "",/);
-  assert.doesNotMatch(reviewFeed, /linkedPost/);
-  assert.doesNotMatch(reviewFeed, /postId: linkedPost\?\.id \?\? item\.review\.id/);
-  assert.match(reviewFeed, /commentCount: 0/);
-  assert.match(reviewFeed, /likeCount: 0/);
-  assert.doesNotMatch(reviewFeed, /commentCount: 1/);
-  assert.doesNotMatch(reviewFeed, /likeCount: item\.review\.rating/);
-  assert.doesNotMatch(reviewFeed, /seededCommentsForActiveReview/);
-  assert.doesNotMatch(reviewFeed, /seededComments=\{/);
-  assert.match(reviewFeed, /<Send[\s\S]*<Bookmark[\s\S]*<CommentIcon[\s\S]*<Heart/);
-  assert.match(reviewFeed, /justifyContent: "space-between"[\s\S]*justifyContent: "flex-end"/);
 
   assert.match(commentsSheet, /<BottomSheetModal/);
   assert.match(commentsSheet, /if \(!FEATURE_FLAGS\.commentsEnabled\) \{\s*return null;\s*\}/);

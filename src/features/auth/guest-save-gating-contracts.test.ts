@@ -57,15 +57,11 @@ test("guest-reachable follow, like and comment taps prompt sign-in first", () =>
   );
 
   const reviewFeed = read("src/app/screens/review/ReviewFeedScreen.tsx");
-  assert.match(
-    reviewFeed,
-    /reviewReactionsEnabled &&\s*requireAccountForReviewAction\("Sign in to like reviews\.", \(\) =>\s*likePostAfterSignIn\(targetItem\.interactionId\)/,
-  );
-  assert.match(reviewFeed, /onBeforeSend=\{requireAccountForComment\}/);
-  assert.match(
-    reviewFeed,
-    /requireAccountForComment = useCallback\(\(\) => \{[\s\S]*?commentsSheetRef\.current\?\.dismiss\(\);\s*return requireAccountForReviewAction\("Sign in to comment\."\)/,
-  );
+  // Round 6: the Reviews grid has no like button; only reporting needs a sign-in there.
+  assert.doesNotMatch(reviewFeed, /toggleLike|likePostAfterSignIn/);
+  assert.match(reviewFeed, /requireAccountForReviewAction\("Sign in to report reviews\."\)/);
+  // Review cards no longer have comments (round 2), so there is nothing to gate there.
+  assert.doesNotMatch(reviewFeed, /ReviewCommentsSheet/);
   const commentsSheet = read("src/components/social/ReviewCommentsSheet.tsx");
   assert.match(commentsSheet, /if \(onBeforeSend && !onBeforeSend\(\)\) return;/);
 

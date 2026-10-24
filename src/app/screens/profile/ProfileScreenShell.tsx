@@ -1,5 +1,6 @@
 import type { PropsWithChildren, ReactNode } from "react";
 import { View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppText, Screen } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
@@ -24,6 +25,10 @@ export function ProfileScreenShell({
   scroll = true,
 }: PropsWithChildren<ProfileScreenShellProps>) {
   const { spacing } = useHungryTheme();
+  const insets = useSafeAreaInsets();
+  // Screen's SafeAreaView already pads the top inset; add breathing room only where the
+  // inset is 0 (web, no notch) so the title is not flush with the top edge.
+  const topPadding = insets.top > 0 ? 0 : spacing[4];
 
   return (
     <Screen
@@ -32,7 +37,7 @@ export function ProfileScreenShell({
       headerRight={headerRight}
       showBack={showBack}
       headerGap={spacing[3]}
-      contentContainerStyle={{ paddingTop: 0 }}
+      contentContainerStyle={{ paddingTop: topPadding }}
       scroll={scroll}
     >
       <View testID={testID} style={[{ gap: spacing[4] }, !scroll && { flex: 1 }]}>

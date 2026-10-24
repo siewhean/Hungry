@@ -66,9 +66,14 @@ test("M5/M6: the mock feed returns only newer reviews for `after` and keeps pagi
 
 test("M1: a review has its own page, deep link, web page and share link", async () => {
   assert.equal(webShareUrl("review", "abc-123"), "https://usehungry.com/review/abc-123");
+  // The Reviews grid opens each review on its own page, which carries the share link.
   const feed = read("src/app/screens/review/ReviewFeedScreen.tsx");
-  assert.match(feed, /link: webShareUrl\("review", item\.review\.id\)/);
+  assert.match(feed, /navigation\.navigate\("ReviewDetail", \{ reviewId: item\.review\.id \}\)/);
   assert.doesNotMatch(feed, /webShareUrl\("dish"/);
+  assert.match(
+    read("src/app/screens/review/ReviewDetailScreen.tsx"),
+    /url: webShareUrl\("review", review\.id\)/,
+  );
   const types = read("src/app/navigation/navigationTypes.ts");
   assert.match(types, /ReviewDetail: \{ reviewId: string \}/);
   const navigator = read("src/app/navigation/RootNavigator.tsx");
@@ -115,8 +120,8 @@ test("M3: authors are told when their review is hidden or removed, with a way to
   const mailto = buildReviewAppealMailto({ reviewId: "r-1", dishName: "Laksa" });
   assert.match(mailto, /^mailto:usehungrysingapore@gmail\.com\?subject=/);
   assert.match(decodeURIComponent(mailto), /Review reference: r-1/);
+  // The Reviews grid has no text; its tiles open ReviewDetail, which shows the notice.
   for (const file of [
-    "src/app/screens/review/ReviewFeedScreen.tsx",
     "src/app/screens/profile/ReviewHistoryScreen.tsx",
     "src/app/screens/profile/ProfileHomeScreen.tsx",
     "src/app/screens/review/ReviewDetailScreen.tsx",
@@ -128,17 +133,15 @@ test("M3: authors are told when their review is hidden or removed, with a way to
 });
 
 test("M9/M10/M11: write button, every photo, tappable reviewer", () => {
+  // Round 6: writing starts from the centre tab button; the grid marks multi-photo reviews
+  // and each review's page shows every photo and links to the reviewer.
+  const tabs = read("src/app/navigation/SwipeableTabNavigator.tsx");
+  assert.match(tabs, /isCreateAction: true, icon: PenLine, label: "Write a review"/);
   const feed = read("src/app/screens/review/ReviewFeedScreen.tsx");
-  assert.match(feed, /accessibilityLabel="Write a review"/);
-  assert.match(feed, /<ReviewPhotoViewer/);
-  assert.match(feed, /`1\/\$\{photoCount\}`/);
-  assert.match(
-    feed,
-    /navigation\.navigate\("UserProfile", \{ authorId, authorName, authorAvatarUrl \}\)/,
-  );
-  assert.match(feed, /accessibilityLabel=\{\s*canOpenAuthor/);
-  // A guest who taps Write a review is asked to sign in first.
-  assert.match(feed, /requireAccountForReviewAction\("Sign in to write a review\."/);
+  assert.match(feed, /photoCount > 1 \? \([\s\S]*?<Images/);
+  const detail = read("src/app/screens/review/ReviewDetailScreen.tsx");
+  assert.match(detail, /<ReviewPhotoViewer/);
+  assert.match(detail, /navigation\.navigate\("UserProfile", \{/);
 });
 
 test("M12: guests are sent to sign in or email support instead of a failing report", () => {
@@ -150,14 +153,15 @@ test("M12: guests are sent to sign in or email support instead of a failing repo
   assert.match(feed, /text: "Email support"/);
 });
 
-test("L1/L9/L10: cards take primitives, 44pt targets, one helpful request at a time", () => {
+test("L1/L9/L10: cards take primitives and 44pt targets, with no Helpful vote", () => {
   const feed = read("src/app/screens/review/ReviewFeedScreen.tsx");
-  assert.match(feed, /helpfulActive: boolean;/);
+  assert.doesNotMatch(feed, /helpfulActive|createHelpfulVoteQueue|review_helpful_toggled/);
   assert.doesNotMatch(feed, /interaction: InteractionState/);
-  assert.match(feed, /minHeight: 44,\s*minWidth: 44,/);
-  assert.match(feed, /if \(serviceProviderMode !== "mock"\) return;\s*initializeInteractions\(/);
-  assert.match(feed, /createHelpfulVoteQueue\(/);
-  assert.match(feed, /trackAnalyticsEvent\("review_helpful_toggled"/);
+  // Grid tiles are a third of the screen wide, well over 44pt.
+  assert.match(
+    feed,
+    /const tileSize = \(screenWidth - GRID_GAP \* \(GRID_COLUMNS - 1\)\) \/ GRID_COLUMNS;/,
+  );
 });
 
 test("L8: the success modal offers to share the new review", () => {
@@ -211,7 +215,9 @@ test("M8/M13/L6/L7: editor waits for the saved draft, searches dishes, offers ha
   assert.match(screen, /showDescriptor/);
   const taste = read("src/constants/taste.ts");
   assert.match(taste, /REVIEW_EDITOR_TAGS/);
-  assert.match(taste, /Worth the queue/);
+  // Queue wording is retired from the editor; the server list still accepts the old tag.
+  assert.match(taste, /RETIRED_REVIEW_TAGS = \["Worth the queue"\]/);
+  assert.doesNotMatch(taste, /REVIEW_VALUE_TAGS = \[[^\]]*queue/);
   assert.match(taste, /Good value/);
   assert.match(taste, /REVIEW_MAX_TAGS = 8/);
 });

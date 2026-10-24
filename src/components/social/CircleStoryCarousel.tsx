@@ -119,7 +119,7 @@ export const CircleStoryCarousel = memo(function CircleStoryCarousel({
                     { backgroundColor: palette.orange, borderColor: palette.bg },
                   ]}
                 >
-                  <Plus color={palette.white} size={12} strokeWidth={3} />
+                  <Plus color={palette.textOnOrange} size={12} strokeWidth={3} />
                 </View>
               )}
 
@@ -133,7 +133,7 @@ export const CircleStoryCarousel = memo(function CircleStoryCarousel({
                     { backgroundColor: palette.orange, borderColor: palette.bg },
                   ]}
                 >
-                  <Utensils color={palette.white} size={9} strokeWidth={2.5} />
+                  <Utensils color={palette.textOnOrange} size={9} strokeWidth={2.5} />
                 </View>
               )}
             </View>

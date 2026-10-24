@@ -233,9 +233,50 @@ export function useDetailSaveActions({ navigation, target }: UseDetailSaveAction
     />
   );
 
+  /** Your own lists for the Save hold menu; loaded when the menu opens. */
+  const ownPortfolios = usePortfolioStore((state) => state.portfolios);
+  const ownPortfolioIds = usePortfolioStore((state) => state.scopeIds.mine);
+  const portfolioItems = usePortfolioStore((state) => state.items);
+  const [collectionsLoading, setCollectionsLoading] = useState(false);
+  const loadCollections = useCallback(async () => {
+    if (!isAuthenticated) return;
+    setCollectionsLoading(true);
+    try {
+      const store = usePortfolioStore.getState();
+      await store.loadPortfolioScope("mine");
+      const state = usePortfolioStore.getState();
+      // One read per list is how the store loads items; a failed one just shows unchecked.
+      await Promise.all(
+        (state.scopeIds.mine ?? [])
+          .filter((id) => !state.items[id])
+          // n-plus-one-ok: the store has no batched item read; at most a handful of own lists.
+          .map((id) => state.loadPortfolioItems(id).catch(() => undefined)),
+      );
+    } catch {
+      // The menu still offers "All lists", which retries.
+    } finally {
+      setCollectionsLoading(false);
+    }
+  }, [isAuthenticated]);
+  const collectionOptions = buildSaveToListOptions(
+    ownPortfolios,
+    ownPortfolioIds ?? [],
+    [],
+    profile.id,
+  ).map((option) => ({
+    option,
+    selected: Boolean(
+      option.portfolio && findPortfolioTargetItem(portfolioItems, option.portfolio.id, target),
+    ),
+  }));
+
   return {
     addToChecklist,
     addToPortfolio,
+    collectionOptions,
+    collectionsLoading,
+    loadCollections,
+    togglePortfolio,
     isAddingToChecklist,
     isAddingToPortfolio,
     /** Render once on the page; addToPortfolio opens it. */

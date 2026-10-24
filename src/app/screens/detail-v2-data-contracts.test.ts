@@ -38,23 +38,33 @@ test("dish detail V2 avoids invented wait times and fake hours", () => {
   assert.doesNotMatch(dish, /Dine-in only/);
 });
 
-test("dish detail V2 action dock is labelled, stateful and meets 44px targets", () => {
+test("dish detail V2 bottom bar is labelled, stateful and meets 44px targets", () => {
   const dish = read("src/app/screens/detail/DishDetailScreenV2.tsx");
+  const bar = read("src/components/detail/DetailActionBar.tsx");
 
-  assert.match(dish, /const dockTargetSize = 44;/);
   assert.doesNotMatch(dish, /height: (40|42),/);
   assert.doesNotMatch(dish, /Missing dish data for ID/);
   assert.doesNotMatch(dish, /Sparkles/);
   assert.match(dish, /We can't find this dish/);
+  // Share, Tried, Save and Like sit in one bar of icon buttons; no three-dots menu.
+  assert.match(dish, /<DetailActionBar\s+actions=\{barActions\}\s+cta=/);
+  assert.match(dish, /testID="dish-action-bar"/);
+  assert.doesNotMatch(dish, /secondaryActions/);
+  for (const label of ["Like", "Share", "Tried"]) {
+    assert.match(dish, new RegExp(`label: [^\\n]*"${label}`));
+  }
+  assert.match(dish, /label: isSaved \? "Saved" : "Save"/);
+  assert.match(dish, /active: isSaved/);
+  assert.match(dish, /role: "checkbox"/);
+  assert.match(dish, /active: isDishTried/);
+  // The bar itself: 44px or taller targets, brand colour when on, never white on the white bar.
+  assert.match(bar, /const TARGET_SIZE = 48;/);
   assert.match(
-    dish,
-    /accessibilityLabel=\{isSaved \? "Saved" : "Save"\}[\s\S]*accessibilityState=\{\{ selected: isSaved \}\}/,
+    bar,
+    /action\.active\s+\? palette\.orange\s+: action\.mutedWhenInactive\s+\? palette\.textMuted\s+: palette\.text/,
   );
-  assert.match(dish, /color=\{isSaved \? palette\.orange : palette\.text\}/);
-  assert.doesNotMatch(dish, /isSaved \? palette\.white/);
-  assert.match(
-    dish,
-    /accessibilityRole="checkbox"\s*accessibilityLabel="Tried"\s*accessibilityState=\{\{ checked: isDishTried/,
-  );
-  assert.match(dish, /accessibilityLabel="Write a review"[\s\S]*?>\s*Review\s*<\/AppText>/);
+  assert.match(bar, /accessibilityRole=\{action\.role \?\? "button"\}/);
+  assert.match(bar, /checked: Boolean\(action\.active\)/);
+  assert.doesNotMatch(bar, /palette\.white/);
+  assert.match(dish, /label: "Write a review"/);
 });

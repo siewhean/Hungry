@@ -1,5 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, View, useWindowDimensions } from "react-native";
+import {
+  Animated,
+  Platform,
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  ScrollView,
+  View,
+  useWindowDimensions,
+  Text,
+} from "react-native";
 import type { ColorValue } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -7,15 +17,12 @@ import { LinearGradient } from "expo-linear-gradient";
 import {
   ArrowLeft,
   Bookmark,
-  ChevronDown,
-  ChevronUp,
-  Clock3,
+  ChevronRight,
+  Circle,
+  Heart,
+  FolderPlus,
   CheckCircle,
-  ListPlus,
   MapPin,
-  MessageCircleMore,
-  MessageCircle,
-  Navigation,
   Send,
   Star,
   Utensils,
@@ -24,43 +31,67 @@ import {
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { useDetailSaveActions } from "@/features/checklistPortfolio/DetailSaveActions";
 import { resolveStallOpenInfo } from "@/features/detail/stallOpenState";
-import { tasteMatchLabel } from "@/features/detail/tasteMatch";
+import {
+  perceivedTasteAxes,
+  perceivedTasteRows,
+  perceivedTasteSentence,
+} from "@/features/detail/perceivedTaste";
+import {
+  formatAwayLabel,
+  similarDishQuery,
+  useSimilarDishesNearby,
+} from "@/features/detail/similarDishes";
 import { isSoldOut } from "@/features/merchant/menuSections";
-import { DeliveryPlatformButton } from "@/components/dish/DeliveryPlatformButton";
+import { DeliveryButtonRow } from "@/components/dish/DeliveryPlatformButton";
+import { DetailActionBar, type DetailAction } from "@/components/detail/DetailActionBar";
+import { FloatingBackButton } from "@/components/detail/FloatingBackButton";
+import { TasteRadarChart } from "@/components/taste/TasteRadarChart";
 import { PhotoPager } from "@/components/dish/PhotoPager";
+import { DetailHeroFade } from "@/components/detail/DetailHeroFade";
 import { ReportProblemLink } from "@/components/stall/ReportProblemLink";
 import { buildDishGallery } from "@/features/detail/detailTransforms";
 import { formatDishUpdated } from "@/features/detail/dishFreshness";
 import { formatDishPrice } from "@/features/detail/dishPrice";
 import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
 import { DietaryFlagChips } from "@/components/dish/DietaryFlagChips";
-import { OwnReviewActions, ReviewPhotoStrip, ReviewReaderActions } from "@/components/review";
+import {
+  CaptionPreview,
+  OwnReviewActions,
+  ReviewPhotoStrip,
+  ReviewReaderActions,
+  StarRating,
+} from "@/components/review";
 import { isOwnReview } from "@/features/review/reviewEdit";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { sanitizeCatalogImageUrl } from "@/lib/services/catalog/media";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
-import { useProfileStore, getTasteSimilarityWithDish } from "@/store/useProfileStore";
+import { useProfileStore } from "@/store/useProfileStore";
+import { useAchievementTallyStore, triedDishFacts } from "@/store/useAchievementTallyStore";
+import { useDishLikeStore } from "@/store/useDishLikeStore";
 import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { saveDishAfterSignIn } from "@/features/auth/finishGuestAction";
 import { rememberPendingDishSave } from "@/features/auth/pendingDishSave";
 import { useRequireAccount } from "@/features/auth/useRequireAccount";
+import { useReviewDraftStore } from "@/store/useReviewDraftStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useSocialStore } from "@/store/useSocialStore";
-import { TASTE_DIMENSIONS } from "@/constants/taste";
 import {
   AccessibleImage,
   AppText,
   Avatar,
   Button,
+  ChipGroup,
   EmptyState,
   FeedErrorBoundary,
 } from "@/components/ui";
+import { REVIEW_EDITOR_TAGS, REVIEW_VALUE_TAGS } from "@/constants/taste";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useHungryTheme } from "@/theme";
 import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/ReviewShareSheet";
 import type { DishDetail, OpeningSchedule, PublicMerchantProfile, Review } from "@/types/domain";
 import { hasDishTasteSignal, isNeutralTasteVector } from "@/lib/ai/tasteEngine";
+import { tapHaptic } from "@/lib/haptics";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 import { openStallFromDish } from "./stallNavigation";
 import {
@@ -74,16 +105,14 @@ import { webShareUrl } from "@/constants/links";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { firstDishTimingProps } from "@/lib/analytics/firstDishTiming";
 import { getBuildingById } from "@/lib/geo/singaporeBuildings";
-import { openTrustedMapsUrl } from "@/lib/security/safeLinking";
-import {
-  buildMapsSearchUrl,
-  formatFullStallAddress,
-  getStallPin,
-} from "@/features/detail/stallLocation";
+import { formatFullStallAddress, getStallPin } from "@/features/detail/stallLocation";
 
-const CommentIcon = MessageCircle ?? MessageCircleMore;
 /** Reviews shown before "See all". */
 const DISH_REVIEW_PREVIEW_COUNT = 3;
+/** Taste words offered in the "you tried it" popup (value tags belong in the full review). */
+const TRIED_PROMPT_TASTE_TAGS = REVIEW_EDITOR_TAGS.filter(
+  (tag) => !REVIEW_VALUE_TAGS.includes(tag),
+);
 /** One page of a dish's reviews, newest first. */
 const DISH_REVIEW_PAGE_SIZE = 50;
 /** Below this confidence a dish's taste vector is too weak to show as fact. */
@@ -92,22 +121,6 @@ const MIN_DISPLAY_TASTE_CONFIDENCE = 0.3;
 const MORE_FROM_STALL_COUNT = 4;
 
 type Props = NativeStackScreenProps<RootStackParamList, "DishDetail">;
-
-type Attribute = {
-  label: string;
-  value: string;
-  helper: string;
-};
-
-function getDominantTaste(dish: DishDetail) {
-  return TASTE_DIMENSIONS.reduce(
-    (best, dimension) => {
-      const score = dish.tasteVector[dimension.key] ?? 0;
-      return score > best.score ? { label: dimension.label, score } : best;
-    },
-    { label: TASTE_DIMENSIONS[0]?.label ?? "Taste", score: 0 },
-  );
-}
 
 /** Other dishes from the same stall; never the dish being viewed. */
 function getMoreFromStall(currentDish: DishDetail, venueDishes: DishDetail[]) {
@@ -119,6 +132,8 @@ function getMoreFromStall(currentDish: DishDetail, venueDishes: DishDetail[]) {
 }
 
 export function DishDetailScreenV2({ navigation, route }: Props) {
+  // Drives the photo fading out as the page scrolls.
+  const [heroScrollY] = useState(() => new Animated.Value(0));
   const repository = getDataRepository();
   const dishId = route.params?.dishId ?? route.params?.id ?? "";
   const cachedDish = repository.getDishById(dishId);
@@ -132,6 +147,10 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
   const profile = useProfileStore((state) => state.profile);
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
+  const likedDishIdsByUser = useDishLikeStore((state) => state.likedDishIdsByUser);
+  const toggleDishLike = useDishLikeStore((state) => state.toggleLike);
+  const recordTriedDish = useAchievementTallyStore((state) => state.recordTriedDish);
+  const forgetTriedDish = useAchievementTallyStore((state) => state.forgetTriedDish);
   const setDishTried = useProfileStore((state) => state.setDishTried);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
@@ -140,12 +159,19 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const markTried = useStallInteractionStore((state) => state.markTried);
   const loadStallInteractions = useStallInteractionStore((state) => state.loadInteractions);
   const incrementShare = useSocialStore((state) => state.incrementShare);
-  const [tasteProfileOpen, setTasteProfileOpen] = useState(true);
-  const [operatingHoursOpen, setOperatingHoursOpen] = useState(false);
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
   const shareSheetRef = useRef<BottomSheetModal>(null);
   const lastRecordedDishViewId = useRef<string | null>(null);
   const [isTryingFood, setIsTryingFood] = useState(false);
+  // After marking a dish tried: an optional popup to rate it and say how it tasted.
+  const [triedPromptOpen, setTriedPromptOpen] = useState(false);
+  const [triedRating, setTriedRating] = useState(0);
+  const [triedTags, setTriedTags] = useState<string[]>([]);
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
+  const selectReviewDish = useReviewDraftStore((state) => state.selectDish);
+  const setReviewRating = useReviewDraftStore((state) => state.setRating);
+  const toggleReviewTag = useReviewDraftStore((state) => state.toggleTag);
+  const resetReviewDraft = useReviewDraftStore((state) => state.resetDraft);
   const [openingSchedule, setOpeningSchedule] = useState<OpeningSchedule>();
   const [merchantProfile, setMerchantProfile] = useState<PublicMerchantProfile>();
   const [dishReviews, setDishReviews] = useState<Review[]>([]);
@@ -154,7 +180,15 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const [showAllReviews, setShowAllReviews] = useState(false);
   const [hasMoreReviews, setHasMoreReviews] = useState(false);
   const [isLoadingMoreReviews, setIsLoadingMoreReviews] = useState(false);
-  const { addToPortfolio, isAddingToPortfolio, saveToListSheet } = useDetailSaveActions({
+  const {
+    addToPortfolio,
+    collectionOptions,
+    collectionsLoading,
+    isAddingToPortfolio,
+    loadCollections,
+    saveToListSheet,
+    togglePortfolio,
+  } = useDetailSaveActions({
     navigation,
     target: {
       itemType: "dish",
@@ -194,10 +228,6 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
         .slice(0, 12),
     [dishReviews],
   );
-  const tasteMatch = useMemo(
-    () => (dish ? getTasteSimilarityWithDish(profile, dish) : 0),
-    [dish, profile],
-  );
   const cachedVenueDishes = useMemo(
     () => (dish ? repository.listDishesByVenue(dish.venueId) : []),
     [dish, repository],
@@ -208,6 +238,15 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     () => (dish ? getMoreFromStall(dish, venueDishes) : []),
     [dish, venueDishes],
   );
+  // "Similar <dish> nearby": the same kind of dish at other stalls around this one.
+  const similarSearchPoint = useMemo(() => {
+    if (!venue) return undefined;
+    const buildingPoint = getBuildingById(venue.buildingId)?.coordinate;
+    return getStallPin(venue, buildingPoint) ?? buildingPoint;
+  }, [venue]);
+  const similarNearby = useSimilarDishesNearby(dish, similarSearchPoint);
+  const similarDishHeading = dish ? similarDishQuery(dish.name) || dish.name : "dishes";
+
   // One shared helper decides open/closed for both pages: the owner's temporary closure,
   // then the weekly schedule with special hours, then the listed hours text.
   const openInfo = useMemo(
@@ -221,8 +260,6 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
         : undefined,
     [merchantProfile?.temporaryClosure, openingSchedule, venue],
   );
-  const listedHours = openInfo?.weekRows ?? [];
-  const currentDayRows = openInfo?.todayRows ?? [];
 
   useEffect(() => {
     let active = true;
@@ -495,7 +532,6 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     );
   }
 
-  const dominantTaste = getDominantTaste(dish);
   const isSaved = profile.favouriteDishIds.includes(dish.id);
   // The venue read can fail on its own: keep the dish page and drop venue-only sections.
   const venueName = venue?.name ?? dish.venueName ?? "This stall";
@@ -516,55 +552,28 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   // Untagged dishes carry a neutral placeholder vector: never show it as fact.
   const hasTasteSignal =
     hasDishTasteSignal(dish) && (dish.tasteConfidence ?? 1) >= MIN_DISPLAY_TASTE_CONFIDENCE;
-  const showTasteMatch = hasTasteSignal && !isNeutralTasteVector(profile.tasteVector);
-  const attributes: Attribute[] = [
-    ...(hasTasteSignal
-      ? [
-          {
-            label: "Taste Intensity",
-            value: `${dominantTaste.score}/10`,
-            helper: dominantTaste.label,
-          },
-        ]
-      : []),
-    ...(dish.tasteTags.length > 0
-      ? [
-          {
-            label: "Taste Notes",
-            value: dish.tasteTags[0],
-            helper: dish.tasteTags.slice(1, 3).join(" · "),
-          },
-        ]
-      : []),
-    ...(showTasteMatch
-      ? [
-          {
-            label: "Your Taste",
-            // Words, not a percentage: the match is an estimate from a few taste tags.
-            value: tasteMatchLabel(tasteMatch),
-            helper: "Compared with your taste profile",
-          },
-        ]
-      : []),
-  ];
+  // A diner who has not set a taste palette still sees the standard level, never a made-up one.
+  const hasPersonalPalate = !isNeutralTasteVector(profile.tasteVector);
+  const perceivedRows = hasTasteSignal
+    ? perceivedTasteRows(dish.tasteVector, profile.tasteVector)
+    : [];
+  const savedCount = dish.savedCount ?? 0;
+  const savedCountLabel =
+    savedCount > 0 ? `${savedCount} ${savedCount === 1 ? "person" : "people"} saved this` : null;
   // Dish photos first, then photos from reviews, swipeable in the hero.
   const heroPhotos = Array.from(
     new Set([...gallery, ...(dish.imageUrl ? [dish.imageUrl] : []), ...reviewPhotos]),
   ).slice(0, 8);
-  const heroHeight = Math.min(Math.max(width * 0.8, 280), 380);
-  const cardWidth = (width - spacing[4] * 2 - spacing[3]) / 2;
+  // Short enough that the stall card and Order on show without scrolling; shorter still
+  // with no photo, where the name below already says what the dish is.
+  const heroHeight = heroPhotos.length > 0 ? Math.min(width * 0.62, 300) : 140;
   const signatureGridItemWidth = Math.min(width * 0.56, 220);
-  const reviewIconSize = 22;
-  /** Minimum touch target for the action dock and header buttons. */
-  const dockTargetSize = 44;
   const canonicalDishUrl = webShareUrl("dish", dish.id);
   const heroGradientColors: readonly [ColorValue, ColorValue, ColorValue] = [
     palette.detailHeroGradientStart,
     palette.detailHeroGradientMid,
     palette.bg,
   ];
-  const headerButtonBackground = palette.detailHeaderSurface;
-  const headerButtonBorder = palette.detailHeaderBorder;
   const dishPrice = formatDishPrice(dish);
   const shareReviewTarget: ReviewShareTarget = {
     kind: "dish",
@@ -586,17 +595,6 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
       dishId: dish.id,
       userId: isAuthenticated ? profile.id : undefined,
     });
-  };
-
-  const openStallMaps = () => {
-    if (!stallAddress) return;
-    trackAnalyticsEvent("directions_opened", { stall_id: dish.venueId, source: "dish_detail" });
-    void openTrustedMapsUrl(
-      buildMapsSearchUrl(
-        stallAddress,
-        venue ? getStallPin(venue, building?.coordinate) : undefined,
-      ),
-    );
   };
 
   const openReviewerProfile = (review: Review) => {
@@ -673,6 +671,29 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   };
 
   const isDishTried = profile.reviewedDishIds.includes(dish.id);
+  const hasReviewed = dishReviews.some((review) =>
+    isOwnReview(review, isAuthenticated ? profile.id : undefined),
+  );
+
+  // From the "you tried it" popup: the review starts with the stars and taste words filled in.
+  // A draft for another dish is left alone so the review screen can ask what to do with it.
+  const continueTriedReview = () => {
+    setTriedPromptOpen(false);
+    const { draft } = useReviewDraftStore.getState();
+    if (!draft.selectedDishId || draft.selectedDishId === dish.id) {
+      if (draft.selectedDishId !== dish.id) resetReviewDraft();
+      selectReviewDish(dish.venueId, dish.id);
+      if (triedRating > 0) setReviewRating(triedRating);
+      const chosen = useReviewDraftStore.getState().draft.selectedTags;
+      for (const tag of triedTags) if (!chosen.includes(tag)) toggleReviewTag(tag);
+    }
+    handleReview();
+  };
+  const openTriedPrompt = () => {
+    setTriedRating(0);
+    setTriedTags([]);
+    setTriedPromptOpen(true);
+  };
 
   const triedToastStyle = {
     tone: "success" as const,
@@ -703,6 +724,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
       try {
         const saved = await setDishTried(dish.id, false);
         const stillTried = useProfileStore.getState().profile.reviewedDishIds.includes(dish.id);
+        if (saved && !stillTried) forgetTriedDish(profile.id, dish.id);
         showToast({
           message: !saved
             ? "Couldn't update your tried dishes. Try again."
@@ -723,6 +745,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
         showToast({ message: "Couldn't mark this dish as tried. Try again.", ...triedToastStyle });
         return;
       }
+      recordTriedDish(profile.id, dish.id, triedDishFacts(dish, hasTasteSignal));
       trackAnalyticsEvent("dish_marked_tried", { dish_id: dish.id, stall_id: dish.venueId });
       let pointsAwarded = 0;
       let stallMarkFailed = false;
@@ -745,6 +768,10 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
             : "Marked as tried.",
         ...triedToastStyle,
       });
+      // Rating only makes sense once the dish is tried; both the stars and the taste are optional.
+      if (!FEATURE_FLAGS.release01CoreOnly && FEATURE_FLAGS.reviewCreationEnabled && !hasReviewed) {
+        openTriedPrompt();
+      }
     } finally {
       setIsTryingFood(false);
     }
@@ -756,18 +783,139 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   // is accidentally enabled for targeted QA.
   const showDeferredDetailControls = !FEATURE_FLAGS.release01CoreOnly;
 
+  const isLiked = (likedDishIdsByUser[profile.id] ?? []).includes(dish.id);
+  const handleLike = () => {
+    if (
+      !requireAccount(`Sign in to like ${dish.name}`, {
+        name: "DishDetail",
+        params: { dishId: dish.id },
+      })
+    ) {
+      return;
+    }
+    const liked = toggleDishLike(profile.id, dish.id);
+    showToast({ message: liked ? "Liked." : "Like removed.", tone: "success" });
+  };
+
+  const setTried = (tried: boolean) => {
+    if (tried !== isDishTried) void handleTryFood();
+  };
+
+  // Bottom bar: Review on the left; Share, Tried, Save and Like on the right. Holding Tried
+  // or Save opens its own menu (tried / not tried, collections); Share and Like are taps.
+  const barActions: DetailAction[] = showDeferredDetailControls
+    ? [
+        {
+          id: "share",
+          label: "Share",
+          icon: Send,
+          onPress: openShareSheet,
+          accessibilityLabel: `Share ${dish.name}`,
+        },
+        {
+          id: "tried",
+          label: isDishTried ? "Tried" : "Mark tried",
+          // Not tried: a plain grey circle. Tried: an orange tick.
+          icon: isDishTried ? CheckCircle : Circle,
+          active: isDishTried,
+          mutedWhenInactive: true,
+          role: "checkbox" as const,
+          loading: isTryingFood,
+          onPress: () => void handleTryFood(),
+          accessibilityLabel: "Tried",
+          holdTitle: "Have you tried it?",
+          holdOptions: [
+            {
+              id: "tried",
+              label: "Tried",
+              icon: CheckCircle,
+              selected: isDishTried,
+              onPress: () => setTried(true),
+            },
+            {
+              id: "not-tried",
+              label: "Not tried",
+              icon: Circle,
+              selected: !isDishTried,
+              onPress: () => setTried(false),
+            },
+          ],
+        },
+        ...(FEATURE_FLAGS.favouritesEnabled
+          ? [
+              {
+                id: "save",
+                label: isSaved ? "Saved" : "Save",
+                icon: Bookmark,
+                active: isSaved,
+                fillWhenActive: true,
+                onPress: () => void handleSave(),
+                accessibilityLabel: isSaved ? "Saved" : "Save",
+                accessibilityHint: isSaved
+                  ? "Removes this dish from Want to try. Hold to pick a collection"
+                  : "Hold to pick a collection",
+                ...(FEATURE_FLAGS.portfoliosEnabled
+                  ? {
+                      holdTitle: "Save to",
+                      onHoldOpen: () => void loadCollections(),
+                      holdLoading: collectionsLoading,
+                      holdOptions: [
+                        {
+                          id: "want-to-try",
+                          label: "Want to try",
+                          icon: Bookmark,
+                          selected: isSaved,
+                          onPress: () => void handleSave(),
+                        },
+                        ...(collectionsLoading
+                          ? []
+                          : collectionOptions.map(({ option, selected }) => ({
+                              id: option.key,
+                              label: option.name,
+                              icon: FolderPlus,
+                              selected,
+                              onPress: () => void togglePortfolio(option),
+                            }))),
+                        {
+                          id: "all-lists",
+                          label: isAddingToPortfolio ? "Adding..." : "New collection",
+                          icon: FolderPlus,
+                          onPress: () => void addToPortfolio(),
+                          accessibilityLabel: "Save to a new collection",
+                        },
+                      ],
+                    }
+                  : {}),
+              },
+            ]
+          : []),
+        {
+          id: "like",
+          label: isLiked ? "Liked" : "Like",
+          icon: Heart,
+          active: isLiked,
+          fillWhenActive: true,
+          onPress: handleLike,
+          accessibilityLabel: isLiked ? "Unlike this dish" : "Like this dish",
+        },
+      ]
+    : [];
+
   return (
     <FeedErrorBoundary title="Dish details unavailable" body="Couldn't load this dish — try again.">
       <SafeAreaView style={{ backgroundColor: palette.bg, flex: 1 }} edges={["left", "right"]}>
         <View style={{ flex: 1 }}>
-          <ScrollView
+          <Animated.ScrollView
             showsVerticalScrollIndicator={false}
+            onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: heroScrollY } } }], {
+              useNativeDriver: Platform.OS !== "web",
+            })}
+            scrollEventThrottle={16}
             contentContainerStyle={{
-              paddingTop: insets.top + 56,
-              paddingBottom: insets.bottom + (showDeferredDetailControls ? 104 : spacing[6]),
+              paddingBottom: insets.bottom + 96,
             }}
           >
-            <View style={{ height: heroHeight }}>
+            <DetailHeroFade scrollY={heroScrollY} height={heroHeight}>
               {heroPhotos.length > 0 ? (
                 <PhotoPager
                   photos={heroPhotos}
@@ -779,7 +927,13 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                   <LinearGradient
                     colors={heroGradientColors}
                     locations={[0, 0.58, 1]}
-                    style={{ bottom: 0, height: 260, left: 0, position: "absolute", right: 0 }}
+                    style={{
+                      bottom: 0,
+                      height: Math.min(260, heroHeight),
+                      left: 0,
+                      position: "absolute",
+                      right: 0,
+                    }}
                   />
                 </PhotoPager>
               ) : (
@@ -795,25 +949,22 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                       padding: spacing[6],
                     }}
                   >
-                    <Utensils color={palette.orange} size={44} />
-                    <AppText variant="h2" style={{ marginTop: spacing[3], textAlign: "center" }}>
-                      {dish.name}
-                    </AppText>
-                    <AppText
-                      tone="secondary"
-                      style={{ marginTop: spacing[1], textAlign: "center" }}
-                    >
-                      {venueName}
-                    </AppText>
+                    <Utensils color={palette.orange} size={36} />
                   </View>
                   <LinearGradient
                     colors={heroGradientColors}
                     locations={[0, 0.58, 1]}
-                    style={{ bottom: 0, height: 260, left: 0, position: "absolute", right: 0 }}
+                    style={{
+                      bottom: 0,
+                      height: Math.min(260, heroHeight),
+                      left: 0,
+                      position: "absolute",
+                      right: 0,
+                    }}
                   />
                 </>
               )}
-            </View>
+            </DetailHeroFade>
 
             <View
               style={{
@@ -822,7 +973,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                 paddingHorizontal: spacing[4],
               }}
             >
-              <View style={{ gap: spacing[4] }}>
+              <View style={{ gap: spacing[3] }}>
                 {dish.mustOrder ? (
                   <View
                     style={{
@@ -840,277 +991,223 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                 ) : null}
                 <View
                   style={{
-                    alignItems: "center",
-                    flexDirection: "row",
-                    flexWrap: "wrap",
-                    gap: spacing[2],
-                  }}
-                >
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={`Open ${venueName} stall details`}
-                    onPress={() => openStallFromDish(navigation, dish.venueId)}
-                    hitSlop={8}
-                    style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
-                  >
-                    <View
-                      style={[
-                        {
-                          alignItems: "center",
-                          alignSelf: "flex-start",
-                          backgroundColor: palette.surface,
-                          borderColor: palette.border,
-                          borderRadius: radii.pill,
-                          borderWidth: 1,
-                          flexDirection: "row",
-                          gap: spacing[1],
-                          paddingHorizontal: spacing[3],
-                          paddingVertical: spacing[1.5],
-                        },
-                        shadows.card,
-                      ]}
-                    >
-                      <MapPin color={palette.orange} size={16} />
-                      <AppText variant="bodySmall" style={{ fontWeight: "800" }}>
-                        {[venueName, venueUnit].filter(Boolean).join(" · ")}
-                      </AppText>
-                    </View>
-                  </Pressable>
-                  {stallAddress ? (
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel={`Directions to ${venueName}`}
-                      onPress={openStallMaps}
-                      hitSlop={8}
-                      style={({ pressed }) => [
-                        {
-                          alignItems: "center",
-                          backgroundColor: palette.surface,
-                          borderColor: palette.border,
-                          borderRadius: radii.pill,
-                          borderWidth: 1,
-                          flexDirection: "row",
-                          gap: spacing[1],
-                          opacity: pressed ? 0.8 : 1,
-                          paddingHorizontal: spacing[3],
-                          paddingVertical: spacing[1.5],
-                        },
-                        shadows.card,
-                      ]}
-                    >
-                      <Navigation color={palette.orange} size={14} />
-                      <AppText variant="bodySmall" style={{ fontWeight: "800" }}>
-                        Directions
-                      </AppText>
-                    </Pressable>
-                  ) : null}
-                </View>
-                {venue ? (
-                  <AppText
-                    variant="bodySmallBold"
-                    tone={openState.status === "open" ? "success" : "secondary"}
-                  >
-                    {openStatusLabel}
-                  </AppText>
-                ) : null}
-                {venue && deliveryLinks.length > 0 ? (
-                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-                    {deliveryLinks.map((link) => (
-                      <DeliveryPlatformButton
-                        key={`${link.platform}:${link.webUrl}`}
-                        link={link}
-                        compact
-                        venueId={venue.id}
-                      />
-                    ))}
-                  </View>
-                ) : null}
-
-                <View
-                  style={{
                     alignItems: "flex-start",
                     flexDirection: "row",
                     gap: spacing[3],
                     justifyContent: "space-between",
                   }}
                 >
-                  <View style={{ flex: 1, gap: spacing[2] }}>
+                  <AppText variant="h1" style={{ flex: 1, fontSize: 28, lineHeight: 34 }}>
+                    {dish.name}
+                  </AppText>
+                  <AppText
+                    variant="price"
+                    style={
+                      dish.price > 0
+                        ? { color: palette.orange, fontSize: 24, lineHeight: 34 }
+                        : { color: palette.textSecondary, fontSize: 16, lineHeight: 34 }
+                    }
+                  >
+                    {dishPrice}
+                  </AppText>
+                </View>
+                {isDishSoldOut ? (
+                  <View
+                    accessible
+                    accessibilityRole="text"
+                    accessibilityLabel="Sold out today"
+                    style={{
+                      alignSelf: "flex-start",
+                      backgroundColor: palette.bgSoft,
+                      borderColor: palette.border,
+                      borderRadius: radii.pill,
+                      borderWidth: 1,
+                      paddingHorizontal: spacing[3],
+                      paddingVertical: spacing[1],
+                    }}
+                  >
+                    <AppText variant="bodySmallBold" tone="secondary">
+                      Sold out today
+                    </AppText>
+                  </View>
+                ) : null}
+                <View
+                  style={{
+                    alignItems: "center",
+                    flexDirection: "row",
+                    flexWrap: "wrap",
+                    gap: spacing[3],
+                  }}
+                >
+                  {dish.reviewCount > 0 ? (
                     <View
-                      style={{
-                        alignItems: "flex-start",
-                        flexDirection: "row",
-                        gap: spacing[3],
-                        justifyContent: "space-between",
-                      }}
+                      accessible
+                      accessibilityRole="text"
+                      accessibilityLabel={`Rated ${dish.rating.toFixed(1)} out of 5 from ${
+                        dish.reviewCount
+                      } ${dish.reviewCount === 1 ? "review" : "reviews"}`}
+                      style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}
                     >
-                      <AppText variant="h1" style={{ flex: 1, fontSize: 28, lineHeight: 34 }}>
-                        {dish.name}
+                      {/* One star and the exact score: five rounded stars hid 4.4 vs 3.6. */}
+                      <Star color={palette.starStroke} fill={palette.starFill} size={17} />
+                      <AppText variant="bodySmall" style={{ fontWeight: "800" }}>
+                        {dish.rating.toFixed(1)}
                       </AppText>
-                      <AppText
-                        variant="price"
-                        style={
-                          dish.price > 0
-                            ? { color: palette.orange, fontSize: 22, lineHeight: 34 }
-                            : { color: palette.textSecondary, fontSize: 16, lineHeight: 34 }
-                        }
-                      >
-                        {dishPrice}
+                      <AppText variant="bodySmall" tone="secondary">
+                        ({dish.reviewCount} {dish.reviewCount === 1 ? "review" : "reviews"})
                       </AppText>
                     </View>
-                    {isDishSoldOut ? (
-                      <View
-                        accessible
-                        accessibilityRole="text"
-                        accessibilityLabel="Sold out today"
-                        style={{
-                          alignSelf: "flex-start",
-                          backgroundColor: palette.bgSoft,
-                          borderColor: palette.border,
-                          borderRadius: radii.pill,
-                          borderWidth: 1,
-                          paddingHorizontal: spacing[3],
-                          paddingVertical: spacing[1],
-                        }}
-                      >
-                        <AppText variant="bodySmallBold" tone="secondary">
-                          Sold out today
-                        </AppText>
-                      </View>
-                    ) : null}
-                    {dish.dietaryFlags.length > 0 ? (
-                      <View style={{ gap: spacing[1] }}>
-                        <DietaryFlagChips flags={dish.dietaryFlags} />
-                        <AppText variant="micro" tone="muted">
-                          Labels come from the stall or our catalogue. Check with the stall if it
-                          matters to you.
-                        </AppText>
-                      </View>
-                    ) : null}
-                    {dish.reviewCount > 0 ? (
-                      <View
-                        accessible
-                        accessibilityRole="text"
-                        accessibilityLabel={`Rated ${dish.rating.toFixed(1)} out of 5 from ${
-                          dish.reviewCount
-                        } ${dish.reviewCount === 1 ? "review" : "reviews"}`}
-                        style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}
-                      >
-                        {/* One star and the exact score: five rounded stars hid 4.4 vs 3.6. */}
-                        <Star color={palette.ratingStar} fill={palette.ratingStar} size={17} />
-                        <AppText variant="bodySmall" style={{ fontWeight: "800" }}>
-                          {dish.rating.toFixed(1)}
-                        </AppText>
-                        <AppText variant="bodySmall" tone="secondary">
-                          ({dish.reviewCount} {dish.reviewCount === 1 ? "review" : "reviews"})
-                        </AppText>
-                      </View>
-                    ) : (
+                  ) : (
+                    <AppText variant="bodySmall" tone="secondary">
+                      No ratings yet
+                    </AppText>
+                  )}
+                  {savedCountLabel ? (
+                    <View
+                      accessible
+                      accessibilityRole="text"
+                      accessibilityLabel={savedCountLabel}
+                      style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}
+                    >
+                      <Bookmark color={palette.textSecondary} size={15} />
                       <AppText variant="bodySmall" tone="secondary">
-                        No ratings yet
+                        {savedCountLabel}
                       </AppText>
-                    )}
-                    {formatDishUpdated(dish.updatedAt) ? (
-                      <AppText variant="bodySmall" tone="muted">
-                        {formatDishUpdated(dish.updatedAt)}
-                      </AppText>
-                    ) : null}
-                  </View>
+                    </View>
+                  ) : null}
                 </View>
-
+                {dish.dietaryFlags.length > 0 ? (
+                  <View style={{ gap: spacing[1] }}>
+                    <DietaryFlagChips flags={dish.dietaryFlags} />
+                    <AppText variant="micro" tone="muted">
+                      Labels come from the stall or our catalogue. Check with the stall if it
+                      matters to you.
+                    </AppText>
+                  </View>
+                ) : null}
                 {dish.description?.trim() ? (
-                  <AppText variant="bodyLarge" tone="secondary" style={{ lineHeight: 26 }}>
-                    {dish.description}
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityHint={descriptionExpanded ? "Shows less" : "Shows the full text"}
+                    onPress={() => setDescriptionExpanded((open) => !open)}
+                  >
+                    <AppText
+                      variant="body"
+                      tone="secondary"
+                      numberOfLines={descriptionExpanded ? undefined : 3}
+                    >
+                      {dish.description}
+                    </AppText>
+                  </Pressable>
+                ) : null}
+                {formatDishUpdated(dish.updatedAt) ? (
+                  <AppText variant="bodySmall" tone="muted">
+                    {formatDishUpdated(dish.updatedAt)}
                   </AppText>
                 ) : null}
               </View>
 
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[3] }}>
-                {attributes.map((attribute) => (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Open ${venueName} stall details`}
+                onPress={() => {
+                  tapHaptic();
+                  openStallFromDish(navigation, dish.venueId);
+                }}
+                style={({ pressed }) => [
+                  {
+                    alignItems: "center",
+                    backgroundColor: palette.surface,
+                    borderColor: palette.border,
+                    borderRadius: componentRadii.card,
+                    borderWidth: 1,
+                    flexDirection: "row",
+                    gap: spacing[3],
+                    opacity: pressed ? 0.85 : 1,
+                    padding: spacing[3],
+                  },
+                  shadows.card,
+                ]}
+              >
+                <View
+                  style={{
+                    alignItems: "center",
+                    backgroundColor: palette.orangeLight,
+                    borderRadius: radii.pill,
+                    height: 44,
+                    justifyContent: "center",
+                    width: 44,
+                  }}
+                >
+                  <MapPin color={palette.orange} size={20} />
+                </View>
+                <View style={{ flex: 1, gap: spacing[0.5] }}>
+                  <AppText variant="bodyBold" numberOfLines={1}>
+                    {venueName}
+                  </AppText>
+                  <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
+                    {[venueUnit, venue?.buildingName ?? building?.name]
+                      .filter(Boolean)
+                      .join(" · ") || "View stall"}
+                  </AppText>
+                  {venue ? (
+                    <AppText
+                      variant="bodySmallBold"
+                      tone={openState.status === "open" ? "success" : "secondary"}
+                    >
+                      {openStatusLabel}
+                    </AppText>
+                  ) : null}
+                </View>
+                <ChevronRight color={palette.textMuted} size={20} />
+              </Pressable>
+
+              {venue && deliveryLinks.length > 0 ? (
+                <View style={{ gap: spacing[2] }}>
+                  <AppText variant="bodySmallBold" tone="secondary">
+                    Order on
+                  </AppText>
+                  <DeliveryButtonRow links={deliveryLinks} dishId={dish.id} venueId={venue.id} />
+                </View>
+              ) : null}
+
+              {hasTasteSignal ? (
+                <View style={{ gap: spacing[3] }}>
+                  <View style={{ gap: spacing[1] }}>
+                    <AppText variant="h2">How it tastes to you</AppText>
+                  </View>
                   <View
-                    key={attribute.label}
                     style={{
                       backgroundColor: palette.surface,
                       borderColor: palette.border,
                       borderRadius: componentRadii.card,
                       borderWidth: 1,
-                      gap: spacing[1],
-                      padding: spacing[3],
-                      width: cardWidth,
+                      gap: spacing[4],
+                      padding: spacing[4],
                     }}
                   >
-                    <AppText variant="micro" tone="secondary">
-                      {attribute.label}
-                    </AppText>
-                    <AppText variant="h3" style={{ fontSize: 18 }}>
-                      {attribute.value}
-                    </AppText>
-                    {attribute.helper ? (
-                      <AppText variant="bodySmall" tone="secondary">
-                        {attribute.helper}
+                    <TasteRadarChart
+                      axes={perceivedTasteAxes(
+                        dish.tasteVector,
+                        hasPersonalPalate ? profile.tasteVector : undefined,
+                      )}
+                      size={Math.min(width - spacing[4] * 4, 300)}
+                    />
+                    {hasPersonalPalate ? (
+                      perceivedRows
+                        .filter((row) => row.direction !== "same")
+                        .slice(0, 2)
+                        .map((row) => (
+                          <AppText key={row.key} variant="bodySmall" tone="secondary">
+                            {perceivedTasteSentence(row)}
+                          </AppText>
+                        ))
+                    ) : (
+                      <AppText variant="micro" tone="muted" style={{ textAlign: "center" }}>
+                        Set your taste palette in Profile to see how it tastes to you.
                       </AppText>
-                    ) : null}
+                    )}
                   </View>
-                ))}
-              </View>
-
-              {hasTasteSignal ? (
-                <View style={{ gap: spacing[3] }}>
-                  <Button
-                    label={tasteProfileOpen ? "Hide Taste Profile" : "View Taste Profile"}
-                    onPress={() => setTasteProfileOpen((current) => !current)}
-                  />
-                  {tasteProfileOpen ? (
-                    <View
-                      style={{
-                        backgroundColor: palette.surface,
-                        borderColor: palette.border,
-                        borderRadius: componentRadii.card,
-                        borderWidth: 1,
-                        gap: spacing[3],
-                        padding: spacing[4],
-                      }}
-                    >
-                      <AppText variant="h3">Taste Matrix &amp; Palate Profile</AppText>
-                      <AppText variant="micro" tone="secondary">
-                        Taste profile from available dish data
-                      </AppText>
-                      {TASTE_DIMENSIONS.map((dimension) => {
-                        const score = dish.tasteVector[dimension.key] ?? 0;
-                        const progressWidth =
-                          `${Math.max(0, Math.min(100, Math.round((score / 10) * 100)))}%` as const;
-
-                        return (
-                          <View key={dimension.key} style={{ gap: spacing[1] }}>
-                            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                              <AppText variant="bodySmall" style={{ fontWeight: "800" }}>
-                                {dimension.label}
-                              </AppText>
-                              <AppText variant="micro" tone="secondary">
-                                {score}/10
-                              </AppText>
-                            </View>
-                            <View
-                              style={{
-                                backgroundColor: palette.border,
-                                borderRadius: radii.pill,
-                                height: 8,
-                                overflow: "hidden",
-                              }}
-                            >
-                              <View
-                                style={{
-                                  backgroundColor: palette.orange,
-                                  borderRadius: radii.pill,
-                                  height: "100%",
-                                  width: progressWidth,
-                                }}
-                              />
-                            </View>
-                          </View>
-                        );
-                      })}
-                    </View>
-                  ) : null}
                 </View>
               ) : null}
 
@@ -1124,73 +1221,6 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                   <AppText tone="secondary">
                     Couldn&apos;t load stall details. Tap to retry.
                   </AppText>
-                </Pressable>
-              ) : null}
-
-              {venue ? (
-                <Pressable
-                  onPress={() => setOperatingHoursOpen((current) => !current)}
-                  accessibilityRole="button"
-                  accessibilityLabel="Opening hours"
-                  accessibilityHint={
-                    operatingHoursOpen ? "Shows today's hours only" : "Shows the full week"
-                  }
-                  accessibilityState={{ expanded: operatingHoursOpen }}
-                  style={({ pressed }) => [
-                    {
-                      gap: spacing[3],
-                      opacity: pressed ? 0.95 : 1,
-                    },
-                  ]}
-                >
-                  <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
-                    <Clock3 color={palette.orange} size={20} />
-                    <AppText variant="h2" style={{ flex: 1 }}>
-                      Opening hours
-                    </AppText>
-                    {operatingHoursOpen ? (
-                      <ChevronUp color={palette.textSecondary} size={22} />
-                    ) : (
-                      <ChevronDown color={palette.textSecondary} size={22} />
-                    )}
-                  </View>
-                  <View
-                    style={{
-                      backgroundColor: palette.surface,
-                      borderColor: palette.border,
-                      borderRadius: componentRadii.card,
-                      borderWidth: 1,
-                      gap: spacing[3],
-                      padding: spacing[4],
-                    }}
-                  >
-                    {listedHours.length ? (
-                      <View style={{ gap: spacing[2], marginTop: spacing[1] }}>
-                        {(operatingHoursOpen ? listedHours : currentDayRows).map((row) => (
-                          <View
-                            key={`${row.label}-${row.text}`}
-                            style={{
-                              flexDirection: "row",
-                              gap: spacing[2],
-                              justifyContent: "space-between",
-                            }}
-                          >
-                            <AppText tone="secondary" style={{ width: 104 }}>
-                              {row.label}
-                            </AppText>
-                            <AppText tone="secondary" style={{ flex: 1, textAlign: "right" }}>
-                              {row.text}
-                            </AppText>
-                          </View>
-                        ))}
-                      </View>
-                    ) : (
-                      <AppText tone="secondary">Hours not listed.</AppText>
-                    )}
-                    {openInfo?.closureNotice ? (
-                      <AppText tone="secondary">{openInfo.closureNotice}</AppText>
-                    ) : null}
-                  </View>
                 </Pressable>
               ) : null}
 
@@ -1254,12 +1284,103 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                           <AppText variant="bodyBold" numberOfLines={1}>
                             {item.name}
                           </AppText>
-                          <AppText variant="price" style={{ color: palette.orange }}>
+                          <AppText variant="price" style={{ color: palette.text }}>
                             {formatDishPrice(item)}
                           </AppText>
                         </View>
                       </Pressable>
                     ))}
+                  </ScrollView>
+                </View>
+              ) : null}
+
+              {similarNearby.length > 0 ? (
+                <View style={{ gap: spacing[3] }}>
+                  {/* Under "More from": the same food at other stalls near this one. */}
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
+                    <MapPin color={palette.orange} size={20} />
+                    <AppText variant="h2" style={{ flex: 1 }} numberOfLines={2}>
+                      {`Other ${similarDishHeading} stalls nearby`}
+                    </AppText>
+                  </View>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={{ marginHorizontal: -spacing[4] }}
+                    contentContainerStyle={{ gap: spacing[3], paddingHorizontal: spacing[4] }}
+                  >
+                    {similarNearby.map((item) => {
+                      const imageUrl = sanitizeCatalogImageUrl(item.imageUrl);
+                      const away = formatAwayLabel(item.distanceMeters);
+                      return (
+                        <Pressable
+                          key={item.id}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Open ${item.name} at ${item.venueName}${
+                            away ? `, ${away}` : ""
+                          }`}
+                          onPress={() => {
+                            tapHaptic();
+                            navigation.push("DishDetail", { dishId: item.id });
+                          }}
+                          style={({ pressed }) => ({
+                            backgroundColor: palette.surface,
+                            borderColor: palette.border,
+                            borderRadius: componentRadii.card,
+                            borderWidth: 1,
+                            overflow: "hidden",
+                            transform: [{ scale: pressed ? 0.98 : 1 }],
+                            width: signatureGridItemWidth,
+                          })}
+                        >
+                          <View>
+                            {imageUrl ? (
+                              <AccessibleImage
+                                source={{ uri: imageUrl }}
+                                contentFit="cover"
+                                style={{ width: "100%", height: signatureGridItemWidth * 0.62 }}
+                                decorative
+                              />
+                            ) : (
+                              <NoDishPhoto
+                                dishName={item.name}
+                                style={{ width: "100%", height: signatureGridItemWidth * 0.62 }}
+                              />
+                            )}
+                            {away ? (
+                              <View
+                                style={{
+                                  backgroundColor: palette.surface,
+                                  borderRadius: radii.pill,
+                                  bottom: spacing[2],
+                                  left: spacing[2],
+                                  paddingHorizontal: spacing[2],
+                                  paddingVertical: 2,
+                                  position: "absolute",
+                                }}
+                              >
+                                <AppText variant="micro" style={{ fontWeight: "700" }}>
+                                  {away}
+                                </AppText>
+                              </View>
+                            ) : null}
+                          </View>
+                          <View style={{ gap: spacing[0.5], padding: spacing[3] }}>
+                            <AppText variant="bodyBold" numberOfLines={1}>
+                              {item.venueName}
+                            </AppText>
+                            <AppText variant="micro" tone="secondary" numberOfLines={1}>
+                              {[item.name, item.buildingName].filter(Boolean).join(" · ")}
+                            </AppText>
+                            {item.price ? (
+                              <AppText variant="price" style={{ color: palette.text }}>
+                                {`S$${item.price.toFixed(2)}`}
+                              </AppText>
+                            ) : null}
+                          </View>
+                        </Pressable>
+                      );
+                    })}
                   </ScrollView>
                 </View>
               ) : null}
@@ -1272,10 +1393,11 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                     alignItems: "center",
                   }}
                 >
-                  <AppText variant="h2">Community Palate Feedback</AppText>
+                  <AppText variant="h2">Reviews</AppText>
                   {dish.reviewCount > 0 ? (
                     <AppText variant="bodySmall" tone="secondary">
-                      ★ {dish.rating.toFixed(1)} ({dish.reviewCount})
+                      <Text style={{ color: palette.starFill }}>★</Text> {dish.rating.toFixed(1)} (
+                      {dish.reviewCount})
                     </AppText>
                   ) : null}
                 </View>
@@ -1357,21 +1479,8 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                               {formatTimeAgo(review.createdAt)}
                             </AppText>
                           </View>
-                          <View
-                            accessible
-                            accessibilityRole="text"
-                            accessibilityLabel={`Rated ${review.rating} out of 5`}
-                            style={{ alignItems: "center", flexDirection: "row", gap: 2 }}
-                          >
-                            <Star color={palette.ratingStar} fill={palette.ratingStar} size={13} />
-                            <AppText variant="micro" style={{ fontWeight: "800" }}>
-                              {review.rating}
-                            </AppText>
-                          </View>
                         </View>
-                        <AppText variant="bodySmall" tone="secondary">
-                          {review.text}
-                        </AppText>
+                        <CaptionPreview text={review.text} />
                         <ReviewPhotoStrip
                           photos={review.photos}
                           subject={`${dish.name}, review by ${review.authorName}`}
@@ -1412,6 +1521,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                         ) : null}
                         <ReviewReaderActions
                           key={review.id}
+                          rating={review.rating}
                           review={review}
                           isOwn={isOwnReview(review, isAuthenticated ? profile.id : undefined)}
                           returnRoute={{ name: "DishDetail", params: { dishId: dish.id } }}
@@ -1475,184 +1585,26 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
               <ReportProblemLink
                 venueId={dish.venueId}
                 dishId={dish.id}
+                subjectName={dish.name}
                 returnRoute={{ name: "DishDetail", params: { dishId: dish.id } }}
               />
             </View>
-          </ScrollView>
+          </Animated.ScrollView>
 
-          {showDeferredDetailControls ? (
-            <View
-              style={{
-                backgroundColor: palette.surface,
-                borderTopColor: palette.border,
-                borderTopWidth: 1,
-                bottom: 0,
-                flexDirection: "row",
-                justifyContent: "flex-end",
-                gap: spacing[3],
-                left: 0,
-                paddingBottom: Math.max(insets.bottom, spacing[4]),
-                paddingHorizontal: spacing[4],
-                paddingTop: spacing[3],
-                position: "absolute",
-                right: 0,
-              }}
-            >
-              {FEATURE_FLAGS.portfoliosEnabled ? (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Add this dish to a list"
-                  accessibilityState={{ disabled: isAddingToPortfolio }}
-                  onPress={() => void addToPortfolio()}
-                  disabled={isAddingToPortfolio}
-                  style={{
-                    alignItems: "center",
-                    height: dockTargetSize,
-                    justifyContent: "center",
-                    minWidth: dockTargetSize,
-                  }}
-                >
-                  <ListPlus color={palette.text} size={reviewIconSize} />
-                </Pressable>
-              ) : null}
-              {FEATURE_FLAGS.favouritesEnabled ? (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={isSaved ? "Saved" : "Save"}
-                  accessibilityHint={isSaved ? "Removes this dish from Want to try" : undefined}
-                  accessibilityState={{ selected: isSaved }}
-                  onPress={() => void handleSave()}
-                  style={{
-                    alignItems: "center",
-                    height: dockTargetSize,
-                    justifyContent: "center",
-                    minWidth: dockTargetSize,
-                  }}
-                >
-                  <Bookmark
-                    color={isSaved ? palette.orange : palette.text}
-                    size={reviewIconSize}
-                    fill={isSaved ? palette.orange : "none"}
-                  />
-                </Pressable>
-              ) : null}
-              <Pressable
-                accessibilityRole="checkbox"
-                accessibilityLabel="Tried"
-                accessibilityState={{ checked: isDishTried, disabled: isTryingFood }}
-                onPress={handleTryFood}
-                disabled={isTryingFood}
-                style={({ pressed }) => {
-                  const backgroundColor = isDishTried
-                    ? palette.surface
-                    : pressed
-                      ? palette.bg
-                      : palette.bgSoft;
-                  const normalizedBackgroundColor = backgroundColor.toLowerCase().replace("#", "");
-                  const isWhiteOrBlackBackground =
-                    !isDishTried &&
-                    (normalizedBackgroundColor === "ffffff" ||
-                      normalizedBackgroundColor === "000000");
-                  return {
-                    alignItems: "center",
-                    backgroundColor,
-                    borderColor: isWhiteOrBlackBackground ? palette.orange : "transparent",
-                    borderWidth: isWhiteOrBlackBackground ? 1 : 0,
-                    borderRadius: componentRadii.iconButton,
-                    height: dockTargetSize,
-                    justifyContent: "center",
-                    minWidth: dockTargetSize,
-                  };
-                }}
-              >
-                <CheckCircle
-                  color={isDishTried ? palette.orange : palette.text}
-                  fill="none"
-                  size={reviewIconSize}
-                />
-              </Pressable>
-              {FEATURE_FLAGS.reviewCreationEnabled ? (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Write a review"
-                  onPress={handleReview}
-                  style={{
-                    alignItems: "center",
-                    backgroundColor: palette.orange,
-                    borderRadius: componentRadii.button,
-                    flexDirection: "row",
-                    gap: spacing[1.5],
-                    height: dockTargetSize,
-                    justifyContent: "center",
-                    paddingHorizontal: spacing[4],
-                  }}
-                >
-                  {/* Dark ink on orange: white on brand orange fails AA in both themes. */}
-                  <CommentIcon color={palette.textOnOrange} size={reviewIconSize} />
-                  <AppText variant="bodyBold" style={{ color: palette.textOnOrange }}>
-                    Review
-                  </AppText>
-                </Pressable>
-              ) : null}
-            </View>
-          ) : null}
+          <DetailActionBar
+            actions={barActions}
+            cta={
+              showDeferredDetailControls && FEATURE_FLAGS.reviewCreationEnabled
+                ? {
+                    label: "Write a review",
+                    onPress: handleReview,
+                  }
+                : undefined
+            }
+            testID="dish-action-bar"
+          />
 
-          <View
-            style={{
-              alignItems: "center",
-              backgroundColor: palette.surface,
-              borderBottomColor: palette.border,
-              borderBottomWidth: 1,
-              flexDirection: "row",
-              height: insets.top + 56,
-              left: 0,
-              paddingHorizontal: spacing[4],
-              paddingTop: insets.top,
-              position: "absolute",
-              right: 0,
-              top: 0,
-            }}
-          >
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Go back"
-              onPress={goBackOrHome}
-              style={{
-                alignItems: "center",
-                backgroundColor: headerButtonBackground,
-                borderColor: headerButtonBorder,
-                borderRadius: componentRadii.iconButton,
-                borderWidth: 1,
-                height: dockTargetSize,
-                justifyContent: "center",
-                width: dockTargetSize,
-              }}
-            >
-              <ArrowLeft color={palette.text} size={22} />
-            </Pressable>
-            <AppText variant="h3" style={{ flex: 1, marginLeft: spacing[3] }}>
-              Dish Details
-            </AppText>
-            {showDeferredDetailControls ? (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Share ${dish.name}`}
-                onPress={openShareSheet}
-                style={{
-                  alignItems: "center",
-                  backgroundColor: headerButtonBackground,
-                  borderColor: headerButtonBorder,
-                  borderRadius: componentRadii.iconButton,
-                  borderWidth: 1,
-                  height: dockTargetSize,
-                  justifyContent: "center",
-                  width: dockTargetSize,
-                }}
-              >
-                <Send color={palette.text} size={21} />
-              </Pressable>
-            ) : null}
-          </View>
+          <FloatingBackButton onPress={goBackOrHome} />
 
           {showDeferredDetailControls ? (
             <ReviewShareSheet
@@ -1669,6 +1621,69 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
             />
           ) : null}
           {saveToListSheet}
+
+          <Modal
+            visible={triedPromptOpen}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setTriedPromptOpen(false)}
+          >
+            <View
+              style={{
+                backgroundColor: palette.mediaScrim,
+                flex: 1,
+                justifyContent: "center",
+                padding: spacing[4],
+              }}
+            >
+              <View
+                accessibilityViewIsModal
+                style={{
+                  backgroundColor: palette.surface,
+                  borderRadius: componentRadii.card,
+                  gap: spacing[4],
+                  padding: spacing[5],
+                }}
+              >
+                <View style={{ alignItems: "center", gap: spacing[1] }}>
+                  <AppText variant="h2" style={{ textAlign: "center" }}>
+                    {`You tried ${dish.name}`}
+                  </AppText>
+                  <AppText variant="bodySmall" tone="secondary" style={{ textAlign: "center" }}>
+                    How was it? Both are optional.
+                  </AppText>
+                </View>
+                <View style={{ alignItems: "center", gap: spacing[2] }}>
+                  <AppText variant="bodySmallBold">Your rating</AppText>
+                  <StarRating value={triedRating} editable onChange={setTriedRating} />
+                </View>
+                <View style={{ gap: spacing[2] }}>
+                  <AppText variant="bodySmallBold" style={{ textAlign: "center" }}>
+                    How did it taste?
+                  </AppText>
+                  <ChipGroup
+                    options={TRIED_PROMPT_TASTE_TAGS.map((tag) => ({ id: tag, label: tag }))}
+                    selectedIds={triedTags}
+                    onSelect={(tag) =>
+                      setTriedTags((current) =>
+                        current.includes(tag)
+                          ? current.filter((value) => value !== tag)
+                          : [...current, tag],
+                      )
+                    }
+                  />
+                </View>
+                <View style={{ gap: spacing[2] }}>
+                  <Button label="Write a review" onPress={continueTriedReview} />
+                  <Button
+                    label="Not now"
+                    variant="ghost"
+                    onPress={() => setTriedPromptOpen(false)}
+                  />
+                </View>
+              </View>
+            </View>
+          </Modal>
         </View>
       </SafeAreaView>
     </FeedErrorBoundary>

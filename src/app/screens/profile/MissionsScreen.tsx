@@ -48,7 +48,7 @@ export function MissionsScreen({ navigation: _nav }: Props) {
 
   return (
     <ProfileScreenShell
-      title="Weekly Missions"
+      title="Weekly missions"
       subtitle={`${completedCount}/${missions.length} completed · ${weekLabel}`}
     >
       {missions.length === 0 ? (

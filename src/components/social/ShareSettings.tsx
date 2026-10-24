@@ -441,7 +441,7 @@ export function ShareRecipientRows({
                 paddingVertical: spacing[1.5],
               }}
             >
-              <AppText variant="micro" style={{ color: palette.white, fontWeight: "900" }}>
+              <AppText variant="micro" style={{ color: palette.textOnOrange, fontWeight: "900" }}>
                 {actionLabel}
               </AppText>
             </View>

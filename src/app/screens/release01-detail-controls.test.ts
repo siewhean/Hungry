@@ -28,10 +28,14 @@ test("core-only builds keep detail controls read-only despite targeted feature o
   const stall = read("src/app/screens/detail/StallDetailScreen.tsx");
 
   assert.match(dish, /const showDeferredDetailControls = !FEATURE_FLAGS\.release01CoreOnly/);
-  assert.match(dish, /\{showDeferredDetailControls \? \([\s\S]*?accessibilityLabel="Tried"/);
+  // Share, Tried, Save and Like are added to the bottom bar only when deferred controls are on.
   assert.match(
     dish,
-    /\{showDeferredDetailControls \? \([\s\S]*?accessibilityLabel=\{`Share \$\{dish\.name\}`\}/,
+    /const barActions: DetailAction\[\] = showDeferredDetailControls\s*\? \[[\s\S]*?accessibilityLabel: `Share \$\{dish\.name\}`[\s\S]*?accessibilityLabel: "Tried"/,
+  );
+  assert.match(
+    dish,
+    /const barActions: DetailAction\[\] = showDeferredDetailControls[\s\S]*?id: "like"/,
   );
   assert.match(dish, /\{showDeferredDetailControls \? \([\s\S]*?<ReviewShareSheet/);
   assert.match(
@@ -40,8 +44,12 @@ test("core-only builds keep detail controls read-only despite targeted feature o
   );
 
   assert.match(stall, /const showDeferredDetailControls = !FEATURE_FLAGS\.release01CoreOnly/);
-  assert.match(stall, /\{showDeferredDetailControls && isAuthenticated && venue \? \(/);
-  assert.match(stall, /\{showDeferredDetailControls && FEATURE_FLAGS\.collectionsEnabled \? \(/);
+  assert.match(stall, /showVisited=\{showDeferredDetailControls && isAuthenticated\}/);
+  assert.match(stall, /showDeferredDetailControls && FEATURE_FLAGS\.portfoliosEnabled/);
+  assert.match(
+    stall,
+    /showDeferredDetailControls && FEATURE_FLAGS\.reviewCreationEnabled\s*\? openWriteReview/,
+  );
   assert.match(
     stall,
     /\{showDeferredDetailControls && FEATURE_FLAGS\.merchantClaimCtaEnabled \? \(/,

@@ -125,7 +125,10 @@ export function LivePreviewSheet() {
                     justifyContent: "center",
                   }}
                 >
-                  <AppText variant="micro" style={{ color: palette.white, fontWeight: "800" }}>
+                  <AppText
+                    variant="micro"
+                    style={{ color: palette.textOnOrange, fontWeight: "800" }}
+                  >
                     ME
                   </AppText>
                 </View>

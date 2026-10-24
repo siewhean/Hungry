@@ -11,6 +11,12 @@ export async function registerForStallAlerts(_options?: {
   return false;
 }
 
+export async function getNotificationPermissionState(): Promise<
+  "granted" | "denied" | "undetermined"
+> {
+  return "undetermined";
+}
+
 export function getInitialNotificationUrl(): string | null {
   return null;
 }
