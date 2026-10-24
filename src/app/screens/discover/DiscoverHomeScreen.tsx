@@ -785,7 +785,7 @@ const DiscoverBiteCard = memo(function DiscoverBiteCard({
           </AppText>
           {variant !== "price" && hasRating ? (
             <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
-              <Star color={palette.amber} size={12} fill={palette.amber} />
+              <Star color={palette.starStroke} size={12} fill={palette.starFill} />
               <AppText variant="micro" style={{ color: palette.text, fontWeight: "700" }}>
                 {bite.rating.toFixed(1)}
               </AppText>
@@ -1052,7 +1052,7 @@ function VerticalStallShowcaseSection({
                           right: spacing[2],
                         }}
                       >
-                        <Star color={palette.amber} size={11} fill={palette.amber} />
+                        <Star color={palette.starStroke} size={11} fill={palette.starFill} />
                         <AppText
                           variant="micro"
                           style={{ color: palette.textOnDark, fontWeight: "900" }}

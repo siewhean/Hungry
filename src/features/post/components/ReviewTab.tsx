@@ -72,7 +72,7 @@ export function ReviewTab() {
             marginBottom: semanticSpacing.componentGap,
           }}
         >
-          <Star size={18} color={palette.amber} fill={palette.amber} />
+          <Star size={18} color={palette.starStroke} fill={palette.starFill} />
           <AppText variant="bodyBold">Overall Rating</AppText>
         </View>
         <StarRating value={rating} onChange={setRating} editable fullWidth />

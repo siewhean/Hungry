@@ -117,7 +117,7 @@ export function PortfolioItemRow({
         </View>
         {typeof item.score === "number" ? (
           <View style={styles.scoreWrap}>
-            <Star color={palette.amber} fill={palette.amber} size={16} />
+            <Star color={palette.starStroke} fill={palette.starFill} size={16} />
             <AppText variant="bodySmallBold">{item.score}/10</AppText>
           </View>
         ) : null}

@@ -119,8 +119,8 @@ function StarRow({ rating, size = 12 }: { rating: number; size?: number }) {
         <Star
           key={i}
           size={size}
-          color={palette.amber}
-          fill={i <= rating ? palette.amber : "transparent"}
+          color={palette.starStroke}
+          fill={i <= rating ? palette.starFill : "transparent"}
         />
       ))}
     </View>

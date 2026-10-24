@@ -13,7 +13,10 @@ test("D1: saved dish bookmark uses a visible brand fill, never white on the ligh
   const dish = read("src/app/screens/detail/DishDetailScreenV2.tsx");
   const bar = read("src/components/detail/DetailActionBar.tsx");
   assert.match(dish, /fillWhenActive: true/);
-  assert.match(bar, /const color = action\.active \? palette\.orange : palette\.text/);
+  assert.match(
+    bar,
+    /const color = action\.active\s+\? palette\.orange\s+: action\.mutedWhenInactive\s+\? palette\.textMuted\s+: palette\.text/,
+  );
   assert.match(
     bar,
     /fill=\{action\.active && action\.fillWhenActive \? palette\.orange : "none"\}/,

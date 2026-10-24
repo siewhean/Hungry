@@ -407,8 +407,8 @@ function InteractionCard({
             <Star
               key={s}
               size={14}
-              color={s <= interaction.rating! ? palette.ratingStar : palette.border}
-              fill={s <= interaction.rating! ? palette.ratingStar : "transparent"}
+              color={s <= interaction.rating! ? palette.starStroke : palette.border}
+              fill={s <= interaction.rating! ? palette.starFill : "transparent"}
             />
           ))}
         </View>

@@ -172,7 +172,7 @@ export function ReviewHistoryScreen({ navigation }: Props) {
                 <View style={{ width: 1, height: spacing[8], backgroundColor: palette.border }} />
                 <View style={{ alignItems: "center", gap: spacing[1] }}>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
-                    <Star size={18} color={palette.ratingStar} fill={palette.ratingStar} />
+                    <Star size={18} color={palette.starStroke} fill={palette.starFill} />
                     <AppText variant="h1">{averageRating}</AppText>
                   </View>
                   <AppText variant="micro" tone="secondary">
@@ -209,7 +209,7 @@ export function ReviewHistoryScreen({ navigation }: Props) {
                     paddingVertical: spacing[1],
                   }}
                 >
-                  <Star size={14} color={palette.ratingStar} fill={palette.ratingStar} />
+                  <Star size={14} color={palette.starStroke} fill={palette.starFill} />
                   <AppText variant="bodySmallBold" tone="inverse">
                     {rating.toFixed(1)}
                   </AppText>

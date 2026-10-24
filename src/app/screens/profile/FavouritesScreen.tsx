@@ -287,7 +287,7 @@ export function FavouritesScreen({ navigation }: Props) {
                         <View
                           style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
                         >
-                          <Star color={palette.ratingStar} fill={palette.ratingStar} size={15} />
+                          <Star color={palette.starStroke} fill={palette.starFill} size={15} />
                           <AppText variant="bodySmallBold">{dish.rating.toFixed(1)}</AppText>
                           <AppText variant="bodySmall" tone="secondary">
                             ({dish.reviewCount})
@@ -589,7 +589,7 @@ function CatalogSavedDishes({ navigation, query }: Pick<Props, "navigation"> & {
                   </View>
                   {dish.reviewCount && dish.rating ? (
                     <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
-                      <Star color={palette.ratingStar} fill={palette.ratingStar} size={15} />
+                      <Star color={palette.starStroke} fill={palette.starFill} size={15} />
                       <AppText variant="bodySmallBold">{dish.rating.toFixed(1)}</AppText>
                       <AppText variant="bodySmall" tone="secondary">
                         ({dish.reviewCount})

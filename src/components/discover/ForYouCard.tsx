@@ -92,7 +92,7 @@ export function ForYouCard({ pick, onPress, onPressIn }: ForYouCardProps) {
         <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[3] }}>
           {dish.reviewCount > 0 ? (
             <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
-              <Star size={15} color={palette.ratingStar} fill={palette.ratingStar} />
+              <Star size={15} color={palette.starStroke} fill={palette.starFill} />
               <AppText variant="bodySmallBold">{dish.rating.toFixed(1)}</AppText>
               <AppText variant="bodySmall" tone="secondary">
                 ({dish.reviewCount})

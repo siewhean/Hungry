@@ -117,10 +117,22 @@ export function clampMapView(view: MapView): MapView {
   };
 }
 
-/** The SVG viewBox for a view: "minX minY width height". */
-export function mapViewBox(view: MapView): string {
-  const width = PROJECTION.width / view.zoom;
-  const height = PROJECTION.height / view.zoom;
+/**
+ * ViewBox units per screen point for a view drawn into a box of this size. At zoom 1 the
+ * whole island fits; a box taller or wider than the map shows a margin around it.
+ */
+export function mapUnitsPerPoint(view: MapView, size: { width: number; height: number }): number {
+  return Math.max(PROJECTION.width / size.width, PROJECTION.height / size.height) / view.zoom;
+}
+
+/** The SVG viewBox for a view: "minX minY width height". Defaults to the map's own shape. */
+export function mapViewBox(
+  view: MapView,
+  size: { width: number; height: number } = PROJECTION,
+): string {
+  const unitsPerPoint = mapUnitsPerPoint(view, size);
+  const width = size.width * unitsPerPoint;
+  const height = size.height * unitsPerPoint;
   return `${view.centerX - width / 2} ${view.centerY - height / 2} ${width} ${height}`;
 }
 

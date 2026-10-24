@@ -28,6 +28,9 @@ export const colors = {
     amberLight: "#FFFBEB",
     /** Rating stars: a darker amber that reads on white (3:1 non-text minimum). */
     ratingStar: "#B45309",
+    /** Rating star icons: a yellow fill, edged in gold so the shape reads on white (3:1). */
+    starFill: "#FFC21A",
+    starStroke: "#B8860B",
     teal: "#14B8A6",
     success: "#4F7E17",
     successText: "#4F7E17",
@@ -108,6 +111,8 @@ export const colors = {
     amber: "#F5A623",
     amberLight: "rgba(245, 166, 35, 0.1)",
     ratingStar: "#F5A623",
+    starFill: "#FFC21A",
+    starStroke: "#FFC21A",
     teal: "#14B8A6",
     success: "#4ADE80",
     successText: "#4ADE80",

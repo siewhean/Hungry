@@ -30,6 +30,8 @@ export type DetailAction = {
   active?: boolean;
   /** Fill the icon when active (bookmark, heart). */
   fillWhenActive?: boolean;
+  /** Grey instead of ink while not active (e.g. a dish not tried yet). */
+  mutedWhenInactive?: boolean;
   loading?: boolean;
   disabled?: boolean;
   accessibilityLabel?: string;
@@ -124,7 +126,6 @@ export function DetailActionBar({ actions, cta, testID }: Props) {
     barWidth > 0 && heldFrame
       ? Math.max(spacing[4], barWidth - (heldFrame.x + heldFrame.width) - spacing[1])
       : spacing[4];
-  const HeldIcon = heldAction?.icon;
 
   const renderBar = () => (
     <View
@@ -174,7 +175,11 @@ export function DetailActionBar({ actions, cta, testID }: Props) {
       <View style={{ flex: 1 }} />
       {actions.map((action) => {
         const Icon = action.icon;
-        const color = action.active ? palette.orange : palette.text;
+        const color = action.active
+          ? palette.orange
+          : action.mutedWhenInactive
+            ? palette.textMuted
+            : palette.text;
         const hasHold = Boolean(action.holdOptions?.length || action.onHoldOpen);
         const openHold = () => {
           if (!hasHold) return;
@@ -253,37 +258,10 @@ export function DetailActionBar({ actions, cta, testID }: Props) {
           onPress={closeMenu}
           style={[
             StyleSheet.absoluteFill,
-            { backgroundColor: palette.mediaScrim, elevation: OVERLAY_Z, zIndex: OVERLAY_Z },
+            // Clear: the page stays as it is; a tap anywhere closes the menu.
+            { elevation: OVERLAY_Z, zIndex: OVERLAY_Z },
           ]}
         />
-      ) : null}
-
-      {/* The held button stays lit above the dimmed page. */}
-      {menuOpen && heldAction && heldFrame && HeldIcon ? (
-        <View
-          pointerEvents="none"
-          importantForAccessibility="no-hide-descendants"
-          accessibilityElementsHidden
-          style={{
-            alignItems: "center",
-            backgroundColor: palette.surface,
-            borderRadius: radii.pill,
-            bottom: barBottomPadding,
-            elevation: OVERLAY_Z + 1,
-            height: TARGET_SIZE,
-            justifyContent: "center",
-            left: heldFrame.x + (heldFrame.width - TARGET_SIZE) / 2,
-            position: "absolute",
-            width: TARGET_SIZE,
-            zIndex: OVERLAY_Z + 1,
-          }}
-        >
-          <HeldIcon
-            color={palette.orange}
-            fill={heldAction.active && heldAction.fillWhenActive ? palette.orange : "none"}
-            size={ICON_SIZE}
-          />
-        </View>
       ) : null}
 
       {shownMenuId ? (

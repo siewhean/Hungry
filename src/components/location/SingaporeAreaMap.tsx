@@ -13,6 +13,7 @@ import {
   SINGAPORE_MAP_WIDTH,
   SINGAPORE_PLANNING_AREAS,
   clampMapView,
+  mapUnitsPerPoint,
   mapViewBox,
   pointInRing,
   projectCoordinate,
@@ -29,6 +30,8 @@ export type MapPlaceDot = { id: string; name: string; coordinate: Coordinate };
 
 type Props = {
   width: number;
+  /** Fills this height (the island fits, centred); defaults to the map's own shape. */
+  height?: number;
   /** Planning areas drawn in orange (see planningAreasFor). */
   highlighted?: readonly string[];
   /** A dropped pin for a chosen place. */
@@ -59,6 +62,7 @@ const PIN_FOCUS_ZOOM = 3;
  */
 export function SingaporeAreaMap({
   width,
+  height: boxHeight,
   highlighted = [],
   pin,
   places = [],
@@ -67,7 +71,8 @@ export function SingaporeAreaMap({
   onViewChange,
 }: Props) {
   const { palette, radii, shadows, spacing } = useHungryTheme();
-  const height = (width * SINGAPORE_MAP_HEIGHT) / SINGAPORE_MAP_WIDTH;
+  const height = boxHeight ?? (width * SINGAPORE_MAP_HEIGHT) / SINGAPORE_MAP_WIDTH;
+  const size = { width, height };
   const [view, setView] = useState<MapView>(FULL_MAP_VIEW);
   const gestureStart = useRef<MapView>(FULL_MAP_VIEW);
   const viewRef = useRef(view);
@@ -78,7 +83,7 @@ export function SingaporeAreaMap({
   });
   const lit = useMemo(() => new Set(highlighted), [highlighted]);
   // ViewBox units per screen point at this zoom.
-  const unitsPerPoint = SINGAPORE_MAP_WIDTH / view.zoom / width;
+  const unitsPerPoint = mapUnitsPerPoint(view, size);
   const showDots = view.zoom >= MAP_PLACE_DOTS_ZOOM;
   const pinPoint = pin ? projectCoordinate(pin) : undefined;
   const placePoints = useMemo(
@@ -165,7 +170,7 @@ export function SingaporeAreaMap({
     })
     .onUpdate((event) => {
       const start = gestureStart.current;
-      const startUnits = SINGAPORE_MAP_WIDTH / start.zoom / width;
+      const startUnits = mapUnitsPerPoint(start, size);
       changeView({
         ...start,
         centerX: start.centerX - event.translationX * startUnits,
@@ -212,7 +217,7 @@ export function SingaporeAreaMap({
     >
       <GestureDetector gesture={gesture}>
         <View accessible accessibilityRole="image" accessibilityLabel={label}>
-          <Svg width={width} height={height} viewBox={mapViewBox(view)}>
+          <Svg width={width} height={height} viewBox={mapViewBox(view, size)}>
             <G>
               {AREA_PATHS.map((area) => (
                 <Path

@@ -86,8 +86,8 @@ export function ReviewReaderActions({
             <Star
               key={index}
               size={14}
-              color={index < rating ? palette.ratingStar : palette.border}
-              fill={index < rating ? palette.ratingStar : "transparent"}
+              color={index < rating ? palette.starStroke : palette.border}
+              fill={index < rating ? palette.starFill : "transparent"}
             />
           ))}
         </View>

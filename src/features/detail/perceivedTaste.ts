@@ -99,8 +99,8 @@ export function palateSummary(vector: TasteVector | undefined): {
 }
 
 /**
- * Every taste axis for the radar chart: the dish's standard level (from its reviews), plus the
- * diner's own taste palette when they have one.
+ * Every taste axis for the radar chart: the dish's standard level (from its reviews), plus how
+ * it is likely to taste to the diner given their palette, when they have one.
  */
 export function perceivedTasteAxes(
   dishVector: TasteVector,
@@ -112,7 +112,8 @@ export function perceivedTasteAxes(
       key: dimension.key,
       label: dimension.label,
       standard,
-      ...(userVector ? { yours: clampLevel(userVector[dimension.key] ?? NEUTRAL) } : {}),
+      // How strong this dish is likely to feel to the diner, on the same scale as the reviews.
+      ...(userVector ? { yours: perceivedTasteLevel(standard, userVector[dimension.key]) } : {}),
     };
   });
 }

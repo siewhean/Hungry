@@ -59,7 +59,10 @@ test("dish detail V2 bottom bar is labelled, stateful and meets 44px targets", (
   assert.match(dish, /active: isDishTried/);
   // The bar itself: 44px or taller targets, brand colour when on, never white on the white bar.
   assert.match(bar, /const TARGET_SIZE = 48;/);
-  assert.match(bar, /action\.active \? palette\.orange : palette\.text/);
+  assert.match(
+    bar,
+    /action\.active\s+\? palette\.orange\s+: action\.mutedWhenInactive\s+\? palette\.textMuted\s+: palette\.text/,
+  );
   assert.match(bar, /accessibilityRole=\{action\.role \?\? "button"\}/);
   assert.match(bar, /checked: Boolean\(action\.active\)/);
   assert.doesNotMatch(bar, /palette\.white/);

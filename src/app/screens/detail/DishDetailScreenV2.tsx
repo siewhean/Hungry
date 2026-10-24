@@ -1,5 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, View, useWindowDimensions } from "react-native";
+import {
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  ScrollView,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import type { ColorValue } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -71,9 +78,11 @@ import {
   AppText,
   Avatar,
   Button,
+  ChipGroup,
   EmptyState,
   FeedErrorBoundary,
 } from "@/components/ui";
+import { REVIEW_EDITOR_TAGS, REVIEW_VALUE_TAGS } from "@/constants/taste";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useHungryTheme } from "@/theme";
 import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/ReviewShareSheet";
@@ -97,6 +106,10 @@ import { formatFullStallAddress, getStallPin } from "@/features/detail/stallLoca
 
 /** Reviews shown before "See all". */
 const DISH_REVIEW_PREVIEW_COUNT = 3;
+/** Taste words offered in the "you tried it" popup (value tags belong in the full review). */
+const TRIED_PROMPT_TASTE_TAGS = REVIEW_EDITOR_TAGS.filter(
+  (tag) => !REVIEW_VALUE_TAGS.includes(tag),
+);
 /** One page of a dish's reviews, newest first. */
 const DISH_REVIEW_PAGE_SIZE = 50;
 /** Below this confidence a dish's taste vector is too weak to show as fact. */
@@ -145,9 +158,14 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const shareSheetRef = useRef<BottomSheetModal>(null);
   const lastRecordedDishViewId = useRef<string | null>(null);
   const [isTryingFood, setIsTryingFood] = useState(false);
+  // After marking a dish tried: an optional popup to rate it and say how it tasted.
+  const [triedPromptOpen, setTriedPromptOpen] = useState(false);
+  const [triedRating, setTriedRating] = useState(0);
+  const [triedTags, setTriedTags] = useState<string[]>([]);
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   const selectReviewDish = useReviewDraftStore((state) => state.selectDish);
   const setReviewRating = useReviewDraftStore((state) => state.setRating);
+  const toggleReviewTag = useReviewDraftStore((state) => state.toggleTag);
   const resetReviewDraft = useReviewDraftStore((state) => state.resetDraft);
   const [openingSchedule, setOpeningSchedule] = useState<OpeningSchedule>();
   const [merchantProfile, setMerchantProfile] = useState<PublicMerchantProfile>();
@@ -652,16 +670,24 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     isOwnReview(review, isAuthenticated ? profile.id : undefined),
   );
 
-  // Quick rate: a tapped star starts the review with that rating filled in. A draft for another
-  // dish is left alone so the review screen can ask what to do with it.
-  const startRating = (rating: number) => {
+  // From the "you tried it" popup: the review starts with the stars and taste words filled in.
+  // A draft for another dish is left alone so the review screen can ask what to do with it.
+  const continueTriedReview = () => {
+    setTriedPromptOpen(false);
     const { draft } = useReviewDraftStore.getState();
     if (!draft.selectedDishId || draft.selectedDishId === dish.id) {
       if (draft.selectedDishId !== dish.id) resetReviewDraft();
       selectReviewDish(dish.venueId, dish.id);
-      setReviewRating(rating);
+      if (triedRating > 0) setReviewRating(triedRating);
+      const chosen = useReviewDraftStore.getState().draft.selectedTags;
+      for (const tag of triedTags) if (!chosen.includes(tag)) toggleReviewTag(tag);
     }
     handleReview();
+  };
+  const openTriedPrompt = () => {
+    setTriedRating(0);
+    setTriedTags([]);
+    setTriedPromptOpen(true);
   };
 
   const triedToastStyle = {
@@ -737,6 +763,10 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
             : "Marked as tried.",
         ...triedToastStyle,
       });
+      // Rating only makes sense once the dish is tried; both the stars and the taste are optional.
+      if (!FEATURE_FLAGS.release01CoreOnly && FEATURE_FLAGS.reviewCreationEnabled && !hasReviewed) {
+        openTriedPrompt();
+      }
     } finally {
       setIsTryingFood(false);
     }
@@ -780,8 +810,10 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
         {
           id: "tried",
           label: isDishTried ? "Tried" : "Mark tried",
-          icon: CheckCircle,
+          // Not tried: a plain grey circle. Tried: an orange tick.
+          icon: isDishTried ? CheckCircle : Circle,
           active: isDishTried,
+          mutedWhenInactive: true,
           role: "checkbox" as const,
           loading: isTryingFood,
           onPress: () => void handleTryFood(),
@@ -1008,7 +1040,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                       style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}
                     >
                       {/* One star and the exact score: five rounded stars hid 4.4 vs 3.6. */}
-                      <Star color={palette.ratingStar} fill={palette.ratingStar} size={17} />
+                      <Star color={palette.starStroke} fill={palette.starFill} size={17} />
                       <AppText variant="bodySmall" style={{ fontWeight: "800" }}>
                         {dish.rating.toFixed(1)}
                       </AppText>
@@ -1130,26 +1162,6 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                 </View>
               ) : null}
 
-              {showDeferredDetailControls && FEATURE_FLAGS.reviewCreationEnabled && !hasReviewed ? (
-                <View
-                  style={{
-                    alignItems: "center",
-                    backgroundColor: palette.surface,
-                    borderColor: palette.border,
-                    borderRadius: componentRadii.card,
-                    borderWidth: 1,
-                    gap: spacing[2],
-                    padding: spacing[4],
-                  }}
-                >
-                  <AppText variant="bodyBold">Rate this dish</AppText>
-                  <StarRating value={0} editable onChange={startRating} />
-                  <AppText variant="micro" tone="muted">
-                    Tap a star, then add a photo to post it.
-                  </AppText>
-                </View>
-              ) : null}
-
               {hasTasteSignal ? (
                 <View style={{ gap: spacing[3] }}>
                   <View style={{ gap: spacing[1] }}>
@@ -1172,16 +1184,20 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                       )}
                       size={Math.min(width - spacing[4] * 4, 300)}
                     />
-                    {hasPersonalPalate
-                      ? perceivedRows
-                          .filter((row) => row.direction !== "same")
-                          .slice(0, 2)
-                          .map((row) => (
-                            <AppText key={row.key} variant="bodySmall" tone="secondary">
-                              {perceivedTasteSentence(row)}
-                            </AppText>
-                          ))
-                      : null}
+                    {hasPersonalPalate ? (
+                      perceivedRows
+                        .filter((row) => row.direction !== "same")
+                        .slice(0, 2)
+                        .map((row) => (
+                          <AppText key={row.key} variant="bodySmall" tone="secondary">
+                            {perceivedTasteSentence(row)}
+                          </AppText>
+                        ))
+                    ) : (
+                      <AppText variant="micro" tone="muted" style={{ textAlign: "center" }}>
+                        Set your taste palette in Profile to see how it tastes to you.
+                      </AppText>
+                    )}
                   </View>
                 </View>
               ) : null}
@@ -1592,6 +1608,69 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
             />
           ) : null}
           {saveToListSheet}
+
+          <Modal
+            visible={triedPromptOpen}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setTriedPromptOpen(false)}
+          >
+            <View
+              style={{
+                backgroundColor: palette.mediaScrim,
+                flex: 1,
+                justifyContent: "center",
+                padding: spacing[4],
+              }}
+            >
+              <View
+                accessibilityViewIsModal
+                style={{
+                  backgroundColor: palette.surface,
+                  borderRadius: componentRadii.card,
+                  gap: spacing[4],
+                  padding: spacing[5],
+                }}
+              >
+                <View style={{ alignItems: "center", gap: spacing[1] }}>
+                  <AppText variant="h2" style={{ textAlign: "center" }}>
+                    {`You tried ${dish.name}`}
+                  </AppText>
+                  <AppText variant="bodySmall" tone="secondary" style={{ textAlign: "center" }}>
+                    How was it? Both are optional.
+                  </AppText>
+                </View>
+                <View style={{ alignItems: "center", gap: spacing[2] }}>
+                  <AppText variant="bodySmallBold">Your rating</AppText>
+                  <StarRating value={triedRating} editable onChange={setTriedRating} />
+                </View>
+                <View style={{ gap: spacing[2] }}>
+                  <AppText variant="bodySmallBold" style={{ textAlign: "center" }}>
+                    How did it taste?
+                  </AppText>
+                  <ChipGroup
+                    options={TRIED_PROMPT_TASTE_TAGS.map((tag) => ({ id: tag, label: tag }))}
+                    selectedIds={triedTags}
+                    onSelect={(tag) =>
+                      setTriedTags((current) =>
+                        current.includes(tag)
+                          ? current.filter((value) => value !== tag)
+                          : [...current, tag],
+                      )
+                    }
+                  />
+                </View>
+                <View style={{ gap: spacing[2] }}>
+                  <Button label="Write a review" onPress={continueTriedReview} />
+                  <Button
+                    label="Not now"
+                    variant="ghost"
+                    onPress={() => setTriedPromptOpen(false)}
+                  />
+                </View>
+              </View>
+            </View>
+          </Modal>
         </View>
       </SafeAreaView>
     </FeedErrorBoundary>

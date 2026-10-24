@@ -90,7 +90,7 @@ export function TrendingList({ title, bites, onOpen, onPrefetch, onSeeAll }: Tre
               <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
                 {bite.rating > 0 ? (
                   <View style={{ alignItems: "center", flexDirection: "row", gap: 2 }}>
-                    <Star size={12} color={palette.ratingStar} fill={palette.ratingStar} />
+                    <Star size={12} color={palette.starStroke} fill={palette.starFill} />
                     <AppText variant="micro">{bite.rating.toFixed(1)}</AppText>
                   </View>
                 ) : null}

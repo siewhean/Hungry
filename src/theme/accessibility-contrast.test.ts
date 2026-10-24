@@ -157,6 +157,11 @@ test("rating stars and orange CTA labels meet contrast targets", () => {
       contrast(palette.ratingStar as HexColor, palette.surface as HexColor) >= 3,
       `${mode} ratingStar on surface should pass 3:1`,
     );
+    // Yellow star icons are edged so the shape still reads on the card.
+    assert.ok(
+      contrast(palette.starStroke as HexColor, palette.surface as HexColor) >= 3,
+      `${mode} starStroke on surface should pass 3:1`,
+    );
   }
   // Orange CTAs: bold white labels in light mode (3:1 large-text minimum), dark ink in dark mode.
   assert.ok(contrast(colors.light.textOnOrange as HexColor, colors.light.orange as HexColor) >= 3);

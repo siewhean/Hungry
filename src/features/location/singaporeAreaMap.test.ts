@@ -9,6 +9,7 @@ import {
   SINGAPORE_PLANNING_AREAS,
   clampMapView,
   mapViewArea,
+  mapUnitsPerPoint,
   mapViewBox,
   planningAreaAt,
   planningAreasFor,
@@ -65,6 +66,14 @@ test("map points and coordinates round-trip, and views stay inside the map", () 
   assert.equal(zoomed.centerX, SINGAPORE_MAP_PROJECTION.width / MAP_MAX_ZOOM / 2);
   assert.equal(mapViewBox(FULL_MAP_VIEW), `0 0 1000 ${SINGAPORE_MAP_PROJECTION.height}`);
   assert.ok(MAP_PLACE_DOTS_ZOOM > 1);
+  // A box taller than the map keeps the whole width in view and shows sea above and below.
+  assert.equal(mapUnitsPerPoint(FULL_MAP_VIEW, { width: 500, height: 800 }), 2);
+  const [, minY, viewWidth, viewHeight] = mapViewBox(FULL_MAP_VIEW, { width: 500, height: 800 })
+    .split(" ")
+    .map(Number);
+  assert.equal(viewWidth, 1000);
+  assert.equal(viewHeight, 1600);
+  assert.ok(minY < 0);
 });
 
 test("a view's area shrinks as the map zooms in", () => {

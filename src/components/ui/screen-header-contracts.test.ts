@@ -267,7 +267,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /source=\{card\.imageSource\}/);
   assert.match(
     discover,
-    /bottom: spacing\[2\],[\s\S]*right: spacing\[2\],[\s\S]*<Star color=\{palette\.amber\} size=\{11\} fill=\{palette\.amber\} \/>[\s\S]*\{card\.heroDish\.rating\.toFixed\(1\)\}/,
+    /bottom: spacing\[2\],[\s\S]*right: spacing\[2\],[\s\S]*<Star color=\{palette\.starStroke\} size=\{11\} fill=\{palette\.starFill\} \/>[\s\S]*\{card\.heroDish\.rating\.toFixed\(1\)\}/,
   );
   assert.match(
     discover,
@@ -413,7 +413,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /onSeeAll: openDiscoverCollection/);
   assert.match(
     discover,
-    /S\$\{bite\.price\.toFixed\(2\)\}[\s\S]*<Star color=\{palette\.amber\} size=\{12\} fill=\{palette\.amber\} \/>[\s\S]*\{bite\.rating\.toFixed\(1\)\}/,
+    /S\$\{bite\.price\.toFixed\(2\)\}[\s\S]*<Star color=\{palette\.starStroke\} size=\{12\} fill=\{palette\.starFill\} \/>[\s\S]*\{bite\.rating\.toFixed\(1\)\}/,
   );
   assert.match(discover, /title="Budget < S\$8"[\s\S]*label="VALUE"/);
   assert.match(discover, /navigation\.navigate\("DishDetail", \{ dishId: bite\.dishId \}\)/);

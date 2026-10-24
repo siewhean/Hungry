@@ -10,7 +10,15 @@
 
 import { View, Pressable, StyleSheet, ActivityIndicator } from "react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Bookmark, CheckCircle, ListPlus, MapPin, PenLine, Send } from "lucide-react-native";
+import {
+  Bookmark,
+  CheckCircle,
+  Circle,
+  ListPlus,
+  MapPin,
+  PenLine,
+  Send,
+} from "lucide-react-native";
 import { confirmHaptic, tapHaptic } from "@/lib/haptics";
 
 import { useHungryTheme } from "@/theme";
@@ -220,8 +228,9 @@ export function StallInteractionBar({
             {
               id: "tried",
               label: isTried ? "Visited" : "Mark visited",
-              icon: CheckCircle,
+              icon: isTried ? CheckCircle : Circle,
               active: isTried,
+              mutedWhenInactive: true,
               role: "checkbox" as const,
               loading: tryingInProgress || interactionLoading,
               onPress: () => void handleTried(),

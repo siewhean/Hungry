@@ -591,7 +591,7 @@ test("TasteRadarChart shows the dish from reviews and adds your taste only with 
   ];
   const withPalette = await render(createElement(TasteRadarChart, { axes }));
 
-  assert.match(withPalette.text(), /Your taste/);
+  assert.match(withPalette.text(), /How it tastes to you/);
   assert.match(withPalette.text(), /This dish, from reviews/);
   await withPalette.unmount();
   const plain = await render(
@@ -599,7 +599,7 @@ test("TasteRadarChart shows the dish from reviews and adds your taste only with 
       axes: axes.map(({ key, label, standard }) => ({ key, label, standard })),
     }),
   );
-  assert.doesNotMatch(plain.text(), /Your taste/);
+  assert.doesNotMatch(plain.text(), /How it tastes to you/);
 });
 
 test("CaptionPreview folds a long caption to a preview with ...more", async () => {
