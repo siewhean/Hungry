@@ -107,6 +107,26 @@ export const EXPERIMENTS = {
     primaryMetric: "search_home_featured_opened",
     guardrailMetrics: ["dish_viewed", "review_started", "search_query", "search_zero_results"],
   },
+  /**
+   * Stall page sticky bar: the orange button is Directions and Review becomes an icon.
+   * Read in StallInteractionBar only when the bar has both Directions and Review.
+   */
+  stall_bar_cta_v1: {
+    variants: ["control", "directions_cta"],
+    fallback: "control",
+    status: "running",
+    surface: "stall",
+    hypothesis:
+      "Most stall visitors are choosing where to go. An orange Directions button, with Review as an icon, raises Directions opens without cutting reviews by more than 10%.",
+    primaryMetric: "directions_opened",
+    guardrailMetrics: [
+      "review_cta_tapped",
+      "review_submitted",
+      "stall_saved",
+      "stall_marked_tried",
+      "stall_menu_dish_opened",
+    ],
+  },
 } as const satisfies Record<string, ExperimentDefinition>;
 
 export type ExperimentKey = keyof typeof EXPERIMENTS;

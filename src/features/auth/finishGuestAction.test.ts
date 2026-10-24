@@ -1,14 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { getHungryService } from "@/lib/services/serviceProvider";
+import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { useDishLikeStore } from "@/store/useDishLikeStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import type { DishDetail } from "@/types/domain";
+import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 import {
   likeDishAfterSignIn,
   markDishTriedAfterSignIn,
   saveDishAfterSignIn,
+  saveStallAfterSignIn,
 } from "./finishGuestAction";
 
 const dish = { id: "dish-already-saved" } as DishDetail;
@@ -103,4 +105,54 @@ test("a guest's Like is finished after sign-in and never toggles an existing lik
   assert.equal(useDishLikeStore.getState().isLiked(userId, "dish-pending-like"), true);
   likeDishAfterSignIn("dish-pending-like");
   assert.equal(useDishLikeStore.getState().isLiked(userId, "dish-pending-like"), true);
+});
+
+function stubStallWrites(serverSaved: string[]) {
+  const repo = getDataRepository();
+  const originalList = repo.listStallInteractions;
+  const originalUpsert = repo.upsertStallInteraction;
+  const writes: { stallId: string; isSaved?: boolean }[] = [];
+  repo.listStallInteractions = async (userId) =>
+    serverSaved.map((stallId) => ({
+      userId,
+      stallId,
+      isSaved: true,
+      isTried: false,
+      isReviewed: false,
+    }));
+  repo.upsertStallInteraction = async (_userId, stallId, patch) => {
+    writes.push({ stallId, isSaved: patch.isSaved });
+    return null;
+  };
+  useStallInteractionStore.getState()._reset();
+  return {
+    writes,
+    restore: () => {
+      repo.listStallInteractions = originalList;
+      repo.upsertStallInteraction = originalUpsert;
+      useStallInteractionStore.getState()._reset();
+    },
+  };
+}
+
+test("finishing a guest stall save saves the stall once", async () => {
+  const stub = stubStallWrites([]);
+  try {
+    assert.equal(await saveStallAfterSignIn("stall-new"), true);
+    assert.deepEqual(stub.writes, [{ stallId: "stall-new", isSaved: true }]);
+    assert.equal(useStallInteractionStore.getState().interactions["stall-new"]?.isSaved, true);
+  } finally {
+    stub.restore();
+  }
+});
+
+test("finishing a guest stall save never un-saves a stall the account already saved", async () => {
+  const stub = stubStallWrites(["stall-saved"]);
+  try {
+    assert.equal(await saveStallAfterSignIn("stall-saved"), true);
+    assert.deepEqual(stub.writes, []);
+    assert.equal(useStallInteractionStore.getState().interactions["stall-saved"]?.isSaved, true);
+  } finally {
+    stub.restore();
+  }
 });

@@ -9,6 +9,8 @@ import type {
   DiscoveryLocationFeedRequest,
   SearchResult,
   VenueLocationSearchRequest,
+  VenueMenuCursor,
+  VenueMenuPage,
 } from "@/lib/services/types";
 import type {
   BlogPost,
@@ -1273,6 +1275,70 @@ export async function listDishesByVenueViaRpc(venueId: string): Promise<DishDeta
   }
   const venueImageUrl = catalogDisplayImageUrl(venue);
   return dishRows.map((row) => mapRpcDish(withoutVenuePhotoFallback(row, venueImageUrl)));
+}
+
+function venueMenuCursor(row: Row, venueImageUrl: string): VenueMenuCursor {
+  return {
+    score: toNumber(row.cursor_score ?? row.rank_score),
+    id: toString(row.cursor_id ?? row.dish_id),
+    venueImageUrl: venueImageUrl || undefined,
+  };
+}
+
+/**
+ * One page of a stall's menu. No cursor: the page embedded in get_venue_detail (shared with
+ * getVenue). With a cursor: the next search_dishes page. A failed page throws, so the caller
+ * can say the menu is incomplete instead of showing a short menu as the whole thing.
+ * Undefined when Supabase is not configured.
+ */
+export async function listDishesByVenuePageViaRpc(
+  venueId: string,
+  cursor?: VenueMenuCursor,
+): Promise<VenueMenuPage | undefined> {
+  if (!cursor) {
+    const rows = await getVenueDetailRowsOrThrow(venueId);
+    const venue = rows?.[0];
+    if (!venue) return rows ? { dishes: [] } : undefined;
+    const dishRows = toRowArray(venue.dishes);
+    const venueImageUrl = catalogDisplayImageUrl(venue);
+    const last = dishRows[dishRows.length - 1];
+    return {
+      dishes: dishRows.map((row) => mapRpcDish(withoutVenuePhotoFallback(row, venueImageUrl))),
+      nextCursor:
+        last && dishRows.length >= VENUE_MENU_PAGE_SIZE
+          ? venueMenuCursor(last, venueImageUrl)
+          : undefined,
+    };
+  }
+  if (!isSupabaseConfigured()) return undefined;
+  const client = getSupabaseClient();
+  if (!client) return undefined;
+  const { data, error } = await client.rpc("search_dishes", {
+    p_query: null,
+    p_lat: null,
+    p_lng: null,
+    p_radius_meters: null,
+    p_dietary_flags: [],
+    p_limit: VENUE_MENU_PAGE_SIZE,
+    p_cursor_score: cursor.score,
+    p_cursor_id: cursor.id,
+    p_venue_id: venueId,
+    p_area_name: null,
+    p_cuisine_tags: null,
+    p_max_price: null,
+    p_open_only: false,
+  });
+  if (error) throw error;
+  const pageRows = Array.isArray(data) ? (data as unknown as Row[]) : [];
+  const venueImageUrl = cursor.venueImageUrl ?? "";
+  const last = pageRows[pageRows.length - 1];
+  return {
+    dishes: pageRows.map((row) => mapRpcDish(withoutVenuePhotoFallback(row, venueImageUrl))),
+    nextCursor:
+      last && pageRows.length >= VENUE_MENU_PAGE_SIZE
+        ? venueMenuCursor(last, venueImageUrl)
+        : undefined,
+  };
 }
 
 export async function listPopularNearbyViaRpc(

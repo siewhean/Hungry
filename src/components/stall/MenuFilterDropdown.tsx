@@ -1,6 +1,6 @@
 import { useRef } from "react";
-import { Pressable, ScrollView, View } from "react-native";
-import { BottomSheetModal } from "@gorhom/bottom-sheet";
+import { Pressable, View } from "react-native";
+import { BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { Check, ChevronDown, SlidersHorizontal } from "lucide-react-native";
 
 import { AppText } from "@/components/ui/AppText";
@@ -94,7 +94,10 @@ export function MenuFilterDropdown({
       </Pressable>
 
       <BottomSheet ref={sheetRef} accessibilityLabel="Filter menu" snapPoints={["70%"]}>
-        <ScrollView contentContainerStyle={{ gap: spacing[4], paddingBottom: spacing[4] }}>
+        {/* The sheet's own scroll view, so scrolling the list never fights dragging the sheet. */}
+        <BottomSheetScrollView
+          contentContainerStyle={{ gap: spacing[4], paddingBottom: spacing[4] }}
+        >
           <View
             style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}
           >
@@ -118,7 +121,11 @@ export function MenuFilterDropdown({
             ) : null}
           </View>
 
-          <View style={{ gap: spacing[1] }}>
+          <View
+            accessibilityRole="radiogroup"
+            accessibilityLabel="Category"
+            style={{ gap: spacing[1] }}
+          >
             <AppText variant="bodySmallBold" tone="secondary">
               Category
             </AppText>
@@ -210,7 +217,7 @@ export function MenuFilterDropdown({
             label={resultCount === 1 ? "Show 1 dish" : `Show ${resultCount} dishes`}
             onPress={() => sheetRef.current?.dismiss()}
           />
-        </ScrollView>
+        </BottomSheetScrollView>
       </BottomSheet>
     </>
   );

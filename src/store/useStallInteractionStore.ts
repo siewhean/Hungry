@@ -17,6 +17,7 @@ import {
   type StallInteractionSourceScreen,
 } from "@/lib/analytics/gamificationEvents";
 import { withinCredCutoff } from "@/constants/gamificationLimits";
+import { reportError } from "@/lib/monitoring/reportError";
 import type { StallInteraction } from "@/types/domain";
 
 // ─── State Interface ──────────────────────────────────────────────────────────
@@ -33,7 +34,10 @@ interface StallInteractionState {
 
   // Actions
   loadInteractions: (userId: string) => Promise<void>;
-  /** Rolls the optimistic write back and rethrows when the save is not stored. */
+  /**
+   * Rolls the optimistic write back and rethrows when the save is not stored. Points for the
+   * save are awarded in the background: a points failure is reported, never thrown.
+   */
   toggleSaved: (userId: string, stallId: string) => Promise<void>;
   /**
    * Toggle `isTried` for a stall.
@@ -122,18 +126,21 @@ export const useStallInteractionStore = create<StallInteractionState>()((set, ge
     }
 
     if (!wasSaved) {
+      // The save is stored: count it before the extras, which must never fail the save.
+      trackStallSaved({ stallId, sourceScreen: "StallDetail" });
       // Rate-limit: today's saves before this one (the new row is already in the map).
       const todaySaveCount =
         Object.values(get().interactions).filter(
           (i) => i.isSaved && i.savedAt && isToday(i.savedAt),
         ).length - 1;
       if (withinCredCutoff("stall_saved", todaySaveCount)) {
-        await useFoodCredStore.getState().awardPoints("stall_saved", stallId);
+        void useFoodCredStore
+          .getState()
+          .awardPoints("stall_saved", stallId)
+          .catch((error) =>
+            reportError(error, { store: "stallInteraction", action: "award_stall_saved" }),
+          );
       }
-    }
-
-    if (!wasSaved) {
-      trackStallSaved({ stallId, sourceScreen: "StallDetail" });
     }
   },
 
@@ -179,13 +186,17 @@ export const useStallInteractionStore = create<StallInteractionState>()((set, ge
         Object.values(get().interactions).filter(
           (i) => i.isTried && i.triedAt && isToday(i.triedAt),
         ).length - 1;
+      // The mark is stored: count it before the points, which must never fail the mark.
+      trackStallMarkedTried({ stallId, sourceScreen });
       if (withinCredCutoff("stall_marked_tried", todayTriedCount)) {
         // Report what was actually credited: the server can award 0 (daily cap, repeat).
-        await useFoodCredStore.getState().awardPoints("stall_marked_tried", stallId);
-        pointsAwarded = useFoodCredStore.getState().lastEarnedPoints;
+        try {
+          await useFoodCredStore.getState().awardPoints("stall_marked_tried", stallId);
+          pointsAwarded = useFoodCredStore.getState().lastEarnedPoints;
+        } catch (error) {
+          reportError(error, { store: "stallInteraction", action: "award_stall_marked_tried" });
+        }
       }
-
-      trackStallMarkedTried({ stallId, sourceScreen });
     }
 
     return {

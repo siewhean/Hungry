@@ -20,7 +20,7 @@ const dishDetail = read("src/app/screens/detail/DishDetailScreenV2.tsx");
 
 test("stall reviews are one newest-first query naming each dish, with a write-review path", () => {
   assert.doesNotMatch(stallDetail, /getReviewsForDish/);
-  assert.match(stallDetail, /reviews\.listRecentReviews\(\{\s*venueId: sideLoadVenueId,/);
+  assert.match(stallDetail, /reviews\.listRecentReviewsPage\(\{\s*venueId: sideLoadVenueId,/);
   assert.match(stallDetail, /on \{review\.dishName\}/);
   assert.match(stallDetail, /navigation\.navigate\("DishDetail", \{ dishId: review\.dishId \}\)/);
   assert.match(stallDetail, /Couldn&apos;t load reviews for this stall\./);

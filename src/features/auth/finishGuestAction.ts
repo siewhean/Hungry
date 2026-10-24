@@ -4,6 +4,7 @@ import { useDishLikeStore } from "@/store/useDishLikeStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSocialStore } from "@/store/useSocialStore";
 import { useStallFollowStore } from "@/store/useStallFollowStore";
+import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 
 // Actions a guest asked for, finished after sign-in (SignInPromptSheet). Each one only
 // ever adds: the account may already have the save/like/follow, so it never toggles off.
@@ -79,4 +80,22 @@ export async function followStallAfterSignIn(stallId: string) {
   if (!useStallFollowStore.getState().followedStallIds.includes(stallId)) {
     await stalls.toggleFollow(stallId).catch(() => undefined);
   }
+}
+
+// The stall page's Save. The account's saved stalls are read first, so a stall it already
+// saved stays saved (Save toggles). Resolves false when the saves could not be read or the
+// save could not be stored (nothing was changed).
+export async function saveStallAfterSignIn(stallId: string): Promise<boolean> {
+  const userId = useProfileStore.getState().profile.id;
+  const stalls = useStallInteractionStore.getState();
+  const loaded = await stalls
+    .loadInteractions(userId)
+    .then(() => true)
+    .catch(() => false);
+  if (!loaded) return false;
+  if (useStallInteractionStore.getState().interactions[stallId]?.isSaved) return true;
+  return stalls
+    .toggleSaved(userId, stallId)
+    .then(() => true)
+    .catch(() => false);
 }

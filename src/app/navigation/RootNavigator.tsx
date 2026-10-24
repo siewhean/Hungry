@@ -48,6 +48,7 @@ const ROOT_ROUTE_NAMES = new Set<RootRouteName>([
   "MainTabs",
   "MerchantTabs",
   "StallDetail",
+  "ReportProblem",
   "MerchantClaimExplainer",
   "DishDetail",
   "CatalogRawDetail",
