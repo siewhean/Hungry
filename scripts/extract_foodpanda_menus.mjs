@@ -1,15 +1,16 @@
 // Extracts Foodpanda menus for stalls in the clean-slate list.
-// Run on your Mac from the repo root:
+// Run from the repo root on your Mac:
 //   node scripts/extract_foodpanda_menus.mjs
 // Needs Playwright installed (npx playwright install chromium).
-// Output: /mnt/project-files/verification/clean-slate/menu-items-foodpanda.jsonl
+// Reads and writes data/clean-slate/ inside the repo.
+// Output: data/clean-slate/menu-items-foodpanda.jsonl
 // Every row is marked source "foodpanda", verified false. Re-running skips stalls already done.
 
 import { chromium } from 'playwright';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const CLEAN_DIR = process.env.CLEAN_DIR || '/mnt/project-files/verification/clean-slate';
+const CLEAN_DIR = process.env.CLEAN_DIR || new URL('../data/clean-slate', import.meta.url).pathname;
 const STALLS = path.join(CLEAN_DIR, 'stalls-clean-slate.csv');
 const OUT = path.join(CLEAN_DIR, 'menu-items-foodpanda.jsonl');
 const DONE = path.join(CLEAN_DIR, 'foodpanda-done.txt');
