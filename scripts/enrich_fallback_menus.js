@@ -90,7 +90,7 @@ async function scrapeDeliveroo(page, url) {
                         dishes.push({
                             name: item.name,
                             description: item.description || '',
-                            price: item.price ? item.price.fractional / 100 : 0,
+                            price: item.price ? item.price.fractional / 100 : null,
                             image: item.image ? item.image.url : ''
                         });
                     }
@@ -139,8 +139,9 @@ async function scrapeFoodpanda(context, url) {
                     dishes.push({
                         name: value.name,
                         description: value.description || '',
-                        price: value.price || value.originalPrice || 0,
-                        image: value.image || value.file_path || ''
+                        // Missing price stays null (blank), never 0; image kept only when it is a full URL
+                        price: value.price || value.originalPrice || null,
+                        image: typeof value.image === 'string' && value.image.startsWith('http') ? value.image : ''
                     });
                 }
                 return value;

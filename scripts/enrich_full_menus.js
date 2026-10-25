@@ -62,8 +62,12 @@ async function searchWeb(page, query, stallName) {
                             const slugWords = slug.split('-').filter(w => w.length > 2 && !stopWords.includes(w));
                             const slugFirstWord = slugWords.length > 0 ? slugWords[0] : slug.split('-')[0];
 
-                            // The first significant word of the slug MUST match the first significant word of the stall!
-                            if (slugFirstWord === stallFirstWord) {
+                            // The first significant word of the slug MUST match the first significant word of the stall,
+                            // and every other significant word (up to 3) of the stall name must also appear in the slug,
+                            // so a chain such as $5 Western does not match another outlet.
+                            const requiredWords = words.slice(0, 3);
+                            const allWordsInSlug = requiredWords.every(w => slug.includes(w));
+                            if (slugFirstWord === stallFirstWord && allWordsInSlug) {
                                 return a.href;
                             }
                         }
