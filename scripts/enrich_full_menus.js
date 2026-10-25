@@ -12,7 +12,6 @@ const CONCURRENCY = 3; // Concurrent workers
 const SAVE_INTERVAL = 10; // Save to disk every 10 stalls
 
 // Load environment variables
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 const SEARCH_ENGINES = [
     (query) => `https://www.bing.com/search?q=${encodeURIComponent(query)}`,
@@ -124,19 +123,21 @@ async function scrapeGrabMenu(page, url, coords) {
                     const desc = descEl ? descEl.textContent.trim() : '';
                     const priceText = priceEl ? priceEl.textContent.trim() : '';
 
-                    // Clean price text (extract number)
-                    let price = 0;
-                    const priceMatch = priceText.replace(/[^0-9.]/g, '');
-                    if (priceMatch) {
-                        price = parseFloat(priceMatch);
-                    }
+                    // Take the first SGD amount; ranges and missing prices stay blank (null), never 0
+                    const priceMatch = priceText.match(/\d[\d,]*(?:\.\d{1,2})?/);
+                    const price = priceMatch ? parseFloat(priceMatch[0].replace(/,/g, '')) : null;
 
                     // Clean name if it repeats description
                     if (desc && name.endsWith(desc)) {
                         name = name.slice(0, -desc.length).trim();
                     }
 
-                    let imageUrl = imgEl ? (imgEl.src || imgEl.getAttribute('src') || '') : '';
+                    // Prefer the largest srcset candidate so the image is not a 128 px thumbnail
+                    let imageUrl = '';
+                    if (imgEl) {
+                        const candidates = (imgEl.getAttribute('srcset') || '').split(',').map(s => s.trim().split(' ')[0]).filter(Boolean);
+                        imageUrl = candidates.length ? candidates[candidates.length - 1] : (imgEl.src || imgEl.getAttribute('src') || '');
+                    }
                     if (imageUrl && (imageUrl.includes('placeholder') || imageUrl.includes('unsplash') || imageUrl.includes('default') || imageUrl.includes('blank') || imageUrl.endsWith('.svg'))) {
                         imageUrl = '';
                     }
@@ -157,75 +158,6 @@ async function scrapeGrabMenu(page, url, coords) {
         console.error(`[Scrape Error] Failed scraping GrabFood URL "${url}": ${e.message}`);
         return null;
     }
-}
-
-function callGeminiAPI(stallName, cuisine, building) {
-    return new Promise((resolve, reject) => {
-        if (!GEMINI_API_KEY) {
-            return reject(new Error("GEMINI_API_KEY not set"));
-        }
-
-        const payload = {
-            contents: [{
-                parts: [{
-                    text: `You are a Singaporean food guide. Generate an extensive, realistic menu of 10-15 dishes for a stall named "${stallName}" serving "${cuisine || 'Local'}" cuisine at "${building || 'Singapore Food Centre'}".\nFor each dish, provide:\n1. "name": The clean dish name (e.g. "Hainanese Chicken Rice").\n2. "price": A realistic price in SGD (e.g. 5.50).\n3. "description": A short appetizing description.\n4. "imageUrl": A specific, high-quality, real Unsplash food image URL (e.g., "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=60") matching this type of food. Avoid generic placeholder images. Ensure each dish has a unique and relevant Unsplash photo ID.\n\nOutput the response as a JSON array of objects with keys: name, price, description, imageUrl. Do not include markdown code block formatting or any other text, just the raw JSON array.`
-                }]
-            }],
-            generationConfig: {
-                temperature: 0.7,
-                maxOutputTokens: 1500,
-                responseMimeType: "application/json"
-            }
-        };
-
-        const postData = JSON.stringify(payload);
-        const options = {
-            hostname: 'generativelanguage.googleapis.com',
-            path: `/v1beta/models/gemini-3.8-flash:generateContent?key=${GEMINI_API_KEY}`,
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Content-Length': Buffer.byteLength(postData)
-            },
-            timeout: 90000
-        };
-
-        const req = https.request(options, (res) => {
-            let body = '';
-            res.on('data', (chunk) => body += chunk);
-            res.on('end', () => {
-                if (res.statusCode !== 200) {
-                    return reject(new Error(`Gemini API HTTP ${res.statusCode}: ${body}`));
-                }
-                try {
-                    const parsed = JSON.parse(body);
-                    if (!parsed.candidates || parsed.candidates.length === 0) {
-                         return reject(new Error(`Gemini returned no candidates: ${body}`));
-                    }
-                    const textContent = parsed.candidates[0].content.parts[0].text.trim();
-
-                    // Clean up markdown block if model output it
-                    let cleanJson = textContent;
-                    if (cleanJson.startsWith('```')) {
-                        cleanJson = cleanJson.replace(/^```json\s*/i, '').replace(/```$/, '').trim();
-                    }
-
-                    const dishes = JSON.parse(cleanJson);
-                    resolve(dishes);
-                } catch (e) {
-                    reject(new Error(`Failed to parse Gemini response: ${e.message}\nResponse body: ${body}`));
-                }
-            });
-        });
-
-        req.on('error', (e) => reject(e));
-        req.on('timeout', () => {
-            req.destroy();
-            reject(new Error("Gemini API request timeout"));
-        });
-        req.write(postData);
-        req.end();
-    });
 }
 
 async function main() {
