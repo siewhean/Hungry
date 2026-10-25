@@ -48,11 +48,11 @@ const requiredSourceMarkers = [
   ["src/lib/seo/schema.ts", "buildFAQSchema"],
   ["src/lib/seo/schema.ts", "buildRestaurantSchema"],
   ["src/lib/seo/pageMetadata.ts", "robots"],
-  ["public/llms.txt", "https://hungry.sg/for-foodies"],
-  ["public/llms.txt", "https://hungry.sg/for-merchants"],
-  ["public/llms.txt", "https://hungry.sg/singapore"],
+  ["public/llms.txt", "https://usehungry.com/for-foodies"],
+  ["public/llms.txt", "https://usehungry.com/for-merchants"],
+  ["public/llms.txt", "https://usehungry.com/singapore"],
   ["public/llms-full.txt", "dish-first discovery"],
-  ["public/llms-full.txt", "https://hungry.sg/singapore/jurong-east/food"],
+  ["public/llms-full.txt", "https://usehungry.com/singapore/jurong-east/food"],
 ];
 
 const staleRouteMarkers = ["/about", "/merchant-login", "/merchant-dashboard"];
@@ -205,12 +205,12 @@ const requiredLlmRoutes = [
   "/singapore/chinatown/food",
   "/dishes/chicken-rice",
   "/guides/what-to-eat-in-singapore-first-time",
-  "/singapore/halal-food",
-  "/singapore/late-night-supper",
+  "/guides/halal-food",
+  "/guides/late-night-supper",
 ];
 
 for (const routePath of requiredLlmRoutes) {
-  if (!llmsCombined.includes(`https://hungry.sg${routePath === "/" ? "/" : routePath}`)) {
+  if (!llmsCombined.includes(`https://usehungry.com${routePath === "/" ? "/" : routePath}`)) {
     failures.push(`LLM context files do not reference key public route: ${routePath}`);
   }
 }

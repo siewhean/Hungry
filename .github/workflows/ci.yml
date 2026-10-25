@@ -68,6 +68,8 @@ jobs:
         run: npm run scaling:validate
 
       - name: Website SEO static validation
+        env:
+          HUNGRY_PREDEPLOY_WAITLIST_E2E: "1"
         run: |
           if [ -f marketing/website/web-v2/package.json ] && [ -f marketing/website/web-v2/package-lock.json ]; then
             npm ci --prefix marketing/website/web-v2

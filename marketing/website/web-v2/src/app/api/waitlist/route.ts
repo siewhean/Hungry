@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { clientRequestKey, jsonError, requireJsonRequest, requireRateLimit } from "@/lib/security/api";
 import { getStringField, readJsonObject, validationErrorResponse } from "@/lib/security/validation";
-import { submitWebsiteWaitlist, type WaitlistAudience } from "@/lib/supabase/websiteData";
+import {
+  submitWebsiteWaitlist,
+  WAITLIST_NOT_CONFIGURED,
+  type WaitlistAudience,
+} from "@/lib/supabase/websiteData";
 
 function normalizeAudience(value: unknown): WaitlistAudience {
   if (value === "merchant" || value === "hawker") return "merchant";
@@ -65,6 +69,12 @@ export async function POST(request: NextRequest) {
       return jsonError(error.message, 400);
     }
 
-    return jsonError("Unable to join waitlist.", 400);
+    console.error("Waitlist signup failed", error);
+
+    if (error instanceof Error && error.message === WAITLIST_NOT_CONFIGURED) {
+      return jsonError("Sign-ups are temporarily unavailable. Please try again soon.", 503);
+    }
+
+    return jsonError("Unable to join waitlist.", 500);
   }
 }

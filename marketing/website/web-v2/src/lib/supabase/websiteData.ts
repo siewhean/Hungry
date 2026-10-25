@@ -201,9 +201,11 @@ function eq(value: string) {
   return `eq.${postgrestValue(value)}`;
 }
 
+export const WAITLIST_NOT_CONFIGURED = "The Hungry website waitlist database is not configured.";
+
 export async function submitWebsiteWaitlist(input: WebsiteWaitlistInput) {
   if (!isSupabasePublicConfigured()) {
-    throw new Error("The Hungry website waitlist database is not configured.");
+    throw new Error(WAITLIST_NOT_CONFIGURED);
   }
 
   const normalizedEmail = normalizeEmail(input.email);

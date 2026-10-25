@@ -35,7 +35,7 @@ Route metadata is centralized in `src/app/seo.ts`. Keep sitemap routes, canonica
 
 ## Environment
 
-Set `NEXT_PUBLIC_SITE_URL` in production if the canonical domain changes. It defaults to `https://hungry.sg`.
+Set `NEXT_PUBLIC_SITE_URL` in production if the canonical domain changes. It defaults to `https://usehungry.com`.
 
 Database-backed waitlist, Console, and Merchant Portal routes require the shared Hungry Supabase project:
 

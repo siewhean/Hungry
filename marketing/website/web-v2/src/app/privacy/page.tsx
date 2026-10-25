@@ -6,11 +6,11 @@ export const metadata = routeMetadata("/privacy");
 const sections = [
   {
     title: "1. Information Hungry Collects",
-    body: "Hungry may collect account details such as name, email address, profile settings, authentication identifiers, and deletion requests; app activity such as searches, likes, saves, follows, reviews, comments, reports, messages, and taste-preference signals; location information when you use nearby discovery or maps; photos, videos, captions, and menu images you upload; merchant profile, claim, team, menu, promotion, and verification details; and technical data such as device, crash, diagnostic, and analytics events.",
+    body: "Hungry may collect waitlist sign-up details such as email address, first name, and (for merchants) business name and business type; account details such as name, email address, profile settings, authentication identifiers, and deletion requests; app activity such as searches, likes, saves, follows, reviews, comments, reports, messages, and taste-preference signals; location information when you use nearby discovery or maps; photos, videos, captions, and menu images you upload; merchant profile, claim, team, menu, promotion, and verification details; and technical data such as device, crash, diagnostic, and analytics events.",
   },
   {
     title: "2. How Hungry Uses Information",
-    body: "We use this information to operate sign-in, onboarding, discovery, reviews, social features, recommendations, merchant tools, safety reporting, abuse prevention, support, analytics, crash diagnostics, and store-compliance processes. Taste and interaction data may be used to personalize Home, Discover, Search, and Decide For Me recommendations.",
+    body: "We use waitlist details only to tell you when Hungry opens and to contact you about the list you joined; you can ask us to remove your waitlist entry at any time. We use this information to operate sign-in, onboarding, discovery, reviews, social features, recommendations, merchant tools, safety reporting, abuse prevention, support, analytics, crash diagnostics, and store-compliance processes. Taste and interaction data may be used to personalize Home, Discover, Search, and Decide For Me recommendations.",
   },
   {
     title: "3. Third-Party Processing",
