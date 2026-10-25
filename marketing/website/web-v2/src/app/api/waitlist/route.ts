@@ -2,7 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { clientRequestKey, jsonError, requireJsonRequest, requireRateLimit } from "@/lib/security/api";
 import { getStringField, readJsonObject, validationErrorResponse } from "@/lib/security/validation";
-import { submitWebsiteWaitlist, type WaitlistAudience } from "@/lib/supabase/websiteData";
+import { cleanAttribution } from "@/lib/analytics/attribution";
+import { sendWaitlistWelcomeEmail } from "@/lib/email/waitlistEmail";
+import {
+  submitWebsiteWaitlist,
+  WAITLIST_NOT_CONFIGURED,
+  type WaitlistAudience,
+} from "@/lib/supabase/websiteData";
 
 function normalizeAudience(value: unknown): WaitlistAudience {
   if (value === "merchant" || value === "hawker") return "merchant";
@@ -43,20 +49,29 @@ export async function POST(request: NextRequest) {
       return jsonError("Specify your food business type.", 400);
     }
 
+    const email = getStringField(body, "email", { max: 254, required: true, transform: "lower-trim" }) ?? "";
+    const name = getStringField(body, "name", { max: 120 });
+    const attribution = cleanAttribution(body.attribution);
+
     const result = await submitWebsiteWaitlist({
       audience,
       businessName,
-      email: getStringField(body, "email", { max: 254, required: true, transform: "lower-trim" }) ?? "",
+      email,
       establishmentType,
       metadata: {
+        ...(Object.keys(attribution).length > 0 ? { attribution } : {}),
         referrer: request.headers.get("referer") ?? undefined,
         userAgent: request.headers.get("user-agent") ?? undefined,
       },
-      name: getStringField(body, "name", { max: 120 }),
+      name,
       source: "web_v2",
     });
 
-    return NextResponse.json({ ok: true, ...result });
+    if (result.created) {
+      await sendWaitlistWelcomeEmail({ audience, name, to: email });
+    }
+
+    return NextResponse.json({ ok: true, alreadyExists: result.alreadyExists });
   } catch (error) {
     const validationResponse = validationErrorResponse(error);
     if (validationResponse) return validationResponse;
@@ -65,6 +80,12 @@ export async function POST(request: NextRequest) {
       return jsonError(error.message, 400);
     }
 
-    return jsonError("Unable to join waitlist.", 400);
+    console.error("Waitlist signup failed", error);
+
+    if (error instanceof Error && error.message === WAITLIST_NOT_CONFIGURED) {
+      return jsonError("Sign-ups are temporarily unavailable. Please try again soon.", 503);
+    }
+
+    return jsonError("Unable to join waitlist.", 500);
   }
 }
