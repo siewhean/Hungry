@@ -1,4 +1,6 @@
 -- smoke: supabase/smoke/catalog_hide_non_consumer_venues.sql
+-- expect-row-loss: public.catalog_raw_venue_cards, public.catalog_raw_dish_cards, public.catalog_raw_dish_media
+-- (cards of hidden venues move to the app_private stash tables; the rollback puts them back)
 -- Hide venues that are not places to eat (7-Eleven, Cheers, Shell Select, food factories and
 -- warehouses, school and staff canteens, camps) from Search, the map, venue and dish pages,
 -- place lists, suggestions and the Home feed. The source rows in public.venues stay as they are.
