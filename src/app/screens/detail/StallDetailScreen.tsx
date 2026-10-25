@@ -589,11 +589,6 @@ export function StallDetailScreen({ navigation, route }: Props) {
   );
 
   const promptMenuPhoto = useCallback(() => {
-    // Released builds have no camera permission, so there is nothing to choose between.
-    if (!FEATURE_FLAGS.cameraCaptureEnabled) {
-      void submitMenuPhotoFrom("library");
-      return;
-    }
     Alert.alert("Add a menu photo", "Snap or pick a photo of this stall's menu.", [
       { text: "Take photo", onPress: () => void submitMenuPhotoFrom("camera") },
       { text: "Choose from library", onPress: () => void submitMenuPhotoFrom("library") },

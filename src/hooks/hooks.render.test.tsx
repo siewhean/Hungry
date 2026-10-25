@@ -18,7 +18,6 @@ import { profileShareUrl, shareProfileLink } from "@/features/share/profileShare
 import { useFoodHistory } from "@/hooks/useFoodHistory";
 import { useKeyboardRevealFocusedInput } from "@/hooks/useKeyboardRevealFocusedInput";
 import { useScrollToRevealBack } from "@/hooks/useScrollToRevealBack";
-import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { askMediaSource, captureWithCamera } from "@/lib/permissions/mediaSource";
 import { getHungryService, setMockServiceProvider } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -234,47 +233,7 @@ test("askMediaSource goes straight to the library on web", async () => {
   assert.equal(await askMediaSource(), "library");
 });
 
-// FEATURE_FLAGS is a plain object, so a test can switch camera support the way a build profile would.
-const cameraFlag = FEATURE_FLAGS as { cameraCaptureEnabled: boolean };
-function withCameraCapture(enabled: boolean) {
-  const original = cameraFlag.cameraCaptureEnabled;
-  cameraFlag.cameraCaptureEnabled = enabled;
-  return () => {
-    cameraFlag.cameraCaptureEnabled = original;
-  };
-}
-
-test("builds without camera support never offer the camera or touch the native module", async () => {
-  const restoreFlag = withCameraCapture(false);
-  const originalOS = Platform.OS;
-  const originalAlert = Alert.alert;
-  const picker = createRequire(__filename)("expo-image-picker") as Record<string, unknown>;
-  const originalRequest = picker.requestCameraPermissionsAsync;
-  let alerted = false;
-  let requested = false;
-  Alert.alert = (() => {
-    alerted = true;
-  }) as typeof Alert.alert;
-  picker.requestCameraPermissionsAsync = async () => {
-    requested = true;
-    return { granted: true, status: "granted", canAskAgain: true };
-  };
-  Object.defineProperty(Platform, "OS", { value: "ios", configurable: true });
-  try {
-    assert.equal(await askMediaSource(), "library");
-    assert.deepEqual(await captureWithCamera({}), { status: "denied" });
-    assert.equal(alerted, false, "no source sheet");
-    assert.equal(requested, false, "iOS aborts the app if the camera is requested unconfigured");
-  } finally {
-    Object.defineProperty(Platform, "OS", { value: originalOS, configurable: true });
-    Alert.alert = originalAlert;
-    picker.requestCameraPermissionsAsync = originalRequest;
-    restoreFlag();
-  }
-});
-
 test("askMediaSource asks natively and resolves with the chosen source or null on cancel", async () => {
-  const restoreFlag = withCameraCapture(true);
   const originalOS = Platform.OS;
   const originalAlert = Alert.alert;
   const choose = (label: string) => {
@@ -297,12 +256,10 @@ test("askMediaSource asks natively and resolves with the chosen source or null o
   } finally {
     Object.defineProperty(Platform, "OS", { value: originalOS, configurable: true });
     Alert.alert = originalAlert;
-    restoreFlag();
   }
 });
 
 test("captureWithCamera reports denied permission, a cancelled capture, and a photo", async () => {
-  const restoreFlag = withCameraCapture(true);
   // The raw (assignable) module, not an import namespace.
   const picker = createRequire(__filename)("expo-image-picker") as Record<string, unknown>;
   const original = {
@@ -336,7 +293,6 @@ test("captureWithCamera reports denied permission, a cancelled capture, and a ph
   } finally {
     picker.requestCameraPermissionsAsync = original.request;
     picker.launchCameraAsync = original.launch;
-    restoreFlag();
   }
 });
 

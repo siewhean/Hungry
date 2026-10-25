@@ -69,10 +69,6 @@ export function resolveFeatureFlags(
     favouritesEnabled: true,
     notificationsEnabled: false,
     catalogDiagnosticsEnabled: appEnv !== "production",
-    // Released (staging/production) builds ship without the camera permission and iOS usage
-    // string (app.config.js), and expo-image-picker aborts the app if the camera is used
-    // without them. Keep this in step with app.config.js; flip both together to ship the camera.
-    cameraCaptureEnabled: appEnv === "development",
     mockMapboxEnabled: enabled(env, "EXPO_PUBLIC_MOCK_MAPBOX_ENABLED"),
     directMessagesEnabled: surface("EXPO_PUBLIC_ENABLE_MESSAGES", false),
     commentsEnabled: nonProductionSurfaceEnabled,

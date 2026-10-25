@@ -102,12 +102,6 @@ test("catalog diagnostics remain unavailable in public production", () => {
   );
 });
 
-test("camera capture is development-only because released builds ship without the permission", () => {
-  assert.equal(resolveFeatureFlags("development", "development", {}).cameraCaptureEnabled, true);
-  assert.equal(resolveFeatureFlags("staging", "production", {}).cameraCaptureEnabled, false);
-  assert.equal(resolveFeatureFlags("production", "production", {}).cameraCaptureEnabled, false);
-});
-
 test("unknown or missing environments resolve to production outside local development", () => {
   for (const appEnv of [undefined, "qa"]) {
     const flags = resolveFeatureFlags(appEnv, "test", {});
