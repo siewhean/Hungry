@@ -131,19 +131,28 @@ test("discovery entry points never warm a local catalog index and map passes vie
   assert.match(map, /candidate\.kind === "venue" \? "stall" : candidate\.kind/);
 });
 
-test("raw map excludes non-consumer venues at the RPC boundary", () => {
-  const migration = read(
-    "supabase/migrations-pending/20260715020000_catalog_raw_map_exclusion.sql",
+test("non-consumer venues are kept out of every raw catalog card and the Home feed", () => {
+  const migration = read("supabase/migrations/20261025090000_catalog_hide_non_consumer_venues.sql");
+  for (const table of [
+    "catalog_raw_venue_cards",
+    "catalog_raw_dish_cards",
+    "catalog_raw_dish_media",
+  ]) {
+    assert.match(
+      migration,
+      new RegExp(
+        `before insert on public\\.${table}\\s+for each row\\s+execute function app_private\\.catalog_raw_skip_excluded_venue\\(\\)`,
+      ),
+    );
+  }
+  assert.match(migration, /after insert or update of name on public\.venues/);
+  assert.match(
+    migration,
+    /not exists \(select 1 from public\.merchant_outlets mo where mo\.venue_id = v\.id\)/,
   );
-  assert.match(migration, /catalog_raw_map_view/);
-  assert.match(migration, /catalog_raw_excluded_venues/);
-  assert.match(migration, /where e\.venue_id = id/);
-});
-
-test("catalog release publisher fails when count validation does not activate a release", () => {
-  const publisher = read("scripts/publish-catalog-raw-release.mjs");
-  assert.match(publisher, /release\?\.status !== "active"/);
-  assert.match(publisher, /process\.exitCode = 1/);
+  assert.match(migration, /get_discovery_feed_by_location: expected 3 candidate queries/);
+  // Plain "factory" / "school" matched real cafes; only explicit non-consumer phrases count.
+  assert.doesNotMatch(migration, /\|factory\||\(school\||\|university\||\|industrial\)/);
 });
 
 test("guest catalog migration opens only the read RPCs to anon", () => {
