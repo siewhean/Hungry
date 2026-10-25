@@ -15,6 +15,7 @@ import {
 import { usePortfolioStore } from "@/store/usePortfolioStore";
 import { useHungryTheme } from "@/theme";
 import type { PortfolioType, PortfolioVisibility } from "@/types/domain";
+import { reportError } from "@/lib/monitoring/reportError";
 
 type Props = NativeStackScreenProps<ProfileStackParamList, "PortfolioCreate">;
 
@@ -41,6 +42,7 @@ export function PortfolioCreateScreen({ navigation }: Props) {
       });
       navigation.replace("PortfolioDetail", { portfolioId: portfolio.id });
     } catch (error) {
+      reportError(error, { screen: "PortfolioCreateScreen", action: "create_list" });
       // A rate limit, being offline or a too-long title must not fail silently.
       Alert.alert(
         "Couldn't create the list",

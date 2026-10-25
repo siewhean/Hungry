@@ -222,3 +222,17 @@ test("MAP-12: Wheel home card text passes 4.5:1 on every gradient stop under its
     }
   }
 });
+
+test("small link and label text uses accentText, not the brand orange (3.69:1 on white)", () => {
+  assert.ok(contrast(colors.light.orange as HexColor, colors.light.white as HexColor) < 4.5);
+  assert.ok(contrast(colors.light.accentText as HexColor, colors.light.white as HexColor) >= 4.5);
+  for (const file of [
+    "src/app/screens/onboarding/WelcomeScreen.tsx",
+    "src/app/screens/auth/EmailVerificationScreen.tsx",
+    "src/app/screens/catalog/CatalogRawDetailScreen.tsx",
+    "src/components/discover/WhatsHerePanel.tsx",
+    "src/components/review/MediaPicker.tsx",
+  ]) {
+    assert.doesNotMatch(readRepoFile(file), /color: palette\.orange\b/, `${file} text colour`);
+  }
+});

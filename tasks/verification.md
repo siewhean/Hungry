@@ -1451,3 +1451,8 @@ Use the smallest check that matches the change risk.
 ## 2026-10-25 redesign live in Supabase builds (worktree-agent-a6e4a2b7af914ed7e)
 - npm test: 2100 pass / 0 fail; npm run test:render: 408/408; typecheck clean; prettier --check src/ clean; lint 0 errors; check:n-plus-one ok (4 baselined).
 - npm run test:coverage: fails on 9 untouched files (authCopy, gamificationLimits, useComposerStore, publishErrorCopy, mockAnalytics, posthogSink, mock/persistence, useDiscoveryStore, useLocationStore); identical list at base b211e99e in this environment, so not caused by this change.
+
+## 2026-10-25 production readiness audit (claude/project-thread-seph6m)
+- npm run typecheck clean; npm test 2095 pass / 0 fail / 2 skipped; npm run test:render 409/409; lint 0 errors (341 warnings, unchanged); format:check clean; check:n-plus-one, audit:races, check:rate-limits, audit:supabase:migration-safety, check:edge-functions pass; test:coverage OK (lines 83.5%).
+- Read-only checks on prod (frluxwpqqyomiqmjzavd): Supabase advisors, Sentry (4 unresolved, all simulator builds), content counts. No writes.
+- Update after owner decisions (map + camera shipped in released builds): typecheck clean; npm test 2094 pass / 0 fail; test:render 408/408; lint 0 errors; prettier clean; test:coverage OK (lines 83.5%). Released-build contract test now asserts the Mapbox plugin, CAMERA and NSCameraUsageDescription are kept. Needs a device check on a fresh build with EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN set.

@@ -4,7 +4,6 @@
     "src/app/screens/checklist/ChecklistItemPickerScreen.tsx",
     "src/app/screens/checklist/ChecklistsHomeScreen.tsx",
     "src/app/screens/dev/DeveloperLauncherScreen.tsx",
-    "src/app/screens/discover/HomeMapScreen.tsx",
     "src/app/screens/home/ActivityInboxScreen.tsx",
     "src/app/screens/home/ActivityPostDetailScreen.tsx",
     "src/app/screens/home/AddStoryScreen.tsx",
@@ -13,19 +12,12 @@
     "src/app/screens/home/HomeFeedScreen.tsx",
     "src/app/screens/home/StoryViewerScreen.tsx",
     "src/app/screens/portfolio/AdminPortfolioFlagsScreen.tsx",
-    "src/app/screens/portfolio/PortfolioCollaboratorsScreen.tsx",
-    "src/app/screens/portfolio/PortfolioCreateScreen.tsx",
-    "src/app/screens/portfolio/PortfolioEditScreen.tsx",
-    "src/app/screens/portfolio/PortfolioSearchScreen.tsx",
-    "src/app/screens/portfolio/PortfoliosHomeScreen.tsx",
     "src/app/screens/post/PostComposerScreen.tsx",
     "src/app/screens/profile/FollowRequestsScreen.tsx",
     "src/app/screens/profile/PassportScreen.tsx",
     "src/app/screens/profile/ProfileConnectionsScreen.tsx",
     "src/app/screens/profile/SocialGridScreen.tsx",
     "src/app/screens/profile/SocialPostDetailScreen.tsx",
-    "src/app/screens/review/ReviewShareSheet.tsx",
-    "src/app/screens/wheel/WheelEntryAddSheet.tsx",
-    "src/app/screens/wheel/WheelResultModal.tsx"
+    "src/app/screens/review/ReviewShareSheet.tsx"
   ]
 }

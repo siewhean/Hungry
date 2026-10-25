@@ -3,17 +3,17 @@ const baseConfig = require("./app.json").expo;
 const RELEASED_ANDROID_PERMISSIONS = [
   "android.permission.ACCESS_COARSE_LOCATION",
   "android.permission.ACCESS_FINE_LOCATION",
+  "android.permission.CAMERA",
   "android.permission.INTERNET",
   "android.permission.VIBRATE",
 ];
 
 // Library-merged permissions with no released feature behind them; blocked so
-// manifest merging cannot reintroduce them. CAMERA is blocked because the
-// quick-review menu photo is development-only. Gallery picking uses the system
+// manifest merging cannot reintroduce them. CAMERA is kept (owner decision 2026-10-25):
+// review and menu photos offer "Take photo", asked only when used. Gallery picking uses the system
 // photo picker, so no storage/media read permission is needed. ACCESS_NETWORK_STATE
 // (Sentry/expo-updates) is intentionally left unblocked.
 const RELEASED_ANDROID_BLOCKED_PERMISSIONS = [
-  "android.permission.CAMERA",
   "android.permission.RECORD_AUDIO",
   "android.permission.MODIFY_AUDIO_SETTINGS",
   "android.permission.READ_EXTERNAL_STORAGE",
@@ -31,12 +31,8 @@ const RELEASED_ANDROID_BLOCKED_PERMISSIONS = [
   "android.permission.USE_FINGERPRINT",
 ];
 
-const RELEASED_NATIVE_MODULES = new Set([
-  "expo-dev-client",
-  "expo-audio",
-  "expo-video",
-  "@rnmapbox/maps",
-]);
+// @rnmapbox/maps ships in released builds (owner decision 2026-10-25): the Home map needs real tiles.
+const RELEASED_NATIVE_MODULES = new Set(["expo-dev-client", "expo-audio", "expo-video"]);
 
 const RELEASED_INFO_PLIST_KEYS = [
   "DEV_CLIENT_TRY_TO_LAUNCH_LAST_BUNDLE",
@@ -45,7 +41,6 @@ const RELEASED_INFO_PLIST_KEYS = [
   "NSLocationAlwaysUsageDescription",
   "NSLocationAlwaysAndWhenInUseUsageDescription",
   "NSFaceIDUsageDescription",
-  "NSCameraUsageDescription",
   "NSMicrophoneUsageDescription",
   "NSPhotoLibraryAddUsageDescription",
   "UIBackgroundModes",
@@ -99,12 +94,12 @@ function withReleasedImagePicker(plugins) {
   return plugins.map((plugin) => {
     if (pluginName(plugin) !== "expo-image-picker") return plugin;
     const existingOptions = Array.isArray(plugin) && plugin[1] ? plugin[1] : {};
-    // `false` keeps the plugin from re-adding RECORD_AUDIO and blocks CAMERA/RECORD_AUDIO.
+    // The camera string stays; `microphonePermission: false` keeps the plugin from re-adding RECORD_AUDIO.
     return [
       "expo-image-picker",
       {
         photosPermission: existingOptions.photosPermission,
-        cameraPermission: false,
+        cameraPermission: existingOptions.cameraPermission,
         microphonePermission: false,
       },
     ];

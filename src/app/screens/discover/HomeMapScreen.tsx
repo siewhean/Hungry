@@ -45,6 +45,7 @@ import { isMapEdgeBackSwipe } from "@/features/discovery/mapEdgeBack";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { sanitizeSearchQuery } from "@/lib/security/inputSanitization";
 import { useHungryTheme } from "@/theme";
+import { reportError } from "@/lib/monitoring/reportError";
 
 const DEFAULT_BUILDING_ID = "hc-maxwell";
 // "Open now" is not offered on the map: the catalog only carries a copy of the stored
@@ -262,8 +263,9 @@ export function HomeMapScreen() {
           setRawVenueCards(venuePage.items);
           setMapLoadState("idle");
         })
-        .catch(() => {
+        .catch((error) => {
           // Keep the last good pins and cards on screen; say the refresh failed.
+          reportError(error, { screen: "HomeMapScreen", action: "load_map" });
           if (active) setMapLoadState("error");
         });
     }, MAP_REFETCH_DEBOUNCE_MS);

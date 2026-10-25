@@ -25,6 +25,7 @@ import { useHungryTheme } from "@/theme";
 import type { WheelStackParamList } from "./WheelStack";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import type { VenueSummary } from "@/types/domain";
+import { reportError } from "@/lib/monitoring/reportError";
 
 type Props = NativeStackScreenProps<WheelStackParamList, "WheelResult">;
 
@@ -51,7 +52,9 @@ export function WheelResultModal({ navigation, route }: Props) {
       .then((found) => {
         if (mounted) setFetchedVenue(found);
       })
-      .catch(() => undefined);
+      .catch((error) =>
+        reportError(error, { screen: "WheelResultModal", action: "load_winner_venue" }),
+      );
     return () => {
       mounted = false;
     };

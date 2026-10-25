@@ -13,6 +13,7 @@ import {
 import { usePortfolioStore } from "@/store/usePortfolioStore";
 import { useHungryTheme } from "@/theme";
 import type { Portfolio } from "@/types/domain";
+import { reportError } from "@/lib/monitoring/reportError";
 
 type Props = NativeStackScreenProps<ProfileStackParamList, "PortfolioSearch">;
 
@@ -35,6 +36,7 @@ export function PortfolioSearchScreen({ navigation }: Props) {
       setHasSearched(true);
     } catch (error) {
       console.error("Failed to search lists:", error);
+      reportError(error, { screen: "PortfolioSearchScreen", action: "search_lists" });
       setSearchFailed(true);
     } finally {
       setIsSearching(false);

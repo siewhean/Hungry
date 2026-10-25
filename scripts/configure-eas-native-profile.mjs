@@ -5,11 +5,11 @@ const RELEASED_ENVS = new Set(["staging", "production"]);
 const RELEASED_ANDROID_PERMISSIONS = new Set([
   "android.permission.ACCESS_COARSE_LOCATION",
   "android.permission.ACCESS_FINE_LOCATION",
+  "android.permission.CAMERA",
   "android.permission.INTERNET",
   "android.permission.VIBRATE",
 ]);
 const REMOVED_ANDROID_PERMISSIONS = new Set([
-  "android.permission.CAMERA",
   "android.permission.FOREGROUND_SERVICE",
   "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
   "android.permission.MODIFY_AUDIO_SETTINGS",
@@ -27,13 +27,13 @@ const REMOVED_INFO_PLIST_KEYS = [
   "NSLocationAlwaysUsageDescription",
   "NSLocationAlwaysAndWhenInUseUsageDescription",
   "NSFaceIDUsageDescription",
-  "NSCameraUsageDescription",
   "NSMicrophoneUsageDescription",
   "NSPhotoLibraryAddUsageDescription",
   "UIBackgroundModes",
   "CADisableMinimumFrameDurationOnPhone",
 ];
-const RELEASED_NATIVE_MODULES = ["expo-dev-client", "expo-audio", "expo-video", "@rnmapbox/maps"];
+// @rnmapbox/maps stays linked (owner decision 2026-10-25); keep in step with app.config.js.
+const RELEASED_NATIVE_MODULES = ["expo-dev-client", "expo-audio", "expo-video"];
 
 function resolveAppEnv(env) {
   const raw = env.EXPO_PUBLIC_APP_ENV || env.APP_ENV || env.NODE_ENV;
