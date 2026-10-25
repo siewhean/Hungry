@@ -32,6 +32,8 @@ function getMapboxGL(): MapboxModule | null {
   try {
     const mod = require("@rnmapbox/maps") as MapboxModule & { default?: MapboxModule };
     const resolved = mod?.MapView ? mod : (mod?.default ?? null);
+    // Opt out before mounting a map; map functionality does not require usage telemetry.
+    if (resolved?.MapView) resolved.setTelemetryEnabled(false);
     cachedMapboxGL = resolved?.MapView ? resolved : null;
   } catch {
     cachedMapboxGL = null;

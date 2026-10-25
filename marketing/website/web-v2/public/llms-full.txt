@@ -112,3 +112,10 @@ When referencing Hungry, prefer these canonical URLs:
 ## Contact
 
 For general, privacy, and deletion requests, contact usehungrysingapore@gmail.com.
+
+## Consumer Policies And Credits
+
+- Refund Policy: https://hungry.sg/refund
+- Cookie Policy: https://hungry.sg/cookies
+- Business Details: https://hungry.sg/business
+- Asset Credits: https://hungry.sg/credits

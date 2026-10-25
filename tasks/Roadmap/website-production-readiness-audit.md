@@ -237,3 +237,12 @@ All P0 blockers resolved. All static predeploy gates pass.
 - Manual: Full read of every API route, all layout files, all public pages, all legal pages, all SEO config
 - Subagent parallel research: API security audit, SEO/robots/sitemap, legal/forms, page structure/accessibility
 - Not run (requires live server): Lighthouse, rendered link checks, keyboard smoke, private-route runtime QC
+
+### Consumer policy routes added 25 October 2026
+
+| Route | Surface | Evidence |
+| --- | --- | --- |
+| `/refund` | Public policy/notice | `marketing/website/web-v2/src/app/refund/page.tsx` |
+| `/cookies` | Public policy/notice | `marketing/website/web-v2/src/app/cookies/page.tsx` |
+| `/business` | Public policy/notice | `marketing/website/web-v2/src/app/business/page.tsx` |
+| `/credits` | Public policy/notice | `marketing/website/web-v2/src/app/credits/page.tsx` |

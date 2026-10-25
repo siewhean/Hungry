@@ -1,4 +1,5 @@
 import { routeMetadata } from "@/app/seo";
+import { PolicyPage } from "@/components/legal/PolicyPage";
 
 export const revalidate = 3600;
 export const metadata = routeMetadata("/privacy");
@@ -6,94 +7,52 @@ export const metadata = routeMetadata("/privacy");
 const sections = [
   {
     title: "1. Information Hungry Collects",
-    body: "Hungry may collect account details such as name, email address, profile settings, authentication identifiers, and deletion requests; app activity such as searches, likes, saves, follows, reviews, comments, reports, messages, and taste-preference signals; location information when you use nearby discovery or maps; photos, videos, captions, and menu images you upload; merchant profile, claim, team, menu, promotion, and verification details; and technical data such as device, crash, diagnostic, and analytics events.",
+    body: "Account and authentication details, profile and taste preferences, searches and saved items, reviews and other content you submit, support or deletion requests, and merchant information are used for the features you choose. Nearby discovery can use location when you allow it. Uploads may contain personal information: avoid including other people, identity documents, or unrelated details unless the feature specifically requires them. We do not need your date of birth to confirm the adult-only launch requirement.",
   },
   {
-    title: "2. How Hungry Uses Information",
-    body: "We use this information to operate sign-in, onboarding, discovery, reviews, social features, recommendations, merchant tools, safety reporting, abuse prevention, support, analytics, crash diagnostics, and store-compliance processes. Taste and interaction data may be used to personalize Home, Discover, Search, and Decide For Me recommendations.",
+    title: "2. Purposes And Choices",
+    body: "Hungry uses information to provide requested features, authenticate users, personalize discovery, answer support requests, and protect the service. Device permissions can be refused or changed in device settings; nearby results or uploads may then be limited. Optional website analytics stays off until you accept it. Refusing analytics does not prevent use of the public website. Waitlist submission requests updates for your selected list; it is not permission for unrelated marketing.",
   },
   {
     title: "3. Third-Party Processing",
-    body: "Hungry uses service providers such as Supabase for authentication, database, storage, realtime, and Edge Functions; Google services for maps, places, OCR, or AI-assisted extraction where enabled; PostHog for analytics where configured; Sentry for crash diagnostics where configured; and Expo/EAS for app build and update infrastructure. Precise latitude and longitude are not sent as PostHog identity properties by default. These providers process data only for service operation, security, analytics, diagnostics, or app functionality.",
+    body: "Supabase provides authentication, database, storage, realtime, and Edge Functions. Mapbox supplies maps where enabled. Google services for maps, places, OCR, or AI-assisted extraction where enabled may process relevant requests. PostHog for analytics where configured and Sentry for crash diagnostics where configured process minimized technical events. Expo/EAS provides build and update infrastructure, Resend delivers configured email, and Vercel hosts the website and supplies consent-controlled website analytics. Precise latitude and longitude are not sent as PostHog identity properties by default. Some providers may process information outside Singapore; configuration and contractual safeguards require review before release. This list describes potential integrations, not a claim that every provider receives your data on every visit.",
   },
   {
     title: "4. Photos, Videos, OCR, And AI Features",
-    body: "If you upload photos, videos, menu images, reviews, or merchant verification media, Hungry stores and processes those files to provide the requested feature. Menu OCR and AI-assisted suggestions may send extracted text, image references, or menu metadata to configured third-party processors. AI suggestions are treated as drafts or assistance and may require review before publication.",
+    body: "Uploads are processed to provide the feature you request. Menu OCR or AI-assisted extraction, when enabled, can send images or extracted information to configured processors. Do not upload sensitive or unrelated information. Suggestions require review and do not verify allergen safety, prices, certification, or factual accuracy.",
   },
   {
     title: "5. User-Generated Content And Safety",
-    body: "Reviews, posts, comments, profile content, and messages may be visible to other users depending on the feature and privacy settings. Hungry provides reporting, hiding, and blocking controls and may retain moderation and safety records in limited form to investigate abuse, enforce rules, prevent fraud, or comply with legal obligations.",
+    body: "Reviews, posts, profile details, and other content may be public according to the feature. Messages are visible to their recipients and may be processed for service operation and safety. Reporting, hiding, and blocking controls are available where supported. Limited records may be retained to investigate abuse or meet legal requirements.",
   },
   {
     title: "6. Retention, Deletion, And Correction",
-    body: "Hungry keeps personal data only as long as needed for the feature, legal obligations, security, fraud prevention, moderation, or legitimate operational needs. You can request account deletion in the app under Settings or at usehungry.com/account/delete. Deletion is scheduled 30 days after the request, and you can cancel it by signing back in before then and choosing Keep my account. After that, account-associated personal data is removed or anonymized. Menu photos you uploaded stay on the stall's page without your name, because they help other diners. Some safety, fraud, legal, or audit records may be retained in minimized or anonymized form.",
+    body: "Hungry retains personal data for the purpose for which it is needed and applicable legal or security requirements. Signed-in users can request deletion under Profile, Settings, Delete account. Deletion is scheduled 30 days after the request; signing in alone does not cancel it. To cancel before the deadline, choose Keep my account and wait for successful confirmation. Removal or anonymization depends on the deletion worker processing the request; a scheduled date is not proof of completion. Menu photos may remain without your name, and limited security, moderation, legal, or audit records may remain where needed. Contact support about identifiable content that remains or to request a status update.",
   },
   {
-    title: "7. Singapore Privacy Rights",
-    body: "Hungry is designed for Singapore users and aims to follow the Personal Data Protection Act obligations for consent, purpose limitation, notification, access, correction, protection, retention limitation, accuracy, and accountability. To get a copy of your data, use Download my data in the app under Settings; it covers your profile, reviews, posts, favourites, saves, and follows. For anything it does not include, or to correct or delete personal data, email usehungrysingapore@gmail.com and we will respond within 30 days.",
+    title: "7. Singapore Privacy Requests",
+    body: "The Personal Data Protection Act governs applicable Singapore personal-data obligations. You can ask about access, correction, deletion, retention, or withdrawal of consent. Download my data in app Settings exports supported account data; it may not cover every record. For account, waitlist, or other data requests, email usehungrysingapore@gmail.com. We may verify the request using proportionate information. Do not email passwords, authentication codes, or identity documents. We will explain applicable retention exceptions or any impact on the service rather than promise unconditional deletion.",
   },
   {
-    title: "8. Contact",
-    body: "Hungry's privacy contact (Data Protection Officer) can be reached at usehungrysingapore@gmail.com. For privacy, deletion, access, correction, or safety requests, email usehungrysingapore@gmail.com. Include the email address used for your Hungry account when relevant so we can verify and process the request.",
+    title: "8. Children And Young People",
+    body: "Account creation and personal-data submissions for the current launch are restricted to people aged 18 or over. This is a Hungry product restriction, not a statement of the legal age of consent in Singapore. A guardian consent workflow is not available. Do not submit a child’s details. If a child’s data was submitted, contact usehungrysingapore@gmail.com for review and removal where appropriate.",
+  },
+  {
+    title: "9. Cookies And Withdrawal",
+    body: "Our Cookie Policy explains browser storage and cookie choices. Use Cookie preferences to refuse or withdraw optional website analytics at any time. To stop waitlist emails, request unsubscribe using the message facility or email usehungrysingapore@gmail.com with the subject Unsubscribe. Essential account and safety messages are separate from marketing.",
+  },
+  {
+    title: "10. Contact",
+    body: "The published Hungry support and privacy-request address is usehungrysingapore@gmail.com. The business details page provides the currently published product and contact information. A named Data Protection Officer appointment and registered operator details must be confirmed by the operator; this policy does not verify them.",
   },
 ];
 
-export default function PrivacyPolicy() {
+export default function Page() {
   return (
-    <main
-      className="container"
-      style={{
-        paddingTop: "calc(var(--header-height) + var(--space-16))",
-        paddingBottom: "var(--space-24)",
-        minHeight: "80vh",
-      }}
-    >
-      <article style={{ maxWidth: "860px", margin: "0 auto" }}>
-        <h1
-          style={{
-            fontSize: "3rem",
-            fontWeight: 800,
-            marginBottom: "var(--space-4)",
-            color: "var(--color-text-primary)",
-          }}
-        >
-          Privacy Policy
-        </h1>
-        <p style={{ color: "var(--color-text-secondary)", lineHeight: 1.8 }}>
-          <em>Last updated: May 18, 2026</em>
-        </p>
-        <p style={{ color: "var(--color-text-secondary)", lineHeight: 1.8 }}>
-          This policy covers the Hungry mobile app, merchant tools, and Hungry website surfaces that
-          link to this page.
-        </p>
-
-        <div
-          style={{
-            color: "var(--color-text-secondary)",
-            lineHeight: 1.8,
-            display: "flex",
-            flexDirection: "column",
-            gap: "var(--space-6)",
-            marginTop: "var(--space-8)",
-          }}
-        >
-          {sections.map((section) => (
-            <section key={section.title}>
-              <h2
-                style={{
-                  fontSize: "1.5rem",
-                  fontWeight: 700,
-                  color: "var(--color-text-primary)",
-                  marginBottom: "var(--space-2)",
-                }}
-              >
-                {section.title}
-              </h2>
-              <p>{section.body}</p>
-            </section>
-          ))}
-        </div>
-      </article>
-    </main>
+    <PolicyPage
+      title="Privacy Policy"
+      intro="This policy covers the Hungry website, mobile app, and merchant tools that link here. Available features and service providers depend on the build and configuration."
+      sections={sections}
+    />
   );
 }

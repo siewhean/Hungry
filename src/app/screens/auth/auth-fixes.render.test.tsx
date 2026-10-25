@@ -1,3 +1,4 @@
+import { useAnalyticsConsentStore } from "@/store/useAnalyticsConsentStore";
 // Round-3 auth fixes, checked in a rendered screen. Run with `npm run test:render`.
 import assert from "node:assert/strict";
 import test, { afterEach, beforeEach } from "node:test";
@@ -29,9 +30,14 @@ import { useSessionStore } from "@/store/useSessionStore";
 import { cleanup, createFakeNavigation, renderScreen, type RenderResult } from "@/test/render";
 import { enterScenario } from "@/test/render/sessions";
 
-beforeEach(() => enterScenario("guest"));
+beforeEach(async () => {
+  await enterScenario("guest");
+  // These metric assertions describe an explicitly opted-in user.
+  useAnalyticsConsentStore.getState().setAnalyticsEnabled(true);
+});
 afterEach(async () => {
   await cleanup();
+  useAnalyticsConsentStore.getState().setAnalyticsEnabled(false);
   setExperimentFlagSource(undefined);
   resetExperimentSession();
 });
@@ -181,6 +187,10 @@ test("AUTH-13: a submitted sign-up logs sign_up_submitted", async () => {
   const matches = Array.from(view.container.querySelectorAll("*")).filter(
     (node) => node.childNodes.length === 1 && node.textContent === "Create account",
   ) as HTMLElement[];
+  await view.press(view.findByLabel("I am 18 or older."));
+  await view.press(
+    view.findByLabel("I agree to the Terms of service and have read the Privacy policy."),
+  );
   await view.press(matches.at(-1) ?? null);
   await view.settle();
   const submitted = getTrackedAnalyticsEvents().filter((e) => e.event === "sign_up_submitted");

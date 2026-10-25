@@ -74,11 +74,11 @@
 .progressDot {
   width: 3rem !important;
   min-width: 0 !important;
-  height: 0.22rem !important;
-  min-height: 0 !important;
+  height: 1.5rem !important;
+  min-height: 1.5rem !important;
   border-radius: 2px !important;
   border: 0 !important;
-  background: color-mix(in srgb, var(--color-text-primary) 28%, transparent) !important;
+  background: linear-gradient(var(--color-text-secondary), var(--color-text-secondary)) center / 100% 0.22rem no-repeat !important;
   transition:
     width var(--duration-fast) var(--ease-out),
     background var(--duration-fast) var(--ease-out);
@@ -87,7 +87,7 @@
 }
 
 .progressDotActive {
-  background: var(--color-primary) !important;
+  background: linear-gradient(var(--color-primary), var(--color-primary)) center / 100% 0.22rem no-repeat !important;
   width: 4rem !important;
 }
 
@@ -273,6 +273,14 @@
 
   .stepActive {
     transform: translateY(0);
+  }
+}
+
+/* A single-column sticky preview would cover the story text as it scrolls. */
+@media (max-width: 699px) {
+  .visualRail {
+    position: relative;
+    top: auto;
   }
 }
 

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import { Analytics } from "@vercel/analytics/next";
+import CookieConsent from "@/components/privacy/CookieConsent";
 import AppLayoutWrapper from "@/components/layout/AppLayoutWrapper";
 import AnnouncementBar from "@/components/layout/AnnouncementBar";
 import Footer from "@/components/layout/Footer";
@@ -78,11 +78,9 @@ export default function RootLayout({
         <link rel="icon" href="/hungry_logo_icon_transparent.png" type="image/png" sizes="32x32" />
         <link rel="shortcut icon" href="/hungry_logo_icon_transparent.png" type="image/png" sizes="16x16" />
         <link rel="apple-touch-icon" href="/hungry_logo_icon_transparent.png" />
-        <link rel="preconnect" href="https://images.unsplash.com" />
       </head>
       <body>
         <JsonLd data={hungryJsonLd} />
-        <Analytics />
         <AppLayoutWrapper
           publicHeader={
             <>
@@ -94,6 +92,7 @@ export default function RootLayout({
         >
           {children}
         </AppLayoutWrapper>
+        <CookieConsent />
       </body>
     </html>
   );

@@ -1,3 +1,4 @@
+import { useAnalyticsConsentStore } from "@/store/useAnalyticsConsentStore";
 // Settings and account fixes from the round-three page audit (SET-*). Run with
 // `node scripts/test-render.mjs src/app/screens/profile/settings-account.render.test.tsx`.
 
@@ -49,6 +50,8 @@ function stub<T extends object, K extends keyof T>(target: T, key: K, value: T[K
 
 beforeEach(async () => {
   await enterScenario("user");
+  // These metric assertions describe an explicitly opted-in user.
+  useAnalyticsConsentStore.getState().setAnalyticsEnabled(true);
   alerts = [];
   Alert.alert = ((title: string, message?: string) => {
     alerts.push({ title, message });
@@ -57,6 +60,7 @@ beforeEach(async () => {
 
 afterEach(async () => {
   await cleanup();
+  useAnalyticsConsentStore.getState().setAnalyticsEnabled(false);
   Alert.alert = originalAlert;
   while (restores.length) restores.pop()?.();
   setExperimentFlagSource(undefined);

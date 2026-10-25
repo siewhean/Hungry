@@ -1,5 +1,11 @@
 # Hungry Active Backlog
 
+## Consumer safeguards — 2026-10-25
+
+| id | owner | area | status | evidence | verification | last_updated | notes |
+|---|---|---|---|---|---|---|---|
+| CONSUMER-SAFEGUARDS-20261025 | Codex + specialist agents | Website/app privacy, consent, transparency and accessibility | In Progress | `docs/compliance/consumer-safeguards-2026-10-25.md` | Focused mobile/website tests, TypeScript, browser keyboard/consent smoke and independent QA | 2026-10-25 | Source implementation and independent local QA complete on `codex/privacy-consumer-safeguards` (2,107 tests pass, 2 skips); owner identity/DPO, vendor settings, marketing suppression, remaining rights evidence and native/live acceptance keep end-to-end checklist open. |
+
 > Canonical active task surface.
 > Update this file first when task status changes.
 > Historical narrative stays in `tasks/session-log.md` and `tasks/todo.md`.

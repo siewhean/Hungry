@@ -124,6 +124,7 @@ export default function Hero() {
           </h1>
           <p className={`${styles.proofLine} ${styles.copyReveal}`}>{hero.proof}</p>
           <p className={`${styles.description} ${styles.copyReveal}`}>{hero.body}</p>
+          <p className={styles.description}>Product preview: sample dishes, prices, and opening statuses are illustrative.</p>
 
           <div className={`${styles.ctas} ${styles.copyReveal}`}>
             <Link
@@ -156,7 +157,7 @@ export default function Hero() {
           </div>
         </div>
 
-        <div className={styles.visualContent} aria-label="Hungry app and food preview">
+        <div className={styles.visualContent} aria-label="Illustrative Hungry app and food preview">
           <div className={`${styles.previewStage} ${styles.visualLayer} ${styles.parallaxFast}`}>
             <div className={styles.phoneWrapper}>
               <div className={styles.phoneMockup}>

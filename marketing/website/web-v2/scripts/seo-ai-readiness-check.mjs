@@ -67,6 +67,11 @@ const routeTemplates = [
   [/^\/join-waitlist$/, "src/app/join-waitlist/page.tsx"],
   [/^\/privacy$/, "src/app/privacy/page.tsx"],
   [/^\/terms$/, "src/app/terms/page.tsx"],
+  [/^\/refund$/, "src/app/refund/page.tsx"],
+  [/^\/cookies$/, "src/app/cookies/page.tsx"],
+  [/^\/business$/, "src/app/business/page.tsx"],
+  [/^\/credits$/, "src/app/credits/page.tsx"],
+
   [/^\/account\/delete$/, "src/app/account/delete/page.tsx"],
   [/^\/contact$/, "src/app/contact/page.tsx"],
   [/^\/singapore$/, "src/app/singapore/page.tsx"],

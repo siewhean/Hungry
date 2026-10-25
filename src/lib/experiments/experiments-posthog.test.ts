@@ -1,6 +1,7 @@
 // Experiments wired to the real PostHog sink (the client is src/test/posthogStub.ts in tests).
 import assert from "node:assert/strict";
-import test, { afterEach } from "node:test";
+import test, { afterEach, beforeEach } from "node:test";
+import { useAnalyticsConsentStore } from "@/store/useAnalyticsConsentStore";
 
 process.env.EXPO_PUBLIC_POSTHOG_API_KEY = "phc_test";
 delete process.env.EXPO_PUBLIC_DISABLE_POSTHOG;
@@ -9,6 +10,10 @@ delete process.env.EXPO_PUBLIC_DISABLE_POSTHOG;
 const PostHogStub = (require("@/test/posthogStub") as typeof import("@/test/posthogStub")).default;
 const sink = require("@/lib/analytics/posthogSink") as typeof import("@/lib/analytics/posthogSink");
 const experiments = require("./experiments") as typeof import("./experiments");
+
+beforeEach(() => {
+  useAnalyticsConsentStore.getState().setAnalyticsEnabled(true);
+});
 
 afterEach(() => {
   PostHogStub.flags = undefined;

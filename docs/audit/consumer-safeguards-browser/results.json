@@ -1,0 +1,117 @@
+{
+  "results": [
+    {
+      "route": "/",
+      "width": 1280,
+      "skipLink": true,
+      "noOverflow": true,
+      "imageAlt": true
+    },
+    {
+      "route": "/for-foodies",
+      "width": 1280,
+      "skipLink": true,
+      "noOverflow": true,
+      "imageAlt": true
+    },
+    {
+      "route": "/for-merchants",
+      "width": 1280,
+      "skipLink": true,
+      "noOverflow": true,
+      "imageAlt": true
+    },
+    {
+      "route": "/privacy",
+      "width": 1280,
+      "skipLink": true,
+      "noOverflow": true,
+      "imageAlt": true
+    },
+    {
+      "route": "/refund",
+      "width": 1280,
+      "skipLink": true,
+      "noOverflow": true,
+      "imageAlt": true
+    },
+    {
+      "route": "/cookies",
+      "width": 1280,
+      "skipLink": true,
+      "noOverflow": true,
+      "imageAlt": true
+    },
+    {
+      "route": "/business",
+      "width": 1280,
+      "skipLink": true,
+      "noOverflow": true,
+      "imageAlt": true
+    },
+    {
+      "route": "/credits",
+      "width": 1280,
+      "skipLink": true,
+      "noOverflow": true,
+      "imageAlt": true
+    },
+    {
+      "route": "/",
+      "width": 390,
+      "skipLink": true,
+      "noOverflow": true,
+      "imageAlt": true
+    },
+    {
+      "route": "/for-foodies",
+      "width": 390,
+      "skipLink": true,
+      "noOverflow": true,
+      "imageAlt": true
+    },
+    {
+      "route": "/for-merchants",
+      "width": 390,
+      "skipLink": true,
+      "noOverflow": true,
+      "imageAlt": true
+    },
+    {
+      "route": "/privacy",
+      "width": 390,
+      "skipLink": true,
+      "noOverflow": true,
+      "imageAlt": true
+    },
+    {
+      "route": "/refund",
+      "width": 390,
+      "skipLink": true,
+      "noOverflow": true,
+      "imageAlt": true
+    },
+    {
+      "route": "/cookies",
+      "width": 390,
+      "skipLink": true,
+      "noOverflow": true,
+      "imageAlt": true
+    },
+    {
+      "route": "/business",
+      "width": 390,
+      "skipLink": true,
+      "noOverflow": true,
+      "imageAlt": true
+    },
+    {
+      "route": "/credits",
+      "width": 390,
+      "skipLink": true,
+      "noOverflow": true,
+      "imageAlt": true
+    }
+  ],
+  "errors": []
+}

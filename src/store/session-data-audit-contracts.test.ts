@@ -14,7 +14,7 @@ function read(path: string) {
   return readFileSync(resolve(process.cwd(), path), "utf8");
 }
 
-test("events tracked before the PostHog sink attaches are replayed to it", () => {
+test("bootstrap never replays pre-consent events and disables automatic lifecycle capture", () => {
   setAnalyticsSink(null);
   clearTrackedAnalyticsEvents();
   trackAnalyticsEvent("app_launched", { is_authenticated: false });
@@ -30,11 +30,9 @@ test("events tracked before the PostHog sink attaches are replayed to it", () =>
     seen.map((event) => event.event),
     ["app_launched", "shared_link_opened", "dish_viewed"],
   );
-  assert.match(
-    read("src/hooks/useAppBootstrap.ts"),
-    /setAnalyticsSink\(posthogSink, \{ replayBufferedEvents: true \}\)/,
-  );
-  assert.match(read("src/lib/analytics/posthogSink.ts"), /captureAppLifecycleEvents: true/);
+  assert.match(read("src/hooks/useAppBootstrap.ts"), /setAnalyticsSink\(posthogSink\)/);
+  assert.doesNotMatch(read("src/hooks/useAppBootstrap.ts"), /replayBufferedEvents: true/);
+  assert.match(read("src/lib/analytics/posthogSink.ts"), /captureAppLifecycleEvents: false/);
 });
 
 test("sign-out unbinds this device's push token before ending the Supabase session", () => {

@@ -1,3 +1,8 @@
+import {
+  RegistrationConsent,
+  hasRegistrationConsent,
+  REGISTRATION_CONSENT_ERROR,
+} from "../auth/RegistrationConsent";
 import { Fragment, useState, useRef, useEffect } from "react";
 import {
   Animated,
@@ -73,6 +78,8 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
   // Inline copy of the last server error (a toast alone passes before it can be read, and
   // has no red border or screen-reader role), as on the shared sign-in screens.
   const [formError, setFormError] = useState<string | null>(null);
+  const [adultConfirmed, setAdultConfirmed] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   // Set when sign-in says the email is not confirmed: the code already sent still works.
   const [unconfirmedEmail, setUnconfirmedEmail] = useState<string | null>(null);
   const signUpEmailRef = useRef<TextInput>(null);
@@ -173,6 +180,10 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
   };
 
   const handleSignUp = signUpForm.handleSubmit(async (values) => {
+    if (!hasRegistrationConsent(adultConfirmed, termsAccepted)) {
+      setFormError(REGISTRATION_CONSENT_ERROR);
+      return;
+    }
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setFormError(null);
     try {
@@ -256,6 +267,10 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
   });
 
   const handleProvider = async (provider: AuthProvider) => {
+    if (!hasRegistrationConsent(adultConfirmed, termsAccepted)) {
+      setFormError(REGISTRATION_CONSENT_ERROR);
+      return;
+    }
     if (isBusy) return;
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setFormError(null);
@@ -400,6 +415,20 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
           {/* OAuth buttons stay hidden until Google/Apple are enabled for this build. */}
           {oauthEnabled ? (
             <>
+              {tab === "login" ? (
+                <>
+                  <AppText variant="bodySmall" tone="secondary">
+                    Google or Apple may create an account if you are new to Hungry.
+                  </AppText>
+                  <RegistrationConsent
+                    adult={adultConfirmed}
+                    terms={termsAccepted}
+                    onAdultChange={setAdultConfirmed}
+                    onTermsChange={setTermsAccepted}
+                  />
+                  <AuthTermsNotice />
+                </>
+              ) : null}
               <View style={{ gap: spacing[3], marginBottom: 20 }}>
                 <AuthProviderButton
                   disabled={isBusy}
@@ -542,6 +571,13 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
                     </View>
                   )}
                 />
+                <RegistrationConsent
+                  adult={adultConfirmed}
+                  terms={termsAccepted}
+                  onAdultChange={setAdultConfirmed}
+                  onTermsChange={setTermsAccepted}
+                />
+
                 {formError ? (
                   <View
                     accessible

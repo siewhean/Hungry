@@ -120,8 +120,8 @@ assertContains(
 );
 assertContains("src/app/api/waitlist/route.ts", "await requireRateLimit(request", "Waitlist rate-limit contract failed");
 assertContains("src/app/api/waitlist/route.ts", "requireJsonRequest(request)", "Waitlist JSON content-type contract failed");
-assertContains("src/app/api/waitlist/route.ts", "Enter your business name.", "Waitlist merchant business-name validation contract failed");
-assertContains("src/app/api/waitlist/route.ts", "Select your food business type.", "Waitlist merchant business-type validation contract failed");
+assertContains("src/app/api/waitlist/route.ts", "body.ageConfirmed !== true", "Waitlist age verification contract failed");
+assertContains("src/app/api/waitlist/route.ts", "body.updatesRequested !== true", "Waitlist selected-list consent contract failed");
 assertContains("src/app/api/waitlist/route.ts", "Specify your food business type.", "Waitlist merchant other-business-type validation contract failed");
 assertContains("src/app/api/merchant/login/route.ts", "await requireRateLimit(request", "Merchant login rate-limit contract failed");
 assertContains("src/lib/security/api.ts", "HUNGRY_RATE_LIMIT_REDIS_REST_URL", "Durable rate-limit env contract failed");

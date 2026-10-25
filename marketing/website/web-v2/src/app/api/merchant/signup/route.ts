@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { clientRequestKey, jsonError, requireRateLimit } from "@/lib/security/api";
 import { getStringField, readJsonObject, validationErrorResponse } from "@/lib/security/validation";
 import { signUpWithPassword } from "@/lib/supabase/server";
-import { submitWebsiteWaitlist } from "@/lib/supabase/websiteData";
 import { requireMerchantJsonRequest, requireMerchantSameOriginRequest } from "../_session";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -27,8 +26,14 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await readJsonObject(request);
-    const email = getStringField(body, "email", { max: 254, required: true, transform: "lower-trim" }) ?? "";
-    const password = getStringField(body, "password", { max: 1024, min: 1, required: true, transform: "none" }) ?? "";
+    if (body.ageConfirmed !== true || body.termsAccepted !== true) {
+      return jsonError("Confirm you are 18 or older and accept the Terms of Service.", 400);
+    }
+    const email =
+      getStringField(body, "email", { max: 254, required: true, transform: "lower-trim" }) ?? "";
+    const password =
+      getStringField(body, "password", { max: 1024, min: 1, required: true, transform: "none" }) ??
+      "";
     const name = getStringField(body, "name", { max: 120, required: true }) ?? "";
     const businessName = getStringField(body, "businessName", { max: 160, required: true }) ?? "";
 
@@ -48,15 +53,7 @@ export async function POST(request: NextRequest) {
       name,
       password,
       redirectTo: getRedirectUrl(request),
-    });
-
-    await submitWebsiteWaitlist({
-      audience: "merchant",
-      businessName,
-      email,
-      metadata: { authSignupRequested: true },
-      name,
-      source: "merchant_portal",
+      consent: { version: "2026-10-25", recordedAt: new Date().toISOString() },
     });
 
     return NextResponse.json({

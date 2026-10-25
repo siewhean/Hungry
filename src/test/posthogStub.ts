@@ -1,3 +1,6 @@
+export enum PostHogPersistedProperty {
+  Queue = "queue",
+}
 type FlagValue = boolean | string;
 
 /**
@@ -9,6 +12,32 @@ export default class PostHogStub {
   static flags: Record<string, FlagValue> | undefined;
   static captured: { event: string; properties?: Record<string, unknown> }[] = [];
   static listeners = new Set<() => void>();
+  static options: Record<string, unknown>[] = [];
+  static queue: unknown[] = [];
+  static optedOut = false;
+  static requests = 0;
+  static distinctUserId: string | undefined;
+  static latest: PostHogStub | undefined;
+
+  constructor(_key: string, options: Record<string, unknown>) {
+    PostHogStub.options.push(options);
+    PostHogStub.latest = this;
+  }
+  fetch(_url: string, _options: unknown) {
+    PostHogStub.requests += 1;
+    return Promise.resolve({ status: 200, text: async () => "{}", json: async () => ({}) });
+  }
+  optIn(): Promise<void> {
+    PostHogStub.optedOut = false;
+    return Promise.resolve();
+  }
+  optOut(): Promise<void> {
+    PostHogStub.optedOut = true;
+    return Promise.resolve();
+  }
+  setPersistedProperty(_key: PostHogPersistedProperty, value: unknown[]): void {
+    PostHogStub.queue = value;
+  }
 
   static loadFlags(flags: Record<string, FlagValue> | undefined): void {
     PostHogStub.flags = flags;
@@ -19,9 +48,13 @@ export default class PostHogStub {
     PostHogStub.captured.push({ event, properties });
   }
 
-  identify(_userId: string, _properties?: Record<string, unknown>): void {}
+  identify(userId: string, _properties?: Record<string, unknown>): void {
+    PostHogStub.distinctUserId = userId;
+  }
 
-  reset(): void {}
+  reset(): void {
+    PostHogStub.distinctUserId = undefined;
+  }
 
   register(_properties: Record<string, unknown>): Promise<void> {
     return Promise.resolve();

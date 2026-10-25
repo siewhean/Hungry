@@ -1,6 +1,7 @@
 // The PostHog sink against the stub client (src/test/posthogStub.ts in tests).
 import assert from "node:assert/strict";
-import test, { afterEach } from "node:test";
+import test, { afterEach, beforeEach } from "node:test";
+import { useAnalyticsConsentStore } from "@/store/useAnalyticsConsentStore";
 
 process.env.EXPO_PUBLIC_POSTHOG_API_KEY = "phc_test";
 delete process.env.EXPO_PUBLIC_DISABLE_POSTHOG;
@@ -26,6 +27,10 @@ prototype.register = function (...args) {
   calls.push({ method: "register", args });
   return Promise.resolve();
 };
+
+beforeEach(() => {
+  useAnalyticsConsentStore.getState().setAnalyticsEnabled(true);
+});
 
 afterEach(() => {
   PostHogStub.flags = undefined;
