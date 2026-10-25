@@ -4,8 +4,6 @@
     "can_read_author_content": "Row-level-security helper; cheap indexed lookup. Too cheap to need its own cap.",
     "catalog_display_image_url": "Immutable string helper used by views; no table access. Too cheap to need its own cap.",
     "catalog_menu_is_displayable": "Immutable boolean helper used by views; no table access. Too cheap to need its own cap.",
-    "catalog_raw_cursor": "Immutable base64 encoder for page cursors; no table access. Too cheap to need its own cap. (Service-role-only grant is pending with the catalog port in supabase/migrations-pending/.)",
-    "catalog_raw_cursor_value": "Immutable base64 decoder for page cursors; no table access. Too cheap to need its own cap. (Service-role-only grant is pending with the catalog port in supabase/migrations-pending/.)",
     "catalog_url_is_delivery_app": "Immutable string helper; no table access. Too cheap to need its own cap.",
     "catalog_venue_menu_priority_score": "Pure scoring helper used by search ordering; no table access. Too cheap to need its own cap.",
     "dish_is_sold_out": "Row-level-security / view helper; cheap lookup. Too cheap to need its own cap.",
