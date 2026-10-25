@@ -5,6 +5,7 @@ import { useNavigation } from "@react-navigation/native";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { AppText, Avatar, Card, Screen } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { confirmAction } from "@/lib/runtime/confirmAction";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
@@ -117,7 +118,15 @@ export function ReleaseProfileScreen() {
         accessibilityRole="button"
         accessibilityLabel="Sign out"
         accessibilityHint="Signs out and returns to the authentication screen"
-        onPress={signOut}
+        onPress={() =>
+          confirmAction({
+            title: "Sign out",
+            message: "You will be signed out from Hungry on this device.",
+            confirmLabel: "Sign out",
+            destructive: true,
+            onConfirm: signOut,
+          })
+        }
         style={({ pressed }) => ({
           alignItems: "center",
           backgroundColor: pressed ? palette.bgSoft : palette.surface,

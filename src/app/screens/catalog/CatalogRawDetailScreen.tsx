@@ -1,11 +1,16 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { ArrowLeft, Clock, ExternalLink, Heart, MapPin } from "lucide-react-native";
+import { ArrowLeft, Bookmark, Clock, ExternalLink, ListPlus, MapPin } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AccessibleImage, AppText, Button, EmptyState, Screen, Skeleton } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { formatDishPrice } from "@/features/detail/dishPrice";
+import { useDetailSaveActions } from "@/features/checklistPortfolio/DetailSaveActions";
+import { trackAnalyticsEvent } from "@/lib/analytics";
+import { useExperimentVariant } from "@/lib/experiments/experiments";
+import { reportError } from "@/lib/monitoring/reportError";
 import { openMerchantProfileLink } from "@/lib/security/safeLinking";
 import { getCatalogRawService } from "@/lib/services/serviceProvider";
 import {
@@ -29,6 +34,13 @@ type Props = NativeStackScreenProps<RootStackParamList, "CatalogRawDetail">;
 type Detail = CatalogRawDishDetail | CatalogRawVenueDetail;
 
 const VENUE_MENU_PAGE_SIZE = 24;
+/** Set when the viewer is signed out: the screen asks them to sign in, not to check a connection. */
+const SIGN_IN_REQUIRED = "sign_in_required";
+
+/** A catalog price may be missing or 0: "Price not listed", never "S$0.00". */
+function catalogPriceLabel(item: { price?: number; priceRange?: string }) {
+  return formatDishPrice({ price: item.price ?? 0, priceRange: item.priceRange ?? "" });
+}
 
 function DetailHeader({ title, onBack }: { title?: string; onBack: () => void }) {
   const { palette, spacing } = useHungryTheme();
@@ -78,8 +90,10 @@ function statusLabel(status: Detail["verificationStatus"]) {
 
 export function CatalogRawDetailScreen({ navigation, route }: Props) {
   const { palette, spacing } = useHungryTheme();
-  // Read-only catalog record with no save/like actions. Sign-in is still required.
+  // Catalog record; sign-in is required. Dishes can be saved (and, in the
+  // catalog_save_to_list_v1 test, saved to a list).
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const service = getCatalogRawService();
   const [detail, setDetail] = useState<Detail | null>(null);
   const [menu, setMenu] = useState<CatalogPage<CatalogRawDishCard> | null>(null);
@@ -94,6 +108,44 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
   const [isSavingFavourite, setIsSavingFavourite] = useState(false);
   const [isLoadingMoreMenu, setIsLoadingMoreMenu] = useState(false);
   const [menuError, setMenuError] = useState<string | null>(null);
+  const loadedDish = isDish && detail && !error ? (detail as CatalogRawDishDetail) : null;
+  // Only signed-in diners looking at a loaded dish see the two arms differ, so only they are
+  // exposed; guests, stall pages and the loading/error states never are.
+  const saveExperimentEligible =
+    isAuthenticated &&
+    loadedDish !== null &&
+    FEATURE_FLAGS.favouritesEnabled &&
+    FEATURE_FLAGS.portfoliosEnabled;
+  const saveVariant = useExperimentVariant("catalog_save_to_list_v1", {
+    enabled: saveExperimentEligible,
+  });
+  const showSaveToList = saveExperimentEligible && saveVariant === "save_with_lists";
+  const saveTarget = useMemo(
+    () => ({
+      itemType: "dish" as const,
+      id: route.params.id,
+      label: loadedDish?.name ?? "This dish",
+      venueId: loadedDish?.venueId,
+    }),
+    [loadedDish?.name, loadedDish?.venueId, route.params.id],
+  );
+  const { addToPortfolio, isAddingToPortfolio, saveToListSheet } = useDetailSaveActions({
+    navigation,
+    target: saveTarget,
+    surface: "catalog_detail",
+  });
+  const lastViewedDishId = useRef<string | null>(null);
+
+  // dish_viewed fires on the dish page most diners reach, not only on DishDetail.
+  useEffect(() => {
+    if (!loadedDish || lastViewedDishId.current === loadedDish.id) return;
+    lastViewedDishId.current = loadedDish.id;
+    trackAnalyticsEvent("dish_viewed", {
+      dish_id: loadedDish.id,
+      venue_id: loadedDish.venueId,
+      source: "catalog_detail",
+    });
+  }, [loadedDish]);
 
   // Deep links can open this screen with no history; never leave a dead end.
   const goBackOrHome = useCallback(() => {
@@ -141,6 +193,7 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
         request: summarizeCatalogRequest({ releaseId: menu.releaseId, cursor: menu.nextCursor }),
       });
     } catch (loadError) {
+      reportError(loadError, { screen: "CatalogRawDetail", action: "load_more_menu" });
       setMenuError(
         loadError instanceof Error ? loadError.message : "Couldn't load more menu items.",
       );
@@ -166,13 +219,17 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
     setIsSavingFavourite(true);
     try {
       // Toast only after the authenticated write settles so failures are never hidden.
-      const result = await toggleFavourite({ id: dish.id, venueId: dish.venueId });
+      const result = await toggleFavourite(
+        { id: dish.id, venueId: dish.venueId },
+        { surface: "catalog_detail" },
+      );
       if (result.status === "failed") {
         showToast({ message: result.message, tone: "error" });
         return;
       }
+      // The same list and words as the dish page's Save.
       showToast({
-        message: result.status === "saved" ? "Saved to favourites." : "Removed from favourites.",
+        message: result.status === "saved" ? "Saved to Want to try." : "Removed from Want to try.",
         tone: "success",
       });
     } finally {
@@ -183,7 +240,7 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
   const load = useCallback(async () => {
     const startedAt = Date.now();
     if (!isAuthenticated) {
-      setError("Sign in to view this catalog record.");
+      setError(SIGN_IN_REQUIRED);
       setIsLoading(false);
       recordCatalogDiagnostic({
         operation: isDish ? "dish-detail" : "stall-detail",
@@ -229,6 +286,11 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
         setMenu(null);
       }
     } catch (loadError) {
+      reportError(loadError, {
+        screen: "CatalogRawDetail",
+        action: "load",
+        kind: route.params.kind,
+      });
       // Raw service errors are not user copy.
       setError("load_failed");
       recordCatalogDiagnostic({
@@ -247,7 +309,14 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
     } finally {
       setIsLoading(false);
     }
-  }, [isDish, route.params.id, route.params.releaseId, service]);
+  }, [
+    isAuthenticated,
+    isDish,
+    route.params.id,
+    route.params.kind,
+    route.params.releaseId,
+    service,
+  ]);
 
   useEffect(() => {
     void load();
@@ -265,6 +334,23 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
           <Skeleton width="70%" height={28} />
           <ActivityIndicator color={palette.orange} />
         </View>
+      </Screen>
+    );
+  }
+
+  if (error === SIGN_IN_REQUIRED) {
+    return (
+      <Screen scroll={false}>
+        <DetailHeader onBack={goBackOrHome} />
+        <EmptyState
+          title="Sign in to see this listing"
+          body="Hungry's dish and stall pages need an account."
+          ctaLabel="Sign in"
+          onPress={() => {
+            setReturnRoute({ name: "CatalogRawDetail", params: route.params });
+            navigation.navigate("AuthStack", { screen: "Login" });
+          }}
+        />
       </Screen>
     );
   }
@@ -372,11 +458,16 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
               ) : (
                 <AppText tone="secondary">{(detail as CatalogRawDishDetail).venueName}</AppText>
               )}
-              {(detail as CatalogRawDishDetail).price !== undefined ? (
-                <AppText style={{ color: palette.orange }} variant="h2">
-                  S${(detail as CatalogRawDishDetail).price?.toFixed(2)}
-                </AppText>
-              ) : null}
+              <AppText
+                style={{
+                  color: (detail as CatalogRawDishDetail).price
+                    ? palette.orange
+                    : palette.textSecondary,
+                }}
+                variant="h2"
+              >
+                {catalogPriceLabel(detail as CatalogRawDishDetail)}
+              </AppText>
             </>
           ) : (
             <AppText tone="secondary">
@@ -385,17 +476,32 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
           )}
           {isDish && FEATURE_FLAGS.favouritesEnabled ? (
             <Button
-              label={isFavourite ? "Remove from favourites" : "Save to favourites"}
+              label={isFavourite ? "Saved to Want to try" : "Save to Want to try"}
+              // The visible text says the state; the screen reader also hears what a tap does.
+              accessibilityLabel={
+                isFavourite ? "Saved to Want to try. Tap to remove" : "Save to Want to try"
+              }
+              accessibilityState={{ selected: isFavourite }}
               variant={isFavourite ? "secondary" : "primary"}
               loading={isSavingFavourite}
               leftIcon={
-                <Heart
-                  color={isFavourite ? palette.error : palette.white}
-                  fill={isFavourite ? palette.error : "transparent"}
+                <Bookmark
+                  color={isFavourite ? palette.orange : palette.white}
+                  fill={isFavourite ? palette.orange : "transparent"}
                   size={18}
                 />
               }
               onPress={() => void handleToggleFavourite(detail as CatalogRawDishDetail)}
+            />
+          ) : null}
+          {showSaveToList ? (
+            <Button
+              label="Save to list"
+              variant="secondary"
+              loading={isAddingToPortfolio}
+              accessibilityHint="Opens your lists to add this dish to one"
+              leftIcon={<ListPlus color={palette.text} size={18} />}
+              onPress={() => void addToPortfolio()}
             />
           ) : null}
           {"description" in detail && detail.description ? (
@@ -419,7 +525,7 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
                 >
                   <AppText variant="bodySmallBold">{item.name}</AppText>
                   <AppText tone="secondary" variant="micro">
-                    {item.price !== undefined ? `S$${item.price.toFixed(2)}` : "Price unavailable"}
+                    {catalogPriceLabel(item)}
                   </AppText>
                 </Pressable>
               ))}
@@ -486,11 +592,14 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
             <Button
               label="Open dish page"
               variant="secondary"
-              onPress={() => navigation.navigate("DishDetail", { dishId: detail.id })}
+              onPress={() =>
+                navigation.navigate("DishDetail", { dishId: detail.id, source: "catalog_detail" })
+              }
             />
           ) : null}
         </View>
       </ScrollView>
+      {showSaveToList ? saveToListSheet : null}
     </Screen>
   );
 }

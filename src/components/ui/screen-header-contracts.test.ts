@@ -91,7 +91,7 @@ test("Screen header contract: live Discover, Review, and New Post headers use Ap
     discover,
     /getNearestSingaporeAreaWithin\(discoverLocationLatitude, discoverLocationLongitude\)/,
   );
-  assert.match(tabs, /<Tab\.Screen name="Discover" component=\{DiscoverWrapper\}/);
+  assert.match(tabs, /<Tab\.Screen\s+name="Discover"\s+component=\{DiscoverWrapper\}/);
   assert.match(tabs, /require\("@\/app\/screens\/discover\/DiscoverEntryScreen"\)/);
   assert.doesNotMatch(tabs, /DiscoverHomeScreenV2/);
   assert.match(home, /<AppHeader[\s\S]*title="Home"/);
@@ -328,7 +328,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
     discover,
     /const discoverBaseBites = useMemo\([\s\S]*getDiscoverBites\(repository\)\.filter/,
   );
-  assert.match(discover, /getDiscoverBiteCollections\(\s*discoverBaseBites,\s*repository,/);
+  assert.match(discover, /getDiscoverBiteCollections\(\s*discoverBaseBites,\s*biteDishLookup,/);
   assert.match(discover, /const discoverDishById = useMemo/);
   assert.match(discover, /discoverDishById\.get\(bite\.dishId\)/);
   assert.match(discover, /function PopularFoodStyleSkeleton/);
@@ -417,13 +417,19 @@ test("Discover V1 contract: situation intents live in their matching sections", 
     /S\$\{bite\.price\.toFixed\(2\)\}[\s\S]*<Star color=\{palette\.starStroke\} size=\{12\} fill=\{palette\.starFill\} \/>[\s\S]*\{bite\.rating\.toFixed\(1\)\}/,
   );
   assert.match(discover, /title="Budget < S\$8"[\s\S]*label="Value"/);
-  assert.match(discover, /navigation\.navigate\("DishDetail", \{ dishId: bite\.dishId \}\)/);
+  assert.match(
+    discover,
+    /navigation\.navigate\("DishDetail", \{ dishId: bite\.dishId, source: "home" \}\)/,
+  );
   assert.match(discover, /const isLateNightMakanVisible = isLateNightHour\(currentHour\)/);
   assert.match(
     discover,
     /\{isLateNightMakanVisible &&\s*shouldRenderDiscoverRail\(\s*lateNightCards\.length,\s*MIN_DISCOVER_RAIL_ITEMS,?\s*\) \? \([\s\S]*title="Late night eats"[\s\S]*cards=\{lateNightCards\}/,
   );
-  assert.match(discover, /trackAnalyticsEvent\("discover_see_all_tapped", \{ collection \}\)/);
+  assert.match(
+    discover,
+    /trackAnalyticsEvent\("discover_see_all_tapped", \{ surface: "home", collection \}\)/,
+  );
   assert.doesNotMatch(discover, /const foodInset = 5/);
   assert.match(discover, /imageSource\?: number/);
   assert.match(discover, /imageSource: POPULAR_LAKSA_GRAPHIC/);
@@ -553,7 +559,14 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.doesNotMatch(discover, /import \{ DecideForMeCard \}/);
   assert.match(
     discover,
-    /\/\* Decision action chips \*\/[\s\S]*<View style=\{\{ flexDirection: "row", gap: decisionCardGap \}\}>[\s\S]*onPress=\{handleDecideForMe\}[\s\S]*Decide for me[\s\S]*navigation\.navigate\("WheelStack", \{ screen: "WheelHome" \}\)[\s\S]*Pick with friends[\s\S]*<\/View>/,
+    /\/\* Decision action chips \*\/[\s\S]*<View style=\{\{ flexDirection: "row", gap: decisionCardGap \}\}>[\s\S]*onPress=\{handleDecideForMe\}[\s\S]*Decide for me[\s\S]*navigation\.navigate\("WheelStack", \{ screen: "WheelHome" \}\)[\s\S]*\{wheelCtaLabel\}[\s\S]*<\/View>/,
+  );
+  // HOME-X8 / HOME-26: the wheel button needs its route, and says "with friends" only when
+  // party mode ships.
+  assert.match(discover, /\{FEATURE_FLAGS\.hungryWheelEnabled \? \(\s*<Pressable/);
+  assert.match(
+    discover,
+    /const wheelCtaLabel = FEATURE_FLAGS\.wheelPartyEnabled \? "Pick with friends" : "Spin the wheel";/,
   );
   assert.match(
     discover,
@@ -661,7 +674,8 @@ test("Discover V1 contract: browse cards open the image-feed browse mode", () =>
   const navigationTypes = read("src/app/navigation/navigationTypes.ts");
   const searchResults = read("src/app/screens/search/SearchResultsScreen.tsx");
   // The two big photo tiles are gone: trending dishes lead, and the full lists are two compact links.
-  assert.match(discover, /<TrendingList[\s\S]*?bites=\{trendingCards\}/);
+  // Without a GPS fix or a pick the list drops distances from the default point (HOME-17).
+  assert.match(discover, /<TrendingList[\s\S]*?bites=\{trendingListBites\}/);
   assert.match(discover, /The full lists stay one tap away/);
   assert.match(
     discover,
@@ -781,7 +795,7 @@ test("Quick Bites contract: empty-state icon is not clipped", () => {
   assert.match(discoverBites, /const lateNight = syncedBites/);
   assert.match(
     quickBites,
-    /return getDiscoverBiteCollection\(collection, bites, undefined, venueHours\)/,
+    /return getDiscoverBiteCollection\(collection, bites, dishLookup, venueHours\)/,
   );
   // The footer carousel repeated the grid above it.
   assert.doesNotMatch(quickBites, /renderFoodCarousel|carousel-\$\{bite\.id\}/);

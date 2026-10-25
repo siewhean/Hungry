@@ -105,7 +105,7 @@ test("canViewFollowLists assumes visible when the check fails, and respects an e
   assert.equal(await service.social.canViewFollowLists(OTHER), true);
 });
 
-test("getFollowCounts returns null unless the server returns a row", async () => {
+test("getFollowCounts returns null without a row and throws when the read fails (PROF-V1)", async () => {
   fake.rpc.get_follow_counts = () => ({ data: [{ followers_count: 12, following_count: "7" }] });
   assert.deepEqual(await service.social.getFollowCounts(OTHER), {
     followersCount: 12,
@@ -114,7 +114,7 @@ test("getFollowCounts returns null unless the server returns a row", async () =>
   fake.rpc.get_follow_counts = () => ({ data: [] });
   assert.equal(await service.social.getFollowCounts(OTHER), null);
   fake.rpc.get_follow_counts = () => ({ error: { message: "x" } });
-  assert.equal(await service.social.getFollowCounts(OTHER), null);
+  await assert.rejects(service.social.getFollowCounts(OTHER));
 });
 
 test("getFollowStatus is 'none' when signed out and reads the caller's own row otherwise", async () => {
@@ -385,11 +385,12 @@ test("signOut ends only this device by default and clears locally when the serve
     "no silent local fallback for global",
   );
   auth.calls.length = 0;
-  await rejectsWith(service.auth.signOut(), /offline/); // local still failing is reported
-  assert.equal(
-    auth.calls.filter((call) => call.method === "signOut").length,
-    2,
-    "local tried the server revoke, then locally",
+  // AUTH-10: a failed local revoke removes the stored session directly instead of a
+  // second signOut, which went back to the server and failed the same way.
+  await service.auth.signOut();
+  assert.deepEqual(
+    auth.calls.map((call) => call.method),
+    ["signOut", "_removeSession"],
   );
 });
 
@@ -421,4 +422,32 @@ test("adjustCommunityTasteVector saves numeric axes through submit_dish_taste_ra
   fake.rpc.submit_dish_taste_rating = () => ({ error: { message: "rate limited" } });
   await rejectsWith(service.ai.adjustCommunityTasteVector("dish-1", { sour: 5 }), /rate limited/);
   assert.equal(fake.callsTo("submit_dish_taste_rating")[0].args.p_review_id, null);
+});
+
+test("an offline sign-out still clears the stored session on this device (AUTH-10)", async () => {
+  auth.failures.signOut = { message: "Network request failed" };
+  await service.auth.signOut();
+  const methods = auth.calls.map((call) => call.method);
+  // One server attempt only: a second signOut would hit the server and fail the same way.
+  assert.deepEqual(methods, ["signOut", "_removeSession"]);
+});
+
+test("listRecentReviewsPage withPhotos inner-joins review_photos; dish and stall reads do not (REV-3)", async () => {
+  const rows = [
+    { id: "r2", dish_id: "d1", created_at: "2026-10-02T00:00:00Z", rating: 5, text: "a" },
+    { id: "r1", dish_id: "d1", created_at: "2026-10-01T00:00:00Z", rating: 4, text: "b" },
+  ];
+  fake.tables.reviews = () => ({ data: rows, error: null });
+  const select = (table: string) =>
+    fake.queriesOn(table)[0].ops.find(([method]) => method === "select")?.[1][0] as string;
+
+  const page = await service.reviews.listRecentReviewsPage({ limit: 2, withPhotos: true });
+  assert.match(select("reviews"), /,review_photos!inner\(id\)$/);
+  // Paging still comes from the raw rows read.
+  assert.equal(page.hasMore, true);
+  assert.deepEqual(page.nextCursor, { before: "2026-10-01T00:00:00Z", beforeId: "r1" });
+
+  fake.queries.length = 0;
+  await service.reviews.listRecentReviewsPage({ limit: 2, venueId: "v1" });
+  assert.doesNotMatch(select("reviews"), /review_photos/);
 });

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { View, StyleSheet, TouchableOpacity } from "react-native";
+import { ActivityIndicator, View, StyleSheet, TouchableOpacity } from "react-native";
 import { Camera, Image as ImageIcon } from "lucide-react-native";
 import { useForm, Controller } from "react-hook-form";
 import { useNavigation } from "@react-navigation/native";
@@ -31,6 +31,7 @@ import { trackMerchantEvent } from "@/features/merchant/merchantTracking";
 import { useMerchantDialog } from "@/features/merchant/useMerchantDialog";
 import { useUnsavedChangesGuard } from "@/features/merchant/useUnsavedChangesGuard";
 import { lookupPostalCode, SINGAPORE_POSTAL_CODE_PATTERN } from "@/lib/geo/oneMap";
+import { reportError } from "@/lib/monitoring/reportError";
 import {
   formatScheduleText,
   scheduleFromHoursText,
@@ -142,7 +143,7 @@ function BusinessTypeDropdown({
   return (
     <View style={{ gap: 8 }}>
       <SelectField
-        label="Business Type"
+        label="Business type"
         value={value}
         options={BUSINESS_TYPE_SELECT_OPTIONS}
         onChange={onChange}
@@ -166,6 +167,13 @@ export function BusinessProfileEditorScreen() {
   const { showAlert, dialog } = useMerchantDialog();
   const isOutletVerified = isVerificationCurrent(activeOutlet?.verification);
   const updateOutletProfile = useMerchantStore((state) => state.updateOutletProfile);
+  const setAccount = useMerchantStore((state) => state.setAccount);
+  // The account restored from storage has no contact details (they are never persisted). Until
+  // a fresh copy arrives the form would seed blank phone/email fields, so wait for one first.
+  const [isRefreshingAccount, setIsRefreshingAccount] = useState(() => {
+    const { accountSyncedAt, developerMerchantMode } = useMerchantStore.getState();
+    return accountSyncedAt === null && !developerMerchantMode;
+  });
   const [isUploadingImages, setIsUploadingImages] = useState(false);
   const [hoursError, setHoursError] = useState<string>();
   const [postalStatus, setPostalStatus] = useState<string>();
@@ -178,7 +186,7 @@ export function BusinessProfileEditorScreen() {
     watch,
     getValues,
     setValue,
-    formState: { isSubmitting, isDirty, errors },
+    formState: { isSubmitting, isDirty, dirtyFields, errors },
   } = useForm<FormData>({
     defaultValues: {
       name: "",
@@ -236,11 +244,31 @@ export function BusinessProfileEditorScreen() {
   // same id: re-seed only while the form is untouched, so it never wipes the merchant's edits.
   const seededOutletId = useRef<string | null>(null);
   useEffect(() => {
-    if (!activeOutlet) return;
+    if (!activeOutlet || isRefreshingAccount) return;
     if (seededOutletId.current === activeOutlet.id && isDirty) return;
     seededOutletId.current = activeOutlet.id;
     reset(toFormData(activeOutlet));
-  }, [activeOutlet, isDirty, reset]);
+  }, [activeOutlet, isDirty, isRefreshingAccount, reset]);
+
+  useEffect(() => {
+    if (!isRefreshingAccount) return;
+    let isMounted = true;
+    getHungryService()
+      .merchant.getMerchantAccount()
+      .then((account) => {
+        if (isMounted && account) setAccount(account);
+      })
+      .catch((error) => {
+        // Editing still works: contact fields are only sent when the merchant changes them.
+        reportError(error, { screen: "BusinessProfileEditor", action: "refresh_account" });
+      })
+      .finally(() => {
+        if (isMounted) setIsRefreshingAccount(false);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [isRefreshingAccount, setAccount]);
 
   const leaveEditor = useCallback(() => navigation.goBack(), [navigation]);
   const confirmLeave = useUnsavedChangesGuard(isDirty && !isSubmitting, leaveEditor, showAlert);
@@ -289,8 +317,10 @@ export function BusinessProfileEditorScreen() {
         profilePhotoUrl,
         coverPhotoUrl,
         galleryUrls,
-        contactPhone: data.contactPhone,
-        contactEmail: data.contactEmail,
+        // Only fields the merchant touched: a form seeded without contact details (stale cache,
+        // failed refresh) must never write blanks over the stored phone and email.
+        ...(dirtyFields.contactPhone ? { contactPhone: data.contactPhone } : {}),
+        ...(dirtyFields.contactEmail ? { contactEmail: data.contactEmail } : {}),
         socialLinks: [
           ...activeOutlet.socialLinks.filter(
             (link) => !LINK_FIELDS.some(({ platform }) => platform === link.platform.toLowerCase()),
@@ -321,7 +351,7 @@ export function BusinessProfileEditorScreen() {
         [{ text: "OK", onPress: () => navigation.goBack() }],
       );
     } catch (error) {
-      console.error(error);
+      reportError(error, { screen: "BusinessProfileEditor", action: "save_profile" });
       showAlert("Error", error instanceof Error ? error.message : "Failed to update profile.");
     } finally {
       setIsUploadingImages(false);
@@ -333,6 +363,19 @@ export function BusinessProfileEditorScreen() {
     const venueId = activeOutlet?.venueId;
     if (venueId) rootNavigation.navigate("StallDetail", { venueId });
   };
+
+  if (isRefreshingAccount) {
+    return (
+      <Screen title="Business profile">
+        <View style={{ paddingVertical: spacing[6], alignItems: "center", gap: spacing[3] }}>
+          <ActivityIndicator color={palette.orange} accessibilityLabel="Loading" />
+          <AppText variant="body" tone="muted">
+            Loading your business profile...
+          </AppText>
+        </View>
+      </Screen>
+    );
+  }
 
   if (!activeOutlet) {
     return (
@@ -349,7 +392,7 @@ export function BusinessProfileEditorScreen() {
 
   return (
     <Screen
-      title="Business Profile"
+      title="Business profile"
       onBackPress={confirmLeave}
       contentContainerStyle={{ paddingBottom: spacing[6] }}
       headerRight={
@@ -401,7 +444,7 @@ export function BusinessProfileEditorScreen() {
 
         <View style={{ gap: spacing[4] }}>
           <AppText variant="h3" style={{ fontWeight: "600" }}>
-            Basic Info
+            Basic info
           </AppText>
 
           <View>
@@ -411,7 +454,7 @@ export function BusinessProfileEditorScreen() {
               rules={{ required: "Name is required" }}
               render={({ field: { onChange, onBlur, value } }) => (
                 <Input
-                  label="Business Name *"
+                  label="Business name *"
                   onBlur={onBlur}
                   onChangeText={onChange}
                   value={value}
@@ -464,7 +507,7 @@ export function BusinessProfileEditorScreen() {
               name="profilePhotoUrl"
               render={({ field: { onChange, value } }) => (
                 <MerchantImageField
-                  label="Profile Image"
+                  label="Profile image"
                   rationale="Hungry needs access to your photo library to upload your stall's profile image."
                   value={value}
                   onChange={onChange}
@@ -479,7 +522,7 @@ export function BusinessProfileEditorScreen() {
               name="coverPhotoUrl"
               render={({ field: { onChange, value } }) => (
                 <MerchantImageField
-                  label="Cover Image"
+                  label="Cover image"
                   rationale="Hungry needs access to your photo library to upload your stall's cover image."
                   value={value}
                   onChange={onChange}
@@ -502,7 +545,7 @@ export function BusinessProfileEditorScreen() {
               name="cuisineCategories"
               render={({ field: { onChange, onBlur, value } }) => (
                 <Input
-                  label="Cuisine Categories"
+                  label="Cuisine categories"
                   onBlur={onBlur}
                   onChangeText={onChange}
                   value={value}
@@ -525,7 +568,7 @@ export function BusinessProfileEditorScreen() {
                 name="unitNumber"
                 render={({ field: { onChange, onBlur, value } }) => (
                   <Input
-                    label="Unit Number"
+                    label="Unit number"
                     onBlur={onBlur}
                     onChangeText={onChange}
                     value={value}
@@ -559,7 +602,7 @@ export function BusinessProfileEditorScreen() {
                   name="postalCode"
                   render={({ field: { onChange, onBlur, value } }) => (
                     <Input
-                      label="Postal Code"
+                      label="Postal code"
                       onBlur={onBlur}
                       onChangeText={onChange}
                       value={value}
@@ -588,7 +631,7 @@ export function BusinessProfileEditorScreen() {
               name="address"
               render={({ field: { onChange, onBlur, value } }) => (
                 <Input
-                  label="Street Address"
+                  label="Street address"
                   onBlur={onBlur}
                   onChangeText={onChange}
                   value={value}
@@ -636,7 +679,7 @@ export function BusinessProfileEditorScreen() {
               name="temporaryClosure"
               render={({ field: { onChange, onBlur, value } }) => (
                 <Input
-                  label="Temporary Closure Notice"
+                  label="Temporary closure notice"
                   onBlur={onBlur}
                   onChangeText={onChange}
                   value={value}
@@ -670,7 +713,7 @@ export function BusinessProfileEditorScreen() {
 
         <View style={{ gap: spacing[4] }}>
           <AppText variant="h3" style={{ fontWeight: "600" }}>
-            Contact Info
+            Contact info
           </AppText>
 
           <View>
@@ -685,7 +728,7 @@ export function BusinessProfileEditorScreen() {
               }}
               render={({ field: { onChange, onBlur, value } }) => (
                 <Input
-                  label="Phone Number"
+                  label="Phone number"
                   onBlur={onBlur}
                   onChangeText={onChange}
                   value={value}
@@ -710,7 +753,7 @@ export function BusinessProfileEditorScreen() {
               }}
               render={({ field: { onChange, onBlur, value } }) => (
                 <Input
-                  label="Email Address"
+                  label="Email address"
                   onBlur={onBlur}
                   onChangeText={onChange}
                   value={value}
@@ -769,7 +812,7 @@ export function BusinessProfileEditorScreen() {
         </View>
 
         <Button
-          label={isSubmitting ? "Saving..." : "Save Profile"}
+          label={isSubmitting ? "Saving..." : "Save profile"}
           variant="primary"
           fullWidth
           onPress={handleSubmit(onSubmit)}

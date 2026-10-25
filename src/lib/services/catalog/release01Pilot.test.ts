@@ -13,6 +13,7 @@ import {
   listExcelVenues,
 } from "@/lib/services/excel/repositories";
 import { excelCatalogFallbackService } from "@/lib/services/catalog/excelFallback";
+import { isDeliveryAppImageUrl } from "@/lib/services/catalog/media";
 import { calculateDistanceMeters } from "@/lib/geo/distance";
 
 const venues = listExcelVenues();
@@ -28,13 +29,6 @@ const pilotVenues = venues.filter((venue) => {
 });
 const pilotVenueIds = new Set(pilotVenues.map((venue) => venue.id));
 const pilotDishes = dishes.filter((dish) => pilotVenueIds.has(dish.venueId));
-const dishesByVenueId = new Map<string, typeof dishes>();
-
-for (const dish of dishes) {
-  const current = dishesByVenueId.get(dish.venueId) ?? [];
-  current.push(dish);
-  dishesByVenueId.set(dish.venueId, current);
-}
 
 function validImage(value: string | null | undefined): boolean {
   if (!value || isRelease01BlockedImageUrl(value)) return false;
@@ -46,19 +40,12 @@ function validImage(value: string | null | undefined): boolean {
   }
 }
 
-function venueHasDisplayImage(venue: (typeof venues)[number]): boolean {
-  if (validImage(venue.logoUrl) || validImage(venue.imageUrl)) return true;
-  return (dishesByVenueId.get(venue.id) ?? []).some((dish) => validImage(dish.imageUrl));
-}
-
 test("Release 0.1 Jurong East pilot has enough reachable catalog records", () => {
   const coordinateBacked = pilotVenues.filter((venue) => {
     const coordinate = getExcelVenueCoordinate(venue.id);
     return coordinate && isSingaporeCoordinate(coordinate.latitude, coordinate.longitude);
   });
   const coordinateCoverage = pilotVenues.length ? coordinateBacked.length / pilotVenues.length : 0;
-  const imageBackedVenues = pilotVenues.filter(venueHasDisplayImage);
-  const imageBackedDishes = pilotDishes.filter((dish) => validImage(dish.imageUrl));
 
   assert.ok(
     pilotVenues.length >= RELEASE_01_PILOT.minimumVenueCount,
@@ -68,14 +55,14 @@ test("Release 0.1 Jurong East pilot has enough reachable catalog records", () =>
     pilotDishes.length >= RELEASE_01_PILOT.minimumDishCount,
     `Expected at least ${RELEASE_01_PILOT.minimumDishCount} Jurong East dishes, found ${pilotDishes.length}`,
   );
-  assert.ok(
-    imageBackedVenues.length >= RELEASE_01_PILOT.minimumImageBackedVenueCount,
-    `Expected at least ${RELEASE_01_PILOT.minimumImageBackedVenueCount} image-backed Jurong East venues, found ${imageBackedVenues.length}`,
-  );
-  assert.ok(
-    imageBackedDishes.length >= RELEASE_01_PILOT.minimumImageBackedDishCount,
-    `Expected at least ${RELEASE_01_PILOT.minimumImageBackedDishCount} image-backed Jurong East dishes, found ${imageBackedDishes.length}`,
-  );
+  // The bundled copy's pilot photos were Grab CMS images, which the server withholds (no licence),
+  // so the offline copy no longer counts toward RELEASE_01_PILOT's image minimums: those are
+  // met by the online catalog's licensed photos. What the offline copy must never do is show one.
+  const deliveryAppImages = [
+    ...pilotVenues.flatMap((venue) => [venue.logoUrl, venue.imageUrl]),
+    ...pilotDishes.map((dish) => dish.imageUrl),
+  ].filter((url) => validImage(url) && isDeliveryAppImageUrl(url));
+  assert.deepEqual(deliveryAppImages, []);
   assert.ok(
     coordinateCoverage >= RELEASE_01_PILOT.minimumCoordinateCoverage,
     `Expected Jurong East coordinate coverage >= ${RELEASE_01_PILOT.minimumCoordinateCoverage}, found ${coordinateCoverage.toFixed(3)}`,

@@ -68,6 +68,8 @@ const pendingReactionCounts = new Map<string, number>();
 // When each post's last like/save write settled. A feed read that started
 // before then may carry pre-write viewer state, so it is ignored for that post.
 const lastReactionSettledAt = new Map<string, number>();
+// Users with a follow, unfollow or request cancel still on its way to the server.
+const followWritesInFlight = new Set<string>();
 
 function enqueueReactionWrite(
   postId: string,
@@ -123,7 +125,8 @@ interface SocialState {
   toggleLike: (postId: string) => void;
   toggleSave: (postId: string) => void;
   toggleAuthorFollow: (authorName: string) => void;
-  toggleFollow: (userId: string) => void;
+  /** `isPrivate`: the account approves followers, so a follow shows "Requested" straight away. */
+  toggleFollow: (userId: string, options?: { isPrivate?: boolean }) => void;
   /** Record server-confirmed follows (e.g. from the viewer's own Following list). */
   markFollowedUserIds: (userIds: string[]) => void;
   /** Reconcile one user's follow state with the server (true or false). */
@@ -442,8 +445,10 @@ export const useSocialStore = create<SocialState>()(
         }));
       },
 
-      toggleFollow: (userId: string) => {
+      toggleFollow: (userId: string, options?: { isPrivate?: boolean }) => {
         if (!isSignedIn()) return;
+        // A second tap while a follow or cancel is still on its way would race it (PROF-V2).
+        if (followWritesInFlight.has(userId)) return;
         const isFollowing = get().followedUserIds[userId] ?? false;
         const service = getHungryService();
         const { useUIStore } = require("./useUIStore") as typeof import("./useUIStore");
@@ -452,25 +457,33 @@ export const useSocialStore = create<SocialState>()(
           set((prev) => ({
             requestedUserIds: { ...prev.requestedUserIds, [userId]: false },
           }));
-          void service.social.cancelFollowRequest(userId).catch((error) => {
-            console.error("Failed to cancel follow request", error);
-            set((prev) => ({
-              requestedUserIds: { ...prev.requestedUserIds, [userId]: true },
-            }));
-            useUIStore.getState().showToast({
-              message: "Couldn't cancel the request. Please try again.",
-              tone: "error",
-            });
-          });
+          followWritesInFlight.add(userId);
+          void service.social
+            .cancelFollowRequest(userId)
+            .catch((error) => {
+              console.error("Failed to cancel follow request", error);
+              set((prev) => ({
+                requestedUserIds: { ...prev.requestedUserIds, [userId]: true },
+              }));
+              useUIStore.getState().showToast({
+                message: "Couldn't cancel the request. Please try again.",
+                tone: "error",
+              });
+            })
+            .finally(() => followWritesInFlight.delete(userId));
           return;
         }
+        // A private account approves followers first: show "Requested" (still locked) at once,
+        // never a brief "Following" with the content unlocked.
+        const optimisticRequest = !isFollowing && options?.isPrivate === true;
         set((prev) => ({
           followedUserIds: {
             ...prev.followedUserIds,
-            [userId]: !isFollowing,
+            [userId]: optimisticRequest ? false : !isFollowing,
           },
-          requestedUserIds: { ...prev.requestedUserIds, [userId]: false },
+          requestedUserIds: { ...prev.requestedUserIds, [userId]: optimisticRequest },
         }));
+        followWritesInFlight.add(userId);
         void (isFollowing ? service.social.unfollowUser(userId) : service.social.followUser(userId))
           .then((result) => {
             // Counted after the server answers, so a failed follow is not an event, and a
@@ -482,7 +495,16 @@ export const useSocialStore = create<SocialState>()(
                 : { target_user_id: userId, status: result === "pending" ? "pending" : "approved" },
             );
             // Private accounts must approve the request, so the viewer is not following yet.
-            if (result !== "pending") return;
+            if (result !== "pending") {
+              // Approved at once (the account was public after all): now really following.
+              if (optimisticRequest) {
+                set((prev) => ({
+                  followedUserIds: { ...prev.followedUserIds, [userId]: true },
+                  requestedUserIds: { ...prev.requestedUserIds, [userId]: false },
+                }));
+              }
+              return;
+            }
             set((prev) => ({
               followedUserIds: { ...prev.followedUserIds, [userId]: false },
               requestedUserIds: { ...prev.requestedUserIds, [userId]: true },
@@ -496,6 +518,9 @@ export const useSocialStore = create<SocialState>()(
             console.error("Failed to sync follow state", error);
             set((prev) => ({
               followedUserIds: { ...prev.followedUserIds, [userId]: isFollowing },
+              ...(optimisticRequest
+                ? { requestedUserIds: { ...prev.requestedUserIds, [userId]: false } }
+                : {}),
             }));
             useUIStore.getState().showToast({
               message: isFollowing
@@ -503,7 +528,8 @@ export const useSocialStore = create<SocialState>()(
                 : "Couldn't follow. Please try again.",
               tone: "error",
             });
-          });
+          })
+          .finally(() => followWritesInFlight.delete(userId));
       },
 
       markFollowedUserIds: (userIds) => {

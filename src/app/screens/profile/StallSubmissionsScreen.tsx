@@ -43,7 +43,14 @@ export function StallSubmissionsScreen({ navigation }: Props) {
                 <Card
                   key={submission.id}
                   accessible
-                  accessibilityLabel={`${submission.stallName}, ${status.label}`}
+                  accessibilityLabel={[
+                    submission.stallName,
+                    status.label,
+                    status.detail,
+                    submitted ? `Submitted ${submitted}` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(", ")}
                   style={{ gap: spacing[2], padding: spacing[4] }}
                 >
                   <AppText variant="bodyBold">{submission.stallName}</AppText>

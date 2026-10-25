@@ -37,6 +37,7 @@ import {
 } from "lucide-react-native";
 import {
   useFocusEffect,
+  useIsFocused,
   useNavigation,
   useRoute,
   type CompositeNavigationProp,
@@ -58,6 +59,7 @@ import { DiscoverViewToggle } from "@/components/discover/DiscoverViewToggle";
 import { ForYouCard } from "@/components/discover/ForYouCard";
 import { TrendingList } from "@/components/discover/TrendingList";
 import { WhatsHerePanel } from "@/components/discover/WhatsHerePanel";
+import { WelcomeBackCard } from "@/components/home/WelcomeBackCard";
 import { StallLogoMark } from "@/components/stall/StallLogoMark";
 import {
   DISCOVER_FEED_LIMIT,
@@ -83,6 +85,7 @@ import {
   preloadRoute,
 } from "@/features/navigation/prefetch";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { reportError } from "@/lib/monitoring/reportError";
 import {
   getNearestBuildings,
   getNearestSingaporeArea,
@@ -862,10 +865,12 @@ const DiscoverBiteCard = memo(function DiscoverBiteCard({
 /** A titled horizontal rail of dish cards whose title opens the full list, with a loading state and a filter-empty state. */
 const DiscoverBiteRail = memo(function DiscoverBiteRail({
   buttonId,
+  canSeeAll,
   cards,
   getCardLabel,
   isFiltering,
   isLoading,
+  isVisible,
   layout,
   onOpenBite,
   onPrefetchBite,
@@ -878,10 +883,14 @@ const DiscoverBiteRail = memo(function DiscoverBiteRail({
   variant,
 }: {
   buttonId: string;
+  /** False when the full-list screen is not registered in this build (release-01 core only). */
+  canSeeAll: boolean;
   cards: Bite[];
   getCardLabel: (bite: Bite) => string;
   isFiltering: boolean;
   isLoading: boolean;
+  /** Home is on screen (not a tab warm-up), so an impression is real. */
+  isVisible: boolean;
   layout: DiscoverRailLayout;
   onOpenBite: (bite: Bite, buttonId: string) => void;
   onPrefetchBite: (bite: Bite) => void;
@@ -897,12 +906,39 @@ const DiscoverBiteRail = memo(function DiscoverBiteRail({
   const impressionSentRef = useRef(false);
   const scrollStyle = useMemo(() => ({ width: layout.screenWidth }), [layout.screenWidth]);
 
-  // Once per visit, when the rail first shows dishes (not on every filter change).
+  // Once per visit, when the rail first shows dishes on screen (not on every filter change).
   useEffect(() => {
-    if (isLoading || cards.length === 0 || impressionSentRef.current) return;
+    if (!isVisible || isLoading || cards.length === 0 || impressionSentRef.current) return;
     impressionSentRef.current = true;
-    trackAnalyticsEvent("discover_rail_impression", { rail, count: cards.length });
-  }, [cards.length, isLoading, rail]);
+    trackAnalyticsEvent("discover_rail_impression", {
+      surface: "home",
+      rail,
+      count: cards.length,
+    });
+  }, [cards.length, isLoading, isVisible, rail]);
+  const handleOpenBite = useCallback(
+    (bite: Bite, cardButtonId: string) => {
+      trackAnalyticsEvent("discover_card_opened", {
+        surface: "home",
+        rail,
+        kind: "dish",
+        position: Math.max(
+          0,
+          cards.findIndex((card) => card.id === bite.id),
+        ),
+      });
+      onOpenBite(bite, cardButtonId);
+    },
+    [cards, onOpenBite, rail],
+  );
+  const titleRow = (
+    <>
+      <AppText variant="h2" style={{ color: palette.text, flexShrink: 1 }}>
+        {title}
+      </AppText>
+      {titleBadge}
+    </>
+  );
 
   return (
     <View style={{ gap: layout.contentGap }}>
@@ -913,26 +949,37 @@ const DiscoverBiteRail = memo(function DiscoverBiteRail({
           justifyContent: "space-between",
         }}
       >
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={seeAllLabel}
-          hitSlop={DISCOVER_TEXT_LINK_HIT_SLOP}
-          onPressIn={() => onPrefetchCollection(rail)}
-          onPress={() => onSeeAll(rail)}
-          style={{
-            alignItems: "center",
-            flex: 1,
-            flexDirection: "row",
-            gap: spacing[2],
-            minHeight: 44,
-          }}
-        >
-          <AppText variant="h2" style={{ color: palette.text, flexShrink: 1 }}>
-            {title}
-          </AppText>
-          {titleBadge}
-          <ChevronRight color={palette.textMuted} size={20} />
-        </Pressable>
+        {canSeeAll ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={seeAllLabel}
+            hitSlop={DISCOVER_TEXT_LINK_HIT_SLOP}
+            onPressIn={() => onPrefetchCollection(rail)}
+            onPress={() => onSeeAll(rail)}
+            style={{
+              alignItems: "center",
+              flex: 1,
+              flexDirection: "row",
+              gap: spacing[2],
+              minHeight: 44,
+            }}
+          >
+            {titleRow}
+            <ChevronRight color={palette.textMuted} size={20} />
+          </Pressable>
+        ) : (
+          <View
+            style={{
+              alignItems: "center",
+              flex: 1,
+              flexDirection: "row",
+              gap: spacing[2],
+              minHeight: 44,
+            }}
+          >
+            {titleRow}
+          </View>
+        )}
       </View>
       {isLoading ? (
         <ScrollView
@@ -961,7 +1008,7 @@ const DiscoverBiteRail = memo(function DiscoverBiteRail({
               cardWidth={layout.cardWidth}
               getCardLabel={getCardLabel}
               imageHeight={layout.imageHeight}
-              onOpen={onOpenBite}
+              onOpen={handleOpenBite}
               onPrefetch={onPrefetchBite}
               variant={variant}
             />
@@ -1218,46 +1265,20 @@ function HalalLogoIcon({ color }: { color: string }) {
   );
 }
 
-export function DiscoverHomeScreen() {
+export type DiscoverHomeScreenProps = {
+  /**
+   * Called when the live feed read fails (or only the saved cache answered). The Supabase entry
+   * then shows the offline Home, which reads the catalog and, during an outage, the bundled copy.
+   */
+  onLiveFeedUnavailable?: () => void;
+};
+
+export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreenProps = {}) {
   const navigation = useNavigation<RootNavigation>();
   const route = useRoute();
+  const isFocused = useIsFocused();
   const isTabSwipeLockedRef = useRef(false);
   const repository = getDataRepository();
-  const repositoryLookup = useMemo<DiscoverRepositoryLookup>(() => {
-    const dishById = new Map<string, DishDetail | undefined>();
-    const dishesByVenue = new Map<string, DishDetail[]>();
-    const venuesByBuilding = new Map<string, VenueSummary[]>();
-
-    return {
-      getDishById: (dishId: string) => {
-        if (!dishById.has(dishId)) {
-          dishById.set(dishId, repository.getDishById(dishId));
-        }
-        return dishById.get(dishId);
-      },
-      listDishesByVenue: (venueId: string) => {
-        const cached = dishesByVenue.get(venueId);
-        if (cached) {
-          return cached;
-        }
-        const dishes = repository.listDishesByVenue(venueId);
-        dishesByVenue.set(venueId, dishes);
-        dishes.forEach((dish) => {
-          dishById.set(dish.id, dish);
-        });
-        return dishes;
-      },
-      listVenuesByBuilding: (buildingId: string) => {
-        const cached = venuesByBuilding.get(buildingId);
-        if (cached) {
-          return cached;
-        }
-        const venues = repository.listVenuesByBuilding(buildingId);
-        venuesByBuilding.set(buildingId, venues);
-        return venues;
-      },
-    };
-  }, [repository]);
   const isSupabaseDataSource = getServiceProvider().mode === "supabase";
   const [supabaseDiscoverAreaCount, setSupabaseDiscoverAreaCount] = useState<number | null>(null);
   const [supabaseDiscoveryFeed, setSupabaseDiscoveryFeed] = useState<DiscoveryLocationFeed | null>(
@@ -1368,6 +1389,7 @@ export function DiscoverHomeScreen() {
   );
   const searchIconSize = 52;
   const openSearchHome = useCallback(() => {
+    trackAnalyticsEvent("discover_search_opened", { surface: "home" });
     navigation.navigate("SearchHome");
   }, [navigation]);
 
@@ -1388,6 +1410,62 @@ export function DiscoverHomeScreen() {
   );
   const supabaseFeedVenues = supabaseDiscoveryFeed?.venues ?? EMPTY_FEED_VENUES;
   const supabaseFeedResults = supabaseDiscoveryFeed?.results ?? EMPTY_FEED_RESULTS;
+  // Live builds look dishes and stalls up in the feed already on screen. The synchronous
+  // repository would start a full-table download (again every 45 s), miss rows past the
+  // 1,000-row cap and never re-render when it lands (HOME-X5).
+  const repositoryLookup = useMemo<DiscoverRepositoryLookup>(() => {
+    const dishById = new Map<string, DishDetail | undefined>();
+    const dishesByVenue = new Map<string, DishDetail[]>();
+    const venuesByBuilding = new Map<string, VenueSummary[]>();
+
+    if (isSupabaseDataSource) {
+      for (const { dish } of supabaseFeedResults) {
+        dishById.set(dish.id, dish);
+        dishesByVenue.set(dish.venueId, [...(dishesByVenue.get(dish.venueId) ?? []), dish]);
+      }
+      for (const venue of supabaseFeedVenues) {
+        venuesByBuilding.set(venue.buildingId, [
+          ...(venuesByBuilding.get(venue.buildingId) ?? []),
+          venue,
+        ]);
+      }
+      return {
+        getDishById: (dishId: string) => dishById.get(dishId),
+        listDishesByVenue: (venueId: string) => dishesByVenue.get(venueId) ?? [],
+        listVenuesByBuilding: (buildingId: string) => venuesByBuilding.get(buildingId) ?? [],
+      };
+    }
+
+    return {
+      getDishById: (dishId: string) => {
+        if (!dishById.has(dishId)) {
+          dishById.set(dishId, repository.getDishById(dishId));
+        }
+        return dishById.get(dishId);
+      },
+      listDishesByVenue: (venueId: string) => {
+        const cached = dishesByVenue.get(venueId);
+        if (cached) {
+          return cached;
+        }
+        const dishes = repository.listDishesByVenue(venueId);
+        dishesByVenue.set(venueId, dishes);
+        dishes.forEach((dish) => {
+          dishById.set(dish.id, dish);
+        });
+        return dishes;
+      },
+      listVenuesByBuilding: (buildingId: string) => {
+        const cached = venuesByBuilding.get(buildingId);
+        if (cached) {
+          return cached;
+        }
+        const venues = repository.listVenuesByBuilding(buildingId);
+        venuesByBuilding.set(buildingId, venues);
+        return venues;
+      },
+    };
+  }, [isSupabaseDataSource, repository, supabaseFeedResults, supabaseFeedVenues]);
   const supabaseDiscoverBites = useMemo(
     () => supabaseFeedResults.map(searchResultToDiscoverBite),
     [supabaseFeedResults],
@@ -1396,15 +1474,16 @@ export function DiscoverHomeScreen() {
     () => new Map(supabaseFeedVenues.map((venue) => [venue.id, venue.operatingHours] as const)),
     [supabaseFeedVenues],
   );
-  // Hours for the late-night rail and chip: the live feed first, then the local cache.
+  // Hours for the late-night rail and chip: the live feed (live builds read nothing else),
+  // otherwise the local data.
   const getVenueHours = useCallback(
     (venueId?: string) =>
       venueId
         ? feedVenueHoursById.get(venueId) ||
-          repository.getVenueById(venueId)?.operatingHours ||
+          (isSupabaseDataSource ? undefined : repository.getVenueById(venueId)?.operatingHours) ||
           undefined
         : undefined,
-    [feedVenueHoursById, repository],
+    [feedVenueHoursById, isSupabaseDataSource, repository],
   );
   const deferredDiscoverChipIds = useDeferredValue(activeDiscoverChipIds);
   const deferredDiscoverChipSet = useMemo(
@@ -1445,6 +1524,7 @@ export function DiscoverHomeScreen() {
   // Without a GPS fix or a manual pick the coordinate is only the built-in default,
   // so the header asks the user to choose an area instead of asserting one.
   const needsDiscoverAreaChoice = isDiscoverLocationApproximate && !manualLocation;
+  const wheelCtaLabel = FEATURE_FLAGS.wheelPartyEnabled ? "Pick with friends" : "Spin the wheel";
   const areaBuildings = useMemo(
     () => getNearestBuildings(discoverLocationLatitude, discoverLocationLongitude, 3, 14),
     [discoverLocationLatitude, discoverLocationLongitude],
@@ -1541,6 +1621,7 @@ export function DiscoverHomeScreen() {
       if (discoveryFeedResult.status === "fulfilled") {
         setSupabaseDiscoveryFeed(discoveryFeedResult.value ?? null);
       } else {
+        reportError(discoveryFeedResult.reason, { surface: "discover_home_feed" });
         setDiscoverLoadError(true);
       }
       setIsSupabaseDiscoveryFeedLoading(false);
@@ -1651,7 +1732,11 @@ export function DiscoverHomeScreen() {
         ? activeDiscoverChipIds.filter((value) => value !== chipId)
         : [...activeDiscoverChipIds, chipId];
 
-      trackAnalyticsEvent("discover_chip_tapped", { chip: chipId, selected: !wasActive });
+      trackAnalyticsEvent("discover_chip_tapped", {
+        surface: "home",
+        chip: chipId,
+        selected: !wasActive,
+      });
 
       if (!wasActive && chipId !== "dietary") {
         scheduleIdleWork(
@@ -1741,12 +1826,13 @@ export function DiscoverHomeScreen() {
       (bite) => !areaVenueIds.size || areaVenueIds.has(bite.venueId),
     );
   }, [areaVenueIds, isSupabaseDataSource, repository, supabaseDiscoverBites]);
+  const biteDishLookup = isSupabaseDataSource ? repositoryLookup : repository;
   const discoverBiteCollections = useMemo(
     () =>
-      getDiscoverBiteCollections(discoverBaseBites, repository, getVenueHours, {
+      getDiscoverBiteCollections(discoverBaseBites, biteDishLookup, getVenueHours, {
         preferBuildingId: currentPlaceId,
       }),
-    [currentPlaceId, discoverBaseBites, getVenueHours, repository],
+    [biteDishLookup, currentPlaceId, discoverBaseBites, getVenueHours],
   );
   const discoverDishById = useMemo(() => {
     const dishById = new Map<string, DishDetail>();
@@ -1829,13 +1915,49 @@ export function DiscoverHomeScreen() {
         : unfilteredLateNightCards,
     [filterDiscoverBites, isDiscoverFiltering, unfilteredLateNightCards],
   );
+  // Live builds read the names of saved and reviewed dishes in one batched call (at most 200).
+  const familiarDishIdsKey = [
+    ...new Set([...profile.favouriteDishIds, ...profile.reviewedDishIds]),
+  ].join("\u001f");
+  const [liveFamiliarDishNames, setLiveFamiliarDishNames] = useState<readonly string[]>([]);
+  useEffect(() => {
+    const dishIds = familiarDishIdsKey ? familiarDishIdsKey.split("\u001f").slice(0, 200) : [];
+    if (!isSupabaseDataSource || dishIds.length === 0) {
+      setLiveFamiliarDishNames([]);
+      return;
+    }
+    let isActive = true;
+    void getHungryService()
+      .discovery.getItemDetails({ dishIds, stallIds: [] })
+      .then((rows) => {
+        if (!isActive) return;
+        setLiveFamiliarDishNames(
+          rows.flatMap((row) => (row.dishId && row.name ? [row.name.toLowerCase()] : [])),
+        );
+      })
+      .catch((error) => {
+        // Only the order of Hawker classics depends on it.
+        reportError(error, { surface: "discover_home_familiar_dishes" });
+      });
+    return () => {
+      isActive = false;
+    };
+  }, [familiarDishIdsKey, isSupabaseDataSource]);
   const familiarDishNames = useMemo(
     () =>
-      [...profile.favouriteDishIds, ...profile.reviewedDishIds].flatMap((dishId) => {
-        const name = repositoryLookup.getDishById(dishId)?.name;
-        return name ? [name.toLowerCase()] : [];
-      }),
-    [profile.favouriteDishIds, profile.reviewedDishIds, repositoryLookup],
+      isSupabaseDataSource
+        ? liveFamiliarDishNames
+        : [...profile.favouriteDishIds, ...profile.reviewedDishIds].flatMap((dishId) => {
+            const name = repositoryLookup.getDishById(dishId)?.name;
+            return name ? [name.toLowerCase()] : [];
+          }),
+    [
+      isSupabaseDataSource,
+      liveFamiliarDishNames,
+      profile.favouriteDishIds,
+      profile.reviewedDishIds,
+      repositoryLookup,
+    ],
   );
   const foodOpenness = profile.tasteProfile?.foodOpenness;
   const unfilteredPopularFoodStyleItems = useMemo(
@@ -1987,11 +2109,14 @@ export function DiscoverHomeScreen() {
     [unfilteredAreaStallCards],
   );
   const unfilteredStallShowcaseCards = useMemo(() => {
+    // Live builds have one feed page, and every stall in it is already under "Stalls in", so
+    // "More from" would always be empty: it is not built there (HOME-X6).
+    if (isSupabaseDataSource) return [];
     const showcaseVenuePool = [...areaVenues, ...allDiscoverVenues].filter(
       (venue) => !listedStallIds.has(venue.id),
     );
     return buildStallShowcaseCardsFromVenues(showcaseVenuePool, repositoryLookup);
-  }, [allDiscoverVenues, areaVenues, listedStallIds, repositoryLookup]);
+  }, [allDiscoverVenues, areaVenues, isSupabaseDataSource, listedStallIds, repositoryLookup]);
   const stallShowcaseCards = useMemo(() => {
     const filteredCards = isDiscoverFiltering
       ? unfilteredStallShowcaseCards.filter(({ venue, heroDish, products }) =>
@@ -2010,6 +2135,48 @@ export function DiscoverHomeScreen() {
   // The live read failed and the saved cache is empty too: that is an error, not "0 places".
   const isFeedFallbackEmpty =
     Boolean(supabaseDiscoveryFeed?.isFallback) && supabaseFeedVenues.length === 0;
+  // A failed live read (or one only the saved cache answered) hands Home to the offline
+  // surface when the entry provides one; the saved cache is the mock-era synchronous copy.
+  const isLiveFeedUnavailable =
+    isSupabaseDataSource && (discoverLoadError || Boolean(supabaseDiscoveryFeed?.isFallback));
+  useEffect(() => {
+    if (isLiveFeedUnavailable) onLiveFeedUnavailable?.();
+  }, [isLiveFeedUnavailable, onLiveFeedUnavailable]);
+  // Content a diner can act on is on screen (not the first skeleton or an error).
+  const hasDiscoverContent = isSupabaseDataSource
+    ? !isSupabaseDiscoveryFeedLoading &&
+      supabaseDiscoveryFeed !== null &&
+      !isLiveFeedUnavailable &&
+      supabaseFeedVenues.length > 0
+    : true;
+  // "See all" opens QuickBites, which release-01 core-only builds do not register.
+  const canOpenDiscoverCollection = !FEATURE_FLAGS.release01CoreOnly;
+  // Distances measured from the built-in default point would be made up.
+  const trendingListBites = useMemo(
+    () =>
+      needsDiscoverAreaChoice
+        ? trendingCards.map((bite) => ({ ...bite, distanceMeters: undefined }))
+        : trendingCards,
+    [needsDiscoverAreaChoice, trendingCards],
+  );
+  const areaStallImpressionSentRef = useRef(false);
+  const areaStallCount = areaStallCards.length;
+  useEffect(() => {
+    if (
+      !isFocused ||
+      showDiscoverFilterRailSkeleton ||
+      areaStallCount === 0 ||
+      areaStallImpressionSentRef.current
+    ) {
+      return;
+    }
+    areaStallImpressionSentRef.current = true;
+    trackAnalyticsEvent("discover_rail_impression", {
+      surface: "home",
+      rail: "area_stalls",
+      count: areaStallCount,
+    });
+  }, [areaStallCount, isFocused, showDiscoverFilterRailSkeleton]);
   const discoverAreaCountLabel = isSupabaseDataSource
     ? getDiscoverAreaCountLabel({
         isFallback: Boolean(supabaseDiscoveryFeed?.isFallback),
@@ -2142,7 +2309,7 @@ export function DiscoverHomeScreen() {
 
   const openBiteDish = useCallback(
     (bite: Bite, buttonId: string) => {
-      navigation.navigate("DishDetail", { dishId: bite.dishId });
+      navigation.navigate("DishDetail", { dishId: bite.dishId, source: "home" });
       scheduleIdleWork(
         () => {
           recordTasteInteraction({
@@ -2161,7 +2328,7 @@ export function DiscoverHomeScreen() {
 
   const openDiscoverCollection = useCallback(
     (collection: keyof typeof discoverBiteCollections) => {
-      trackAnalyticsEvent("discover_see_all_tapped", { collection });
+      trackAnalyticsEvent("discover_see_all_tapped", { surface: "home", collection });
       // Same area as the rail the viewer was looking at, not a fresh GPS read.
       navigation.navigate("QuickBites", {
         collection,
@@ -2266,8 +2433,10 @@ export function DiscoverHomeScreen() {
     ],
   );
   const discoverRailProps = {
+    canSeeAll: canOpenDiscoverCollection,
     isFiltering: isDiscoverFiltering,
     isLoading: showDiscoverFilterRailSkeleton,
+    isVisible: isFocused,
     layout: discoverRailLayout,
     onOpenBite: openBiteDish,
     onPrefetchBite: prefetchBiteCard,
@@ -2308,7 +2477,11 @@ export function DiscoverHomeScreen() {
           >
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={`You are at ${discoverHeaderLabel}. Search for another area`}
+              accessibilityLabel={
+                needsDiscoverAreaChoice
+                  ? `You are at ${discoverHeaderLabel}. Location is off, choose your area`
+                  : `You are at ${discoverHeaderLabel}. Search for another area`
+              }
               accessibilityHint="Search for an area, mall, hawker centre or food court"
               hitSlop={DISCOVER_TEXT_LINK_HIT_SLOP}
               onPress={handleChangeArea}
@@ -2320,6 +2493,13 @@ export function DiscoverHomeScreen() {
               <AppText variant="h2" style={{ color: themeTints.text }} numberOfLines={1}>
                 {discoverHeaderLabel}
               </AppText>
+              {/* Owner decision (2026-10-23): the header always names an area. Without a GPS fix
+                  or a pick that area is only the default point, so say so (HOME-17). */}
+              {needsDiscoverAreaChoice ? (
+                <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
+                  Location is off. Tap to choose your area.
+                </AppText>
+              ) : null}
             </Pressable>
             {/* Every signed-in diner can switch Discover to the map (when the map ships). */}
             {FEATURE_FLAGS.mapEnabled ? (
@@ -2448,6 +2628,19 @@ export function DiscoverHomeScreen() {
           }
         />
 
+        {/* welcome_back_v2: mounted only once Home shows content, and exposed only while the
+            tab is on screen (tab warm-up mounts Home off-screen). */}
+        {hasDiscoverContent ? (
+          <WelcomeBackCard
+            horizontalPadding={0}
+            visible={isFocused}
+            onOpenDish={(dishId) =>
+              navigation.navigate("DishDetail", { dishId, source: "welcome_back" })
+            }
+            onOpenSaved={() => navigation.navigate("Favourites")}
+          />
+        ) : null}
+
         {inMallMode ? <DiscoverModeTabs value={discoverMode} onChange={setDiscoverMode} /> : null}
 
         {/* Popular food style buttons */}
@@ -2548,59 +2741,66 @@ export function DiscoverHomeScreen() {
             </View>
           </Pressable>
 
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Pick with friends"
-            accessibilityHint="Opens the Hungry Wheel to spin together with your group"
-            onPressIn={() => preloadRoute(navigation, "WheelStack", { screen: "WheelHome" })}
-            onPress={() => navigation.navigate("WheelStack", { screen: "WheelHome" })}
-            style={({ pressed }) => [
-              {
-                alignItems: "center",
-                backgroundColor: "transparent",
-                borderColor: palette.border,
-                borderRadius: componentRadii.button,
-                borderWidth: 1,
-                flexDirection: "row",
-                gap: decisionCardInnerGap,
-                minHeight: 56,
-                justifyContent: "center",
-                opacity: pressed ? 0.92 : 1,
-                padding: decisionCardPadding,
-                width: decisionCardWidth,
-              },
-            ]}
-          >
-            <View
-              style={{
-                alignItems: "center",
-                backgroundColor: palette.bgSoft,
-                borderRadius: radii.pill,
-                height: decisionCardIconSize,
-                justifyContent: "center",
-                width: decisionCardIconSize,
-              }}
+          {/* WheelStack is registered only when the wheel ships; party mode is non-production. */}
+          {FEATURE_FLAGS.hungryWheelEnabled ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={wheelCtaLabel}
+              accessibilityHint={
+                FEATURE_FLAGS.wheelPartyEnabled
+                  ? "Opens the Hungry Wheel to spin together with your group"
+                  : "Opens the Hungry Wheel to pick between a few options"
+              }
+              onPressIn={() => preloadRoute(navigation, "WheelStack", { screen: "WheelHome" })}
+              onPress={() => navigation.navigate("WheelStack", { screen: "WheelHome" })}
+              style={({ pressed }) => [
+                {
+                  alignItems: "center",
+                  backgroundColor: "transparent",
+                  borderColor: palette.border,
+                  borderRadius: componentRadii.button,
+                  borderWidth: 1,
+                  flexDirection: "row",
+                  gap: decisionCardInnerGap,
+                  minHeight: 56,
+                  justifyContent: "center",
+                  opacity: pressed ? 0.92 : 1,
+                  padding: decisionCardPadding,
+                  width: decisionCardWidth,
+                },
+              ]}
             >
-              <Users color={themeTints.text} size={decisionCardIconGraphicSize} />
-            </View>
-            <AppText
-              variant="bodyBold"
-              numberOfLines={2}
-              style={{
-                color: themeTints.text,
-                includeFontPadding: false,
-                flexShrink: 1,
-                fontSize: decisionCardLabelFontSize,
-                lineHeight: decisionCardLabelLineHeight,
-                maxWidth: decisionCardLabelMaxWidth,
-                minWidth: 0,
-                textAlign: "center",
-                textAlignVertical: "center",
-              }}
-            >
-              Pick with friends
-            </AppText>
-          </Pressable>
+              <View
+                style={{
+                  alignItems: "center",
+                  backgroundColor: palette.bgSoft,
+                  borderRadius: radii.pill,
+                  height: decisionCardIconSize,
+                  justifyContent: "center",
+                  width: decisionCardIconSize,
+                }}
+              >
+                <Users color={themeTints.text} size={decisionCardIconGraphicSize} />
+              </View>
+              <AppText
+                variant="bodyBold"
+                numberOfLines={2}
+                style={{
+                  color: themeTints.text,
+                  includeFontPadding: false,
+                  flexShrink: 1,
+                  fontSize: decisionCardLabelFontSize,
+                  lineHeight: decisionCardLabelLineHeight,
+                  maxWidth: decisionCardLabelMaxWidth,
+                  minWidth: 0,
+                  textAlign: "center",
+                  textAlignVertical: "center",
+                }}
+              >
+                {wheelCtaLabel}
+              </AppText>
+            </Pressable>
+          ) : null}
         </View>
 
         {inMallMode && currentPlace ? (
@@ -2649,10 +2849,23 @@ export function DiscoverHomeScreen() {
           <>
             <TrendingList
               title={`Trending ${trendingAreaPhrase}`}
-              bites={trendingCards}
-              onOpen={(bite) => openBiteDish(bite, "trending_bite_card")}
+              bites={trendingListBites}
+              onOpen={(bite) => {
+                trackAnalyticsEvent("discover_card_opened", {
+                  surface: "home",
+                  rail: "trending",
+                  kind: "dish",
+                  position: Math.max(
+                    0,
+                    trendingListBites.findIndex((item) => item.id === bite.id),
+                  ),
+                });
+                openBiteDish(bite, "trending_bite_card");
+              }}
               onPrefetch={(bite) => prefetchBiteCard(bite)}
-              onSeeAll={() => openDiscoverCollection("trending")}
+              onSeeAll={
+                canOpenDiscoverCollection ? () => openDiscoverCollection("trending") : undefined
+              }
             />
             {/* The full lists stay one tap away now that the two big tiles are gone. */}
             <View style={{ flexDirection: "row", gap: discoverContentGap }}>
@@ -2891,6 +3104,12 @@ export function DiscoverHomeScreen() {
                             }
                           }}
                           onPress={() => {
+                            trackAnalyticsEvent("discover_card_opened", {
+                              surface: "home",
+                              rail: "area_stalls",
+                              kind: "stall",
+                              position: stallIndex,
+                            });
                             if (isUserMode) {
                               navigation.navigate("StallDetail", { venueId: venue.id });
                               return;

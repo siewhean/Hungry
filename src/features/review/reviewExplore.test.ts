@@ -3,7 +3,19 @@ import test from "node:test";
 
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import type { DishDetail, Review } from "@/types/domain";
-import { buildReviewExploreChips, filterReviewExplore, reviewsWithPhotos } from "./reviewExplore";
+import {
+  buildReviewExploreChips,
+  filterReviewExplore,
+  resolveActiveReviewChip,
+  reviewFoodLabel,
+  reviewTileHoldAction,
+  reviewsWithPhotos,
+  clearDeletedReviewsForSession,
+  isReviewDeletedForSession,
+  markReviewDeletedForSession,
+  visibleGridReviews,
+  withSelectedReviewChip,
+} from "./reviewExplore";
 import type { ReviewFeedItem } from "./reviewFeed";
 
 const review = (id: string, photos: string[]): Review => ({
@@ -76,4 +88,93 @@ test("filters by taste, food and area", () => {
   assert.deepEqual(pick("For your taste"), ["1"]);
   assert.deepEqual(pick("Laksa"), ["1", "2"]);
   assert.deepEqual(pick("Maxwell"), ["1", "3"]);
+});
+
+test("a picked food that drops out of the top six stays selected; a lost chip falls back to All (REV-8)", () => {
+  const chips = buildReviewExploreChips(items, {
+    userVector: spicyLover,
+    areaOf: (i) => (i as unknown as { area: string }).area,
+  });
+  assert.equal(chips[0]?.id, "taste", "taste is first for a diner with a palette");
+
+  // "food:Satay" is not on the page any more: it is kept, not swapped for "For your taste".
+  const kept = withSelectedReviewChip(chips, "food:Satay");
+  assert.equal(resolveActiveReviewChip(kept, "food:Satay")?.id, "food:Satay");
+  assert.equal(kept.length, chips.length + 1);
+  assert.equal(withSelectedReviewChip(chips, "food:Laksa").length, chips.length);
+
+  // An id that cannot be rebuilt falls back to All, never to the taste chip.
+  assert.equal(resolveActiveReviewChip(chips, "gone")?.id, "all");
+});
+
+test("the grid leaves out session-hidden reviews and the viewer's own moderated ones (REV-X5)", () => {
+  const own = item("own", "Laksa", "Maxwell");
+  own.review = { ...own.review, authorId: "me", moderationState: "hidden" };
+  const ownLive = item("own-live", "Laksa", "Maxwell");
+  ownLive.review = { ...ownLive.review, authorId: "me" };
+  const reported = item("reported", "Laksa", "Maxwell");
+  const visible = visibleGridReviews([own, ownLive, reported, ...items], {
+    viewerId: "me",
+    isHidden: (i) => i.review.id === "reported",
+  });
+  assert.deepEqual(
+    visible.map((i) => i.review.id),
+    ["own-live", ...items.map((i) => i.review.id)],
+  );
+});
+
+test("a review deleted on another screen leaves the grid this session (REV-V1)", () => {
+  clearDeletedReviewsForSession();
+  const deleted = item("deleted", "Laksa", "Maxwell");
+  const kept = item("kept", "Laksa", "Maxwell");
+  const options = { isHidden: () => false };
+  assert.equal(visibleGridReviews([deleted, kept], options).length, 2);
+  markReviewDeletedForSession("deleted");
+  assert.equal(isReviewDeletedForSession("deleted"), true);
+  assert.deepEqual(
+    visibleGridReviews([deleted, kept], options).map((i) => i.review.id),
+    ["kept"],
+  );
+  clearDeletedReviewsForSession();
+});
+
+test("holding a tile manages your own review only when it can be edited, and reports others'", () => {
+  assert.equal(reviewTileHoldAction({ isOwn: false, canEditOwnReviews: true }), "report");
+  assert.equal(reviewTileHoldAction({ isOwn: true, canEditOwnReviews: true }), "manage");
+  assert.equal(reviewTileHoldAction({ isOwn: true, canEditOwnReviews: false }), null);
+});
+
+test("chips and filters without a palette, without a chip, and for unknown ids", () => {
+  const typed = {
+    ...item("5", "Mee Siam", ""),
+    dish: { id: "dish-5", foodTypeTag: " Noodles ", tasteVector: NEUTRAL_TASTE_VECTOR },
+  } as unknown as ReviewFeedItem;
+  assert.equal(reviewFoodLabel(typed), "Noodles", "the dish's food type wins over its name");
+  const noDish = { ...item("6", "Satay", "Amoy"), dish: undefined } as ReviewFeedItem;
+  const all = [...items, typed, noDish];
+  const chips = buildReviewExploreChips(all, { areaOf: () => undefined });
+  assert.equal(chips[0]?.id, "all", "no taste chip without a palette");
+  assert.equal(
+    chips.some((chip) => chip.kind === "area"),
+    false,
+    "no area chips without areas",
+  );
+  assert.equal(filterReviewExplore(all, undefined, { areaOf }).length, all.length);
+  const taste = { id: "taste", kind: "taste", label: "For your taste" } as const;
+  assert.equal(
+    filterReviewExplore(all, taste, { areaOf }).length,
+    all.length,
+    "no palette, no filter",
+  );
+  assert.equal(
+    filterReviewExplore(all, taste, { userVector: spicyLover, areaOf }).some(
+      (entry) => entry.dish === undefined,
+    ),
+    false,
+    "a review without a dish cannot match a palette",
+  );
+  assert.equal(withSelectedReviewChip(chips, "taste").length, chips.length);
+  assert.equal(withSelectedReviewChip(chips, "area:").length, chips.length);
+  assert.equal(withSelectedReviewChip(chips, "area:Bugis:East").at(-1)?.label, "Bugis:East");
+  assert.equal(resolveActiveReviewChip([], "all"), undefined);
 });

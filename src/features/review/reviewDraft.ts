@@ -23,6 +23,24 @@ export function reviewDraftHasContent(draft: ReviewDraft): boolean {
   );
 }
 
+export type ReviewRequiredField = "dish" | "photo" | "rating";
+
+/**
+ * The first required field still missing, in the order the editor shows them (dish, photo,
+ * rating), with the sentence shown under Publish; null when the review can be published.
+ */
+export function firstMissingReviewField(
+  draft: Pick<ReviewDraft, "rating" | "photos">,
+  hasDish: boolean,
+): { field: ReviewRequiredField; message: string } | null {
+  if (!hasDish) return { field: "dish", message: "Choose a dish to review." };
+  if (draft.photos.length === 0) {
+    return { field: "photo", message: "Add a photo of the dish to publish." };
+  }
+  if (!draft.rating) return { field: "rating", message: "Add a star rating to publish." };
+  return null;
+}
+
 /** Error code when a review saved but its photos did not attach (retry attaches them). */
 export const REVIEW_PHOTOS_NOT_ATTACHED = "review_photos_not_attached";
 

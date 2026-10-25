@@ -18,11 +18,13 @@ test("Discover map keeps left-edge swipe back enabled", () => {
     /<RootStack\.Screen[\s\S]*getComponent=\{loadHomeMapScreen\}[\s\S]*name="DiscoverMap"[\s\S]*options=\{\{ gestureEnabled: true \}\}/,
   );
   assert.match(homeMap, /const edgeBackPanResponder = useMemo/);
-  assert.match(homeMap, /gestureState\.dx > 12/);
-  assert.match(homeMap, /Math\.abs\(gestureState\.dx\) > Math\.abs\(gestureState\.dy\) \* 1\.5/);
+  // The capture rule (edge zone, above the sheet, mostly horizontal) is unit-tested in
+  // src/features/discovery/mapEdgeBack.test.ts.
+  assert.match(homeMap, /isMapEdgeBackSwipe\(gestureState, \{/);
+  assert.match(homeMap, /sheetHeight: sheetTargetHeightRef\.current/);
   assert.match(homeMap, /gestureState\.dx > 64 \|\| gestureState\.vx > 0\.35/);
-  assert.match(homeMap, /navigation\.canGoBack\(\)/);
-  assert.match(homeMap, /navigation\.goBack\(\)/);
+  // The swipe lands where the List toggle does.
+  assert.match(homeMap, /gestureState\.vx > 0\.35\) \{\s*backToList\(\);/);
   assert.match(homeMap, /\{\.\.\.edgeBackPanResponder\.panHandlers\}/);
   // No overlay strip: the root captures only a horizontal move that starts at the edge,
   // so taps on the map, legend and cards are never swallowed.
@@ -30,6 +32,6 @@ test("Discover map keeps left-edge swipe back enabled", () => {
   assert.match(homeMap, /const edgeBackZoneWidth = Math\.max\(28, insets\.left \+ 24\)/);
   assert.match(
     homeMap,
-    /onMoveShouldSetPanResponderCapture:[\s\S]*gestureState\.x0 <= edgeBackZoneWidth/,
+    /onMoveShouldSetPanResponderCapture:[\s\S]*edgeZoneWidth: edgeBackZoneWidth/,
   );
 });

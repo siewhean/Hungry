@@ -16,6 +16,7 @@ import {
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
+import { reportError } from "@/lib/monitoring/reportError";
 import { useMerchantDialog } from "@/features/merchant/useMerchantDialog";
 import type { OCRDishDraft } from "@/types/domain";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
@@ -48,7 +49,7 @@ export function OCRDraftScreen() {
       const data = await getHungryService().merchant.getOCRDrafts(activeOutlet.id);
       setDrafts(data.filter((draft) => draft.status === "pending"));
     } catch (e) {
-      console.error(e);
+      reportError(e, { screen: "OCRDraft", action: "load_drafts" });
       setError(e instanceof Error ? e.message : "Failed to load photo drafts.");
     } finally {
       setIsLoading(false);
@@ -92,6 +93,7 @@ export function OCRDraftScreen() {
       }
       return true;
     } catch (e) {
+      reportError(e, { screen: "OCRDraft", action: "accept_draft" });
       if (!options.silent) showAlert("Error", "Failed to accept draft.");
       return false;
     } finally {
@@ -109,15 +111,16 @@ export function OCRDraftScreen() {
       await getHungryService().merchant.rejectOCRDraft(draftId);
       setDrafts((prev) => prev.filter((d) => d.id !== draftId));
     } catch (e) {
+      reportError(e, { screen: "OCRDraft", action: "reject_draft" });
       showAlert("Error", "Failed to reject draft.");
     }
   };
 
   const handleBatchAccept = async () => {
-    showAlert("Accept All", `Are you sure you want to add ${drafts.length} dishes to your menu?`, [
+    showAlert("Accept all", `Are you sure you want to add ${drafts.length} dishes to your menu?`, [
       { text: "Cancel", style: "cancel" },
       {
-        text: "Accept All",
+        text: "Accept all",
         onPress: async () => {
           const draftIds = drafts
             .map((draft) => draft.id)
@@ -129,8 +132,9 @@ export function OCRDraftScreen() {
             const result = await getHungryService().merchant.acceptOCRDrafts(draftIds);
             acceptedIds = result.acceptedIds;
             failed = drafts.length - acceptedIds.length;
-          } catch {
+          } catch (e) {
             // Every draft stays listed so the merchant can try again.
+            reportError(e, { screen: "OCRDraft", action: "accept_all_drafts" });
           } finally {
             draftIds.forEach((id) => busyDraftIds.current.delete(id));
           }
@@ -161,7 +165,7 @@ export function OCRDraftScreen() {
           }}
         >
           <AppText variant="bodyBold" style={{ color: palette.info }}>
-            Review Extracted Dishes
+            Review extracted dishes
           </AppText>
           <AppText variant="bodySmall" style={{ color: palette.info, marginTop: 4 }}>
             Dishes found in your menu photos are listed here. Review them before adding them to your
@@ -188,7 +192,7 @@ export function OCRDraftScreen() {
 
         {drafts.length > 0 && (
           <Button
-            label={`Accept All (${drafts.length})`}
+            label={`Accept all (${drafts.length})`}
             variant="secondary"
             onPress={handleBatchAccept}
           />
@@ -234,7 +238,7 @@ export function OCRDraftScreen() {
                   ) : null}
                 </View>
                 <StatusChip
-                  label={`${Math.round(draft.confidence * 100)}% Match`}
+                  label={`${Math.round(draft.confidence * 100)}% match`}
                   tone={draft.confidence > 0.8 ? "success" : "warning"}
                 />
               </View>

@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 
+import { reportError } from "@/lib/monitoring/reportError";
+
 /**
  * Runs `load` on mount and whenever `retry` is called, and reports whether the last run failed, so
  * a list can show an error with Retry instead of an empty state. `load` must be stable
@@ -13,7 +15,7 @@ export function useRetryableLoad(load: () => Promise<unknown>, label: string) {
     let isActive = true;
     setFailed(false);
     load().catch((error) => {
-      console.error(`Failed to load ${label}:`, error);
+      reportError(error, { action: "load", label });
       if (isActive) setFailed(true);
     });
     return () => {

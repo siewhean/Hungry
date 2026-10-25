@@ -40,7 +40,7 @@ test("push alerts are opt-in and tapped alerts open through deep link rules", ()
   assert.equal(DEFAULT_PUSH_PREFERENCES.weeklyPicks, true);
   const alerts = read("src/components/settings/StallAlertsSettings.tsx");
   assert.match(alerts, /label="Weekly picks"/);
-  assert.match(alerts, /isEnabled=\{preferences\.weeklyPicks && !permissionDenied\}/);
+  assert.match(alerts, /isEnabled=\{preferences\.weeklyPicks\}/);
   assert.match(
     read("src/lib/services/supabase/supabaseService.ts"),
     /weekly_picks: next\.weeklyPicks/,
@@ -155,5 +155,5 @@ test("merchant low-rating push: reviews trigger enqueues, worker rechecks, setti
   assert.match(worker, /!isLowRating && isQuietHour\(/);
 
   const push = read("src/lib/notifications/push.ts");
-  assert.match(push, /if \(!existing\.granted && !askPermission\) return false;/);
+  assert.match(push, /resolveNotificationPermission\(\{\s*askPermission,/);
 });

@@ -46,10 +46,10 @@ test("H2: dish options use a Dialog (all buttons on Android) and the editor can 
   const menu = read("src/app/screens/merchant/MerchantMenuScreen.tsx");
   assert.doesNotMatch(menu, /Alert\.alert\("Dish Options"/);
   assert.match(menu, /<Dialog[\s\S]*buttons=\{dishDialogButtons\}/);
-  assert.match(menu, /text: "Delete Dish"/);
+  assert.match(menu, /text: "Remove from menu"/);
   const editor = read("src/app/screens/merchant/DishEditorScreen.tsx");
   assert.match(editor, /merchant\.deleteDish\(activeOutlet\.id, dishId\)/);
-  assert.match(editor, /label="Delete Dish"/);
+  assert.match(editor, /label="Remove from menu"/);
 });
 
 test("H4/H5: editors open fresh and Back follows history in the merchant tabs", () => {

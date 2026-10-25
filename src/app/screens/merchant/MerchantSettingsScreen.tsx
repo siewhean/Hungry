@@ -14,7 +14,12 @@ import { registerForStallAlerts } from "@/lib/notifications/push";
 import type { MerchantNotification, MerchantWeeklySummary } from "@/types/domain";
 import { WEB_LINKS } from "@/constants/links";
 import { isVerificationCurrent } from "@/features/merchant/merchantGuards";
-import { getVerificationStatusInfo } from "@/features/merchant/merchantReadiness";
+import {
+  formatAverageRating,
+  formatReviewCountLabel,
+  getVerificationStatusInfo,
+} from "@/features/merchant/merchantReadiness";
+import { reportError } from "@/lib/monitoring/reportError";
 import { useMerchantDialog } from "@/features/merchant/useMerchantDialog";
 
 export function MerchantSettingsScreen() {
@@ -63,7 +68,7 @@ export function MerchantSettingsScreen() {
         .then(setIsDeviceRegistered)
         .catch(() => setIsDeviceRegistered(false));
     } catch (e) {
-      console.error(e);
+      reportError(e, { screen: "MerchantSettings", action: "load_settings" });
       setError(e instanceof Error ? e.message : "Failed to load merchant settings.");
     } finally {
       setIsLoading(false);
@@ -134,7 +139,8 @@ export function MerchantSettingsScreen() {
         lowRatingAlerts: enabled,
       });
       setLowRatingAlerts(enabled);
-    } catch {
+    } catch (e) {
+      reportError(e, { screen: "MerchantSettings", action: "update_alerts" });
       showAlert("Error", "Couldn't update low-rating alerts. Please try again.");
     } finally {
       setIsSavingAlerts(false);
@@ -159,7 +165,7 @@ export function MerchantSettingsScreen() {
     <Screen title="Settings" contentContainerStyle={{ paddingBottom: spacing[6] }}>
       <View style={{ gap: spacing[5], width: "100%" }}>
         {/* Account Info */}
-        <SettingsSection title="Business Account">
+        <SettingsSection title="Business account">
           <View style={{ padding: spacing[3] }}>
             <AppText variant="bodyBold">{account?.displayName}</AppText>
             <AppText variant="body" tone="muted" style={{ marginTop: 2 }}>
@@ -214,11 +220,14 @@ export function MerchantSettingsScreen() {
             {weeklySummary ? (
               <View style={{ gap: spacing[1] }}>
                 <AppText variant="bodyBold">
-                  {weeklySummary.totalViews.toLocaleString()} total views this week
+                  {weeklySummary.totalViews.toLocaleString()} views in the last 7 days
                 </AppText>
                 <AppText variant="bodySmall" tone="muted">
-                  {weeklySummary.newReviews} reviews · {weeklySummary.unrepliedReviews} unreplied ·
-                  Average rating {weeklySummary.averageRating.toFixed(1)}
+                  {formatReviewCountLabel(weeklySummary.newReviews, "in the last 7 days", {
+                    zeroLabel: "No reviews in the last 7 days",
+                  })}{" "}
+                  · {weeklySummary.unrepliedReviews} unreplied · Avg rating{" "}
+                  {formatAverageRating(weeklySummary.averageRating, weeklySummary.newReviews)}
                 </AppText>
               </View>
             ) : (
@@ -240,7 +249,7 @@ export function MerchantSettingsScreen() {
         {/* Links & Legal */}
         <SettingsSection title="Support">
           <SettingsRow
-            label="Verification Status"
+            label="Verification status"
             value={verificationInfo.label}
             description={verificationInfo.nextStep || undefined}
             icon={<Shield size={20} color={palette.textSecondary} />}

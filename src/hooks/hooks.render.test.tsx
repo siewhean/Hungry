@@ -58,7 +58,6 @@ test("useRetryableLoad flags a failed load and clears the flag when retry succee
     };
     const { box, view } = await renderHook(() => useRetryableLoad(load, "lists"));
     assert.equal(box.current.failed, true);
-    assert.match(String(logged[0][0]), /Failed to load lists/);
 
     shouldFail = false;
     box.current.retry();

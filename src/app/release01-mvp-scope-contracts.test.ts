@@ -58,12 +58,12 @@ test("R01-WRITE-01: favourite writes resolve only after the authenticated write 
 
   assert.match(
     store,
-    /toggleFavourite: \(dish: FavouriteDishInput\) => Promise<FavouriteToggleResult>/,
+    /toggleFavourite: \(\s*dish: FavouriteDishInput,\s*options\?: \{ surface\?: string \},\s*\) => Promise<FavouriteToggleResult>/,
   );
-  assert.match(store, /toggleFavourite: async \(dish\) => \{/);
+  assert.match(store, /toggleFavourite: async \(dish, options\) => \{/);
   assert.match(
     store,
-    /const saved = await getHungryService\(\)\.profile\.toggleFavourite\(dishId, ownerUserId\);\s*if \(!isStillOwner\(\)\) return staleFavouriteResult\(\);[\s\S]*?return \{ status: saved \? "saved" : "removed" \};/,
+    /const saved = await getHungryService\(\)\.profile\.setFavourite\(\s*dishId,\s*!wasFavourite,\s*ownerUserId,\s*\);\s*if \(!isStillOwner\(\)\) return staleFavouriteResult\(\);[\s\S]*?return \{ status: saved \? "saved" : "removed" \};/,
   );
   assert.match(
     store,
@@ -83,7 +83,7 @@ test("R01-WRITE-01: favourite results are dropped when the account changes mid-w
   );
   assert.match(
     supabase,
-    /async toggleFavourite\(dishId: string, expectedUserId\?: string\)[\s\S]*?if \(expectedUserId && userId !== expectedUserId\) \{\s*throw/,
+    /async setFavourite\(dishId: string, saved: boolean, expectedUserId\?: string\)[\s\S]*?if \(expectedUserId && userId !== expectedUserId\) \{\s*throw/,
   );
 });
 
@@ -95,7 +95,7 @@ test("R01-WRITE-01: favourite toasts follow the write result, never an optimisti
   assert.match(catalogDetail, /\{isDish && FEATURE_FLAGS\.favouritesEnabled \? \(/);
   assert.match(
     catalogDetail,
-    /const result = await toggleFavourite\(\{ id: dish\.id, venueId: dish\.venueId \}\);[\s\S]*?result\.status === "failed"[\s\S]*?tone: "error"/,
+    /const result = await toggleFavourite\(\s*\{ id: dish\.id, venueId: dish\.venueId \},\s*\{ surface: "catalog_detail" \},?\s*\);[\s\S]*?result\.status === "failed"[\s\S]*?tone: "error"/,
   );
 
   assert.match(
@@ -121,12 +121,8 @@ test("release-reachable screens hide controls for cut features behind their flag
   const search = read("src/app/screens/search/DishSearchScreen.tsx");
   const dishDetail = read("src/app/screens/detail/DishDetailScreenV2.tsx");
 
-  // Follows and follow requests outlive the archived social feed.
-  assert.match(settings, /const showSocialPrivacySettings = true;/);
-  assert.match(
-    settings,
-    /\{showSocialPrivacySettings \? \(\s*<SettingsRow\s+label="Profile visibility"/,
-  );
+  // Follows and follow requests outlive the archived social feed, so visibility always shows.
+  assert.match(settings, /\{isAuthenticated \? \(\s*<SettingsRow\s+label="Profile visibility"/);
   // Unwired preferences were removed outright (see mvp-source-of-truth-contracts).
   for (const label of [
     "Show location badge",
@@ -137,14 +133,15 @@ test("release-reachable screens hide controls for cut features behind their flag
   ]) {
     assert.doesNotMatch(settings, new RegExp(`label="${label}"`));
   }
+  // Left-handed mode only moves the merchant menu's add button, so only merchants see it.
   assert.match(
     settings,
-    /onToggle=\{handleDeviceToggle\("left_handed_mode", setLeftHandedMode\)\}\s*isLast\s/,
+    /\{hasMerchantAccount \? \(\s*<SettingsRow[\s\S]*?label="Left-handed mode"/,
   );
 
   assert.match(
     notFound,
-    /label=\{FEATURE_FLAGS\.socialFeedEnabled \? "Back to Feed" : "Back to Discover"\}/,
+    /label=\{FEATURE_FLAGS\.socialFeedEnabled \? "Back to Feed" : "Back to Home"\}/,
   );
 
   // Search home has no local suggestion card (the paged catalog owns results).

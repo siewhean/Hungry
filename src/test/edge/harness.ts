@@ -77,9 +77,11 @@ export class FakeSupabase {
         },
       );
     return {
-      rpc: async (name: string, args: Record<string, unknown> = {}) => {
+      rpc: (name: string, args: Record<string, unknown> = {}) => {
         fake.rpcCalls.push({ name, args });
-        return orDefault(await fake.rpc[name]?.(args));
+        const result = (async () => orDefault(await fake.rpc[name]?.(args)))();
+        // supabase-js lets a set-returning rpc be paged with `.range(from, to)`.
+        return Object.assign(result, { range: () => result });
       },
       from: (table: string) => {
         const call: QueryCall = { table, ops: [] };

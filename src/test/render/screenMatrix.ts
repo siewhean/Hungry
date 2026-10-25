@@ -195,6 +195,8 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "DiscoverEntryScreen",
     file: "src/app/screens/discover/DiscoverEntryScreen.tsx",
     scenario: "user",
+    // Mock mode renders DiscoverHomeScreen; the Supabase branch (live feed, offline hand-off)
+    // is covered in src/app/screens/discover/DiscoverEntryScreen.render.test.tsx.
     expect: /Choose where you are|You are at/,
   },
   {
@@ -271,27 +273,27 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "BusinessProfileEditorScreen",
     file: "src/app/screens/merchant/BusinessProfileEditorScreen.tsx",
     scenario: "merchant",
-    expect: /Business Profile/,
+    expect: /Business profile/,
     known: "BACK_HANDLER",
   },
   {
     name: "CustomerInboxScreen",
     file: "src/app/screens/merchant/CustomerInboxScreen.tsx",
     scenario: "merchant",
-    expect: /Customer Inbox/,
+    expect: /Customer inbox/,
   },
   {
     name: "DishEditorScreen",
     file: "src/app/screens/merchant/DishEditorScreen.tsx",
     scenario: "merchant",
-    expect: /Add Dish/,
+    expect: /Add dish/,
     known: "BACK_HANDLER",
   },
   {
     name: "FeaturedVisitorsScreen",
     file: "src/app/screens/merchant/FeaturedVisitorsScreen.tsx",
     scenario: "merchant",
-    expect: /Featured Visitors/,
+    expect: /Featured visitors/,
   },
   {
     name: "HomeBasedVerificationScreen",
@@ -321,7 +323,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "MerchantProfileScreen",
     file: "src/app/screens/merchant/MerchantProfileScreen.tsx",
     scenario: "merchant",
-    expect: /Stall Profile/,
+    expect: /Stall profile/,
   },
   {
     name: "MerchantSettingsScreen",
@@ -339,7 +341,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "PromotionBuilderScreen",
     file: "src/app/screens/merchant/PromotionBuilderScreen.tsx",
     scenario: "merchant",
-    expect: /New Promotion/,
+    expect: /New promotion/,
     known: "BACK_HANDLER",
   },
   {
@@ -483,7 +485,8 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "BlockedAndHiddenScreen",
     file: "src/app/screens/profile/BlockedAndHiddenScreen.tsx",
     scenario: "user",
-    expect: /Blocked and hidden/,
+    // Hidden posts belong to the archived social feed, so only blocks list while it is off.
+    expect: /Blocked people/,
   },
   {
     name: "ChangePasswordScreen",

@@ -143,6 +143,11 @@ export function getVerificationStatusInfo(
 export function getMerchantProfileGaps(
   outlet: MerchantOutlet,
   menu: Pick<MerchantDashboardSummary, "menuCount" | "dishesWithoutImages">,
+  /**
+   * False while the outlet comes from the cached account restored at launch: contact details
+   * are never persisted, so a missing phone/email then means "not loaded", not "not set".
+   */
+  options: { contactKnown?: boolean } = {},
 ): MerchantProfileGap[] {
   const gaps: MerchantProfileGap[] = [];
 
@@ -153,7 +158,8 @@ export function getMerchantProfileGaps(
     gaps.push({ id: "profile-image", label: "Profile image/logo" });
   if (!hasText(outlet.coverPhotoUrl)) gaps.push({ id: "cover-image", label: "Cover image" });
   if (!hasLocation(outlet)) gaps.push({ id: "location", label: "Location/address" });
-  if (!hasContact(outlet)) gaps.push({ id: "contact", label: "Contact information" });
+  if ((options.contactKnown ?? true) && !hasContact(outlet))
+    gaps.push({ id: "contact", label: "Contact information" });
   if (!hasText(outlet.operatingHours) && !hasWeeklyHours(outlet.openingSchedule))
     gaps.push({ id: "opening-hours", label: "Opening hours" });
   if (menu.menuCount === 0) gaps.push({ id: "menu-items", label: "Menu items" });
@@ -206,9 +212,16 @@ export function formatAverageRating(average: number, reviewCount: number): strin
   return reviewCount > 0 ? average.toFixed(1) : "–";
 }
 
-/** Subtext under the rating: "No reviews yet" or the count for the range. */
-export function formatReviewCountLabel(reviewCount: number, rangeLabel: string): string {
-  if (reviewCount <= 0) return "No reviews yet";
+/**
+ * Subtext under the rating: "No reviews yet" or the count for the range. Pass `zeroLabel` where
+ * the stall may have older reviews (a weekly summary next to an all-time unreplied count).
+ */
+export function formatReviewCountLabel(
+  reviewCount: number,
+  rangeLabel: string,
+  options: { zeroLabel?: string } = {},
+): string {
+  if (reviewCount <= 0) return options.zeroLabel ?? "No reviews yet";
   return `${reviewCount} ${reviewCount === 1 ? "review" : "reviews"} ${rangeLabel}`;
 }
 

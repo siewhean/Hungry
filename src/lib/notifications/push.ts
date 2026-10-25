@@ -14,6 +14,7 @@ import * as Notifications from "expo-notifications";
 
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { getHungryService } from "@/lib/services/serviceProvider";
+import { resolveNotificationPermission } from "./notificationPermission";
 
 export const STALL_UPDATES_CHANNEL_ID = "stall-updates";
 
@@ -40,12 +41,11 @@ export async function registerForStallAlerts({ askPermission = true } = {}): Pro
     });
   }
 
-  const existing = await Notifications.getPermissionsAsync();
-  if (!existing.granted && !askPermission) return false;
-  const status = existing.granted
-    ? existing.status
-    : (await Notifications.requestPermissionsAsync()).status;
-  trackAnalyticsEvent("notification_permission_result", { status });
+  const status = await resolveNotificationPermission({
+    askPermission,
+    getPermissions: () => Notifications.getPermissionsAsync(),
+    requestPermissions: () => Notifications.requestPermissionsAsync(),
+  });
   if (status !== "granted") return false;
 
   const projectId =

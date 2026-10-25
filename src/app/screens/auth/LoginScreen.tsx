@@ -8,7 +8,7 @@ import { AppText, Button, FeedErrorBoundary, InlineBanner, Input } from "@/compo
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { applySignedInProfile } from "@/features/auth/applySignedInProfile";
 import { trackAuthFailed, trackAuthScreenViewed } from "@/features/auth/authAnalytics";
-import { getAuthErrorCode, getAuthFailureMessage } from "@/features/auth/authErrors";
+import { getAuthErrorCode, isUnexpectedAuthError } from "@/features/auth/authErrors";
 import { reportError } from "@/lib/monitoring/reportError";
 import { validateEmail, validateRequired } from "@/features/auth/validation";
 import { getHungryService } from "@/lib/services/serviceProvider";
@@ -21,7 +21,7 @@ import { AuthProviderButton } from "./AuthProviderButton";
 import { AuthScreenShell } from "./AuthScreenShell";
 import { AUTH_EYE_BUTTON_STYLE } from "./authEyeButton";
 import { AUTH_COPY, getProviderErrorMessage, type AuthProvider } from "./authCopy";
-import { getAuthErrorLogContext } from "./authErrors";
+import { getAuthErrorLogContext, getLoginErrorMessage } from "./authErrors";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "Login">;
 type FormValues = { email: string; password: string };
@@ -48,7 +48,6 @@ export function LoginScreen({ navigation, route }: Props) {
   // Inline copy of the last server error, so it is not only a passing toast.
   const [formError, setFormError] = useState<string | null>(null);
   const [unconfirmedEmail, setUnconfirmedEmail] = useState<string | null>(null);
-  const [isResendingVerification, setIsResendingVerification] = useState(false);
 
   const {
     control,
@@ -64,26 +63,12 @@ export function LoginScreen({ navigation, route }: Props) {
     trackAuthScreenViewed("login");
   }, []);
 
-  const resendVerification = async () => {
+  // The code in the email already sent still works, so open the code screen with the
+  // address instead of sending (and spending) another email. Resend waits there.
+  const openEmailVerification = () => {
     const email = unconfirmedEmail ?? getValues("email");
-    if (!email || isResendingVerification) return;
-    setIsResendingVerification(true);
-    try {
-      await getHungryService().auth.resendVerificationEmail(email);
-      showToast({ message: AUTH_COPY.login.resendVerificationSentToast, tone: "success" });
-      navigation.navigate("EmailVerification", { email: email.trim().toLowerCase() });
-    } catch (err) {
-      trackAuthFailed("email_confirm", "email", err);
-      showToast({
-        message: getAuthFailureMessage(
-          err,
-          "Could not resend verification email. Please try again shortly.",
-        ),
-        tone: "error",
-      });
-    } finally {
-      setIsResendingVerification(false);
-    }
+    if (!email) return;
+    navigation.navigate("EmailVerification", { email: email.trim().toLowerCase() });
   };
 
   const handleLogin = handleSubmit(async (values) => {
@@ -109,13 +94,9 @@ export function LoginScreen({ navigation, route }: Props) {
       trackAuthFailed("sign_in", "email", err);
       // Diagnostics only: provider code/status, never the email or password.
       console.warn("[auth] Email sign-in failed", getAuthErrorLogContext(err));
+      if (isUnexpectedAuthError(err)) reportError(err, { flow: "sign_in", provider: "email" });
       const code = getAuthErrorCode(err);
-      const message =
-        code === "email_not_confirmed"
-          ? AUTH_COPY.login.emailNotConfirmedToast
-          : code === "invalid_credentials"
-            ? AUTH_COPY.login.invalidCredentialsToast
-            : getAuthFailureMessage(err, AUTH_COPY.login.genericErrorToast);
+      const message = getLoginErrorMessage(err);
       if (code === "email_not_confirmed") setUnconfirmedEmail(values.email);
       // The inline banner is the one announcement; a toast on top would read twice.
       setFormError(message);
@@ -177,9 +158,11 @@ export function LoginScreen({ navigation, route }: Props) {
         compact
         footer={
           <View
+            testID="login-footer"
             style={{
               alignItems: "center",
               flexDirection: "row",
+              flexWrap: "wrap",
               justifyContent: "center",
               marginTop: spacing[2],
             }}
@@ -343,14 +326,13 @@ export function LoginScreen({ navigation, route }: Props) {
               {unconfirmedEmail ? (
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel={AUTH_COPY.login.resendVerificationAction}
-                  accessibilityState={{ disabled: isResendingVerification }}
-                  disabled={isResendingVerification}
-                  onPress={() => void resendVerification()}
+                  accessibilityLabel={AUTH_COPY.login.verifyEmailAction}
+                  accessibilityHint="Opens the screen to type the code from the email"
+                  onPress={openEmailVerification}
                   style={{ justifyContent: "center", minHeight: 44 }}
                 >
                   <AppText variant="bodyBold" tone="accent">
-                    {AUTH_COPY.login.resendVerificationAction}
+                    {AUTH_COPY.login.verifyEmailAction}
                   </AppText>
                 </Pressable>
               ) : null}

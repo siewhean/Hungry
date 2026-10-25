@@ -278,10 +278,7 @@ test("H59: stalls save to Lists once and count toward the add-to-list mission", 
     saveActions,
     /target\.itemType === "stall"[\s\S]*incrementProgress\(profile\.id, "add_to_collection"\)/,
   );
-  assert.match(saveActions, /onAddToPortfolio\?: \(\) => void/);
-  assert.match(saveActions, /\{onAddToPortfolio \? \(/);
-  const card = stallDetail.slice(stallDetail.indexOf("<DetailSaveActionsCard"));
-  assert.doesNotMatch(card.slice(0, card.indexOf("/>")), /onAddToPortfolio/);
+  assert.doesNotMatch(stallDetail, /<DetailSaveActionsCard/);
   assert.match(stallDetail, /onAddToList=\{/);
 });
 

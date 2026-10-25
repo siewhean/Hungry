@@ -107,7 +107,7 @@ export function SingaporeAreaMap({
 
   const label = highlighted.length
     ? `Map of Singapore with ${highlighted.join(", ")} highlighted`
-    : "Map of Singapore by area";
+    : "Map of Singapore. Search above to choose an area";
 
   const changeView = (next: MapView) => {
     const clamped = clampMapView(next);

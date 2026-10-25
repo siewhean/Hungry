@@ -9,6 +9,8 @@ import type {
   DiscoveryLocationFeedRequest,
   SearchResult,
   VenueLocationSearchRequest,
+  VenueMenuCursor,
+  VenueMenuPage,
 } from "@/lib/services/types";
 import type {
   BlogPost,
@@ -112,10 +114,15 @@ function isCatalogDeliveryAppUrl(value: string): boolean {
   );
 }
 
-function isCatalogMenuDisplayable(row: Row): boolean {
+/**
+ * Whether a raw `dishes` row may appear in the diner catalog cache. A dish the merchant removed
+ * from the menu keeps its row (archived_at set) so reviews and saves survive; it must not show.
+ */
+export function isCatalogMenuDisplayable(row: Row): boolean {
   const rightsStatus = toString(row.menu_rights_status, "unverified");
   const sourceUrl = toString(row.menu_source_url);
   return (
+    (row.archived_at === null || row.archived_at === undefined || row.archived_at === "") &&
     toBool(row.menu_approved_for_display) &&
     ["merchant_owned", "operator_owned", "user_submitted", "permitted_api", "licensed"].includes(
       rightsStatus,
@@ -1014,7 +1021,8 @@ export async function searchDishesViaRpc(
         ? Math.round(filters.radius)
         : null,
     p_dietary_flags: filters.dietaryFlags,
-    p_limit: 20,
+    // search_dishes caps p_limit at 50.
+    p_limit: Math.min(50, Math.max(1, Math.round(filters.limit ?? 20))),
     p_cursor_score: null,
     p_cursor_id: null,
     p_venue_id: null,
@@ -1030,10 +1038,47 @@ export async function searchDishesViaRpc(
   }));
 }
 
+/**
+ * Dietary flag slugs for a set of dishes in two batched reads (the link rows for these ids, and
+ * the small flag list). Undefined when either read fails, so the caller keeps what it had.
+ */
+async function loadDishDietaryFlagsByDishId(
+  dishIds: string[],
+): Promise<Map<string, string[]> | undefined> {
+  const client = getSupabaseClient();
+  if (!client || dishIds.length === 0) return undefined;
+  const [linkResult, flagResult] = await Promise.all([
+    client.from("dish_dietary_flags").select("dish_id,dietary_flag_id").in("dish_id", dishIds),
+    client.from("dietary_flags").select("id,slug"),
+  ]);
+  if (
+    linkResult.error ||
+    flagResult.error ||
+    !Array.isArray(linkResult.data) ||
+    !Array.isArray(flagResult.data)
+  ) {
+    console.warn("Supabase discovery dietary flags read failed");
+    return undefined;
+  }
+  const slugById = new Map(
+    (flagResult.data as unknown as Row[]).map((row) => [toString(row.id), toString(row.slug)]),
+  );
+  const flagsByDishId = new Map<string, string[]>();
+  for (const row of linkResult.data as unknown as Row[]) {
+    const dishId = toString(row.dish_id);
+    const slug = slugById.get(toString(row.dietary_flag_id));
+    if (!dishId || !slug) continue;
+    const flags = flagsByDishId.get(dishId) ?? [];
+    if (!flags.includes(slug)) flags.push(slug);
+    flagsByDishId.set(dishId, flags);
+  }
+  return flagsByDishId;
+}
+
 export async function listDiscoveryFeedByLocationViaRpc(
   request: DiscoveryLocationFeedRequest,
 ): Promise<DiscoveryLocationFeed | undefined> {
-  const rows = await rpcRows("get_discovery_feed_by_location", {
+  let rows = await rpcRows("get_discovery_feed_by_location", {
     p_area_name: request.areaName?.trim() || null,
     p_lat: request.lat ?? null,
     p_lng: request.lng ?? null,
@@ -1043,6 +1088,20 @@ export async function listDiscoveryFeedByLocationViaRpc(
     ...(request.buildingId ? { p_building_id: request.buildingId } : {}),
   });
   if (!rows) return undefined;
+
+  // 20261021190000 rebuilt the feed without top_dish_dietary_flags (still missing in
+  // 20261022040100), so the Halal and Dietary needs chips matched nothing on live data. While
+  // the column is missing, this page's top-dish flags come from one batched read.
+  if (rows.length > 0 && !rows.some((row) => "top_dish_dietary_flags" in row)) {
+    const dishIds = [...new Set(rows.map((row) => toString(row.top_dish_id)).filter(Boolean))];
+    const flagsByDishId = await loadDishDietaryFlagsByDishId(dishIds);
+    if (flagsByDishId) {
+      rows = rows.map((row) => ({
+        ...row,
+        top_dish_dietary_flags: flagsByDishId.get(toString(row.top_dish_id)) ?? [],
+      }));
+    }
+  }
 
   const venues = rows.map(mapDiscoveryFeedVenue);
   const results = rows
@@ -1129,8 +1188,9 @@ export async function getVenueByIdViaRpc(venueId: string): Promise<VenueSummary 
 }
 
 /**
- * Stall summaries for many ids in one get_venue_summaries call (no menus). Undefined when the
- * RPC is unavailable, so the caller can fall back to one get_venue_detail per stall.
+ * Stall summaries for many ids (up to 50) in one get_venue_summaries call (no menus). Undefined
+ * when Supabase is not configured. Throws when the configured RPC failed (offline, rate cap), so
+ * callers show a retry instead of treating every stall as closed or gone.
  */
 export async function getVenuesByIdsViaRpc(
   venueIds: string[],
@@ -1138,6 +1198,9 @@ export async function getVenuesByIdsViaRpc(
   const ids = [...new Set(venueIds)].slice(0, 50);
   if (ids.length === 0) return [];
   const rows = await rpcRows("get_venue_summaries", { p_venue_ids: ids });
+  if (!rows && isSupabaseConfigured() && getSupabaseClient()) {
+    throw new Error("Couldn't load these stalls.");
+  }
   return rows?.map(mapRpcVenue);
 }
 
@@ -1273,6 +1336,70 @@ export async function listDishesByVenueViaRpc(venueId: string): Promise<DishDeta
   }
   const venueImageUrl = catalogDisplayImageUrl(venue);
   return dishRows.map((row) => mapRpcDish(withoutVenuePhotoFallback(row, venueImageUrl)));
+}
+
+function venueMenuCursor(row: Row, venueImageUrl: string): VenueMenuCursor {
+  return {
+    score: toNumber(row.cursor_score ?? row.rank_score),
+    id: toString(row.cursor_id ?? row.dish_id),
+    venueImageUrl: venueImageUrl || undefined,
+  };
+}
+
+/**
+ * One page of a stall's menu. No cursor: the page embedded in get_venue_detail (shared with
+ * getVenue). With a cursor: the next search_dishes page. A failed page throws, so the caller
+ * can say the menu is incomplete instead of showing a short menu as the whole thing.
+ * Undefined when Supabase is not configured.
+ */
+export async function listDishesByVenuePageViaRpc(
+  venueId: string,
+  cursor?: VenueMenuCursor,
+): Promise<VenueMenuPage | undefined> {
+  if (!cursor) {
+    const rows = await getVenueDetailRowsOrThrow(venueId);
+    const venue = rows?.[0];
+    if (!venue) return rows ? { dishes: [] } : undefined;
+    const dishRows = toRowArray(venue.dishes);
+    const venueImageUrl = catalogDisplayImageUrl(venue);
+    const last = dishRows[dishRows.length - 1];
+    return {
+      dishes: dishRows.map((row) => mapRpcDish(withoutVenuePhotoFallback(row, venueImageUrl))),
+      nextCursor:
+        last && dishRows.length >= VENUE_MENU_PAGE_SIZE
+          ? venueMenuCursor(last, venueImageUrl)
+          : undefined,
+    };
+  }
+  if (!isSupabaseConfigured()) return undefined;
+  const client = getSupabaseClient();
+  if (!client) return undefined;
+  const { data, error } = await client.rpc("search_dishes", {
+    p_query: null,
+    p_lat: null,
+    p_lng: null,
+    p_radius_meters: null,
+    p_dietary_flags: [],
+    p_limit: VENUE_MENU_PAGE_SIZE,
+    p_cursor_score: cursor.score,
+    p_cursor_id: cursor.id,
+    p_venue_id: venueId,
+    p_area_name: null,
+    p_cuisine_tags: null,
+    p_max_price: null,
+    p_open_only: false,
+  });
+  if (error) throw error;
+  const pageRows = Array.isArray(data) ? (data as unknown as Row[]) : [];
+  const venueImageUrl = cursor.venueImageUrl ?? "";
+  const last = pageRows[pageRows.length - 1];
+  return {
+    dishes: pageRows.map((row) => mapRpcDish(withoutVenuePhotoFallback(row, venueImageUrl))),
+    nextCursor:
+      last && pageRows.length >= VENUE_MENU_PAGE_SIZE
+        ? venueMenuCursor(last, venueImageUrl)
+        : undefined,
+  };
 }
 
 export async function listPopularNearbyViaRpc(

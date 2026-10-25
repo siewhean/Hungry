@@ -13,16 +13,21 @@ import {
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { AccessibleImage, AppText, Button, Input } from "@/components/ui";
+import type { PortfolioItemDetailRow } from "@/lib/services/types";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import {
   WANT_TO_TRY_COLLECTION_ID,
   buildCollectionFoods,
+  buildingAreaName,
+  collectCollectionItemIds,
+  detailKey,
+  indexItemDetails,
   searchCollectionFoods,
   type CollectionFood,
 } from "@/features/collections/collectionSearch";
 import { reportError } from "@/lib/monitoring/reportError";
-import { getDataRepository } from "@/lib/services/serviceProvider";
-import { usePortfolioStore } from "@/store/usePortfolioStore";
+import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
+import { getPortfolioOwnerId, usePortfolioStore } from "@/store/usePortfolioStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
@@ -46,51 +51,113 @@ export function CollectionsScreen({ navigation }: Props) {
   const itemsByPortfolio = usePortfolioStore((state) => state.items);
   const [query, setQuery] = useState("");
 
+  const sharedIds = usePortfolioStore((state) => state.scopeIds.shared);
+  const ownerId = isAuthenticated ? getPortfolioOwnerId() : profileId;
+
   const portfolios = useMemo(() => {
     const ids = new Set(mineIds ?? []);
     return allPortfolios.filter((portfolio) =>
-      mineIds ? ids.has(portfolio.id) : portfolio.ownerId === profileId,
+      mineIds ? ids.has(portfolio.id) : portfolio.ownerId === ownerId,
     );
-  }, [allPortfolios, mineIds, profileId]);
+  }, [allPortfolios, mineIds, ownerId]);
+  // Search also covers lists shared with you.
+  const searchablePortfolios = useMemo(() => {
+    const shared = new Set(sharedIds ?? []);
+    return [
+      ...portfolios,
+      ...allPortfolios.filter(
+        (portfolio) => shared.has(portfolio.id) && !portfolios.includes(portfolio),
+      ),
+    ];
+  }, [allPortfolios, portfolios, sharedIds]);
 
-  // Load the diner's lists, then the items in them so their food can be searched.
+  // Load the diner's lists (and shared ones), then all their items in one read.
+  const [listsLoading, setListsLoading] = useState(true);
   useEffect(() => {
     if (!isAuthenticated) return;
     let active = true;
-    const store = usePortfolioStore.getState();
-    void store
-      .loadPortfolioScope("mine")
-      .then(() => {
-        if (!active) return undefined;
-        const { scopeIds, loadPortfolioItems } = usePortfolioStore.getState();
-        return Promise.all(
-          // n-plus-one-ok: the list store loads items one list at a time; a diner has a handful of lists.
-          (scopeIds.mine ?? []).map((portfolioId) => loadPortfolioItems(portfolioId)),
-        );
+    setListsLoading(true);
+    void (async () => {
+      try {
+        const store = usePortfolioStore.getState();
+        await Promise.all([
+          store.loadPortfolioScope("mine"),
+          store.loadPortfolioScope("shared").catch(() => undefined),
+        ]);
+        const { scopeIds } = usePortfolioStore.getState();
+        await store.loadItemsForPortfolios([...(scopeIds.mine ?? []), ...(scopeIds.shared ?? [])]);
+      } catch (error) {
+        reportError(error, { screen: "Collections", action: "loadCollections" });
+      } finally {
+        if (active) setListsLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [isAuthenticated, ownerId]);
+
+  // Names and photos for every saved dish and stall come from the server in one call, so
+  // items outside the app's local catalog cache are found too.
+  const wanted = useMemo(
+    () =>
+      collectCollectionItemIds({
+        savedDishIds,
+        portfolios: searchablePortfolios,
+        itemsByPortfolio,
+      }),
+    [itemsByPortfolio, savedDishIds, searchablePortfolios],
+  );
+  const wantedKey = `${wanted.dishIds.join(",")}|${wanted.stallIds.join(",")}`;
+  const [details, setDetails] = useState<{
+    key: string;
+    rows: Map<string, PortfolioItemDetailRow>;
+  }>();
+  const [detailsFailed, setDetailsFailed] = useState(false);
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    let active = true;
+    setDetailsFailed(false);
+    getHungryService()
+      .discovery.getItemDetails(wanted)
+      .then((rows) => {
+        if (active) setDetails({ key: wantedKey, rows: indexItemDetails(rows) });
       })
       .catch((error: unknown) => {
-        reportError(error, { screen: "Collections", action: "loadCollections" });
+        reportError(error, { screen: "Collections", action: "loadItemDetails" });
+        if (active) setDetailsFailed(true);
       });
     return () => {
       active = false;
     };
-  }, [isAuthenticated]);
+    // wantedKey stands for `wanted`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, wantedKey]);
+  const isSearchLoading = listsLoading || (!detailsFailed && details?.key !== wantedKey);
 
-  const buildings = useMemo(
-    () => new Map(repository.listBuildings().map((building) => [building.id, building])),
-    [repository],
-  );
-  const foods = useMemo(
-    () =>
-      buildCollectionFoods({
-        savedDishIds,
-        portfolios,
-        itemsByPortfolio,
-        getDish: (dishId) => repository.getDishById(dishId),
-        getBuilding: (buildingId) => buildings.get(buildingId),
-      }),
-    [buildings, itemsByPortfolio, portfolios, repository, savedDishIds],
-  );
+  const foods = useMemo(() => {
+    // Building and area are not in the detail rows yet; use the local catalog when it has them.
+    // Read fresh on every rebuild, so buildings that hydrate after mount are picked up.
+    const buildings = new Map(
+      repository.listBuildings().map((building) => [building.id, building]),
+    );
+    return buildCollectionFoods({
+      savedDishIds,
+      portfolios: searchablePortfolios,
+      itemsByPortfolio,
+      getDetail: (itemType, id) => details?.rows.get(detailKey(itemType, id)),
+      getPlace: (dishId) => {
+        const dish = repository.getDishById(dishId);
+        if (!dish) return undefined;
+        const building = buildings.get(dish.buildingId);
+        return {
+          placeName: building?.name,
+          areaName: buildingAreaName(building),
+          description: dish.description,
+        };
+      },
+    });
+  }, [details, itemsByPortfolio, repository, savedDishIds, searchablePortfolios]);
   const trimmedQuery = query.trim();
   const results = useMemo(
     () => (trimmedQuery ? searchCollectionFoods(foods, trimmedQuery) : []),
@@ -98,8 +165,12 @@ export function CollectionsScreen({ navigation }: Props) {
   );
 
   const rootNavigation = getRootNavigation(navigation as never);
-  const openDish = (food: CollectionFood) => {
-    rootNavigation.navigate("DishDetail", { dishId: food.dishId });
+  const openFood = (food: CollectionFood) => {
+    if (food.itemType === "stall" && food.stallId) {
+      rootNavigation.navigate("StallDetail", { venueId: food.stallId });
+    } else if (food.dishId) {
+      rootNavigation.navigate("DishDetail", { dishId: food.dishId });
+    }
   };
 
   return (
@@ -115,13 +186,17 @@ export function CollectionsScreen({ navigation }: Props) {
 
       {trimmedQuery ? (
         <View style={{ gap: spacing[2] }}>
-          <AppText variant="bodySmall" tone="secondary">
-            {results.length === 0
-              ? `Nothing in your collections matches "${trimmedQuery}".`
-              : `${results.length} ${results.length === 1 ? "food" : "foods"} in your collections`}
+          <AppText variant="bodySmall" tone="secondary" accessibilityLiveRegion="polite">
+            {results.length === 0 && isSearchLoading
+              ? "Searching your collections…"
+              : results.length === 0
+                ? detailsFailed
+                  ? "Couldn't search your collections. Check your connection and try again."
+                  : `Nothing in your collections matches "${trimmedQuery}".`
+                : `${results.length} ${results.length === 1 ? "item" : "items"} in your collections`}
           </AppText>
           {results.map((food) => (
-            <FoodRow key={food.key} food={food} onPress={() => openDish(food)} />
+            <FoodRow key={food.key} food={food} onPress={() => openFood(food)} />
           ))}
         </View>
       ) : (
@@ -160,7 +235,9 @@ export function CollectionsScreen({ navigation }: Props) {
             >
               <AppText variant="bodyBold">Make a collection</AppText>
               <AppText variant="bodySmall" tone="secondary">
-                Hold Save on any dish to add it to a new collection.
+                {
+                  "Tap New collection, then add dishes and stalls to it, or use Save to list on a dish page."
+                }
               </AppText>
             </View>
           ) : null}
@@ -182,7 +259,7 @@ function CollectionRow({
   onPress: () => void;
 }) {
   const { componentRadii, palette, spacing } = useHungryTheme();
-  const countLabel = `${count} ${count === 1 ? "food" : "foods"}`;
+  const countLabel = `${count} ${count === 1 ? "item" : "items"}`;
   return (
     <Pressable
       accessibilityRole="button"
@@ -231,7 +308,11 @@ function FoodRow({ food, onPress }: { food: CollectionFood; onPress: () => void 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${food.dishName} at ${food.venueName}, in ${food.collectionName}`}
+      accessibilityLabel={
+        food.itemType === "stall"
+          ? `${food.dishName}, stall, in ${food.collectionName}`
+          : `${food.dishName} at ${food.venueName}, in ${food.collectionName}`
+      }
       onPress={onPress}
       style={({ pressed }) => ({
         alignItems: "center",

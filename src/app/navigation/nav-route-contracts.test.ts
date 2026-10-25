@@ -92,7 +92,10 @@ test("onboarding is welcome, then four counted steps: location, optional taste q
   // Welcome -> Location (GPS or pick area) -> quiz -> done -> Home.
   assert.match(welcome, /navigation\.navigate\("LocationPermission"\)/);
   assert.match(location, /const next = \(\) => \{\s*navigation\.navigate\("TasteQuiz"\);/);
-  assert.match(location, /navigation\.navigate\("ManualLocationPicker"\)/);
+  assert.match(
+    location,
+    /navigation\.navigate\("ManualLocationPicker", \{ mode: "onboarding" \}\)/,
+  );
   assert.match(picker, /navigation\.navigate\("TasteQuiz"\)/);
   assert.match(
     quiz,
@@ -103,7 +106,7 @@ test("onboarding is welcome, then four counted steps: location, optional taste q
   // carried over, and a missing draft must never reset the vector to neutral.
   assert.match(
     quiz,
-    /navigation\.navigate\("DietaryPreferences", \{[\s\S]*\.\.\.\(answeredAny \? \{ answers: values \} : \{\}\),[\s\S]*\}\)/,
+    /navigation\.navigate\("DietaryPreferences", \{[\s\S]*\.\.\.\(answeredAny \? \{ answers: values, answeredKeys \} : \{\}\),[\s\S]*\}\)/,
   );
   assert.match(
     quiz,
@@ -138,10 +141,11 @@ test("onboarding is welcome, then four counted steps: location, optional taste q
     assert.doesNotMatch(source, /completeOnboarding/);
   }
   // Welcome completes onboarding only for an existing account going to Login.
-  assert.equal(welcome.match(/completeOnboarding\(\)/g)?.length, 1);
+  // ...as an existing account: no onboarding_completed, no pending account step (ONB-2, ONB-3).
+  assert.equal(welcome.match(/completeOnboarding\(/g)?.length, 1);
   assert.match(
     welcome,
-    /const handleExistingAccountSignIn = \(\) => \{[\s\S]*?completeOnboarding\(\);[\s\S]*?screen: "Login"/,
+    /const handleExistingAccountSignIn = \(\) => \{[\s\S]*?clearPendingDishSave\(\);\s*completeOnboarding\(false, \{ existingAccount: true \}\);[\s\S]*?screen: "Login"/,
   );
   assert.match(
     done,

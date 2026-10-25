@@ -191,8 +191,15 @@ test("auth-L14: leaving reset with a recovery session signs it out", () => {
   assert.match(reset, /hasRecoverySession \? "Cancel" : "Back to sign in"/);
   assert.match(
     reset,
-    /const leaveReset = \(\) => \{\s*if \(hasRecoverySession[\s\S]*?\.signOut\(\);/,
+    /const leaveReset = \(\) => \{[\s\S]*?if \(hasRecoverySession[\s\S]*?\.signOut\(\);/,
   );
+  // AUTH-7: swipe-back / Android back leave through leaveReset too.
+  assert.match(
+    reset,
+    /addListener\("beforeRemove", \(event\) => \{\s*if \(leavingRef\.current\) return;\s*event\.preventDefault\(\);\s*leaveReset\(\);/,
+  );
+  // AUTH-4: a user who was signed in before the reset is not signed out by Cancel.
+  assert.match(reset, /if \(fromSignedIn\) \{[\s\S]*?return;\s*\}\s*if \(hasRecoverySession/);
 });
 
 test("auth-L12: demo reset button, mock branches in screens and the reset/success link are gone", async () => {
@@ -290,7 +297,8 @@ test("auth-L10: offline and rate-limit failures get their own message", () => {
     "src/app/screens/auth/ForgotPasswordScreen.tsx",
     "src/app/screens/onboarding/OnboardingAuthScreen.tsx",
   ]) {
-    assert.match(read(file), /getAuthFailureMessage\(/, file);
+    // Login goes through getLoginErrorMessage, which falls back to getAuthFailureMessage.
+    assert.match(read(file), /getAuthFailureMessage\(|getLoginErrorMessage\(/, file);
   }
   // The code box no longer calls every failure "wrong or expired".
   assert.match(

@@ -1,5 +1,12 @@
 import { useEffect, useState, type ComponentType } from "react";
-import { ActivityIndicator, Animated, Pressable, StyleSheet, View } from "react-native";
+import {
+  ActivityIndicator,
+  Animated,
+  Pressable,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Check } from "lucide-react-native";
 
@@ -70,6 +77,8 @@ const TARGET_SIZE = 48;
 /** Icon buttons sit close together: narrower than tall, with hit slop making up the rest. */
 const ICON_BUTTON_MIN_WIDTH = 44;
 const LONG_PRESS_MS = 320;
+/** At or above this text size the orange button may wrap to two lines instead of truncating. */
+const LARGE_TEXT_SCALE = 1.3;
 /** Above the page and the floating back button while a hold menu is open. */
 const OVERLAY_Z = 20;
 
@@ -99,6 +108,8 @@ export function DetailActionBar({ actions, cta, testID }: Props) {
     {},
   );
   const barBottomPadding = Math.max(insets.bottom, spacing[3]);
+  const { fontScale } = useWindowDimensions();
+  const ctaLines = fontScale >= LARGE_TEXT_SCALE ? 2 : 1;
   const menuOpen = openMenuId !== null;
 
   useEffect(() => {
@@ -108,7 +119,10 @@ export function DetailActionBar({ actions, cta, testID }: Props) {
       mass: 0.6,
       stiffness: 260,
       useNativeDriver: true,
-    }).start();
+    }).start(({ finished }) => {
+      // Unmount the closed menu so its rows can't be focused or activated while invisible.
+      if (finished && !menuOpen) setShownMenuId(null);
+    });
   }, [menuOpen, menuProgress]);
 
   const openMenu = (id: string) => {
@@ -170,7 +184,11 @@ export function DetailActionBar({ actions, cta, testID }: Props) {
           })}
         >
           {cta.icon ? <cta.icon color={palette.textOnOrange} size={18} /> : null}
-          <AppText variant="bodyBold" numberOfLines={1} style={{ color: palette.textOnOrange }}>
+          <AppText
+            variant="bodyBold"
+            numberOfLines={ctaLines}
+            style={{ color: palette.textOnOrange, textAlign: "center" }}
+          >
             {cta.label}
           </AppText>
         </Pressable>
@@ -283,6 +301,11 @@ export function DetailActionBar({ actions, cta, testID }: Props) {
         <Animated.View
           pointerEvents={menuOpen ? "auto" : "none"}
           accessibilityViewIsModal={menuOpen}
+          // While it fades out, screen readers must not reach the hidden rows (TalkBack ignores
+          // pointerEvents and could double-tap "Not tried").
+          aria-hidden={!menuOpen}
+          accessibilityElementsHidden={!menuOpen}
+          importantForAccessibility={menuOpen ? "auto" : "no-hide-descendants"}
           style={[
             shadows.floating,
             {
@@ -343,7 +366,8 @@ export function DetailActionBar({ actions, cta, testID }: Props) {
                 key={row.id}
                 accessibilityLabel={row.accessibilityLabel ?? row.label}
                 accessibilityRole="button"
-                accessibilityState={{ selected: Boolean(highlighted) }}
+                accessibilityState={{ selected: Boolean(highlighted), disabled: !menuOpen }}
+                disabled={!menuOpen}
                 onPress={() => {
                   tapHaptic();
                   closeMenu();

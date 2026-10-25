@@ -86,9 +86,9 @@ test("Sprint 9 screen contract: Login screen uses service auth + error boundary"
   );
   assert.match(
     forgotPasswordSource,
-    /accessibilityLabel=\{AUTH_COPY\.forgotPassword\.backToLogin\}/,
+    /const backLabel = fromSignedIn \? "Back" : AUTH_COPY\.forgotPassword\.backToLogin;[\s\S]*accessibilityLabel=\{backLabel\}/,
   );
-  assert.match(forgotPasswordSource, /accessibilityHint="Returns to the sign in screen"/);
+  assert.match(forgotPasswordSource, /"Returns to the sign in screen"/);
   assert.match(resetPasswordSource, /"Back to sign in"/);
   assert.match(
     resetPasswordSource,
@@ -221,7 +221,8 @@ test("Sprint 9 screen contract: stall menu cards expose dish actions", () => {
     /accessibilityRole="button"[\s\S]*accessibilityLabel=\{menuDishAccessibilityLabel\(dish\)\}/,
   );
   // The label carries the price, or "sold out today" (detail-L24).
-  assert.match(stallDetail, /\$\{dish\.name\}, sold out today/);
+  assert.match(stallDetail, /"sold out today"/);
+  assert.match(stallDetail, /dish\.mustOrder \? "must order" : null/);
   assert.match(stallDetail, /accessibilityHint="Opens this dish detail page"/);
 });
 
@@ -560,7 +561,7 @@ test("Sprint 9 screen contract: routed dish detail uses gallery-backed share flo
   const navigatorSource = read("src/app/navigation/RootNavigator.tsx");
 
   assert.match(source, /const repository = getDataRepository\(\)/);
-  assert.match(source, /buildDishGallery\(dish\)/);
+  assert.match(source, /buildDishHeroPhotos\(dish\)/);
   assert.match(source, /const canonicalDishUrl = webShareUrl\("dish", dish\.id\)/);
   assert.match(source, /ReviewShareSheet/);
   assert.match(source, /shareSheetRef\.current\?\.present\(\)/);
@@ -578,7 +579,7 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
 
   assert.match(source, /getDataRepository\(\)/);
   assert.match(source, /type Props = NativeStackScreenProps<RootStackParamList, "DishDetail">/);
-  assert.match(source, /buildDishGallery\(dish\)/);
+  assert.match(source, /buildDishHeroPhotos\(dish\)/);
   // Unpriced dishes show the range or "Price not listed", never S$0.00.
   assert.match(read("src/features/detail/dishPrice.ts"), /function formatDishPrice\(/);
   assert.match(read("src/features/detail/dishPrice.ts"), /Price not listed/);
@@ -613,7 +614,10 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
   assert.doesNotMatch(source, /\{dish\.priceRange\}/);
   assert.doesNotMatch(source, /\{item\.priceRange\}/);
   // push, so Back returns to the previous dish.
-  assert.match(source, /navigation\.push\("DishDetail", \{ dishId: item\.id \}\)/);
+  assert.match(
+    source,
+    /navigation\.push\("DishDetail", \{\s*dishId: item\.id,\s*source: "more_from_stall"/,
+  );
   assert.match(navigatorSource, /const loadDishDetailScreenV2 =/);
   // The redundant DishDetailV2 alias route was removed; DishDetail is the V2 screen.
   assert.doesNotMatch(navigatorSource, /name="DishDetailV2"/);

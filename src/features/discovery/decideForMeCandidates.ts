@@ -32,6 +32,22 @@ export function rankDecideCandidates(
   return withinBudget.length ? withinBudget : ranked;
 }
 
+/**
+ * Open now in Singapore time, the stall page's rule: a merchant's weekly schedule wins over
+ * listed hours. Used by Decide for Me and the zoomed-in map so they agree.
+ */
+export function getVenueOpenStateNow(venue: VenueSummary, now: Date = new Date()): OpenState {
+  return hasWeeklyHours(venue.openingSchedule)
+    ? getScheduleOpenState(venue.openingSchedule, venue.isOpen, now)
+    : getVenueOpenState(venue.operatingHours, venue.isOpen, now);
+}
+
+/** Open now as a yes/no; with no readable hours it falls back to the stall's own flag. */
+export function isVenueOpenNow(venue: VenueSummary, now: Date = new Date()): boolean {
+  const state = getVenueOpenStateNow(venue, now);
+  return state.status === "unknown" ? venue.isOpen : state.status === "open";
+}
+
 export interface OpenAwareCandidates {
   candidates: DishDetail[];
   /** True when nothing is open (or unknown) and the picks are closed stalls. */
@@ -53,12 +69,7 @@ export function preferOpenStalls(
     const cached = openStateByVenueId.get(venueId);
     if (cached) return cached;
     const venue = venueById.get(venueId);
-    // Same rule as the stall page: a merchant's weekly schedule wins over listed hours.
-    const state: OpenState = !venue
-      ? { status: "unknown" }
-      : hasWeeklyHours(venue.openingSchedule)
-        ? getScheduleOpenState(venue.openingSchedule, venue.isOpen, now)
-        : getVenueOpenState(venue.operatingHours, venue.isOpen, now);
+    const state: OpenState = venue ? getVenueOpenStateNow(venue, now) : { status: "unknown" };
     openStateByVenueId.set(venueId, state);
     return state;
   };

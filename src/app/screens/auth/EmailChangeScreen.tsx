@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 
 import { AppText, Button, FeedErrorBoundary } from "@/components/ui";
 import { trackAuthFailed, trackAuthScreenViewed } from "@/features/auth/authAnalytics";
+import { isUnexpectedAuthError } from "@/features/auth/authErrors";
+import { reportError } from "@/lib/monitoring/reportError";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -22,12 +24,13 @@ type Props = NativeStackScreenProps<AuthStackParamList, "EmailChange">;
 export function EmailChangeScreen({ navigation, route }: Props) {
   const { palette, radii, spacing } = useHungryTheme();
   const code = route.params?.code;
+  const otherLinkPending = route.params?.otherLinkPending === true;
   const setPasswordRecoveryInProgress = useSessionStore(
     (state) => state.setPasswordRecoveryInProgress,
   );
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
-  const [status, setStatus] = useState<"checking" | "done" | "failed">(
-    code ? "checking" : "failed",
+  const [status, setStatus] = useState<"checking" | "done" | "one_down" | "failed">(
+    code ? "checking" : otherLinkPending ? "one_down" : "failed",
   );
 
   useEffect(() => {
@@ -52,6 +55,7 @@ export function EmailChangeScreen({ navigation, route }: Props) {
       .catch((error) => {
         if (!active) return;
         trackAuthFailed("email_confirm", "email", error);
+        if (isUnexpectedAuthError(error)) reportError(error, { flow: "email_change" });
         setStatus("failed");
       });
     return () => {
@@ -75,10 +79,15 @@ export function EmailChangeScreen({ navigation, route }: Props) {
             title: "Email change confirmed",
             body: "If you haven't yet, also open the link we sent to your other address. Your new email takes effect once both are confirmed.",
           }
-        : {
-            title: "We couldn't confirm that here",
-            body: "Open the link on the phone where you asked for the change, or request the change again from Edit profile.",
-          };
+        : status === "one_down"
+          ? {
+              title: "One down, one to go",
+              body: "That link worked. Now open the link we sent to your other email address to finish the change.",
+            }
+          : {
+              title: "We couldn't confirm that here",
+              body: "Open the link on the phone where you asked for the change, or request the change again from Edit profile.",
+            };
 
   return (
     <FeedErrorBoundary

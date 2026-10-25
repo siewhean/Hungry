@@ -7,6 +7,7 @@ import { AppText, Screen, FilterChipRail, Skeleton, EmptyState } from "@/compone
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
+import { reportError } from "@/lib/monitoring/reportError";
 import { getDataTrustDisclosure } from "@/lib/services/dataTrustDisclosure";
 import {
   formatAverageRating,
@@ -73,7 +74,7 @@ function SeeMoreButton({
       style={{ minHeight: 24, justifyContent: "center" }}
     >
       <AppText variant="micro" style={{ color: palette.orangeText, fontWeight: "800" }}>
-        {expanded ? "Hide" : "See More"}
+        {expanded ? "Hide" : "See more"}
       </AppText>
     </Pressable>
   );
@@ -111,8 +112,8 @@ export function MerchantAnalyticsScreen() {
       setAnalytics(data);
     } catch (e) {
       if (requestId !== latestRequestId.current) return;
+      reportError(e, { screen: "MerchantAnalytics", action: "load_analytics" });
       setError(e instanceof Error ? e.message : "Failed to load analytics.");
-      console.error(e);
     } finally {
       if (requestId === latestRequestId.current) setIsLoading(false);
     }
@@ -241,7 +242,7 @@ export function MerchantAnalyticsScreen() {
               detail={`${analytics.profileVisits} profile visits, ${analytics.menuViews} menu views and ${analytics.dishViews} dish views.`}
             />
             <MetricCard
-              label="Menu Views"
+              label="Menu views"
               value={analytics.menuViews.toString()}
               trend={formatDelta(analytics.menuViews, analytics.previousPeriodComparison.menuViews)}
               icon={<BarChart3 size={16} color={palette.info} />}
@@ -250,7 +251,7 @@ export function MerchantAnalyticsScreen() {
               detail={`Top dish: ${analytics.topDishes[0]?.name ?? "no dish data yet"}.`}
             />
             <MetricCard
-              label="Avg Rating"
+              label="Avg rating"
               value={formatAverageRating(analytics.averageRating, analytics.reviewCount)}
               trend={formatRatingChange(
                 analytics.averageRating,
@@ -280,7 +281,7 @@ export function MerchantAnalyticsScreen() {
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                 <BarChart3 size={20} color={palette.ratingStar} />
                 <AppText variant="bodyBold" accessibilityRole="header">
-                  Discovery Funnel
+                  Discovery funnel
                 </AppText>
               </View>
               <SeeMoreButton
@@ -340,7 +341,7 @@ export function MerchantAnalyticsScreen() {
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                 <Flame size={20} color={palette.orange} />
                 <AppText variant="bodyBold" accessibilityRole="header">
-                  Top Performing Dishes
+                  Top performing dishes
                 </AppText>
               </View>
               <SeeMoreButton
@@ -385,7 +386,7 @@ export function MerchantAnalyticsScreen() {
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                 <Star size={20} color={palette.amber} />
                 <AppText variant="bodyBold" accessibilityRole="header">
-                  Customer Taste Profile
+                  Customer taste profile
                 </AppText>
               </View>
               <SeeMoreButton
@@ -442,7 +443,7 @@ export function MerchantAnalyticsScreen() {
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                 <Clock size={20} color={palette.info} />
                 <AppText variant="bodyBold" accessibilityRole="header">
-                  Peak Discovery Hours
+                  Peak discovery hours
                 </AppText>
               </View>
               <SeeMoreButton

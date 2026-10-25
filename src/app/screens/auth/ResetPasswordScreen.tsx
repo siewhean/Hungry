@@ -6,13 +6,18 @@ import { useEffect, useRef, useState } from "react";
 
 import { AppText, Button, FeedErrorBoundary, Input } from "@/components/ui";
 import { trackAuthFailed, trackAuthScreenViewed } from "@/features/auth/authAnalytics";
-import { getAuthErrorKind, getAuthFailureMessage } from "@/features/auth/authErrors";
+import {
+  getAuthErrorKind,
+  getAuthFailureMessage,
+  isUnexpectedAuthError,
+} from "@/features/auth/authErrors";
 import {
   getPasswordUpdateErrorMessage,
   PASSWORD_RULES,
   validateConfirmPassword,
   validatePassword,
 } from "@/features/auth/validation";
+import { reportError } from "@/lib/monitoring/reportError";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { getConfiguredDataSource } from "@/lib/services/supabase/client";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -82,12 +87,13 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
         // No session was created, so nothing to hold.
         setPasswordRecoveryInProgress(false);
         trackAuthFailed("password_reset", "email", error);
+        const missingVerifier =
+          (error as { name?: unknown } | null)?.name === "AuthPKCECodeVerifierMissingError";
+        if (!missingVerifier && isUnexpectedAuthError(error)) {
+          reportError(error, { flow: "password_reset_link" });
+        }
         // Without the PKCE verifier the link was opened on a different phone than asked.
-        setLinkProblem(
-          (error as { name?: unknown } | null)?.name === "AuthPKCECodeVerifierMissingError"
-            ? "other_device"
-            : "expired",
-        );
+        setLinkProblem(missingVerifier ? "other_device" : "expired");
         return false;
       }
     }
@@ -119,6 +125,7 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
         // The recovery session is signed in: keep the hold so the user stays
         // here and can retry with a different password.
         trackAuthFailed("password_reset", "email", error);
+        if (isUnexpectedAuthError(error)) reportError(error, { flow: "password_reset_update" });
         showToast({
           message:
             getAuthErrorKind(error) === "other"
@@ -136,12 +143,36 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
 
   // A recovery session is already a sign-in. Leaving without a new password signs it out
   // again, so "Back to sign in" never lands the user in the app on a password they did not set.
+  // A user who was signed in before ("Forgot current password?" in Settings) stays signed in
+  // and goes back to where they came from.
+  const fromSignedIn = route.params?.fromSignedIn === true;
+  const leavingRef = useRef(false);
   const leaveReset = () => {
+    leavingRef.current = true;
+    if (fromSignedIn) {
+      const parent = navigation.getParent();
+      if (parent?.canGoBack()) parent.goBack();
+      else navigation.goBack();
+      return;
+    }
     if (hasRecoverySession && getConfiguredDataSource() === "supabase") {
       useSessionStore.getState().signOut();
     }
     navigation.navigate("Login");
   };
+
+  // Swipe-back and the Android back button leave the same way as Cancel, so they never
+  // leave a recovery session signed in without a new password.
+  const mustSignOutOnLeave =
+    hasRecoverySession && !fromSignedIn && getConfiguredDataSource() === "supabase";
+  useEffect(() => {
+    if (!mustSignOutOnLeave) return;
+    return navigation.addListener("beforeRemove", (event) => {
+      if (leavingRef.current) return;
+      event.preventDefault();
+      leaveReset();
+    });
+  });
 
   return (
     <FeedErrorBoundary
@@ -158,9 +189,11 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
             accessibilityRole="button"
             accessibilityLabel={hasRecoverySession ? "Cancel" : "Back to sign in"}
             accessibilityHint={
-              hasRecoverySession
-                ? "Leaves without a new password and signs you out"
-                : "Returns to the sign in screen"
+              fromSignedIn
+                ? "Leaves without changing your password"
+                : hasRecoverySession
+                  ? "Leaves without a new password and signs you out"
+                  : "Returns to the sign in screen"
             }
             onPress={leaveReset}
             style={{

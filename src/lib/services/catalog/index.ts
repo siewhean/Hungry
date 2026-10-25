@@ -1,5 +1,9 @@
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/services/supabase/client";
-import { sanitizeCatalogMediaUrl } from "./media";
+import {
+  sanitizeCatalogCardImageUrl,
+  sanitizeCatalogMediaUrl,
+  type ServerFilteredCardImageRpc,
+} from "./media";
 
 export type CatalogVerificationStatus = "raw" | "verified" | "approved";
 /** "price" lists the cheapest first; dishes and stalls without a price come last. */
@@ -12,7 +16,11 @@ export type CatalogErrorKind =
   | "contract"
   | "network"
   | "rpc"
+  | "release_expired"
   | "unavailable";
+
+/** Pages served from the bundled offline copy (the Excel fallback) carry this release id. */
+export const CATALOG_OFFLINE_RELEASE_ID = "excel-fallback-v1";
 
 /** Typed text shorter than this is not searched (the RPCs return an empty page); longer is cut. */
 export const CATALOG_QUERY_MIN_CHARS = 2;
@@ -105,6 +113,9 @@ export interface CatalogRawVenueCard {
   distanceMeters?: number;
   isOpen?: boolean;
   menuCount: number;
+  /** The stall's best displayable dish: its rating and review count (quality_rating columns). */
+  qualityRating?: number;
+  qualityReviewCount?: number;
   representativeDish?: Pick<
     CatalogRawDishCard,
     "id" | "name" | "imageUrl" | "price" | "verificationStatus"
@@ -275,6 +286,17 @@ export class CatalogContractError extends CatalogAccessError {
   }
 }
 
+/**
+ * The release a cursor was pinned to has expired (or the cursor belongs to another release).
+ * The list must start again from page 1 on the active release; retrying the cursor never works.
+ */
+export class CatalogReleaseExpiredError extends CatalogAccessError {
+  constructor(message = "The catalog was updated. Reloading the latest results.", cause?: unknown) {
+    super(message, { kind: "release_expired", fallbackEligible: false, cause });
+    this.name = "CatalogReleaseExpiredError";
+  }
+}
+
 export class CatalogNetworkError extends CatalogAccessError {
   constructor(message = "The online catalog could not be reached.", cause?: unknown) {
     super(message, { kind: "network", fallbackEligible: true, cause });
@@ -381,6 +403,16 @@ function looksLikeAuthorizationFailure(value: unknown): boolean {
   );
 }
 
+function looksLikeExpiredRelease(value: unknown): boolean {
+  const code = errorCode(value);
+  const message = errorMessage(value).toLowerCase();
+  return (
+    code === "22023" ||
+    message.includes("catalog release unavailable") ||
+    message.includes("catalog cursor release mismatch")
+  );
+}
+
 function looksLikeConfigurationFailure(value: unknown): boolean {
   const message = errorMessage(value).toLowerCase();
   return message.includes("not configured") || message.includes("missing configuration");
@@ -418,6 +450,7 @@ export function classifyCatalogAccessError(value: unknown, context: "session" | 
   if (looksLikeInvalidSession(value)) return new CatalogSessionInvalidError(message, value);
   if (looksLikeAuthorizationFailure(value)) return new CatalogAuthorizationError(message, value);
   if (looksLikeNetworkFailure(value)) return new CatalogNetworkError(message, value);
+  if (looksLikeExpiredRelease(value)) return new CatalogReleaseExpiredError(undefined, value);
   if (looksLikeContractFailure(value)) return new CatalogContractError(message, value);
 
   // getSession may return an unrecognised failure object. Treating that as an
@@ -462,7 +495,7 @@ function verificationStatus(value: unknown): CatalogVerificationStatus {
   return value === "approved" || value === "verified" ? value : "raw";
 }
 
-function mapDishCard(value: unknown): CatalogRawDishCard {
+function mapDishCard(value: unknown, sourceRpc: ServerFilteredCardImageRpc): CatalogRawDishCard {
   const row = asRecord(value);
   const mediaRightsStatus = asString(row.media_rights_status) ?? "unverified";
   return {
@@ -476,11 +509,10 @@ function mapDishCard(value: unknown): CatalogRawDishCard {
     description: asString(row.description),
     price: asNumber(row.price),
     priceRange: asString(row.price_range),
-    imageUrl: sanitizeCatalogMediaUrl(
-      asString(row.image_url),
-      mediaRightsStatus,
-      asBoolean(row.media_approved_for_display),
-    ),
+    imageUrl: sanitizeCatalogCardImageUrl(asString(row.image_url), sourceRpc, {
+      rightsStatus: mediaRightsStatus,
+      approvedForDisplay: asBoolean(row.media_approved_for_display),
+    }),
     distanceMeters: asNumber(row.distance_meters),
     rating: asNumber(row.rating),
     reviewCount: asNumber(row.review_count),
@@ -497,7 +529,7 @@ function mapDishCard(value: unknown): CatalogRawDishCard {
   };
 }
 
-function mapVenueCard(value: unknown): CatalogRawVenueCard {
+function mapVenueCard(value: unknown, sourceRpc: ServerFilteredCardImageRpc): CatalogRawVenueCard {
   const row = asRecord(value);
   const representative = asRecord(row.representative_dish);
   const mediaRightsStatus = asString(row.media_rights_status) ?? "unverified";
@@ -510,25 +542,25 @@ function mapVenueCard(value: unknown): CatalogRawVenueCard {
     buildingType: asString(row.building_type),
     unitNumber: asString(row.unit_number),
     floor: asString(row.floor),
-    imageUrl: sanitizeCatalogMediaUrl(
-      asString(row.image_url),
-      mediaRightsStatus,
-      asBoolean(row.media_approved_for_display),
-    ),
+    imageUrl: sanitizeCatalogCardImageUrl(asString(row.image_url), sourceRpc, {
+      rightsStatus: mediaRightsStatus,
+      approvedForDisplay: asBoolean(row.media_approved_for_display),
+    }),
     latitude: asNumber(row.latitude),
     longitude: asNumber(row.longitude),
     distanceMeters: asNumber(row.distance_meters),
     isOpen: asBoolean(row.is_open),
     menuCount: asNumber(row.menu_count) ?? 0,
+    qualityRating: asNumber(row.quality_rating),
+    qualityReviewCount: asNumber(row.quality_review_count),
     representativeDish: asString(representative.id)
       ? {
           id: asString(representative.id) ?? "",
           name: asString(representative.name) ?? "Unnamed dish",
-          imageUrl: sanitizeCatalogMediaUrl(
-            asString(representative.image_url),
-            representativeRightsStatus,
-            asBoolean(representative.media_approved_for_display),
-          ),
+          imageUrl: sanitizeCatalogCardImageUrl(asString(representative.image_url), sourceRpc, {
+            rightsStatus: representativeRightsStatus,
+            approvedForDisplay: asBoolean(representative.media_approved_for_display),
+          }),
           price: asNumber(representative.price),
           verificationStatus: verificationStatus(representative.verification_status),
         }
@@ -695,7 +727,9 @@ export const catalogRawService = {
     const key = catalogRequestKey("dishes", args);
     const cached = readCache<CatalogPage<CatalogRawDishCard>>(pageCache, key);
     if (cached) return cached;
-    const page = mapPage(await callRawRpc("catalog_raw_dishes_page", args), mapDishCard);
+    const page = mapPage(await callRawRpc("catalog_raw_dishes_page", args), (item) =>
+      mapDishCard(item, "catalog_raw_dishes_page"),
+    );
     return writeCache(pageCache, key, page, PAGE_TTL_MS);
   },
 
@@ -704,7 +738,9 @@ export const catalogRawService = {
     const key = catalogRequestKey("venues", args);
     const cached = readCache<CatalogPage<CatalogRawVenueCard>>(pageCache, key);
     if (cached) return cached;
-    const page = mapPage(await callRawRpc("catalog_raw_venues_page", args), mapVenueCard);
+    const page = mapPage(await callRawRpc("catalog_raw_venues_page", args), (item) =>
+      mapVenueCard(item, "catalog_raw_venues_page"),
+    );
     return writeCache(pageCache, key, page, PAGE_TTL_MS);
   },
 
@@ -752,7 +788,7 @@ export const catalogRawService = {
     );
     if (!asString(row.id)) throw new CatalogUnavailableError("Dish details are unavailable.");
     const detail: CatalogRawDishDetail = {
-      ...mapDishCard(row),
+      ...mapDishCard(row, "catalog_raw_dish_detail"),
       media: Array.isArray(row.media) ? row.media.map(mapMedia) : [],
     };
     return writeCache(detailCache, key, detail, DETAIL_TTL_MS);
@@ -770,7 +806,7 @@ export const catalogRawService = {
     );
     if (!asString(row.id)) throw new CatalogUnavailableError("Stall details are unavailable.");
     const detail: CatalogRawVenueDetail = {
-      ...mapVenueCard(row),
+      ...mapVenueCard(row, "catalog_raw_venue_detail"),
       address: asString(row.address),
       postalCode: asString(row.postal_code),
       operatingHours: asString(row.operating_hours),
@@ -786,7 +822,9 @@ export const catalogRawService = {
     const key = catalogRequestKey("venue-menu", args);
     const cached = readCache<CatalogPage<CatalogRawDishCard>>(pageCache, key);
     if (cached) return cached;
-    const page = mapPage(await callRawRpc("catalog_raw_venue_menu_page", args), mapDishCard);
+    const page = mapPage(await callRawRpc("catalog_raw_venue_menu_page", args), (item) =>
+      mapDishCard(item, "catalog_raw_venue_menu_page"),
+    );
     return writeCache(pageCache, key, page, PAGE_TTL_MS);
   },
 

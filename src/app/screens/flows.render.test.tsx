@@ -78,7 +78,8 @@ test("LoginScreen shows a clear message for each way sign-in can be refused, and
       await view.press(view.findByText("Sign in"));
       assert.match(view.text(), message, code);
       assert.equal(useSessionStore.getState().isAuthenticated, false);
-      if (code === "email_not_confirmed") assert.ok(view.findByText("Resend verification email"));
+      if (code === "email_not_confirmed")
+        assert.ok(view.findByText("Enter the code from the email"));
       await view.unmount();
     }
   } finally {

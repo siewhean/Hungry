@@ -119,7 +119,7 @@ test("toggleFavourite rolls back and returns a failed result when sync fails", a
     repository: dataRepositoryMock,
     service: {
       profile: {
-        toggleFavourite: async () => {
+        setFavourite: async () => {
           throw new Error("favourite write failed");
         },
       },

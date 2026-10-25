@@ -36,6 +36,19 @@ export function toSingaporePromotionBoundary(date: string, boundary: "start" | "
   return `${date}T${boundary === "start" ? "00:00:00" : "23:59:59"}${SINGAPORE_OFFSET}`;
 }
 
+/**
+ * Publishing a promotion whose last day (Singapore time) is already over would store an "ended"
+ * promotion behind a "published" success message. Returns the field error to show, if any.
+ */
+export function getPromotionPublishDateError(
+  endDate: string,
+  now: Date = new Date(),
+): string | undefined {
+  const endsAt = new Date(toSingaporePromotionBoundary(endDate, "end")).getTime();
+  if (!Number.isFinite(endsAt) || endsAt >= now.getTime()) return undefined;
+  return "The end date has passed. Pick a later end date to publish.";
+}
+
 type PromotionDraft = Omit<MerchantPromotion, "id" | "outletId" | "createdAt" | "analytics">;
 
 interface PromotionValidationOptions {

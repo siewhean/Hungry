@@ -1,6 +1,6 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useIsFocused } from "@react-navigation/native";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, View } from "react-native";
 import { PenLine, Star, Store } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -14,8 +14,10 @@ import {
   getServiceProvider,
 } from "@/lib/services/serviceProvider";
 import { tapHaptic } from "@/lib/haptics";
+import { reportError } from "@/lib/monitoring/reportError";
 import { OwnReviewMenuButton, useOwnReviewEditor } from "@/features/profile/useOwnReviewEditor";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { Review } from "@/types/domain";
 import { isDishDetail } from "./profileGuards";
@@ -27,12 +29,16 @@ type Props = NativeStackScreenProps<ProfileStackParamList, "ReviewHistory">;
 
 /** Reviews per server page. */
 const REVIEW_HISTORY_PAGE_SIZE = 50;
+// Load more re-reads this many rows before the end, so reviews deleted or posted elsewhere
+// (which shift the server's offsets) cannot make it skip one; repeats are dropped by id.
+const LOAD_MORE_OVERLAP = 5;
 
 export function ReviewHistoryScreen({ navigation }: Props) {
   const { palette, spacing, radii, componentRadii, shadows } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const profile = useProfileStore((state) => state.profile);
   const reviewEntries = useProfileStore((state) => state.reviewEntries);
+  const showToast = useUIStore((state) => state.showToast);
   const repository = getDataRepository();
   const serviceProviderMode = getServiceProvider().mode;
   const [remoteReviews, setRemoteReviews] = useState<Review[]>([]);
@@ -40,6 +46,9 @@ export function ReviewHistoryScreen({ navigation }: Props) {
   // False until the first read finishes, so "No reviews yet" never flashes while loading.
   const [remoteLoaded, setRemoteLoaded] = useState(serviceProviderMode === "mock");
   const [loadedRows, setLoadedRows] = useState(0);
+  // Read by the focus refresh without making it re-run when a page is added.
+  const loadedRowsRef = useRef(0);
+  loadedRowsRef.current = loadedRows;
   const [hasMore, setHasMore] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
@@ -50,8 +59,11 @@ export function ReviewHistoryScreen({ navigation }: Props) {
       setRemoteReviews((current) =>
         current.map((review) => (review.id === updated.id ? updated : review)),
       ),
-    onDeleted: (reviewId) =>
-      setRemoteReviews((current) => current.filter((review) => review.id !== reviewId)),
+    onDeleted: (reviewId) => {
+      setRemoteReviews((current) => current.filter((review) => review.id !== reviewId));
+      // The server's rows after it move up by one.
+      setLoadedRows((current) => Math.max(0, current - 1));
+    },
   });
   const mockHistory = useMemo(
     () =>
@@ -84,12 +96,23 @@ export function ReviewHistoryScreen({ navigation }: Props) {
       .reviews.getUserReviews(profile.id, { limit: REVIEW_HISTORY_PAGE_SIZE, offset: 0 })
       .then((reviews) => {
         if (!active) return;
-        setRemoteReviews(reviews);
-        setLoadedRows(reviews.length);
-        setHasMore(reviews.length === REVIEW_HISTORY_PAGE_SIZE);
+        // Coming back refreshes page 1 and keeps the pages already loaded below it, so the
+        // list does not jump back to the first 50 after opening a dish.
+        const keepLaterPages = loadedRowsRef.current > REVIEW_HISTORY_PAGE_SIZE;
+        const pageOneIds = new Set(reviews.map((review) => review.id));
+        setRemoteReviews((current) =>
+          keepLaterPages
+            ? [...reviews, ...current.filter((review) => !pageOneIds.has(review.id))]
+            : reviews,
+        );
+        if (!keepLaterPages) {
+          setLoadedRows(reviews.length);
+          setHasMore(reviews.length === REVIEW_HISTORY_PAGE_SIZE);
+        }
         setRemoteLoaded(true);
       })
-      .catch(() => {
+      .catch((error) => {
+        reportError(error, { screen: "ReviewHistory", action: "load_reviews" });
         if (!active) return;
         // Keep what is already on screen on a failed refresh; only a first load shows the error.
         setRemoteLoadFailed(true);
@@ -104,17 +127,22 @@ export function ReviewHistoryScreen({ navigation }: Props) {
   const loadMore = () => {
     if (isLoadingMore || !hasMore) return;
     setIsLoadingMore(true);
+    const offset = Math.max(0, loadedRows - LOAD_MORE_OVERLAP);
+    const limit = REVIEW_HISTORY_PAGE_SIZE + (loadedRows - offset);
     void getHungryService()
-      .reviews.getUserReviews(profile.id, { limit: REVIEW_HISTORY_PAGE_SIZE, offset: loadedRows })
+      .reviews.getUserReviews(profile.id, { limit, offset })
       .then((reviews) => {
         setRemoteReviews((current) => {
           const seen = new Set(current.map((review) => review.id));
           return [...current, ...reviews.filter((review) => !seen.has(review.id))];
         });
-        setLoadedRows((current) => current + reviews.length);
-        setHasMore(reviews.length === REVIEW_HISTORY_PAGE_SIZE);
+        setLoadedRows(offset + reviews.length);
+        setHasMore(reviews.length === limit);
       })
-      .catch(() => undefined)
+      .catch((error) => {
+        reportError(error, { screen: "ReviewHistory", action: "load_more_reviews" });
+        showToast({ message: "Couldn't load more reviews. Try again.", tone: "error" });
+      })
       .finally(() => setIsLoadingMore(false));
   };
 
@@ -128,6 +156,10 @@ export function ReviewHistoryScreen({ navigation }: Props) {
             review: undefined,
           }));
   const hasHistory = historyItems.length > 0;
+  // Only some pages are loaded: the server's counter (distinct dishes reviewed) covers them all.
+  const reviewedCount = hasMore
+    ? Math.max(profile.stats.dishesReviewed, historyItems.length)
+    : historyItems.length;
   const ownRatings = historyItems
     .map(
       ({ review, dish }) => review?.rating ?? (dish ? reviewEntries[dish.id]?.rating : undefined),
@@ -162,7 +194,9 @@ export function ReviewHistoryScreen({ navigation }: Props) {
             }}
           >
             <View style={{ alignItems: "center", gap: spacing[1] }}>
-              <AppText variant="h1">{historyItems.length}</AppText>
+              <AppText variant="h1" testID="review-history-count">
+                {reviewedCount}
+              </AppText>
               <AppText variant="micro" tone="secondary">
                 Reviewed
               </AppText>
@@ -215,20 +249,8 @@ export function ReviewHistoryScreen({ navigation }: Props) {
                   </AppText>
                 </View>
               ) : null;
-              const card = (
-                <View
-                  style={[
-                    shadows.card,
-                    {
-                      backgroundColor: palette.surface,
-                      borderRadius: componentRadii.card,
-                      overflow: "hidden",
-                      borderWidth: 1,
-                      borderColor: palette.border,
-                      marginBottom: spacing[4],
-                    },
-                  ]}
-                >
+              const cardBody = (
+                <>
                   {imageUrl ? (
                     <View style={{ height: 210 }}>
                       <AccessibleImage
@@ -318,28 +340,52 @@ export function ReviewHistoryScreen({ navigation }: Props) {
                         {review.editedAt ? " · Edited" : ""}
                       </AppText>
                     ) : null}
-                    {review && ownReviewEditor.enabled ? (
-                      <View style={{ alignSelf: "flex-end" }}>
-                        <OwnReviewMenuButton onPress={() => ownReviewEditor.openActions(review)} />
-                      </View>
-                    ) : null}
                   </View>
-                </View>
+                </>
               );
               const key = review?.id ?? dish?.id ?? `review-history-entry-${index}`;
 
-              return dishId ? (
-                <Pressable
+              // The menu sits beside the card's pressable, not inside it, so a screen reader can
+              // reach it (an accessible Pressable hides its children).
+              return (
+                <View
                   key={key}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Review of ${dishName}${rating ? `, rated ${rating} out of 5` : ""}`}
-                  accessibilityHint="Opens the dish"
-                  onPress={() => openDish(dishId)}
+                  style={[
+                    shadows.card,
+                    {
+                      backgroundColor: palette.surface,
+                      borderRadius: componentRadii.card,
+                      overflow: "hidden",
+                      borderWidth: 1,
+                      borderColor: palette.border,
+                      marginBottom: spacing[4],
+                    },
+                  ]}
                 >
-                  {card}
-                </Pressable>
-              ) : (
-                <View key={key}>{card}</View>
+                  {dishId ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Review of ${dishName}${rating ? `, rated ${rating} out of 5` : ""}`}
+                      accessibilityHint="Opens the dish"
+                      onPress={() => openDish(dishId)}
+                    >
+                      {cardBody}
+                    </Pressable>
+                  ) : (
+                    cardBody
+                  )}
+                  {review && ownReviewEditor.enabled ? (
+                    <View
+                      style={{
+                        alignSelf: "flex-end",
+                        paddingBottom: spacing[2],
+                        paddingHorizontal: spacing[2],
+                      }}
+                    >
+                      <OwnReviewMenuButton onPress={() => ownReviewEditor.openActions(review)} />
+                    </View>
+                  ) : null}
+                </View>
               );
             })}
             {hasMore ? (

@@ -32,19 +32,21 @@ test("profile home contract: profile stats use dynamic profile and social store 
 
   assert.match(domainSource, /followersCount: number/);
   assert.match(domainSource, /followingCount: number/);
-  // The profile shows saved dishes, reviews and badges only: no follower or following counts,
-  // and no Stalls tile (visited stalls live on the Achievements screen).
-  assert.doesNotMatch(source, /getFollowCounts|label="Followers"|label="Following"/);
+  // Follower and following counts come from the server and open the lists (R3 PROF-2: the
+  // lists hold Remove follower and Find people). No Stalls tile (visited stalls are on Achievements).
+  assert.match(source, /getFollowCounts\(profile\.id\)/);
+  assert.match(source, /label="Followers"[\s\S]*navigation\.navigate\("Followers"\)/);
+  assert.match(source, /label="Following"[\s\S]*navigation\.navigate\("Following"\)/);
   assert.doesNotMatch(source, /mergeFollowerNames|localFollowerCount|localFollowingCount/);
   // Reviews count real reviews from the server.
-  assert.match(source, /ownReviews === null \? null : ownReviews\.length/);
+  assert.match(source, /ownReviews === null\s*\? null/);
   assert.doesNotMatch(source, /label="Stalls"/);
   assert.match(source, /label="Reviews"[\s\S]*<PencilLine size=\{14\}/);
   assert.match(source, /label="Saved dishes"[\s\S]*<Bookmark size=\{14\}/);
   assert.match(source, /<AppText variant="h1" style=\{\{ color: palette\.orange \}\}>/);
   assert.match(
     source,
-    /<AppText\s+variant="h1"\s+numberOfLines=\{1\}\s+adjustsFontSizeToFit\s+minimumFontScale=\{0\.78\}[\s\S]*style=\{\{ color: palette\.text \}\}/,
+    /<AppText variant="h1" numberOfLines=\{2\} style=\{\{ color: palette\.text \}\}>/,
   );
   assert.match(
     source,
@@ -98,7 +100,7 @@ test("Stitch profile surfaces use account data and preserve their destinations",
   assert.match(source, /value=\{earnedBadgeCount\}/);
   assert.match(source, /getEarnedStamps\(\)\.length/);
   assert.match(source, /navigation\.navigate\("Settings"\)/);
-  assert.match(source, /Recent Hawker Log/);
+  assert.match(source, /socialFeedEnabled \? "Recent activity" : "Your reviews"/);
   assert.match(source, /onPress=\{handleReviewsCardPress\}/);
   assert.match(
     source,
@@ -241,5 +243,6 @@ test("profile home contract: account reads wait for a real profile id, not the g
     /const hasAccountProfile = isAuthenticated && profile\.id !== "guest-user";/,
   );
   // Posts, reviews and follow requests all send profile.id to the server as a uuid.
-  assert.equal(source.match(/!hasAccountProfile/g)?.length, 3);
+  // ...as do the stall-submission, follow-count and gamification loads.
+  assert.equal(source.match(/!hasAccountProfile/g)?.length, 5);
 });

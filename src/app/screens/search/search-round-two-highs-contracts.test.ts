@@ -99,7 +99,10 @@ test("H24: Search home suggests as you type and shows popular food types", () =>
   const home = read("src/app/screens/search/DishSearchScreen.tsx");
   assert.match(home, /\.suggest\(trimmedSearchText\)/);
   assert.match(home, /Popular dishes/);
-  assert.match(home, /openResults\(suggestion\.label, suggestionMode\(suggestion\)\)/);
+  assert.match(
+    home,
+    /openResults\(suggestion\.label, "search_suggestion", suggestionMode\(suggestion\)\)/,
+  );
 });
 
 test("H25: cards without a photo show the stall's initials, not a grey caption", () => {

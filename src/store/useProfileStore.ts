@@ -150,7 +150,12 @@ interface ProfileState {
   loadFoodHistory: () => Promise<void>;
   resetFoodHistory: () => Promise<void>;
   /** Onboarding / Settings: how open the user is to new food. Also sets neophiliaIndex. */
-  setFoodOpenness: (openness: FoodOpenness, surface: "onboarding" | "settings") => void;
+  /** `changedFromDefault`: false when the user kept the preselected answer. */
+  setFoodOpenness: (
+    openness: FoodOpenness,
+    surface: "onboarding" | "settings",
+    options?: { changedFromDefault?: boolean },
+  ) => void;
   applyProfile: (profile: UserProfile) => void;
   /**
    * Merge a profile returned by `profile.updateProfile` after an Edit Profile save.
@@ -161,15 +166,34 @@ interface ProfileState {
   setProvisionalOnboardingMigration: (migration: ProvisionalOnboardingMigration) => void;
   clearProvisionalOnboardingMigration: (userId: string) => void;
   syncProfile: (isAuthenticated: boolean, userId?: string | null) => void;
-  toggleFavourite: (dish: FavouriteDishInput) => Promise<FavouriteToggleResult>;
+  /** `surface` names the page the tap came from, for the dish_favourited event. */
+  toggleFavourite: (
+    dish: FavouriteDishInput,
+    options?: { surface?: string },
+  ) => Promise<FavouriteToggleResult>;
+  /**
+   * Adds several favourites with one server write (a guest's pending saves after sign-up).
+   * Only adds; resolves to the dishes that could not be saved.
+   */
+  addFavourites: (
+    dishes: FavouriteDishInput[],
+    options?: { surface?: string },
+  ) => Promise<FavouriteDishInput[]>;
   updateProfile: (next: Partial<Pick<UserProfile, "displayName" | "email" | "avatarUrl">>) => void;
   /** Resolves false when the server rejected the change and the old value was restored. */
   setProfileVisibility: (profileVisibility: ProfileVisibility) => Promise<boolean>;
   setTasteVector: (tasteVector: TasteVector) => void;
   setTasteProfile: (tasteProfile: TasteProfile) => void;
-  setDietaryPreferences: (dietaryPreferences: DietaryFlag[]) => void;
+  /** `surface` tags the analytics event: the onboarding quiz or the profile/Settings edit. */
+  setDietaryPreferences: (
+    dietaryPreferences: DietaryFlag[],
+    options?: { surface?: "onboarding" | "profile" | "settings" },
+  ) => void;
   /** Saved on the account (user_profiles.max_dish_budget) when signed in; kept on the device for guests. */
-  setMaxDishBudget: (maxDishBudget: number | undefined) => void;
+  setMaxDishBudget: (
+    maxDishBudget: number | undefined,
+    options?: { surface?: "onboarding" | "profile" | "settings" },
+  ) => void;
   addReview: (dish: DishDetail) => void;
   addReviewedDish: (dishId: string) => void;
   removeReviewedDish: (dishId: string) => void;
@@ -519,7 +543,7 @@ export const useProfileStore = create<ProfileState>()(
         set({ foodHistory: [] });
         trackAnalyticsEvent("food_history_reset", {});
       },
-      setFoodOpenness: (openness, surface) => {
+      setFoodOpenness: (openness, surface, options) => {
         const previousSnapshot = { profile: get().profile, tasteProfile: get().tasteProfile };
         const base = get().profile.tasteProfile ?? get().tasteProfile;
         const tasteProfile: TasteProfile = {
@@ -530,7 +554,13 @@ export const useProfileStore = create<ProfileState>()(
           neophiliaIndex: OPENNESS_NEOPHILIA_INDEX[openness],
         };
         set((state) => ({ profile: { ...state.profile, tasteProfile }, tasteProfile }));
-        trackAnalyticsEvent("food_openness_set", { openness, surface });
+        trackAnalyticsEvent("food_openness_set", {
+          openness,
+          surface,
+          ...(options?.changedFromDefault === undefined
+            ? {}
+            : { changed_from_default: options.changedFromDefault }),
+        });
         const optimisticProfile = get().profile;
         if (!shouldSyncAuthenticatedProfile(optimisticProfile)) return;
         void getHungryService()
@@ -558,7 +588,9 @@ export const useProfileStore = create<ProfileState>()(
               ...state.profile,
               displayName: savedProfile.displayName,
               email: savedProfile.email ?? state.profile.email,
-              avatarUrl: savedProfile.avatarUrl ?? state.profile.avatarUrl,
+              // The save returns the whole row: a missing bio or photo means it was removed.
+              bio: savedProfile.bio,
+              avatarUrl: savedProfile.avatarUrl,
               dietaryPreferences:
                 savedProfile.dietaryPreferences ?? state.profile.dietaryPreferences,
             },
@@ -630,8 +662,15 @@ export const useProfileStore = create<ProfileState>()(
         rehydrateFavouriteDishIds();
         if (authenticatedUserId) void get().loadFoodHistory();
       },
-      toggleFavourite: async (dish) => {
+      toggleFavourite: async (dish, options) => {
         const dishId = dish.id;
+        // Sent only once the save is settled, with what was actually stored.
+        const trackFavouriteResult = (saved: boolean) =>
+          trackAnalyticsEvent(saved ? "dish_favourited" : "dish_unfavourited", {
+            dish_id: dish.id,
+            venue_id: dish.venueId,
+            surface: options?.surface,
+          });
         if (pendingFavouriteDishToggles.has(dishId)) {
           return {
             status: "failed",
@@ -673,10 +712,6 @@ export const useProfileStore = create<ProfileState>()(
             : [...state.profile.favouriteDishIds, dishId];
           const feedbackType: ExplicitFeedbackEvent["type"] = isFavourite ? "unsaved" : "saved";
 
-          trackAnalyticsEvent(isFavourite ? "dish_unfavourited" : "dish_favourited", {
-            dish_id: dish.id,
-            venue_id: dish.venueId,
-          });
           if (!isFavourite) {
             trackActivationOnce(state.profile, "saved", dish.id);
           }
@@ -735,15 +770,21 @@ export const useProfileStore = create<ProfileState>()(
         }
         if (getServiceProvider().mode === "mock") {
           pendingFavouriteDishToggles.delete(dishId);
+          trackFavouriteResult(!wasFavourite);
           return { status: wasFavourite ? "removed" : "saved" };
         }
 
         const optimisticProfile = get().profile;
         try {
-          const saved = await getHungryService().profile.toggleFavourite(dishId, ownerUserId);
+          // Write the state the user asked for; a server toggle could flip a stale tap.
+          const saved = await getHungryService().profile.setFavourite(
+            dishId,
+            !wasFavourite,
+            ownerUserId,
+          );
           if (!isStillOwner()) return staleFavouriteResult();
-          // The server toggles its own row; if local state was stale, adopt the server result.
           setFavouriteMembership(set, dishId, saved);
+          trackFavouriteResult(saved);
           return { status: saved ? "saved" : "removed" };
         } catch (error) {
           if (!isStillOwner()) return staleFavouriteResult();
@@ -760,6 +801,103 @@ export const useProfileStore = create<ProfileState>()(
           };
         } finally {
           pendingFavouriteDishToggles.delete(dishId);
+        }
+      },
+      addFavourites: async (dishes, options) => {
+        const session = getSessionStoreState();
+        if (!session.isAuthenticated) return dishes;
+        const ownerUserId = session.authenticatedUserId ?? undefined;
+        const ownerEpoch = profileAccountEpoch;
+        const isStillOwner = () => {
+          const current = getSessionStoreState();
+          return (
+            profileAccountEpoch === ownerEpoch &&
+            current.isAuthenticated &&
+            (current.authenticatedUserId ?? undefined) === ownerUserId
+          );
+        };
+        const seen = new Set(get().profile.favouriteDishIds);
+        const toAdd = dishes.filter((dish) => {
+          if (seen.has(dish.id) || pendingFavouriteDishToggles.has(dish.id)) return false;
+          seen.add(dish.id);
+          return true;
+        });
+        if (toAdd.length === 0) return [];
+        const ids = toAdd.map((dish) => dish.id);
+        ids.forEach((id) => pendingFavouriteDishToggles.add(id));
+        const previousSnapshot = {
+          profile: get().profile,
+          tasteProfile: get().tasteProfile,
+          tasteInteractionEvents: get().tasteInteractionEvents,
+        };
+        const interactions: { input: RecordTasteInteractionInput; event: TasteInteractionEvent }[] =
+          [];
+        // One store update for every dish: membership, and the taste nudge a save gives.
+        set((state) => {
+          let profile = state.profile;
+          let tasteInteractionEvents = state.tasteInteractionEvents;
+          for (const dish of toAdd) {
+            trackActivationOnce(profile, "saved", dish.id);
+            if (!isFullFavouriteDish(dish)) continue;
+            const updatedTasteVector = processExplicitFeedback(profile.tasteVector, {
+              type: "saved",
+              dishVector: dish.tasteVector,
+              dishConfidence: dish.tasteConfidence,
+              timestamp: Date.now(),
+            });
+            const input: RecordTasteInteractionInput = { type: "saved", surface: "profile", dish };
+            const event = createTasteEvent(input, profile.tasteVector, updatedTasteVector, true);
+            interactions.push({ input, event });
+            tasteInteractionEvents = appendTasteEvent(tasteInteractionEvents, event);
+            profile = {
+              ...profile,
+              tasteVector: updatedTasteVector,
+              recommendationSignals: bumpRecommendationSignals(profile, "saved"),
+            };
+          }
+          const favouriteDishIds = [...state.profile.favouriteDishIds, ...ids];
+          return {
+            profile: {
+              ...profile,
+              favouriteDishIds,
+              stats: { ...profile.stats, favouritesCount: favouriteDishIds.length },
+            },
+            tasteProfile: { ...state.tasteProfile, vector: profile.tasteVector },
+            tasteInteractionEvents,
+          };
+        });
+        // n-plus-one-ok: fire-and-forget taste signals, at most 8 pending guest saves; there is no batched feedback RPC yet.
+        interactions.forEach(({ input, event }) => persistTasteInteraction(input, event));
+        const trackSaved = () =>
+          toAdd.forEach((dish) =>
+            trackAnalyticsEvent("dish_favourited", {
+              dish_id: dish.id,
+              venue_id: dish.venueId,
+              surface: options?.surface,
+            }),
+          );
+        if (getServiceProvider().mode === "mock") {
+          ids.forEach((id) => pendingFavouriteDishToggles.delete(id));
+          trackSaved();
+          return [];
+        }
+        const optimisticProfile = get().profile;
+        try {
+          await getHungryService().profile.addFavourites(ids, ownerUserId);
+          if (!isStillOwner()) return toAdd;
+          trackSaved();
+          return [];
+        } catch (error) {
+          if (!isStillOwner()) return toAdd;
+          console.error("Failed to save favourites", error);
+          if (get().profile === optimisticProfile) {
+            set(previousSnapshot);
+          } else {
+            ids.forEach((id) => setFavouriteMembership(set, id, false));
+          }
+          return toAdd;
+        } finally {
+          ids.forEach((id) => pendingFavouriteDishToggles.delete(id));
         }
       },
       updateProfile: (next) => {
@@ -904,12 +1042,13 @@ export const useProfileStore = create<ProfileState>()(
             set(previousSnapshot);
           });
       },
-      setDietaryPreferences: (dietaryPreferences) => {
+      setDietaryPreferences: (dietaryPreferences, options) => {
         const previousProfile = get().profile;
         set((state) => {
           // Religious and health diets are sensitive (PDPA): only how many were picked is sent.
           trackAnalyticsEvent("dietary_preferences_set", {
             flag_count: dietaryPreferences.length,
+            surface: options?.surface ?? null,
           });
           return {
             profile: {
@@ -930,8 +1069,11 @@ export const useProfileStore = create<ProfileState>()(
             set({ profile: previousProfile });
           });
       },
-      setMaxDishBudget: (maxDishBudget) => {
-        trackAnalyticsEvent("budget_preference_set", { max_dish_budget: maxDishBudget ?? null });
+      setMaxDishBudget: (maxDishBudget, options) => {
+        trackAnalyticsEvent("budget_preference_set", {
+          max_dish_budget: maxDishBudget ?? null,
+          surface: options?.surface ?? null,
+        });
         const previousProfile = get().profile;
         set((state) => ({ profile: { ...state.profile, maxDishBudget } }));
         const optimisticProfile = get().profile;

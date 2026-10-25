@@ -5,7 +5,7 @@ import { dishes, venues } from "@/lib/services/mock/data";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import type { DishDetail, VenueSummary } from "@/types/domain";
 
-import { preferOpenStalls, rankDecideCandidates } from "./decideForMeCandidates";
+import { isVenueOpenNow, preferOpenStalls, rankDecideCandidates } from "./decideForMeCandidates";
 
 const baseDish = dishes[0]!;
 const baseVenue = venues[0]!;
@@ -20,6 +20,17 @@ function venue(id: string, operatingHours: string, isOpen = true): VenueSummary 
 
 // Tuesday 22:00 in Singapore (14:00 UTC).
 const TEN_PM_SGT = new Date("2026-10-20T14:00:00Z");
+
+test("the map's open check uses the merchant's weekly schedule over the listed hours", () => {
+  // Listed hours say lunch only, but the merchant now opens for supper on Tuesdays.
+  const stall: VenueSummary = {
+    ...venue("schedule-stall", "Mon-Sun 11am-2pm"),
+    openingSchedule: { weekly: { tue: [{ open: "18:00", close: "23:30" }] } },
+  };
+  assert.equal(isVenueOpenNow(stall, TEN_PM_SGT), true);
+  assert.equal(isVenueOpenNow(venue("lunch-only", "Mon-Sun 11am-2pm"), TEN_PM_SGT), false);
+  assert.equal(isVenueOpenNow(venue("no-hours", "", false), TEN_PM_SGT), false);
+});
 
 test("Decide for Me skips a stall that closed hours ago", () => {
   const lunchOnly = venue("lunch-stall", "Mon-Sun 11am-2pm");

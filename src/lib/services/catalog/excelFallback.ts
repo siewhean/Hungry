@@ -20,14 +20,14 @@ import type {
   CatalogPlacesRequest,
   CatalogSuggestion,
 } from "@/lib/services/catalog";
-import { CatalogContractError } from "@/lib/services/catalog";
-import { sanitizeCatalogImageUrl } from "@/lib/services/catalog/media";
+import { CATALOG_OFFLINE_RELEASE_ID, CatalogContractError } from "@/lib/services/catalog";
+import { sanitizeOfflineCatalogImageUrl } from "@/lib/services/catalog/media";
 import type { Coordinate, DietaryFlag, DishDetail } from "@/types/domain";
 
 type ExcelVenue = ReturnType<typeof listExcelVenues>[number];
 type CatalogReadService = typeof import("@/lib/services/catalog").catalogRawService;
 
-const FALLBACK_RELEASE_ID = "excel-fallback-v1";
+const FALLBACK_RELEASE_ID = CATALOG_OFFLINE_RELEASE_ID;
 const allDishes = listExcelDishes();
 const allVenues = listExcelVenues();
 const venueById = new Map(allVenues.map((venue) => [venue.id, venue]));
@@ -43,7 +43,7 @@ for (const dish of allDishes) {
 }
 
 function cleanImageUrl(value: string | null | undefined): string | undefined {
-  return sanitizeCatalogImageUrl(value, { rightsStatus: "approved", approvedForDisplay: true });
+  return sanitizeOfflineCatalogImageUrl(value);
 }
 
 function dishImageUrl(dish: Pick<DishDetail, "gallery" | "imageUrl">): string | undefined {
@@ -204,12 +204,22 @@ function queryMatches(value: string, query: string | undefined): boolean {
   return !normalized || value.includes(normalized);
 }
 
+/** Noodles / Rice chips: any keyword fragment in the text, like the RPCs' p_food_keywords. */
+function matchesAnyKeyword(text: string, keywords: readonly string[] | undefined): boolean {
+  const wanted = (keywords ?? [])
+    .map((keyword) => keyword.trim().toLocaleLowerCase())
+    .filter(Boolean);
+  return wanted.length === 0 || wanted.some((keyword) => text.includes(keyword));
+}
+
 function filterDishes(request: CatalogPageRequest): CatalogRawDishCard[] {
   return allDishes
     .filter((dish) => {
+      if (request.buildingId && dish.buildingId !== request.buildingId) return false;
       const venue = venueById.get(dish.venueId);
       const text = dishSearchText(dish, venue);
       if (!queryMatches(text, request.query)) return false;
+      if (!matchesAnyKeyword(normalizedText([dish.name]), request.foodKeywords)) return false;
       if (!matchesAllTags(text, request.cuisineTags)) return false;
       if (
         request.dietaryFlags?.length &&
@@ -269,8 +279,17 @@ function filterVenues(request: CatalogPageRequest): CatalogRawVenueCard[] {
 
   return allVenues
     .filter((venue) => {
+      if (request.buildingId && venue.buildingId !== request.buildingId) return false;
       const text = venueSearchText(venue);
       if (!queryMatches(text, request.query)) return false;
+      if (
+        request.foodKeywords?.length &&
+        !(dishesByVenueId.get(venue.id) ?? []).some((dish) =>
+          matchesAnyKeyword(normalizedText([dish.name]), request.foodKeywords),
+        )
+      ) {
+        return false;
+      }
       if (!matchesAllTags(text, request.cuisineTags)) return false;
       if (
         request.dietaryFlags?.length &&

@@ -20,10 +20,16 @@ export type AuthStackParamList = {
       }
     | undefined;
   /** The link a signed-in user opens to confirm a new sign-in email (hungry://auth/email-change). */
-  EmailChange: { code?: string } | undefined;
-  ForgotPassword: undefined;
+  /** otherLinkPending: the first of two double-confirmation links was accepted. */
+  EmailChange: { code?: string; otherLinkPending?: boolean } | undefined;
+  /**
+   * fromSignedIn: opened by a signed-in user ("Forgot current password?" on ChangePassword),
+   * who stays signed in and returns there; email fills the field.
+   */
+  ForgotPassword: { email?: string; fromSignedIn?: boolean } | undefined;
   /**
    * recoveryVerified: the emailed code was already verified (ForgotPassword).
+   * fromSignedIn: the user was signed in before the reset, so leaving does not sign out.
    * error / linkError: the reset link came back with an error (expired, already used).
    */
   ResetPassword:
@@ -32,6 +38,7 @@ export type AuthStackParamList = {
         code?: string;
         error?: "expired" | "invalid";
         recoveryVerified?: boolean;
+        fromSignedIn?: boolean;
         linkError?: "expired" | "invalid";
       }
     | undefined;
@@ -40,13 +47,22 @@ export type AuthStackParamList = {
 
 export type OnboardingStackParamList = {
   OnboardingWelcome: undefined;
-  TasteQuiz: { mode?: "onboarding" | "profile"; initialPhase?: "taste" | "dietary" } | undefined;
+  TasteQuiz:
+    | {
+        mode?: "onboarding" | "profile";
+        initialPhase?: "taste" | "dietary";
+        /** The page the edit was opened from, for the preference events' surface. */
+        source?: "settings";
+      }
+    | undefined;
   DietaryPreferences:
     | {
         mode?: "onboarding" | "profile";
         initialPhase?: "taste" | "dietary";
         /** Taste answers carried over from the TasteQuiz route. */
         answers?: TasteVector;
+        /** The questions the user actually answered (the rest kept the middle value). */
+        answeredKeys?: (keyof TasteVector)[];
       }
     | undefined;
   /** "How open are you to trying new food?" mode "settings": change it from Settings and go back. */
@@ -55,7 +71,7 @@ export type OnboardingStackParamList = {
   TasteProfileResult: undefined;
   LocationPermission: undefined;
   /** mode "settings": change the location from Settings and go back, without onboarding. */
-  ManualLocationPicker: { mode?: "settings" } | undefined;
+  ManualLocationPicker: { mode?: "settings" | "onboarding" } | undefined;
   /** dishName: the dish a guest tapped save on, so the headline can say what the account is for. */
   OnboardingAuth: { dishName?: string } | undefined;
 };
@@ -120,7 +136,8 @@ export type MerchantTabParamList = {
   BusinessProfileEditor: undefined;
   DishEditor: { dishId?: string; ocrDraftId?: string } | undefined;
   OCRDrafts: undefined;
-  CustomerInbox: undefined;
+  /** `filter` opens a filtered list; `replyToId` opens the reply composer for that review. */
+  CustomerInbox: { filter?: "unreplied"; replyToId?: string } | undefined;
   FeaturedVisitors: undefined;
   PromotionBuilder: { promotionId?: string; duplicateFromId?: string } | undefined;
   PromotionList: undefined;
@@ -137,7 +154,14 @@ export type RootStackParamList = {
   StallDetail: { venueId?: string; id?: string };
   MerchantClaimExplainer: undefined;
   ReportProblem: { venueId: string; dishId?: string; subjectName?: string };
-  DishDetail: { dishId?: string; id?: string };
+  /** `source` names where the dish was opened from, for the dish_viewed event. */
+  DishDetail: {
+    dishId?: string;
+    id?: string;
+    source?: string;
+    /** Opened from a catalog card: a dish page that can't be found shows the catalog record. */
+    catalogFallback?: { releaseId?: string };
+  };
   CatalogRawDetail: { kind: "dish" | "venue"; id: string; releaseId?: string };
   SearchHome: undefined;
   SearchResults:
@@ -151,13 +175,19 @@ export type RootStackParamList = {
         /** One chip or several, comma separated: "Halal", "Halal,Rice" or "Under S$6". */
         initialFilter?: string;
         /** Where the search came from; Discover chips already logged their own signal. */
-        source?: "discover_chip";
+        source?:
+          | "discover_chip"
+          | "search_typed"
+          | "search_recent"
+          | "search_suggestion"
+          | "search_featured";
       }
     | undefined;
   BrowseDishes: undefined;
   BrowseStalls: undefined;
   DiscoverMap: undefined;
-  DecideForMeQuiz: undefined;
+  /** `answers` pre-fills the quiz when "Change answers" reopens it from the result. */
+  DecideForMeQuiz: { answers?: DecideAnswers } | undefined;
   DecideForMeResult:
     | { surface?: "home" | "discover" | "push"; answers?: DecideAnswers }
     | undefined;

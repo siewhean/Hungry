@@ -114,7 +114,7 @@ test("plain sign-out only ends this device; global is explicit (M4)", () => {
   // The session store calls signOut() with no scope, which is local.
   assert.match(
     read("src/store/useSessionStore.ts"),
-    /\.then\(\(\) => service\.auth\.signOut\(\)\)/,
+    /\.then\(async \(\) => \{[\s\S]*?await service\.auth\.signOut\(\);/,
   );
   assert.match(
     read("src/lib/services/types.ts"),
@@ -168,12 +168,13 @@ test("guests can open Settings and see only guest-safe rows (M8, L15)", () => {
   );
 
   const screen = settings();
-  assert.match(screen, /\{isAuthenticated \? <PendingDeletionBanner \/> : null\}/);
-  assert.match(screen, /label="Sign in or create an account"/);
+  assert.match(screen, /\{isAuthenticated \? \(\s*<PendingDeletionBanner/);
+  // The app is sign-in only (PreAuthNavigator), so the guest sign-in row is gone.
+  assert.doesNotMatch(screen, /label="Sign in or create an account"/);
   // Account-only rows sit inside isAuthenticated branches.
   for (const accountOnly of [
     'label="Profile visibility"',
-    'label="Blocked and hidden"',
+    "label={BLOCKED_AND_HIDDEN_TITLE}",
     "label={isExportingData",
     'label="Delete account"',
   ]) {
@@ -200,7 +201,9 @@ test("deletion dialog says the profile is hidden, resends codes and is destructi
   assert.match(dialog, /onResend=\{onResend\}/);
   assert.match(dialog, /submitVariant="destructive"/);
   const field = read("src/features/auth/EmailCodeField.tsx");
-  assert.match(field, /EMAIL_CODE_RESEND_SECONDS = 60/);
+  // AUTH-12: one cooldown (useResendCooldown, 65 s from an end time) for every auth screen.
+  assert.match(field, /EMAIL_CODE_RESEND_SECONDS = RESEND_COOLDOWN_SECONDS/);
+  assert.match(field, /useResendCooldown\(true\)/);
   assert.match(field, /Resend code in \$\{cooldown\}s/);
   assert.match(field, /variant=\{submitVariant\}/);
   assert.match(screen, /onResend=\{resendDeletionCode\}/);
@@ -311,13 +314,14 @@ test("profile names and bios get a server length cap, reserved check and text fi
 
 // --- Notifications (M9) ------------------------------------------------------------------
 
-test("notification switches show off and dim while the OS blocks notifications (M9)", () => {
+test("notification switches show the saved value, dimmed, while the OS blocks notifications (M9, SET-16)", () => {
   const alerts = read("src/components/settings/StallAlertsSettings.tsx");
   assert.match(alerts, /getNotificationPermissionState\(\)/);
   assert.match(alerts, /AppState\.addEventListener\("change"/);
   assert.match(alerts, /Notifications are off for Hungry/);
-  assert.equal(alerts.match(/&& !permissionDenied/g)?.length, 3);
-  assert.equal(alerts.match(/dimmed=\{permissionDenied\}/g)?.length, 3);
+  // A saved alert stays visible so it can be turned off; the "off" row explains the block.
+  assert.doesNotMatch(alerts, /&& !permissionDenied/);
+  assert.equal(alerts.match(/dimmed=\{permissionDenied\}/g)?.length, 4);
   assert.match(read("src/lib/notifications/push.ts"), /getPermissionsAsync\(\)/);
 });
 
@@ -327,7 +331,9 @@ test("left-handed mode no longer right-aligns post text (L1)", () => {
   const home = read("src/app/screens/home/HomeFeedScreen.tsx");
   assert.doesNotMatch(home, /textAlign: leftHandedMode/);
   assert.doesNotMatch(home, /alignSelf: leftHandedMode/);
-  assert.match(settings(), /like and save buttons on posts/);
+  // Posts are archived; the row now names the only floating button it moves.
+  assert.doesNotMatch(settings(), /like and save buttons on posts/);
+  assert.match(settings(), /Moves the add button on your merchant menu to the left side\./);
 });
 
 test("reset food history copy matches what it clears (L2)", () => {

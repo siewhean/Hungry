@@ -1441,3 +1441,13 @@ Use the smallest check that matches the change risk.
 | 2026-10-23 | AI provider and model chosen by secrets (AI_PROVIDER / AI_MODEL; Gemini or Claude) | `src/lib/ai/aiProvider.test.ts` + `geminiHelper.test.ts` (12 pass, Claude and Gemini requests mocked); `dish-taste-tagging.test.ts`; `check:rate-limits`, `check:n-plus-one`, `check:edge-functions`, race-pattern audit | Pass / live Claude call pending | `typecheck`, `eslint` and the error-reporting contract test not run locally (they need installed deps); CI covers them. Needs `ANTHROPIC_API_KEY` on the Singapore project before switching; default stays Gemini, so nothing changes until the secrets are set. Re-run the answer-key eval per model before trusting auto-apply. |
 | 2026-10-23 | STITCH-BUILD-02 Stitch redesign (images 2-8) | typecheck; full npm test (1819, 0 fail); `test:render` 149/149; `eslint src` (0 errors); `check:n-plus-one`; `audit:races`; `test:coverage` + baseline update; prettier | Pass | Native visual smoke not run. Release builds use `CatalogDiscoverHome`, which lacks mall mode and For You. |
 | 2026-10-23 | STITCH-BUILD-03 round-2 owner feedback (24 items) | typecheck; full npm test (0 fail); `test:render` (0 fail); eslint on touched files (0 errors); `check:n-plus-one`; `test:coverage` + baseline update; prettier | Pass | 38 old source contracts updated to the owner's new decisions (no Helpful, no review comments, no Rice chip, no Save-this-stall card, search-only area picker). Dark mode keeps dark text on orange (white is 2.8:1 there). Native visual smoke not run. |
+
+## 2026-10-24 round-three page audit (branch claude/project-thread-cyx5eo)
+- npm test: 2035 pass after contract updates; npm run test:render: 395/395; npm run typecheck clean.
+- npm run test:coverage:update: lines 83.1%, branches 83.3%, functions 78.1% (baseline committed).
+- check:n-plus-one ok (4 baselined), check:rate-limits, audit:races, audit:supabase:migration-safety pass. No migrations in this branch.
+- Needs device check: quiz iOS swipe-back block (usePreventRemove), review photo pinch zoom.
+
+## 2026-10-25 redesign live in Supabase builds (worktree-agent-a6e4a2b7af914ed7e)
+- npm test: 2100 pass / 0 fail; npm run test:render: 408/408; typecheck clean; prettier --check src/ clean; lint 0 errors; check:n-plus-one ok (4 baselined).
+- npm run test:coverage: fails on 9 untouched files (authCopy, gamificationLimits, useComposerStore, publishErrorCopy, mockAnalytics, posthogSink, mock/persistence, useDiscoveryStore, useLocationStore); identical list at base b211e99e in this environment, so not caused by this change.

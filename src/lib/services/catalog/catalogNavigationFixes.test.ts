@@ -262,10 +262,11 @@ test("catalog detail pushes nested records and never dead-ends", () => {
   assert.match(detail, /openRecord\("dish", item\.id, menu\.releaseId\)/);
   assert.match(detail, /openRecord\(\s*"venue",\s*\(detail as CatalogRawDishDetail\)\.venueId/);
   assert.doesNotMatch(dishDetail, /navigation\.navigate\("DishDetail", \{ dishId: item\.id \}\)/);
-  assert.match(dishDetail, /navigation\.push\("DishDetail", \{ dishId: item\.id \}\)/);
+  assert.match(dishDetail, /navigation\.push\("DishDetail", \{\s*dishId: item\.id,/);
 
   // Loading and error states keep a back control; Back works without history.
-  assert.equal((detail.match(/<DetailHeader onBack=\{goBackOrHome\} \/>/g) ?? []).length, 2);
+  // Loading, sign-in and error states.
+  assert.equal((detail.match(/<DetailHeader onBack=\{goBackOrHome\} \/>/g) ?? []).length, 3);
   assert.match(detail, /navigation\.canGoBack\(\)[\s\S]*?navigation\.navigate\("MainTabs"/);
   assert.match(detail, /ctaLabel="Retry"/);
 
@@ -287,7 +288,7 @@ test("release tab redirects stay inert and never mount Discover", () => {
   assert.match(redirect, /useFocusEffect\(/);
   assert.match(redirect, /return <TabScreenLoadingPlaceholder \/>/);
   assert.doesNotMatch(redirect, /useEffect\(/);
-  assert.match(tabs, /<Tab\.Screen name="Discover" component=\{DiscoverWrapper\} \/>/);
+  assert.match(tabs, /<Tab\.Screen\s+name="Discover"\s+component=\{DiscoverWrapper\}/);
 });
 
 test("browse grid keeps rows on a failed continuation and offers retry", () => {

@@ -15,15 +15,15 @@ test.describe("merchant catalog", () => {
 
     // The preset has one outlet, so the outlet switcher stays hidden.
     await expect(page.getByRole("button", { name: /Switch outlet/ })).toHaveCount(0);
-    await expect(page.getByText("Manage Menu").first()).toBeVisible();
+    await expect(page.getByText("Manage menu").first()).toBeVisible();
 
-    await page.getByText("Manage Menu").first().click();
+    await page.getByText("Manage menu").first().click();
     await expect(page.getByText("Menu", { exact: true }).first()).toBeVisible();
     await expect(page.getByRole("button", { name: "Add menu item" }).first()).toBeVisible();
 
     await page.getByRole("button", { name: "Add menu item" }).first().click();
     // Photo drafts are off, so the button opens the dish editor directly.
-    await expect(page.getByText("Add Dish", { exact: true }).first()).toBeVisible();
-    await expect(page.getByText("Dish Name *").first()).toBeVisible();
+    await expect(page.getByText("Add dish", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("Dish name *").first()).toBeVisible();
   });
 });

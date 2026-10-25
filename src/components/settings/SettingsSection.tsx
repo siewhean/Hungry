@@ -14,7 +14,7 @@ interface SettingsSectionProps {
   collapsible?: boolean;
   /** Collapsible sections start folded unless this is false. */
   defaultCollapsed?: boolean;
-  /** Shown next to the title while folded, for example "3 selected". */
+  /** Shown next to the title while folded, for example "3 selected", and read with the title. */
   collapsedSummary?: string;
 }
 
@@ -36,7 +36,9 @@ export function SettingsSection({
       {title && canFold ? (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={title}
+          accessibilityLabel={
+            collapsed && collapsedSummary ? `${title}, ${collapsedSummary}` : title
+          }
           accessibilityState={{ expanded: !collapsed }}
           accessibilityHint={collapsed ? "Shows these settings" : "Hides these settings"}
           onPress={() => {
@@ -54,9 +56,21 @@ export function SettingsSection({
           <AppText variant={editorial ? "h2" : "micro"} accessibilityRole="header">
             {title}
           </AppText>
-          <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
+          <View
+            style={{
+              alignItems: "center",
+              flexDirection: "row",
+              flexShrink: 1,
+              gap: spacing[2],
+              marginLeft: spacing[3],
+            }}
+          >
             {collapsed && collapsedSummary ? (
-              <AppText tone="muted" variant="bodySmall">
+              <AppText
+                tone="muted"
+                variant="bodySmall"
+                style={{ flexShrink: 1, textAlign: "right" }}
+              >
                 {collapsedSummary}
               </AppText>
             ) : null}

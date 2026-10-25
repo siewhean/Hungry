@@ -18,6 +18,7 @@ import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
+import { reportError } from "@/lib/monitoring/reportError";
 import { safeAsyncStorage } from "@/store/persistStorage";
 import type { AIBusinessInsight } from "@/types/domain";
 
@@ -63,10 +64,10 @@ export function AIAssistantScreen() {
         data.filter((i) => i.type !== "weekly_summary" && !i.isDismissed && !dismissed.has(i.id)),
       );
 
-      const summary = await getHungryService().merchant.getWeeklySummary(activeOutlet.id);
-      setWeeklySummary(summary);
+      // The weekly summary is one of the insights: no second read of the same analytics.
+      setWeeklySummary(data.find((insight) => insight.type === "weekly_summary") ?? null);
     } catch (e) {
-      console.error(e);
+      reportError(e, { screen: "AIAssistant", action: "load_insights" });
       setError(e instanceof Error ? e.message : "Failed to load insights.");
     } finally {
       setIsLoading(false);

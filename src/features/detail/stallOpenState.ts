@@ -24,6 +24,11 @@ export interface StallOpenInfo {
   statusLabel: string;
   /** The owner's temporary-closure text, else the stored closure notice. */
   closureNotice?: string;
+  /**
+   * The closure notice when the status line does not already say it, so a page shows the
+   * notice once: under the header only when the hours card says something else.
+   */
+  extraNotice?: string;
   /** The whole week (plus upcoming special hours); unreadable text is still shown as written. */
   weekRows: StallHoursRow[];
   /** Just today, for a collapsed hours card; the whole week when today cannot be told. */
@@ -92,6 +97,7 @@ export function resolveStallOpenInfo(input: {
     isOpen: openState.status === "open",
     statusLabel,
     closureNotice,
+    extraNotice: closureNotice && closureNotice !== statusLabel ? closureNotice : undefined,
     weekRows,
     todayRows,
   };

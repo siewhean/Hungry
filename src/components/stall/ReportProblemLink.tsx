@@ -15,29 +15,36 @@ interface ReportProblemLinkProps {
   dishId?: string;
   /** The dish or stall name, shown on the report page. */
   subjectName?: string;
-  /** Where a guest returns to after signing in. */
-  returnRoute: PendingRoute;
+  /**
+   * Not used: after sign-in a guest goes straight on to the report page instead of back to
+   * this stall or dish. Kept so existing callers still type-check.
+   */
+  returnRoute?: PendingRoute;
 }
 
 /**
  * "Something wrong?" at the bottom of a stall or dish page. Catalog data is imported, so
  * prices and hours go stale; a tap opens the report page, which sends it to the ops queue.
  */
-export function ReportProblemLink({
-  venueId,
-  dishId,
-  subjectName,
-  returnRoute,
-}: ReportProblemLinkProps) {
+export function ReportProblemLink({ venueId, dishId, subjectName }: ReportProblemLinkProps) {
   const { palette, spacing } = useHungryTheme();
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const requireAccount = useRequireAccount();
   const subject = dishId ? "this dish" : "this stall";
 
   const open = useCallback(() => {
-    if (!requireAccount(`Sign in to report a problem with ${subject}`, returnRoute)) return;
-    navigation.navigate("ReportProblem", { venueId, dishId, subjectName });
-  }, [dishId, navigation, requireAccount, returnRoute, subject, subjectName, venueId]);
+    const params = { venueId, dishId, subjectName };
+    // After sign-in the guest lands on the report page, not back on the stall or dish.
+    if (
+      !requireAccount(`Sign in to report a problem with ${subject}`, {
+        name: "ReportProblem",
+        params,
+      })
+    ) {
+      return;
+    }
+    navigation.navigate("ReportProblem", params);
+  }, [dishId, navigation, requireAccount, subject, subjectName, venueId]);
 
   return (
     <Pressable

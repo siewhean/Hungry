@@ -116,9 +116,24 @@ export function registerPostHogProperties(properties: Record<string, unknown>): 
   void client.register(toPostHogProperties(sanitizeAnalyticsProperties(properties)));
 }
 
-/** The flag's value for this user (PostHog keeps the assignment stable per user). */
+/**
+ * The flag's value for this user (PostHog keeps the assignment stable per
+ * user). Records exposure: PostHog sends `$feature_flag_called` once per flag
+ * load.
+ */
 export function getPostHogFeatureFlag(key: string): boolean | string | undefined {
   return getPostHogClient()?.getFeatureFlag(key);
+}
+
+/** The flag's value without recording exposure. */
+export function peekPostHogFeatureFlag(key: string): boolean | string | undefined {
+  const result = getPostHogClient()?.getFeatureFlagResult(key, { sendEvent: false });
+  return result ? (result.variant ?? result.enabled) : undefined;
+}
+
+/** True once flags have loaded from the server or the on-device cache. */
+export function havePostHogFeatureFlagsLoaded(): boolean {
+  return getPostHogClient()?.getFeatureFlags() !== undefined;
 }
 
 /** Calls back whenever flags load or reload; returns an unsubscribe. */

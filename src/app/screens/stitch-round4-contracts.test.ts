@@ -12,10 +12,12 @@ test("dish page: Order on under the stall card, rating only after Tried, no flav
   assert.ok(stallCard > 0 && orderOn > stallCard && radar > orderOn);
   // No rating before the dish is tried; marking it tried opens an optional rate + taste popup.
   assert.doesNotMatch(dish, /Rate this dish/);
-  assert.match(dish, /"Marked as tried\."[\s\S]*?openTriedPrompt\(\)/);
-  assert.match(dish, /<StarRating value=\{triedRating\} editable onChange=\{setTriedRating\}/);
-  assert.match(dish, /How did it taste\?[\s\S]*?<ChipGroup/);
-  assert.match(dish, /label="Not now"/);
+  // The popup lives in TriedFollowUp (dish_tried_prompt_v1), mounted only after a Tried mark.
+  const followUp = read("src/features/detail/TriedFollowUp.tsx");
+  assert.match(dish, /"Marked as tried\."[\s\S]*?setTriedFollowUpPending\(true\)/);
+  assert.match(followUp, /<StarRating value=\{rating\} editable onChange=\{setRating\}/);
+  assert.match(followUp, /How did it taste\?[\s\S]*?<ChipGroup/);
+  assert.match(followUp, /label="Not now"/);
   // Not tried: grey circle, no tick. Tried: orange tick.
   assert.match(
     dish,
@@ -66,7 +68,7 @@ test("stall page: description only, hours on one row, website, filter beside the
   assert.match(stall, /link\.platform === "website"/);
   assert.match(
     stall,
-    /Signature dishes<\/AppText>\s+\{menuStatus === "ready" &&[\s\S]*?<MenuFilterDropdown/,
+    /"h2">Menu<\/AppText>\s+\{menuStatus === "ready" &&[\s\S]*?<MenuFilterDropdown/,
   );
   const card = stall.indexOf("Opening hours, ${operatingStatusLabel}");
   const orderOn = stall.search(/Order on\s*<\/AppText>/);
