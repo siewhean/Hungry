@@ -3,7 +3,7 @@
 -- warehouses, school and staff canteens, camps) from Search, the map, venue and dish pages,
 -- place lists, suggestions and the Home feed. The source rows in public.venues stay as they are.
 --
--- Rebuilt on today's functions from supabase/migrations-pending/20260715013000 and
+-- Rebuilt on today's functions from the parked (now removed) 20260715013000 and
 -- 20260715020000 (which patched older page bodies) and the cursor-helper part of 20260724090000.
 -- The name rules are narrower than the old ones: plain "factory", "school", "university" and
 -- "industrial" matched real cafes (Beans Factory, Modern Old School, Tokyo Milk Cheese Factory),

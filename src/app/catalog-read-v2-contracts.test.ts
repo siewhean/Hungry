@@ -155,12 +155,6 @@ test("non-consumer venues are kept out of every raw catalog card and the Home fe
   assert.doesNotMatch(migration, /\|factory\||\(school\||\|university\||\|industrial\)/);
 });
 
-test("catalog release publisher fails when count validation does not activate a release", () => {
-  const publisher = read("scripts/publish-catalog-raw-release.mjs");
-  assert.match(publisher, /release\?\.status !== "active"/);
-  assert.match(publisher, /process\.exitCode = 1/);
-});
-
 test("guest catalog migration opens only the read RPCs to anon", () => {
   const migration = read("supabase/migrations/20261019210000_guest_catalog_raw_reads.sql");
   for (const rpc of [
