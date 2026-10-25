@@ -1,0 +1,14 @@
+{
+  "version": "20261025090000",
+  "name": "20261025090000_catalog_hide_non_consumer_venues",
+  "result": "pass",
+  "rehearsed_at": "2026-10-25T15:50:44Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "71d90fd88ef6e859fc396baccbbad4a272dbd3a8",
+  "up_sha256": "2f856bb24876ddd05878ff0f063071d5cd2b9e7f578196f417d7da43bb6c1b51",
+  "down_sha256": "add7e8a12128b74a5585e83f4c042d464bbe87eb144b19a182fab0d178e3781d",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/catalog_hide_non_consumer_venues.sql"]
+}

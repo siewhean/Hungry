@@ -8,7 +8,7 @@ export const WEB_LINKS = {
   help: `${WEB_BASE_URL}/contact`,
   privacy: `${WEB_BASE_URL}/privacy`,
   terms: `${WEB_BASE_URL}/terms`,
-  refunds: `${WEB_BASE_URL}/refunds`,
+  refunds: `${WEB_BASE_URL}/refund`,
   cookies: `${WEB_BASE_URL}/cookies`,
   credits: `${WEB_BASE_URL}/credits`,
   accountDeletion: `${WEB_BASE_URL}/account/delete`,
