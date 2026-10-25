@@ -13,7 +13,6 @@ import {
   MessageCircle,
   Plus,
   Search,
-  Star,
   User,
   Utensils,
   Zap,
@@ -69,25 +68,6 @@ const stallDishes = [
   },
 ] as const;
 
-const reviewCards = [
-  {
-    author: "Mei Lin",
-    dish: "Signature Chicken Rice",
-    venue: "Tan Kee Chicken Rice",
-    rating: 5,
-    text: "Rice was fragrant, chicken was tender, and the chilli had the right kick.",
-    image: "/images/food/chicken-rice-topdown.png",
-  },
-  {
-    author: "Arjun",
-    dish: "Char Kway Teow",
-    venue: "Chinatown Complex",
-    rating: 4,
-    text: "Good wok hei and clear opening status before I made the trip down.",
-    image: "/images/food/char-kway-teow-topdown.png",
-  },
-] as const;
-
 const screenLabels = {
   discover: "Hungry discovery page on iPhone",
   "dish-detail": "Hungry dish details page on iPhone",
@@ -95,16 +75,6 @@ const screenLabels = {
   "stall-menu": "Hungry stall menu section on iPhone",
   "review-feed": "Hungry review feed with mock contents on iPhone",
 } satisfies Record<DiscoveryPhoneMockupScreen, string>;
-
-function StarRating({ rating }: { rating: number }) {
-  return (
-    <span className={styles.starRating} aria-label={`${rating} star rating`}>
-      {[1, 2, 3, 4, 5].map((value) => (
-        <Star key={value} size={13} fill={value <= rating ? "currentColor" : "transparent"} />
-      ))}
-    </span>
-  );
-}
 
 function DiscoverContent() {
   return (
@@ -213,7 +183,7 @@ function StallDetailContent() {
         <p>#02-32 · Hainanese · 12 min walk</p>
         <div className={styles.infoPillRow}>
           <span>Open now</span>
-          <span>4.7 ★</span>
+          <span>Sample stall</span>
           <span>$4-$7</span>
         </div>
       </section>
@@ -266,7 +236,7 @@ function DishDetailContent() {
         <p>Rich coconut broth, prawns, fishcake, and sambal from Ah Heng Curry.</p>
         <div className={styles.infoPillRow}>
           <span>Open now</span>
-          <span>4.8 ★</span>
+          <span>Sample dish</span>
           <span>$5.20</span>
         </div>
       </section>
@@ -347,45 +317,16 @@ function ReviewFeedContent() {
   return (
     <div className={styles.reviewPreview}>
       <section className={styles.reviewHeader}>
-        <p className={styles.locationEyebrow}>Review</p>
+        <p className={styles.locationEyebrow}>Review preview</p>
         <h2>Dish notes from foodies</h2>
-        <p>Mock community content attached to real dishes and stalls.</p>
+        <p>No customer reviews are shown in this preview.</p>
       </section>
-
-      <div className={styles.reviewFilterRow}>
-        <span className={styles.tabActive}>Recent</span>
-        <span>Top rated</span>
-        <span>By dish</span>
-      </div>
-
-      <div className={styles.reviewList}>
-        {reviewCards.map((review) => (
-          <article className={styles.reviewCard} key={`${review.author}-${review.dish}`}>
-            <div className={styles.reviewPhoto}>
-              <Image src={review.image} alt="" fill sizes="160px" />
-            </div>
-            <div className={styles.reviewBody}>
-              <div className={styles.reviewMeta}>
-                <span>{review.author.charAt(0)}</span>
-                <div>
-                  <strong>{review.author}</strong>
-                  <p>{review.venue}</p>
-                </div>
-                <StarRating rating={review.rating} />
-              </div>
-              <div className={styles.reviewDishTag}>{review.dish}</div>
-              <p>{review.text}</p>
-              <div className={styles.reviewActions}>
-                <span>
-                  <Heart size={13} /> 24
-                </span>
-                <span>
-                  <MessageCircle size={13} /> 6
-                </span>
-              </div>
-            </div>
-          </article>
-        ))}
+      <div className={styles.infoCard}>
+        <MessageCircle size={18} aria-hidden />
+        <div>
+          <strong>Reviews belong to diners</strong>
+          <p>When available, diners can share their own experience of a dish here.</p>
+        </div>
       </div>
     </div>
   );

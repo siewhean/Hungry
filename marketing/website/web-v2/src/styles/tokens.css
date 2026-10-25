@@ -1,7 +1,9 @@
 :root {
   /* Brand Colors */
-  --color-primary: #E8531E;
-  --color-primary-dark: #C43E10;
+  --color-brand-orange: #E8531E;
+  /* Functional orange meets AA for normal text and white button labels. */
+  --color-primary: #B9380D;
+  --color-primary-dark: #96300B;
   --color-bg: #FFF7EE;
   --color-bg-soft: #F8EFE4;
   --color-bg-warm: #FFE9DA;
@@ -22,7 +24,7 @@
   --console-orange-light: #FFF0EB;
   --color-text-primary: #1A2E44;
   --color-text-secondary: #41566F;
-  --color-text-muted: #6F7D8F;
+  --color-text-muted: #586879;
   --color-ink-soft: #243F5A;
   --color-ink-deep: #10253A;
   --color-plum-shadow: #251D2C;

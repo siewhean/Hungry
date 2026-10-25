@@ -53,6 +53,15 @@ test("Edge Function Sentry wrapper stays inert without a DSN and scrubs events",
   assert.match(wrapper, /beforeSend: \(event\) => scrubEvent\(event\)/);
 });
 
+test("mobile diagnostics disables default PII and automatic performance collection", () => {
+  const app = read("App.tsx");
+  assert.match(app, /sendDefaultPii: false/);
+  assert.match(app, /enableAutoPerformanceTracing: false/);
+  assert.match(app, /tracesSampleRate: 0/);
+  assert.match(app, /beforeSend: \(event\) => sanitizeSentryEvent\(event\)/);
+  assert.match(app, /beforeBreadcrumb: \(breadcrumb\) => sanitizeSentryBreadcrumb\(breadcrumb\)/);
+});
+
 // New screens must report the errors they catch. Screens that predate this rule are listed in
 // the baseline; the list can only shrink. When you add reportError to a baselined screen,
 // delete it from screen-error-reporting-baseline.json.
@@ -87,4 +96,11 @@ test("the screen error-reporting baseline only lists screens that still need it"
     assert.ok(hasCatch(source), `${file} has no catch block; remove it from the baseline`);
     assert.ok(!isCompliant(source), `${file} now uses reportError; remove it from the baseline`);
   }
+});
+
+test("map rendering opts out of optional SDK telemetry", () => {
+  const map = read("src/components/map/MapSurface.tsx");
+  assert.match(map, /resolved.setTelemetryEnabled\(false\)/);
+  assert.match(map, /attributionEnabled/);
+  assert.match(map, /logoEnabled/);
 });

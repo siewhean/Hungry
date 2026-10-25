@@ -1,5 +1,31 @@
 # Hungry Verification
 
+## 2026-10-25 — Consumer safeguards (website + app)
+
+Scope: `codex/privacy-consumer-safeguards` worktree from `origin/main`; original checkout/data changes preserved. Details and the 20-item ledger: `docs/compliance/consumer-safeguards-2026-10-25.md`.
+
+| Check | Result | Evidence / limits |
+|---|---|---|
+| Full mobile/source suite, `npm test` | Pass: 2,109 total, 2,107 passed, 2 existing skips, 0 failures | Final rerun after updating stale merchant-signup contract to prohibit silent waitlist enrolment. Negative-path mock tests emit expected diagnostic errors; Node DEP0205 warning from existing runner. |
+| Mobile privacy/security/native-permission contracts | 33/33 pass | Sentry minimization, Mapbox opt-out, auth/storage/security and native permission source checks. |
+| Specialist auth/analytics regression set | 48/48 pass | Includes default-off, withdrawal/identity purge, retired SDK retries, email/provider consent and account-switch tests. |
+| Existing mobile accessibility contracts | 23/23 pass | Source/image semantics/theme checks; no native screen reader claim. |
+| Website TypeScript | Pass | `node node_modules/typescript/bin/tsc --noEmit --incremental false` from `marketing/website/web-v2`. |
+| Website policy/security/accessibility/SEO gates | Pass | `npm run legal:validate`, `npm run security:audit`, `npm run a11y:contracts`, `npm run routes:inventory`, `npm run seo:audit`; focused ESLint. Contrast script checks 24 text pairs and 2 button pairs. |
+| Website consent tests | 3/3 pass | `node --import tsx --test scripts/privacy-consent.test.ts`; malformed/expired choices, privacy signals, URL minimization, blocked preference storage. |
+| Website consent/form browser smoke | Pass; 0 page errors | `node scripts/privacy-browser-smoke.mjs` on local port 3107. Provider and successful API transport mocked; CSP bypass only for external Vercel development analytics script. Tests reject/accept/withdraw, equal choice, keyboard focus, unchecked consent and guarded forms. No real submissions. |
+| Independent API negatives | Pass | Local API HTTP 400 for missing/false/string age or required-consent assertions; merchant same-origin guard remains enforced. No successful data mutation. |
+| Website desktop/mobile visual QA | Pass | `node scripts/consumer-browser-smoke.mjs`: 16 route/viewport checks; zero console/page errors; measured mobile story preview does not overlap copy. Manifest/screenshots: `docs/audit/consumer-safeguards-browser/`. |
+| Independent policy browser QA | Pass | Six policy routes HTTP 200, one main heading, no horizontal overflow at 390px, no page errors, preferences keyboard focus restored. Screenshots under `docs/compliance/evidence/`. |
+| Independent final review | Passed reviewed source/behavior | OAuth auto-creation bypass, PostHog identity on withdrawal, storage-policy wording and embedded Fraunces copyright findings fixed and rechecked. Final mobile story layout delta separately verified. |
+| Root app `npm run typecheck` | Blocked by existing dependency/type issues | Reused node_modules lacks declared `expo-clipboard` (9 imports); existing `src/lib/haptics.test.ts:5` DOM/Node URL type mismatch. Both dependencies/imports were present in unchanged base; no new touched-code type errors reported. |
+| Mobile render tests / lint | Environment-blocked | Reused dependencies lack `jsdom`; installed lint plugin lacks `react-hooks/refs` rule. No claims of rendered mobile QA or clean mobile lint. |
+| Native/device smoke | Not run | Host free space fell to ~2 GiB. No native build/simulator launched. |
+| Formatting/diff | Pass | Touched source Prettier/focused ESLint and `git diff --check`; no new dependencies or lockfile edits. |
+
+Release remains unverified: no deployment, live deletion processing, marketing suppression/campaign sending, vendor contract/retention review or complete asset-rights certification. Operator details/DPO appointment are not invented. Manual email requests open a draft and do not prove delivery/completion. 18+ is a product restriction with self-attestation, not legal age-of-consent guidance or verified parental consent.
+
+
 > Current verification bundle evidence.
 > Update this file for the latest known-good state.
 

@@ -9,7 +9,10 @@ import styles from "./page.module.css";
 type Audience = "foodie" | "merchant";
 type BusinessType = "restaurant" | "cafe" | "home_based" | "hawker" | "food_court" | "other";
 type FieldErrors = Partial<
-  Record<"businessName" | "businessType" | "email" | "otherBusinessType", string>
+  Record<
+    "businessName" | "businessType" | "email" | "otherBusinessType" | "age" | "updates",
+    string
+  >
 >;
 
 const audienceOptions = [
@@ -34,23 +37,23 @@ const businessTypeOptions: readonly { label: string; value: BusinessType }[] = [
   { label: "Others", value: "other" },
 ];
 
-const audienceCopy: Record<Audience, { title: string; description: string; button: string; success: string }> =
-  {
-    foodie: {
-      title: "Join as a foodie",
-      description:
-        "Get an email when Hungry opens for early food discovery in Singapore.",
-      button: "Join foodie waitlist",
-      success: "You are on the foodie waitlist. We will email you when early access opens.",
-    },
-    merchant: {
-      title: "Join as a merchant",
-      description:
-        "Get an email when Merchant Mode opens for Singapore food businesses.",
-      button: "Join merchant waitlist",
-      success: "You are on the merchant waitlist. We will email you when Merchant Mode opens.",
-    },
-  };
+const audienceCopy: Record<
+  Audience,
+  { title: string; description: string; button: string; success: string }
+> = {
+  foodie: {
+    title: "Join as a foodie",
+    description: "Get an email when Hungry opens for early food discovery in Singapore.",
+    button: "Join foodie waitlist",
+    success: "You are on the foodie waitlist. We will email you when early access opens.",
+  },
+  merchant: {
+    title: "Join as a merchant",
+    description: "Get an email when Merchant Mode opens for Singapore food businesses.",
+    button: "Join merchant waitlist",
+    success: "You are on the merchant waitlist. We will email you when Merchant Mode opens.",
+  },
+};
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -61,6 +64,8 @@ type JoinWaitlistFormProps = {
 export default function JoinWaitlistForm({ initialAudience }: JoinWaitlistFormProps) {
   const [audience, setAudience] = useState<Audience>(initialAudience);
   const [email, setEmail] = useState("");
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
+  const [updatesRequested, setUpdatesRequested] = useState(false);
   const [name, setName] = useState("");
   const [businessName, setBusinessName] = useState("");
   const [businessType, setBusinessType] = useState<BusinessType | "">("");
@@ -101,13 +106,9 @@ export default function JoinWaitlistForm({ initialAudience }: JoinWaitlistFormPr
       nextErrors.email = "Enter a valid email address.";
     }
 
-    if (audience === "merchant" && !businessName.trim()) {
-      nextErrors.businessName = "Enter your business name.";
-    }
-
-    if (audience === "merchant" && !businessType) {
-      nextErrors.businessType = "Select your food business type.";
-    }
+    if (!ageConfirmed) nextErrors.age = "Confirm you are 18 or older to join.";
+    if (!updatesRequested)
+      nextErrors.updates = "Confirm you want early-access emails for the selected list.";
 
     if (audience === "merchant" && businessType === "other" && !otherBusinessType.trim()) {
       nextErrors.otherBusinessType = "Specify your food business type.";
@@ -134,6 +135,8 @@ export default function JoinWaitlistForm({ initialAudience }: JoinWaitlistFormPr
       const response = await fetch("/api/waitlist", {
         body: JSON.stringify({
           audience,
+          ageConfirmed,
+          updatesRequested,
           businessName: audience === "merchant" ? businessName.trim() : undefined,
           email: trimmedEmail,
           establishmentType,
@@ -225,7 +228,24 @@ export default function JoinWaitlistForm({ initialAudience }: JoinWaitlistFormPr
                         setOtherBusinessType("");
                       }
                     }}
+                    id={`audience-tab-${option.id}`}
                     role="tab"
+                    aria-controls="waitlist-panel"
+                    tabIndex={isActive ? 0 : -1}
+                    onKeyDown={(event) => {
+                      if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+                      event.preventDefault();
+                      const next =
+                        event.key === "Home"
+                          ? "foodie"
+                          : event.key === "End"
+                            ? "merchant"
+                            : audience === "foodie"
+                              ? "merchant"
+                              : "foodie";
+                      document.getElementById(`audience-tab-${next}`)?.click();
+                      document.getElementById(`audience-tab-${next}`)?.focus();
+                    }}
                     aria-selected={isActive}
                   >
                     <Icon size={17} aria-hidden />
@@ -236,6 +256,8 @@ export default function JoinWaitlistForm({ initialAudience }: JoinWaitlistFormPr
             </div>
             <div
               className={styles.cardContent}
+              id="waitlist-panel"
+              aria-labelledby={`audience-tab-${audience}`}
               role="tabpanel"
             >
               <h2>{selectedCopy.title}</h2>
@@ -251,6 +273,8 @@ export default function JoinWaitlistForm({ initialAudience }: JoinWaitlistFormPr
                   onChange={(event) => setName(event.target.value)}
                   type="text"
                   placeholder="What should we call you?"
+                  autoComplete="given-name"
+                  maxLength={120}
                 />
 
                 <label className={styles.label} htmlFor="waitlist-email">
@@ -267,6 +291,8 @@ export default function JoinWaitlistForm({ initialAudience }: JoinWaitlistFormPr
                     }
                   }}
                   type="email"
+                  autoComplete="email"
+                  maxLength={254}
                   required
                   placeholder="you@example.com"
                   aria-invalid={Boolean(fieldErrors.email)}
@@ -281,7 +307,7 @@ export default function JoinWaitlistForm({ initialAudience }: JoinWaitlistFormPr
                 {audience === "merchant" ? (
                   <div key="merchant-extra" className={styles.merchantTransition}>
                     <label className={styles.label} htmlFor="waitlist-business-name">
-                      Business name
+                      Business name (optional)
                     </label>
                     <input
                       id="waitlist-business-name"
@@ -294,7 +320,7 @@ export default function JoinWaitlistForm({ initialAudience }: JoinWaitlistFormPr
                         }
                       }}
                       type="text"
-                      required
+                      maxLength={160}
                       placeholder="Your business name"
                       aria-invalid={Boolean(fieldErrors.businessName)}
                       aria-describedby={
@@ -312,7 +338,7 @@ export default function JoinWaitlistForm({ initialAudience }: JoinWaitlistFormPr
                     ) : null}
 
                     <label className={styles.label} htmlFor="waitlist-business-type">
-                      Food business type
+                      Food business type (optional)
                     </label>
                     <select
                       id="waitlist-business-type"
@@ -329,7 +355,6 @@ export default function JoinWaitlistForm({ initialAudience }: JoinWaitlistFormPr
                           clearFieldError("otherBusinessType");
                         }
                       }}
-                      required
                       aria-invalid={Boolean(fieldErrors.businessType)}
                       aria-describedby={
                         fieldErrors.businessType ? "waitlist-business-type-error" : undefined
@@ -369,6 +394,7 @@ export default function JoinWaitlistForm({ initialAudience }: JoinWaitlistFormPr
                           }}
                           type="text"
                           required
+                          maxLength={80}
                           placeholder="For example, supper pop-up or catering"
                           aria-invalid={Boolean(fieldErrors.otherBusinessType)}
                           aria-describedby={
@@ -391,8 +417,36 @@ export default function JoinWaitlistForm({ initialAudience }: JoinWaitlistFormPr
                   </div>
                 ) : null}
 
+                <label className={styles.consentLabel}>
+                  <input
+                    type="checkbox"
+                    checked={ageConfirmed}
+                    required
+                    onChange={(event) => {
+                      setAgeConfirmed(event.target.checked);
+                      clearFieldError("age");
+                    }}
+                  />
+                  <span>I am 18 or older. Hungry is currently for adults.</span>
+                </label>
+                <label className={styles.consentLabel}>
+                  <input
+                    type="checkbox"
+                    checked={updatesRequested}
+                    required
+                    onChange={(event) => {
+                      setUpdatesRequested(event.target.checked);
+                      clearFieldError("updates");
+                    }}
+                  />
+                  <span>
+                    Email me about early access for the {audience} list I selected. I can withdraw
+                    by emailing usehungrysingapore@gmail.com. This does not sign me up for other
+                    marketing.
+                  </span>
+                </label>
                 <div className={styles.fieldMeta}>
-                  We will only email you about the list you selected.{" "}
+                  We use these details to manage your selected waitlist.{" "}
                   <Link href="/privacy" className={styles.privacyLink}>
                     Privacy Policy
                   </Link>

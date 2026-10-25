@@ -1,3 +1,4 @@
+import { useAnalyticsConsentStore } from "@/store/useAnalyticsConsentStore";
 import * as Clipboard from "expo-clipboard";
 import Constants from "expo-constants";
 import * as Updates from "expo-updates";
@@ -109,6 +110,8 @@ const THEME_DESCRIPTIONS: Record<ThemePreference, string> = {
 };
 
 export function SettingsScreen() {
+  const analyticsEnabled = useAnalyticsConsentStore((state) => state.analyticsEnabled);
+  const setAnalyticsEnabled = useAnalyticsConsentStore((state) => state.setAnalyticsEnabled);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const rootNavigation = getRootNavigation(navigation);
   const { palette, spacing } = useHungryTheme();
@@ -801,6 +804,16 @@ export function SettingsScreen() {
       ) : null}
 
       <SettingsSection editorial title="Data & privacy">
+        <SettingsRow
+          editorial
+          label="Optional usage analytics"
+          description="Share usage events with PostHog to improve Hungry. Off by default; turn off any time."
+          icon={<Shield size={20} color={palette.orange} />}
+          type="toggle"
+          isEnabled={analyticsEnabled}
+          onToggle={setAnalyticsEnabled}
+          isLast={false}
+        />
         {isAuthenticated ? (
           <SettingsRow
             label="Profile visibility"
@@ -938,6 +951,30 @@ export function SettingsScreen() {
           type="link"
           icon={<Scale size={20} color={palette.orange} />}
           onPress={() => void openTrustedExternalUrl(WEB_LINKS.terms)}
+          isLast={false}
+        />
+        <SettingsRow
+          editorial
+          label="Refund policy"
+          type="link"
+          icon={<FileText size={20} color={palette.orange} />}
+          onPress={() => void openTrustedExternalUrl(WEB_LINKS.refunds)}
+          isLast={false}
+        />
+        <SettingsRow
+          editorial
+          label="Cookie policy"
+          type="link"
+          icon={<FileText size={20} color={palette.orange} />}
+          onPress={() => void openTrustedExternalUrl(WEB_LINKS.cookies)}
+          isLast={false}
+        />
+        <SettingsRow
+          editorial
+          label="Credits and licences"
+          type="link"
+          icon={<FileText size={20} color={palette.orange} />}
+          onPress={() => void openTrustedExternalUrl(WEB_LINKS.credits)}
           isLast
         />
       </SettingsSection>

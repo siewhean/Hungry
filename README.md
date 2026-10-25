@@ -106,6 +106,8 @@ To override these locally, you can use `.env.development` or modify the constant
 
 ## Project Status
 
+Consumer safeguards (25 October 2026): website/app policies, explicit consent, default-off optional analytics, transparent previews, credits and focused accessibility fixes are implemented on `codex/privacy-consumer-safeguards`. The full source suite passes (2,107 pass, 2 existing skips), website TypeScript/browser checks and independent QA pass. Native/live acceptance, owner details and operational evidence remain open; see `docs/compliance/consumer-safeguards-2026-10-25.md` and `tasks/verification.md`.
+
 Stitch screen iteration (23 October 2026): eight Search, Profile, Achievements,
 Settings, Reviews, Saved Dishes, Stall, and Dish design exports are saved in
 [`design/stitch/iterations-11940609752387078506/`](design/stitch/iterations-11940609752387078506/README.md).

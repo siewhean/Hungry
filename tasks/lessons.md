@@ -141,3 +141,10 @@
 - After merging screen layouts, run the full source-contract coverage gate before treating focused screen tests as sufficient; keep account-only Settings rows behind authentication while preserving keyed saved-dish remounts across account changes.
 - When a screen's approved heading changes, update the render matrix expectation in the same branch; source contracts and coverage can pass while a render smoke still asserts the prior title.
 - In React Native Web, a Pressable rendered as a button cannot contain another button, and native-only `accessible` props should not reach raw SVG DOM nodes. Browser smoke should select the visible Stitch tab before asserting content in a non-default tab.
+
+## 2026-10-25 — Consent and licence QA corrections
+
+- OAuth sign-in can create accounts: apply adult/terms checks to every provider entry point, not only screens labelled Sign up.
+- SDK reset may retain queues; withdrawal must erase identity/queue and retire the client so old asynchronous retries cannot resume after later opt-in. Test account changes across withdrawal.
+- Match policy text to storage failure behavior and preserve embedded font copyright notices as well as downloaded upstream licence text.
+- Browser/source contrast checks can miss sticky product previews obscuring text; visually inspect narrow viewport screenshots before closing accessibility work.

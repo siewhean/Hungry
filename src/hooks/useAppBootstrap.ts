@@ -178,9 +178,8 @@ export function useAppBootstrap() {
       if (!shouldEnablePostHogSink()) return;
       const { posthogSink } =
         require("@/lib/analytics/posthogSink") as typeof import("@/lib/analytics/posthogSink");
-      // Send what was tracked before the sink attached (app_launched,
-      // cold-start shared_link_opened) instead of dropping it.
-      setAnalyticsSink(posthogSink, { replayBufferedEvents: true });
+      // Never replay events collected before an optional analytics decision.
+      setAnalyticsSink(posthogSink);
     });
 
     return cancelTask;

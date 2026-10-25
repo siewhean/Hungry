@@ -1,4 +1,5 @@
 import { track } from "@vercel/analytics";
+import { analyticsAllowed } from "@/lib/privacy/consent";
 
 export type WebsiteAudience = "foodie" | "merchant";
 
@@ -16,12 +17,18 @@ export function trackWebsiteEvent(
   eventName: WebsiteEventName,
   properties: WebsiteEventProperties = {},
 ) {
-  if (typeof window === "undefined") {
+  if (!analyticsAllowed()) {
     return;
   }
 
   try {
-    track(eventName, properties);
+    const safeProperties: WebsiteEventProperties = {};
+    for (const key of ["audience", "source", "route"] as const) {
+      const value = properties[key];
+      if (typeof value === "string" && /^[a-zA-Z0-9_/-]{1,80}$/.test(value))
+        safeProperties[key] = value;
+    }
+    track(eventName, safeProperties);
   } catch {
     // Tracking failures should never block UI interactions.
   }

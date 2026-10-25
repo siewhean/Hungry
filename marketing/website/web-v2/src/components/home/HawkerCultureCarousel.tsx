@@ -23,7 +23,10 @@ export function HawkerCultureCarousel({ cards }: HawkerCultureCarouselProps) {
     const rail = railRef.current;
     if (!rail) return;
     const delta = rail.clientWidth * 0.74 * (direction === "next" ? 1 : -1);
-    rail.scrollBy({ left: delta, behavior: "smooth" });
+    rail.scrollBy({
+      left: delta,
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
+    });
   };
 
   return (
@@ -40,7 +43,25 @@ export function HawkerCultureCarousel({ cards }: HawkerCultureCarouselProps) {
           <ArrowRight size={18} />
         </button>
       </div>
-      <div className={styles.rail} ref={railRef}>
+      <div
+        className={styles.rail}
+        ref={railRef}
+        role="region"
+        aria-label="Singapore food culture cards"
+        tabIndex={0}
+        onKeyDown={(event) => {
+          if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+            event.preventDefault();
+            scroll(event.key === "ArrowLeft" ? "previous" : "next");
+          } else if (event.key === "Home" || event.key === "End") {
+            event.preventDefault();
+            event.currentTarget.scrollTo({
+              left: event.key === "Home" ? 0 : event.currentTarget.scrollWidth,
+              behavior: "instant",
+            });
+          }
+        }}
+      >
         {cards.map((card, index) => (
           <article className={styles.card} key={card.title}>
             <Image

@@ -98,7 +98,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 :focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--color-primary) 72%, white);
+  outline: 3px solid var(--color-ink-deep);
+  box-shadow: 0 0 0 3px var(--color-white);
   outline-offset: 4px;
 }
 

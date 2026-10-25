@@ -83,7 +83,10 @@ test("web Merchant Portal sign-up and forgot-password are safe public auth route
   }
 
   assert.match(signupRoute, /signUpWithPassword/);
-  assert.match(signupRoute, /submitWebsiteWaitlist/);
+  // Creating merchant access must never silently enrol someone in marketing.
+  assert.doesNotMatch(signupRoute, /submitWebsiteWaitlist/);
+  assert.match(signupRoute, /body\.ageConfirmed !== true \|\| body\.termsAccepted !== true/);
+  assert.match(signupRoute, /consent: \{ version: "2026-10-25", recordedAt:/);
   assert.match(forgotRoute, /sendPasswordResetEmail/);
   assert.match(supabaseServer, /auth\/v1\/signup/);
   assert.match(supabaseServer, /auth\/v1\/recover/);

@@ -23,7 +23,10 @@ if (shouldEnableSentry && !sentryInitialized && !globalForSentry.__hungrySentryI
     enabled: true,
     debug: typeof __DEV__ !== "undefined" ? __DEV__ : false,
     environment: appEnv,
-    tracesSampleRate: appEnv === "production" ? 0.1 : 0,
+    // Keep diagnostics minimal; optional product analytics has its own consent gate.
+    sendDefaultPii: false,
+    enableAutoPerformanceTracing: false,
+    tracesSampleRate: 0,
     beforeSend: (event) => sanitizeSentryEvent(event),
     beforeBreadcrumb: (breadcrumb) => sanitizeSentryBreadcrumb(breadcrumb),
   });

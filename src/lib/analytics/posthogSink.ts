@@ -1,4 +1,6 @@
-import PostHog from "posthog-react-native";
+import PostHog, { PostHogPersistedProperty } from "posthog-react-native";
+import { useAnalyticsConsentStore } from "@/store/useAnalyticsConsentStore";
+import { clearTrackedAnalyticsEvents } from "./mockAnalytics";
 
 import type { AnalyticsEventRecord, AnalyticsSink } from "./types";
 import { sanitizeAnalyticsProperties } from "./privacy";
@@ -8,21 +10,63 @@ const POSTHOG_DISABLED = process.env.EXPO_PUBLIC_DISABLE_POSTHOG === "1";
 const POSTHOG_API_KEY = process.env.EXPO_PUBLIC_POSTHOG_API_KEY?.trim();
 const POSTHOG_HOST = process.env.EXPO_PUBLIC_POSTHOG_HOST?.trim() || DEFAULT_POSTHOG_HOST;
 
-let posthogClient: PostHog | null = null;
+let posthogClient: ConsentAwarePostHog | null = null;
+
+// Gate every SDK network request, including scheduled retries and feature flag calls.
+// A request already sent before withdrawal cannot be recalled.
+class ConsentAwarePostHog extends PostHog {
+  private revoked = false;
+
+  revoke(): void {
+    this.revoked = true;
+  }
+
+  fetch(url: string, options: Parameters<PostHog["fetch"]>[1]): ReturnType<PostHog["fetch"]> {
+    if (this.revoked || useAnalyticsConsentStore.getState().analyticsEnabled !== true) {
+      return Promise.resolve({ status: 200, text: async () => "{}", json: async () => ({}) });
+    }
+    return super.fetch(url, options);
+  }
+}
+
+useAnalyticsConsentStore.subscribe((state, previous) => {
+  if (state.analyticsEnabled === previous.analyticsEnabled) return;
+  clearTrackedAnalyticsEvents();
+  if (!posthogClient) return;
+  if (state.analyticsEnabled) {
+    void posthogClient.optIn();
+  } else {
+    // reset() preserves queued events in this SDK; explicitly erase that queue.
+    posthogClient.revoke();
+    posthogClient.reset();
+    posthogClient.setPersistedProperty(PostHogPersistedProperty.Queue, []);
+    void posthogClient.optOut();
+    posthogClient = null;
+  }
+});
 
 type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
 type PostHogProperties = { [key: string]: JsonValue };
 
 function getPostHogClient(): PostHog | null {
-  if (POSTHOG_DISABLED || !POSTHOG_API_KEY) {
+  if (
+    POSTHOG_DISABLED ||
+    !POSTHOG_API_KEY ||
+    useAnalyticsConsentStore.getState().analyticsEnabled !== true
+  ) {
     return null;
   }
 
   if (!posthogClient) {
-    posthogClient = new PostHog(POSTHOG_API_KEY, {
+    posthogClient = new ConsentAwarePostHog(POSTHOG_API_KEY, {
       host: POSTHOG_HOST,
-      // Application Installed / Updated / Opened / Backgrounded, for retention.
-      captureAppLifecycleEvents: true,
+      // Only explicit consented events; never lifecycle URLs or session recordings.
+      captureAppLifecycleEvents: false,
+      enableSessionReplay: false,
+      persistence: "memory",
+      disableGeoip: true,
+      disableSurveys: true,
+      disableRemoteConfig: true,
     });
   }
 
@@ -98,7 +142,8 @@ export function identifyPostHogUser(userId: string, properties: Record<string, u
 }
 
 export function resetPostHogUser(): void {
-  const client = getPostHogClient();
+  // Logout must never construct a client or restore a withdrawn identity.
+  const client = posthogClient;
   if (!client) {
     return;
   }

@@ -8,6 +8,10 @@ export const footerLinks = {
   legal: [
     { label: "Terms of Service", href: "/terms" },
     { label: "Privacy Policy", href: "/privacy" },
+    { label: "Refund Policy", href: "/refund" },
+    { label: "Cookie Policy", href: "/cookies" },
+    { label: "Business Details", href: "/business" },
+    { label: "Asset Credits", href: "/credits" },
     { label: "Account Deletion", href: "/account/delete" },
   ],
   discover: [
@@ -80,7 +84,7 @@ export const homepage = {
     eyebrow: "For hungry days in Singapore",
     lines: ["Know what to eat.", "Before you leave."],
     proof: "Find the dish. Check the stall. Skip the wasted trip.",
-    body: "The only app that lets you discover local stalls by their best dishes, check live opening hours, and see the menu—before you leave your seat.",
+    body: "Discover local stalls by dish, browse published menus, and check listed opening hours before you leave. Details can change; confirm with the stall when it matters.",
     primaryCta: { label: "Join Waitlist", href: "/join-waitlist" },
     secondaryCta: { label: "Explore Foodies", href: "/for-foodies" },
     atmosphere: {
@@ -108,9 +112,9 @@ export const homepage = {
   audiences: [
     {
       title: "For foodies",
-      eyebrow: "Choose with real dish photos",
+      eyebrow: "Explore dishes and product previews",
       description:
-        "See what people are eating, compare dish photos, and decide if a stall is worth the trip.",
+        "Explore dish listings and product previews to plan your next meal. Illustrative images are not proof of a particular stall’s food.",
       image: {
         src: "/images/people/singapore-yusheng-restaurant-diners.jpg",
         alt: "Families dining at a Singapore restaurant in Suntec City",
@@ -160,9 +164,9 @@ export const homepage = {
         },
       },
       {
-        title: "Know what is open",
+        title: "Check listed opening hours",
         description:
-          "Check hours and open status before crossing the neighbourhood.",
+          "Check published hours before travelling; confirm directly with the stall for current opening status.",
         icon: "open",
         variant: "plain",
         image: {
@@ -173,7 +177,7 @@ export const homepage = {
       {
         title: "See menus before you go",
         description:
-          "Browse menus with dish photos, prices, and availability before you queue.",
+          "Browse available menu information and listed prices; confirm current prices and availability with the seller.",
         icon: "menu",
         variant: "open",
         image: {
@@ -224,8 +228,7 @@ export const homepage = {
   cultureCards: [
     {
       title: "Hawker stalls",
-      description:
-        "Everyday favourites show up by dish, not just by stall name.",
+      description: "Everyday favourites show up by dish, not just by stall name.",
       image: {
         src: "/images/food/stalls-restaurants-wide.png",
         alt: "Hawker and restaurant food discovery scene",
@@ -264,13 +267,11 @@ export const homepage = {
     },
     {
       title: "Local rankings",
-      description:
-        "Nearby saves and ratings make shortlisting less painful.",
+      description: "Nearby saves and ratings make shortlisting less painful.",
     },
     {
       title: "Food photos",
-      description:
-        "Food photos answer questions that category labels cannot.",
+      description: "Food photos answer questions that category labels cannot.",
     },
   ],
 } as const;
@@ -288,8 +289,7 @@ export const merchantPage = {
   },
   benefits: {
     title: "Fix the gaps that cost you diners.",
-    description:
-      "A clear profile answers the questions people ask before they walk over.",
+    description: "A clear profile answers the questions people ask before they walk over.",
     items: [
       {
         title: "Show the dish first",
@@ -305,14 +305,12 @@ export const merchantPage = {
       },
       {
         title: "Help diners know your stall",
-        description:
-          "Show what you serve, when you open, and where to find you.",
+        description: "Show what you serve, when you open, and where to find you.",
         icon: "hours",
       },
       {
         title: "See what diners care about",
-        description:
-          "See which dishes, photos, and reviews people check before visiting.",
+        description: "See which dishes, photos, and reviews people check before visiting.",
         icon: "analytics",
       },
       {
@@ -386,8 +384,7 @@ export const merchantPage = {
   },
   previewFeatures: {
     title: "Preview the merchant tools before onboarding.",
-    description:
-      "Hungry gives stall teams a clear place to manage the details diners see.",
+    description: "Hungry gives stall teams a clear place to manage the details diners see.",
     items: [
       {
         title: "Dashboard overview",
@@ -406,7 +403,7 @@ export const merchantPage = {
   verification: {
     title: "Verify the stall before it goes live.",
     description:
-      "Verification keeps fake listings out and gives real merchants a clear launch path.",
+      "Ownership checks help review merchant claims. Verification does not guarantee every listing or statement is accurate.",
     steps: [
       {
         title: "Submit business details",
@@ -424,8 +421,7 @@ export const merchantPage = {
   },
   profileMgmt: {
     title: "Keep the business profile accurate.",
-    description:
-      "Make the basic stall details easy to trust.",
+    description: "Make the basic stall details easy to trust.",
     items: [
       {
         title: "Location and hours",
@@ -462,8 +458,7 @@ export const merchantPage = {
   },
   customerInbox: {
     title: "Respond where customer questions arrive.",
-    description:
-      "Keep reviews and enquiries tied to the stall profile.",
+    description: "Keep reviews and enquiries tied to the stall profile.",
     features: [
       {
         title: "Unreplied review queue",
@@ -481,8 +476,7 @@ export const merchantPage = {
   },
   analytics: {
     title: "See what diners check before they visit.",
-    description:
-      "Use stall, dish, review, and promotion data to improve the listing.",
+    description: "Use stall, dish, review, and promotion data to improve the listing.",
     metrics: [
       {
         title: "Dish views",
@@ -500,8 +494,7 @@ export const merchantPage = {
   },
   promotions: {
     title: "Promote the right item at the right time.",
-    description:
-      "Create simple promotions tied to real menu items and dates.",
+    description: "Create simple promotions tied to real menu items and dates.",
     features: [
       {
         title: "Menu item promotions",
@@ -538,12 +531,12 @@ export const merchantPage = {
   },
   creatorTypes: {
     title: "Different food businesses, same diner questions.",
-    description: "People want to know what you serve, when you open, and whether the trip is worth it.",
+    description:
+      "People want to know what you serve, when you open, and whether the trip is worth it.",
     items: [
       {
         title: "Hawker stalls",
-        description:
-          "Show signature dishes clearly so locals can find you before they arrive.",
+        description: "Show signature dishes clearly so locals can find you before they arrive.",
         image: {
           src: "/images/food/stalls-restaurants-wide.png",
           alt: "Bustling Singapore hawker stall scene",
@@ -581,8 +574,7 @@ export const merchantPage = {
   },
   finalCta: {
     title: "Want diners to find your menu faster?",
-    description:
-      "Join the merchant waitlist. We will follow up when onboarding opens.",
+    description: "Join the merchant waitlist. We will follow up when onboarding opens.",
     cta: { label: "Register Merchant Interest", href: "/join-waitlist?audience=merchant" },
   },
 } as const;

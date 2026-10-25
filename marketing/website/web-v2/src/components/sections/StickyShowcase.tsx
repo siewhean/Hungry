@@ -10,8 +10,8 @@ export default function StickyShowcase() {
           <span className={styles.eyebrow}>Inside the app</span>
           <h2>See how a choice comes together.</h2>
           <p>
-            Real Hungry screens. Start nearby, open the stall, check the menu, then read what
-            people ordered.
+            Product preview. Dishes, prices, opening statuses, and screens are illustrative.
+            Check current prices and hours with the merchant before visiting.
           </p>
         </div>
         <StickyScreenStory screens={homepage.productStory} />

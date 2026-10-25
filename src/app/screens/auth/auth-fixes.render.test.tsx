@@ -181,6 +181,10 @@ test("AUTH-13: a submitted sign-up logs sign_up_submitted", async () => {
   const matches = Array.from(view.container.querySelectorAll("*")).filter(
     (node) => node.childNodes.length === 1 && node.textContent === "Create account",
   ) as HTMLElement[];
+  await view.press(view.findByLabel("I am 18 or older."));
+  await view.press(
+    view.findByLabel("I agree to the Terms of service and have read the Privacy policy."),
+  );
   await view.press(matches.at(-1) ?? null);
   await view.settle();
   const submitted = getTrackedAnalyticsEvents().filter((e) => e.event === "sign_up_submitted");

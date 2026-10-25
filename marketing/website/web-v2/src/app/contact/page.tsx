@@ -33,13 +33,22 @@ export default function ContactPage() {
           <h1>Need help with Hungry?</h1>
           <p>
             For support, privacy, merchant, waitlist, or account deletion questions, email the
-            Hungry team. We use this route as the public support fallback until a protected support
-            form is launched.
+            Hungry team. For registered operator information, see the business details page.
           </p>
           <a className={styles.emailLink} href={`mailto:${siteConfig.contactEmail}`}>
             <Mail aria-hidden size={18} />
             {siteConfig.contactEmail}
           </a>
+          <p>
+            <Link href="/business">Business details</Link> ·{" "}
+            <a href={`mailto:${siteConfig.contactEmail}?subject=Unsubscribe`}>
+              Request unsubscribe by email
+            </a>
+          </p>
+          <p>
+            Unsubscribe requests are handled by the team. Do not include passwords or identity
+            documents.
+          </p>
         </div>
       </section>
 

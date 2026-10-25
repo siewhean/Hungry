@@ -42,6 +42,10 @@ const publicLegalPages = [
   "src/app/terms/page.tsx",
   "src/app/account/delete/page.tsx",
   "src/app/contact/page.tsx",
+  "src/app/refund/page.tsx",
+  "src/app/cookies/page.tsx",
+  "src/app/business/page.tsx",
+  "src/app/credits/page.tsx",
 ];
 
 for (const page of publicLegalPages) {
@@ -70,58 +74,310 @@ for (const [file, source] of [
   ["account/delete/page.tsx", accountDelete],
 ]) {
   requireMarker(source, "routeMetadata(", file, "Legal page metadata contract failed");
-  requireMarker(source, "usehungrysingapore@gmail.com", file, "Legal support email contract failed");
+  requireMarker(
+    source,
+    "usehungrysingapore@gmail.com",
+    file,
+    "Legal support email contract failed",
+  );
 }
 
 for (const [file, source] of [
   ["privacy/page.tsx", privacy],
   ["terms/page.tsx", terms],
 ]) {
-  requireMarker(source, "privacy contact (Data Protection Officer)", file, "Named privacy contact contract failed");
-  rejectMatch(source, /hungry\.sg|support@usehungry\.com/, file, "Legal page contact domain contract failed");
+  rejectMatch(
+    source,
+    /(?:our|Hungry.s) privacy contact \(Data Protection Officer\)/i,
+    file,
+    "Unverified DPO appointment must not be asserted",
+  );
+  rejectMatch(
+    source,
+    /hungry\.sg|support@usehungry\.com/,
+    file,
+    "Legal page contact domain contract failed",
+  );
 }
 
 requireMarker(contact, "routeMetadata(", "contact/page.tsx", "Legal page metadata contract failed");
-requireMarker(contact, "siteConfig.contactEmail", "contact/page.tsx", "Legal support email contract failed");
+requireMarker(
+  contact,
+  "siteConfig.contactEmail",
+  "contact/page.tsx",
+  "Legal support email contract failed",
+);
 
-requireMarker(seo, 'contactEmail: "usehungrysingapore@gmail.com"', "seo.ts", "Canonical support email contract failed");
-requireMarker(contact, "mailto:${siteConfig.contactEmail}", "contact/page.tsx", "Contact email source-of-truth contract failed");
-requireMarker(contact, "/account/delete", "contact/page.tsx", "Contact deletion fallback contract failed");
+requireMarker(
+  seo,
+  'contactEmail: "usehungrysingapore@gmail.com"',
+  "seo.ts",
+  "Canonical support email contract failed",
+);
+requireMarker(
+  contact,
+  "mailto:${siteConfig.contactEmail}",
+  "contact/page.tsx",
+  "Contact email source-of-truth contract failed",
+);
+requireMarker(
+  contact,
+  "/account/delete",
+  "contact/page.tsx",
+  "Contact deletion fallback contract failed",
+);
 
-requireMarker(privacy, "Supabase", "privacy/page.tsx", "Privacy provider disclosure contract failed");
-requireMarker(privacy, "PostHog for analytics where configured", "privacy/page.tsx", "PostHog conditional disclosure contract failed");
-requireMarker(privacy, "Sentry for crash diagnostics where configured", "privacy/page.tsx", "Sentry conditional disclosure contract failed");
-requireMarker(privacy, "Google services for maps, places, OCR, or AI-assisted extraction where enabled", "privacy/page.tsx", "Google conditional disclosure contract failed");
-requireMarker(privacy, "Precise latitude and longitude are not sent as PostHog identity properties by default", "privacy/page.tsx", "Precise coordinate analytics disclosure contract failed");
-requireMarker(privacy, "Deletion is scheduled 30 days after the request", "privacy/page.tsx", "Account deletion queue disclosure contract failed");
-requireMarker(privacy, "Personal Data Protection Act", "privacy/page.tsx", "Singapore privacy disclosure contract failed");
+requireMarker(
+  privacy,
+  "Supabase",
+  "privacy/page.tsx",
+  "Privacy provider disclosure contract failed",
+);
+requireMarker(
+  privacy,
+  "PostHog for analytics where configured",
+  "privacy/page.tsx",
+  "PostHog conditional disclosure contract failed",
+);
+requireMarker(
+  privacy,
+  "Sentry for crash diagnostics where configured",
+  "privacy/page.tsx",
+  "Sentry conditional disclosure contract failed",
+);
+requireMarker(
+  privacy,
+  "Google services for maps, places, OCR, or AI-assisted extraction where enabled",
+  "privacy/page.tsx",
+  "Google conditional disclosure contract failed",
+);
+requireMarker(
+  privacy,
+  "Precise latitude and longitude are not sent as PostHog identity properties by default",
+  "privacy/page.tsx",
+  "Precise coordinate analytics disclosure contract failed",
+);
+requireMarker(
+  privacy,
+  "Deletion is scheduled 30 days after the request",
+  "privacy/page.tsx",
+  "Account deletion queue disclosure contract failed",
+);
+requireMarker(
+  privacy,
+  "Personal Data Protection Act",
+  "privacy/page.tsx",
+  "Singapore privacy disclosure contract failed",
+);
 
 requireMarker(terms, "User-Generated Content", "terms/page.tsx", "UGC terms contract failed");
-requireMarker(terms, "AI, OCR, And Recommendations", "terms/page.tsx", "AI/OCR terms contract failed");
-requireMarker(terms, "Account Deletion", "terms/page.tsx", "Account deletion terms contract failed");
-requireMarker(terms, "Merchant And Menu Information", "terms/page.tsx", "Merchant terms contract failed");
+requireMarker(
+  terms,
+  "AI, OCR, And Recommendations",
+  "terms/page.tsx",
+  "AI/OCR terms contract failed",
+);
+requireMarker(
+  terms,
+  "Account Deletion",
+  "terms/page.tsx",
+  "Account deletion terms contract failed",
+);
+requireMarker(
+  terms,
+  "Merchant And Menu Information",
+  "terms/page.tsx",
+  "Merchant terms contract failed",
+);
 
-requireMarker(accountDelete, "Signed-in users can request deletion", "account/delete/page.tsx", "Deletion support page contract failed");
-requireMarker(accountDelete, "30-day grace period", "account/delete/page.tsx", "Deletion timeline contract failed");
-rejectMatch(accountDelete, /instant|immediate|guaranteed/i, "account/delete/page.tsx", "Deletion page must not overpromise timing");
+requireMarker(
+  accountDelete,
+  "Signed-in users can request deletion",
+  "account/delete/page.tsx",
+  "Deletion support page contract failed",
+);
+requireMarker(
+  accountDelete,
+  "30-day grace period",
+  "account/delete/page.tsx",
+  "Deletion timeline contract failed",
+);
+requireMarker(
+  accountDelete,
+  "Signing back in does not cancel it",
+  "account/delete/page.tsx",
+  "Explicit cancellation disclosure missing",
+);
+requireMarker(
+  accountDelete,
+  "Waitlist Or Other Data Without An Account",
+  "account/delete/page.tsx",
+  "Non-account data request fallback missing",
+);
+rejectMatch(
+  accountDelete,
+  /instant|immediate|guaranteed/i,
+  "account/delete/page.tsx",
+  "Deletion page must not overpromise timing",
+);
 
-requireMarker(rootPackage, '"@sentry/react-native"', "package.json", "Sentry dependency evidence missing");
-requireMarker(rootPackage, '"posthog-react-native"', "package.json", "PostHog dependency evidence missing");
-requireMarker(appConfig, "@sentry/react-native/expo", "app.json", "Sentry Expo plugin evidence missing");
-requireMarker(posthogSink, "POSTHOG_API_KEY", "posthogSink.ts", "PostHog configured-only evidence missing");
-requireMarker(sentryPrivacy, "sanitizeSentryEvent", "privacy.ts", "Sentry sanitizer evidence missing");
-requireMarker(sentryPrivacy, "sanitizeSentryBreadcrumb", "privacy.ts", "Sentry breadcrumb sanitizer evidence missing");
+requireMarker(
+  rootPackage,
+  '"@sentry/react-native"',
+  "package.json",
+  "Sentry dependency evidence missing",
+);
+requireMarker(
+  rootPackage,
+  '"posthog-react-native"',
+  "package.json",
+  "PostHog dependency evidence missing",
+);
+requireMarker(
+  appConfig,
+  "@sentry/react-native/expo",
+  "app.json",
+  "Sentry Expo plugin evidence missing",
+);
+requireMarker(
+  posthogSink,
+  "POSTHOG_API_KEY",
+  "posthogSink.ts",
+  "PostHog configured-only evidence missing",
+);
+requireMarker(
+  sentryPrivacy,
+  "sanitizeSentryEvent",
+  "privacy.ts",
+  "Sentry sanitizer evidence missing",
+);
+requireMarker(
+  sentryPrivacy,
+  "sanitizeSentryBreadcrumb",
+  "privacy.ts",
+  "Sentry breadcrumb sanitizer evidence missing",
+);
 
-requireMarker(supabaseConfig, "[functions.process-account-deletions]", "supabase/config.toml", "Account deletion function config missing");
-requireMarker(accountDeletionWorker, "claim_account_deletion_requests", "process-account-deletions/index.ts", "Account deletion worker claim evidence missing");
-requireMarker(accountDeletionWorker, "anonymize_account_deletion_request", "process-account-deletions/index.ts", "Account deletion worker anonymization evidence missing");
-requireMarker(accountDeletionWorker, "complete_account_deletion_request", "process-account-deletions/index.ts", "Account deletion worker completion evidence missing");
-requireMarker(accountDeletionMigration, "account_deletion_requests", "0040_release_hardening_account_deletion_merchant_rpcs.sql", "Account deletion table evidence missing");
-requireMarker(accountDeletionMigration, "account_deletion_processing_events", "0040_release_hardening_account_deletion_merchant_rpcs.sql", "Account deletion audit evidence missing");
+requireMarker(
+  supabaseConfig,
+  "[functions.process-account-deletions]",
+  "supabase/config.toml",
+  "Account deletion function config missing",
+);
+requireMarker(
+  accountDeletionWorker,
+  "claim_account_deletion_requests",
+  "process-account-deletions/index.ts",
+  "Account deletion worker claim evidence missing",
+);
+requireMarker(
+  accountDeletionWorker,
+  "anonymize_account_deletion_request",
+  "process-account-deletions/index.ts",
+  "Account deletion worker anonymization evidence missing",
+);
+requireMarker(
+  accountDeletionWorker,
+  "complete_account_deletion_request",
+  "process-account-deletions/index.ts",
+  "Account deletion worker completion evidence missing",
+);
+requireMarker(
+  accountDeletionMigration,
+  "account_deletion_requests",
+  "0040_release_hardening_account_deletion_merchant_rpcs.sql",
+  "Account deletion table evidence missing",
+);
+requireMarker(
+  accountDeletionMigration,
+  "account_deletion_processing_events",
+  "0040_release_hardening_account_deletion_merchant_rpcs.sql",
+  "Account deletion audit evidence missing",
+);
 
-requireMarker(ocrWorker, "Google Vision API key", "ingest-menu-photo/index.ts", "Google OCR evidence missing");
-requireMarker(ocrWorker, "ALLOWED_OCR_IMAGE_TYPES", "ingest-menu-photo/index.ts", "OCR upload validation evidence missing");
-requireMatch(privacy, /where configured|where enabled/g, "privacy/page.tsx", "Conditional provider wording contract failed");
+requireMarker(
+  ocrWorker,
+  "Google Vision API key",
+  "ingest-menu-photo/index.ts",
+  "Google OCR evidence missing",
+);
+requireMarker(
+  ocrWorker,
+  "ALLOWED_OCR_IMAGE_TYPES",
+  "ingest-menu-photo/index.ts",
+  "OCR upload validation evidence missing",
+);
+requireMatch(
+  privacy,
+  /where configured|where enabled/g,
+  "privacy/page.tsx",
+  "Conditional provider wording contract failed",
+);
+
+const cookies = read("src/app/cookies/page.tsx");
+const refund = read("src/app/refund/page.tsx");
+const business = read("src/app/business/page.tsx");
+const credits = read("src/app/credits/page.tsx");
+const footerLinks = read("src/content/site.ts");
+const policyComponent = read("src/components/legal/PolicyPage.tsx");
+for (const route of ["refund", "cookies", "business", "credits"]) {
+  requireMarker(seo, `path: "/${route}"`, "seo.ts", "Public policy metadata missing");
+  requireMarker(footerLinks, `href: "/${route}"`, "site.ts", "Public policy footer link missing");
+}
+for (const cookie of [
+  "hungry_merchant_access_token",
+  "hungry_merchant_refresh_token",
+  "hungry_merchant_csrf_token",
+  "hungry.website-consent.v1",
+]) {
+  requireMarker(cookies, cookie, "cookies/page.tsx", "Storage disclosure missing");
+}
+requireMarker(cookies, "180 days", "cookies/page.tsx", "Consent storage duration missing");
+requireMarker(cookies, "Cookie preferences", "cookies/page.tsx", "Withdrawal control missing");
+requireMarker(
+  refund,
+  "do not take payments",
+  "refund/page.tsx",
+  "Refund policy must disclose current payment scope",
+);
+requireMarker(
+  refund,
+  "applicable law",
+  "refund/page.tsx",
+  "Refund policy must preserve consumer rights",
+);
+requireMarker(
+  business,
+  "have not been confirmed for publication",
+  "business/page.tsx",
+  "Business disclosure must not invent operator details",
+);
+requireMarker(
+  policyComponent,
+  "?subject=Unsubscribe",
+  "PolicyPage.tsx",
+  "Manual unsubscribe request link missing",
+);
+requireMarker(credits, "Rogbeer", "credits/page.tsx", "Photo creator credit missing");
+requireMarker(credits, "CEphoto, Uwe Aranas", "credits/page.tsx", "Photo creator credit missing");
+requireMarker(credits, "Kagenlim", "credits/page.tsx", "Photo creator credit missing");
+for (const font of ["Nunito", "DMMono", "Fraunces"]) {
+  requireFile(`public/licenses/fonts/${font}-OFL.txt`, "Redistributed font licence missing");
+}
+requireMarker(privacy, "18 or over", "privacy/page.tsx", "Adult-only launch restriction missing");
+requireMarker(terms, "18 or over", "terms/page.tsx", "Adult-only terms restriction missing");
+rejectMatch(
+  privacy,
+  /we will respond within 30 days/i,
+  "privacy/page.tsx",
+  "Unverified response guarantee must not be published",
+);
+rejectMatch(
+  footerLinks,
+  /The only app|check live opening hours|keeps fake listings out/,
+  "site.ts",
+  "Unsupported marketing claim remains",
+);
 
 if (failures.length > 0) {
   console.error("Legal readiness contracts failed:");

@@ -108,7 +108,10 @@ export function StickyScreenStory({
               key={screen.eyebrow}
               className={`${styles.progressDot} ${index === activeIndex ? styles.progressDotActive : ""}`}
               onClick={() => {
-                stepRefs.current[index]?.scrollIntoView({ behavior: "smooth", block: "center" });
+                stepRefs.current[index]?.scrollIntoView({
+                  behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
+                  block: "center",
+                });
               }}
               aria-label={`Show ${screen.title}`}
               aria-current={index === activeIndex ? "step" : undefined}

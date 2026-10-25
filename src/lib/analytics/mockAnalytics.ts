@@ -1,5 +1,6 @@
 import type { AnalyticsEventRecord, AnalyticsEventName, AnalyticsSink } from "./types";
 import { sanitizeAnalyticsProperties } from "./privacy";
+import { useAnalyticsConsentStore } from "@/store/useAnalyticsConsentStore";
 
 const MAX_BUFFER_SIZE = 500;
 const analyticsBuffer: AnalyticsEventRecord[] = [];
@@ -23,6 +24,16 @@ export function trackAnalyticsEvent(
     user_id: options?.userId,
     timestamp: new Date().toISOString(),
   };
+
+  // Development retains local diagnostic events; release builds collect nothing
+  // optional until the device preference explicitly permits it.
+  if (
+    typeof __DEV__ !== "undefined" &&
+    !__DEV__ &&
+    !useAnalyticsConsentStore.getState().analyticsEnabled
+  ) {
+    return record;
+  }
 
   analyticsBuffer.push(record);
   if (analyticsBuffer.length > MAX_BUFFER_SIZE) {

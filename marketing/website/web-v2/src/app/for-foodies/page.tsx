@@ -52,9 +52,10 @@ export default function ForFoodies() {
               <span className={styles.eyebrow}>For Singapore foodies</span>
               <h1>Decide what to eat with less guessing.</h1>
               <p>
-                Hungry shows nearby dishes, real photos, menus, reviews, and open status before
-                hunger turns into scrolling.
+                Hungry is being built to help you explore nearby dishes, photos, menus, and diner
+                reviews. Check current prices, hours, and availability with the merchant.
               </p>
+              <p>Product preview: sample dishes, prices, and opening statuses are illustrative.</p>
               <div className={styles.proofList}>
                 {proofPoints.map((point) => (
                   <span key={point}>

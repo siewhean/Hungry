@@ -1,3 +1,8 @@
+import {
+  RegistrationConsent,
+  hasRegistrationConsent,
+  REGISTRATION_CONSENT_ERROR,
+} from "./RegistrationConsent";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Controller, useForm } from "react-hook-form";
 import { AccessibilityInfo, Pressable, View, type TextInput } from "react-native";
@@ -85,6 +90,8 @@ export function SignUpScreen({ navigation }: Props) {
   const hasCompletedOnboarding = useSessionStore((state) => state.hasCompletedOnboarding);
   // Inline copy of the last server error, so it is not only a passing toast.
   const [formError, setFormError] = useState<string | null>(null);
+  const [adultConfirmed, setAdultConfirmed] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const {
     control,
     handleSubmit,
@@ -99,6 +106,10 @@ export function SignUpScreen({ navigation }: Props) {
   }, []);
 
   const handleSignUp = handleSubmit(async (values) => {
+    if (!hasRegistrationConsent(adultConfirmed, termsAccepted)) {
+      setFormError(REGISTRATION_CONSENT_ERROR);
+      return;
+    }
     setFormError(null);
     try {
       const session = await getHungryService().auth.signUp(
@@ -162,6 +173,10 @@ export function SignUpScreen({ navigation }: Props) {
   });
 
   const handleProviderContinue = async (provider: AuthProvider) => {
+    if (!hasRegistrationConsent(adultConfirmed, termsAccepted)) {
+      setFormError(REGISTRATION_CONSENT_ERROR);
+      return;
+    }
     if (isBusy) return;
     setFormError(null);
     setProviderInFlight(provider);
@@ -384,6 +399,13 @@ export function SignUpScreen({ navigation }: Props) {
               )}
             />
           </View>
+
+          <RegistrationConsent
+            adult={adultConfirmed}
+            terms={termsAccepted}
+            onAdultChange={setAdultConfirmed}
+            onTermsChange={setTermsAccepted}
+          />
 
           {formError ? (
             <View

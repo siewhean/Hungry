@@ -1,3 +1,9 @@
+import {
+  RegistrationConsent,
+  hasRegistrationConsent,
+  REGISTRATION_CONSENT_ERROR,
+} from "./RegistrationConsent";
+import { AuthTermsNotice } from "./AuthTermsNotice";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Controller, useForm } from "react-hook-form";
 import { Pressable, View, type TextInput } from "react-native";
@@ -47,6 +53,8 @@ export function LoginScreen({ navigation, route }: Props) {
   }, [pendingAuthNotice, sessionExpired]);
   // Inline copy of the last server error, so it is not only a passing toast.
   const [formError, setFormError] = useState<string | null>(null);
+  const [adultConfirmed, setAdultConfirmed] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [unconfirmedEmail, setUnconfirmedEmail] = useState<string | null>(null);
 
   const {
@@ -104,6 +112,10 @@ export function LoginScreen({ navigation, route }: Props) {
   });
 
   const handleProviderLogin = async (provider: AuthProvider) => {
+    if (!hasRegistrationConsent(adultConfirmed, termsAccepted)) {
+      setFormError(REGISTRATION_CONSENT_ERROR);
+      return;
+    }
     if (isBusy) return;
     setFormError(null);
     setProviderInFlight(provider);
@@ -190,6 +202,16 @@ export function LoginScreen({ navigation, route }: Props) {
               Google/Apple stay hidden until they are enabled for this build. */}
           {oauthProvidersEnabled ? (
             <>
+              <AppText variant="bodySmall" tone="secondary">
+                Google or Apple may create an account if you are new to Hungry.
+              </AppText>
+              <RegistrationConsent
+                adult={adultConfirmed}
+                terms={termsAccepted}
+                onAdultChange={setAdultConfirmed}
+                onTermsChange={setTermsAccepted}
+              />
+              <AuthTermsNotice />
               <View style={{ gap: spacing[3] }}>
                 <AuthProviderButton
                   disabled={isBusy}

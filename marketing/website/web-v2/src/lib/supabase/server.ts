@@ -287,7 +287,9 @@ export async function signUpWithPassword({
   name,
   password,
   redirectTo,
+  consent,
 }: {
+  consent?: { version: string; recordedAt: string };
   businessName?: string;
   email: string;
   name?: string;
@@ -306,6 +308,13 @@ export async function signUpWithPassword({
           business_name: businessName,
           full_name: name,
           signup_source: "merchant_portal",
+          ...(consent
+            ? {
+                age_18_confirmed: true,
+                terms_version: consent.version,
+                terms_accepted_at: consent.recordedAt,
+              }
+            : {}),
         },
         email,
         password,

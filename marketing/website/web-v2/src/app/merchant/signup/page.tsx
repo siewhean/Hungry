@@ -5,6 +5,7 @@ import Link from "next/link";
 import { CheckCircle2, ClipboardCheck, ShieldCheck, UtensilsCrossed } from "lucide-react";
 
 import styles from "../../console/console.module.css";
+import consentStyles from "./Consent.module.css";
 import { parseMerchantPortalJson } from "@/lib/merchantPortal/fetch";
 
 type MerchantSignupResponse = {
@@ -17,6 +18,8 @@ export default function MerchantSignupPage() {
   const [businessName, setBusinessName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
   const [success, setSuccess] = useState<string>("");
@@ -29,7 +32,7 @@ export default function MerchantSignupPage() {
 
     try {
       const response = await fetch("/api/merchant/signup", {
-        body: JSON.stringify({ businessName, email, name, password }),
+        body: JSON.stringify({ businessName, email, name, password, ageConfirmed, termsAccepted }),
         headers: { "Content-Type": "application/json" },
         method: "POST",
       });
@@ -121,6 +124,39 @@ export default function MerchantSignupPage() {
                 minLength={8}
                 required
               />
+            </div>
+
+            <div className={styles.formRow}>
+              <label className={styles.formLabel}>
+                <input
+                  type="checkbox"
+                  checked={ageConfirmed}
+                  required
+                  onChange={(event) => setAgeConfirmed(event.target.checked)}
+                />{" "}
+                I am 18 or older.
+              </label>
+              <label className={styles.formLabel}>
+                <input
+                  type="checkbox"
+                  checked={termsAccepted}
+                  required
+                  onChange={(event) => setTermsAccepted(event.target.checked)}
+                />{" "}
+                I agree to the{" "}
+                <Link href="/terms" className={styles.authTextLink}>
+                  Terms of Service
+                </Link>
+                .
+              </label>
+              <p className={consentStyles.notice}>
+                We use your details to create and verify merchant access. Read the{" "}
+                <Link href="/privacy" className={styles.authTextLink}>
+                  Privacy Policy
+                </Link>
+                . Account emails are required for this service; creating an account does not
+                subscribe you to marketing.
+              </p>
             </div>
 
             {error ? (

@@ -245,6 +245,10 @@ test("ONB-6: the signed-out flow runs Welcome to sign-up and keeps the answers",
   await auth.type(name, "Mei");
   await auth.type(email, "mei.new@example.sg");
   await auth.type(password, "Str0ng-Passw0rd!");
+  await auth.press(auth.findByLabel("I am 18 or older."));
+  await auth.press(
+    auth.findByLabel("I agree to the Terms of service and have read the Privacy policy."),
+  );
   await auth.press(allByText(auth, "Create account").at(-1) ?? null);
   assert.equal(useSessionStore.getState().isAuthenticated, true);
   assert.equal(events("onboarding_completed").length, 1);
@@ -362,6 +366,10 @@ test("ONB-6: the full flow carries the quiz answers, the diet and a saved dish i
   await auth.type(name, "Mei");
   await auth.type(email, "mei.flow@example.sg");
   await auth.type(password, "Str0ng-Passw0rd!");
+  await auth.press(auth.findByLabel("I am 18 or older."));
+  await auth.press(
+    auth.findByLabel("I agree to the Terms of service and have read the Privacy policy."),
+  );
   await auth.press(allByText(auth, "Create account").at(-1) ?? null);
   await auth.settle();
   await new Promise((resolve) => setTimeout(resolve, 50));
@@ -469,6 +477,10 @@ test("ONB-V3: an offline or rate-limited sign-up on the account step is not sent
       await view.type(name, "Mei");
       await view.type(email, "mei@example.sg");
       await view.type(password, "Str0ng-Passw0rd!");
+      await view.press(view.findByLabel("I am 18 or older."));
+      await view.press(
+        view.findByLabel("I agree to the Terms of service and have read the Privacy policy."),
+      );
       await view.press(allByText(view, "Create account").at(-1) ?? null);
       await view.settle();
       await view.unmount();
@@ -639,6 +651,10 @@ test("ONB-13, ONB-X5: the tabs are a tablist and switching tabs clears the last 
     await view.type(name, "Mei");
     await view.type(email, "mei@example.sg");
     await view.type(password, "Str0ng-Passw0rd!");
+    await view.press(view.findByLabel("I am 18 or older."));
+    await view.press(
+      view.findByLabel("I agree to the Terms of service and have read the Privacy policy."),
+    );
     await view.press(allByText(view, "Create account").at(-1) ?? null);
     const errorText = view.text();
     assert.match(errorText, /already|exists|in use|registered/i);

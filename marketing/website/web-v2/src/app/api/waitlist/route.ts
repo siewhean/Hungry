@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { clientRequestKey, jsonError, requireJsonRequest, requireRateLimit } from "@/lib/security/api";
+import {
+  clientRequestKey,
+  jsonError,
+  requireJsonRequest,
+  requireRateLimit,
+} from "@/lib/security/api";
 import { getStringField, readJsonObject, validationErrorResponse } from "@/lib/security/validation";
 import { submitWebsiteWaitlist, type WaitlistAudience } from "@/lib/supabase/websiteData";
 
@@ -23,6 +28,12 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await readJsonObject(request);
+    if (body.ageConfirmed !== true || body.updatesRequested !== true) {
+      return jsonError(
+        "Confirm you are 18 or older and request emails for your selected list.",
+        400,
+      );
+    }
     const audience = normalizeAudience(body.audience ?? body.joining_as);
     const businessName =
       getStringField(body, "businessName", { max: 160 }) ??
@@ -31,26 +42,22 @@ export async function POST(request: NextRequest) {
       getStringField(body, "establishmentType", { max: 80 }) ??
       getStringField(body, "establishment_type", { max: 80 });
 
-    if (audience === "merchant" && !businessName) {
-      return jsonError("Enter your business name.", 400);
-    }
-
-    if (audience === "merchant" && !establishmentType) {
-      return jsonError("Select your food business type.", 400);
-    }
-
     if (audience === "merchant" && establishmentType?.toLowerCase() === "other") {
       return jsonError("Specify your food business type.", 400);
     }
 
     const result = await submitWebsiteWaitlist({
       audience,
-      businessName,
-      email: getStringField(body, "email", { max: 254, required: true, transform: "lower-trim" }) ?? "",
-      establishmentType,
+      businessName: audience === "merchant" || audience === "both" ? businessName : undefined,
+      email:
+        getStringField(body, "email", { max: 254, required: true, transform: "lower-trim" }) ?? "",
+      establishmentType:
+        audience === "merchant" || audience === "both" ? establishmentType : undefined,
       metadata: {
-        referrer: request.headers.get("referer") ?? undefined,
-        userAgent: request.headers.get("user-agent") ?? undefined,
+        ageConfirmed: true,
+        selectedListUpdatesRequested: true,
+        consentVersion: "2026-10-25",
+        consentRecordedAt: new Date().toISOString(),
       },
       name: getStringField(body, "name", { max: 120 }),
       source: "web_v2",
