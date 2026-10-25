@@ -5,11 +5,12 @@ useDefault = true
 
 # Legacy single [allowlist] table so older gitleaks releases in CI also apply it.
 [allowlist]
-description = "SFA venue identifiers in the generated Excel catalog; the Supabase anon key (public by design, shipped in every app build, role=anon, RLS enforced); the AsyncStorage name of the pending dish save (an identifier, not a secret)"
+description = "SFA venue identifiers in the generated Excel catalog; the Supabase anon key (public by design, shipped in every app build, role=anon, RLS enforced); the AsyncStorage name of the pending dish save and the website's first-touch attribution localStorage name (identifiers, not secrets)"
 regexTarget = "secret"
 regexes = [
   '''^ven-SFA-[A-Z0-9]+$''',
   '''^hungry-pending-dish-save-v1$''',
+  '''^hungry_attribution_v1$''',
   '''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlybHhqZW92d3NsaXJzZWFqb216Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIyNDc3ODIsImV4cCI6MjEwNzgyMzc4Mn0\.HChJVQe3BIoDuuDG_ruT6XedpVuqJjB9oeyB40bYZPk''',
   '''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZybHV4d3BxcXlvbWlxbWp6YXZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI2NTIwMDEsImV4cCI6MjEwODIyODAwMX0\.ZZCy_SsRdlG-SSJWDqaioOg8rdruXExVwH8lgO3Mil0''',
 ]
