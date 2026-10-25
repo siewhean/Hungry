@@ -65,6 +65,54 @@ test("a discounted price is kept apart from the list price", () => {
   assert.equal(item.price_from, false);
 });
 
+const PS_CAFE = fs.readFileSync(
+  new URL(
+    "../data/source_snapshots/foodpanda_pilot_20261025/ps-cafe-great-world.stripped.html",
+    import.meta.url,
+  ),
+  "utf8",
+);
+
+test("large multi-category stall: every category tab count matches the parsed items", () => {
+  assert.deepEqual(vendorFromHtml(PS_CAFE), {
+    url: "https://www.foodpanda.sg/restaurant/y6cf/ps-cafe-great-world",
+    name: "PS.Cafe (Great World)",
+    code: "y6cf",
+  });
+  const items = extractMenuFromHtml(PS_CAFE);
+  assert.equal(items.length, 43);
+  const parsed = {};
+  for (const i of items) parsed[i.category] = (parsed[i.category] || 0) + 1;
+  // Tab labels in the page read "BRUNCH (11)", "Desserts (9)", ... (the "Popular (4)" tab repeats items).
+  const tabs = {};
+  for (const m of PS_CAFE.matchAll(/id="tabs__tab-\d+-label">([^<]+?) \((\d+)\)</g)) {
+    if (m[1] !== "Popular") tabs[m[1].replace(/&amp;/g, "&")] = Number(m[2]);
+  }
+  assert.deepEqual(parsed, tabs);
+  assert.equal(Object.keys(tabs).length, 9);
+  assert.equal(new Set(items.map((i) => i.item_name)).size, 43);
+});
+
+test("large stall: variation ranges, missing images and descriptions are kept as-is", () => {
+  const byName = Object.fromEntries(extractMenuFromHtml(PS_CAFE).map((i) => [i.item_name, i]));
+  assert.equal(byName["PS. Full Breakfast"].price_sgd, 34);
+  assert.equal(byName["PS. Full Breakfast"].price_from, false);
+  assert.deepEqual(byName["Americano"].variation_prices_sgd, [7, 8]);
+  assert.equal(byName["Americano"].price_from, true);
+  assert.deepEqual(byName["Our Tea Options"].variation_prices_sgd, [7, 7.5, 8.5]);
+  assert.equal(byName["Cow & Egg"].price_sgd, 31);
+  assert.equal(byName["Sprite"].image_url, null);
+  assert.equal(byName["Iced Peach Tea"].description, "");
+  assert.ok(extractMenuFromHtml(PS_CAFE).every((i) => i.discounted_price_sgd === null && !i.sold_out));
+});
+
+test("large stall: DOM fallback skips the nameless Popular carousel tiles", () => {
+  const noState = PS_CAFE.replace(/<script>window\.__PROVIDER_PROPS__[\s\S]*?<\/script>/, "");
+  const items = extractMenuFromHtml(noState);
+  assert.equal(items.length, 43);
+  assert.ok(items.every((i) => i.price_sgd > 0));
+});
+
 test("stall list accepts a CSV with a URL column or bare URLs", () => {
   const csv = "F&B Name,SFA Licence,Menu URL\nStall A,LIC1,https://foodpanda.sg/restaurant/y2ny/a\nStall A again,LIC1,https://foodpanda.sg/restaurant/y2ny/a\nNo link,LIC2,\n";
   assert.deepEqual(parseStallList(csv), [
