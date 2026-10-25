@@ -122,3 +122,40 @@ test("stall list accepts a CSV with a URL column or bare URLs", () => {
     { licence_no: "t3ip", name: "t3ip", menu_source_url: "https://www.foodpanda.sg/restaurant/t3ip/b" },
   ]);
 });
+
+const RAFFLES = fs.readFileSync(
+  new URL(
+    "../data/source_snapshots/foodpanda_pilot_20261025/ps-cafe-raffles-city.stripped.html",
+    import.meta.url,
+  ),
+  "utf8",
+);
+
+test("Raffles City outlet: separate vendor from Great World, tab counts match, scheduled menu is recorded", () => {
+  assert.deepEqual(vendorFromHtml(RAFFLES), {
+    url: "https://www.foodpanda.sg/restaurant/y6kw/ps-cafe-raffles-city",
+    name: "PS.Cafe (Raffles City)",
+    code: "y6kw",
+  });
+  const items = extractMenuFromHtml(RAFFLES);
+  assert.equal(items.length, 38);
+  const parsed = {};
+  for (const i of items) parsed[i.category] = (parsed[i.category] || 0) + 1;
+  const tabs = {};
+  for (const m of RAFFLES.matchAll(/id="tabs__tab-\d+-label">([^<]+?) \((\d+)\)</g)) {
+    tabs[m[1].replace(/&amp;/g, "&")] = Number(m[2]);
+  }
+  assert.deepEqual(parsed, tabs);
+  // The page embeds only the menu active at save time (a weekend brunch window here).
+  assert.ok(items.every((i) => i.menu_title === "Brunch (Weekends)" && i.menu_hours === "10:00-15:59"));
+  assert.ok(items.every((i) => i.discounted_price_sgd === null && !i.sold_out));
+  assert.equal(items.filter((i) => !i.image_url).length, 5);
+  assert.ok(items.every((i) => i.image_url === null || !i.image_url.includes("?")));
+});
+
+test("DOM fallback leaves menu fields null", () => {
+  const noState = RAFFLES.replace(/<script>window\.__PROVIDER_PROPS__[\s\S]*?<\/script>/, "");
+  const items = extractMenuFromHtml(noState);
+  assert.equal(items.length, 38);
+  assert.ok(items.every((i) => i.menu_title === null && i.menu_hours === null));
+});

@@ -101,8 +101,17 @@ function itemsFromApollo(html) {
   const state = readObjectAfter(html, 'apollo:{')?.initialState;
   if (!state) return [];
   const items = [];
+  // Which scheduled menu (e.g. "Brunch (Weekends)", 10:00-15:59) each category belongs to. The page
+  // only embeds the menu active at save time, so other menus' items are absent from a snapshot.
+  const menuOf = new Map();
+  for (const [key, menu] of Object.entries(state)) {
+    if (!key.startsWith('RestaurantMenu:')) continue;
+    const hours = menu.startTime && menu.endTime ? `${menu.startTime.slice(0, 5)}-${menu.endTime.slice(0, 5)}` : null;
+    for (const ref of menu.categories || []) menuOf.set(ref.__ref, { title: menu.title || null, hours });
+  }
   for (const [key, cat] of Object.entries(state)) {
     if (!key.startsWith('RestaurantMenuCategory:')) continue;
+    const menu = menuOf.get(key);
     for (const ref of cat.products || []) {
       const p = state[ref.__ref];
       if (!p?.title) continue;
@@ -114,6 +123,8 @@ function itemsFromApollo(html) {
       const discounted = parsePrice(attrs.discountedPrice);
       items.push({
         category: cat.title || '',
+        menu_title: menu?.title ?? null,
+        menu_hours: menu?.hours ?? null,
         item_name: p.title.trim(),
         price_sgd: original,
         discounted_price_sgd: discounted != null && discounted < original ? discounted : null,
@@ -142,6 +153,8 @@ function itemsFromDom(html) {
     const img = tile.match(/data-testid="menu-product-image"[^>]*\ssrc="([^"]+)"/);
     items.push({
       category: '',
+      menu_title: null,
+      menu_hours: null,
       item_name: name,
       price_sgd: parsePrice(field(tile, 'menu-product-price')),
       discounted_price_sgd: null,
