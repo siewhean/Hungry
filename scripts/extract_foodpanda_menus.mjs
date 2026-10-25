@@ -101,13 +101,21 @@ function itemsFromApollo(html) {
   const state = readObjectAfter(html, 'apollo:{')?.initialState;
   if (!state) return [];
   const items = [];
-  // Which scheduled menu (e.g. "Brunch (Weekends)", 10:00-15:59) each category belongs to. The page
-  // only embeds the menu active at save time, so other menus' items are absent from a snapshot.
+  // Which scheduled menu (e.g. "Brunch (Weekends)") each category belongs to. Foodpanda gives a menu
+  // only start/end times of day plus free text; weekday names live in the title/description, so no
+  // days are inferred. A page embeds only the menu active at save time, so other menus' items are absent.
   const menuOf = new Map();
   for (const [key, menu] of Object.entries(state)) {
     if (!key.startsWith('RestaurantMenu:')) continue;
-    const hours = menu.startTime && menu.endTime ? `${menu.startTime.slice(0, 5)}-${menu.endTime.slice(0, 5)}` : null;
-    for (const ref of menu.categories || []) menuOf.set(ref.__ref, { title: menu.title || null, hours });
+    const info = {
+      menu_id: menu.id ?? null,
+      menu_title: menu.title || null,
+      menu_description: menu.description || null,
+      menu_hours: menu.startTime && menu.endTime
+        ? { start: menu.startTime, end: menu.endTime, expedition_type: menu.expeditionType ?? null }
+        : null,
+    };
+    for (const ref of menu.categories || []) menuOf.set(ref.__ref, info);
   }
   for (const [key, cat] of Object.entries(state)) {
     if (!key.startsWith('RestaurantMenuCategory:')) continue;
@@ -123,8 +131,10 @@ function itemsFromApollo(html) {
       const discounted = parsePrice(attrs.discountedPrice);
       items.push({
         category: cat.title || '',
-        menu_title: menu?.title ?? null,
-        menu_hours: menu?.hours ?? null,
+        menu_id: menu?.menu_id ?? null,
+        menu_title: menu?.menu_title ?? null,
+        menu_description: menu?.menu_description ?? null,
+        menu_hours: menu?.menu_hours ?? null,
         item_name: p.title.trim(),
         price_sgd: original,
         discounted_price_sgd: discounted != null && discounted < original ? discounted : null,
@@ -153,7 +163,9 @@ function itemsFromDom(html) {
     const img = tile.match(/data-testid="menu-product-image"[^>]*\ssrc="([^"]+)"/);
     items.push({
       category: '',
+      menu_id: null,
       menu_title: null,
+      menu_description: null,
       menu_hours: null,
       item_name: name,
       price_sgd: parsePrice(field(tile, 'menu-product-price')),
@@ -168,9 +180,25 @@ function itemsFromDom(html) {
   return items;
 }
 
+// Stall-level opening hours from the restaurant ld+json, kept as the raw
+// openingHoursSpecification array. Separate from per-menu hours.
+export function stallHoursFromHtml(html) {
+  for (const m of html.matchAll(/<script type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g)) {
+    try {
+      const spec = JSON.parse(m[1])?.openingHoursSpecification;
+      if (Array.isArray(spec) && spec.length) {
+        return spec.map(({ dayOfWeek, opens, closes }) => ({ days: [].concat(dayOfWeek ?? []), opens: opens ?? null, closes: closes ?? null }));
+      }
+    } catch { /* not the restaurant block */ }
+  }
+  return null;
+}
+
 export function extractMenuFromHtml(html) {
   const fromState = itemsFromApollo(html);
-  return fromState.length ? fromState : itemsFromDom(html);
+  const items = fromState.length ? fromState : itemsFromDom(html);
+  const stall_hours = stallHoursFromHtml(html);
+  return items.map((it) => ({ ...it, stall_hours }));
 }
 
 export function vendorFromHtml(html) {

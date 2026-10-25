@@ -147,7 +147,13 @@ test("Raffles City outlet: separate vendor from Great World, tab counts match, s
   }
   assert.deepEqual(parsed, tabs);
   // The page embeds only the menu active at save time (a weekend brunch window here).
-  assert.ok(items.every((i) => i.menu_title === "Brunch (Weekends)" && i.menu_hours === "10:00-15:59"));
+  assert.ok(items.every((i) => i.menu_id === "5132897" && i.menu_title === "Brunch (Weekends)"));
+  assert.ok(items.every((i) => i.menu_description === "Available from 10am to 4pm"));
+  assert.ok(items.every((i) => i.menu_hours.start === "10:00:00" && i.menu_hours.end === "15:59:59"));
+  // Stall hours come from ld+json and stay separate from menu hours.
+  assert.deepEqual(items[0].stall_hours, [
+    { days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], opens: "11:00", closes: "21:00" },
+  ]);
   assert.ok(items.every((i) => i.discounted_price_sgd === null && !i.sold_out));
   assert.equal(items.filter((i) => !i.image_url).length, 5);
   assert.ok(items.every((i) => i.image_url === null || !i.image_url.includes("?")));
@@ -157,5 +163,41 @@ test("DOM fallback leaves menu fields null", () => {
   const noState = RAFFLES.replace(/<script>window\.__PROVIDER_PROPS__[\s\S]*?<\/script>/, "");
   const items = extractMenuFromHtml(noState);
   assert.equal(items.length, 38);
-  assert.ok(items.every((i) => i.menu_title === null && i.menu_hours === null));
+  assert.ok(items.every((i) => i.menu_id === null && i.menu_title === null && i.menu_hours === null));
+  assert.equal(items[0].stall_hours[0].opens, "11:00");
+});
+
+test("per-item menu hours: Newton and Great World carry their own menu and stall hours", () => {
+  const nw = extractMenuFromHtml(html);
+  assert.ok(nw.every((i) => i.menu_id === "83166" && i.menu_title === "Main Menu"));
+  assert.deepEqual(nw[0].menu_hours, { start: "09:00:00", end: "22:00:00", expedition_type: "DELIVERY" });
+  assert.equal(nw[0].menu_description, null);
+  assert.deepEqual(nw[0].stall_hours, [
+    { days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], opens: "11:00", closes: "22:00" },
+  ]);
+  const gw = extractMenuFromHtml(PS_CAFE);
+  assert.ok(gw.every((i) => i.menu_id === "160134" && i.menu_title === "Brunch (Weekends)"));
+  assert.deepEqual(gw[0].menu_hours, { start: "08:00:00", end: "16:00:00", expedition_type: "DELIVERY" });
+  assert.equal(gw[0].stall_hours[0].closes, "21:00");
+});
+
+test("with several menus each product maps to the menu that holds its category; no schedule gives null", () => {
+  const prod = (n) => ({ title: n, variations: [{ __ref: "V:1" }], priceAttributes: {} });
+  const state = {
+    initialState: {
+      "RestaurantMenu:1": { id: "1", title: "Lunch", startTime: "11:00:00", endTime: "14:00:00", expeditionType: "DELIVERY", categories: [{ __ref: "RestaurantMenuCategory:1" }] },
+      "RestaurantMenu:2": { id: "2", title: "Always", categories: [{ __ref: "RestaurantMenuCategory:2" }] },
+      "RestaurantMenuCategory:1": { title: "Rice", products: [{ __ref: "P:1" }] },
+      "RestaurantMenuCategory:2": { title: "Drinks", products: [{ __ref: "P:2" }] },
+      "P:1": prod("Chicken Rice"),
+      "P:2": prod("Tea"),
+      "V:1": { price: 5 },
+    },
+  };
+  const page = `<script>window.__PROVIDER_PROPS__=Object.assign({},{apollo:${JSON.stringify(state)}});</script>`;
+  const [rice, tea] = extractMenuFromHtml(page);
+  assert.deepEqual([rice.menu_id, rice.menu_title], ["1", "Lunch"]);
+  assert.deepEqual(rice.menu_hours, { start: "11:00:00", end: "14:00:00", expedition_type: "DELIVERY" });
+  assert.deepEqual([tea.menu_id, tea.menu_title, tea.menu_hours], ["2", "Always", null]);
+  assert.equal(tea.stall_hours, null);
 });
