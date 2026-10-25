@@ -1,5 +1,7 @@
 -- Undo 20261025090000_catalog_hide_non_consumer_venues: put the stashed cards back, restore
 -- the Home feed body and the cursor-helper grants, then drop the exclusion objects.
+-- The hidden-venue list (which may hold hand-added 'manual' rows) is copied to
+-- rollback_archive before it is dropped.
 
 drop trigger if exists trg_catalog_raw_skip_excluded_venue on public.catalog_raw_venue_cards;
 drop trigger if exists trg_catalog_raw_skip_excluded_venue on public.catalog_raw_dish_cards;
@@ -64,6 +66,11 @@ $$;
 
 grant execute on function public.catalog_raw_cursor(jsonb) to public, anon, authenticated, service_role;
 grant execute on function public.catalog_raw_cursor_value(text) to public, anon, authenticated, service_role;
+
+create schema if not exists rollback_archive;
+drop table if exists rollback_archive.catalog_excluded_venues_20261025090000;
+create table rollback_archive.catalog_excluded_venues_20261025090000 as
+select * from app_private.catalog_excluded_venues;
 
 drop table if exists app_private.catalog_excluded_venues;
 drop function if exists app_private.catalog_non_consumer_reason(text);
