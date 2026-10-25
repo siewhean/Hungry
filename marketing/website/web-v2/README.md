@@ -43,6 +43,7 @@ Database-backed waitlist, Console, and Merchant Portal routes require the shared
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, or the Expo public anon key equivalents
 - `SUPABASE_SERVICE_ROLE_KEY` or `HUNGRY_SUPABASE_SERVICE_ROLE_KEY` for Console reads/admin writes and waitlist upserts
 - `HUNGRY_CONSOLE_USERNAME` and `HUNGRY_CONSOLE_PASSWORD` for Console access. Store these as deployment secrets and local `.env.local` values only; never commit real credentials. Console pages and `/api/console/*` fail closed when either value is missing.
+- Optional waitlist welcome email (Resend): `RESEND_API_KEY` and `WAITLIST_EMAIL_FROM` (falls back to `RESEND_FROM`); the sender domain must be verified in Resend. Without them signups still work and no email is sent.
 - Optional durable rate limiting uses an Upstash Redis REST-compatible store:
   - `HUNGRY_RATE_LIMIT_REDIS_REST_URL` / `HUNGRY_RATE_LIMIT_REDIS_REST_TOKEN`
   - or `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`

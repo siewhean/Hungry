@@ -225,6 +225,20 @@ export async function submitWebsiteWaitlist(input: WebsiteWaitlistInput) {
   };
 
   if (isSupabaseServiceConfigured()) {
+    // A new address returns its row; a repeat returns nothing, so only new
+    // signups count as created (and get the welcome email).
+    const { data: inserted } = await supabaseFetchOnDemand<unknown[]>("rest/v1/website_waitlist_entries", {
+      body: payload,
+      method: "POST",
+      params: { on_conflict: "email" },
+      prefer: "resolution=ignore-duplicates,return=representation",
+      serviceRole: true,
+    });
+    if (Array.isArray(inserted) && inserted.length > 0) {
+      return { alreadyExists: false, created: true };
+    }
+
+    // Repeat signup: keep the latest details (for example a foodie who now joins as a merchant).
     await supabaseFetchOnDemand<unknown>("rest/v1/website_waitlist_entries", {
       body: payload,
       method: "POST",
@@ -232,7 +246,7 @@ export async function submitWebsiteWaitlist(input: WebsiteWaitlistInput) {
       prefer: "resolution=merge-duplicates,return=minimal",
       serviceRole: true,
     });
-    return { alreadyExists: false };
+    return { alreadyExists: true, created: false };
   }
 
   try {
@@ -241,10 +255,10 @@ export async function submitWebsiteWaitlist(input: WebsiteWaitlistInput) {
       method: "POST",
       prefer: "return=minimal",
     });
-    return { alreadyExists: false };
+    return { alreadyExists: false, created: true };
   } catch (error) {
     if (error instanceof Error && error.message.includes("duplicate key")) {
-      return { alreadyExists: true };
+      return { alreadyExists: true, created: false };
     }
     throw error;
   }

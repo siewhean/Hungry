@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { clientRequestKey, jsonError, requireJsonRequest, requireRateLimit } from "@/lib/security/api";
 import { getStringField, readJsonObject, validationErrorResponse } from "@/lib/security/validation";
+import { cleanAttribution } from "@/lib/analytics/attribution";
+import { sendWaitlistWelcomeEmail } from "@/lib/email/waitlistEmail";
 import {
   submitWebsiteWaitlist,
   WAITLIST_NOT_CONFIGURED,
@@ -47,20 +49,29 @@ export async function POST(request: NextRequest) {
       return jsonError("Specify your food business type.", 400);
     }
 
+    const email = getStringField(body, "email", { max: 254, required: true, transform: "lower-trim" }) ?? "";
+    const name = getStringField(body, "name", { max: 120 });
+    const attribution = cleanAttribution(body.attribution);
+
     const result = await submitWebsiteWaitlist({
       audience,
       businessName,
-      email: getStringField(body, "email", { max: 254, required: true, transform: "lower-trim" }) ?? "",
+      email,
       establishmentType,
       metadata: {
+        ...(Object.keys(attribution).length > 0 ? { attribution } : {}),
         referrer: request.headers.get("referer") ?? undefined,
         userAgent: request.headers.get("user-agent") ?? undefined,
       },
-      name: getStringField(body, "name", { max: 120 }),
+      name,
       source: "web_v2",
     });
 
-    return NextResponse.json({ ok: true, ...result });
+    if (result.created) {
+      await sendWaitlistWelcomeEmail({ audience, name, to: email });
+    }
+
+    return NextResponse.json({ ok: true, alreadyExists: result.alreadyExists });
   } catch (error) {
     const validationResponse = validationErrorResponse(error);
     if (validationResponse) return validationResponse;
