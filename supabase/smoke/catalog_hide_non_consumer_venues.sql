@@ -2,19 +2,23 @@
 -- A new 7-Eleven is listed as hidden as soon as it is loaded, a publish leaves it out of the
 -- raw catalog, a renamed venue comes back, a real "factory" cafe and a merchant's venue stay
 -- visible, the Home feed filters all three candidate queries, and the cursor helpers are
--- service-role only. Runs in a transaction and rolls back.
+-- service-role only. Runs in a transaction and rolls back. Brings its own building, so it
+-- runs on prod (no seed data) as well as staging.
 
 begin;
 
+insert into buildings (id, name, building_type, latitude, longitude)
+values ('smoke-0048-building', 'Smoke 0048 Building', 'hawker_centre', 1.2803, 103.8448);
+
 insert into venues (id, building_id, name, floor)
 values
-  ('smoke-0048-seven', 'building-maxwell', '7-Eleven', '1'),
-  ('smoke-0048-cafe', 'building-maxwell', 'Beans Factory', '1'),
-  ('smoke-0048-rename', 'building-maxwell', 'Kimly Food Manufacturing Pte Ltd', '1'),
-  ('smoke-0048-shell', 'building-maxwell', 'Shell Select', '1');
+  ('smoke-0048-seven', 'smoke-0048-building', '7-Eleven', '1'),
+  ('smoke-0048-cafe', 'smoke-0048-building', 'Beans Factory', '1'),
+  ('smoke-0048-rename', 'smoke-0048-building', 'Kimly Food Manufacturing Pte Ltd', '1'),
+  ('smoke-0048-shell', 'smoke-0048-building', 'Shell Select', '1');
 
 insert into dishes (id, venue_id, building_id, name, price)
-values ('smoke-0048-seven-dish', 'smoke-0048-seven', 'building-maxwell', 'Onigiri', 2.5);
+values ('smoke-0048-seven-dish', 'smoke-0048-seven', 'smoke-0048-building', 'Onigiri', 2.5);
 
 do $$
 begin
@@ -44,14 +48,26 @@ begin
   end if;
 end $$;
 
-select public.catalog_raw_publish_release(null, null);
+-- With no active release (staging) publish one; on prod refresh only the smoke venues
+-- instead of republishing the whole catalog.
+do $$
+begin
+  if not exists (select 1 from public.catalog_releases where status = 'active') then
+    perform public.catalog_raw_publish_release(null, null);
+  else
+    perform public.catalog_raw_refresh_venue('smoke-0048-seven');
+    perform public.catalog_raw_refresh_venue('smoke-0048-cafe');
+    perform public.catalog_raw_refresh_venue('smoke-0048-rename');
+    perform public.catalog_raw_refresh_venue('smoke-0048-shell');
+  end if;
+end $$;
 
 do $$
 declare
   v_release uuid := (select id from public.catalog_releases where status = 'active');
 begin
   if v_release is null then
-    raise exception 'publish should activate a release';
+    raise exception 'there should be an active release';
   end if;
   if exists (select 1 from public.catalog_raw_venue_cards where release_id = v_release and id in ('smoke-0048-seven', 'smoke-0048-shell')) then
     raise exception 'hidden venues must not get venue cards';
