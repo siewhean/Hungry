@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, ChefHat, Store } from "lucide-react";
+import { readStoredAttribution } from "@/lib/analytics/attribution";
 import { trackWebsiteEvent } from "@/lib/analytics/websiteEvents";
 import styles from "./page.module.css";
 
@@ -133,6 +134,7 @@ export default function JoinWaitlistForm({ initialAudience }: JoinWaitlistFormPr
           : undefined;
       const response = await fetch("/api/waitlist", {
         body: JSON.stringify({
+          attribution: readStoredAttribution(),
           audience,
           businessName: audience === "merchant" ? businessName.trim() : undefined,
           email: trimmedEmail,

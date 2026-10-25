@@ -20,7 +20,7 @@ import {
 } from "@/lib/seo/noindex";
 import { buildGlobalGraph } from "@/lib/seo/schema";
 
-const rawSiteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://hungry.sg";
+const rawSiteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://usehungry.com";
 
 export const siteConfig = {
   name: "Hungry",

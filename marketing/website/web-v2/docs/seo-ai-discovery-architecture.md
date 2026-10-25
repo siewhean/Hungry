@@ -65,7 +65,7 @@ Goal: help search systems and AI systems identify Hungry as a Singapore food-dis
 Current JSON-LD:
 
 - `Organization`: Hungry as the publisher/company entity.
-- `WebSite`: hungry.sg as the canonical website.
+- `WebSite`: usehungry.com as the canonical website.
 - `MobileApplication`: Hungry as a coming-soon iOS/Android food discovery app.
 
 Future JSON-LD:
@@ -209,9 +209,9 @@ npm run build:webpack
 
 Rendered checks after deployment:
 
-- `https://hungry.sg/robots.txt` returns `200` and lists the sitemap.
-- `https://hungry.sg/sitemap.xml` returns `200` and lists canonical public pages.
-- `https://hungry.sg/llms.txt` returns `200`.
+- `https://usehungry.com/robots.txt` returns `200` and lists the sitemap.
+- `https://usehungry.com/sitemap.xml` returns `200` and lists canonical public pages.
+- `https://usehungry.com/llms.txt` returns `200`.
 - Page source for `/`, `/for-foodies`, and `/for-merchants` includes canonical metadata and JSON-LD.
 - Rich Results Test can parse JSON-LD without critical errors.
 - Google Search Console can inspect and request indexing for the main URLs.
@@ -229,7 +229,7 @@ Pass criteria:
 
 - Answers describe Hungry as a Singapore food discovery app.
 - Answers do not describe Hungry as delivery, booking, or globally launched unless the website changes.
-- When citations are shown, they point to `hungry.sg` pages.
+- When citations are shown, they point to `usehungry.com` pages.
 
 ## Source Notes
 
