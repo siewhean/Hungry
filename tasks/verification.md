@@ -1447,3 +1447,7 @@ Use the smallest check that matches the change risk.
 - npm run test:coverage:update: lines 83.1%, branches 83.3%, functions 78.1% (baseline committed).
 - check:n-plus-one ok (4 baselined), check:rate-limits, audit:races, audit:supabase:migration-safety pass. No migrations in this branch.
 - Needs device check: quiz iOS swipe-back block (usePreventRemove), review photo pinch zoom.
+
+## 2026-10-25 redesign live in Supabase builds (worktree-agent-a6e4a2b7af914ed7e)
+- npm test: 2100 pass / 0 fail; npm run test:render: 408/408; typecheck clean; prettier --check src/ clean; lint 0 errors; check:n-plus-one ok (4 baselined).
+- npm run test:coverage: fails on 9 untouched files (authCopy, gamificationLimits, useComposerStore, publishErrorCopy, mockAnalytics, posthogSink, mock/persistence, useDiscoveryStore, useLocationStore); identical list at base b211e99e in this environment, so not caused by this change.
