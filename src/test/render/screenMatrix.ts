@@ -195,6 +195,8 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "DiscoverEntryScreen",
     file: "src/app/screens/discover/DiscoverEntryScreen.tsx",
     scenario: "user",
+    // Mock mode renders DiscoverHomeScreen; the Supabase branch (live feed, offline hand-off)
+    // is covered in src/app/screens/discover/DiscoverEntryScreen.render.test.tsx.
     expect: /Choose where you are|You are at/,
   },
   {

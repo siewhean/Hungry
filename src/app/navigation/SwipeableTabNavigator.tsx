@@ -194,7 +194,7 @@ const ProfileWrapper = createDeferredTabScreen(profileScreenLoader);
  * Release builds keep the Home/Review routes registered (many flows reset to
  * `MainTabs > Home`) but hide them from the tab bar. The redirect must stay
  * inert: it renders no Discover instance (that would mount extra
- * CatalogDiscoverHome trees and duplicate catalog requests) and only redirects
+ * Home trees and duplicate feed requests) and only redirects
  * while focused, so tab preloading can never bounce the user off Profile.
  */
 function ReleaseLandingRedirect() {

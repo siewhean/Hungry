@@ -155,7 +155,13 @@ export type RootStackParamList = {
   MerchantClaimExplainer: undefined;
   ReportProblem: { venueId: string; dishId?: string; subjectName?: string };
   /** `source` names where the dish was opened from, for the dish_viewed event. */
-  DishDetail: { dishId?: string; id?: string; source?: string };
+  DishDetail: {
+    dishId?: string;
+    id?: string;
+    source?: string;
+    /** Opened from a catalog card: a dish page that can't be found shows the catalog record. */
+    catalogFallback?: { releaseId?: string };
+  };
   CatalogRawDetail: { kind: "dish" | "venue"; id: string; releaseId?: string };
   SearchHome: undefined;
   SearchResults:

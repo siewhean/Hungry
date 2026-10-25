@@ -170,12 +170,17 @@ function RawDishCard({
           kind: "dish",
           position,
         });
-        // Approved dishes have a real dish page; others open the catalog record.
-        if (item.verificationStatus === "approved") {
-          navigation.navigate("DishDetail", { dishId: item.id });
-        } else {
+        // The offline copy only has the read-only catalog page. Live catalog ids are dish ids,
+        // so they open the dish page, which falls back to the catalog record if it can't load.
+        if (releaseId?.startsWith("excel-fallback")) {
           navigation.navigate("CatalogRawDetail", { kind: "dish", id: item.id, releaseId });
+          return;
         }
+        navigation.navigate("DishDetail", {
+          dishId: item.id,
+          source: "home",
+          catalogFallback: { releaseId },
+        });
       }}
       style={{ width: 190 }}
     >
@@ -334,8 +339,12 @@ function RawVenueRow({
   );
 }
 
-/** Supabase-first, authenticated catalog surface with read-only Excel outage fallback. */
-export function CatalogDiscoverHome() {
+/**
+ * The offline Home: shown in Supabase builds only when the live discovery feed fails. Reads the
+ * authenticated catalog first, with the read-only Excel copy as the outage fallback.
+ * `onRetryLive` (from the entry) makes Retry and pull-to-refresh try the live Home again.
+ */
+export function CatalogDiscoverHome({ onRetryLive }: { onRetryLive?: () => void }) {
   const navigation = useNavigation<RootNavigation>();
   const isFocused = useIsFocused();
   const insets = useSafeAreaInsets();
@@ -487,8 +496,12 @@ export function CatalogDiscoverHome() {
   /** Pull-to-refresh and Retry: skip the 60 s page cache so the tap really refetches. */
   const reloadFresh = useCallback(() => {
     service?.clearCache();
+    if (onRetryLive) {
+      onRetryLive();
+      return;
+    }
     void load();
-  }, [load, service]);
+  }, [load, onRetryLive, service]);
 
   useEffect(() => {
     void load();

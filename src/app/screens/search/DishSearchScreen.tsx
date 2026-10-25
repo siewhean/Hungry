@@ -118,6 +118,7 @@ export function DishSearchScreen() {
   const [featured, setFeatured] = useState<{
     arm: string;
     items: CatalogRawDishCard[];
+    releaseId?: string;
     settled: boolean;
   }>({ arm: "", items: [], settled: false });
   // One report per mount for each Search home load, not one per retry.
@@ -208,7 +209,14 @@ export function DishSearchScreen() {
         : islandWide();
     load
       .then((page) => {
-        if (active) setFeatured({ arm: featuredArm, items: page.items, settled: true });
+        if (active) {
+          setFeatured({
+            arm: featuredArm,
+            items: page.items,
+            releaseId: page.releaseId || undefined,
+            settled: true,
+          });
+        }
       })
       .catch((error) => {
         if (active) setFeatured({ arm: featuredArm, items: [], settled: true });
@@ -662,7 +670,21 @@ export function DishSearchScreen() {
                     position,
                     variant: featuredVariant,
                   });
-                  navigation.navigate("CatalogRawDetail", { kind: "dish", id: dish.id });
+                  // The dish page, with the catalog record as the fallback if it can't load.
+                  // The offline copy has only the read-only catalog page.
+                  if (featured.releaseId?.startsWith("excel-fallback")) {
+                    navigation.navigate("CatalogRawDetail", {
+                      kind: "dish",
+                      id: dish.id,
+                      releaseId: featured.releaseId,
+                    });
+                    return;
+                  }
+                  navigation.navigate("DishDetail", {
+                    dishId: dish.id,
+                    source: "search_featured",
+                    catalogFallback: { releaseId: featured.releaseId },
+                  });
                 }}
                 style={[
                   shadows.card,

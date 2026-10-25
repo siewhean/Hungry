@@ -1038,10 +1038,47 @@ export async function searchDishesViaRpc(
   }));
 }
 
+/**
+ * Dietary flag slugs for a set of dishes in two batched reads (the link rows for these ids, and
+ * the small flag list). Undefined when either read fails, so the caller keeps what it had.
+ */
+async function loadDishDietaryFlagsByDishId(
+  dishIds: string[],
+): Promise<Map<string, string[]> | undefined> {
+  const client = getSupabaseClient();
+  if (!client || dishIds.length === 0) return undefined;
+  const [linkResult, flagResult] = await Promise.all([
+    client.from("dish_dietary_flags").select("dish_id,dietary_flag_id").in("dish_id", dishIds),
+    client.from("dietary_flags").select("id,slug"),
+  ]);
+  if (
+    linkResult.error ||
+    flagResult.error ||
+    !Array.isArray(linkResult.data) ||
+    !Array.isArray(flagResult.data)
+  ) {
+    console.warn("Supabase discovery dietary flags read failed");
+    return undefined;
+  }
+  const slugById = new Map(
+    (flagResult.data as unknown as Row[]).map((row) => [toString(row.id), toString(row.slug)]),
+  );
+  const flagsByDishId = new Map<string, string[]>();
+  for (const row of linkResult.data as unknown as Row[]) {
+    const dishId = toString(row.dish_id);
+    const slug = slugById.get(toString(row.dietary_flag_id));
+    if (!dishId || !slug) continue;
+    const flags = flagsByDishId.get(dishId) ?? [];
+    if (!flags.includes(slug)) flags.push(slug);
+    flagsByDishId.set(dishId, flags);
+  }
+  return flagsByDishId;
+}
+
 export async function listDiscoveryFeedByLocationViaRpc(
   request: DiscoveryLocationFeedRequest,
 ): Promise<DiscoveryLocationFeed | undefined> {
-  const rows = await rpcRows("get_discovery_feed_by_location", {
+  let rows = await rpcRows("get_discovery_feed_by_location", {
     p_area_name: request.areaName?.trim() || null,
     p_lat: request.lat ?? null,
     p_lng: request.lng ?? null,
@@ -1051,6 +1088,20 @@ export async function listDiscoveryFeedByLocationViaRpc(
     ...(request.buildingId ? { p_building_id: request.buildingId } : {}),
   });
   if (!rows) return undefined;
+
+  // 20261021190000 rebuilt the feed without top_dish_dietary_flags (still missing in
+  // 20261022040100), so the Halal and Dietary needs chips matched nothing on live data. While
+  // the column is missing, this page's top-dish flags come from one batched read.
+  if (rows.length > 0 && !rows.some((row) => "top_dish_dietary_flags" in row)) {
+    const dishIds = [...new Set(rows.map((row) => toString(row.top_dish_id)).filter(Boolean))];
+    const flagsByDishId = await loadDishDietaryFlagsByDishId(dishIds);
+    if (flagsByDishId) {
+      rows = rows.map((row) => ({
+        ...row,
+        top_dish_dietary_flags: flagsByDishId.get(toString(row.top_dish_id)) ?? [],
+      }));
+    }
+  }
 
   const venues = rows.map(mapDiscoveryFeedVenue);
   const results = rows

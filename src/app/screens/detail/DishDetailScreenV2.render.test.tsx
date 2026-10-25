@@ -12,8 +12,13 @@ import {
   setExperimentFlagSource,
   type ExperimentFlagSource,
 } from "@/lib/experiments/experiments";
-import type { RecentReviewFeedEntry } from "@/lib/services/types";
-import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
+import type { HungryService, RecentReviewFeedEntry } from "@/lib/services/types";
+import {
+  getDataRepository,
+  getHungryService,
+  getServiceProvider,
+  setServiceProvider,
+} from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useReviewDraftStore } from "@/store/useReviewDraftStore";
 import { cleanup, createFakeNavigation, renderScreen, type RenderResult } from "@/test/render";
@@ -311,4 +316,107 @@ test("Not now keeps the popup's stars and taste words as a review draft (DISH-V7
   const { draft } = useReviewDraftStore.getState();
   assert.equal(draft.selectedDishId, dish.id);
   assert.equal(draft.rating, 4);
+});
+
+// ─── Live (Supabase) builds ───────────────────────────────────────────────────
+
+/**
+ * Switches to a "supabase" provider whose discovery reads come from `discovery`, and whose
+ * repository records every dish/stall read (each one would start a full-table download).
+ */
+function useLiveDishReads(discovery: Partial<HungryService["discovery"]>) {
+  const base = getServiceProvider();
+  const repositoryReads: string[] = [];
+  const watched = new Set(["getDishById", "getVenueById", "listDishesByVenue"]);
+  const repository = new Proxy(base.repository, {
+    get(target, property, receiver) {
+      const value = Reflect.get(target, property, receiver);
+      if (typeof value !== "function" || !watched.has(String(property))) return value;
+      return (...args: unknown[]) => {
+        repositoryReads.push(String(property));
+        return (value as (...a: unknown[]) => unknown).apply(target, args);
+      };
+    },
+  });
+  const service = { ...base.service, discovery: { ...base.service.discovery, ...discovery } };
+  setServiceProvider({ ...base, mode: "supabase", service, repository });
+  return repositoryReads;
+}
+
+test("on live data the dish page reads the dish, stall and menu through the service only", async () => {
+  stubReviews([]);
+  const dish = pickDish();
+  const venue = getDataRepository().getVenueById(dish.venueId);
+  const calls: string[] = [];
+  const repositoryReads = useLiveDishReads({
+    getDish: async () => {
+      calls.push("getDish");
+      return dish;
+    },
+    getVenue: async () => {
+      calls.push("getVenue");
+      return venue;
+    },
+    listDishesByVenue: async () => {
+      calls.push("listDishesByVenue");
+      return [dish];
+    },
+    getVenueOpeningSchedule: async () => undefined,
+    getPublicMerchantProfile: async () => undefined,
+  });
+  const view = await renderScreen(DishDetailScreenV2 as never, {
+    name: "DishDetail",
+    params: { dishId: dish.id, source: "home" },
+  });
+  assert.ok(view.findByText(dish.name), "the dish renders from the service read");
+  assert.deepEqual(repositoryReads, [], "no synchronous repository read on live data");
+  assert.ok(calls.includes("getDish"));
+  assert.ok(calls.includes("getVenue"));
+  assert.ok(calls.includes("listDishesByVenue"));
+});
+
+test("a catalog card whose dish page can't be found opens the catalog record instead", async () => {
+  stubReviews([]);
+  useLiveDishReads({ getDish: async () => undefined });
+  const view = await renderScreen(DishDetailScreenV2 as never, {
+    name: "DishDetail",
+    params: {
+      dishId: "catalog-only-dish",
+      source: "search",
+      catalogFallback: { releaseId: "r-7" },
+    },
+  });
+  assert.deepEqual(view.navigation.calls.find((call) => call.method === "replace")?.args, [
+    "CatalogRawDetail",
+    { kind: "dish", id: "catalog-only-dish", releaseId: "r-7" },
+  ]);
+  assert.doesNotMatch(view.text(), /We can't find this dish/);
+});
+
+test("without a catalog fallback, or when the read failed, the dish page keeps its own states", async () => {
+  stubReviews([]);
+  useLiveDishReads({ getDish: async () => undefined });
+  let view = await renderScreen(DishDetailScreenV2 as never, {
+    name: "DishDetail",
+    params: { dishId: "gone-dish" },
+  });
+  assert.match(view.text(), /We can't find this dish/);
+  assert.equal(view.navigation.calls.filter((call) => call.method === "replace").length, 0);
+  await cleanup();
+
+  useLiveDishReads({
+    getDish: async () => {
+      throw new Error("Couldn't load this dish.");
+    },
+  });
+  view = await renderScreen(DishDetailScreenV2 as never, {
+    name: "DishDetail",
+    params: { dishId: "offline-dish", catalogFallback: {} },
+  });
+  assert.match(view.text(), /Couldn't load this dish/);
+  assert.equal(
+    view.navigation.calls.filter((call) => call.method === "replace").length,
+    0,
+    "a network failure offers Try again, not the catalog record",
+  );
 });

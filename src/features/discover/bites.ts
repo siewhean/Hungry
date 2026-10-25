@@ -1,3 +1,4 @@
+import { isRelease01BlockedImageUrl } from "@/constants/release01";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import type { Bite, DataRepository, SearchResult } from "@/lib/services/types";
 import type { DishDetail, StallPost } from "@/types/domain";
@@ -11,6 +12,20 @@ export type DiscoverCollection =
   | "lateNight";
 
 export type DiscoverBiteCollections = Record<DiscoverCollection, Bite[]>;
+
+/**
+ * What the rails need to look a dish up. Live (Supabase) screens pass one built from the feed
+ * they already have (`createFeedDishLookup`), so no rail ever reads the synchronous repository,
+ * whose first read downloads whole tables.
+ */
+export type DiscoverDishLookup = Pick<DataRepository, "getDishById"> &
+  Partial<Pick<DataRepository, "getVenueById">>;
+
+/** A dish lookup over feed results only: one Map, no repository read. */
+export function createFeedDishLookup(results: readonly SearchResult[]): DiscoverDishLookup {
+  const dishById = new Map(results.map((result) => [result.dish.id, result.dish] as const));
+  return { getDishById: (dishId: string) => dishById.get(dishId) };
+}
 
 export const DISCOVER_CUISINE_FILTERS = [
   "All",
@@ -89,7 +104,13 @@ export type DiscoverCardImage = {
 
 export function isUsableDiscoverImageUrl(value: string | null | undefined) {
   const trimmed = value?.trim();
-  if (!trimmed || trimmed.includes(",") || trimmed === HUNGRY_LOGO_IMAGE_URL) {
+  if (
+    !trimmed ||
+    trimmed.includes(",") ||
+    trimmed === HUNGRY_LOGO_IMAGE_URL ||
+    // Placeholder and stock hosts never show as a dish photo (same rule as the catalog Home).
+    isRelease01BlockedImageUrl(trimmed)
+  ) {
     return false;
   }
 
@@ -335,7 +356,7 @@ export function syncBiteWithDish(
 /** Distance in metres, or undefined when nothing measured it (never a fake 0m). */
 export function getDiscoverBiteDistance(
   bite: Bite,
-  repository: DataRepository = getDataRepository(),
+  repository: DiscoverDishLookup = getDataRepository(),
 ): number | undefined {
   const distance = bite.distanceMeters ?? repository.getDishById(bite.dishId)?.distanceMeters;
   return typeof distance === "number" && distance > 0 ? distance : undefined;
@@ -344,7 +365,7 @@ export function getDiscoverBiteDistance(
 export function getDiscoverBiteCollection(
   collection: DiscoverCollection,
   bites: Bite[] = getDiscoverBites(),
-  repository: DataRepository = getDataRepository(),
+  repository: DiscoverDishLookup = getDataRepository(),
   venueHours?: VenueHoursLookup,
 ) {
   return getDiscoverBiteCollections(bites, repository, venueHours)[collection];
@@ -361,7 +382,7 @@ export function preferBuildingBites(bites: Bite[], buildingId?: string): Bite[] 
 
 export function getDiscoverBiteCollections(
   bites: Bite[] = getDiscoverBites(),
-  repository: DataRepository = getDataRepository(),
+  repository: DiscoverDishLookup = getDataRepository(),
   venueHours: VenueHoursLookup = (venueId) => repository.getVenueById?.(venueId)?.operatingHours,
   options: { preferBuildingId?: string } = {},
 ): DiscoverBiteCollections {
@@ -379,7 +400,7 @@ export function getDiscoverBiteCollections(
 
 function buildDiscoverBiteCollections(
   bites: Bite[],
-  repository: DataRepository,
+  repository: DiscoverDishLookup,
   venueHours: VenueHoursLookup,
 ): DiscoverBiteCollections {
   const syncedBites = bites.map((bite) => {
