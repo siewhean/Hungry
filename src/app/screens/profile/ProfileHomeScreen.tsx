@@ -1160,7 +1160,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                   hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
                   style={{ justifyContent: "center", minHeight: 44 }}
                 >
-                  <AppText variant="bodySmall" style={{ color: palette.orange }}>
+                  <AppText variant="bodySmall" style={{ color: palette.accentText }}>
                     View all{ownReviewCount !== null ? ` (${ownReviewCount})` : ""}
                   </AppText>
                 </Pressable>

@@ -199,7 +199,7 @@ export function WelcomeScreen({ navigation }: Props) {
           >
             <AppText variant="bodySmall" tone="secondary">
               Already have an account?{" "}
-              <AppText variant="bodySmall" style={{ color: palette.orange, fontWeight: "700" }}>
+              <AppText variant="bodySmall" style={{ color: palette.accentText, fontWeight: "700" }}>
                 Sign in
               </AppText>
             </AppText>

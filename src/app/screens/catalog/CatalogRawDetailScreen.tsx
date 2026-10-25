@@ -451,7 +451,7 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
                   }
                   style={{ alignSelf: "flex-start" }}
                 >
-                  <AppText style={{ color: palette.orange, textDecorationLine: "underline" }}>
+                  <AppText style={{ color: palette.accentText, textDecorationLine: "underline" }}>
                     {(detail as CatalogRawDishDetail).venueName}
                   </AppText>
                 </Pressable>

@@ -264,7 +264,7 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
             >
               <AppText style={{ color: palette.textSecondary, textAlign: "center" }}>
                 Didn&apos;t receive the email?{" "}
-                <AppText style={{ color: palette.orange, fontWeight: "700" }}>
+                <AppText style={{ color: palette.accentText, fontWeight: "700" }}>
                   {resendSeconds > 0 ? `Resend in ${cooldownText}` : "Resend now"}
                 </AppText>
               </AppText>
