@@ -9,7 +9,7 @@ import {
 const ROUTE_SMOKES = [
   { label: "Home", expectedText: "Chicken Rice" },
   { label: "Discover", expectedText: "Dishes near you" },
-  { label: "Search", expectedPlaceholder: "Try laksa, chicken rice, halal under $8" },
+  { label: "Search", expectedPlaceholder: "Try laksa or chicken rice" },
   { label: "Dish", expectedText: "Chicken Rice" },
   { label: "Stall", expectedText: "Tian Tian Chicken Rice" },
   { label: "Review", expectedText: "Reviews" },

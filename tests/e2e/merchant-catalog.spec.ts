@@ -23,7 +23,7 @@ test.describe("merchant catalog", () => {
 
     await page.getByRole("button", { name: "Add menu item" }).first().click();
     // Photo drafts are off, so the button opens the dish editor directly.
-    await expect(page.getByText("Add Dish", { exact: true }).first()).toBeVisible();
-    await expect(page.getByText("Dish Name *").first()).toBeVisible();
+    await expect(page.getByText("Add dish", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("Dish name *").first()).toBeVisible();
   });
 });

@@ -64,7 +64,7 @@ test.describe("feed/profile sync", () => {
       .getByRole("button", { name: /^Open Wei Ming profile$/ })
       .first()
       .click();
-    await page.getByRole("button", { name: "Show profile posts" }).click();
+    await page.getByRole("tab", { name: "Show profile posts" }).click();
     await expect(page.getByRole("button", { name: `Open post ${caption}` }).first()).toBeVisible();
   });
 });
