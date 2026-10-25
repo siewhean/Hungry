@@ -54,7 +54,7 @@ export const EXPERIMENTS = {
     guardrailMetrics: ["welcome_back_dismissed", "dish_viewed"],
   },
   /**
-   * Welcome back card on the shipped Home (CatalogDiscoverHome) after more than a week away.
+   * Welcome back card on the shipped Home (DiscoverHomeScreen) after more than a week away.
    * Read in WelcomeBackCard only for returning users while Home is focused and has content.
    */
   welcome_back_v2: {

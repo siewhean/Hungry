@@ -61,6 +61,10 @@ test("Discover image helper rejects demo providers, logo placeholders, malformed
     "https://upload.wikimedia.org/wikipedia/commons/7/71/Hainanese_Chicken_Rice.jpg",
     "file:///tmp/food.jpg",
     "not-a-url",
+    // Release-01 blocked markers: the approved-photo rule the catalog Home applied.
+    "https://via.placeholder.com/600x400",
+    "https://placehold.co/600x400",
+    "https://cdn.example.com/social-hero/laksa.jpg",
   ];
 
   rejected.forEach((imageUrl) => {

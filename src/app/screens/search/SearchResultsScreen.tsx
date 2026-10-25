@@ -735,11 +735,22 @@ function RawCatalogBrowseGrid({
   const handleOpen = useCallback(
     (item: BrowseItem, index: number) => {
       const openedMode = modeRef.current;
-      navigation.navigate("CatalogRawDetail", {
-        kind: openedMode === "dishes" ? "dish" : "venue",
-        id: item.id,
-        releaseId: releaseIdRef.current,
-      });
+      const releaseId = releaseIdRef.current;
+      // Live catalog dish ids are dish ids: open the dish page, which shows this catalog record
+      // if it can't load the dish. The offline copy and stalls keep the catalog page.
+      if (openedMode === "dishes" && !releaseId?.startsWith("excel-fallback")) {
+        navigation.navigate("DishDetail", {
+          dishId: item.id,
+          source: "search",
+          catalogFallback: { releaseId },
+        });
+      } else {
+        navigation.navigate("CatalogRawDetail", {
+          kind: openedMode === "dishes" ? "dish" : "venue",
+          id: item.id,
+          releaseId,
+        });
+      }
       trackAnalyticsEvent("search_result_opened", {
         mode: openedMode,
         position: index,

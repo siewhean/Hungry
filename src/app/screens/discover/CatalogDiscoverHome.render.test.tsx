@@ -289,12 +289,17 @@ test("cards open the real dish and stall pages and are tracked", async () => {
   const laksa = view.findByLabel(/^Laksa, Sungei Road Laksa, S\$4\.50, rated 4\.6 from 12 reviews/);
   assert.ok(laksa, "the card label carries venue, price and rating");
   await view.press(laksa);
-  assert.deepEqual(navigation.calls.at(-1)?.args, ["DishDetail", { dishId: "dish-1" }]);
+  assert.deepEqual(navigation.calls.at(-1)?.args, [
+    "DishDetail",
+    { dishId: "dish-1", source: "home", catalogFallback: { releaseId: "release-1" } },
+  ]);
 
+  // Unverified catalog dishes open the dish page too; it shows the catalog record if the dish
+  // page can't load (see DishDetailScreenV2.render.test.tsx).
   await view.press(view.findByLabel(/^Otah,/));
   assert.deepEqual(navigation.calls.at(-1)?.args, [
-    "CatalogRawDetail",
-    { kind: "dish", id: "dish-2", releaseId: "release-1" },
+    "DishDetail",
+    { dishId: "dish-2", source: "home", catalogFallback: { releaseId: "release-1" } },
   ]);
 
   await view.press(view.findByLabel(/^Sungei Road Laksa, Laksa/));
@@ -320,6 +325,32 @@ test("HOME-V3: on the offline copy a stall row opens the read-only catalog page"
     "CatalogRawDetail",
     { kind: "venue", id: "venue-1", releaseId: "excel-fallback-v1" },
   ]);
+  // Dish cards on the offline copy open the read-only catalog page as well.
+  await view.press(view.findByLabel(/^Laksa, Sungei Road Laksa/));
+  assert.deepEqual(navigation.calls.at(-1)?.args, [
+    "CatalogRawDetail",
+    { kind: "dish", id: "dish-1", releaseId: "excel-fallback-v1" },
+  ]);
+});
+
+test("as the offline Home, Retry and pull-to-refresh try the live Home again", async () => {
+  const catalog = stubCatalog();
+  catalog.fail = new Error("catalog down");
+  let liveRetries = 0;
+  const view = await render(
+    createElement(CatalogDiscoverHome, {
+      onRetryLive: () => {
+        liveRetries += 1;
+      },
+    }),
+  );
+  assert.match(view.text(), /Couldn't load Home/);
+  const requests = catalog.requests.length;
+  await view.press(view.findByText("Retry"));
+  assert.equal(liveRetries, 1, "Retry hands back to the live Home");
+  assert.equal(catalog.requests.length, requests, "the offline Home does not reload itself");
+  await pullToRefresh(view);
+  assert.equal(liveRetries, 2);
 });
 
 test("a halal diner's first request already filters for halal", async () => {

@@ -147,6 +147,12 @@ test("authenticated fallback smoke requires staging credentials and an offline c
   assert.match(flow, /assertVisible: "Offline catalog"/);
   assert.match(discover, /testID=\{isOfflineCatalog \? "catalog-source-excel"/);
   assert.match(discover, /releaseId\?\.startsWith\("excel-fallback"\)/);
+  // Supabase builds show the redesigned Home, which hands off to the Excel Home only when
+  // the discovery feed fails too, so the outage smokes must take that RPC down as well.
+  const spec = read("tests/e2e/authenticated-excel-fallback.spec.ts");
+  assert.match(flow, /get_discovery_feed_by_location unavailable/);
+  assert.match(spec, /catalog_raw_\|get_discovery_feed_by_location/);
+  assert.doesNotMatch(spec, /catalog-source-supabase/);
 });
 
 test("HOME-V4: outage smokes accept the rail title Home shows without a GPS fix", () => {

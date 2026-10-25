@@ -50,8 +50,15 @@ import {
   getDiscoverBites,
   getDiscoverFeedBites,
   type DiscoverCollection,
+  type DiscoverDishLookup,
   type VenueHoursLookup,
 } from "@/features/discover/bites";
+
+/**
+ * Live bites already carry the feed's name, price, rating, photo and distance, so the rails
+ * look nothing up: the synchronous repository would download whole tables to answer.
+ */
+const LIVE_FEED_DISH_LOOKUP: DiscoverDishLookup = { getDishById: () => undefined };
 
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 type QuickBitesRoute = RouteProp<RootStackParamList, "QuickBites">;
@@ -272,7 +279,6 @@ export function QuickBitesScreen() {
   const dietaryPreferences = useProfileStore((state) => state.profile.dietaryPreferences);
   const collection: DiscoverCollection = route.params?.collection ?? "quickBites";
   const collectionCopy = COLLECTION_COPY[collection];
-  const fallbackBites = useMemo(() => getDiscoverBites(), []);
 
   const [selectedCuisine, setSelectedCuisine] = useState("All");
   const cuisineFilterOptions = useMemo(
@@ -280,6 +286,12 @@ export function QuickBitesScreen() {
     [],
   );
   const isSupabaseDataSource = getServiceProvider().mode === "supabase";
+  // Mock and Excel builds fill in from the local data; live builds never read it (HOME-X7).
+  const fallbackBites = useMemo(
+    () => (isSupabaseDataSource ? [] : getDiscoverBites()),
+    [isSupabaseDataSource],
+  );
+  const dishLookup = isSupabaseDataSource ? LIVE_FEED_DISH_LOOKUP : undefined;
   // Live data starts empty behind a skeleton; the local cache is never shown as the answer.
   const [bites, setBites] = useState<Bite[]>(isSupabaseDataSource ? [] : fallbackBites);
   const [isLoading, setIsLoading] = useState(isSupabaseDataSource);
@@ -385,8 +397,8 @@ export function QuickBitesScreen() {
   }, [currentLocation, fallbackBites, isSupabaseDataSource, manualLocation, reloadKey]);
 
   const collectionBites = useMemo(() => {
-    return getDiscoverBiteCollection(collection, bites, undefined, venueHours);
-  }, [bites, collection, venueHours]);
+    return getDiscoverBiteCollection(collection, bites, dishLookup, venueHours);
+  }, [bites, collection, dishLookup, venueHours]);
 
   const filteredBites = useMemo(() => {
     // The rail's own order (reviews, rating, photos) is kept: no re-sort by distance.
@@ -401,9 +413,9 @@ export function QuickBitesScreen() {
         return matchesCuisine;
       })
       .map((bite) => {
-        return { ...bite, distance: getDiscoverBiteDistance(bite) };
+        return { ...bite, distance: getDiscoverBiteDistance(bite, dishLookup) };
       });
-  }, [collectionBites, selectedCuisine]);
+  }, [collectionBites, dishLookup, selectedCuisine]);
 
   useEffect(() => {
     prefetchImages(

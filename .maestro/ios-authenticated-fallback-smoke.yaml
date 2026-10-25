@@ -1,7 +1,9 @@
 appId: ${APP_ID}
 ---
-# Prerequisite: run with an authenticated staging account and make only the
-# catalog RPC unavailable (network proxy, RPC fault injection, or staging rule).
+# Prerequisite: run with an authenticated staging account and make the catalog
+# RPCs and get_discovery_feed_by_location unavailable (network proxy, RPC fault
+# injection, or staging rule). Supabase builds show the redesigned Home, which
+# hands off to the offline (Excel) Home only when its discovery feed fails.
 # Authentication must remain valid throughout this flow.
 - launchApp
 - tapOn:

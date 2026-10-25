@@ -69,7 +69,11 @@ import {
 import { isOwnReview } from "@/features/review/reviewEdit";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { sanitizeCatalogImageUrl } from "@/lib/services/catalog/media";
-import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
+import {
+  getDataRepository,
+  getHungryService,
+  getServiceProvider,
+} from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useAchievementTallyStore, triedDishFacts } from "@/store/useAchievementTallyStore";
 import { useDishLikeStore } from "@/store/useDishLikeStore";
@@ -147,8 +151,12 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   // Drives the photo fading out as the page scrolls.
   const [heroScrollY] = useState(() => new Animated.Value(0));
   const repository = getDataRepository();
+  // Live builds read this page through its RPCs only. The synchronous repository's first read
+  // downloads whole tables (again every 45 s) and stops at 1,000 rows, so it is never asked.
+  const readsLocalData = getServiceProvider().mode !== "supabase";
   const dishId = route.params?.dishId ?? route.params?.id ?? "";
-  const cachedDish = repository.getDishById(dishId);
+  const catalogFallback = route.params?.catalogFallback;
+  const cachedDish = readsLocalData ? repository.getDishById(dishId) : undefined;
   const [hydratedDish, setHydratedDish] = useState<DishDetail | undefined>();
   const [hasLoadedDishDetail, setHasLoadedDishDetail] = useState(Boolean(cachedDish));
   const [dishLoadFailed, setDishLoadFailed] = useState(false);
@@ -214,8 +222,8 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   });
 
   const cachedVenue = useMemo(
-    () => (dish ? repository.getVenueById(dish.venueId) : undefined),
-    [dish, repository],
+    () => (dish && readsLocalData ? repository.getVenueById(dish.venueId) : undefined),
+    [dish, readsLocalData, repository],
   );
   const [hydratedVenue, setHydratedVenue] = useState<typeof cachedVenue>();
   // A failed stall read shows a retry row instead of silently dropping the stall sections.
@@ -237,8 +245,8 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     [dishReviews],
   );
   const cachedVenueDishes = useMemo(
-    () => (dish ? repository.listDishesByVenue(dish.venueId) : []),
-    [dish, repository],
+    () => (dish && readsLocalData ? repository.listDishesByVenue(dish.venueId) : []),
+    [dish, readsLocalData, repository],
   );
   const [fetchedVenueDishes, setFetchedVenueDishes] = useState<DishDetail[] | undefined>();
   const venueDishes = fetchedVenueDishes ?? cachedVenueDishes;
@@ -534,8 +542,20 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
 
   // The dish renders as soon as it arrives; stall-only sections fill in when the venue read lands.
   const isDetailLoading = Boolean(dishId) && !dish && !hasLoadedDishDetail;
+  // A catalog card whose dish has no public dish page (menu not displayable, not published yet)
+  // opens the read-only catalog record instead of "We can't find this dish".
+  const opensCatalogRecord =
+    Boolean(catalogFallback) && Boolean(dishId) && hasLoadedDishDetail && !dish && !dishLoadFailed;
+  useEffect(() => {
+    if (!opensCatalogRecord) return;
+    navigation.replace("CatalogRawDetail", {
+      kind: "dish",
+      id: dishId,
+      releaseId: catalogFallback?.releaseId,
+    });
+  }, [catalogFallback?.releaseId, dishId, navigation, opensCatalogRecord]);
 
-  if (isDetailLoading) {
+  if (isDetailLoading || opensCatalogRecord) {
     return (
       <SafeAreaView
         style={{
