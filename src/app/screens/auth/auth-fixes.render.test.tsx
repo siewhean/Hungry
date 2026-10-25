@@ -1,3 +1,4 @@
+import { useAnalyticsConsentStore } from "@/store/useAnalyticsConsentStore";
 // Round-3 auth fixes, checked in a rendered screen. Run with `npm run test:render`.
 import assert from "node:assert/strict";
 import test, { afterEach, beforeEach } from "node:test";
@@ -29,9 +30,14 @@ import { useSessionStore } from "@/store/useSessionStore";
 import { cleanup, createFakeNavigation, renderScreen, type RenderResult } from "@/test/render";
 import { enterScenario } from "@/test/render/sessions";
 
-beforeEach(() => enterScenario("guest"));
+beforeEach(async () => {
+  await enterScenario("guest");
+  // These metric assertions describe an explicitly opted-in user.
+  useAnalyticsConsentStore.getState().setAnalyticsEnabled(true);
+});
 afterEach(async () => {
   await cleanup();
+  useAnalyticsConsentStore.getState().setAnalyticsEnabled(false);
   setExperimentFlagSource(undefined);
   resetExperimentSession();
 });

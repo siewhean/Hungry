@@ -1,3 +1,4 @@
+import { useAnalyticsConsentStore } from "@/store/useAnalyticsConsentStore";
 // Round-three onboarding fixes, checked in a rendered tree (react-native-web + jsdom, mock data).
 // Run with `node scripts/test-render.mjs src/app/screens/onboarding/onboarding.render.test.tsx`.
 
@@ -67,12 +68,15 @@ function fakeFlags(flags: Record<string, string>) {
 
 beforeEach(async () => {
   await enterGuestOnboarding();
+  // These metric assertions describe an explicitly opted-in user.
+  useAnalyticsConsentStore.getState().setAnalyticsEnabled(true);
   clearTrackedAnalyticsEvents();
   clearPendingDishSave();
 });
 
 afterEach(async () => {
   await cleanup();
+  useAnalyticsConsentStore.getState().setAnalyticsEnabled(false);
   setExperimentFlagSource(undefined);
   resetExperimentSession();
   clearExperimentOverrides();
