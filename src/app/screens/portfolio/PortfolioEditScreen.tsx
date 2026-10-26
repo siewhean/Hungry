@@ -20,6 +20,7 @@ import {
 import { usePortfolioStore } from "@/store/usePortfolioStore";
 import { useHungryTheme } from "@/theme";
 import type { PortfolioType, PortfolioVisibility } from "@/types/domain";
+import { reportError } from "@/lib/monitoring/reportError";
 
 type Props = NativeStackScreenProps<ProfileStackParamList, "PortfolioEdit">;
 
@@ -57,6 +58,7 @@ export function PortfolioEditScreen({ navigation, route }: Props) {
       .then(() => mounted && setLoadState("ready"))
       .catch((error) => {
         console.error("Failed to load list:", error);
+        reportError(error, { screen: "PortfolioEditScreen", action: "load_list" });
         if (mounted) setLoadState(listLoadStateForError(error));
       });
     return () => {
@@ -86,6 +88,7 @@ export function PortfolioEditScreen({ navigation, route }: Props) {
       });
       navigation.goBack();
     } catch (error) {
+      reportError(error, { screen: "PortfolioEditScreen", action: "update_list" });
       Alert.alert("List update failed", listErrorMessage(error, "Please refresh and try again."));
     } finally {
       setIsSaving(false);

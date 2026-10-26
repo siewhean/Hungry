@@ -54,8 +54,8 @@ Evidence target:
 - Store listing URL fields + in-app settings link all point to the final public policy URL.
 
 Repo evidence:
-- Policy URL target: `https://hungry.sg/privacy`
-- Account deletion URL target: `https://hungry.sg/account/delete`
+- Policy URL target: `https://usehungry.com/privacy`
+- Account deletion URL target: `https://usehungry.com/account/delete`
 - App linkage: `src/app/screens/profile/SettingsScreen.tsx`, `src/app/screens/auth/SignUpScreen.tsx`
 - Public pages: `marketing/web/app/privacy/page.tsx`, `marketing/web/app/account/delete/page.tsx`, `marketing/website/web-v2/src/app/privacy/page.tsx`, `marketing/website/web-v2/src/app/account/delete/page.tsx`
 

@@ -235,3 +235,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 ```
+
+## Released-build map and camera (2026-10-25)
+
+Staging and production builds include `@rnmapbox/maps` and the camera (iOS `NSCameraUsageDescription`, Android `CAMERA`, asked only when "Take photo" is used). Set `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` (the public `pk.` token) as an EAS environment variable for the `preview` and `production` environments; without it `MapSurface` falls back to the approximate drawn map with a notice.

@@ -135,7 +135,7 @@ export function MediaPicker({
             ]}
           >
             <Video size={24} color={palette.orange} />
-            <AppText variant="micro" style={{ color: palette.orange }}>
+            <AppText variant="micro" style={{ color: palette.accentText }}>
               Add Reel
             </AppText>
           </Pressable>

@@ -121,7 +121,7 @@ export function WhatsHerePanel({
             accessibilityLabel="Clear filters"
             onPress={() => setFilters({})}
           >
-            <AppText style={{ color: palette.orange }} variant="bodyBold">
+            <AppText style={{ color: palette.accentText }} variant="bodyBold">
               Clear filters
             </AppText>
           </Pressable>
@@ -174,7 +174,7 @@ export function WhatsHerePanel({
                   {getStallMeta(stall)}
                 </AppText>
                 {price ? (
-                  <AppText variant="bodySmallBold" style={{ color: palette.orange }}>
+                  <AppText variant="bodySmallBold" style={{ color: palette.accentText }}>
                     {price}
                   </AppText>
                 ) : null}

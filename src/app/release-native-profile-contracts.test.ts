@@ -98,12 +98,8 @@ test("released config retains only nearby-discovery native permissions", () => {
 
   const pluginNames = (config: typeof staging) =>
     (config.plugins ?? []).map((plugin) => (Array.isArray(plugin) ? plugin[0] : plugin));
-  const removedPlugins = ["expo-dev-client", "expo-audio", "expo-video", "@rnmapbox/maps"];
-  const removedKeys = [
-    "NSCameraUsageDescription",
-    "NSMicrophoneUsageDescription",
-    "NSPhotoLibraryAddUsageDescription",
-  ];
+  const removedPlugins = ["expo-dev-client", "expo-audio", "expo-video"];
+  const removedKeys = ["NSMicrophoneUsageDescription", "NSPhotoLibraryAddUsageDescription"];
 
   assert.equal(pluginNames(development).includes("expo-dev-client"), true);
   for (const config of [staging, production]) {
@@ -111,11 +107,15 @@ test("released config retains only nearby-discovery native permissions", () => {
     assert.deepEqual(config.android?.permissions, [
       "android.permission.ACCESS_COARSE_LOCATION",
       "android.permission.ACCESS_FINE_LOCATION",
+      "android.permission.CAMERA",
       "android.permission.INTERNET",
       "android.permission.VIBRATE",
     ]);
     assert.equal(config.ios?.infoPlist?.NSLocationWhenInUseUsageDescription !== undefined, true);
     for (const plugin of removedPlugins) assert.equal(pluginNames(config).includes(plugin), false);
+    // Real map and camera photos ship in released builds (owner decisions 2026-10-25).
+    assert.equal(pluginNames(config).includes("@rnmapbox/maps"), true);
+    assert.equal(typeof config.ios?.infoPlist?.NSCameraUsageDescription, "string");
     for (const key of removedKeys) assert.equal(key in (config.ios?.infoPlist ?? {}), false);
   }
 });
@@ -160,7 +160,6 @@ test("released config blocks library-merged Android permissions", () => {
     const blocked = config.android?.blockedPermissions ?? [];
     for (const permission of [
       ...hookRemoved,
-      "android.permission.CAMERA",
       "android.permission.READ_MEDIA_IMAGES",
       "android.permission.READ_MEDIA_AUDIO",
       "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
@@ -177,7 +176,7 @@ test("released config blocks library-merged Android permissions", () => {
     const imagePicker = (config.plugins ?? []).find(
       (plugin) => Array.isArray(plugin) && plugin[0] === "expo-image-picker",
     ) as [string, Record<string, unknown>] | undefined;
-    assert.equal(imagePicker?.[1].cameraPermission, false);
+    assert.equal(typeof imagePicker?.[1].cameraPermission, "string");
     assert.equal(imagePicker?.[1].microphonePermission, false);
   }
 });
@@ -214,17 +213,15 @@ test("EAS pre-install strips release-only native capabilities in its isolated wo
     );
 
     assert.deepEqual(packageJson.expo?.autolinking?.exclude, [
-      "@rnmapbox/maps",
       "expo-audio",
       "expo-dev-client",
       "expo-video",
     ]);
-    for (const value of ["NSCameraUsageDescription", "NSMicrophoneUsageDescription"]) {
-      assert.equal(plist.includes(value), false);
-    }
+    assert.equal(plist.includes("NSMicrophoneUsageDescription"), false);
+    assert.equal(plist.includes("NSCameraUsageDescription"), true);
     assert.equal(plist.includes("NSPhotoLibraryUsageDescription"), true);
+    assert.equal(manifest.includes("android.permission.CAMERA"), true);
     for (const value of [
-      "android.permission.CAMERA",
       "android.permission.RECORD_AUDIO",
       "READ_MEDIA_IMAGES",
       "READ_MEDIA_VIDEO",
