@@ -15,6 +15,8 @@ test("resilient catalog service loads the Excel fallback only when it is used", 
   // Production bundles stub the Excel catalog; an eager require crashed every catalog read.
   assert.ok(start > 0 && end > start);
   assert.doesNotMatch(body, /CatalogReadService\s*=\s*getExcelCatalogFallbackService\(\)/);
-  assert.match(body, /fallbackService \?\?= getExcelCatalogFallbackService\(\)/);
+  assert.match(body, /fallbackService = getExcelCatalogFallbackService\(\)/);
+  // A fallback that cannot load (stubbed in production) must become a retryable error.
+  assert.match(body, /throw new CatalogUnavailableError\(undefined, error\)/);
   assert.doesNotMatch(body, /\bfallback\.\w+\(/);
 });

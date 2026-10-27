@@ -347,10 +347,17 @@ export function createResilientCatalogReadService(
   fallbackOverride?: CatalogReadService,
 ): CatalogReadService {
   // Loaded on first use: production bundles stub the Excel catalog, so requiring it
-  // up front crashed every catalog read even when the live catalog was healthy.
+  // up front crashed every catalog read even when the live catalog was healthy. When the
+  // live catalog fails in such a bundle the fallback cannot load either, and that surfaces
+  // as the retryable unavailable error the screens already handle instead of a crash.
   let fallbackService = fallbackOverride ?? null;
   const getFallback = () => {
-    fallbackService ??= getExcelCatalogFallbackService();
+    if (fallbackService) return fallbackService;
+    try {
+      fallbackService = getExcelCatalogFallbackService();
+    } catch (error) {
+      throw new CatalogUnavailableError(undefined, error);
+    }
     return fallbackService;
   };
 
