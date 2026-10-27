@@ -859,3 +859,4 @@ All 9 required audit documents updated in `tasks/Roadmap/`:
 - 2026-10-25: ship of 20261025090000 rolled back by the row-loss guard (2,130 hidden venue cards moved to the stash, by design); added -- expect-row-loss header; needs a fresh rehearsal.
 - 2026-10-25: 20261025090000 shipped to prod; ship.sh smoke failed only on seed building building-maxwell (absent on prod). Smoke now creates its own building and refreshes only its venues when a release is active. Prod verified read-only: 426 hidden, totals match, 0 leaked cards.
 - 2026-10-27: Release build crashed on first catalog read (Sentry REACT-NATIVE-1M/1N): createResilientCatalogReadService required the Excel fallback eagerly while production Metro stubs it. Fallback now loads on first use; contract tests updated.
+- 2026-10-27: Search results crashed rendering a card whose venue name was missing (REACT-NATIVE-1R, a stall row drawn in dishes mode). Logo initials and the card fall back to the card title.
