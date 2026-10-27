@@ -5,12 +5,10 @@ import { ArrowLeft, Compass, Star, UtensilsCrossed } from "lucide-react-native";
 import { useEffect, useState } from "react";
 
 import { AppText, Button, Card } from "@/components/ui";
-import { WordmarkLogoV2 } from "@/components/icons/brand/WordmarkLogoV2";
 import { AccessibleImage } from "@/components/ui/AccessibleImage";
-import { HUNGRY_LOGO_STANDARD_WORDMARK_SIZE } from "@/constants/brandAssets";
+import { useExperimentVariant } from "@/lib/experiments/experiments";
 import { reportError } from "@/lib/monitoring/reportError";
 import { useLocationStore } from "@/store/useLocationStore";
-import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { OnboardingProgress, trackOnboardingStepViewed } from "./OnboardingProgress";
 import type { OnboardingStackParamList } from "./OnboardingStack";
@@ -51,14 +49,23 @@ const FEATURE_ROWS = [
   },
 ] as const;
 
+// The short primer keeps the two benefits that sell location; Directions works without it.
+const COMPACT_ROW_TITLES: Record<string, string> = {
+  nearby: "Dishes and stalls near you",
+  favourites: "What diners nearby rate highly",
+};
+
 export function LocationPermissionScreen({ navigation }: Props) {
   const { palette, radii, shadows, spacing } = useHungryTheme();
   const grantLocation = useLocationStore((state) => state.grantLocation);
   const manualLocation = useLocationStore((state) => state.manualLocation);
-  const showToast = useUIStore((state) => state.showToast);
   const [isContinuing, setIsContinuing] = useState(false);
   // The OS no longer shows the prompt after a permanent denial; offer Settings.
   const [permissionBlocked, setPermissionBlocked] = useState(false);
+  // Why the phone cannot ask again; shown next to the buttons, never as a toast over them.
+  const [blockedNotice, setBlockedNotice] = useState<string | null>(null);
+  const primer = useExperimentVariant("onboarding_location_primer_v1");
+  const compact = primer === "test";
 
   useEffect(() => {
     trackOnboardingStepViewed("location");
@@ -70,8 +77,7 @@ export function LocationPermissionScreen({ navigation }: Props) {
   };
 
   const pickAreaInstead = (message: string) => {
-    showToast({ message, tone: "warning" });
-    navigation.navigate("ManualLocationPicker", { mode: "onboarding" });
+    navigation.navigate("ManualLocationPicker", { mode: "onboarding", notice: message });
   };
 
   const readPermission = async (): Promise<{ status?: string; canAskAgain?: boolean }> => {
@@ -116,10 +122,7 @@ export function LocationPermissionScreen({ navigation }: Props) {
       if (permission.canAskAgain === false) {
         // The phone will not ask again: stay here and offer Settings or an area, side by side.
         setPermissionBlocked(true);
-        showToast({
-          message: "Location is off for Hungry. Turn it on in Settings, or pick your area.",
-          tone: "warning",
-        });
+        setBlockedNotice("Location is off for Hungry. Turn it on in Settings, or pick your area.");
         return;
       }
       pickAreaInstead("No problem. Pick your area instead; you can turn location on anytime.");
@@ -156,10 +159,9 @@ export function LocationPermissionScreen({ navigation }: Props) {
             alignItems: "center",
             backgroundColor: palette.bg,
             flexDirection: "row",
-            justifyContent: "space-between",
-            minHeight: 64,
+            minHeight: 56,
             paddingHorizontal: spacing[3],
-            paddingVertical: spacing[3],
+            paddingVertical: spacing[2],
           }}
         >
           <Pressable
@@ -183,8 +185,6 @@ export function LocationPermissionScreen({ navigation }: Props) {
           >
             <ArrowLeft color={palette.text} size={22} />
           </Pressable>
-          <WordmarkLogoV2 size={HUNGRY_LOGO_STANDARD_WORDMARK_SIZE} />
-          <View style={{ width: 44 }} />
         </View>
 
         {/* The content scrolls (large text sizes); the buttons stay pinned below it. */}
@@ -206,7 +206,7 @@ export function LocationPermissionScreen({ navigation }: Props) {
               decorative
               style={{
                 alignSelf: "center",
-                height: 96,
+                height: compact ? 72 : 96,
                 width: "100%",
                 maxWidth: 230,
               }}
@@ -220,9 +220,18 @@ export function LocationPermissionScreen({ navigation }: Props) {
           </View>
 
           <View style={{ gap: spacing[2] }}>
-            {FEATURE_ROWS.map(({ key, ...row }) => (
-              <FeatureCard key={key} {...row} />
-            ))}
+            {compact
+              ? FEATURE_ROWS.filter((row) => row.key in COMPACT_ROW_TITLES).map(
+                  ({ key, ...row }) => (
+                    <FeatureCard
+                      key={key}
+                      {...row}
+                      title={COMPACT_ROW_TITLES[key] ?? row.title}
+                      description=""
+                    />
+                  ),
+                )
+              : FEATURE_ROWS.map(({ key, ...row }) => <FeatureCard key={key} {...row} />)}
           </View>
         </ScrollView>
 
@@ -235,6 +244,16 @@ export function LocationPermissionScreen({ navigation }: Props) {
             paddingHorizontal: ONBOARDING_ACTIONS_HORIZONTAL_PADDING,
           }}
         >
+          {blockedNotice && permissionBlocked ? (
+            <AppText
+              variant="bodySmall"
+              tone="secondary"
+              accessibilityRole="alert"
+              style={{ textAlign: "center" }}
+            >
+              {blockedNotice}
+            </AppText>
+          ) : null}
           {showSettingsPrimary ? (
             <Button
               label="Open settings"
@@ -306,7 +325,7 @@ function FeatureCard({
         flexDirection: "row",
         alignItems: "center",
         gap: spacing[3],
-        minHeight: 78,
+        minHeight: description ? 78 : 56,
         padding: spacing[3],
       }}
     >
@@ -324,9 +343,11 @@ function FeatureCard({
       </View>
       <View style={{ flex: 1, gap: spacing[1] }}>
         <AppText variant="bodyBold">{title}</AppText>
-        <AppText variant="micro" tone="secondary">
-          {description}
-        </AppText>
+        {description ? (
+          <AppText variant="micro" tone="secondary">
+            {description}
+          </AppText>
+        ) : null}
       </View>
     </Card>
   );

@@ -2,11 +2,10 @@ import type { NavigationProp } from "@react-navigation/native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
-import { Heart } from "lucide-react-native";
+import { ArrowLeft } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
-import { AccessibleImage, AppText, Button, Card } from "@/components/ui";
+import { AppText, Button } from "@/components/ui";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import {
   flushPendingDishSave,
@@ -14,7 +13,9 @@ import {
   getPendingDishSaveIds,
   rememberPendingDishSave,
 } from "@/features/auth/pendingDishSave";
+import { formatDistanceFromUser } from "@/features/detail/stallLocation";
 import { useExperimentVariant } from "@/lib/experiments/experiments";
+import { getBuildingById } from "@/lib/geo/singaporeBuildings";
 import { reportError } from "@/lib/monitoring/reportError";
 import {
   getDataRepository,
@@ -33,21 +34,29 @@ import {
   trackOnboardingStepViewed,
 } from "./OnboardingProgress";
 import type { OnboardingStackParamList } from "./OnboardingStack";
-import { describeTaste, matchesAllDietaryFlags, noDietaryPicksMessage } from "./resultPicks";
+import { DishPreviewSheet } from "./DishPreviewSheet";
+import { ResultDishCard } from "./ResultDishCard";
+import { buildResultPicks, fewDietaryPicksMessage, type ResultPick } from "./fillResultPicks";
+import { describeTaste, noDietaryPicksMessage } from "./resultPicks";
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, "TasteProfileResult">;
 
-const RESULT_COUNT = 4;
+// The first-picks grid: four plain cards (control) or six with stall, price and distance (test).
+const RESULT_COUNT_CONTROL = 4;
+const RESULT_COUNT_DETAILED = 6;
+// The server is asked for more than the grid needs: diet and budget are applied afterwards.
+const SLATE_OVERFETCH = 3;
 
 // Local catalog search only (mock, or a cached catalog): no radius limit.
 function getResultFilters(): SearchFilters {
-  const { tasteVector, dietaryPreferences } = useProfileStore.getState().profile;
+  const { tasteVector, dietaryPreferences, maxDishBudget } = useProfileStore.getState().profile;
   return {
     query: "",
     categories: [],
     dietaryFlags: dietaryPreferences,
     tasteValues: tasteVector,
     radius: Number.MAX_SAFE_INTEGER,
+    maxPrice: maxDishBudget,
   };
 }
 
@@ -55,8 +64,8 @@ function getResultFilters(): SearchFilters {
 const TASTE_PICK_RADII_METERS = [3000, 10000, undefined];
 
 /** Dishes ranked by the quiz taste vector on the server (get_taste_recommendations). */
-async function loadTastePicks(): Promise<DishDetail[]> {
-  const { tasteVector, dietaryPreferences } = useProfileStore.getState().profile;
+async function loadTastePicks(count: number): Promise<DishDetail[]> {
+  const { tasteVector, dietaryPreferences, maxDishBudget } = useProfileStore.getState().profile;
   const { coordinate, isApproximate } = getEffectiveLocation(useLocationStore.getState());
   const location = isApproximate ? undefined : coordinate;
   let picks: DishDetail[] = [];
@@ -69,10 +78,17 @@ async function loadTastePicks(): Promise<DishDetail[]> {
       latitude: location?.latitude,
       longitude: location?.longitude,
       radiusMeters,
-      limit: RESULT_COUNT,
+      limit: count * SLATE_OVERFETCH,
     });
     picks = slate.items.map((item) => item.dish);
-    if (picks.length >= RESULT_COUNT) break;
+    const fitting = buildResultPicks({
+      ranked: picks,
+      popular: [],
+      count,
+      dietaryFlags: dietaryPreferences,
+      maxDishBudget,
+    });
+    if (fitting.length >= count) break;
   }
   return picks;
 }
@@ -85,11 +101,17 @@ export function TasteProfileResultScreen({ navigation }: Props) {
   const framing = useExperimentVariant("onboarding_account_framing_v1", {
     enabled: !isAuthenticated,
   });
+  const payoff = useExperimentVariant("onboarding_result_payoff_v1", {
+    enabled: !isAuthenticated,
+  });
+  const detailed = payoff === "test";
+  const resultCount = detailed ? RESULT_COUNT_DETAILED : RESULT_COUNT_CONTROL;
   const hasSkippedTasteQuiz = useSessionStore((state) => state.hasSkippedTasteQuiz);
   const completeOnboarding = useSessionStore((state) => state.completeOnboarding);
   const showToast = useUIStore((state) => state.showToast);
   const favouriteDishIds = useProfileStore((state) => state.profile.favouriteDishIds);
   const savedTasteVector = useProfileStore((state) => state.profile.tasteVector);
+  const dietaryPreferences = useProfileStore((state) => state.profile.dietaryPreferences);
   const tasteSummary = hasSkippedTasteQuiz ? null : describeTaste(savedTasteVector);
 
   useEffect(() => {
@@ -97,83 +119,102 @@ export function TasteProfileResultScreen({ navigation }: Props) {
   }, []);
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
 
-  // Rank the catalog by the quiz taste vector (and dietary picks) instead of a fixed popular list.
+  // Rank the catalog by the quiz taste vector (and dietary picks) instead of a fixed popular list,
+  // then top up with popular dishes nearby so the grid is never a lone card.
   // Fetched once so saving a dish (which nudges the vector) does not reshuffle the grid.
   // Supabase has no cached catalog during onboarding: searching it would only start a
   // full catalog download, so go straight to the server picks below.
   const [initialPicks] = useState(() => {
     if (getServiceProvider().mode === "supabase") {
-      return { dishes: [] as DishDetail[], tasteRanked: false };
+      return { picks: [] as ResultPick<DishDetail>[] };
     }
-    const { tasteVector, dietaryPreferences } = useProfileStore.getState().profile;
+    const { tasteVector, dietaryPreferences, maxDishBudget } = useProfileStore.getState().profile;
     const repository = getDataRepository();
-    const ranked = repository.searchDishes(getResultFilters(), tasteVector);
-    // The popular fallback must respect the diet too: a halal user never sees a non-halal dish here.
-    return ranked.length > 0
-      ? { dishes: ranked.slice(0, RESULT_COUNT), tasteRanked: true }
-      : {
-          dishes: repository
-            .listPopularNearby()
-            .filter((dish) => matchesAllDietaryFlags(dish, dietaryPreferences))
-            .slice(0, RESULT_COUNT),
-          tasteRanked: false,
-        };
+    return {
+      picks: buildResultPicks({
+        ranked: repository.searchDishes(getResultFilters(), tasteVector),
+        // The popular top-up must respect the diet and budget too (buildResultPicks checks both).
+        popular: repository.listPopularNearby(),
+        count: resultCount,
+        dietaryFlags: dietaryPreferences,
+        maxDishBudget,
+      }),
+    };
   });
-  const [dishes, setDishes] = useState(initialPicks.dishes);
-  // "Picked to match your taste" only when the list really is taste-ranked.
-  const [tasteRanked, setTasteRanked] = useState(initialPicks.tasteRanked);
+  const [picks, setPicks] = useState(initialPicks.picks);
+  const dishes = picks.map((pick) => pick.dish);
+  // "Picked to match your taste" only when the list really has taste-ranked dishes.
+  const tasteRanked = picks.some((pick) => !pick.popular);
   // True when the diet left nothing to show, so the screen says so instead of looking broken.
   const [noDietaryMatch, setNoDietaryMatch] = useState(false);
   // A guest's hearts: kept on the device and saved after sign-up, shown filled meanwhile.
   const [pendingSaveIds, setPendingSaveIds] = useState(getPendingDishSaveIds);
+  const [previewDish, setPreviewDish] = useState<DishDetail | null>(null);
+
+  // How far each stall is from the user, from the stall's building (never the stored column).
+  const distanceLabelFor = useCallback((dish: DishDetail) => {
+    const { coordinate, isApproximate } = getEffectiveLocation(useLocationStore.getState());
+    if (isApproximate) return undefined;
+    return formatDistanceFromUser(coordinate, getBuildingById(dish.buildingId)?.coordinate);
+  }, []);
 
   // What the grid showed, once per screen: lets the funnel see taste-ranked vs fallback picks.
   const picksTrackedRef = useRef(false);
-  const trackPicksOnce = useCallback((picks: Parameters<typeof trackOnboardingPicksShown>[0]) => {
+  const trackPicksOnce = useCallback((tracked: Parameters<typeof trackOnboardingPicksShown>[0]) => {
     if (picksTrackedRef.current) return;
     picksTrackedRef.current = true;
-    trackOnboardingPicksShown(picks);
+    trackOnboardingPicksShown(tracked);
   }, []);
   useEffect(() => {
-    if (initialPicks.dishes.length === 0) return;
+    if (initialPicks.picks.length === 0) return;
+    const ranked = initialPicks.picks.some((pick) => !pick.popular);
     trackPicksOnce({
-      ranked: initialPicks.tasteRanked,
-      count: initialPicks.dishes.length,
-      source: initialPicks.tasteRanked ? "local" : "popular",
+      ranked,
+      count: initialPicks.picks.length,
+      source: ranked ? "local" : "popular",
     });
   }, [initialPicks, trackPicksOnce]);
 
   // The Supabase repository has no cached catalog during onboarding, so ask the server.
   const [loadState, setLoadState] = useState<"idle" | "loading" | "error">(() =>
-    dishes.length > 0 ? "idle" : "loading",
+    initialPicks.picks.length > 0 ? "idle" : "loading",
   );
   const [loadAttempt, setLoadAttempt] = useState(0);
   const retry = useCallback(() => setLoadAttempt((attempt) => attempt + 1), []);
   useEffect(() => {
-    if (dishes.length > 0) return;
+    if (initialPicks.picks.length > 0 && loadAttempt === 0) return;
     let active = true;
     setLoadState("loading");
-    const { dietaryPreferences } = useProfileStore.getState().profile;
-    void loadTastePicks()
-      .then(async (picks) =>
-        picks.length > 0
-          ? { results: picks, ranked: true }
-          : {
-              results: (await getHungryService().discovery.listPopularNearby()).filter((dish) =>
-                matchesAllDietaryFlags(dish, dietaryPreferences),
-              ),
-              ranked: false,
-            },
-      )
-      .then(({ results, ranked }) => {
+    const { dietaryPreferences, maxDishBudget } = useProfileStore.getState().profile;
+    void loadTastePicks(resultCount)
+      .then(async (ranked) => {
+        const matches = buildResultPicks({
+          ranked,
+          popular: [],
+          count: resultCount,
+          dietaryFlags: dietaryPreferences,
+          maxDishBudget,
+        });
+        if (matches.length >= resultCount) return matches;
+        // Too few taste matches (or none): fill the rest with popular dishes nearby.
+        const popular = await getHungryService().discovery.listPopularNearby();
+        return buildResultPicks({
+          ranked,
+          popular,
+          count: resultCount,
+          dietaryFlags: dietaryPreferences,
+          maxDishBudget,
+        });
+      })
+      .then((results) => {
         if (!active) return;
-        setDishes(results.slice(0, RESULT_COUNT));
-        setTasteRanked(ranked);
+        setPicks(results);
         setNoDietaryMatch(results.length === 0 && dietaryPreferences.length > 0);
         setLoadState("idle");
+        const ranked = results.some((pick) => !pick.popular);
         trackPicksOnce({
           ranked,
-          count: Math.min(results.length, RESULT_COUNT),
+          count: results.length,
           source: ranked ? "server" : "popular",
         });
       })
@@ -196,6 +237,43 @@ export function TasteProfileResultScreen({ navigation }: Props) {
     if (isAuthenticated && getServiceProvider().mode === "mock") void flushPendingDishSave();
   }, [isAuthenticated]);
 
+  const toggleSave = (dish: DishDetail) => {
+    const isSaved = isAuthenticated
+      ? favouriteDishIds.includes(dish.id)
+      : pendingSaveIds.includes(dish.id);
+    if (isAuthenticated) {
+      void toggleFavourite(dish).then((result) => {
+        if (result.status === "failed") {
+          showToast({ message: result.message, tone: "error" });
+        }
+      });
+      return;
+    }
+    // Account creation is the step after this one. The dishes are kept
+    // on the device and saved once sign-in finishes (main H6).
+    if (isSaved) {
+      forgetPendingDishSave(dish.id);
+      setPendingSaveIds(getPendingDishSaveIds());
+      return;
+    }
+    rememberPendingDishSave(dish);
+    setPendingSaveIds(getPendingDishSaveIds());
+    showToast({
+      message: `We'll save ${dish.name} once you create your account.`,
+      tone: "info",
+    });
+  };
+
+  const openDish = (dish: DishDetail) => {
+    navigation.getParent<NavigationProp<RootStackParamList>>()?.navigate("DishDetail", {
+      dishId: dish.id,
+    });
+    // Opening a dish is leaving the flow: if the app is closed while the user
+    // browses, the next launch must not start onboarding again. Done after
+    // navigating, so the root navigator sees DishDetail on top and stays put.
+    completeOnboarding(hasSkippedTasteQuiz);
+  };
+
   return (
     <View style={{ backgroundColor: palette.bg, flex: 1 }}>
       <ScrollView
@@ -203,25 +281,43 @@ export function TasteProfileResultScreen({ navigation }: Props) {
           gap: spacing[4],
           padding: spacing[4],
           paddingBottom: spacing[12],
-          paddingTop: insets.top + spacing[4],
+          paddingTop: insets.top + spacing[2],
         }}
       >
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+          accessibilityHint="Goes back to change an answer"
+          onPress={() => navigation.goBack()}
+          style={{
+            alignItems: "center",
+            alignSelf: "flex-start",
+            borderRadius: radii.pill,
+            height: 44,
+            justifyContent: "center",
+            marginLeft: -spacing[2],
+            width: 44,
+          }}
+        >
+          <ArrowLeft color={palette.text} size={22} />
+        </Pressable>
         <OnboardingProgress step="done" />
         <View style={{ gap: spacing[1] }}>
           <AppText variant="h1" accessibilityRole="header">
-            {"You're all set"}
+            {/* Setup is not done until the account exists, so a guest sees "first picks". */}
+            {isAuthenticated ? "You're all set" : "Your first picks"}
           </AppText>
           {tasteSummary ? <AppText variant="bodyBold">{tasteSummary}</AppText> : null}
           <AppText variant="bodySmall" tone="secondary">
             {hasSkippedTasteQuiz
               ? "Here are a few dishes to start with. Take the taste quiz anytime from Profile."
               : dishes.length > 0 && tasteRanked
-                ? "Picked to match your taste. We'll keep ranking Home the same way."
+                ? "Picked to match your taste."
                 : dishes.length > 0
-                  ? "Popular dishes to start with. We'll use your taste to rank Home."
+                  ? "Popular dishes to start with."
                   : noDietaryMatch
-                    ? noDietaryPicksMessage(useProfileStore.getState().profile.dietaryPreferences)
-                    : "We'll use your taste to rank dishes for you on Home."}
+                    ? noDietaryPicksMessage(dietaryPreferences)
+                    : "Dishes that match your taste will show up here."}
           </AppText>
         </View>
 
@@ -236,7 +332,7 @@ export function TasteProfileResultScreen({ navigation }: Props) {
               justifyContent: "space-between",
             }}
           >
-            {Array.from({ length: RESULT_COUNT }, (_, index) => (
+            {Array.from({ length: resultCount }, (_, index) => (
               <View
                 key={index}
                 style={{
@@ -266,112 +362,51 @@ export function TasteProfileResultScreen({ navigation }: Props) {
             justifyContent: "space-between",
           }}
         >
-          {dishes.map((dish) => {
+          {picks.map(({ dish, popular }) => {
             const isSaved = isAuthenticated
               ? favouriteDishIds.includes(dish.id)
               : pendingSaveIds.includes(dish.id);
-            const photo = dish.imageUrl ? (
-              <AccessibleImage
-                source={{ uri: dish.imageUrl }}
-                contentFit="cover"
-                style={{ height: 120, width: "100%" }}
-                accessibilityLabel={`Photo of ${dish.name}`}
-              />
-            ) : (
-              <NoDishPhoto dishName={dish.name} style={{ height: 120, width: "100%" }} />
-            );
+            // Signed in, a card opens the dish. Signed out, the pre-auth navigator has no
+            // DishDetail, so the payoff design opens a read-only preview instead.
+            const onOpen = isAuthenticated
+              ? () => openDish(dish)
+              : detailed
+                ? () => setPreviewDish(dish)
+                : undefined;
             return (
-              <Card
+              <ResultDishCard
                 key={dish.id}
-                style={{ borderRadius: radii.md, overflow: "hidden", padding: 0, width: "48%" }}
-              >
-                {/* The dish's own photo, or the shared no-photo tile; never a stand-in dish.
-                    Signed out, the pre-auth navigator has no DishDetail, so it is not a link. */}
-                {isAuthenticated ? (
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={`Open ${dish.name}`}
-                    onPress={() => {
-                      navigation
-                        .getParent<NavigationProp<RootStackParamList>>()
-                        ?.navigate("DishDetail", { dishId: dish.id });
-                      // Opening a dish is leaving the flow: if the app is closed while the user
-                      // browses, the next launch must not start onboarding again. Done after
-                      // navigating, so the root navigator sees DishDetail on top and stays put.
-                      completeOnboarding(hasSkippedTasteQuiz);
-                    }}
-                  >
-                    {photo}
-                  </Pressable>
-                ) : (
-                  photo
-                )}
-                <View style={{ gap: spacing[1], padding: spacing[2] }}>
-                  <AppText variant="bodyBold" numberOfLines={1}>
-                    {dish.name}
-                  </AppText>
-                  <View
-                    style={{
-                      alignItems: "center",
-                      flexDirection: "row",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <AppText variant="micro" tone="secondary" numberOfLines={1}>
-                      {dish.tasteTags.slice(0, 2).join(" · ")}
-                    </AppText>
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel={`${isSaved ? "Unsave" : "Save"} ${dish.name}`}
-                      accessibilityState={{ selected: isSaved }}
-                      accessibilityHint={
-                        isAuthenticated
-                          ? undefined
-                          : "Saved once you create your account at the end of setup"
-                      }
-                      onPress={() => {
-                        if (isAuthenticated) {
-                          void toggleFavourite(dish).then((result) => {
-                            if (result.status === "failed") {
-                              showToast({ message: result.message, tone: "error" });
-                            }
-                          });
-                          return;
-                        }
-                        // Account creation is the step after this one. The dishes are kept
-                        // on the device and saved once sign-in finishes (main H6).
-                        if (isSaved) {
-                          forgetPendingDishSave(dish.id);
-                          setPendingSaveIds(getPendingDishSaveIds());
-                          return;
-                        }
-                        rememberPendingDishSave(dish);
-                        setPendingSaveIds(getPendingDishSaveIds());
-                        showToast({
-                          message: `We'll save ${dish.name} once you create your account.`,
-                          tone: "info",
-                        });
-                      }}
-                      style={{
-                        alignItems: "center",
-                        justifyContent: "center",
-                        minHeight: 44,
-                        minWidth: 44,
-                      }}
-                    >
-                      <Heart
-                        color={palette.orange}
-                        fill={isSaved ? palette.orange : "transparent"}
-                        size={18}
-                      />
-                    </Pressable>
-                  </View>
-                </View>
-              </Card>
+                dish={dish}
+                details={detailed}
+                distanceLabel={detailed ? distanceLabelFor(dish) : undefined}
+                popular={popular}
+                isSaved={isSaved}
+                saveHint={
+                  isAuthenticated
+                    ? undefined
+                    : "Saved once you create your account at the end of setup"
+                }
+                onOpen={onOpen}
+                openLabel={isAuthenticated ? `Open ${dish.name}` : `Preview ${dish.name}`}
+                onToggleSave={() => toggleSave(dish)}
+              />
             );
           })}
         </View>
+        {dietaryPreferences.length > 0 && dishes.length > 0 && dishes.length < resultCount ? (
+          <AppText variant="bodySmall" tone="muted">
+            {fewDietaryPicksMessage(dietaryPreferences, dishes.length)}
+          </AppText>
+        ) : null}
       </ScrollView>
+
+      <DishPreviewSheet
+        dish={previewDish}
+        distanceLabel={previewDish ? distanceLabelFor(previewDish) : undefined}
+        isSaved={previewDish ? pendingSaveIds.includes(previewDish.id) : false}
+        onToggleSave={() => previewDish && toggleSave(previewDish)}
+        onClose={() => setPreviewDish(null)}
+      />
 
       <View style={{ padding: spacing[4], paddingBottom: insets.bottom + spacing[4] }}>
         <Button

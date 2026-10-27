@@ -1,8 +1,10 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  AccessibilityInfo,
   Animated,
   FlatList,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -14,19 +16,24 @@ import {
   type NativeSyntheticEvent,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ArrowLeft, Check, Search } from "lucide-react-native";
+import { ArrowLeft, Check } from "lucide-react-native";
 
 import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
-import { AccessibleImage, Button, AppText, Card, Chip, EmptyState, Input } from "@/components/ui";
+import { AccessibleImage, Button, AppText } from "@/components/ui";
 import { NEUTRAL_TASTE_VECTOR, TASTE_DIMENSIONS } from "@/constants/taste";
 import { recordQuizResponse } from "@/features/profile/pendingQuizResponse";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
+import { useExperimentVariant } from "@/lib/experiments/experiments";
+import { reportError } from "@/lib/monitoring/reportError";
+import { getFreshOnboardingDraft, useOnboardingDraftStore } from "@/store/useOnboardingDraftStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { DietaryFlag, TasteKey, TasteVector } from "@/types/domain";
+import { DietaryStep } from "./DietaryStep";
 import {
+  OnboardingProgress,
   trackOnboardingQuestionViewed,
   trackOnboardingStepSkipped,
   trackOnboardingStepViewed,
@@ -38,6 +45,7 @@ import {
   ONBOARDING_ACTIONS_HORIZONTAL_PADDING,
 } from "./layoutConstants";
 import { TASTE_QUESTION_FOODS } from "./onboardingFoodImages";
+import { TasteOptionTiles } from "./TasteOptionTiles";
 import {
   TASTE_ANSWER_OPTIONS,
   hasAnsweredAnyQuestion,
@@ -74,93 +82,36 @@ const LABELS = {
   aromatic: ["Subtle", "Balanced", "Intense"],
 } as const;
 
-const DIETARY_OPTIONS: {
-  value: DietaryFlag;
-  label: string;
-  keywords: string[];
-}[] = [
-  { value: "vegetarian", label: "Vegetarian", keywords: ["veg"] },
-  { value: "vegan", label: "Vegan", keywords: ["plant"] },
-  { value: "halal", label: "Halal", keywords: ["muslim", "halal"] },
-  { value: "gluten_free", label: "Gluten Free", keywords: ["gluten", "wheat"] },
-  { value: "dairy_free", label: "Dairy Free", keywords: ["milk", "lactose"] },
-  { value: "egg_free", label: "Egg Free", keywords: ["egg"] },
-  {
-    value: "nut_free",
-    label: "Nut Free",
-    keywords: ["nut", "peanut", "almond"],
-  },
-  { value: "peanut_free", label: "Peanut Free", keywords: ["peanut"] },
-  {
-    value: "shellfish_free",
-    label: "Shellfish Free",
-    keywords: ["shrimp", "prawn", "shellfish"],
-  },
-  { value: "soy_free", label: "Soy Free", keywords: ["soy", "tofu"] },
-  { value: "sesame_free", label: "Sesame Free", keywords: ["sesame"] },
-  { value: "pork_free", label: "Pork Free", keywords: ["pork"] },
-  { value: "pescatarian", label: "Pescatarian", keywords: ["fish"] },
-  { value: "kosher", label: "Kosher", keywords: ["jewish", "kosher"] },
-  { value: "keto", label: "Keto", keywords: ["keto", "ketogenic"] },
-  { value: "paleo", label: "Paleo", keywords: ["paleo"] },
-  { value: "low_carb", label: "Low Carb", keywords: ["carb"] },
-  { value: "low_sodium", label: "Low Sodium", keywords: ["salt", "sodium"] },
-  { value: "low_sugar", label: "Low Sugar", keywords: ["sugar"] },
-  {
-    value: "diabetic_friendly",
-    label: "Diabetic Friendly",
-    keywords: ["diabetic", "diabetes", "glycemic"],
-  },
-  {
-    value: "fodmap_friendly",
-    label: "FODMAP Friendly",
-    keywords: ["fodmap", "ibs"],
-  },
-  { value: "beef_free", label: "Beef Free", keywords: ["beef"] },
-  {
-    value: "allium_free",
-    label: "Allium Free",
-    keywords: ["onion", "garlic", "allium"],
-  },
-  { value: "fish_free", label: "Fish Free", keywords: ["fish"] },
-  {
-    value: "mollusc_free",
-    label: "Mollusc Free",
-    keywords: ["mollusc", "clam", "oyster", "mussel"],
-  },
-  { value: "celery_free", label: "Celery Free", keywords: ["celery"] },
-  { value: "mustard_free", label: "Mustard Free", keywords: ["mustard"] },
-  { value: "lupin_free", label: "Lupin Free", keywords: ["lupin"] },
-  {
-    value: "sulphite_free",
-    label: "Sulphite Free",
-    keywords: ["sulphite", "sulfite"],
-  },
-];
-
-// The diets most Singapore diners look for come first; the rest sit behind "Show all".
-const POPULAR_DIETARY_FLAGS: DietaryFlag[] = [
-  "halal",
-  "vegetarian",
-  "vegan",
-  "pork_free",
-  "beef_free",
-  "nut_free",
-  "shellfish_free",
-  "gluten_free",
-  "dairy_free",
-];
-
-const BUDGET_OPTIONS: { label: string; value: number | undefined }[] = [
-  { label: "Under S$6", value: 6 },
-  { label: "Under S$12", value: 12 },
-  { label: "Any price", value: undefined },
-];
+/** The three questions that move recommendations most (test arm of onboarding_quiz_length_v1). */
+const SHORT_STEPS: TasteKey[] = ["spicy", "sweet", "rich"];
+/** Time to see the picked tile before the next question slides in. */
+const AUTO_ADVANCE_MS = 400;
 
 export function TasteQuizScreen({ navigation, route }: Props) {
   const { componentRadii, motion, palette, radii, spacing } = useHungryTheme();
   const { fontScale, height, width } = useWindowDimensions();
   const reduceMotion = useReduceMotion();
+  // A screen reader user moves on with Next: an answer that auto-advances would skip its readout.
+  const [screenReaderOn, setScreenReaderOn] = useState(false);
+  // Not on web: react-native-web reports a screen reader as always on.
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+    let active = true;
+    void AccessibilityInfo.isScreenReaderEnabled()
+      .then((enabled) => {
+        if (active) setScreenReaderOn(enabled);
+      })
+      .catch((error) =>
+        reportError(error, { screen: "TasteQuiz", action: "read_screen_reader_state" }),
+      );
+    const subscription = AccessibilityInfo.addEventListener("screenReaderChanged", (enabled) =>
+      setScreenReaderOn(Boolean(enabled)),
+    );
+    return () => {
+      active = false;
+      subscription.remove();
+    };
+  }, []);
   const stepDuration = reduceMotion ? 0 : motion.onboardingStep;
   const setTasteVector = useProfileStore((state) => state.setTasteVector);
   const profile = useProfileStore((state) => state.profile);
@@ -176,6 +127,17 @@ export function TasteQuizScreen({ navigation, route }: Props) {
   const carriedAnswers =
     isDietaryRoute && route.params && "answers" in route.params ? route.params.answers : undefined;
   const hasTasteAnswers = !isDietaryRoute || carriedAnswers !== undefined;
+  const isOnboardingTaste = flowMode === "onboarding" && !isDietaryRoute;
+  // A relaunch reopens this step with the answers given so far (a draft under 24 hours old).
+  const [draft] = useState(() => (flowMode === "onboarding" ? getFreshOnboardingDraft() : null));
+  const quizLength = useExperimentVariant("onboarding_quiz_length_v1", {
+    enabled: isOnboardingTaste,
+  });
+  const quizLayout = useExperimentVariant("onboarding_quiz_layout_v1", {
+    enabled: isOnboardingTaste,
+  });
+  const questionKeys = isOnboardingTaste && quizLength === "test" ? SHORT_STEPS : STEPS;
+  const useTiles = quizLayout === "test";
   const carriedAnsweredKeys =
     isDietaryRoute && route.params && "answeredKeys" in route.params
       ? route.params.answeredKeys
@@ -184,21 +146,22 @@ export function TasteQuizScreen({ navigation, route }: Props) {
   // write, sync or log anything and backing out discards the draft. A retake from
   // Profile starts from the saved vector so untouched dimensions keep their values.
   const [values, setValues] = useState<TasteVector>(
-    carriedAnswers ?? (flowMode === "profile" ? profile.tasteVector : INITIAL),
+    carriedAnswers ??
+      (flowMode === "profile" ? profile.tasteVector : (draft?.quiz?.answers ?? INITIAL)),
   );
   const [dietaryPreferences, setDietaryPreferencesState] = useState<DietaryFlag[]>(
-    profile.dietaryPreferences,
+    draft?.dietary?.dietaryPreferences ?? profile.dietaryPreferences,
   );
-  const [maxDishBudget, setMaxDishBudgetState] = useState(profile.maxDishBudget);
-  const [dietaryQuery, setDietaryQuery] = useState("");
-  const [showAllDietary, setShowAllDietary] = useState(false);
-  const [step, setStep] = useState(0);
+  const [maxDishBudget, setMaxDishBudgetState] = useState(
+    draft?.dietary ? (draft.dietary.maxDishBudget ?? undefined) : profile.maxDishBudget,
+  );
+  const [step, setStep] = useState(() => Math.min(draft?.quiz?.step ?? 0, questionKeys.length - 1));
   const [phase, setPhase] = useState<"taste" | "dietary">(initialPhase);
   // Questions the user answered (tapped or swiped). A retake starts with the saved vector
   // answered; in onboarding nothing is answered until the user picks a card, so the
   // preselected middle card is never recorded as a "Balanced" answer.
   const [answeredKeys, setAnsweredKeys] = useState<TasteKey[]>(
-    flowMode === "profile" ? [...STEPS] : [],
+    flowMode === "profile" ? [...STEPS] : (draft?.quiz?.answeredKeys ?? []),
   );
   const [isTransitioning, setIsTransitioning] = useState(false);
   // One finish per screen: a double tap on Continue must not save the quiz twice.
@@ -207,13 +170,27 @@ export function TasteQuizScreen({ navigation, route }: Props) {
   const quizScrollX = useRef(new Animated.Value(0)).current;
   const carouselRef = useRef<FlatList<number> | null>(null);
   const stepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const advanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(
     () => () => {
       if (stepTimerRef.current) clearTimeout(stepTimerRef.current);
+      if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
     },
     [],
   );
+
+  // Keep the answers given so far, so closing the app mid-quiz does not lose them.
+  useEffect(() => {
+    if (!isOnboardingTaste) return;
+    useOnboardingDraftStore.getState().rememberQuiz({ answers: values, answeredKeys, step });
+  }, [answeredKeys, isOnboardingTaste, step, values]);
+  useEffect(() => {
+    if (!(flowMode === "onboarding" && isDietaryRoute)) return;
+    useOnboardingDraftStore
+      .getState()
+      .rememberDietary({ dietaryPreferences, maxDishBudget: maxDishBudget ?? null });
+  }, [dietaryPreferences, flowMode, isDietaryRoute, maxDishBudget]);
 
   // Coming back to this screen (Back from the next step) re-arms Continue.
   useEffect(
@@ -229,10 +206,10 @@ export function TasteQuizScreen({ navigation, route }: Props) {
     if (flowMode === "onboarding" && !isDietaryRoute) trackOnboardingStepViewed("taste");
   }, [flowMode, isDietaryRoute]);
 
-  const currentKey = STEPS[step];
+  const currentKey = questionKeys[step] ?? questionKeys[0]!;
   const labels = LABELS[currentKey];
   const choiceFoods = TASTE_QUESTION_FOODS[currentKey];
-  const totalSteps = STEPS.length + 1;
+  const totalSteps = questionKeys.length + 1;
   const inDietaryStep = phase === "dietary";
   const { scrollIndex, selectedIndex } = resolveQuestionCard(values, currentKey, answeredKeys);
   const scrollIndexRef = useRef(scrollIndex);
@@ -241,9 +218,9 @@ export function TasteQuizScreen({ navigation, route }: Props) {
   // Funnel: every question (and the dietary step) is a view, so drop-off inside the quiz is visible.
   useEffect(() => {
     if (flowMode !== "onboarding") return;
-    if (inDietaryStep) trackOnboardingQuestionViewed("dietary", STEPS.length);
+    if (inDietaryStep) trackOnboardingQuestionViewed("dietary", questionKeys.length);
     else trackOnboardingQuestionViewed(currentKey, step);
-  }, [currentKey, flowMode, inDietaryStep, step]);
+  }, [currentKey, flowMode, inDietaryStep, questionKeys.length, step]);
 
   const CARD_WIDTH = 220;
   // Sized from the screen so short phones keep the question and buttons in view.
@@ -285,6 +262,10 @@ export function TasteQuizScreen({ navigation, route }: Props) {
   }, [SNAP_INTERVAL, inDietaryStep, quizScrollX, step, width]);
 
   const animateStep = (nextStep: number, direction: "forward" | "backward") => {
+    if (advanceTimerRef.current) {
+      clearTimeout(advanceTimerRef.current);
+      advanceTimerRef.current = null;
+    }
     if (isTransitioning) {
       return;
     }
@@ -364,28 +345,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
     navigation.navigate("FoodOpenness", { mode: "onboarding" });
   };
 
-  const isLast = step === STEPS.length - 1;
-  const normalizedDietaryQuery = dietaryQuery.trim().toLowerCase();
-  const sortedDietaryOptions = [
-    ...POPULAR_DIETARY_FLAGS.map(
-      (flag) => DIETARY_OPTIONS.find((option) => option.value === flag)!,
-    ),
-    ...DIETARY_OPTIONS.filter((option) => !POPULAR_DIETARY_FLAGS.includes(option.value)),
-  ];
-  const filteredDietaryOptions = sortedDietaryOptions.filter((option) => {
-    if (!normalizedDietaryQuery) {
-      return (
-        showAllDietary ||
-        POPULAR_DIETARY_FLAGS.includes(option.value) ||
-        dietaryPreferences.includes(option.value)
-      );
-    }
-    const haystack = `${option.label} ${option.keywords.join(" ")}`.toLowerCase();
-    return haystack.includes(normalizedDietaryQuery);
-  });
-  const hiddenDietaryCount = normalizedDietaryQuery
-    ? 0
-    : sortedDietaryOptions.length - filteredDietaryOptions.length;
+  const isLast = step === questionKeys.length - 1;
 
   const toggleDietary = (flag: DietaryFlag) => {
     setDietaryPreferencesState((current) =>
@@ -410,6 +370,18 @@ export function TasteQuizScreen({ navigation, route }: Props) {
       offset: SNAP_INTERVAL * index,
     });
     answerTaste(index);
+  };
+
+  // Tiles: a tap answers, then the next question slides in after a beat. Reduce Motion, a
+  // screen reader, a retake from Profile and the last question wait for Next instead.
+  const selectTile = (index: number) => {
+    answerTaste(index);
+    if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
+    if (reduceMotion || screenReaderOn || !isOnboardingTaste || isLast) return;
+    advanceTimerRef.current = setTimeout(() => {
+      advanceTimerRef.current = null;
+      animateStep(step + 1, "forward");
+    }, AUTO_ADVANCE_MS);
   };
 
   // Header arrow: the previous question, or out of the quiz from the first one.
@@ -440,87 +412,43 @@ export function TasteQuizScreen({ navigation, route }: Props) {
     });
   };
 
-  const renderDietaryRow = ({
-    key,
-    label,
-    isSelected,
-    onPress,
-    hint,
-  }: {
-    key: string;
-    label: string;
-    isSelected: boolean;
-    onPress: () => void;
-    hint: string;
-  }) => (
-    <Pressable
-      key={key}
-      onPress={onPress}
-      accessibilityRole="checkbox"
-      accessibilityLabel={`Dietary preference ${label}`}
-      accessibilityHint={hint}
-      accessibilityState={{ checked: isSelected }}
-      style={{
-        alignItems: "center",
-        backgroundColor: isSelected ? palette.orangeLight : palette.surface,
-        borderColor: isSelected ? palette.orange : palette.border,
-        borderRadius: componentRadii.button,
-        borderWidth: 1,
-        flexDirection: "row",
-        gap: spacing[3],
-        minHeight: 52,
-        paddingHorizontal: spacing[3],
-        paddingVertical: spacing[2],
-      }}
-    >
-      <View
-        style={{
-          alignItems: "center",
-          backgroundColor: isSelected ? palette.orange : "transparent",
-          borderColor: isSelected ? palette.orange : palette.border,
-          borderRadius: radii.pill,
-          borderWidth: 1,
-          height: 20,
-          justifyContent: "center",
-          width: 20,
-        }}
-      >
-        {isSelected ? <Check color={palette.surface} size={12} /> : null}
+  const headingText = inDietaryStep ? "Any dietary needs?" : QUESTIONS[currentKey];
+  // Onboarding shows the shared progress bar (the questions fill the Taste segment); a retake
+  // from Profile has no steps, so it keeps the plain counter.
+  const progressBlock =
+    flowMode === "onboarding" ? (
+      <View style={{ paddingHorizontal: spacing[3] }}>
+        <OnboardingProgress
+          step="taste"
+          subProgress={inDietaryStep ? 1 : (step + 1) / totalSteps}
+          detail={inDietaryStep ? undefined : `Question ${step + 1} of ${totalSteps}`}
+        />
       </View>
-      <AppText style={{ flex: 1 }}>{label}</AppText>
-    </Pressable>
-  );
-
-  const headline = inDietaryStep ? (
-    <AppText variant="h1" accessibilityRole="header" style={{ textAlign: "center" }}>
-      Any dietary needs?
-    </AppText>
-  ) : (
-    <AppText variant="h1" accessibilityRole="header" style={{ textAlign: "center" }}>
-      What flavours do{"\n"}you{" "}
-      <AppText variant="h1" style={{ color: palette.orange }}>
-        enjoy
+    ) : (
+      <AppText
+        variant="bodySmall"
+        tone="muted"
+        style={{ paddingHorizontal: spacing[3], textAlign: "center" }}
+      >
+        {inDietaryStep
+          ? `Question ${totalSteps} of ${totalSteps}`
+          : `Question ${step + 1} of ${totalSteps}`}
       </AppText>
-      ?
-    </AppText>
-  );
-  // The question counter is the only counter on these screens; the step bar returns on the next step.
-  const questionHeading = (
-    <View style={{ gap: spacing[3] }}>
-      {/* The dietary step's h1 is its question; a second heading would only repeat it. */}
+    );
+  const headingBlock = (
+    <View style={{ gap: spacing[2], paddingHorizontal: spacing[3] }}>
+      {/* One heading per screen: the question itself. */}
+      <AppText variant="h2" accessibilityRole="header" style={{ textAlign: "center" }}>
+        {headingText}
+      </AppText>
       {inDietaryStep ? null : (
-        <AppText variant="h2" accessibilityRole="header" style={{ textAlign: "center" }}>
-          {QUESTIONS[currentKey]}
+        // Always on screen, so the options do not jump when the first answer arrives.
+        <AppText variant="micro" tone="muted" style={{ minHeight: 18, textAlign: "center" }}>
+          {selectedIndex < 0
+            ? "Tap one to answer, or go Next to leave this one out."
+            : `Picked: ${labels[selectedIndex]}`}
         </AppText>
       )}
-      <AppText variant="bodySmall" tone="muted" style={{ textAlign: "center" }}>
-        Question {inDietaryStep ? totalSteps : step + 1} of {totalSteps}
-      </AppText>
-      {!inDietaryStep && selectedIndex < 0 ? (
-        <AppText variant="micro" tone="muted" style={{ textAlign: "center" }}>
-          Tap or swipe to answer, or go Next to leave this one out.
-        </AppText>
-      ) : null}
     </View>
   );
 
@@ -547,8 +475,8 @@ export function TasteQuizScreen({ navigation, route }: Props) {
           </Pressable>
         </View>
         {inDietaryStep ? (
-          // One scroll for the whole step: at large text sizes the headings and the search
-          // must scroll away with the list, or the list (and the budget) get no room at all.
+          // One scroll for the whole step: at large text sizes the heading and the chips
+          // scroll together, so the budget below them is never out of reach.
           <ScrollView
             testID="dietary-step-scroll"
             style={{ flex: 1 }}
@@ -560,85 +488,28 @@ export function TasteQuizScreen({ navigation, route }: Props) {
               paddingTop: spacing[2],
             }}
           >
-            {headline}
-            {questionHeading}
-            <View style={{ paddingHorizontal: spacing[3] }}>
-              <Card style={{ gap: spacing[2], padding: spacing[3] }}>
-                <AppText variant="bodySmall" tone="muted">
-                  Select any that apply. We use these to filter dishes. Allergen details come from
-                  stalls and diners and may be incomplete, so always check with the stall.
-                </AppText>
-                <Input
-                  placeholder="Search dietary restrictions"
-                  value={dietaryQuery}
-                  onChangeText={setDietaryQuery}
-                  leftIcon={<Search color={palette.textMuted} size={16} />}
-                />
-                <View style={{ gap: spacing[2], paddingTop: spacing[1] }}>
-                  {normalizedDietaryQuery
-                    ? null
-                    : renderDietaryRow({
-                        key: "none",
-                        label: "None",
-                        isSelected: dietaryPreferences.length === 0,
-                        onPress: () => setDietaryPreferencesState([]),
-                        hint: "Double tap to clear your dietary preferences",
-                      })}
-                  {filteredDietaryOptions.map((option) => {
-                    const isSelected = dietaryPreferences.includes(option.value);
-                    return renderDietaryRow({
-                      key: option.value,
-                      label: option.label,
-                      isSelected,
-                      onPress: () => toggleDietary(option.value),
-                      hint: isSelected
-                        ? "Double tap to remove this dietary preference"
-                        : "Double tap to add this dietary preference",
-                    });
-                  })}
-                  {!filteredDietaryOptions.length ? (
-                    <EmptyState
-                      title="No match"
-                      body="Try another word, like halal, vegetarian or nuts."
-                    />
-                  ) : null}
-                  {hiddenDietaryCount > 0 ? (
-                    <Button
-                      label={`Show all (${hiddenDietaryCount} more)`}
-                      variant="ghost"
-                      onPress={() => setShowAllDietary(true)}
-                    />
-                  ) : null}
-                  <AppText variant="h3" style={{ marginTop: spacing[2] }}>
-                    Usual budget per dish
-                  </AppText>
-                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-                    {BUDGET_OPTIONS.map((option) => (
-                      <Chip
-                        key={option.label}
-                        label={option.label}
-                        accessibilityLabel={`Budget ${option.label}`}
-                        selected={maxDishBudget === option.value}
-                        onPress={() => setMaxDishBudgetState(option.value)}
-                      />
-                    ))}
-                  </View>
-                </View>
-              </Card>
-            </View>
+            {progressBlock}
+            {headingBlock}
+            <DietaryStep
+              selected={dietaryPreferences}
+              onToggle={toggleDietary}
+              onClear={() => setDietaryPreferencesState([])}
+              budget={maxDishBudget}
+              onBudgetChange={setMaxDishBudgetState}
+            />
           </ScrollView>
         ) : (
-          // The taste phase scrolls, so large text sizes cannot push the cards or the footer buttons out of reach.
+          // The taste phase scrolls, so large text sizes cannot push the options or the footer buttons out of reach.
           <ScrollView
             style={{ flex: 1 }}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ flexGrow: 1, gap: spacing[3], paddingTop: spacing[2] }}
           >
-            {headline}
-            {questionHeading}
+            {progressBlock}
+            {headingBlock}
             <Animated.View
-              accessibilityRole="radiogroup"
-              accessibilityLabel={QUESTIONS[currentKey]}
+              accessibilityRole={useTiles ? undefined : "radiogroup"}
+              accessibilityLabel={useTiles ? undefined : QUESTIONS[currentKey]}
               style={{
                 flex: 1,
                 justifyContent: "center",
@@ -648,135 +519,157 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                 transform: [{ translateX: optionsSlideAnim }],
               }}
             >
-              <Animated.FlatList
-                ref={carouselRef}
-                horizontal
-                data={[0, 1, 2]}
-                keyExtractor={(item: number) => `${item}`}
-                showsHorizontalScrollIndicator={false}
-                snapToAlignment="center"
-                snapToOffsets={snapOffsets}
-                decelerationRate="fast"
-                disableIntervalMomentum
-                bounces={false}
-                overScrollMode="never"
-                initialNumToRender={3}
-                maxToRenderPerBatch={3}
-                windowSize={3}
-                removeClippedSubviews={false}
-                scrollEventThrottle={16}
-                style={{ overflow: "visible", width: "100%" }}
-                contentContainerStyle={{
-                  paddingHorizontal: horizontalPadding + spacing[2],
-                  paddingTop: spacing[2],
-                }}
-                ItemSeparatorComponent={CardSeparator}
-                getItemLayout={(_: ArrayLike<number> | null | undefined, index: number) => ({
-                  index,
-                  length: SNAP_INTERVAL,
-                  offset: SNAP_INTERVAL * index,
-                })}
-                onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: quizScrollX } } }], {
-                  useNativeDriver: true,
-                })}
-                onMomentumScrollEnd={(event: NativeSyntheticEvent<NativeScrollEvent>) => {
-                  const index = Math.max(
-                    0,
-                    Math.min(2, Math.round(event.nativeEvent.contentOffset.x / SNAP_INTERVAL)),
-                  );
-                  const exactOffset = index * SNAP_INTERVAL;
-                  if (Math.abs(event.nativeEvent.contentOffset.x - exactOffset) > 0.5) {
-                    carouselRef.current?.scrollToOffset({
-                      animated: false,
-                      offset: exactOffset,
-                    });
-                  }
-                  // The card the carousel was placed on is not an answer; only a swipe to another card is.
-                  if (index === scrollIndexRef.current) return;
-                  answerTaste(index);
-                }}
-                renderItem={({ item: index }: ListRenderItemInfo<number>) => {
-                  const isSelected = selectedIndex === index;
-                  const dimOpacity = dimOpacities[index];
-                  return (
-                    <Pressable
-                      onPress={() => selectTasteOption(index)}
-                      accessibilityRole="radio"
-                      accessibilityLabel={`${QUESTIONS[currentKey]} ${labels[index]}`}
-                      accessibilityHint={`For example, ${choiceFoods[index].label}`}
-                      accessibilityState={{ checked: isSelected, disabled: isTransitioning }}
-                      disabled={isTransitioning}
-                      style={{ alignItems: "center", width: CARD_WIDTH }}
-                    >
-                      <View
-                        style={[
-                          isSelected
-                            ? {
-                                ...styles.whiteGlow,
-                                shadowColor: palette.surface,
-                              }
-                            : null,
-                          {
+              {useTiles ? (
+                <TasteOptionTiles
+                  question={QUESTIONS[currentKey]}
+                  labels={labels}
+                  foods={choiceFoods}
+                  selectedIndex={selectedIndex}
+                  disabled={isTransitioning}
+                  onSelect={selectTile}
+                />
+              ) : (
+                <Animated.FlatList
+                  ref={carouselRef}
+                  horizontal
+                  data={[0, 1, 2]}
+                  keyExtractor={(item: number) => `${item}`}
+                  showsHorizontalScrollIndicator={false}
+                  snapToAlignment="center"
+                  snapToOffsets={snapOffsets}
+                  decelerationRate="fast"
+                  disableIntervalMomentum
+                  bounces={false}
+                  overScrollMode="never"
+                  initialNumToRender={3}
+                  maxToRenderPerBatch={3}
+                  windowSize={3}
+                  removeClippedSubviews={false}
+                  scrollEventThrottle={16}
+                  style={{ overflow: "visible", width: "100%" }}
+                  contentContainerStyle={{
+                    paddingHorizontal: horizontalPadding + spacing[2],
+                    paddingTop: spacing[2],
+                  }}
+                  ItemSeparatorComponent={CardSeparator}
+                  getItemLayout={(_: ArrayLike<number> | null | undefined, index: number) => ({
+                    index,
+                    length: SNAP_INTERVAL,
+                    offset: SNAP_INTERVAL * index,
+                  })}
+                  onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { x: quizScrollX } } }],
+                    { useNativeDriver: true },
+                  )}
+                  onMomentumScrollEnd={(event: NativeSyntheticEvent<NativeScrollEvent>) => {
+                    const index = Math.max(
+                      0,
+                      Math.min(2, Math.round(event.nativeEvent.contentOffset.x / SNAP_INTERVAL)),
+                    );
+                    const exactOffset = index * SNAP_INTERVAL;
+                    if (Math.abs(event.nativeEvent.contentOffset.x - exactOffset) > 0.5) {
+                      carouselRef.current?.scrollToOffset({
+                        animated: false,
+                        offset: exactOffset,
+                      });
+                    }
+                    // A swipe only moves the cards to look at them; a tap is the answer.
+                  }}
+                  renderItem={({ item: index }: ListRenderItemInfo<number>) => {
+                    const isSelected = selectedIndex === index;
+                    const dimOpacity = dimOpacities[index];
+                    return (
+                      <Pressable
+                        onPress={() => selectTasteOption(index)}
+                        accessibilityRole="radio"
+                        accessibilityLabel={`${QUESTIONS[currentKey]} ${labels[index]}`}
+                        accessibilityHint={`For example, ${choiceFoods[index].label}`}
+                        accessibilityState={{ checked: isSelected, disabled: isTransitioning }}
+                        aria-checked={isSelected}
+                        disabled={isTransitioning}
+                        style={{ alignItems: "center", width: CARD_WIDTH }}
+                      >
+                        <View
+                          style={{
                             backgroundColor: palette.bg,
+                            borderColor: isSelected ? palette.orange : "transparent",
                             borderRadius: radii.pill,
+                            borderWidth: 3,
                             height: CARD_HEIGHT,
                             justifyContent: "center",
                             overflow: "hidden",
                             width: CARD_WIDTH,
-                          },
-                        ]}
-                      >
-                        {choiceFoods[index].imageSource ? (
-                          <AccessibleImage
-                            source={choiceFoods[index].imageSource}
-                            contentFit="cover"
-                            contentPosition="center"
-                            style={{ height: "100%", width: "100%" }}
-                            decorative
-                          />
-                        ) : (
-                          <NoDishPhoto
-                            dishName={choiceFoods[index].label}
-                            style={{ height: "100%", width: "100%" }}
-                          />
-                        )}
-                        <Animated.View
-                          pointerEvents="none"
-                          style={{
-                            backgroundColor: palette.bg,
-                            bottom: 0,
-                            left: 0,
-                            position: "absolute",
-                            right: 0,
-                            top: 0,
-                            opacity: dimOpacity,
                           }}
-                        />
-                      </View>
-                      <AppText
-                        variant={isSelected ? "h3" : "body"}
-                        tone={isSelected ? "default" : "secondary"}
-                        style={{
-                          fontWeight: "700",
-                          marginTop: spacing[2],
-                          textAlign: "center",
-                          width: "100%",
-                        }}
-                      >
-                        {labels[index]}
-                      </AppText>
-                      <AppText
-                        variant="micro"
-                        tone="secondary"
-                        numberOfLines={1}
-                        style={{ marginTop: spacing[1], textAlign: "center", width: "100%" }}
-                      >
-                        {choiceFoods[index].label}
-                      </AppText>
-                    </Pressable>
-                  );
-                }}
-              />
+                        >
+                          {choiceFoods[index].imageSource ? (
+                            <AccessibleImage
+                              source={choiceFoods[index].imageSource}
+                              contentFit="cover"
+                              contentPosition="center"
+                              style={{ height: "100%", width: "100%" }}
+                              decorative
+                            />
+                          ) : (
+                            <NoDishPhoto
+                              dishName={choiceFoods[index].label}
+                              style={{ height: "100%", width: "100%" }}
+                            />
+                          )}
+                          <Animated.View
+                            pointerEvents="none"
+                            style={{
+                              backgroundColor: palette.bg,
+                              bottom: 0,
+                              left: 0,
+                              position: "absolute",
+                              right: 0,
+                              top: 0,
+                              opacity: dimOpacity,
+                            }}
+                          />
+                          {isSelected ? (
+                            <View
+                              style={{
+                                alignItems: "center",
+                                backgroundColor: palette.orange,
+                                borderRadius: radii.pill,
+                                height: 28,
+                                justifyContent: "center",
+                                position: "absolute",
+                                right: spacing[4],
+                                top: spacing[4],
+                                width: 28,
+                              }}
+                            >
+                              <Check color={palette.surface} size={16} />
+                            </View>
+                          ) : null}
+                        </View>
+                        <AppText
+                          variant={isSelected ? "h3" : "body"}
+                          tone={isSelected ? "default" : "secondary"}
+                          style={{
+                            fontWeight: "700",
+                            marginTop: spacing[2],
+                            textAlign: "center",
+                            width: "100%",
+                          }}
+                        >
+                          {labels[index]}
+                        </AppText>
+                        <AppText
+                          variant="micro"
+                          tone="secondary"
+                          numberOfLines={1}
+                          style={{ marginTop: spacing[1], textAlign: "center", width: "100%" }}
+                        >
+                          {choiceFoods[index].label}
+                        </AppText>
+                      </Pressable>
+                    );
+                  }}
+                />
+              )}
             </Animated.View>
           </ScrollView>
         )}
@@ -791,112 +684,50 @@ export function TasteQuizScreen({ navigation, route }: Props) {
           }}
         >
           {inDietaryStep ? (
-            <View style={{ gap: ONBOARDING_ACTIONS_GAP }}>
-              <View
-                style={{
-                  alignItems: "center",
-                  flexDirection: "row",
-                  gap: spacing[3],
-                  justifyContent: "center",
-                }}
-              >
+            <Button
+              label="Continue"
+              onPress={handleFinish}
+              labelNumberOfLines={fontScale > 1.15 ? 2 : 1}
+              labelEllipsizeMode="tail"
+            />
+          ) : isLast ? (
+            <Button label="Next" onPress={goToDietary} />
+          ) : (
+            <View
+              style={{
+                alignItems: "center",
+                flexDirection: "row",
+                gap: spacing[3],
+                justifyContent: "center",
+              }}
+            >
+              {step === 0 ? (
                 <Button
-                  label="Back"
-                  variant="secondary"
-                  fullWidth={false}
+                  label={flowMode === "profile" ? "Cancel" : "Skip"}
+                  variant="ghost"
                   onPress={() => {
-                    if (isDietaryRoute) {
+                    if (flowMode === "profile") {
                       navigation.goBack();
                       return;
                     }
-                    setPhase("taste");
+                    // The taste questions are optional, but dietary needs still
+                    // matter: Skip goes to the dietary step without taste answers.
+                    trackOnboardingStepSkipped("taste");
+                    setSkippedTasteQuiz(true);
+                    navigation.navigate("DietaryPreferences", {
+                      mode: flowMode,
+                      initialPhase: "dietary",
+                    });
                   }}
-                  style={{
-                    flex: 1,
-                    minWidth: 86,
-                  }}
-                />
-                <Button
-                  label="Continue"
-                  onPress={handleFinish}
-                  fullWidth={false}
-                  style={{
-                    flex: 2,
-                    minWidth: 160,
-                  }}
-                  labelNumberOfLines={fontScale > 1.15 ? 2 : 1}
-                  labelEllipsizeMode="tail"
-                />
-              </View>
-            </View>
-          ) : isLast ? (
-            <View style={{ gap: ONBOARDING_ACTIONS_GAP }}>
-              <View
-                style={{
-                  alignItems: "center",
-                  flexDirection: "row",
-                  gap: spacing[3],
-                  justifyContent: "center",
-                }}
-              >
-                <Button
-                  label="Back"
-                  variant="secondary"
-                  onPress={() => animateStep(step - 1, "backward")}
                   style={{ width: BACK_BUTTON_WIDTH }}
                 />
-                <Button
-                  label="Next"
-                  onPress={goToDietary}
-                  style={{ width: PRIMARY_BUTTON_WIDTH }}
-                />
-              </View>
-            </View>
-          ) : (
-            <View style={{ gap: ONBOARDING_ACTIONS_GAP }}>
-              <View
-                style={{
-                  alignItems: "center",
-                  flexDirection: "row",
-                  gap: spacing[3],
-                  justifyContent: "center",
-                }}
-              >
-                {step > 0 ? (
-                  <Button
-                    label="Back"
-                    variant="secondary"
-                    onPress={() => animateStep(step - 1, "backward")}
-                    style={{ width: BACK_BUTTON_WIDTH }}
-                  />
-                ) : (
-                  <Button
-                    label={flowMode === "profile" ? "Cancel" : "Skip"}
-                    variant="ghost"
-                    onPress={() => {
-                      if (flowMode === "profile") {
-                        navigation.goBack();
-                        return;
-                      }
-                      // The taste questions are optional, but dietary needs still
-                      // matter: Skip goes to the dietary step without taste answers.
-                      trackOnboardingStepSkipped("taste");
-                      setSkippedTasteQuiz(true);
-                      navigation.navigate("DietaryPreferences", {
-                        mode: flowMode,
-                        initialPhase: "dietary",
-                      });
-                    }}
-                    style={{ width: BACK_BUTTON_WIDTH }}
-                  />
-                )}
-                <Button
-                  label="Next"
-                  onPress={() => animateStep(step + 1, "forward")}
-                  variant="primary"
-                  style={{ width: PRIMARY_BUTTON_WIDTH }}
-                />
-              </View>
+              ) : null}
+              <Button
+                label="Next"
+                onPress={() => animateStep(step + 1, "forward")}
+                variant="primary"
+                style={step === 0 ? { width: PRIMARY_BUTTON_WIDTH } : { flex: 1 }}
+              />
             </View>
           )}
         </View>

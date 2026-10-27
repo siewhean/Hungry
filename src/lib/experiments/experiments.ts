@@ -110,6 +110,66 @@ export const EXPERIMENTS = {
     ],
   },
   /**
+   * The taste quiz options: a swipeable carousel (control) or all three options side by side
+   * with tap-to-answer and auto-advance (test). Read on the taste route during onboarding only.
+   * Draft until the PostHog flags exist; the fallback is the test layout, which is the fix for
+   * R4-ONB-5 (browsing the carousel looked like answering). Never overlaps another test on the
+   * quiz screen: run quiz_length only after this one concludes.
+   */
+  onboarding_quiz_layout_v1: {
+    variants: ["control", "test"],
+    fallback: "test",
+    status: "draft",
+    surface: "onboarding",
+    hypothesis:
+      "Seeing all three answers at once and tapping one gets more new users through the taste quiz than swiping a carousel.",
+    primaryMetric: "taste_quiz_completed",
+    guardrailMetrics: ["onboarding_step_skipped", "onboarding_completed"],
+  },
+  /**
+   * Six taste questions (control) or the three that move recommendations most: spicy, sweet,
+   * rich (test). Read on the taste route during onboarding only.
+   */
+  onboarding_quiz_length_v1: {
+    variants: ["control", "test"],
+    fallback: "control",
+    status: "draft",
+    surface: "onboarding",
+    hypothesis:
+      "A three-question taste quiz raises onboarding completion without making the first picks worse.",
+    primaryMetric: "onboarding_completed",
+    guardrailMetrics: ["onboarding_step_skipped", "dish_viewed", "dish_favourited"],
+  },
+  /**
+   * The first-picks screen: four plain dish cards (control) or six cards with stall, price and
+   * distance and a read-only preview before sign-up (test). Exposed on the result screen for a
+   * signed-out user. Draft until the flags exist; the fallback is the test design (R4-ONB-1).
+   */
+  onboarding_result_payoff_v1: {
+    variants: ["control", "test"],
+    fallback: "test",
+    status: "draft",
+    surface: "onboarding",
+    hypothesis:
+      "A fuller first-picks screen that shows where each dish is, what it costs and how far it is makes more new users create the account that keeps those picks.",
+    primaryMetric: "sign_up_completed",
+    guardrailMetrics: ["dish_favourited", "onboarding_picks_shown", "auth_failed"],
+  },
+  /**
+   * The location primer: the three benefit cards (control) or two compact rows that fit above
+   * the buttons on a small phone (test). Exposed on the Location step.
+   */
+  onboarding_location_primer_v1: {
+    variants: ["control", "test"],
+    fallback: "test",
+    status: "draft",
+    surface: "onboarding",
+    hypothesis:
+      "A short primer that fits on one screen, with the buttons in view, raises the share of users who allow location.",
+    primaryMetric: "location_permission_result",
+    guardrailMetrics: ["onboarding_area_picker_viewed", "onboarding_step_skipped"],
+  },
+  /**
    * Search home "Dishes to Discover": island-wide top 3 by rating (control) vs the top 6 within
    * 1.5 km (near, falls back to the island-wide list under 3 nearby dishes). Draft until the
    * catalog stores a Bayesian score to rank on (SEARCH-7 follow-up migration).

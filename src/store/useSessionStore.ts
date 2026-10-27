@@ -10,6 +10,7 @@ import { getConfiguredDataSource, type HungryDataSource } from "@/lib/services/s
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 import { useLocationStore } from "./useLocationStore";
+import { useOnboardingDraftStore } from "./useOnboardingDraftStore";
 import { hungryPersistStorage } from "./persistStorage";
 
 export interface PendingRoute {
@@ -39,6 +40,12 @@ interface SessionState {
    * user to the account step instead of "Welcome back" sign-in.
    */
   onboardingCompletionPending: boolean;
+  /**
+   * Persisted: Welcome's "Sign in" was tapped and nobody has signed in yet. Onboarding is not
+   * marked done; a relaunch returns to Login, and the account decides after sign-in whether
+   * onboarding runs (an existing account goes Home, a new one goes through it).
+   */
+  returningAccountIntent: boolean;
   authenticatedUserId?: string | null;
   authDataSource?: HungryDataSource | null;
   returnRoute?: string | PendingRoute;
@@ -63,10 +70,11 @@ interface SessionState {
     isNewUser?: boolean;
   }) => void;
   /**
-   * Marks first-run onboarding done. Signed out, onboarding_completed waits for auth;
-   * `existingAccount` (Welcome's "Sign in") skips the onboarding journey and its event.
+   * Marks first-run onboarding done. Signed out, onboarding_completed waits for auth.
+   * Welcome's "Sign in" does not call it; see setReturningAccountIntent.
    */
-  completeOnboarding: (skippedQuiz?: boolean, options?: { existingAccount?: boolean }) => void;
+  completeOnboarding: (skippedQuiz?: boolean) => void;
+  setReturningAccountIntent: (value: boolean) => void;
   expireSession: () => void;
   dismissSessionExpiry: () => void;
   setReturnRoute: (route?: string | PendingRoute) => void;
@@ -100,6 +108,7 @@ const initialState = {
   hasCompletedOnboarding: false,
   hasSkippedTasteQuiz: false,
   onboardingCompletionPending: false,
+  returningAccountIntent: false,
   authenticatedUserId: null,
   authDataSource: null,
   returnRoute: undefined,
@@ -145,6 +154,8 @@ function syncProfileForAuthState(isAuthenticated: boolean, userId?: string | nul
 }
 
 function clearAccountScopedStores(): void {
+  // The half-finished onboarding run (diet choices included) belongs to this device's last user.
+  useOnboardingDraftStore.getState().clearDraft();
   getMerchantStoreState().clearMerchant();
   useLocationStore.getState().resetLocationState();
   const { useSocialStore } = require("./useSocialStore") as typeof import("./useSocialStore");
@@ -442,18 +453,20 @@ export const useSessionStore = create<SessionState>()(
           { fallbackDelayMs: 0 },
         );
       },
-      completeOnboarding: (skippedQuiz = false, options) => {
+      completeOnboarding: (skippedQuiz = false) => {
         // onboarding_completed fires once; a returning user's saved state is kept.
         const { hasCompletedOnboarding, isAuthenticated } = useSessionStore.getState();
         if (hasCompletedOnboarding) {
           return;
         }
+        // Finished: the saved place in the flow is no longer needed.
+        useOnboardingDraftStore.getState().clearDraft();
         // Signed out, this is the local preference journey only; the event waits for auth.
         if (!isAuthenticated) {
           set({
             hasCompletedOnboarding: true,
             hasSkippedTasteQuiz: skippedQuiz,
-            onboardingCompletionPending: !options?.existingAccount,
+            onboardingCompletionPending: true,
           });
           return;
         }
@@ -466,6 +479,7 @@ export const useSessionStore = create<SessionState>()(
         });
         markAccountOnboarded();
       },
+      setReturningAccountIntent: (value) => set({ returningAccountIntent: value }),
       expireSession: () => {
         const profileId = getSafeProfileId();
         set({
@@ -581,6 +595,7 @@ export const useSessionStore = create<SessionState>()(
             hasSkippedTasteQuiz: session.skippedTasteQuiz ?? state.hasSkippedTasteQuiz,
             sessionExpired: false,
             signOutPending: false,
+            returningAccountIntent: false,
           }));
           syncProfileForAuthState(true, session.userId);
           markAccountOnboarded();
@@ -650,6 +665,7 @@ export const useSessionStore = create<SessionState>()(
         hasCompletedOnboarding: state.hasCompletedOnboarding,
         hasSkippedTasteQuiz: state.hasSkippedTasteQuiz,
         onboardingCompletionPending: state.onboardingCompletionPending,
+        returningAccountIntent: state.returningAccountIntent,
         signOutPending: state.signOutPending,
         // Where a guest was headed when sign-up sent them to the email app: a cold-start
         // confirmation link still returns them there.

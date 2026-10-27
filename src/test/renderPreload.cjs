@@ -287,6 +287,17 @@ function notificationsOverrides() {
   };
 }
 
+const imageStub = (props = {}) =>
+  React.createElement("span", {
+    "data-stub": "expo-image.Image",
+    ...(props.testID ? { "data-testid": props.testID } : {}),
+    ref: (el) => {
+      if (el)
+        el.__triggerError = props.onError ? () => props.onError({ error: "failed" }) : undefined;
+    },
+  });
+imageStub.displayName = "Stub(expo-image.Image)";
+
 const STUBS = [
   [
     /^expo-font$/,
@@ -299,7 +310,9 @@ const STUBS = [
   [
     /^expo-image$/,
     {
-      Image: Object.assign(hostStub("expo-image.Image"), {
+      // Renders like the other stubs, plus a hook for tests: `el.__triggerError()` runs the
+      // image's onError, so a photo that fails to load can be simulated.
+      Image: Object.assign(imageStub, {
         prefetch: async () => true,
         clearMemoryCache: async () => true,
         clearDiskCache: async () => true,

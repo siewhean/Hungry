@@ -178,8 +178,8 @@ test("ONB-3: a relaunch after onboarding, with no account yet, returns to the ac
   });
 });
 
-test("ONB-3: an existing account from Welcome still relaunches to sign-in", async () => {
-  useSessionStore.getState().completeOnboarding(false, { existingAccount: true });
+test("ONB-3: Welcome's Sign in still relaunches to sign-in", async () => {
+  useSessionStore.getState().setReturningAccountIntent(true);
   useSessionStore.setState({ isAuthReady: true, hasHydrated: true });
   const navigation = createFakeNavigation();
   const view = await renderScreen(SplashScreen as never, { name: "Splash", navigation });
@@ -589,7 +589,7 @@ test("ONB-11: the picker opened from the Location step is the onboarding step, e
     name: "ManualLocationPicker",
     params: { mode: "onboarding" },
   });
-  assert.ok(view.findByLabel("Step 1 of 4"));
+  assert.ok(view.findByLabel("Step 1 of 5"));
 });
 
 test("ONB-12, ONB-X8: no autofocus under a screen reader, a usable map label, and a spoken result count", async () => {
@@ -654,6 +654,7 @@ test("ONB-16: step_number is the on-screen counter; step_index is the position i
   assert.equal(visibleStepNumber("welcome"), 0);
   assert.equal(visibleStepNumber("location"), 1);
   assert.equal(visibleStepNumber("done"), 4);
+  assert.equal(visibleStepNumber("account"), 5);
   trackOnboardingStepViewed("location");
   const [viewed] = events("onboarding_step_viewed");
   assert.equal(viewed?.properties.step_number, 1);

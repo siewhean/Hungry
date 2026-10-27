@@ -71,7 +71,13 @@ export type OnboardingStackParamList = {
   TasteProfileResult: undefined;
   LocationPermission: undefined;
   /** mode "settings": change the location from Settings and go back, without onboarding. */
-  ManualLocationPicker: { mode?: "settings" | "onboarding" } | undefined;
+  ManualLocationPicker:
+    | {
+        mode?: "settings" | "onboarding";
+        /** Shown inline above the search, e.g. "No problem. Pick your area instead". */
+        notice?: string;
+      }
+    | undefined;
   /** dishName: the dish a guest tapped save on, so the headline can say what the account is for. */
   OnboardingAuth: { dishName?: string } | undefined;
 };

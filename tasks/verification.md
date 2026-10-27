@@ -1456,3 +1456,8 @@ Use the smallest check that matches the change risk.
 - npm run typecheck clean; npm test 2095 pass / 0 fail / 2 skipped; npm run test:render 409/409; lint 0 errors (341 warnings, unchanged); format:check clean; check:n-plus-one, audit:races, check:rate-limits, audit:supabase:migration-safety, check:edge-functions pass; test:coverage OK (lines 83.5%).
 - Read-only checks on prod (frluxwpqqyomiqmjzavd): Supabase advisors, Sentry (4 unresolved, all simulator builds), content counts. No writes.
 - Update after owner decisions (map + camera shipped in released builds): typecheck clean; npm test 2094 pass / 0 fail; test:render 408/408; lint 0 errors; prettier clean; test:coverage OK (lines 83.5%). Released-build contract test now asserts the Mapbox plugin, CAMERA and NSCameraUsageDescription are kept. Needs a device check on a fresh build with EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN set.
+
+## 2026-10-27 onboarding round-four fixes (claude/project-thread-4cunlm)
+- npm run typecheck clean; npm test 2124 pass / 0 fail / 2 skipped; npm run test:render 463/463; lint 0 errors; test:coverage OK (baseline updated).
+- Playwright (mock web build, chromium): tests/e2e/onboarding-flow.spec.ts 6/6 (390x844 and 320x568); auth, guest-browsing, mandatory-onboarding-auth, production-route-gating specs pass.
+- Not verified: a device build; live PostHog flags (none exist yet; the new experiments are drafts).
