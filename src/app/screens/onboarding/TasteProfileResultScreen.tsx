@@ -13,9 +13,7 @@ import {
   getPendingDishSaveIds,
   rememberPendingDishSave,
 } from "@/features/auth/pendingDishSave";
-import { formatDistanceFromUser } from "@/features/detail/stallLocation";
 import { useExperimentVariant } from "@/lib/experiments/experiments";
-import { getBuildingById } from "@/lib/geo/singaporeBuildings";
 import { reportError } from "@/lib/monitoring/reportError";
 import {
   getDataRepository,
@@ -36,6 +34,7 @@ import {
 import type { OnboardingStackParamList } from "./OnboardingStack";
 import { DishPreviewSheet } from "./DishPreviewSheet";
 import { ResultDishCard } from "./ResultDishCard";
+import { resultDistanceLabel } from "./resultDistance";
 import { buildResultPicks, fewDietaryPicksMessage, type ResultPick } from "./fillResultPicks";
 import { describeTaste, noDietaryPicksMessage } from "./resultPicks";
 
@@ -151,11 +150,13 @@ export function TasteProfileResultScreen({ navigation }: Props) {
   const [pendingSaveIds, setPendingSaveIds] = useState(getPendingDishSaveIds);
   const [previewDish, setPreviewDish] = useState<DishDetail | null>(null);
 
-  // How far each stall is from the user, from the stall's building (never the stored column).
+  // How far each stall is from the user, from the stall's own pin (never the stored column).
   const distanceLabelFor = useCallback((dish: DishDetail) => {
     const { coordinate, isApproximate } = getEffectiveLocation(useLocationStore.getState());
     if (isApproximate) return undefined;
-    return formatDistanceFromUser(coordinate, getBuildingById(dish.buildingId)?.coordinate);
+    return resultDistanceLabel(coordinate, dish, (venueId) =>
+      getDataRepository().getVenueById(venueId),
+    );
   }, []);
 
   // What the grid showed, once per screen: lets the funnel see taste-ranked vs fallback picks.

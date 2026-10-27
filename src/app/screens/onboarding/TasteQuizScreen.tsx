@@ -84,11 +84,13 @@ const LABELS = {
 
 /** The three questions that move recommendations most (test arm of onboarding_quiz_length_v1). */
 const SHORT_STEPS: TasteKey[] = ["spicy", "sweet", "rich"];
-/** Time to see the picked tile before the next question slides in. */
+/** Time to see the picked tile before the next question fades in. */
 const AUTO_ADVANCE_MS = 400;
+/** Each half of the crossfade between questions: 200 ms in all, never an empty screen. */
+const STEP_FADE_MS = 100;
 
 export function TasteQuizScreen({ navigation, route }: Props) {
-  const { componentRadii, motion, palette, radii, spacing } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const { fontScale, height, width } = useWindowDimensions();
   const reduceMotion = useReduceMotion();
   // A screen reader user moves on with Next: an answer that auto-advances would skip its readout.
@@ -112,7 +114,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
       subscription.remove();
     };
   }, []);
-  const stepDuration = reduceMotion ? 0 : motion.onboardingStep;
+  const fadeDuration = reduceMotion ? 0 : STEP_FADE_MS;
   const setTasteVector = useProfileStore((state) => state.setTasteVector);
   const profile = useProfileStore((state) => state.profile);
   const setDietaryPreferences = useProfileStore((state) => state.setDietaryPreferences);
@@ -122,14 +124,16 @@ export function TasteQuizScreen({ navigation, route }: Props) {
   const flowMode = route.params?.mode ?? "onboarding";
   const isDietaryRoute = route.name === "DietaryPreferences";
   const initialPhase = isDietaryRoute ? "dietary" : (route.params?.initialPhase ?? "taste");
-  // The dietary step is a separate route instance, so the taste answers from the
-  // quiz route arrive via params; without them we must not overwrite the vector.
-  const carriedAnswers =
-    isDietaryRoute && route.params && "answers" in route.params ? route.params.answers : undefined;
-  const hasTasteAnswers = !isDietaryRoute || carriedAnswers !== undefined;
-  const isOnboardingTaste = flowMode === "onboarding" && !isDietaryRoute;
   // A relaunch reopens this step with the answers given so far (a draft under 24 hours old).
   const [draft] = useState(() => (flowMode === "onboarding" ? getFreshOnboardingDraft() : null));
+  // The dietary step is a separate route instance, so the taste answers come from the draft the
+  // quiz route keeps (route params would put an object in the web URL); without any answered
+  // question we must not overwrite the vector.
+  const draftAnsweredKeys = draft?.quiz?.answeredKeys ?? [];
+  const carriedAnswers =
+    isDietaryRoute && hasAnsweredAnyQuestion(draftAnsweredKeys) ? draft?.quiz?.answers : undefined;
+  const hasTasteAnswers = !isDietaryRoute || carriedAnswers !== undefined;
+  const isOnboardingTaste = flowMode === "onboarding" && !isDietaryRoute;
   const quizLength = useExperimentVariant("onboarding_quiz_length_v1", {
     enabled: isOnboardingTaste,
   });
@@ -138,10 +142,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
   });
   const questionKeys = isOnboardingTaste && quizLength === "test" ? SHORT_STEPS : STEPS;
   const useTiles = quizLayout === "test";
-  const carriedAnsweredKeys =
-    isDietaryRoute && route.params && "answeredKeys" in route.params
-      ? route.params.answeredKeys
-      : undefined;
+  const carriedAnsweredKeys = isDietaryRoute ? draftAnsweredKeys : undefined;
   // Answers stay a local draft until the quiz is finished, so swiping does not
   // write, sync or log anything and backing out discards the draft. A retake from
   // Profile starts from the saved vector so untouched dimensions keep their values.
@@ -166,7 +167,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
   const [isTransitioning, setIsTransitioning] = useState(false);
   // One finish per screen: a double tap on Continue must not save the quiz twice.
   const finishedRef = useRef(false);
-  const optionsSlideAnim = useRef(new Animated.Value(0)).current;
+  const optionsFadeAnim = useRef(new Animated.Value(1)).current;
   const quizScrollX = useRef(new Animated.Value(0)).current;
   const carouselRef = useRef<FlatList<number> | null>(null);
   const stepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -261,7 +262,8 @@ export function TasteQuizScreen({ navigation, route }: Props) {
     return () => cancelAnimationFrame(frame);
   }, [SNAP_INTERVAL, inDietaryStep, quizScrollX, step, width]);
 
-  const animateStep = (nextStep: number, direction: "forward" | "backward") => {
+  // A short crossfade between questions: the options fade out, the next question's fade in.
+  const animateStep = (nextStep: number) => {
     if (advanceTimerRef.current) {
       clearTimeout(advanceTimerRef.current);
       advanceTimerRef.current = null;
@@ -269,23 +271,19 @@ export function TasteQuizScreen({ navigation, route }: Props) {
     if (isTransitioning) {
       return;
     }
-    const offscreenDistance = width + CARD_WIDTH + CARD_GAP;
-    const exitTo = direction === "forward" ? -offscreenDistance : offscreenDistance;
-    const enterFrom = direction === "forward" ? offscreenDistance : -offscreenDistance;
     setIsTransitioning(true);
-    optionsSlideAnim.setValue(0);
-    Animated.timing(optionsSlideAnim, {
-      toValue: exitTo,
-      duration: stepDuration,
+    optionsFadeAnim.setValue(1);
+    Animated.timing(optionsFadeAnim, {
+      toValue: 0,
+      duration: fadeDuration,
       easing: Easing.linear,
       useNativeDriver: true,
     }).start(() => {
       setStep(nextStep);
-      optionsSlideAnim.setValue(enterFrom);
       stepTimerRef.current = setTimeout(() => {
-        Animated.timing(optionsSlideAnim, {
-          toValue: 0,
-          duration: stepDuration,
+        Animated.timing(optionsFadeAnim, {
+          toValue: 1,
+          duration: fadeDuration,
           easing: Easing.linear,
           useNativeDriver: true,
         }).start(() => {
@@ -380,7 +378,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
     if (reduceMotion || screenReaderOn || !isOnboardingTaste || isLast) return;
     advanceTimerRef.current = setTimeout(() => {
       advanceTimerRef.current = null;
-      animateStep(step + 1, "forward");
+      animateStep(step + 1);
     }, AUTO_ADVANCE_MS);
   };
 
@@ -391,7 +389,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
       return;
     }
     if (!inDietaryStep && step > 0) {
-      animateStep(step - 1, "backward");
+      animateStep(step - 1);
       return;
     }
     navigation.goBack();
@@ -405,10 +403,11 @@ export function TasteQuizScreen({ navigation, route }: Props) {
       return;
     }
     if (!answeredAny) trackOnboardingStepSkipped("taste");
+    // The dietary step reads the answers from the draft, not from route params.
+    useOnboardingDraftStore.getState().rememberQuiz({ answers: values, answeredKeys, step });
     navigation.navigate("DietaryPreferences", {
       mode: flowMode,
       initialPhase: "dietary",
-      ...(answeredAny ? { answers: values, answeredKeys } : {}),
     });
   };
 
@@ -514,9 +513,10 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                 flex: 1,
                 justifyContent: "center",
                 overflow: "visible",
-                paddingBottom: spacing[OPTIONS_VERTICAL_GAP_UNITS],
-                paddingTop: spacing[OPTIONS_VERTICAL_GAP_UNITS],
-                transform: [{ translateX: optionsSlideAnim }],
+                // The rows fill the height themselves; the carousel needs the room around it.
+                paddingBottom: spacing[useTiles ? 2 : OPTIONS_VERTICAL_GAP_UNITS],
+                paddingTop: spacing[useTiles ? 2 : OPTIONS_VERTICAL_GAP_UNITS],
+                opacity: optionsFadeAnim,
               }}
             >
               {useTiles ? (
@@ -714,6 +714,9 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                     // matter: Skip goes to the dietary step without taste answers.
                     trackOnboardingStepSkipped("taste");
                     setSkippedTasteQuiz(true);
+                    useOnboardingDraftStore
+                      .getState()
+                      .rememberQuiz({ answers: values, answeredKeys: [], step });
                     navigation.navigate("DietaryPreferences", {
                       mode: flowMode,
                       initialPhase: "dietary",
@@ -724,7 +727,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
               ) : null}
               <Button
                 label="Next"
-                onPress={() => animateStep(step + 1, "forward")}
+                onPress={() => animateStep(step + 1)}
                 variant="primary"
                 style={step === 0 ? { width: PRIMARY_BUTTON_WIDTH } : { flex: 1 }}
               />

@@ -105,11 +105,12 @@ test("onboarding is welcome, then four counted steps: location, optional taste q
     /navigation\.navigate\("DietaryPreferences", \{[\s\S]*initialPhase: "dietary"[\s\S]*\}\)/,
   );
   assert.match(quiz, /route\.name === "DietaryPreferences"/);
-  // The dietary route is a fresh TasteQuizScreen instance: the taste answers must be
-  // carried over, and a missing draft must never reset the vector to neutral.
+  // The dietary route is a fresh TasteQuizScreen instance: the taste answers are carried over
+  // in the onboarding draft (never as route params, which land in the web URL as
+  // "[object Object]"), and a missing draft must never reset the vector to neutral.
   assert.match(
     quiz,
-    /navigation\.navigate\("DietaryPreferences", \{[\s\S]*\.\.\.\(answeredAny \? \{ answers: values, answeredKeys \} : \{\}\),[\s\S]*\}\)/,
+    /useOnboardingDraftStore\.getState\(\)\.rememberQuiz\(\{ answers: values, answeredKeys, step \}\);\s*navigation\.navigate\("DietaryPreferences", \{\s*mode: flowMode,\s*initialPhase: "dietary",\s*\}\)/,
   );
   assert.match(
     quiz,
@@ -118,7 +119,7 @@ test("onboarding is welcome, then four counted steps: location, optional taste q
   assert.match(quiz, /if \(hasTasteAnswers\) \{\s*setTasteVector\(values\);/);
   // Swipes only change the local draft; the vector is committed once in handleFinish.
   assert.equal(quiz.match(/setTasteVector\(/g)?.length, 1);
-  assert.match(types, /DietaryPreferences:[\s\S]*answers\?: TasteVector;/);
+  assert.doesNotMatch(types, /DietaryPreferences:[\s\S]{0,200}answers\?: TasteVector;/);
   assert.match(quiz, /navigation\.navigate\("FoodOpenness", \{ mode: "onboarding" \}\)/);
   // Openness: Continue saves the choice; Skip saves nothing (the default applies); both go to done.
   assert.match(openness, /navigation\.navigate\("TasteProfileResult"\)/);
@@ -127,7 +128,7 @@ test("onboarding is welcome, then four counted steps: location, optional taste q
   // (without taste answers), and the quiz stays marked as skipped.
   assert.match(
     quiz,
-    /setSkippedTasteQuiz\(true\);\s*navigation\.navigate\("DietaryPreferences", \{\s*mode: flowMode,\s*initialPhase: "dietary",\s*\}\)/,
+    /setSkippedTasteQuiz\(true\);\s*useOnboardingDraftStore\s*\.getState\(\)\s*\.rememberQuiz\(\{ answers: values, answeredKeys: \[\], step \}\);\s*navigation\.navigate\("DietaryPreferences", \{\s*mode: flowMode,\s*initialPhase: "dietary",\s*\}\)/,
   );
   // Next through every question without answering is also a skip, not an all-balanced taste.
   assert.match(quiz, /const answeredAny = hasAnsweredAnyQuestion\(answeredKeys\)/);

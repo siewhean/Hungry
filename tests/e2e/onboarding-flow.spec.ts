@@ -171,19 +171,97 @@ test("an account made after the quiz lands on Home with the diner's picks or a w
   await expect(food.or(wayForward).first()).toBeVisible({ timeout: 30_000 });
 });
 
+// N1: the three answers are full-width rows that all fit with Next, and no label is cut short.
+async function expectRowsFit(page: Page) {
+  const viewport = page.viewportSize()!;
+  let previousBottom = 0;
+  for (const index of [0, 1, 2]) {
+    const tile = page.getByTestId(`taste-tile-${index}`);
+    await expect(tile).toBeVisible();
+    const box = (await tile.boundingBox())!;
+    // Full width of the column: much wider than the old side-by-side tiles.
+    expect(box.width).toBeGreaterThan(viewport.width * 0.8);
+    expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+    expect(box.y).toBeGreaterThanOrEqual(previousBottom);
+    expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
+    previousBottom = box.y + box.height;
+  }
+  const next = (await page.getByRole("button", { name: "Next" }).boundingBox())!;
+  expect(next.y).toBeGreaterThanOrEqual(previousBottom);
+  expect(next.y + next.height).toBeLessThanOrEqual(viewport.height);
+  const truncated = await page.evaluate(() =>
+    Array.from(document.querySelectorAll('[data-testid^="taste-tile-"] *')).filter(
+      (el) => el.children.length === 0 && el.textContent && el.scrollWidth > el.clientWidth,
+    ).length,
+  );
+  expect(truncated).toBe(0);
+  const labels = await page.evaluate(() =>
+    Array.from(document.querySelectorAll('[data-testid^="taste-tile-"] *')).some(
+      (el) => el.children.length === 0 && getComputedStyle(el).textOverflow === "ellipsis",
+    ),
+  );
+  expect(labels).toBe(false);
+}
+
+test("the three answer rows and Next fit the screen with no label cut short", async ({ page }) => {
+  await startOnboarding(page);
+  await expectRowsFit(page);
+});
+
+test("a tap moves to the next question with a short crossfade, never a blank screen", async ({
+  page,
+}) => {
+  await startOnboarding(page);
+  await expect(page.getByTestId("taste-tile-1")).toBeEnabled();
+  // Watch the options' opacity every frame from before the tap until the next question is up.
+  await page.evaluate(() => {
+    const tile = document.querySelector('[data-testid="taste-tile-1"]')!;
+    const w = window as unknown as { __fade: { dimMs: number; frames: number } };
+    w.__fade = { dimMs: 0, frames: 0 };
+    let dimSince = 0;
+    const sample = (now: number) => {
+      const group = document.querySelector('[data-testid="taste-tile-0"]')?.parentElement
+        ?.parentElement;
+      const opacity = group ? Number(getComputedStyle(group).opacity) : 1;
+      w.__fade.frames += 1;
+      if (opacity < 0.05) {
+        dimSince ||= now;
+        w.__fade.dimMs = Math.max(w.__fade.dimMs, now - dimSince);
+      } else {
+        dimSince = 0;
+      }
+      if (tile.isConnected || w.__fade.frames < 600) requestAnimationFrame(sample);
+    };
+    requestAnimationFrame(sample);
+  });
+  const startedAt = Date.now();
+  await page.getByTestId("taste-tile-1").click();
+  await expect(progressLabel(page)).toHaveAttribute("aria-label", /Question 2 of 7/);
+  expect(Date.now() - startedAt).toBeLessThan(1500);
+  const fade = await page.evaluate(
+    () => (window as unknown as { __fade: { dimMs: number } }).__fade,
+  );
+  expect(fade.dimMs).toBeLessThan(250);
+});
+
+test("the diet step's address carries no [object Object]", async ({ page }) => {
+  await startOnboarding(page);
+  await answerAllQuestions(page);
+  expect(decodeURIComponent(page.url())).not.toContain("object Object");
+  await expect(page.getByText("Any dietary needs?")).toBeVisible();
+  await page.reload();
+  await expect(page.getByText("Any dietary needs?")).toBeVisible({ timeout: 60_000 });
+});
+
 test.describe("a small phone", () => {
   test.use({ viewport: { width: 320, height: 568 } });
 
-  test("the quiz question, the tiles and Next fit without sideways scrolling", async ({ page }) => {
+  test("the quiz question, the rows and Next fit without sideways scrolling", async ({ page }) => {
     await startOnboarding(page);
     const horizontalOverflow = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
     );
     expect(horizontalOverflow).toBeLessThanOrEqual(0);
-    for (const index of [0, 1, 2]) {
-      await expect(page.getByTestId(`taste-tile-${index}`)).toBeVisible();
-    }
-    const box = await page.getByTestId("taste-tile-2").boundingBox();
-    expect(box && box.x + box.width).toBeLessThanOrEqual(320);
+    await expectRowsFit(page);
   });
 });

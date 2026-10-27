@@ -452,6 +452,95 @@ test("R4-ONB-5: the next question slides in by itself after an answer", async ()
   assert.equal(progressLabel(), "Step 2 of 5 · Question 2 of 7");
 });
 
+test("N1: each answer is a full-width row whose label is never cut short", async () => {
+  const { view } = await renderQuiz();
+  for (const index of [0, 1, 2]) {
+    const tile = view.findByTestId(`taste-tile-${index}`) as HTMLElement;
+    const texts = Array.from(tile.querySelectorAll("*")).filter((el) =>
+      Array.from(el.childNodes).some((node) => node.nodeType === 3 && node.textContent?.trim()),
+    ) as HTMLElement[];
+    assert.ok(texts.length >= 2, "the answer and its example dish are both in the row");
+    for (const text of texts) {
+      const style = window.getComputedStyle(text);
+      assert.notEqual(style.textOverflow, "ellipsis", text.textContent ?? "");
+      assert.ok(!style.webkitLineClamp || style.webkitLineClamp === "none", text.textContent ?? "");
+    }
+  }
+  // Rows stack: the options share one column instead of three side by side.
+  const group = view.findByTestId("taste-tile-0")!.parentElement as HTMLElement;
+  assert.equal(window.getComputedStyle(group).flexDirection, "column");
+});
+
+test("N2: the next question crossfades in well under a second and the options never unmount", async () => {
+  useUIStore.setState({ reducedMotionEnabled: false });
+  const { view } = await renderQuiz();
+  await view.press(labelled(/^How sweet do you like your food\? /)[1]!);
+  const startedAt = Date.now();
+  let advancedAt = 0;
+  while (Date.now() - startedAt < 1200) {
+    assert.ok(view.findByTestId("taste-tile-1"), "the options stay mounted during the fade");
+    if (view.findByText("How spicy do you usually go?")) {
+      advancedAt = Date.now();
+      break;
+    }
+    await wait(20);
+  }
+  assert.ok(advancedAt > 0, "the second question appeared");
+  // 400 ms pause + 100 ms fade out, with room for slow test machines; the old slide took 1.3 s.
+  assert.ok(advancedAt - startedAt < 1000, `took ${advancedAt - startedAt} ms`);
+  await wait(300);
+  await view.settle();
+  assert.ok(view.findByTestId("taste-tile-1"));
+});
+
+test("N4: Next opens the diet step with plain route params; the answers travel in the draft", async () => {
+  useUIStore.setState({ reducedMotionEnabled: true });
+  const { view, navigation } = await renderQuiz();
+  await view.press(labelled(/^How sweet do you like your food\? /)[2]!);
+  for (let tap = 0; tap < 8; tap += 1) {
+    const next = allByText("Next").at(-1) ?? null;
+    if (!next) break;
+    await view.press(next);
+    await wait(60);
+    await view.settle();
+    if (navigation.calls.some((call) => call.args[0] === "DietaryPreferences")) break;
+  }
+  const toDietary = navigation.calls.find((call) => call.args[0] === "DietaryPreferences");
+  assert.ok(toDietary);
+  const params = toDietary!.args[1] as Record<string, unknown>;
+  assert.deepEqual(Object.keys(params).sort(), ["initialPhase", "mode"]);
+  assert.ok(Object.values(params).every((value) => typeof value !== "object"));
+  assert.deepEqual(useOnboardingDraftStore.getState().quiz?.answeredKeys, ["sweet"]);
+  assert.equal(useOnboardingDraftStore.getState().quiz?.answers.sweet, 8);
+});
+
+test("N4: the diet step saves the drafted taste answers and leaves the vector alone after a skip", async () => {
+  useOnboardingDraftStore.getState().rememberRoute("DietaryPreferences");
+  useOnboardingDraftStore.getState().rememberQuiz({
+    answers: { ...useProfileStore.getState().profile.tasteVector, sweet: 8 },
+    answeredKeys: ["sweet"],
+    step: 0,
+  });
+  const dietary = await renderDietary();
+  await dietary.view.press(allByText("Continue").at(-1) ?? null);
+  assert.equal(useProfileStore.getState().profile.tasteVector.sweet, 8);
+  await dietary.view.unmount();
+
+  // Skip leaves the draft with no answered question: the dietary step must not touch the vector.
+  useProfileStore.getState().setTasteVector({
+    ...useProfileStore.getState().profile.tasteVector,
+    sweet: 3,
+  });
+  useOnboardingDraftStore.getState().rememberQuiz({
+    answers: { ...useProfileStore.getState().profile.tasteVector, sweet: 9 },
+    answeredKeys: [],
+    step: 0,
+  });
+  const skipped = await renderDietary();
+  await skipped.view.press(allByText("Continue").at(-1) ?? null);
+  assert.equal(useProfileStore.getState().profile.tasteVector.sweet, 3);
+});
+
 test("R4-ONB-5: every taste question but the last moves on by itself after an answer", async () => {
   useUIStore.setState({ reducedMotionEnabled: false });
   const { view } = await renderQuiz();

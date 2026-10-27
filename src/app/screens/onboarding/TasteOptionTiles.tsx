@@ -1,4 +1,4 @@
-import { Pressable, View } from "react-native";
+import { Pressable, View, useWindowDimensions } from "react-native";
 import { Check } from "lucide-react-native";
 
 import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
@@ -16,10 +16,17 @@ interface TasteOptionTilesProps {
   onSelect: (index: number) => void;
 }
 
+/** The photo's side; the row is as tall as the photo plus its padding. */
+const PHOTO_SIZE = 88;
+/** Short phones (a 568 pt iPhone SE) get smaller photos so all three rows and Next fit. */
+const COMPACT_PHOTO_SIZE = 60;
+const COMPACT_SCREEN_HEIGHT = 700;
+
 /**
- * The three answers of a taste question side by side, so nobody has to swipe to see the
- * options. A tap answers; nothing else does. The picked tile has an orange ring and a check
- * badge and the others fade, so the choice never rests on a bolder label alone.
+ * The three answers of a taste question as full-width rows (photo on the left, the answer and
+ * an example dish on the right), so nobody has to swipe and no label is cut short. A tap
+ * answers; nothing else does. The picked row has an orange ring and a check badge and the
+ * others fade, so the choice never rests on a bolder label alone.
  */
 export function TasteOptionTiles({
   question,
@@ -30,11 +37,13 @@ export function TasteOptionTiles({
   onSelect,
 }: TasteOptionTilesProps) {
   const { palette, radii, spacing } = useHungryTheme();
+  const { height } = useWindowDimensions();
+  const photoSize = height < COMPACT_SCREEN_HEIGHT ? COMPACT_PHOTO_SIZE : PHOTO_SIZE;
   return (
     <View
       accessibilityRole="radiogroup"
       accessibilityLabel={question}
-      style={{ flexDirection: "row", gap: spacing[2], paddingHorizontal: spacing[3] }}
+      style={{ gap: spacing[2], paddingHorizontal: spacing[3] }}
     >
       {labels.map((label, index) => {
         const isSelected = selectedIndex === index;
@@ -52,19 +61,22 @@ export function TasteOptionTiles({
             aria-checked={isSelected}
             style={{
               alignItems: "center",
-              flex: 1,
-              gap: spacing[2],
+              backgroundColor: palette.surface,
+              borderColor: isSelected ? palette.orange : palette.border,
+              borderRadius: radii.lg,
+              borderWidth: isSelected ? 3 : 1,
+              flexDirection: "row",
+              gap: spacing[3],
               opacity: selectedIndex >= 0 && !isSelected ? 0.6 : 1,
+              padding: spacing[2],
             }}
           >
             <View
               style={{
-                aspectRatio: 0.78,
-                borderColor: isSelected ? palette.orange : "transparent",
-                borderRadius: radii.lg,
-                borderWidth: 3,
+                borderRadius: radii.md,
+                height: photoSize,
                 overflow: "hidden",
-                width: "100%",
+                width: photoSize,
               }}
             >
               {food.imageSource ? (
@@ -78,40 +90,30 @@ export function TasteOptionTiles({
               ) : (
                 <NoDishPhoto dishName={food.label} style={{ height: "100%", width: "100%" }} />
               )}
-              {isSelected ? (
-                <View
-                  style={{
-                    alignItems: "center",
-                    backgroundColor: palette.orange,
-                    borderRadius: radii.pill,
-                    height: 24,
-                    justifyContent: "center",
-                    position: "absolute",
-                    right: spacing[1],
-                    top: spacing[1],
-                    width: 24,
-                  }}
-                >
-                  <Check color={palette.surface} size={14} />
-                </View>
-              ) : null}
             </View>
-            <AppText
-              variant="bodyBold"
-              tone={isSelected ? "default" : "secondary"}
-              numberOfLines={1}
-              style={{ textAlign: "center", width: "100%" }}
-            >
-              {label}
-            </AppText>
-            <AppText
-              variant="micro"
-              tone="secondary"
-              numberOfLines={1}
-              style={{ textAlign: "center", width: "100%" }}
-            >
-              {food.label}
-            </AppText>
+            <View style={{ flex: 1, gap: spacing[1] }}>
+              <AppText variant="h3" tone={isSelected ? "default" : "secondary"}>
+                {label}
+              </AppText>
+              <AppText variant="bodySmall" tone="secondary">
+                {food.label}
+              </AppText>
+            </View>
+            {isSelected ? (
+              <View
+                style={{
+                  alignItems: "center",
+                  backgroundColor: palette.orange,
+                  borderRadius: radii.pill,
+                  height: 24,
+                  justifyContent: "center",
+                  marginRight: spacing[1],
+                  width: 24,
+                }}
+              >
+                <Check color={palette.surface} size={14} />
+              </View>
+            ) : null}
           </Pressable>
         );
       })}

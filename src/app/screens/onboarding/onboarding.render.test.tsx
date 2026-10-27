@@ -16,6 +16,7 @@ import {
 } from "@/lib/experiments/experiments";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useLocationStore } from "@/store/useLocationStore";
+import { useOnboardingDraftStore } from "@/store/useOnboardingDraftStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { cleanup, createFakeNavigation, renderScreen, type RenderResult } from "@/test/render";
 import { enterScenario } from "@/test/render/sessions";
@@ -316,12 +317,13 @@ test("ONB-6: the full flow carries the quiz answers, the diet and a saved dish i
   }
   const toDietary = quizNav.calls.find((call) => call.args[0] === "DietaryPreferences");
   assert.ok(toDietary, "Next on the last question opens the dietary step");
-  const dietaryParams = toDietary!.args[1] as {
-    answers?: { sweet?: number };
-    answeredKeys?: string[];
-  };
-  assert.deepEqual(dietaryParams.answeredKeys, ["sweet"]);
-  assert.equal(dietaryParams.answers?.sweet, 8);
+  // The answers travel in the draft; route params stay plain (an object lands in the web URL).
+  const dietaryParams = toDietary!.args[1] as Record<string, unknown>;
+  assert.ok(Object.values(dietaryParams).every((value) => typeof value !== "object"));
+  const draftQuiz = useOnboardingDraftStore.getState().quiz;
+  assert.deepEqual(draftQuiz?.answeredKeys, ["sweet"]);
+  assert.equal(draftQuiz?.answers.sweet, 8);
+  useOnboardingDraftStore.getState().rememberRoute("DietaryPreferences");
   await quiz.unmount();
 
   // Dietary: pick Vegetarian and continue.

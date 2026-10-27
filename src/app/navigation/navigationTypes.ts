@@ -1,6 +1,5 @@
 import type { NavigatorScreenParams } from "@react-navigation/native";
 import type { DecideAnswers } from "@/features/discovery/decideQuiz";
-import type { TasteVector } from "@/types/domain";
 
 export type AuthStackParamList = {
   /**
@@ -59,10 +58,6 @@ export type OnboardingStackParamList = {
     | {
         mode?: "onboarding" | "profile";
         initialPhase?: "taste" | "dietary";
-        /** Taste answers carried over from the TasteQuiz route. */
-        answers?: TasteVector;
-        /** The questions the user actually answered (the rest kept the middle value). */
-        answeredKeys?: (keyof TasteVector)[];
       }
     | undefined;
   /** "How open are you to trying new food?" mode "settings": change it from Settings and go back. */

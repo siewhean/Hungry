@@ -1461,3 +1461,4 @@ Use the smallest check that matches the change risk.
 - npm run typecheck clean; npm test 2124 pass / 0 fail / 2 skipped; npm run test:render 463/463; lint 0 errors; test:coverage OK (baseline updated).
 - Playwright (mock web build, chromium): tests/e2e/onboarding-flow.spec.ts 6/6 (390x844 and 320x568); auth, guest-browsing, mandatory-onboarding-auth, production-route-gating specs pass.
 - Not verified: a device build; live PostHog flags (none exist yet; the new experiments are drafts).
+- Re-audit follow-up (N1-N4): typecheck clean; npm test 2128 pass / 0 fail; test:render 467/467; test:coverage OK; Playwright onboarding-flow.spec.ts 9/9 (rows fit at 390x844 and 320x568, crossfade, no [object Object] in the URL).
