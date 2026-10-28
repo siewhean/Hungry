@@ -20,7 +20,9 @@ import { ArrowLeft, Check } from "lucide-react-native";
 
 import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
 import { AccessibleImage, Button, AppText } from "@/components/ui";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { NEUTRAL_TASTE_VECTOR, TASTE_DIMENSIONS } from "@/constants/taste";
+import { nextOnboardingRoute } from "@/features/onboarding/flowRoutes";
 import { recordQuizResponse } from "@/features/profile/pendingQuizResponse";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { useExperimentVariant } from "@/lib/experiments/experiments";
@@ -340,7 +342,9 @@ export function TasteQuizScreen({ navigation, route }: Props) {
     // Answering the taste questions means the quiz was not skipped; a Skip still
     // reaches this dietary step and stays marked as skipped. Next: how open they are to new food.
     setSkippedTasteQuiz(!hasTasteAnswers);
-    navigation.navigate("FoodOpenness", { mode: "onboarding" });
+    const nextRoute = nextOnboardingRoute("DietaryPreferences");
+    if (nextRoute === "FoodOpenness") navigation.navigate("FoodOpenness", { mode: "onboarding" });
+    else navigation.navigate(nextRoute);
   };
 
   const isLast = step === questionKeys.length - 1;
@@ -495,6 +499,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
               onClear={() => setDietaryPreferencesState([])}
               budget={maxDishBudget}
               onBudgetChange={setMaxDishBudgetState}
+              showBudget={!FEATURE_FLAGS.sliderOnboardingEnabled}
             />
           </ScrollView>
         ) : (

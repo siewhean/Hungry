@@ -14,12 +14,12 @@ test("location steps continue to the optional taste quiz without completing onbo
 
   assert.match(
     manual,
-    /const finish = [\s\S]*?navigation\.navigate\("TasteQuiz"\);[\s\S]*?setManualSelection\(selected\.areaName, selected\.coordinate, selected\.placeName\);/,
+    /const finish = [\s\S]*?navigation\.navigate\(nextOnboardingRoute\("ManualLocationPicker"\)\);[\s\S]*?setManualSelection\(selected\.areaName, selected\.coordinate, selected\.placeName\);/,
   );
   for (const source of [manual, permission]) {
     assert.doesNotMatch(source, /completeOnboarding\(/);
   }
-  assert.match(permission, /navigation\.navigate\("TasteQuiz"\)/);
+  assert.match(permission, /navigation\.navigate\(nextOnboardingRoute\("LocationPermission"\)\)/);
 });
 
 test("manual location list is alphabetical", () => {

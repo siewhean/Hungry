@@ -10,6 +10,7 @@ import { getConfiguredDataSource, type HungryDataSource } from "@/lib/services/s
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 import { useLocationStore } from "./useLocationStore";
+import { useOnboardingAnswersStore } from "./useOnboardingAnswersStore";
 import { useOnboardingDraftStore } from "./useOnboardingDraftStore";
 import { hungryPersistStorage } from "./persistStorage";
 
@@ -156,6 +157,7 @@ function syncProfileForAuthState(isAuthenticated: boolean, userId?: string | nul
 function clearAccountScopedStores(): void {
   // The half-finished onboarding run (diet choices included) belongs to this device's last user.
   useOnboardingDraftStore.getState().clearDraft();
+  useOnboardingAnswersStore.getState().reset();
   getMerchantStoreState().clearMerchant();
   useLocationStore.getState().resetLocationState();
   const { useSocialStore } = require("./useSocialStore") as typeof import("./useSocialStore");

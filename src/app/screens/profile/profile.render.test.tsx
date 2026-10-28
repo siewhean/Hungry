@@ -439,7 +439,7 @@ test("Review history: the review menu is outside the card's button, so a screen 
 
 test("PROF-18a: saving an edit to your own review marks it Edited straight away", async () => {
   const reviews = getHungryService().reviews;
-  const updates: Array<{ id: string; patch: unknown }> = [];
+  const updates: { id: string; patch: unknown }[] = [];
   stub(reviews, "getUserReviews", async () => [review(1, { dishId: "dish-chicken-rice" })]);
   stub(reviews, "updateReview", async (id: string, patch) => {
     updates.push({ id, patch });

@@ -139,7 +139,7 @@ test("Sprint 9 screen contract: onboarding icon controls and location rows are l
   // From Settings (already onboarded) Continue saves and returns; first run moves on to the quiz.
   assert.match(
     manualLocation,
-    /if \(!isOnboarding\) \{[\s\S]*?navigation\.goBack\(\);[\s\S]*?return;[\s\S]*?navigation\.navigate\("TasteQuiz"\)/,
+    /if \(!isOnboarding\) \{[\s\S]*?navigation\.goBack\(\);[\s\S]*?return;[\s\S]*?navigation\.navigate\(nextOnboardingRoute\("ManualLocationPicker"\)\)/,
   );
   assert.match(
     manualLocation,
@@ -168,11 +168,10 @@ test("Sprint 9 screen contract: onboarding icon controls and location rows are l
   // Supabase has no cached catalog during onboarding, so the screen asks the server's
   // taste ranking (with the user's vector and a real radius that widens), and only says
   // "Picked to match your taste" when the list came from taste ranking.
-  assert.match(
-    tasteProfileResult,
-    /recommendations\.getSlate\(\{[\s\S]*?tasteProfile: tasteVector,/,
-  );
-  assert.match(tasteProfileResult, /TASTE_PICK_RADII_METERS = \[3000, 10000, undefined\]/);
+  const tastePicks = read("src/app/screens/onboarding/tastePicks.ts");
+  assert.match(tasteProfileResult, /loadTastePicks\(/);
+  assert.match(tastePicks, /recommendations\.getSlate\(\{[\s\S]*?tasteProfile: tasteVector,/);
+  assert.match(tastePicks, /TASTE_PICK_RADII_METERS = \[3000, 10000, undefined\]/);
   assert.doesNotMatch(tasteProfileResult, /getSearchResultsAsync/);
   // p_radius_meters is an integer: a "no limit" MAX_SAFE_INTEGER radius is sent as null.
   assert.match(

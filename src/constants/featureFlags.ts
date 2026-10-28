@@ -51,6 +51,13 @@ export function resolveFeatureFlags(
   // Crave is only reachable from merchant mode today, so keep it out of production.
   const craveEnabled = surface("EXPO_PUBLIC_ENABLE_CRAVE", nonProductionSurfaceEnabled);
 
+  // The slider taste questions (Cloey-style onboarding, build 1 of several). Off in production until
+  // the whole new flow is ready; staging and dev builds see it.
+  const sliderOnboardingEnabled = surface(
+    "EXPO_PUBLIC_ENABLE_SLIDER_ONBOARDING",
+    nonProductionSurfaceEnabled,
+  );
+
   return {
     appEnv,
     // Narrow Release 0.1 core-only surface (read-only detail, release profile,
@@ -63,6 +70,7 @@ export function resolveFeatureFlags(
     mapEnabled,
     hungryWheelEnabled,
     craveEnabled,
+    sliderOnboardingEnabled,
     wheelPartyEnabled: hungryWheelEnabled && nonProductionSurfaceEnabled,
     // Favourites are MVP scope: on in every environment. Writes are authenticated
     // and surface server success/failure.

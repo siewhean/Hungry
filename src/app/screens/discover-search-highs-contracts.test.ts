@@ -192,7 +192,7 @@ test("Area picker returns already-onboarded users without re-completing onboardi
   assert.ok(submit, "finish should exist");
   assert.match(
     submit,
-    /if \(!isOnboarding\) \{[\s\S]*?navigation\.goBack\(\);\s*return;\s*\}[\s\S]*?navigation\.navigate\("TasteQuiz"\)/,
+    /if \(!isOnboarding\) \{[\s\S]*?navigation\.goBack\(\);\s*return;\s*\}[\s\S]*?navigation\.navigate\(nextOnboardingRoute\("ManualLocationPicker"\)\)/,
   );
   assert.match(
     picker,

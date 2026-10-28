@@ -1,11 +1,20 @@
-import {
-  ONBOARDING_RESUME_ROUTES,
-  getFreshOnboardingDraft,
-  useOnboardingDraftStore,
-} from "@/store/useOnboardingDraftStore";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { SLIDER_FLOW_ROUTES } from "@/features/onboarding/flowRoutes";
+import { getFreshOnboardingDraft, useOnboardingDraftStore } from "@/store/useOnboardingDraftStore";
 
 /** The order the first-run screens are stacked in, so Back from a resumed step works. */
-const STACK_ORDER = ["OnboardingWelcome", ...ONBOARDING_RESUME_ROUTES] as const;
+const LEGACY_STACK_ORDER = [
+  "OnboardingWelcome",
+  "LocationPermission",
+  "TasteQuiz",
+  "DietaryPreferences",
+  "FoodOpenness",
+  "TasteProfileResult",
+] as const;
+
+function stackOrder(): readonly string[] {
+  return FEATURE_FLAGS.sliderOnboardingEnabled ? SLIDER_FLOW_ROUTES : LEGACY_STACK_ORDER;
+}
 
 type EntryRoute = { name: string; params?: Record<string, unknown> };
 
@@ -24,8 +33,14 @@ export function onboardingEntryRoute(): {
     if (useOnboardingDraftStore.getState().route) useOnboardingDraftStore.getState().clearDraft();
     return { name: "OnboardingStack", params: { screen: "OnboardingWelcome" } };
   }
-  const targetIndex = STACK_ORDER.indexOf(draft.route);
-  const routes: EntryRoute[] = STACK_ORDER.slice(0, targetIndex + 1).map((name) => {
+  const order = stackOrder();
+  const targetIndex = order.indexOf(draft.route);
+  // A draft saved by the other flow (the flag changed since) is not in this order: start over.
+  if (targetIndex < 0) {
+    useOnboardingDraftStore.getState().clearDraft();
+    return { name: "OnboardingStack", params: { screen: "OnboardingWelcome" } };
+  }
+  const routes: EntryRoute[] = order.slice(0, targetIndex + 1).map((name) => {
     if (name === "DietaryPreferences") {
       return {
         name,

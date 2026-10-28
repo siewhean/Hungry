@@ -46,6 +46,18 @@ export type AuthStackParamList = {
 
 export type OnboardingStackParamList = {
   OnboardingWelcome: undefined;
+  /** The slider onboarding (flag EXPO_PUBLIC_ENABLE_SLIDER_ONBOARDING): one route per new screen. */
+  OnboardingName: undefined;
+  OnboardingAreas: undefined;
+  OnboardingMealTimes: undefined;
+  OnboardingPalateIntro: undefined;
+  OnboardingPalateReveal: undefined;
+  OnboardingDishGrid: undefined;
+  OnboardingPrice: undefined;
+  OnboardingSwipe: undefined;
+  OnboardingLoading: undefined;
+  OnboardingResults: undefined;
+  OnboardingMealPicks: undefined;
   TasteQuiz:
     | {
         mode?: "onboarding" | "profile";

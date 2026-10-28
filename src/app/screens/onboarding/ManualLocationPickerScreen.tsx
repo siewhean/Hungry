@@ -13,6 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft, Building2, Check, LocateFixed, MapPin, Search, X } from "lucide-react-native";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
+import { nextOnboardingRoute } from "@/features/onboarding/flowRoutes";
 import { SingaporeAreaMap } from "@/components/location/SingaporeAreaMap";
 import { AppText, Button } from "@/components/ui";
 import {
@@ -214,7 +215,7 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
       return;
     }
     // First run: the location step is done; the optional taste quiz is next.
-    navigation.navigate("TasteQuiz");
+    navigation.navigate(nextOnboardingRoute("ManualLocationPicker"));
   };
 
   // A tap shows the choice on the map first; "Set as my location" saves it.

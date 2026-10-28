@@ -77,6 +77,22 @@ test("clearing drops everything", () => {
 test("only steps after Welcome can be resumed, in flow order", () => {
   assert.deepEqual(
     [...ONBOARDING_RESUME_ROUTES],
-    ["LocationPermission", "TasteQuiz", "DietaryPreferences", "FoodOpenness", "TasteProfileResult"],
+    [
+      "OnboardingName",
+      "LocationPermission",
+      "OnboardingAreas",
+      "OnboardingMealTimes",
+      "OnboardingPalateIntro",
+      "TasteQuiz",
+      "OnboardingPalateReveal",
+      "DietaryPreferences",
+      "OnboardingDishGrid",
+      "OnboardingPrice",
+      "FoodOpenness",
+      "OnboardingSwipe",
+      "OnboardingResults",
+      "OnboardingMealPicks",
+      "TasteProfileResult",
+    ],
   );
 });

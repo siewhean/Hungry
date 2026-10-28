@@ -36,6 +36,7 @@ import { DishPreviewSheet } from "./DishPreviewSheet";
 import { ResultDishCard } from "./ResultDishCard";
 import { resultDistanceLabel } from "./resultDistance";
 import { buildResultPicks, fewDietaryPicksMessage, type ResultPick } from "./fillResultPicks";
+import { loadTastePicks } from "./tastePicks";
 import { describeTaste, noDietaryPicksMessage } from "./resultPicks";
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, "TasteProfileResult">;
@@ -43,9 +44,6 @@ type Props = NativeStackScreenProps<OnboardingStackParamList, "TasteProfileResul
 // The first-picks grid: four plain cards (control) or six with stall, price and distance (test).
 const RESULT_COUNT_CONTROL = 4;
 const RESULT_COUNT_DETAILED = 6;
-// The server is asked for more than the grid needs: diet and budget are applied afterwards.
-const SLATE_OVERFETCH = 3;
-
 // Local catalog search only (mock, or a cached catalog): no radius limit.
 function getResultFilters(): SearchFilters {
   const { tasteVector, dietaryPreferences, maxDishBudget } = useProfileStore.getState().profile;
@@ -57,39 +55,6 @@ function getResultFilters(): SearchFilters {
     radius: Number.MAX_SAFE_INTEGER,
     maxPrice: maxDishBudget,
   };
-}
-
-// Server picks start near the user and widen until there are enough dishes.
-const TASTE_PICK_RADII_METERS = [3000, 10000, undefined];
-
-/** Dishes ranked by the quiz taste vector on the server (get_taste_recommendations). */
-async function loadTastePicks(count: number): Promise<DishDetail[]> {
-  const { tasteVector, dietaryPreferences, maxDishBudget } = useProfileStore.getState().profile;
-  const { coordinate, isApproximate } = getEffectiveLocation(useLocationStore.getState());
-  const location = isApproximate ? undefined : coordinate;
-  let picks: DishDetail[] = [];
-  // n-plus-one-ok: widens the radius step by step and stops at the first slate that is full enough.
-  for (const radiusMeters of location ? TASTE_PICK_RADII_METERS : [undefined]) {
-    const slate = await getHungryService().recommendations.getSlate({
-      surface: "home",
-      tasteProfile: tasteVector,
-      dietaryFlags: dietaryPreferences,
-      latitude: location?.latitude,
-      longitude: location?.longitude,
-      radiusMeters,
-      limit: count * SLATE_OVERFETCH,
-    });
-    picks = slate.items.map((item) => item.dish);
-    const fitting = buildResultPicks({
-      ranked: picks,
-      popular: [],
-      count,
-      dietaryFlags: dietaryPreferences,
-      maxDishBudget,
-    });
-    if (fitting.length >= count) break;
-  }
-  return picks;
 }
 
 export function TasteProfileResultScreen({ navigation }: Props) {
