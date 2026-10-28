@@ -1,44 +1,30 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import {
-  AccessibilityInfo,
-  Alert,
-  Platform,
-  Pressable,
-  Share,
-  StyleSheet,
-  View,
-  Text,
-} from "react-native";
+import { AccessibilityInfo, Platform, Pressable, Share, StyleSheet, View } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { useIsFocused } from "@react-navigation/native";
 import {
   ChevronRight,
   Settings,
-  Utensils,
   Heart,
   Menu,
   PencilLine,
   Send,
   Copy,
   Share2,
-  BarChart3,
-  List,
   LogOut,
   Store,
-  Bookmark,
   MessageCircleMore,
   ImagePlus,
-  Trophy,
   UserPlus,
   UserCheck,
-  FolderHeart,
   FlaskConical,
-  Users,
 } from "lucide-react-native";
-import Svg, { Circle, Line, Polygon } from "react-native-svg";
 
-import { ReviewModerationNotice } from "@/components/review";
-import { AccessibleImage, AppText, Button, Card, EmptyState, Skeleton } from "@/components/ui";
+import { FavouriteDishesRow } from "@/components/profile/FavouriteDishesRow";
+import { ProfileReviewCard } from "@/components/profile/ProfileReviewCard";
+import { ProfileStatRow, STAT_UNAVAILABLE } from "@/components/profile/ProfileStatRow";
+import { TasteRadar } from "@/components/profile/TasteRadar";
+import { AccessibleImage, AppText, Button, EmptyState } from "@/components/ui";
 import { FloatingShareSendButton, InAppShareCard } from "@/components/social";
 import { MissionBanner } from "@/components/gamification/MissionBanner";
 import { PassportCard } from "@/components/gamification/PassportCard";
@@ -51,14 +37,18 @@ import {
   buildTasteShareMessage,
   hasTasteSignal,
 } from "@/features/profile/tasteFingerprint";
+import { formatMemberSince } from "@/features/profile/relativeDate";
+import { useProfileFavouriteDishes } from "@/features/profile/useProfileFavouriteDishes";
+import { useReviewDishDetails } from "@/features/profile/useReviewDishDetails";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { useExperimentVariant } from "@/lib/experiments/experiments";
 import { reportError } from "@/lib/monitoring/reportError";
+import { confirmAction } from "@/lib/runtime/confirmAction";
 import { OwnReviewMenuButton, useOwnReviewEditor } from "@/features/profile/useOwnReviewEditor";
 import { profileShareUrl, shareProfileLink } from "@/features/share/profileShare";
 import { biteToStallPost } from "@/lib/services/postTransforms";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
-import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
+import { getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import { PendingDeletionBanner } from "@/features/auth/PendingDeletionBanner";
@@ -70,7 +60,6 @@ import { ProfileScreenShell } from "./ProfileScreenShell";
 import { useMerchantStore } from "@/store/useMerchantStore";
 import { palateSummary } from "@/features/detail/perceivedTaste";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
-import { TASTE_DIMENSIONS } from "@/constants/taste";
 import { useActivityStore } from "@/store/useActivityStore";
 import { useFoodCredStore } from "@/store/useFoodCredStore";
 import { usePassportStore } from "@/store/usePassportStore";
@@ -86,7 +75,7 @@ import {
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import type { Review, StallPost, TasteVector } from "@/types/domain";
+import type { Review, StallPost } from "@/types/domain";
 
 /** Own posts per server page; matches listUserPosts' default page size. */
 const OWN_POSTS_PAGE_SIZE = 60;
@@ -143,11 +132,6 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
   const loadStallInteractions = useStallInteractionStore((s) => s.loadInteractions);
   const stallInteractions = useStallInteractionStore((state) => state.interactions);
   const computePassportProgress = usePassportStore((s) => s.computeProgress);
-  const passportProgressMap = usePassportStore((s) => s.progressMap);
-  const earnedBadgeCount = useMemo(
-    () => usePassportStore.getState().getEarnedStamps().length,
-    [passportProgressMap],
-  );
   const insets = useSafeAreaInsets();
   const showToast = useUIStore((state) => state.showToast);
   // The posts feed is archived: no Posts tab and no post reads without it.
@@ -180,6 +164,9 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
   const storiesEnabled = FEATURE_FLAGS.storiesEnabled;
   const [isTasteShareSheetOpen, setIsTasteShareSheetOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  // A profile photo that fails to load falls back to initials, never a blank circle.
+  const [avatarFailed, setAvatarFailed] = useState(false);
+  useEffect(() => setAvatarFailed(false), [profile.avatarUrl]);
   const [profilePosts, setProfilePosts] = useState<StallPost[]>([]);
   // Server rows fetched so far (offset for the next page) and whether another page may exist.
   const [loadedPostRows, setLoadedPostRows] = useState(0);
@@ -439,12 +426,37 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
     };
   }, [hasAccountProfile, isFocused, profile.id, reviewedDishKey, ownReviewsReloadKey]);
 
-  const profileStatSummary = useMemo(
-    () => ({
-      saved: profile.stats.favouritesCount,
-    }),
-    [profile.stats.favouritesCount],
+  // The review cards on this page; their dish names come from one batched read.
+  const inlineReviews = useMemo(
+    () => (ownReviews ?? []).slice(0, OWN_REVIEWS_INLINE_LIMIT),
+    [ownReviews],
   );
+  const { infoFor: reviewDishInfo } = useReviewDishDetails(inlineReviews);
+  const openReviewedDish = useCallback(
+    (review: Review, position: number) => {
+      if (!review.dishId) return;
+      trackAnalyticsEvent("profile_item_opened", {
+        kind: "review",
+        position,
+        source: "profile_reviews",
+      });
+      rootNavigation.navigate("DishDetail", { dishId: review.dishId });
+    },
+    [rootNavigation],
+  );
+  // Counts the saved dish ids; Saved itself skips dishes that left the catalog (SAVED4-16).
+  const savedCount = profile.stats.favouritesCount;
+  const {
+    dishIds: pinnedDishIds,
+    isLoaded: pinnedDishesLoaded,
+    save: savePinnedDishes,
+  } = useProfileFavouriteDishes(profile.id, isAuthenticated);
+  // Only dishes you saved or reviewed can be pinned.
+  const pinCandidateIds = useMemo(
+    () => [...new Set([...profile.favouriteDishIds, ...profile.reviewedDishIds])],
+    [profile.favouriteDishIds, profile.reviewedDishIds],
+  );
+  const memberSince = profile.createdAt ? formatMemberSince(profile.createdAt) : "";
   // A full first page may be cut off: then the server's counter (distinct dishes reviewed).
   const ownReviewCount =
     ownReviews === null
@@ -518,11 +530,15 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
       );
       trackAnalyticsEvent("taste_fingerprint_shared", { channel: "copy_link" });
       AccessibilityInfo.announceForAccessibility("Taste Fingerprint link copied");
-      Alert.alert("Copied", "Your Taste Fingerprint and profile link are on the clipboard.");
-    } catch {
-      Alert.alert("Couldn't copy", "Try again, or use Share instead.");
+      showToast({
+        message: "Your Taste Fingerprint and profile link are on the clipboard.",
+        tone: "success",
+      });
+    } catch (error) {
+      reportError(error, { screen: "ProfileHome", action: "copy_taste_fingerprint" });
+      showToast({ message: "Couldn't copy. Try again, or use Share instead.", tone: "error" });
     }
-  }, [profile.id, tasteShareMessage]);
+  }, [profile.id, showToast, tasteShareMessage]);
 
   const handleShareProfile = useCallback(async () => {
     try {
@@ -530,8 +546,9 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
       trackAnalyticsEvent("profile_shared", { channel: "system_share" });
     } catch (error) {
       reportError(error, { screen: "ProfileHome", action: "share_profile" });
+      showToast({ message: "Couldn't open sharing. Please try again.", tone: "error" });
     }
-  }, [profile.displayName, profile.id]);
+  }, [profile.displayName, profile.id, showToast]);
 
   const palate = useMemo(() => palateSummary(profile.tasteVector), [profile.tasteVector]);
   const tastePersonaSummary = useMemo(
@@ -548,8 +565,9 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
       trackAnalyticsEvent("taste_fingerprint_shared", { channel: "system_share" });
     } catch (error) {
       reportError(error, { screen: "ProfileHome", action: "share_taste_fingerprint" });
+      showToast({ message: "Couldn't open sharing. Please try again.", tone: "error" });
     }
-  }, [profile.id, tasteShareMessage]);
+  }, [profile.id, showToast, tasteShareMessage]);
 
   const sendTasteProfileToHungryUsers = useCallback(async () => {
     if (!FEATURE_FLAGS.directMessagesEnabled) return;
@@ -567,14 +585,22 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
           }),
         ),
       );
-    } catch {
-      Alert.alert("Could not share taste profile", "Please try again.");
+    } catch (error) {
+      reportError(error, { screen: "ProfileHome", action: "send_taste_fingerprint" });
+      showToast({ message: "Couldn't share your taste profile. Please try again.", tone: "error" });
       return;
     }
 
     setSelectedShareChatIds([]);
     shareSheetRef.current?.dismiss();
-  }, [profile.avatarUrl, profile.displayName, profile.id, selectedShareChatIds, sharePostToChat]);
+  }, [
+    profile.avatarUrl,
+    profile.displayName,
+    profile.id,
+    selectedShareChatIds,
+    sharePostToChat,
+    showToast,
+  ]);
 
   const resetShareSheet = useCallback(() => {
     setIsTasteShareSheetOpen(false);
@@ -610,6 +636,57 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
     );
   }
 
+  const followRequestLabel =
+    (followRequestCount ?? 0) > 0
+      ? `${followRequestCount} follow ${followRequestCount === 1 ? "request" : "requests"}`
+      : null;
+  const stats = [
+    FEATURE_FLAGS.favouritesEnabled
+      ? {
+          key: "saved",
+          label: "Saved",
+          value: savedCount,
+          accessibilityHint: "Opens your saved dishes, stalls and lists",
+          onPressIn: () => preloadRoute(navigation, "Favourites"),
+          onPress: () => navigation.navigate("Favourites"),
+        }
+      : null,
+    FEATURE_FLAGS.reviewCreationEnabled
+      ? {
+          key: "reviews",
+          label: "Reviews",
+          value: ownReviewCount,
+          accessibilityHint: "Opens your review history",
+          onPressIn: () => preloadRoute(navigation, "ReviewHistory"),
+          onPress: handleReviewsCardPress,
+        }
+      : null,
+    {
+      key: "followers",
+      label: "Followers",
+      value:
+        followCounts === "unavailable"
+          ? STAT_UNAVAILABLE
+          : followCounts
+            ? followCounts.followersCount
+            : null,
+      onPressIn: () => preloadRoute(navigation, "Followers"),
+      onPress: () => navigation.navigate("Followers"),
+    },
+    {
+      key: "following",
+      label: "Following",
+      value:
+        followCounts === "unavailable"
+          ? STAT_UNAVAILABLE
+          : followCounts
+            ? followCounts.followingCount
+            : null,
+      onPressIn: () => preloadRoute(navigation, "Following"),
+      onPress: () => navigation.navigate("Following"),
+    },
+  ].filter((stat): stat is NonNullable<typeof stat> => stat !== null);
+
   return (
     <ProfileScreenShell
       title="Profile"
@@ -619,7 +696,13 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
         <View style={{ position: "relative", alignItems: "flex-end", zIndex: 30, elevation: 30 }}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={menuOpen ? "Close quick access" : "Open quick access"}
+            accessibilityLabel={
+              menuOpen
+                ? "Close quick access"
+                : followRequestLabel
+                  ? `Open quick access, ${followRequestLabel}`
+                  : "Open quick access"
+            }
             hitSlop={10}
             onPress={handleMenuToggle}
             style={{
@@ -631,6 +714,30 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
             }}
           >
             <Menu color={palette.text} size={22} />
+            {followRequestCount ? (
+              <View
+                testID="profile-menu-badge"
+                style={{
+                  alignItems: "center",
+                  backgroundColor: palette.orange,
+                  borderRadius: radii.pill,
+                  height: 16,
+                  justifyContent: "center",
+                  minWidth: 16,
+                  paddingHorizontal: 4,
+                  position: "absolute",
+                  right: 0,
+                  top: 2,
+                }}
+              >
+                <AppText
+                  variant="micro"
+                  style={{ color: palette.textOnOrange, fontSize: 10, lineHeight: 12 }}
+                >
+                  {followRequestCount > 9 ? "9+" : followRequestCount}
+                </AppText>
+              </View>
+            ) : null}
           </Pressable>
           {menuOpen && (
             <View
@@ -693,31 +800,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                   }}
                 />
               )}
-              {isAuthenticated && (
-                <MenuRow
-                  label="Add a stall"
-                  icon={<ImagePlus size={20} color={palette.orange} />}
-                  onPressIn={() => preloadRoute(navigation, "AddStall")}
-                  onPress={() => {
-                    setMenuOpen(false);
-                    navigation.navigate("AddStall");
-                  }}
-                />
-              )}
-              {isAuthenticated && (
-                // Saved, lists (portfolios) and checklists live in one Lists area.
-                <MenuRow
-                  label="Lists"
-                  icon={<List size={20} color={palette.orange} />}
-                  onPressIn={() => preloadRoute(navigation, "ListsHome")}
-                  onPress={() => {
-                    setMenuOpen(false);
-                    navigation.navigate("ListsHome");
-                  }}
-                />
-              )}
               {(followRequestCount ?? 0) > 0 || profile.profileVisibility === "private" ? (
-                // Follow requests live in the menu, not on the profile page.
                 <MenuRow
                   label={
                     followRequestCount
@@ -740,17 +823,6 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                   navigation.navigate("FollowedStalls");
                 }}
               />
-              {FEATURE_FLAGS.reviewCreationEnabled ? (
-                <MenuRow
-                  label="Review history"
-                  icon={<PencilLine size={20} color={palette.text} />}
-                  onPressIn={() => preloadRoute(navigation, "ReviewHistory")}
-                  onPress={() => {
-                    setMenuOpen(false);
-                    navigation.navigate("ReviewHistory");
-                  }}
-                />
-              ) : null}
               <MenuRow
                 label="Settings"
                 icon={<Settings size={20} color={palette.text} />}
@@ -766,20 +838,19 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                   icon={<LogOut size={20} color={palette.error} />}
                   onPress={() => {
                     setMenuOpen(false);
-                    Alert.alert("Sign out", "You will be signed out from Hungry on this device.", [
-                      { text: "Cancel", style: "cancel" },
-                      {
-                        text: "Sign out",
-                        style: "destructive",
-                        onPress: () => {
-                          signOut();
-                          rootNavigation.reset({
-                            index: 0,
-                            routes: [{ name: "AuthStack", params: { screen: "Login" } }],
-                          });
-                        },
+                    confirmAction({
+                      title: "Sign out",
+                      message: "You will be signed out from Hungry on this device.",
+                      confirmLabel: "Sign out",
+                      destructive: true,
+                      onConfirm: () => {
+                        signOut();
+                        rootNavigation.reset({
+                          index: 0,
+                          routes: [{ name: "AuthStack", params: { screen: "Login" } }],
+                        });
                       },
-                    ]);
+                    });
                   }}
                 />
               )}
@@ -788,12 +859,14 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
         </View>
       }
     >
-      <View style={{ gap: spacing[1], paddingBottom: spacing[8], position: "relative" }}>
+      <View style={{ gap: spacing[4], paddingBottom: spacing[8], position: "relative" }}>
         <PendingDeletionBanner />
         {menuOpen && (
+          // The menu button already closes it, and Escape does too: the backdrop is not a second
+          // "close" control for a screen reader.
           <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Close quick access menu"
+            accessible={false}
+            importantForAccessibility="no"
             onPress={() => setMenuOpen(false)}
             style={{
               position: "absolute",
@@ -838,7 +911,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                   },
                 ]}
               >
-                {profile.avatarUrl ? (
+                {profile.avatarUrl && !avatarFailed ? (
                   <AccessibleImage
                     source={{ uri: profile.avatarUrl }}
                     accessibilityLabel={`${profile.displayName} profile photo`}
@@ -848,6 +921,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                       width: avatarSize,
                     }}
                     contentFit="cover"
+                    onError={() => setAvatarFailed(true)}
                   />
                 ) : (
                   <AppText variant="h1" style={{ color: palette.orange }}>
@@ -865,6 +939,11 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
               {profile.bio ? (
                 <AppText variant="bodySmall" tone="secondary" testID="profile-bio">
                   {profile.bio}
+                </AppText>
+              ) : null}
+              {memberSince ? (
+                <AppText variant="micro" tone="secondary" testID="profile-member-since">
+                  Member since {memberSince}
                 </AppText>
               ) : null}
               {gamificationEnabled ? <FoodCredBadge size="sm" /> : null}
@@ -898,65 +977,31 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
             </View>
           </View>
 
-          {/* Saved and Reviews (and Badges with the Passport) side by side, with no box around them. */}
-          <View style={{ flexDirection: "row", gap: spacing[2] }}>
-            {FEATURE_FLAGS.favouritesEnabled ? (
-              <StatBlock
-                label="Saved dishes"
-                value={profileStatSummary.saved}
-                icon={<Bookmark size={14} color={palette.orange} />}
-                onPressIn={() => preloadRoute(navigation, "Favourites")}
-                onPress={() => navigation.navigate("Favourites")}
-              />
-            ) : null}
-            {FEATURE_FLAGS.reviewCreationEnabled ? (
-              <StatBlock
-                label="Reviews"
-                value={ownReviewCount}
-                icon={<PencilLine size={14} color={palette.orange} />}
-                onPressIn={() => preloadRoute(navigation, "ReviewHistory")}
-                onPress={handleReviewsCardPress}
-              />
-            ) : null}
-            {gamificationEnabled ? (
-              // The Passport route exists only with gamification.
-              <StatBlock
-                label="Badges"
-                value={earnedBadgeCount}
-                icon={<Trophy size={14} color={palette.orange} />}
-                onPressIn={() => preloadRoute(rootNavigation, "PassportScreen")}
-                onPress={() => rootNavigation.navigate("PassportScreen")}
-              />
-            ) : null}
-          </View>
-          <View style={{ flexDirection: "row", gap: spacing[2] }} testID="profile-follow-counts">
-            <StatBlock
-              label="Followers"
-              value={
-                followCounts === "unavailable"
-                  ? STAT_UNAVAILABLE
-                  : followCounts
-                    ? followCounts.followersCount
-                    : null
-              }
-              icon={<Users size={14} color={palette.orange} />}
-              onPressIn={() => preloadRoute(navigation, "Followers")}
-              onPress={() => navigation.navigate("Followers")}
-            />
-            <StatBlock
-              label="Following"
-              value={
-                followCounts === "unavailable"
-                  ? STAT_UNAVAILABLE
-                  : followCounts
-                    ? followCounts.followingCount
-                    : null
-              }
-              icon={<UserCheck size={14} color={palette.orange} />}
-              onPressIn={() => preloadRoute(navigation, "Following")}
-              onPress={() => navigation.navigate("Following")}
-            />
-          </View>
+          {/* One stat row: Saved opens the one place for saved dishes, stalls and lists. */}
+          <ProfileStatRow stats={stats} testID="profile-follow-counts" />
+          {followRequestLabel ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`${followRequestLabel}. Review them`}
+              onPress={() => rootNavigation.navigate("FollowRequests")}
+              style={({ pressed }) => ({
+                alignItems: "center",
+                backgroundColor: pressed ? palette.bgSoft : palette.orangeLight,
+                borderRadius: componentRadii.card,
+                flexDirection: "row",
+                gap: spacing[3],
+                minHeight: 48,
+                paddingHorizontal: spacing[3],
+              })}
+              testID="profile-follow-requests-row"
+            >
+              <UserPlus size={20} color={palette.orange} />
+              <AppText variant="bodyBold" style={{ flex: 1 }}>
+                {followRequestLabel}
+              </AppText>
+              <ChevronRight color={palette.textMuted} size={18} />
+            </Pressable>
+          ) : null}
           {firstReviewNudgeEligible && firstReviewNudge === "test" ? (
             <View
               testID="profile-first-review-nudge"
@@ -982,41 +1027,231 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
               />
             </View>
           ) : null}
-          {isAuthenticated && FEATURE_FLAGS.favouritesEnabled ? (
+        </View>
+
+        {isAuthenticated && pinnedDishesLoaded ? (
+          <FavouriteDishesRow
+            dishIds={pinnedDishIds}
+            candidateDishIds={pinCandidateIds}
+            onOpenDish={(dishId) => rootNavigation.navigate("DishDetail", { dishId })}
+            onSave={async (ids) => {
+              const saved = await savePinnedDishes(ids);
+              showToast(
+                saved
+                  ? { message: "Favourite dishes updated.", tone: "success" }
+                  : { message: "Couldn't save your favourite dishes.", tone: "error" },
+              );
+              return saved;
+            }}
+          />
+        ) : null}
+
+        {/* What you ate comes first: your reviews, with the photos you posted. */}
+        <View style={{ gap: spacing[4] }}>
+          <View
+            style={{
+              alignItems: "center",
+              flexDirection: "row",
+              justifyContent: "space-between",
+            }}
+          >
+            <AppText variant="h2">{socialFeedEnabled ? "Recent activity" : "Your reviews"}</AppText>
+            {FEATURE_FLAGS.reviewCreationEnabled ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="View all reviews"
+                onPress={handleReviewsCardPress}
+                hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
+                style={{ justifyContent: "center", minHeight: 44 }}
+              >
+                <AppText variant="bodySmall" style={{ color: palette.accentText }}>
+                  View all{ownReviewCount !== null ? ` (${ownReviewCount})` : ""}
+                </AppText>
+              </Pressable>
+            ) : null}
+          </View>
+          {socialFeedEnabled ? (
+            <View
+              accessibilityRole="tablist"
+              style={{
+                alignSelf: "stretch",
+                flexDirection: "row",
+                borderWidth: 1,
+                borderRadius: radii.pill,
+                borderColor: palette.border,
+                backgroundColor: palette.surface,
+                overflow: "hidden",
+              }}
+            >
+              <Pressable
+                accessibilityRole="tab"
+                accessibilityLabel="Show profile posts"
+                accessibilityState={{ selected: activeShareTab === "posts" }}
+                onPress={() => setActiveShareTab("posts")}
+                style={{
+                  flex: 1,
+                  paddingVertical: spacing[2],
+                  alignItems: "center",
+                  backgroundColor: activeShareTab === "posts" ? palette.orange : "transparent",
+                }}
+              >
+                <AppText
+                  style={{
+                    fontWeight: activeShareTab === "posts" ? 700 : 500,
+                    color: activeShareTab === "posts" ? palette.textOnOrange : palette.text,
+                  }}
+                >
+                  Posts
+                </AppText>
+              </Pressable>
+              {FEATURE_FLAGS.reviewCreationEnabled ? (
+                <Pressable
+                  accessibilityRole="tab"
+                  accessibilityLabel="Show profile reviews"
+                  accessibilityState={{ selected: activeShareTab === "reviews" }}
+                  onPress={() => setActiveShareTab("reviews")}
+                  style={{
+                    flex: 1,
+                    paddingVertical: spacing[2],
+                    alignItems: "center",
+                    backgroundColor: activeShareTab === "reviews" ? palette.orange : "transparent",
+                  }}
+                >
+                  <AppText
+                    style={{
+                      fontWeight: activeShareTab === "reviews" ? 700 : 500,
+                      color: activeShareTab === "reviews" ? palette.textOnOrange : palette.text,
+                    }}
+                  >
+                    Reviews
+                  </AppText>
+                </Pressable>
+              ) : null}
+            </View>
+          ) : null}
+          {activeShareTab === "posts" ? (
+            sortedProfilePosts.length ? (
+              <View
+                style={{
+                  flexDirection: "row",
+                  flexWrap: "wrap",
+                  marginHorizontal: -spacing[4],
+                }}
+              >
+                {sortedProfilePosts.map((post) => {
+                  const image = (
+                    <View style={{ flex: 1 }}>
+                      <AccessibleImage
+                        decorative
+                        source={{ uri: post.mediaUrl }}
+                        style={{ width: "100%", height: "100%" }}
+                        contentFit="cover"
+                      />
+                    </View>
+                  );
+                  // The post detail lives in Activity; with Activity off a tile is a photo.
+                  return FEATURE_FLAGS.activityEnabled ? (
+                    <Pressable
+                      key={post.id}
+                      aria-label={`Open post ${post.caption || post.id}`}
+                      accessibilityLabel={`Open post ${post.caption || post.id}`}
+                      accessibilityRole="button"
+                      role="button"
+                      testID={`profile-post-tile-${post.id}`}
+                      style={{
+                        width: "33.333%",
+                        aspectRatio: 1,
+                      }}
+                      onPress={() =>
+                        rootNavigation.navigate("ActivityPostDetail", {
+                          postId: post.id,
+                        })
+                      }
+                    >
+                      {image}
+                    </Pressable>
+                  ) : (
+                    <View
+                      key={post.id}
+                      testID={`profile-post-tile-${post.id}`}
+                      style={{ width: "33.333%", aspectRatio: 1 }}
+                    >
+                      {image}
+                    </View>
+                  );
+                })}
+              </View>
+            ) : !postsLoaded ? (
+              <ProfileGridSkeleton />
+            ) : postsLoadFailed ? (
+              <EmptyState
+                title="Couldn't load posts"
+                body="Check your connection and try again."
+                icon={<MessageCircleMore size={36} color={palette.textSecondary} />}
+                ctaLabel="Retry"
+                onPress={() => setPostsReloadKey((key) => key + 1)}
+              />
+            ) : (
+              <EmptyState
+                title="No posts yet"
+                body="Published posts will appear here."
+                icon={<MessageCircleMore size={36} color={palette.textSecondary} />}
+              />
+            )
+          ) : ownReviews === null ? (
+            <ProfileReviewsSkeleton />
+          ) : ownReviews.length ? (
+            <View style={{ gap: spacing[3] }}>
+              {inlineReviews.map((review, index) => (
+                <ProfileReviewCard
+                  key={review.id}
+                  review={review}
+                  dish={reviewDishInfo(review.dishId)}
+                  onOpenDish={review.dishId ? () => openReviewedDish(review, index) : undefined}
+                  menu={
+                    ownReviewEditor.enabled ? (
+                      <OwnReviewMenuButton onPress={() => ownReviewEditor.openActions(review)} />
+                    ) : undefined
+                  }
+                />
+              ))}
+              {ownReviews.length > OWN_REVIEWS_INLINE_LIMIT ? (
+                <Button
+                  label="See all reviews"
+                  variant="ghost"
+                  size="sm"
+                  onPress={handleReviewsCardPress}
+                />
+              ) : null}
+              {ownReviewEditor.dialog}
+            </View>
+          ) : ownReviewsFailed ? (
+            <EmptyState
+              title="Couldn't load reviews"
+              body="Check your connection and try again."
+              icon={<MessageCircleMore size={36} color={palette.textSecondary} />}
+              ctaLabel="Retry"
+              onPress={() => setOwnReviewsReloadKey((key) => key + 1)}
+            />
+          ) : (
+            <EmptyState
+              title="No reviews yet"
+              body="Rate a dish you've eaten and it will show up here."
+              icon={<MessageCircleMore size={36} color={palette.textSecondary} />}
+            />
+          )}
+          {activeShareTab === "posts" && hasMorePosts ? (
             <Button
-              label="Collections"
-              variant="secondary"
-              leftIcon={<FolderHeart size={18} color={palette.orange} />}
-              accessibilityHint="Opens your saved food and lists, with search"
-              onPressIn={() => preloadRoute(navigation, "Collections")}
-              onPress={() => navigation.navigate("Collections")}
+              label="Load more"
+              variant="ghost"
+              size="sm"
+              loading={isLoadingMorePosts}
+              onPress={loadMoreProfilePosts}
             />
           ) : null}
         </View>
 
-        {isAuthenticated && gamificationEnabled ? (
-          <PassportCard
-            onPressIn={() => preloadRoute(rootNavigation, "PassportScreen")}
-            onPress={() => rootNavigation.navigate("PassportScreen")}
-          />
-        ) : null}
-
         <View style={{ gap: spacing[4] }}>
-          {isAuthenticated && gamificationEnabled ? (
-            <MissionBanner onPress={() => navigation.navigate("MissionsScreen" as any)} />
-          ) : null}
-          <StallContributionCard
-            submissionCount={stallSubmissions.length}
-            menuSubmissionCount={
-              stallSubmissions.filter((submission) => submission.menuItems.length > 0).length
-            }
-            acceptedCount={
-              stallSubmissions.filter((submission) => submission.status === "accepted").length
-            }
-            onPressIn={() => preloadRoute(navigation, "AddStall")}
-            onPress={() => navigation.navigate("AddStall")}
-            onOpenSubmissions={() => navigation.navigate("StallSubmissions")}
-          />
           {/* Taste Fingerprint Section */}
           <View
             style={[
@@ -1034,7 +1269,6 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                 flexDirection: "row",
                 justifyContent: "space-between",
                 alignItems: "center",
-                paddingHorizontal: spacing[1],
               }}
             >
               <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
@@ -1057,371 +1291,70 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                 </Pressable>
               ) : null}
             </View>
-
-            <View
-              style={[
-                shadows.card,
-                {
-                  backgroundColor: palette.surface,
-                  borderRadius: componentRadii.card,
-                  padding: spacing[5],
-                  gap: spacing[4],
-                },
-              ]}
-            >
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: spacing[3],
-                }}
-              >
-                <View
-                  style={{
-                    backgroundColor: palette.orangeLight,
-                    width: 40,
-                    height: 40,
-                    borderRadius: radii.pill,
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <BarChart3 size={20} color={palette.orange} />
-                </View>
-                <AppText style={{ flex: 1, fontWeight: "600" }}>{tastePersonaSummary}</AppText>
-              </View>
-              {hasTasteFingerprint ? (
-                <View style={{ gap: spacing[1] }} testID="profile-palate-summary">
-                  {palate.loves.length > 0 ? (
-                    <AppText variant="bodySmall">
-                      <AppText variant="bodySmallBold">You enjoy strong: </AppText>
-                      {palate.loves.join(", ")}
-                    </AppText>
-                  ) : null}
-                  {palate.mild.length > 0 ? (
-                    <AppText variant="bodySmall">
-                      <AppText variant="bodySmallBold">You prefer mild: </AppText>
-                      {palate.mild.join(", ")}
-                    </AppText>
-                  ) : null}
-                  <AppText variant="micro" tone="secondary">
-                    A dish has one standard level for everyone. Your palate decides how strong it
-                    tastes to you, and dish pages show that.
+            <AppText style={{ fontWeight: "600" }}>{tastePersonaSummary}</AppText>
+            {hasTasteFingerprint ? (
+              <View style={{ gap: spacing[1] }} testID="profile-palate-summary">
+                {palate.mild.length > 0 ? (
+                  <AppText variant="bodySmall">
+                    <AppText variant="bodySmallBold">You prefer mild: </AppText>
+                    {palate.mild.join(", ")}
                   </AppText>
-                </View>
-              ) : null}
-
-              {hasTasteFingerprint ? (
-                <View style={{ alignItems: "center", gap: spacing[3] }}>
-                  <TasteRadar vector={profile.tasteVector} />
-                  <Button
-                    label="Retake the taste quiz"
-                    onPress={() =>
-                      rootNavigation.navigate("OnboardingStack", {
-                        screen: "TasteQuiz",
-                        params: { mode: "profile" },
-                      })
-                    }
-                  />
-                </View>
-              ) : (
+                ) : null}
+                <AppText variant="micro" tone="secondary">
+                  A dish has one standard level for everyone. Your palate decides how strong it
+                  tastes to you, and dish pages show that.
+                </AppText>
+              </View>
+            ) : null}
+            {hasTasteFingerprint ? (
+              <View style={{ alignItems: "center", gap: spacing[3] }}>
+                <TasteRadar vector={profile.tasteVector} />
                 <Button
-                  label="Take the taste quiz"
+                  label="Retake the taste quiz"
                   variant="secondary"
-                  size="sm"
-                  fullWidth={false}
                   onPress={() =>
                     rootNavigation.navigate("OnboardingStack", {
                       screen: "TasteQuiz",
                       params: { mode: "profile" },
                     })
                   }
-                  style={{ alignSelf: "flex-start", minHeight: 44 }}
                 />
-              )}
-            </View>
-          </View>
-          <View style={{ gap: spacing[4], marginTop: spacing[5] }}>
-            <View
-              style={{
-                alignItems: "center",
-                flexDirection: "row",
-                justifyContent: "space-between",
-              }}
-            >
-              <AppText variant="h2">
-                {socialFeedEnabled ? "Recent activity" : "Your reviews"}
-              </AppText>
-              {FEATURE_FLAGS.reviewCreationEnabled ? (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="View all reviews"
-                  onPress={handleReviewsCardPress}
-                  hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
-                  style={{ justifyContent: "center", minHeight: 44 }}
-                >
-                  <AppText variant="bodySmall" style={{ color: palette.accentText }}>
-                    View all{ownReviewCount !== null ? ` (${ownReviewCount})` : ""}
-                  </AppText>
-                </Pressable>
-              ) : null}
-            </View>
-            {socialFeedEnabled ? (
-              <View
-                accessibilityRole="tablist"
-                style={{
-                  alignSelf: "stretch",
-                  flexDirection: "row",
-                  borderWidth: 1,
-                  borderRadius: radii.pill,
-                  borderColor: palette.border,
-                  backgroundColor: palette.surface,
-                  overflow: "hidden",
-                }}
-              >
-                <Pressable
-                  accessibilityRole="tab"
-                  accessibilityLabel="Show profile posts"
-                  accessibilityState={{ selected: activeShareTab === "posts" }}
-                  onPress={() => setActiveShareTab("posts")}
-                  style={{
-                    flex: 1,
-                    paddingVertical: spacing[2],
-                    alignItems: "center",
-                    backgroundColor: activeShareTab === "posts" ? palette.orange : "transparent",
-                  }}
-                >
-                  <AppText
-                    style={{
-                      fontWeight: activeShareTab === "posts" ? 700 : 500,
-                      color: activeShareTab === "posts" ? palette.textOnOrange : palette.text,
-                    }}
-                  >
-                    Posts
-                  </AppText>
-                </Pressable>
-                {FEATURE_FLAGS.reviewCreationEnabled ? (
-                  <Pressable
-                    accessibilityRole="tab"
-                    accessibilityLabel="Show profile reviews"
-                    accessibilityState={{ selected: activeShareTab === "reviews" }}
-                    onPress={() => setActiveShareTab("reviews")}
-                    style={{
-                      flex: 1,
-                      paddingVertical: spacing[2],
-                      alignItems: "center",
-                      backgroundColor:
-                        activeShareTab === "reviews" ? palette.orange : "transparent",
-                    }}
-                  >
-                    <AppText
-                      style={{
-                        fontWeight: activeShareTab === "reviews" ? 700 : 500,
-                        color: activeShareTab === "reviews" ? palette.textOnOrange : palette.text,
-                      }}
-                    >
-                      Reviews
-                    </AppText>
-                  </Pressable>
-                ) : null}
               </View>
-            ) : null}
-            {activeShareTab === "posts" ? (
-              sortedProfilePosts.length ? (
-                <View
-                  style={{
-                    flexDirection: "row",
-                    flexWrap: "wrap",
-                    marginHorizontal: -spacing[4],
-                  }}
-                >
-                  {sortedProfilePosts.map((post) => {
-                    const image = (
-                      <View style={{ flex: 1 }}>
-                        <AccessibleImage
-                          decorative
-                          source={{ uri: post.mediaUrl }}
-                          style={{ width: "100%", height: "100%" }}
-                          contentFit="cover"
-                        />
-                      </View>
-                    );
-                    // The post detail lives in Activity; with Activity off a tile is a photo.
-                    return FEATURE_FLAGS.activityEnabled ? (
-                      <Pressable
-                        key={post.id}
-                        aria-label={`Open post ${post.caption || post.id}`}
-                        accessibilityLabel={`Open post ${post.caption || post.id}`}
-                        accessibilityRole="button"
-                        role="button"
-                        testID={`profile-post-tile-${post.id}`}
-                        style={{
-                          width: "33.333%",
-                          aspectRatio: 1,
-                        }}
-                        onPress={() =>
-                          rootNavigation.navigate("ActivityPostDetail", {
-                            postId: post.id,
-                          })
-                        }
-                      >
-                        {image}
-                      </Pressable>
-                    ) : (
-                      <View
-                        key={post.id}
-                        testID={`profile-post-tile-${post.id}`}
-                        style={{ width: "33.333%", aspectRatio: 1 }}
-                      >
-                        {image}
-                      </View>
-                    );
-                  })}
-                </View>
-              ) : !postsLoaded ? (
-                <ProfileGridSkeleton />
-              ) : postsLoadFailed ? (
-                <EmptyState
-                  title="Couldn't load posts"
-                  body="Check your connection and try again."
-                  icon={<MessageCircleMore size={36} color={palette.textSecondary} />}
-                  ctaLabel="Retry"
-                  onPress={() => setPostsReloadKey((key) => key + 1)}
-                />
-              ) : (
-                <EmptyState
-                  title="No posts yet"
-                  body="Published posts will appear here."
-                  icon={<MessageCircleMore size={36} color={palette.textSecondary} />}
-                />
-              )
-            ) : ownReviews === null ? (
-              <ProfileReviewsSkeleton />
-            ) : ownReviews.length ? (
-              <View style={{ gap: spacing[3] }}>
-                {ownReviews.slice(0, OWN_REVIEWS_INLINE_LIMIT).map((review) => {
-                  const dish = review.dishId
-                    ? getDataRepository().getDishById(review.dishId)
-                    : undefined;
-                  const dishName = dish?.name;
-                  return (
-                    <View key={review.id}>
-                      <Card style={{ gap: spacing[3] }}>
-                        <View
-                          style={{
-                            alignItems: "center",
-                            flexDirection: "row",
-                            gap: spacing[2],
-                          }}
-                        >
-                          <Pressable
-                            accessibilityRole="button"
-                            accessibilityLabel={`Review of ${dishName ?? "dish"}, rated ${review.rating} out of 5`}
-                            accessibilityHint="Opens the dish"
-                            disabled={!review.dishId}
-                            onPress={() =>
-                              review.dishId &&
-                              rootNavigation.navigate("DishDetail", { dishId: review.dishId })
-                            }
-                            style={{
-                              flex: 1,
-                              flexDirection: "row",
-                              alignItems: "center",
-                              gap: spacing[2],
-                            }}
-                          >
-                            {dish?.imageUrl ? (
-                              <AccessibleImage
-                                source={{ uri: dish.imageUrl }}
-                                accessibilityLabel={dishName ?? "Reviewed dish"}
-                                contentFit="cover"
-                                style={{
-                                  borderRadius: radii.md,
-                                  height: spacing[20],
-                                  width: spacing[20],
-                                }}
-                              />
-                            ) : null}
-                            <View style={{ flex: 1, gap: spacing[1] }}>
-                              <AppText variant="bodyBold" numberOfLines={1}>
-                                {dishName ?? "Reviewed dish"}
-                              </AppText>
-                              {dish?.venueName ? (
-                                <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
-                                  {dish.venueName}
-                                </AppText>
-                              ) : null}
-                              <AppText variant="bodySmall" tone="secondary">
-                                <Text style={{ color: palette.starFill }}>★</Text>{" "}
-                                {review.rating.toFixed(1)} / 5
-                              </AppText>
-                            </View>
-                          </Pressable>
-                          {ownReviewEditor.enabled ? (
-                            <OwnReviewMenuButton
-                              onPress={() => ownReviewEditor.openActions(review)}
-                            />
-                          ) : null}
-                        </View>
-                        {review.moderationState ? (
-                          <ReviewModerationNotice
-                            state={review.moderationState}
-                            reviewId={review.id}
-                            dishName={dishName}
-                          />
-                        ) : null}
-                        {review.text ? (
-                          <View
-                            style={{
-                              backgroundColor: palette.bgSoft,
-                              borderRadius: radii.md,
-                              padding: spacing[3],
-                            }}
-                          >
-                            <AppText numberOfLines={4} style={{ fontStyle: "italic" }}>
-                              {review.text}
-                            </AppText>
-                          </View>
-                        ) : null}
-                      </Card>
-                    </View>
-                  );
-                })}
-                {ownReviews.length > OWN_REVIEWS_INLINE_LIMIT ? (
-                  <Button
-                    label="See all reviews"
-                    variant="ghost"
-                    size="sm"
-                    onPress={handleReviewsCardPress}
-                  />
-                ) : null}
-                {ownReviewEditor.dialog}
-              </View>
-            ) : ownReviewsFailed ? (
-              <EmptyState
-                title="Couldn't load reviews"
-                body="Check your connection and try again."
-                icon={<MessageCircleMore size={36} color={palette.textSecondary} />}
-                ctaLabel="Retry"
-                onPress={() => setOwnReviewsReloadKey((key) => key + 1)}
-              />
             ) : (
-              <EmptyState
-                title="No reviews yet"
-                body="Reviews will appear here after they are published."
-                icon={<MessageCircleMore size={36} color={palette.textSecondary} />}
+              <Button
+                label="Take the taste quiz"
+                variant="secondary"
+                size="sm"
+                fullWidth={false}
+                onPress={() =>
+                  rootNavigation.navigate("OnboardingStack", {
+                    screen: "TasteQuiz",
+                    params: { mode: "profile" },
+                  })
+                }
+                style={{ alignSelf: "flex-start", minHeight: 44 }}
               />
             )}
-            {activeShareTab === "posts" && hasMorePosts ? (
-              <Button
-                label="Load more"
-                variant="ghost"
-                size="sm"
-                loading={isLoadingMorePosts}
-                onPress={loadMoreProfilePosts}
-              />
-            ) : null}
           </View>
+
+          {isAuthenticated && gamificationEnabled ? (
+            <PassportCard
+              onPressIn={() => preloadRoute(rootNavigation, "PassportScreen")}
+              onPress={() => rootNavigation.navigate("PassportScreen")}
+            />
+          ) : null}
+          {isAuthenticated && gamificationEnabled ? (
+            <MissionBanner onPress={() => navigation.navigate("MissionsScreen" as any)} />
+          ) : null}
+          <StallContributionRow
+            submissionCount={stallSubmissions.length}
+            acceptedCount={
+              stallSubmissions.filter((submission) => submission.status === "accepted").length
+            }
+            onPressIn={() => preloadRoute(navigation, "AddStall")}
+            onPress={() => navigation.navigate("AddStall")}
+            onOpenSubmissions={() => navigation.navigate("StallSubmissions")}
+          />
         </View>
 
         <BottomSheetModal
@@ -1510,26 +1443,30 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
   );
 }
 
-function StallContributionCard({
+/** A slim row, not a card of counters: the form is one tap away, what you sent is one more. */
+function StallContributionRow({
   submissionCount,
-  menuSubmissionCount,
   acceptedCount,
   onPressIn,
   onPress,
   onOpenSubmissions,
 }: {
   submissionCount: number;
-  menuSubmissionCount: number;
   acceptedCount: number;
   onPressIn?: () => void;
   onPress: () => void;
   onOpenSubmissions: () => void;
 }) {
   const { componentRadii, palette, shadows, spacing } = useHungryTheme();
-  const nextScoutTarget = submissionCount >= 5 ? 10 : 5;
-  const scoutProgress = Math.min(submissionCount, nextScoutTarget);
   // The Scout target belongs to the Passport and FoodCred system; without it, show what happened.
   const showScout = FEATURE_FLAGS.gamificationEnabled;
+  const nextScoutTarget = submissionCount >= 5 ? 10 : 5;
+  const subtitle =
+    submissionCount === 0
+      ? "Know a stall we're missing? Send it in for review."
+      : showScout
+        ? `${submissionCount} submitted · Scout ${Math.min(submissionCount, nextScoutTarget)}/${nextScoutTarget}`
+        : `${submissionCount} submitted · ${acceptedCount} approved`;
 
   return (
     <View
@@ -1537,8 +1474,8 @@ function StallContributionCard({
         ...shadows.card,
         backgroundColor: palette.surface,
         borderRadius: componentRadii.card,
-        gap: spacing[4],
-        padding: spacing[4],
+        gap: spacing[2],
+        padding: spacing[3],
       }}
     >
       <Pressable
@@ -1547,55 +1484,27 @@ function StallContributionCard({
         onPress={onPress}
         accessibilityLabel="Add a stall"
         accessibilityHint="Opens the stall contribution form"
-        style={{ gap: spacing[4] }}
+        style={{ alignItems: "center", flexDirection: "row", gap: spacing[3], minHeight: 48 }}
       >
-        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[3] }}>
-          <View
-            style={{
-              alignItems: "center",
-              backgroundColor: palette.orangeLight,
-              borderRadius: componentRadii.iconButton,
-              height: 44,
-              justifyContent: "center",
-              width: 44,
-            }}
-          >
-            <ImagePlus color={palette.orange} size={22} />
-          </View>
-          <View style={{ flex: 1, gap: spacing[0.5] }}>
-            <AppText variant="h3">Add a stall</AppText>
-            <AppText variant="bodySmall" tone="muted">
-              Submit a stall name, photos, menu notes, hours and an ordering link for review.
-            </AppText>
-          </View>
-          <ChevronRight color={palette.textMuted} size={18} />
+        <View
+          style={{
+            alignItems: "center",
+            backgroundColor: palette.orangeLight,
+            borderRadius: componentRadii.iconButton,
+            height: 40,
+            justifyContent: "center",
+            width: 40,
+          }}
+        >
+          <ImagePlus color={palette.orange} size={20} />
         </View>
-
-        <View style={{ flexDirection: "row", gap: spacing[2] }}>
-          <ScoutMetric
-            icon={<Store size={14} color={palette.orange} />}
-            label="Submitted"
-            value={submissionCount}
-          />
-          <ScoutMetric
-            icon={<Utensils size={14} color={palette.orange} />}
-            label="With menu"
-            value={menuSubmissionCount}
-          />
-          {showScout ? (
-            <ScoutMetric
-              icon={<Trophy size={14} color={palette.orange} />}
-              label="Scout"
-              value={`${scoutProgress}/${nextScoutTarget}`}
-            />
-          ) : (
-            <ScoutMetric
-              icon={<UserCheck size={14} color={palette.orange} />}
-              label="Approved"
-              value={acceptedCount}
-            />
-          )}
+        <View style={{ flex: 1, gap: spacing[0.5] }}>
+          <AppText variant="bodyBold">Add a stall</AppText>
+          <AppText variant="bodySmall" tone="muted">
+            {subtitle}
+          </AppText>
         </View>
+        <ChevronRight color={palette.textMuted} size={18} />
       </Pressable>
       {submissionCount > 0 ? (
         <Button
@@ -1608,209 +1517,6 @@ function StallContributionCard({
         />
       ) : null}
     </View>
-  );
-}
-
-function ScoutMetric({
-  icon,
-  label,
-  value,
-}: {
-  icon: ReactNode;
-  label: string;
-  value: number | string;
-}) {
-  const { palette, radii, spacing } = useHungryTheme();
-  return (
-    <View
-      style={{
-        backgroundColor: palette.bgSoft,
-        borderRadius: radii.lg,
-        flex: 1,
-        gap: spacing[1],
-        padding: spacing[3],
-      }}
-    >
-      <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
-        {icon}
-        <AppText variant="bodySmallBold">{value}</AppText>
-      </View>
-      <AppText variant="micro" tone="muted">
-        {label}
-      </AppText>
-    </View>
-  );
-}
-
-function TasteRadar({ vector }: { vector: TasteVector }) {
-  const { palette, radii, spacing } = useHungryTheme();
-  const axes = ["spicy", "rich", "salty", "sweet", "sour", "aromatic"] as const;
-  const point = (index: number, radius: number) => {
-    const angle = -Math.PI / 2 + (index * Math.PI) / 3;
-    return { x: 130 + Math.cos(angle) * radius, y: 130 + Math.sin(angle) * radius };
-  };
-  const polygon = (radius: number) =>
-    axes
-      .map((_, index) => {
-        const { x, y } = point(index, radius);
-        return `${x},${y}`;
-      })
-      .join(" ");
-  const values = axes.map((axis, index) =>
-    point(index, (Math.max(0, Math.min(10, vector[axis])) / 10) * 92),
-  );
-
-  return (
-    <View style={{ alignItems: "center", width: "100%", gap: spacing[3] }}>
-      {/* Up to 260pt, never wider than the card: a 320-360pt phone leaves less than that. */}
-      <View testID="profile-taste-radar" style={{ aspectRatio: 1, maxWidth: 260, width: "100%" }}>
-        <Svg
-          accessible={Platform.OS === "web" ? undefined : true}
-          accessibilityRole="image"
-          accessibilityLabel={`Taste vector: ${axes.map((axis) => `${axis} ${vector[axis].toFixed(1)} out of 10`).join(", ")}`}
-          width="100%"
-          height="100%"
-          viewBox="0 0 260 260"
-        >
-          {[92, 62, 31].map((radius) => (
-            <Polygon
-              key={radius}
-              points={polygon(radius)}
-              fill="none"
-              stroke={palette.border}
-              strokeWidth={1}
-            />
-          ))}
-          {axes.map((axis, index) => {
-            const end = point(index, 92);
-            return (
-              <Line
-                key={axis}
-                x1={130}
-                y1={130}
-                x2={end.x}
-                y2={end.y}
-                stroke={palette.border}
-                strokeWidth={1}
-              />
-            );
-          })}
-          <Polygon
-            points={values.map(({ x, y }) => `${x},${y}`).join(" ")}
-            fill={palette.orangeLight}
-            stroke={palette.orange}
-            strokeWidth={2.5}
-          />
-          {values.map(({ x, y }, index) => (
-            <Circle key={axes[index]} cx={x} cy={y} r={4} fill={palette.orange} />
-          ))}
-        </Svg>
-      </View>
-      <View
-        style={{
-          flexDirection: "row",
-          flexWrap: "wrap",
-          gap: spacing[2],
-          justifyContent: "center",
-        }}
-      >
-        {TASTE_DIMENSIONS.map(({ key, label }) => (
-          <View
-            key={key}
-            style={{
-              alignItems: "center",
-              backgroundColor: palette.bgSoft,
-              borderRadius: radii.pill,
-              flexDirection: "row",
-              gap: spacing[1],
-              paddingHorizontal: spacing[2],
-              paddingVertical: spacing[1],
-            }}
-          >
-            <AppText variant="micro" style={{ color: palette.text }}>
-              {label} {Math.round(vector[key] * 10)}%
-            </AppText>
-          </View>
-        ))}
-      </View>
-    </View>
-  );
-}
-
-/** A stat whose read failed: a dash on screen, "unavailable" to a screen reader. */
-const STAT_UNAVAILABLE = "–";
-
-function StatBlock({
-  label,
-  value,
-  icon,
-  onPressIn,
-  onPress,
-}: {
-  label: string;
-  /** null while loading; text such as "20+" when only the first page is counted. */
-  value: number | string | null;
-  icon: ReactNode;
-  onPressIn?: () => void;
-  onPress?: () => void;
-}) {
-  const { colorScheme, componentRadii, palette, spacing } = useHungryTheme();
-
-  const row = (
-    <>
-      {value === null ? (
-        <Skeleton width={spacing[6]} height={spacing[5]} borderRadius={4} />
-      ) : (
-        <AppText variant="h2" style={{ color: palette.text }}>
-          {value}
-        </AppText>
-      )}
-      <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
-        {icon}
-        <AppText variant="micro" style={{ color: palette.textSecondary }}>
-          {label}
-        </AppText>
-      </View>
-    </>
-  );
-
-  // A flat row of numbers: no card or border around each stat.
-  const baseStyle = {
-    borderRadius: componentRadii.card,
-    paddingVertical: spacing[3],
-    paddingHorizontal: spacing[3],
-    alignItems: "center" as const,
-    flex: 1,
-    gap: spacing[1],
-  };
-
-  if (!onPress) {
-    return <View style={baseStyle}>{row}</View>;
-  }
-
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={
-        value === null
-          ? `${label}, loading`
-          : value === STAT_UNAVAILABLE
-            ? `${label}, unavailable`
-            : `${label} ${value}`
-      }
-      onPressIn={onPressIn}
-      onPress={onPress}
-      style={({ pressed }) => {
-        const pressedStyle =
-          pressed &&
-          (colorScheme === "dark"
-            ? { backgroundColor: palette.surface }
-            : { backgroundColor: palette.bgSoft, opacity: 0.92 });
-        return [baseStyle, pressedStyle];
-      }}
-    >
-      {row}
-    </Pressable>
   );
 }
 

@@ -5,6 +5,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Avatar, Button, Card, EmptyState } from "@/components/ui";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { reportError } from "@/lib/monitoring/reportError";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -41,7 +42,7 @@ export function FollowRequestsScreen({ navigation }: Props) {
   const showToast = useUIStore((state) => state.showToast);
   const [requests, setRequests] = useState<FollowRequestItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
   // Server rows fetched so far (offset for the next page) and whether another page may exist.
   const [loadedRowCount, setLoadedRowCount] = useState(0);
   const [hasMore, setHasMore] = useState(false);
@@ -53,7 +54,7 @@ export function FollowRequestsScreen({ navigation }: Props) {
   const loadFirstPage = useCallback(() => {
     let isActive = true;
     setIsLoading(true);
-    setLoadError(null);
+    setLoadFailed(false);
     void getHungryService()
       .social.listFollowRequests({ limit: FOLLOW_REQUESTS_PAGE_SIZE, offset: 0 })
       .then((rows) => {
@@ -63,9 +64,9 @@ export function FollowRequestsScreen({ navigation }: Props) {
         setHasMore(rows.length === FOLLOW_REQUESTS_PAGE_SIZE);
       })
       .catch((error) => {
-        console.error("Failed to load follow requests:", error);
+        reportError(error, { screen: "FollowRequests", action: "load_requests" });
         if (!isActive) return;
-        setLoadError(error instanceof Error ? error.message : String(error));
+        setLoadFailed(true);
       })
       .finally(() => {
         if (!isActive) return;
@@ -89,7 +90,8 @@ export function FollowRequestsScreen({ navigation }: Props) {
         setHasMore(rows.length === FOLLOW_REQUESTS_PAGE_SIZE);
       })
       .catch((error) => {
-        console.error("Failed to load more follow requests:", error);
+        reportError(error, { screen: "FollowRequests", action: "load_more_requests" });
+        showToast({ message: "Couldn't load more requests. Try again.", tone: "error" });
       })
       .finally(() => setIsLoadingMore(false));
   };
@@ -122,7 +124,7 @@ export function FollowRequestsScreen({ navigation }: Props) {
         });
       })
       .catch((error) => {
-        console.error(`Failed to ${action} follow request:`, error);
+        reportError(error, { screen: "FollowRequests", action: `${action}_request` });
         showToast({
           message:
             action === "approve"
@@ -146,12 +148,10 @@ export function FollowRequestsScreen({ navigation }: Props) {
             body="Fetching people who asked to follow you."
           />
         </View>
-      ) : loadError ? (
+      ) : loadFailed ? (
         <EmptyState
           title="Couldn't load follow requests"
           body="Check your connection and try again."
-          errorMessage={loadError}
-          sendErrorContext="Follow requests"
           ctaLabel="Try again"
           onPress={loadFirstPage}
         />

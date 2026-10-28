@@ -47,6 +47,7 @@ import type {
   OpeningSchedule,
   PublicMerchantProfile,
   PublicUserProfile,
+  ReviewStats,
   PromotionStatus,
   RecommendationBucket,
   RecommendationSurface,
@@ -988,6 +989,8 @@ export interface HungryService {
       userId: string,
       page?: { limit?: number; offset?: number },
     ): Promise<DishDetail["reviews"]>;
+    /** Totals and the 1-5 histogram over all of your reviews; undefined on a backend without it. */
+    getMyReviewStats(): Promise<ReviewStats | undefined>;
     submitReview(draft: SubmitReviewInput): Promise<void>;
     /** Newest-first review feed across all dishes, fetched as one paginated query. */
     listRecentReviews(options?: ListRecentReviewsOptions): Promise<RecentReviewFeedEntry[]>;
@@ -1009,6 +1012,15 @@ export interface HungryService {
     updateProfile(updates: Partial<UserProfile>): Promise<UserProfile>;
     /** Another user's public profile (name, avatar, bio); undefined when hidden or missing. */
     getPublicProfile(userId: string): Promise<PublicUserProfile | undefined>;
+    /**
+     * 0-100 taste match with another diner; null when there is none to show (yourself, a blocked
+     * or private account, or either of you has no taste fingerprint yet, or an older backend).
+     */
+    getTasteMatch(userId: string): Promise<number | null>;
+    /** The dishes pinned on a profile, in order (at most 4); empty on an older backend. */
+    listFavouriteDishIds(userId: string): Promise<string[]>;
+    /** Replaces your pinned dishes (at most 4, each saved or reviewed by you); returns the stored order. */
+    setFavouriteDishes(dishIds: string[]): Promise<string[]>;
     /** Every category of the signed-in user's own data. Throws instead of returning partial data. */
     exportMyData(): Promise<MyDataExport>;
     updateDietaryPreferences(flags: DietaryFlag[]): Promise<void>;

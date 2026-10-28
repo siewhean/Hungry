@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Alert, FlatList, Pressable, View } from "react-native";
+import { ActivityIndicator, FlatList, Pressable, View } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RouteProp, useRoute } from "@react-navigation/native";
 import { Search } from "lucide-react-native";
@@ -8,6 +8,8 @@ import { AppText, Avatar, Button, Card, EmptyState, Input } from "@/components/u
 import { FollowPillButton } from "@/components/social/FollowPillButton";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { useFollowPress } from "@/features/profile/useFollowPress";
+import { reportError } from "@/lib/monitoring/reportError";
+import { confirmAction } from "@/lib/runtime/confirmAction";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useSocialStore } from "@/store/useSocialStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -74,7 +76,7 @@ const PersonRow = memo(function PersonRow({
 }: {
   person: UserProfileItem;
   viewerId: string;
-  /** Your own Followers list: offer "Remove". */
+  /** Your own Followers list: offer "Remove", and "Follow back" for people you do not follow. */
   canRemove: boolean;
   onOpen: (person: UserProfileItem) => void;
   onRemove: (person: UserProfileItem) => void;
@@ -87,7 +89,13 @@ const PersonRow = memo(function PersonRow({
       !state.followedUserIds[person.userId] && Boolean(state.requestedUserIds[person.userId]),
   );
   const canShowFollowButton = person.userId !== viewerId;
-  const label = isRequested ? "Requested" : isFollowing ? "Following" : "Follow";
+  const label = isRequested
+    ? "Requested"
+    : isFollowing
+      ? "Following"
+      : canRemove
+        ? "Follow back"
+        : "Follow";
 
   return (
     <Card style={{ padding: spacing[3] }}>
@@ -222,7 +230,7 @@ function ProfileConnectionsScreen({ navigation }: Props) {
         setHasMore(rowCount === CONNECTIONS_PAGE_SIZE);
       })
       .catch((error) => {
-        console.error("Failed to load connections:", error);
+        reportError(error, { screen: "ProfileConnections", action: "load_connections" });
         if (!isActive) return;
         setPeople([]);
         setLoadFailed(true);
@@ -247,7 +255,7 @@ function ProfileConnectionsScreen({ navigation }: Props) {
         setHasMore(rowCount === CONNECTIONS_PAGE_SIZE);
       })
       .catch((error) => {
-        console.error("Failed to load more connections:", error);
+        reportError(error, { screen: "ProfileConnections", action: "load_more_connections" });
         // Stop auto-paging after a failure; scrolling away and back tries again.
         setHasMore(false);
       })
@@ -281,7 +289,7 @@ function ProfileConnectionsScreen({ navigation }: Props) {
           if (isActive) setFoundPeople(toPersonItems(rows));
         })
         .catch((error) => {
-          console.error("Failed to search people:", error);
+          reportError(error, { screen: "ProfileConnections", action: "find_people" });
           if (!isActive) return;
           setFoundPeople([]);
           setFindPeopleFailed(true);
@@ -317,30 +325,29 @@ function ProfileConnectionsScreen({ navigation }: Props) {
         profile.profileVisibility === "private"
           ? "They won't be told, and they'd need your approval to follow you again."
           : "They won't be told, and they can follow you again.";
-      Alert.alert(`Remove ${person.name}?`, followAgain, [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Remove",
-          style: "destructive",
-          onPress: () => {
-            void getHungryService()
-              .social.removeFollower(person.userId)
-              .then(() => {
-                setPeople((current) => current.filter((item) => item.userId !== person.userId));
-                useUIStore
-                  .getState()
-                  .showToast({ message: `${person.name} no longer follows you.`, tone: "info" });
-              })
-              .catch((error) => {
-                console.error("Failed to remove follower:", error);
-                useUIStore.getState().showToast({
-                  message: "Couldn't remove the follower. Please try again.",
-                  tone: "error",
-                });
+      confirmAction({
+        title: `Remove ${person.name}?`,
+        message: followAgain,
+        confirmLabel: "Remove",
+        destructive: true,
+        onConfirm: () => {
+          void getHungryService()
+            .social.removeFollower(person.userId)
+            .then(() => {
+              setPeople((current) => current.filter((item) => item.userId !== person.userId));
+              useUIStore
+                .getState()
+                .showToast({ message: `${person.name} no longer follows you.`, tone: "info" });
+            })
+            .catch((error) => {
+              reportError(error, { screen: "ProfileConnections", action: "remove_follower" });
+              useUIStore.getState().showToast({
+                message: "Couldn't remove the follower. Please try again.",
+                tone: "error",
               });
-          },
+            });
         },
-      ]);
+      });
     },
     [profile.profileVisibility],
   );
@@ -351,7 +358,7 @@ function ProfileConnectionsScreen({ navigation }: Props) {
     : normalizedQuery
       ? "No matches"
       : isFollowingTab
-        ? "No users followed yet"
+        ? "Not following anyone yet"
         : "No followers yet";
   const emptyBody = listsHidden
     ? `Only ${targetDisplayName}'s approved followers can see this list.`
@@ -366,7 +373,7 @@ function ProfileConnectionsScreen({ navigation }: Props) {
         : isOwnProfile
           ? "You don't have any followers yet."
           : `${targetDisplayName} doesn't have any followers yet.`;
-  const loadingTitle = isFollowingTab ? "Loading following" : "Loading followers";
+  const loadingTitle = isFollowingTab ? "Loading people you follow" : "Loading followers";
   const loadingBody = isFollowingTab
     ? isOwnProfile
       ? "Fetching users you follow."

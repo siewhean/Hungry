@@ -2,7 +2,7 @@ import * as Clipboard from "expo-clipboard";
 import Constants from "expo-constants";
 import * as Updates from "expo-updates";
 import { useCallback, useEffect, useState } from "react";
-import { Alert, AppState, Linking, Platform, Share, View } from "react-native";
+import { AppState, Linking, Platform, Share, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
@@ -52,6 +52,7 @@ import { resolveFoodOpenness } from "@/lib/ai/exploration";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { useExperimentVariant } from "@/lib/experiments/experiments";
 import { reportError } from "@/lib/monitoring/reportError";
+import { confirmAction } from "@/lib/runtime/confirmAction";
 import { openTrustedExternalUrl } from "@/lib/security/safeLinking";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { ACCOUNT_DELETION_GRACE_DAYS } from "@/lib/services/types";
@@ -271,29 +272,24 @@ export function SettingsScreen() {
           if (canShareExportAsText(exportJson)) {
             await Share.share({ title: "My Hungry data", message: exportJson });
           } else {
-            Alert.alert(
-              "Your export is large",
-              `Your data is too big to share from the app on this phone. Email ${SUPPORT_EMAIL} and we will send you a copy.`,
-              [
-                { text: "Not now", style: "cancel" },
-                {
-                  text: "Email support",
-                  onPress: () =>
-                    void openTrustedExternalUrl(
-                      `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent("My Hungry data export")}`,
-                    ),
-                },
-              ],
-            );
+            confirmAction({
+              title: "Your export is large",
+              message: `Your data is too big to share from the app on this phone. Email ${SUPPORT_EMAIL} and we will send you a copy.`,
+              confirmLabel: "Email support",
+              onConfirm: () =>
+                void openTrustedExternalUrl(
+                  `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent("My Hungry data export")}`,
+                ),
+            });
           }
         }
       } catch (error) {
         reportError(error, { area: "settings_data_export" });
         trackAnalyticsEvent("settings_data_export_failed", {});
-        Alert.alert(
-          "Export failed",
-          `We could not prepare your data right now. Please try again or email ${SUPPORT_EMAIL}.`,
-        );
+        showToast({
+          message: `We could not prepare your data right now. Please try again or email ${SUPPORT_EMAIL}.`,
+          tone: "error",
+        });
       } finally {
         setIsExportingData(false);
       }
@@ -422,14 +418,12 @@ export function SettingsScreen() {
       });
       return;
     }
-    Alert.alert(
-      "Couldn't change visibility",
-      `Your profile is still ${visibility === "private" ? "public" : "private"}. Check your connection and try again.`,
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Retry", onPress: () => void changeProfileVisibility(visibility) },
-      ],
-    );
+    confirmAction({
+      title: "Couldn't change visibility",
+      message: `Your profile is still ${visibility === "private" ? "public" : "private"}. Check your connection and try again.`,
+      confirmLabel: "Retry",
+      onConfirm: () => void changeProfileVisibility(visibility),
+    });
   };
 
   const openAppSettings = async () => {
@@ -437,10 +431,11 @@ export function SettingsScreen() {
       await Linking.openSettings();
     } catch (error) {
       reportError(error, { area: "settings_open_app_settings" });
-      Alert.alert(
-        "Open settings",
-        "Unable to open system settings from here. You can update permissions from your device settings app.",
-      );
+      showToast({
+        message:
+          "Couldn't open system settings. You can update permissions from your device settings app.",
+        tone: "warning",
+      });
     }
   };
 
@@ -452,14 +447,13 @@ export function SettingsScreen() {
     }
     const granted = await grantLocation({ manualLocation: location });
     if (!granted) {
-      Alert.alert(
-        "Location permissions",
-        "Hungry could not enable location access. Update this permission in Settings if you previously denied it.",
-        [
-          { text: "Open settings", onPress: () => void openAppSettings() },
-          { text: "Cancel", style: "cancel" },
-        ],
-      );
+      confirmAction({
+        title: "Location permissions",
+        message:
+          "Hungry could not enable location access. Update this permission in Settings if you previously denied it.",
+        confirmLabel: "Open settings",
+        onConfirm: () => void openAppSettings(),
+      });
     }
   };
 
@@ -478,75 +472,71 @@ export function SettingsScreen() {
     };
 
   const handleResetFoodHistory = () => {
-    Alert.alert(
-      "Reset food history",
-      "Recommendations will forget your dish history: the dishes you liked, tapped or hid. Your taste profile, favourites and reviews stay.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Reset",
-          style: "destructive",
-          onPress: () => {
-            void resetFoodHistory()
-              .then(() => Alert.alert("Food history reset", "Recommendations start fresh."))
-              .catch((error: unknown) => {
-                reportError(error, { area: "settings_reset_food_history" });
-                Alert.alert("Couldn't reset", "Check your connection and try again.");
-              });
-          },
-        },
-      ],
-    );
+    confirmAction({
+      title: "Reset food history",
+      message:
+        "Recommendations will forget your dish history: the dishes you liked, tapped or hid. Your taste profile, favourites and reviews stay.",
+      confirmLabel: "Reset",
+      destructive: true,
+      onConfirm: () => {
+        void resetFoodHistory()
+          .then(() =>
+            showToast({
+              message: "Food history reset. Recommendations start fresh.",
+              tone: "success",
+            }),
+          )
+          .catch((error: unknown) => {
+            reportError(error, { area: "settings_reset_food_history" });
+            showToast({
+              message: "Couldn't reset. Check your connection and try again.",
+              tone: "error",
+            });
+          });
+      },
+    });
   };
 
   const handleResetLocation = () => {
-    Alert.alert(
-      "Reset selected location",
-      "This clears the area you picked. Hungry will use your device location when location access is allowed.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Reset",
-          onPress: () => {
-            void clearManualLocation().then(() =>
-              Alert.alert("Location reset", "Your selected location has been cleared."),
-            );
-          },
-        },
-      ],
-    );
+    confirmAction({
+      title: "Reset selected location",
+      message:
+        "This clears the area you picked. Hungry will use your device location when location access is allowed.",
+      confirmLabel: "Reset",
+      onConfirm: () => {
+        void clearManualLocation().then(() =>
+          showToast({ message: "Your selected location has been cleared.", tone: "success" }),
+        );
+      },
+    });
   };
 
   const handleClearLocalData = () => {
-    Alert.alert(
-      "Clear local cache",
-      "This removes recent searches, unsent review drafts, cached images and any saved data export on this device. You stay signed in.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Clear",
-          onPress: () => {
-            void (async () => {
-              // Only caches: the session, profile and location stay so nothing is signed out.
-              await Promise.all([
-                hungryPersistStorage?.removeItem("hungry-search-v1"),
-                hungryPersistStorage?.removeItem("hungry-review-draft-v1"),
-                clearImageCache(),
-              ]);
-              deleteExportFile();
-              resetDraft();
-              clearSearchState();
-              clearSearchHistory();
-              trackAnalyticsEvent("settings_local_cache_cleared", {});
-              Alert.alert(
-                "Local cache cleared",
-                "Recent searches, drafts and cached images were removed from this device.",
-              );
-            })();
-          },
-        },
-      ],
-    );
+    confirmAction({
+      title: "Clear local cache",
+      message:
+        "This removes recent searches, unsent review drafts, cached images and any saved data export on this device. You stay signed in.",
+      confirmLabel: "Clear",
+      onConfirm: () => {
+        void (async () => {
+          // Only caches: the session, profile and location stay so nothing is signed out.
+          await Promise.all([
+            hungryPersistStorage?.removeItem("hungry-search-v1"),
+            hungryPersistStorage?.removeItem("hungry-review-draft-v1"),
+            clearImageCache(),
+          ]);
+          deleteExportFile();
+          resetDraft();
+          clearSearchState();
+          clearSearchHistory();
+          trackAnalyticsEvent("settings_local_cache_cleared", {});
+          showToast({
+            message: "Local cache cleared. Searches, drafts and cached images were removed.",
+            tone: "success",
+          });
+        })();
+      },
+    });
   };
 
   const handleSignOut = () => setAccountDialog("signOut");
@@ -559,35 +549,30 @@ export function SettingsScreen() {
   };
 
   const handleSignOutEverywhere = () => {
-    Alert.alert(
-      "Sign out of all devices",
-      "This signs you out of Hungry on every phone, including this one.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Sign out everywhere",
-          style: "destructive",
-          onPress: () => {
-            void getHungryService()
-              .auth.signOut({ scope: "global" })
-              .then(() => {
-                signOut();
-                rootNavigation.reset({
-                  index: 0,
-                  routes: [{ name: "AuthStack", params: { screen: "Login" } }],
-                });
-              })
-              .catch((error: unknown) => {
-                reportError(error, { area: "settings_sign_out_everywhere" });
-                Alert.alert(
-                  "Couldn't sign out everywhere",
-                  "Check your connection and try again. You are still signed in.",
-                );
-              });
-          },
-        },
-      ],
-    );
+    confirmAction({
+      title: "Sign out of all devices",
+      message: "This signs you out of Hungry on every phone, including this one.",
+      confirmLabel: "Sign out everywhere",
+      destructive: true,
+      onConfirm: () => {
+        void getHungryService()
+          .auth.signOut({ scope: "global" })
+          .then(() => {
+            signOut();
+            rootNavigation.reset({
+              index: 0,
+              routes: [{ name: "AuthStack", params: { screen: "Login" } }],
+            });
+          })
+          .catch((error: unknown) => {
+            reportError(error, { area: "settings_sign_out_everywhere" });
+            showToast({
+              message: "Couldn't sign out everywhere. Check your connection and try again.",
+              tone: "error",
+            });
+          });
+      },
+    });
   };
 
   const handleCopyVersion = () => {

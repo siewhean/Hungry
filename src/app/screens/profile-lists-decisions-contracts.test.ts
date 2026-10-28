@@ -104,7 +104,18 @@ test("20: bio is capped at 150 characters in the database, the editor and the mo
 test("21: one Lists area, and Saved has Dishes, Stalls and Lists tabs", () => {
   assert.match(read("src/app/screens/profile/ProfileStack.tsx"), /name="ListsHome"/);
   const home = read("src/app/screens/profile/ProfileHomeScreen.tsx");
-  assert.match(home, /label="Lists"/);
+  // Saved is the one entry point; its Lists tab reaches ListsHome, and "Search all saved"
+  // reaches Collections.
+  assert.match(home, /key: "saved",[\s\S]*?navigation\.navigate\("Favourites"\)/);
+  assert.doesNotMatch(home, /label="Lists"/);
+  assert.match(
+    read("src/app/screens/profile/FavouritesScreen.tsx"),
+    /navigation\.navigate\("ListsHome", undefined, \{ pop: true \}\)/,
+  );
+  assert.match(
+    read("src/app/screens/profile/FavouritesScreen.tsx"),
+    /label="Search all saved"[\s\S]*?navigation\.navigate\("Collections"\)|navigation\.navigate\("Collections"\)[\s\S]*?label="Search all saved"/,
+  );
   assert.doesNotMatch(home, /label="My Checklists"|label="Hungry Portfolios"/);
   const lists = read("src/app/screens/profile/ListsHomeScreen.tsx");
   assert.match(lists, /navigation\.navigate\("Favourites", undefined, \{ pop: true \}\)/);

@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Alert, View, Pressable } from "react-native";
+import { View, Pressable } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Camera } from "lucide-react-native";
 
-import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { AccessibleImage, AppText, Button, Card, Input } from "@/components/ui";
 import { validateEmail } from "@/features/auth/validation";
 import { PROFILE_BIO_MAX_LENGTH } from "@/features/profile/profileBio";
@@ -15,6 +14,7 @@ import {
 } from "@/features/profile/profileName";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { reportError } from "@/lib/monitoring/reportError";
+import { confirmAction } from "@/lib/runtime/confirmAction";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -102,14 +102,13 @@ export function EditProfileScreen({ navigation }: Props) {
     const unsubscribe = navigation.addListener("beforeRemove", (event) => {
       if (!isDirty || allowLeaveRef.current) return;
       event.preventDefault();
-      Alert.alert("Discard changes?", "Your profile changes haven't been saved.", [
-        { text: "Keep editing", style: "cancel" },
-        {
-          text: "Discard",
-          style: "destructive",
-          onPress: () => navigation.dispatch(event.data.action),
-        },
-      ]);
+      confirmAction({
+        title: "Discard changes?",
+        message: "Your profile changes haven't been saved.",
+        confirmLabel: "Discard",
+        destructive: true,
+        onConfirm: () => navigation.dispatch(event.data.action),
+      });
     });
     return unsubscribe;
   }, [isDirty, navigation]);
@@ -125,20 +124,25 @@ export function EditProfileScreen({ navigation }: Props) {
       return;
     }
 
-    const result = await imagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
+    try {
+      const result = await imagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
 
-    if (result.canceled || !result.assets?.length) {
-      return;
+      if (result.canceled || !result.assets?.length) {
+        return;
+      }
+
+      setAvatarUri(result.assets[0].uri);
+      setRemoveAvatar(false);
+      showToast({ message: "Photo selected. Tap Save changes to use it.", tone: "info" });
+    } catch (error) {
+      reportError(error, { screen: "EditProfile", action: "pick_avatar" });
+      showToast({ message: "Couldn't open your photos.", tone: "error" });
     }
-
-    setAvatarUri(result.assets[0].uri);
-    setRemoveAvatar(false);
-    showToast({ message: "Photo selected. Tap Save changes to use it.", tone: "info" });
   };
 
   useEffect(() => {
@@ -303,7 +307,6 @@ export function EditProfileScreen({ navigation }: Props) {
                 ...(bioChanged ? { bio: trimmedBio } : {}),
                 // An empty avatarUrl removes the photo; no new photo leaves it unchanged.
                 ...(removeAvatar ? { avatarUrl: "" } : avatarUri ? { avatarUrl: avatarUri } : {}),
-                dietaryPreferences: profile.dietaryPreferences,
               });
               applySavedProfileEdits(savedProfile);
               clearDrafts();
@@ -354,17 +357,6 @@ export function EditProfileScreen({ navigation }: Props) {
               setIsSaving(false);
             }
           })();
-        }}
-      />
-      <Button
-        label="Retake the taste quiz"
-        variant="secondary"
-        onPress={() => {
-          const rootNavigation = getRootNavigation(navigation);
-          rootNavigation.navigate("OnboardingStack", {
-            screen: "TasteQuiz",
-            params: { mode: "profile" },
-          });
         }}
       />
     </ProfileScreenShell>

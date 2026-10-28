@@ -336,7 +336,7 @@ test("Supabase review reads hydrate review_photos and public profile names and a
     reviewFeed,
     /serviceProviderMode === "mock"\s*\?\s*listReviewFeedItems\(repository\)\s*:\s*\(serviceReviewItems \?\? \[\]\)/,
   );
-  assert.match(reviewHistory, /serviceProviderMode === "supabase"\s*\?\s*remoteHistory/);
+  assert.match(reviewHistory, /serviceProviderMode === "supabase" \|\| remoteReviews\.length > 0/);
   assert.match(reviewHistory, /serviceProviderMode === "mock"/);
   assert.match(reviewHistory, /remoteLoadFailed/);
   assert.doesNotMatch(reviewHistory, /hasRemoteHistory \|\| localHistory/);

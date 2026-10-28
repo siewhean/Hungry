@@ -8,9 +8,14 @@ const read = (file: string) => readFileSync(resolve(process.cwd(), file), "utf8"
 test("Stitch reviews use the viewer's real review data and preserve review actions", () => {
   const source = read("src/app/screens/profile/ReviewHistoryScreen.tsx");
 
-  assert.match(source, /review\?\.rating \?\? entry\?\.rating/);
-  assert.match(source, /review\?\.photos\[0\] \?\? dish\?\.imageUrl/);
-  assert.match(source, /review\?\.text \|\| entry\?\.text/);
+  // The list is shared review cards; mock-mode entries carry the on-device rating, text and tags.
+  assert.match(source, /rating: entry\?\.rating \?\? 0/);
+  assert.match(source, /text: entry\?\.text \?\? ""/);
+  assert.match(source, /<ProfileReviewCard/);
+  assert.match(
+    read("src/components/profile/ProfileReviewCard.tsx"),
+    /review\.photos\[0\] \?\? \(dish\.status === "ready" \? dish\.imageUrl : undefined\)/,
+  );
   assert.match(source, /getUserReviews\(profile\.id/);
   assert.match(source, /ownReviewEditor\.openActions\(review\)/);
   assert.match(source, /navigate\("DishDetail", \{ dishId \}\)/);

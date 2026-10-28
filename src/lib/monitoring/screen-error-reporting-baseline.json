@@ -13,9 +13,6 @@
     "src/app/screens/home/StoryViewerScreen.tsx",
     "src/app/screens/portfolio/AdminPortfolioFlagsScreen.tsx",
     "src/app/screens/post/PostComposerScreen.tsx",
-    "src/app/screens/profile/FollowRequestsScreen.tsx",
-    "src/app/screens/profile/PassportScreen.tsx",
-    "src/app/screens/profile/ProfileConnectionsScreen.tsx",
     "src/app/screens/profile/SocialGridScreen.tsx",
     "src/app/screens/profile/SocialPostDetailScreen.tsx",
     "src/app/screens/review/ReviewShareSheet.tsx"
