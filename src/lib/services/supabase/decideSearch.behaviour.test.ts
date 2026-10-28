@@ -48,6 +48,48 @@ test("searchDishes sends the price ceiling and the requested pool size, capped a
   assert.equal(calls[2].p_max_price, null);
 });
 
+test("searchDishes sends the quiz keywords only when asked, and maps course and cuisine tags", async () => {
+  fake.rpc.search_dishes = () => ({
+    data: [
+      {
+        dish_id: "d1",
+        venue_id: "v1",
+        building_id: "b1",
+        venue_name: "Stall",
+        name: "Wanton Mee",
+        food_type: "Noodles",
+        course: "Main",
+        cuisine_tags: ["Chinese", "Local"],
+        rating: 4,
+        review_count: 1,
+        price: 5,
+        distance_meters: 100,
+        rank_score: 1,
+      },
+    ],
+  });
+  const filters = {
+    query: "",
+    categories: [],
+    dietaryFlags: [],
+    tasteValues: NEUTRAL,
+    radius: 1000,
+    latitude: 1.28,
+    longitude: 103.84,
+  };
+  const [first] = await service.discovery.searchDishes(
+    { ...filters, cuisineKeywords: ["chinese"], stapleKeywords: ["noodle", "mee"] },
+    NEUTRAL,
+  );
+  await service.discovery.searchDishes(filters, NEUTRAL);
+  const calls = fake.callsTo("search_dishes").map((call) => call.args);
+  assert.deepEqual(calls[0].p_cuisine_keywords, ["chinese"]);
+  assert.deepEqual(calls[0].p_staple_keywords, ["noodle", "mee"]);
+  assert.equal("p_cuisine_keywords" in calls[1], false, "no keywords, no new arguments");
+  assert.equal(first.dish.course, "Main");
+  assert.deepEqual(first.dish.cuisineTags, ["Chinese", "Local"]);
+});
+
 test("getVenuesByIds rejects when the batch fails, with one call and no per-stall reads", async () => {
   fake.rpc.get_venue_summaries = () => ({ error: { message: "network down" } });
   // Resolving with only the cached stalls would tell Saved and Followed stalls they closed.

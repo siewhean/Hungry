@@ -242,6 +242,10 @@ export interface DishSummary {
   floor: string;
   name: string;
   foodTypeTag?: string;
+  /** Main, Side, Drink or Dessert & bakery; only the dish search returns it. */
+  course?: string;
+  /** Cuisine tags of the dish and its stall; only the dish search returns them. */
+  cuisineTags?: string[];
   imageUrl: string;
   blurhash?: string;
   distanceMeters: number;
@@ -464,6 +468,9 @@ export interface SearchFilters {
   longitude?: number;
   areaName?: string;
   cuisineTags?: string[];
+  /** Decide for Me's quiz answers, sent to the server as whole-word keywords (up to 12 each). */
+  cuisineKeywords?: string[];
+  stapleKeywords?: string[];
   foodTypeTag?: string;
   maxPrice?: number;
   openOnly?: boolean;

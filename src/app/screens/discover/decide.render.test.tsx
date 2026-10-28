@@ -130,9 +130,9 @@ test("Not for me does not refetch the pool, and never offers a turned-down dish 
   // stay hidden, so the screen says so instead of looping A, B, A.
   await view.press(view.findByText("Another pick"));
   assert.equal(searchCalls.length, 2);
-  assert.equal(searchCalls[1].radius, 1000);
+  assert.equal(searchCalls[1].radius, 2000);
   assert.match(view.text(), /That's everything nearby/);
-  assert.match(view.text(), /You've seen every match within 1\.0 km/);
+  assert.match(view.text(), /You've seen every match within 2\.0 km/);
   assert.equal(view.findByText("Chicken Rice"), null);
   assert.equal(events("decide_for_me_no_match").length, 0, "seen everything is not no-match");
 });
@@ -200,17 +200,90 @@ test("quiz answers are sent to the search, shown as chips, and a dropped answer 
   });
 });
 
-test("the price answer is dropped and retried once when nothing nearby is under it", async () => {
+test("the price answer is dropped only after wider radii also hold nothing under it", async () => {
   serve(async () =>
     searchCalls.at(-1)?.maxPrice ? [] : [dish("a", "Wagyu Ramen", { price: 18 })],
   );
   const view = await renderResult({ surface: "discover", answers: { price: "under5" } });
   assert.deepEqual(
-    searchCalls.map((call) => call.maxPrice),
-    [5, undefined],
+    searchCalls.map((call) => [call.radius, call.maxPrice]),
+    [
+      [1000, 5],
+      [2000, 5],
+      [4000, 5],
+      [1000, undefined],
+    ],
   );
   assert.match(view.text(), /Wagyu Ramen/);
   assert.match(view.text(), /Under S\$5 \(left out\)/);
+});
+
+test("MD-D4 cuisine and staple answers go to the server, and a wider radius is tried before an answer is dropped", async () => {
+  serve(async () =>
+    searchCalls.at(-1)?.radius === 2000
+      ? [dish("a", "Wanton Mee", { foodTypeTag: "Noodles", cuisineTags: ["Chinese"] })]
+      : [],
+  );
+  const view = await renderResult({
+    surface: "discover",
+    answers: { cuisine: "chinese", staple: "noodles" },
+  });
+  assert.deepEqual(
+    searchCalls.map((call) => call.radius),
+    [1000, 2000],
+  );
+  assert.ok(searchCalls[0].cuisineKeywords?.includes("chinese"));
+  assert.ok(searchCalls[0].stapleKeywords?.includes("noodle"));
+  assert.match(view.text(), /Wanton Mee/);
+  assert.doesNotMatch(view.text(), /left out/, "a match one step out keeps every answer");
+  assert.ok(view.container.querySelector('[aria-label="Your answers: Chinese, Noodles"]'));
+});
+
+test("MD-D4 when no radius fits, answers are dropped staple first, cuisine next", async () => {
+  serve(async () => {
+    const last = searchCalls.at(-1);
+    return last?.stapleKeywords || last?.cuisineKeywords
+      ? []
+      : [dish("a", "Chicken Rice", { foodTypeTag: "Rice Dishes" })];
+  });
+  const view = await renderResult({
+    surface: "discover",
+    answers: { cuisine: "malay", staple: "soup" },
+  });
+  const shape = searchCalls.map((call) => [
+    call.radius,
+    Boolean(call.cuisineKeywords),
+    Boolean(call.stapleKeywords),
+  ]);
+  assert.deepEqual(shape.slice(-2), [
+    [1000, true, false],
+    [1000, false, false],
+  ]);
+  assert.match(view.text(), /Chicken Rice/);
+  assert.match(view.text(), /Malay \(left out\)/);
+  assert.match(view.text(), /Soup \(left out\)/);
+});
+
+test("MD-D12 the radius starts at 1 km and the chips pick another one", async () => {
+  serve([dish("a", "Chicken Rice")]);
+  const view = await renderResult({ surface: "push" });
+  assert.equal(searchCalls[0].radius, 1000);
+  const chips = view.container.querySelectorAll('[aria-label^="Search within"]');
+  assert.equal(chips.length, 4);
+  assert.ok(
+    view.container.querySelector('[aria-label="Search within 1 kilometres, selected"]'),
+    "the radius in use is announced as selected",
+  );
+  await view.press(view.container.querySelector('[aria-label="Search within 4 kilometres"]'));
+  assert.equal(searchCalls.at(-1)?.radius, 4000);
+  assert.ok(view.container.querySelector('[aria-label="Search within 4 kilometres, selected"]'));
+  assert.equal(events("decide_for_me_radius_picked").length, 1);
+  // Picking the radius already shown looks again rather than doing nothing.
+  const before = searchCalls.length;
+  await view.press(
+    view.container.querySelector('[aria-label="Search within 4 kilometres, selected"]'),
+  );
+  assert.equal(searchCalls.length, before + 1);
 });
 
 test("MD-D8 Other picks name the stall and say why they are offered", async () => {
@@ -252,7 +325,7 @@ test("MD-D7 when every stall is closed the screen says so first and does not rep
   ]) as unknown as typeof discovery.getVenuesByIds;
   const view = await renderResult({ surface: "push" });
   await view.settle();
-  assert.match(view.text(), /Everything within 0\.5 km is closed right now/);
+  assert.match(view.text(), /Everything within 1\.0 km is closed right now/);
   assert.match(view.text(), /Closed/);
   assert.doesNotMatch(view.text(), /Closed · Closed/);
 });
@@ -295,7 +368,7 @@ test("MD-D5 the dish name and stall come before the badges, chips and explanatio
   const text = view.text();
   const nameAt = text.indexOf("Chicken Rice");
   assert.ok(nameAt >= 0);
-  for (const later of ["Popular nearby", "Under S$5", "Radius 0.5 km", "Why this dish?"]) {
+  for (const later of ["Popular nearby", "Under S$5", "Within", "Why this dish?"]) {
     assert.ok(text.indexOf(later) > nameAt, `${later} comes after the dish name`);
   }
 });

@@ -6,7 +6,8 @@ import type { DietaryFlag, DishDetail, TasteVector, VenueSummary } from "@/types
 
 /** Decide for Me starts at the first radius and widens one step at a time. */
 export const DECIDE_RADIUS_STEPS_METERS = [500, 1000, 2000, 4000];
-export const DECIDE_INITIAL_RADIUS_METERS = DECIDE_RADIUS_STEPS_METERS[0];
+/** 0.5 km held too few stalls in the suburbs; the diner can narrow or widen it on the result. */
+export const DECIDE_INITIAL_RADIUS_METERS = DECIDE_RADIUS_STEPS_METERS[1];
 
 /** Picks within this many match points are "the same quality"; the food-history mix may swap them. */
 export const DECIDE_SCORE_BAND = 5;

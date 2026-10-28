@@ -24,13 +24,24 @@ import { firstDishTimingProps } from "@/lib/analytics/firstDishTiming";
 import { reportError } from "@/lib/monitoring/reportError";
 import { LocationGate } from "@/components/discover/LocationGate";
 import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
-import { AccessibleImage, AppText, Badge, Button, Card, EmptyState, Screen } from "@/components/ui";
+import {
+  AccessibleImage,
+  AppText,
+  Badge,
+  Button,
+  Card,
+  ChipGroup,
+  EmptyState,
+  Screen,
+} from "@/components/ui";
 import { formatDishUpdated } from "@/features/detail/dishFreshness";
 import { formatDishPrice } from "@/features/detail/dishPrice";
 import {
   applyDecideAnswers,
-  decideAnswerMaxPrice,
+  decideServerFilters,
   describeDecideAnswers,
+  givenServerAnswers,
+  type DecideAnswers,
 } from "@/features/discovery/decideQuiz";
 import { findBuildingById } from "@/features/discovery/discovery";
 import {
@@ -173,6 +184,14 @@ const RADIUS_STEPS_METERS = DECIDE_RADIUS_STEPS_METERS;
 const INITIAL_RADIUS_METERS = DECIDE_INITIAL_RADIUS_METERS;
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 
+/** react-native-web drops aria-selected on buttons, so the label says which radius is on. */
+const radiusOptions = (selectedMeters: number) =>
+  RADIUS_STEPS_METERS.map((meters) => ({
+    id: String(meters),
+    label: `${meters / 1000} km`,
+    accessibilityLabel: `Search within ${meters / 1000} kilometres${meters === selectedMeters ? ", selected" : ""}`,
+  }));
+
 function nextRadius(currentRadius: number) {
   return RADIUS_STEPS_METERS.find((value) => value > currentRadius);
 }
@@ -182,11 +201,15 @@ const DECIDE_POOL_SIZE = 50;
 /** Stalls whose hours are read for the open-now check: one get_venue_summaries call (max 50). */
 const MAX_OPEN_STATE_VENUES = 50;
 
+/** The pool the screen shows, and the radius it was found within (wider than asked if needed). */
+type LoadedCandidates = OpenAwareCandidates & { radius: number };
+
 /**
- * Picks come from the server search (search_dishes in Supabase mode), not the
- * capped local cache, then are ranked by taste and checked against opening hours.
- * The quiz's price answer is sent to the server; if nothing fits it, the search runs once
- * more without it and the screen says the price answer was left out.
+ * Picks come from the server search (search_dishes in Supabase mode), not the capped local
+ * cache, then are ranked by taste and checked against opening hours. The quiz's cuisine, staple
+ * and price answers are sent to the server. When nothing fits them all, the search widens the
+ * radius first and only then drops answers (staple, cuisine, price), so an answer is not "left
+ * out" while a match sits one step further away; the screen lists whatever was dropped.
  */
 async function loadCandidates(
   tasteVector: TasteVector,
@@ -195,34 +218,58 @@ async function loadCandidates(
   radius: number,
   location: Coordinate,
   maxDishBudget?: number,
-  maxPrice?: number,
-): Promise<OpenAwareCandidates> {
+  answers?: DecideAnswers,
+): Promise<LoadedCandidates> {
   const service = getHungryService();
   // Pass the user's location so the radius is measured from them, matching the radius chip.
-  const search = (priceCeiling?: number) =>
-    service.discovery.searchDishes(
+  const search = async (
+    searchRadius: number,
+    dropped: Parameters<typeof decideServerFilters>[1],
+  ) => {
+    const { maxPrice, ...keywords } = answers ? decideServerFilters(answers, dropped) : {};
+    const results = await service.discovery.searchDishes(
       {
         query: "",
         categories: [],
         dietaryFlags,
         tasteValues: tasteVector,
-        radius,
+        radius: searchRadius,
         latitude: location.latitude,
         longitude: location.longitude,
-        maxPrice: priceCeiling,
+        maxPrice,
         limit: DECIDE_POOL_SIZE,
+        ...keywords,
       },
       tasteVector,
     );
-  let results = await search(maxPrice);
-  if (!results.length && maxPrice !== undefined) results = await search(undefined);
-  const ranked = rankDecideCandidates(
-    results.map((result) => result.dish),
-    { tasteVector, hasTasteProfile, dietaryFlags, radiusMeters: radius, maxDishBudget },
-  );
+    return rankDecideCandidates(
+      results.map((result) => result.dish),
+      { tasteVector, hasTasteProfile, dietaryFlags, radiusMeters: searchRadius, maxDishBudget },
+    );
+  };
+  let usedRadius = radius;
+  let ranked = await search(radius, []);
+  const given = answers ? givenServerAnswers(answers) : [];
+  if (!ranked.length && given.length) {
+    for (const wider of RADIUS_STEPS_METERS.filter((step) => step > radius)) {
+      // n-plus-one-ok: each pass searches a wider ring and stops at the first that has a match
+      ranked = await search(wider, []);
+      if (ranked.length) {
+        usedRadius = wider;
+        break;
+      }
+    }
+    for (let count = 1; !ranked.length && count <= given.length; count += 1) {
+      // n-plus-one-ok: one more answer is dropped on each pass, at most three searches
+      ranked = await search(radius, given.slice(0, count));
+    }
+  }
   const venueIds = [...new Set(ranked.map((dish) => dish.venueId))].slice(0, MAX_OPEN_STATE_VENUES);
   const venues = await service.discovery.getVenuesByIds(venueIds).catch(() => []);
-  return preferOpenStalls(ranked, new Map(venues.map((venue) => [venue.id, venue])));
+  return {
+    ...preferOpenStalls(ranked, new Map(venues.map((venue) => [venue.id, venue]))),
+    radius: usedRadius,
+  };
 }
 
 /** "Malay", "Malay and Under S$5", "Malay, Noodles and Spicy". */
@@ -325,7 +372,6 @@ export function DecideForMeResultScreen() {
   // before navigating; every other entry point is tracked here, once per open.
   const entrySurface = route.params?.surface ?? "direct";
   const answers = route.params?.answers;
-  const maxPrice = answers ? decideAnswerMaxPrice(answers) : undefined;
 
   // The taste vector as it was when the screen opened. Every tap here records a taste signal
   // that moves the stored vector; reading it live would refetch the pool, restart the match
@@ -371,7 +417,9 @@ export function DecideForMeResultScreen() {
 
   const { history: foodHistory, openness } = useFoodHistory();
   // The last finished load stays on screen while a wider radius loads.
-  const [candidatePool, setCandidatePool] = useState<OpenAwareCandidates>();
+  const [candidatePool, setCandidatePool] = useState<LoadedCandidates>();
+  // The radius the shown picks were found within: wider than asked when the answers needed it.
+  const shownRadius = candidatePool?.radius ?? searchRadius;
   const [isLoadingCandidates, setIsLoadingCandidates] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [reloadCount, setReloadCount] = useState(0);
@@ -396,7 +444,7 @@ export function DecideForMeResultScreen() {
       searchRadius,
       { latitude: locationLatitude, longitude: locationLongitude },
       profile.maxDishBudget,
-      maxPrice,
+      answers,
     ).then(
       (pool) => {
         if (!active) return;
@@ -418,7 +466,7 @@ export function DecideForMeResultScreen() {
     isLocationApproximate,
     locationLatitude,
     locationLongitude,
-    maxPrice,
+    answers,
     profile.dietaryPreferences,
     profile.maxDishBudget,
     hasTasteProfile,
@@ -560,21 +608,32 @@ export function DecideForMeResultScreen() {
     if (!hasNoMatch) return;
     trackAnalyticsEvent("decide_for_me_no_match", {
       surface: entrySurface,
-      radius_m: searchRadius,
+      radius_m: shownRadius,
     });
-  }, [entrySurface, hasNoMatch, searchRadius]);
+  }, [entrySurface, hasNoMatch, shownRadius]);
+
+  const pickRadius = (id: string) => {
+    const target = Number(id);
+    trackAnalyticsEvent("decide_for_me_radius_picked", {
+      surface: entrySurface,
+      from_radius_m: shownRadius,
+      to_radius_m: target,
+    });
+    if (target === searchRadius) setReloadCount((count) => count + 1);
+    setSearchRadius(target);
+  };
 
   const widenRadius = (target: number) => {
     trackAnalyticsEvent("decide_for_me_radius_expanded", {
       surface: entrySurface,
-      from_radius_m: searchRadius,
+      from_radius_m: shownRadius,
       to_radius_m: target,
     });
     setSearchRadius(target);
   };
 
   const expandRadius = () => {
-    const target = nextRadius(searchRadius);
+    const target = nextRadius(shownRadius);
     if (!target) {
       showToast({ message: "Already searching the widest radius.", tone: "info" });
       return;
@@ -582,7 +641,7 @@ export function DecideForMeResultScreen() {
     widenRadius(target);
   };
 
-  const radiusKm = (searchRadius / 1000).toFixed(1);
+  const radiusKm = (shownRadius / 1000).toFixed(1);
 
   // A new pick starts at the top of the screen and is read out, so the change is not silent.
   const showNewPick = (nextDish: DishDetail | undefined) => {
@@ -606,7 +665,7 @@ export function DecideForMeResultScreen() {
     const remaining = candidates.filter((candidate) => candidate.id !== dish.id);
     if (!remaining.length) {
       // Every match here has been seen: look further out, or say that is everything.
-      const upcomingRadius = nextRadius(searchRadius);
+      const upcomingRadius = nextRadius(shownRadius);
       if (upcomingRadius) {
         widenRadius(upcomingRadius);
         showToast({
@@ -685,7 +744,7 @@ export function DecideForMeResultScreen() {
   }
 
   if (!dish) {
-    const upcomingRadius = nextRadius(searchRadius);
+    const upcomingRadius = nextRadius(shownRadius);
     return (
       <Screen
         title="Recommended for you"
@@ -949,8 +1008,23 @@ export function DecideForMeResultScreen() {
             </View>
           ) : null}
 
-          <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
-            <Badge label={`Radius ${radiusKm} km`} tone="neutral" />
+          <View
+            style={{
+              alignItems: "center",
+              flexDirection: "row",
+              flexWrap: "wrap",
+              gap: spacing[2],
+            }}
+          >
+            <AppText variant="bodySmall" tone="secondary">
+              Within
+            </AppText>
+            <ChipGroup
+              options={radiusOptions(shownRadius)}
+              selectedId={String(shownRadius)}
+              onSelect={pickRadius}
+              style={{ flexShrink: 1, gap: spacing[1] }}
+            />
             {isLoadingCandidates ? (
               // A wider radius is loading; the current pick stays until it arrives.
               <View

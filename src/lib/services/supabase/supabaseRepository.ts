@@ -294,6 +294,10 @@ function mapDish(row: Row, venue?: VenueSummary, presentation?: DishPresentation
     floor: venue?.floor ?? "",
     name: toString(row.name),
     foodTypeTag: toString(row.food_type) || undefined,
+    ...(row.course ? { course: toString(row.course) } : {}),
+    ...(toStringArray(row.cuisine_tags).length
+      ? { cuisineTags: toStringArray(row.cuisine_tags) }
+      : {}),
     imageUrl,
     blurhash: toString(row.blurhash) || undefined,
     distanceMeters: toNumber(row.distance_meters),
@@ -1030,6 +1034,9 @@ export async function searchDishesViaRpc(
     p_cuisine_tags: filters.cuisineTags ?? null,
     p_max_price: filters.maxPrice ?? null,
     p_open_only: filters.openOnly ?? false,
+    // Sent only when the quiz asked, so a backend without the filters keeps working for search.
+    ...(filters.cuisineKeywords?.length ? { p_cuisine_keywords: filters.cuisineKeywords } : {}),
+    ...(filters.stapleKeywords?.length ? { p_staple_keywords: filters.stapleKeywords } : {}),
   });
   if (!rows) return undefined;
   return rows.map((row) => ({
