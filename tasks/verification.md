@@ -1456,6 +1456,7 @@ Use the smallest check that matches the change risk.
 - npm run typecheck clean; npm test 2095 pass / 0 fail / 2 skipped; npm run test:render 409/409; lint 0 errors (341 warnings, unchanged); format:check clean; check:n-plus-one, audit:races, check:rate-limits, audit:supabase:migration-safety, check:edge-functions pass; test:coverage OK (lines 83.5%).
 - Read-only checks on prod (frluxwpqqyomiqmjzavd): Supabase advisors, Sentry (4 unresolved, all simulator builds), content counts. No writes.
 - Update after owner decisions (map + camera shipped in released builds): typecheck clean; npm test 2094 pass / 0 fail; test:render 408/408; lint 0 errors; prettier clean; test:coverage OK (lines 83.5%). Released-build contract test now asserts the Mapbox plugin, CAMERA and NSCameraUsageDescription are kept. Needs a device check on a fresh build with EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN set.
+- ONB-X1 (20261028090000): typecheck clean; npm test 2105 pass / 0 fail; test:coverage OK; check:rate-limits, audit:races, check:n-plus-one pass. Migration up, down and re-up, and the smoke, run on a local Postgres 16 with stub tables (no pgvector/PostGIS there). NOT yet run: scripts/db/rehearse.sh on staging (needs sh's database passwords); check-migration-safety fails until supabase/rehearsals/20261028090000.json is committed.
 
 ## 2026-10-27 onboarding round-four fixes (claude/project-thread-4cunlm)
 - npm run typecheck clean; npm test 2124 pass / 0 fail / 2 skipped; npm run test:render 463/463; lint 0 errors; test:coverage OK (baseline updated).
@@ -1483,3 +1484,7 @@ Use the smallest check that matches the change risk.
 ### AUTH-R4 re-audit 2 follow-up (G1-G3), 2026-10-28
 - typecheck clean; npm test 2172/0 fail; test:render 537/537; lint 0 errors; format:check clean; test:coverage OK (baseline unchanged).
 - Playwright (mock web build): auth-flows 8/8, onboarding-flow, auth pass. Continue on Create account at 320x568 is at y=596 with two providers, so still just under the fold there; one provider (Android) is about 56 px higher.
+
+### ONB-ACCT account step progress, 2026-10-28
+
+- typecheck clean; onboarding-r4, onboarding and auth render tests pass (61, 22, 24, 12); coverage OK; Playwright onboarding-flow 9/9 (mock web, 390x844); lint 0 errors (45 warnings, unchanged).

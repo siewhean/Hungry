@@ -131,6 +131,27 @@ export interface PortfolioItemDetailRow {
   imageUrl?: string;
 }
 
+/** One saved dish as the Saved page shows it: the dish, its stall and where the stall is. */
+export interface SavedDishCard {
+  id: string;
+  name: string;
+  venueId?: string;
+  venueName?: string;
+  buildingName?: string;
+  unitNumber?: string;
+  address?: string;
+  postalCode?: string;
+  price?: number;
+  imageUrl?: string;
+  /** Absent until the dish has a review. */
+  rating?: number;
+  reviewCount?: number;
+  isOpen?: boolean;
+  /** The stall's own point, else its building's. */
+  latitude?: number;
+  longitude?: number;
+}
+
 export interface DataRepository {
   getProfile(isAuthenticated: boolean, userId?: string | null): UserProfile;
   listBuildings(): BuildingSummary[];
@@ -924,6 +945,11 @@ export interface HungryService {
       dishIds: string[];
       stallIds: string[];
     }): Promise<PortfolioItemDetailRow[]>;
+    /**
+     * Saved-dish cards for a set of dish ids in a few batched reads, never one per dish. Ids
+     * that are gone or not visible are left out. Throws when a read fails.
+     */
+    getSavedDishCards(dishIds: string[]): Promise<SavedDishCard[]>;
     /** Stall summaries (hours, open flag, building) for a set of ids in one call; no menus. */
     getVenuesByIds(ids: string[]): Promise<VenueSummary[]>;
     listActivePromotionsForTarget(input: {

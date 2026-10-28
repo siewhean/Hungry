@@ -24,6 +24,7 @@ import {
   getDishByIdViaRpc,
   getBuildingDetailViaRpc,
   getItemDetailsViaRpc,
+  getSavedDishCardsViaRpc,
   getVenueByIdViaRpc,
   getVenuesByIdsViaRpc,
   listBuildingsViaRpc,
@@ -32,6 +33,7 @@ import {
   listDishesByVenuePageViaRpc,
   listPopularNearbyViaRpc,
   listVenuesByBuildingViaRpc,
+  mapTasteCardRow,
   refreshSupabaseRepositoryCache,
   refreshSupabaseRepositoryVenueDishes,
   searchDishesViaRpc,
@@ -745,7 +747,8 @@ async function fetchFavouriteDishIdsForUser(
   const { data, error } = await client
     .from("user_favourite_dishes")
     .select("dish_id")
-    .eq("user_id", userId);
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
   if (error || !Array.isArray(data)) return [];
   return (data as Row[])
     .map((row) => asString(row.dish_id))
@@ -1994,7 +1997,14 @@ function mapRecommendationRpcRows(rows: Row[]): RankedRecommendation[] {
   return rows
     .map((row) => {
       const dishId = asString(row.dish_id);
-      const dish = dishId ? supabaseRepository.getDishById(dishId) : undefined;
+      // The card the RPC sent. Looking the dish up in the repository would start the full
+      // catalog download as a side effect; only rows from before the card columns existed (ids
+      // only) still need that lookup.
+      const dish = dishId
+        ? row.venue_name === undefined
+          ? supabaseRepository.getDishById(dishId)
+          : mapTasteCardRow(row)
+        : undefined;
       if (!dish) return null;
 
       const matchScore = asNumber(row.match_score) ?? 0;
@@ -2058,7 +2068,8 @@ async function getLiveTasteRecommendations(
 
   const rows = data as Row[];
   let mapped = mapRecommendationRpcRows(rows);
-  if (rows.length > 0 && mapped.length === 0) {
+  // Only an id-only reply needs the full catalog to be turned into dishes.
+  if (rows.length > 0 && mapped.length === 0 && rows[0]?.venue_name === undefined) {
     await refreshSupabaseRepositoryCache();
     mapped = mapRecommendationRpcRows(rows);
   }
@@ -3996,6 +4007,12 @@ export const supabaseService: HungryService = {
         price: row.price === null || row.price === undefined ? undefined : Number(row.price),
         imageUrl: typeof row.image_url === "string" ? row.image_url : undefined,
       }));
+    },
+
+    async getSavedDishCards(dishIds) {
+      const cards = await getSavedDishCardsViaRpc(dishIds);
+      if (!cards) throw new Error("Couldn't load your saved dishes.");
+      return cards;
     },
 
     async listVenuesByBuilding(buildingId) {
