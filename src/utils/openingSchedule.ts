@@ -7,6 +7,7 @@ import type { OpeningDayKey, OpeningSchedule, OpeningTimeRange } from "@/types/d
 import {
   DAY_ORDER,
   formatClockMinutes,
+  formatNextOpening,
   getHoursForDay,
   parseOperatingHours,
   type DayName,
@@ -112,6 +113,21 @@ export function getScheduleRangesForDate(
 
 const runsPastMidnight = ([open, close]: [number, number]) => close < open;
 
+/** The first opening in the seven days after `dateKey` (specials win); undefined when none. */
+function findNextScheduledOpening(
+  schedule: OpeningSchedule,
+  dateKey: string,
+  dayIndex: number,
+): string | undefined {
+  for (let offset = 1; offset <= 7; offset += 1) {
+    const nextIndex = (dayIndex + offset) % 7;
+    const { ranges } = getScheduleRangesForDate(schedule, shiftDate(dateKey, offset), nextIndex);
+    const first = [...ranges].sort((left, right) => left[0] - right[0])[0];
+    if (first) return formatNextOpening(first[0], offset, DAY_ORDER[nextIndex]);
+  }
+  return undefined;
+}
+
 /**
  * Open or closed right now in Singapore from the structured schedule. `isOpen` is the stored
  * venue flag: false (a closure notice) always means closed.
@@ -133,7 +149,9 @@ export function getScheduleOpenState(
   if (today.ranges.length === 0) {
     return {
       status: "closed",
-      detail: today.special ? "Closed today (special hours)" : "Closed today",
+      detail:
+        findNextScheduledOpening(schedule, dateKey, dayIndex) ??
+        (today.special ? "Closed today (special hours)" : "Closed today"),
     };
   }
   const current = today.ranges.find(([open, close]) => {
@@ -151,7 +169,10 @@ export function getScheduleOpenState(
     .sort((left, right) => left[0] - right[0])[0];
   return next
     ? { status: "closed", detail: `${prefix}Opens ${formatClockMinutes(next[0])}` }
-    : { status: "closed", detail: "Closed for today" };
+    : {
+        status: "closed",
+        detail: findNextScheduledOpening(schedule, dateKey, dayIndex) ?? "Closed for today",
+      };
 }
 
 function formatRanges(ranges: OpeningTimeRange[]): string {
