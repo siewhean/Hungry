@@ -24,6 +24,7 @@ import {
   getDishByIdViaRpc,
   getBuildingDetailViaRpc,
   getItemDetailsViaRpc,
+  getSavedDishCardsViaRpc,
   getVenueByIdViaRpc,
   getVenuesByIdsViaRpc,
   listBuildingsViaRpc,
@@ -745,7 +746,8 @@ async function fetchFavouriteDishIdsForUser(
   const { data, error } = await client
     .from("user_favourite_dishes")
     .select("dish_id")
-    .eq("user_id", userId);
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
   if (error || !Array.isArray(data)) return [];
   return (data as Row[])
     .map((row) => asString(row.dish_id))
@@ -3996,6 +3998,12 @@ export const supabaseService: HungryService = {
         price: row.price === null || row.price === undefined ? undefined : Number(row.price),
         imageUrl: typeof row.image_url === "string" ? row.image_url : undefined,
       }));
+    },
+
+    async getSavedDishCards(dishIds) {
+      const cards = await getSavedDishCardsViaRpc(dishIds);
+      if (!cards) throw new Error("Couldn't load your saved dishes.");
+      return cards;
     },
 
     async listVenuesByBuilding(buildingId) {

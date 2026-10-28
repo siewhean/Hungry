@@ -134,6 +134,26 @@ test("FloatingToast renders the current toast and nothing without one", async ()
   assert.doesNotMatch(view.text(), /Saved to your list/);
 });
 
+test("FloatingToast with an action shows a button that runs it and dismisses the toast", async () => {
+  const view = await render(createElement(FloatingToast, {}));
+  let undone = 0;
+  useUIStore.getState().showToast({
+    message: "Removed from Saved.",
+    tone: "success",
+    duration: 60_000,
+    action: { label: "Undo", onPress: () => (undone += 1) },
+  });
+  await view.settle();
+  assert.match(view.text(), /Removed from Saved\./);
+  const undo = view.findByLabel("Undo");
+  assert.ok(undo);
+  // The message is not itself a button, so the action is never a button inside a button.
+  assert.equal(undo?.parentElement?.closest("button"), null);
+  await view.press(undo);
+  assert.equal(undone, 1);
+  assert.equal(useUIStore.getState().toast, null);
+});
+
 test("FloatingToast clears itself after its duration", async () => {
   const view = await render(createElement(FloatingToast, {}));
   useUIStore.getState().showToast({ message: "Gone soon", tone: "info", duration: 20 });

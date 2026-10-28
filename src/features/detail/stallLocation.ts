@@ -29,6 +29,27 @@ export function buildMapsSearchUrl(address: string, pin?: Coordinate) {
 }
 
 /**
+ * Google Maps link that opens the stall's listing (hours, photos, reviews) by searching its
+ * name with its building and address. A bare "lat,lng" query only drops a pin, so coordinates
+ * are used just when the stall has no building or address to search by.
+ */
+export function buildStallMapsUrl(
+  stall: { name: string; buildingName?: string; address?: string; postalCode?: string },
+  pin?: Coordinate,
+) {
+  const hasPlace = Boolean(stall.buildingName || stall.address || stall.postalCode);
+  const query = [
+    stall.name,
+    stall.buildingName,
+    stall.address,
+    stall.postalCode ? `Singapore ${stall.postalCode}` : undefined,
+  ]
+    .filter(Boolean)
+    .join(", ");
+  return buildMapsSearchUrl(query, hasPlace ? undefined : pin);
+}
+
+/**
  * The stall's own map pin (a merchant-set pin or stored venue coordinate), when it
  * sits apart from its building's point. Street-level and home-based stalls can be
  * far from the building coordinate; a pin equal to the building adds nothing.
