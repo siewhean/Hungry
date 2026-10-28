@@ -32,6 +32,7 @@ import {
   listDishesByVenuePageViaRpc,
   listPopularNearbyViaRpc,
   listVenuesByBuildingViaRpc,
+  mapTasteCardRow,
   refreshSupabaseRepositoryCache,
   refreshSupabaseRepositoryVenueDishes,
   searchDishesViaRpc,
@@ -1992,7 +1993,14 @@ function mapRecommendationRpcRows(rows: Row[]): RankedRecommendation[] {
   return rows
     .map((row) => {
       const dishId = asString(row.dish_id);
-      const dish = dishId ? supabaseRepository.getDishById(dishId) : undefined;
+      // The card the RPC sent. Looking the dish up in the repository would start the full
+      // catalog download as a side effect; only rows from before the card columns existed (ids
+      // only) still need that lookup.
+      const dish = dishId
+        ? row.venue_name === undefined
+          ? supabaseRepository.getDishById(dishId)
+          : mapTasteCardRow(row)
+        : undefined;
       if (!dish) return null;
 
       const matchScore = asNumber(row.match_score) ?? 0;
@@ -2056,7 +2064,8 @@ async function getLiveTasteRecommendations(
 
   const rows = data as Row[];
   let mapped = mapRecommendationRpcRows(rows);
-  if (rows.length > 0 && mapped.length === 0) {
+  // Only an id-only reply needs the full catalog to be turned into dishes.
+  if (rows.length > 0 && mapped.length === 0 && rows[0]?.venue_name === undefined) {
     await refreshSupabaseRepositoryCache();
     mapped = mapRecommendationRpcRows(rows);
   }

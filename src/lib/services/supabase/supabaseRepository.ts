@@ -373,6 +373,21 @@ function mapRpcDish(row: Row): DishDetail {
   return reviews.length > 0 ? { ...dish, reviews } : dish;
 }
 
+/**
+ * A dish card from a get_taste_recommendations row (the RPC returns what a card shows, so no
+ * catalog download is needed to show the first picks). The photo is already rights-checked and
+ * the stall pin is the venue's own, else its building's.
+ */
+export function mapTasteCardRow(row: Row): DishDetail {
+  const image = toString(row.image_url);
+  const dish = mapRpcDish({ ...row, gallery: image ? [image] : [] });
+  const latitude = toOptionalCoordinate(row.latitude);
+  const longitude = toOptionalCoordinate(row.longitude);
+  return latitude !== undefined && longitude !== undefined
+    ? { ...dish, venuePin: { latitude, longitude } }
+    : dish;
+}
+
 /** A weekly schedule from the venues.opening_schedule column; undefined when absent or malformed. */
 function toVenueOpeningSchedule(value: unknown): OpeningSchedule | undefined {
   const record = toRecord(value);
