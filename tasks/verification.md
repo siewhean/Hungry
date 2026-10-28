@@ -1507,3 +1507,6 @@ Use the smallest check that matches the change risk.
 - typecheck clean; npm test 2199/0 fail (three source-contract tests that pinned the old map and Decide code were updated); test:render 592/0 fail (map cards, Loading pill, pins cap, A2 event, Decide hours cache, A1 events, four draft-arm previews); lint 0 errors; format clean on touched code; test:coverage OK and baseline updated; check:n-plus-one, check:rate-limits, audit:races OK.
 - No migration in this step. `getVenuesByIds` over 50 ids tested against the fake Supabase client (120 ids make calls of 50, 50, 20; one failed batch rejects).
 - Not walked on a device or the web build in this step.
+
+### MAPDECIDE-R4 step 7 (re-audit 1), 2026-10-28
+- Playwright walk of the mock web build at 390x844 (not a device): map, Decide and Wheel lobby screenshots reviewed. Wheel lobby fixes covered by wheel.render.test.tsx (empty-state wording). typecheck clean; npm test and test:render re-run after the change.

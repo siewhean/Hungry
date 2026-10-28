@@ -52,6 +52,8 @@ export function WheelLobbyScreen({ navigation }: Props) {
   // MD-W2: a new wheel starts with the nearest open stalls instead of an empty list.
   const [prefilling, setPrefilling] = useState(false);
   const [prefilledCount, setPrefilledCount] = useState(0);
+  // The prefill ran and nothing near the diner is open: say so, rather than a bare empty wheel.
+  const [prefillFoundNone, setPrefillFoundNone] = useState(false);
   const prefillStarted = useRef(false);
   const isHostMember = members.find((m) => m.id === myMemberId)?.isHost ?? false;
   const partyId = party?.id;
@@ -81,6 +83,7 @@ export function WheelLobbyScreen({ navigation }: Props) {
           addEntry(stall.venueId, stall.buildingId, stall.label, stall.imageUrl, "prefill");
         }
         setPrefilledCount(stalls.length);
+        setPrefillFoundNone(stalls.length === 0);
         trackAnalyticsEvent("wheel_prefilled", { party_id: partyId, count: stalls.length });
       })
       .catch((error: unknown) => {
@@ -352,9 +355,11 @@ export function WheelLobbyScreen({ navigation }: Props) {
                   <EmptyState
                     title="The wheel is empty"
                     body={
-                      PARTY_ENABLED
-                        ? "Add some spots to start the party."
-                        : "Add some spots, then spin to decide."
+                      prefillFoundNone
+                        ? "No stalls near you are open right now. Add a few spots yourself."
+                        : PARTY_ENABLED
+                          ? "Add some spots to start the party."
+                          : "Add some spots, then spin to decide."
                     }
                     icon={<Plus size={36} color={palette.textMuted} />}
                   />
@@ -379,7 +384,7 @@ export function WheelLobbyScreen({ navigation }: Props) {
                 label={spinLabel}
                 onPress={handleSpin}
                 disabled={!canSpin}
-                style={{ flex: 1.5 }}
+                style={{ flex: 1 }}
               />
             )}
           </View>

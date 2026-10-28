@@ -144,6 +144,15 @@ test("MD-W2 a new wheel starts with the four nearest open stalls", async () => {
   );
 });
 
+test("MD-W2 when no stall near the diner is open the empty wheel says so", async () => {
+  serve([]);
+  const party = await startWheel();
+  const view = await renderLobby(party);
+  await view.settle();
+  assert.equal(useWheelStore.getState().entries.length, 0);
+  assert.match(view.text(), /No stalls near you are open right now/);
+});
+
 test("wheel_prefill_v1: the control arm starts with an empty wheel and searches for nothing", async () => {
   setExperimentOverride("wheel_prefill_v1", "control");
   serve([dish("d1", "v1", 100)]);
