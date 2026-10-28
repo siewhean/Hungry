@@ -1,16 +1,24 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 
 import {
   getPasswordRuleStatuses,
   getPasswordRules,
   PASSWORD_MIN_LENGTH,
   getPasswordUpdateErrorMessage,
+  isReservedDisplayName,
   isWeakPasswordError,
+  MAX_DISPLAY_NAME_LENGTH,
   MIN_PASSWORD_LENGTH,
   PASSWORD_RULES,
+  RESERVED_DISPLAY_NAME_MESSAGE,
+  RESERVED_DISPLAY_NAME_PATTERN,
   WEAK_PASSWORD_MESSAGE,
+  suggestEmailDomain,
   validateConfirmPassword,
+  validateDisplayName,
   validateEmail,
   validatePassword,
   validateRequired,
@@ -71,4 +79,59 @@ test("getPasswordUpdateErrorMessage explains rejected new passwords", () => {
     getPasswordUpdateErrorMessage(new Error("network")),
     "Password reset failed. Please try again.",
   );
+});
+
+test("suggestEmailDomain fixes a one-slip typo of a common provider and nothing else", () => {
+  const cases: [string, string | null][] = [
+    ["mei@gmial.com", "mei@gmail.com"],
+    ["mei@gmail.con", "mei@gmail.com"],
+    ["mei@gnail.com", "mei@gmail.com"],
+    ["mei@hotmial.com", "mei@hotmail.com"],
+    ["mei@outlok.com", "mei@outlook.com"],
+    ["mei@yaho.com", "mei@yahoo.com"],
+    ["  mei@gmial.com  ", "mei@gmail.com"],
+    ["Mei.Tan@GMIAL.com", "Mei.Tan@gmail.com"],
+    // Valid as typed, or a different real provider: never "corrected".
+    ["mei@gmail.com", null],
+    ["mei@yahoo.com.sg", null],
+    ["mei@proton.me", null],
+    ["mei@company.sg", null],
+    ["mei@example.com", null],
+    // Not an address yet.
+    ["mei", null],
+    ["mei@", null],
+    ["@gmial.com", null],
+    ["", null],
+  ];
+  for (const [input, expected] of cases) {
+    assert.equal(suggestEmailDomain(input), expected, input);
+  }
+});
+
+test("validateDisplayName needs a name of at most 40 characters that is not reserved", () => {
+  assert.equal(validateDisplayName("Mei"), true);
+  assert.equal(validateDisplayName("  Mei Tan  "), true);
+  assert.equal(validateDisplayName("   "), "Name is required");
+  assert.equal(validateDisplayName("", "Display name"), "Display name is required");
+  assert.equal(validateDisplayName("a".repeat(MAX_DISPLAY_NAME_LENGTH)), true);
+  assert.equal(
+    validateDisplayName("a".repeat(MAX_DISPLAY_NAME_LENGTH + 1)),
+    `Name can be up to ${MAX_DISPLAY_NAME_LENGTH} characters`,
+  );
+  for (const reserved of ["Admin", "4dm1n", "hungry_team", "S.u.p.p.o.r.t", "Hungry Official 2"]) {
+    assert.equal(validateDisplayName(reserved), RESERVED_DISPLAY_NAME_MESSAGE, reserved);
+  }
+  assert.equal(isReservedDisplayName("Admiral"), false);
+  assert.equal(isReservedDisplayName("Hungry Hippo"), false);
+});
+
+test("the reserved-name pattern matches the one the database enforces", () => {
+  const migration = readFileSync(
+    path.join(process.cwd(), "supabase/migrations/20261022100200_profile_text_guards.sql"),
+    "utf8",
+  );
+  const serverPattern = migration.match(/~ '(\^\(hungry\|admin[^']*)';/)?.[1];
+  assert.ok(serverPattern, "pattern not found in the profile text guards migration");
+  assert.equal(RESERVED_DISPLAY_NAME_PATTERN.source, serverPattern);
+  assert.match(migration, /translate\(lower\(coalesce\(p_name, ''\)\), '01345', 'oieas'\)/);
 });

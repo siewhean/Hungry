@@ -61,10 +61,11 @@ test("user auth and onboarding flows cover account, taste, dietary, and location
     login,
     [
       /getHungryService\(\)\.auth\.signIn\(/,
-      /service\.auth\.signInWithGoogle\(/,
-      /service\.auth\.signInWithApple\(/,
+      /auth\.signInWithGoogle\(\)/,
+      /auth\.signInWithApple\(\)/,
       // Email sign-in is an existing account; the quiz state is not overwritten.
-      /completeAuth\(\{\s*completedOnboarding: getConfiguredDataSource\(\) !== "supabase"\s*\}\)/,
+      /const isMock = getConfiguredDataSource\(\) !== "supabase"/,
+      /completeAuth\(\{[\s\S]*completedOnboarding: isMock/,
     ],
     "LoginScreen",
   );

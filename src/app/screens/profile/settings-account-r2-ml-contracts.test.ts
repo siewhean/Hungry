@@ -204,7 +204,7 @@ test("deletion dialog says the profile is hidden, resends codes and is destructi
   // AUTH-12: one cooldown (useResendCooldown, 65 s from an end time) for every auth screen.
   assert.match(field, /EMAIL_CODE_RESEND_SECONDS = RESEND_COOLDOWN_SECONDS/);
   assert.match(field, /useResendCooldown\(true\)/);
-  assert.match(field, /Resend code in \$\{cooldown\}s/);
+  assert.match(field, /Resend code in \$\{formatCooldown\(cooldown\)\}/);
   assert.match(field, /variant=\{submitVariant\}/);
   assert.match(screen, /onResend=\{resendDeletionCode\}/);
 });

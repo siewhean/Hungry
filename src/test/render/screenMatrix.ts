@@ -76,7 +76,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "LoginScreen",
     file: "src/app/screens/auth/LoginScreen.tsx",
     scenario: "user",
-    expect: /Welcome back/,
+    expect: /Sign in to Hungry/,
   },
   {
     name: "ResetPasswordScreen",

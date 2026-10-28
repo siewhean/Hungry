@@ -173,7 +173,7 @@ test("onboarding is welcome, then four counted steps: location, optional taste q
   assert.match(onboardingAuth, /const finishOnboarding = \(\) => \{\s*completeOnboarding\(\);/);
   assert.match(
     onboardingAuth,
-    /screen: "EmailVerification",\s*params: \{ email: values\.email, completedOnboarding: true \}/,
+    /screen: "EmailVerification",\s*params: \{ email, completedOnboarding: true \}/,
   );
   assert.match(
     read("src/app/screens/auth/EmailVerificationScreen.tsx"),

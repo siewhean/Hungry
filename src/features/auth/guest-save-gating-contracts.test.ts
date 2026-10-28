@@ -135,7 +135,11 @@ test("a guest's taste quiz stays on the device and uploads on sign-in", () => {
     "src/app/screens/auth/EmailVerificationScreen.tsx",
     "src/app/screens/onboarding/OnboardingAuthScreen.tsx",
   ]) {
-    assert.match(read(screen), /applySignedInProfile\(/, `${screen} must merge guest taste`);
+    assert.match(
+      read(screen),
+      /useSignedInProfileSync\(/,
+      `${screen} must merge guest taste (useSignedInProfileSync calls applySignedInProfile)`,
+    );
   }
 });
 

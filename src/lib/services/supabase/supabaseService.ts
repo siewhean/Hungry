@@ -3658,6 +3658,21 @@ export const supabaseService: HungryService = {
       return await toAppSession(client);
     },
 
+    async signInWithEmailCode(email, options) {
+      const client = requireSupabaseClient();
+      const displayName = options?.displayName?.trim();
+      const { error } = await client.auth.signInWithOtp({
+        email: normalizeAuthEmail(email),
+        options: {
+          shouldCreateUser: true,
+          emailRedirectTo: AUTH_REDIRECTS.emailConfirm,
+          // Applied only when this creates the account; an existing account keeps its name.
+          ...(displayName ? { data: { display_name: displayName } } : {}),
+        },
+      });
+      if (error) throw error;
+    },
+
     async signIn(email, password) {
       const client = requireSupabaseClient();
       const { error } = await client.auth.signInWithPassword({

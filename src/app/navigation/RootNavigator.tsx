@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import {
   NavigationContainer,
   createNavigationContainerRef,
+  getPathFromState,
   type Theme,
 } from "@react-navigation/native";
 import {
@@ -31,7 +32,7 @@ import type { MainTabParamList, RootStackParamList } from "./navigationTypes";
 import { onboardingEntryRoute } from "./onboardingEntry";
 import { SwipeableTabNavigator } from "./SwipeableTabNavigator";
 import { useAccountDeletionGracePrompt } from "@/features/auth/useAccountDeletionGracePrompt";
-import { createRootLinking } from "./linking";
+import { createRootLinking, withoutEmailParam } from "./linking";
 import { getInitialNotificationUrl, subscribeToNotificationOpens } from "@/lib/notifications/push";
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
@@ -546,6 +547,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           },
         };
       }),
+      getPathFromState: withoutEmailParam(getPathFromState),
       // Tapped push notifications open their deep link through the same linking rules.
       getInitialURL: async () => (await Linking.getInitialURL()) ?? getInitialNotificationUrl(),
       subscribe: (listener: (url: string) => void) => {
