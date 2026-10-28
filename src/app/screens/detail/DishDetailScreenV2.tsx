@@ -45,7 +45,7 @@ import {
 import { isSoldOut } from "@/features/merchant/menuSections";
 import { DeliveryButtonRow } from "@/components/dish/DeliveryPlatformButton";
 import { DetailActionBar, type DetailAction } from "@/components/detail/DetailActionBar";
-import { FloatingBackButton } from "@/components/detail/FloatingBackButton";
+import { DetailCollapsingHeader } from "@/components/detail/DetailCollapsingHeader";
 import { TasteRadarChart } from "@/components/taste/TasteRadarChart";
 import { PhotoPager } from "@/components/dish/PhotoPager";
 import { DetailHeroFade } from "@/components/detail/DetailHeroFade";
@@ -1017,21 +1017,13 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     <FeedErrorBoundary title="Dish details unavailable" body="Couldn't load this dish — try again.">
       <SafeAreaView style={{ backgroundColor: palette.bg, flex: 1 }} edges={["left", "right"]}>
         <View style={{ flex: 1 }}>
-          {/* First in the tree so screen readers reach Back first; zIndex keeps it on top. */}
-          <View
-            pointerEvents="box-none"
-            style={{
-              elevation: 10,
-              height: insets.top + 64,
-              left: 0,
-              position: "absolute",
-              right: 0,
-              top: 0,
-              zIndex: 10,
-            }}
-          >
-            <FloatingBackButton onPress={leaveDetail} />
-          </View>
+          {/* First in the tree so screen readers reach Back first; the name fades in once the photo has. */}
+          <DetailCollapsingHeader
+            scrollY={heroScrollY}
+            heroHeight={heroHeight}
+            title={dish.name}
+            onBack={leaveDetail}
+          />
           <Animated.ScrollView
             showsVerticalScrollIndicator={false}
             onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: heroScrollY } } }], {

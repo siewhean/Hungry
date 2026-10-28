@@ -7,7 +7,7 @@ const stall = readRepoFile("src/app/screens/detail/StallDetailScreen.tsx");
 const dish = readRepoFile("src/app/screens/detail/DishDetailScreenV2.tsx");
 
 test("Stitch stall layout keeps catalogue and review evidence dynamic", () => {
-  assert.match(stall, /<FloatingBackButton/);
+  assert.match(stall, /<DetailCollapsingHeader/);
   // The whole menu is titled "Menu", not "Signature dishes" (STALL-10).
   assert.match(stall, /<AppText variant="h2">Menu<\/AppText>/);
   assert.doesNotMatch(stall, /Signature dishes/);
@@ -22,7 +22,7 @@ test("Stitch stall layout keeps catalogue and review evidence dynamic", () => {
 });
 
 test("Stitch dish layout keeps taste, rating, price, and menu data dynamic", () => {
-  assert.match(dish, /<FloatingBackButton/);
+  assert.match(dish, /<DetailCollapsingHeader/);
   assert.match(dish, /How it tastes to you/);
   assert.match(dish, /<AppText variant="h2">Reviews<\/AppText>/);
   assert.match(dish, /dish\.mustOrder\s*\?/);

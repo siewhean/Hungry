@@ -51,6 +51,7 @@ import {
 import { PhotoPager } from "@/components/dish/PhotoPager";
 import { DetailHeroFade } from "@/components/detail/DetailHeroFade";
 import { DeliveryButtonRow } from "@/components/dish/DeliveryPlatformButton";
+import { DetailCollapsingHeader } from "@/components/detail/DetailCollapsingHeader";
 import { FloatingBackButton } from "@/components/detail/FloatingBackButton";
 import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
 import {
@@ -1326,33 +1327,20 @@ export function StallDetailScreen({ navigation, route }: Props) {
     >
       <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["left", "right"]}>
         <View style={{ flex: 1 }}>
-          {/* Back and Share come first in the tree so screen readers reach them first. A later
-              sibling draws on top on iOS and web, so this wrapper's zIndex/elevation keeps them
-              above the hero photo; box-none lets taps between the buttons reach the photo. */}
-          <View
-            pointerEvents="box-none"
-            testID="stall-detail-top-chrome"
-            style={{
-              elevation: 10,
-              height: insets.top + 64,
-              left: 0,
-              position: "absolute",
-              right: 0,
-              top: 0,
-              zIndex: 10,
-            }}
-          >
-            <FloatingBackButton onPress={goBackOrHome} />
-            {showDeferredDetailControls ? (
-              // Share sits over the photo so the bottom bar has room for a whole "Write a review".
-              <FloatingBackButton
-                accessibilityLabel="Share stall"
-                icon={ShareIcon}
-                onPress={openShareSheet}
-                side="right"
-              />
-            ) : null}
-          </View>
+          {/* Back and Share come first in the tree so screen readers reach them first. The
+              wrapper's zIndex/elevation keeps them above the hero photo on iOS and web (a later
+              sibling draws on top); box-none lets taps between the buttons reach the photo.
+              Once the photo has faded, a bar with the stall name fades in behind them. */}
+          <DetailCollapsingHeader
+            scrollY={heroScrollY}
+            heroHeight={heroHeight}
+            title={venue.name}
+            onBack={goBackOrHome}
+            onShare={showDeferredDetailControls ? openShareSheet : undefined}
+            shareLabel="Share stall"
+            shareIcon={ShareIcon}
+            chromeTestID="stall-detail-top-chrome"
+          />
           <Animated.ScrollView
             showsVerticalScrollIndicator={false}
             onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: heroScrollY } } }], {
