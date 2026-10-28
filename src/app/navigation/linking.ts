@@ -15,6 +15,8 @@ export interface LinkingAuthState {
   hasCompletedOnboarding?: boolean;
   /** Onboarding is done on the device but waits for the account step (OnboardingAuth). */
   onboardingCompletionPending?: boolean;
+  /** Welcome's "Sign in" was tapped and nobody has signed in yet: signed-out links open Login. */
+  returningAccountIntent?: boolean;
   /** Called with the route a signed-out user was sent to onboarding/Login from. */
   onAuthRedirect?: (route: LinkingRoute) => void;
 }
@@ -331,12 +333,13 @@ function isSignedOutOnlyAuthState(state: LinkingState): boolean {
 function signedOutState(
   hasCompletedOnboarding: boolean | undefined,
   onboardingCompletionPending?: boolean,
+  returningAccountIntent?: boolean,
 ): LinkingState {
   // As Splash does: someone who finished the quiz but not the account step resumes there.
   if (onboardingCompletionPending) {
     return createState("OnboardingStack", { screen: "OnboardingAuth" });
   }
-  return hasCompletedOnboarding
+  return hasCompletedOnboarding || returningAccountIntent
     ? createState("AuthStack", { screen: "Login" })
     : createState("OnboardingStack", { screen: "OnboardingWelcome" });
 }
@@ -438,6 +441,7 @@ export function createRootLinking(
         isAuthenticated,
         hasCompletedOnboarding,
         onboardingCompletionPending,
+        returningAccountIntent,
         onAuthRedirect,
       } = getAuthState();
       const activeRoute = state.routes[state.routes.length - 1];
@@ -452,7 +456,11 @@ export function createRootLinking(
       }
       if (!isAuthenticated) {
         rememberRoute(activeRoute);
-        return signedOutState(hasCompletedOnboarding, onboardingCompletionPending);
+        return signedOutState(
+          hasCompletedOnboarding,
+          onboardingCompletionPending,
+          returningAccountIntent,
+        );
       }
 
       return state;

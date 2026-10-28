@@ -366,7 +366,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "LocationPermissionScreen",
     file: "src/app/screens/onboarding/LocationPermissionScreen.tsx",
     scenario: "user",
-    expect: /Step 1 of 4/,
+    expect: /Step 1 of 5/,
   },
   {
     name: "ManualLocationPickerScreen",
@@ -396,7 +396,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "TasteQuizScreen",
     file: "src/app/screens/onboarding/TasteQuizScreen.tsx",
     scenario: "user",
-    expect: /What flavours do/,
+    expect: /How sweet do you like your food/,
   },
   {
     name: "WelcomeScreen",

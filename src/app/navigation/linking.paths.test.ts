@@ -99,6 +99,18 @@ test("signed out, a protected link is remembered and the user resumes where Spla
     params: { screen: "OnboardingAuth" },
   });
 
+  // Welcome's "Sign in" tapped, nobody signed in yet: a link opens Login, not onboarding.
+  const signingIn = linkingFor(() => ({
+    isAuthReady: true,
+    isAuthenticated: false,
+    hasCompletedOnboarding: false,
+    returningAccountIntent: true,
+  }));
+  assert.deepEqual(signingIn.getStateFromPath("user/u1")?.routes[0], {
+    name: "AuthStack",
+    params: { screen: "Login" },
+  });
+
   const returning = linkingFor(() => ({
     isAuthReady: true,
     isAuthenticated: false,
@@ -116,6 +128,6 @@ test("signed out, a protected link is remembered and the user resumes where Spla
 
   assert.deepEqual(
     remembered.map((route) => route.name),
-    ["UserProfile", "UserProfile", "UserProfile"],
+    ["UserProfile", "UserProfile", "UserProfile", "UserProfile"],
   );
 });

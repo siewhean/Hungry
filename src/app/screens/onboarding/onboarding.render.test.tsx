@@ -16,6 +16,7 @@ import {
 } from "@/lib/experiments/experiments";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useLocationStore } from "@/store/useLocationStore";
+import { useOnboardingDraftStore } from "@/store/useOnboardingDraftStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { cleanup, createFakeNavigation, renderScreen, type RenderResult } from "@/test/render";
 import { enterScenario } from "@/test/render/sessions";
@@ -178,8 +179,8 @@ test("ONB-3: a relaunch after onboarding, with no account yet, returns to the ac
   });
 });
 
-test("ONB-3: an existing account from Welcome still relaunches to sign-in", async () => {
-  useSessionStore.getState().completeOnboarding(false, { existingAccount: true });
+test("ONB-3: Welcome's Sign in still relaunches to sign-in", async () => {
+  useSessionStore.getState().setReturningAccountIntent(true);
   useSessionStore.setState({ isAuthReady: true, hasHydrated: true });
   const navigation = createFakeNavigation();
   const view = await renderScreen(SplashScreen as never, { name: "Splash", navigation });
@@ -316,12 +317,13 @@ test("ONB-6: the full flow carries the quiz answers, the diet and a saved dish i
   }
   const toDietary = quizNav.calls.find((call) => call.args[0] === "DietaryPreferences");
   assert.ok(toDietary, "Next on the last question opens the dietary step");
-  const dietaryParams = toDietary!.args[1] as {
-    answers?: { sweet?: number };
-    answeredKeys?: string[];
-  };
-  assert.deepEqual(dietaryParams.answeredKeys, ["sweet"]);
-  assert.equal(dietaryParams.answers?.sweet, 8);
+  // The answers travel in the draft; route params stay plain (an object lands in the web URL).
+  const dietaryParams = toDietary!.args[1] as Record<string, unknown>;
+  assert.ok(Object.values(dietaryParams).every((value) => typeof value !== "object"));
+  const draftQuiz = useOnboardingDraftStore.getState().quiz;
+  assert.deepEqual(draftQuiz?.answeredKeys, ["sweet"]);
+  assert.equal(draftQuiz?.answers.sweet, 8);
+  useOnboardingDraftStore.getState().rememberRoute("DietaryPreferences");
   await quiz.unmount();
 
   // Dietary: pick Vegetarian and continue.
@@ -589,7 +591,7 @@ test("ONB-11: the picker opened from the Location step is the onboarding step, e
     name: "ManualLocationPicker",
     params: { mode: "onboarding" },
   });
-  assert.ok(view.findByLabel("Step 1 of 4"));
+  assert.ok(view.findByLabel("Step 1 of 5"));
 });
 
 test("ONB-12, ONB-X8: no autofocus under a screen reader, a usable map label, and a spoken result count", async () => {
@@ -654,6 +656,7 @@ test("ONB-16: step_number is the on-screen counter; step_index is the position i
   assert.equal(visibleStepNumber("welcome"), 0);
   assert.equal(visibleStepNumber("location"), 1);
   assert.equal(visibleStepNumber("done"), 4);
+  assert.equal(visibleStepNumber("account"), 5);
   trackOnboardingStepViewed("location");
   const [viewed] = events("onboarding_step_viewed");
   assert.equal(viewed?.properties.step_number, 1);

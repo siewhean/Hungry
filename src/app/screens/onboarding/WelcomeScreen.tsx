@@ -26,7 +26,7 @@ const VALUE_PROPS = [
 export function WelcomeScreen({ navigation }: Props) {
   const { palette } = useHungryTheme();
   const insets = useSafeAreaInsets();
-  const completeOnboarding = useSessionStore((state) => state.completeOnboarding);
+  const setReturningAccountIntent = useSessionStore((state) => state.setReturningAccountIntent);
   const { height: SCREEN_H } = useWindowDimensions();
   const reduceMotion = useReduceMotion();
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
@@ -61,17 +61,17 @@ export function WelcomeScreen({ navigation }: Props) {
   }, [headlineAnim, logoAnim, pillsAnim, reduceMotion]);
 
   const handleStart = () => {
+    setReturningAccountIntent(false);
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     navigation.navigate("LocationPermission");
   };
 
   const handleExistingAccountSignIn = () => {
-    // An existing account has already completed the account journey. Persist
-    // that intent before leaving onboarding so protected deep links and an
-    // app reload return to authentication rather than the welcome screen. It is not
-    // the onboarding journey, and a dish saved earlier as a guest is not attached to it.
+    // Onboarding is not marked done here: a relaunch returns to Login through this intent, and
+    // the account decides after sign-in whether onboarding runs (an existing account goes Home,
+    // a new one goes through it). A dish saved earlier as a guest is not attached to this account.
     clearPendingDishSave();
-    completeOnboarding(false, { existingAccount: true });
+    setReturningAccountIntent(true);
     getRootNavigation(navigation).navigate("AuthStack", { screen: "Login" });
   };
 

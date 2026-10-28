@@ -37,7 +37,7 @@ test("manual location list is alphabetical", () => {
 
 test("taste profile result respects safe area and hides the grid when no dishes", () => {
   const source = read("TasteProfileResultScreen.tsx");
-  assert.match(source, /paddingTop: insets\.top \+ spacing\[4\]/);
+  assert.match(source, /paddingTop: insets\.top \+ spacing\[2\]/);
   assert.match(source, /paddingBottom: insets\.bottom \+ spacing\[4\]/);
   // No catalog dishes: a loading skeleton or a retry, never stand-in recommendations.
   assert.match(source, /\{loadState === "loading" && dishes\.length === 0 \? \(/);

@@ -130,6 +130,8 @@ test("Sprint 9 screen contract: onboarding icon controls and location rows are l
   const manualLocation = read("src/app/screens/onboarding/ManualLocationPickerScreen.tsx");
   const tasteProfileResult = read("src/app/screens/onboarding/TasteProfileResultScreen.tsx");
   const tasteQuiz = read("src/app/screens/onboarding/TasteQuizScreen.tsx");
+  const tiles = read("src/app/screens/onboarding/TasteOptionTiles.tsx");
+  const dietaryStep = read("src/app/screens/onboarding/DietaryStep.tsx");
 
   assert.match(locationPermission, /accessibilityLabel="Back to welcome"/);
   assert.match(locationPermission, /accessibilityHint="Returns to the welcome screen"/);
@@ -145,7 +147,7 @@ test("Sprint 9 screen contract: onboarding icon controls and location rows are l
   );
   assert.match(manualLocation, /accessibilityLabel=\{`Choose \$\{result\.title\}`\}/);
   assert.match(
-    tasteProfileResult,
+    read("src/app/screens/onboarding/ResultDishCard.tsx"),
     /accessibilityLabel=\{`\$\{isSaved \? "Unsave" : "Save"\} \$\{dish\.name\}`\}/,
   );
   assert.match(tasteProfileResult, /"Saved once you create your account at the end of setup"/);
@@ -182,8 +184,10 @@ test("Sprint 9 screen contract: onboarding icon controls and location rows are l
     /dishes\.length > 0 && tasteRanked\s*\? "Picked to match your taste/,
   );
   assert.doesNotMatch(tasteProfileResult, /generated food photo/);
-  // The three cards of a question are one radio group (r2 onboarding-L9).
-  assert.match(tasteQuiz, /accessibilityRole="radiogroup"/);
+  // The three cards of a question are one radio group (r2 onboarding-L9), as tiles or carousel.
+  assert.match(tiles, /accessibilityRole="radiogroup"/);
+  assert.match(tiles, /accessibilityRole="radio"/);
+  assert.match(tiles, /aria-checked=\{isSelected\}/);
   assert.match(
     tasteQuiz,
     /accessibilityRole="radio"[\s\S]*accessibilityLabel=\{`\$\{QUESTIONS\[currentKey\]\} \$\{labels\[index\]\}`\}/,
@@ -193,11 +197,10 @@ test("Sprint 9 screen contract: onboarding icon controls and location rows are l
     tasteQuiz,
     /accessibilityState=\{\{ checked: isSelected, disabled: isTransitioning \}\}/,
   );
-  assert.match(
-    tasteQuiz,
-    /accessibilityRole="checkbox"[\s\S]*accessibilityLabel=\{`Dietary preference \$\{label\}`\}/,
-  );
-  assert.match(tasteQuiz, /accessibilityState=\{\{ checked: isSelected \}\}/);
+  assert.match(dietaryStep, /accessibilityRole="checkbox"/);
+  assert.match(dietaryStep, /accessibilityLabel=\{`Dietary preference \$\{option\.label\}`\}/);
+  assert.match(dietaryStep, /accessibilityState=\{\{ checked: selected \}\}/);
+  assert.match(dietaryStep, /aria-checked=\{selected\}/);
   assert.match(tasteQuiz, /const \{ fontScale, height, width \} = useWindowDimensions\(\)/);
   assert.match(
     tasteQuiz,

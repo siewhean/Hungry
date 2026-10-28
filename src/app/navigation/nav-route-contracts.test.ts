@@ -63,27 +63,30 @@ test("onboarding is welcome, then four counted steps: location, optional taste q
   assert.doesNotMatch(read("src/app/screens/auth/SignUpScreen.tsx"), /screen: "OnboardingWelcome"/);
   assert.match(
     read("src/app/navigation/RootNavigator.tsx"),
-    /isAuthenticated && !hasCompletedOnboarding[\s\S]*screen: "OnboardingWelcome"/,
+    /isAuthenticated && !hasCompletedOnboarding[\s\S]*routes: \[onboardingEntryRoute\(\)\]/,
   );
 
-  // One progress component, "Step x of 4" from Location to Done. Welcome has no counter
-  // (r2 onboarding-L14) and the quiz shows its own "Question x of 7" instead of a second bar
-  // (r2 onboarding-M1).
+  // One progress component, "Step x of 5" from Location to the account step. Welcome has no
+  // counter (r2 onboarding-L14); the quiz fills the Taste segment per question instead of
+  // showing a second counter (r4 onboarding-8).
   assert.match(
     progress,
-    /ONBOARDING_STEPS = \["welcome", "location", "taste", "openness", "done"\] as const/,
+    /ONBOARDING_STEPS = \[\s*"welcome",\s*"location",\s*"taste",\s*"openness",\s*"done",\s*"account",?\s*\] as const/,
   );
   assert.match(
     progress,
     /PROGRESS_STEPS = ONBOARDING_STEPS\.filter\(\(name\) => name !== "welcome"\)/,
   );
-  assert.match(progress, /Step \{current\} of \{total\}/);
+  assert.match(progress, /Step \$\{current\} of \$\{total\}/);
   assert.match(progress, /accessibilityRole="progressbar"/);
   assert.doesNotMatch(welcome, /<OnboardingProgress/);
   assert.match(location, /<OnboardingProgress step="location" \/>/);
   assert.match(picker, /\{isOnboarding \? <OnboardingProgress step="location" \/> : null\}/);
-  assert.doesNotMatch(quiz, /<OnboardingProgress/);
-  assert.match(quiz, /Question \{inDietaryStep \? totalSteps : step \+ 1\} of \{totalSteps\}/);
+  assert.match(quiz, /<OnboardingProgress\s+step="taste"/);
+  assert.match(quiz, /Question \$\{step \+ 1\} of \$\{totalSteps\}/);
+  // The shared bar counts the account step (5 of 5); the account screen draws it once the
+  // shared sign-up form lands with the auth build.
+  assert.match(progress, /"account"/);
   assert.match(done, /<OnboardingProgress step="done" \/>/);
   assert.match(openness, /\{isSettings \? null : <OnboardingProgress step="openness" \/>\}/);
   // The quiz no longer draws its own progress bar.
@@ -102,20 +105,21 @@ test("onboarding is welcome, then four counted steps: location, optional taste q
     /navigation\.navigate\("DietaryPreferences", \{[\s\S]*initialPhase: "dietary"[\s\S]*\}\)/,
   );
   assert.match(quiz, /route\.name === "DietaryPreferences"/);
-  // The dietary route is a fresh TasteQuizScreen instance: the taste answers must be
-  // carried over, and a missing draft must never reset the vector to neutral.
+  // The dietary route is a fresh TasteQuizScreen instance: the taste answers are carried over
+  // in the onboarding draft (never as route params, which land in the web URL as
+  // "[object Object]"), and a missing draft must never reset the vector to neutral.
   assert.match(
     quiz,
-    /navigation\.navigate\("DietaryPreferences", \{[\s\S]*\.\.\.\(answeredAny \? \{ answers: values, answeredKeys \} : \{\}\),[\s\S]*\}\)/,
+    /useOnboardingDraftStore\.getState\(\)\.rememberQuiz\(\{ answers: values, answeredKeys, step \}\);\s*navigation\.navigate\("DietaryPreferences", \{\s*mode: flowMode,\s*initialPhase: "dietary",\s*\}\)/,
   );
   assert.match(
     quiz,
-    /useState<TasteVector>\(\s*carriedAnswers \?\? \(flowMode === "profile" \? profile\.tasteVector : INITIAL\),?\s*\)/,
+    /useState<TasteVector>\(\s*carriedAnswers \?\?\s*\(flowMode === "profile" \? profile\.tasteVector : \(draft\?\.quiz\?\.answers \?\? INITIAL\)\),?\s*\)/,
   );
   assert.match(quiz, /if \(hasTasteAnswers\) \{\s*setTasteVector\(values\);/);
   // Swipes only change the local draft; the vector is committed once in handleFinish.
   assert.equal(quiz.match(/setTasteVector\(/g)?.length, 1);
-  assert.match(types, /DietaryPreferences:[\s\S]*answers\?: TasteVector;/);
+  assert.doesNotMatch(types, /DietaryPreferences:[\s\S]{0,200}answers\?: TasteVector;/);
   assert.match(quiz, /navigation\.navigate\("FoodOpenness", \{ mode: "onboarding" \}\)/);
   // Openness: Continue saves the choice; Skip saves nothing (the default applies); both go to done.
   assert.match(openness, /navigation\.navigate\("TasteProfileResult"\)/);
@@ -124,7 +128,7 @@ test("onboarding is welcome, then four counted steps: location, optional taste q
   // (without taste answers), and the quiz stays marked as skipped.
   assert.match(
     quiz,
-    /setSkippedTasteQuiz\(true\);\s*navigation\.navigate\("DietaryPreferences", \{\s*mode: flowMode,\s*initialPhase: "dietary",\s*\}\)/,
+    /setSkippedTasteQuiz\(true\);\s*useOnboardingDraftStore\s*\.getState\(\)\s*\.rememberQuiz\(\{ answers: values, answeredKeys: \[\], step \}\);\s*navigation\.navigate\("DietaryPreferences", \{\s*mode: flowMode,\s*initialPhase: "dietary",\s*\}\)/,
   );
   // Next through every question without answering is also a skip, not an all-balanced taste.
   assert.match(quiz, /const answeredAny = hasAnsweredAnyQuestion\(answeredKeys\)/);
@@ -140,12 +144,12 @@ test("onboarding is welcome, then four counted steps: location, optional taste q
   for (const source of [location, picker, quiz, openness]) {
     assert.doesNotMatch(source, /completeOnboarding/);
   }
-  // Welcome completes onboarding only for an existing account going to Login.
-  // ...as an existing account: no onboarding_completed, no pending account step (ONB-2, ONB-3).
-  assert.equal(welcome.match(/completeOnboarding\(/g)?.length, 1);
+  // Welcome never completes onboarding: "Sign in" only stores the returning-account intent
+  // (R4-ONB-4), so the account decides after sign-in whether onboarding runs.
+  assert.doesNotMatch(welcome, /completeOnboarding/);
   assert.match(
     welcome,
-    /const handleExistingAccountSignIn = \(\) => \{[\s\S]*?clearPendingDishSave\(\);\s*completeOnboarding\(false, \{ existingAccount: true \}\);[\s\S]*?screen: "Login"/,
+    /const handleExistingAccountSignIn = \(\) => \{[\s\S]*?clearPendingDishSave\(\);\s*setReturningAccountIntent\(true\);[\s\S]*?screen: "Login"/,
   );
   assert.match(
     done,

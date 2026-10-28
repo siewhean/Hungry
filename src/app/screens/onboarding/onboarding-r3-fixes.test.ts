@@ -47,9 +47,9 @@ test("ONB-2: finishing onboarding signed out sends onboarding_completed only onc
   assert.equal(useSessionStore.getState().onboardingCompletionPending, false);
 });
 
-test("ONB-2, ONB-3: Welcome's existing-account sign-in is not an onboarding completion", () => {
-  useSessionStore.getState().completeOnboarding(false, { existingAccount: true });
-  assert.equal(useSessionStore.getState().hasCompletedOnboarding, true);
+test("ONB-2, ONB-3: Welcome's sign-in intent is not an onboarding completion", () => {
+  useSessionStore.getState().setReturningAccountIntent(true);
+  assert.equal(useSessionStore.getState().hasCompletedOnboarding, false);
   assert.equal(useSessionStore.getState().onboardingCompletionPending, false);
   useSessionStore.getState().completeAuth();
   assert.equal(events("onboarding_completed").length, 0);

@@ -11,11 +11,7 @@ import { useProfileStore } from "@/store/useProfileStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { FoodOpenness } from "@/types/domain";
-import {
-  OnboardingProgress,
-  trackOnboardingStepSkipped,
-  trackOnboardingStepViewed,
-} from "./OnboardingProgress";
+import { OnboardingProgress, trackOnboardingStepViewed } from "./OnboardingProgress";
 import type { OnboardingStackParamList } from "./OnboardingStack";
 import {
   ONBOARDING_ACTIONS_BOTTOM_PADDING,
@@ -110,6 +106,7 @@ export function FoodOpennessScreen({ navigation, route }: Props) {
                 key={option.value}
                 accessibilityRole="radio"
                 accessibilityState={{ checked: isSelected }}
+                aria-checked={isSelected}
                 accessibilityLabel={option.label}
                 accessibilityHint={option.description}
                 onPress={() => setSelected(option.value)}
@@ -147,17 +144,6 @@ export function FoodOpennessScreen({ navigation, route }: Props) {
         }}
       >
         <Button label={isSettings ? "Save" : "Continue"} onPress={() => finish(selected)} />
-        {isSettings ? null : (
-          <Button
-            label="Skip"
-            variant="ghost"
-            onPress={() => {
-              // Skip saves nothing: the default applies until the user picks one in Settings.
-              trackOnboardingStepSkipped("openness");
-              navigation.navigate("TasteProfileResult");
-            }}
-          />
-        )}
       </View>
     </SafeAreaView>
   );

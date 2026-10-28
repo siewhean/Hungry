@@ -155,7 +155,10 @@ test("H111/H112/H113/H114/H120/H121: auth forms hide disabled OAuth, autofill, s
 test("H115/H116: quiz answers stay a draft until finish and a Profile retake starts from the saved vector", () => {
   const quiz = read("src/app/screens/onboarding/TasteQuizScreen.tsx");
   assert.equal(quiz.match(/setTasteVector\(/g)?.length, 1);
-  assert.match(quiz, /flowMode === "profile" \? profile\.tasteVector : INITIAL/);
+  assert.match(
+    quiz,
+    /flowMode === "profile" \? profile\.tasteVector : \(draft\?\.quiz\?\.answers \?\? INITIAL\)/,
+  );
 });
 
 test("H117: cuisines picked before the cuisine step was cut are still sent with the quiz response", () => {
