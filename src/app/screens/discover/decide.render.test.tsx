@@ -120,7 +120,7 @@ test("Not for me does not refetch the pool, and never offers a turned-down dish 
   assert.equal(searchCalls.length, 1);
   assert.equal(searchCalls[0].limit, 50, "Decide asks for the full pool");
 
-  await view.press(view.findByText("Not for me"));
+  await view.press(view.findByText("Another pick"));
   assert.match(view.text(), /Laksa/);
   assert.equal(searchCalls.length, 1, "the taste signal does not reload the pool");
   assert.equal(useProfileStore.getState().tasteInteractionEvents.length, 1);
@@ -128,7 +128,7 @@ test("Not for me does not refetch the pool, and never offers a turned-down dish 
 
   // The second dismissal empties the pool: the radius widens, the same two dishes come back and
   // stay hidden, so the screen says so instead of looping A, B, A.
-  await view.press(view.findByText("Not for me"));
+  await view.press(view.findByText("Another pick"));
   assert.equal(searchCalls.length, 2);
   assert.equal(searchCalls[1].radius, 1000);
   assert.match(view.text(), /That's everything nearby/);
@@ -287,6 +287,63 @@ test("MD-D1 the headline match sits between the lowest and highest Palate match 
     headline <= Math.max(...bars) && headline >= Math.min(...bars),
     `${headline} vs ${bars}`,
   );
+});
+
+test("MD-D5 the dish name and stall come before the badges, chips and explanation", async () => {
+  serve([dish("a", "Chicken Rice", { venueName: "Tian Tian" })]);
+  const view = await renderResult({ surface: "discover", answers: { price: "under5" } });
+  const text = view.text();
+  const nameAt = text.indexOf("Chicken Rice");
+  assert.ok(nameAt >= 0);
+  for (const later of ["Popular nearby", "Under S$5", "Radius 0.5 km", "Why this dish?"]) {
+    assert.ok(text.indexOf(later) > nameAt, `${later} comes after the dish name`);
+  }
+});
+
+test("MD-D6 Another pick sits in the dock next to Directions and asks for the next dish", async () => {
+  serve([dish("a", "Chicken Rice"), dish("b", "Laksa")]);
+  const view = await renderResult({ surface: "push" });
+  const dock = view.findByLabel("Another pick instead of Chicken Rice")!.parentElement!;
+  assert.ok(dock.textContent?.includes("Directions"), "same row as Directions");
+  await view.press(view.findByText("Another pick"));
+  assert.match(view.text(), /Laksa/);
+});
+
+test("MD-D9 picking an Other pick or Another pick scrolls back to the top", async () => {
+  const scrolls: unknown[] = [];
+  const original = HTMLElement.prototype.scroll;
+  HTMLElement.prototype.scroll = function (arg?: unknown) {
+    scrolls.push(arg);
+  } as typeof HTMLElement.prototype.scroll;
+  try {
+    serve([dish("a", "Chicken Rice"), dish("b", "Laksa"), dish("c", "Fish Soup")]);
+    const view = await renderResult({ surface: "push" });
+    await view.press(view.findByLabel(/^Pick Laksa|^Pick Fish Soup/));
+    assert.ok(scrolls.length >= 1, "scrolled after an Other pick");
+    const before = scrolls.length;
+    await view.press(view.findByText("Another pick"));
+    assert.ok(scrolls.length > before, "scrolled after Another pick");
+  } finally {
+    HTMLElement.prototype.scroll = original;
+  }
+});
+
+test("MD-D10 the end state offers Change answers and Start over", async () => {
+  serve([dish("a", "Chicken Rice")]);
+  const navigation = createFakeNavigation();
+  const view = await renderResult(
+    { surface: "discover", answers: { price: "under5" } },
+    navigation,
+  );
+  await view.press(view.findByText("Another pick"));
+  await view.settle();
+  assert.match(view.text(), /That's everything nearby/);
+  assert.ok(view.findByText("Change answers"), "Change answers is offered");
+  await view.press(view.findByText("Start over"));
+  assert.deepEqual(navigation.calls.at(-1), {
+    method: "replace",
+    args: ["DecideForMeQuiz", {}],
+  });
 });
 
 // ---- Quiz ----

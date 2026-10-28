@@ -68,7 +68,7 @@ test("dishes show when they were last updated and never a stock photo", () => {
 
 test("Decide For Me offers backup picks and a Not for me swap", () => {
   const source = read("src/app/screens/discover/DecideForMeResultScreen.tsx");
-  assert.match(source, /label="Not for me"/);
+  assert.match(source, /label="Another pick"/);
   assert.match(source, /type: "dismissed"/);
   assert.match(source, /Other picks/);
   assert.match(source, /getOtherPicks\(candidates, resultIndex\)/);

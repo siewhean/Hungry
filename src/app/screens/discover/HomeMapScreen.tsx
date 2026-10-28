@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation } from "@react-navigation/native";
-import { LocateFixed, Map as MapIcon, ChevronRight, Utensils, X } from "lucide-react-native";
+import { ChevronLeft, ChevronRight, Layers, LocateFixed, X } from "lucide-react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "@/lib/haptics";
 
@@ -62,7 +62,20 @@ const NEAR_ME_PAN_TOLERANCE_METERS = 1_000;
 const METERS_PER_DEGREE = 111_000;
 /** A pan can return up to 500 pins; drawing each as a JS view is slow on mid-range phones. */
 const MAX_RENDERED_MARKERS = 150;
+const BACK_BUTTON_SIZE = 44;
 const CARD_WIDTH = 320;
+/** The card in the carousel, top to bottom: photo, then padding, a name line and two detail lines. */
+const CARD_IMAGE_HEIGHT = 120;
+const CARD_TEXT_HEIGHT = 12 * 2 + 20 + 16 * 2 + 4 * 2;
+/** Grabber and the Cards / List switch sit in this strip at the top of the sheet. */
+const SHEET_HEADER_HEIGHT = 40;
+const SHEET_CARD_TOP_PADDING = 8;
+/** Room for the 2 pt selected-card border on top and bottom. */
+const CARD_BORDER_ALLOWANCE = 4;
+/** Tall enough for the whole card, so no detail line is cut off. */
+const CAROUSEL_CONTENT_HEIGHT =
+  SHEET_CARD_TOP_PADDING + CARD_IMAGE_HEIGHT + CARD_TEXT_HEIGHT + CARD_BORDER_ALLOWANCE;
+const CAROUSEL_BASE_HEIGHT = SHEET_HEADER_HEIGHT + CAROUSEL_CONTENT_HEIGHT;
 /** The map is the only screen for this; keep it above this rating and review floor. */
 const TOP_RATED_MIN_RATING = 4.5;
 
@@ -93,6 +106,65 @@ const HOME_MAP_FILTER_OPTIONS: readonly { id: HomeMapFilterId; label: string }[]
   { id: "topRated", label: "Top rated" },
 ];
 
+/** One switch for what the sheet shows: swipeable cards or a scrolling list. */
+function SheetModeToggle({
+  value,
+  onChange,
+}: {
+  value: "carousel" | "list";
+  onChange: (next: "carousel" | "list") => void;
+}) {
+  const { palette, radii, spacing } = useHungryTheme();
+  const options = [
+    { id: "carousel", label: "Cards" },
+    { id: "list", label: "List" },
+  ] as const;
+  return (
+    <View
+      accessibilityRole="tablist"
+      style={{
+        backgroundColor: palette.bgSoft,
+        borderRadius: radii.pill,
+        flexDirection: "row",
+        padding: 2,
+      }}
+    >
+      {options.map((option) => {
+        const selected = option.id === value;
+        return (
+          <Pressable
+            key={option.id}
+            accessibilityRole="tab"
+            accessibilityLabel={`Show ${option.label.toLowerCase()} in the sheet`}
+            accessibilityState={{ selected }}
+            hitSlop={6}
+            onPress={() => {
+              if (!selected) onChange(option.id);
+            }}
+            style={{
+              backgroundColor: selected ? palette.orange : "transparent",
+              borderRadius: radii.pill,
+              minHeight: 28,
+              justifyContent: "center",
+              paddingHorizontal: spacing[3],
+            }}
+          >
+            <AppText
+              variant="micro"
+              style={{
+                color: selected ? palette.textOnOrange : palette.textSecondary,
+                fontWeight: "700",
+              }}
+            >
+              {option.label}
+            </AppText>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
 export function HomeMapScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const catalogRawService = getCatalogRawService();
@@ -104,7 +176,7 @@ export function HomeMapScreen() {
   const [searchText, setSearchText] = useState("");
   const rememberSearch = useSearchStore((state) => state.rememberSearch);
   const searchBarWidth = useMemo(
-    () => Math.max(screenWidth - spacing[3] * 2 - 78, 240),
+    () => Math.max(screenWidth - spacing[3] * 2 - BACK_BUTTON_SIZE - spacing[2], 240),
     [screenWidth, spacing],
   );
 
@@ -175,7 +247,8 @@ export function HomeMapScreen() {
   const listRef = useRef<ScrollView>(null);
   const listRowYRef = useRef<Record<string, number>>({});
 
-  const CAROUSEL_HEIGHT = 240;
+  // The home-indicator inset sits under the card, never over its text.
+  const CAROUSEL_HEIGHT = CAROUSEL_BASE_HEIGHT + insets.bottom;
   const MINIMIZED_HEIGHT = 60;
   // Heights follow the screen: 620 pt covered a 667 pt phone, search row included (L11).
   const FULL_HEIGHT = Math.min(620, Math.round(screenHeight * 0.7));
@@ -526,6 +599,23 @@ export function HomeMapScreen() {
               alignItems: "center",
             }}
           >
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+              hitSlop={4}
+              onPress={backToList}
+              style={{
+                alignItems: "center",
+                backgroundColor: palette.surface,
+                borderRadius: BACK_BUTTON_SIZE / 2,
+                height: BACK_BUTTON_SIZE,
+                justifyContent: "center",
+                width: BACK_BUTTON_SIZE,
+                ...shadows.floating,
+              }}
+            >
+              <ChevronLeft color={palette.text} size={24} />
+            </Pressable>
             <ExpandableSearchLauncher
               query={searchText}
               onQueryChange={setSearchText}
@@ -540,34 +630,6 @@ export function HomeMapScreen() {
               textColor={palette.text}
               placeholderColor={palette.textSecondary}
             />
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={
-                displayMode === "carousel" ? "Switch to list view" : "Switch to carousel view"
-              }
-              onPress={() => {
-                const next = displayMode === "carousel" ? "list" : "carousel";
-                setDisplayMode(next);
-                void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }}
-              style={[
-                {
-                  width: 52,
-                  height: 52,
-                  borderRadius: 26,
-                  backgroundColor: palette.surface,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  ...shadows.floating,
-                },
-              ]}
-            >
-              {displayMode === "carousel" ? (
-                <Utensils color={palette.orange} size={22} />
-              ) : (
-                <MapIcon color={palette.orange} size={22} />
-              )}
-            </Pressable>
           </View>
           <FilterChipRail
             options={filterOptions}
@@ -650,7 +712,7 @@ export function HomeMapScreen() {
         </View>
       </SafeAreaView>
 
-      {/* Floating Buttons & Legend */}
+      {/* Floating Buttons: legend, List/Map and recentre share one row; the legend opens above it */}
       <Animated.View
         style={{
           position: "absolute",
@@ -668,14 +730,19 @@ export function HomeMapScreen() {
           left: spacing[4],
           right: spacing[4],
           zIndex: zIndex.overlay,
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "flex-end",
+          gap: spacing[3],
         }}
         pointerEvents="box-none"
       >
-        <View style={{ gap: spacing[3], alignItems: "flex-start" }}>
-          {showLegend && <BuildingLegend />}
+        {showLegend ? (
+          <View testID="map-legend">
+            <BuildingLegend />
+          </View>
+        ) : null}
+        <View
+          style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" }}
+          pointerEvents="box-none"
+        >
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={showLegend ? "Hide map legend" : "Show map legend"}
@@ -696,39 +763,39 @@ export function HomeMapScreen() {
               },
             ]}
           >
-            <MapIcon color={palette.orange} size={20} />
+            <Layers color={palette.orange} size={20} />
+          </Pressable>
+
+          <DiscoverViewToggle value="map" onChange={backToList} />
+
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={
+              isLocationApproximate ? "Choose your area" : "Recenter map on your location"
+            }
+            onPress={() => {
+              void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              if (isLocationApproximate) {
+                navigation.navigate("OnboardingStack", { screen: "ManualLocationPicker" });
+                return;
+              }
+              setMapCenter(currentLocation);
+            }}
+            style={[
+              {
+                width: 52,
+                height: 52,
+                borderRadius: 26,
+                backgroundColor: palette.surface,
+                alignItems: "center",
+                justifyContent: "center",
+                ...shadows.floating,
+              },
+            ]}
+          >
+            <LocateFixed color={palette.orange} size={24} />
           </Pressable>
         </View>
-
-        <DiscoverViewToggle value="map" onChange={backToList} />
-
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={
-            isLocationApproximate ? "Choose your area" : "Recenter map on your location"
-          }
-          onPress={() => {
-            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            if (isLocationApproximate) {
-              navigation.navigate("OnboardingStack", { screen: "ManualLocationPicker" });
-              return;
-            }
-            setMapCenter(currentLocation);
-          }}
-          style={[
-            {
-              width: 52,
-              height: 52,
-              borderRadius: 26,
-              backgroundColor: palette.surface,
-              alignItems: "center",
-              justifyContent: "center",
-              ...shadows.floating,
-            },
-          ]}
-        >
-          <LocateFixed color={palette.orange} size={24} />
-        </Pressable>
       </Animated.View>
 
       {/* Bottom UI Container */}
@@ -748,8 +815,17 @@ export function HomeMapScreen() {
           },
         ]}
       >
-        <View style={styles.dragHandle}>
+        <View style={styles.sheetHeader}>
           <View style={[styles.dragBar, { backgroundColor: palette.border }]} />
+          <View style={[styles.sheetModeToggle, { right: spacing[3] }]}>
+            <SheetModeToggle
+              value={displayMode}
+              onChange={(next) => {
+                setDisplayMode(next);
+                void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              }}
+            />
+          </View>
         </View>
 
         {displayMode === "list" ? (
@@ -808,8 +884,8 @@ export function HomeMapScreen() {
         ) : (
           <Animated.View
             style={{
-              height: CAROUSEL_HEIGHT,
-              paddingTop: spacing[2],
+              height: CAROUSEL_CONTENT_HEIGHT + insets.bottom,
+              paddingTop: SHEET_CARD_TOP_PADDING,
               transform: [
                 {
                   translateY: animatedHeight.interpolate({
@@ -869,7 +945,7 @@ export function HomeMapScreen() {
                     shadows.floating,
                   ]}
                 >
-                  <View style={{ height: 160 }}>
+                  <View style={{ height: CARD_IMAGE_HEIGHT }}>
                     {venue.imageUrl || venue.representativeDish?.imageUrl ? (
                       <AccessibleImage
                         source={{
@@ -923,11 +999,15 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
   },
-  dragHandle: {
+  sheetHeader: {
     width: "100%",
-    height: 32,
+    height: SHEET_HEADER_HEIGHT,
     alignItems: "center",
     justifyContent: "center",
+  },
+  sheetModeToggle: {
+    position: "absolute",
+    top: 4,
   },
   dragBar: {
     width: 40,

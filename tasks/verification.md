@@ -1487,3 +1487,7 @@ Use the smallest check that matches the change risk.
 ### MAPDECIDE-R4 step 1 (MD-D1, D2, D7, D8, D11, D13), 2026-10-28
 - typecheck clean; npm test 2181/0 fail; test:render 542/0 fail (decide.render.test.tsx gains D1, D7, D8, D11, D13); lint 0 errors; format clean; test:coverage OK (baseline unchanged).
 - Old tests that encoded the centred-cosine score (neutral = 50, opposite = 0) were rewritten to the new per-axis score.
+
+### MAPDECIDE-R4 step 2 (MD-M1, M2, M4, M5, D5, D6, D9, D10), 2026-10-28
+- typecheck clean; npm test 2181/0 fail; test:render 550/0 fail (new HomeMapScreen.render.test.tsx; decide.render.test.tsx gains D5, D6, D9, D10); lint 0 errors; format clean; test:coverage OK.
+- Walked the mock web build at 390x844 (Playwright): map cards, legend open, list sheet, Decide result with the dock (screenshots reviewed, not committed). Metro does not hot-reload in the sandbox, so the server was restarted per check.
