@@ -9,6 +9,8 @@
 
 import { getFloorPlan } from "@/lib/geo/floorPlans";
 import {
+  MOCK_WRONG_EMAIL_CODE,
+  getMockCodeSendFailure,
   getMockLoginFailure,
   getMockSignUpFailure,
   type MockAuthFailure,
@@ -1529,6 +1531,9 @@ function mockAuthError(failure: MockAuthFailure): Error {
       status: 0,
     });
   }
+  if (failure.reason === "over_email_send_rate_limit") {
+    return Object.assign(new Error(failure.message), { code: failure.reason, status: 429 });
+  }
   const code = failure.reason === "email_taken" ? "user_already_exists" : "invalid_credentials";
   return Object.assign(new Error(failure.message), { code });
 }
@@ -1574,6 +1579,9 @@ export const hungryService: HungryService = {
 
     async verifyEmailCode(email, code, type) {
       if (!/^\d{8}$/.test(code.trim())) throw new Error("Invalid code");
+      if (code.trim() === MOCK_WRONG_EMAIL_CODE) {
+        throw Object.assign(new Error("Token has expired or is invalid"), { code: "otp_expired" });
+      }
       _isAuthenticated = true;
       _authProvider = "email";
       if (type === "email") {
@@ -1590,6 +1598,8 @@ export const hungryService: HungryService = {
     },
 
     async signInWithEmailCode(email, options) {
+      const failure = getMockCodeSendFailure(email);
+      if (failure) throw mockAuthError(failure);
       _pendingCodeSignIn = { email, displayName: options?.displayName?.trim() || undefined };
       return resolve(undefined);
     },

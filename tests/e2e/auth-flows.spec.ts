@@ -71,3 +71,54 @@ test("the web address never carries the email a screen was opened with", async (
   expect(page.url()).not.toContain("email");
   expect(page.url()).not.toContain("qa-link");
 });
+
+test("a code that cannot be sent says why and stays on the email step", async ({ page }) => {
+  await openLogin(page);
+  await page.getByLabel("Email address", { exact: true }).fill("offline@hungry.test");
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await expect(page.getByText(/You're offline/)).toBeVisible();
+  await expect(page.getByText("Check your email", { exact: true })).toHaveCount(0);
+
+  await page.getByLabel("Email address", { exact: true }).fill("ratelimit@hungry.test");
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await expect(page.getByRole("alert").first()).toBeVisible();
+  await expect(page.getByText("Check your email", { exact: true })).toHaveCount(0);
+});
+
+test("a wrong code is refused, keeps the field, and the right one then signs in", async ({
+  page,
+}) => {
+  await openLogin(page);
+  await page.getByLabel("Email address", { exact: true }).fill("qa-wrong-code@hungry.test");
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await expect(page.getByText("Check your email", { exact: true })).toBeVisible();
+
+  const code = page.getByLabel("Enter the code", { exact: true });
+  await code.fill("00000000");
+  await expect(page.getByText(/wrong or has expired/i)).toBeVisible();
+  await expect(code).toHaveValue("00000000");
+
+  await code.fill("1234567");
+  await code.fill("12345678");
+  await expect(page.getByText(/^You are at/).first()).toBeVisible({ timeout: 30_000 });
+});
+
+test.describe("a 320x568 phone", () => {
+  test.use({ viewport: { width: 320, height: 568 } });
+
+  test("Create account keeps Continue within one scroll of the name field", async ({ page }) => {
+    await openLogin(page);
+    await page.getByRole("button", { name: "Create account" }).click();
+    const name = page.getByLabel("Name shown on your reviews").filter({ visible: true });
+    await expect(name).toBeVisible();
+    const continueButton = page
+      .getByRole("button", { name: "Continue", exact: true })
+      .filter({ visible: true });
+    const box = await continueButton.boundingBox();
+    const nameBox = await name.boundingBox();
+    // The subtitle is dropped on a short screen, and the name helper shares a row with its counter.
+    expect(box && nameBox && box.y - nameBox.y).toBeLessThan(260);
+    await continueButton.scrollIntoViewIfNeeded();
+    await expect(continueButton).toBeInViewport();
+  });
+});

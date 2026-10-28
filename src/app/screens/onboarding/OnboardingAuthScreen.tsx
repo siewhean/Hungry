@@ -500,7 +500,6 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
                   rules={{ validate: (v) => validateDisplayName(v) }}
                   render={({ field: { onChange, value } }) => (
                     <DisplayNameField
-                      placeholder="Your name"
                       value={value}
                       onChangeText={onChange}
                       errorText={signUpErrors.displayName?.message}
@@ -516,7 +515,7 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
                     <View style={{ gap: spacing[1] }}>
                       <Input
                         ref={signUpEmailRef}
-                        placeholder="Email address"
+                        label={AUTH_COPY.signUp.emailLabel}
                         value={value}
                         onChangeText={(next) => {
                           signUpEmailSuggestion.clear();
@@ -556,7 +555,7 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
                     <View style={{ gap: spacing[1] }}>
                       <Input
                         ref={signUpPasswordRef}
-                        placeholder="Password"
+                        label={AUTH_COPY.signUp.passwordLabel}
                         value={value}
                         onChangeText={onChange}
                         secureTextEntry={!showPassword}
@@ -618,7 +617,7 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
                   render={({ field: { onChange, value } }) => (
                     <View style={{ gap: spacing[1] }}>
                       <Input
-                        placeholder="Email address"
+                        label={AUTH_COPY.login.emailLabel}
                         value={value}
                         onChangeText={onChange}
                         autoCapitalize="none"
@@ -644,7 +643,7 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
                     <View style={{ gap: spacing[1] }}>
                       <Input
                         ref={loginPasswordRef}
-                        placeholder="Password"
+                        label={AUTH_COPY.login.passwordLabel}
                         value={value}
                         onChangeText={onChange}
                         secureTextEntry={!showPassword}

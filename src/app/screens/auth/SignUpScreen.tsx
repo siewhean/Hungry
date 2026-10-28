@@ -1,6 +1,12 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Controller, useForm } from "react-hook-form";
-import { AccessibilityInfo, Pressable, View, type TextInput } from "react-native";
+import {
+  AccessibilityInfo,
+  Pressable,
+  View,
+  useWindowDimensions,
+  type TextInput,
+} from "react-native";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 
@@ -51,6 +57,7 @@ type FormValues = { displayName: string; email: string; password: string };
 export function SignUpScreen({ navigation }: Props) {
   const { componentRadii, palette, spacing } = useHungryTheme();
   const emailCodeFirst = useEmailCodeFirst();
+  const isShortScreen = useWindowDimensions().height < 640;
   // "Use a password instead": the older form, for people who prefer one.
   const [passwordChosen, setPasswordChosen] = useState(false);
   const showPasswordForm = !emailCodeFirst || passwordChosen;
@@ -213,7 +220,8 @@ export function SignUpScreen({ navigation }: Props) {
     <FeedErrorBoundary title={AUTH_COPY.signUp.errorTitle} body={AUTH_COPY.signUp.errorBody}>
       <AuthScreenShell
         title={AUTH_COPY.signUp.title}
-        subtitle={AUTH_COPY.signUp.subtitle}
+        // The subtitle is the first thing to go on a short screen, so Continue stays in reach.
+        subtitle={isShortScreen ? undefined : AUTH_COPY.signUp.subtitle}
         compact
         onBack={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate("Login"))}
         footer={

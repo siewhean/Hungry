@@ -522,3 +522,38 @@ test("the compact auth header is the 48pt mark alone, and the long auth screens 
     assert.match(readFileSync(`src/app/screens/auth/${file}.tsx`, "utf8"), /\bcompact\b/, file);
   }
 });
+
+test("the onboarding password forms use labelled fields, like Login and Create account", async () => {
+  setExperimentOverride("auth_email_code_first_v1", "control");
+  const parent = createFakeNavigation();
+  const navigation = { ...createFakeNavigation(), getParent: () => parent };
+  const view = await renderScreen(OnboardingAuthScreen as never, {
+    name: "OnboardingAuth",
+    navigation: navigation as never,
+  });
+  for (const input of inputs(view)) {
+    assert.ok(!input.getAttribute("placeholder"));
+  }
+  assert.match(view.text(), /Name shown on your reviews/);
+  assert.match(view.text(), /Email address/);
+  assert.match(view.text(), /Create password/);
+});
+
+test("a wrong code shows the reason and keeps the field for another try", async () => {
+  const restore = stubAuth({ signInWithEmailCode: async () => undefined });
+  try {
+    const view = await renderScreen(LoginScreen as never, { name: "Login" });
+    await signInByCode(view);
+    await view.type(inputs(view)[0], "00000000");
+    await view.settle();
+    assert.match(view.text(), /wrong or has expired|expired|invalid/i);
+    assert.equal(useSessionStore.getState().isAuthenticated, false);
+    assert.equal(inputs(view)[0].value, "00000000");
+    await view.type(inputs(view)[0], "1234567");
+    await view.type(inputs(view)[0], "12345678");
+    await view.settle();
+    assert.equal(useSessionStore.getState().isAuthenticated, true);
+  } finally {
+    restore();
+  }
+});

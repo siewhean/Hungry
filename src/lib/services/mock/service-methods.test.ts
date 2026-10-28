@@ -349,6 +349,24 @@ test("auth.signInWithEmailCode then verifyEmailCode signs in with the typed addr
   await hungryService.auth.signOut();
 });
 
+test("the mock refuses a code to an offline address, a rate-limited one, and the wrong code", async () => {
+  await assert.rejects(hungryService.auth.signInWithEmailCode("offline@example.sg"), {
+    name: "AuthRetryableFetchError",
+  });
+  await assert.rejects(hungryService.auth.signInWithEmailCode("ratelimit@example.sg"), {
+    code: "over_email_send_rate_limit",
+    status: 429,
+  });
+  await hungryService.auth.signInWithEmailCode("mei@example.sg");
+  await assert.rejects(hungryService.auth.verifyEmailCode("mei@example.sg", "00000000", "email"), {
+    code: "otp_expired",
+  });
+  assert.equal(
+    (await hungryService.auth.getCurrentSession())?.profile.email === "mei@example.sg",
+    false,
+  );
+});
+
 test("auth.requestAccountDeletion clears mock session", async () => {
   await hungryService.auth.signIn("delete-me@hungry.sg", "password");
   await hungryService.auth.requestAccountDeletion({

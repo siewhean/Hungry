@@ -117,3 +117,14 @@ test("the provider logo stays pinned in a normal row and joins the label when it
   assert.ok(view.findByTestId("provider-logo-pinned"));
   assert.equal(view.findByTestId("provider-logo-in-flow"), null);
 });
+
+test("the resend countdown reads m:ss, the same as Forgot password's", async () => {
+  const view = await render(
+    createElement(EmailCodeField, {
+      onSubmit: async () => undefined,
+      onResend: async () => undefined,
+    }),
+  );
+  assert.match(view.text(), /Resend code in \d:\d\d/);
+  assert.doesNotMatch(view.text(), /Resend code in \d+s/);
+});

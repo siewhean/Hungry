@@ -143,7 +143,9 @@ test("Welcome > Sign in > relaunch returns to Login, and onboarding stays open",
   await expect(page.getByText("Sign in to Hungry", { exact: true })).toBeVisible();
 
   await page.reload();
-  await expect(page.getByText("Sign in to Hungry", { exact: true })).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByText("Sign in to Hungry", { exact: true })).toBeVisible({
+    timeout: 60_000,
+  });
   await expect(page.getByRole("button", { name: "Get started" })).toHaveCount(0);
 });
 
@@ -159,9 +161,12 @@ test("an account made after the quiz lands on Home with the diner's picks or a w
 
   // The account step leads with an emailed code; this run uses the password form.
   await page.getByRole("button", { name: "Use a password instead" }).click();
-  await page.getByPlaceholder("Your name").fill("Mei");
-  await page.getByPlaceholder("Email address").first().fill("mei.onboarding@hungry.test");
-  await page.getByPlaceholder("Password").first().fill("Password123!");
+  await page.getByLabel("Name shown on your reviews").fill("Mei");
+  await page
+    .getByLabel("Email address", { exact: true })
+    .first()
+    .fill("mei.onboarding@hungry.test");
+  await page.getByLabel("Create password", { exact: true }).first().fill("Password123!");
   await page.getByRole("button", { name: "Create account" }).last().click();
 
   // The mock build opens the developer launcher after sign-in; open the normal app flow.
@@ -191,10 +196,11 @@ async function expectRowsFit(page: Page) {
   const next = (await page.getByRole("button", { name: "Next" }).boundingBox())!;
   expect(next.y).toBeGreaterThanOrEqual(previousBottom);
   expect(next.y + next.height).toBeLessThanOrEqual(viewport.height);
-  const truncated = await page.evaluate(() =>
-    Array.from(document.querySelectorAll('[data-testid^="taste-tile-"] *')).filter(
-      (el) => el.children.length === 0 && el.textContent && el.scrollWidth > el.clientWidth,
-    ).length,
+  const truncated = await page.evaluate(
+    () =>
+      Array.from(document.querySelectorAll('[data-testid^="taste-tile-"] *')).filter(
+        (el) => el.children.length === 0 && el.textContent && el.scrollWidth > el.clientWidth,
+      ).length,
   );
   expect(truncated).toBe(0);
   const labels = await page.evaluate(() =>

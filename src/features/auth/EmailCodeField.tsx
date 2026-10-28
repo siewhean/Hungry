@@ -5,7 +5,7 @@ import { AppText, Button, Input } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { trackEmailCodeSubmitted, type AuthFunnelScreen } from "./authAnalytics";
 import { getAuthFailureMessage } from "./authErrors";
-import { RESEND_COOLDOWN_SECONDS, useResendCooldown } from "./useResendCooldown";
+import { RESEND_COOLDOWN_SECONDS, formatCooldown, useResendCooldown } from "./useResendCooldown";
 
 /** Supabase auth.email.otp_length (supabase/config.toml). */
 export const EMAIL_CODE_LENGTH = 8;
@@ -159,7 +159,7 @@ export function EmailCodeField({
             </AppText>
           ) : null}
           <Button
-            label={cooldown > 0 ? `Resend code in ${cooldown}s` : "Resend code"}
+            label={cooldown > 0 ? `Resend code in ${formatCooldown(cooldown)}` : "Resend code"}
             variant="ghost"
             onPress={() => void resend()}
             loading={isResending}

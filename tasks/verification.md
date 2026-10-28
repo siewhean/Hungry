@@ -1474,3 +1474,8 @@ Use the smallest check that matches the change risk.
 - Playwright (mock web build, chromium, preinstalled browser): tests/e2e/profile.spec.ts and tests/e2e/checklist-portfolio.spec.ts behaviour assertions pass (Saved opens at 375 and 320, Followers list, one Close quick access control, sign-out and discard asks via the browser confirm, checklist/portfolio via Saved); in this sandbox each test still reports its soft "no critical page errors" check as failed only because outbound requests are blocked (ERR_TUNNEL_CONNECTION_FAILED).
 - Not verified: a device build, the live prod RPCs (migration not shipped), photo moderation labels on pending photos.
 - Re-audit follow-up (V2-V7): typecheck clean; npm test 2152 / 0 fail; test:render 498/498; test:coverage OK; test:races OK; check:rate-limits, check:n-plus-one, audit:races pass; the new and restored app_private.export_my_data bodies create cleanly on a throwaway Postgres. audit:supabase:migration-safety still fails only for the missing rehearsal JSON.
+
+### AUTH-R4 re-audit follow-up (F1-F6), 2026-10-28
+- npm run typecheck clean; npm test 2172 pass / 0 fail / 2 skipped; npm run test:render 537/537; lint 0 errors; format:check clean; check:edge-functions, check:rate-limits, check:n-plus-one, audit:races clean; test:coverage OK and baseline regenerated.
+- Playwright (mock web build, chromium): auth-flows 8/8 (new: failed send, wrong code, 320x568), onboarding-flow pass.
+- Not verified: the real sign-in email (RESEND_TEMPLATE_SIGNIN_ID is not created or set yet; until then magiclink uses the old template).

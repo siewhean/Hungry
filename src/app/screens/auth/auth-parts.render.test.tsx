@@ -70,15 +70,13 @@ test("DisplayNameField caps the name at 40 and counts what is typed", async () =
   assert.ok(view.findByLabel("7 of 40 characters"));
 });
 
-test("DisplayNameField can drop its label for the onboarding step", async () => {
+test("DisplayNameField shows its label and a one-line helper beside the counter", async () => {
   const view = await render(
-    createElement(DisplayNameField, {
-      value: "",
-      onChangeText: () => undefined,
-      placeholder: "Your name",
-    }),
+    createElement(DisplayNameField, { value: "", onChangeText: () => undefined }),
   );
-  assert.equal(inputs(view)[0].getAttribute("placeholder"), "Your name");
+  assert.match(view.text(), /Name shown on your reviews/);
+  assert.match(view.text(), /A nickname is fine/);
+  assert.ok(!inputs(view)[0].getAttribute("placeholder"));
 });
 
 test("EmailSuggestionHint stays out of the way until there is a suggestion, then accepts it", async () => {

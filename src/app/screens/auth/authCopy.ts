@@ -29,7 +29,7 @@ export const AUTH_COPY = {
     title: "Create account",
     subtitle: "Join our community of food lovers.",
     displayNameLabel: "Name shown on your reviews",
-    displayNameHelper: "A nickname is fine. Other people see this name next to your reviews.",
+    displayNameHelper: "A nickname is fine. Shown next to your reviews.",
     emailLabel: "Email address",
     passwordLabel: "Create password",
     passwordRules: "Use at least 10 characters. Avoid passwords you've used elsewhere.",
