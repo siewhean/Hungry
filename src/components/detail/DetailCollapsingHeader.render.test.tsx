@@ -53,7 +53,11 @@ test("R4-STALL-2: the bar's name is hidden from screen readers until the bar sho
       /Laksa/.test(node.textContent ?? ""),
     ) as HTMLElement | undefined;
   assert.ok(title(), "the name renders");
-  assert.equal(title()?.getAttribute("aria-hidden"), "true", "hidden while the page's own title shows");
+  assert.equal(
+    title()?.getAttribute("aria-hidden"),
+    "true",
+    "hidden while the page's own title shows",
+  );
   const { act } = await import("react");
   await act(async () => {
     scrollY.setValue(400);

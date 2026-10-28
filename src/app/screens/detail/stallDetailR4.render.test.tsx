@@ -7,12 +7,10 @@ import test, { afterEach, beforeEach } from "node:test";
 import { StallDetailScreen } from "@/app/screens/detail/StallDetailScreen";
 import { StallInteractionBar } from "@/components/stall/StallInteractionBar";
 import { FloatingToast } from "@/components/ui/FloatingToast";
-import {
-  resetExperimentSession,
-  setExperimentFlagSource,
-} from "@/lib/experiments/experiments";
+import { resetExperimentSession, setExperimentFlagSource } from "@/lib/experiments/experiments";
 import {
   getDataRepository,
+  getHungryService,
   getServiceProvider,
   setServiceProvider,
 } from "@/lib/services/serviceProvider";
@@ -124,12 +122,18 @@ async function holdDown(view: Awaited<ReturnType<typeof render>>, target: HTMLEl
 test("R4-STALL-6: the save toast offers Add to a list, and pressing it opens the list sheet", async () => {
   useUIStore.setState({ toast: null });
   const opened: string[] = [];
-  const view = await render(barWithToast(UNSAVED_STALL, { onAddToList: () => opened.push("list") }));
+  const view = await render(
+    barWithToast(UNSAVED_STALL, { onAddToList: () => opened.push("list") }),
+  );
   await view.press(view.findByLabel("Save this stall"));
   assert.match(view.text(), /Saved\. Find it in Profile, Saved, Stalls/);
   const action = view.findByLabel("Add to a list");
   assert.ok(action, "the toast carries an Add to a list button");
-  assert.equal(action.getAttribute("role"), "button", "it is a real button a screen reader can press");
+  assert.equal(
+    action.getAttribute("role"),
+    "button",
+    "it is a real button a screen reader can press",
+  );
   await view.press(action);
   assert.deepEqual(opened, ["list"]);
   assert.equal(useUIStore.getState().toast, null, "pressing it dismisses the toast");
@@ -149,7 +153,11 @@ test("R4-STALL-6: the hold menu of a saved stall says 'Remove from saved' and un
   await view.settle();
   assert.ok(view.findByLabel("Saved"), "the stall shows as saved");
   await holdDown(view, view.findByLabel("Saved"));
-  assert.equal(view.findByText("Saved stalls"), null, "the toggling row no longer reads 'Saved stalls'");
+  assert.equal(
+    view.findByText("Saved stalls"),
+    null,
+    "the toggling row no longer reads 'Saved stalls'",
+  );
   const row = view.findByLabel("Remove from saved");
   assert.ok(row, "the hold menu has a Remove from saved row");
   await view.press(row);
@@ -220,8 +228,122 @@ test("R4-STALL-5: pressing a menu row opens that dish", async () => {
   const [first] = useMenuWithPhotos(0, 3);
   const view = await openStall();
   await view.press(view.findByLabel(new RegExp(`^${first.name}`)));
-  assert.deepEqual(
-    view.navigation.calls.find((call) => call.method === "navigate")?.args,
-    ["DishDetail", { dishId: first.id }],
+  assert.deepEqual(view.navigation.calls.find((call) => call.method === "navigate")?.args, [
+    "DishDetail",
+    { dishId: first.id },
+  ]);
+});
+
+// ─── The empty stall (R4-STALL-1) ────────────────────────────────────────────────────────
+
+const EMPTY_STALL = "venue-empty-r4";
+
+/** A licence-data stall: ALL CAPS name, no photo, no menu, no hours, no reviews. */
+function useEmptyStall() {
+  const repo = getDataRepository();
+  const base = repo.getVenueById(STALL);
+  assert.ok(base, "mock stall exists");
+  const empty = {
+    ...base,
+    id: EMPTY_STALL,
+    name: "TIAN TIAN HAINANESE CHICKEN RICE",
+    imageUrl: undefined,
+    logoUrl: undefined,
+    operatingHours: "",
+    openingSchedule: undefined,
+    deliveryLinks: [],
+    savedCount: 0,
+  };
+  const originalVenue = repo.getVenueById;
+  const originalDishes = repo.listDishesByVenue;
+  repo.getVenueById = (id: string) => (id === EMPTY_STALL ? empty : originalVenue.call(repo, id));
+  repo.listDishesByVenue = (id: string) =>
+    id === EMPTY_STALL ? [] : originalDishes.call(repo, id);
+  restores.push(() => {
+    repo.getVenueById = originalVenue;
+    repo.listDishesByVenue = originalDishes;
+  });
+  const reviews = getHungryService().reviews;
+  const originalReviews = reviews.listRecentReviewsPage;
+  reviews.listRecentReviewsPage = async () => ({ entries: [], hasMore: false });
+  restores.push(() => {
+    reviews.listRecentReviewsPage = originalReviews;
+  });
+  return empty;
+}
+
+test("R4-STALL-1: an empty stall shows one 'Help us fill this in' card, not three empty cards", async () => {
+  useEmptyStall();
+  const view = await openStall(EMPTY_STALL);
+  assert.ok(view.container.querySelector('[data-testid="stall-help-fill-card"]'), "the card");
+  assert.match(view.text(), /Help us fill this in/);
+  assert.match(view.text(), /No menu, hours and reviews yet/);
+  assert.doesNotMatch(view.text(), /No menu available for this stall yet/);
+  assert.doesNotMatch(view.text(), /No community reviews yet/);
+  assert.equal(view.findByText("Menu"), null, "no empty Menu heading");
+  assert.equal(view.findByText("Reviews"), null, "no empty Reviews heading");
+  assert.ok(view.findByText("Write the first review"));
+  assert.ok(view.findByText("Add opening hours"));
+});
+
+test("R4-STALL-1: an ALL CAPS name is shown in title case and the hero is the brand fallback", async () => {
+  useEmptyStall();
+  const view = await openStall(EMPTY_STALL);
+  const heading = view.container.querySelector("h1");
+  assert.equal(heading?.textContent, "Tian Tian Hainanese Chicken Rice");
+  assert.ok(
+    view.findByLabel("Tian Tian Hainanese Chicken Rice photo unavailable"),
+    "the hero fallback is labelled",
   );
+});
+
+test("R4-STALL-1: Add opening hours opens the report page with 'opening hours' picked", async () => {
+  useEmptyStall();
+  const view = await openStall(EMPTY_STALL);
+  await view.press(view.findByText("Add opening hours"));
+  const call = view.navigation.calls.find((entry) => entry.method === "navigate");
+  assert.deepEqual(call?.args, [
+    "ReportProblem",
+    {
+      venueId: EMPTY_STALL,
+      subjectName: "Tian Tian Hainanese Chicken Rice",
+      initialKind: "wrong_hours",
+    },
+  ]);
+});
+
+test("R4-STALL-1: Write the first review opens the composer for this stall", async () => {
+  useEmptyStall();
+  const view = await openStall(EMPTY_STALL);
+  await view.press(view.findByText("Write the first review"));
+  const call = view.navigation.calls.find((entry) => entry.method === "navigate");
+  assert.deepEqual(call?.args, [
+    "ReviewStack",
+    { screen: "ReviewMain", params: { venueId: EMPTY_STALL } },
+  ]);
+});
+
+test("R4-STALL-1: a stall with a menu keeps its Menu section and does not get the card", async () => {
+  const view = await openStall();
+  assert.equal(view.container.querySelector('[data-testid="stall-help-fill-card"]'), null);
+  assert.ok(view.findByText("Menu"));
+});
+
+test("R4-STALL-1: the report page opens with 'opening hours' picked when asked to", async () => {
+  const { ReportProblemScreen } = await import("@/app/screens/detail/ReportProblemScreen");
+  let view = await renderScreen(ReportProblemScreen as never, {
+    name: "ReportProblem",
+    params: { venueId: STALL, subjectName: "Tian Tian", initialKind: "wrong_hours" },
+  });
+  assert.equal(
+    view.findByLabel("Opening hours are wrong")?.getAttribute("aria-checked"),
+    "true",
+    "the hours reason is already picked",
+  );
+  await cleanup();
+  view = await renderScreen(ReportProblemScreen as never, {
+    name: "ReportProblem",
+    params: { venueId: STALL, subjectName: "Tian Tian" },
+  });
+  assert.equal(view.findByLabel("Opening hours are wrong")?.getAttribute("aria-checked"), "false");
 });

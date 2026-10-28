@@ -155,7 +155,13 @@ export type RootStackParamList = {
   MerchantTabs: NavigatorScreenParams<MerchantTabParamList>;
   StallDetail: { venueId?: string; id?: string };
   MerchantClaimExplainer: undefined;
-  ReportProblem: { venueId: string; dishId?: string; subjectName?: string };
+  ReportProblem: {
+    venueId: string;
+    dishId?: string;
+    subjectName?: string;
+    /** Picks a reason up front, e.g. "wrong_hours" from the stall page's Add opening hours. */
+    initialKind?: "wrong_hours";
+  };
   /** `source` names where the dish was opened from, for the dish_viewed event. */
   DishDetail: {
     dishId?: string;

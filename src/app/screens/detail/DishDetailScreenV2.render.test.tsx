@@ -439,7 +439,10 @@ test("a 'More from' rail where no dish has a photo drops the grey photo blocks",
     params: { dishId: dish.id, source: "home" },
   });
   assert.match(view.text(), /More from/);
-  assert.ok(view.findByLabel(new RegExp(`^Open ${siblings[0].name}`)), "the sibling is still listed");
+  assert.ok(
+    view.findByLabel(new RegExp(`^Open ${siblings[0].name}`)),
+    "the sibling is still listed",
+  );
   for (const sibling of siblings) {
     assert.equal(
       view.findByLabel(`${sibling.name}, no photo yet`),
