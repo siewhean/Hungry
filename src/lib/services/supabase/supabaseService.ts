@@ -24,7 +24,9 @@ import {
   getDishByIdViaRpc,
   getBuildingDetailViaRpc,
   getItemDetailsViaRpc,
+  getInlineMerchantReads,
   getVenueByIdViaRpc,
+  invalidateVenueDetail,
   getVenuesByIdsViaRpc,
   listBuildingsViaRpc,
   listDiscoveryFeedByLocationViaRpc,
@@ -82,6 +84,7 @@ import type {
   ListRecentReviewsOptions,
   RecentReviewFeedEntry,
   RecentReviewFeedPage,
+  MerchantClaimStatus,
 } from "@/lib/services/types";
 import type {
   AIBusinessInsight,
@@ -3223,6 +3226,38 @@ function buildPromotionAnalytics(
   return { impressions: 0, clicks: 0, saves: 0, profileVisits: 0, dishViews: 0 };
 }
 
+/** Ops moves a claim new -> contacted -> qualified -> converted (or rejected). */
+function toClaimStatus(status: string | null): MerchantClaimStatus {
+  switch (status) {
+    case "new":
+      return "submitted";
+    case "contacted":
+    case "qualified":
+      return "in_review";
+    case "converted":
+      return "approved";
+    case "rejected":
+      return "rejected";
+    default:
+      return "none";
+  }
+}
+
+function mapPublicMerchantProfile(row: Row): PublicMerchantProfile {
+  return {
+    outletId: asString(row.outlet_id) ?? "",
+    description: asString(row.description),
+    contactPhone: asString(row.contact_phone),
+    contactEmail: asString(row.contact_email),
+    socialLinks: toSocialLinks(row.social_links),
+    cuisineCategories: asStringArray(row.cuisine_categories),
+    profilePhotoUrl: asString(row.profile_photo_url),
+    coverPhotoUrl: asString(row.cover_photo_url),
+    temporaryClosure: asString(row.temporary_closure),
+    isVerified: asBoolean(row.is_verified) ?? false,
+  } satisfies PublicMerchantProfile;
+}
+
 function mapPromotion(row: Row): MerchantPromotion {
   const status = (asString(row.status) as PromotionStatus) ?? "draft";
   const analytics = {
@@ -4019,6 +4054,11 @@ export const supabaseService: HungryService = {
     async listActivePromotionsForTarget(input) {
       const client = getSupabaseClient();
       if (!client) return [];
+      // The stall page's list came back with the stall; a dish page asks for its own target.
+      if (!input.dishId) {
+        const inline = await getInlineMerchantReads(input.venueId);
+        if (inline) return inline.promotions.map(mapPromotion);
+      }
       const { data, error } = await client.rpc("list_customer_active_promotions", {
         p_venue_id: input.venueId,
         p_dish_id: input.dishId ?? null,
@@ -4031,25 +4071,15 @@ export const supabaseService: HungryService = {
     async getPublicMerchantProfile(venueId) {
       const client = getSupabaseClient();
       if (!client || !venueId) return undefined;
+      const inline = await getInlineMerchantReads(venueId);
+      if (inline) return inline.profile ? mapPublicMerchantProfile(inline.profile) : undefined;
       const { data, error } = await client.rpc("get_public_merchant_profile", {
         p_venue_id: venueId,
       });
       // Thrown, not swallowed: a lost temporary closure must reach Sentry.
       if (error) throw error;
       const row = (Array.isArray(data) ? (data as Row[]) : [])[0];
-      if (!row) return undefined;
-      return {
-        outletId: asString(row.outlet_id) ?? "",
-        description: asString(row.description),
-        contactPhone: asString(row.contact_phone),
-        contactEmail: asString(row.contact_email),
-        socialLinks: toSocialLinks(row.social_links),
-        cuisineCategories: asStringArray(row.cuisine_categories),
-        profilePhotoUrl: asString(row.profile_photo_url),
-        coverPhotoUrl: asString(row.cover_photo_url),
-        temporaryClosure: asString(row.temporary_closure),
-        isVerified: asBoolean(row.is_verified) ?? false,
-      } satisfies PublicMerchantProfile;
+      return row ? mapPublicMerchantProfile(row) : undefined;
     },
 
     async getVenueOpeningSchedule(venueId) {
@@ -6535,6 +6565,8 @@ export const supabaseService: HungryService = {
       if (rpcError) {
         throw rpcError;
       }
+      // The reused stall read says "no claim": the next read of this stall must be fresh.
+      invalidateVenueDetail(input.venueId);
 
       return {
         claimId: claimId ? String(claimId) : null,
@@ -6543,6 +6575,8 @@ export const supabaseService: HungryService = {
     },
 
     async getMerchantClaimStatus(venueId) {
+      const inline = await getInlineMerchantReads(venueId);
+      if (inline) return toClaimStatus(inline.claimStatus);
       const client = requireSupabaseClient();
       const userId = await getCurrentSupabaseUserId();
       if (!userId) return "none";
@@ -6553,20 +6587,7 @@ export const supabaseService: HungryService = {
         .eq("claimed_by", userId)
         .maybeSingle();
       if (error || !data) return "none";
-      // Ops moves a claim new -> contacted -> qualified -> converted (or rejected).
-      switch (asString((data as Row).status)) {
-        case "new":
-          return "submitted";
-        case "contacted":
-        case "qualified":
-          return "in_review";
-        case "converted":
-          return "approved";
-        case "rejected":
-          return "rejected";
-        default:
-          return "none";
-      }
+      return toClaimStatus(asString((data as Row).status) ?? null);
     },
 
     async listDraftDishesQueue(venueId) {
