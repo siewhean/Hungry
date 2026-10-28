@@ -16,6 +16,7 @@
     "public_profiles": "Public copy of user_profiles fields kept in sync by trigger; the profile category already exports the source row.",
     "portfolio_flags": "Lists the user reported are moderation records (see notIncluded in the export).",
     "website_console_admins": "Staff access list, not end-user data.",
+    "dish_flavor_tags": "Shared flavour tags on dishes; the only user link is reviewed_by, the ops reviewer, not content the user created.",
     "user_push_tokens": "Device identifiers used only to deliver alerts (see notIncluded in the export)."
   }
 }

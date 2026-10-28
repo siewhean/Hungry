@@ -1,9 +1,11 @@
+-- expect-row-loss: public.user_stall_submissions
 -- Down for 20261029090000_account_deletion_keeps_accepted_submissions.
 -- Puts the purge function back to the 20261018180000 body, drops the profile-delete trigger and
 -- makes user_stall_submissions.user_id NOT NULL again. Detached accepted submissions (user_id
 -- null) cannot satisfy NOT NULL, so they are copied to rollback_archive first and then removed.
 -- Their photos stay in storage; restore the rows from the archive table if the migration is
--- re-applied.
+-- re-applied. The archive is appended to, never recreated, so an up/down/up/down cycle keeps the
+-- rows an earlier rollback saved.
 
 drop trigger if exists trg_user_profiles_detach_accepted_submissions on public.user_profiles;
 drop function if exists app_private.detach_accepted_stall_submissions();
@@ -126,8 +128,9 @@ revoke all on function public.purge_account_deletion_residual_data(uuid, uuid)
 grant execute on function public.purge_account_deletion_residual_data(uuid, uuid) to service_role;
 
 create schema if not exists rollback_archive;
-drop table if exists rollback_archive.user_stall_submissions_20261029090000;
-create table rollback_archive.user_stall_submissions_20261029090000 as
+create table if not exists rollback_archive.user_stall_submissions_20261029090000 as
+select * from public.user_stall_submissions where false;
+insert into rollback_archive.user_stall_submissions_20261029090000
 select * from public.user_stall_submissions where user_id is null;
 
 delete from public.user_stall_submissions where user_id is null;

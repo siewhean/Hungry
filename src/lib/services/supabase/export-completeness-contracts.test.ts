@@ -42,6 +42,16 @@ function userKeyedTablesAndExport() {
         tables.set(match[1].toLowerCase(), file);
       }
     }
+    // Foreign keys added later (ADD COLUMN ... references, ADD CONSTRAINT ... references).
+    for (const match of sql.matchAll(
+      /alter\s+table\s+(?:if\s+exists\s+)?(?:only\s+)?(?:public\.)?"?([a-z_0-9]+)"?\s+([^;]*?);/gis,
+    )) {
+      if (
+        /references\s+(?:public\.)?user_profiles\s*\(|references\s+auth\.users\s*\(/i.test(match[2])
+      ) {
+        tables.set(match[1].toLowerCase(), file);
+      }
+    }
     for (const match of sql.matchAll(
       /drop\s+table\s+(?:if\s+exists\s+)?(?:public\.)?"?([a-z_0-9]+)"?/gi,
     )) {
