@@ -455,7 +455,10 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const venueId = route.params?.venueId ?? route.params?.id ?? "";
   const repository = getDataRepository();
   const serviceProviderMode = getServiceProvider().mode;
-  const cachedVenue = repository.getVenueById(venueId);
+  // Live builds read this page through its RPCs only. The synchronous repository's first read
+  // downloads whole tables (again every 45 s) and stops at 1,000 rows, so it is never asked.
+  const readsLocalData = serviceProviderMode !== "supabase";
+  const cachedVenue = readsLocalData ? repository.getVenueById(venueId) : undefined;
   const [hydratedVenue, setHydratedVenue] = useState<typeof cachedVenue>();
   const [hasLoadedVenueDetail, setHasLoadedVenueDetail] = useState(Boolean(cachedVenue));
   // A failed venue read (offline, timeout) is not "Stall not found".
@@ -495,10 +498,18 @@ export function StallDetailScreen({ navigation, route }: Props) {
     };
   }, [cachedVenue, serviceProviderMode, venueId, venueReloadKey]);
 
-  const building = venue ? getBuildingById(venue.buildingId) : undefined;
+  const venueBuildingId = venue?.buildingId;
+  // The bundled building list first; mock data's own list only when that misses. Memoised on
+  // the building id: the screen re-renders on every menu page, review page and scroll batch.
+  const building = useMemo(() => {
+    if (!venueBuildingId) return undefined;
+    const bundled = getBuildingById(venueBuildingId);
+    if (bundled || !readsLocalData) return bundled;
+    return repository.listBuildings().find((candidate) => candidate.id === venueBuildingId);
+  }, [readsLocalData, repository, venueBuildingId]);
   const cachedDishes = useMemo(
-    () => (venue ? repository.listDishesByVenue(venue.id) : []),
-    [repository, venue],
+    () => (venue && readsLocalData ? repository.listDishesByVenue(venue.id) : EMPTY_DISHES),
+    [readsLocalData, repository, venue],
   );
   const [hydratedDishes, setHydratedDishes] = useState<DishDetail[] | undefined>();
   const [menuLoadFailed, setMenuLoadFailed] = useState(false);
@@ -1062,9 +1073,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
   // Distance from the user to the stall (its own pin when it has one, else its building);
   // hidden when either is unknown.
   const userOrigin = locationPermission === "granted" ? currentLocation : manualCoordinate;
-  const buildingCoordinate =
-    building?.coordinate ??
-    repository.listBuildings().find((candidate) => candidate.id === venue.buildingId)?.coordinate;
+  const buildingCoordinate = building?.coordinate;
   const stallPin = getStallPin(venue, buildingCoordinate);
   const distanceLabel = formatDistanceFromUser(userOrigin, stallPin ?? buildingCoordinate);
   const ratingSummary = summarizeStallRating(dishes);
