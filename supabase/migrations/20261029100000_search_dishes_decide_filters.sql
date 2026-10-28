@@ -1,9 +1,23 @@
--- Undo 20261029090000_search_dishes_decide_filters: put back the 13-argument search_dishes
--- from 20261022020100 (no keyword filters, no food_type / course / cuisine_tags columns).
+-- smoke: supabase/smoke/search_dishes_decide_filters.sql
+-- Decide for Me used to match the quiz's cuisine and staple answers on the phone, against the 50
+-- nearest dishes, so an answer such as "Chinese" or "Noodles" was often "left out" when the
+-- nearest 50 held no match. search_dishes now filters on them in the database:
+--   * p_cuisine_keywords / p_staple_keywords (up to 12 plain words each): a dish matches when
+--     any keyword is a whole word (plurals allowed) of its name, food type, course, taste tags,
+--     or the cuisine tags of the dish or its stall. Same rule the quiz applied on the phone.
+--   * the filter runs while the candidate pool is picked, not after the top 750, so a rare
+--     cuisine is not cut off by the rating cap.
+--   * three more columns come back: food_type, course, cuisine_tags (dish plus stall), so the
+--     app can keep applying the same rule to what it shows.
+-- Body copied from 20261022020100_search_dishes_all_dietary_flags.sql (the newest definition)
+-- with those changes only. The two new parameters change the signature, so the old function is
+-- dropped first. SECURITY INVOKER, stable-then-volatile, search_path, the grants and the
+-- 'rpc/search_dishes' rate rule are as before.
+-- Rollback: supabase/rollbacks/20261029100000_search_dishes_decide_filters.down.sql.
 
 drop function if exists public.search_dishes(
   text, double precision, double precision, integer, text[], integer,
-  double precision, text, text, text, text[], numeric, boolean, text[], text[]
+  double precision, text, text, text, text[], numeric, boolean
 );
 
 create or replace function public.search_dishes(
@@ -19,7 +33,9 @@ create or replace function public.search_dishes(
   p_area_name text default null,
   p_cuisine_tags text[] default null,
   p_max_price numeric default null,
-  p_open_only boolean default false
+  p_open_only boolean default false,
+  p_cuisine_keywords text[] default null,
+  p_staple_keywords text[] default null
 )
 returns table (
   dish_id text,
@@ -44,6 +60,9 @@ returns table (
   description text,
   must_order boolean,
   availability_flags text[],
+  food_type text,
+  course text,
+  cuisine_tags text[],
   rank_score double precision,
   cursor_score double precision,
   cursor_id text
@@ -76,6 +95,24 @@ as $$
       end as radius_meters,
       coalesce(p_dietary_flags, '{}'::text[]) as dietary_flags,
       coalesce(p_cuisine_tags, '{}'::text[]) as cuisine_tags,
+      (
+        select coalesce(array_agg('(^|[^a-z])' || cleaned.kw || '(s|es)?([^a-z]|$)'), '{}'::text[])
+        from (
+          select regexp_replace(lower(trim(k)), '[^a-z0-9 ]', '', 'g') as kw
+          from unnest(coalesce(p_cuisine_keywords, '{}'::text[])) as k
+          limit 12
+        ) cleaned
+        where cleaned.kw <> ''
+      ) as cuisine_patterns,
+      (
+        select coalesce(array_agg('(^|[^a-z])' || cleaned.kw || '(s|es)?([^a-z]|$)'), '{}'::text[])
+        from (
+          select regexp_replace(lower(trim(k)), '[^a-z0-9 ]', '', 'g') as kw
+          from unnest(coalesce(p_staple_keywords, '{}'::text[])) as k
+          limit 12
+        ) cleaned
+        where cleaned.kw <> ''
+      ) as staple_patterns,
       p_max_price as max_price,
       coalesce(p_open_only, false) as open_only,
       nullif(trim(coalesce(p_area_name, '')), '') is not null as area_requested,
@@ -175,6 +212,14 @@ as $$
               and d.distance_meters <= params.radius_meters
             )
           )
+          and (
+            cardinality(params.cuisine_patterns) = 0
+            or lower(concat_ws(' ', d.name, d.food_type, d.course, array_to_string(d.taste_tags, ' '), array_to_string(d.cuisine_tags, ' '), array_to_string(v.cuisine_tags, ' '))) ~ any (params.cuisine_patterns)
+          )
+          and (
+            cardinality(params.staple_patterns) = 0
+            or lower(concat_ws(' ', d.name, d.food_type, d.course, array_to_string(d.taste_tags, ' '), array_to_string(d.cuisine_tags, ' '), array_to_string(v.cuisine_tags, ' '))) ~ any (params.staple_patterns)
+          )
         order by d.rating_avg desc, d.review_count desc, d.id
         limit 750
       )
@@ -212,6 +257,12 @@ as $$
       d.description,
       d.must_order,
       d.availability_flags,
+      d.food_type,
+      d.course,
+      (
+        select coalesce(array_agg(distinct tag order by tag), '{}'::text[])
+        from unnest(d.cuisine_tags || v.cuisine_tags) as tag
+      ) as cuisine_tags,
       case
         when params.query is null then 1::double precision
         else greatest(
@@ -254,6 +305,14 @@ as $$
       and (params.venue_id is null or d.venue_id = params.venue_id)
       and (not params.open_only or (v.is_open = true and b.is_closed_today = false))
       and (params.max_price is null or d.price <= params.max_price)
+      and (
+        cardinality(params.cuisine_patterns) = 0
+        or lower(concat_ws(' ', d.name, d.food_type, d.course, array_to_string(d.taste_tags, ' '), array_to_string(d.cuisine_tags, ' '), array_to_string(v.cuisine_tags, ' '))) ~ any (params.cuisine_patterns)
+      )
+      and (
+        cardinality(params.staple_patterns) = 0
+        or lower(concat_ws(' ', d.name, d.food_type, d.course, array_to_string(d.taste_tags, ' '), array_to_string(d.cuisine_tags, ' '), array_to_string(v.cuisine_tags, ' '))) ~ any (params.staple_patterns)
+      )
       and (
         cardinality(params.cuisine_tags) = 0
         or d.cuisine_tags && params.cuisine_tags
@@ -366,6 +425,9 @@ as $$
     limited.description,
     limited.must_order,
     limited.availability_flags,
+    limited.food_type,
+    limited.course,
+    limited.cuisine_tags,
     limited.rank_score,
     limited.rank_score as cursor_score,
     limited.dish_id as cursor_id
@@ -376,10 +438,10 @@ $$;
 
 alter function public.search_dishes(
   text, double precision, double precision, integer, text[], integer,
-  double precision, text, text, text, text[], numeric, boolean
+  double precision, text, text, text, text[], numeric, boolean, text[], text[]
 ) volatile;
 
 grant execute on function public.search_dishes(
   text, double precision, double precision, integer, text[], integer,
-  double precision, text, text, text, text[], numeric, boolean
+  double precision, text, text, text, text[], numeric, boolean, text[], text[]
 ) to anon, authenticated;
