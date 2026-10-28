@@ -4570,7 +4570,7 @@ export const supabaseService: HungryService = {
         .select("dish_id,position")
         .eq("user_id", userId)
         .order("position", { ascending: true });
-      if (isMissingBackendObjectError(error)) return [];
+      if (isMissingBackendObjectError(error)) return null;
       if (error) throw error;
       return Array.isArray(data) ? (data as Row[]).flatMap((r) => asString(r.dish_id) ?? []) : [];
     },

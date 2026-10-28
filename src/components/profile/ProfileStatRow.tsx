@@ -45,7 +45,12 @@ function StatBlock({ stat }: { stat: ProfileStat }) {
           {value}
         </AppText>
       )}
-      <AppText variant="micro" numberOfLines={1} style={{ color: palette.textSecondary }}>
+      {/* Two lines at most, so "Followers" is never cut to "Followe…" on a narrow phone. */}
+      <AppText
+        variant="micro"
+        numberOfLines={2}
+        style={{ color: palette.textSecondary, textAlign: "center" }}
+      >
         {label}
       </AppText>
     </>

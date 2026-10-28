@@ -17,7 +17,7 @@ const LABEL_RADIUS = RING + 14;
  * the chart, and the chips say Low / Medium / High instead of a percentage.
  */
 export function TasteRadar({ vector }: { vector: TasteVector }) {
-  const { palette, radii, spacing } = useHungryTheme();
+  const { palette, radii, spacing, typography } = useHungryTheme();
   const point = (index: number, radius: number) => {
     const angle = -Math.PI / 2 + (index * 2 * Math.PI) / TASTE_DIMENSIONS.length;
     return { x: CENTER + Math.cos(angle) * radius, y: CENTER + Math.sin(angle) * radius };
@@ -84,8 +84,8 @@ export function TasteRadar({ vector }: { vector: TasteVector }) {
                 key={key}
                 x={x}
                 y={y + 4}
+                fontFamily={typography.h3.fontFamily}
                 fontSize={12}
-                fontWeight="600"
                 fill={palette.textSecondary}
                 textAnchor={anchor}
               >

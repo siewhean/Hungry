@@ -97,8 +97,29 @@ const PersonRow = memo(function PersonRow({
         ? "Follow back"
         : "Follow";
 
+  // On your own Followers list the row carries two actions. Beside the name they would squeeze it
+  // to a few letters at 375pt, so they sit on a line under it, each at least 44pt tall.
+  const stacked = canRemove && canShowFollowButton;
+  const followButton = canShowFollowButton ? (
+    <FollowPillButton
+      label={label}
+      accessibilityLabel={
+        isRequested ? `Follow request sent to ${person.name}` : `${label} ${person.name}`
+      }
+      accessibilityHint={isRequested ? "Cancels your follow request" : undefined}
+      muted={isFollowing || isRequested}
+      onPress={() =>
+        followPress({
+          userId: person.userId,
+          name: person.name,
+          avatarUrl: person.avatarUrl,
+        })
+      }
+    />
+  ) : null;
+
   return (
-    <Card style={{ padding: spacing[3] }}>
+    <Card style={{ padding: spacing[3], gap: spacing[2] }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[3] }}>
         <Pressable
           accessibilityRole="button"
@@ -115,41 +136,41 @@ const PersonRow = memo(function PersonRow({
           })}
         >
           <Avatar name={person.name} uri={person.avatarUrl} size={44} />
-          <AppText variant="bodyBold" numberOfLines={1} style={{ flex: 1, color: palette.text }}>
+          <AppText
+            variant="bodyBold"
+            numberOfLines={stacked ? 2 : 1}
+            style={{ flex: 1, color: palette.text }}
+          >
             {person.name}
           </AppText>
         </Pressable>
-        {canShowFollowButton ? (
-          <FollowPillButton
-            label={label}
-            accessibilityLabel={
-              isRequested ? `Follow request sent to ${person.name}` : `${label} ${person.name}`
-            }
-            accessibilityHint={isRequested ? "Cancels your follow request" : undefined}
-            muted={isFollowing || isRequested}
-            onPress={() =>
-              followPress({
-                userId: person.userId,
-                name: person.name,
-                avatarUrl: person.avatarUrl,
-              })
-            }
-          />
-        ) : null}
-        {canRemove && canShowFollowButton ? (
+        {stacked ? null : followButton}
+      </View>
+      {stacked ? (
+        <View
+          testID={`person-actions-${person.userId}`}
+          style={{
+            alignItems: "center",
+            flexDirection: "row",
+            gap: spacing[3],
+            // Under the name: past the 44pt avatar and the gap.
+            paddingLeft: 44 + spacing[3],
+          }}
+        >
+          {followButton}
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Remove ${person.name} as a follower`}
             hitSlop={8}
             onPress={() => onRemove(person)}
-            style={{ minHeight: 36, justifyContent: "center", paddingHorizontal: spacing[1] }}
+            style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: spacing[2] }}
           >
             <AppText variant="micro" tone="secondary" style={{ fontWeight: "800" }}>
               Remove
             </AppText>
           </Pressable>
-        ) : null}
-      </View>
+        </View>
+      ) : null}
     </Card>
   );
 });

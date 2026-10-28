@@ -3,6 +3,8 @@
 // `node scripts/test-render.mjs src/app/screens/profile/profile-r4.render.test.tsx`.
 
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { createElement } from "react";
 import test, { afterEach, beforeEach } from "node:test";
 
@@ -27,6 +29,13 @@ import {
   setServiceProvider,
 } from "@/lib/services/serviceProvider";
 import { similarityScore } from "@/lib/ai/similarityScore";
+import {
+  EXPERIMENTS,
+  clearExperimentOverrides,
+  resetExperimentSession,
+  setExperimentFlagSource,
+  type ExperimentFlagSource,
+} from "@/lib/experiments/experiments";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useUIStore } from "@/store/useUIStore";
 import { cleanup, createFakeNavigation, render, renderScreen } from "@/test/render";
@@ -107,6 +116,9 @@ afterEach(async () => {
   await cleanup();
   while (restores.length) restores.pop()!();
   Object.assign(flags, savedFlags);
+  setExperimentFlagSource(undefined);
+  resetExperimentSession();
+  clearExperimentOverrides();
 });
 
 // --- The shared review card -------------------------------------------------------------
@@ -511,4 +523,138 @@ test("edit profile: saving never sends dietary preferences", async () => {
   assert.equal(updates.length, 1);
   assert.equal("dietaryPreferences" in updates[0], false);
   assert.equal(view.findByText("Retake the taste quiz"), null, "the duplicate button is gone");
+});
+
+// --- Re-audit follow-ups (PROF4-V2 to V7) -----------------------------------------------
+
+test("PROF4-V2: a stat label may wrap to two lines, centred, so Followers is never cut", async () => {
+  const view = await render(
+    createElement(ProfileStatRow, {
+      stats: [
+        { key: "a", label: "Reviews", value: 4 },
+        { key: "b", label: "Followers", value: 12 },
+        { key: "c", label: "Following", value: 9 },
+        { key: "d", label: "Saved", value: 3 },
+      ],
+    }),
+  );
+  const label = view.findByText("Followers") as HTMLElement;
+  assert.ok(label, "the full label is rendered");
+  const style = window.getComputedStyle(label);
+  assert.equal(style.textAlign, "center");
+  assert.equal(style.webkitLineClamp || style.getPropertyValue("-webkit-line-clamp"), "2");
+});
+
+test("PROF4-V3: on your Followers list the actions sit under the name, Remove at least 44pt tall", async () => {
+  stub(getHungryService().social, "listFollowers", async () => [
+    { userId: OTHER_ID, displayName: "Wei Ming Tan" },
+  ]);
+  const view = await renderScreen(FollowersScreen as never, { name: "Followers" });
+  const name = view.findByLabel("Wei Ming Tan") as HTMLElement;
+  const follow = view.findByLabel("Follow back Wei Ming Tan") as HTMLElement;
+  const remove = view.findByLabel("Remove Wei Ming Tan as a follower") as HTMLElement;
+  assert.ok(name && follow && remove);
+  assert.equal(name.parentElement?.contains(follow), false, "the name's row holds no buttons");
+  assert.equal(name.parentElement?.contains(remove), false);
+  assert.equal(follow.parentElement, remove.parentElement, "the two actions share one line");
+  assert.ok(view.findByTestId(`person-actions-${OTHER_ID}`));
+  assert.ok(Number.parseFloat(window.getComputedStyle(remove).minHeight) >= 44);
+});
+
+test("PROF4-V3: on the Following list the Follow button stays beside the name", async () => {
+  stub(getHungryService().social, "listFollowing", async () => [
+    { userId: OTHER_ID, displayName: "Ahmad" },
+  ]);
+  const { FollowingScreen } =
+    require("@/app/screens/profile/ProfileConnectionsScreen") as typeof import("@/app/screens/profile/ProfileConnectionsScreen");
+  const view = await renderScreen(FollowingScreen as never, { name: "Following" });
+  assert.equal(view.findByTestId(`person-actions-${OTHER_ID}`), null);
+  assert.equal(view.findByLabel("Remove Ahmad as a follower"), null);
+});
+
+test("PROF4-V4: radar axis labels take the app font from the theme, not the SVG default serif", () => {
+  // react-native-svg is stubbed in render tests, so check the source the labels are built from.
+  const source = readFileSync(join(process.cwd(), "src/components/profile/TasteRadar.tsx"), "utf8");
+  assert.match(source, /<SvgText[^>]*[\s\S]*?fontFamily=\{typography\.[a-zA-Z0-9]+\.fontFamily\}/);
+});
+
+test("PROF4-V5: with no pins table on the backend, nothing is offered to pin", async () => {
+  stub(getHungryService().profile, "listFavouriteDishIds", async () => null);
+  const view = await renderScreen(ProfileHomeScreen as never, { name: "ProfileHome" });
+  assert.equal(view.findByLabel("Pin favourite dishes"), null);
+  assert.equal(view.findByTestId("profile-favourite-dishes"), null);
+});
+
+test("PROF4-V5: useProfileFavouriteDishes reports supported=false on an older backend", async () => {
+  stub(getHungryService().profile, "listFavouriteDishIds", async () => null);
+  function Probe() {
+    const { dishIds, isLoaded, supported } = useProfileFavouriteDishes(OTHER_ID);
+    return createElement(
+      "p",
+      { "data-testid": "probe" },
+      `${isLoaded}:${supported}:${dishIds.length}`,
+    );
+  }
+  const view = await render(createElement(Probe));
+  assert.equal(view.findByTestId("probe")?.textContent, "true:false:0");
+});
+
+function fakeFlags(flagValues: Record<string, string> | undefined) {
+  const state = { exposed: [] as string[] };
+  const source: ExperimentFlagSource = {
+    peek: (key) => flagValues?.[key],
+    expose: (key) => {
+      state.exposed.push(key);
+      return flagValues?.[key];
+    },
+    hasLoaded: () => flagValues !== undefined,
+    onChange: () => () => undefined,
+  };
+  return { state, source };
+}
+
+function runShowcaseLive() {
+  const definition = EXPERIMENTS.profile_favourites_showcase_v1 as { status: string };
+  const previous = definition.status;
+  definition.status = "running";
+  restores.push(() => {
+    definition.status = previous;
+  });
+}
+
+test("PROF4-V7: the showcase experiment is a draft whose fallback shows the row", async () => {
+  assert.equal(EXPERIMENTS.profile_favourites_showcase_v1.status, "draft");
+  assert.equal(EXPERIMENTS.profile_favourites_showcase_v1.fallback, "test");
+  assert.equal(EXPERIMENTS.profile_favourites_showcase_v1.primaryMetric, "profile_shared");
+  stub(getHungryService().profile, "listFavouriteDishIds", async () => []);
+  const view = await renderScreen(ProfileHomeScreen as never, { name: "ProfileHome" });
+  assert.ok(view.findByLabel("Pin favourite dishes"), "everyone sees the row until a flag runs");
+});
+
+test("PROF4-V7: running, the control arm leaves the row out and the test arm shows it, both exposed", async () => {
+  runShowcaseLive();
+  stub(getHungryService().profile, "listFavouriteDishIds", async () => []);
+
+  const control = fakeFlags({ profile_favourites_showcase_v1: "control" });
+  setExperimentFlagSource(control.source);
+  const hidden = await renderScreen(ProfileHomeScreen as never, { name: "ProfileHome" });
+  assert.equal(hidden.findByLabel("Pin favourite dishes"), null);
+  assert.ok(control.state.exposed.includes("profile_favourites_showcase_v1"));
+  await cleanup();
+  resetExperimentSession();
+
+  const test_ = fakeFlags({ profile_favourites_showcase_v1: "test" });
+  setExperimentFlagSource(test_.source);
+  const shown = await renderScreen(ProfileHomeScreen as never, { name: "ProfileHome" });
+  assert.ok(shown.findByLabel("Pin favourite dishes"));
+  assert.ok(test_.state.exposed.includes("profile_favourites_showcase_v1"));
+});
+
+test("PROF4-V7: a backend without the pins table is never exposed to the showcase test", async () => {
+  runShowcaseLive();
+  stub(getHungryService().profile, "listFavouriteDishIds", async () => null);
+  const fake = fakeFlags({ profile_favourites_showcase_v1: "test" });
+  setExperimentFlagSource(fake.source);
+  await renderScreen(ProfileHomeScreen as never, { name: "ProfileHome" });
+  assert.equal(fake.state.exposed.includes("profile_favourites_showcase_v1"), false);
 });

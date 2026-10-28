@@ -449,6 +449,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
   const {
     dishIds: pinnedDishIds,
     isLoaded: pinnedDishesLoaded,
+    supported: pinnedDishesSupported,
     save: savePinnedDishes,
   } = useProfileFavouriteDishes(profile.id, isAuthenticated);
   // Only dishes you saved or reviewed can be pinned.
@@ -456,6 +457,15 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
     () => [...new Set([...profile.favouriteDishIds, ...profile.reviewedDishIds])],
     [profile.favouriteDishIds, profile.reviewedDishIds],
   );
+  // Seen by a signed-in diner who has pins, or dishes to pin, on a backend that stores pins.
+  const showcaseEligible =
+    isAuthenticated &&
+    pinnedDishesLoaded &&
+    pinnedDishesSupported &&
+    (pinnedDishIds.length > 0 || pinCandidateIds.length > 0);
+  const showcaseVariant = useExperimentVariant("profile_favourites_showcase_v1", {
+    enabled: showcaseEligible,
+  });
   const memberSince = profile.createdAt ? formatMemberSince(profile.createdAt) : "";
   // A full first page may be cut off: then the server's counter (distinct dishes reviewed).
   const ownReviewCount =
@@ -1029,7 +1039,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
           ) : null}
         </View>
 
-        {isAuthenticated && pinnedDishesLoaded ? (
+        {showcaseEligible && showcaseVariant === "test" ? (
           <FavouriteDishesRow
             dishIds={pinnedDishIds}
             candidateDishIds={pinCandidateIds}

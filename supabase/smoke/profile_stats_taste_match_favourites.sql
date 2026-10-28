@@ -228,6 +228,19 @@ begin
   end if;
 end $$;
 
+-- The PDPA export includes the pins (one row here: d2), in the exported categories too.
+do $$
+declare
+  v_export jsonb := public.export_my_data();
+begin
+  if jsonb_array_length(v_export->'data'->'profileFavouriteDishes') <> 1 then
+    raise exception 'export_my_data should include the caller''s pinned dishes';
+  end if;
+  if not (v_export->'categories') ? 'profileFavouriteDishes' then
+    raise exception 'profileFavouriteDishes should be listed in categories';
+  end if;
+end $$;
+
 select public.set_profile_favourite_dishes('{}');
 do $$
 begin

@@ -8,16 +8,19 @@ export const PROFILE_FAVOURITE_DISHES_MAX = 4;
 
 /**
  * The dishes pinned on a profile. A failed read shows nothing rather than an error: the row is
- * a bonus, and an older backend without the table reads as an empty list.
+ * a bonus. `supported` is false on an older backend without the table: nothing can be pinned
+ * there yet, so the row is hidden rather than offering a save that would fail.
  */
 export function useProfileFavouriteDishes(userId: string | undefined, enabled = true) {
   const [dishIds, setDishIds] = useState<string[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [supported, setSupported] = useState(true);
 
   useEffect(() => {
     if (!enabled || !userId) {
       setDishIds([]);
       setIsLoaded(false);
+      setSupported(true);
       return;
     }
     let active = true;
@@ -25,7 +28,9 @@ export function useProfileFavouriteDishes(userId: string | undefined, enabled = 
     void getHungryService()
       .profile.listFavouriteDishIds(userId)
       .then((ids) => {
-        if (active) setDishIds(ids);
+        if (!active) return;
+        setSupported(ids !== null);
+        setDishIds(ids ?? []);
       })
       .catch((error) => {
         reportError(error, { screen: "Profile", action: "load_favourite_dishes" });
@@ -53,5 +58,5 @@ export function useProfileFavouriteDishes(userId: string | undefined, enabled = 
     }
   }, []);
 
-  return { dishIds, isLoaded, save };
+  return { dishIds, isLoaded, supported, save };
 }

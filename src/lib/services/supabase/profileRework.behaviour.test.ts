@@ -122,7 +122,7 @@ test("getTasteMatch returns the score, null when there is none, and throws on a 
   await assert.rejects(service.profile.getTasteMatch(OTHER));
 });
 
-test("listFavouriteDishIds reads the pins in order; a missing table reads as empty", async () => {
+test("listFavouriteDishIds reads the pins in order; a missing table reads as null (cannot pin)", async () => {
   fake.tables.profile_favourite_dishes = () => ({
     data: [
       { dish_id: "d2", position: 1 },
@@ -138,7 +138,7 @@ test("listFavouriteDishIds reads the pins in order; a missing table reads as emp
     data: null,
     error: { message: "relation does not exist", code: "42P01" },
   });
-  assert.deepEqual(await service.profile.listFavouriteDishIds(OTHER), []);
+  assert.equal(await service.profile.listFavouriteDishIds(OTHER), null);
 
   fake.tables.profile_favourite_dishes = () => ({
     data: null,

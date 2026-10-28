@@ -1017,8 +1017,11 @@ export interface HungryService {
      * or private account, or either of you has no taste fingerprint yet, or an older backend).
      */
     getTasteMatch(userId: string): Promise<number | null>;
-    /** The dishes pinned on a profile, in order (at most 4); empty on an older backend. */
-    listFavouriteDishIds(userId: string): Promise<string[]>;
+    /**
+     * The dishes pinned on a profile, in order (at most 4); null on an older backend that has no
+     * pins table yet, so callers can tell "none pinned" from "cannot pin".
+     */
+    listFavouriteDishIds(userId: string): Promise<string[] | null>;
     /** Replaces your pinned dishes (at most 4, each saved or reviewed by you); returns the stored order. */
     setFavouriteDishes(dishIds: string[]): Promise<string[]>;
     /** Every category of the signed-in user's own data. Throws instead of returning partial data. */
