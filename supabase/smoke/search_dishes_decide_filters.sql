@@ -1,4 +1,4 @@
--- Smoke checks for 20261029090000_search_dishes_decide_filters.sql.
+-- Smoke checks for 20261029100000_search_dishes_decide_filters.sql.
 -- search_dishes filters on cuisine and staple keywords in the database (whole words, plurals
 -- allowed, matched on name, food type, course, taste tags and the cuisine tags of the dish and
 -- its stall), and returns food_type, course and cuisine_tags. Brings its own building, so it
