@@ -1498,3 +1498,7 @@ Use the smallest check that matches the change risk.
 ### MAPDECIDE-R4 step 4 (MD-D4, MD-D12), 2026-10-28
 - typecheck clean; npm test 2186/0 fail; test:render 562/0 fail (decide.render.test.tsx gains the widen-then-drop, keyword and radius-chip cases); lint 0 errors; format clean; test:coverage OK and baseline updated; check:n-plus-one, check:rate-limits, audit:races OK.
 - Migration, rollback and smoke run on a scratch Postgres 16 with stand-in tables (no PostGIS): up, down, up again; the new smoke passes (SMOKE_OK); whole-word ("ice" does not match "Rice Dishes"), plural ("noodle" matches "Noodles"), course ("drink"), stall cuisine tags and a pattern-like keyword all behave. Real staging rehearsal not run (no database password in this environment); `audit:supabase:migration-safety` fails only on the missing `supabase/rehearsals/20261029090000.json`.
+
+### MAPDECIDE-R4 step 5 (MD-W1 to W7), 2026-10-28
+- typecheck clean; npm test 2191/0 fail; test:render 577/0 fail (new wheel.render.test.tsx, wheelSolo.render.test.tsx with production flags, WheelSvg.render.test.tsx); lint 0 errors; format clean; test:coverage OK and baseline updated; check:n-plus-one, check:rate-limits, audit:races OK.
+- react-native-svg is stubbed in render tests (props dropped), so slice label rotation is tested as a function and the font by a source check; not seen on a device.

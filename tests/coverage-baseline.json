@@ -2,7 +2,7 @@
   "global": {
     "lines": 84.1,
     "branches": 85.2,
-    "functions": 79.8
+    "functions": 79.9
   },
   "files": {
     "src/app/navigation/getRootNavigation.ts": 100,
@@ -115,6 +115,8 @@
     "src/features/share/shareAttribution.ts": 84.7,
     "src/features/social/sharedStallPosts.ts": 79.8,
     "src/features/wheel/leaveWheel.ts": 100,
+    "src/features/wheel/loadPrefill.ts": 100,
+    "src/features/wheel/prefill.ts": 94.9,
     "src/features/wheel/surprisePick.ts": 100,
     "src/features/wheel/venueRow.ts": 100,
     "src/hooks/useKeyboardRevealFocusedInput.ts": 97.8,

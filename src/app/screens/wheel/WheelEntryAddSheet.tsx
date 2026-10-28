@@ -227,11 +227,21 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
         .coordinate
     : undefined;
   const [query, setQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<SearchCategory | null>(null);
+  // MD-W6: Browse opens on a category instead of "pick a category above".
+  const [selectedCategory, setSelectedCategory] = useState<SearchCategory | null>(CATEGORIES[0]);
+  // The last stall added, read out by the header so a quiet add is still confirmed.
+  const [lastAdded, setLastAdded] = useState<string | null>(null);
 
   const addedVenueIds = new Set(entries.map((e) => e.venueId));
 
-  const atEntryCap = entries.filter((e) => !e.isEliminated).length >= MAX_WHEEL_ENTRIES;
+  const activeCount = entries.filter((e) => !e.isEliminated).length;
+  const atEntryCap = activeCount >= MAX_WHEEL_ENTRIES;
+
+  // MD-W2: the sheet stays open after an add, so several stalls take one visit. The row flips to
+  // "already on the wheel" and the header counts them; Done (or the X) closes the sheet.
+  function confirmAdded(name: string) {
+    setLastAdded(name);
+  }
 
   function addVenue(venue: VenueSummary) {
     if (addedVenueIds.has(venue.id)) {
@@ -264,7 +274,7 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
               onPress: () => {
                 void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 addEntry(venue.id, venue.buildingId, venue.name, venueDish?.imageUrl ?? "");
-                onClose();
+                confirmAdded(venue.name);
               },
             },
           ],
@@ -275,7 +285,7 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
 
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     addEntry(venue.id, venue.buildingId, venue.name, venueDish?.imageUrl ?? "");
-    onClose();
+    confirmAdded(venue.name);
   }
 
   function addRandom() {
@@ -430,6 +440,16 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
         >
           <View style={{ flex: 1 }}>
             <AppText style={{ fontSize: 20, fontWeight: "900" }}>Add an Option</AppText>
+            <AppText
+              variant="micro"
+              tone="secondary"
+              accessibilityLiveRegion="polite"
+              testID="wheel-add-sheet-count"
+            >
+              {lastAdded
+                ? `Added ${lastAdded} · ${activeCount} on the wheel`
+                : `${activeCount} on the wheel`}
+            </AppText>
             {groupDietaryRestrictions.length > 0 && (
               <View
                 style={{
@@ -449,19 +469,22 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
           </View>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Dismiss add option sheet"
+            accessibilityLabel="Done adding options"
             onPress={onClose}
             hitSlop={12}
             style={{
               backgroundColor: palette.bgSoft,
-              width: 32,
-              height: 32,
+              minHeight: 32,
+              paddingHorizontal: spacing[3],
               borderRadius: radii.pill,
               alignItems: "center",
+              flexDirection: "row",
+              gap: spacing[1],
               justifyContent: "center",
             }}
           >
-            <X size={18} color={palette.text} />
+            <X size={16} color={palette.text} />
+            <AppText variant="bodySmallBold">Done</AppText>
           </Pressable>
         </View>
 
