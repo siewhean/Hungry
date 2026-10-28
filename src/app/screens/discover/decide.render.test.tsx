@@ -346,6 +346,15 @@ test("MD-D10 the end state offers Change answers and Start over", async () => {
   });
 });
 
+test("MD-D3 with no location the result screen asks for it instead of the area picker", async () => {
+  useLocationStore.setState({ permission: "unknown", manualCoordinate: undefined });
+  serve([dish("a", "Chicken Rice")]);
+  const view = await renderResult({ surface: "push" });
+  assert.ok(view.findByTestId("location-gate"));
+  assert.equal(view.findByText("Choose your area"), null);
+  assert.equal(searchCalls.length, 0, "nothing is searched without a location");
+});
+
 // ---- Quiz ----
 
 function navigationWithListeners() {
@@ -443,6 +452,20 @@ test("a double tap answers one question, not the next one too", async () => {
   // The next question's tile in the same slot, tapped straight after.
   await view.press(view.findByLabel("Rice"));
   assert.match(view.text(), /QUESTION 2 OF 4/);
+});
+
+test("MD-D3 with no location fix the quiz asks for location before question 1", async () => {
+  useLocationStore.setState({ permission: "unknown", manualCoordinate: undefined });
+  const view = await renderQuiz();
+  assert.ok(view.findByTestId("location-gate"));
+  assert.doesNotMatch(view.text(), /QUESTION 1 OF/);
+  assert.match(view.text(), /Where are you eating\?/);
+});
+
+test("MD-D3 once a location is known the quiz starts at question 1", async () => {
+  const view = await renderQuiz();
+  assert.equal(view.findByTestId("location-gate"), null);
+  assert.match(view.text(), /QUESTION 1 OF/);
 });
 
 test("finishing the quiz sends decide_quiz_completed once, announces each question, and passes the answers on", async () => {

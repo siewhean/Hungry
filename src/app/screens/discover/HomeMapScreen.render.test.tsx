@@ -36,9 +36,12 @@ beforeEach(async () => {
   catalog.listVenues = (async () => ({ releaseId: "r", items: [card] })) as never;
 });
 
+const originalGrant = useLocationStore.getState().grantLocation;
+
 afterEach(async () => {
   await cleanup();
   Object.assign(catalog, originals);
+  useLocationStore.setState({ grantLocation: originalGrant });
 });
 
 const renderMap = (navigation = createFakeNavigation()) =>
@@ -86,4 +89,35 @@ test("MD-M1 the carousel sheet is tall enough for a whole card", () => {
   assert.match(src, /CAROUSEL_BASE_HEIGHT = SHEET_HEADER_HEIGHT \+ CAROUSEL_CONTENT_HEIGHT/);
   assert.match(src, /height: CAROUSEL_CONTENT_HEIGHT \+ insets\.bottom/);
   assert.ok(num("CARD_IMAGE_HEIGHT") === 120 && num("SHEET_HEADER_HEIGHT") === 40);
+});
+
+test("MD-M3 with no location the map asks for it, and the recentre button asks before offering a place search", async () => {
+  useLocationStore.setState({ permission: "unknown", manualCoordinate: undefined });
+  let asked = 0;
+  useLocationStore.setState({
+    grantLocation: async () => {
+      asked += 1;
+      return false;
+    },
+  });
+  const navigation = createFakeNavigation();
+  const view = await renderMap(navigation);
+  assert.ok(view.findByTestId("location-gate"));
+  assert.match(view.text(), /See places near you/);
+
+  // The gate's own button and the floating recentre button share the label; the recentre one is last.
+  const buttons = view.container.querySelectorAll<HTMLElement>('[aria-label="Use my location"]');
+  assert.equal(buttons.length, 2);
+  await view.press(buttons[1]);
+  await view.settle();
+  assert.equal(asked, 1, "the recentre button asks for the device location first");
+  assert.deepEqual(navigation.calls.at(-1), {
+    method: "navigate",
+    args: ["OnboardingStack", { screen: "ManualLocationPicker" }],
+  });
+});
+
+test("with a location the map shows no location prompt", async () => {
+  const view = await renderMap();
+  assert.equal(view.findByTestId("location-gate"), null);
 });

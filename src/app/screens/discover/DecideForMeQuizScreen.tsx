@@ -17,6 +17,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Check, Dices, Utensils } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
+import { LocationGate } from "@/components/discover/LocationGate";
 import { AccessibleImage, AppText, Button, Screen } from "@/components/ui";
 import {
   DECIDE_FOR_ME_OPTION_ID,
@@ -27,6 +28,7 @@ import { trackAnalyticsEvent } from "@/lib/analytics";
 import { getExperimentVariant } from "@/lib/experiments/experiments";
 import { selectHaptic, tapHaptic } from "@/lib/haptics";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
+import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
 import { useHungryTheme } from "@/theme";
 import { DECIDE_OPTION_IMAGES, DECIDE_PRICE_TIERS } from "./decideOptionImages";
 
@@ -57,6 +59,15 @@ export function DecideForMeQuizScreen() {
       ? DECIDE_QUESTIONS.filter((item) => item.id === "cuisine" || item.id === "price")
       : DECIDE_QUESTIONS,
   );
+  const locationPermission = useLocationStore((state) => state.permission);
+  const gpsLocation = useLocationStore((state) => state.currentLocation);
+  const manualCoordinate = useLocationStore((state) => state.manualCoordinate);
+  // No fix and no picked place: ask before the questions, not after the diner answered them all.
+  const needsLocation = getEffectiveLocation({
+    permission: locationPermission,
+    currentLocation: gpsLocation,
+    manualCoordinate,
+  }).isApproximate;
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<DecideAnswers>(() => route.params?.answers ?? {});
   const question = questions[step];
@@ -140,6 +151,18 @@ export function DecideForMeQuizScreen() {
     tapHaptic();
     finish({}, true);
   };
+
+  if (needsLocation && step === 0) {
+    return (
+      <Screen title="Decide for me" onBackPress={() => navigation.goBack()}>
+        <LocationGate
+          source="decide"
+          title="Where are you eating?"
+          body="Decide for me picks a dish near you, so it needs to know where you are. It is only used to find food near you."
+        />
+      </Screen>
+    );
+  }
 
   return (
     <Screen

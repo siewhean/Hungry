@@ -38,6 +38,7 @@ import { calculateDistanceMeters } from "@/lib/geo/distance";
 import { getCatalogRawService } from "@/lib/services/serviceProvider";
 import type { CatalogMapItem, CatalogRawVenueCard } from "@/lib/services/catalog";
 import { DiscoverViewToggle } from "@/components/discover/DiscoverViewToggle";
+import { LocationGate } from "@/components/discover/LocationGate";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
 import { useSearchStore } from "@/store/useSearchStore";
@@ -183,6 +184,7 @@ export function HomeMapScreen() {
   const gpsLocation = useLocationStore((state) => state.currentLocation);
   const manualCoordinate = useLocationStore((state) => state.manualCoordinate);
   const locationPermission = useLocationStore((state) => state.permission);
+  const grantLocation = useLocationStore((state) => state.grantLocation);
   // Same effective location as Discover: a manual pick wins over GPS.
   const { coordinate: currentLocation, isApproximate: isLocationApproximate } =
     getEffectiveLocation({
@@ -681,6 +683,14 @@ export function HomeMapScreen() {
               </Pressable>
             </View>
           ) : null}
+          {isLocationApproximate ? (
+            <LocationGate
+              compact
+              source="map"
+              title="See places near you"
+              body="Turn on location, or search for a place to look around."
+            />
+          ) : null}
           {mapLoadState === "idle" ? null : (
             <Pressable
               accessibilityRole={mapLoadState === "error" ? "button" : "text"}
@@ -771,12 +781,17 @@ export function HomeMapScreen() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={
-              isLocationApproximate ? "Choose your area" : "Recenter map on your location"
+              isLocationApproximate ? "Use my location" : "Recenter map on your location"
             }
             onPress={() => {
               void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               if (isLocationApproximate) {
-                navigation.navigate("OnboardingStack", { screen: "ManualLocationPicker" });
+                // Ask for the device location; only when that is refused offer a place search.
+                void grantLocation().then((granted) => {
+                  if (!granted) {
+                    navigation.navigate("OnboardingStack", { screen: "ManualLocationPicker" });
+                  }
+                });
                 return;
               }
               setMapCenter(currentLocation);

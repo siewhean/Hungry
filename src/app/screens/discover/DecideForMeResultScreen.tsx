@@ -22,6 +22,7 @@ import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { firstDishTimingProps } from "@/lib/analytics/firstDishTiming";
 import { reportError } from "@/lib/monitoring/reportError";
+import { LocationGate } from "@/components/discover/LocationGate";
 import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
 import { AccessibleImage, AppText, Badge, Button, Card, EmptyState, Screen } from "@/components/ui";
 import { formatDishUpdated } from "@/features/detail/dishFreshness";
@@ -638,20 +639,16 @@ export function DecideForMeResultScreen() {
   };
 
   if (isLocationApproximate) {
-    // Same picker Discover offers in this state.
     return (
-      <Screen title="Recommended for you" subtitle="Choose your area to get a pick near you.">
-        <EmptyState
-          title="Choose your area"
-          body="Hungry doesn't know where you are yet, so it can't pick a dish near you."
-        />
-        <Button
-          label="Choose your area"
-          onPress={() => navigation.navigate("OnboardingStack", { screen: "ManualLocationPicker" })}
+      <Screen title="Recommended for you">
+        <LocationGate
+          source="decide"
+          title="Where are you eating?"
+          body="Decide for me picks a dish near you, so it needs to know where you are."
         />
         <Button
           label="Back to Discover"
-          variant="secondary"
+          variant="ghost"
           onPress={() => navigation.navigate("MainTabs", { screen: "Discover" })}
         />
       </Screen>
