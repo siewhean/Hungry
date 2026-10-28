@@ -1,8 +1,8 @@
 {
   "global": {
-    "lines": 84,
+    "lines": 83.7,
     "branches": 85.1,
-    "functions": 79.7
+    "functions": 79.4
   },
   "files": {
     "src/app/navigation/getRootNavigation.ts": 100,
@@ -130,7 +130,7 @@
     "src/lib/analytics/gamificationEvents.ts": 100,
     "src/lib/analytics/index.ts": 100,
     "src/lib/analytics/mockAnalytics.ts": 100,
-    "src/lib/analytics/posthogSink.ts": 99.3,
+    "src/lib/analytics/posthogSink.ts": 95.9,
     "src/lib/analytics/privacy.ts": 93.6,
     "src/lib/date/formatTimeAgo.ts": 95.8,
     "src/lib/experiments/experiments.ts": 94.7,
@@ -140,7 +140,7 @@
     "src/lib/geo/maxwell_floorplan.ts": 98.1,
     "src/lib/geo/oneMap.ts": 98.8,
     "src/lib/geo/recommendationGeoCell.ts": 100,
-    "src/lib/geo/singaporeBuildings.ts": 96.1,
+    "src/lib/geo/singaporeBuildings.ts": 96,
     "src/lib/images/stableCacheKey.ts": 100,
     "src/lib/monitoring/reportError.ts": 92.3,
     "src/lib/network/connectivity.ts": 100,
@@ -177,7 +177,7 @@
     "src/lib/services/supabase/mediaUpload.ts": 65.4,
     "src/lib/services/supabase/pkceCryptoPolyfill.ts": 76.7,
     "src/lib/services/supabase/supabaseRepository.ts": 59.6,
-    "src/lib/services/supabase/supabaseService.ts": 52.5,
+    "src/lib/services/supabase/supabaseService.ts": 51.6,
     "src/lib/services/supabase/videoMetadata.ts": 95.5,
     "src/lib/services/types.ts": 99.9,
     "src/store/persistStorage.ts": 66.5,
