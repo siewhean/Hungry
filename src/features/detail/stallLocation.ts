@@ -29,6 +29,20 @@ export function buildMapsSearchUrl(address: string, pin?: Coordinate) {
 }
 
 /**
+ * Google Maps link for getting to a stall, shared by every Directions button. The search is
+ * "stall, building, Singapore postal code" (a unit number such as #01-10 makes Maps lose the
+ * place); a stall with no name falls back to its map pin.
+ */
+export function buildStallMapsUrl(
+  stall: Pick<VenueSummary, "name"> & Omit<BuildingLocation, "name"> & { buildingName?: string },
+  pin?: Coordinate,
+) {
+  const postal = stall.postalCode ? `Singapore ${stall.postalCode}` : undefined;
+  const text = [stall.name, stall.buildingName ?? stall.address, postal].filter(Boolean).join(", ");
+  return buildMapsSearchUrl(text || "Singapore", text ? undefined : pin);
+}
+
+/**
  * The stall's own map pin (a merchant-set pin or stored venue coordinate), when it
  * sits apart from its building's point. Street-level and home-based stalls can be
  * far from the building coordinate; a pin equal to the building adds nothing.

@@ -8,6 +8,7 @@ import { AccessibilityInfo } from "react-native";
 
 import { DecideForMeQuizScreen } from "@/app/screens/discover/DecideForMeQuizScreen";
 import { DecideForMeResultScreen } from "@/app/screens/discover/DecideForMeResultScreen";
+import { DAY_ORDER, getSingaporeDay } from "@/utils/operatingHours";
 import { clearTrackedAnalyticsEvents, getTrackedAnalyticsEvents } from "@/lib/analytics";
 import {
   EXPERIMENTS,
@@ -210,6 +211,82 @@ test("the price answer is dropped and retried once when nothing nearby is under 
   );
   assert.match(view.text(), /Wagyu Ramen/);
   assert.match(view.text(), /Under S\$5 \(left out\)/);
+});
+
+test("MD-D8 Other picks name the stall and say why they are offered", async () => {
+  serve([
+    dish("a", "Laksa", { distanceMeters: 100, price: 6 }),
+    dish("b", "Chicken Rice", { venueName: "Tian Tian", distanceMeters: 300, price: 4 }),
+    dish("c", "Chicken Rice", {
+      venueName: "Ah Tai",
+      distanceMeters: 250,
+      price: 7,
+      rating: 4.9,
+    }),
+  ]);
+  const view = await renderResult({ surface: "push" });
+  // The best rated stall leads; the backups name their stalls and what they beat it on.
+  assert.match(view.text(), /Tian Tian · S\$4\.00 · 300 m away/);
+  assert.match(view.text(), /Laksa Stall · S\$6\.00 · 100 m away/);
+  assert.match(view.text(), /Closer · Cheaper/);
+});
+
+test("MD-D11 Directions is offered, and opens the stall's Google Maps search, when the stall read fails", async () => {
+  serve([dish("a", "Chicken Rice", { venueName: "Tian Tian" })]);
+  const view = await renderResult({ surface: "push" });
+  await view.settle();
+  assert.ok(view.findByText("Directions"));
+});
+
+test("MD-D7 when every stall is closed the screen says so first and does not repeat Closed", async () => {
+  const today = getSingaporeDay();
+  const otherDay = DAY_ORDER[(DAY_ORDER.indexOf(today) + 3) % 7];
+  serve([dish("a", "Chicken Rice")]);
+  discovery.getVenuesByIds = (async () => [
+    {
+      id: "venue-a",
+      name: "Chicken Rice Stall",
+      operatingHours: `${otherDay} 10am-11am`,
+      isOpen: false,
+    },
+  ]) as unknown as typeof discovery.getVenuesByIds;
+  const view = await renderResult({ surface: "push" });
+  await view.settle();
+  assert.match(view.text(), /Everything within 0\.5 km is closed right now/);
+  assert.match(view.text(), /Closed/);
+  assert.doesNotMatch(view.text(), /Closed · Closed/);
+});
+
+test("MD-D13 skipping the questions offers Answer a few questions, not Change answers", async () => {
+  serve([dish("a", "Chicken Rice")]);
+  const navigation = createFakeNavigation();
+  const view = await renderResult({ surface: "discover", answers: {} }, navigation);
+  await view.settle();
+  assert.equal(view.findByText("Change answers"), null);
+  await view.press(view.findByText("Answer a few questions"));
+  assert.equal(navigation.calls.at(-1)?.method, "replace");
+});
+
+test("MD-D1 the headline match sits between the lowest and highest Palate match bar", async () => {
+  useSessionStore.setState({ hasSkippedTasteQuiz: false });
+  const user = { sweet: 6, spicy: 6, sour: 6, salty: 6, rich: 6, aromatic: 6 };
+  useProfileStore.setState((state) => ({ profile: { ...state.profile, tasteVector: user } }));
+  serve([
+    dish("a", "Chicken Rice", {
+      tasteVector: { sweet: 9, spicy: 9, sour: 8, salty: 7, rich: 9, aromatic: 8 },
+    }),
+  ]);
+  const view = await renderResult({ surface: "push" });
+  await view.settle();
+  const headline = Number(/(\d+)% taste match/.exec(view.text())?.[1]);
+  const bars = [...view.text().matchAll(/(?:Sweet|Spicy|Sour|Salty|Rich|Aroma\w*)(\d+)%/g)].map(
+    (match) => Number(match[1]),
+  );
+  assert.equal(bars.length, 6, view.text());
+  assert.ok(
+    headline <= Math.max(...bars) && headline >= Math.min(...bars),
+    `${headline} vs ${bars}`,
+  );
 });
 
 // ---- Quiz ----

@@ -32,11 +32,13 @@ import { findBuildingById } from "@/features/discovery/discovery";
 import {
   DECIDE_INITIAL_RADIUS_METERS,
   DECIDE_RADIUS_STEPS_METERS,
+  formatOpenLabel,
+  keepScoreOrder,
   preferOpenStalls,
   rankDecideCandidates,
   type OpenAwareCandidates,
 } from "@/features/discovery/decideForMeCandidates";
-import { buildMapsSearchUrl, formatFullStallAddress } from "@/features/detail/stallLocation";
+import { buildStallMapsUrl } from "@/features/detail/stallLocation";
 import { openTrustedMapsUrl } from "@/lib/security/safeLinking";
 import { shareLink } from "@/features/share/messagingShare";
 import { webShareUrl } from "@/constants/links";
@@ -181,6 +183,7 @@ const MAX_OPEN_STATE_VENUES = 50;
  */
 async function loadCandidates(
   tasteVector: TasteVector,
+  hasTasteProfile: boolean,
   dietaryFlags: DietaryFlag[],
   radius: number,
   location: Coordinate,
@@ -208,7 +211,7 @@ async function loadCandidates(
   if (!results.length && maxPrice !== undefined) results = await search(undefined);
   const ranked = rankDecideCandidates(
     results.map((result) => result.dish),
-    { tasteVector, dietaryFlags, radiusMeters: radius, maxDishBudget },
+    { tasteVector, hasTasteProfile, dietaryFlags, radiusMeters: radius, maxDishBudget },
   );
   const venueIds = [...new Set(ranked.map((dish) => dish.venueId))].slice(0, MAX_OPEN_STATE_VENUES);
   const venues = await service.discovery.getVenuesByIds(venueIds).catch(() => []);
@@ -257,6 +260,18 @@ function buildPickReason(
     : match >= 60
       ? `A strong pick based on your ${topMatch.label.toLowerCase()} and ${sortedDims[1].label.toLowerCase()} preferences.`
       : `A nearby pick that still aligns with your strongest taste dimensions.`;
+}
+
+/** Why a backup beats (or differs from) the current pick, in the signals the diner can check. */
+function buildAlternativeReason(pick: DishDetail, current: DishDetail, matchPercent?: number) {
+  const reasons: string[] = [];
+  if (matchPercent !== undefined) reasons.push(`${matchPercent}% match`);
+  if (pick.distanceMeters > 0 && pick.distanceMeters < current.distanceMeters - 50) {
+    reasons.push("Closer");
+  }
+  if (pick.price > 0 && current.price > 0 && pick.price < current.price) reasons.push("Cheaper");
+  if (pick.reviewCount > 0 && pick.rating >= current.rating + 0.2) reasons.push("Higher rated");
+  return reasons.length ? reasons.join(" · ") : "Another good option nearby";
 }
 
 /** The next two distinct candidates after the current pick, shown as backups. */
@@ -357,6 +372,7 @@ export function DecideForMeResultScreen() {
     setLoadFailed(false);
     loadCandidates(
       tasteVector,
+      hasTasteProfile,
       profile.dietaryPreferences,
       searchRadius,
       { latitude: locationLatitude, longitude: locationLongitude },
@@ -386,6 +402,7 @@ export function DecideForMeResultScreen() {
     maxPrice,
     profile.dietaryPreferences,
     profile.maxDishBudget,
+    hasTasteProfile,
     reloadCount,
     searchRadius,
     tasteVector,
@@ -401,13 +418,18 @@ export function DecideForMeResultScreen() {
   );
   const matchingCandidates = useMemo(
     () =>
-      // Openness sets how often a pick is a dish they know versus something new.
-      mixByFoodHistory(answerResult.dishes, {
-        history: foodHistory,
-        openness,
-        lookup: (dishId) => repository.getDishById(dishId),
-      }),
-    [answerResult, foodHistory, openness, repository],
+      // Openness sets how often a pick is a dish they know versus something new, but a dish never
+      // moves above one that matches more than a few points better: the order follows the match.
+      keepScoreOrder(
+        mixByFoodHistory(answerResult.dishes, {
+          history: foodHistory,
+          openness,
+          lookup: (dishId) => repository.getDishById(dishId),
+        }),
+        (candidate) =>
+          hasTasteProfile ? tasteMatchPercent(tasteVector, candidate.tasteVector) : 0,
+      ),
+    [answerResult, foodHistory, hasTasteProfile, openness, repository, tasteVector],
   );
   const candidates = useMemo(
     () => matchingCandidates.filter((candidate) => !dismissedIds.has(candidate.id)),
@@ -667,27 +689,21 @@ export function DecideForMeResultScreen() {
     .filter(Boolean)
     .join(" · ");
   const building = findBuildingById(dish.buildingId);
-  const stallAddress = venue
-    ? formatFullStallAddress(venue, {
-        name: venue.buildingName ?? building?.name,
-        address: venue.address,
-        postalCode: venue.postalCode,
-      })
-    : "";
+  // Directions never wait on the stall read: the dish row and its building are enough.
+  const directionsUrl = buildStallMapsUrl({
+    name: venue?.name || dish.venueName,
+    buildingName: venue?.buildingName ?? building?.name,
+    address: venue?.address,
+    postalCode: venue?.postalCode,
+  });
   // Distance from the built-in default point is not distance from the user.
   const distanceLabel = isLocationApproximate ? undefined : formatDistance(dish.distanceMeters);
   const isSaved = profile.favouriteDishIds.includes(dish.id);
   // Open now in Singapore time; a closed pick says when it opens.
   const openState = candidatePool?.openStateByVenueId.get(dish.venueId);
-  const openLabel =
-    openState?.status === "open"
-      ? ["Open now", openState.detail].filter(Boolean).join(" · ")
-      : openState?.status === "closed"
-        ? ["Closed", openState.detail].filter(Boolean).join(" · ")
-        : undefined;
+  const openLabel = formatOpenLabel(openState);
 
   const handleDirections = () => {
-    if (!stallAddress) return;
     trackAnalyticsEvent("directions_opened", {
       dish_id: dish.id,
       stall_id: dish.venueId,
@@ -699,7 +715,7 @@ export function DecideForMeResultScreen() {
       dish,
       buttonId: "directions",
     });
-    void openTrustedMapsUrl(buildMapsSearchUrl(stallAddress));
+    void openTrustedMapsUrl(directionsUrl);
   };
 
   const handleSave = () => {
@@ -824,13 +840,28 @@ export function DecideForMeResultScreen() {
                 </AppText>
               ) : null}
               <Button
-                label="Change answers"
+                label={answerChips.length ? "Change answers" : "Answer a few questions"}
                 variant="ghost"
                 fullWidth={false}
                 style={{ alignSelf: "flex-start" }}
                 onPress={changeAnswers}
               />
             </View>
+          ) : null}
+
+          {candidatePool?.onlyClosed ? (
+            <Card
+              accessibilityRole="alert"
+              style={{ backgroundColor: palette.bgSoft, padding: spacing[4] }}
+              testID="decide-all-closed"
+            >
+              <AppText variant="body" style={{ fontWeight: "800" }}>
+                {`Everything within ${radiusKm} km is closed right now`}
+              </AppText>
+              <AppText variant="bodySmall" tone="secondary">
+                Here are the picks that open soonest.
+              </AppText>
+            </Card>
           ) : null}
 
           <View style={{ gap: spacing[2] }}>
@@ -951,7 +982,9 @@ export function DecideForMeResultScreen() {
             <View style={{ gap: spacing[3] }}>
               <AppText variant="h3">Other picks</AppText>
               {otherPicks.map((pick) => {
-                const pickMatch = tasteMatchPercent(tasteVector, pick.tasteVector);
+                const pickMatch = hasTasteProfile
+                  ? tasteMatchPercent(tasteVector, pick.tasteVector)
+                  : undefined;
                 // Same rule as the main pick: no distance from the default point.
                 const pickDistance = isLocationApproximate
                   ? undefined
@@ -960,7 +993,7 @@ export function DecideForMeResultScreen() {
                   <Pressable
                     key={pick.id}
                     accessibilityRole="button"
-                    accessibilityLabel={`Pick ${pick.name}, ${formatDishPrice(pick)}`}
+                    accessibilityLabel={`Pick ${pick.name} at ${pick.venueName}, ${formatDishPrice(pick)}`}
                     onPress={() => handleOtherPick(pick)}
                     style={({ pressed }) => [
                       {
@@ -993,10 +1026,12 @@ export function DecideForMeResultScreen() {
                         {pick.name}
                       </AppText>
                       <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
-                        {[formatDishPrice(pick), pickDistance].filter(Boolean).join(" · ")}
+                        {[pick.venueName, formatDishPrice(pick), pickDistance]
+                          .filter(Boolean)
+                          .join(" · ")}
                       </AppText>
                       <AppText variant="bodySmall" tone="muted" numberOfLines={2}>
-                        {buildPickReason(tasteVector, pick, pickMatch, hasTasteProfile)}
+                        {buildAlternativeReason(pick, dish, pickMatch)}
                       </AppText>
                     </View>
                   </Pressable>
@@ -1020,16 +1055,14 @@ export function DecideForMeResultScreen() {
       >
         {/* No ordering exists yet: the main action is getting there, plus saving for later. */}
         <View style={{ flexDirection: "row", gap: spacing[3] }}>
-          {stallAddress ? (
-            <Button
-              label="Directions"
-              fullWidth={false}
-              style={{ flex: 2 }}
-              leftIcon={<Navigation size={18} color={palette.white} />}
-              labelColor={palette.white}
-              onPress={handleDirections}
-            />
-          ) : null}
+          <Button
+            label="Directions"
+            fullWidth={false}
+            style={{ flex: 2 }}
+            leftIcon={<Navigation size={18} color={palette.white} />}
+            labelColor={palette.white}
+            onPress={handleDirections}
+          />
           <Button
             label={isSaved ? "Saved" : "Save"}
             variant="secondary"
