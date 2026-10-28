@@ -286,6 +286,24 @@ test("MD-D12 the radius starts at 1 km and the chips pick another one", async ()
   assert.equal(searchCalls.length, before + 1);
 });
 
+test("MD-B10 opening hours are read once per stall for the visit, not again for every radius", async () => {
+  serve([dish("a", "Chicken Rice"), dish("b", "Laksa")]);
+  const asked: string[][] = [];
+  discovery.getVenuesByIds = (async (ids: string[]) => {
+    asked.push(ids);
+    return ids.map((id) => ({
+      id,
+      name: id,
+      operatingHours: "Daily 12am-11:59pm",
+      isOpen: true,
+    }));
+  }) as unknown as typeof discovery.getVenuesByIds;
+  const view = await renderResult({ surface: "push" });
+  assert.equal(asked.length, 1);
+  await view.press(view.container.querySelector('[aria-label="Search within 4 kilometres"]'));
+  assert.equal(asked.length, 1, "the same two stalls are not read again");
+});
+
 test("MD-D8 Other picks name the stall and say why they are offered", async () => {
   serve([
     dish("a", "Laksa", { distanceMeters: 100, price: 6 }),
@@ -380,6 +398,33 @@ test("MD-D6 Another pick sits in the dock next to Directions and asks for the ne
   assert.ok(dock.textContent?.includes("Directions"), "same row as Directions");
   await view.press(view.findByText("Another pick"));
   assert.match(view.text(), /Laksa/);
+});
+
+test("decide_initial_radius_v1: the control arm starts at 0.5 km, the shipped arm at 1 km", async () => {
+  setExperimentOverride("decide_initial_radius_v1", "control");
+  try {
+    serve([dish("a", "Chicken Rice")]);
+    const view = await renderResult({ surface: "push" });
+    assert.equal(searchCalls[0].radius, 500);
+    assert.ok(
+      view.container.querySelector('[aria-label="Search within 0.5 kilometres, selected"]'),
+    );
+  } finally {
+    setExperimentOverride("decide_initial_radius_v1", null);
+  }
+});
+
+test("MD-A1 Another pick and an Other pick are each counted", async () => {
+  serve([dish("a", "Chicken Rice"), dish("b", "Laksa"), dish("c", "Fish Soup")]);
+  const view = await renderResult({ surface: "push" });
+  await view.press(view.findByText("Another pick"));
+  assert.deepEqual(
+    events("decide_reroll").map((record) => record.properties),
+    [{ surface: "push", seen: 1 }],
+  );
+  await view.press(view.findByLabel(/^Pick /));
+  assert.equal(events("decide_other_pick").length, 1);
+  assert.equal(events("decide_other_pick")[0].properties.position, 0);
 });
 
 test("MD-D9 picking an Other pick or Another pick scrolls back to the top", async () => {
@@ -574,6 +619,26 @@ test("finishing the quiz sends decide_quiz_completed once, announces each questi
     assert.equal(events("decide_for_me_triggered").length, 0, "Discover already counted the tap");
   } finally {
     AccessibilityInfo.announceForAccessibility = originalAnnounce;
+    clock.restore();
+  }
+});
+
+test("MD-A1 each question reached is counted once, so the drop-off step can be read", async () => {
+  const clock = advanceClock();
+  try {
+    const view = await renderQuiz();
+    await view.press(view.findByLabel("Malay"));
+    clock.step();
+    await view.press(view.findByLabel("Rice"));
+    assert.deepEqual(
+      events("decide_quiz_step_viewed").map((record) => record.properties),
+      [
+        { step: 1, questions: 4 },
+        { step: 2, questions: 4 },
+        { step: 3, questions: 4 },
+      ],
+    );
+  } finally {
     clock.restore();
   }
 });

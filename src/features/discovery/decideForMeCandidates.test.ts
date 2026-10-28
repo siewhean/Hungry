@@ -6,8 +6,10 @@ import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import type { DishDetail, VenueSummary } from "@/types/domain";
 
 import { tasteMatchPercent } from "@/lib/ai/tasteEngine";
+import { clearExperimentOverrides, setExperimentOverride } from "@/lib/experiments/experiments";
 
 import {
+  decideInitialRadiusMeters,
   formatOpenLabel,
   isVenueOpenNow,
   keepScoreOrder,
@@ -198,4 +200,16 @@ test("open labels never repeat Closed", () => {
   assert.equal(formatOpenLabel({ status: "closed", detail: "Opens 7am" }), "Closed · Opens 7am");
   assert.equal(formatOpenLabel({ status: "closed" }), "Closed");
   assert.equal(formatOpenLabel({ status: "unknown" }), undefined);
+});
+
+test("decide_initial_radius_v1: 1 km for the shipped arm, 0.5 km for the control arm", () => {
+  try {
+    assert.equal(decideInitialRadiusMeters(), 1000);
+    setExperimentOverride("decide_initial_radius_v1", "control");
+    assert.equal(decideInitialRadiusMeters(), 500);
+    setExperimentOverride("decide_initial_radius_v1", "one_km");
+    assert.equal(decideInitialRadiusMeters(), 1000);
+  } finally {
+    clearExperimentOverrides();
+  }
 });

@@ -103,7 +103,7 @@ test("screens use the batched reads", () => {
   );
   assert.match(
     read("src/app/screens/discover/DecideForMeResultScreen.tsx"),
-    /discovery\.getVenuesByIds\(venueIds\)/,
+    /discovery\.getVenuesByIds\(unread\)/,
   );
   assert.match(
     read("src/app/screens/merchant/MerchantMenuScreen.tsx"),

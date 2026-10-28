@@ -45,7 +45,7 @@ import {
 } from "@/features/discovery/decideQuiz";
 import { findBuildingById } from "@/features/discovery/discovery";
 import {
-  DECIDE_INITIAL_RADIUS_METERS,
+  decideInitialRadiusMeters,
   DECIDE_RADIUS_STEPS_METERS,
   formatOpenLabel,
   keepScoreOrder,
@@ -181,7 +181,6 @@ const HERO_HEIGHT_RATIO = 0.75;
 /** A swipe left on the photo this far (or faster) asks for another pick. */
 const SWIPE_ANOTHER_PICK_DX = -60;
 const RADIUS_STEPS_METERS = DECIDE_RADIUS_STEPS_METERS;
-const INITIAL_RADIUS_METERS = DECIDE_INITIAL_RADIUS_METERS;
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 
 /** react-native-web drops aria-selected on buttons, so the label says which radius is on. */
@@ -219,6 +218,7 @@ async function loadCandidates(
   location: Coordinate,
   maxDishBudget?: number,
   answers?: DecideAnswers,
+  venueCache: Map<string, VenueSummary> = new Map(),
 ): Promise<LoadedCandidates> {
   const service = getHungryService();
   // Pass the user's location so the radius is measured from them, matching the radius chip.
@@ -265,11 +265,13 @@ async function loadCandidates(
     }
   }
   const venueIds = [...new Set(ranked.map((dish) => dish.venueId))].slice(0, MAX_OPEN_STATE_VENUES);
-  const venues = await service.discovery.getVenuesByIds(venueIds).catch(() => []);
-  return {
-    ...preferOpenStalls(ranked, new Map(venues.map((venue) => [venue.id, venue]))),
-    radius: usedRadius,
-  };
+  // Hours are read once per visit: a wider ring or a new answer only asks for the stalls not seen.
+  const unread = venueIds.filter((id) => !venueCache.has(id));
+  if (unread.length > 0) {
+    const venues = await service.discovery.getVenuesByIds(unread).catch(() => []);
+    for (const venue of venues) venueCache.set(venue.id, venue);
+  }
+  return { ...preferOpenStalls(ranked, venueCache), radius: usedRadius };
 }
 
 /** "Malay", "Malay and Under S$5", "Malay, Noodles and Spicy". */
@@ -365,7 +367,10 @@ export function DecideForMeResultScreen() {
   // Same effective location as the Discover feed: a manual pick wins over GPS.
   const { coordinate: effectiveLocation, isApproximate: isLocationApproximate } =
     getEffectiveLocation({ permission: locationPermission, currentLocation, manualCoordinate });
-  const [searchRadius, setSearchRadius] = useState(INITIAL_RADIUS_METERS);
+  const [searchRadius, setSearchRadius] = useState(() =>
+    // Read once, as the quiz does, so a flag that loads later cannot move the ring mid-visit.
+    decideInitialRadiusMeters({ expose: true }),
+  );
   const [resultIndex, setResultIndex] = useState(0);
   const route = useRoute<RouteProp<RootStackParamList, "DecideForMeResult">>();
   // Where Decide-for-me was opened from. Discover tracks `decide_for_me_triggered`
@@ -391,7 +396,7 @@ export function DecideForMeResultScreen() {
     if (entrySurface === "discover") return; // Discover tracks the trigger itself.
     trackAnalyticsEvent("decide_for_me_triggered", {
       surface: entrySurface,
-      radius_m: INITIAL_RADIUS_METERS,
+      radius_m: decideInitialRadiusMeters(),
     });
   }, [entrySurface]);
 
@@ -423,6 +428,7 @@ export function DecideForMeResultScreen() {
   const [isLoadingCandidates, setIsLoadingCandidates] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [reloadCount, setReloadCount] = useState(0);
+  const venueCacheRef = useRef(new Map<string, VenueSummary>());
   // Dishes the person turned down with "Not for me" are not offered again on this visit.
   const [dismissedIds, setDismissedIds] = useState<ReadonlySet<string>>(() => new Set());
   const locationLatitude = effectiveLocation.latitude;
@@ -445,6 +451,7 @@ export function DecideForMeResultScreen() {
       { latitude: locationLatitude, longitude: locationLongitude },
       profile.maxDishBudget,
       answers,
+      venueCacheRef.current,
     ).then(
       (pool) => {
         if (!active) return;
@@ -655,6 +662,7 @@ export function DecideForMeResultScreen() {
 
   const handleTryAnother = () => {
     if (!dish) return;
+    trackAnalyticsEvent("decide_reroll", { surface: entrySurface, seen: dismissedIds.size + 1 });
     recordTasteInteraction({
       type: "dismissed",
       surface: "decide",
@@ -855,6 +863,10 @@ export function DecideForMeResultScreen() {
     .map((chip) => chip.label);
 
   const handleOtherPick = (pick: DishDetail) => {
+    trackAnalyticsEvent("decide_other_pick", {
+      surface: entrySurface,
+      position: otherPicks.findIndex((candidate) => candidate.id === pick.id),
+    });
     recordTasteInteraction({
       type: "food_button_click",
       surface: "decide",

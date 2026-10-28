@@ -376,6 +376,60 @@ export const EXPERIMENTS = {
     ],
   },
   /**
+   * Where Decide for Me's first search looks. Read in DecideForMeResultScreen. Draft until Decide
+   * has about 200 users a week; the shipped fallback is the wider 1 km ring.
+   */
+  decide_initial_radius_v1: {
+    variants: ["control", "one_km"],
+    fallback: "one_km",
+    status: "draft",
+    surface: "decide",
+    hypothesis:
+      "A first search within 1 km instead of 500 m cuts no-match results and left-out quiz answers without making the pick too far to walk to.",
+    primaryMetric: "decide_for_me_result_shown",
+    guardrailMetrics: ["directions_opened", "decide_for_me_no_match", "decide_reroll"],
+    minSamplePerArm: 1500,
+  },
+  /**
+   * Map cards with rating, open state and the matched dish against the plain card. Read in
+   * HomeMapScreen. Draft until the map has enough weekly users; the shipped fallback is rich.
+   */
+  map_card_rich_v1: {
+    variants: ["control", "rich"],
+    fallback: "rich",
+    status: "draft",
+    surface: "map",
+    hypothesis:
+      "A card that shows its rating, whether the stall is open and the dish that matched the search lifts card opens, because diners can judge a stall without leaving the map.",
+    primaryMetric: "map_card_opened",
+    guardrailMetrics: ["map_opened", "stall_viewed"],
+    minSamplePerArm: 1500,
+  },
+  /** Which sheet the map opens on. Read in HomeMapScreen. Draft; the shipped fallback is cards. */
+  map_default_sheet_v1: {
+    variants: ["control", "list"],
+    fallback: "control",
+    status: "draft",
+    surface: "map",
+    hypothesis:
+      "Opening the map on the list shows more stalls at once and gets more stall opens than the card carousel.",
+    primaryMetric: "map_card_opened",
+    guardrailMetrics: ["map_pin_tapped", "map_opened"],
+    minSamplePerArm: 1500,
+  },
+  /** A new wheel starting with four nearby open stalls. Read in WheelLobbyScreen. Draft. */
+  wheel_prefill_v1: {
+    variants: ["control", "prefilled"],
+    fallback: "prefilled",
+    status: "draft",
+    surface: "wheel",
+    hypothesis:
+      "A wheel that starts with four nearby open stalls gets more people to a spin than an empty one they have to fill by hand.",
+    primaryMetric: "wheel_spun",
+    guardrailMetrics: ["wheel_result_viewed", "wheel_option_added"],
+    minSamplePerArm: 1500,
+  },
+  /**
    * Merchant Home: the newest unreplied review inline with a Reply button, instead of the
    * "Unreplied reviews" count card. Read in MerchantDashboardScreen only while the Dashboard is
    * focused, loaded and has unreplied reviews. Draft until the Merchant Centre ships to production.

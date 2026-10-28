@@ -40,6 +40,8 @@ type ExpandableSearchLauncherProps = {
   enableMovingPlaceholder?: boolean;
   movingPlaceholderPhrases?: string[];
   showExpandedBacking?: boolean;
+  /** Stay open after a search is submitted, so the query can be edited without tapping the icon. */
+  keepOpenWithQuery?: boolean;
 };
 
 export function ExpandableSearchLauncher({
@@ -64,6 +66,7 @@ export function ExpandableSearchLauncher({
   enableMovingPlaceholder,
   movingPlaceholderPhrases,
   showExpandedBacking = true,
+  keepOpenWithQuery = false,
 }: ExpandableSearchLauncherProps) {
   const {
     componentCornerCurve,
@@ -163,13 +166,15 @@ export function ExpandableSearchLauncher({
 
   const handleInputBlur = useCallback(() => {
     if (isClearingRef.current) return;
+    if (keepOpenWithQuery && query.trim()) return;
     hideSearch();
-  }, [hideSearch]);
+  }, [hideSearch, keepOpenWithQuery, query]);
 
   const handleSubmit = useCallback(() => {
-    hideSearch();
+    if (keepOpenWithQuery && query.trim()) Keyboard.dismiss();
+    else hideSearch();
     onSubmit();
-  }, [hideSearch, onSubmit]);
+  }, [hideSearch, keepOpenWithQuery, onSubmit, query]);
 
   const expandedAnchorStyle = { right: 0 };
   const launcherRowDirection = iconAlignment === "right" ? "row-reverse" : "row";

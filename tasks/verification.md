@@ -1502,3 +1502,8 @@ Use the smallest check that matches the change risk.
 ### MAPDECIDE-R4 step 5 (MD-W1 to W7), 2026-10-28
 - typecheck clean; npm test 2191/0 fail; test:render 577/0 fail (new wheel.render.test.tsx, wheelSolo.render.test.tsx with production flags, WheelSvg.render.test.tsx); lint 0 errors; format clean; test:coverage OK and baseline updated; check:n-plus-one, check:rate-limits, audit:races OK.
 - react-native-svg is stubbed in render tests (props dropped), so slice label rotation is tested as a function and the font by a source check; not seen on a device.
+
+### MAPDECIDE-R4 step 6 (MD-M6 to M15, B9, B10, A1 to A3, draft experiments), 2026-10-28
+- typecheck clean; npm test 2199/0 fail (three source-contract tests that pinned the old map and Decide code were updated); test:render 592/0 fail (map cards, Loading pill, pins cap, A2 event, Decide hours cache, A1 events, four draft-arm previews); lint 0 errors; format clean on touched code; test:coverage OK and baseline updated; check:n-plus-one, check:rate-limits, audit:races OK.
+- No migration in this step. `getVenuesByIds` over 50 ids tested against the fake Supabase client (120 ids make calls of 50, 50, 20; one failed batch rejects).
+- Not walked on a device or the web build in this step.

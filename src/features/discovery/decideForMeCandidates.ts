@@ -1,3 +1,4 @@
+import { getExperimentVariant } from "@/lib/experiments/experiments";
 import { filterSafeDishes } from "@/lib/ai/dietaryGate";
 import { hasPersonalTasteProfile, tasteMatchPercent } from "@/lib/ai/tasteEngine";
 import { getScheduleOpenState, hasWeeklyHours } from "@/utils/openingSchedule";
@@ -8,6 +9,13 @@ import type { DietaryFlag, DishDetail, TasteVector, VenueSummary } from "@/types
 export const DECIDE_RADIUS_STEPS_METERS = [500, 1000, 2000, 4000];
 /** 0.5 km held too few stalls in the suburbs; the diner can narrow or widen it on the result. */
 export const DECIDE_INITIAL_RADIUS_METERS = DECIDE_RADIUS_STEPS_METERS[1];
+
+/** The first radius for this diner: 1 km, or 0.5 km in the control arm of decide_initial_radius_v1. */
+export function decideInitialRadiusMeters(options: { expose?: boolean } = {}): number {
+  return getExperimentVariant("decide_initial_radius_v1", options) === "control"
+    ? DECIDE_RADIUS_STEPS_METERS[0]
+    : DECIDE_INITIAL_RADIUS_METERS;
+}
 
 /** Picks within this many match points are "the same quality"; the food-history mix may swap them. */
 export const DECIDE_SCORE_BAND = 5;

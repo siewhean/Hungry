@@ -103,6 +103,31 @@ test("getVenuesByIds still resolves an empty list for ids the server does not kn
   assert.deepEqual(await service.discovery.getVenuesByIds(["v-gone"]), []);
 });
 
+test("getVenuesByIds reads 120 uncached stalls in three batches of 50 and returns all of them (MD-B9)", async () => {
+  fake.rpc.get_venue_summaries = (args) => ({
+    data: (args.p_venue_ids as string[]).map((id) => ({ venue_id: id, name: `Stall ${id}` })),
+  });
+  const ids = Array.from({ length: 120 }, (_, index) => `v-bulk-${index}`);
+  const venues = await service.discovery.getVenuesByIds(ids);
+  assert.equal(venues.length, 120);
+  assert.deepEqual(
+    fake.callsTo("get_venue_summaries").map((call) => (call.args.p_venue_ids as string[]).length),
+    [50, 50, 20],
+  );
+});
+
+test("getVenuesByIds rejects when any one of the batches fails (MD-B9)", async () => {
+  let call = 0;
+  fake.rpc.get_venue_summaries = (args) => {
+    call += 1;
+    return call === 2
+      ? { error: { message: "rate limited" } }
+      : { data: (args.p_venue_ids as string[]).map((id) => ({ venue_id: id, name: id })) };
+  };
+  const ids = Array.from({ length: 120 }, (_, index) => `v-part-${index}`);
+  await assert.rejects(service.discovery.getVenuesByIds(ids));
+});
+
 test("searchDishes rejects when the RPC fails and the cache has nothing (MAP-V3)", async () => {
   fake.rpc.search_dishes = () => ({ error: { message: "network down" } });
   const filters = {

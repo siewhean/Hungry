@@ -10,6 +10,7 @@ import { WheelHomeScreen } from "@/app/screens/wheel/WheelHomeScreen";
 import { WheelLobbyScreen } from "@/app/screens/wheel/WheelLobbyScreen";
 import { WheelResultModal } from "@/app/screens/wheel/WheelResultModal";
 import { clearTrackedAnalyticsEvents, getTrackedAnalyticsEvents } from "@/lib/analytics";
+import { clearExperimentOverrides, setExperimentOverride } from "@/lib/experiments/experiments";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -111,6 +112,7 @@ afterEach(async () => {
   await cleanup();
   Object.assign(discovery, originals);
   useWheelStore.getState().reset();
+  clearExperimentOverrides();
   while (restores.length) restores.pop()?.();
 });
 
@@ -140,6 +142,17 @@ test("MD-W2 a new wheel starts with the four nearest open stalls", async () => {
     events("wheel_option_added").every((event) => event.properties?.source === "prefill"),
     "the app's own adds are not counted as the diner's picks",
   );
+});
+
+test("wheel_prefill_v1: the control arm starts with an empty wheel and searches for nothing", async () => {
+  setExperimentOverride("wheel_prefill_v1", "control");
+  serve([dish("d1", "v1", 100)]);
+  const party = await startWheel();
+  const view = await renderLobby(party);
+  await view.settle();
+  assert.equal(searchCalls.length, 0);
+  assert.equal(useWheelStore.getState().entries.length, 0);
+  assert.equal(events("wheel_prefilled").length, 0);
 });
 
 test("MD-W2 a wheel that already has a stall, or a guessed location, is not prefilled", async () => {

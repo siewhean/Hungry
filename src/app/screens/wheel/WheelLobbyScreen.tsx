@@ -10,6 +10,7 @@ import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { MemberAvatarRow } from "@/components/wheel/MemberAvatarRow";
 import { getWheelSliceColors } from "@/components/wheel/WheelSvg";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { isExperimentAssignmentReady, useExperimentVariant } from "@/lib/experiments/experiments";
 import { reportError } from "@/lib/monitoring/reportError";
 import { leaveWheelStack } from "@/features/wheel/leaveWheel";
 import { loadWheelPrefill } from "@/features/wheel/loadPrefill";
@@ -54,11 +55,17 @@ export function WheelLobbyScreen({ navigation }: Props) {
   const prefillStarted = useRef(false);
   const isHostMember = members.find((m) => m.id === myMemberId)?.isHost ?? false;
   const partyId = party?.id;
+  const prefillEligible = Boolean(partyId) && isHostMember && !isApproximate;
+  const prefillVariant = useExperimentVariant("wheel_prefill_v1", { enabled: prefillEligible });
+  const prefillReady = isExperimentAssignmentReady("wheel_prefill_v1");
   useEffect(() => {
     // Once per wheel, for its host, and only where "nearby" means something: a guessed location
     // would fill the wheel with stalls that are not near the diner.
     if (!partyId || !isHostMember || isApproximate || prefillStarted.current) return;
+    // Wait for the arm (wheel_prefill_v1) so a late flag load cannot fill a control wheel.
+    if (!prefillReady) return;
     prefillStarted.current = true;
+    if (prefillVariant === "control") return;
     if (useWheelStore.getState().entries.length > 0) return;
     let active = true;
     setPrefilling(true);
@@ -86,7 +93,7 @@ export function WheelLobbyScreen({ navigation }: Props) {
       active = false;
     };
     // The origin and profile are read once, when the wheel opens.
-  }, [partyId, isHostMember, isApproximate]);
+  }, [partyId, isHostMember, isApproximate, prefillReady, prefillVariant]);
 
   const activeEntries = useMemo(() => selectActiveWheelEntries(entries), [entries]);
 

@@ -112,6 +112,19 @@ export function DecideForMeQuizScreen() {
     if (node) AccessibilityInfo.setAccessibilityFocus(node);
   }, [questions, step]);
 
+  // Where people leave the quiz: one event per question reached, once the location prompt is out
+  // of the way. The question count is read from a ref so a flag that loads later does not repeat it.
+  const questionCountRef = useRef(questions.length);
+  questionCountRef.current = questions.length;
+  const stepViewReady = !(needsLocation && step === 0);
+  useEffect(() => {
+    if (!stepViewReady) return;
+    trackAnalyticsEvent("decide_quiz_step_viewed", {
+      step: step + 1,
+      questions: questionCountRef.current,
+    });
+  }, [step, stepViewReady]);
+
   const finish = (finalAnswers: DecideAnswers, skipped: boolean) => {
     if (finishedRef.current) return;
     finishedRef.current = true;
