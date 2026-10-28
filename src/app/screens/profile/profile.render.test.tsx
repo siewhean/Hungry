@@ -145,7 +145,11 @@ test("own profile in production: no dead Badges tile or post loads, follower lis
   const view = await renderScreen(ProfileHomeScreen as never, { name: "ProfileHome", navigation });
 
   assert.ok(view.findByText("Profile"), "the header says Profile, not Hungry");
-  assert.equal(view.findByText("Badges"), null, "Passport is not registered in production");
+  assert.equal(
+    view.findByText("Hungry Passport"),
+    null,
+    "Passport is not registered in production",
+  );
   assert.equal(view.findByLabel("Show profile posts"), null, "no Posts tab with the feed archived");
   assert.equal(postReads, 0, "no post reads for an archived feed");
   assert.deepEqual(interactionLoads, [], "tried stalls load only for the Passport");
@@ -196,10 +200,11 @@ test("PROF-V1: a failed follower-count read shows the tiles as unavailable, not 
   }
 });
 
-test("own profile shows Badges only with the Passport", async () => {
+test("own profile shows the Passport card only with the Passport", async () => {
   flags.gamificationEnabled = true;
   const view = await renderScreen(ProfileHomeScreen as never, { name: "ProfileHome" });
-  assert.ok(view.findByText("Badges"));
+  assert.ok(view.findByText("Hungry Passport"));
+  assert.equal(view.findByText("Badges"), null, "the old Badges tile is gone");
 });
 
 test("the taste radar is capped at 260 and shrinks with its card", async () => {
@@ -322,7 +327,7 @@ test("another profile in production: Reviews only, one Load more, the server's r
     ).length,
     1,
   );
-  assert.ok(view.findByLabel("73 Reviews"), "server counter instead of 50+");
+  assert.ok(view.findByLabel("Reviews 73"), "server counter instead of 50+");
 });
 
 test("profile_viewed fires once the other profile has loaded, never for a missing one", async () => {
@@ -412,7 +417,8 @@ test("PROF-V3: a review deleted elsewhere does not make Load more skip the next 
   assert.ok(view.findByText("Notes 100"), "the review after the old page end is not skipped");
 });
 
-test("Review history shows the server count while more pages exist", async () => {
+test("Review history on a backend without review stats shows the server count while more pages exist", async () => {
+  stub(getHungryService().reviews, "getMyReviewStats", async () => undefined);
   stub(getHungryService().reviews, "getUserReviews", async () =>
     Array.from({ length: 50 }, (_, index) => review(index)),
   );
@@ -439,7 +445,7 @@ test("Review history: the review menu is outside the card's button, so a screen 
 
 test("PROF-18a: saving an edit to your own review marks it Edited straight away", async () => {
   const reviews = getHungryService().reviews;
-  const updates: Array<{ id: string; patch: unknown }> = [];
+  const updates: { id: string; patch: unknown }[] = [];
   stub(reviews, "getUserReviews", async () => [review(1, { dishId: "dish-chicken-rice" })]);
   stub(reviews, "updateReview", async (id: string, patch) => {
     updates.push({ id, patch });

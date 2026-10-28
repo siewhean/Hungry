@@ -277,6 +277,22 @@ export const EXPERIMENTS = {
     primaryMetric: "review_submitted",
     guardrailMetrics: ["review_abandoned", "review_submit_failed", "profile_viewed"],
   },
+  /**
+   * "Favourite dishes" row on your own profile: up to four pinned dishes, shown (test) or left
+   * out (control). Read in ProfileHomeScreen once the pins have loaded on a backend that stores
+   * them, for a signed-in diner with a pinned, saved or reviewed dish. Draft until the PostHog
+   * flag exists and the pins table is on production; the fallback is "test" so the row ships.
+   */
+  profile_favourites_showcase_v1: {
+    variants: ["control", "test"],
+    fallback: "test",
+    status: "draft",
+    surface: "profile",
+    hypothesis:
+      "A pinned top-four dishes row makes a profile more worth sharing, so more diners with a saved or reviewed dish share their profile.",
+    primaryMetric: "profile_shared",
+    guardrailMetrics: ["dish_favourited", "profile_viewed", "profile_item_opened"],
+  },
   /** Decide for Me quiz length; read in DecideForMeQuizScreen, which only Discover's Decide button opens. */
   decide_quiz_v1: {
     variants: ["control", "two_questions"],

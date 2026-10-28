@@ -86,8 +86,14 @@ test("social store contract: UUID follows sync to service while local-name fallb
   assert.match(profileContentSource, /title="Profile unavailable"/);
   // Other users' stats come from the server, not hard-coded values.
   assert.match(profileContentSource, /service\.getFollowCounts\(resolvedAuthorId\)/);
-  assert.match(profileContentSource, /value=\{followersCount\}/);
-  assert.match(profileContentSource, /value=\{followingCount\}/);
+  assert.match(
+    profileContentSource,
+    /key: "followers",\s*label: "Followers",\s*value: followersCount/,
+  );
+  assert.match(
+    profileContentSource,
+    /key: "following",\s*label: "Following",\s*value: followingCount/,
+  );
   assert.doesNotMatch(profileContentSource, /value=\{isFollowingAuthor \? 1 : 0\}/);
   assert.match(
     profileContentSource,
@@ -205,7 +211,7 @@ test("public profile does not expose the current user's saved card", () => {
 
   assert.match(
     profileHome,
-    /FEATURE_FLAGS\.favouritesEnabled \? \([\s\S]*label="Saved dishes"[\s\S]*onPress=\{\(\) => navigation\.navigate\("Favourites"\)\}/,
+    /FEATURE_FLAGS\.favouritesEnabled\s*\?\s*\{[\s\S]*?label: "Saved"[\s\S]*?onPress: \(\) => navigation\.navigate\("Favourites"\)/,
   );
   assert.doesNotMatch(profileHome, /isOtherUserProfile|import \{ UserProfileContent/);
   assert.doesNotMatch(profileContent, /label="Saved dishes"/);
