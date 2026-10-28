@@ -236,15 +236,16 @@ test("signed-in onboarding persists and awaits provisional preference migration"
   const mergeHelper = read("src/features/auth/applySignedInProfile.ts");
   const profileStore = read("src/store/useProfileStore.ts");
 
-  assert.match(onboardingAuth, /import \{ applySignedInProfile \}/);
+  // The screens merge through useSignedInProfileSync, which calls applySignedInProfile and
+  // keeps a failed sync on screen with a retry instead of returning silently.
+  const syncHook = read("src/features/auth/useSignedInProfileSync.ts");
+  assert.match(syncHook, /import \{ applySignedInProfile \}/);
+  assert.match(syncHook, /applySignedInProfile\(session\.profile/);
+  assert.match(syncHook, /migration\.status === "failed"/);
   assert.match(onboardingAuth, /completedOnboarding: true/);
-  assert.match(emailVerification, /import \{ applySignedInProfile \}/);
-  assert.match(emailVerification, /applySignedInProfile\(session\.profile/);
   assert.match(emailVerification, /completeVerifiedSignUp\(shouldCompleteOnboarding\)/);
-  assert.match(login, /import \{ applySignedInProfile \}/);
-  assert.match(signUp, /import \{ applySignedInProfile \}/);
   for (const caller of [onboardingAuth, emailVerification, login, signUp]) {
-    assert.match(caller, /migration\.status === "failed"/);
+    assert.match(caller, /useSignedInProfileSync\(/);
   }
   assert.match(
     mergeHelper,

@@ -73,6 +73,10 @@ export function resolveFeatureFlags(
     directMessagesEnabled: surface("EXPO_PUBLIC_ENABLE_MESSAGES", false),
     commentsEnabled: nonProductionSurfaceEnabled,
     oauthProvidersEnabled: nonProductionSurfaceEnabled,
+    // Google sign-in on Android and web. Production opts in with EXPO_PUBLIC_ENABLE_GOOGLE_SIGN_IN=1
+    // once the Google provider is configured in Supabase; iPhone never shows it until Sign in
+    // with Apple ships (App Store rule 4.8), whatever this says (authProviders.ts).
+    googleSignInEnabled: surface("EXPO_PUBLIC_ENABLE_GOOGLE_SIGN_IN", nonProductionSurfaceEnabled),
     floorplansEnabled: false,
     gamificationEnabled: nonProductionSurfaceEnabled,
     collectionsEnabled: nonProductionSurfaceEnabled,

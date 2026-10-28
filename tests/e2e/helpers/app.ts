@@ -147,6 +147,8 @@ export async function createEmailAccountFromScratch(page: Page, prefix: string) 
   await expect(page.getByRole("button", { name: "Get started" })).toBeVisible({ timeout: 60_000 });
   await page.getByRole("button", { name: "Sign in to existing account" }).click();
   await page.getByRole("button", { name: "Create account" }).click();
+  // Create account leads with an emailed code; these tests use the password form.
+  await page.getByRole("button", { name: "Use a password instead" }).filter({ visible: true }).click();
   // Login stays mounted (hidden) under SignUp, so pick the visible fields.
   await page.getByLabel("Name shown on your reviews").filter({ visible: true }).fill(user.name);
   await page

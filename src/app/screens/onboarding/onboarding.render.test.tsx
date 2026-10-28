@@ -67,6 +67,8 @@ function fakeFlags(flags: Record<string, string>) {
 }
 
 beforeEach(async () => {
+  // These tests drive the password forms; the emailed-code default has its own tests.
+  setExperimentOverride("auth_email_code_first_v1", "control");
   await enterGuestOnboarding();
   clearTrackedAnalyticsEvents();
   clearPendingDishSave();

@@ -336,6 +336,7 @@ const _activityDates = new Set<string>();
 let _isAuthenticated = false;
 let _authProvider: "email" | "google" | "apple" = "email";
 let _pendingDeletionScheduledFor: string | undefined;
+let _pendingCodeSignIn: { email: string; displayName?: string } | undefined;
 let _pendingEmailChange: string | null = null;
 let _merchantAccount: MerchantAccount = clone(merchantAccount);
 let _merchantDishCounter = 0;
@@ -1569,11 +1570,26 @@ export const hungryService: HungryService = {
       return resolve(mockSession(_profile));
     },
 
-    async verifyEmailCode(_email, code, type) {
+    async verifyEmailCode(email, code, type) {
       if (!/^\d{8}$/.test(code.trim())) throw new Error("Invalid code");
       _isAuthenticated = true;
       _authProvider = "email";
+      if (type === "email") {
+        const pending = _pendingCodeSignIn;
+        _pendingCodeSignIn = undefined;
+        _profile = {
+          ...userProfile,
+          email,
+          ...(pending?.displayName ? { displayName: pending.displayName } : {}),
+        };
+        return resolve(mockSession(_profile));
+      }
       return resolve(type === "signup" ? mockSession(_profile) : null);
+    },
+
+    async signInWithEmailCode(email, options) {
+      _pendingCodeSignIn = { email, displayName: options?.displayName?.trim() || undefined };
+      return resolve(undefined);
     },
 
     async signIn(email, password) {

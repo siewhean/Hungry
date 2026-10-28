@@ -1,6 +1,11 @@
 import * as Linking from "expo-linking";
 import { useMemo } from "react";
-import { NavigationContainer, type LinkingOptions, type Theme } from "@react-navigation/native";
+import {
+  NavigationContainer,
+  getPathFromState,
+  type LinkingOptions,
+  type Theme,
+} from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import { SplashScreen } from "@/app/screens/SplashScreen";
@@ -10,7 +15,7 @@ import { FloatingToast } from "@/components/ui";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import type { RootStackParamList } from "./navigationTypes";
-import { createRootLinking } from "./linking";
+import { createRootLinking, withoutEmailParam } from "./linking";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -42,7 +47,10 @@ export function PreAuthNavigator({ theme }: { theme: Theme }) {
 
     // React Navigation cannot infer the nested AuthStack params from a navigator
     // that intentionally mounts only the pre-auth subset of the root routes.
-    return base as unknown as LinkingOptions<RootStackParamList>;
+    return {
+      ...base,
+      getPathFromState: withoutEmailParam(getPathFromState),
+    } as unknown as LinkingOptions<RootStackParamList>;
   }, [prefix, setReturnRoute]);
 
   return (

@@ -36,6 +36,16 @@ export interface ExperimentDefinition {
   hypothesis: string;
   primaryMetric: AnalyticsEventName;
   guardrailMetrics: readonly AnalyticsEventName[];
+  /**
+   * Visitors needed in EACH arm before the result may be read (95% confidence, 80% power for
+   * the effect in the hypothesis). Do not call a winner before every arm reaches it.
+   */
+  minSamplePerArm?: number;
+  /**
+   * A staged release, not a test: the fallback is the arm every user gets until a PostHog flag
+   * of this key says otherwise, so it has no flag to create before it is live.
+   */
+  rollout?: true;
 }
 
 export const EXPERIMENTS = {
@@ -245,6 +255,62 @@ export const EXPERIMENTS = {
       "Showing the new password as it is typed (with a Hide button) cuts typos and weak-password retries on Create account, so more people who open SignUp submit the form.",
     primaryMetric: "sign_up_submitted",
     guardrailMetrics: ["sign_up_completed", "auth_failed", "password_reset_requested"],
+    minSamplePerArm: 390,
+  },
+  /**
+   * Email code (no password) as the way in on Login, Create account and the onboarding account
+   * step. sh chose it as the default (2026-10-27), so this is a staged release: with no PostHog
+   * flag everyone gets "email_code"; a flag of this key set to "control" for a share of users
+   * keeps them on the password form (also the way back if the code email misbehaves).
+   * Measure sign_up_completed and sign_in_completed against auth_screen_viewed per arm.
+   */
+  auth_email_code_first_v1: {
+    variants: ["control", "email_code"],
+    fallback: "email_code",
+    status: "running",
+    surface: "auth",
+    hypothesis:
+      "Removing the password (one email field, then the 8-digit code) raises completed sign-ups and sign-ins compared with the password form, without more failed attempts or more auth emails per person.",
+    primaryMetric: "sign_up_completed",
+    guardrailMetrics: [
+      "sign_in_completed",
+      "auth_failed",
+      "email_code_requested",
+      "auth_screen_viewed",
+    ],
+    minSamplePerArm: 390,
+    rollout: true,
+  },
+  /**
+   * Ask for the name before the first review instead of at sign-up. Defined, not wired: the
+   * prompt before a first review does not exist yet, so nothing reads this key. Run it after
+   * auth_email_code_first_v1 settles, never together (same form).
+   */
+  auth_signup_name_later_v1: {
+    variants: ["control", "name_later"],
+    fallback: "control",
+    status: "draft",
+    surface: "auth",
+    hypothesis:
+      "Two fields instead of three (no name until the first review) raise the share of people who submit Create account.",
+    primaryMetric: "sign_up_submitted",
+    guardrailMetrics: ["sign_up_completed", "review_submitted", "auth_failed"],
+    minSamplePerArm: 390,
+  },
+  /**
+   * After a wrong password the error banner offers "Reset password" with the email filled.
+   * Read in LoginScreen only once a wrong-password error is on screen.
+   */
+  auth_login_reset_nudge_v1: {
+    variants: ["control", "nudge"],
+    fallback: "control",
+    status: "draft",
+    surface: "auth",
+    hypothesis:
+      "Offering Reset password right in the wrong-password message means fewer people give up after a failed sign-in; measure sign_in_completed within 15 minutes of auth_failed with reason invalid_credentials.",
+    primaryMetric: "sign_in_completed",
+    guardrailMetrics: ["password_reset_requested", "auth_failed"],
+    minSamplePerArm: 390,
   },
   /**
    * Dish name and stars on Reviews grid tiles. Control keeps photo and date only (sh, 9ae387b).

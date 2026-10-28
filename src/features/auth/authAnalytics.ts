@@ -9,20 +9,36 @@ export type AuthFunnelScreen =
   | "email_change"
   | "onboarding_auth";
 
-export type AuthFunnelFlow = "sign_in" | "sign_up" | "password_reset" | "email_confirm";
+export type AuthFunnelFlow =
+  | "sign_in"
+  | "sign_up"
+  | "password_reset"
+  | "email_confirm"
+  | "email_code";
 
 export function trackAuthScreenViewed(screen: AuthFunnelScreen) {
   trackAnalyticsEvent("auth_screen_viewed", { screen });
 }
 
-/** Records why an auth attempt failed: a Supabase error code, "cancelled" or "unknown". */
-export function trackAuthFailed(flow: AuthFunnelFlow, method: string, error: unknown) {
+/**
+ * Records why an auth attempt failed: a Supabase error code, "cancelled" or "unknown".
+ * `screen` says where, so a failure can be set against that screen's views.
+ */
+export function trackAuthFailed(
+  flow: AuthFunnelFlow,
+  method: string,
+  error: unknown,
+  screen?: AuthFunnelScreen,
+) {
   const code =
     (error as { error_code?: string; code?: string })?.error_code ??
     (error as { error_code?: string; code?: string })?.code;
   const message = ((error as { message?: string })?.message ?? "").toLowerCase();
   const reason = message.includes("cancelled") ? "cancelled" : (code ?? "unknown");
-  trackAnalyticsEvent("auth_failed", { flow, method, reason });
+  trackAnalyticsEvent(
+    "auth_failed",
+    screen ? { flow, method, reason, screen } : { flow, method, reason },
+  );
 }
 
 export function trackGuestContinued(screen: AuthFunnelScreen) {
@@ -45,4 +61,35 @@ export function trackEmailVerified(via: "code" | "link") {
 
 export function trackPasswordResetRequested() {
   trackAnalyticsEvent("password_reset_requested", {});
+}
+
+/** A password sign-in was submitted (the denominator for sign_in_completed and auth_failed). */
+export function trackSignInSubmitted(screen: AuthFunnelScreen, method: string) {
+  trackAnalyticsEvent("sign_in_submitted", { screen, method });
+}
+
+/** The new password was saved at the end of a reset. */
+export function trackPasswordResetCompleted() {
+  trackAnalyticsEvent("password_reset_completed", {});
+}
+
+/** A new sign-up confirmation email was requested from the verify screen. */
+export function trackVerificationEmailResent() {
+  trackAnalyticsEvent("verification_email_resent", {});
+}
+
+/** A sign-in code was emailed (`resend` for a second or later send). */
+export function trackEmailCodeRequested(screen: AuthFunnelScreen, resend: boolean) {
+  trackAnalyticsEvent("email_code_requested", { screen, resend });
+}
+
+/**
+ * An 8-digit code was submitted. `auto` is true when the field submitted it itself on the
+ * eighth digit; `paste` when those digits arrived in one change (paste or autofill).
+ */
+export function trackEmailCodeSubmitted(
+  screen: AuthFunnelScreen,
+  options: { auto: boolean; paste: boolean },
+) {
+  trackAnalyticsEvent("email_code_submitted", { screen, ...options });
 }

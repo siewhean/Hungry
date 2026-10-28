@@ -344,6 +344,36 @@ function signedOutState(
     : createState("OnboardingStack", { screen: "OnboardingWelcome" });
 }
 
+/**
+ * Removes `email` from a URL's query string. Login, Forgot password and the verify screen carry
+ * the address as a param so the next screen can fill it in, and on web React Navigation would
+ * write it into the address bar, history and any shared or logged URL.
+ */
+export function stripEmailQuery(path: string): string {
+  const queryStart = path.indexOf("?");
+  if (queryStart < 0) return path;
+  const hashStart = path.indexOf("#", queryStart);
+  const query = path.slice(queryStart + 1, hashStart < 0 ? undefined : hashStart);
+  const kept = query.split("&").filter((pair) => {
+    if (!pair) return false;
+    const key = pair.split("=")[0];
+    try {
+      return decodeURIComponent(key).toLowerCase() !== "email";
+    } catch {
+      return true;
+    }
+  });
+  const hash = hashStart < 0 ? "" : path.slice(hashStart);
+  return `${path.slice(0, queryStart)}${kept.length > 0 ? `?${kept.join("&")}` : ""}${hash}`;
+}
+
+/** Wraps React Navigation's getPathFromState so no URL it builds carries an email address. */
+export function withoutEmailParam<State, Options>(
+  getPathFromState: (state: State, options?: Options) => string,
+) {
+  return (state: State, options?: Options) => stripEmailQuery(getPathFromState(state, options));
+}
+
 export function createRootLinking(
   prefix: string,
   getAuthState: () => LinkingAuthState = () => ({

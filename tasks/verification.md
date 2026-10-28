@@ -1462,3 +1462,8 @@ Use the smallest check that matches the change risk.
 - Playwright (mock web build, chromium): tests/e2e/onboarding-flow.spec.ts 6/6 (390x844 and 320x568); auth, guest-browsing, mandatory-onboarding-auth, production-route-gating specs pass.
 - Not verified: a device build; live PostHog flags (none exist yet; the new experiments are drafts).
 - Re-audit follow-up (N1-N4): typecheck clean; npm test 2128 pass / 0 fail; test:render 467/467; test:coverage OK; Playwright onboarding-flow.spec.ts 9/9 (rows fit at 390x844 and 320x568, crossfade, no [object Object] in the URL).
+
+## 2026-10-28 auth round-four fixes (claude/project-thread-v9xbva)
+- npm run typecheck clean; npm test 2148 pass / 0 fail / 2 skipped; npm run test:render 503/503; lint 0 errors (warnings unchanged in kind); format:check clean; check:n-plus-one, audit:races, scaling:validate pass; test:coverage OK (baseline updated: authCopy 100, authProviders 100).
+- Playwright (mock web build, chromium): auth-flows (new, 5), auth, mandatory-onboarding-auth (3), onboarding-flow (8), guest-browsing (2) all pass. Maestro flows edited (text only), not run.
+- Not verified: a device build; Google sign-in against a configured Supabase provider; the real code email (Resend template wording is sh's step); live PostHog flags (none exist; auth_email_code_first_v1 serves email_code until a flag says control).

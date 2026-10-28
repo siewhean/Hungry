@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { View } from "react-native";
 
 import { AppText, Button, Input } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
+import { trackEmailCodeSubmitted, type AuthFunnelScreen } from "./authAnalytics";
 import { getAuthFailureMessage } from "./authErrors";
 import { RESEND_COOLDOWN_SECONDS, useResendCooldown } from "./useResendCooldown";
 
@@ -19,6 +20,12 @@ export function normalizeEmailCode(value: string): string {
   return value.replace(/\D/g, "").slice(0, EMAIL_CODE_LENGTH);
 }
 
+/**
+ * Room for the separators a pasted code can carry ("1234 5678"), so a native maxLength does
+ * not cut the paste before normalizeEmailCode strips it.
+ */
+const EMAIL_CODE_MAX_INPUT_LENGTH = EMAIL_CODE_LENGTH + 4;
+
 interface EmailCodeFieldProps {
   /** Verifies the code; throw to show `errorText`. */
   onSubmit: (code: string) => Promise<void>;
@@ -33,6 +40,10 @@ interface EmailCodeFieldProps {
    * server allows one code email per minute. Throw to report a failed send.
    */
   onResend?: () => Promise<void>;
+  /** The screen to report `email_code_submitted` for; no event without it. */
+  screen?: AuthFunnelScreen;
+  /** Focus the field when it appears (the code step after a send). */
+  autoFocus?: boolean;
 }
 
 /** "Enter the code from your email": works when the email's link was opened on another device. */
@@ -43,6 +54,8 @@ export function EmailCodeField({
   label = "Enter the code from your email",
   submitVariant = "primary",
   onResend,
+  screen,
+  autoFocus = false,
 }: EmailCodeFieldProps) {
   const { spacing } = useHungryTheme();
   const [code, setCode] = useState("");
@@ -55,6 +68,10 @@ export function EmailCodeField({
   // The message to show; a dropped connection or rate limit is not "wrong code".
   const [failure, setFailure] = useState<string | null>(null);
   const isComplete = code.length === EMAIL_CODE_LENGTH;
+  // The code the field last submitted by itself. A wrong code is not sent again until the
+  // value is edited; the button stays for a deliberate retry.
+  const autoSubmittedRef = useRef<string | null>(null);
+  const submittingRef = useRef(false);
 
   const resend = async () => {
     if (!onResend || cooldown > 0 || isResending) return;
@@ -63,6 +80,7 @@ export function EmailCodeField({
     try {
       await onResend();
       setCode("");
+      autoSubmittedRef.current = null;
       setFailure(null);
       setResendState("sent");
       restartCooldown();
@@ -73,17 +91,34 @@ export function EmailCodeField({
     }
   };
 
-  const submit = async () => {
-    if (!isComplete || isSubmitting) return;
+  const submit = async (value: string, how: { auto: boolean; paste: boolean }) => {
+    if (value.length !== EMAIL_CODE_LENGTH || submittingRef.current) return;
+    submittingRef.current = true;
     setIsSubmitting(true);
     setFailure(null);
+    if (screen) trackEmailCodeSubmitted(screen, how);
     try {
-      await onSubmit(code);
+      await onSubmit(value);
     } catch (error) {
       setFailure(getAuthFailureMessage(error, errorText));
     } finally {
+      submittingRef.current = false;
       setIsSubmitting(false);
     }
+  };
+
+  const handleChange = (raw: string) => {
+    const next = normalizeEmailCode(raw);
+    // More than one character at once is a paste or one-time-code autofill.
+    const paste = Math.abs(raw.length - code.length) > 1;
+    setCode(next);
+    if (next.length < EMAIL_CODE_LENGTH) {
+      autoSubmittedRef.current = null;
+      return;
+    }
+    if (autoSubmittedRef.current === next) return;
+    autoSubmittedRef.current = next;
+    void submit(next, { auto: true, paste });
   };
 
   return (
@@ -91,22 +126,23 @@ export function EmailCodeField({
       <AppText variant="bodyBold">{label}</AppText>
       <Input
         accessibilityLabel={label}
-        placeholder={"0".repeat(EMAIL_CODE_LENGTH)}
+        placeholder={`${EMAIL_CODE_LENGTH}-digit code`}
         value={code}
-        onChangeText={(value) => setCode(normalizeEmailCode(value))}
+        onChangeText={handleChange}
         keyboardType="number-pad"
         textContentType="oneTimeCode"
         autoComplete="one-time-code"
-        maxLength={EMAIL_CODE_LENGTH}
+        autoFocus={autoFocus}
+        maxLength={EMAIL_CODE_MAX_INPUT_LENGTH}
         returnKeyType="done"
-        onSubmitEditing={() => void submit()}
+        onSubmitEditing={() => void submit(code, { auto: false, paste: false })}
         error={failure !== null}
         errorText={failure ?? undefined}
       />
       <Button
         label={submitLabel}
         variant={submitVariant}
-        onPress={() => void submit()}
+        onPress={() => void submit(code, { auto: false, paste: false })}
         loading={isSubmitting}
         disabled={!isComplete}
       />

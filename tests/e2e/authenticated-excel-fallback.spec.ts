@@ -8,7 +8,8 @@ async function authenticateFromFreshInstall(page: Page) {
   await page.goto("/");
   await expect(page.getByRole("button", { name: "Get started" })).toBeVisible({ timeout: 60_000 });
   await page.getByRole("button", { name: "Sign in to existing account" }).click();
-  await expect(page.getByText("Welcome back", { exact: true })).toBeVisible();
+  await expect(page.getByText("Sign in to Hungry", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Use a password instead" }).click();
   await page.getByPlaceholder("Email address").fill(stagingEmail ?? "");
   await page.getByPlaceholder("Password").fill(stagingPassword ?? "");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();

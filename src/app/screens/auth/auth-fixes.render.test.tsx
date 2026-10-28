@@ -20,8 +20,10 @@ import { AccessibilityInfo } from "react-native";
 
 import {
   EXPERIMENTS,
+  clearExperimentOverrides,
   resetExperimentSession,
   setExperimentFlagSource,
+  setExperimentOverride,
   type ExperimentFlagSource,
 } from "@/lib/experiments/experiments";
 import { getHungryService } from "@/lib/services/serviceProvider";
@@ -29,11 +31,16 @@ import { useSessionStore } from "@/store/useSessionStore";
 import { cleanup, createFakeNavigation, renderScreen, type RenderResult } from "@/test/render";
 import { enterScenario } from "@/test/render/sessions";
 
-beforeEach(() => enterScenario("guest"));
+// These tests drive the password forms; the emailed-code default has its own tests.
+beforeEach(() => {
+  setExperimentOverride("auth_email_code_first_v1", "control");
+  return enterScenario("guest");
+});
 afterEach(async () => {
   await cleanup();
   setExperimentFlagSource(undefined);
   resetExperimentSession();
+  clearExperimentOverrides();
 });
 
 const inputs = (view: RenderResult) =>

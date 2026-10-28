@@ -140,10 +140,10 @@ test("Welcome > Sign in > relaunch returns to Login, and onboarding stays open",
   await page.getByRole("button", { name: "Sign in to existing account" }).click({
     timeout: 60_000,
   });
-  await expect(page.getByText("Welcome back", { exact: true })).toBeVisible();
+  await expect(page.getByText("Sign in to Hungry", { exact: true })).toBeVisible();
 
   await page.reload();
-  await expect(page.getByText("Welcome back", { exact: true })).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByText("Sign in to Hungry", { exact: true })).toBeVisible({ timeout: 60_000 });
   await expect(page.getByRole("button", { name: "Get started" })).toHaveCount(0);
 });
 
@@ -157,6 +157,8 @@ test("an account made after the quiz lands on Home with the diner's picks or a w
   await page.getByRole("button", { name: "Continue" }).click();
   await page.getByRole("button", { name: /^(Start exploring|Save my picks)$/ }).click();
 
+  // The account step leads with an emailed code; this run uses the password form.
+  await page.getByRole("button", { name: "Use a password instead" }).click();
   await page.getByPlaceholder("Your name").fill("Mei");
   await page.getByPlaceholder("Email address").first().fill("mei.onboarding@hungry.test");
   await page.getByPlaceholder("Password").first().fill("Password123!");

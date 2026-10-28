@@ -854,8 +854,14 @@ export interface HungryService {
     verifyEmailCode(
       email: string,
       code: string,
-      type: "signup" | "recovery",
+      type: "signup" | "recovery" | "email",
     ): Promise<Session | null>;
+    /**
+     * Emails an 8-digit sign-in code: no password. An address with no account becomes a new
+     * account (named `displayName` when given), so the same call serves sign-in and sign-up and
+     * never reveals which one it was. Finish with verifyEmailCode(email, code, "email").
+     */
+    signInWithEmailCode(email: string, options?: { displayName?: string }): Promise<void>;
     signIn(email: string, password: string): Promise<Session>;
     signInWithGoogle(): Promise<Session>;
     signInWithApple(): Promise<Session>;
