@@ -288,7 +288,7 @@ test("dish and stall details expose correct detail surfaces without user-mode ma
       /filteredMenuDishes\.slice\(0, visibleMenuItemCount\)/,
       /setVisibleMenuItemCount\(\(current\) =>[\s\S]*MENU_ITEM_BATCH_SIZE[\s\S]*filteredMenuDishes\.length/,
       /<MenuFilterDropdown/,
-      /navigation\.navigate\("DishDetail", \{ dishId: activeDish\.id \}\)/,
+      /navigation\.navigate\("DishDetail", \{ dishId: activeDish\.id, source: "stall_menu" \}\)/,
       /StallInteractionBar/,
       /ReviewShareSheet/,
     ],

@@ -128,6 +128,12 @@ function findNextScheduledOpening(
   return undefined;
 }
 
+/** "Closed today" with its reason and, when known, when the stall opens next. */
+function closedTodayDetail(special: boolean, nextOpening: string | undefined): string {
+  const base = special ? "Closed today (special hours)" : "Closed today";
+  return nextOpening ? (special ? `${base} · ${nextOpening}` : nextOpening) : base;
+}
+
 /**
  * Open or closed right now in Singapore from the structured schedule. `isOpen` is the stored
  * venue flag: false (a closure notice) always means closed.
@@ -149,9 +155,10 @@ export function getScheduleOpenState(
   if (today.ranges.length === 0) {
     return {
       status: "closed",
-      detail:
-        findNextScheduledOpening(schedule, dateKey, dayIndex) ??
-        (today.special ? "Closed today (special hours)" : "Closed today"),
+      detail: closedTodayDetail(
+        today.special,
+        findNextScheduledOpening(schedule, dateKey, dayIndex),
+      ),
     };
   }
   const current = today.ranges.find(([open, close]) => {

@@ -14,8 +14,10 @@ test("Stitch stall layout keeps catalogue and review evidence dynamic", () => {
   assert.match(stall, /<AppText variant="h2">Reviews<\/AppText>/);
   assert.doesNotMatch(stall, /Community Highlights/);
   assert.match(stall, /ratingSummary\s*\?/);
-  assert.match(stall, /dish\.reviewCount > 0/);
-  assert.match(stall, /dish\.mustOrder\s*\?/);
+  // Menu tiles and rows live in StallMenuDish.
+  const menuDish = readRepoFile("src/components/stall/StallMenuDish.tsx");
+  assert.match(menuDish, /dish\.reviewCount > 0/);
+  assert.match(menuDish, /dish\.mustOrder\s*\?/);
   assert.match(stall, /openInfo\.extraNotice/);
   assert.match(stall, /<PhotoPager/);
   assert.doesNotMatch(stall, /Michelin Bib Gourmand|NEA Grade A|2,410 reviews/);

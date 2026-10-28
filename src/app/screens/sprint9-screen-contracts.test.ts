@@ -213,7 +213,7 @@ test("Sprint 9 screen contract: onboarding icon controls and location rows are l
 });
 
 test("Sprint 9 screen contract: stall menu cards expose dish actions", () => {
-  const stallDetail = read("src/app/screens/detail/StallDetailScreen.tsx");
+  const stallDetail = read("src/components/stall/StallMenuDish.tsx");
 
   assert.match(
     stallDetail,

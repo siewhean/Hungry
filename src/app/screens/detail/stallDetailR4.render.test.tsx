@@ -23,6 +23,7 @@ import { cleanup, render, renderScreen } from "@/test/render";
 import { enterScenario } from "@/test/render/sessions";
 
 const STALL = "venue-tian-tian";
+const baseProvider = getServiceProvider();
 
 beforeEach(async () => {
   await enterScenario("user");
@@ -32,6 +33,7 @@ beforeEach(async () => {
 
 afterEach(async () => {
   await cleanup();
+  setServiceProvider(baseProvider);
   setExperimentFlagSource(undefined);
   resetExperimentSession();
 });
@@ -232,7 +234,7 @@ test("R4-STALL-5: pressing a menu row opens that dish", async () => {
   await view.press(view.findByLabel(new RegExp(`^${first.name}`)));
   assert.deepEqual(view.navigation.calls.find((call) => call.method === "navigate")?.args, [
     "DishDetail",
-    { dishId: first.id },
+    { dishId: first.id, source: "stall_menu" },
   ]);
 });
 
@@ -493,4 +495,80 @@ test("R4-STALL-3: marking visited after a review pays the visit points straight 
     .markTried(userId, UNSAVED_STALL, "StallDetail");
   assert.equal(result.isTried, true);
   assert.ok(useFoodCredStore.getState().totalPoints > before);
+});
+
+// ─── Rating pill, Call chip, claim with an expired session ───────────────────────────────
+
+/** Mock mode, with some of the discovery reads replaced. */
+function withDiscovery(discovery: Partial<HungryService["discovery"]>) {
+  const base = getServiceProvider();
+  setServiceProvider({
+    ...base,
+    service: { ...base.service, discovery: { ...base.service.discovery, ...discovery } },
+  });
+}
+
+test("R4-STALL-8: the rating pill names what it counts and is a button", async () => {
+  const view = await openStall();
+  const pill = Array.from(view.container.querySelectorAll("[aria-label]")).find((node) =>
+    /stars from \d+ dish ratings?$/.test(node.getAttribute("aria-label") ?? ""),
+  ) as HTMLElement | undefined;
+  assert.ok(pill, "the pill reads as a rating from dish ratings");
+  assert.equal(pill.getAttribute("role"), "button");
+  assert.match(pill.textContent ?? "", /dish ratings?/);
+  assert.ok(!/ reviews\)/.test(pill.textContent ?? ""), "it no longer says reviews");
+  await view.press(pill);
+});
+
+test("R4-STALL-10: with a phone number, Call sits above the menu", async () => {
+  withDiscovery({
+    getPublicMerchantProfile: async () => ({
+      outletId: "o1",
+      contactPhone: "+6591234567",
+      socialLinks: [],
+      cuisineCategories: [],
+      isVerified: true,
+    }),
+  });
+  const view = await openStall();
+  const calls = Array.from(view.container.querySelectorAll('[aria-label^="Call "]'));
+  assert.ok(calls.length >= 1, "a Call button renders");
+  const menuHeading = Array.from(view.container.querySelectorAll("div, h1, h2, h3")).find(
+    (node) => node.children.length === 0 && node.textContent?.trim() === "Menu",
+  );
+  assert.ok(menuHeading, "the Menu heading renders");
+  assert.ok(
+    calls[0].compareDocumentPosition(menuHeading) & window.Node.DOCUMENT_POSITION_FOLLOWING,
+    "the first Call comes before the Menu heading",
+  );
+});
+
+test("R4-STALL-10: with no phone number there is no Call button", async () => {
+  withDiscovery({ getPublicMerchantProfile: async () => undefined });
+  const view = await openStall();
+  assert.equal(view.container.querySelectorAll('[aria-label^="Call "]').length, 0);
+});
+
+test("R4-STALL-19: a claim refused for an expired session opens sign-in and returns to the stall", async () => {
+  const base = getServiceProvider();
+  setServiceProvider({
+    ...base,
+    service: {
+      ...base.service,
+      supply: {
+        ...base.service.supply,
+        submitMerchantClaimInterest: async () => {
+          throw new Error("JWT expired");
+        },
+      },
+    },
+  });
+  const view = await openStall();
+  const claim = Array.from(view.container.querySelectorAll("[role='button']")).find((node) =>
+    /Claim this stall/.test(node.textContent ?? ""),
+  ) as HTMLElement | undefined;
+  assert.ok(claim, "the claim button renders for a signed-in diner");
+  await view.press(claim);
+  await view.settle();
+  assert.match(useUIStore.getState().signInPrompt?.title ?? "", /Sign in before claiming/);
 });
