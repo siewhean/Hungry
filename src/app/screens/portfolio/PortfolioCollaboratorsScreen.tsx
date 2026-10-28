@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Alert, FlatList, Pressable, StyleSheet, View } from "react-native";
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ArrowLeft, Search } from "lucide-react-native";
@@ -7,7 +7,7 @@ import { useShallow } from "zustand/react/shallow";
 
 import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
 import { CollaboratorRow, collaboratorName } from "@/components/portfolio";
-import { AppText, Avatar, Button, Card, Chip, Input } from "@/components/ui";
+import { AppText, Avatar, Button, Card, Chip, Dialog, Input } from "@/components/ui";
 import { runListMutation } from "@/features/checklistPortfolio/runListMutation";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { usePortfolioStore } from "@/store/usePortfolioStore";
@@ -53,6 +53,8 @@ export function PortfolioCollaboratorsScreen({ navigation, route }: Props) {
   const [query, setQuery] = useState("");
   const [role, setRole] = useState<PortfolioCollaboratorRole>("viewer");
   const [addingUserId, setAddingUserId] = useState<string | null>(null);
+  // A Dialog, not Alert.alert: that is a no-op on web.
+  const [removing, setRemoving] = useState<PortfolioCollaborator | null>(null);
 
   const loadCollaborators = useCallback(async () => {
     setCollaboratorsState("loading");
@@ -109,21 +111,7 @@ export function PortfolioCollaboratorsScreen({ navigation, route }: Props) {
     setAddingUserId(null);
   };
 
-  const confirmRemove = (collaborator: PortfolioCollaborator) => {
-    const name = collaboratorName(collaborator);
-    Alert.alert(`Remove ${name}?`, "They will no longer see or edit this list.", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Remove",
-        style: "destructive",
-        onPress: () =>
-          void runListMutation(() => removeCollaborator(portfolioId, collaborator.userId), {
-            success: "Collaborator removed",
-            failure: "Couldn't remove the collaborator.",
-          }),
-      },
-    ]);
-  };
+  const confirmRemove = (collaborator: PortfolioCollaborator) => setRemoving(collaborator);
 
   const header = (
     <View style={{ gap: spacing[4] }}>
@@ -244,45 +232,72 @@ export function PortfolioCollaboratorsScreen({ navigation, route }: Props) {
   );
 
   return (
-    // One virtualized list: up to 500 followed people must not all render at once.
-    <FlatList
-      style={{ flex: 1, backgroundColor: palette.bg, paddingTop: Math.max(insets.top, spacing[4]) }}
-      contentContainerStyle={[styles.content, { gap: spacing[3], padding: spacing[4] }]}
-      keyboardShouldPersistTaps="handled"
-      ListHeaderComponent={header}
-      data={collaboratorsState === "ready" && followingState === "ready" ? matches : []}
-      keyExtractor={(person) => person.userId}
-      renderItem={({ item: person }) => {
-        const name = collaboratorName(person);
-        const isAdded = collaboratorIds.has(person.userId);
-        return (
-          <Card>
-            <View style={styles.personRow}>
-              <Avatar name={name} uri={person.avatarUrl} size={40} />
-              <AppText variant="bodyBold" style={{ flex: 1 }} numberOfLines={1}>
-                {name}
-              </AppText>
-              {isAdded ? (
-                <AppText variant="bodySmall" tone="secondary">
-                  Added
+    <>
+      {/* One virtualized list: up to 500 followed people must not all render at once. */}
+      <FlatList
+        style={{
+          flex: 1,
+          backgroundColor: palette.bg,
+          paddingTop: Math.max(insets.top, spacing[4]),
+        }}
+        contentContainerStyle={[styles.content, { gap: spacing[3], padding: spacing[4] }]}
+        keyboardShouldPersistTaps="handled"
+        ListHeaderComponent={header}
+        data={collaboratorsState === "ready" && followingState === "ready" ? matches : []}
+        keyExtractor={(person) => person.userId}
+        renderItem={({ item: person }) => {
+          const name = collaboratorName(person);
+          const isAdded = collaboratorIds.has(person.userId);
+          return (
+            <Card>
+              <View style={styles.personRow}>
+                <Avatar name={name} uri={person.avatarUrl} size={40} />
+                <AppText variant="bodyBold" style={{ flex: 1 }} numberOfLines={1}>
+                  {name}
                 </AppText>
-              ) : (
-                <Button
-                  label="Add"
-                  accessibilityLabel={`Add ${name} as ${role}`}
-                  variant="secondary"
-                  size="sm"
-                  fullWidth={false}
-                  loading={addingUserId === person.userId}
-                  disabled={addingUserId !== null}
-                  onPress={() => void handleAdd(person)}
-                />
-              )}
-            </View>
-          </Card>
-        );
-      }}
-    />
+                {isAdded ? (
+                  <AppText variant="bodySmall" tone="secondary">
+                    Added
+                  </AppText>
+                ) : (
+                  <Button
+                    label="Add"
+                    accessibilityLabel={`Add ${name} as ${role}`}
+                    variant="secondary"
+                    size="sm"
+                    fullWidth={false}
+                    loading={addingUserId === person.userId}
+                    disabled={addingUserId !== null}
+                    onPress={() => void handleAdd(person)}
+                  />
+                )}
+              </View>
+            </Card>
+          );
+        }}
+      />
+      <Dialog
+        visible={removing !== null}
+        title={removing ? `Remove ${collaboratorName(removing)}?` : ""}
+        message="They will no longer see or edit this list."
+        buttons={[
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Remove",
+            style: "destructive",
+            onPress: () => {
+              const target = removing;
+              if (!target) return;
+              void runListMutation(() => removeCollaborator(portfolioId, target.userId), {
+                success: "Collaborator removed",
+                failure: "Couldn't remove the collaborator.",
+              });
+            },
+          },
+        ]}
+        onClose={() => setRemoving(null)}
+      />
+    </>
   );
 }
 
