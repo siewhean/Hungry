@@ -15,6 +15,7 @@ import {
   setServiceProvider,
 } from "@/lib/services/serviceProvider";
 import type { HungryService } from "@/lib/services/types";
+import { useFoodCredStore } from "@/store/useFoodCredStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -26,6 +27,7 @@ const STALL = "venue-tian-tian";
 beforeEach(async () => {
   await enterScenario("user");
   useStallInteractionStore.getState()._reset();
+  useFoodCredStore.getState()._reset();
 });
 
 afterEach(async () => {
@@ -90,7 +92,7 @@ test("R4-STALL-25: on live data the stall page reads the stall and menu through 
 // ─── Save: "Add to a list" on the toast, and a hold row that says what it does ───────────
 
 // Not saved in the mock account (Tian Tian and Satay Street are).
-const UNSAVED_STALL = "venue-ban-mian";
+const UNSAVED_STALL = "venue-japanese-curry";
 
 const barWithToast = (stallId: string, extra: Record<string, unknown> = {}) =>
   createElement(
@@ -144,7 +146,7 @@ test("R4-STALL-6: without a list sheet the save toast has no action", async () =
   const view = await render(barWithToast(UNSAVED_STALL));
   await view.press(view.findByLabel("Save this stall"));
   assert.match(view.text(), /Saved\./);
-  assert.equal(view.findByLabel("Add to a list"), null);
+  assert.ok(!view.findByLabel("Add to a list"), "not rendered");
 });
 
 test("R4-STALL-6: the hold menu of a saved stall says 'Remove from saved' and un-saves", async () => {
@@ -201,8 +203,8 @@ test("R4-STALL-5: a menu where no dish has a photo is list rows, not a grid of g
   const dishes = useMenuWithPhotos(0, 3);
   const view = await openStall();
   assert.ok(view.container.querySelector('[data-testid="stall-menu-list"]'), "list rows");
-  assert.equal(view.container.querySelector('[data-testid="stall-menu-grid"]'), null);
-  assert.equal(view.findByLabel(/no photo yet/), null, "no grey placeholder tiles");
+  assert.ok(!view.container.querySelector('[data-testid="stall-menu-grid"]'), "not rendered");
+  assert.ok(!view.findByLabel(/no photo yet/), "no grey placeholder tiles");
   for (const dish of dishes) assert.ok(view.findByText(dish.name), `${dish.name} is listed`);
 });
 
@@ -210,7 +212,7 @@ test("R4-STALL-5: a menu where most dishes have photos keeps the photo grid", as
   useMenuWithPhotos(3, 3);
   const view = await openStall();
   assert.ok(view.container.querySelector('[data-testid="stall-menu-grid"]'), "photo grid");
-  assert.equal(view.container.querySelector('[data-testid="stall-menu-list"]'), null);
+  assert.ok(!view.container.querySelector('[data-testid="stall-menu-list"]'), "not rendered");
 });
 
 test("R4-STALL-5: the layout follows the whole menu: 2 of 3 with photos is a grid, 1 of 3 a list", async () => {
@@ -280,8 +282,8 @@ test("R4-STALL-1: an empty stall shows one 'Help us fill this in' card, not thre
   assert.match(view.text(), /No menu, hours and reviews yet/);
   assert.doesNotMatch(view.text(), /No menu available for this stall yet/);
   assert.doesNotMatch(view.text(), /No community reviews yet/);
-  assert.equal(view.findByText("Menu"), null, "no empty Menu heading");
-  assert.equal(view.findByText("Reviews"), null, "no empty Reviews heading");
+  assert.ok(!view.findByText("Menu"), "no empty Menu heading");
+  assert.ok(!view.findByText("Reviews"), "no empty Reviews heading");
   assert.ok(view.findByText("Write the first review"));
   assert.ok(view.findByText("Add opening hours"));
 });
@@ -325,7 +327,7 @@ test("R4-STALL-1: Write the first review opens the composer for this stall", asy
 
 test("R4-STALL-1: a stall with a menu keeps its Menu section and does not get the card", async () => {
   const view = await openStall();
-  assert.equal(view.container.querySelector('[data-testid="stall-help-fill-card"]'), null);
+  assert.ok(!view.container.querySelector('[data-testid="stall-help-fill-card"]'), "not rendered");
   assert.ok(view.findByText("Menu"));
 });
 
@@ -355,4 +357,140 @@ test("R4-STALL-1: the report page opens with 'opening hours' picked when asked t
   });
   await view.press(view.findByText("Send report"));
   assert.deepEqual(sent, [], "with no reason picked nothing is sent");
+});
+
+// ─── Mark visited is one tap (R4-STALL-3) ────────────────────────────────────────────────
+
+/** A stall the signed-in mock diner has not tried or reviewed anything at. */
+function useUnreviewedStall() {
+  const repo = getDataRepository();
+  const dishes = repo.listDishesByVenue(UNSAVED_STALL);
+  assert.ok(dishes.length >= 2, "the stall has dishes");
+  const profile = useProfileStore.getState().profile;
+  useProfileStore.setState({
+    profile: {
+      ...profile,
+      reviewedDishIds: profile.reviewedDishIds.filter(
+        (id) => !dishes.some((dish) => dish.id === id),
+      ),
+    },
+  });
+  return dishes;
+}
+
+test("R4-STALL-3: Mark visited is one tap: the page stays, the box is ticked, no review is asked for first", async () => {
+  useUIStore.setState({ toast: null });
+  useUnreviewedStall();
+  const view = await openStall(UNSAVED_STALL);
+  await view.settle();
+  await view.press(view.findByLabel("Mark this stall visited"));
+  assert.deepEqual(
+    view.navigation.calls.filter((call) => call.method === "navigate"),
+    [],
+    "pressing Mark visited does not navigate",
+  );
+  assert.ok(view.findByLabel("Visited"), "the checkbox is now ticked");
+  assert.equal(useStallInteractionStore.getState().interactions[UNSAVED_STALL]?.isTried, true);
+  assert.doesNotMatch(
+    useUIStore.getState().toast?.message ?? "",
+    /Try or review a dish here first/,
+  );
+});
+
+test("R4-STALL-3: the 'What did you have?' sheet opens in place with the stall's dishes, and Skip closes it", async () => {
+  const dishes = useUnreviewedStall();
+  const view = await openStall(UNSAVED_STALL);
+  await view.settle();
+  assert.ok(!view.findByTestId("stall-visited-sheet"), "closed until a visit is marked");
+  await view.press(view.findByLabel("Mark this stall visited"));
+  assert.ok(view.findByTestId("stall-visited-sheet"), "the sheet opens in place");
+  assert.match(view.text(), /Visited\. What did you have\?/);
+  assert.ok(view.findByLabel(`Review ${dishes[0].name}`) || view.findByLabel(/^Review /));
+  await view.press(view.findByText("Skip"));
+  assert.ok(!view.findByTestId("stall-visited-sheet"), "Skip closes it");
+  assert.deepEqual(
+    view.navigation.calls.filter((call) => call.method === "navigate"),
+    [],
+    "skipping leaves the visit saved and goes nowhere",
+  );
+  assert.equal(useStallInteractionStore.getState().interactions[UNSAVED_STALL]?.isTried, true);
+});
+
+test("R4-STALL-3: picking a dish in the sheet opens the review composer on that dish", async () => {
+  useUnreviewedStall();
+  const view = await openStall(UNSAVED_STALL);
+  await view.settle();
+  await view.press(view.findByLabel("Mark this stall visited"));
+  const row = view.findByLabel(/^Review /);
+  assert.ok(row, "a dish row is offered");
+  await view.press(row);
+  const call = view.navigation.calls.find((entry) => entry.method === "navigate");
+  assert.equal(call?.args[0], "ReviewStack");
+  const params = (call?.args[1] as { params?: { venueId?: string; dishId?: string } }).params;
+  assert.equal(params?.venueId, UNSAVED_STALL);
+  assert.ok(params?.dishId, "the composer starts on the picked dish");
+  assert.ok(!view.findByTestId("stall-visited-sheet"), "the sheet closed");
+});
+
+test("R4-STALL-3: unmarking a visit clears it without opening the sheet", async () => {
+  useUnreviewedStall();
+  const view = await openStall(UNSAVED_STALL);
+  await view.settle();
+  await view.press(view.findByLabel("Mark this stall visited"));
+  await view.press(view.findByText("Skip"));
+  await view.press(view.findByLabel("Visited"));
+  assert.equal(useStallInteractionStore.getState().interactions[UNSAVED_STALL]?.isTried, false);
+  assert.ok(!view.findByTestId("stall-visited-sheet"), "not rendered");
+  assert.match(useUIStore.getState().toast?.message ?? "", /Removed from visited/);
+});
+
+test("R4-STALL-3: a stall with an empty menu offers 'Write a review' in the sheet", async () => {
+  useEmptyStall();
+  const view = await openStall(EMPTY_STALL);
+  await view.settle();
+  await view.press(view.findByLabel("Mark this stall visited"));
+  assert.ok(view.findByTestId("stall-visited-sheet"));
+  assert.ok(!view.findByLabel(/^Review /), "no dishes to offer");
+  const buttons = Array.from(
+    document.body.querySelectorAll('[data-testid="stall-visited-sheet"] [role="button"]'),
+  );
+  assert.ok(buttons.some((node) => node.textContent?.trim() === "Write a review"));
+});
+
+// Food Cred for a visit needs a review.
+
+test("R4-STALL-3: marking visited without a review earns no Food Cred; the points come with the review", async () => {
+  const stalls = useStallInteractionStore.getState();
+  const cred = useFoodCredStore.getState();
+  const userId = useProfileStore.getState().profile.id;
+  const before = cred.totalPoints;
+  await stalls.loadInteractions(userId);
+
+  const noReview = await stalls.markTried(userId, UNSAVED_STALL, "StallDetail", {
+    skipPoints: true,
+  });
+  assert.equal(noReview.isTried, true);
+  assert.equal(noReview.pointsAwarded, 0);
+  assert.equal(useFoodCredStore.getState().totalPoints, before, "no points for the bare visit");
+
+  // The diner then posts a review at this stall: the visit's points are due.
+  await useStallInteractionStore.getState().awardVisitAfterReview(userId, UNSAVED_STALL);
+  assert.ok(useFoodCredStore.getState().totalPoints > before, "the visit pays once reviewed");
+});
+
+test("R4-STALL-3: a review at a stall that was not marked visited pays no visit points", async () => {
+  const userId = useProfileStore.getState().profile.id;
+  const before = useFoodCredStore.getState().totalPoints;
+  await useStallInteractionStore.getState().awardVisitAfterReview(userId, UNSAVED_STALL);
+  assert.equal(useFoodCredStore.getState().totalPoints, before);
+});
+
+test("R4-STALL-3: marking visited after a review pays the visit points straight away", async () => {
+  const userId = useProfileStore.getState().profile.id;
+  const before = useFoodCredStore.getState().totalPoints;
+  const result = await useStallInteractionStore
+    .getState()
+    .markTried(userId, UNSAVED_STALL, "StallDetail");
+  assert.equal(result.isTried, true);
+  assert.ok(useFoodCredStore.getState().totalPoints > before);
 });

@@ -45,6 +45,7 @@ import {
   type PickerRow,
 } from "@/features/review/dishPicker";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -372,6 +373,10 @@ export function ReviewScreen({ navigation, route }: Props) {
       }
 
       useProfileStore.getState().addReviewedDish(selectedDish.id);
+      // A stall marked visited before this review earns its visit points now.
+      void useStallInteractionStore
+        .getState()
+        .awardVisitAfterReview(useProfileStore.getState().profile.id, selectedDish.venueId);
       useProfileStore.getState().addReview(selectedDish);
       useProfileStore.getState().recordReviewEntry(selectedDish.id, {
         rating: draft.rating,

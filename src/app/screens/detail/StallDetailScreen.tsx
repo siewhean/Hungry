@@ -64,6 +64,7 @@ import { isOwnReview } from "@/features/review/reviewEdit";
 import { StallHeroFallback } from "@/components/stall/StallHeroFallback";
 import { StallHelpFillCard } from "@/components/stall/StallHelpFillCard";
 import { StallLogoMark } from "@/components/stall/StallLogoMark";
+import { StallVisitedSheet } from "@/components/stall/StallVisitedSheet";
 import {
   getStallDishPhotos,
   shouldUseMenuList,
@@ -90,6 +91,7 @@ import {
 import { getBuildingById } from "@/lib/geo/singaporeBuildings";
 import { formatDishPrice } from "@/features/detail/dishPrice";
 import { toDisplayName } from "@/features/detail/stallDisplayName";
+import { pickVisitedSheetDishes } from "@/features/detail/stallVisited";
 import type {
   MerchantClaimStatus,
   RecentReviewFeedEntry,
@@ -512,6 +514,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const [activeMenuCategory, setActiveMenuCategory] = useState(ALL_MENU_CATEGORY);
   const [activeDietaryFlags, setActiveDietaryFlags] = useState<string[]>([]);
   const [hoursExpanded, setHoursExpanded] = useState(false);
+  // "Visited. What did you have?" opens in place after Mark visited.
+  const [visitedSheetOpen, setVisitedSheetOpen] = useState(false);
   const [menuQuery, setMenuQuery] = useState("");
   const [visibleMenuItemCount, setVisibleMenuItemCount] = useState(INITIAL_MENU_ITEM_COUNT);
   const contentBodyLayoutRef = useRef<{ y: number; height: number } | null>(null);
@@ -1041,29 +1045,17 @@ export function StallDetailScreen({ navigation, route }: Props) {
     communityReviews.length === 0;
   const reviewedDishIds = profile.reviewedDishIds;
   const hasReviewedDishAtVenue = dishes.some((dish) => reviewedDishIds.includes(dish.id));
-  const nextUnreviewedDish = dishes.find((dish) => !reviewedDishIds.includes(dish.id));
 
-  // Only the signed-in bar calls this: guests are sent to sign in before they get here.
-  const handleReviewRequiredForTried = () => {
-    // Without a clear next dish, let the reviewer pick one instead of guessing.
-    const targetDishId = nextUnreviewedDish?.id;
-    if (!dishes.length) {
-      showToast({
-        message: "No dish available for review yet. Add a dish first.",
-        tone: "warning",
-        duration: 3000,
-      });
-      return;
-    }
-
-    showToast({
-      message: "Try or review a dish here first, then mark this stall visited.",
-      tone: "info",
-      duration: 3000,
-    });
+  const visitedSheetDishes = visitedSheetOpen
+    ? pickVisitedSheetDishes(dishes, reviewedDishIds)
+    : EMPTY_DISHES;
+  const closeVisitedSheet = () => setVisitedSheetOpen(false);
+  const pickVisitedDish = (dish: DishDetail) => {
+    closeVisitedSheet();
+    trackAnalyticsEvent("stall_visited_dish_picked", { stall_id: venue.id, dish_id: dish.id });
     navigation.navigate("ReviewStack", {
       screen: "ReviewMain",
-      params: targetDishId ? { venueId: venue.id, dishId: targetDishId } : { venueId: venue.id },
+      params: { venueId: venue.id, dishId: dish.id },
     });
   };
 
@@ -2008,8 +2000,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
               }
               onDirections={stallAddress || stallPin ? openStallMaps : undefined}
               hasReviewedDishAtVenue={hasReviewedDishAtVenue}
-              reviewPromptText="Try or review a dish here first, then mark this stall visited."
-              onReviewRequired={isAuthenticated ? handleReviewRequiredForTried : undefined}
+              onVisited={() => setVisitedSheetOpen(true)}
               showVisited={showDeferredDetailControls && isAuthenticated}
               onAddToList={
                 showDeferredDetailControls && FEATURE_FLAGS.portfoliosEnabled
@@ -2040,6 +2031,17 @@ export function StallDetailScreen({ navigation, route }: Props) {
             />
           ) : null}
           {detailSaveActions.saveToListSheet}
+          <StallVisitedSheet
+            visible={visitedSheetOpen}
+            stallName={displayName}
+            dishes={visitedSheetDishes}
+            onPickDish={pickVisitedDish}
+            onWriteReview={() => {
+              closeVisitedSheet();
+              openWriteReview();
+            }}
+            onSkip={closeVisitedSheet}
+          />
         </View>
       </SafeAreaView>
     </FeedErrorBoundary>
