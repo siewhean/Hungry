@@ -11,6 +11,19 @@ let sink: AnalyticsSink | null = (event) => {
   }
 };
 
+// The person's "Share usage analytics" setting. While it is off nothing is buffered or sent.
+let analyticsEnabled = true;
+
+export function setAnalyticsEnabled(enabled: boolean): void {
+  analyticsEnabled = enabled;
+  // What was buffered before the person opted out must not be replayed to a sink later.
+  if (!enabled) analyticsBuffer.length = 0;
+}
+
+export function isAnalyticsEnabled(): boolean {
+  return analyticsEnabled;
+}
+
 export function trackAnalyticsEvent(
   event: AnalyticsEventName | (string & {}),
   properties: Record<string, unknown> = {},
@@ -23,6 +36,8 @@ export function trackAnalyticsEvent(
     user_id: options?.userId,
     timestamp: new Date().toISOString(),
   };
+
+  if (!analyticsEnabled) return record;
 
   analyticsBuffer.push(record);
   if (analyticsBuffer.length > MAX_BUFFER_SIZE) {

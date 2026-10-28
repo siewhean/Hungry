@@ -123,7 +123,10 @@ export function TasteQuizScreen({ navigation, route }: Props) {
   const showToast = useUIStore((state) => state.showToast);
   const flowMode = route.params?.mode ?? "onboarding";
   const isDietaryRoute = route.name === "DietaryPreferences";
-  const initialPhase = isDietaryRoute ? "dietary" : (route.params?.initialPhase ?? "taste");
+  const requestedPhase = isDietaryRoute ? "dietary" : (route.params?.initialPhase ?? "taste");
+  // "budget" is the dietary step opened at its budget chips.
+  const startAtBudget = requestedPhase === "budget";
+  const initialPhase = startAtBudget ? "dietary" : requestedPhase;
   // A relaunch reopens this step with the answers given so far (a draft under 24 hours old).
   const [draft] = useState(() => (flowMode === "onboarding" ? getFreshOnboardingDraft() : null));
   // The dietary step is a separate route instance, so the taste answers come from the draft the
@@ -170,6 +173,9 @@ export function TasteQuizScreen({ navigation, route }: Props) {
   const optionsFadeAnim = useRef(new Animated.Value(1)).current;
   const quizScrollX = useRef(new Animated.Value(0)).current;
   const carouselRef = useRef<FlatList<number> | null>(null);
+  // Opening at the budget (Settings, Meal budget): scroll there once its position is known.
+  const dietaryScrollRef = useRef<ScrollView | null>(null);
+  const scrolledToBudget = useRef(false);
   const stepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const advanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -477,6 +483,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
           // One scroll for the whole step: at large text sizes the heading and the chips
           // scroll together, so the budget below them is never out of reach.
           <ScrollView
+            ref={dietaryScrollRef}
             testID="dietary-step-scroll"
             style={{ flex: 1 }}
             showsVerticalScrollIndicator={false}
@@ -495,6 +502,14 @@ export function TasteQuizScreen({ navigation, route }: Props) {
               onClear={() => setDietaryPreferencesState([])}
               budget={maxDishBudget}
               onBudgetChange={setMaxDishBudgetState}
+              onBudgetLayout={(budgetY) => {
+                if (!startAtBudget || scrolledToBudget.current) return;
+                scrolledToBudget.current = true;
+                dietaryScrollRef.current?.scrollTo?.({
+                  y: budgetY - spacing[3],
+                  animated: false,
+                });
+              }}
             />
           </ScrollView>
         ) : (
