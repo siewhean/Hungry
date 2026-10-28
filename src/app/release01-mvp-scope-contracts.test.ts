@@ -90,7 +90,7 @@ test("R01-WRITE-01: favourite results are dropped when the account changes mid-w
 test("R01-WRITE-01: favourite toasts follow the write result, never an optimistic guess", () => {
   const catalogDetail = read("src/app/screens/catalog/CatalogRawDetailScreen.tsx");
   const dishDetail = read("src/app/screens/detail/DishDetailScreenV2.tsx");
-  const favourites = read("src/app/screens/profile/FavouritesScreen.tsx");
+  const favourites = read("src/app/screens/profile/SavedDishesSection.tsx");
 
   assert.match(catalogDetail, /\{isDish && FEATURE_FLAGS\.favouritesEnabled \? \(/);
   assert.match(
@@ -104,15 +104,13 @@ test("R01-WRITE-01: favourite toasts follow the write result, never an optimisti
   );
   assert.doesNotMatch(dishDetail, /Saved to favourites!/);
 
-  assert.match(favourites, /<CatalogSavedDishes navigation=\{navigation\} query=\{dishQuery\} \/>/);
+  // Saved opens the redesigned dish page and removes with the write result, never a guess.
   assert.match(
     favourites,
-    /rootNavigation\.navigate\("CatalogRawDetail", \{ kind: "dish", id: dish\.id \}\)/,
+    /rootNavigation\.navigate\("DishDetail", \{ dishId: dish\.id, source: "saved" \}\)/,
   );
-  assert.match(
-    favourites,
-    /result\.status === "failed"\s*\? \{ message: result\.message, tone: "error" \}/,
-  );
+  assert.match(favourites, /toggleFavourite\(input, \{ surface: "saved" \}\)/);
+  assert.match(favourites, /result\.status === "failed"[\s\S]*?tone: "error"/);
 });
 
 test("release-reachable screens hide controls for cut features behind their flags", () => {

@@ -1810,6 +1810,38 @@ export const hungryService: HungryService = {
       return resolve([...dishRows, ...stallRows]);
     },
 
+    async getSavedDishCards(dishIds) {
+      return resolve(
+        [...new Set(dishIds)].flatMap((id) => {
+          const dish = mockRepository.getDishById(id);
+          if (!dish) return [];
+          const venue = mockRepository.getVenueById(dish.venueId);
+          const building = mockRepository
+            .listBuildings()
+            .find((candidate) => candidate.id === dish.buildingId);
+          return [
+            {
+              id,
+              name: dish.name,
+              venueId: dish.venueId,
+              venueName: venue?.name ?? dish.venueName,
+              buildingName: venue?.buildingName ?? building?.name,
+              unitNumber: venue?.unitNumber,
+              address: venue?.address,
+              postalCode: venue?.postalCode,
+              price: dish.price,
+              imageUrl: dish.imageUrl || undefined,
+              rating: dish.reviewCount > 0 ? dish.rating : undefined,
+              reviewCount: dish.reviewCount,
+              isOpen: venue?.isOpen,
+              latitude: venue?.latitude ?? building?.coordinate.latitude,
+              longitude: venue?.longitude ?? building?.coordinate.longitude,
+            },
+          ];
+        }),
+      );
+    },
+
     async getDish(id) {
       const dish = dishes.find((d) => d.id === id);
       if (!dish) return resolve(undefined);

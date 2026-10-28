@@ -9,6 +9,8 @@ export interface ToastPayload {
   message: string;
   tone?: ToastTone;
   duration?: number;
+  /** A button on the toast, e.g. Undo. The toast stays up for `duration` so there is time to tap. */
+  action?: { label: string; onPress: () => void };
   backgroundColor?: string;
   borderColor?: string;
   textColor?: string;

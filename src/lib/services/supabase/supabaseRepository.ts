@@ -7,6 +7,7 @@ import type {
   DataRepository,
   DiscoveryLocationFeed,
   DiscoveryLocationFeedRequest,
+  SavedDishCard,
   SearchResult,
   VenueLocationSearchRequest,
   VenueMenuCursor,
@@ -1244,6 +1245,92 @@ export async function getItemDetailsViaRpc(input: {
   );
   if (results.some((rows) => !rows)) return undefined;
   return results.flatMap((rows) => rows ?? []);
+}
+
+/** get_item_details and get_venue_summaries read at most this many ids per call. */
+const DISH_BATCH_SIZE = 200;
+const VENUE_BATCH_SIZE = 50;
+
+function chunkIds(ids: string[], size: number): string[][] {
+  const chunks: string[][] = [];
+  for (let start = 0; start < ids.length; start += size)
+    chunks.push(ids.slice(start, start + size));
+  return chunks;
+}
+
+/**
+ * Saved-dish cards in a few batched reads: names, photos and prices (get_item_details), each
+ * dish's stall and rating (one table read per 200 dishes) and the stalls' places
+ * (get_venue_summaries per 50). Never one request per dish. Dishes that are gone are left out.
+ * Undefined when any read fails, so the page shows a retry instead of a short list.
+ */
+export async function getSavedDishCardsViaRpc(
+  dishIds: string[],
+): Promise<SavedDishCard[] | undefined> {
+  const ids = [...new Set(dishIds)];
+  if (ids.length === 0) return [];
+  const client = getSupabaseClient();
+  if (!client || !isSupabaseConfigured()) return undefined;
+  const details = await getItemDetailsViaRpc({ dishIds: ids, stallIds: [] });
+  if (!details) return undefined;
+
+  const refResults = await Promise.all(
+    chunkIds(ids, DISH_BATCH_SIZE).map((chunk) =>
+      // n-plus-one-ok: one read per 200 ids, issued together
+      client.from("dishes").select("id,venue_id,rating_avg,review_count").in("id", chunk),
+    ),
+  );
+  const refs = new Map<string, Row>();
+  for (const result of refResults) {
+    if (result.error || !Array.isArray(result.data)) return undefined;
+    for (const row of result.data as Row[]) refs.set(toString(row.id), row);
+  }
+
+  const venueIds = [
+    ...new Set([...refs.values()].map((row) => toString(row.venue_id)).filter(Boolean)),
+  ];
+  const venueResults = await Promise.all(
+    chunkIds(venueIds, VENUE_BATCH_SIZE).map((chunk) =>
+      // n-plus-one-ok: get_venue_summaries caps 50 ids per call, so larger sets go in chunks
+      rpcRows("get_venue_summaries", { p_venue_ids: chunk }),
+    ),
+  );
+  if (venueResults.some((rows) => !rows)) return undefined;
+  const venueRows = new Map<string, Row>(
+    venueResults.flatMap((rows) => rows ?? []).map((row) => [toString(row.venue_id), row]),
+  );
+
+  return details.flatMap((detail) => {
+    const id = toString(detail.dish_id);
+    const ref = refs.get(id);
+    if (!id || !ref) return [];
+    const venueId = toString(ref.venue_id) || undefined;
+    const venueRow = venueId ? venueRows.get(venueId) : undefined;
+    const venue = venueRow ? mapRpcVenue(venueRow) : undefined;
+    const building = toRecord(venueRow?.building);
+    const reviewCount = toNumber(ref.review_count);
+    return [
+      {
+        id,
+        name: toString(detail.name),
+        venueId,
+        venueName: toString(detail.stall_name) || venue?.name,
+        buildingName: venue?.buildingName,
+        unitNumber: venue?.unitNumber || undefined,
+        address: venue?.address,
+        postalCode: venue?.postalCode,
+        price:
+          detail.price === null || detail.price === undefined ? undefined : Number(detail.price),
+        imageUrl: toString(detail.image_url) || undefined,
+        rating: reviewCount > 0 ? toNumber(ref.rating_avg) : undefined,
+        reviewCount,
+        isOpen: venue?.isOpen,
+        // The stall's own point, else its building's (the summary's building carries both).
+        latitude: venue?.latitude ?? toOptionalCoordinate(building.latitude),
+        longitude: venue?.longitude ?? toOptionalCoordinate(building.longitude),
+      } satisfies SavedDishCard,
+    ];
+  });
 }
 
 export async function listBuildingsViaRpc(
