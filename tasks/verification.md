@@ -1457,3 +1457,9 @@ Use the smallest check that matches the change risk.
 - Read-only checks on prod (frluxwpqqyomiqmjzavd): Supabase advisors, Sentry (4 unresolved, all simulator builds), content counts. No writes.
 - Update after owner decisions (map + camera shipped in released builds): typecheck clean; npm test 2094 pass / 0 fail; test:render 408/408; lint 0 errors; prettier clean; test:coverage OK (lines 83.5%). Released-build contract test now asserts the Mapbox plugin, CAMERA and NSCameraUsageDescription are kept. Needs a device check on a fresh build with EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN set.
 - ONB-X1 (20261028090000): typecheck clean; npm test 2105 pass / 0 fail; test:coverage OK; check:rate-limits, audit:races, check:n-plus-one pass. Migration up, down and re-up, and the smoke, run on a local Postgres 16 with stub tables (no pgvector/PostGIS there). NOT yet run: scripts/db/rehearse.sh on staging (needs sh's database passwords); check-migration-safety fails until supabase/rehearsals/20261028090000.json is committed.
+
+## 2026-10-27 onboarding round-four fixes (claude/project-thread-4cunlm)
+- npm run typecheck clean; npm test 2124 pass / 0 fail / 2 skipped; npm run test:render 463/463; lint 0 errors; test:coverage OK (baseline updated).
+- Playwright (mock web build, chromium): tests/e2e/onboarding-flow.spec.ts 6/6 (390x844 and 320x568); auth, guest-browsing, mandatory-onboarding-auth, production-route-gating specs pass.
+- Not verified: a device build; live PostHog flags (none exist yet; the new experiments are drafts).
+- Re-audit follow-up (N1-N4): typecheck clean; npm test 2128 pass / 0 fail; test:render 467/467; test:coverage OK; Playwright onboarding-flow.spec.ts 9/9 (rows fit at 390x844 and 320x568, crossfade, no [object Object] in the URL).

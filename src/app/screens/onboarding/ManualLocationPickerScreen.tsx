@@ -357,6 +357,17 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
         </View>
 
         {isOnboarding ? <OnboardingProgress step="location" /> : null}
+        {/* Why the picker opened (location was denied): an inline note, not a toast over the buttons. */}
+        {isOnboarding && route.params?.notice ? (
+          <AppText
+            variant="bodySmall"
+            tone="secondary"
+            accessibilityRole="alert"
+            style={{ marginTop: spacing[2] }}
+          >
+            {route.params.notice}
+          </AppText>
+        ) : null}
 
         {/* The map fills the space between the search bar and the button; results float on it. */}
         <View
