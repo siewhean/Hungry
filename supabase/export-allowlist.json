@@ -1,0 +1,21 @@
+{
+  "_readme": "User-keyed tables that are deliberately NOT in app_private.export_my_data (the PDPA export), each with the reason. src/lib/services/supabase/export-completeness-contracts.test.ts fails when a table that references user_profiles or auth.users is in neither the latest export function nor this list. Prefer adding the table to the export; list it here only when it holds no personal content of the user's own, and say why.",
+  "tables": {
+    "guest_sessions": "Legacy scaffold from migration 0008; no app code reads or writes it. Holds a device id and expiry only.",
+    "orders": "Legacy scaffold from migration 0008; no app code reads or writes it.",
+    "chat_messages": "Legacy scaffold from migration 0008, superseded by messages (exported as messagesSent); no app code writes it.",
+    "dishes_draft": "Ops review queue of menu drafts from photo extraction; claimed_by is the reviewer, not content the user created.",
+    "conversations": "Exported through conversation_participants and messagesSent; the conversation row holds no personal content of its own.",
+    "read_receipts": "Delivery markers (message id and time read) rather than content; removed at account deletion. Revisit if a PDPA request asks for them.",
+    "moderation_actions": "Security, moderation and legal records; the export's notIncluded list tells users to email support for these.",
+    "home_feed_items": "Derived feed cache rebuilt from posts; not data the user provided.",
+    "app_ops_admins": "Staff access list, not end-user data.",
+    "app_ops_audit_events": "Security audit records (see notIncluded in the export).",
+    "app_ops_rate_limits": "Rate-limit counters and abuse-protection logs (see notIncluded in the export).",
+    "app_user_rate_limits": "Rate-limit counters and abuse-protection logs (see notIncluded in the export).",
+    "public_profiles": "Public copy of user_profiles fields kept in sync by trigger; the profile category already exports the source row.",
+    "portfolio_flags": "Lists the user reported are moderation records (see notIncluded in the export).",
+    "website_console_admins": "Staff access list, not end-user data.",
+    "user_push_tokens": "Device identifiers used only to deliver alerts (see notIncluded in the export)."
+  }
+}
