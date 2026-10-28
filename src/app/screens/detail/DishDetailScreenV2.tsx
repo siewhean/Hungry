@@ -754,6 +754,12 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     showToast({
       message: result.status === "saved" ? "Saved to Want to try." : "Removed from Want to try.",
       tone: "success",
+      ...(result.status === "saved" && FEATURE_FLAGS.portfoliosEnabled
+        ? {
+            duration: 5000,
+            action: { label: "Add to a list", onPress: () => void addToPortfolio() },
+          }
+        : {}),
     });
   };
 
@@ -974,9 +980,9 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                       holdOptions: [
                         {
                           id: "want-to-try",
-                          label: "Want to try",
+                          // The row toggles, so when it is saved it says what a press does.
+                          label: isSaved ? "Remove from Want to try" : "Want to try",
                           icon: Bookmark,
-                          selected: isSaved,
                           onPress: () => void handleSave(),
                         },
                         ...(collectionsLoading

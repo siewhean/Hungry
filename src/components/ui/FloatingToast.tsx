@@ -34,6 +34,7 @@ export function FloatingToast() {
   }, [toast, clearToast, motion.toastAutoDismiss, tone]);
 
   if (!toast) return null;
+  const action = toast.action;
 
   const toneConfig = {
     success: {
@@ -80,10 +81,7 @@ export function FloatingToast() {
         entering={FadeInDown.duration(motion.toast)}
         exiting={FadeOutUp.duration(motion.toast)}
       >
-        <Pressable
-          accessibilityRole="alert"
-          accessibilityLiveRegion="polite"
-          onPress={clearToast}
+        <View
           style={[
             shadows.floating,
             {
@@ -101,11 +99,35 @@ export function FloatingToast() {
             },
           ]}
         >
-          <Icon size={20} color={toastIconColor} />
-          <AppText style={{ color: toastTextColor, fontWeight: "700", flex: 1 }}>
-            {toast.message}
-          </AppText>
-        </Pressable>
+          <Pressable
+            accessibilityRole="alert"
+            accessibilityLiveRegion="polite"
+            onPress={clearToast}
+            style={{ alignItems: "center", flex: 1, flexDirection: "row", gap: spacing[3] }}
+          >
+            <Icon size={20} color={toastIconColor} />
+            <AppText style={{ color: toastTextColor, fontWeight: "700", flex: 1 }}>
+              {toast.message}
+            </AppText>
+          </Pressable>
+          {action ? (
+            // Its own button, not inside the alert: a screen reader can reach and press it.
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={action.label}
+              hitSlop={8}
+              onPress={() => {
+                clearToast();
+                action.onPress();
+              }}
+              style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: spacing[1] }}
+            >
+              <AppText variant="bodyBold" tone="accent">
+                {action.label}
+              </AppText>
+            </Pressable>
+          ) : null}
+        </View>
       </Animated.View>
     </View>
   );

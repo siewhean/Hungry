@@ -14,6 +14,8 @@ export interface ToastPayload {
   textColor?: string;
   iconColor?: string;
   borderWidth?: number;
+  /** A button on the toast, e.g. "Add to a list". Pressing it dismisses the toast first. */
+  action?: { label: string; onPress: () => void };
 }
 
 export interface ReviewSuccessPayload {

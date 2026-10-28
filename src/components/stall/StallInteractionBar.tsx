@@ -153,7 +153,9 @@ export function StallInteractionBar({
         showToast({
           message: "Saved. Find it in Profile, Saved, Stalls.",
           tone: "success",
-          duration: 3000,
+          // Longer when there is something to press.
+          duration: onAddToList ? 5000 : 3000,
+          action: onAddToList ? { label: "Add to a list", onPress: onAddToList } : undefined,
         });
         // Missions are extra: a failure there must not say the save failed.
         void incrementProgress(userId, "save_stalls").catch((error) =>
@@ -286,9 +288,9 @@ export function StallInteractionBar({
               holdOptions: [
                 {
                   id: "saved-stalls",
-                  label: "Saved stalls",
+                  // The row toggles, so when it is saved it says what a press does.
+                  label: isSaved ? "Remove from saved" : "Saved stalls",
                   icon: Bookmark,
-                  selected: isSaved,
                   onPress: () => void handleSave(),
                 },
                 {
