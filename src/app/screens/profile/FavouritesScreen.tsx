@@ -185,6 +185,7 @@ export function FavouritesScreen({ navigation }: Props) {
           onOpenList={(portfolioId) => navigation.navigate("PortfolioDetail", { portfolioId })}
           onCreateList={() => navigation.navigate("PortfolioCreate")}
           onOpenAllLists={() => navigation.navigate("ListsHome", undefined, { pop: true })}
+          onSearchAllSaved={() => navigation.navigate("Collections")}
         />
       ) : getServiceProvider().mode === "supabase" ? (
         <Fragment key={`${authenticatedUserId ?? "guest"}:${profile.id}`}>
@@ -800,10 +801,12 @@ function SavedListsSection({
   onOpenList,
   onCreateList,
   onOpenAllLists,
+  onSearchAllSaved,
 }: {
   onOpenList: (portfolioId: string) => void;
   onCreateList: () => void;
   onOpenAllLists: () => void;
+  onSearchAllSaved: () => void;
 }) {
   const { spacing } = useHungryTheme();
   const { width } = useWindowDimensions();
@@ -882,6 +885,7 @@ function SavedListsSection({
           them from any dish page.
         </AppText>
       ) : null}
+      <Button label="Search all saved" variant="secondary" onPress={onSearchAllSaved} />
       <Button label="All lists" variant="secondary" onPress={onOpenAllLists} />
     </View>
   );

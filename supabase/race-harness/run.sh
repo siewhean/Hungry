@@ -72,6 +72,16 @@ PGOPTIONS="-c check_function_bodies=off" "${PSQL[@]}" -d after -v ON_ERROR_STOP=
 PGOPTIONS="-c check_function_bodies=off" "${PSQL[@]}" -d after -v ON_ERROR_STOP=1 \
   -f "$HERE/../migrations/$MIGRATION" >/dev/null || { echo "migration is not idempotent" >&2; exit 2; }
 
+# Pinned favourites (20261028100000): only the pin function is loaded, against stand-in tables.
+"${PSQL[@]}" -d after -v ON_ERROR_STOP=1 <<'SQL' >/dev/null || exit 2
+create table user_favourite_dishes (user_id uuid, dish_id text, primary key (user_id, dish_id));
+create table profile_favourite_dishes (user_id uuid not null, dish_id text not null, position smallint not null, primary key (user_id, position), unique (user_id, dish_id));
+SQL
+awk '/^create or replace function app_private.set_profile_favourite_dishes/{p=1} p{print} p&&/^\$\$;/{exit}' \
+  "$HERE/../migrations/20261028100000_profile_stats_taste_match_favourites.sql" \
+  | PGOPTIONS="-c check_function_bodies=off" "${PSQL[@]}" -v ON_ERROR_STOP=1 -d after >/dev/null \
+  || { echo "could not load set_profile_favourite_dishes" >&2; exit 2; }
+
 U1=00000000-0000-0000-0000-000000000001
 U2=00000000-0000-0000-0000-000000000002
 U3=00000000-0000-0000-0000-000000000003
@@ -173,6 +183,10 @@ run_scenarios() {
     race T11 $U1 $U1 "select public.bump_dish_draft_confidence('$DRAFT', 0.8);" "select public.bump_dish_draft_confidence('$DRAFT', 0.9);"
     record T11_bumps "$(val 'select confidence_bumps from dishes_draft')"
     record T11_confidence "$(val 'select extraction_confidence from dishes_draft')"
+
+    val "truncate user_favourite_dishes, profile_favourite_dishes; insert into user_favourite_dishes values ('$U1','d1'),('$U1','d2');" >/dev/null
+    race T12 $U1 $U1 "select app_private.set_profile_favourite_dishes(array['d1','d2']);" "select app_private.set_profile_favourite_dishes(array['d2','d1']);"
+    record T12_pins "$(val "select string_agg(dish_id, ',' order by position) from profile_favourite_dishes")"
   fi
 }
 
@@ -200,7 +214,9 @@ T10_errors=0
 T10_receipts=2
 T11_errors=0
 T11_bumps=2
-T11_confidence=0.9"
+T11_confidence=0.9
+T12_errors=0
+T12_pins=d2,d1"
 
 DESC="T1 two saves with the same expected version (second must be rejected)
 T2 two likes at once (like_count)
@@ -212,7 +228,8 @@ T7 two reviews at once (review_count, rating_avg)
 T8 double tap on delete account
 T9 two list items added at once (positions)
 T10 mark_conversation_read from two tabs
-T11 two OCR confidence bumps at once"
+T11 two OCR confidence bumps at once
+T12 two pinned-favourites saves at once (primary key / unique violation, final list)"
 
 if [ -n "${RACE_SHOW_BEFORE:-}" ]; then
   run_scenarios before "$WORK/before.txt"
@@ -236,7 +253,7 @@ if [ -n "$missing" ]; then echo "  FAIL  no result recorded for: $missing"; fail
 "${PSQL[@]}" -d postgres -c "create database down template after" >/dev/null
 PGOPTIONS="-c check_function_bodies=off" "${PSQL[@]}" -d down -v ON_ERROR_STOP=1 \
   -f "$HERE/../rollbacks/${MIGRATION%.sql}.down.sql" >/dev/null || { echo "  FAIL  down migration failed to apply"; fail=1; }
-bodies() { "${PSQL[@]}" -d "$1" -c "select n.nspname || '.' || p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')=' || md5(p.prosrc) from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname in ('public','app_private') and p.proname not in ('mark_conversation_read','bump_dish_draft_confidence','enforce_popular_visitor_pin_limit') order by 1"; }
+bodies() { "${PSQL[@]}" -d "$1" -c "select n.nspname || '.' || p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')=' || md5(p.prosrc) from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname in ('public','app_private') and p.proname not in ('mark_conversation_read','bump_dish_draft_confidence','enforce_popular_visitor_pin_limit','set_profile_favourite_dishes') order by 1"; }
 if diff <(bodies before) <(bodies down) >/dev/null; then
   echo "  ok    down migration restores every function body"
 else

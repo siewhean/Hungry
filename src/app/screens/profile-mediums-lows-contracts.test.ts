@@ -56,7 +56,7 @@ test("profile home shows real reviews, loading skeletons, retry, and a confirmed
   // Same confirmation copy as Settings > Sign out.
   assert.match(
     source,
-    /Alert\.alert\("Sign out", "You will be signed out from Hungry on this device\."/,
+    /confirmAction\(\{\s*title: "Sign out",\s*message: "You will be signed out from Hungry on this device\."/,
   );
   assert.match(source, /accessibilityViewIsModal/);
   assert.doesNotMatch(source, /Guest User/);
@@ -64,7 +64,12 @@ test("profile home shows real reviews, loading skeletons, retry, and a confirmed
     source,
     /label="Edit"[\s\S]*onPress=\{\(\) => navigation\.navigate\("EditProfile"\)\}/,
   );
-  assert.match(source, /accessibilityRole="image"[\s\S]*accessibilityLabel=\{`Taste vector:/);
+  // The radar (and its accessible description) is the shared TasteRadar component.
+  assert.match(source, /<TasteRadar vector=\{profile\.tasteVector\}/);
+  assert.match(
+    read("src/components/profile/TasteRadar.tsx"),
+    /accessibilityRole="image"[\s\S]*accessibilityLabel=\{describeTasteVector\(vector\)\}/,
+  );
   assert.match(source, /tastePersonaSummary/);
 });
 

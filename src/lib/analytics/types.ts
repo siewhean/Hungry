@@ -125,6 +125,7 @@ export type AnalyticsEventName =
   | "profile_updated"
   | "profile_review_nudge_tapped"
   | "profile_shared"
+  | "profile_item_opened"
   | "taste_fingerprint_shared"
   | "follow_request_approved"
   | "follow_request_declined"

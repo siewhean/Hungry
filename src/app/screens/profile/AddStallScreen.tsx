@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Alert, PanResponder, Platform, Pressable, ScrollView, View } from "react-native";
+import { PanResponder, Platform, Pressable, ScrollView, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
@@ -9,6 +9,7 @@ import DateTimePicker, { type DateTimePickerEvent } from "@react-native-communit
 import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { reportError } from "@/lib/monitoring/reportError";
+import { confirmAction } from "@/lib/runtime/confirmAction";
 import {
   AccessibleImage,
   AppText,
@@ -347,14 +348,13 @@ export function AddStallScreen({ navigation }: Props) {
     return navigation.addListener("beforeRemove", (event) => {
       if (hasSubmittedRef.current) return;
       event.preventDefault();
-      Alert.alert("Discard this stall?", "The details you entered will be lost.", [
-        { text: "Keep editing", style: "cancel" },
-        {
-          text: "Discard",
-          style: "destructive",
-          onPress: () => navigation.dispatch(event.data.action),
-        },
-      ]);
+      confirmAction({
+        title: "Discard this stall?",
+        message: "The details you entered will be lost.",
+        confirmLabel: "Discard",
+        destructive: true,
+        onConfirm: () => navigation.dispatch(event.data.action),
+      });
     });
   }, [hasUnsavedChanges, navigation]);
 

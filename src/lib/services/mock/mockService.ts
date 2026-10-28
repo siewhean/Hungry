@@ -111,6 +111,7 @@ import type {
   PassportEventType,
   PassportProgressEvent,
   PassportStamp,
+  ReviewStats,
   SubmitUserStallSubmissionInput,
   UserStallSubmission,
   PushPreferences,
@@ -326,6 +327,7 @@ function createMockUserStallSubmission(input: SubmitUserStallSubmissionInput): U
 // ─── Mutable in-memory state (mirrors what Supabase would persist) ─────────────
 
 let _profile: UserProfile = { ...guestProfile };
+let _mockPinnedDishIds: string[] = [];
 const _submittedClientReviewIds = new Set<string>();
 /** Reviews the mock viewer marked helpful. */
 const _helpfulReviewIds = new Set<string>();
@@ -1967,7 +1969,12 @@ export const hungryService: HungryService = {
         ? _profile.reviewedDishIds
             .map((id) => dishes.find((d) => d.id === id))
             .filter(Boolean)
-            .flatMap((d) => (d?.reviews ?? []).slice(0, 1))
+            .flatMap((d) =>
+              (d?.reviews ?? []).slice(0, 1).map((review) => ({
+                ...review,
+                dishId: review.dishId ?? d?.id,
+              })),
+            )
             .filter((review) => !isMockReviewHiddenForViewer(review))
         : dishes
             .flatMap((dish) => dish.reviews ?? [])
@@ -1981,6 +1988,24 @@ export const hungryService: HungryService = {
           .sort(compareReviewsNewestFirst)
           .slice(offset, offset + Math.max(1, Math.floor(page.limit))),
       );
+    },
+
+    async getMyReviewStats() {
+      const own = _profile.reviewedDishIds
+        .map((id) => dishes.find((d) => d.id === id))
+        .flatMap((d) => (d?.reviews ?? []).slice(0, 1))
+        .filter((review) => !isMockReviewHiddenForViewer(review));
+      const ratingCounts: ReviewStats["ratingCounts"] = [0, 0, 0, 0, 0];
+      for (const review of own) {
+        const star = Math.min(5, Math.max(1, Math.round(review.rating)));
+        ratingCounts[star - 1] += 1;
+      }
+      const total = own.reduce((sum, review) => sum + review.rating, 0);
+      return resolve({
+        reviewCount: own.length,
+        averageRating: own.length > 0 ? Math.round((total / own.length) * 10) / 10 : null,
+        ratingCounts,
+      });
     },
 
     async submitReview(draft: SubmitReviewInput) {
@@ -2088,6 +2113,20 @@ export const hungryService: HungryService = {
       }
       const person = findMockPerson(userId);
       return resolve({ id: userId, ...person });
+    },
+
+    async getTasteMatch(_userId: string) {
+      // Mock accounts are demo people without taste fingerprints, so there is no score to show.
+      return resolve(null);
+    },
+
+    async listFavouriteDishIds(userId: string) {
+      return resolve(userId === _profile.id ? [..._mockPinnedDishIds] : []);
+    },
+
+    async setFavouriteDishes(dishIds: string[]) {
+      _mockPinnedDishIds = [...new Set(dishIds)].slice(0, 4);
+      return resolve([..._mockPinnedDishIds]);
     },
 
     async updateMaxDishBudget(maxDishBudget: number | null) {

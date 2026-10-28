@@ -4,6 +4,7 @@ import { hungryPersistStorage } from "./persistStorage";
 import { getHungryService, getServiceProvider } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { reportError } from "@/lib/monitoring/reportError";
 
 /** Shows a toast without importing the UI store at module load. */
 function showSocialToast(message: string) {
@@ -461,7 +462,7 @@ export const useSocialStore = create<SocialState>()(
           void service.social
             .cancelFollowRequest(userId)
             .catch((error) => {
-              console.error("Failed to cancel follow request", error);
+              reportError(error, { store: "social", action: "cancel_follow_request" });
               set((prev) => ({
                 requestedUserIds: { ...prev.requestedUserIds, [userId]: true },
               }));
@@ -515,7 +516,7 @@ export const useSocialStore = create<SocialState>()(
             });
           })
           .catch((error) => {
-            console.error("Failed to sync follow state", error);
+            reportError(error, { store: "social", action: "sync_follow_state" });
             set((prev) => ({
               followedUserIds: { ...prev.followedUserIds, [userId]: isFollowing },
               ...(optimisticRequest

@@ -168,7 +168,7 @@ test("follow button shows Requested and tapping it cancels the request", () => {
   assert.match(profile, /setFollowRequested\(resolvedAuthorId, serverFollowStatus === "pending"\)/);
   assert.match(profile, /\? "Requested"/);
   assert.match(profile, /Cancels your follow request/);
-  assert.match(connections, /isRequested \? "Requested"/);
+  assert.match(connections, /isRequested\s*\? "Requested"/);
   assert.match(home, /isFollowRequested \? "Requested"/);
 });
 

@@ -122,11 +122,17 @@ test("M3: authors are told when their review is hidden or removed, with a way to
   assert.match(decodeURIComponent(mailto), /Review reference: r-1/);
   // The Reviews grid has no text; its tiles open ReviewDetail, which shows the notice.
   for (const file of [
-    "src/app/screens/profile/ReviewHistoryScreen.tsx",
-    "src/app/screens/profile/ProfileHomeScreen.tsx",
+    "src/components/profile/ProfileReviewCard.tsx",
     "src/app/screens/review/ReviewDetailScreen.tsx",
   ]) {
     assert.match(read(file), /<ReviewModerationNotice/, file);
+  }
+  // Review history and Profile both draw their cards with the shared card.
+  for (const file of [
+    "src/app/screens/profile/ReviewHistoryScreen.tsx",
+    "src/app/screens/profile/ProfileHomeScreen.tsx",
+  ]) {
+    assert.match(read(file), /<ProfileReviewCard/, file);
   }
   const service = read("src/lib/services/supabase/supabaseService.ts");
   assert.match(service, /get_my_review_moderation_states/);
