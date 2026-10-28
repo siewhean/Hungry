@@ -11,6 +11,7 @@ export type AnalyticsEventName =
   | "sign_out"
   | "onboarding_completed"
   | "onboarding_step_viewed"
+  | "onboarding_screen_viewed"
   | "onboarding_step_skipped"
   | "onboarding_question_viewed"
   | "onboarding_area_picker_viewed"

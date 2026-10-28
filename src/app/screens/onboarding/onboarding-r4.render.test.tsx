@@ -41,6 +41,11 @@ import { WelcomeScreen } from "./WelcomeScreen";
 import { TasteProfileResultScreen } from "./TasteProfileResultScreen";
 import { TasteQuizScreen } from "./TasteQuizScreen";
 import type { DishDetail } from "@/types/domain";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
+
+// These tests cover today's flow (retired when the slider flow ships); the slider flow has its own
+// tests. Dev builds turn the slider flow on, so it is switched off here.
+(FEATURE_FLAGS as unknown as Record<string, boolean>).sliderOnboardingEnabled = false;
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 

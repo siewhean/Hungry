@@ -29,17 +29,14 @@ test("it opens on the spice question with Continue off until the person answers"
   await view.unmount();
 });
 
-test("skipping all six questions goes to the dietary step with no taste answers", async () => {
+test("skipping all six questions goes to the palate reveal with no taste answers", async () => {
   const view = await show();
   for (let question = 0; question < 6; question += 1) {
     await view.press(view.findByText("Skip for now"));
   }
   const last = view.navigation.calls.at(-1);
   assert.equal(last?.method, "navigate");
-  assert.deepEqual(last?.args, [
-    "DietaryPreferences",
-    { mode: "onboarding", initialPhase: "dietary" },
-  ]);
+  assert.deepEqual(last?.args, ["OnboardingPalateReveal"]);
   assert.deepEqual(useOnboardingDraftStore.getState().quiz?.answeredKeys, []);
   await view.unmount();
 });
@@ -64,7 +61,7 @@ test("the skip-the-rest link appears from the fourth question and ends the quest
   }
   assert.match(view.text(), /How much sourness do you enjoy\?/);
   await view.press(view.findByText("Skip the rest, use my defaults"));
-  assert.equal(view.navigation.calls.at(-1)?.args[0], "DietaryPreferences");
+  assert.equal(view.navigation.calls.at(-1)?.args[0], "OnboardingPalateReveal");
   await view.unmount();
 });
 

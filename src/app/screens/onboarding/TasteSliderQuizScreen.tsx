@@ -1,14 +1,14 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Pressable, ScrollView, View, useWindowDimensions } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { ArrowLeft } from "lucide-react-native";
+import { View, useWindowDimensions } from "react-native";
 
-import { FlowProgressBar } from "@/components/onboarding/FlowProgressBar";
 import { FoodSwapStage } from "@/components/onboarding/FoodSwapStage";
 import { TasteSlider } from "@/components/onboarding/TasteSlider";
-import { TypingText } from "@/components/onboarding/TypingText";
+import { MascotLine } from "@/components/onboarding/MascotLine";
+import { OnboardingFrame } from "@/components/onboarding/OnboardingFrame";
 import { AppText, Button } from "@/components/ui";
+import { nextOnboardingRoute } from "@/features/onboarding/flowRoutes";
+import { poseForScreen } from "@/features/onboarding/mascot";
 import { tasteFlowScreenAt } from "@/features/onboarding/onboardingFlow";
 import {
   answerTaste,
@@ -32,15 +32,11 @@ import {
 } from "@/features/onboarding/tasteSliderStops";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { tapHaptic } from "@/lib/haptics";
 import { getFreshOnboardingDraft, useOnboardingDraftStore } from "@/store/useOnboardingDraftStore";
 import { useHungryTheme } from "@/theme";
 import { trackOnboardingStepSkipped, trackOnboardingStepViewed } from "./OnboardingProgress";
 import type { OnboardingStackParamList } from "./OnboardingStack";
-import {
-  ONBOARDING_ACTIONS_BOTTOM_PADDING,
-  ONBOARDING_ACTIONS_GAP,
-  ONBOARDING_ACTIONS_HORIZONTAL_PADDING,
-} from "./layoutConstants";
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, "TasteQuiz">;
 
@@ -52,7 +48,7 @@ const LAST_INDEX = TASTE_SLIDER_ORDER.length - 1;
  * goes to the dietary step, which records the quiz.
  */
 export function TasteSliderQuizScreen({ navigation, route }: Props) {
-  const { palette, spacing } = useHungryTheme();
+  const { spacing } = useHungryTheme();
   const { width } = useWindowDimensions();
   const reduceMotion = useReduceMotion();
   const flowMode = route.params?.mode ?? "onboarding";
@@ -122,7 +118,7 @@ export function TasteSliderQuizScreen({ navigation, route }: Props) {
       answeredKeys: [...final.answered],
       step: index,
     });
-    navigation.navigate("DietaryPreferences", { mode: flowMode, initialPhase: "dietary" });
+    navigation.navigate(nextOnboardingRoute("TasteQuiz", true));
   };
 
   const advance = (next: TasteDraft) => {
@@ -136,109 +132,78 @@ export function TasteSliderQuizScreen({ navigation, route }: Props) {
   const lastCaption = axis.stops[axis.stops.length - 1]!.caption;
 
   return (
-    <SafeAreaView
-      style={{ flex: 1, backgroundColor: palette.bg }}
-      edges={["top", "left", "right", "bottom"]}
-    >
-      <View
-        style={{
-          alignItems: "center",
-          flexDirection: "row",
-          gap: spacing[2],
-          minHeight: 64,
-          paddingHorizontal: spacing[3],
-          paddingVertical: spacing[3],
-        }}
-      >
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Back"
-          onPress={() => (index > 0 ? goToQuestion(index - 1, draft) : navigation.goBack())}
-          style={{
-            alignItems: "center",
-            height: 44,
-            justifyContent: "center",
-            width: 44,
-          }}
-        >
-          <ArrowLeft color={palette.text} size={22} />
-        </Pressable>
-        <View style={{ flex: 1 }}>
-          <FlowProgressBar screen={tasteFlowScreenAt(index)} />
-        </View>
-      </View>
-
-      <ScrollView
-        contentContainerStyle={{ gap: spacing[3], paddingHorizontal: spacing[3] }}
-        keyboardShouldPersistTaps="handled"
-      >
-        <TypingText lineId={`taste-${key}`} text={axis.question} />
-
-        <FoodSwapStage
-          stops={axis.stops}
-          stopIndex={stopIndex}
-          reduceMotion={reduceMotion}
-          size={stageSize}
-        />
-
-        <View style={{ gap: spacing[1] }}>
-          <TasteSlider
-            value={draft.values[key]}
-            unset={!answered}
-            onMove={setLiveValue}
-            onSettle={(value) => setDraft((current) => answerTaste(current, key, value))}
-            accessibilityLabel={axis.question}
-            accessibilityValueText={
-              answered
-                ? describeStop(key, stopIndex)
-                : "Not set. Swipe up or down to choose, or skip for now."
-            }
-          />
-          <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-            <AppText variant="micro" tone="secondary">
-              {firstCaption}
-            </AppText>
-            <AppText variant="micro" tone="secondary">
-              {lastCaption}
-            </AppText>
-          </View>
-        </View>
-
-        <AppText variant="bodySmall" tone="secondary" style={{ textAlign: "center" }}>
-          {answered ? liveTasteLine(key, liveValue) : "Slide to choose, or skip for now."}
-        </AppText>
-      </ScrollView>
-
-      <View
-        style={{
-          gap: ONBOARDING_ACTIONS_GAP,
-          paddingBottom: ONBOARDING_ACTIONS_BOTTOM_PADDING,
-          paddingHorizontal: ONBOARDING_ACTIONS_HORIZONTAL_PADDING,
-          paddingTop: spacing[3],
-        }}
-      >
-        <Button
-          label={index >= LAST_INDEX ? "Done" : "Continue"}
-          disabled={!answered}
-          onPress={() => advance(draft)}
-        />
-        <Button
-          label="Skip for now"
-          variant="ghost"
-          onPress={() => advance(skipTaste(draft, key))}
-        />
-        {canSkipRest(index) ? (
+    <OnboardingFrame
+      screen={tasteFlowScreenAt(index)}
+      onBack={() => (index > 0 ? goToQuestion(index - 1, draft) : navigation.goBack())}
+      footer={
+        <>
           <Button
-            label="Skip the rest, use my defaults"
-            variant="ghost"
+            label={index >= LAST_INDEX ? "Done" : "Continue"}
+            disabled={!answered}
             onPress={() => {
-              const next = skipRemainingTastes(draft, index);
-              setDraft(next);
-              finish(next);
+              tapHaptic();
+              advance(draft);
             }}
           />
-        ) : null}
+          <Button
+            label="Skip for now"
+            variant="ghost"
+            onPress={() => advance(skipTaste(draft, key))}
+          />
+          {canSkipRest(index) ? (
+            <Button
+              label="Skip the rest, use my defaults"
+              variant="ghost"
+              onPress={() => {
+                const next = skipRemainingTastes(draft, index);
+                setDraft(next);
+                finish(next);
+              }}
+            />
+          ) : null}
+        </>
+      }
+    >
+      <MascotLine
+        small
+        pose={poseForScreen(tasteFlowScreenAt(index))}
+        lineId={`taste-${key}`}
+        text={axis.question}
+      />
+
+      <FoodSwapStage
+        stops={axis.stops}
+        stopIndex={stopIndex}
+        reduceMotion={reduceMotion}
+        size={stageSize}
+      />
+
+      <View style={{ gap: spacing[1] }}>
+        <TasteSlider
+          value={draft.values[key]}
+          unset={!answered}
+          onMove={setLiveValue}
+          onSettle={(value) => setDraft((current) => answerTaste(current, key, value))}
+          accessibilityLabel={axis.question}
+          accessibilityValueText={
+            answered
+              ? describeStop(key, stopIndex)
+              : "Not set. Swipe up or down to choose, or skip for now."
+          }
+        />
+        <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+          <AppText variant="micro" tone="secondary">
+            {firstCaption}
+          </AppText>
+          <AppText variant="micro" tone="secondary">
+            {lastCaption}
+          </AppText>
+        </View>
       </View>
-    </SafeAreaView>
+
+      <AppText variant="bodySmall" tone="secondary" style={{ textAlign: "center" }}>
+        {answered ? liveTasteLine(key, liveValue) : "Slide to choose, or skip for now."}
+      </AppText>
+    </OnboardingFrame>
   );
 }

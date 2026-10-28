@@ -19,6 +19,8 @@ interface DietaryStepProps {
   onClear: () => void;
   budget: number | undefined;
   onBudgetChange: (value: number | undefined) => void;
+  /** false: the slider onboarding asks the budget on its own screen after this one. */
+  showBudget?: boolean;
 }
 
 /**
@@ -32,6 +34,7 @@ export function DietaryStep({
   onClear,
   budget,
   onBudgetChange,
+  showBudget = true,
 }: DietaryStepProps) {
   const { palette, spacing } = useHungryTheme();
   const [expanded, setExpanded] = useState(false);
@@ -95,20 +98,24 @@ export function DietaryStep({
       {searching && visible.length === 0 ? (
         <EmptyState title="No match" body="Try another word, like halal, vegetarian or nuts." />
       ) : null}
-      <AppText variant="h3" style={{ marginTop: spacing[1] }}>
-        Usual budget per dish
-      </AppText>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-        {BUDGET_OPTIONS.map((option) => (
-          <Chip
-            key={option.label}
-            label={option.label}
-            accessibilityLabel={`Budget ${option.label}`}
-            selected={budget === option.value}
-            onPress={() => onBudgetChange(option.value)}
-          />
-        ))}
-      </View>
+      {showBudget ? (
+        <>
+          <AppText variant="h3" style={{ marginTop: spacing[1] }}>
+            Usual budget per dish
+          </AppText>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+            {BUDGET_OPTIONS.map((option) => (
+              <Chip
+                key={option.label}
+                label={option.label}
+                accessibilityLabel={`Budget ${option.label}`}
+                selected={budget === option.value}
+                onPress={() => onBudgetChange(option.value)}
+              />
+            ))}
+          </View>
+        </>
+      ) : null}
     </View>
   );
 }

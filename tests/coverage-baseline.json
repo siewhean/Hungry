@@ -1,8 +1,8 @@
 {
   "global": {
-    "lines": 83.7,
-    "branches": 85.2,
-    "functions": 79.7
+    "lines": 83.9,
+    "branches": 85.5,
+    "functions": 80.2
   },
   "files": {
     "src/app/navigation/getRootNavigation.ts": 100,
@@ -86,8 +86,17 @@
     "src/features/merchant/promotionValidation.ts": 96.9,
     "src/features/merchant/verificationStateMachine.ts": 100,
     "src/features/merchantClaim/submitClaimFromStall.ts": 91.4,
+    "src/features/onboarding/dishFit.ts": 100,
+    "src/features/onboarding/flowRoutes.ts": 97.7,
+    "src/features/onboarding/flushOnboardingAnswers.ts": 93.2,
     "src/features/onboarding/foodArc.ts": 95.8,
+    "src/features/onboarding/loadingTips.ts": 100,
+    "src/features/onboarding/mascot.ts": 100,
+    "src/features/onboarding/mealTimes.ts": 100,
+    "src/features/onboarding/onboardingDeck.ts": 100,
     "src/features/onboarding/onboardingFlow.ts": 98.2,
+    "src/features/onboarding/palateInsight.ts": 98.7,
+    "src/features/onboarding/priceStops.ts": 96.8,
     "src/features/onboarding/sliderGeometry.ts": 100,
     "src/features/onboarding/tasteSliderAnswers.ts": 98.1,
     "src/features/onboarding/tasteSliderStops.ts": 96.8,
@@ -197,7 +206,8 @@
     "src/store/useLocationStore.ts": 79.7,
     "src/store/useMerchantStore.ts": 89.1,
     "src/store/useMissionStore.ts": 99.4,
-    "src/store/useOnboardingDraftStore.ts": 97.6,
+    "src/store/useOnboardingAnswersStore.ts": 97.7,
+    "src/store/useOnboardingDraftStore.ts": 100,
     "src/store/usePassportStore.ts": 64,
     "src/store/usePortfolioStore.ts": 78.8,
     "src/store/useProfileStore.ts": 89.3,

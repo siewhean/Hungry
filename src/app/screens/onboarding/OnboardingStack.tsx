@@ -14,6 +14,17 @@ import { MandatoryOnboardingAuthScreen } from "./MandatoryOnboardingAuthScreen";
 import { TasteQuizRoute } from "./TasteQuizRoute";
 import { TasteQuizScreen } from "./TasteQuizScreen";
 import { TasteProfileResultScreen } from "./TasteProfileResultScreen";
+import { OnboardingAreasScreen } from "./OnboardingAreasScreen";
+import { OnboardingDishGridScreen } from "./OnboardingDishGridScreen";
+import { OnboardingLoadingScreen } from "./OnboardingLoadingScreen";
+import { OnboardingMealPicksScreen } from "./OnboardingMealPicksScreen";
+import { OnboardingMealTimesScreen } from "./OnboardingMealTimesScreen";
+import { OnboardingNameScreen } from "./OnboardingNameScreen";
+import { OnboardingPalateIntroScreen } from "./OnboardingPalateIntroScreen";
+import { OnboardingPalateRevealScreen } from "./OnboardingPalateRevealScreen";
+import { OnboardingPriceScreen } from "./OnboardingPriceScreen";
+import { OnboardingResultsScreen } from "./OnboardingResultsScreen";
+import { OnboardingSwipeScreen } from "./OnboardingSwipeScreen";
 import { WelcomeScreen } from "./WelcomeScreen";
 export type { OnboardingStackParamList } from "@/app/navigation/navigationTypes";
 
@@ -52,6 +63,18 @@ export function OnboardingStack() {
       <Stack.Screen name="FoodOpenness" component={FoodOpennessScreen} />
       <Stack.Screen name="TasteProfileResult" component={TasteProfileResultScreen} />
       <Stack.Screen name="OnboardingAuth" component={MandatoryOnboardingAuthScreen} />
+      {/* The slider-flow screens (sliderOnboardingEnabled); nothing navigates here with the flag off. */}
+      <Stack.Screen name="OnboardingName" component={OnboardingNameScreen} />
+      <Stack.Screen name="OnboardingAreas" component={OnboardingAreasScreen} />
+      <Stack.Screen name="OnboardingMealTimes" component={OnboardingMealTimesScreen} />
+      <Stack.Screen name="OnboardingPalateIntro" component={OnboardingPalateIntroScreen} />
+      <Stack.Screen name="OnboardingPalateReveal" component={OnboardingPalateRevealScreen} />
+      <Stack.Screen name="OnboardingDishGrid" component={OnboardingDishGridScreen} />
+      <Stack.Screen name="OnboardingPrice" component={OnboardingPriceScreen} />
+      <Stack.Screen name="OnboardingSwipe" component={OnboardingSwipeScreen} />
+      <Stack.Screen name="OnboardingLoading" component={OnboardingLoadingScreen} />
+      <Stack.Screen name="OnboardingResults" component={OnboardingResultsScreen} />
+      <Stack.Screen name="OnboardingMealPicks" component={OnboardingMealPicksScreen} />
     </Stack.Navigator>
   );
 }

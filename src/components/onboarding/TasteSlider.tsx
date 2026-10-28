@@ -29,6 +29,8 @@ type Props = {
   accessibilityLabel: string;
   /** Spoken value, for example "7.5, Hot, Sambal stingray". */
   accessibilityValueText: string;
+  /** The text in the bubble above the thumb. Default: the number, "6.3" while dragging. */
+  bubbleLabel?: (value: number, settled: boolean) => string;
   /** Not set yet: the thumb rests at the middle and the bubble is dimmed. */
   unset?: boolean;
 };
@@ -43,6 +45,7 @@ export function TasteSlider({
   onSettle,
   accessibilityLabel,
   accessibilityValueText,
+  bubbleLabel = formatSliderValue,
   unset = false,
 }: Props) {
   const { palette, radii } = useHungryTheme();
@@ -188,7 +191,7 @@ export function TasteSlider({
           variant="micro"
           style={{ color: unset ? palette.textMuted : palette.orange, height: 18 }}
         >
-          {unset ? "–" : formatSliderValue(shown, !dragging)}
+          {unset ? "–" : bubbleLabel(shown, !dragging)}
         </AppText>
         <View
           style={{

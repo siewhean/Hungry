@@ -6,6 +6,7 @@ import { ArrowLeft, Compass, Heart, Shuffle } from "lucide-react-native";
 
 import { AppText, Button } from "@/components/ui";
 import { FOOD_OPENNESS_OPTIONS } from "@/constants/taste";
+import { nextOnboardingRoute } from "@/features/onboarding/flowRoutes";
 import { DEFAULT_FOOD_OPENNESS, resolveFoodOpenness } from "@/lib/ai/exploration";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -53,7 +54,7 @@ export function FoodOpennessScreen({ navigation, route }: Props) {
       navigation.goBack();
       return;
     }
-    navigation.navigate("TasteProfileResult");
+    navigation.navigate(nextOnboardingRoute("FoodOpenness"));
   };
 
   return (

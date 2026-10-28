@@ -9,6 +9,7 @@ import { AppText, Button } from "@/components/ui";
 import { HUNGRY_LOGO_ICON, HUNGRY_LOGO_STANDARD_SIZE } from "@/constants/brandAssets";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { clearPendingDishSave } from "@/features/auth/pendingDishSave";
+import { nextOnboardingRoute } from "@/features/onboarding/flowRoutes";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
@@ -63,7 +64,7 @@ export function WelcomeScreen({ navigation }: Props) {
   const handleStart = () => {
     setReturningAccountIntent(false);
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    navigation.navigate("LocationPermission");
+    navigation.navigate(nextOnboardingRoute("OnboardingWelcome"));
   };
 
   const handleExistingAccountSignIn = () => {

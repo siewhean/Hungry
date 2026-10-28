@@ -1,4 +1,5 @@
 import { NEUTRAL_TASTE_PROFILE, NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
+import { flushOnboardingAnswers } from "@/features/onboarding/flushOnboardingAnswers";
 import { flushPendingQuizResponse } from "@/features/profile/pendingQuizResponse";
 import { flushPendingDishSave } from "./pendingDishSave";
 import { mergeDietaryPreferences, recalibrateTasteProfile } from "@/lib/ai/tasteEngine";
@@ -248,6 +249,8 @@ export async function applySignedInProfile(
 
   // Quiz answers saved on the device before sign-in are recorded now (with quiz_version).
   void flushPendingQuizResponse().catch(() => undefined);
+  // The dishes liked in onboarding and the meal-picks opt-in are sent now that there is an account.
+  void flushOnboardingAnswers().catch(() => undefined);
 
   if (getServiceProvider().mode === "mock") {
     const profile = mergeServerProfileWithProvisional(sessionProfile, provisional);

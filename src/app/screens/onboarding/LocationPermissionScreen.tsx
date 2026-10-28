@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 
 import { AppText, Button, Card } from "@/components/ui";
 import { AccessibleImage } from "@/components/ui/AccessibleImage";
+import { nextOnboardingRoute } from "@/features/onboarding/flowRoutes";
 import { useExperimentVariant } from "@/lib/experiments/experiments";
 import { reportError } from "@/lib/monitoring/reportError";
 import { useLocationStore } from "@/store/useLocationStore";
@@ -73,7 +74,7 @@ export function LocationPermissionScreen({ navigation }: Props) {
 
   // Step 2 of onboarding; the optional taste quiz comes next.
   const next = () => {
-    navigation.navigate("TasteQuiz");
+    navigation.navigate(nextOnboardingRoute("LocationPermission"));
   };
 
   const pickAreaInstead = (message: string) => {

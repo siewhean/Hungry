@@ -4,12 +4,18 @@
 import assert from "node:assert/strict";
 import { createElement } from "react";
 import test, { afterEach, beforeEach } from "node:test";
+import { Text } from "react-native";
 
 import { FlowProgressBar } from "@/components/onboarding/FlowProgressBar";
 import { FoodSwapStage } from "@/components/onboarding/FoodSwapStage";
+import { Mascot } from "@/components/onboarding/Mascot";
+import { MascotLine } from "@/components/onboarding/MascotLine";
+import { OnboardingFrame } from "@/components/onboarding/OnboardingFrame";
 import { TasteSlider } from "@/components/onboarding/TasteSlider";
 import { TypingText } from "@/components/onboarding/TypingText";
 import { resetTypedLines } from "@/features/onboarding/typedLines";
+import { useOnboardingScreenViewed } from "@/features/onboarding/useOnboardingScreenViewed";
+import { clearTrackedAnalyticsEvents, getTrackedAnalyticsEvents } from "@/lib/analytics";
 import { TASTE_SLIDER_AXES } from "@/features/onboarding/tasteSliderStops";
 import { useUIStore } from "@/store/useUIStore";
 import { cleanup, render } from "@/test/render";
@@ -116,5 +122,47 @@ test("FoodSwapStage keeps the leaving dish on screen while the swap animates", a
   assert.match(view.text(), /Mala xiang guo/);
   await wait(500);
   assert.match(view.text(), /Mala xiang guo/);
+  await view.unmount();
+});
+
+test("Mascot draws the placeholder bowl while there is no pose art, and MascotLine pairs it with its line", async () => {
+  const mascot = await render(createElement(Mascot, { pose: "wave", size: 72 }));
+  assert.ok(mascot.container.firstElementChild, "the placeholder bowl is drawn");
+  await mascot.unmount();
+
+  const line = await render(
+    createElement(MascotLine, { pose: "clipboard", lineId: "mascot-line-a", text: "Hello there" }),
+  );
+  assert.ok(line.findByLabel("Hello there"));
+  await line.unmount();
+});
+
+test("OnboardingFrame shows the progress bar and content, and Back and the footer work", async () => {
+  let backs = 0;
+  const view = await render(
+    <OnboardingFrame screen="areas" onBack={() => (backs += 1)} footer={<Text>Footer</Text>}>
+      <Text>Body</Text>
+    </OnboardingFrame>,
+  );
+  assert.ok(view.findByLabel("Screen 4 of 22"));
+  assert.match(view.text(), /Body/);
+  assert.match(view.text(), /Footer/);
+  await view.press(view.findByLabel("Back"));
+  assert.equal(backs, 1);
+  await view.unmount();
+});
+
+test("useOnboardingScreenViewed reports the numbered screen once when it mounts", async () => {
+  clearTrackedAnalyticsEvents();
+  function Probe() {
+    useOnboardingScreenViewed("loading");
+    return createElement(Text, null, "probe");
+  }
+  const view = await render(createElement(Probe));
+  const viewed = getTrackedAnalyticsEvents().filter(
+    (record) => record.event === "onboarding_screen_viewed",
+  );
+  assert.equal(viewed.length, 1);
+  assert.equal(viewed[0]?.properties?.screen, "loading");
   await view.unmount();
 });
