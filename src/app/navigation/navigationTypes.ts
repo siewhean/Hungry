@@ -41,7 +41,8 @@ export type AuthStackParamList = {
         linkError?: "expired" | "invalid";
       }
     | undefined;
-  ResetPasswordSuccess: undefined;
+  /** otherDevicesSignedOut: the reset also ended the sessions on other devices. */
+  ResetPasswordSuccess: { otherDevicesSignedOut?: boolean } | undefined;
 };
 
 export type OnboardingStackParamList = {

@@ -14,10 +14,9 @@ test("profile home contract: quick access lives behind the header menu", () => {
 
   assert.match(source, /headerRight=\{/);
   assert.match(source, /<Menu color=\{palette\.text\} size=\{22\}/);
-  assert.match(
-    source,
-    /accessibilityLabel=\{menuOpen \? "Close quick access" : "Open quick access"\}/,
-  );
+  assert.match(source, /menuOpen\s*\? "Close quick access"/);
+  assert.match(source, /`Open quick access, \$\{followRequestLabel\}`/);
+  assert.match(source, /: "Open quick access"/);
   assert.match(source, /if \(!FEATURE_FLAGS\.directMessagesEnabled\)/);
   assert.match(source, /recipients=\{directMessagesEnabled \? shareRecipients : \[\]\}/);
   assert.match(source, /toChatShareRecipient/);
@@ -35,21 +34,23 @@ test("profile home contract: profile stats use dynamic profile and social store 
   // Follower and following counts come from the server and open the lists (R3 PROF-2: the
   // lists hold Remove follower and Find people). No Stalls tile (visited stalls are on Achievements).
   assert.match(source, /getFollowCounts\(profile\.id\)/);
-  assert.match(source, /label="Followers"[\s\S]*navigation\.navigate\("Followers"\)/);
-  assert.match(source, /label="Following"[\s\S]*navigation\.navigate\("Following"\)/);
+  assert.match(source, /key: "followers",[\s\S]*?navigation\.navigate\("Followers"\)/);
+  assert.match(source, /key: "following",[\s\S]*?navigation\.navigate\("Following"\)/);
   assert.doesNotMatch(source, /mergeFollowerNames|localFollowerCount|localFollowingCount/);
   // Reviews count real reviews from the server.
   assert.match(source, /ownReviews === null\s*\? null/);
   assert.doesNotMatch(source, /label="Stalls"/);
-  assert.match(source, /label="Reviews"[\s\S]*<PencilLine size=\{14\}/);
-  assert.match(source, /label="Saved dishes"[\s\S]*<Bookmark size=\{14\}/);
+  // One flat stat row: Saved, Reviews, Followers, Following (no per-stat icons).
+  assert.match(source, /<ProfileStatRow stats=\{stats\} testID="profile-follow-counts" \/>/);
+  assert.match(source, /key: "reviews",[\s\S]*?onPress: handleReviewsCardPress/);
+  assert.match(source, /key: "saved",[\s\S]*?navigation\.navigate\("Favourites"\)/);
   assert.match(source, /<AppText variant="h1" style=\{\{ color: palette\.orange \}\}>/);
   assert.match(
     source,
     /<AppText variant="h1" numberOfLines=\{2\} style=\{\{ color: palette\.text \}\}>/,
   );
   assert.match(
-    source,
+    read("src/components/profile/ProfileStatRow.tsx"),
     /value === null \? \(\s*<Skeleton[\s\S]*?<AppText variant="h2" style=\{\{ color: palette\.text \}\}>\s*\{value\}\s*<\/AppText>/,
   );
   assert.match(source, /const headerActionSize = spacing\[8\] \+ spacing\[2\.5\]/);
@@ -68,27 +69,31 @@ test("profile home contract: profile stats use dynamic profile and social store 
 test("profile home contract: Palate Fingerprint plots all six dimensions and keeps saved dishes linked", () => {
   const source = read("src/app/screens/profile/ProfileHomeScreen.tsx");
 
+  const radar = read("src/components/profile/TasteRadar.tsx");
+
   assert.match(source, /<TasteRadar vector=\{profile\.tasteVector\}/);
-  assert.match(source, /TASTE_DIMENSIONS\.map\(\(\{ key, label \}\) => \(/);
-  assert.match(source, /Math\.max\(0, Math\.min\(10, vector\[axis\]\)\)/);
-  assert.match(source, /label="Saved dishes"/);
+  assert.match(radar, /TASTE_DIMENSIONS\.map\(\(\{ key, label \}\) => \(/);
+  assert.match(radar, /Math\.max\(0, Math\.min\(10, vector\[key\]\)\)/);
+  // Saved dishes, stalls and lists live behind the one Saved stat.
+  assert.match(source, /label: "Saved"/);
   assert.doesNotMatch(source, /label="Favourites"|>Favourites</);
 });
 
 test("profile home contract: web review actions remain separate and radar SVG is accessible", () => {
   const source = read("src/app/screens/profile/ProfileHomeScreen.tsx");
-  const reviewCard = source
-    .split("ownReviews.slice(0, OWN_REVIEWS_INLINE_LIMIT).map((review) => {")[1]
-    ?.split("ownReviews.length > OWN_REVIEWS_INLINE_LIMIT")[0];
+  const card = read("src/components/profile/ProfileReviewCard.tsx");
 
-  assert.ok(reviewCard);
-  assert.match(reviewCard, /<View key=\{review\.id\}>[\s\S]*?<Card/);
+  // The shared card keeps the open-dish Pressable and the "..." menu as siblings, so a screen
+  // reader can reach both.
+  assert.match(source, /<ProfileReviewCard[\s\S]*?<OwnReviewMenuButton/);
   assert.match(
-    reviewCard,
-    /<Pressable[\s\S]*?accessibilityLabel=\{`Review of[\s\S]*?<\/Pressable>\s*\{ownReviewEditor\.enabled \? \(/,
+    card,
+    /<Pressable[\s\S]*?accessibilityLabel=\{`Review of[\s\S]*?<\/Pressable>\s*\) : \([\s\S]*?\{menu\}/,
   );
-  assert.match(reviewCard, /<OwnReviewMenuButton/);
-  assert.match(source, /accessible=\{Platform\.OS === "web" \? undefined : true\}/);
+  assert.match(
+    read("src/components/profile/TasteRadar.tsx"),
+    /accessible=\{Platform\.OS === "web" \? undefined : true\}/,
+  );
 });
 
 test("Stitch profile surfaces use account data and preserve their destinations", () => {
@@ -96,9 +101,10 @@ test("Stitch profile surfaces use account data and preserve their destinations",
   assert.doesNotMatch(source, /SINGAPORE FOODIE PASSPORT/);
   assert.doesNotMatch(source, /FollowRequestsRow/);
   assert.match(source, /`Follow requests \(\$\{followRequestCount\}\)`/);
-  assert.match(source, /label="Collections"[\s\S]*?navigation\.navigate\("Collections"\)/);
-  assert.match(source, /value=\{earnedBadgeCount\}/);
-  assert.match(source, /getEarnedStamps\(\)\.length/);
+  // Saved is the one entry point to dishes, stalls and lists; the old Collections and Badges
+  // tiles are gone, and the Passport card shows the stamps.
+  assert.doesNotMatch(source, /label="Collections"|label="Badges"/);
+  assert.match(source, /<PassportCard/);
   assert.match(source, /navigation\.navigate\("Settings"\)/);
   assert.match(source, /socialFeedEnabled \? "Recent activity" : "Your reviews"/);
   assert.match(source, /onPress=\{handleReviewsCardPress\}/);

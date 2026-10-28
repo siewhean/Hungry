@@ -129,6 +129,7 @@ import type {
   UserStallSubmissionDeliveryLink,
   UserStallSubmissionMenuItem,
   UserProfile,
+  ReviewStats,
   VerificationEvidence,
   PushPreferences,
   LifecycleSnapshot,
@@ -791,6 +792,7 @@ async function fetchUserProfile(client: SupabaseClient, userId: string, email?: 
     email: resolvedEmail ?? "",
     avatarUrl: asString(row.avatar_url),
     bio: asString(row.bio),
+    createdAt: asString(row.created_at),
     profileVisibility: accountVisibility === "private" ? "private" : "public",
     tasteVector: toTasteVector(row),
     tasteProfile: (row.taste_profile as TasteProfile | undefined) ?? undefined,
@@ -2300,6 +2302,16 @@ function isMissingActivityEventsSchemaError(error: PostgrestError | null | undef
   );
 }
 
+/** True when the backend does not have the function or table yet (migration not shipped). */
+function isMissingBackendObjectError(error: PostgrestError | null | undefined): boolean {
+  return (
+    error?.code === "42883" ||
+    error?.code === "PGRST202" ||
+    error?.code === "42P01" ||
+    error?.code === "PGRST205"
+  );
+}
+
 function isMissingMarkActivityReadRpcError(error: PostgrestError | null | undefined): boolean {
   if (!error) return false;
   const message = `${error.message ?? ""} ${error.details ?? ""} ${error.hint ?? ""}`.toLowerCase();
@@ -3655,6 +3667,21 @@ export const supabaseService: HungryService = {
       return await toAppSession(client);
     },
 
+    async signInWithEmailCode(email, options) {
+      const client = requireSupabaseClient();
+      const displayName = options?.displayName?.trim();
+      const { error } = await client.auth.signInWithOtp({
+        email: normalizeAuthEmail(email),
+        options: {
+          shouldCreateUser: true,
+          emailRedirectTo: AUTH_REDIRECTS.emailConfirm,
+          // Applied only when this creates the account; an existing account keeps its name.
+          ...(displayName ? { data: { display_name: displayName } } : {}),
+        },
+      });
+      if (error) throw error;
+    },
+
     async signIn(email, password) {
       const client = requireSupabaseClient();
       const { error } = await client.auth.signInWithPassword({
@@ -4213,11 +4240,38 @@ export const supabaseService: HungryService = {
       // Thrown so a failed read is not shown as "No reviews yet".
       if (error) throw error;
       if (!Array.isArray(data)) return [];
+      // Your own cards show the photo you posted (one batched photo read and one signing call
+      // for the page). Someone else's profile cards never show photos, so none are read.
       return attachOwnReviewModeration(
         client,
-        await mapSupabaseReviewRows(client, data as Row[], { includePhotos: false }),
+        await mapSupabaseReviewRows(client, data as Row[], {
+          includePhotos: Boolean(viewerId) && userId === viewerId,
+        }),
         viewerId,
       );
+    },
+
+    async getMyReviewStats() {
+      const client = requireSupabaseClient();
+      if (!(await getCurrentSupabaseUserId())) return undefined;
+      const { data, error } = await client.rpc("get_my_review_stats");
+      // An older backend has no such function: the screen then shows the loaded reviews only.
+      if (isMissingBackendObjectError(error)) return undefined;
+      if (error) throw error;
+      const row = (Array.isArray(data) ? data[0] : data) as Row | null | undefined;
+      if (!row) return undefined;
+      const reviewCount = asNumber(row.review_count) ?? 0;
+      return {
+        reviewCount,
+        averageRating: reviewCount > 0 ? (asNumber(row.average_rating) ?? null) : null,
+        ratingCounts: [
+          asNumber(row.rating_1) ?? 0,
+          asNumber(row.rating_2) ?? 0,
+          asNumber(row.rating_3) ?? 0,
+          asNumber(row.rating_4) ?? 0,
+          asNumber(row.rating_5) ?? 0,
+        ],
+      } satisfies ReviewStats;
     },
 
     async submitReview(draft: SubmitReviewInput) {
@@ -4485,7 +4539,7 @@ export const supabaseService: HungryService = {
       if (!client) return undefined;
       const { data, error } = await client
         .from("public_profiles")
-        .select("id,display_name,avatar_url,bio,dishes_reviewed,stalls_visited")
+        .select("id,display_name,avatar_url,bio,dishes_reviewed,stalls_visited,created_at")
         .eq("id", userId)
         .maybeSingle();
       if (error) throw error;
@@ -4517,7 +4571,40 @@ export const supabaseService: HungryService = {
         bio: asString(row.bio),
         dishesReviewed: asNumber(row.dishes_reviewed),
         stallsVisited: asNumber(row.stalls_visited),
+        createdAt: asString(row.created_at),
       };
+    },
+
+    async getTasteMatch(userId) {
+      const client = getSupabaseClient();
+      if (!client) return null;
+      const { data, error } = await client.rpc("get_taste_match", { p_user_id: userId });
+      // Nothing to show on an older backend; a rate cap or network error is a real error.
+      if (isMissingBackendObjectError(error)) return null;
+      if (error) throw error;
+      const score = asNumber(data);
+      return score === undefined ? null : Math.max(0, Math.min(100, Math.round(score)));
+    },
+
+    async listFavouriteDishIds(userId) {
+      const client = getSupabaseClient();
+      if (!client) return [];
+      const { data, error } = await client
+        .from("profile_favourite_dishes")
+        .select("dish_id,position")
+        .eq("user_id", userId)
+        .order("position", { ascending: true });
+      if (isMissingBackendObjectError(error)) return null;
+      if (error) throw error;
+      return Array.isArray(data) ? (data as Row[]).flatMap((r) => asString(r.dish_id) ?? []) : [];
+    },
+
+    async setFavouriteDishes(dishIds) {
+      const client = requireSupabaseClient();
+      const ids = [...new Set(dishIds.filter((id) => id.trim() !== ""))];
+      const { error } = await client.rpc("set_profile_favourite_dishes", { p_dish_ids: ids });
+      if (error) throw error;
+      return ids;
     },
 
     async exportMyData() {

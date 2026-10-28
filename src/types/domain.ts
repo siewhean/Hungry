@@ -430,6 +430,17 @@ export interface UserProfile {
   onboardingCuisineIds?: string[];
   /** Usual max price per dish in SGD, set during onboarding. Undefined = no budget limit. */
   maxDishBudget?: number;
+  /** When the account was created (ISO); drives "Member since". */
+  createdAt?: string;
+}
+
+/** Count, average and 1-5 histogram over all of the signed-in user's reviews (server totals). */
+export interface ReviewStats {
+  reviewCount: number;
+  /** Null when there are no reviews. */
+  averageRating: number | null;
+  /** Reviews per star, index 0 = 1 star ... index 4 = 5 stars. */
+  ratingCounts: [number, number, number, number, number];
 }
 
 export interface ReviewDraft {
@@ -710,6 +721,8 @@ export interface PublicUserProfile {
   stallsVisited?: number;
   /** Distinct dishes reviewed, the server's user_profiles.dishes_reviewed counter. */
   dishesReviewed?: number;
+  /** When the account was created (ISO); drives "Member since". */
+  createdAt?: string;
 }
 
 export interface PublicMerchantProfile {

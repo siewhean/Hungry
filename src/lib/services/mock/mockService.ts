@@ -9,6 +9,8 @@
 
 import { getFloorPlan } from "@/lib/geo/floorPlans";
 import {
+  MOCK_WRONG_EMAIL_CODE,
+  getMockCodeSendFailure,
   getMockLoginFailure,
   getMockSignUpFailure,
   type MockAuthFailure,
@@ -111,6 +113,7 @@ import type {
   PassportEventType,
   PassportProgressEvent,
   PassportStamp,
+  ReviewStats,
   SubmitUserStallSubmissionInput,
   UserStallSubmission,
   PushPreferences,
@@ -326,6 +329,7 @@ function createMockUserStallSubmission(input: SubmitUserStallSubmissionInput): U
 // ─── Mutable in-memory state (mirrors what Supabase would persist) ─────────────
 
 let _profile: UserProfile = { ...guestProfile };
+let _mockPinnedDishIds: string[] = [];
 const _submittedClientReviewIds = new Set<string>();
 /** Reviews the mock viewer marked helpful. */
 const _helpfulReviewIds = new Set<string>();
@@ -336,6 +340,7 @@ const _activityDates = new Set<string>();
 let _isAuthenticated = false;
 let _authProvider: "email" | "google" | "apple" = "email";
 let _pendingDeletionScheduledFor: string | undefined;
+let _pendingCodeSignIn: { email: string; displayName?: string } | undefined;
 let _pendingEmailChange: string | null = null;
 let _merchantAccount: MerchantAccount = clone(merchantAccount);
 let _merchantDishCounter = 0;
@@ -1526,6 +1531,9 @@ function mockAuthError(failure: MockAuthFailure): Error {
       status: 0,
     });
   }
+  if (failure.reason === "over_email_send_rate_limit") {
+    return Object.assign(new Error(failure.message), { code: failure.reason, status: 429 });
+  }
   const code = failure.reason === "email_taken" ? "user_already_exists" : "invalid_credentials";
   return Object.assign(new Error(failure.message), { code });
 }
@@ -1569,11 +1577,31 @@ export const hungryService: HungryService = {
       return resolve(mockSession(_profile));
     },
 
-    async verifyEmailCode(_email, code, type) {
+    async verifyEmailCode(email, code, type) {
       if (!/^\d{8}$/.test(code.trim())) throw new Error("Invalid code");
+      if (code.trim() === MOCK_WRONG_EMAIL_CODE) {
+        throw Object.assign(new Error("Token has expired or is invalid"), { code: "otp_expired" });
+      }
       _isAuthenticated = true;
       _authProvider = "email";
+      if (type === "email") {
+        const pending = _pendingCodeSignIn;
+        _pendingCodeSignIn = undefined;
+        _profile = {
+          ...userProfile,
+          email,
+          ...(pending?.displayName ? { displayName: pending.displayName } : {}),
+        };
+        return resolve(mockSession(_profile));
+      }
       return resolve(type === "signup" ? mockSession(_profile) : null);
+    },
+
+    async signInWithEmailCode(email, options) {
+      const failure = getMockCodeSendFailure(email);
+      if (failure) throw mockAuthError(failure);
+      _pendingCodeSignIn = { email, displayName: options?.displayName?.trim() || undefined };
+      return resolve(undefined);
     },
 
     async signIn(email, password) {
@@ -1951,7 +1979,12 @@ export const hungryService: HungryService = {
         ? _profile.reviewedDishIds
             .map((id) => dishes.find((d) => d.id === id))
             .filter(Boolean)
-            .flatMap((d) => (d?.reviews ?? []).slice(0, 1))
+            .flatMap((d) =>
+              (d?.reviews ?? []).slice(0, 1).map((review) => ({
+                ...review,
+                dishId: review.dishId ?? d?.id,
+              })),
+            )
             .filter((review) => !isMockReviewHiddenForViewer(review))
         : dishes
             .flatMap((dish) => dish.reviews ?? [])
@@ -1965,6 +1998,24 @@ export const hungryService: HungryService = {
           .sort(compareReviewsNewestFirst)
           .slice(offset, offset + Math.max(1, Math.floor(page.limit))),
       );
+    },
+
+    async getMyReviewStats() {
+      const own = _profile.reviewedDishIds
+        .map((id) => dishes.find((d) => d.id === id))
+        .flatMap((d) => (d?.reviews ?? []).slice(0, 1))
+        .filter((review) => !isMockReviewHiddenForViewer(review));
+      const ratingCounts: ReviewStats["ratingCounts"] = [0, 0, 0, 0, 0];
+      for (const review of own) {
+        const star = Math.min(5, Math.max(1, Math.round(review.rating)));
+        ratingCounts[star - 1] += 1;
+      }
+      const total = own.reduce((sum, review) => sum + review.rating, 0);
+      return resolve({
+        reviewCount: own.length,
+        averageRating: own.length > 0 ? Math.round((total / own.length) * 10) / 10 : null,
+        ratingCounts,
+      });
     },
 
     async submitReview(draft: SubmitReviewInput) {
@@ -2072,6 +2123,20 @@ export const hungryService: HungryService = {
       }
       const person = findMockPerson(userId);
       return resolve({ id: userId, ...person });
+    },
+
+    async getTasteMatch(_userId: string) {
+      // Mock accounts are demo people without taste fingerprints, so there is no score to show.
+      return resolve(null);
+    },
+
+    async listFavouriteDishIds(userId: string) {
+      return resolve(userId === _profile.id ? [..._mockPinnedDishIds] : []);
+    },
+
+    async setFavouriteDishes(dishIds: string[]) {
+      _mockPinnedDishIds = [...new Set(dishIds)].slice(0, 4);
+      return resolve([..._mockPinnedDishIds]);
     },
 
     async updateMaxDishBudget(maxDishBudget: number | null) {

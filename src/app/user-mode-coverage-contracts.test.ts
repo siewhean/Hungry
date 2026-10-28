@@ -61,10 +61,11 @@ test("user auth and onboarding flows cover account, taste, dietary, and location
     login,
     [
       /getHungryService\(\)\.auth\.signIn\(/,
-      /service\.auth\.signInWithGoogle\(/,
-      /service\.auth\.signInWithApple\(/,
+      /auth\.signInWithGoogle\(\)/,
+      /auth\.signInWithApple\(\)/,
       // Email sign-in is an existing account; the quiz state is not overwritten.
-      /completeAuth\(\{\s*completedOnboarding: getConfiguredDataSource\(\) !== "supabase"\s*\}\)/,
+      /const isMock = getConfiguredDataSource\(\) !== "supabase"/,
+      /completeAuth\(\{[\s\S]*completedOnboarding: isMock/,
     ],
     "LoginScreen",
   );
@@ -466,13 +467,14 @@ test("profile surfaces keep own and other-user layouts linked while hiding taste
   assertSourceIncludes(
     profileHome,
     [
-      /profile\.avatarUrl \? \([\s\S]*<AccessibleImage[\s\S]*source=\{\{ uri: profile\.avatarUrl \}\}/,
+      /profile\.avatarUrl && !avatarFailed \? \([\s\S]*<AccessibleImage[\s\S]*source=\{\{ uri: profile\.avatarUrl \}\}/,
       /avatarInitials/,
       /<AppText variant="h2">Taste Fingerprint<\/AppText>/,
-      /label="Reviews"/,
-      /label="Badges"/,
-      /label="Saved dishes"/,
-      /accessibilityLabel=\{menuOpen \? "Close quick access" : "Open quick access"\}/,
+      /key: "reviews",/,
+      /key: "saved",/,
+      /<ProfileStatRow stats=\{stats\}/,
+      /menuOpen\s*\? "Close quick access"/,
+      /: "Open quick access"/,
       /label="Edit"[\s\S]*onPress=\{\(\) => navigation\.navigate\("EditProfile"\)\}/,
       /accessibilityLabel="Share Taste Fingerprint"/,
       /<AppText variant="h1" numberOfLines=\{2\}[\s\S]*profile\.displayName/,
@@ -486,12 +488,13 @@ test("profile surfaces keep own and other-user layouts linked while hiding taste
   assertSourceIncludes(
     userProfile,
     [
-      /<ProfileScreenShell\s+title=\{authorName\}/,
+      /<ProfileScreenShell\s+title="Profile"/,
       /Avatar name=\{authorName\} uri=\{resolvedAuthorAvatarUrl\}/,
-      /label="Followers"/,
-      /label="Following"/,
-      /label="Reviews"/,
-      /label="Stalls"/,
+      /<ProfileStatRow stats=\{stats\}/,
+      /label: "Followers"/,
+      /label: "Following"/,
+      /label: "Reviews"/,
+      /label: "Stalls"/,
       /activeTab === "posts"/,
       /activeTab === "reviews"/,
       /post\.authorId === normalizedAuthorId/,

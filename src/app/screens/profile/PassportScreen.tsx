@@ -29,6 +29,7 @@ import { computeAchievements } from "@/features/achievements/achievements";
 import { useAchievementInput } from "@/features/achievements/useAchievementInput";
 import { computeWeeklyGoal, milestoneReachedThisWeek } from "@/features/passport/weeklyGoal";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { reportError } from "@/lib/monitoring/reportError";
 import { trackPassportViewed } from "@/lib/analytics/gamificationEvents";
 import { useChecklistStore } from "@/store/useChecklistStore";
 import { usePassportStore } from "@/store/usePassportStore";
@@ -169,7 +170,9 @@ export function PassportScreen({ navigation }: Props) {
 
   useFocusEffect(
     useCallback(() => {
-      void Promise.all([loadPassportStamps(), loadPassportEvents()]).catch(() => undefined);
+      void Promise.all([loadPassportStamps(), loadPassportEvents()]).catch((error) =>
+        reportError(error, { screen: "Passport", action: "load_passport" }),
+      );
     }, [loadPassportEvents, loadPassportStamps]),
   );
 

@@ -37,8 +37,12 @@ test("Supabase auth responses hydrate the app profile store", () => {
   assert.match(profileStore, /applyProfile: \(profile: UserProfile\) => void/);
   assert.match(profileHelper, /useProfileStore\.getState\(\)\.applyProfile\(result\.profile\)/);
   assert.match(profileHelper, /runProvisionalOnboardingMigration/);
-  assert.match(loginScreen, /applySignedInProfile\(session\.profile/);
-  assert.match(signUpScreen, /applySignedInProfile\(session\.profile/);
+  // Every sign-in screen merges the profile through the hook, which calls applySignedInProfile
+  // and keeps a failed sync on screen with a retry.
+  const syncHook = read("src/features/auth/useSignedInProfileSync.ts");
+  assert.match(syncHook, /applySignedInProfile\(session\.profile/);
+  assert.match(loginScreen, /useSignedInProfileSync\(/);
+  assert.match(signUpScreen, /useSignedInProfileSync\(/);
   assert.match(
     bootstrap,
     /runAfterIdle\(\(\) => \{[\s\S]*getHungryService\(\)\s*\.profile\.getProfile\(\)/,

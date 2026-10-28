@@ -76,7 +76,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "LoginScreen",
     file: "src/app/screens/auth/LoginScreen.tsx",
     scenario: "user",
-    expect: /Welcome back/,
+    expect: /Sign in to Hungry/,
   },
   {
     name: "ResetPasswordScreen",
@@ -565,7 +565,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "ProfileHomeScreen",
     file: "src/app/screens/profile/ProfileHomeScreen.tsx",
     scenario: "user",
-    expect: /Collections/,
+    expect: /Taste Fingerprint/,
   },
   {
     name: "ReleaseProfileScreen",
@@ -577,7 +577,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "ReviewHistoryScreen",
     file: "src/app/screens/profile/ReviewHistoryScreen.tsx",
     scenario: "user",
-    expect: /Reviewed/,
+    expect: /Your reviews/,
   },
   {
     name: "SettingsScreen",

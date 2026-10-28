@@ -191,7 +191,9 @@ test("G8 lists and detail screens: loading, error and retry states", () => {
   const history = read("src/app/screens/profile/ReviewHistoryScreen.tsx");
   assert.match(history, /useIsFocused/);
   assert.match(history, /REVIEW_HISTORY_PAGE_SIZE/);
-  assert.match(history, /No written notes/);
+  // A review without notes shows no empty "notes" box (R4 PROF4-8).
+  assert.doesNotMatch(history, /No written notes/);
+  assert.match(history, /<ProfileReviewCard/);
 
   const visited = read("src/app/screens/profile/VisitedStallsScreen.tsx");
   assert.doesNotMatch(visited, /Open now|Closed now/);

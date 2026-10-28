@@ -9,6 +9,8 @@ import {
   createRootLinking,
   parseAuthCallbackParams,
   parseOrderDeepLinkQuery,
+  stripEmailQuery,
+  withoutEmailParam,
 } from "@/app/navigation/linking";
 
 test("linking exposes authenticated dish, venue, post and order entry points", () => {
@@ -278,4 +280,37 @@ test("review/:id links open the review page once signed in (sign-in only)", () =
   assert.notEqual(signedOut?.routes?.at(-1)?.name, "ReviewDetail");
   assert.equal(getStateFromPath("review/"), undefined);
   assert.equal(getStateFromPath("review/%3Cscript%3E"), undefined);
+});
+
+test("a web URL never carries the email a screen was opened with (AUTH4-19)", () => {
+  const linking = createRootLinking("exp://127.0.0.1:8081/--/");
+  const options = linking.config as Parameters<typeof getPathFromState>[1];
+  const pathFor = withoutEmailParam(getPathFromState);
+  for (const [screen, params] of [
+    ["Login", { email: "mei@example.sg" }],
+    ["ForgotPassword", { email: "mei@example.sg" }],
+    ["ResetPassword", { email: "mei@example.sg", code: "pkce-code" }],
+  ] as const) {
+    const state = {
+      routes: [{ name: "AuthStack", state: { routes: [{ name: screen, params }] } }],
+    };
+    const raw = getPathFromState(state, options);
+    assert.match(raw, /email=/, `${screen}: the default path would carry the address`);
+    const clean = pathFor(state, options);
+    assert.doesNotMatch(clean, /email/i, screen);
+    assert.ok(clean.startsWith("/"), clean);
+  }
+  // The rest of the query is kept.
+  assert.equal(stripEmailQuery("/auth/reset?code=abc&email=a%40b.sg"), "/auth/reset?code=abc");
+  assert.equal(stripEmailQuery("/login?email=a%40b.sg"), "/login");
+  assert.equal(stripEmailQuery("/login?email=a%40b.sg#top"), "/login#top");
+  assert.equal(stripEmailQuery("/search?q=email&mode=stalls"), "/search?q=email&mode=stalls");
+  assert.equal(stripEmailQuery("/home"), "/home");
+});
+
+test("both navigators build web URLs without the email", () => {
+  for (const file of ["RootNavigator.tsx", "PreAuthNavigator.tsx"]) {
+    const source = readFileSync(path.join(process.cwd(), "src/app/navigation", file), "utf8");
+    assert.match(source, /getPathFromState: withoutEmailParam\(getPathFromState\)/, file);
+  }
 });

@@ -1224,10 +1224,26 @@ export async function getItemDetailsViaRpc(input: {
   dishIds: string[];
   stallIds: string[];
 }): Promise<Row[] | undefined> {
-  const dishIds = [...new Set(input.dishIds)].slice(0, 200);
-  const stallIds = [...new Set(input.stallIds)].slice(0, 200);
+  const dishIds = [...new Set(input.dishIds)];
+  const stallIds = [...new Set(input.stallIds)];
   if (dishIds.length === 0 && stallIds.length === 0) return [];
-  return rpcRows("get_item_details", { p_dish_ids: dishIds, p_stall_ids: stallIds });
+  // The RPC reads at most 200 of each kind, so a longer list (a profile with hundreds of
+  // reviews) goes out as a few calls, side by side, instead of dropping the rest.
+  const chunks: { dishes: string[]; stalls: string[] }[] = [];
+  for (let start = 0; start < Math.max(dishIds.length, stallIds.length); start += 200) {
+    chunks.push({
+      dishes: dishIds.slice(start, start + 200),
+      stalls: stallIds.slice(start, start + 200),
+    });
+  }
+  const results = await Promise.all(
+    chunks.map(({ dishes, stalls }) =>
+      // n-plus-one-ok: one call per 200 ids, the RPC's own cap, issued together
+      rpcRows("get_item_details", { p_dish_ids: dishes, p_stall_ids: stalls }),
+    ),
+  );
+  if (results.some((rows) => !rows)) return undefined;
+  return results.flatMap((rows) => rows ?? []);
 }
 
 export async function listBuildingsViaRpc(

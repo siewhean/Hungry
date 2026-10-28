@@ -123,9 +123,11 @@ test("H27: passport celebration is marked at start and persisted per user", () =
 test("H29: other-profile stats, tabs and post actions have labels", () => {
   const content = read("src/app/screens/profile/UserProfileContent.tsx");
   const post = read("src/app/screens/profile/SocialPostDetailScreen.tsx");
+  // Stats come from the shared stat row; each is named "<label> <value>" (or loading/unavailable).
+  assert.match(content, /<ProfileStatRow stats=\{stats\}/);
   assert.match(
-    content,
-    /accessibilityLabel=\{value === null \? `\$\{label\}, loading` : `\$\{value\} \$\{label\}`\}/,
+    read("src/components/profile/ProfileStatRow.tsx"),
+    /\? `\$\{label\}, loading`[\s\S]*?: `\$\{label\} \$\{value\}`/,
   );
   assert.match(content, /accessibilityRole="tab"/);
   assert.match(post, /accessibilityLabel=\{`Like, \$\{interaction\.likeCount\}/);

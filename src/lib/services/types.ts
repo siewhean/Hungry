@@ -47,6 +47,7 @@ import type {
   OpeningSchedule,
   PublicMerchantProfile,
   PublicUserProfile,
+  ReviewStats,
   PromotionStatus,
   RecommendationBucket,
   RecommendationSurface,
@@ -854,8 +855,14 @@ export interface HungryService {
     verifyEmailCode(
       email: string,
       code: string,
-      type: "signup" | "recovery",
+      type: "signup" | "recovery" | "email",
     ): Promise<Session | null>;
+    /**
+     * Emails an 8-digit sign-in code: no password. An address with no account becomes a new
+     * account (named `displayName` when given), so the same call serves sign-in and sign-up and
+     * never reveals which one it was. Finish with verifyEmailCode(email, code, "email").
+     */
+    signInWithEmailCode(email: string, options?: { displayName?: string }): Promise<void>;
     signIn(email: string, password: string): Promise<Session>;
     signInWithGoogle(): Promise<Session>;
     signInWithApple(): Promise<Session>;
@@ -988,6 +995,8 @@ export interface HungryService {
       userId: string,
       page?: { limit?: number; offset?: number },
     ): Promise<DishDetail["reviews"]>;
+    /** Totals and the 1-5 histogram over all of your reviews; undefined on a backend without it. */
+    getMyReviewStats(): Promise<ReviewStats | undefined>;
     submitReview(draft: SubmitReviewInput): Promise<void>;
     /** Newest-first review feed across all dishes, fetched as one paginated query. */
     listRecentReviews(options?: ListRecentReviewsOptions): Promise<RecentReviewFeedEntry[]>;
@@ -1009,6 +1018,18 @@ export interface HungryService {
     updateProfile(updates: Partial<UserProfile>): Promise<UserProfile>;
     /** Another user's public profile (name, avatar, bio); undefined when hidden or missing. */
     getPublicProfile(userId: string): Promise<PublicUserProfile | undefined>;
+    /**
+     * 0-100 taste match with another diner; null when there is none to show (yourself, a blocked
+     * or private account, or either of you has no taste fingerprint yet, or an older backend).
+     */
+    getTasteMatch(userId: string): Promise<number | null>;
+    /**
+     * The dishes pinned on a profile, in order (at most 4); null on an older backend that has no
+     * pins table yet, so callers can tell "none pinned" from "cannot pin".
+     */
+    listFavouriteDishIds(userId: string): Promise<string[] | null>;
+    /** Replaces your pinned dishes (at most 4, each saved or reviewed by you); returns the stored order. */
+    setFavouriteDishes(dishIds: string[]): Promise<string[]>;
     /** Every category of the signed-in user's own data. Throws instead of returning partial data. */
     exportMyData(): Promise<MyDataExport>;
     updateDietaryPreferences(flags: DietaryFlag[]): Promise<void>;

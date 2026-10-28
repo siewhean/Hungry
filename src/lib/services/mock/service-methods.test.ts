@@ -334,6 +334,39 @@ test("ai.processImplicitFeedback is no-op while explicit learning stabilizes", a
   assert.deepEqual(afterProfile.tasteVector, beforeProfile.tasteVector);
 });
 
+test("auth.signInWithEmailCode then verifyEmailCode signs in with the typed address and name", async () => {
+  await hungryService.auth.signInWithEmailCode("Mei@Example.sg", { displayName: " Mei " });
+  const session = await hungryService.auth.verifyEmailCode("Mei@Example.sg", "12345678", "email");
+  assert.equal(session?.profile.displayName, "Mei");
+  assert.equal(session?.profile.email, "Mei@Example.sg");
+  assert.equal((await hungryService.auth.getCurrentSession())?.profile.displayName, "Mei");
+  await hungryService.auth.signOut();
+
+  // A second sign-in without a name does not inherit the last one.
+  await hungryService.auth.signInWithEmailCode("other@example.sg");
+  const other = await hungryService.auth.verifyEmailCode("other@example.sg", "12345678", "email");
+  assert.notEqual(other?.profile.displayName, "Mei");
+  await hungryService.auth.signOut();
+});
+
+test("the mock refuses a code to an offline address, a rate-limited one, and the wrong code", async () => {
+  await assert.rejects(hungryService.auth.signInWithEmailCode("offline@example.sg"), {
+    name: "AuthRetryableFetchError",
+  });
+  await assert.rejects(hungryService.auth.signInWithEmailCode("ratelimit@example.sg"), {
+    code: "over_email_send_rate_limit",
+    status: 429,
+  });
+  await hungryService.auth.signInWithEmailCode("mei@example.sg");
+  await assert.rejects(hungryService.auth.verifyEmailCode("mei@example.sg", "00000000", "email"), {
+    code: "otp_expired",
+  });
+  assert.equal(
+    (await hungryService.auth.getCurrentSession())?.profile.email === "mei@example.sg",
+    false,
+  );
+});
+
 test("auth.requestAccountDeletion clears mock session", async () => {
   await hungryService.auth.signIn("delete-me@hungry.sg", "password");
   await hungryService.auth.requestAccountDeletion({

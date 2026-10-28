@@ -9,14 +9,15 @@ test.describe("checklist and portfolio critical flows", () => {
     );
   });
 
-  test("creates a checklist from the profile quick access menu", async ({ page }) => {
+  test("creates a checklist from the Saved area", async ({ page }) => {
     await resetAppState(page);
     await startOnboardedMockSession(page);
     await clickDevButton(page, "Profile", "Profile & Review");
 
-    // Saved, lists and checklists share one Lists area (main #91).
-    await page.getByRole("button", { name: "Open quick access" }).click();
-    await page.getByRole("button", { name: "Lists", exact: true }).click();
+    // Saved is the one entry point (R4); its collections tab reaches the Lists area (main #91).
+    await page.getByRole("button", { name: /^Saved \d+/ }).click();
+    await page.getByRole("tab", { name: "Saved collections" }).click();
+    await page.getByRole("button", { name: "All lists" }).click();
     await page.getByRole("button", { name: /^Checklists\./ }).click();
     await expect(page.getByText("My checklists", { exact: true }).first()).toBeVisible();
 
@@ -29,15 +30,16 @@ test.describe("checklist and portfolio critical flows", () => {
     await expect(page.getByLabel("Checklist name")).toHaveValue("New Checklist");
   });
 
-  test("creates and publishes a portfolio from the profile quick access menu", async ({ page }) => {
+  test("creates and publishes a portfolio from the Saved area", async ({ page }) => {
     const portfolioName = `E2E Portfolio ${Date.now()}`;
 
     await resetAppState(page);
     await startOnboardedMockSession(page);
     await clickDevButton(page, "Profile", "Profile & Review");
 
-    await page.getByRole("button", { name: "Open quick access" }).click();
-    await page.getByRole("button", { name: "Lists", exact: true }).click();
+    await page.getByRole("button", { name: /^Saved \d+/ }).click();
+    await page.getByRole("tab", { name: "Saved collections" }).click();
+    await page.getByRole("button", { name: "All lists" }).click();
     await page.getByRole("button", { name: /^Your lists\./ }).click();
     await expect(
       page.getByText("Your lists", { exact: true }).filter({ visible: true }).first(),
