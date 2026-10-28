@@ -331,19 +331,28 @@ test("R4-STALL-1: a stall with a menu keeps its Menu section and does not get th
 
 test("R4-STALL-1: the report page opens with 'opening hours' picked when asked to", async () => {
   const { ReportProblemScreen } = await import("@/app/screens/detail/ReportProblemScreen");
+  const supply = getHungryService().supply;
+  const sent: unknown[] = [];
+  const original = supply.submitCatalogCorrection;
+  supply.submitCatalogCorrection = async (input) => {
+    sent.push(input);
+  };
+  restores.push(() => {
+    supply.submitCatalogCorrection = original;
+  });
   let view = await renderScreen(ReportProblemScreen as never, {
     name: "ReportProblem",
     params: { venueId: STALL, subjectName: "Tian Tian", initialKind: "wrong_hours" },
   });
-  assert.equal(
-    view.findByLabel("Opening hours are wrong")?.getAttribute("aria-checked"),
-    "true",
-    "the hours reason is already picked",
-  );
+  // Without picking a reason first: the hours reason is already chosen.
+  await view.press(view.findByText("Send report"));
+  assert.deepEqual(sent, [{ venueId: STALL, dishId: undefined, kind: "wrong_hours" }]);
   await cleanup();
+  sent.length = 0;
   view = await renderScreen(ReportProblemScreen as never, {
     name: "ReportProblem",
     params: { venueId: STALL, subjectName: "Tian Tian" },
   });
-  assert.equal(view.findByLabel("Opening hours are wrong")?.getAttribute("aria-checked"), "false");
+  await view.press(view.findByText("Send report"));
+  assert.deepEqual(sent, [], "with no reason picked nothing is sent");
 });
