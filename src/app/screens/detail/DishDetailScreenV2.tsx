@@ -261,6 +261,9 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     return getStallPin(venue, buildingPoint) ?? buildingPoint;
   }, [venue]);
   const similarNearby = useSimilarDishesNearby(dish, similarSearchPoint);
+  // A rail where no dish has a photo drops the grey photo block: text tiles read as complete.
+  const moreFromHasPhotos = moreFromStall.some((item) => sanitizeCatalogImageUrl(item.imageUrl));
+  const similarHasPhotos = similarNearby.some((item) => sanitizeCatalogImageUrl(item.imageUrl));
   const similarDishHeading = dish ? similarDishQuery(dish.name) || dish.name : "dishes";
 
   // One shared helper decides open/closed for both pages: the owner's temporary closure,
@@ -1439,12 +1442,12 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                             style={{ width: "100%", height: signatureGridItemWidth * 0.62 }}
                             decorative
                           />
-                        ) : (
+                        ) : moreFromHasPhotos ? (
                           <NoDishPhoto
                             dishName={item.name}
                             style={{ width: "100%", height: signatureGridItemWidth * 0.62 }}
                           />
-                        )}
+                        ) : null}
                         <View style={{ gap: spacing[1], padding: spacing[3] }}>
                           <AppText variant="bodyBold" numberOfLines={1}>
                             {item.name}
@@ -1512,13 +1515,13 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                                 style={{ width: "100%", height: signatureGridItemWidth * 0.62 }}
                                 decorative
                               />
-                            ) : (
+                            ) : similarHasPhotos ? (
                               <NoDishPhoto
                                 dishName={item.name}
                                 style={{ width: "100%", height: signatureGridItemWidth * 0.62 }}
                               />
-                            )}
-                            {away ? (
+                            ) : null}
+                            {away && similarHasPhotos ? (
                               <View
                                 style={{
                                   backgroundColor: palette.surface,
@@ -1537,6 +1540,11 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                             ) : null}
                           </View>
                           <View style={{ gap: spacing[0.5], padding: spacing[3] }}>
+                            {away && !similarHasPhotos ? (
+                              <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
+                                {away}
+                              </AppText>
+                            ) : null}
                             <AppText variant="bodyBold" numberOfLines={1}>
                               {item.venueName}
                             </AppText>

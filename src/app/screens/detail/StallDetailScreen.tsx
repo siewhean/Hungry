@@ -63,6 +63,12 @@ import {
 import { summarizeStallDietaryFlags } from "@/features/detail/dietaryLabels";
 import { isOwnReview } from "@/features/review/reviewEdit";
 import { StallLogoMark } from "@/components/stall/StallLogoMark";
+import {
+  getStallDishPhotos,
+  shouldUseMenuList,
+  StallMenuDishCard,
+  StallMenuDishRow,
+} from "@/components/stall/StallMenuDish";
 import { MenuFilterDropdown } from "@/components/stall/MenuFilterDropdown";
 import {
   deriveStallCommunityReviews,
@@ -325,129 +331,6 @@ function inferDishCategory(dish: DishDetail) {
   if (availabilityCategory) return availabilityCategory;
 
   return "Menu";
-}
-
-/** The first photo of the dish's own: a menu tile shows one still image, never the stall's. */
-function getStallDishPhotos(dish: DishDetail) {
-  // A menu tile only ever cycles the dish's own photos, so the image, name,
-  // price and tap target always describe the same dish. URLs go through the
-  // shared catalog sanitizer so unsafe or placeholder hosts fall back to NoDishPhoto.
-  return Array.from(
-    new Set(
-      [dish.imageUrl, ...(dish.gallery ?? [])]
-        .map((url) => sanitizeCatalogImageUrl(url))
-        .filter((url): url is string => Boolean(url?.trim())),
-    ),
-  );
-}
-
-/** Screen-reader label for a menu tile: name, price or sold out. */
-function menuDishAccessibilityLabel(dish: DishDetail) {
-  const status = isSoldOut(dish.availabilityFlags) ? "sold out today" : formatDishPrice(dish);
-  return [dish.name, dish.mustOrder ? "must order" : null, status].filter(Boolean).join(", ");
-}
-
-function StallMenuDishCard({
-  dish,
-  onPress,
-  width,
-  isLeftColumn,
-}: {
-  dish: DishDetail;
-  onPress: (dish: DishDetail) => void;
-  width: number;
-  /** The left tile draws the hairline between the two columns. */
-  isLeftColumn: boolean;
-}) {
-  const { palette, radii, spacing } = useHungryTheme();
-  // One still photo per tile: no per-tile timers or measuring, and a swipe never fights the tap.
-  const photo = useMemo(() => getStallDishPhotos(dish)[0], [dish]);
-  const imageStyle = {
-    width: "100%" as const,
-    height: width * 0.7,
-  };
-
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={menuDishAccessibilityLabel(dish)}
-      accessibilityHint="Opens this dish detail page"
-      onPress={() => onPress(dish)}
-      // Square-cornered tiles that meet in the middle and run edge to edge.
-      style={{
-        width,
-        backgroundColor: palette.surface,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderColor: palette.border,
-        borderRightWidth: isLeftColumn ? StyleSheet.hairlineWidth : 0,
-        overflow: "hidden",
-      }}
-    >
-      <View>
-        {photo ? (
-          <AccessibleImage
-            source={{ uri: photo }}
-            accessibilityLabel={`${dish.name} photo`}
-            style={imageStyle}
-            contentFit="cover"
-            placeholder={dish.blurhash}
-            transition={180}
-          />
-        ) : (
-          <NoDishPhoto dishName={dish.name} style={imageStyle} />
-        )}
-        {dish.mustOrder ? (
-          <View
-            style={{
-              backgroundColor: palette.mediaScrim,
-              borderRadius: radii.pill,
-              left: spacing[2],
-              paddingHorizontal: spacing[2],
-              paddingVertical: 2,
-              position: "absolute",
-              top: width * 0.7 - spacing[2] - 22,
-            }}
-          >
-            <AppText
-              variant="micro"
-              style={{ color: palette.white, fontWeight: "800", letterSpacing: 0.5 }}
-            >
-              MUST ORDER
-            </AppText>
-          </View>
-        ) : null}
-        <View style={{ gap: spacing[1], padding: spacing[3] }}>
-          <AppText variant="bodyBold" numberOfLines={2}>
-            {dish.name}
-          </AppText>
-          {dish.description?.trim() ? (
-            <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
-              {dish.description}
-            </AppText>
-          ) : null}
-          {/* Price on the left, rating on the right of the same row. */}
-          <View
-            style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}
-          >
-            {isSoldOut(dish.availabilityFlags) ? (
-              <AppText variant="bodySmallBold" style={{ color: palette.error }}>
-                Sold out today
-              </AppText>
-            ) : (
-              <AppText variant="price" style={{ color: palette.text }}>
-                {formatDishPrice(dish)}
-              </AppText>
-            )}
-            {dish.reviewCount > 0 ? (
-              <AppText variant="micro" tone="secondary">
-                <Text style={{ color: palette.starFill }}>★</Text> {dish.rating.toFixed(1)}
-              </AppText>
-            ) : null}
-          </View>
-        </View>
-      </View>
-    </Pressable>
-  );
 }
 
 export function StallDetailScreen({ navigation, route }: Props) {
@@ -963,6 +846,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
     [filteredMenuDishes, visibleMenuItemCount],
   );
   const hasMoreMenuItems = visibleMenuDishes.length < filteredMenuDishes.length;
+  // List rows when most of the menu has no photo, tiles when it does (R4-STALL-5).
+  const menuAsList = useMemo(() => shouldUseMenuList(dishes), [dishes]);
   // The next menu page is read when the diner reaches the end of what is loaded, or filters
   // or searches (which need the whole menu).
   const menuFilterActive =
@@ -1675,25 +1560,29 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     ) : null}
                     {visibleMenuDishes.length > 0 ? (
                       <View
+                        testID={menuAsList ? "stall-menu-list" : "stall-menu-grid"}
                         style={{
                           borderColor: palette.border,
                           borderTopWidth: StyleSheet.hairlineWidth,
-                          flexDirection: "row",
-                          flexWrap: "wrap",
                           // Out to the screen edges, past the body's spacing[3] padding.
                           marginHorizontal: -spacing[3],
+                          ...(menuAsList ? {} : { flexDirection: "row", flexWrap: "wrap" }),
                         }}
                       >
-                        {visibleMenuDishes.map((dish, index) => (
-                          <StallMenuDishCard
-                            key={dish.id}
-                            dish={dish}
-                            // Two columns with no gap between them.
-                            width={screenWidth / MENU_GRID_COLUMNS}
-                            isLeftColumn={index % MENU_GRID_COLUMNS === 0}
-                            onPress={openMenuDish}
-                          />
-                        ))}
+                        {visibleMenuDishes.map((dish, index) =>
+                          menuAsList ? (
+                            <StallMenuDishRow key={dish.id} dish={dish} onPress={openMenuDish} />
+                          ) : (
+                            <StallMenuDishCard
+                              key={dish.id}
+                              dish={dish}
+                              // Two columns with no gap between them.
+                              width={screenWidth / MENU_GRID_COLUMNS}
+                              isLeftColumn={index % MENU_GRID_COLUMNS === 0}
+                              onPress={openMenuDish}
+                            />
+                          ),
+                        )}
                       </View>
                     ) : menuNextCursor && menuPageStatus !== "error" ? (
                       <Skeleton width="100%" height={72} borderRadius={radii.lg} />

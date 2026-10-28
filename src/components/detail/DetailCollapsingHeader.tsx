@@ -80,7 +80,7 @@ export function DetailCollapsingHeader({
     >
       <View
         pointerEvents="box-none"
-        style={{ ...StyleSheet.absoluteFillObject, elevation: 12, zIndex: 2 }}
+        style={{ ...StyleSheet.absoluteFill, elevation: 12, zIndex: 2 }}
       >
         <FloatingBackButton onPress={onBack} />
         {onShare ? (
@@ -96,7 +96,7 @@ export function DetailCollapsingHeader({
         pointerEvents="none"
         testID={testID}
         style={{
-          ...StyleSheet.absoluteFillObject,
+          ...StyleSheet.absoluteFill,
           backgroundColor: palette.surface,
           borderBottomColor: palette.border,
           borderBottomWidth: StyleSheet.hairlineWidth,

@@ -163,3 +163,65 @@ test("R4-STALL-6: the hold menu of an unsaved stall offers 'Saved stalls' and sa
   await view.press(view.findByLabel("Saved stalls"));
   assert.equal(useStallInteractionStore.getState().interactions[UNSAVED_STALL]?.isSaved, true);
 });
+
+// ─── Menu layout: rows when most dishes have no photo (R4-STALL-5) ───────────────────────
+
+const restores: (() => void)[] = [];
+afterEach(() => {
+  while (restores.length) restores.pop()?.();
+});
+
+/** The mock stall's menu, cut to `total` dishes of which the first `withPhoto` have a photo. */
+function useMenuWithPhotos(withPhoto: number, total: number) {
+  const repo = getDataRepository();
+  const source = repo.listDishesByVenue(STALL);
+  assert.ok(source.length >= total, "the mock stall has enough dishes");
+  const dishes = source.slice(0, total).map((dish, index) => ({
+    ...dish,
+    imageUrl: index < withPhoto ? "https://images.hungry.test/dish.jpg" : "",
+    gallery: [],
+  }));
+  const original = repo.listDishesByVenue;
+  repo.listDishesByVenue = () => dishes;
+  restores.push(() => {
+    repo.listDishesByVenue = original;
+  });
+  return dishes;
+}
+
+test("R4-STALL-5: a menu where no dish has a photo is list rows, not a grid of grey squares", async () => {
+  const dishes = useMenuWithPhotos(0, 3);
+  const view = await openStall();
+  assert.ok(view.container.querySelector('[data-testid="stall-menu-list"]'), "list rows");
+  assert.equal(view.container.querySelector('[data-testid="stall-menu-grid"]'), null);
+  assert.equal(view.findByLabel(/no photo yet/), null, "no grey placeholder tiles");
+  for (const dish of dishes) assert.ok(view.findByText(dish.name), `${dish.name} is listed`);
+});
+
+test("R4-STALL-5: a menu where most dishes have photos keeps the photo grid", async () => {
+  useMenuWithPhotos(3, 3);
+  const view = await openStall();
+  assert.ok(view.container.querySelector('[data-testid="stall-menu-grid"]'), "photo grid");
+  assert.equal(view.container.querySelector('[data-testid="stall-menu-list"]'), null);
+});
+
+test("R4-STALL-5: the layout follows the whole menu: 2 of 3 with photos is a grid, 1 of 3 a list", async () => {
+  useMenuWithPhotos(2, 3);
+  let view = await openStall();
+  assert.ok(view.container.querySelector('[data-testid="stall-menu-grid"]'));
+  await cleanup();
+  while (restores.length) restores.pop()?.();
+  useMenuWithPhotos(1, 3);
+  view = await openStall();
+  assert.ok(view.container.querySelector('[data-testid="stall-menu-list"]'));
+});
+
+test("R4-STALL-5: pressing a menu row opens that dish", async () => {
+  const [first] = useMenuWithPhotos(0, 3);
+  const view = await openStall();
+  await view.press(view.findByLabel(new RegExp(`^${first.name}`)));
+  assert.deepEqual(
+    view.navigation.calls.find((call) => call.method === "navigate")?.args,
+    ["DishDetail", { dishId: first.id }],
+  );
+});
