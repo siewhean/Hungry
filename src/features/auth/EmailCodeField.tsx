@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { View } from "react-native";
+import { View, type TextInput } from "react-native";
 
 import { AppText, Button, Input } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
@@ -57,7 +57,8 @@ export function EmailCodeField({
   screen,
   autoFocus = false,
 }: EmailCodeFieldProps) {
-  const { spacing } = useHungryTheme();
+  const { palette, spacing } = useHungryTheme();
+  const inputRef = useRef<TextInput>(null);
   const [code, setCode] = useState("");
   // The code was just sent when the field opens, so the first resend waits too.
   // It runs from an end time, so a backgrounded app cannot end the wait early or late.
@@ -101,6 +102,10 @@ export function EmailCodeField({
       await onSubmit(value);
     } catch (error) {
       setFailure(getAuthFailureMessage(error, errorText));
+      // The wrong digits go, so a retry starts from an empty field.
+      setCode("");
+      autoSubmittedRef.current = null;
+      inputRef.current?.focus();
     } finally {
       submittingRef.current = false;
       setIsSubmitting(false);
@@ -125,6 +130,7 @@ export function EmailCodeField({
     <View style={{ gap: spacing[2] }}>
       <AppText variant="bodyBold">{label}</AppText>
       <Input
+        ref={inputRef}
         accessibilityLabel={label}
         placeholder={`${EMAIL_CODE_LENGTH}-digit code`}
         value={code}
@@ -137,8 +143,17 @@ export function EmailCodeField({
         returnKeyType="done"
         onSubmitEditing={() => void submit(code, { auto: false, paste: false })}
         error={failure !== null}
-        errorText={failure ?? undefined}
       />
+      {failure ? (
+        <AppText
+          variant="bodySmall"
+          style={{ color: palette.error }}
+          accessibilityRole="alert"
+          accessibilityLiveRegion="polite"
+        >
+          {failure}
+        </AppText>
+      ) : null}
       <Button
         label={submitLabel}
         variant={submitVariant}

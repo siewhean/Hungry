@@ -41,6 +41,8 @@ interface EmailCodeEntryProps {
   onSignedIn: () => void | Promise<void>;
   /** When given, a "Use a password instead" link sits under the email step. */
   onUsePassword?: () => void;
+  /** Tighter spacing for short screens. */
+  compact?: boolean;
 }
 
 /**
@@ -56,6 +58,7 @@ export function EmailCodeEntry({
   initialEmail = "",
   onSignedIn,
   onUsePassword,
+  compact = false,
 }: EmailCodeEntryProps) {
   const { componentRadii, palette, spacing } = useHungryTheme();
   const showToast = useUIStore((state) => state.showToast);
@@ -172,7 +175,7 @@ export function EmailCodeEntry({
   }
 
   return (
-    <View style={{ gap: spacing[4] }}>
+    <View style={{ gap: compact ? spacing[3] : spacing[4] }}>
       <View style={{ gap: spacing[2] }}>
         {askName ? (
           <Controller
@@ -207,6 +210,8 @@ export function EmailCodeEntry({
               value={value}
               onChangeText={(next) => {
                 emailSuggestion.clear();
+                // A send error belongs to the address it was for.
+                setFormError(null);
                 onChange(next);
               }}
               onBlur={() => {

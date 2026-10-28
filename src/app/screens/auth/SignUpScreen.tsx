@@ -258,9 +258,10 @@ export function SignUpScreen({ navigation }: Props) {
           </View>
         }
       >
-        <View style={{ gap: spacing[4] }}>
+        <View style={{ gap: isShortScreen ? spacing[3] : spacing[4] }}>
           {/* A provider shows only where it is enabled and allowed (authProviders.ts). */}
           <AuthProviderButtons
+            compact={isShortScreen}
             disabled={isBusy}
             divider={AUTH_COPY.signUp.divider}
             onPress={(provider) => void handleProviderContinue(provider)}
@@ -291,6 +292,7 @@ export function SignUpScreen({ navigation }: Props) {
                 </View>
               ) : null}
               <EmailCodeEntry
+                compact={isShortScreen}
                 screen="sign_up"
                 askName
                 onSignedIn={() => finishSignUp("email")}

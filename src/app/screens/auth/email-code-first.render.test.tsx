@@ -139,6 +139,10 @@ test("a code that could not be sent stays on the email step with a reason", asyn
     assert.equal(failed.properties.reason, "over_email_send_rate_limit");
     assert.equal(failed.properties.screen, "login");
     assert.equal(failed.properties.flow, "email_code");
+
+    // The banner belongs to the address it was for: editing the address clears it.
+    await view.type(inputs(view)[0], "mei2@example.sg");
+    assert.equal(view.container.querySelector('[role="alert"]'), null);
   } finally {
     restore();
   }
@@ -539,7 +543,7 @@ test("the onboarding password forms use labelled fields, like Login and Create a
   assert.match(view.text(), /Create password/);
 });
 
-test("a wrong code shows the reason and keeps the field for another try", async () => {
+test("a wrong code shows the reason, empties the field, and another try signs in", async () => {
   const restore = stubAuth({ signInWithEmailCode: async () => undefined });
   try {
     const view = await renderScreen(LoginScreen as never, { name: "Login" });
@@ -548,8 +552,7 @@ test("a wrong code shows the reason and keeps the field for another try", async 
     await view.settle();
     assert.match(view.text(), /wrong or has expired|expired|invalid/i);
     assert.equal(useSessionStore.getState().isAuthenticated, false);
-    assert.equal(inputs(view)[0].value, "00000000");
-    await view.type(inputs(view)[0], "1234567");
+    assert.equal(inputs(view)[0].value, "");
     await view.type(inputs(view)[0], "12345678");
     await view.settle();
     assert.equal(useSessionStore.getState().isAuthenticated, true);

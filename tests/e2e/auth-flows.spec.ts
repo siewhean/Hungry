@@ -83,9 +83,13 @@ test("a code that cannot be sent says why and stays on the email step", async ({
   await page.getByRole("button", { name: "Continue", exact: true }).click();
   await expect(page.getByRole("alert").first()).toBeVisible();
   await expect(page.getByText("Check your email", { exact: true })).toHaveCount(0);
+
+  // The banner belongs to the address it was for.
+  await page.getByLabel("Email address", { exact: true }).fill("someone@hungry.test");
+  await expect(page.getByRole("alert")).toHaveCount(0);
 });
 
-test("a wrong code is refused, keeps the field, and the right one then signs in", async ({
+test("a wrong code is announced, empties the field, and the right one then signs in", async ({
   page,
 }) => {
   await openLogin(page);
@@ -95,10 +99,9 @@ test("a wrong code is refused, keeps the field, and the right one then signs in"
 
   const code = page.getByLabel("Enter the code", { exact: true });
   await code.fill("00000000");
-  await expect(page.getByText(/wrong or has expired/i)).toBeVisible();
-  await expect(code).toHaveValue("00000000");
+  await expect(page.getByRole("alert").filter({ hasText: /wrong or has expired/i })).toBeVisible();
+  await expect(code).toHaveValue("");
 
-  await code.fill("1234567");
   await code.fill("12345678");
   await expect(page.getByText(/^You are at/).first()).toBeVisible({ timeout: 30_000 });
 });
@@ -118,6 +121,8 @@ test.describe("a 320x568 phone", () => {
     const nameBox = await name.boundingBox();
     // The subtitle is dropped on a short screen, and the name helper shares a row with its counter.
     expect(box && nameBox && box.y - nameBox.y).toBeLessThan(260);
+    // Two providers here (Apple and Google); Android has one, which is another ~56 px up.
+    expect(box?.y).toBeLessThan(620);
     await continueButton.scrollIntoViewIfNeeded();
     await expect(continueButton).toBeInViewport();
   });

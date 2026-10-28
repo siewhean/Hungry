@@ -1479,3 +1479,7 @@ Use the smallest check that matches the change risk.
 - npm run typecheck clean; npm test 2172 pass / 0 fail / 2 skipped; npm run test:render 537/537; lint 0 errors; format:check clean; check:edge-functions, check:rate-limits, check:n-plus-one, audit:races clean; test:coverage OK and baseline regenerated.
 - Playwright (mock web build, chromium): auth-flows 8/8 (new: failed send, wrong code, 320x568), onboarding-flow pass.
 - Not verified: the real sign-in email (RESEND_TEMPLATE_SIGNIN_ID is not created or set yet; until then magiclink uses the old template).
+
+### AUTH-R4 re-audit 2 follow-up (G1-G3), 2026-10-28
+- typecheck clean; npm test 2172/0 fail; test:render 537/537; lint 0 errors; format:check clean; test:coverage OK (baseline unchanged).
+- Playwright (mock web build): auth-flows 8/8, onboarding-flow, auth pass. Continue on Create account at 320x568 is at y=596 with two providers, so still just under the fold there; one provider (Android) is about 56 px higher.

@@ -40,7 +40,7 @@ test("EmailCodeField submits by itself on the eighth digit, once", async () => {
   assert.equal(submittedEvents()[0].properties.auto, true);
 });
 
-test("a wrong code is not sent again until it is edited, and the button retries on purpose", async () => {
+test("a wrong code is announced as an alert, clears the field, and a new code is tried", async () => {
   let attempts = 0;
   const view = await render(
     createElement(EmailCodeField, {
@@ -55,19 +55,18 @@ test("a wrong code is not sent again until it is edited, and the button retries 
   await view.settle();
   assert.equal(attempts, 1);
   assert.match(view.text(), /wrong or has expired|nope|try again/i);
+  const alert = view.container.ownerDocument.querySelector('[role="alert"]');
+  assert.ok(alert, "the message is exposed as an alert");
+  assert.match(alert.textContent ?? "", /wrong or has expired|nope|try again/i);
 
-  // The same value again (a re-render, a keyboard blur) does not fire a second attempt.
+  // The wrong digits are gone, so the retry starts from an empty field.
+  assert.equal(codeInput(view).value, "");
+
+  // The same eight digits typed again are a new attempt, not a repeat of the last one.
   await view.type(codeInput(view), "12345678");
-  await view.settle();
-  assert.equal(attempts, 1);
-
-  // A deliberate press does.
-  await view.press(view.findByText("Continue"));
   await view.settle();
   assert.equal(attempts, 2);
 
-  // Editing the code and completing it again submits the new value.
-  await view.type(codeInput(view), "1234567");
   await view.type(codeInput(view), "87654321");
   await view.settle();
   assert.equal(attempts, 3);

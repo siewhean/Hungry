@@ -16,19 +16,22 @@ export function AuthProviderButtons({
   intent = "continue",
   onPress,
   spacingBelow,
+  compact = false,
 }: {
   disabled: boolean;
   divider: string;
   intent?: AuthProviderIntent;
   onPress: (provider: AuthProvider) => void;
   spacingBelow?: number;
+  /** Tighter spacing for short screens. */
+  compact?: boolean;
 }) {
   const { palette, spacing } = useHungryTheme();
   const providers = getEnabledAuthProviders();
   if (providers.length === 0) return null;
   return (
-    <View style={{ gap: spacing[4], marginBottom: spacingBelow }}>
-      <View style={{ gap: spacing[3] }}>
+    <View style={{ gap: compact ? spacing[3] : spacing[4], marginBottom: spacingBelow }}>
+      <View style={{ gap: compact ? spacing[2] : spacing[3] }}>
         {providers.map((provider) => (
           <AuthProviderButton
             key={provider}
