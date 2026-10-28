@@ -122,7 +122,10 @@ test("release-reachable screens hide controls for cut features behind their flag
   const dishDetail = read("src/app/screens/detail/DishDetailScreenV2.tsx");
 
   // Follows and follow requests outlive the archived social feed, so visibility always shows.
-  assert.match(settings, /\{isAuthenticated \? \(\s*<SettingsRow\s+label="Profile visibility"/);
+  assert.match(
+    settings,
+    /\{isAuthenticated \? \(\s*<SettingsRow\s+\{\.\.\.neutralRow\}\s+label="Profile visibility"/,
+  );
   // Unwired preferences were removed outright (see mvp-source-of-truth-contracts).
   for (const label of [
     "Show location badge",

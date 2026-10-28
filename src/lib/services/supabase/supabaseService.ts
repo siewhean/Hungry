@@ -4853,23 +4853,20 @@ export const supabaseService: HungryService = {
       const client = requireSupabaseClient();
       const userId = await getCurrentSupabaseUserId();
       if (!userId) throw new Error("You must be signed in to change notification settings.");
-      const current = await supabaseService.push.getPreferences();
-      const next = { ...current, ...updates };
+      // Only the columns being changed go in the upsert (ON CONFLICT updates just those), so
+      // a switch changed on another phone is never written back with a stale value.
+      const row: Record<string, unknown> = { user_id: userId };
+      if (updates.stallUpdates !== undefined) row.stall_updates = updates.stallUpdates;
+      if (updates.weeklyPicks !== undefined) row.weekly_picks = updates.weeklyPicks;
+      if (updates.mealtimeSuggestions !== undefined)
+        row.mealtime_suggestions = updates.mealtimeSuggestions;
+      if (updates.socialActivity !== undefined) row.social_activity = updates.socialActivity;
+      if (updates.quietStartHour !== undefined) row.quiet_start_hour = updates.quietStartHour;
+      if (updates.quietEndHour !== undefined) row.quiet_end_hour = updates.quietEndHour;
+      if (updates.weeklyCap !== undefined) row.weekly_cap = updates.weeklyCap;
       const { data, error } = await client
         .from("notification_preferences")
-        .upsert(
-          {
-            user_id: userId,
-            stall_updates: next.stallUpdates,
-            weekly_picks: next.weeklyPicks,
-            mealtime_suggestions: next.mealtimeSuggestions,
-            social_activity: next.socialActivity,
-            quiet_start_hour: next.quietStartHour,
-            quiet_end_hour: next.quietEndHour,
-            weekly_cap: next.weeklyCap,
-          },
-          { onConflict: "user_id" },
-        )
+        .upsert(row, { onConflict: "user_id" })
         .select(
           "stall_updates,weekly_picks,mealtime_suggestions,social_activity,quiet_start_hour,quiet_end_hour,weekly_cap",
         )

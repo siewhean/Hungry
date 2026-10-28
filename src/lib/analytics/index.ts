@@ -2,6 +2,8 @@ export {
   clearTrackedAnalyticsEvents,
   getAnalyticsSessionId,
   getTrackedAnalyticsEvents,
+  isAnalyticsEnabled,
+  setAnalyticsEnabled,
   setAnalyticsSink,
   trackAnalyticsEvent,
 } from "./mockAnalytics";
